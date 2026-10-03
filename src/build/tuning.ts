@@ -45,6 +45,9 @@ const SETTLED_CHOICES = [
   "fastRecentres",
   "endCentre",
   "redAlerts",
+  // The Incoming wave: the next round's raid is always shown, with what it goes for first (the owner, after
+  // the Commander's pull request: "the enemy units should be visible without nexus powers").
+  "incoming",
 ] as const
 
 /** Tuned values since retired, because the rule they tuned is gone: the held-key ramp's hold step,

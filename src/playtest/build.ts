@@ -13,7 +13,8 @@ import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { nextRound, startPulse } from "../cli/pulse-run.ts"
+import { foresee, nextRound, startPulse } from "../cli/pulse-run.ts"
+import type { MissionPlay } from "../cli/pulse-run.ts"
 import { starterContext } from "../cli/starter.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
@@ -42,6 +43,10 @@ export type BuildPlaytestOptions = Readonly<{
   /** Experiments to open with instead of this build's defaults — an imported export's. */
   experiments?: Partial<Experiments>
   context?: BuildContext
+  /** The mission the rounds are played on, when it is not the screen's own (PERIMETER): another mission's
+   *  or a test map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`),
+   *  with `context` its first round. */
+  play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee">>
   cursor?: Coord
   /**
    * Play a terminal that reports key presses, repeats and releases (the kitty keyboard protocol, which
@@ -50,6 +55,9 @@ export type BuildPlaytestOptions = Readonly<{
    * (`Right/repeat`), and off otherwise — a classic terminal.
    */
   keyReleases?: boolean
+  /** Whether a round that opens with a scene plays it in the dialog first, as the game does — on unless
+   *  said otherwise, so a script starts where a player starts: PERIMETER's intro (`Esc` skips it). */
+  scenes?: boolean
 }>
 
 export type PlaytestFrame = Readonly<{
@@ -129,9 +137,12 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     onQuit: () => {
       leftBy = "quit"
     },
-    startPulse,
+    startPulse: options.play?.startPulse ?? startPulse,
     activity,
-    nextRound,
+    nextRound: options.play?.nextRound ?? nextRound,
+    // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
+    ...(options.play === undefined ? { foresee } : options.play.foresee === undefined ? {} : { foresee: options.play.foresee }),
+    scenes: options.scenes ?? true,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 
@@ -141,6 +152,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     // A Nexus Pulse on screen is drawn at the script's clock: the frame after a step shows the Pulse as it
     // is that long after it began. Nothing else on this screen depends on time in a scripted playtest.
     const pulse = build.pulseFrame(layout)
+    const raid = build.raid()
     return composeBuildFrame(
       {
         // This round's: what stands on the map changes from round to round.
@@ -150,6 +162,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
         glyphPack: build.state.settings.glyphPack,
         reducedMotion: build.state.settings.reducedMotion,
         ...(pulse === undefined ? {} : { pulse }),
+        ...(raid === undefined ? {} : { raid }),
       },
       build.state.settings.capability,
     )

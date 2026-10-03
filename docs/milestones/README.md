@@ -17,8 +17,8 @@ remains.
 | [2 — Design and Orientation](../history/milestones/milestone-02-campaign-design.md) | COMPLETE | done | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before milestones 3-6 build the game's experience? |
 | [3 — Game Menu](../history/milestones/milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
 | [5 — Build Phase](../history/milestones/milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
-| [6 — Nexus Pulse Phase](milestone-06-pulse-phase.md) | CURRENT | 4 | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
-| [8 — Commander](milestone-08-commander.md) | PLANNED | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
+| [6 — Nexus Pulse Phase](../history/milestones/milestone-06-pulse-phase.md) | COMPLETE | done | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
+| [8 — Commander](milestone-08-commander.md) | CURRENT | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
 | [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | PLANNED | 6 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
 | [4 — Campaign Menu](milestone-04-campaign-menu.md) | PLANNED | 7 | Can a player start or load a campaign and see progress, army, and enemy intel? |
 | [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 8 | Can workers be built and gather resources deterministically during the Pulse? |
@@ -31,6 +31,11 @@ Pulse), then the two mode shells (the Commander and draft, the run, the campaign
 economy, cutscenes), then proof and content (the first two missions, repeated content passes). Prefer the
 honest, connected, ugly step over the beautiful one that dead-ends: the biggest improvements to the Grid
 all came after the Pulse ran end to end, because playing it is what says which part needed the quality.
+
+**The owner's priority, 2026-10-01**, after playing the loop across rounds: the interface and the quality of
+the mechanics come before any level's balance. A first mission that is too easy is fine while the basics are
+being built; levels are designed and balanced later, inside what the mechanics allow. His notes on the Pulse
+screen wait in [`backlog.md`](backlog.md) for the step that takes them.
 
 Two orderings are choices Mario may swap: 11 before 4, because a run exercises Commander Army composition
 harder than a campaign shell and needs no writing; and 7 after 11, because a run can start on a

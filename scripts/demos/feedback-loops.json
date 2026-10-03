@@ -2,6 +2,6 @@
   {
     "label": "Activity logs",
     "try": "Two buildings are placed. Press Esc, then a: what you did, newest first. Right changes the filter; e exports it into the box under the screen.",
-    "keys": "n 1 1 Enter 2 Right Enter"
+    "keys": "Esc n 1 1 Enter 2 Right Enter"
   }
 ]

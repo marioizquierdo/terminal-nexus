@@ -2,7 +2,8 @@
 // by triggers", a trigger being "a condition, and the actions taken when it holds".
 //
 // This file is the **simulation band**, built at the size PERIMETER needs — `spawn`, `order`, `commitPlan`,
-// `win`, `lose` — and the three conditions its trigger list uses. The shapes follow the sketch in
+// `win`, `lose` — the **presentation band** at its smallest — `say`, a line of dialog when a round's Build
+// Phase opens — and the four conditions its trigger list uses. The shapes follow the sketch in
 // campaigns.md (`{ pulse: 1, tick: 0 }`, `{ event: "pulse.end", pulse: 3 }`, `{ spawn: {...} }`)
 // so that sketch and this file read alike. **A mission never contains a function**
 // (missions are declarative triggers, not a scripting API; whether that stays true is an open question,
@@ -14,6 +15,7 @@
 // Pure data: nothing here imports the kernel, so the Build Phase may read a mission's shape without ever
 // reaching `src/pulse` (tests/architecture.test.ts).
 
+import type { DeckOverride } from "../content/armies.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 
@@ -36,11 +38,14 @@ export type Region = Readonly<{
  * - `{ event: "pulse.end" }` — a Pulse is over (for one Pulse, or every one when `pulse` is absent).
  * - `{ event: "nexus.destroyed", side }` — that side's Grid Nexus stood when the mission began and does
  *   not now. Read at a Pulse's end (the kernel ends a Pulse the moment a Nexus falls).
+ * - `{ event: "build.start", pulse }` — that round's Build Phase opens. Only presentation actions run
+ *   here (`say`): nothing is resolved between two Pulses, so nothing about the Grid can change then.
  */
 export type TriggerCondition =
   | Readonly<{ pulse: number; tick: number }>
   | Readonly<{ event: "pulse.end"; pulse?: number }>
   | Readonly<{ event: "nexus.destroyed"; side: PlayerId }>
+  | Readonly<{ event: "build.start"; pulse: number }>
 
 /**
  * What a group does once it is on the Grid. **Only `advance` exists, and today it means what the kernel's
@@ -88,20 +93,63 @@ export type LoseAction = Readonly<{ lose: true }>
 
 export type SimulationAction = SpawnAction | OrderAction | CommitPlanAction | WinAction | LoseAction
 
+/**
+ * What a line of dialog looks at while it is shown — the camera goes there, and the intro highlight lights
+ * around it: a unit some trigger brings (by content id: Vasse), a group some trigger spawns (by its name), or
+ * a region of the map.
+ */
+export type SayFocus = Readonly<{ unit: string }> | Readonly<{ group: string }> | Readonly<{ region: string }>
+
+/**
+ * **The presentation band, at its smallest** (campaigns.md, "two bands of trigger actions"): a line of
+ * dialog, shown in the dialog at the bottom of the screen when the round's Build Phase opens, advanced by the
+ * player and skipped by Esc. The trigger runner never reads it, so a mission's lines can never change what
+ * its Pulses resolve (`src/match/mission.ts`).
+ */
+export type SayAction = Readonly<{
+  say: Readonly<{
+    /**
+     * Who says it: the content id of a unit the mission brings — its name, side and glyph then come from
+     * the content and the spawn that brings it (`"unit.citizen.vasse"`) — or the name of someone who is not
+     * on the Grid (`"Corvane"`).
+     */
+    speaker: string
+    /** Whose side the speaker speaks for — the colour of their name. A unit's own side when absent. */
+    side?: PlayerId
+    /** The line itself, short enough for the dialog at 80 x 24 (`SAY_LINES` lines of `SAY_COLUMNS`). */
+    text: string
+    /** Where the camera looks while the line is shown. Absent: it stays where it is. */
+    focus?: SayFocus
+  }>
+}>
+
+export type PresentationAction = SayAction
+
+/** Anything a trigger can do: a simulation action, which the runner applies, or a presentation action,
+ *  which only the screen shows. */
+export type TriggerAction = SimulationAction | PresentationAction
+
 export type TriggerDefinition = Readonly<{
   id: string
   when: TriggerCondition
-  do: readonly SimulationAction[]
+  do: readonly TriggerAction[]
 }>
 
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
- * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no armies, unlocks or objectives list yet;
- * the map and the construct menu are still the Build Phase's starter ones, named by the adapter.
+ * the part of campaigns.md's `MissionDefinition` PERIMETER needs — the player's deck, but no opponent deck,
+ * unlock record or objectives list yet; the map is still the Build Phase's starter one, named by the adapter.
  */
 export type MissionDefinition = Readonly<{
   id: string
   name: string
+  /**
+   * The deck the player plays: a Commander's deck by id (`src/content/armies.ts`), and what this mission makes
+   * of it. The Campaign develops a deck level by level, so a level names what of it is unlocked — or overrides
+   * any part outright — and the Build Phase is built from the result (`deckOf`). Checked with the rest of the
+   * mission: an unknown deck, or an override that names what the deck does not hold, is refused.
+   */
+  player?: Readonly<{ army: string; override?: DeckOverride }>
   /** How many Pulses the mission plans for. The last one's end must decide the mission. */
   pulses: number
   /** Every Pulse's length in ticks: the kernel's tick limit. */

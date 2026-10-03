@@ -25,17 +25,20 @@ import type { Scenario, Spot } from "./pulse-helpers.ts"
 
 const headlineOf = (pulse: ResolvedPulse): string => resultOf(outcomeOf(pulse.timeline)).headline
 
-test("every ending the kernel has is reachable from the starter map's own data", () => {
+test("every ending the player can meet is reachable from the starter map's own data", () => {
   // The question is whether the ending reads "regardless of whether they won, lost, or
-  // reached the mission's own tick limit". Nothing can be judged that cannot be reached.
+  // reached the mission's own tick limit". Nothing can be judged that cannot be reached. A defeat is
+  // only ever the Nexus falling (Mario, 2026-10-01): a force wiped out with its Nexus standing plays on,
+  // so a side wiped out and a draw belong to battles with no Nexus (`grid`'s scenarios), and their words
+  // are ending.test.ts's.
   const table: readonly (readonly [string, Scenario, string, string | null, string])[] = [
     // name, scenario, headline, winner, reason
-    ["nothing built", {}, "DEFEAT", "B", "annihilation"],
-    ["one Turret", { plan: [DEFENCE[0] as Spot] }, "DRAW", null, "annihilation"],
+    ["nothing built", {}, "TIME'S UP", null, "tick-limit"],
+    ["one Turret", { plan: [DEFENCE[0] as Spot] }, "VICTORY", "A", "annihilation"],
     ["two Turrets and a Hatchery", { plan: DEFENCE }, "VICTORY", "A", "annihilation"],
     ["nobody comes", { raid: "none" }, "TIME'S UP", null, "tick-limit"],
     ["no units of your own", { crew: "none" }, "DEFEAT", "B", "nexus-destroyed"],
-    ["a heavy raid, nothing built", { raid: "heavy" }, "DEFEAT", "B", "annihilation"],
+    ["a heavy raid, nothing built", { raid: "heavy" }, "DEFEAT", "B", "nexus-destroyed"],
   ]
   for (const [name, scenario, headline, winner, reason] of table) {
     const { pulse } = play(scenario)
@@ -44,6 +47,13 @@ test("every ending the kernel has is reachable from the starter map's own data",
     assert.equal(outcome.winner, winner, `${name}: the winner`)
     assert.equal(outcome.reason, reason, `${name}: why`)
   }
+  // With nothing built the squads still fall, and the Pulse plays on past them to its end.
+  const nothing = play().pulse
+  const final = nothing.timeline.states.at(-1)
+  assert.ok(final !== undefined)
+  assert.equal(final.entities.filter((entity) => entity.player === "A" && FIXTURE_REGISTRY.get(entity.contentId).layer === "units").length, 0)
+  const lastDeath = nothing.timeline.events.filter((event) => event.kind === "entity.died" && event.player === "A").at(-1)
+  assert.ok(lastDeath !== undefined && lastDeath.tick < final.tick, "the Pulse stopped when the squads fell")
 })
 
 test("the same plan is the same Pulse: hashes stable across runs, and identical to the kernel run directly", () => {

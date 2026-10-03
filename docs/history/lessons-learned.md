@@ -187,6 +187,39 @@ than any one feature:
    the filters by position; a new first filter broke them all. The question's filter went last instead,
    one Left from where the window opens.
 
+## The Commander (2026-10-01)
+
+1. **A new unit on a fixture side moves every outcome, so measure the mission before and after.** Adding
+   Vasse to PERIMETER's squads let a plan that built nothing win (through the old annihilation rule), ended
+   round 1 before the Barracks's first trooper, and, listed last rather than first, moved every squad
+   member's starting tile and had her fall behind every Turret plan. Each was found by playing the mission
+   round by round across a few plans and her numbers, not by the tests that failed.
+2. **A decided rule a new feature leans on goes first, in its own commit.** Mario had just answered that only
+   the Nexus falling loses a round, and asked for it later. The Commander made the old rule decide the
+   mission, so the rule was built first, alone, green on its own, and the Commander built on top of it: the
+   history says which change moved which outcome.
+3. **A test that samples a Pulse in steps can step over a short phase.** One-second steps happened to land in
+   the half-second cease fire until round 1's length moved. Sample at a fraction of the shortest phase you
+   assert on.
+4. **Measure again before the pull request repeats a claim.** The report's outcome table shortened two rows to
+   "held", and a fixture's comment carried the milestone's hope (PERIMETER does not force her death) as a
+   fact. Measured again for the description, she falls in the last round of every plan at every health. A
+   hope from the plan is not a result until a run says so.
+
+## The Commander's second round (2026-10-03)
+
+1. **A trail must be the way the kernel walks, not a straight line.** The first trail ran straight from the
+   ridge to the Barracks, across rock the raid walks round; units step greedily toward their target and can
+   stand pressed against a ridge face. The trail is now the kernel's own steps, from the unit whose walk
+   arrives, and shows the raid pressing on the ridge when none gets through.
+2. **A screen that opens something by itself changes every test that starts there.** PERIMETER's intro would
+   have taken the first keys of every round-1 test and key script. The session decides whether scenes play
+   (on in the game, the browser page and the playtest; off for a session a test builds, unless asked), so the
+   tests kept their meaning and only the documented key scripts gained an `Esc`.
+3. **Parallel workers collide in the files they share, not the ones they own.** The session's options, the
+   composition's input and the round loop each took additions from both sides; naming in each prompt which
+   hunks the other worker would add kept every conflict a keep-both, resolved in minutes.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

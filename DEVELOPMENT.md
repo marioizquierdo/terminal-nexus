@@ -34,7 +34,7 @@ npm run maps                                                          # every ch
 ./bin/terminal-nexus.ts
 ./bin/terminal-nexus.ts --build-phase                                       # the Build Phase (a temporary flag; --spike still works)
 ./bin/terminal-nexus.ts --build-phase --settings "$(pbpaste)"               # start from a pasted settings export
-./bin/terminal-nexus.ts --build-phase --keys "n 1 1 Enter"                  # open already in a state
+./bin/terminal-nexus.ts --build-phase --keys "Esc n 1 1 Enter"              # open already in a state (Esc skips the intro)
 
 bun scripts/build-web.mjs                                             # the browser playtest page
 ```
@@ -111,9 +111,9 @@ run recorded in the Activity Logs, as the game's window would export it; `--size
 `click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
 
 ```bash
-node scripts/playtest.mjs --keys "Down Down Space*4"                       # every step's status, then the final screen
-node scripts/playtest.mjs --keys "Down Down Space*4" --gif --png final --name hatchery-run
-node scripts/playtest.mjs --keys "n 2 s s wait~1000*20"                    # a Pulse, twenty seconds in
+node scripts/playtest.mjs --keys "Esc Down Down Space*4"                   # every step's status, then the final screen
+node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --png final --name hatchery-run
+node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a Pulse, twenty seconds in
 ```
 
 Output goes to `.playtest/`, which git ignores, and so does every capture script's. **Pictures are not

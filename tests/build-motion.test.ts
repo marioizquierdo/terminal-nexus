@@ -426,19 +426,19 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
   for (let step = 0; step < 3; step += 1) jumps.build.handleData(SHIFT_RIGHT, jumps.layout)
   assert.equal(jumps.build.state.cursor.x, 3 * TUNED.jumpStep)
   // A playtest's untimed steps are a second apart: taps that start over.
-  const untimed = runBuildPlaytest({ steps: parseKeyScript("e Right*10") })
+  const untimed = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right*10") })
   // Where Explore Map put the cursor: clear ground beside the Nexus.
   const start = untimed.frames[1]?.state.cursor.x ?? 0
   assert.equal(untimed.frames.at(-1)?.state.cursor.x, start + 10)
   assert.deepEqual(untimed.frames.slice(2).map((frame) => frame.moveKind), Array.from({ length: 10 }, () => "tap 1"))
   // `~ms` times them: quick taps speed up, and a hold runs on the cadence (the summary says which).
-  const tapping = runBuildPlaytest({ steps: parseKeyScript("e Right Right~350 Right~250") })
+  const tapping = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right Right~350 Right~250") })
   assert.deepEqual(tapping.frames.slice(2).map((frame) => frame.moveKind), ["tap 1", "tap 1", "tap 2"])
-  const holding = runBuildPlaytest({ steps: parseKeyScript("e Right Right~180 Right~30*10") })
+  const holding = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right Right~180 Right~30*10") })
   const kinds = holding.frames.slice(3).map((frame) => frame.moveKind)
   assert.ok(kinds.includes("hold 1") && kinds.includes("hold 0"), `a held key in a script: ${kinds.join(", ")}`)
   // `Right/repeat` and `Right/release` play a terminal reporting key events.
-  const marked = runBuildPlaytest({ steps: parseKeyScript("e Right Right/repeat~180 Right/repeat~30*4 Right/release~30 Right~100") })
+  const marked = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right Right/repeat~180 Right/repeat~30*4 Right/release~30 Right~100") })
   assert.equal(marked.frames.at(-2)?.moveKind, "release 0")
   assert.equal(marked.frames.at(-1)?.moveKind, "tap 1", "a press 100 ms after a release is a tap when the terminal says so")
 })
@@ -797,6 +797,7 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   const stdin = new FakeStdin()
   const session = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,

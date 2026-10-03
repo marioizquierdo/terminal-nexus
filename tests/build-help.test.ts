@@ -158,6 +158,12 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, ESC, "a"), /^Left\/right change the filter, \[e\] exports, up\/down read\. \[esc\] goes back\.$/],
     [(side) => side.build.run([{ kind: "open-activity-logs" }]), /^Left\/right change the filter, \[e\] exports, up\/down read\. \[esc\] closes\.$/],
   ],
+  // PERIMETER's intro, its first and last lines: these sessions play no scenes, so the dialog is put up by
+  // hand on the round's own scene (tests/dialog.test.ts plays it).
+  dialog: [
+    [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 0, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 1 of 4\. \[enter\] next line, \[esc\] skips the rest\.$/],
+    [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 3, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 4 of 4\. \[enter\] or \[esc\] closes it\.$/],
+  ],
   committed: [[(side) => keys(side, "n", "1", "s", "s"), /^The plan is locked in\. \[esc\] opens the menu\.$/]],
   "menu-mouse": [
     [
@@ -333,7 +339,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "ANY LIST", "THE MOUSE", "THE NEXUS PULSE", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "ANY LIST", "THE MOUSE", "THE NEXUS PULSE", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = buildSide({ terminal: size })

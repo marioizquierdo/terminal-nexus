@@ -25,8 +25,11 @@ export function victory(context: TickContext): Outcome | null {
   }
 
   // "Annihilated" means every entity on `workers`, `units`, and `air` is dead. Workers count: a side with only workers left has lost its army.
+  // A side whose Grid Nexus stands is never annihilated (Mario, 2026-10-01: "the player should only lose
+  // when the nexus is destroyed"): its Pulse goes on until the Nexus falls or the time runs out. A side
+  // with no Nexus — a raid — is still beaten by losing every unit.
   const annihilated = PLAYERS.filter(
-    (player) => context.pulse.roster[player].hasMobile && !mobileAlive[player],
+    (player) => context.pulse.roster[player].hasMobile && !mobileAlive[player] && !nexusAlive[player],
   )
   if (annihilated.length === 2) {
     return { winner: null, reason: "annihilation", tick: context.tick }

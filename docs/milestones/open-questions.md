@@ -17,7 +17,7 @@ when it is genuinely his call, state the assumption you proceed under, then keep
 
 ## Index
 
-Five are ready for Mario to decide now ("Mario, now"); every other question is parked until the
+Four are ready for Mario to decide now ("Mario, now"); every other question is parked until the
 milestone or backlog entry named, and nothing in the current milestone is blocked by any of them.
 
 | Id | Question | Status | Waits on |
@@ -36,7 +36,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
 | [Q31](#q31--what-shape-does-an-unlock-record-take-with-no-save-system-yet) | What shape does an unlock record take? | OPEN | Milestone 4 (campaign menu) |
-| [Q34](#q34--does-building-commander-vasse-in-level-1-mean-authoring-the-citizens-commander-army-early) | Does building Vasse mean authoring the whole Commander Army? | OPEN | Milestone 8 (Commander) |
 | [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (campaign menu) |
 | [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Mario, now |
 | [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
@@ -47,7 +46,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
 | [Q68](#q68--what-does-the-player-call-a-nexus-pulse) | What does the player call a Nexus Pulse? | OPEN | Mario, now |
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN | Mario, now |
-| [Q70](#q70--should-a-side-whose-grid-nexus-still-stands-lose-a-pulse-because-its-units-died) | Should a side with a standing Nexus lose because its units died? | OPEN | Mario, now |
 
 ## Open
 
@@ -352,29 +350,6 @@ naming its Commander**, and bonus goals unlock content for Challenge mode, so th
 campaign. A flat list still serves the first playable mission; Milestone 4 is where the difference gets
 designed rather than discovered.
 
-### Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
-
-**Status:** OPEN — parked until Milestone 8 starts; the recommendation is already assumed by [`milestone-08-commander.md`](milestone-08-commander.md).
-
-Mario's milestone list puts a real Commander in Level 1: "focus on the first Citizen commander. Develop the
-initial draft of Nexus upgrades." Every earlier framing deferred both: `commander-armies.md` ("Do not invent
-production-ready stats before Milestone 12 selects the minimum Citizens-versus-Ravels microgame"),
-`AGENTS.md`'s standing ban, and the campaign's belief ramp, which spends the Commander death, absence and
-restoration beat at Mission 3 (RESTORATION). Building the full roster early locks balance nobody has played;
-refusing any Commander mechanic leaves Milestone 8 with nothing to do.
-
-| Option | Cost |
-| --- | --- |
-| A. **Build the Commander *mechanic* and one named Commander (Vasse) scoped to PERIMETER; keep the upgrade draft to one or two real options; do not treat this as roster selection** | Real, testable work (the death, absence and restoration cadence [`pulse.md`](../system-design/pulse.md) specifies and nothing has built) without locking what `commander-armies.md` reserves. The risk is a later reader mistaking "Vasse exists" for "the Citizens Commander Army is decided", which is why Milestone 8's own definition of done requires its report to say otherwise |
-| B. **Defer the Commander to Mission 3**, per the belief ramp, and let Milestone 8 build only the Nexus upgrade draft | Faithful to the narrative plan and cheaper, but leaves PERIMETER without the character its briefing centres on, and Mario asked for the Commander in Level 1 |
-| C. **Author the full Citizens Commander Army now** | Contradicts `commander-armies.md` and `AGENTS.md` and locks balance on a roster nobody has played. Named for completeness only |
-
-**Recommendation: A.** The line that makes it safe is the one `commander-armies.md` draws: a Commander Army
-is "the complete set of choices legally available to one player in one match". One named Commander's
-mechanic plus a two-option draft, with every other choice still from the disposable fixture roster, is not
-that. **Separately: PERIMETER's own design should not force Vasse's death**, so the mechanism is testable
-without spending RESTORATION's beat two missions early.
-
 ### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
 
 **Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
@@ -562,31 +537,3 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
 that is what a readable intention needs and what the Campaign's scripted opponent will be made of.
-
-### Q70 — Should a side whose Grid Nexus still stands lose a Pulse because its units died?
-
-**Status:** OPEN — decision-ready; registered 2026-09-30 from PERIMETER's fixture.
-
-The kernel ends a Pulse the moment one side's mobile units are all dead (annihilation), even when that side's
-Grid Nexus stands. In a defence mission this reads oddly: when the player's squads fall in round 2, the round
-simply stops, with the raid at the gate, and the flank that was due seven seconds in never comes. The raid's
-survivors then carry into round 3 (which is at least consistent: the player sees them in the Build Phase). In an
-earlier tuning of the waves, a strong defence's round 3 ended the moment its last swarmer died, the Nexus
-untouched, and the mission counted it held.
-
-| Option | Cost |
-| --- | --- |
-| A. **Keep the rule**: annihilation ends a Pulse whatever stands | No change; a defence round can end before its waves have all come |
-| B. **A side with a standing Grid Nexus is never annihilated**: its Pulse goes on until the Nexus falls or the time runs out | A RULE change ([`pulse.md`](../system-design/pulse.md), victory), a named scenario, and the full determinism bar; it also changes Skirmish, where it is arguably right too: "Destroying the enemy Grid Nexus wins" |
-| C. **A mission flag**: the runner tells the kernel the defender fields no mobile units, so only its Nexus can lose | No kernel file changes, but it misstates the roster to the kernel to get a different rule — the kind of hidden rule the project refuses |
-
-**Recommendation: B**, decided by playing it: play PERIMETER as it is first (the Next round Experiment and the
-waves as built), and if a round ending with the raid at the gate reads wrong to the owner, B is the honest fix.
-Until then A stands and the pull request says what it does.
-
-The Barracks that trains makes the rule's edges sharper. A round can now begin with none of the player's units
-alive and still field some, trained during it. The kernel counts a side as having fielded units from the round's
-opening, and the mission runner widens that each time a raid group arrives; so whether a trooper trained after
-the opening ends the round by dying depends on whether it happened to be standing when a later group arrived. In
-PERIMETER at a trooper every eight seconds, a plan that builds nothing wins round 3 this way. Option B removes
-the timing as well.

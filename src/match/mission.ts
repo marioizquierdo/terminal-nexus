@@ -18,10 +18,15 @@
 // no door for intents yet (the narrow hook content.md describes is unbuilt), so between ticks is the nearest
 // place that needs no kernel change — a finding recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md.
 //
-// One consequence is deliberate and visible: **the kernel's victory rule still ends a Pulse the moment a
-// side is wiped out**, so a reinforcement scheduled after that tick never comes. The victory check reads
-// what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
+// One consequence is deliberate and visible: **the kernel's victory rule ends a Pulse the moment a side with
+// no Grid Nexus standing is wiped out** — a raid — so a reinforcement of its scheduled after that tick never
+// comes. A side whose Nexus stands is never wiped out and plays on (Mario, 2026-10-01). The victory check
+// reads what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
 // roster for the rest of the Pulse, so a side that only arrives later can still be wiped out, and win.
+//
+// **The presentation band is never read here** — a line of dialog (`say`) and the Build Phase opening it
+// runs at (`build.start`) are the screen's (`src/mission/scene.ts`) — so a mission's lines cannot change
+// what its Pulses resolve: the same plans give the same states with or without them.
 //
 // After the Pulse, the triggers waiting for its end are read in list order and the first `win` or `lose`
 // decides the mission — the kernel's own outcome is never overridden, only read (a mission's goal is
@@ -270,7 +275,8 @@ function verdictAt(
   let verdict: MissionVerdict = { kind: "continue" }
   for (const trigger of mission.triggers) {
     const { when } = trigger
-    if (isMoment(when)) continue
+    // A Build Phase opening is the presentation band's (`src/mission/scene.ts`): never a Pulse's end.
+    if (isMoment(when) || when.event === "build.start") continue
     const holds =
       when.event === "pulse.end"
         ? when.pulse === undefined || when.pulse === pulse

@@ -25,6 +25,16 @@ const SLINGER = "unit.ravel.slinger"
 export const PERIMETER: MissionDefinition = {
   id: "mission.citizen.perimeter",
   name: "Perimeter",
+  // Vasse's deck, and what mission 1 has unlocked of it: every building and both placeholder Nexus powers it
+  // holds today. Named one by one rather than left to the deck, so that when her deck grows (her real Nexus
+  // powers are the next step) this level keeps what it teaches.
+  player: {
+    army: "army.citizen.vasse",
+    override: {
+      blueprints: ["structure.citizen.barracks", "structure.bench.hatchery", "structure.bench.beamturret"],
+      nexusPowers: ["power.citizen.reserve-fund", "power.citizen.war-chest"],
+    },
+  },
   pulses: 3,
   // Thirty seconds a Pulse, as the placeholder Pulse was: time enough for a wave to cross the map.
   pulseTicks: 360,
@@ -51,7 +61,12 @@ export const PERIMETER: MissionDefinition = {
         {
           spawn: {
             side: "A",
+            // "Commander Vasse holds the ground with what walked out of the annex: two squads" (the
+            // briefing). Listed first, so she takes the muster's centre with the squads around her: listed
+            // last she stood at their edge and fell in round 2 behind every Turret plan measured. She
+            // arrives once; when she falls, the rules between rounds bring her back.
             units: [
+              { unit: "unit.citizen.vasse", count: 1 },
               { unit: "unit.citizen.trooper", count: 3 },
               { unit: "unit.citizen.marksman", count: 2 },
             ],
@@ -78,6 +93,20 @@ export const PERIMETER: MissionDefinition = {
             intent: "Probe the line at the ridge.",
           },
         },
+      ],
+    },
+    {
+      // The intro, as round 1's Build Phase opens: Vasse's own bark, then the pre-battle exchange — every
+      // line already written in campaigns.md (mission one, in full), none new. The camera goes where each
+      // line looks: at her, at the raid on the ridge, and at the Nexus for Corvane's last. Corvane is not on
+      // the Grid; the raid speaks for them.
+      id: "intro",
+      when: { event: "build.start", pulse: 1 },
+      do: [
+        { say: { speaker: "unit.citizen.vasse", text: "By the book. The new book.", focus: { unit: "unit.citizen.vasse" } } },
+        { say: { speaker: "Corvane", side: "B", text: "Nice fence, roadmakers. We brought wire cutters.", focus: { group: "probe" } } },
+        { say: { speaker: "unit.citizen.vasse", text: "It is not our fence I would worry about.", focus: { unit: "unit.citizen.vasse" } } },
+        { say: { speaker: "Corvane", side: "B", text: "...Why is your pyramid looking at me?", focus: { region: "nexus" } } },
       ],
     },
     {

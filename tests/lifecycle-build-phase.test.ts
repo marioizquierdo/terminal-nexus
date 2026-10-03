@@ -78,6 +78,7 @@ async function starterSession(
 
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -221,6 +222,7 @@ test("--keys opens the Build Phase already in the state those keys reach, then h
   const exits: number[] = []
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -246,6 +248,7 @@ test("--keys that cannot be delivered stops there and says why when the screen c
   const reported: string[] = []
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -277,6 +280,7 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   const exits: number[] = []
   void runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -289,16 +293,16 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
-  assert.equal(timerAt(stdout.lastWrite), "0:09", "the Pulse did not open at zero")
+  assert.equal(timerAt(stdout.lastWrite), "0:14", "the Pulse did not open at zero")
   assert.match(stdout.lastWrite, /nexus pulse/)
 
   t += 3_000
   await sleep(80)
-  assert.equal(timerAt(stdout.lastWrite), "0:06", "the Pulse did not follow the screen's clock")
+  assert.equal(timerAt(stdout.lastWrite), "0:11", "the Pulse did not follow the screen's clock")
 
-  // The last seconds, in the run-up to the stop (PERIMETER's first round ends near 8.3 s and the warning
-  // is three seconds).
-  t += 4_000
+  // The last seconds, in the run-up to the stop (PERIMETER's first round ends near 13.1 s with this plan
+  // and Vasse in the squads, and the warning is three seconds).
+  t += 8_000
   await sleep(80)
   assert.match(stdout.lastWrite, /about to end/, "no warning before the fight stopped")
 
@@ -333,6 +337,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   const stdin = new FakeStdin()
   void runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -343,7 +348,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   await sleep(60)
   t += 3_000
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:06")
+  assert.equal(timerAt(stdout.lastWrite), "0:11")
 
   stdout.columns = 60
   stdout.emit("resize")
@@ -354,7 +359,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   stdout.columns = 80
   stdout.emit("resize")
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:06", "the Pulse ran on behind the gate")
+  assert.equal(timerAt(stdout.lastWrite), "0:11", "the Pulse ran on behind the gate")
   stdin.emit("data", Buffer.from([3]))
   await sleep(30)
 })
@@ -403,6 +408,7 @@ async function keyboardRun(answers: Answers, options: { keyReleases?: "auto" | "
   })
   const session = runBuildPhase({
     settings: TEST_SETTINGS,
+    scenes: false,
     backend: {
       name: "flaky",
       start: async () => {

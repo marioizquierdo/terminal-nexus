@@ -105,6 +105,13 @@ export type ContentDef = Readonly<{
    */
   nexus?: boolean
   /**
+   * This unit is its side's Commander (pulse.md): a persistent frontline unit that, when it falls, is
+   * absent for the rest of that round's Pulse and the whole of the next round, and is then restored
+   * beside its side's Grid Nexus. Only the rules between rounds read it (`src/match/commander.ts`); the
+   * kernel sees a unit like any other, so a Commander's death is never the victory condition.
+   */
+  commander?: true
+  /**
    * Hard restriction: this entity may only perceive hostiles on these layers as viable targets — for
    * a normal `attack` and for a contact `detonation.triggerRange` alike, since both are resolved from
    * whatever perception already decided. Undefined means every layer, which preserves every existing

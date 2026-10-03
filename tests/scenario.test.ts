@@ -394,6 +394,17 @@ test("salvage-drop: death leaves a ground item on the tile it died on", async ()
   assert.equal(item.amount, FIXTURE_REGISTRY.get(death.contentId).salvage)
 })
 
+test("nexus-stands: a side whose Grid Nexus stands is never wiped out; its Pulse goes on until the Nexus falls", async () => {
+  // Mario, 2026-10-01: "the player should only lose when the nexus is destroyed".
+  const resolved = await resolveScenario("nexus-stands.map.json")
+  const fell = resolved.run.events.find((event) => event.kind === "entity.died" && event.player === "A")
+  assert.ok(fell !== undefined, "the trooper never fell")
+  const outcome = resolved.run.finalState.outcome
+  assert.equal(outcome?.reason, "nexus-destroyed")
+  assert.equal(outcome?.winner, "B")
+  assert.ok(fell.tick < (outcome?.tick ?? 0), "the Pulse ended when the trooper fell, with the Nexus standing")
+})
+
 test("annihilation-victory: the Pulse ends only once every mobile entity is dead", async () => {
   const resolved = await resolveScenario("annihilation-victory.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")

@@ -24,7 +24,9 @@ before then forecloses either mode.
 **RULE: a mode is data over one match loop and one army shape.** The match loop is Build Phase,
 Nexus Pulse, repeat, until a result ([`pulse.md`](../system-design/pulse.md), match structure). The army
 shape is the Commander Army, a bounded composition drawn from a faction's pool
-([`commander-armies.md`](commander-armies.md)). A mode decides which matches are played, in what
+([`commander-armies.md`](commander-armies.md)); what is built of it is a Commander's deck, which a mode that
+lets a player pick her reads whole and a Campaign mission overrides (`src/content/armies.ts`,
+`tests/army.test.ts`). A mode decides which matches are played, in what
 order, against whom, and what happens to the army between them. Nothing below the mode — the kernel,
 the Pulse, the Build Phase screen, the renderer — knows which mode it is serving.
 
@@ -38,7 +40,7 @@ the Pulse, the Build Phase screen, the renderer — knows which mode it is servi
 | **Run** | An ordered series of battles in which the army changes between them — the Challenge mode's unit. One attempt, start to finish, win or lose |
 | **Act** | A segment of a run ending in a harder, named battle. A run is a small number of acts |
 | **Card** | Working shorthand for any content item an army can hold or be offered: a structure, a Nexus power, an upgrade, a Commander variant. A unit is not a card — units come from the structures that produce them. **Not a claim that an army behaves like a trading-card deck** — see the note below. **Still ambiguous** (see the terminology glossary in [`commander-armies.md`](commander-armies.md)): whether this stays an internal shorthand or narrows to mean "Nexus power" specifically, the game's actual card-equivalent noun, is not yet decided |
-| **Pool / Army** | The faction's whole catalogue / the army's chosen subset ([`commander-armies.md`](commander-armies.md)). Whether the subset is well described as a "deck" is unresolved — see below. **"Pool" alone is ambiguous** (a faction's pool versus one army's own slice of it) — always qualify it |
+| **Pool / Army** | The faction's whole catalogue / the army's chosen subset ([`commander-armies.md`](commander-armies.md)). The owner calls one Commander's army her **deck**, and so does the code (`src/content/armies.ts`): the package she brings, not deck behaviour — see below. **"Pool" alone is ambiguous** (a faction's pool versus one army's own slice of it) — always qualify it |
 | **Draft** | Choosing from an offered hand. **The Nexus draft** happens inside a match, at each Build Phase, from the army's Nexus power pool. **The run draft** happens between battles, from the faction pool, and changes the army |
 | **Rarity** | How often a card is offered when a draft is dealt: `common`, `uncommon`, `rare` |
 | **Tier** | The earliest depth at which a card may be offered: `1`, `2`, `3`. Tier gates *when*; rarity weights *how often* |

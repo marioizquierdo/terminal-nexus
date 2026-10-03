@@ -184,8 +184,8 @@ watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 **The kernel's victory condition never learns about a mission's goal.** A mission's objective is
 resolved one level up, by the scenario and trigger layer, which fires an ordinary `win`/`lose` action
 when its own condition holds (see [`campaigns.md`](../game-design/campaigns.md)). What follows — Grid
-Nexus destroyed, one side annihilated, tick limit reached — is the unchanged fallback a battle with
-no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
+Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
+battle with no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
 `src/pulse/victory.ts`).
 
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
@@ -206,13 +206,37 @@ producer carried into the next Pulse starts on the recipe that Pulse runs (RULE 
 `tests/scenario.test.ts`). Any attacker in a legal attack position may damage it. Defences and
 terrain make practical outer layers; there is no hidden exposure meter.
 
+**A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/pulse/victory.ts`,
+`scenarios/nexus-stands.map.json`, `tests/scenario.test.ts`). Its Pulse goes on until the Nexus falls or
+the time runs out, and a mission may add a losing condition of its own; a side with no Nexus, a raid, is
+still beaten by losing every unit. So a defence round no longer stops with the raid at the gate when the
+player's units fall: the raid comes on to the Nexus, and the round ends when it falls or the time is up.
+Before this, every side was wiped out by losing its last unit, and a defence round could end with the
+Nexus untouched and count as held.
+
 ### 2.1 Commander
 
 A persistent frontline unit, normally `@` — fictionally a Nexus Symbol — on the `units` layer. It may
 take Nexus-specific upgrades and competes for investment with army, economy, research, and
 fortification. **On death it is absent for the rest of that round's Pulse and for one full round
-after it, then the Prime Nexus may replicate it again** (RULE — settled; no code holds it yet). **Commander death is not the victory
-condition** (RULE — `src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
+after it, then the Prime Nexus may replicate it again** (RULE — `src/match/commander.ts`,
+`tests/commander.test.ts`). **Commander death is not the victory condition** (RULE —
+`src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
+
+What is built is that cadence, for one Commander, Vasse (`src/content/commanders.ts`). A unit is a
+Commander by a flag on its content (`commander`), which only the rules between rounds read: the kernel
+sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her
+back. When she falls, the round loop carries an absence beside the state — whose, which, the round she fell
+in and the round she is due — and as that round begins, after Recall and before its Build Phase, the
+Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body, at full health, standing
+there through the Build Phase like any survivor. "May replicate" is taken as "does", as the campaign's
+third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to
+restore her to, so her absence goes on until it has one. At a Pulse's end Recall sends her home to the
+Grid Nexus, since no building makes her. A mission brings its Commander once (`src/mission/validate.ts`
+refuses a second arrival, or two of her), and the Commander it brings for the player is her deck's
+(`src/content/armies.ts`). How much she can take is an Experiment while it is tuned
+(**Vasse's health**). Her doctrine's behaviour — hold, then advance — waits on an order the kernel can
+keep (Q69): today she engages the nearest enemy like every unit.
 
 ### 2.2 Structures
 
@@ -270,7 +294,9 @@ content-defined legal actions or passive rules that execute through validated ke
 
 What the draft is dealt from is settled even though the draft itself is not designed: the Commander
 Army's own Nexus power pool — a subset of the faction's — dealt as a small hand at the start of every
-Build Phase, from which the player keeps one. The draft's tier, size, and redraw rules are still
+Build Phase, from which the player keeps one. The pool is built as part of a Commander's deck
+(`src/content/armies.ts`; Vasse's holds the two placeholder powers), and a mission may override it; the
+dealing is still the whole pool, every Build Phase. The draft's tier, size, and redraw rules are still
 undesigned; they are recorded here so the shape of the draft is not accidentally foreclosed.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no

@@ -11,6 +11,10 @@ import { remaining } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { TUNING } from "../src/build/tuning.ts"
+import { isSettingName } from "../src/build/all-settings.ts"
+import { defaultExperiments } from "../src/build/experiments.ts"
+import { parseSettingsExport } from "../src/build/settings-export.ts"
+import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { buildSide, clickCell, keys, screenText } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
@@ -104,8 +108,10 @@ test("Enter, Space, n, a click on the row and the driver's command all open the 
 })
 
 test("the Barracks trains during the round: round 2 opens with its troopers at home beside it, and the log says so", () => {
+  // Nothing built, so the probe lasts past the first trooper (ten seconds in): two Turrets and Vasse end
+  // round 1 before it.
   const side = perimeter()
-  startRound(side, DEFENCE)
+  startRound(side)
   const trained = side.build.pulse!.resolved.timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined)
   assert.ok(trained.length > 0, "the Barracks trained nothing in round 1")
   toResult(side)
@@ -200,7 +206,7 @@ test("Next round on auto: the next Build Phase begins on its own a moment after 
   assert.equal(standing.busyUntil(standing.times.homeMs + 10_000), null)
 })
 
-test("the incoming wave: drawn see-through where it will arrive, its intention on the card, hidden by the Experiment", () => {
+test("the incoming wave: drawn where it will arrive, its intention on the card, and always shown", () => {
   const side = perimeter()
   const raider = (side.build.round.incoming ?? []).find((entity) => entity.player === "B")
   assert.ok(raider !== undefined, "PERIMETER's first round shows nothing incoming")
@@ -211,10 +217,10 @@ test("the incoming wave: drawn see-through where it will arrive, its intention o
   assert.match(shown, /Probe the line at the/)
   assert.match(shown, /as the round starts/)
 
-  side.build.dispatch({ kind: "experiment-adjust", field: "incoming", step: 1 })
-  assert.equal(side.build.state.experiments.incoming, "hidden")
-  const hidden = screenText(side)
-  assert.doesNotMatch(hidden, /Probe the line/)
-  assert.doesNotMatch(hidden, /as the round starts/)
-  assert.match(hidden, /Open ground|Deposit|Rock/)
+  // The owner settled the Experiment that could hide it ("the enemy units should be visible"): nothing in
+  // Settings hides the raid now, and an older export that hid it is read without a word.
+  assert.equal(isSettingName("incoming"), false)
+  const old = parseSettingsExport("incoming = hidden", { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
+  assert.deepEqual(old.settled, ["incoming"])
+  assert.deepEqual(old.ignored, [])
 })

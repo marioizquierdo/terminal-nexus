@@ -4,7 +4,7 @@ _What a campaign and a mission are, how a mission is driven by triggers and judg
 
 ## 1. Development boundary
 
-**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and a Commander mechanic with one named Commander is the most that comes before it, not a locked roster.
+**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and one named Commander, her mechanic and her deck at the size of the bench content are the most that come before it, not a locked roster.
 
 This document still gives the *destination* — the belief ramp, the later missions' teaching goals, the cast. Nothing beyond PERIMETER and RIGHT OF SALVAGE is built or in scope; the later missions are **IDEA**. A document describes; it does not schedule.
 
@@ -28,7 +28,9 @@ A campaign is an ordered or branching graph of missions plus persistent progress
 
 Campaign unlocks reveal complexity gradually. Full skirmish mode eventually exposes every legal roster without requiring campaign completion.
 
-A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text), with no armies, unlocks or objectives list yet.
+A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text, and the player's deck), with no opponent deck, unlock record or objectives list yet.
+
+**A mission names the player's deck and may override it** (RULE — `src/mission/types.ts`, `src/mission/validate.ts`, `tests/army.test.ts`). `player: { army, override }` is the sketch's `playerArmy` and `availableContent` in one: a Commander's deck by id ([`commander-armies.md`](commander-armies.md)), and what this level makes of it. The Campaign develops a deck level by level, so a level lists what of it is unlocked (an id picks the deck's own entry) or overrides a part outright (a whole entry, another cost, other credits); a part the override leaves out is the deck's. The Build Phase offers exactly the result, and validation refuses an unknown deck or an override naming what the deck does not hold. PERIMETER names Vasse's deck and lists all of it, one by one, so that when her deck grows the level keeps what it teaches.
 
 ```ts
 interface MissionDefinition {
@@ -64,7 +66,7 @@ A scene is a trigger like any other (section 2.1), not a special slot; there is 
 
 **A trigger** is `{ id, when, once?, do }`: a condition, and the actions taken when it holds.
 
-Conditions are evaluated on canonical state and events — **never on what rendered**, so a trigger can never fire because of a frame: a mission event (optionally for one round); a tick within a round; an entity or group dying; an entity entering a named region of the map; an objective changing state; a count of some kind of entity crossing a threshold. Built today: a moment (`{ pulse, tick }`), a round's end, and a Nexus destroyed.
+Conditions are evaluated on canonical state and events — **never on what rendered**, so a trigger can never fire because of a frame: a mission event (optionally for one round); a tick within a round; an entity or group dying; an entity entering a named region of the map; an objective changing state; a count of some kind of entity crossing a threshold. Built today: a moment (`{ pulse, tick }`), a round's end, a Nexus destroyed, and a round's Build Phase opening (`{ event: "build.start", pulse }`, for the presentation band).
 
 Actions come in **two bands, and the band is the most important thing on this page**:
 
@@ -73,7 +75,9 @@ Actions come in **two bands, and the band is the most important thing on this pa
 | **Simulation** | `spawn` (units at a region, with an initial order), `order` (a group advances, holds, or withdraws toward a region), `commitPlan` (the scripted opponent's Build Phase plan for a given round), `objective` (set or change one), `win`, `lose`, `endPulse`, `startBuild`, `reveal` | applied by the trigger runner as scripted inputs at the tick the condition holds, validated like any player command, emitted as ordinary events | part of the hashed inputs — a replay re-derives them from mission, seed, and plans |
 | **Presentation** | `focus` (camera to an entity or a tile, through the ordinary scroll), `card` (a character's portrait card), `say` (speaker and line, advanced by the player or a timeout), `bark`, `effect`, `pause` / `resume` | in presentation; they never write state | re-derived from the event stream and the trigger list; skipping or replaying them changes nothing |
 
-Built today: `spawn`, `order` (only `advance`, which means what the kernel's one movement rule does: engage the nearest enemy), `commitPlan`, `win` and `lose`. The rest are GUIDANCE.
+Built today: `spawn`, `order` (only `advance`, which means what the kernel's one movement rule does: engage the nearest enemy), `commitPlan`, `win` and `lose`, and in the presentation band `say` at its smallest. The rest are GUIDANCE.
+
+**A mission's lines are data, and the dialog shows them** (RULE — `src/mission/scene.ts`, `src/mission/validate.ts`, `tests/dialog.test.ts`). `say: { speaker, side?, text, focus? }` runs only at `build.start`: as that round's Build Phase opens, its lines play in the dialog at the bottom of the screen ([`ui-patterns.md`](../system-design/ui-patterns.md), the dialog), one at a time, the camera on each line's focus (a unit, a group or a region). A speaker is a unit the mission brings — Vasse's name, side and `@` come from her content — or a name off the Grid, as Corvane is. Validation refuses, by name, a line anywhere but `build.start`, an empty speaker or text, a line too long for the box at 80 × 24, a structure as speaker, and any speaker or focus the mission does not bring by that round. The trigger runner never reads them, so a mission's states hash the same with and without its lines. The round a Commander is restored opens on one line in the game's own voice, looking at her. Not built: `card`, `bark`, `effect`, a timeout, a scripted Pulse.
 
 **RULE — simulation actions are validated intents that are part of the hashed inputs; presentation actions never touch state** (`src/mission/validate.ts`, `tests/mission.test.ts`: "validation refuses every broken shape by name, and reports them all at once"; "a whole mission is the same mission every run"). A Pulse may be scripted and is still a Pulse. The trigger runner applies the simulation band at tick 0 and between two ticks, beside the kernel and without changing it; the kernel's own door for intents (the narrow hook in [`content.md`](../system-design/content.md)) is unbuilt.
 
@@ -116,7 +120,7 @@ type ObjectiveDefinition =
   | { kind: "keepAlive"; target: EntityId | RegionId }
 ```
 
-**How this meets the kernel's own victory check.** The kernel's check — Grid Nexus destroyed, one side annihilated, tick limit reached ([`pulse.md`](../system-design/pulse.md)) — **does not change, and does not need to know about goals.** A mission's objective is resolved one level up, by the scenario and trigger layer (section 2.1), which watches the condition and fires an ordinary `win` or `lose` action when it holds — "the Nexus still stands when round 3 ends" is `{ when: { event: "pulse.end", pulse: 3 }, do: [{ objective: { id: "hold", state: "complete" } }, { win: true }] }`, a trigger like any other. The kernel's own check stays what it always was: the *fallback* result a battle without a scripted objective gets — Skirmish, and every Challenge battle, land on it directly. A mission with a declared objective is never left to that fallback, because its own `win` or `lose` trigger fires first and the mission ends there (`src/match/mission.ts` reads the triggers after the Pulse and lets the first `win` or `lose` decide).
+**How this meets the kernel's own victory check.** The kernel's check — Grid Nexus destroyed, one side annihilated, tick limit reached ([`pulse.md`](../system-design/pulse.md), where Mario has since settled that a side whose Nexus stands is never annihilated) — **does not change for a goal, and does not need to know about goals.** A mission's objective is resolved one level up, by the scenario and trigger layer (section 2.1), which watches the condition and fires an ordinary `win` or `lose` action when it holds — "the Nexus still stands when round 3 ends" is `{ when: { event: "pulse.end", pulse: 3 }, do: [{ objective: { id: "hold", state: "complete" } }, { win: true }] }`, a trigger like any other. The kernel's own check stays what it always was: the *fallback* result a battle without a scripted objective gets — Skirmish, and every Challenge battle, land on it directly. A mission with a declared objective is never left to that fallback, because its own `win` or `lose` trigger fires first and the mission ends there (`src/match/mission.ts` reads the triggers after the Pulse and lets the first `win` or `lose` decide).
 
 This is a **local data shape**: reversible and narrow, so a session may change it alone (see "What a session decides alone" in [`DEVELOPMENT.md`](../../DEVELOPMENT.md)). What stays genuinely open is only implementation detail: whether `captureAndHold`'s region needs a new kernel primitive (a capture structure is already GUIDANCE, [`pulse.md`](../system-design/pulse.md)) or composes from existing ones. The milestone that builds it decides that on the fixture it actually builds.
 
@@ -199,7 +203,7 @@ The complete written material for PERIMETER, inside the lore's writing budgets (
 >
 > The pyramid may touch you.
 
-**Pre-battle exchange:**
+**Pre-battle exchange** (built: round 1 opens on it in the dialog, after Vasse's own bark, "By the book. The new book."):
 
 ```text
 CORVANE: Nice fence, roadmakers. We brought wire cutters.
@@ -269,7 +273,7 @@ Round counts below are **design estimates for pacing, not contracts**. A round c
 
 **Mission 3 is the shape to protect (IDEA).** The Commander is a unit for the first time, with powers of her own — and she falls on a scripted beat, and the mission does not end. The round after is played through the absence the rules already impose (`SYMBOL ABSENT — CYCLE 1 OF 1 — HOLD`), and the next restores her. The belief ramp's whole point lands mechanically before anyone says a word about it, which is why the bonus goal is about surviving the absence rather than about avoiding the death.
 
-**What each mission deliberately withholds**, so it is not built early: mission 1 has no economy, no Commander, and no real draft choice; mission 2 has no Commander; mission 3 is the first with everything on. Removal, run drafts, and deck editing belong to **Challenge** mode ([`game-modes.md`](game-modes.md)) and never appear in the opening — the Campaign grows the pool, it does not prune it.
+**What each mission deliberately withholds**, so it is not built early: mission 1 has no economy and no real draft choice, and its Commander is only the mechanic — Vasse is on the Grid and can fall, sit a round out and come back, but PERIMETER is not built to kill her and gives her no powers (the Commander milestone pulled her forward, Q34); mission 2 adds no more of her; mission 3 is the first with everything on, and the first to spend her death as a story beat. Removal, run drafts, and deck editing belong to **Challenge** mode ([`game-modes.md`](game-modes.md)) and never appear in the opening — the Campaign grows the pool, it does not prune it.
 
 **Save slots.** A player may keep more than one campaign in progress and start another at any time, so campaign progress is **per slot**, each slot naming its Commander. That is more than the flat checked-in unlock list of the open question about the shape of an unlock record (Q31) assumes, so the campaign menu has to design the difference rather than discover it.
 
@@ -291,7 +295,7 @@ The same content definition should be usable by the game, a preview tool, and ag
 
 - **`focus`** — the camera moves to an entity or a tile, through the same cursor-driven scroll the player uses ([`grid.md`](../system-design/grid.md)). No second camera, no cinematic mode: the viewer's eye is taken where the player's cursor could go.
 - **`card`** — a character's portrait card: a hand-authored ASCII tableau of the face, the name, the faction's glyph role, drawn in the side panel or as an overlay in the `chrome` band. The same card is what inspection shows for that character during play, so a face learned in the intro is the face met on the Grid.
-- **`say`** — a line under the card, attributed, advanced by Enter, a click, or the driver — or by a timeout where the mission prefers pace to control. Skip is always available.
+- **`say`** — a line under the card, attributed, advanced by Enter, a click, or the driver — or by a timeout where the mission prefers pace to control. Skip is always available. Built as the dialog at the bottom of the screen, with no card and no timeout yet (section 2.1).
 - **a scripted Pulse** — `spawn` and `order` run while the player watches enemies arrive and take position; then `startBuild` hands over the first Build Phase.
 
 **Skip is a presentation action.** Skipping an intro jumps past its `card`, `say`, and `focus` actions; the scripted Pulse still resolves, so the skipped intro leaves the Grid exactly where the watched one would. That is the property that keeps intros out of the engine's record (the third rule of the belief ramp) while still letting them move things on the Grid.

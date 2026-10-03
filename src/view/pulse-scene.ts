@@ -12,6 +12,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile, nextRoundRow, pulseControlRows } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { inBounds, tileIndex } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
@@ -21,7 +22,7 @@ import type { StatusMessage } from "../build/status.ts"
 import { status } from "../build/status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
-import { forceBar } from "./compose.ts"
+import { drawnBold, forceBar } from "./compose.ts"
 import { inView } from "./build-grid.ts"
 import { paintEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
@@ -84,7 +85,7 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
       occupied.add(tileIndex(view.grid, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
-        bold: definition.layer === "obstacles",
+        bold: drawnBold(definition),
       })
       for (let extra = 1; extra < view.layout.tileWidth; extra += 1) {
         put(cells, band, cell.x + extra, cell.y, " ", playerRole(entity.player))
@@ -228,9 +229,24 @@ function whoIs(id: string): Readonly<{ player: PlayerId | null; name: string }> 
   return { player: side === "A" || side === "B" ? side : null, name }
 }
 
+/** The Commanders' names, by the short name their ids carry (`A:vasse#7` is "Vasse"), for each registry. */
+const COMMANDER_NAMES = new WeakMap<ContentRegistry, ReadonlyMap<string, string>>()
+
+/** A unit's name in the feed: its short name, or a Commander's own. */
+function feedName(pulse: PulseFrame, id: string): string {
+  let names = COMMANDER_NAMES.get(pulse.registry)
+  if (names === undefined) {
+    const { registry } = pulse
+    names = new Map(registry.ids().filter((contentId) => registry.get(contentId).commander === true).map((contentId) => [registry.get(contentId).short, commanderName(contentId)]))
+    COMMANDER_NAMES.set(registry, names)
+  }
+  const { name } = whoIs(id)
+  return names.get(name) ?? name
+}
+
 /**
  * One line of the feed in plain words — "3.5s trooper > raider", "3.8s raider dies", "10.0s trooper
- * trained" — drawn in the colour of
+ * trained", "18.3s Vasse falls" — drawn in the colour of
  * the side it is about, or `null` for an event the feed does not carry. Short enough for the panel at the
  * floor without cutting a word: the units' own names say whose they are (a trooper is yours, a raider is
  * the raid's) and the colour says it again where colour reaches.
@@ -239,12 +255,13 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
   const at = `${secondsOf(pulse, event.tick)}s`
   const sideRole = (player: PlayerId | null): StyleRole => (player === null ? "chrome.value" : playerRole(player))
   switch (event.kind) {
-    case "attack.launched": {
-      const by = whoIs(event.attacker)
-      return { text: `${at} ${by.name} > ${whoIs(event.target).name}`, role: sideRole(by.player) }
-    }
+    case "attack.launched":
+      return { text: `${at} ${feedName(pulse, event.attacker)} > ${feedName(pulse, event.target)}`, role: sideRole(whoIs(event.attacker).player) }
+    // A Commander falls rather than dies, by name: her absence is news the result spells out.
     case "entity.died":
-      return { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
+      return pulse.registry.get(event.contentId).commander === true
+        ? { text: `${at} ${commanderName(event.contentId)} falls`, role: sideRole(event.player) }
+        : { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
     // Only what a building trained: an arrival or a spawner's brood is not news the feed has room for.
     case "entity.spawned":
       return event.trainedBy === undefined ? null : { text: `${at} ${whoIs(event.entity).name} trained`, role: sideRole(event.player) }
@@ -333,6 +350,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   if (pulse.phase === "home") {
     line("RECALL", "chrome.label")
     line(cameHome(pulse.home), "chrome.value")
+    for (const words of wrapWords(pulse.result.commander ?? "", limit - 1)) line(words, "chrome.value")
     // A Pulse with no mission goes nowhere: the game menu's Restart is the way back.
     if (pulse.result.goOn === undefined) {
       gap()

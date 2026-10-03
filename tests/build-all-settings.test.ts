@@ -75,7 +75,7 @@ test("a value reads the same wherever it is: the live Experiment, the saved sett
   assert.equal(formatValue("tapsToSpeedUp", 3), "3 taps")
   assert.equal(formatValue("reducedMotion", true), "on")
   assert.equal(formatValue("capability", "color16"), "16")
-  assert.equal(formatValue("incoming", "hidden"), "hidden")
+  assert.equal(formatValue("nextRound", "auto"), "auto")
 })
 
 // --- Sections in Settings ------------------------------------------------------------------------------

@@ -88,8 +88,8 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   assert.match(text, /KEYBOARD NAVIGATION - experiments/)
   // In order, group by group: keyboard navigation — the hold window and key releases
   // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
-  // popup pulse (every popup's) and the Battle Round flash, and the mission's next round, incoming wave
-  // and the Barracks's pace.
+  // popup pulse (every popup's) and the Battle Round flash, and the mission's next round, the Barracks's
+  // pace and Vasse's health.
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
     [
@@ -107,9 +107,9 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "popupFlashMs",
       "popupFlashPeak",
       "nextRound",
-      "incoming",
       "trainEvery",
       "trainPerRound",
+      "commanderHealth",
     ],
   )
   assert.deepEqual(
@@ -209,7 +209,7 @@ test("a number stops at its ends and says so; a choice comes round", () => {
   assert.equal(stepExperiment(between, "holdWindowMs", -1).flags.holdWindowMs, second)
   assert.equal(stepExperiment(between, "holdWindowMs", 1).flags.holdWindowMs, third)
   // A choice comes round, forward and back.
-  for (const field of ["nextRound", "incoming"] as const) {
+  for (const field of ["nextRound", "keyReleases"] as const) {
     const values = experimentSpec(field).values
     let around = flags
     for (let step = 0; step < values.length; step += 1) around = stepExperiment(around, field, 1).flags

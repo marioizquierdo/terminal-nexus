@@ -160,14 +160,16 @@ test("the timer counts down the seconds left to the last shot, and its last seco
   assert.equal(clock(moments.stopMs - 1), "0:01", "the last second reads 0:01, not 0:00")
 })
 
-test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", () => {
-  const lost = play()
-  atHome(lost)
-  assert.match(screenText(lost), /^\| DEFEAT /m)
-  assert.match(screenText(lost), /Your force was wiped out\./)
+test("a lost Pulse and a timed-out one say so plainly, and a force wiped out with the Nexus standing plays on", () => {
+  // Nothing built: the squads fall, the Nexus stands, and the round runs to its end (Mario, 2026-10-01:
+  // only the Nexus falling loses).
+  const fallen = play()
+  atHome(fallen)
+  assert.match(screenText(fallen), /^\| TIME'S UP /m)
+  assert.doesNotMatch(screenText(fallen), /Your force was wiped out\./)
   // Nobody left to walk home is said as that, not as "0 of yours".
-  assert.match(screenText(lost), /None of yours came home\./)
-  assert.doesNotMatch(screenText(lost), /\b0 of yours came home/)
+  assert.match(screenText(fallen), /None of yours came home\./)
+  assert.doesNotMatch(screenText(fallen), /\b0 of yours came home/)
 
   // A Nexus that falls ends the mission: the mission's verdict leads, and the fight's reason stays under it.
   const nexusFell = play({ crew: "none" })
@@ -187,9 +189,11 @@ test("a lost Pulse and a timed-out one say so plainly, and a draw is a draw", ()
   assert.match(screenText(timedOut), /The time ran out before/)
   assert.match(screenText(timedOut), /either side won\./)
 
-  const draw = play({ plan: [DEFENCE[0]!] })
-  atHome(draw)
-  assert.match(screenText(draw), /^\| DRAW /m)
+  // One Turret: the squads and the raid fall together, and only the raid, with no Nexus standing for it,
+  // is wiped out — what used to be a draw.
+  const held = play({ plan: [DEFENCE[0]!] })
+  atHome(held)
+  assert.match(screenText(held), /^\| VICTORY /m)
 })
 
 test("at 80x24 the result's words are never cut off, whichever way the Pulse ended", () => {
@@ -587,15 +591,15 @@ test("time holds while the terminal is too small to draw it, and the clock start
 
 test("starting over from the game menu is a fresh Build Phase with the Experiments kept; committing again plays a new Pulse", () => {
   const played = play({ plan: DEFENCE, raid: "none" })
-  played.build.dispatch({ kind: "experiment-adjust", field: "incoming", step: 1 })
-  assert.equal(played.build.state.experiments.incoming, "hidden")
+  played.build.dispatch({ kind: "experiment-adjust", field: "keyReleases", step: 1 })
+  assert.equal(played.build.state.experiments.keyReleases, "off")
   const first = played.build.pulse
   played.build.handleData(ESC, played.layout)
   played.build.handleData("r", played.layout)
   assert.equal(played.build.state.committed, false)
   assert.equal(played.build.pulse, null, "the Pulse outlived the Build Phase it came from")
   assert.deepEqual(played.build.state.planned, [])
-  assert.equal(played.build.state.experiments.incoming, "hidden", "restarting lost an Experiment")
+  assert.equal(played.build.state.experiments.keyReleases, "off", "restarting lost an Experiment")
   assert.match(screenText(played), /\[1\] Barracks/, "the Build Phase's menu is not back")
   prepare(played.build)
   played.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])

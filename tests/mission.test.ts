@@ -221,7 +221,7 @@ test("a building planned where a survivor stands moves the survivor aside, and n
 
 // --- How a mission ends ---------------------------------------------------------------------------
 
-test("PERIMETER is won by holding and lost when the Nexus falls; a lost round is not a lost mission", () => {
+test("PERIMETER is won by holding and lost when the Nexus falls; a round the player's force fell in plays on, and is not a lost mission", () => {
   const strong = playMission(PERIMETER, STRONG)
   assert.equal(strong.length, 3)
   assert.deepEqual(strong.map((pulse) => pulse.verdict), [{ kind: "continue" }, { kind: "continue" }, { kind: "won", trigger: "hold" }])
@@ -229,11 +229,25 @@ test("PERIMETER is won by holding and lost when the Nexus falls; a lost round is
   const nothing = playMission(PERIMETER, NOTHING)
   assert.deepEqual(nothing.at(-1)?.verdict, { kind: "lost", trigger: "fallen" })
   assert.equal(nothing.at(-1)?.final.outcome?.reason, "nexus-destroyed")
-  // Round 2 was a lost fight — the squads wiped out — and the mission went on to round 3.
-  const round2 = nothing[1]
-  assert.ok(round2 !== undefined)
-  assert.equal(round2.final.outcome?.winner, "B")
-  assert.equal(round2.verdict.kind, "continue")
+
+  // A single trooper for squads: it falls in round 1, the Nexus stands, and the round runs to its time
+  // rather than stopping there (Mario, 2026-10-01: only the Nexus falling loses) — and the mission goes on.
+  // Without the intro, too: its lines are Vasse's, and she is not in this squad.
+  const thin: MissionDefinition = {
+    ...PERIMETER,
+    triggers: PERIMETER.triggers
+      .filter((trigger) => trigger.id !== "intro")
+      .map((trigger) =>
+        trigger.id !== "squads" ? trigger : { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] },
+      ),
+  }
+  validateMission(thin, grid, registry)
+  const [round1] = playMission(thin, NOTHING)
+  assert.ok(round1 !== undefined)
+  assert.ok(round1.events.some((event) => event.kind === "entity.died" && event.player === "A"), "the trooper never fell")
+  assert.equal(round1.final.entities.filter((entity) => entity.player === "A" && registry.get(entity.contentId).layer === "units").length, 0)
+  assert.equal(round1.final.outcome?.reason, "tick-limit")
+  assert.equal(round1.verdict.kind, "continue")
 })
 
 test("at a Pulse's end the triggers are read in list order: the first win or lose decides", () => {

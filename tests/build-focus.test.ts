@@ -488,7 +488,7 @@ test("with nothing in reach, arming steps one tile right and down, drawn as the 
 test("the cursor opens on the Grid Nexus, and the first building armed finds the nearest good spot around it", () => {
   const context = starterContext()
   assert.deepEqual(nexusTile(context), STARTER_START_CURSOR)
-  const run = runBuildPlaytest({ steps: parseKeyScript("1") })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1") })
   assert.deepEqual(run.frames[0]?.state.cursor, STARTER_START_CURSOR)
   const armed = run.frames[1]?.state
   assert.ok(armed !== undefined)

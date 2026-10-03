@@ -34,11 +34,11 @@ import { KeyMotion, moveTuning, pressTiles } from "../build/motion.ts"
 import type { MouseEvent } from "../build/mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "../build/mouse.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport } from "../build/state.ts"
+import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport, withoutScene } from "../build/state.ts"
 import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
 import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCommand, ExportKind } from "../build/types.ts"
+import type { BuildCommand, ExportKind, RaidForecast } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
 
@@ -76,6 +76,20 @@ export type BuildSessionOptions = Readonly<{
    * same reason as `startPulse`. Absent: a round's result is where the screen stops.
    */
   nextRound?: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
+  /**
+   * What each group of the raid the round brings goes for first, and the way it would go, on the plan as
+   * it stands — the kernel's own first choice. Injected for the same reason as `startPulse`, and asked
+   * only when the screen draws it (`raid`). Absent: no raid is foreseen.
+   */
+  foresee?: (context: BuildContext, state: BuildState) => RaidForecast
+  /**
+   * Whether a round that opens with a scene (`BuildContext.scene`: the mission's lines, a Commander's
+   * return) plays it in the dialog before the player has the keyboard: on in the game, the browser page and
+   * the scripted playtest. Off unless asked — a session a test builds directly — so every test that starts
+   * on round 1 starts on the menu, as the screen did before scenes; the rounds open exactly as they would
+   * have after the scene.
+   */
+  scenes?: boolean
 }>
 
 /**
@@ -121,17 +135,50 @@ export class BuildSession {
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
    *  zero when that key arrived. `undefined` for a driver that never says. */
   private now: number | undefined
+  private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
+  /** The raid last foreseen, and the round and plan it was foreseen on. */
+  private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; raid: RaidForecast }> | null = null
 
   constructor(options: BuildSessionOptions) {
-    this.context = options.context
-    this.firstContext = options.context
-    this.buildState = createBuildState(options.context, options.cursor, options.viewport)
+    // Without scenes, no round is handed one: each opens on the menu, as it would after its scene.
+    const staged = (context: BuildContext): BuildContext => (options.scenes === true ? context : withoutScene(context))
+    this.context = staged(options.context)
+    this.firstContext = this.context
+    this.buildState = createBuildState(this.context, options.cursor, options.viewport)
     this.onQuit = options.onQuit ?? ((): void => {})
     this.onExport = options.onExport ?? ((): void => {})
     this.onSettingsChange = options.onSettingsChange ?? ((): void => {})
     this.startPulse = options.startPulse ?? ((): null => null)
     this.log = options.activity ?? globalActivity
-    this.nextRound = options.nextRound ?? ((): null => null)
+    const nextRound = options.nextRound ?? ((): null => null)
+    this.nextRound = (context, state, resolved) => {
+      const next = nextRound(context, state, resolved)
+      return next === null ? null : staged(next)
+    }
+    this.foresee = options.foresee ?? null
+    this.recordDialog(null)
+  }
+
+  /**
+   * The raid this round brings and what each group goes for first, on the plan as it stands — for the
+   * composer, which draws it in the Build Phase only. Worked out when first asked and kept until the round
+   * or the plan changes, so a frame costs nothing more and placing, undoing or removing a building is seen
+   * at once. `undefined` when the session was given no way to foresee one; empty when it cannot be
+   * foreseen (a plan that leaves the raid no room says why when the Pulse is started).
+   */
+  raid(): RaidForecast | undefined {
+    if (this.foresee === null) return undefined
+    const { planned } = this.buildState
+    const last = this.foreseen
+    if (last !== null && last.context === this.context && last.planned === planned) return last.raid
+    let raid: RaidForecast
+    try {
+      raid = this.foresee(this.context, this.buildState)
+    } catch {
+      raid = []
+    }
+    this.foreseen = { context: this.context, planned, raid }
+    return raid
   }
 
   get state(): BuildState {
@@ -251,6 +298,29 @@ export class BuildSession {
       if (after.activityExports > before.activityExports) {
         log.log("export", { kind: "activity", events: shownEntries(after).length })
       }
+      this.recordDialog(before)
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
+  }
+
+  /**
+   * The dialog's lines, into the Activity Logs, read off the states like everything `record` logs:
+   * `dialog.line` each time a line comes on screen — the scene opening with a round (`before` `null`), the
+   * next line, a restart's — and `dialog.skip` when the dialog closes with lines still unread.
+   */
+  private recordDialog(before: BuildState | null): void {
+    try {
+      const after = this.buildState
+      const scene = this.context.scene ?? []
+      const was = before?.dialog ?? null
+      const shown = after.dialog === null || after.dialog === was ? undefined : scene[after.dialog.line]
+      if (after.dialog !== null && shown !== undefined) {
+        this.log.log("dialog.line", { round: after.pulseNumber, line: after.dialog.line + 1, of: scene.length, speaker: shown.speaker ?? "game" })
+      }
+      if (before !== null && was !== null && after.dialog === null && was.line < scene.length - 1) {
+        this.log.log("dialog.skip", { round: before.pulseNumber, line: was.line + 1, of: scene.length })
+      }
     } catch {
       // A log that could break the game would not be worth having.
     }
@@ -302,6 +372,7 @@ export class BuildSession {
     // The sequences keep counting up, so the live loop never mistakes a new one for one it has shown.
     this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
     this.presenter = null
+    this.recordDialog(null)
   }
 
   /** Resolve the committed plan and put its Pulse on screen. A Pulse that cannot start — a plan that

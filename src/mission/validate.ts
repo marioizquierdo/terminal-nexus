@@ -5,17 +5,20 @@
 // Deterministic and blind to presentation, like the rest of the rules layer: no clock, no randomness,
 // nothing drawn.
 
+import { armyById, deckOf, deckProblems } from "../content/armies.ts"
+import type { CommanderArmy } from "../content/armies.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { inBounds, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import type {
   MissionDefinition,
   Region,
-  SimulationAction,
+  TriggerAction,
   TriggerCondition,
   TriggerDefinition,
 } from "./types.ts"
 import { MissionError } from "./types.ts"
+import { checkSay, isBuildStart } from "./scene.ts"
 
 /** The centre tile of a region — where its arrivals gather around. */
 export function regionCentre(region: Region): Coord {
@@ -38,7 +41,8 @@ function whenOf(condition: TriggerCondition): "moment" | "end" {
 }
 
 /** What an action is, as the error messages name it. */
-export function actionName(action: SimulationAction): string {
+export function actionName(action: TriggerAction): string {
+  if ("say" in action) return "say"
   if ("spawn" in action) return "spawn"
   if ("order" in action) return "order"
   if ("commitPlan" in action) return "commitPlan"
@@ -47,6 +51,18 @@ export function actionName(action: SimulationAction): string {
 }
 
 const isPositiveInteger = (value: number): boolean => Number.isInteger(value) && value > 0
+
+/**
+ * The deck a mission's player plays, its override applied (`deckOf`), or `null` when the mission names none.
+ * Throws `MissionError` when it names a deck that does not exist, so a Build Phase is never assembled from
+ * one; everything else about the deck is checked by `validateMission`.
+ */
+export function missionDeck(mission: MissionDefinition): CommanderArmy | null {
+  if (mission.player === undefined) return null
+  const army = armyById(mission.player.army)
+  if (army === undefined) throw new MissionError(mission.id, [`player plays the unknown deck "${mission.player.army}"`])
+  return deckOf(army, mission.player.override)
+}
 
 /**
  * Throws `MissionError` listing every problem, or returns the mission unchanged. The grid is the map the
@@ -73,6 +89,11 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     if (!registry.has(entry.unit)) say(`"${entry.structure}" trains the unknown unit "${entry.unit}"`)
     else if (registry.get(entry.unit).layer === "obstacles") say(`"${entry.structure}" trains "${entry.unit}", which is a building`)
   }
+
+  // The player's deck: one that exists, and an override that names only what it can.
+  const army = mission.player === undefined ? undefined : armyById(mission.player.army)
+  if (mission.player !== undefined && army === undefined) say(`player plays the unknown deck "${mission.player.army}"`)
+  if (army !== undefined) for (const problem of deckProblems(army, registry, mission.player?.override)) say(problem)
 
   // Regions: unique, sized, on the map.
   const regionIds = new Set<string>()
@@ -122,11 +143,22 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
       if (when.side !== "A" && when.side !== "B") say(`${where} names the unknown side "${String(when.side)}"`)
       return
     }
+    if (when.event === "build.start") {
+      if (!isPositiveInteger(when.pulse) || when.pulse > mission.pulses) {
+        say(`${where} waits for the Build Phase of round ${when.pulse}, but the mission has rounds 1 to ${mission.pulses}`)
+      }
+      return
+    }
     say(`${where} has a condition this vocabulary does not know: ${JSON.stringify(when)}`)
   }
 
-  const checkAction = (trigger: TriggerDefinition, action: SimulationAction, index: number): void => {
+  // Each side's Commander, once spawned.
+  const commanders = new Set<string>()
+  const checkAction = (trigger: TriggerDefinition, action: TriggerAction, index: number): void => {
     const where = `trigger "${trigger.id}", action ${index + 1} (${actionName(action)})`
+    // The presentation band: a line of dialog (`scene.ts`). Nothing but it runs when a Build Phase opens.
+    if ("say" in action) return checkSay(mission, registry, trigger, action, where, say)
+    if (isBuildStart(trigger.when)) return say(`${where} cannot run when a Build Phase opens: only a line of dialog (say) can`)
     const at = whenOf(trigger.when)
     const moment = isMoment(trigger.when) ? trigger.when : null
 
@@ -143,6 +175,17 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
           say(`${where} spawns "${entry.unit}", a structure — structures arrive by commitPlan`)
         }
         if (!isPositiveInteger(entry.count)) say(`${where} spawns ${entry.count} of "${entry.unit}"; a count is a positive integer`)
+        // A side has one Commander, and a mission brings her once: after that the rules between rounds
+        // bring her back when she falls (pulse.md), and a second arrival would be a second Commander.
+        if (registry.has(entry.unit) && registry.get(entry.unit).commander === true) {
+          const key = `${spawn.side}:${entry.unit}`
+          if (entry.count !== 1) say(`${where} spawns ${entry.count} of the Commander "${entry.unit}"; a side has one`)
+          if (commanders.has(key)) say(`${where} spawns the Commander "${entry.unit}" a second time; once she is on the Grid the rules bring her back`)
+          commanders.add(key)
+          if (spawn.side === "A" && army !== undefined && entry.unit !== army.commander) {
+            say(`${where} spawns the Commander "${entry.unit}" for the player, whose deck's Commander is "${army.commander}"`)
+          }
+        }
       }
       if (spawn.order !== undefined) checkOrder(spawn.order, where)
       if (spawn.group !== undefined && moment !== null) {

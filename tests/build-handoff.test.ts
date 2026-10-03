@@ -24,6 +24,7 @@ import type { TerrainId } from "../src/grid/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
 import { SEE_THROUGH_TRAIL } from "../src/view/build.ts"
+import { CURSOR_ROLE } from "../src/view/build-grid.ts"
 import { BuildAnimation, handoffAt, handoffSchedule } from "../src/view/build-live.ts"
 import type { HandoffTiming } from "../src/view/build-live.ts"
 import { cellAt } from "../src/view/frame.ts"
@@ -493,7 +494,8 @@ test("nothing flies over a popup, from the menu, or once the plan is committed, 
   assert.equal(committed.build.state.committed, true)
   assert.equal(flight(committed, 0.5).length, 0, "something flew over a committed plan")
   // A still frame: the Turret armed from its row draws exactly what it does armed on the map, where
-  // nothing is handed off; Explore Map's frame has no see-through cell.
+  // nothing is handed off; Explore Map's frame has no see-through cursor flying — the incoming wave's own
+  // wash, in its side's colour, is the only see-through on it.
   const fromRow = buildSide()
   keys(fromRow, TURRET)
   const onMap = buildSide()
@@ -502,7 +504,8 @@ test("nothing flies over a popup, from the menu, or once the plan is committed, 
   assert.deepEqual(compose(fromRow), compose(onMap))
   const exploring = buildSide()
   keys(exploring, "e")
-  assert.ok(!compose(exploring).cells.some((cell) => cell.style.seeThrough !== undefined), "a still frame carries a see-through cell")
+  const flying = compose(exploring).cells.filter((cell) => cell.style.seeThrough?.role === CURSOR_ROLE && cell.style.seeThrough.alpha > 0)
+  assert.deepEqual(flying, [], "a still frame carries the see-through cursor")
 })
 
 test("the cursor blinks in the menu row's pressed look, and is the plain cursor between blinks", () => {
@@ -559,6 +562,7 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
   const stdin = new FakeStdin()
   const session = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome", glyphPack: "ascii" },
+    scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,

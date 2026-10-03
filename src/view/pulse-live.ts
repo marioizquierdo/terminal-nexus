@@ -11,7 +11,7 @@
 // is centred on the player's Grid Nexus when the Pulse starts and again when its ending begins. Nothing
 // here can change what the Pulse did — presentation never can (`docs/system-design/grid-engine.md`).
 
-import type { BuildCommand } from "../build/types.ts"
+import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
 import type { TileWidth } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
@@ -47,6 +47,8 @@ export type MissionRound = Readonly<{
   of: number
   /** The mission's own line for a won or lost mission. */
   endText?: Readonly<{ won: string; lost: string }>
+  /** The Commanders who fell this round, and the round each is back for (`src/match/commander.ts`). */
+  fell?: readonly CommanderAbsence[]
 }>
 
 /** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */

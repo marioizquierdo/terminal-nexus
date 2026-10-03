@@ -163,10 +163,10 @@ test("pendingRestart names the changed settings marked restart, and nothing else
   const fields: readonly RestartFieldSpec[] = [
     { field: "holdWindowMs", label: "Hold window", applies: "restart" },
     { field: "popupPulseMs", label: "Popup pulse", applies: "restart" },
-    { field: "incoming", label: "Incoming wave", applies: "now" },
+    { field: "nextRound", label: "Next round", applies: "now" },
   ]
   assert.deepEqual(pendingRestart(started, started, fields), [])
-  assert.deepEqual(pendingRestart(started, { ...started, incoming: "hidden" }, fields), [], "a setting that applies now")
+  assert.deepEqual(pendingRestart(started, { ...started, nextRound: "auto" }, fields), [], "a setting that applies now")
   assert.deepEqual(pendingRestart(started, { ...started, holdWindowMs: 500 }, fields), ["Hold window"])
   assert.deepEqual(pendingRestart(started, { ...started, holdWindowMs: 500, popupPulseMs: 0 }, fields), ["Hold window", "Popup pulse"])
   // Put back, it is not pending any more.
@@ -286,7 +286,7 @@ test("a message popup: a title and its text, nothing to choose, closed by Esc or
 test("the game menu's Restart: r, Enter on its row, and a click on it start the Build Phase over, keeping every setting", () => {
   const plan = (side: Side): void => {
     keys(side, "n", "1", "1", ENTER) // pick a power, plan a Barracks
-    side.build.dispatch({ kind: "experiment-adjust", field: "incoming", step: 1 })
+    side.build.dispatch({ kind: "experiment-adjust", field: "nextRound", step: 1 })
     side.build.dispatch({ kind: "setting-adjust", field: "theme", step: 1 })
     assert.equal(side.build.state.planned.length, 1)
   }
@@ -313,7 +313,7 @@ test("the game menu's Restart: r, Enter on its row, and a click on it start the 
   assert.equal(expected.popup, null)
   assert.equal(expected.planned.length, 0)
   assert.equal(expected.nexusPick, null)
-  assert.equal(expected.experiments.incoming, stepExperiment(defaultExperiments(), "incoming", 1).flags.incoming)
+  assert.equal(expected.experiments.nextRound, stepExperiment(defaultExperiments(), "nextRound", 1).flags.nextRound)
   assert.equal(expected.settings.theme, "light")
   assert.equal(expected.status.text, "Build Phase restarted with these settings.")
   const comparable = (side: Side) => ({ ...side.build.state, ack: null, highlightHidden: false })

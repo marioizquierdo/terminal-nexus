@@ -2,11 +2,11 @@
 // A scripted playtest: press keys on a screen of the game without a terminal, and get back what the
 // screen showed after every key — as text, as PNGs, and as an animated GIF.
 //
-//   node scripts/playtest.mjs --keys "Down Down Space*4"
-//   node scripts/playtest.mjs --keys "n 1 n Tab S-Left*3 Enter" --png final
+//   node scripts/playtest.mjs --keys "Esc Down Down Space*4"          # Esc skips PERIMETER's intro
+//   node scripts/playtest.mjs --keys "Esc n 1 n Tab S-Left*3 Enter" --png final
 //   node scripts/playtest.mjs --file my-flow.keys --gif --name hatchery-run
-//   node scripts/playtest.mjs --keys "1 click:24,13 click:24,13" --print all
-//   node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what it logged
+//   node scripts/playtest.mjs --keys "Esc 1 click:24,13 click:24,13" --print all
+//   node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what it logged
 //
 // The keys go through the real keyboard and mouse adapters as the exact bytes a terminal sends, one
 // key at a time (`src/playtest/keys.ts` has the names). The frames come from the same composer the
@@ -37,14 +37,15 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 
 const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <path>) [options]
 
-  --keys "<script>"    keys to press, e.g. "Down Down Space*4" (names: src/playtest/keys.ts)
+  --keys "<script>"    keys to press, e.g. "Esc Down Down Space*4" (names: src/playtest/keys.ts);
+                       PERIMETER opens on its intro dialog, which Esc skips and Enter reads on
   --file <path>        the same, from a file; # starts a comment
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, 128x24 wide tiles)
   --capability <mode>  truecolor (default), color256, color16, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode
   --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the
-                       whole export, or pairs like "incoming=hidden nextRound=auto"; the three
+                       whole export, or pairs like "nextRound=auto trainEvery=6"; the three
                        flags above still win for their own setting
   --out <dir>          where files go (default .playtest/, ignored by git)
   --name <name>        file name prefix (default playtest)

@@ -5,13 +5,12 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Play step 6B**: PERIMETER, three rounds, Enter between them. Press `d` during a round: **Next round**
-  (the result waits for Enter, or the next Build Phase begins on its own) and **Incoming wave** (shown or
-  hidden), under THE MISSION. Then paste the export.
-- **Play the Barracks that trains**: PERIMETER round 1 into round 2; watch for "trooper trained" in the
-  feed and the trooper by the Barracks when round 2 opens. Press `d` during a round: **Barracks trains**
-  (how often) and **Troopers a round** (how many), under THE MISSION. Then paste the settings export, and the
-  Activity logs export with the **Barracks** filter (Esc, `a`, Left once, `e`).
+- **Play the Commander's second round** (his notes on pull request 60): PERIMETER opens on its intro, the
+  dialog at the bottom, Vasse's line first with the camera on her and her ring lit, then the exchange with
+  Corvane; Enter reads on, Esc skips. Then the raid's intent: the panel says how many are coming, when, from
+  where and what each group goes for first, and a trail on the map shows the way. Place a Turret where a
+  trail runs and watch the raid's target move to it. Vasse's deck is what the Build Phase offers; nothing
+  about it is new to see. Her fall and absence are still there to watch (`d`, **Vasse's health**, at 20).
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -21,13 +20,14 @@ it is done.*
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
   means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): whether a side whose Nexus stands loses when its
-  units die (Q70), an order primitive as its own step (Q69; the thinking is in
-  [`scripted-opponent.md`](../game-design/scripted-opponent.md)), letter hotkeys for buildings (Q67), whether
-  the player ever reads "Pulse" (Q68), and the exploring click, the wheel step and the light theme's light
-  (Q63; Q62 and Q64 are answered).
-- **The menu spike's Experiments** (Battle Round flash, Flash strength, Popup pulse, the keyboard
-  navigation numbers) came back without an export; they stay until he sends one.
+- **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
+  would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
+  letter hotkeys for buildings (Q67), whether the player ever reads "Pulse" (Q68), and the exploring click, the
+  wheel step and the light theme's light (Q63; Q62 and Q64 are answered).
+- **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
+  spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
+  loop's and the Barracks's under THE MISSION (Next round, Barracks trains, Troopers a round),
+  with the Activity logs' **Barracks** filter beside them.
 
 ## Carry-over
 
@@ -37,7 +37,6 @@ Small, none blocking.
 
 - PERIMETER is played on the Build Phase's starter map, with regions named for its landmarks; its own map is Q38's.
 - Every unit engages the nearest enemy: `order` has one verb, `advance` (Q69).
-- A round ends when the player's units are all dead, even with the Nexus standing (Q70).
 - A new Nexus power is dealt every round (the placeholder draft adds 30 or 2000 credits) on top of the
   credits carried over. Real Nexus powers are Milestone 8's.
 - The incoming wave is a forecast placed against the map without the plan; a building on an arrival's
@@ -45,13 +44,39 @@ Small, none blocking.
 - The walk home is a straight glide over whole tiles, with no routing. Watch again replays a Pulse
   already resolved; it must never resolve a new one.
 
+**From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):
+
+- Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
+  back in a round 4 that does not exist. The named scenario (`tests/commander-fixture.ts`) proves it.
+- She falls in PERIMETER's last round in every plan measured, at every health the Experiment offers, so the
+  mission always ends with "Vasse fell."; the milestone hoped PERIMETER would not force her death. No health
+  keeps her alive there and still lets a plan that builds nothing lose: holding her back waits on Q69.
+- Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
+  enemy like every unit, from just behind the line.
+- In round 1 she is incoming with the squads, so her card is the incoming one ("Yours, next round"), not her
+  own ("Your Commander"); from round 2 on it is hers.
+- With her in the squads, a round 1 with Turrets built ends near 9.8 seconds, before the Barracks's first
+  trooper at the default pace; with nothing built it ends near 11 seconds and the Barracks trains one.
+
+**From step 8A's second round** ([Mario's notes](../history/feedback/2026-10-03-commander-round-2.md)):
+
+- The raid's intent is its first target only: after first contact the raid retargets, nearest enemy each
+  tick, and where the fight then goes is not shown. A group arriving seconds in is foreseen against the
+  round's opening.
+- At 16 colours and in monochrome an arriving unit is drawn at full strength (the wash shows only where
+  colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
+  "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
+- PERIMETER unlocks all of Vasse's deck today, so its override changes nothing on screen; the difference
+  shows when her deck holds her real powers (the Nexus draft step).
+- PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
+  `Esc` (the documented examples do).
+
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
 - Only a mission's listed buildings train: a barracks in a `grid` scenario still trains nothing.
-- A trooper trained after a round opens counts toward "your force was wiped out" only if it was standing when a
-  later raid group arrived; the open question on a side with a standing Nexus losing now says so.
+
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):
 

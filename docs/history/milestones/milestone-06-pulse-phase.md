@@ -1,11 +1,15 @@
 # Milestone 6 — Nexus Pulse Phase
 
-**Status:** CURRENT
-**Current step:** 6C — Minimal automatic production: the fixture Barracks trains its recipe on an interval during the Pulse.
+**Status:** COMPLETE
+**Current step:** none — steps 6A, 6B and 6C are built and played; accepted by Mario on 2026-10-01
 **Depends on:** Milestone 5 (complete).
 
-_Nothing is open for an agent right now: steps 6B and 6C are built and wait for Mario's playtest. Until
-then the work is his latest feedback, or nothing._
+> **ACCEPTED, 2026-10-01.** Mario played PERIMETER as three rounds and wrote "Multi pulse was great! It
+> feels like the game is starting to take shape", merged the Barracks that trains, and asked for the next
+> milestone to start. His notes on the Pulse screen (looking at units during a Pulse, fewer numbers, seeing
+> how many enemies are coming) and his answer on losing (only when the Nexus falls, or by a mission's own
+> condition) are logged in [`2026-10-01-multi-pulse.md`](../feedback/2026-10-01-multi-pulse.md) and placed
+> in the backlog, the questions register and the next steps.
 
 ## The question
 
@@ -29,9 +33,9 @@ cycles; PERIMETER is three.
   acceleration); its detail is in `docs/history/`.
 - A mission as validated data (`src/mission/`) and its trigger runner (`src/match/mission.ts`), with
   PERIMETER's three waves as the fixture.
-- Design: [`campaigns.md`](../game-design/campaigns.md) for missions and the objective shape,
-  [`scripted-opponent.md`](../game-design/scripted-opponent.md) for the opponent the campaign will
-  eventually need, and [`ui-patterns.md`](../system-design/ui-patterns.md) for screens.
+- Design: [`campaigns.md`](../../game-design/campaigns.md) for missions and the objective shape,
+  [`scripted-opponent.md`](../../game-design/scripted-opponent.md) for the opponent the campaign will
+  eventually need, and [`ui-patterns.md`](../../system-design/ui-patterns.md) for screens.
 
 ## Steps
 
@@ -56,7 +60,7 @@ Done (pull request 49).
 
 ### Step 6B — The loop and the mission's trigger runner
 
-Built; waiting for Mario's playtest (pull request 50).
+Done (pull request 50): Mario played it on 2026-10-01.
 
 - [x] After Recall, `[enter] Next round` opens the next Build Phase on what the last one left: buildings
       standing, survivors home, credits unspent. Keyboard, mouse and driver open the identical round.
@@ -77,10 +81,11 @@ Built; waiting for Mario's playtest (pull request 50).
 
 ### Step 6C — Minimal automatic production
 
-Built; waiting for Mario's playtest.
+Done (pull request 59): merged, and Mario moved on to the next milestone. Its two Experiments wait for a
+settings export.
 
 - [x] The fixture Barracks trains its recipe on an interval during the Pulse, at the smallest size that
-      makes a second round show something new. Pulled from [`backlog.md`](backlog.md). It trains a
+      makes a second round show something new. Pulled from [`backlog.md`](../../milestones/backlog.md). It trains a
       trooper on an interval up to a cap a round, both Experiments; a Barracks the player places trains
       too, trained survivors come home to it, and round 2 opens with them beside it.
 
@@ -93,18 +98,20 @@ Built; waiting for Mario's playtest.
 - The trigger runner's presentation actions (briefings, barks): Milestone 9.
 - `hold` and `withdraw` orders: refused when a mission loads.
 
-## Open decisions this milestone waits on
+## Open decisions this milestone waited on
 
-- Should a side whose Grid Nexus still stands lose a Pulse because its units all died? Today the round
-  simply stops with the raid at the gate. Nothing is blocked. (Q70)
+- Should a side whose Grid Nexus still stands lose a Pulse because its units all died? Mario answered no on
+  2026-10-01: only the Nexus falling, or a mission's own condition, loses. Built the same day, ahead of the
+  Commander. (Q70)
 - Does the kernel need an order primitive, so a scripted group can hold, withdraw or head for a place?
-  Today `advance` is the only verb. Nothing is blocked. (Q69)
+  Today `advance` is the only verb. Still open; nothing is blocked. (Q69)
 
 ## The milestone is done when
 
-- [ ] Mario has played the loop and the ending, and a fresh viewer can tell, unprompted, that the Pulse
+- [x] Mario has played the loop and the ending, and a fresh viewer can tell, unprompted, that the Pulse
       ended, why, and that units visibly came home.
-- [ ] The ending's report says what it looked like, what read well, and what the warning meant for a
-      sudden ending versus a scheduled one.
-- [ ] PERIMETER stays hash-stable across runs and both runtimes.
-- [ ] `./scripts/check-repository.sh` passes.
+- [x] The ending's report says what it looked like, what read well, and what the warning meant for a
+      sudden ending versus a scheduled one ([the report](../reports/2026-09-29-pulse-start-end-recall.md)).
+- [x] PERIMETER stays hash-stable across runs and both runtimes (`tests/mission.test.ts`,
+      `tests/production.test.ts`).
+- [x] `./scripts/check-repository.sh` passes.

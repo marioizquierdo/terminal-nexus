@@ -10,6 +10,9 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q50 | 2026-09-21 | **A click places the armed structure — no second click to confirm.** Mario, shown both behaviours side by side: "Click to place looks good to me too. We can always implement undo or destroy later, for now this is good." (Undo and remove already exist: `u` and Backspace.) The toggle is deleted rather than kept as a setting. **Revisited 2026-09-26, see Q52** | [`engine.md`](../system-design/grid-engine.md) Section 9.7, whose own recommendation this confirms; [`docs/history/milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md) |
 | Q52 | 2026-09-26 | **Reversed: a second click on the same tile places it, not the first.** Owner, after living with gate 5D's build: "the building is placed right away, but there should be a confirmation... the default should require a second click." A future `Shift+click` is planned as a one-click escape hatch, not built now. Q50's own asymmetry finding (a first click can scroll the camera, so a second click at the same *screen position* lands on a different *tile*) is what makes this safe to re-adopt: the check is on tile identity, not screen position | [`engine.md`](../system-design/grid-engine.md) Section 9.7 |
 | Q66 | 2026-09-30 | **A — the three tiers, behind the Key releases Experiment (auto / off), built before the probe ran in his iTerm2** because the owner asked to compare the two himself (third round on the menu spike, F79: "We should enable/disable reading key-press in the settings, so I can test how it feels when the system provides it vs when it does not"). On auto the Build Phase asks for the kitty keyboard protocol and switches it on if the terminal answers, and the one disposer switches it off on every exit path; a press is then a tap, a repeat belongs to a hold and a release ends it. A classic terminal, or off, falls back to timing: a press within the hold window of the one before is a repeat. The browser page does the same from its key-down and key-up events. Only how a repeat is recognised differs, never where the cursor goes; a test holds that. Left for the navigation session: whether iTerm2 answers (the probe), a learned hold window, and a hold timer of the game's own | [`engine.md`](../system-design/grid-engine.md) 3.3, 9.7, 10.1 (canon 2.29); `../src/view/key-events.ts`, `../src/build/motion.ts` |
+| Q70 | 2026-10-01 | **B — a side whose Grid Nexus stands is never wiped out; built the same day.** Mario, after playing the loop across rounds (feedback F102): "the player should only lose when the nexus is destroyed or if there's a specific losing condition on the campaign level." A Pulse goes on until the Nexus falls or time runs out, and a mission may add a losing condition of its own. Built ahead of the Commander step, whose Vasse made it urgent: with her in the squads, the old rule let a plan that built nothing win PERIMETER | [`pulse.md`](../system-design/pulse.md), the victory rule; `src/pulse/victory.ts`; `scenarios/nexus-stands.map.json` |
+| Q34 | 2026-10-03 | **Build the Commander now, and her deck with her.** Mario on the Commander's pull request (feedback F104, F105): "this milestone is more about building the concept of the commander and less about polishong this mission or vasse's health. Make sure that the commander deck is properly organized, and properly integrated with the campaign." Vasse, her mechanic and her deck are built at the size of the bench content; a mission names the deck it plays and overrides it, because the Campaign develops it level by level; the Citizens' roster, its balance and her four powers still wait. The note that PERIMETER should not force her death stands as a known issue, behind his "don't worry that much about level balance yet" | [`commander-armies.md`](../game-design/commander-armies.md) (what is built: a Commander's deck), [`campaigns.md`](../game-design/campaigns.md) (a mission names the player's deck) |
+| Q71 | 2026-10-03 | **A — the coming raid is free, and the Build Phase shows its intent.** Mario (feedback F108): "The enemy units should be visible without nexus powers, reading the enemy intent is very important for basic ui/ux interaction." The Incoming wave Experiment is settled as shown and removed; the Build Phase shows what each group goes for first, along which way, how many and when, from the kernel's own prediction on the plan as it stands. A `reveal` power must show what the free view cannot; Early Warning's line is the Nexus draft step's to rewrite | [`ui-patterns.md`](../system-design/ui-patterns.md) (the incoming wave), [`scripted-opponent.md`](../game-design/scripted-opponent.md), [`commander-armies.md`](../game-design/commander-armies.md) (what a Nexus power does) |
 | Q60 | 2026-09-27 | **B — the popup closes on the pick.** The owner, asked directly ("does the Nexus Powers popup close itself after you pick a power? My recommendation is that it closes"), agreed. Open, pick, and the player is back on the menu; the status line and the entry's "1 active" confirm it, and reopening the popup shows the pick listed as active. Esc still closes it without a pick. The register's own written recommendation was A (stay open); the question was put to him with B recommended, on the grounds that the pick is confirmed in two other places and the open popup cost a key on every Build Phase | [`engine.md`](../system-design/grid-engine.md) 9.7 (canon 2.21); `../src/build/state.ts` (`pickNexus`) |
 | Q56 | 2026-09-27 | **A solid bar, on all four sides.** Owner, after playing gate 5F: "The grid borders need to also use the 'thick' version horizontally... it should use something that is more clear... The rectangle needs to be a rectangle." A side that has reached the map's edge is drawn as an inverse-video cell — the same weight horizontally and vertically, in every glyph pack and in monochrome — and a corner is solid where a solid side runs into it. Replaces the `=` / bold `|` pair gate 5E built | [`engine.md`](../system-design/grid-engine.md) 3.3 (canon 2.21); `../src/view/build-frame.ts` (`drawChrome`) |
 | Q57 | 2026-09-27 | **A — always back to the menu**, reversing the recommendation gate 5F built. Owner: "I like keeping that as the main orchestrator, so when a building is placed, the focus should always come back to the menu." A placement also disarms: a building is armed only while the map has focus. Esc returns focus to the menu (and on the menu asks "Exit the game?"); Backspace stays "remove". The digit path is now "digit, arrows, Enter" per building **Refined 2026-09-29 (F30): finishing returns to where it began** — the map in plain navigation when the arming began there, the menu when it began on the menu | [`engine.md`](../system-design/grid-engine.md) 9.7 (canon 2.21, 2.26); `../src/build/state.ts` (`place`) |
@@ -26,7 +29,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q11 | 2026-08-21 | **Alder refuse artificial Nexus power — conceptual.** Simplicity and growth instead: little or no Nexus draft, and more complexity in the structures they can build. Direction, not a locked mechanic | [`terminal-nexus-lore.md`](../game-design/lore.md) Section 8.5 and [`commander-armies.md`](../game-design/commander-armies.md) Section 4 |
 | Q17 | 2026-08-21 | **Resolved by an unrelated fix, not decided among its options.** Four-way movement and Manhattan distance (Q15's fix, shipped for legibility) removed the degenerate tie itself: under Chebyshev a rank-deployed army had every enemy at the same distance; under Manhattan the same layout does not, because the axis the old metric ignored (`min(|dx|,|dy|)`) is exactly the one Manhattan keeps. Verified, not assumed: `citizen-mirror-skirmish.ts` (rank-deployed) now pairs each attacker with a distinct nearest opponent from tick 1, no stampede | [`grid/coords.ts`](../../src/grid/coords.ts) `gridDistance`; `docs/milestones/open-questions.md` Q15 |
 | Q25 | 2026-08-26 | **A confirmed (256-colour tier stays derived from `rgb`; 16-colour stays hand-authored) and C shipped**: `CellStyle.fade`, a `fgRole`-only 0–1 scalar resolved only at `color256`/`truecolor`, narrowly scoped to `fx.damage.flash` per a recorded departure from craft rule 7. B and D not done, per the recommendation | [`engine.md`](../system-design/grid-engine.md) Section 9.1; [`ascii-effects.md`](../system-design/effects.md) craft rule 7; `src/view/roles.ts`, `src/view/frame.ts`, `src/view/effects/composite.ts`, `src/view/effects/recipes.ts` |
-| Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`docs/milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) |
+| Q29 | 2026-08-26 | **Recall is the existing end-of-Pulse regroup rule, named, not a new mechanic.** Confirmed directly by Mario's own description of the Pulse phase: "instantly recall all units back to their proper location next to their home buildings" — exactly `engine.md` Section 5's existing rule, Option A | [`docs/history/milestones/milestone-06-pulse-phase.md`](milestones/milestone-06-pulse-phase.md) |
 | Q42 | 2026-09-09 | **No player-facing taxonomy; a bounded union in code.** A power is a name and one plain line saying what it does (*"Factory Permit — Unlocks building: Factory"*). The effect kinds — `unlockStructure`, `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` — are engineering names the player never sees | [`commander-armies.md`](../game-design/commander-armies.md) Section 4.5; [`engine.md`](../system-design/grid-engine.md) Section 5.4 |
 | Q43 | 2026-09-10 | **No upfront Commander choice.** A new player starts Vasse's mission 1 directly; completing it unlocks Averno and Dob Hunter as two new campaign-menu rows, each their own opening on the same maps. Save slots are per Commander (`campaigns.md` Section 4.3) | [`campaigns.md`](../game-design/campaigns.md) Section 4.3; [`docs/history/milestones/milestone-03-game-menu.md`](milestones/milestone-03-game-menu.md) |
 | Q44 | 2026-09-09 | **Missions have goals, not fixed lengths.** A main goal (usually "destroy the enemy Grid Nexus"; also survive/capture/accumulate shapes) plus an optional bonus goal that unlocks Challenge content. A Pulse counter shows only when the goal is about Pulses. Canon 2.12's fixed 3/4/5-Pulse contract survives as a pacing estimate only | [`campaigns.md`](../game-design/campaigns.md) Section 4.3 |
@@ -265,7 +268,7 @@ rule exactly — automatic, at Pulse end, no player action, units returning to t
 which is Option A, adopted without needing anything new built.
 
 The consequence is small and entirely presentational: the rule already runs, so what
-[`docs/milestones/milestone-06-pulse-phase.md`](../milestones/milestone-06-pulse-phase.md) owes is one
+[`docs/history/milestones/milestone-06-pulse-phase.md`](milestones/milestone-06-pulse-phase.md) owes is one
 clear beat on screen when it fires, not a kernel change. Option B (a player-triggered Nexus power that
 withdraws units mid-Pulse) stays available for a later mission whose design actually needs it — it
 would be real new kernel surface, decided on that mission's own evidence, not inherited from this row.
@@ -727,3 +730,100 @@ the probe has been run in his iTerm2 — if it reports releases there, the next 
 tier 2's learned repeat interval alone is worth building, and tier 3 serves the terminals and the page
 that can.
 
+### Q70 — answered
+
+**Question:** Q70 — Should a side whose Grid Nexus still stands lose a Pulse because its units died?
+
+**Status:** ANSWERED 2026-10-01 — B, by Mario (the Answered table has the decision); built the same day. The
+original entry follows.
+
+**Status:** OPEN — decision-ready; registered 2026-09-30 from PERIMETER's fixture.
+
+The kernel ends a Pulse the moment one side's mobile units are all dead (annihilation), even when that side's
+Grid Nexus stands. In a defence mission this reads oddly: when the player's squads fall in round 2, the round
+simply stops, with the raid at the gate, and the flank that was due seven seconds in never comes. The raid's
+survivors then carry into round 3 (which is at least consistent: the player sees them in the Build Phase). In an
+earlier tuning of the waves, a strong defence's round 3 ended the moment its last swarmer died, the Nexus
+untouched, and the mission counted it held.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep the rule**: annihilation ends a Pulse whatever stands | No change; a defence round can end before its waves have all come |
+| B. **A side with a standing Grid Nexus is never annihilated**: its Pulse goes on until the Nexus falls or the time runs out | A RULE change ([`pulse.md`](../system-design/pulse.md), victory), a named scenario, and the full determinism bar; it also changes Skirmish, where it is arguably right too: "Destroying the enemy Grid Nexus wins" |
+| C. **A mission flag**: the runner tells the kernel the defender fields no mobile units, so only its Nexus can lose | No kernel file changes, but it misstates the roster to the kernel to get a different rule — the kind of hidden rule the project refuses |
+
+**Recommendation: B**, decided by playing it: play PERIMETER as it is first (the Next round Experiment and the
+waves as built), and if a round ending with the raid at the gate reads wrong to the owner, B is the honest fix.
+Until then A stands and the pull request says what it does.
+
+The Barracks that trains makes the rule's edges sharper. A round can now begin with none of the player's units
+alive and still field some, trained during it. The kernel counts a side as having fielded units from the round's
+opening, and the mission runner widens that each time a raid group arrives; so whether a trooper trained after
+the opening ends the round by dying depends on whether it happened to be standing when a later group arrived. In
+PERIMETER at a trooper every eight seconds, a plan that builds nothing wins round 3 this way. Option B removes
+the timing as well.
+
+### Q34 — answered
+
+**Question:** Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
+
+**Status:** ANSWERED 2026-10-03 — by Mario (the Answered table has the decision); built in the Commander step's second round. The
+original entry follows.
+
+**Status:** OPEN — Milestone 8 started on 2026-10-01 and builds under the recommendation, as [`milestone-08-commander.md`](../milestones/milestone-08-commander.md) assumed; the Commander step's pull request says so for Mario to confirm or overturn.
+
+Mario's milestone list puts a real Commander in Level 1: "focus on the first Citizen commander. Develop the
+initial draft of Nexus upgrades." Every earlier framing deferred both: `commander-armies.md` ("Do not invent
+production-ready stats before Milestone 12 selects the minimum Citizens-versus-Ravels microgame"),
+`AGENTS.md`'s standing ban, and the campaign's belief ramp, which spends the Commander death, absence and
+restoration beat at Mission 3 (RESTORATION). Building the full roster early locks balance nobody has played;
+refusing any Commander mechanic leaves Milestone 8 with nothing to do.
+
+| Option | Cost |
+| --- | --- |
+| A. **Build the Commander *mechanic* and one named Commander (Vasse) scoped to PERIMETER; keep the upgrade draft to one or two real options; do not treat this as roster selection** | Real, testable work (the death, absence and restoration cadence [`pulse.md`](../system-design/pulse.md) specifies and nothing has built) without locking what `commander-armies.md` reserves. The risk is a later reader mistaking "Vasse exists" for "the Citizens Commander Army is decided", which is why Milestone 8's own definition of done requires its report to say otherwise |
+| B. **Defer the Commander to Mission 3**, per the belief ramp, and let Milestone 8 build only the Nexus upgrade draft | Faithful to the narrative plan and cheaper, but leaves PERIMETER without the character its briefing centres on, and Mario asked for the Commander in Level 1 |
+| C. **Author the full Citizens Commander Army now** | Contradicts `commander-armies.md` and `AGENTS.md` and locks balance on a roster nobody has played. Named for completeness only |
+
+**Recommendation: A.** The line that makes it safe is the one `commander-armies.md` draws: a Commander Army
+is "the complete set of choices legally available to one player in one match". One named Commander's
+mechanic plus a two-option draft, with every other choice still from the disposable fixture roster, is not
+that. **Separately: PERIMETER's own design should not force Vasse's death**, so the mechanism is testable
+without spending RESTORATION's beat two missions early.
+
+**Since the Commander step (2026-10-01):** it does, late. She falls in PERIMETER's last round in every plan
+measured, at every health her Experiment offers, so the mission ends with "Vasse fell." though it never shows
+her absence or her return. No health keeps her alive there and still lets a plan that builds nothing lose;
+holding her back needs an order she can keep (Q69). The figures are in the
+[Commander report](../history/reports/2026-10-01-commander-vasse.md).
+
+### Q71 — answered
+
+**Question:** Q71 — How much of what is coming does a player see without spending a pick?
+
+**Status:** ANSWERED 2026-10-03 — A, by Mario (the Answered table has the decision); built in the Commander step's second round. The
+original entry follows.
+
+**Status:** OPEN — registered 2026-10-01 from Mario's playtest; waits on Milestone 8's Nexus draft step, which
+picks PERIMETER's two powers.
+
+Mario, after playing the loop across rounds: "I would like, for example, that the enemies would have a spawner
+where the player can check how many enemies are coming. Or directly see them on the map with intentions." The
+design says the opposite in one place: in [`commander-armies.md`](../game-design/commander-armies.md) the `reveal`
+effect kind "keeps information something a player spends a pick on rather than something the HUD gives away",
+and Vasse's card offers *Early Warning*, "Shows where the next wave arrives, and what is in it". Step 6B already
+sides with Mario by default: the Build Phase draws the next round's arrivals on the map, see-through, with their
+intention on the Explore Map card (the Incoming wave Experiment, shown). If the screen gives the waves away,
+Early Warning has nothing left to show, and the Nexus draft step chooses PERIMETER's two powers knowing which it
+is.
+
+| Option | Cost |
+| --- | --- |
+| A. **The screen shows the round's raid for free**: where each group arrives, how many and of what, and what it means to do, in one place as well as on the map; a `reveal` power shows what that view cannot (the round after next, a group that arrives unannounced, exact timings) | What Mario asked for, and the scripted opponent's deal with the player ("the Nexus is ahead of you", [`scripted-opponent.md`](../game-design/scripted-opponent.md)). Early Warning's line changes to show something beyond the free view, or another power takes its slot. Challenge, where both sides plan hidden, still shows only what is public |
+| B. **Where for free, what for a pick**: arrival points and intentions show; the numbers and kinds need Early Warning | Keeps the design's line as written, but the count Mario asked for sits behind a pick in the first mission, where a player has two powers to choose between |
+| C. **Nothing for free**: every forecast is a power | Reverses what step 6B built and Mario liked; the first mission is played blind unless the player picks the right card |
+
+**Recommendation: A.** In the Campaign the raid's plan is public by design, and the player's own Nexus telling
+them what is coming is the mission's fiction; a pick is better spent on what is genuinely hidden. Decide it
+before the Nexus draft step chooses PERIMETER's two powers. The display itself (a count in one place, seen
+without exploring the map) waits in [`backlog.md`](../milestones/backlog.md), under the Pulse screen.

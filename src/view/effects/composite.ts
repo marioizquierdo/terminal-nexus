@@ -46,6 +46,7 @@ export function effectCellStyle(cell: PositionedCell): CellStyle {
     ...(cell.inverse === true ? { inverse: true } : {}),
     ...(cell.fade !== undefined && cell.fade > 0 ? { fade: cell.fade } : {}),
     ...(cell.tint !== undefined && cell.tint.amount > 0 ? { tint: cell.tint } : {}),
+    ...(cell.seeThrough !== undefined && cell.seeThrough.alpha > 0 ? { seeThrough: cell.seeThrough } : {}),
   }
 }
 

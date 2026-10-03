@@ -104,7 +104,7 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A popup opened over the Build Phase.",
     props: {
-      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message." },
+      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog." },
     },
   },
   "setting.change": {
@@ -141,7 +141,7 @@ export const ACTIVITY_EVENTS = {
       trained: { type: "number", description: "How many troopers they trained." },
       first: { type: "number", description: "The second of the round the first one was trained at.", optional: true },
       home: { type: "number", description: "How many of those trained came home alive at the end." },
-      ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once one side's units are all dead." },
+      ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once the raid's units are all dead, or the Nexus falls." },
     },
   },
   export: {
@@ -150,6 +150,25 @@ export const ACTIVITY_EVENTS = {
     props: {
       kind: { type: "string", description: "settings or activity." },
       events: { type: "number", description: "How many events an activity export held.", optional: true },
+    },
+  },
+  "dialog.line": {
+    defaultLevel: "info",
+    description: "A line of a round's opening scene was shown in the dialog at the bottom of the map.",
+    props: {
+      round: { type: "number", description: "Which round's Build Phase the scene opened." },
+      line: { type: "number", description: "Which line of the scene, from 1." },
+      of: { type: "number", description: "How many lines the scene has." },
+      speaker: { type: "string", description: "Who says it, as the dialog names them: game for the game's own voice." },
+    },
+  },
+  "dialog.skip": {
+    defaultLevel: "info",
+    description: "The rest of a scene was skipped — Esc, x or a right click — with lines still unread.",
+    props: {
+      round: { type: "number", description: "Which round's Build Phase the scene opened." },
+      line: { type: "number", description: "The line on screen when it was skipped, from 1." },
+      of: { type: "number", description: "How many lines the scene has." },
     },
   },
   "move.step": {
@@ -203,6 +222,13 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
     question: "What each round's Barracks trained, how many came home, and when the fighting stopped.",
     level: "info",
     events: ["pulse.start", "pulse.trained", "pulse.end", "setting.change"],
+  },
+  // The Commander round's question — was the intro read? — last for the same reason. Remove it once answered.
+  {
+    name: "Intro",
+    question: "Whether the lines a round opens with were read: each line the dialog showed, and where the rest was skipped.",
+    level: "info",
+    events: ["dialog.line", "dialog.skip", "pulse.start"],
   },
 ]
 

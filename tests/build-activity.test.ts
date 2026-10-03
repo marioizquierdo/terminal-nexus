@@ -588,7 +588,7 @@ test("a session given no log of its own records into the game's global one", asy
 // --- A scripted playtest ----------------------------------------------------------------------------
 
 test("a scripted playtest records on the script's own clock, and its window shows that log", () => {
-  const run = runBuildPlaytest({ steps: parseKeyScript("1 Enter Esc a") })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") })
   const placedEntry = run.activity.entries().find((entry) => entry.event === "build.placed")
   // The second step, a second after the first: the time is the step's, the same on every run.
   assert.equal(placedEntry?.time, 2000)
@@ -596,7 +596,7 @@ test("a scripted playtest records on the script's own clock, and its window show
   const last = run.frames[run.frames.length - 1]
   assert.equal(last?.state.popup, "activity-logs")
   assert.ok(frameToText(last?.frame ?? compose(buildSide())).includes("00:02.000 info  build.placed building=Ba"))
-  assert.deepEqual(runBuildPlaytest({ steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
+  assert.deepEqual(runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
 })
 
 // --- The live screen --------------------------------------------------------------------------------

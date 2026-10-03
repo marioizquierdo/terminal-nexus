@@ -209,6 +209,12 @@ export type BuildCommand =
    * session swaps in the next round's context, which the shell works out (`src/cli/pulse-run.ts`).
    */
   | Readonly<{ kind: "next-round" }>
+  /**
+   * **The dialog**: the next line of the round's scene — Enter, Space, or a click anywhere while the dialog
+   * is open — or, after its last line, the dialog closes and the Build Phase is exactly as the round opened
+   * it. Esc, `x` and a right click skip the rest instead (`cancel` and `back`, as every popup closes).
+   */
+  | Readonly<{ kind: "dialog-next" }>
 
 /**
  * How the sides of the Grid rectangle that have reached the map's own edge are drawn — **the map's
@@ -246,7 +252,9 @@ export type MenuEntry =
 /** The popups this screen has — one popup shape for all of them (`src/build/popup.ts`): the Nexus
  *  powers, the Battle Round confirmation, the game menu (Settings, Controls, Activity logs, Restart,
  *  Quit), Settings, the export, a message — `BuildState.message`, a title and text with nothing to
- *  choose — the Controls and hotkeys page, and the Activity logs window. */
+ *  choose — the Controls and hotkeys page, the Activity logs window, and **the dialog**: a round's scene,
+ *  a line at a time, docked at the bottom of the map — the one popup the player does not open
+ *  (`BuildState.dialog`). */
 export type Popup =
   | "nexus-powers"
   | "battle-round"
@@ -256,6 +264,29 @@ export type Popup =
   | "message"
   | "controls"
   | "activity-logs"
+  | "dialog"
+
+/**
+ * Where a line of dialog looks, on this round's map: the tile the camera centres on, and the focus's own
+ * tiles — a unit's one, each of a group's units', a region's — which the intro highlight lights around
+ * (`src/view/build-dialog.ts`). Worked out by the shell when the round opens (`src/cli/pulse-run.ts`).
+ */
+export type DialogFocus = Readonly<{ tile: Coord; own: readonly Coord[] }>
+
+/**
+ * One line of a round's scene as the dialog shows it (`BuildContext.scene`): who says it — their name, or
+ * `null` for the game's own voice, which has none — the side they speak for (their name's colour, `null`
+ * for none), the unit they are when they stand on this round's map (their glyph beside their name), the
+ * words, and where the camera looks while it is shown. Plain data: the mission's `say`, resolved on the
+ * round's own map.
+ */
+export type DialogLine = Readonly<{
+  speaker: string | null
+  side: "A" | "B" | null
+  unit: string | null
+  text: string
+  focus: DialogFocus | null
+}>
 
 /**
  * Which export a text is, so the shell that copies it out knows where it goes: the settings and
@@ -309,8 +340,8 @@ export type FieldEntity = Readonly<{
 
 /**
  * A unit the next round's triggers will bring (the owner's "see what is coming"): where it will
- * arrive, when, and the line of intention its group carries. Drawn see-through while the Incoming wave
- * Experiment shows it; nothing about it is state — the Pulse decides where it actually lands.
+ * arrive, when, and the line of intention its group carries. Always drawn, see-through; nothing about it
+ * is state — the Pulse decides where it actually lands.
  */
 export type IncomingEntity = Readonly<{
   contentId: string
@@ -319,6 +350,18 @@ export type IncomingEntity = Readonly<{
   /** The tick of the round it arrives at: 0 is when the round starts. */
   tick: number
   intent: string | null
+}>
+
+/**
+ * A Commander who fell and sits a round out: whose, which, the round she fell in and the round the Nexus
+ * restores her at the start of (the rule is the match layer's, `src/match/commander.ts`). Plain data, so
+ * the Build Phase can say she is absent without reaching the rules.
+ */
+export type CommanderAbsence = Readonly<{
+  player: "A" | "B"
+  contentId: string
+  fellInRound: number
+  returnsInRound: number
 }>
 
 /**
@@ -335,3 +378,45 @@ export type NexusPowerOption = Readonly<{
   /** Added to the starting allotment the moment this option is picked. */
   bonusAllotment: number
 }>
+
+/**
+ * What a group of the coming raid goes for first: the entity, where it stands as the round starts, and
+ * every tile it covers — so the map can mark it and the panel can name it.
+ */
+export type RaidTarget = Readonly<{
+  contentId: string
+  player: "A" | "B"
+  anchor: Coord
+  tiles: readonly Coord[]
+}>
+
+/**
+ * One group the coming round brings, and its intent as the kernel will act on it (the owner: "reading
+ * the enemy intent is very important"): how many and of what, when it arrives, where it stands, what it
+ * goes for first and the way it would go — worked out by the shell on the plan as it stands
+ * (`src/match/intent.ts`), so placing, undoing or removing a building can change it. Plain data, so the
+ * Build Phase draws and says it without reaching the rules.
+ */
+export type RaidGroup = Readonly<{
+  /** The mission's name for the group. */
+  group: string
+  player: "A" | "B"
+  /** Each kind that arrives, in the order the mission lists them, and how many. */
+  units: readonly Readonly<{ contentId: string; count: number }>[]
+  /** The tick of the round it arrives at: 0 is as the round starts. */
+  tick: number
+  /** The mission's one line of what it means to do, or `null`. */
+  intent: string | null
+  /** Every tile its units stand on as they arrive. */
+  tiles: readonly Coord[]
+  /** The tile of the group nearest its middle. */
+  centre: Coord
+  /** What most of its units go for first, or `null` when there is nothing to go for. */
+  target: RaidTarget | null
+  /** The way it would go to the target by the kernel's own steps, a tile a step, ending next to it — or,
+   *  when none of its units can get there, pressed on what stops them. */
+  path: readonly Coord[]
+}>
+
+/** Every group of the raid the coming round brings, in order of arrival — empty when it brings none. */
+export type RaidForecast = readonly RaidGroup[]

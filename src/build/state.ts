@@ -52,6 +52,7 @@ import { controlsLineCount } from "./help.ts"
 import type {
   Ack,
   BuildCommand,
+  CommanderAbsence,
   ConstructItem,
   FieldEntity,
   Focus,
@@ -63,6 +64,7 @@ import type {
   PlannedPlacement,
   PopupMessage,
   StandingStructure,
+  DialogLine,
 } from "./types.ts"
 
 /** Everything about the screen that never changes while it is open. Split from the state proper so
@@ -120,11 +122,21 @@ export type BuildContext = Readonly<{
   trains?: readonly Readonly<{ structure: string; unit: string }>[]
   /** What else is on the map: survivors of both sides, and a scripted side's structures. */
   field?: readonly FieldEntity[]
-  /** What the next round's triggers will bring, and where (drawn while the Incoming wave
-   *  Experiment shows it). */
+  /** The Commanders sitting this round out, and when each is back — handed on to the next round by the
+   *  shell, and read by the Battle Round screen to say so. Absent: nobody is missing. */
+  absent?: readonly CommanderAbsence[]
+  /** What the next round's triggers will bring, and where: always drawn, see-through, where it arrives
+   *  (the incoming wave). */
   incoming?: readonly IncomingEntity[]
   /** The bottom line's first answer when this Build Phase opens — how the last round ended. */
   openingStatus?: StatusMessage
+  /**
+   * **The round's scene**: the lines the dialog shows as this Build Phase opens, in order — the mission's
+   * `say`s for the round, and the game's own line the round a Commander is restored — each resolved on this
+   * round's map (`src/cli/pulse-run.ts`). Absent or empty: the round opens straight onto the menu. A session
+   * that does not play scenes (one a test builds) never passes one on (`withoutScene`).
+   */
+  scene?: readonly DialogLine[]
   /**
    * What the Battle Round confirmation announces for round *n*, keyed by its number ("campaign missions may
    * inject pulse-n text here", the owner). A round with no entry says
@@ -227,7 +239,8 @@ export type BuildState = Readonly<{
    *  the Battle Round confirmation (`s` — "the one action that must not fire by accident", from
    *  docs/system-design/input.md), the game menu, Settings, the export, or a message. Never opened by anything but the player —
    *  a message only as the answer to something the player did (closing Settings with a change that
-   *  needs a restart). */
+   *  needs a restart) — **except the dialog**, which a round that opens with a scene opens itself
+   *  (`dialog`). */
   popup: Popup | null
   /** The open popup's highlight, an index into its list (`popupRowCount`), set whenever one opens: the
    *  Nexus popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
@@ -241,6 +254,14 @@ export type BuildState = Readonly<{
   /** What the message popup says while `popup` is `"message"`, and `null` otherwise:
    *  a title and text, nothing to choose. */
   message: PopupMessage | null
+  /**
+   * **The dialog's own memory** while the round's scene plays (`BuildContext.scene`): the line on screen,
+   * and the cursor and camera the round put there before the first line took the camera away — given back
+   * when the dialog closes, so the Build Phase after it is exactly the one the round opened. `null` with no
+   * scene playing. The dialog shows while `popup` is `"dialog"`; a popup the player opens over it (the game
+   * menu) goes back to it.
+   */
+  dialog: Readonly<{ line: number; cursor: Coord; camera: Camera }> | null
   planned: readonly PlannedPlacement[]
   /** The last command's answer, which the bottom line shows: what just happened, or why it did not.
    *  It lapses at the next command that says nothing (`lapseStatus`); a refused placement names its
@@ -349,7 +370,7 @@ export function createBuildState(
   settings: Settings = context.settings ?? DEFAULT_SETTINGS,
 ): BuildState {
   const start = clampToGrid(cursor, context.grid)
-  return {
+  const opened: BuildState = {
     cursor: start,
     camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf(context, viewport)),
     viewport,
@@ -369,6 +390,7 @@ export function createBuildState(
     popupHighlight: 0,
     popupUnder: [],
     message: null,
+    dialog: null,
     planned: [],
     status: context.openingStatus ?? NO_STATUS,
     nextOrdinal: 1,
@@ -385,6 +407,61 @@ export function createBuildState(
     activityFrozen: [],
     activityExports: 0,
   }
+  // A round that opens with a scene opens on the dialog: the one popup the player does not open.
+  return (context.scene ?? []).length > 0 ? openDialog(context, opened) : opened
+}
+
+/** `context` without its scene: what a session that does not play scenes hands the reducer, so its rounds
+ *  open on the menu (`BuildSession`'s `scenes`). */
+export function withoutScene(context: BuildContext): BuildContext {
+  if (context.scene === undefined) return context
+  const { scene: _scene, ...rest } = context
+  return rest
+}
+
+// --- The dialog ------------------------------------------------------------------------------------
+//
+// **The dialog** (a named pattern): a round's scene, a line at a time, in a popup docked at the bottom of
+// the map. It opens by itself as the round opens — the one popup the player does not open — and holds the
+// keyboard and the mouse like any popup: Enter, Space or a click shows the next line, Esc, `x` or a right
+// click skip the rest. Each line takes the camera to what it looks at (the Pulse's own `look-at`); the map
+// cursor is hidden, as under every popup. After the last line, or a skip, the round's cursor and camera
+// come back and the Build Phase is exactly the one the round opened. The highlight around a line's focus
+// and the words are the view's (`src/view/build-dialog.ts`); the clock that breathes it is the live loop's.
+
+/** The tile the camera centres on and the cursor goes to: the Pulse's `look-at`, and each dialog line's. */
+function lookAt(context: BuildContext, state: BuildState, tile: Coord): BuildState {
+  return withCursor(context, state, tile, (_camera, cursor) => centreOn(cursor, state.viewport, context.grid))
+}
+
+/** Line `line` of the scene on screen: the camera on what it looks at, or where it was for a line that
+ *  looks at nothing. */
+function showLine(context: BuildContext, state: BuildState, line: number): BuildState {
+  if (state.dialog === null) return state
+  const focus = context.scene?.[line]?.focus ?? null
+  const shown: BuildState = { ...state, dialog: { ...state.dialog, line } }
+  return focus === null ? shown : lookAt(context, shown, focus.tile)
+}
+
+/** The dialog opens on the scene's first line, remembering the cursor and camera to give back. */
+function openDialog(context: BuildContext, state: BuildState): BuildState {
+  const dialog = { line: 0, cursor: state.cursor, camera: state.camera }
+  return showLine(context, { ...state, popup: "dialog", popupHighlight: 0, popupUnder: [], message: null, dialog }, 0)
+}
+
+/** The dialog gone, the round's own cursor and camera back — whatever closed it. */
+function closeDialog(state: BuildState): BuildState {
+  const { dialog } = state
+  if (dialog === null) return state
+  return { ...state, cursor: dialog.cursor, camera: dialog.camera, dialog: null }
+}
+
+/** Enter, Space or a click with the dialog open: the next line, or — after the last — the dialog closed. */
+function nextLine(context: BuildContext, state: BuildState): BuildState {
+  if (state.popup !== "dialog" || state.dialog === null) return state
+  const next = state.dialog.line + 1
+  if (next >= (context.scene ?? []).length) return closePopups(state)
+  return showLine(context, state, next)
 }
 
 /**
@@ -1046,13 +1123,13 @@ function popPopup(state: BuildState): BuildState {
 }
 
 /** Every popup closed at once — a click outside, a pick, the Pulse starting — and a message's words
- *  with them. */
+ *  with them, and the dialog's scene if it was under them (the round's cursor and camera back). */
 function closePopups(state: BuildState): BuildState {
-  return { ...state, popup: null, popupHighlight: 0, popupUnder: [], message: null }
+  return closeDialog({ ...state, popup: null, popupHighlight: 0, popupUnder: [], message: null })
 }
 
 /** A popup that belongs to no other — the Nexus powers, the game menu — opened alone, over whatever
- *  was open. */
+ *  was open. Over the dialog it opens on top, and going back from it comes back to the line. */
 function openPopup(state: BuildState, popup: Popup): BuildState {
   // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
   // either would be a second question on top of one. The game menu is the one exception: leaving can
@@ -1061,6 +1138,7 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
     const lock = state.committed || state.popup === "battle-round" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
+  if (state.popup === "dialog") return pushPopup(state, popup, 0)
   return pushPopup(closePopups(state), popup, 0)
 }
 
@@ -1127,6 +1205,8 @@ function place(context: BuildContext, state: BuildState): BuildState {
  *  on the menu, the game menu opens. */
 function cancel(state: BuildState): BuildState {
   if (state.popup === "battle-round") return { ...closePopups(state), status: status("Cancelled.") }
+  // The dialog: the rest of the scene skipped, and the round as it opened.
+  if (state.popup === "dialog") return closePopups(state)
   if (state.popup !== null) return popPopup(state)
   if (state.committed) return openPopup(state, "game-menu")
   switch (mapMode(state)) {
@@ -1361,7 +1441,10 @@ export function applyBuildCommand(
   const applied = applyCommand(context, base, command)
   // Nothing armed, nothing to draw as a ghost.
   const next = applied.armed === null && applied.noSpotFound ? { ...applied, noSpotFound: false } : applied
-  return lapseStatus(state, warnIfRestartNeeded(base, next))
+  const result = warnIfRestartNeeded(base, next)
+  // The dialog says nothing of its own on the bottom line, and lapses nothing either: the answer the round
+  // opened with — how the last round went — is still there when the scene is over.
+  return state.popup === "dialog" ? result : lapseStatus(state, result)
 }
 
 /**
@@ -1392,6 +1475,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return withCursor(context, state, { x: state.cursor.x + command.dx, y: state.cursor.y + command.dy })
 
     case "click-tile": {
+      // The dialog is read, not chosen from: a click anywhere shows the next line, and a stray one never
+      // skips the scene (the mouse sends the same for a click on it or off it).
+      if (state.popup === "dialog") return nextLine(context, state)
       const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
       // A click outside an open popup closes it and brings focus to where it landed — and does
       // nothing else, so a click meant to dismiss never also places or picks.
@@ -1421,6 +1507,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "click-menu": {
+      if (state.popup === "dialog") return nextLine(context, state)
       if (state.committed) return state
       // A click anywhere outside a popup dismisses it first — and only that, plus focus.
       if (state.popup !== null) {
@@ -1511,10 +1598,11 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       }
     }
 
-    case "look-at": {
-      const tile = clampToGrid({ x: command.x, y: command.y }, context.grid)
-      return withCursor(context, state, tile, (_camera, cursor) => centreOn(cursor, state.viewport, context.grid))
-    }
+    case "look-at":
+      return lookAt(context, state, { x: command.x, y: command.y })
+
+    case "dialog-next":
+      return nextLine(context, state)
 
     case "pulse-failed":
       return {
@@ -1627,9 +1715,13 @@ export function withViewport(
   state: BuildState,
   viewport: Viewport,
 ): BuildState {
+  const margin = marginOf(context, viewport)
+  const { dialog } = state
   return {
     ...state,
     viewport,
-    camera: followCursor(state.camera, state.cursor, viewport, context.grid, marginOf(context, viewport)),
+    camera: followCursor(state.camera, state.cursor, viewport, context.grid, margin),
+    // The camera the dialog gives back fits the new view too.
+    ...(dialog === null ? {} : { dialog: { ...dialog, camera: followCursor(dialog.camera, dialog.cursor, viewport, context.grid, margin) } }),
   }
 }

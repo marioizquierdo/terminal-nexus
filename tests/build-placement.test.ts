@@ -35,7 +35,7 @@ const BARRACKS = "structure.citizen.barracks"
 const PLACE_BARRACKS = "n 1 Down Space Space"
 
 function placed(keys = PLACE_BARRACKS): { run: BuildPlaytest; state: BuildState } {
-  const run = runBuildPlaytest({ steps: parseKeyScript(keys) })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys) })
   const last = run.frames[run.frames.length - 1]
   assert.ok(last !== undefined)
   return { run, state: last.state }
@@ -533,7 +533,7 @@ test("with three buildings going up at once, the Build Phase still draws well in
   // truecolor encoder — the live loop's whole per-frame cost. (The many sparks and the rainbow this once
   // measured were settled away, 2026-09-30.) The live loop asks for a frame every 16 ms; the budget
   // asserted is that p95 stays under it, and the measurement is what the report records.
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${PLACE_BARRACKS} Down Space Space Down Space Space`), columns: 104, rows: 32 })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${PLACE_BARRACKS} Down Space Space Down Space Space`), columns: 104, rows: 32 })
   const state = run.frames[run.frames.length - 1]!.state
   assert.equal(state.planned.length, 3)
   const total = placementTiming(false).totalMs
