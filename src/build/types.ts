@@ -382,7 +382,8 @@ export type RaidGroup = Readonly<{
   centre: Coord
   /** What most of its units go for first, or `null` when there is nothing to go for. */
   target: RaidTarget | null
-  /** The way its front unit would walk to the target, a tile a step, ending next to it. */
+  /** The way it would go to the target by the kernel's own steps, a tile a step, ending next to it — or,
+   *  when none of its units can get there, pressed on what stops them. */
   path: readonly Coord[]
 }>
 

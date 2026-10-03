@@ -40,6 +40,9 @@ export type RaidLine = Readonly<{ indent: number; parts: readonly RaidPart[] }>
 /** How far under a group's first line its kinds and its target are set. */
 const INDENT = 2
 
+/** What a group's last line says before what it goes for first. */
+const GOES_FOR = "goes for "
+
 /** The panel rows the raid may use: from the second row under the last building (a blank row between) to
  *  the second row above Start Pulse (a blank row before it) — or `null` when the menu leaves none. */
 export function raidRows(layout: BuildLayout, catalog: BuildContext["catalog"]): Readonly<{ first: number; last: number }> | null {
@@ -115,13 +118,13 @@ function groupLines(context: Pick<BuildContext, "registry">, group: RaidGroup, f
     for (const words of kindLines(context, group.units, width - INDENT)) lines.push({ indent: INDENT, parts: [{ text: words, role: "chrome.value" }] })
   }
   if (group.target !== null) {
-    lines.push({
-      indent: INDENT,
-      parts: [
-        { text: "goes for ", role: "chrome.label" },
-        { text: targetName(context, group.target), role: playerRole(group.target.player), bold: true },
-      ],
-    })
+    const name: RaidPart = { text: targetName(context, group.target), role: playerRole(group.target.player), bold: true }
+    // A name too long to follow "goes for" on one line goes under it, so no word is cut.
+    if (INDENT + GOES_FOR.length + name.text.length <= width) {
+      lines.push({ indent: INDENT, parts: [{ text: GOES_FOR, role: "chrome.label" }, name] })
+    } else {
+      lines.push({ indent: INDENT, parts: [{ text: GOES_FOR.trimEnd(), role: "chrome.label" }] }, { indent: INDENT * 2, parts: [name] })
+    }
   }
   return lines
 }

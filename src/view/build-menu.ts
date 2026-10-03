@@ -26,6 +26,7 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { BuildCompositionInput, RowAck } from "./build.ts"
+import { drawRaidPanel } from "./raid-panel.ts"
 
 /** A bar under a row: the role every part on it takes, and the weight it adds to them. */
 type Bar = Readonly<{ role: StyleRole; bold: boolean; underline: boolean }>
@@ -299,7 +300,8 @@ function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
  * `[s] Start Pulse` on its last line. No headings, no help text: what a row does, and why a placement
  * is refused, are the bottom line's to say, and there is no radius preview, because
  * nothing placed here has a radius. A row the panel is too short for is not drawn (`menuEntryRow` says
- * so, and the mouse reads the same answer).
+ * so, and the mouse reads the same answer). In the free rows between the buildings and Start Pulse, the
+ * coming raid (`raid-panel.ts`): information, not rows, so it fades and comes back with the menu.
  */
 export function drawPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, capability: CapabilityMode): void {
   const { context, layout } = input
@@ -310,4 +312,5 @@ export function drawPanel(cells: BandCell[], input: BuildCompositionInput, pack:
     if (row === null || spec === null) return
     drawMenuRow(cells, layout, row, spec, capability)
   })
+  drawRaidPanel(cells, input)
 }

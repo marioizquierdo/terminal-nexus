@@ -12,11 +12,13 @@
 // by its tick everything has moved. Place a building nearer the raid and the answer changes, because the
 // kernel's answer does: every unit engages the nearest enemy (`src/pulse/perception.ts`).
 //
-// **Along which way**: the path the group's front unit would take toward that target by the kernel's own
-// step rule (`rankedSteps`: greedy, four-way, sliding along whatever blocks it), over the terrain and the
-// buildings as they stand when the round starts. Units are left out of it, since they move. It stops
-// next to the target, or where the step rule leaves it with no step that gets closer. A forecast of the
-// approach that never walks through a ridge, so a trail drawn on it cannot lie about the way round.
+// **Along which way**: the path one of the group's units would take toward that target by the kernel's
+// own step rule (`rankedSteps`: greedy, four-way, sliding along whatever blocks it), over the terrain and
+// the buildings as they stand when the round starts — the nearest unit whose walk gets there, since a
+// greedy step can leave some pressing on a ridge that others go round. Units are left out of what blocks
+// it, since they move. A forecast of the approach that never walks through a ridge, so a trail drawn on it
+// cannot lie about the way round; a group none of whose units can get there is shown pressing on what
+// stops it, which is what the kernel will do too.
 //
 // Deterministic like the kernel: no clock, no randomness, nothing drawn. It reads the mission and the
 // state and never changes either.
@@ -58,8 +60,9 @@ export type GroupIntent = Readonly<{
   centre: Coord
   /** What most of its units go for first, or `null` when there is nothing to go for. */
   target: IntentTarget | null
-  /** The way its front unit would walk toward the target: one tile a step, the first step first, ending
-   *  next to it. Empty without a target, or when it arrives next to it. */
+  /** The way it would go to the target, one tile a step, the first step first: the walk of the nearest of
+   *  its units that gets next to it, or — when none can — the nearest unit's, pressed on what stops it.
+   *  Empty without a target, or when it arrives next to it. */
   path: readonly Coord[]
 }>
 
@@ -154,18 +157,13 @@ function chosenTarget(arrivals: readonly Arrival[], after: ReadonlyMap<number, E
 
 /**
  * The way `walker`, standing at `from`, would walk toward `target` by the kernel's step rule, over the
- * terrain and `state`'s structures: every step's anchor, until it stands next to the target, or no step
- * gets it closer. Next to it rather than in range: a group's ranged units stop short and its others close
- * in, and the way is drawn to what it goes for. Each step brings it one tile closer, so the walk ends
- * within the distance it started at.
+ * terrain and `structures` (an index of the structures alone): every step's anchor, until it stands next
+ * to the target, or no step gets it closer. Next to it rather than in range: a group's ranged units stop
+ * short and its others close in, and the way is drawn to what it goes for. Each step brings it one tile
+ * closer, so the walk ends within the distance it started at.
  */
-function walk(state: MatchState, registry: ContentRegistry, walker: ContentDef, from: Coord, target: IntentTarget): Coord[] {
-  const index = new OccupancyIndex(state.grid)
-  for (const entity of state.entities) {
-    const definition = registry.get(entity.contentId)
-    if (definition.layer === "obstacles") index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
-  }
-  const mask = maskFrom(index, { layers: walker.collidesWith, terrain: walker.layer === "air" ? "ignore" : "impassable" })
+function walk(structures: OccupancyIndex, registry: ContentRegistry, walker: ContentDef, from: Coord, target: IntentTarget): Coord[] {
+  const mask = maskFrom(structures, { layers: walker.collidesWith, terrain: walker.layer === "air" ? "ignore" : "impassable" })
   const footprint = registry.get(target.contentId).footprint
   const path: Coord[] = []
   let at = from
@@ -192,6 +190,12 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
   const state: MatchState = { ...start.state, entities: [...start.state.entities, ...born], nextOrdinal }
   const after = new Map(stepTick(state, contextFor(state, registry, mission.pulseTicks)).state.entities.map((entity) => [entity.ordinal, entity]))
   const before = new Map(state.entities.map((entity) => [entity.ordinal, entity]))
+  // What a way goes round: the terrain and the structures as the round starts. Units move, so none blocks it.
+  const structures = new OccupancyIndex(state.grid)
+  for (const entity of state.entities) {
+    const definition = registry.get(entity.contentId)
+    if (definition.layer === "obstacles") structures.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
+  }
 
   const arrivals = [...start.arrivals, ...later].filter((arrival) => arrival.player === side)
   return gather(arrivals).map(({ arrivals: own }) => {
@@ -218,34 +222,29 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
       tiles,
       centre: middleOf(tiles),
       target,
-      path: target === null ? [] : pathOf(state, registry, own, target),
+      path: target === null ? [] : pathOf(structures, registry, own, target),
     }
   })
 }
 
 /**
- * The way a group would go: walked from the front unit of each kind it brings — the one nearest the target,
- * the first of them on a tie — with that unit's own footprint and what it collides with, nearest kind first.
- * The first way that reaches the target is the group's; when none does, the nearest kind's. The step rule
- * is greedy, so a wide unit can be left pressing on a ridge a narrow one walks round (PERIMETER's raiders on
- * the ridge's north face, while its runners go round the west end): the trail shows the way the attack
- * gets there.
+ * The way a group would go: walked from each of its units in turn, nearest the target first (the first to
+ * arrive on a tie), with that unit's own footprint and what it collides with. The first way that reaches
+ * the target is the group's; when none does, the nearest unit's. The step rule is greedy, so units can be
+ * left pressing on a ridge that others walk round or come through the gap in (PERIMETER's raiders on the
+ * ridge's north face, while its runners go round the west end): the trail shows the way the attack gets
+ * there, and only a group that cannot get there at all is shown pressing on what stops it.
  */
-function pathOf(state: MatchState, registry: ContentRegistry, arrivals: readonly Arrival[], target: IntentTarget): Coord[] {
+function pathOf(structures: OccupancyIndex, registry: ContentRegistry, arrivals: readonly Arrival[], target: IntentTarget): Coord[] {
   const footprint = registry.get(target.contentId).footprint
   const distanceOf = (arrival: Arrival): number =>
     footprintDistance(arrival.anchor, registry.get(arrival.contentId).footprint, target.anchor, footprint)
-  const fronts = new Map<string, Arrival>()
-  for (const arrival of arrivals) {
-    const front = fronts.get(arrival.contentId)
-    if (front === undefined || distanceOf(arrival) < distanceOf(front)) fronts.set(arrival.contentId, arrival)
-  }
-  // Stable: kinds at the same distance stay in the order they arrived.
-  const kinds = [...fronts.values()].sort((a, b) => distanceOf(a) - distanceOf(b))
+  // Stable: units at the same distance stay in the order they arrived.
+  const fronts = [...arrivals].sort((a, b) => distanceOf(a) - distanceOf(b))
   let nearest: Coord[] | null = null
-  for (const front of kinds) {
+  for (const front of fronts) {
     const walker = registry.get(front.contentId)
-    const way = walk(state, registry, walker, front.anchor, target)
+    const way = walk(structures, registry, walker, front.anchor, target)
     if (footprintDistance(way.at(-1) ?? front.anchor, walker.footprint, target.anchor, footprint) <= 1) return way
     nearest ??= way
   }

@@ -29,7 +29,6 @@ import type { PlacementClock, PlacementTuning, RemovalClock } from "./placement.
 import { drawChrome, drawTopBarAndBottomLine } from "./build-frame.ts"
 import { animatingPlacements, drawGrid, drawEffects, drawPreview, drawCursor, drawRefusedTry, drawRaidIntent } from "./build-grid.ts"
 import { drawPanel } from "./build-menu.ts"
-import { drawRaidPanel } from "./raid-panel.ts"
 import type { CardReveal } from "./build-card.ts"
 import { drawCard } from "./build-card.ts"
 import { drawHandoff } from "./build-handoff.ts"
@@ -191,10 +190,7 @@ export function composeBuildFrame(
   const panel: BandCell[] = []
   if (input.state.committed) drawCommittedPanel(panel, input)
   else if (cardShowing(input.state)) drawCard(panel, input, pack, capability)
-  else {
-    drawPanel(panel, input, pack, capability)
-    drawRaidPanel(panel, input)
-  }
+  else drawPanel(panel, input, pack, capability)
   for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
   // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup.
   drawHandoff(cells, input, pack, preview)
