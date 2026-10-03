@@ -5,9 +5,14 @@
     "keys": ""
   },
   {
-    "label": "Vasse",
-    "try": "Round 1. The @ beside the Nexus, among the squads, is Commander Vasse; her card is open. Press Esc, then s s to play the round and watch her fight from just behind the line.",
-    "keys": "Esc n 1 e click:22,10"
+    "label": "The raid",
+    "try": "Round 1 after the intro. The panel says what is coming, from where and what it goes for first; the trail on the map shows its way to your Barracks. Press 3 and tap a tile on the trail twice to place a Turret there: the raid now goes for the Turret. u undoes it.",
+    "keys": "Esc"
+  },
+  {
+    "label": "Round 2",
+    "try": "Round 2, round 1 played with nothing built: two groups, as the round starts and seven seconds in, each with its own trail and its own line in the panel. Where would one Turret catch both?",
+    "keys": "Esc n 1 s s wait~1000*16 Enter"
   },
   {
     "label": "Vasse falls",
