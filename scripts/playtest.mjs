@@ -44,7 +44,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode
   --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the
-                       whole export, or pairs like "incoming=hidden nextRound=auto"; the three
+                       whole export, or pairs like "nextRound=auto trainEvery=6"; the three
                        flags above still win for their own setting
   --out <dir>          where files go (default .playtest/, ignored by git)
   --name <name>        file name prefix (default playtest)

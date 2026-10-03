@@ -38,7 +38,7 @@ import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText
 import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
 import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCommand, ExportKind } from "../build/types.ts"
+import type { BuildCommand, ExportKind, RaidForecast } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
 
@@ -76,6 +76,12 @@ export type BuildSessionOptions = Readonly<{
    * same reason as `startPulse`. Absent: a round's result is where the screen stops.
    */
   nextRound?: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
+  /**
+   * What each group of the raid the round brings goes for first, and the way it would go, on the plan as
+   * it stands — the kernel's own first choice. Injected for the same reason as `startPulse`, and asked
+   * only when the screen draws it (`raid`). Absent: no raid is foreseen.
+   */
+  foresee?: (context: BuildContext, state: BuildState) => RaidForecast
 }>
 
 /**
@@ -121,6 +127,9 @@ export class BuildSession {
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
    *  zero when that key arrived. `undefined` for a driver that never says. */
   private now: number | undefined
+  private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
+  /** The raid last foreseen, and the round and plan it was foreseen on. */
+  private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; raid: RaidForecast }> | null = null
 
   constructor(options: BuildSessionOptions) {
     this.context = options.context
@@ -132,6 +141,29 @@ export class BuildSession {
     this.startPulse = options.startPulse ?? ((): null => null)
     this.log = options.activity ?? globalActivity
     this.nextRound = options.nextRound ?? ((): null => null)
+    this.foresee = options.foresee ?? null
+  }
+
+  /**
+   * The raid this round brings and what each group goes for first, on the plan as it stands — for the
+   * composer, which draws it in the Build Phase only. Worked out when first asked and kept until the round
+   * or the plan changes, so a frame costs nothing more and placing, undoing or removing a building is seen
+   * at once. `undefined` when the session was given no way to foresee one; empty when it cannot be
+   * foreseen (a plan that leaves the raid no room says why when the Pulse is started).
+   */
+  raid(): RaidForecast | undefined {
+    if (this.foresee === null) return undefined
+    const { planned } = this.buildState
+    const last = this.foreseen
+    if (last !== null && last.context === this.context && last.planned === planned) return last.raid
+    let raid: RaidForecast
+    try {
+      raid = this.foresee(this.context, this.buildState)
+    } catch {
+      raid = []
+    }
+    this.foreseen = { context: this.context, planned, raid }
+    return raid
   }
 
   get state(): BuildState {

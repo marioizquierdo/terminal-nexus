@@ -283,10 +283,10 @@ test("the result says what happened in words: won, lost, drawn or timed out — 
 })
 
 test("the mission's Experiments need no restart, and each names the question it serves", () => {
-  for (const field of ["nextRound", "incoming"] as const satisfies readonly (keyof Experiments)[]) {
-    const spec = EXPERIMENT_FIELDS.find((candidate) => candidate.field === field)
-    assert.ok(spec !== undefined, `${field} is not an Experiment`)
-    assert.equal(spec.applies, "now")
-    assert.ok(spec.question.length > 30, `${field} does not say what it is for`)
+  const mission = EXPERIMENT_FIELDS.filter((candidate) => candidate.section === "mission")
+  assert.ok(mission.some((spec) => spec.field === ("nextRound" satisfies keyof Experiments)), "Next round is not an Experiment")
+  for (const spec of mission) {
+    assert.equal(spec.applies, "now", `${spec.field} needs a restart`)
+    assert.ok(spec.question.length > 30, `${spec.field} does not say what it is for`)
   }
 })

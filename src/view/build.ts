@@ -16,7 +16,7 @@ import type { Camera } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { armedPreview, cardShowing } from "../build/state.ts"
-import type { Ack } from "../build/types.ts"
+import type { Ack, RaidForecast } from "../build/types.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { text } from "./draw.ts"
@@ -27,8 +27,9 @@ import type { CapabilityMode } from "./roles.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { drawChrome, drawTopBarAndBottomLine } from "./build-frame.ts"
-import { animatingPlacements, drawGrid, drawEffects, drawPreview, drawCursor, drawRefusedTry } from "./build-grid.ts"
+import { animatingPlacements, drawGrid, drawEffects, drawPreview, drawCursor, drawRefusedTry, drawRaidIntent } from "./build-grid.ts"
 import { drawPanel } from "./build-menu.ts"
+import { drawRaidPanel } from "./raid-panel.ts"
 import type { CardReveal } from "./build-card.ts"
 import { drawCard } from "./build-card.ts"
 import { drawHandoff } from "./build-handoff.ts"
@@ -114,6 +115,10 @@ export type BuildCompositionInput = Readonly<{
    * starts a Pulse — the frame is the Build Phase's, exactly as it always was.
    */
   pulse?: PulseFrame
+  /** The raid the round brings and what each group goes for first, on the plan as it stands
+   *  (`BuildSession.raid`): drawn on the map and said in the panel during the Build Phase. Absent — a
+   *  session with no mission — nothing is foreseen. */
+  raid?: RaidForecast
 }>
 
 /** A menu row's acknowledgement as the live loop shows it: the state's `ack` without its sequence
@@ -172,6 +177,7 @@ export function composeBuildFrame(
   const preview = armedPreview(input.context, input.state)
   const animating = animatingPlacements(input)
   drawGrid(cells, input, pack, animating)
+  drawRaidIntent(cells, input, pack)
   drawEffects(cells, input, animating, capability)
   drawPreview(cells, input, preview)
   drawCursor(cells, input)
@@ -185,7 +191,10 @@ export function composeBuildFrame(
   const panel: BandCell[] = []
   if (input.state.committed) drawCommittedPanel(panel, input)
   else if (cardShowing(input.state)) drawCard(panel, input, pack, capability)
-  else drawPanel(panel, input, pack, capability)
+  else {
+    drawPanel(panel, input, pack, capability)
+    drawRaidPanel(panel, input)
+  }
   for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
   // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup.
   drawHandoff(cells, input, pack, preview)

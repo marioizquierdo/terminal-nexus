@@ -1,0 +1,185 @@
+// ***The raid in the panel***: the coming raid, said in the side panel's free rows between the buildings
+// and Start Pulse, so a player reads it without looking for it (the owner: "reading the enemy intent is
+// very important for basic ui/ux interaction"). Under when it comes — as the round starts, or so many
+// seconds in — each group says how many and from where, of what, and what it goes for first:
+//
+//   AS THE ROUND STARTS
+//   13 from the north-east
+//     6 runners, 4 raiders,
+//     3 slingers
+//     goes for your Turret
+//
+// Information, not a menu row: nothing here is a choice, so the keyboard never lands on it and a click on it
+// does nothing (`menuEntryAt` knows no such row). Plain words sized to the panel at 80 x 24, never a cut
+// word; where the panel has fewer free rows (a longer menu), the kinds go first, then whole groups, and the
+// last line says how many groups the panel had no room for. What a group goes for is the kernel's own first
+// choice on the plan as it stands (`BuildSession.raid`), so the words change with the plan, as the trail
+// and the mark on the map do (`drawRaidIntent`).
+
+import { CREDITS_ROW, constructLines, startRow } from "../build/layout.ts"
+import type { BuildLayout } from "../build/layout.ts"
+import type { BuildContext } from "../build/state.ts"
+import { nexusTile } from "../build/state.ts"
+import { cardText } from "../build/card.ts"
+import type { RaidForecast, RaidGroup, RaidTarget } from "../build/types.ts"
+import type { Coord } from "../grid/types.ts"
+import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import type { BandCell } from "./frame.ts"
+import { BANDS } from "./frame.ts"
+import { text } from "./draw.ts"
+import type { StyleRole } from "./roles.ts"
+import { playerRole } from "./theme.ts"
+import type { BuildCompositionInput } from "./build.ts"
+
+/** One run of a line's words, in its own role and weight. */
+export type RaidPart = Readonly<{ text: string; role: StyleRole; bold?: boolean }>
+
+/** One line of the raid's words: how far in it starts, and its parts in order. */
+export type RaidLine = Readonly<{ indent: number; parts: readonly RaidPart[] }>
+
+/** How far under a group's first line its kinds and its target are set. */
+const INDENT = 2
+
+/** The panel rows the raid may use: from the second row under the last building (a blank row between) to
+ *  the second row above Start Pulse (a blank row before it) — or `null` when the menu leaves none. */
+export function raidRows(layout: BuildLayout, catalog: BuildContext["catalog"]): Readonly<{ first: number; last: number }> | null {
+  const lines = constructLines(layout, catalog)
+  // A menu cut short by the panel's height has no room under it.
+  if (lines.length < catalog.length) return null
+  const lastBuilding = lines.at(-1)?.row ?? layout.panelRow + CREDITS_ROW
+  const first = lastBuilding + 2
+  const last = startRow(layout) - 2
+  return last >= first ? { first, last } : null
+}
+
+/** The eight points of the compass, as a player reads them, from east turning north. */
+const BEARINGS = ["east", "north-east", "north", "north-west", "west", "south-west", "south", "south-east"] as const
+
+/**
+ * Where `to` lies from `from`, as one of the eight points of the compass — weighing a row as two columns, as
+ * the map is seen at 80 x 24, where a tile is about twice as tall as it is wide. So the ridge at the top
+ * right of PERIMETER's map is to the north-east of the Nexus, and the flats level with it to the east.
+ */
+export function bearing(from: Coord, to: Coord): string {
+  const angle = Math.atan2(-(to.y - from.y) * 2, to.x - from.x)
+  const sector = (Math.round(angle / (Math.PI / 4)) + 8) % 8
+  return BEARINGS[sector] ?? "east"
+}
+
+/** A kind's name as a count of it reads: "1 runner", "6 runners", "2 marksmen". */
+function counted(context: Pick<BuildContext, "registry">, contentId: string, count: number): string {
+  const name = cardText(context, contentId).title.toLowerCase()
+  if (count === 1) return `1 ${name}`
+  if (name.endsWith("man")) return `${count} ${name.slice(0, -3)}men`
+  return `${count} ${name}${/(s|x|ch|sh)$/u.test(name) ? "es" : "s"}`
+}
+
+/** What a group goes for, as the panel names it: a building as the menu does ("your Barracks", "your
+ *  Nexus"), a unit as the kinds are counted ("your trooper"), a Commander by her name ("Vasse"). */
+export function targetName(context: Pick<BuildContext, "registry">, target: RaidTarget): string {
+  const definition = context.registry.get(target.contentId)
+  const title = cardText(context, target.contentId).title
+  if (definition.commander === true) return title
+  const name = definition.nexus === true ? "Nexus" : definition.layer === "obstacles" ? title : title.toLowerCase()
+  return target.player === "A" ? `your ${name}` : `the raid's ${name}`
+}
+
+/** A group's kinds as lines of at most `width` glyphs, never breaking a count from its kind:
+ *  "6 runners, 4 raiders," then "3 slingers". */
+function kindLines(context: Pick<BuildContext, "registry">, units: RaidGroup["units"], width: number): string[] {
+  const items = units.map((entry, index) => `${counted(context, entry.contentId, entry.count)}${index < units.length - 1 ? "," : ""}`)
+  const lines: string[] = []
+  for (const item of items) {
+    const last = lines.at(-1)
+    if (last !== undefined && last.length + 1 + item.length <= width) lines[lines.length - 1] = `${last} ${item}`
+    else lines.push(item)
+  }
+  return lines
+}
+
+/** When a group comes, as its heading says it. */
+export function whenHeading(tick: number): string {
+  const seconds = Math.round(tick / TICKS_PER_SECOND)
+  if (tick === 0) return "AS THE ROUND STARTS"
+  return seconds === 1 ? "1 SECOND IN" : `${seconds} SECONDS IN`
+}
+
+/** One group's lines: how many and from where, of what (when `kinds`), and what it goes for first. */
+function groupLines(context: Pick<BuildContext, "registry">, group: RaidGroup, from: Coord, width: number, kinds: boolean): RaidLine[] {
+  const side = playerRole(group.player)
+  const count = group.units.reduce((sum, entry) => sum + entry.count, 0)
+  const lines: RaidLine[] = [
+    { indent: 0, parts: [{ text: String(count), role: side, bold: true }, { text: ` from the ${bearing(from, group.centre)}`, role: side }] },
+  ]
+  if (kinds) {
+    for (const words of kindLines(context, group.units, width - INDENT)) lines.push({ indent: INDENT, parts: [{ text: words, role: "chrome.value" }] })
+  }
+  if (group.target !== null) {
+    lines.push({
+      indent: INDENT,
+      parts: [
+        { text: "goes for ", role: "chrome.label" },
+        { text: targetName(context, group.target), role: playerRole(group.target.player), bold: true },
+      ],
+    })
+  }
+  return lines
+}
+
+/** Every line of the raid at a level of detail: a heading for each moment something comes, its groups under it. */
+function linesAt(context: Pick<BuildContext, "registry">, raid: RaidForecast, from: Coord, width: number, kinds: boolean): RaidLine[][] {
+  // One block a group, its moment's heading leading the first group to come at that moment.
+  const blocks: RaidLine[][] = []
+  let heading: number | null = null
+  for (const group of [...raid].sort((a, b) => a.tick - b.tick)) {
+    const block: RaidLine[] = []
+    if (group.tick !== heading) {
+      heading = group.tick
+      block.push({ indent: 0, parts: [{ text: whenHeading(group.tick), role: "chrome.label" }] })
+    }
+    block.push(...groupLines(context, group, from, width, kinds))
+    blocks.push(block)
+  }
+  return blocks
+}
+
+/**
+ * The raid's lines for `room` rows of `width` glyphs: every group with its kinds when they fit; else without
+ * them (the Explore Map card over any of its units still names them); else the groups that fit whole and a
+ * last line saying how many more there are. Measured from `from`, the player's Nexus.
+ */
+export function raidLines(context: Pick<BuildContext, "registry">, raid: RaidForecast, from: Coord, width: number, room: number): RaidLine[] {
+  for (const kinds of [true, false]) {
+    const lines = linesAt(context, raid, from, width, kinds).flat()
+    if (lines.length <= room) return lines
+  }
+  const blocks = linesAt(context, raid, from, width, false)
+  const shown: RaidLine[] = []
+  let left = blocks.length
+  for (const block of blocks) {
+    if (shown.length + block.length > room - 1) break
+    shown.push(...block)
+    left -= 1
+  }
+  if (room > 0) shown.push({ indent: 0, parts: [{ text: `+${left} more group${left === 1 ? "" : "s"}`, role: "chrome.muted" }] })
+  return shown.slice(0, Math.max(0, room))
+}
+
+/** The raid in the side panel's free rows, under the menu — nothing when the round brings none, or the menu
+ *  leaves no room. One column in from the divider, as the panel's prose is. */
+export function drawRaidPanel(cells: BandCell[], input: BuildCompositionInput): void {
+  const { context, layout, raid } = input
+  if (raid === undefined || raid.length === 0) return
+  const rows = raidRows(layout, context.catalog)
+  if (rows === null) return
+  const from = nexusTile(context) ?? { x: Math.floor(context.grid.width / 2), y: Math.floor(context.grid.height / 2) }
+  const width = layout.panelLimit - 1
+  raidLines(context, raid, from, width, rows.last - rows.first + 1).forEach((line, index) => {
+    let at = layout.panelColumn + line.indent
+    for (const part of line.parts) {
+      const limit = layout.panelColumn + width - at
+      text(cells, BANDS.chrome, at, rows.first + index, part.text, part.role, { limit, ...(part.bold === true ? { bold: true } : {}) })
+      at += part.text.length
+    }
+  })
+}

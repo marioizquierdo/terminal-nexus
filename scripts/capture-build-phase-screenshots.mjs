@@ -694,7 +694,7 @@ scripted(
 
 scripted(
   "mission-experiments",
-  "d over a Pulse opens Settings at the mission's two Experiments: Next round and Incoming wave",
+  "d over a Pulse opens Settings at the mission's Experiments, Next round first",
   { keys: `${ROUND_1_STRONG} wait~3000 d`, expect: "Next round" },
 )
 

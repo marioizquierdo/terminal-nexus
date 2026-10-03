@@ -212,7 +212,9 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
   assert.match(text, new RegExp(`holdWindowMs = ${hold} `))
   // Up/Down walk the text; the window follows it to the last line.
   for (let line = 0; line < 40; line += 1) keys(side, DOWN)
-  assert.match(screen(side), new RegExp(`incoming = ${defaultExperiments().incoming} `))
+  const last = EXPERIMENT_FIELDS[EXPERIMENT_FIELDS.length - 1]?.field
+  assert.ok(last !== undefined && last !== "holdWindowMs")
+  assert.match(screen(side), new RegExp(`${last} = ${String(defaultExperiments()[last])} `))
   keys(side, ESC)
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, SETTINGS_EXPORT_ROW)
@@ -232,10 +234,10 @@ test("[e] shows the export in a popup, hands the same text to the adapter, and E
 })
 
 test("the export lists changed experiments first with their defaults, then the settings, then the rest", () => {
-  // Three Experiments a step from this build's defaults, each written as `incoming = hidden  # Incoming
-  // wave, default shown`: the value as the code reads it, the default as the popup shows it.
+  // Three Experiments a step from this build's defaults, each written as `keyReleases = off  # Key
+  // releases, default auto`: the value as the code reads it, the default as the popup shows it.
   const defaults = defaultExperiments()
-  const moved = ["nextRound", "incoming", "holdWindowMs"] as const
+  const moved = ["nextRound", "keyReleases", "holdWindowMs"] as const
   const experiments = moved.reduce((flags, field) => stepExperiment(flags, field, 1).flags, defaults)
   const snapshot: SettingsSnapshot = { settings: { ...DEFAULT_SETTINGS, theme: "light" }, experiments }
   const text = formatSettingsExport(snapshot, "592f3cb")
@@ -288,7 +290,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   const result = parseSettingsExport(
     [
       "some chatter from a pull request comment",
-      "incoming=hidden, holdWindowMs=500ms; battleRoundPulseMs=1200ms",
+      "keyReleases=off, holdWindowMs=500ms; battleRoundPulseMs=1200ms",
       "retiredFlag = 3  # a flag an older build had",
       "battleRoundPulseMs = 99999  # out of range: keeps what it had",
       "focusArrowMs=250 cardRevealMs=400  # settled in the third round: skipped without a word",
@@ -301,7 +303,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
     base,
   )
   const { experiments, settings } = result.snapshot
-  assert.equal(experiments.incoming, "hidden")
+  assert.equal(experiments.keyReleases, "off")
   assert.equal(experiments.holdWindowMs, 500)
   assert.equal(experiments.popupPulseMs, 1200)
   assert.equal(experiments.nextRound, defaultExperiments().nextRound)
@@ -329,8 +331,8 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
 test("a number is digits first: a bare unit is a bad value, skipped and reported, never zero", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   // `Number("")` is 0, which once turned the focus arrow and the card reveal off.
-  const result = parseSettingsExport("battleRoundPulseMs=ms holdWindowMs=% holdWindowMs=-350 incoming=hidden", base)
-  assert.deepEqual(result.snapshot.experiments, { ...defaultExperiments(), incoming: "hidden" })
+  const result = parseSettingsExport("battleRoundPulseMs=ms holdWindowMs=% holdWindowMs=-350 keyReleases=off", base)
+  assert.deepEqual(result.snapshot.experiments, { ...defaultExperiments(), keyReleases: "off" })
   assert.deepEqual(result.ignored, ["battleRoundPulseMs=ms", "holdWindowMs=%", "holdWindowMs=-350"])
   // With digits in front, a unit still reads.
   assert.equal(parseSettingsExport("battleRoundPulseMs=1200ms", base).snapshot.experiments.popupPulseMs, 1200)
@@ -454,14 +456,14 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
 test("--settings on the command line: settings over what is saved, and every experiment from the text", () => {
   const saved: Settings = { ...DEFAULT_SETTINGS, capability: "truecolor" }
   assert.deepEqual(importSettings(undefined, saved), { settings: saved, experiments: defaultExperiments(), ignored: [] })
-  const imported = importSettings("theme=light incoming=hidden", saved)
+  const imported = importSettings("theme=light keyReleases=off", saved)
   assert.deepEqual(imported.settings, { ...saved, theme: "light" })
-  assert.deepEqual(imported.experiments, { ...defaultExperiments(), incoming: "hidden" })
+  assert.deepEqual(imported.experiments, { ...defaultExperiments(), keyReleases: "off" })
 })
 
 test("a Build Phase opened with imported experiments has them, and the playtest script's runner takes both halves", () => {
-  const side = session({ ...starterContext(), experiments: { incoming: "hidden", holdWindowMs: 500 } })
-  assert.equal(side.build.state.experiments.incoming, "hidden")
+  const side = session({ ...starterContext(), experiments: { keyReleases: "off", holdWindowMs: 500 } })
+  assert.equal(side.build.state.experiments.keyReleases, "off")
   assert.equal(side.build.state.experiments.holdWindowMs, 500)
   const run = runBuildPlaytest({
     steps: parseKeyScript("d"),
@@ -479,10 +481,10 @@ test("a Build Phase opened with imported experiments has them, and the playtest 
 
 test("the settings flow by keys, by clicks, and from a driver script is the same state, frame and export", () => {
   // Open the game menu, open Settings, set the background to light, go to the experiments and turn the
-  // incoming wave to hidden, then export.
+  // next round to begin on its own, then export.
   const byKeyboard = session()
   keys(byKeyboard, ESC, "s", RIGHT, ESC, ESC, "d")
-  goToExperiment(byKeyboard, "incoming")
+  goToExperiment(byKeyboard, "nextRound")
   keys(byKeyboard, RIGHT, "e")
 
   const byMouse = session()
@@ -491,14 +493,14 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
   const background = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === "Background")
   assert.ok(background !== undefined)
   clickCell(byMouse, settingColumns(placed(byMouse)).valueTo, background.row)
-  // By mouse, the incoming wave's row is reached with the wheel; its value box is the click.
-  const raidLabel = experimentSpec("incoming").label
-  while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === raidLabel)) {
+  // By mouse, the next round's row is reached with the wheel; its value box is the click.
+  const roundLabel = experimentSpec("nextRound").label
+  while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "setting" && entry.spec.label === roundLabel)) {
     clickCell(byMouse, placed(byMouse).box.left + 2, placed(byMouse).box.top + 2, MOUSE_WHEEL_DOWN)
   }
-  const raid = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === raidLabel)
-  assert.ok(raid !== undefined)
-  clickCell(byMouse, settingColumns(placed(byMouse)).valueTo, raid.row)
+  const round = placed(byMouse).rows.find((entry) => entry.spec.kind === "setting" && entry.spec.label === roundLabel)
+  assert.ok(round !== undefined)
+  clickCell(byMouse, settingColumns(placed(byMouse)).valueTo, round.row)
   // Export settings is the list's last row: the scroll bar's lower half brings it into view.
   while (!placed(byMouse).rows.some((entry) => entry.spec.kind === "option" && entry.spec.hotkey === "e")) {
     const bar = placed(byMouse).scrollBar
@@ -511,19 +513,19 @@ test("the settings flow by keys, by clicks, and from a driver script is the same
     { kind: "open-game-menu" },
     { kind: "open-settings", section: "settings" },
     { kind: "setting-adjust", field: "theme", step: 1 },
-    { kind: "experiment-adjust", field: "incoming", step: 1 },
+    { kind: "experiment-adjust", field: "nextRound", step: 1 },
     { kind: "export-settings" },
   ]
   const byDriver = session()
   byDriver.build.run(script)
 
-  const raidNow = stepExperiment(defaultExperiments(), "incoming", 1).flags.incoming
+  const roundNow = stepExperiment(defaultExperiments(), "nextRound", 1).flags.nextRound
   for (const side of [byKeyboard, byMouse, byDriver]) {
     assert.equal(side.build.state.popup, "export")
     assert.equal(side.build.state.settings.theme, "light")
-    assert.equal(side.build.state.experiments.incoming, raidNow)
+    assert.equal(side.build.state.experiments.nextRound, roundNow)
     assert.equal(side.exports.length, 1)
-    assert.match(side.exports[0] as string, new RegExp(`incoming = ${raidNow} `))
+    assert.match(side.exports[0] as string, new RegExp(`nextRound = ${roundNow} `))
   }
   assert.equal(byMouse.exports[0], byKeyboard.exports[0])
   assert.equal(byDriver.exports[0], byKeyboard.exports[0])

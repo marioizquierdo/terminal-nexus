@@ -87,7 +87,6 @@ type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
   (Readonly<{ tier: "tuned" } & Partial<Description>> | (Readonly<{ tier: "player" | "experiment" }> & Description))
 
 const NEXT_ROUND = ["key", "auto"] as const
-const INCOMING = ["shown", "hidden"] as const
 
 export const ALL_SETTINGS = {
   // --- Display: the player's own, saved with the title menu's Settings -----------------------------
@@ -377,17 +376,6 @@ export const ALL_SETTINGS = {
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
    *  auto; a first guess. */
   autoNextRoundMs: { tier: "tuned", default: 3000 },
-  /** Whether the Build Phase shows the next round's arrivals on the map, see-through, with their line of
-   *  intention on the Explore Map card (the owner: "so the user can Explore map and see what is
-   *  coming"). First guess: shown. */
-  incoming: {
-    tier: "experiment",
-    section: "mission",
-    label: "Incoming wave",
-    question: "Whether the Build Phase shows the next round's raid on the map, see-through, with what it means to do.",
-    values: INCOMING,
-    default: "shown",
-  },
   /** How often a Barracks trains a trooper during a round (step 6C). A round runs thirty seconds at
    *  most and ends sooner when the raid's units are all dead or the Nexus falls, so the pace decides
    *  how many a round really trains and how much of the fight they see. First guess: every 10 seconds

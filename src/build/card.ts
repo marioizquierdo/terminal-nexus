@@ -59,7 +59,7 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
   if (structure !== null) return entityCard(context, structure.contentId, state)
   const field = (context.field ?? []).find((entity) => covers(context, entity, state.cursor))
   if (field !== undefined) return fieldCard(context, field, state)
-  const incoming = setting(state, "incoming") === "shown" ? (context.incoming ?? []).find((entity) => covers(context, entity, state.cursor)) : undefined
+  const incoming = (context.incoming ?? []).find((entity) => covers(context, entity, state.cursor))
   if (incoming !== undefined) return incomingCard(context, incoming, state)
   return groundCard(context, state.cursor)
 }

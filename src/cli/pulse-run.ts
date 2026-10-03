@@ -33,6 +33,9 @@ import {
   trainingRegistry,
 } from "../match/index.ts"
 import type { Arrival, MissionPulseInput, Restoration, TrainingPace } from "../match/index.ts"
+import { foreseeIntents } from "../match/index.ts"
+import type { GroupIntent } from "../match/index.ts"
+import type { RaidForecast, RaidGroup } from "../build/types.ts"
 import type { MissionDefinition } from "../mission/index.ts"
 import { PERIMETER, validateMission } from "../mission/index.ts"
 import type { MatchState } from "../state/types.ts"
@@ -52,6 +55,9 @@ export type MissionPlay = Readonly<{
   firstRound: (base: BuildContext) => BuildContext
   startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
   nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
+  /** What each group of the raid the round brings goes for first, and the way it would go, on the plan as
+   *  it stands: the kernel's own first choice (`src/match/intent.ts`), for the Build Phase to draw and say. */
+  foresee: (context: BuildContext, state: BuildState) => RaidForecast
 }>
 
 const isStructure = (registry: ContentRegistry, contentId: string): boolean => registry.get(contentId).layer === "obstacles"
@@ -71,6 +77,20 @@ const incomingOf = (arrivals: readonly Arrival[]): IncomingEntity[] =>
     player: arrival.player,
     tick: arrival.tick,
     intent: arrival.intent,
+  }))
+
+/** The raid's intent as the Build Phase reads it: the match layer's groups, as plain data. */
+const raidOf = (groups: readonly GroupIntent[]): RaidGroup[] =>
+  groups.map(({ group, player, units, tick, intent, tiles, centre, target, path }) => ({
+    group,
+    player,
+    units,
+    tick,
+    intent,
+    tiles,
+    centre,
+    target: target === null ? null : { contentId: target.contentId, player: target.player, anchor: target.anchor, tiles: target.tiles },
+    path,
   }))
 
 /** The map a round's Build Phase opens on, split the way the Build Phase draws it: the player's own
@@ -135,6 +155,12 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 
   return {
     mission,
+
+    foresee(context, state) {
+      // The Pulse's own opening and content, so what is foreseen is what its first tick will do.
+      const registry = pulseRegistry(context, state)
+      return raidOf(foreseeIntents({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state)), registry }))
+    },
 
     firstRound(base) {
       validateMission(mission, base.grid, base.registry)
@@ -203,5 +229,5 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 /** The mission the Build Phase's screen plays: PERIMETER's three waves, on the starter map. */
 export const STARTER_MISSION: MissionPlay = missionPlay(PERIMETER)
 
-/** The screen's two connections to it, as `BuildSession` takes them. */
-export const { startPulse, nextRound } = STARTER_MISSION
+/** The screen's connections to it, as `BuildSession` takes them. */
+export const { startPulse, nextRound, foresee } = STARTER_MISSION

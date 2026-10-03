@@ -17,7 +17,7 @@ node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every ste
 node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
 node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x30 --capability monochrome --png all
-node scripts/playtest.mjs --settings "popupPulseMs=3000 incoming=hidden" --keys "1 Enter"  # start from an export
+node scripts/playtest.mjs --settings "popupPulseMs=3000 nextRound=auto" --keys "1 Enter"  # start from an export
 node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what the run recorded
 node scripts/playtest.mjs --help
 ```
@@ -60,7 +60,7 @@ Each reaches a state on the `--build-phase` screen; what the screens are and eve
   menu first). `Esc s Right` switches the background to light; `d` opens the Experiments.
 - `Esc a`: the Activity logs window (`Right` steps the filter, `e` exports).
 - `click@3,7`: click a screen cell (0-based column, row); `click:22,9` clicks Grid tile 22,9.
-- `--settings "popupPulseMs=3000 incoming=hidden"`: start from an export, or just pairs; a name that
+- `--settings "popupPulseMs=3000 nextRound=auto"`: start from an export, or just pairs; a name that
   is no longer an Experiment is skipped with a note on stderr.
 - `--activity [filter]`: print what the run recorded in the Activity Logs (Everything when no filter
   is named; `Interactions`, `Problems`) and save `<name>-activity.txt`, with times on the script's own

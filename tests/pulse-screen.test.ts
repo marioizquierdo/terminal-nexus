@@ -591,15 +591,15 @@ test("time holds while the terminal is too small to draw it, and the clock start
 
 test("starting over from the game menu is a fresh Build Phase with the Experiments kept; committing again plays a new Pulse", () => {
   const played = play({ plan: DEFENCE, raid: "none" })
-  played.build.dispatch({ kind: "experiment-adjust", field: "incoming", step: 1 })
-  assert.equal(played.build.state.experiments.incoming, "hidden")
+  played.build.dispatch({ kind: "experiment-adjust", field: "keyReleases", step: 1 })
+  assert.equal(played.build.state.experiments.keyReleases, "off")
   const first = played.build.pulse
   played.build.handleData(ESC, played.layout)
   played.build.handleData("r", played.layout)
   assert.equal(played.build.state.committed, false)
   assert.equal(played.build.pulse, null, "the Pulse outlived the Build Phase it came from")
   assert.deepEqual(played.build.state.planned, [])
-  assert.equal(played.build.state.experiments.incoming, "hidden", "restarting lost an Experiment")
+  assert.equal(played.build.state.experiments.keyReleases, "off", "restarting lost an Experiment")
   assert.match(screenText(played), /\[1\] Barracks/, "the Build Phase's menu is not back")
   prepare(played.build)
   played.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])

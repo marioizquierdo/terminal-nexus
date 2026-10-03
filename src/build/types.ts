@@ -347,3 +347,44 @@ export type NexusPowerOption = Readonly<{
   /** Added to the starting allotment the moment this option is picked. */
   bonusAllotment: number
 }>
+
+/**
+ * What a group of the coming raid goes for first: the entity, where it stands as the round starts, and
+ * every tile it covers — so the map can mark it and the panel can name it.
+ */
+export type RaidTarget = Readonly<{
+  contentId: string
+  player: "A" | "B"
+  anchor: Coord
+  tiles: readonly Coord[]
+}>
+
+/**
+ * One group the coming round brings, and its intent as the kernel will act on it (the owner: "reading
+ * the enemy intent is very important"): how many and of what, when it arrives, where it stands, what it
+ * goes for first and the way it would go — worked out by the shell on the plan as it stands
+ * (`src/match/intent.ts`), so placing, undoing or removing a building can change it. Plain data, so the
+ * Build Phase draws and says it without reaching the rules.
+ */
+export type RaidGroup = Readonly<{
+  /** The mission's name for the group. */
+  group: string
+  player: "A" | "B"
+  /** Each kind that arrives, in the order the mission lists them, and how many. */
+  units: readonly Readonly<{ contentId: string; count: number }>[]
+  /** The tick of the round it arrives at: 0 is as the round starts. */
+  tick: number
+  /** The mission's one line of what it means to do, or `null`. */
+  intent: string | null
+  /** Every tile its units stand on as they arrive. */
+  tiles: readonly Coord[]
+  /** The tile of the group nearest its middle. */
+  centre: Coord
+  /** What most of its units go for first, or `null` when there is nothing to go for. */
+  target: RaidTarget | null
+  /** The way its front unit would walk to the target, a tile a step, ending next to it. */
+  path: readonly Coord[]
+}>
+
+/** Every group of the raid the coming round brings, in order of arrival — empty when it brings none. */
+export type RaidForecast = readonly RaidGroup[]

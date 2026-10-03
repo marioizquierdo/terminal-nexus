@@ -23,7 +23,7 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { nextRound, startPulse } from "./pulse-run.ts"
+import { foresee, nextRound, startPulse } from "./pulse-run.ts"
 import { starterContext } from "./starter.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
@@ -209,6 +209,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     startPulse,
     activity: log,
     nextRound,
+    foresee,
   })
 
   // Start in a state: the script's own clock, a second between untimed steps as in a scripted
@@ -276,6 +277,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
         })
     const pulse = gated ? undefined : build.pulseFrame(layout)
+    const raid = gated ? undefined : build.raid()
     const frame =
       gated || live === null
         ? gateFrame(size.columns, size.rows, STARTER_MINIMUM)
@@ -291,6 +293,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
               ...livePresentation(live),
               reducedMotion: settings.reducedMotion,
               ...(pulse === undefined ? {} : { pulse }),
+              ...(raid === undefined ? {} : { raid }),
             },
             settings.capability,
           )

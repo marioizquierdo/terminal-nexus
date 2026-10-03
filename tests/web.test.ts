@@ -31,7 +31,7 @@ import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { keysFromChunk } from "../src/terminal/playback.ts"
-import { BACKGROUND_RGB, rgbFor } from "../src/view/roles.ts"
+import { BACKGROUND_RGB, rgbFor, seeThroughColours } from "../src/view/roles.ts"
 import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, withShift } from "../src/web/keys.ts"
 import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
 import { sameness } from "./web-helpers.ts"
@@ -148,11 +148,19 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
   const css = (rgb: readonly number[]): string => `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`
   let inverse = 0
   let dim = 0
+  let washed = 0
   frame.cells.forEach((cell, index) => {
     const op = ops[index]
     assert.ok(op !== undefined)
     const colour = css(rgbFor(cell.style.fgRole, "truecolor", "dark", cell.style.fade ?? 0))
-    if (cell.style.inverse === true) {
+    // A see-through style that shows — the incoming wave's wash — is the role table's colours mixed as the
+    // terminal mixes them, glyph and fill.
+    const seen = seeThroughColours(cell, "truecolor", "dark")
+    if (seen !== null) {
+      washed += 1
+      assert.equal(op.foreground, css(seen.foreground))
+      assert.equal(op.background, css(seen.background))
+    } else if (cell.style.inverse === true) {
       // The map's solid edge: the role colour becomes the cell's fill, the theme's ground its ink.
       inverse += 1
       assert.equal(op.background, colour)
@@ -160,7 +168,7 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
     } else {
       assert.equal(op.foreground, colour)
     }
-    if (cell.style.dim === true) {
+    if (cell.style.dim === true && seen === null) {
       dim += 1
       assert.equal(op.alpha, DIM_ALPHA)
     }
@@ -168,6 +176,7 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
   })
   assert.ok(inverse > 10, "the frame drew no inverse cells to check")
   assert.ok(dim > 0)
+  assert.ok(washed > 0, "the frame drew no incoming wave to check")
 })
 
 // --- 4. The page's keys are the scripted playtest's keys ------------------------------------------
