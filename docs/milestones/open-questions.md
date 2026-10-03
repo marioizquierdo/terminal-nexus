@@ -17,7 +17,7 @@ when it is genuinely his call, state the assumption you proceed under, then keep
 
 ## Index
 
-Five are ready for Mario to decide now ("Mario, now"); every other question is parked until the
+Four are ready for Mario to decide now ("Mario, now"); every other question is parked until the
 milestone or backlog entry named, and nothing in the current milestone is blocked by any of them.
 
 | Id | Question | Status | Waits on |
@@ -36,7 +36,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
 | [Q31](#q31--what-shape-does-an-unlock-record-take-with-no-save-system-yet) | What shape does an unlock record take? | OPEN | Milestone 4 (campaign menu) |
-| [Q34](#q34--does-building-commander-vasse-in-level-1-mean-authoring-the-citizens-commander-army-early) | Does building Vasse mean authoring the whole Commander Army? | OPEN | Mario, now: Milestone 8 builds under the recommendation |
 | [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (campaign menu) |
 | [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Mario, now |
 | [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
@@ -47,7 +46,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
 | [Q68](#q68--what-does-the-player-call-a-nexus-pulse) | What does the player call a Nexus Pulse? | OPEN | Mario, now |
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN | Mario, now |
-| [Q71](#q71--how-much-of-what-is-coming-does-a-player-see-without-spending-a-pick) | How much of what is coming does a player see without spending a pick? | OPEN | Milestone 8 (the Nexus draft step) |
 
 ## Open
 
@@ -352,35 +350,6 @@ naming its Commander**, and bonus goals unlock content for Challenge mode, so th
 campaign. A flat list still serves the first playable mission; Milestone 4 is where the difference gets
 designed rather than discovered.
 
-### Q34 — Does building Commander Vasse in Level 1 mean authoring the Citizens Commander Army early?
-
-**Status:** OPEN — Milestone 8 started on 2026-10-01 and builds under the recommendation, as [`milestone-08-commander.md`](milestone-08-commander.md) assumed; the Commander step's pull request says so for Mario to confirm or overturn.
-
-Mario's milestone list puts a real Commander in Level 1: "focus on the first Citizen commander. Develop the
-initial draft of Nexus upgrades." Every earlier framing deferred both: `commander-armies.md` ("Do not invent
-production-ready stats before Milestone 12 selects the minimum Citizens-versus-Ravels microgame"),
-`AGENTS.md`'s standing ban, and the campaign's belief ramp, which spends the Commander death, absence and
-restoration beat at Mission 3 (RESTORATION). Building the full roster early locks balance nobody has played;
-refusing any Commander mechanic leaves Milestone 8 with nothing to do.
-
-| Option | Cost |
-| --- | --- |
-| A. **Build the Commander *mechanic* and one named Commander (Vasse) scoped to PERIMETER; keep the upgrade draft to one or two real options; do not treat this as roster selection** | Real, testable work (the death, absence and restoration cadence [`pulse.md`](../system-design/pulse.md) specifies and nothing has built) without locking what `commander-armies.md` reserves. The risk is a later reader mistaking "Vasse exists" for "the Citizens Commander Army is decided", which is why Milestone 8's own definition of done requires its report to say otherwise |
-| B. **Defer the Commander to Mission 3**, per the belief ramp, and let Milestone 8 build only the Nexus upgrade draft | Faithful to the narrative plan and cheaper, but leaves PERIMETER without the character its briefing centres on, and Mario asked for the Commander in Level 1 |
-| C. **Author the full Citizens Commander Army now** | Contradicts `commander-armies.md` and `AGENTS.md` and locks balance on a roster nobody has played. Named for completeness only |
-
-**Recommendation: A.** The line that makes it safe is the one `commander-armies.md` draws: a Commander Army
-is "the complete set of choices legally available to one player in one match". One named Commander's
-mechanic plus a two-option draft, with every other choice still from the disposable fixture roster, is not
-that. **Separately: PERIMETER's own design should not force Vasse's death**, so the mechanism is testable
-without spending RESTORATION's beat two missions early.
-
-**Since the Commander step (2026-10-01):** it does, late. She falls in PERIMETER's last round in every plan
-measured, at every health her Experiment offers, so the mission ends with "Vasse fell." though it never shows
-her absence or her return. No health keeps her alive there and still lets a plan that builds nothing lose;
-holding her back needs an order she can keep (Q69). The figures are in the
-[Commander report](../history/reports/2026-10-01-commander-vasse.md).
-
 ### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
 
 **Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
@@ -568,29 +537,3 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
 that is what a readable intention needs and what the Campaign's scripted opponent will be made of.
-
-### Q71 — How much of what is coming does a player see without spending a pick?
-
-**Status:** OPEN — registered 2026-10-01 from Mario's playtest; waits on Milestone 8's Nexus draft step, which
-picks PERIMETER's two powers.
-
-Mario, after playing the loop across rounds: "I would like, for example, that the enemies would have a spawner
-where the player can check how many enemies are coming. Or directly see them on the map with intentions." The
-design says the opposite in one place: in [`commander-armies.md`](../game-design/commander-armies.md) the `reveal`
-effect kind "keeps information something a player spends a pick on rather than something the HUD gives away",
-and Vasse's card offers *Early Warning*, "Shows where the next wave arrives, and what is in it". Step 6B already
-sides with Mario by default: the Build Phase draws the next round's arrivals on the map, see-through, with their
-intention on the Explore Map card (the Incoming wave Experiment, shown). If the screen gives the waves away,
-Early Warning has nothing left to show, and the Nexus draft step chooses PERIMETER's two powers knowing which it
-is.
-
-| Option | Cost |
-| --- | --- |
-| A. **The screen shows the round's raid for free**: where each group arrives, how many and of what, and what it means to do, in one place as well as on the map; a `reveal` power shows what that view cannot (the round after next, a group that arrives unannounced, exact timings) | What Mario asked for, and the scripted opponent's deal with the player ("the Nexus is ahead of you", [`scripted-opponent.md`](../game-design/scripted-opponent.md)). Early Warning's line changes to show something beyond the free view, or another power takes its slot. Challenge, where both sides plan hidden, still shows only what is public |
-| B. **Where for free, what for a pick**: arrival points and intentions show; the numbers and kinds need Early Warning | Keeps the design's line as written, but the count Mario asked for sits behind a pick in the first mission, where a player has two powers to choose between |
-| C. **Nothing for free**: every forecast is a power | Reverses what step 6B built and Mario liked; the first mission is played blind unless the player picks the right card |
-
-**Recommendation: A.** In the Campaign the raid's plan is public by design, and the player's own Nexus telling
-them what is coming is the mission's fiction; a pick is better spent on what is genuinely hidden. Decide it
-before the Nexus draft step chooses PERIMETER's two powers. The display itself (a count in one place, seen
-without exploring the map) waits in [`backlog.md`](backlog.md), under the Pulse screen.

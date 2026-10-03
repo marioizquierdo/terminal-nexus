@@ -4,7 +4,7 @@ _What a campaign and a mission are, how a mission is driven by triggers and judg
 
 ## 1. Development boundary
 
-**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and a Commander mechanic with one named Commander is the most that comes before it, not a locked roster.
+**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and one named Commander, her mechanic and her deck at the size of the bench content are the most that come before it, not a locked roster.
 
 This document still gives the *destination* — the belief ramp, the later missions' teaching goals, the cast. Nothing beyond PERIMETER and RIGHT OF SALVAGE is built or in scope; the later missions are **IDEA**. A document describes; it does not schedule.
 
@@ -28,7 +28,9 @@ A campaign is an ordered or branching graph of missions plus persistent progress
 
 Campaign unlocks reveal complexity gradually. Full skirmish mode eventually exposes every legal roster without requiring campaign completion.
 
-A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text), with no armies, unlocks or objectives list yet.
+A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text, and the player's deck), with no opponent deck, unlock record or objectives list yet.
+
+**A mission names the player's deck and may override it** (RULE — `src/mission/types.ts`, `src/mission/validate.ts`, `tests/army.test.ts`). `player: { army, override }` is the sketch's `playerArmy` and `availableContent` in one: a Commander's deck by id ([`commander-armies.md`](commander-armies.md)), and what this level makes of it. The Campaign develops a deck level by level, so a level lists what of it is unlocked (an id picks the deck's own entry) or overrides a part outright (a whole entry, another cost, other credits); a part the override leaves out is the deck's. The Build Phase offers exactly the result, and validation refuses an unknown deck or an override naming what the deck does not hold. PERIMETER names Vasse's deck and lists all of it, one by one, so that when her deck grows the level keeps what it teaches.
 
 ```ts
 interface MissionDefinition {

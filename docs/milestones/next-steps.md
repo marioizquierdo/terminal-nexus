@@ -19,15 +19,13 @@ it is done.*
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
   means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): building Vasse without authoring the whole
-  Citizens army, which the Commander milestone does under the recommendation (Q34); how much of what is coming a
-  player sees without spending a Nexus power, before the Nexus draft step picks PERIMETER's two (Q71); an order
-  primitive as its own step (Q69; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
+- **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
+  would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
   letter hotkeys for buildings (Q67), whether the player ever reads "Pulse" (Q68), and the exploring click, the
   wheel step and the light theme's light (Q63; Q62 and Q64 are answered).
 - **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
   spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
-  loop's and the Barracks's under THE MISSION (Next round, Incoming wave, Barracks trains, Troopers a round),
+  loop's and the Barracks's under THE MISSION (Next round, Barracks trains, Troopers a round),
   with the Activity logs' **Barracks** filter beside them.
 
 ## Carry-over

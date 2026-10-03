@@ -92,7 +92,11 @@ Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern
 the complete set of choices legally available to one player in one match — a Nexus and faction, a
 Commander, starting units and structures, blueprints and a tech tree, upgrades, Nexus powers, and
 Specials, bounded against its faction's pools (same document). The match, the Pulse, and every
-renderer see an army; none of them ever sees a faction.
+renderer see an army; none of them ever sees a faction. What is built of one is a Commander's **deck**
+(`src/content/armies.ts`): data beside the content, read by the Build Phase's assembly and the mission's
+validation and never by the kernel — her Commander, the credits a Build Phase starts with, her blueprints
+(each building and its cost) and her Nexus power pool. A mission names the deck it plays and may override
+it (see the mission's deck in [`campaigns.md`](../game-design/campaigns.md)).
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
 radius, restoration, regroup anchor — over inheritance. Exceptional behaviour may register narrow
