@@ -1,14 +1,11 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8A, round 2 — Mario's notes on the Commander: her deck, organized and overridden by the campaign; her entrance; the raid's intent, readable enough to plan against.
+**Current step:** 8A, round 3 — Mario's notes on round 2: navigation by route (`--at`), content bundles with the campaign at the top, and Commanders who die as part of the game.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
 the next milestone stage!"
-
-_Nothing is open for an agent right now: step 8A's second round is built and waits for Mario's playtest. Until
-then the work is his latest feedback, or nothing._
 
 This milestone widens Level 1's scope on purpose. Earlier plans deferred the Commander mechanic to
 Mission 3 (RESTORATION) and said not to author a Commander Army before Milestone 12. The plan now puts
@@ -76,6 +73,25 @@ waiting for Mario's playtest.
       without looking for it, what each group goes for first, along which way, how many and when. The
       prediction is the kernel's own, run on the plan as it stands.
 - [x] Played as a player at 80 × 24; the pull request says what the raid's intent made the player plan.
+
+### Step 8A, round 3 — Navigation by route, content bundles, and Commanders who die
+
+Mario's notes on the second round ([his words](../history/feedback/2026-10-04-commander-round-3.md)). Built on
+the same pull request.
+
+- [ ] `--at <route>` replaces `--build-phase`: the title menu's screens and a campaign level
+      (`campaign?level=<id>`, with the round to open at) are routes, the same grammar for the browser page's
+      direct links; `--settings` takes `foo=6&var=true`. The bare command opens the title menu; loading a saved
+      game from a default location is written down, not built.
+- [ ] The routing schema is documented, and a test opens every route it names.
+- [ ] Content is organized as bundles, data rather than code, each naming the bundles it builds on: `common`
+      (buildings and Nexus powers any Commander may use) and `vasse` (her Commander and her campaign: its levels
+      in order, what each unlocks, and their missions). Validation refuses a broken bundle by name.
+- [ ] What a level offers is what its campaign has unlocked by then. PERIMETER is the campaign's first level;
+      the Commander's cadence test map is a second, reachable by route, so her return can be played.
+- [ ] Commanders die as part of the game: the round one is out opens on a line saying so, and the campaign
+      design and the lore teach it in the intro levels rather than saving it for a later mission.
+- [ ] The next iteration on intent, the player's own units' targets, is in the backlog.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 
