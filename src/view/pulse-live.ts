@@ -155,7 +155,7 @@ export class PulsePresenter {
     const { timeline } = this.resolved
     const speaker = speakerOf(timeline, barksOf)
     if (speaker === null) return null
-    const end = { stopMs: this.times.stopMs, won: this.result.tone === "success" }
+    const end = { resultMs: this.times.homeMs, won: this.result.tone === "success" }
     const lines = planVoice(voiceMoments(timeline, speaker, end), speaker.barks, { round: this.resolved.mission?.round ?? 1, cosmeticSeed })
     if (lines.length === 0) return null
     const fell = timeline.events.find((event) => event.kind === "entity.died" && event.ordinal === speaker.ordinal)
@@ -179,9 +179,16 @@ export class PulsePresenter {
   speakerTileAt(timeMs: number): Coord | null {
     const voice = this.voice
     if (voice === null) return null
-    const tick = Math.max(0, Math.min(this.view.lastTick, Math.floor(timeMs / this.view.tickDurationMs)))
-    const standing = this.resolved.timeline.states[tick]?.entities.find((entity) => entity.ordinal === voice.speaker.ordinal)
+    const standing = this.stateAt(timeMs).entities.find((entity) => entity.ordinal === voice.speaker.ordinal)
     return standing?.anchor ?? voice.fellAt
+  }
+
+  /** What stands where at a presentation instant, by the resolved states: the fight's state at that tick, and
+   *  once the walk home has begun, where Recall puts everyone. */
+  private stateAt(timeMs: number): PulseTimeline["states"][number] {
+    if (timeMs >= this.times.walkMs) return this.resolved.recall.state
+    const { states } = this.resolved.timeline
+    return states[Math.max(0, Math.min(this.view.lastTick, Math.floor(timeMs / this.view.tickDurationMs)))] ?? this.resolved.recall.state
   }
 
   /** Where in the Pulse the screen is, in presentation milliseconds. */
@@ -369,14 +376,15 @@ export class PulsePresenter {
     const known = voice.places.get(line)
     if (known !== undefined) return known
     const { timeline } = this.resolved
+    // Everything the line is shown over: the fight's states from its start to its end — or, once the walk home
+    // has begun, everyone where Recall puts them.
     const tickOf = (ms: number): number => Math.max(0, Math.min(this.view.lastTick, Math.floor(ms / this.view.tickDurationMs)))
-    const first = tickOf(line.startMs)
-    const last = tickOf(line.endMs)
-    const her = timeline.states[first]?.entities.find((entity) => entity.ordinal === voice.speaker.ordinal)?.anchor ?? voice.fellAt
+    const over = line.startMs >= this.times.walkMs ? [this.resolved.recall.state] : timeline.states.slice(tickOf(line.startMs), tickOf(line.endMs) + 1)
+    const her = this.speakerTileAt(line.startMs)
     const opening = timeline.states[0]
     if (her === null || opening === undefined) return null
     const within = view === undefined ? undefined : visibleRange(view.camera, view.viewport)
-    const place = labelPlace(line.text, her, timeline.states.slice(first, last + 1), timeline.registry, opening.grid, within)
+    const place = labelPlace(line.text, her, over, timeline.registry, opening.grid, within)
     voice.places.set(line, place)
     return place
   }

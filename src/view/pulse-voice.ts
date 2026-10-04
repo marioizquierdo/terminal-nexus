@@ -50,7 +50,7 @@ export type VoiceMode = SettingValue<"commanderVoice">
 export const VOICE = {
   /** The start of a round's line comes a beat in, once the view has settled on the Nexus. */
   startDelayMs: 800,
-  /** The round-won line comes a beat after the shooting stops. */
+  /** The round-won line comes a beat after the result stands. */
   wonDelayMs: 300,
   /** A line types in at this many milliseconds a character, never for longer than `typeMaxMs`. */
   typeMsPerChar: 30,
@@ -157,9 +157,9 @@ export function speakerOf(timeline: VoiceTimeline, barksOf: (contentId: string) 
  *  start. */
 export type Moment = Readonly<{ moment: BarkMoment; atMs: number }>
 
-/** How a round ended, as far as her voice cares: when the shooting stopped, and whether her side won it (a
- *  victory, or the mission's goal met). */
-export type RoundEnd = Readonly<{ stopMs: number; won: boolean }>
+/** How a round ended, as far as her voice cares: when its result stands — the shooting stopped and the
+ *  survivors home — and whether her side won it (a victory, or the mission's goal met). */
+export type RoundEnd = Readonly<{ resultMs: number; won: boolean }>
 
 const manhattan = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
@@ -175,7 +175,8 @@ const manhattan = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + Math.abs
  * - **badly-hurt**: a hit leaves her standing on `VOICE.hurtFraction` of her health or less;
  * - **nexus-hit**: her side's Grid Nexus is first hit;
  * - **falls**: she falls;
- * - **round-won**: a beat after the shooting stops, when her side won the round.
+ * - **round-won**: a beat after the result stands, when her side won the round — her remark on the result,
+ *   said where she stands once she is home, not where the walk home would leave it behind.
  */
 export function voiceMoments(timeline: VoiceTimeline, speaker: Speaker, end: RoundEnd): Moment[] {
   const tickMs = 1000 / timeline.ticksPerSecond
@@ -241,7 +242,7 @@ export function voiceMoments(timeline: VoiceTimeline, speaker: Speaker, end: Rou
         break
     }
   }
-  if (end.won) add("round-won", end.stopMs + VOICE.wonDelayMs)
+  if (end.won) add("round-won", end.resultMs + VOICE.wonDelayMs)
   const rank = (moment: Moment): number => PRIORITY.indexOf(moment.moment)
   return [...found.values()].sort((a, b) => a.atMs - b.atMs || rank(a) - rank(b))
 }

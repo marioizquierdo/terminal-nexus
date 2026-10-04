@@ -154,7 +154,7 @@ test("the moments she answers are read off the round's events, the first of each
   assert.equal(speaker.name, "Vasse")
   // Near her is her aura's reach, read from the content.
   assert.equal(speaker.near, FIXTURE_REGISTRY.get(VASSE).aura?.radius)
-  const moments = voiceMoments(timeline, speaker, { stopMs: 90 * TICK_MS, won: true })
+  const moments = voiceMoments(timeline, speaker, { resultMs: 90 * TICK_MS, won: true })
   assert.deepEqual(
     moments.map((moment) => [moment.moment, Math.round(moment.atMs)]),
     [
@@ -173,7 +173,7 @@ test("the moments she answers are read off the round's events, the first of each
   // Every moment the armies can name is one the view can find.
   assert.deepEqual([...PRIORITY].sort(), [...BARK_MOMENTS].sort())
   // A round lost, or one she is not in, has no round-won and nothing at all.
-  assert.ok(!voiceMoments(timeline, speaker, { stopMs: 90 * TICK_MS, won: false }).some((moment) => moment.moment === "round-won"))
+  assert.ok(!voiceMoments(timeline, speaker, { resultMs: 90 * TICK_MS, won: false }).some((moment) => moment.moment === "round-won"))
   const without = { ...timeline, states: timeline.states.map((state) => ({ ...state, entities: state.entities.filter((each) => each.ordinal !== HER.ordinal) })) }
   assert.equal(speakerOf(without, () => ARMIES.commanders[0]?.barks ?? {}), null)
   // A Commander with nothing to say is not a speaker.
