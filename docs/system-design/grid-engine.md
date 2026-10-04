@@ -187,13 +187,13 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Grid Nexus**, **Prime Nexus** — the Nexus replica that sits on the Grid, and the one that stays home and replicates it.
 - **Build Phase** — the hidden, simultaneous, untimed phase where each player builds their plan.
 - **Nexus Pulse** — the fixed-tick, deterministic battle that resolves both plans in ASCII: the resolution the kernel runs.
-- **round** — one Build Phase and the Nexus Pulse that follows it, which is the unit the player counts: "round 2 of 3". The screen that opens a round is titled "Battle Round N"; whether the player should ever read the word "Pulse" (the menu row that starts one says `[s] Start Pulse` today) is still open (Q68). In code the round's number is `pulseNumber`; the identifier is not renamed.
+- **round**, **Battle Round** — one Build Phase and the Nexus Pulse that follows it, which is the unit the player counts: "round 2 of 3". **The player reads Battle Round, never Pulse** (the owner, 2026-10-04: "We can refer to it as Nexus Pulse in lore and design, but Battle Round is better for the player and UI"): the interface names the battle Battle Round wherever it names it, and Nexus Pulse is the lore's and the design's word. In code the round's number is `pulseNumber`; identifiers are not renamed.
 - **mission** — a sequence of rounds driven by triggers, with goals rather than a fixed length.
-- **wave** — a group of units a mission trigger brings onto the Grid during a round, at a chosen tick.
+- **group** — units a mission trigger brings onto the Grid together during a round, at a chosen tick, with a name and an intention. The game does not say "wave" (the owner, 2026-10-04).
 - **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.
 - **Recall** — what happens when a Pulse ends: surviving units walk home, so the next round starts from what the last one left.
 - **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
-- **bundle** — a folder of content data under `bundles/` that names the bundles it builds on and sees only what they bring: `common` holds the cards any Commander may use, `vasse` her Commander and her campaign ([`content.md`](content.md)).
+- **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds the cards any Commander may use, `armies/vasse` her Commander and her campaign ([`content.md`](content.md)).
 - **route** — a place in the game written like a web address without its site (`settings`, `campaign?level=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
 - **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
 - **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.

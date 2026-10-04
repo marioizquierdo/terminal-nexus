@@ -133,9 +133,9 @@ how much of that this milestone builds, on the Commander's pull request: "this m
 building the concept of the commander ... Make sure that the commander deck is properly organized, and
 properly integrated with the campaign." The second round built her deck as one definition a Campaign level
 overrode. In the third, Mario separated the campaign's deck from the run mode's ("from the development side
-they don't have to be the same"), so content became bundles: `common` with the buildings and Nexus powers any
+they don't have to be the same"), so content became data: `armies/all` with the buildings and Nexus powers any
 Commander may use, and `vasse` with her Commander and her campaign, whose levels each offer what it has
-unlocked by then (`bundles/`; the question about building her early is answered).
+unlocked by then (`armies/`; the question about building her early is answered).
 
 What is still not this milestone: choosing and locking the Citizens' roster. Every building and power she is
 offered is the disposable bench content, with no balance claim, as Milestone 1 shipped it; the roster, its

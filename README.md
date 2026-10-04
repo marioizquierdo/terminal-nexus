@@ -57,7 +57,7 @@ level, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its round
 
 Start Pulse runs the **Nexus Pulse**: the unmodified rules kernel resolves the plan you built. You
 watch it with a countdown, a score and a feed of events, and you can pause, change speed, step and
-watch again. The first mission, **PERIMETER**, is three rounds with a raid arriving in three waves.
+watch again. The first mission, **PERIMETER**, is three Battle Rounds, with the raid arriving in each.
 After each round there is a result, and Next round opens the next Build Phase on what survived.
 
 Not built yet: an economy, Commander powers, Campaign content, Challenge runs and sound. The

@@ -4,13 +4,13 @@ _What a campaign and a mission are, how a mission is driven by triggers and judg
 
 ## 1. Development boundary
 
-**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and one named Commander, her mechanic and her campaign's bundle at the size of the bench content are the most that come before it, not a locked roster.
+**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and one named Commander, her mechanic and her army file at the size of the bench content are the most that come before it, not a locked roster.
 
 This document still gives the *destination* — the belief ramp, the later missions' teaching goals, the cast. Nothing beyond PERIMETER and RIGHT OF SALVAGE is built or in scope; the later missions are **IDEA**. A document describes; it does not schedule.
 
 **The Campaign is one of two single-player modes** ([`game-modes.md`](game-modes.md)): the first-time player experience and the world's fixed story, judged on whether a new player comes out able to play a run and whether the world feels real. Replay value, breadth and duration are Challenge mode's job. Nothing in this document is a length or breadth requirement; the belief ramp is direction for what the missions teach and tell, not a count of missions the game owes. Mechanically the Campaign is the mode that grows the player's pool — each mission unlocks the cards it introduces — which makes its last mission a guided run in all but name.
 
-**RULE — the first complete single-player direction is the Citizen origin campaign** (`bundles/vasse/bundle.json`, PERIMETER, its first level; `tests/mission.test.ts`).
+**RULE — the first complete single-player direction is the Citizen origin campaign** (`armies/vasse/army.json`, PERIMETER, its first level; `tests/mission.test.ts`).
 
 ## 2. What defines a campaign
 
@@ -28,9 +28,9 @@ A campaign is an ordered or branching graph of missions plus persistent progress
 
 Campaign unlocks reveal complexity gradually. Full skirmish mode eventually exposes every legal roster without requiring campaign completion.
 
-A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text), held by a level of its campaign's bundle with the level's map, credits and unlocks, and no opponent deck or objectives list yet.
+A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text), held by a level of its campaign's army file with the level's map, credits and unlocks, and no opponent deck or objectives list yet.
 
-**A campaign is data in its Commander's bundle** (RULE — `bundles/vasse/bundle.json`, `src/bundles/load.ts`, `tests/bundles.test.ts`; bundles are in [`content.md`](../system-design/content.md)). It names its Commander and lists its levels in the order they are played, each with a map by name, the credits a Build Phase starts with, what it unlocks and its mission: the sketch's `playerArmy` and `availableContent`, split between the campaign and its levels. **A level offers everything the levels before it unlocked, and its own unlocks**, in the order first unlocked so that a hotkey never moves, and records what is new in it for the screen between levels to show (not built). The Build Phase offers exactly that. The loader refuses an unlock its bundle cannot see, one an earlier level already gave, and a player Commander that is not the campaign's. PERIMETER, the first level, unlocks every card `common` has, one by one, so that when `common` grows the level keeps what it teaches; the second, the Commander's cadence played in three rounds, has no unlocks of its own. They are called `vasse-test-1` and `vasse-test-2`, the names a route opens them by ([`routing.md`](../system-design/routing.md)), until the campaign has real levels.
+**A campaign is data in its Commander's army** (RULE — `armies/vasse/army.json`, `src/armies/load.ts`, `tests/armies.test.ts`; army files are in [`content.md`](../system-design/content.md)). It names its Commander and lists its levels in the order they are played, each with a map by name, the credits a Build Phase starts with, what it unlocks and its mission: the sketch's `playerArmy` and `availableContent`, split between the campaign and its levels. **A level offers everything the levels before it unlocked, and its own unlocks**, in the order first unlocked so that a hotkey never moves, and records what is new in it for the screen between levels to show (not built). The Build Phase offers exactly that. The loader refuses an unlock its army cannot see, one an earlier level already gave, and a player Commander that is not the campaign's. PERIMETER, the first level, unlocks every card `armies/all` has, one by one, so that when it grows the level keeps what it teaches; the second, the Commander's cadence played in three rounds, has no unlocks of its own. They are called `vasse-test-1` and `vasse-test-2`, the names a route opens them by ([`routing.md`](../system-design/routing.md)), until the campaign has real levels.
 
 ```ts
 interface MissionDefinition {
@@ -87,7 +87,7 @@ The two bands keep the three-worlds rule ([`grid-engine.md`](../system-design/gr
 
 **Custom campaigns.** A mission references armies by id, and an army is a bounded composition validated against its faction's pools ([`commander-armies.md`](commander-armies.md)). A custom campaign is therefore a folder of missions plus the Commander Armies it ships, loaded and validated by the same code as the first-party one. Nothing about that is built or promised now — it is *why* the trigger surface is data and army legality is a load-time check rather than a feature in itself.
 
-**IDEA — PERIMETER's trigger list in this shape**: an intro, a raid in waves across three rounds, and the hold, so the model is concrete rather than described. (The built mission is the first level in `bundles/vasse/bundle.json`.)
+**IDEA — PERIMETER's trigger list in this shape**: an intro, a raid in each of three Battle Rounds, and the hold, so the model is concrete rather than described. (The built mission is the first level in `armies/vasse/army.json`.)
 
 ```ts
 triggers: [
@@ -95,12 +95,12 @@ triggers: [
       { card: "vasse" }, { say: { speaker: "vasse", text: "..." } },
       { focus: { region: "nw-ridge" } },
   ]},
-  { id: "wave-1", when: { pulse: 1, tick: 0 }, do: [
+  { id: "raid-1", when: { pulse: 1, tick: 0 }, do: [
       { spawn: { unit: "unit.ravel.raider", count: 3, at: "nw-ridge", order: { advance: "nexus" } } },
       { card: "corvane" }, { say: { speaker: "corvane", text: "Nice fence, roadmakers. We brought wire cutters." } },
   ]},
-  { id: "wave-2", when: { pulse: 2, tick: 0 }, do: [ { spawn: { /* larger */ } } ] },
-  { id: "wave-3", when: { pulse: 3, tick: 0 }, do: [ { spawn: { /* the push */ } } ] },
+  { id: "raid-2", when: { pulse: 2, tick: 0 }, do: [ { spawn: { /* larger */ } } ] },
+  { id: "raid-3", when: { pulse: 3, tick: 0 }, do: [ { spawn: { /* the push */ } } ] },
   { id: "hold",   when: { event: "pulse.end", pulse: 3 }, do: [ { objective: { id: "hold", state: "complete" } }, { win: true } ] },
 ]
 ```
@@ -310,7 +310,7 @@ The opening image should make the Prime Nexus physically impossible before the p
 
 Campaign opponents are local game AIs by default, not LLMs. They receive a bounded planning view and the same legal action vocabulary available to a human plan validator.
 
-Possible tiers include scripted tutorials, weighted faction heuristics, limited search/rollout using the headless simulator, and mission policies altered by scenario parameters. Hidden plans do not leak into an ordinary policy. A mission may grant an explicit exception only when the player can understand it as a rule or narrative event. How a scripted wave names its plan and its intention, and where an opponent planner could come from, is in [`scripted-opponent.md`](scripted-opponent.md).
+Possible tiers include scripted tutorials, weighted faction heuristics, limited search/rollout using the headless simulator, and mission policies altered by scenario parameters. Hidden plans do not leak into an ordinary policy. A mission may grant an explicit exception only when the player can understand it as a rule or narrative event. How a scripted raid names its plan and its intention, and where an opponent planner could come from, is in [`scripted-opponent.md`](scripted-opponent.md).
 
 LLM dialogue or planning remains a future option, not a requirement for the first campaign.
 

@@ -498,7 +498,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   because **a unit steps aside for a building when the Pulse starts**, so a unit is never drawn over a
   planned building either. Explore Map's card reads any of them: its words, whose it is, its health now.
   (RULE — `tests/mission-loop.test.ts`)
-- ***The incoming wave*** (a named pattern: the owner's "explore the map and see what is coming", and
+- ***The incoming raid*** (a named pattern: the owner's "explore the map and see what is coming", and
   "the enemy units should be visible without nexus powers"): what the next round's triggers bring is
   **always** drawn where it will arrive, in the see-through style at a low alpha in its side's colour: a
   wash under near-full glyphs where colours blend, full strength at 16 colours and in monochrome, so it
@@ -630,7 +630,7 @@ the build stamped on every export — is what makes a pasted export reproducible
   round wants to feel it again — as keyboard navigation's numbers did for the navigation polish round.
   Some stay on purpose: a number that depends on the player's keyboard (the hold window), a comparison he
   asked to make (key releases), a look still being felt (the popup pulse and the Battle Round flash), or
-  a feature whose worth is in doubt (the mission's Next round). The Incoming wave was settled as shown by
+  a feature whose worth is in doubt (the mission's Next round). The Experiment that could hide the incoming raid was settled as shown by
   his words rather than an export ("the enemy units should be visible without nexus powers"). A renamed setting keeps its old name readable in old
   exports. (RULE for the old names — `tests/build-all-settings.test.ts`)
 - **Never copy a tuned number into prose**; point at the setting.
@@ -676,9 +676,10 @@ the build stamped on every export — is what makes a pasted export reproducible
   plain words. For a way back, the action first, then the key (`back [esc]`).
 - **Names**: the menu's acknowledgement is *pressed* in code (`ack`, `PRESSED_LOOK`) and a *blink* on screen; the
   building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
-- **Battle Round or Pulse is still open** (Q68): the start screen says Battle Round; the menu row and the
-  running screen say Pulse until it is settled. A mission's cycles are **rounds** to the player — "round 2
-  of 3", "Next round" — which agrees with Battle Round either way. The words are defined in
+- **Battle Round, never Pulse, on screen** (the owner, 2026-10-04: "Battle Round is better for the player and
+  UI"): the menu row, the start screen, the running screen's lines, the popups and the cards say Battle Round
+  (or the battle); Nexus Pulse is the lore's and the design's word, and the code's. A mission's cycles are
+  **rounds** to the player — "round 2 of 3", "Next round". The words are defined in
   [`grid-engine.md`](grid-engine.md); the "Popup pulse" Experiment is a breath of light on a popup's
   border and has nothing to do with the Nexus Pulse.
 

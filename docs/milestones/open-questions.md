@@ -44,7 +44,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
 | [Q63](#q63--should-the-mouse-wheel-move-the-jump-distance-rather-than-5) | Should the wheel move the jump distance rather than 5? | OPEN | Mario's trackpad |
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
-| [Q68](#q68--what-does-the-player-call-a-nexus-pulse) | What does the player call a Nexus Pulse? | OPEN | Mario, now |
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN | Mario, now |
 
 ## Open
@@ -497,26 +496,6 @@ spoken for: `e`, `n`, `p`, `q`, `u`, `x`, `s`, `r`, `d`. The owner's example use
 
 **Recommendation: A**, unless the owner says he meant letters — in which case C, shown in the row, so the
 digit contract stays a rule. Ask him once whether `b` was an example of a key or a request for letters.
-
-### Q68 — What does the player call a Nexus Pulse?
-
-**Status:** OPEN — decision-ready; registered 2026-09-29 (the owner's feedback on the first Pulse screen).
-
-The confirmation is titled "Battle Round 1", because the owner felt "we may keep the term 'pulse' to
-ourselves and instead call this 'battle round'". He also wrote the menu row as "[s] Start Pulse". The design
-documents still say the player-facing phases are **Build Phase** and **Nexus Pulse** (`AGENTS.md`), so as built
-the popup says Battle Round while the menu row and the running screen's title say Pulse: two names for one
-thing on one screen.
-
-| Option | Cost |
-| --- | --- |
-| A. **As built**: Pulse everywhere but the popup | Two names for one thing; the player learns both |
-| B. **Battle Round everywhere the player reads** (`[s] Start Battle Round`, a `BATTLE ROUND 1` panel title, the Nexus popup's "needed before the battle round"); "Pulse" stays the code, design and lore name | A design change (the phase names above) and a sweep of the interface's words; the lore's Nexus Pulse becomes the in-world name only |
-| C. Both, with a job each: **Battle Round n** is the round of a mission; **Nexus Pulse** is the thing the Nexus does inside it | Two names on purpose, so a player must be taught which is which |
-
-**Recommendation: B**, decided together with the menu reorganisation the owner has announced, because the
-menu row is one of the places the word lives. Until then A stands, and the popup's title and body are data
-(`popupSpec`), so B is a change of words.
 
 ### Q69 — Should units be able to hold, withdraw or head for a place, so a scripted group can follow an order?
 

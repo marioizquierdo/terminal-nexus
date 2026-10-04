@@ -9,7 +9,7 @@ it is done.*
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'` opens round 2, `--at settings` the
   Settings screen, and `--help` lists every route. Watch her whole cadence on the second test level:
   `--at 'campaign?level=vasse-test-2'`, she falls in round 1, round 2 opens on a line saying she is out, and
-  round 3 on her return. The bundles change nothing on screen: PERIMETER offers what it always did, now from
+  round 3 on her return. The army files change nothing on screen: PERIMETER offers what it always did, now from
   data. The second round's intro and the raid's intent are unchanged.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
@@ -22,8 +22,8 @@ it is done.*
   means `auto` and `off` feel the same.
 - **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
-  letter hotkeys for buildings (Q67), whether the player ever reads "Pulse" (Q68), and the exploring click, the
-  wheel step and the light theme's light (Q63; Q62 and Q64 are answered).
+  letter hotkeys for buildings (Q67), and the exploring click, the wheel step and the light theme's light (Q63;
+  Q62 and Q64 are answered).
 - **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
   spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
   loop's and the Barracks's under THE MISSION (Next round, Barracks trains, Troopers a round),
@@ -39,7 +39,7 @@ Small, none blocking.
 - Every unit engages the nearest enemy: `order` has one verb, `advance` (Q69).
 - A new Nexus power is dealt every round (the placeholder draft adds 30 or 2000 credits) on top of the
   credits carried over. Real Nexus powers are Milestone 8's.
-- The incoming wave is a forecast placed against the map without the plan; a building on an arrival's
+- The incoming raid is a forecast placed against the map without the plan; a building on an arrival's
   tile moves it when the round starts.
 - The walk home is a straight glide over whole tiles, with no routing. Watch again replays a Pulse
   already resolved; it must never resolve a new one.
@@ -64,7 +64,7 @@ Small, none blocking.
 - At 16 colours and in monochrome an arriving unit is drawn at full strength (the wash shows only where
   colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
   "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
-- Both of her campaign's levels offer the same cards (PERIMETER unlocks all of `common`, the cadence level
+- Both of her campaign's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
   nothing new), so what a level offers changes nothing on screen yet; it shows when a level unlocks a card of
   its own (the Nexus draft step).
 - PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
@@ -73,11 +73,11 @@ Small, none blocking.
 **From step 8A's third round** ([Mario's notes](../history/feedback/2026-10-04-commander-round-3.md)):
 
 - No card carries rarity, tier and role yet, though the game modes design says every card does from the day
-  it is authored: the bundles' cards are the bench placeholders, and the first step that deals cards from a
+  it is authored: the army files' cards are the bench placeholders, and the first step that deals cards from a
   pool adds the tags.
-- The bundle loader does not check that a Nexus power's line fits a panel row (28 columns at 80 × 24).
-- The units' and buildings' definitions (stats, footprints) are still TypeScript in `src/content`; a bundle
-  names them by id. Moving them into bundles is the next step for content.
+- The army loader does not check that a Nexus power's line fits a panel row (28 columns at 80 × 24).
+- The units' and buildings' definitions (stats, footprints) are still TypeScript in `src/content`; an army
+  names them by id. Moving them into the army files is the next step for content.
 - `--build-phase` and `--spike` stay one more release, as `--at 'campaign?level=vasse-test-1'`.
 - A claude.ai link cannot carry `#at=`; the published page opens a place through a demo's route instead.
 

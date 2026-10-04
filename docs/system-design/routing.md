@@ -42,21 +42,19 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `about` | the title menu's About screen |
 | `campaign?level=vasse-test-1` | PERIMETER's Build Phase, round 1 |
 | `campaign?level=vasse-test-1&round=2` | its round 2 (`&round=3`, its last) |
-| `campaign?level=vasse-test-1&wave=0` | round 1 again, counted as a wave |
 | `campaign?level=vasse-test-2` | the Commander's cadence, the campaign's second test level: Vasse falls in round 1 |
 | `campaign?level=vasse-test-2&round=2` | its round 2, which opens on a line saying she is out |
 | `campaign?level=vasse-test-2&round=3` | its round 3, which opens on her return |
 
 Every level the game can open is a route the same way, `campaign?level=<id>` with each of its rounds: the
-levels are every shipped campaign's, from its bundle ([`content.md`](content.md)). `terminal-nexus --help`
+levels are every shipped campaign's, from its army ([`content.md`](content.md)). `terminal-nexus --help`
 prints the places and the levels from the same table and list, so it never names one the game does not
 have.
 
-**Round and wave.** `round` counts from 1, as the screen counts ("round 2 of 3"), and is the route's own
-word. `wave` counts from 0 and names the same round: `wave=N` is `round=N+1`, on any level. It exists
-because the owner's first route was written `campaign?level=vasse-test-1&wave=0`: a wave is what a
-mission brings during a round, and PERIMETER brings its first in round 1, its second in round 2, its
-third in round 3. A route gives one or the other, never both.
+**Battle Rounds.** `round` counts Battle Rounds from 1, as the screen counts ("round 2 of 3"). The
+owner's first route counted from 0 with another word; he then settled the word (2026-10-04, "let's settle
+in Battle Rounds"), so there is one way to name a round, and any other query name is refused like an
+unknown one.
 
 **A later round is reached as a player who builds nothing reaches it**: the rounds before it are played
 out, the first Nexus power picked each time, with the run's own settings and Experiments (`openRound`,

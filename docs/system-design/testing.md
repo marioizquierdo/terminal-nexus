@@ -83,10 +83,10 @@ intent as timed presses and as press, repeat and release events lands on the sam
 names map to the exact bytes a terminal sends, an unknown name fails loudly, and a click goes through
 the mouse adapter wherever the tile is drawn.
 
-### Content bundles load whole or are refused whole
+### Armies load whole or are refused whole
 
-RULE — `tests/bundles.test.ts`, `tests/levels.test.ts`. The shipped bundles load, and a broken one is refused
-with every problem at once, each naming where: a card, a Commander or an unlock from a bundle it does not
+RULE — `tests/armies.test.ts`, `tests/levels.test.ts`. The shipped armies load, and a broken one is refused
+with every problem at once, each naming where: a card, a Commander or an unlock from an army it does not
 require, a content id that does not exist, a duplicate id, an unlock an earlier level already gave, a mission
 with a bad shape. What a level offers adds up level by level in the order first unlocked, and is what its
 Build Phase offers: the menu, the credits and the Nexus draft. PERIMETER and the cadence level are pinned by

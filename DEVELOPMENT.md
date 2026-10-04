@@ -44,9 +44,8 @@ bun scripts/build-web.mjs                                             # the brow
 
 **A route** names a place in the game the way a web address names a page, without the site: the place,
 then `?` and `name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`,
-`campaign` and `challenge`; a campaign level is `campaign?level=<id>`, with `&round=<n>` counted from 1 as
-the screen counts, or `&wave=<n>` counted from 0 as the raid's waves are (the owner's first route said
-`wave=0`; it is round 1). Quote a route on a command line, since the shell reads `?` and `&` itself. The
+`campaign` and `challenge`; a campaign level is `campaign?level=<id>`, with `&round=<n>` counting Battle
+Rounds from 1 as the screen does. Quote a route on a command line, since the shell reads `?` and `&` itself. The
 same routes serve the game's `--at`, the scripted playtest's `--at`, the browser page's `#at=` and a
 demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
 every problem at once and what exists instead. The grammar and its table, where adding a place is one

@@ -12,7 +12,7 @@ version of the design beyond git.
 - [`game-modes.md`](game-design/game-modes.md) — Campaign and Challenge, and the vocabulary they share.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
 - [`campaigns.md`](game-design/campaigns.md) — missions, the Citizen opening, PERIMETER, cutscenes.
-- [`scripted-opponent.md`](game-design/scripted-opponent.md) — waves, intentions and the Campaign's opponent (working design).
+- [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions and the Campaign's opponent (working design).
 - [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take from each source.
 - [`concept-art/`](game-design/concept-art/README.md) — early concept art and the first prototype captures.
 
