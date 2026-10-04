@@ -427,14 +427,17 @@ export function labelPlace(
     centres.push({ x: her.x + slide, aside: slide })
     if (slide > 0) centres.push({ x: her.x - slide, aside: slide })
   }
-  // What stands where, at each moment the line is shown.
-  const standing = over.map((state) => {
-    const tiles = new Set<string>()
+  // How many of the moments the line is shown at something stands on each tile, counted once for every span.
+  const covered = new Int32Array(grid.width * grid.height)
+  for (const state of over) {
     for (const entity of state.entities) {
-      for (const tile of tilesOf(entity.anchor, registry.get(entity.contentId).footprint)) tiles.add(`${tile.x},${tile.y}`)
+      for (const tile of tilesOf(entity.anchor, registry.get(entity.contentId).footprint)) {
+        if (tile.x < 0 || tile.x >= grid.width || tile.y < 0 || tile.y >= grid.height) continue
+        const index = tile.y * grid.width + tile.x
+        covered[index] = (covered[index] ?? 0) + 1
+      }
     }
-    return tiles
-  })
+  }
   let best: Coord = { x: her.x, y: her.y + (LABEL_ROWS[0] as number) }
   let cheapest = Number.POSITIVE_INFINITY
   for (const row of LABEL_ROWS) {
@@ -445,8 +448,12 @@ export function labelPlace(
       const left = Math.max(within.firstX, Math.min(centre.x - half, within.lastX - width + 1))
       let cost = Math.abs(row) * LABEL_COST.row + (row > 0 ? LABEL_COST.below : 0) + centre.aside * LABEL_COST.aside
       for (let x = left; x < left + width; x += 1) {
-        if (x < 0 || x >= grid.width || grid.tiles[y * grid.width + x] !== "terrain.plain") cost += LABEL_COST.terrain
-        for (const tiles of standing) if (tiles.has(`${x},${y}`)) cost += LABEL_COST.standing
+        if (x < 0 || x >= grid.width) {
+          cost += LABEL_COST.terrain
+          continue
+        }
+        if (grid.tiles[y * grid.width + x] !== "terrain.plain") cost += LABEL_COST.terrain
+        cost += (covered[y * grid.width + x] ?? 0) * LABEL_COST.standing
       }
       if (cost < cheapest) {
         cheapest = cost
