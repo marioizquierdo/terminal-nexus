@@ -220,6 +220,16 @@ than any one feature:
    composition's input and the round loop each took additions from both sides; naming in each prompt which
    hunks the other worker would add kept every conflict a keep-both, resolved in minutes.
 
+## The Commander's third round (2026-10-04)
+
+1. **Write the seam before splitting the work.** Routes and bundles both needed "a level by id, opened at a
+   round". Building that one small module first (`src/cli/levels.ts`, with its tests) and naming it in both
+   prompts let the two workers build on it at once without touching each other's files.
+2. **An address part can hold `&` and `=` of its own.** The browser page once read `#settings=` up to the
+   next `&`, which a route's query or a settings text in `a=1&b=2` form would cut in half. A part now runs
+   to the next part the page knows (`&at=`, `&settings=`, `&keys=`), so links are written as plainly as a
+   command line (`src/web/address.ts`).
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

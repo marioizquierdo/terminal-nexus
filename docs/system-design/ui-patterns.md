@@ -149,6 +149,9 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu
   has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
   (RULE — `tests/menu-about-screen.test.ts`, `tests/menu-campaign-screen.test.ts`)
+- **A title menu row that opens a place names its route** ([`routing.md`](routing.md)), and choosing it
+  follows that route: `--at settings` and pressing Settings open the same frame, and opening at a place
+  leaves its row highlighted for Esc to come back to. (RULE — `tests/route-open.test.ts`)
 - **Two states, and only two**:
   - **highlighted** — an inverse bar across the row, in one colour, only while the menu has the keyboard;
   - **active** — its action is under way: it keeps its own hotkey, turns the hotkey colour, and a single
@@ -657,9 +660,11 @@ the build stamped on every export — is what makes a pasted export reproducible
   never changes for it.
 - **Exports land beside the screen**: the settings and the activity logs each fill a text box with a Copy
   button, so a phone can paste them. (RULE — `tests/build-activity.test.ts`, `tests/web.test.ts`)
-- **Demo buttons open the game where the question is**: `#keys=` and `#settings=` in the address, and
-  buttons for the pull request's demos (`bun scripts/build-web.mjs --demos <file>`; a bad key script
-  fails the build). Each demo names what to try.
+- **Demo buttons open the game where the question is**: `#at=`, `#keys=` and `#settings=` in the address
+  of a local copy, and buttons for the pull request's demos (`bun scripts/build-web.mjs --demos <file>`),
+  each of which may name a route to open at, so a demo reaches a later round without a key script; a bad
+  route or key script fails the build. Each demo names what to try. A claude.ai link cannot carry an
+  address with `=` in it, which is what the demo's route is for.
 
 ## 16. Words
 

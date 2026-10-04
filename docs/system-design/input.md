@@ -187,9 +187,12 @@ command-line flag and a rebuild.
   it to a file beside the settings (RULE — `tests/build-settings.test.ts`).
 - **`--settings "<text>"`** (the terminal game and the scripted playtest) and `#settings=` (the browser
   page) read an export back, skipping an unknown name or a bad value one at a time, so an agent sees
-  exactly what the owner saw. An old export's names are read by the tier each setting is on now: a
-  settled one is skipped quietly, a renamed one is read as its new name (RULE —
-  `tests/build-settings.test.ts`).
+  exactly what the owner saw. Pairs may be separated by spaces, lines or `&`, as a route's query is
+  (`trainEvery=6&reducedMotion=true`), and every on/off setting takes on/off, true/false, yes/no and
+  1/0 — a yes/no one, and one whose values hold an "off" (Key releases' `true` is `auto`; the popup
+  pulse's `false` is 0); a yes word with several "on" values to choose from is skipped, not guessed. An
+  old export's names are read by the tier each setting is on now: a settled one is skipped quietly, a
+  renamed one is read as its new name (RULE — `tests/build-settings.test.ts`).
 
 The title menu's Settings screen has the player settings only. How the popup is drawn is in
 [`ui-patterns.md`](ui-patterns.md).

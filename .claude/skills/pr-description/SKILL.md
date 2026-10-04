@@ -85,8 +85,8 @@ scrolls, press Right to flip it, and tell me which feels better." Mario asked to
 End the section with the export line, so his answer comes back as data rather than a description:
 "When it feels right, press `e` in Settings (**Export settings**) — it is copied to your clipboard and
 saved to `~/.terminal-nexus/settings-export.txt` — and paste it as a comment here." An agent that
-reads an exported block back starts the game with it (`./bin/terminal-nexus.ts --build-phase --settings
-"<text>"`, or `node scripts/playtest.mjs --settings "<text>"`, or `#settings=<url-encoded text>` on
+reads an exported block back starts the game with it (`./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'
+--settings "<text>"`, or `node scripts/playtest.mjs --settings "<text>"`, or `#settings=<url-encoded text>` on
 the browser page) to see what he saw.
 
 **When the question is what happened** — a feel that depends on timing, an interaction that misbehaves

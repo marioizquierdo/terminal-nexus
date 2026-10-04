@@ -16,7 +16,7 @@
   },
   {
     "label": "Vasse falls",
-    "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 18 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens without her, and its Battle Round screen says so. Press d to change her health.",
+    "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 18 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens on a line saying she is out, the camera on your Nexus; Enter again, and its Battle Round screen says so too. Press d to change her health.",
     "at": "campaign?level=vasse-test-1&round=2",
     "keys": "n 1 s s",
     "settings": "commanderHealth=20"

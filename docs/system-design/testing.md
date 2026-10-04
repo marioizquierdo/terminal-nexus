@@ -83,6 +83,13 @@ intent as timed presses and as press, repeat and release events lands on the sam
 names map to the exact bytes a terminal sends, an unknown name fails loudly, and a click goes through
 the mouse adapter wherever the tile is drawn.
 
+### Every route opens where it says
+
+RULE — `tests/route.test.ts`, `tests/route-open.test.ts`. Each route parses to its place or is refused
+with every problem at once; each title menu place opens through the title menu's loop and each level at
+each round through the Build Phase's, on a stand-in terminal; a row and its route draw the same frame; a
+route to round 2 is the screen the keys reach ([`routing.md`](routing.md)).
+
 ### The browser page held to the terminal
 
 RULE — `tests/web.test.ts`. The page must run the terminal's own code, never a copy of it, and four
