@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8A, round 3 — Mario's notes on round 2: navigation by route (`--at`), content bundles with the campaign at the top, and Commanders who die as part of the game.
+**Current step:** 8A, round 4 — Mario's notes on round 3: a building's range and construction territory, a level's target for your troops, Vasse as a hero (an aura and her voice in battle), more Nexus powers for her, Battle Rounds, armies, and a cleanup.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -92,6 +92,24 @@ the same pull request.
 - [x] Commanders die as part of the game: the round one is out opens on a line saying so, and the campaign
       design and the lore teach it in the intro levels rather than saving it for a later mission.
 - [x] The next iteration on intent, the player's own units' targets, is in the backlog.
+
+### Step 8A, round 4 — Range and territory, a target for your troops, Vasse as a hero, and a cleanup
+
+Mario's notes on the third round ([his words](../history/feedback/2026-10-04-commander-round-4.md)). Built on
+the same pull request, by subagents.
+
+- [ ] A building with range shows it on the ghost while it is being placed, quietly; any building with a
+      range can show it the same way.
+- [ ] Construction territory is built: a building may only be placed within the construction radius of the
+      player's other buildings, rooted at the Grid Nexus, and the Build Phase shows where that is.
+- [ ] Each campaign level names the target the player's troops head for; they engage what comes within reach
+      on the way, and the Build Phase says where they are going. Posts wait.
+- [ ] Vasse has a passive aura: the player's units near her take less damage.
+- [ ] Vasse speaks during the Nexus Pulse, behind an Experiment, with a light touch of the effect library.
+- [ ] A pool of Nexus powers for Vasse is designed for the Nexus draft step to build.
+- [ ] "Wave" is gone: Battle Round in the interface, Nexus Pulse in lore and design; a route counts rounds only.
+- [ ] Content bundles are armies: `armies/all` and `armies/vasse`.
+- [ ] A cleanup pass over what this milestone added leaves the code simpler, with behaviour unchanged.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 
