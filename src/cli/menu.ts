@@ -25,7 +25,6 @@ import type { ActivityLog, HostName } from "../log/activity.ts"
 import { composeMenuFrame, MENU_LAYOUT, MENU_SIZE } from "../view/menu.ts"
 import { keysFromChunk } from "../terminal/playback.ts"
 import { gateFrame } from "../view/index.ts"
-import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
 import { chunkText } from "../view/backends/ports.ts"
@@ -417,5 +416,3 @@ export async function runMenu(options: MenuOptions): Promise<number> {
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
-
-export { AnsiBackend }

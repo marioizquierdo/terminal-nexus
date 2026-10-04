@@ -25,7 +25,7 @@ export const CONTRIBUTIONS_TEXT =
   "Feel free to submit issues, PRs, fork, or develop your own mods."
 
 /** What the About screen says, whatever build it is. */
-export const ABOUT_SECTIONS: readonly TextSection[] = [
+const ABOUT_SECTIONS: readonly TextSection[] = [
   {
     heading: "Terminal Nexus",
     text: [

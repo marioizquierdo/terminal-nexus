@@ -43,7 +43,7 @@ const ESC = "\u001b"
 const CLEAR = `${ESC}[2J`
 
 /** The floor the resize gate is measured against: 80 x 24 is the floor and the acceptance target. */
-export const STARTER_MINIMUM = { width: 80, height: 24 } as const
+const FLOOR = { width: 80, height: 24 } as const
 
 /**
  * What an export does besides showing its text, told which export it is (`ExportKind`): the terminal
@@ -131,8 +131,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       : { exportDestination: options.exporter.destination.settings, activityExportDestination: options.exporter.destination.activity }),
   })
   const terminalSize = (): { columns: number; rows: number } => ({
-    columns: stdout.columns ?? STARTER_MINIMUM.width,
-    rows: stdout.rows ?? STARTER_MINIMUM.height,
+    columns: stdout.columns ?? FLOOR.width,
+    rows: stdout.rows ?? FLOOR.height,
   })
   // The first line of a playtest's story: which screen, from which build, where, and at what size.
   let loggedSize = terminalSize()
@@ -297,7 +297,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     const raid = gated ? undefined : build.raid()
     const frame =
       gated || live === null
-        ? gateFrame(size.columns, size.rows, STARTER_MINIMUM)
+        ? gateFrame(size.columns, size.rows, FLOOR)
         : composeBuildFrame(
             {
               // This round's: what stands on the map changes from round to round.

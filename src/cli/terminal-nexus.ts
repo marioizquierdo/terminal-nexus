@@ -182,7 +182,7 @@ export async function main(argv: readonly string[]): Promise<number> {
 }
 
 /** Where an export is written: beside the settings file, so it is found where settings already are. */
-export function exportPath(): string {
+function exportPath(): string {
   return join(dirname(defaultSettingsPath()), "settings-export.txt")
 }
 
@@ -200,7 +200,7 @@ function currentCommit(): string | undefined {
 }
 
 /** The Activity Logs' export file, beside the settings' export. */
-export const ACTIVITY_EXPORT_FILE = "activity-export.txt"
+const ACTIVITY_EXPORT_FILE = "activity-export.txt"
 
 /**
  * The terminal's export: the text to the clipboard through OSC 52 — the escape sequence iTerm2 and

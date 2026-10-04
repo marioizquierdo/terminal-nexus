@@ -100,7 +100,6 @@ export type BuildPlaytest = Readonly<{
   ended: Readonly<{ by: "quit"; atStep: number; skipped: number }> | null
 }>
 
-export { UNTIMED_GAP_MS } from "./deliver.ts"
 
 /** This step's cursor key's move as the summary prints it, `tap 2` — `null` when the step made none:
  *  another key, a click or a wait (every cursor key's move is a new record, so an unchanged one is the
