@@ -20,6 +20,15 @@ campaign?level=vasse-test-1&round=3
 - the browser playtest page opens `#at=<route>`, its mode buttons open their routes, and a demo may carry
   an `at`.
 
+**A route is read with the rest of a launch.** Where a run opens, the settings text it starts with and the keys
+it plays first are read once, the same way, whichever way the run was started — the game's `--at`, `--settings`
+and `--keys`, the scripted playtest's same three, the page's `#at=`, `#settings=` and `#keys=`, a demo's `at`,
+`settings` and `keys` (`readLaunch`, `src/cli/launch.ts`). Each only finds the texts and says where they came
+from. What a host does with a part it cannot read is its own: the game and the scripted playtest refuse the
+launch, the page opens the default level's first round and says why under the screen, the build refuses the
+demo. Where a launch opens when it names no place is the host's too: the title menu for the game, the default
+level's first round elsewhere. (RULE — `tests/launch.test.ts`)
+
 How a route is read (`parseRoute`, `src/cli/route.ts`):
 
 - An empty route is `menu`. A leading or trailing `/` is an address's habit and is ignored.
@@ -51,10 +60,10 @@ levels are every shipped campaign's, from its army ([`content.md`](content.md)).
 prints the places and the levels from the same table and list, so it never names one the game does not
 have.
 
-**Battle Rounds.** `round` counts Battle Rounds from 1, as the screen counts ("round 2 of 3"). The
-owner's first route counted from 0 with another word; he then settled the word (2026-10-04, "let's settle
-in Battle Rounds"), so there is one way to name a round, and any other query name is refused like an
-unknown one.
+**Battle Rounds.** `round` counts Battle Rounds from 1, as the screen counts ("round 2 of 3"), and is the
+only way a route names one: the owner's first route counted from 0 with another word, and he then settled
+the word (2026-10-04, "let's settle in Battle Rounds"). A route that says anything else is refused like any
+query name the place does not read, naming `level` and `round` as what `campaign` reads.
 
 **A later round is reached as a player who builds nothing reaches it**: the rounds before it are played
 out, the first Nexus power picked each time, with the run's own settings and Experiments (`openRound`,
@@ -66,19 +75,23 @@ wait and `Enter` reach, every time (RULE — `tests/route-open.test.ts`).
 `parseRoute` turns a route into a **destination**: a place on the title menu, or a level at a round.
 What happens next depends on who asked.
 
-- **The game** (`src/cli/terminal-nexus.ts`). A title menu place runs the title menu's loop opened at it
-  (`runMenu`'s `at`); a level runs the Build Phase's loop on that level at that round (`runBuildPhase`'s
-  `level` and `round`), with everything the old flag had: the settings store, the export, `--settings`,
-  `--keys` and `--scroll-margin`. `--keys` and `--scroll-margin` on a title menu route are refused, since
-  nothing there reads them.
+- **The game** (`src/cli/terminal-nexus.ts`). A title menu place runs the title menu's loop, a level the
+  Build Phase's loop at that round; both take the destination as `at`, with the settings store, the export,
+  `--settings` and, on a campaign level, `--keys` and `--scroll-margin`. `--keys` and `--scroll-margin` on a
+  title menu route are refused, since nothing there reads them; `--settings` there applies its player settings
+  to the menu. **An argument the game does not read is refused before any screen**, so a command pasted from
+  an older note never opens somewhere it did not mean; the removed `--build-phase` and `--spike` say that
+  `--at 'campaign?level=vasse-test-1'` replaced them. (RULE — `tests/terminal-nexus-cli.test.ts`)
 - **The title menu** (`src/cli/menu.ts`). Each row that opens a place names its route. Choosing the row
   and opening at its route go through one `follow`, so they can never lead to two different screens
   (RULE — `tests/route-open.test.ts`: the same frame either way). Opening at a place leaves its row
   highlighted, so Esc comes back to it as it would for a player who chose it. Exit names no route: it
-  opens no place.
-- **The scripted playtest** (`playtestOpening`, `src/playtest/build.ts`). A level at a round, with no
-  keys needed to walk there; a title menu route is refused with a message saying so, until the title
-  menu has a scripted playtest of its own.
+  opens no place. Each place's screen and the line it says there (Campaign's placeholder, Challenge's
+  notice) is one entry in the menu's `PLACE_SCREENS`; Back and Esc follow the menu's own route.
+- **The scripted playtest** (`playtestOpening`, `src/playtest/build.ts`) reads its `--at`, `--settings` and
+  `--keys` (or `--file`) as a launch: a level at a round, PERIMETER's first unless given, with no keys needed
+  to walk there. A title menu route is refused with a message saying so, until the title menu has a scripted
+  playtest of its own, and so is a key that does not exist.
 - **The browser page** (`src/web/host.ts`): section 6.
 
 ## 4. Adding a place
@@ -88,7 +101,8 @@ it reads and what each means, where its query leads, and the routes it names. `-
 and the test that opens every route all read that entry.
 
 A place that opens a screen nothing opens yet also needs that screen to follow it: a new title menu
-screen is a row naming its route and a line in the menu's `PLACE_SCREENS`; a new kind of destination makes
+screen is a row naming its route and a line in the menu's `PLACE_SCREENS` (its screen, and what it says
+there); a new kind of destination makes
 the type checker name every place that must learn it — the game's dispatch, the browser page, the
 scripted playtest. A new campaign level needs no entry here at all: `campaign?level=<id>` reads the levels
 the game can open (`src/cli/levels.ts`).
@@ -105,9 +119,6 @@ default place beside the settings (a file in `~/.terminal-nexus/`, next to `sett
 title menu only when there is no saved game. `--at` stays the way to go anywhere else, saved game or not;
 where a saved game resumes is itself a place a route can name. Nothing saves yet.
 
-`--build-phase` and its older name `--spike` are `--at campaign?level=vasse-test-1` for one more release,
-so pasted commands keep working; `--at` wins when both are given.
-
 ## 6. The browser page's links
 
 The page reads its address after `#` (`src/web/address.ts`):
@@ -123,6 +134,9 @@ The page reads its address after `#` (`src/web/address.ts`):
 `tests/web.test.ts`). Any part may also be percent-encoded. Without `#at=` the page opens PERIMETER's
 first round, as it always has, so `#settings=` and `#keys=` alone still work; a route that is not a place
 opens that same default, with the problems written under the screen.
+
+The page reads its address as a launch (`src/cli/launch.ts`): its parts are the launch's, so a part added
+there is one the address reads.
 
 The mode buttons that are game screens open their routes (Menu is `menu`, Build Phase is
 `campaign?level=vasse-test-1`); the two Pulse replays are the engine tool's battles, not places in the

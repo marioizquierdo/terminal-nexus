@@ -78,7 +78,6 @@ Small, none blocking.
 - The army loader does not check that a Nexus power's line fits a panel row (28 columns at 80 × 24).
 - The units' and buildings' definitions (stats, footprints) are still TypeScript in `src/content`; an army
   names them by id. Moving them into the army files is the next step for content.
-- `--build-phase` and `--spike` stay one more release, as `--at 'campaign?level=vasse-test-1'`.
 - A claude.ai link cannot carry `#at=`; the published page opens a place through a demo's route instead.
 
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
@@ -111,7 +110,6 @@ Small, none blocking.
 | Item | Why | Size |
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
-| One launch-options module for the command line and the page's `#at=` / `#settings=` / `#keys=` | A new option can reach one and not the other | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet

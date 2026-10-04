@@ -109,7 +109,10 @@ the same pull request, by subagents.
 - [ ] A pool of Nexus powers for Vasse is designed for the Nexus draft step to build.
 - [ ] "Wave" is gone: Battle Round in the interface, Nexus Pulse in lore and design; a route counts rounds only.
 - [ ] Content bundles are armies: `armies/all` and `armies/vasse`.
-- [ ] A cleanup pass over what this milestone added leaves the code simpler, with behaviour unchanged.
+- [x] A cleanup pass over what this milestone added leaves the code simpler, with behaviour unchanged: `--build-phase`
+      and `--spike` gone (an argument the game does not read is refused, naming what replaced them), one
+      launch-options module for the game, the scripted playtest, the page and its demos, one default level, the
+      title menu's places in one table.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

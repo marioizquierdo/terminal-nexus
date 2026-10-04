@@ -75,7 +75,7 @@ instant. A renderer that leaves the terminal in raw mode is a reason to reject i
 
 ### Keyboard, mouse and driver parity
 
-RULE — `tests/menu-adapters.test.ts`, `tests/key-events.test.ts`, `tests/playtest.test.ts`,
+RULE — `tests/title-menu-adapters.test.ts`, `tests/key-events.test.ts`, `tests/playtest.test.ts`,
 `tests/build-motion.test.ts`. Keyboard, mouse and the scripted driver must reach the identical named
 command from *raw input*: every case starts from a byte or an SGR mouse sequence, never a hand-built
 command, and mouse coordinates come from the same layout functions the composer draws with. The same
@@ -97,7 +97,10 @@ a hash of each, so moving them into data changed nothing they play ([`content.md
 RULE — `tests/route.test.ts`, `tests/route-open.test.ts`. Each route parses to its place or is refused
 with every problem at once; each title menu place opens through the title menu's loop and each level at
 each round through the Build Phase's, on a stand-in terminal; a row and its route draw the same frame; a
-route to round 2 is the screen the keys reach ([`routing.md`](routing.md)).
+route to round 2 is the screen the keys reach ([`routing.md`](routing.md)). A route, a settings text and a
+key script are read as one launch, once, for the game, the scripted playtest, the page's address and a demo:
+what cannot be read is said part by part and left out, a route that is not a place opens the host's own
+start, and every launch part reaches the game's argument parser as an option (RULE — `tests/launch.test.ts`).
 
 ### The browser page held to the terminal
 

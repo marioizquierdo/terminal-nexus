@@ -97,7 +97,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 
 - **Every action is a named command**; keyboard, mouse and a script are adapters onto one vocabulary
   ([`input.md`](input.md)), and tests drive the real adapters with raw keys and clicks. A hotkey that is
-  not displayed does not exist. (RULE — `tests/build-phase.test.ts`, `tests/menu-adapters.test.ts`)
+  not displayed does not exist. (RULE — `tests/build-phase.test.ts`, `tests/title-menu-adapters.test.ts`)
 - **A click activates what it lands on**, from any focus: a building's row arms it, `[n] Nexus` opens its
   popup, `[e] Explore Map` opens it. What a row click starts comes back to the menu.
   (RULE — `tests/build-focus.test.ts`)
@@ -142,13 +142,13 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   the menu incomplete. The same holds for a popup's options; a test walks the whole menu.
   (RULE — `tests/build-start.test.ts`)
 - **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket carries it in monochrome.
-  (RULE — `tests/menu-view.test.ts`, `tests/build-menu.test.ts`)
+  (RULE — `tests/title-menu-view.test.ts`, `tests/build-menu.test.ts`)
 - **A title-menu screen that only has words to show** — Campaign's placeholder, About — has one row,
   `[1] Back`, where the rows start, with its words below it: headings bold, text wrapped at words to a
   comfortable reading width, a quiet line (the build) dimmed. Esc goes back too, and the highlight comes
   back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu
   has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
-  (RULE — `tests/menu-about-screen.test.ts`, `tests/menu-campaign-screen.test.ts`)
+  (RULE — `tests/title-menu-about-screen.test.ts`, `tests/title-menu-campaign-screen.test.ts`)
 - **A title menu row that opens a place names its route** ([`routing.md`](routing.md)), and choosing it
   follows that route: `--at settings` and pressing Settings open the same frame, and opening at a place
   leaves its row highlighted for Esc to come back to. (RULE — `tests/route-open.test.ts`)
@@ -184,7 +184,7 @@ title screen's menu.
   map*): quick taps speed up by counting, a held arrow keeps the game's pace, clamped at the ends. The
   title screen's menu stops and jumps but does not count or keep a pace: its loop reads no clock. One
   key classifier serves every list (`src/terminal/list-keys.ts`).
-  (RULE — `tests/build-lists.test.ts`, `tests/menu-list.test.ts`)
+  (RULE — `tests/build-lists.test.ts`, `tests/title-menu-list.test.ts`)
 - **Shift+Up/Down, PageUp/PageDown and Home/End go to the first or last row.**
   (RULE — `tests/build-lists.test.ts`)
 - **Rows that are not choices are skipped**: blank lines, the credits line, section headings.

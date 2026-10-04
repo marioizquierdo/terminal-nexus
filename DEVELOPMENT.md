@@ -33,7 +33,7 @@ npm run maps                                                          # every ch
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
 ./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, campaign
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'                   # PERIMETER's Build Phase (--build-phase still works)
+./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'                   # PERIMETER's Build Phase
 ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'           # its round 3, no keys to walk there
 ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
 ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings 'trainEvery=6&reducedMotion=true'
@@ -49,10 +49,11 @@ Rounds from 1 as the screen does. Quote a route on a command line, since the she
 same routes serve the game's `--at`, the scripted playtest's `--at`, the browser page's `#at=` and a
 demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
 every problem at once and what exists instead. The grammar and its table, where adding a place is one
-entry, are `src/cli/route.ts`. A bare launch opens the title menu for now; once the game can save, it is
-meant to continue the saved game from beside the settings in `~/.terminal-nexus/`, and `--at` stays the
-way to go anywhere else. `--build-phase` and `--spike` are `--at 'campaign?level=vasse-test-1'` for one
-more release.
+entry, are `src/cli/route.ts`; a route is read with the settings text and the key script as one launch, the
+same way for all four (`src/cli/launch.ts`). A bare launch opens the title menu for now; once the game can
+save, it is meant to continue the saved game from beside the settings in `~/.terminal-nexus/`, and `--at`
+stays the way to go anywhere else. An argument the game does not read is refused, and the removed
+`--build-phase` says that `--at 'campaign?level=vasse-test-1'` replaced it.
 
 `watch` options on either program: `--capability monochrome|color16|color256|truecolor`,
 `--theme dark|light`, `--glyphs ascii|unicode`, `--tile-width 1|2` (2 needs 128 columns),

@@ -125,9 +125,6 @@ Ordered by payoff over cost. None is urgent; each is a candidate for a small ste
    the host declare which settings it exposes.
 6. **Box-drawing in a browser uses the phone's own font**, so the map edge's joins may not tile. A
    canvas backend that draws line and block glyphs itself (as a terminal does) fixes it.
-7. **One launch-options module** for `--settings`, `--keys` and friends, shared by the command line and
-   the page's address, so a new option cannot reach one and not the other (`--keys` was once silently
-   dropped).
 
 ## 6. Platform ideas — IDEA
 
@@ -149,6 +146,6 @@ Nothing here is built, and nothing depends on it.
 - Do not give the browser page a game loop of its own; it is a way to *see* the terminal's loops.
   RULE — `tests/web.test.ts`.
 - Do not let a host reach into the reducer or add commands: hosts translate, the vocabulary stays one.
-  RULE — `tests/menu-adapters.test.ts`, `tests/build-motion.test.ts` ("keys and the untimed arrows the
+  RULE — `tests/title-menu-adapters.test.ts`, `tests/build-motion.test.ts` ("keys and the untimed arrows the
   web page and scripts send still land on the same state").
 - Do not require the enhanced path (releases, a pointer, colour); the plain one is the floor.

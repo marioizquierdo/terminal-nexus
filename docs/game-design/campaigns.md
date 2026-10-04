@@ -279,7 +279,7 @@ Round counts below are **design estimates for pacing, not contracts**. A round c
 
 **Save slots.** A player may keep more than one campaign in progress and start another at any time, so campaign progress is **per slot**, each slot naming its Commander. That is more than the flat checked-in unlock list of the open question about the shape of an unlock record (Q31) assumes, so the campaign menu has to design the difference rather than discover it.
 
-**RULE — there is no upfront Commander-choice screen** (`src/cli/menu.ts`, whose top-level menu has no Commander choice; `tests/menu-campaign-screen.test.ts`). The start is deliberately controlled: Vasse first, then Averno and Dob Hunter once the first mission is done. A new player starts Vasse's mission 1 directly — it is the whole first-time experience. Completing it (its main goal, not the bonus goal) unlocks Averno and Dob Hunter as two new rows on the campaign menu, each starting *their own* mission 1 on the same map. The choice belongs to the campaign menu as an unlock like any other, not to the top-level menu.
+**RULE — there is no upfront Commander-choice screen** (`src/cli/menu.ts`, whose top-level menu has no Commander choice; `tests/title-menu-campaign-screen.test.ts`). The start is deliberately controlled: Vasse first, then Averno and Dob Hunter once the first mission is done. A new player starts Vasse's mission 1 directly — it is the whole first-time experience. Completing it (its main goal, not the bonus goal) unlocks Averno and Dob Hunter as two new rows on the campaign menu, each starting *their own* mission 1 on the same map. The choice belongs to the campaign menu as an unlock like any other, not to the top-level menu.
 
 ## 5. Cutscenes
 
