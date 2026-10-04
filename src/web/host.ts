@@ -13,15 +13,18 @@
 //               settings' in one box, the Activity Logs' in another
 //   import   -> `#settings=<text>` in the page's address, or that same text box
 //   --at     -> `#at=<route>` in the page's address (`src/web/address.ts`), a mode button's route, or a
-//               demo's `at`: the same routes the terminal's `--at` takes (`src/cli/route.ts`)
+//               demo's `at`: the same routes the terminal's `--at` takes (`src/cli/route.ts`), read with the
+//               settings text and the keys as one launch, the way the terminal reads them (`src/cli/launch.ts`)
 //   errors   -> the page's own uncaught errors, into the Activity Logs (`session.error`, where "page")
 //
 // Built into one self-contained HTML file by `scripts/build-web.mjs`.
 
 import { runMenu } from "../cli/menu.ts"
-import type { PlaytestStep } from "../playtest/keys.ts"
 import { runBuildPhase } from "../cli/build-phase.ts"
-import { DEFAULT_LEVEL_ROUTE, RouteError, parseRoute } from "../cli/route.ts"
+import type { Exporter } from "../cli/build-phase.ts"
+import { readLaunch } from "../cli/launch.ts"
+import type { LaunchPart } from "../cli/launch.ts"
+import { DEFAULT_LEVEL_ROUTE, formatRoute, parseRoute } from "../cli/route.ts"
 import type { Destination } from "../cli/route.ts"
 import { readAddress } from "./address.ts"
 import type { Demo } from "./demos.ts"
@@ -38,7 +41,7 @@ import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import { CanvasBackend } from "../view/backends/canvas.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../build/mouse.ts"
-import { keyBytes, parseKeyScript } from "../playtest/keys.ts"
+import { keyBytes } from "../playtest/keys.ts"
 import { KEY_BAR, StandInKeyboard, mouseBytes, withShift } from "./keys.ts"
 import { activity } from "../log/activity.ts"
 import grandBattle from "../../scenarios/grand-battle.map.json" with { type: "json" }
@@ -54,31 +57,18 @@ declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: 
  */
 declare const __TN_DEMOS__: readonly Demo[]
 
+/** The engine tool's two Pulse replays a mode button opens: battles, not places in the game. */
 type PulseName = "pulse-grand" | "pulse-mirror"
 
-/**
- * What a mode button, a demo or the address opens: a place in the game by its route — a title menu screen, or a
- * campaign level at a round — or one of the engine tool's two Pulse replays, which are not places in the game.
- */
-type Opening = Readonly<{ kind: "route"; destination: Destination }> | Readonly<{ kind: "pulse"; pulse: PulseName }>
+/** Which screen loop runs: the title menu's, a campaign level's Build Phase, or a Pulse replay. */
+type Screen = "menu" | "build" | PulseName
+
+/** The screen loop a place in the game runs in. */
+const screenAt = (destination: Destination): Screen => (destination.kind === "title" ? "menu" : "build")
 
 const PULSES: Readonly<Record<PulseName, ScenarioDefinition>> = {
   "pulse-grand": grandBattle as unknown as ScenarioDefinition,
   "pulse-mirror": citizensVersusRavels as unknown as ScenarioDefinition,
-}
-
-/** What the page opens when nothing says otherwise: the default level's first round. */
-const DEFAULT_OPENING: Opening = { kind: "route", destination: parseRoute(DEFAULT_LEVEL_ROUTE) }
-
-/** Where `route` leads — or, for one that is not a place in the game, the default opening, with why (`where`
- *  names what asked: "#at", a demo). */
-function routeOpening(route: string, where: string): Readonly<{ opening: Opening; notes: readonly string[] }> {
-  try {
-    return { opening: { kind: "route", destination: parseRoute(route) }, notes: [] }
-  } catch (error) {
-    if (!(error instanceof RouteError)) throw error
-    return { opening: DEFAULT_OPENING, notes: [`${where}: ${error.message}`] }
-  }
 }
 
 // --- The stand-in terminal ------------------------------------------------------------------------
@@ -176,16 +166,15 @@ let backend: CanvasBackend | null = null
 let running: Promise<number> | null = null
 let switching = false
 let shift = false
-let opening: Opening = DEFAULT_OPENING
+/** The screen running, and the route it opened at when it is a place in the game: the key bar shows the
+ *  screen's keys, and the settings box's button starts a campaign level over at the same round. */
+let shown: Readonly<{ screen: Screen; route?: string }> = { screen: "build" }
 /**
- * Settings text to start a campaign level with — from `#settings=` in the address, or the text box's
+ * Settings text to start a campaign level with — from `#settings=` in the address, a demo, or the text box's
  * "Start the Build Phase with these". Its player settings apply for this visit without being saved,
  * as `--settings` does in a terminal; changing one in the game's Settings saves them all.
  */
 let imported: string | null = null
-
-/** The demo a button just started, until the screen it opens has read its keys. */
-let demo: Demo | null = null
 
 /** A tab never exits; a screen that ends just says so, and a mode button starts another. */
 const host: Host = {
@@ -197,14 +186,37 @@ const host: Host = {
   },
 }
 
-/** Which screen loop an opening runs: the title menu's, a campaign level's Build Phase, or a Pulse replay. */
-function screenOf(next: Opening): "menu" | "build" | PulseName {
-  if (next.kind === "pulse") return next.pulse
-  return next.destination.kind === "title" ? "menu" : "build"
+/** What every screen loop is handed: the stand-in terminal, and the page as the program around it. */
+const pageTerminal = { stdout: terminal, stdin: keyboard, host } as const
+
+/** The page's export: the clipboard, and the text box under the screen that is the export's own. */
+const exporter: Exporter = {
+  destination: {
+    settings: "Copied to the clipboard, and shown in the settings text box under the screen.",
+    activity: "Copied to the clipboard, and shown in the activity logs box under the screen.",
+  },
+  export: (text, kind) => {
+    // Each export into its own box, opened so it is seen.
+    const activityExport = kind === "activity"
+    const area = activityExport ? activityText : settingsText
+    const box = activityExport ? activityBox : settingsBox
+    const name = activityExport ? "activity logs" : "settings text"
+    area.value = text
+    box.open = true
+    // Inside the key press or tap that asked for it, so the browser allows the write; a refusal
+    // leaves the text box, which is why it is filled first.
+    return navigator.clipboard?.writeText(text).catch(() => {
+      status.textContent = `The clipboard refused the export: copy it from the ${name} box.`
+    })
+  },
 }
 
-/** `notes`: what to say under the screen first — a route that could not be followed, say. */
-async function start(next: Opening, notes: readonly string[] = []): Promise<void> {
+/**
+ * Stops the screen running, if any, and shows `screen` as the one starting: its mode button pressed — Menu for
+ * any place on the title menu, Build Phase for any campaign level and round, a replay for itself — its keys on
+ * the bar, and `notes` under the screen. `route` is where a place in the game opened.
+ */
+async function switchTo(screen: Screen, route: string | null, notes: readonly string[]): Promise<void> {
   if (running !== null) {
     // Ctrl+C is every screen's immediate quit, through its own disposer — the Build Phase's `q`
     // asks first, so it cannot be what switches screens.
@@ -213,41 +225,22 @@ async function start(next: Opening, notes: readonly string[] = []): Promise<void
     await running
     switching = false
   }
-  opening = next
-  const screen = screenOf(next)
+  shown = route === null ? { screen } : { screen, route }
   document.body.dataset["mode"] = screen
-  // A mode button shows pressed while its screen loop runs: Menu for any place on the title menu, Build Phase
-  // for any campaign level and round, a replay for itself.
   for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at], [data-pulse]")) {
     const at = button.dataset["at"]
-    const own = at === undefined ? button.dataset["pulse"] : screenOf({ kind: "route", destination: parseRoute(at) })
+    const own = at === undefined ? button.dataset["pulse"] : screenAt(parseRoute(at))
     button.setAttribute("aria-pressed", String(own === screen))
   }
   renderKeyBar()
-  const said: string[] = [...notes]
-  status.textContent = said.join(" · ")
+  status.textContent = notes.join(" · ")
+}
 
-  const level = next.kind === "route" && next.destination.kind === "level" ? next.destination : null
-  const saved: Settings = (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
-  // The settings text reaches a campaign level only; the menu opens on what is saved.
-  const importing = importSettings(level !== null ? (imported ?? undefined) : undefined, saved)
-  if (importing.ignored.length > 0) said.push(`Settings text: ignored ${importing.ignored.join(", ")}`)
-  const chosen = demo
-  demo = null
-  // A demo's own keys, or none; otherwise the address's. A key script plays on a campaign level only.
-  const startScript = level === null ? null : chosen !== null ? (chosen.keys ?? null) : (readAddress(window.location.hash).keys ?? null)
-  let startKeys: PlaytestStep[] | null = null
-  if (startScript !== null) {
-    try {
-      startKeys = parseKeyScript(startScript)
-    } catch (error) {
-      said.push(`#keys: ${error instanceof Error ? error.message : String(error)}`)
-    }
-  }
-  const { settings, experiments } = importing
-  // What to try, after anything the demo's keys or settings could not use, never over it.
-  if (chosen !== null) said.push(`Try: ${chosen.try}`)
-  status.textContent = said.join(" · ")
+/** The settings saved in this browser, or a first visit's, in truecolour: a browser always has it. */
+const savedSettings = async (): Promise<Settings> => (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
+
+/** A canvas for the screen starting, in its settings' colours. */
+function canvasFor(settings: Settings): CanvasBackend {
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,
@@ -255,73 +248,94 @@ async function start(next: Opening, notes: readonly string[] = []): Promise<void
     fit: () => ({ width: stage.clientWidth, height: stage.clientHeight }),
     pixelRatio: () => window.devicePixelRatio || 1,
   })
-  const common = { backend, stdout: terminal, stdin: keyboard, host } as const
-  if (next.kind === "pulse") {
-    const scenario = PULSES[next.pulse]
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-    const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
-    running = watchPulse({
-      ...common,
-      timeline,
-      capability: settings.capability,
-      theme: settings.theme,
-      tileWidth: 1,
-      speed: 1,
-      presentation: { ...DEFAULT_PRESENTATION, reducedMotion: settings.reducedMotion, glyphPack: settings.glyphPack },
-    })
-  } else if (next.destination.kind === "title") {
-    running = runMenu({ ...common, settings, settingsStore, at: next.destination, buildId: __TN_BUILD__.commit, hostName: "web" })
-  } else {
-    running = runBuildPhase({
-      ...common,
-      settings,
-      settingsStore,
-      level: next.destination.level,
-      round: next.destination.round,
-      buildId: __TN_BUILD__.commit,
-      experiments,
-      ...(startKeys === null ? {} : { startKeys }),
-      hostName: "web",
-      exporter: {
-        destination: {
-          settings: "Copied to the clipboard, and shown in the settings text box under the screen.",
-          activity: "Copied to the clipboard, and shown in the activity logs box under the screen.",
-        },
-        export: (text, kind) => {
-          // Each export into its own box, opened so it is seen.
-          const activityExport = kind === "activity"
-          const area = activityExport ? activityText : settingsText
-          const box = activityExport ? activityBox : settingsBox
-          const name = activityExport ? "activity logs" : "settings text"
-          area.value = text
-          box.open = true
-          // Inside the key press or tap that asked for it, so the browser allows the write; a refusal
-          // leaves the text box, which is why it is filled first.
-          return navigator.clipboard?.writeText(text).catch(() => {
-            status.textContent = `The clipboard refused the export: copy it from the ${name} box.`
-          })
-        },
-      },
-    })
-  }
-  const mine = running
-  void mine.then(
+  return backend
+}
+
+/** `loop` as the screen running, said under the screen when it ends — or, for one that could not open at all (a
+ *  round its level's mission ends before), why. */
+function track(loop: Promise<number>): void {
+  running = loop
+  void loop.then(
     () => {
-      if (running !== mine) return
+      if (running !== loop) return
       running = null
       if (!switching) status.textContent = "That screen has ended. Pick one above to start again."
     },
-    // A screen that could not open at all — a round its level's mission ends before — says why, here.
     (error: unknown) => {
-      if (running !== mine) return
+      if (running !== loop) return
       running = null
       status.textContent = `That screen could not open: ${error instanceof Error ? error.message : String(error)}`
     },
   )
 }
 
+/** One of the engine tool's two Pulse replays, in the saved settings. */
+async function startPulse(pulse: PulseName): Promise<void> {
+  await switchTo(pulse, null, [])
+  const settings = await savedSettings()
+  const scenario = PULSES[pulse]
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+  track(
+    watchPulse({
+      ...pageTerminal,
+      backend: canvasFor(settings),
+      timeline,
+      capability: settings.capability,
+      theme: settings.theme,
+      tileWidth: 1,
+      speed: 1,
+      presentation: { ...DEFAULT_PRESENTATION, reducedMotion: settings.reducedMotion, glyphPack: settings.glyphPack },
+    }),
+  )
+}
+
+/**
+ * A place in the game, read as a launch, the way the terminal reads one (`src/cli/launch.ts`): the route `at`,
+ * which came from where `from` says; the settings text the page holds; and `demo`'s own keys or, without a demo,
+ * the address's. A route that is not a place opens the default level's first round, and the first note says why.
+ */
+async function startAt(at: string | undefined, from: string, demo?: Demo): Promise<void> {
+  const { launch, problems } = readLaunch(
+    { at, settings: imported ?? undefined, keys: demo !== undefined ? demo.keys : readAddress(window.location.hash).keys },
+    DEFAULT_LEVEL_ROUTE,
+  )
+  const { destination } = launch
+  const said = (part: LaunchPart, where: string): string[] =>
+    problems.filter((problem) => problem.part === part).map(({ error }) => `${where}: ${error.message}`)
+  const notes = said("at", from)
+  await switchTo(screenAt(destination), formatRoute(destination), notes)
+
+  const saved = await savedSettings()
+  // The settings text and the keys reach a campaign level only, and so does what was wrong with them; the menu
+  // opens on what is saved.
+  const onLevel = destination.kind === "level"
+  const { settings, experiments, ignored } = importSettings(onLevel ? launch.settings : undefined, saved)
+  if (ignored.length > 0) notes.push(`Settings text: ignored ${ignored.join(", ")}`)
+  if (onLevel) notes.push(...said("keys", "#keys"))
+  // What to try, after anything the demo's keys or settings could not use, never over it.
+  if (demo !== undefined) notes.push(`Try: ${demo.try}`)
+  status.textContent = notes.join(" · ")
+  const common = { ...pageTerminal, backend: canvasFor(settings), settings, settingsStore, buildId: __TN_BUILD__.commit, hostName: "web" } as const
+  if (destination.kind === "title") {
+    track(runMenu({ ...common, at: destination }))
+    return
+  }
+  const { keys } = launch
+  track(
+    runBuildPhase({
+      ...common,
+      level: destination.level,
+      round: destination.round,
+      experiments,
+      ...(keys === undefined ? {} : { startKeys: keys }),
+      exporter,
+    }),
+  )
+}
+
 function renderKeyBar(): void {
-  const screen = screenOf(opening)
+  const { screen } = shown
   const own = screen === "menu" ? KEY_BAR.menu : screen === "build" ? KEY_BAR.build : KEY_BAR.pulse
   const keys = [...KEY_BAR.common, ...own]
   keyBar.replaceChildren()
@@ -416,13 +430,10 @@ canvas.addEventListener(
 
 // The mode buttons that are game screens open their routes; the replays are the engine tool's battles.
 for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at]")) {
-  button.addEventListener("click", () => {
-    const { opening: next, notes } = routeOpening(button.dataset["at"] ?? "", "this button")
-    void start(next, notes)
-  })
+  button.addEventListener("click", () => void startAt(button.dataset["at"], "this button"))
 }
 for (const button of document.querySelectorAll<HTMLButtonElement>("[data-pulse]")) {
-  button.addEventListener("click", () => void start({ kind: "pulse", pulse: button.dataset["pulse"] as PulseName }))
+  button.addEventListener("click", () => void startPulse(button.dataset["pulse"] as PulseName))
 }
 
 // The terminal size the loops lay out for: 80 x 24 is the game's floor and acceptance target.
@@ -459,7 +470,7 @@ window.addEventListener("unhandledrejection", (event) => {
 // or, from any other screen, the default level.
 element("settings-apply").addEventListener("click", () => {
   imported = settingsText.value
-  void start(screenOf(opening) === "build" ? opening : DEFAULT_OPENING)
+  void startAt(shown.screen === "build" ? shown.route : undefined, "the settings box")
 })
 
 /**
@@ -473,8 +484,7 @@ function followAddress(): void {
     imported = address.settings
     settingsText.value = imported
   }
-  const { opening: next, notes } = address.at === undefined ? { opening: DEFAULT_OPENING, notes: [] } : routeOpening(address.at, "#at")
-  void start(next, notes)
+  void startAt(address.at, "#at")
 }
 window.addEventListener("hashchange", () => {
   if (Object.keys(readAddress(window.location.hash)).length > 0) followAddress()
@@ -488,11 +498,9 @@ for (const entry of typeof __TN_DEMOS__ === "undefined" ? [] : __TN_DEMOS__) {
   button.textContent = entry.label
   button.title = entry.try
   button.addEventListener("click", () => {
-    demo = entry
     imported = entry.settings ?? null
     settingsText.value = imported ?? ""
-    const { opening: next, notes } = routeOpening(entry.at ?? DEFAULT_LEVEL_ROUTE, `the demo's at`)
-    void start(next, notes)
+    void startAt(entry.at, "the demo's at", entry)
   })
   demos.append(button)
   demos.hidden = false

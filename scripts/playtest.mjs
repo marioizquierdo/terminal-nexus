@@ -25,11 +25,11 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
-import { parseKeyScript } from "../src/playtest/keys.ts"
 import { importSettings } from "../src/build/settings-export.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
-import { RouteError } from "../src/cli/route.ts"
+import { readLaunch } from "../src/cli/launch.ts"
+import { DEFAULT_LEVEL_ROUTE, RouteError } from "../src/cli/route.ts"
 import { ACTIVITY_FILTERS, formatActivityExport } from "../src/log/activity.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { parseCapability, parseTheme } from "../src/view/roles.ts"
@@ -119,38 +119,40 @@ if (values.help || (values.keys === undefined && values.file === undefined && va
   process.exit(values.help ? 0 : 2)
 }
 
-// Where the run opens, refused before anything runs: a route that is not a place, with every problem at once,
-// or one on the title menu, which this playtest does not play.
+// Where the run opens and what it starts from, read as the game reads them (`src/cli/launch.ts`) and refused
+// before anything runs: a route that is not a place, with every problem at once, a key the script names that
+// does not exist, or a place on the title menu, which this playtest does not play.
+const script = values.file === undefined ? values.keys : readFileSync(values.file, "utf8")
+const { launch, problems } = readLaunch({ at: values.at, settings: values.settings, keys: script }, DEFAULT_LEVEL_ROUTE)
+for (const { error } of problems) {
+  process.stderr.write(error instanceof RouteError ? `--at ${error.message}\n` : `${values.file === undefined ? "--keys" : values.file}: ${error.message}\n`)
+}
+if (problems.length > 0) process.exit(2)
 let at
-if (values.at !== undefined) {
-  try {
-    at = playtestOpening(values.at)
-  } catch (error) {
-    const said = error instanceof RouteError ? `--at ${error.message}` : error instanceof Error ? error.message : String(error)
-    process.stderr.write(`${said}\n`)
-    process.exit(2)
-  }
+try {
+  at = playtestOpening(launch.destination)
+} catch (error) {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
+  process.exit(2)
 }
 
 const size = /^(\d+)x(\d+)$/u.exec(values.size)
 if (size === null) throw new Error(`--size wants COLSxROWS, like 80x24, not "${values.size}"`)
 // An exported settings text first, then the flags over it; truecolor, dark and ascii otherwise.
-const imported = importSettings(values.settings, { ...DEFAULT_SETTINGS, capability: "truecolor" })
+const imported = importSettings(launch.settings, { ...DEFAULT_SETTINGS, capability: "truecolor" })
 if (imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
 const startSettings = imported.settings
 const capability = parseCapability(values.capability ?? startSettings.capability)
 const theme = parseTheme(values.theme ?? startSettings.theme)
 const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
-const script = values.file === undefined ? (values.keys ?? "") : readFileSync(values.file, "utf8")
 
-const steps = parseKeyScript(script)
 const run = runBuildPlaytest({
-  steps,
+  steps: launch.keys ?? [],
   columns: Number(size[1]),
   rows: Number(size[2]),
   settings: { ...startSettings, capability, theme, glyphPack },
   experiments: imported.experiments,
-  ...(at === undefined ? {} : { at }),
+  at,
 })
 const last = run.frames.length - 1
 

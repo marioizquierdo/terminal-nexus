@@ -16,8 +16,8 @@ import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
 import { DEFAULT_LEVEL, openRound } from "../cli/levels.ts"
-import { DEFAULT_LEVEL_ROUTE, parseRoute } from "../cli/route.ts"
-import type { LevelDestination } from "../cli/route.ts"
+import { DEFAULT_LEVEL_ROUTE, formatRoute } from "../cli/route.ts"
+import type { Destination, LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
@@ -206,15 +206,13 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
 }
 
 /**
- * The campaign level and round `--at <route>` names for a scripted playtest (`runBuildPlaytest`'s `at`). A
- * scripted playtest plays a campaign level's Build Phase, so a route to the title menu is refused, saying so;
- * a route that is not a place is refused with every problem (`RouteError`).
+ * The campaign level and round a launch opens for a scripted playtest (`runBuildPlaytest`'s `at`): a scripted
+ * playtest plays a campaign level's Build Phase, so a place on the title menu is refused, saying so.
  */
-export function playtestOpening(route: string): LevelDestination {
-  const destination = parseRoute(route)
+export function playtestOpening(destination: Destination): LevelDestination {
   if (destination.kind === "level") return destination
   throw new Error(
-    `--at ${route} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
+    `--at ${formatRoute(destination)} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
       `try --at '${DEFAULT_LEVEL_ROUTE}&round=2'`,
   )
 }

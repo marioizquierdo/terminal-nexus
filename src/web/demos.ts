@@ -1,6 +1,6 @@
 // A pull request's demos for the browser playtest page (`bun scripts/build-web.mjs --demos <file>`): each a
-// button that opens the game where a question is, and says what to try there. Checked here, at build time, with
-// the readers the page itself uses — a demo the page could not follow would open somewhere else and say nothing.
+// button that opens the game where a question is, and says what to try there. Checked here, at build time, as the
+// page will read them — a demo the page could not follow would open somewhere else and say nothing.
 //
 // A demos file is a list of `{ "label", "try", "at"?, "keys"?, "settings"? }`:
 //
@@ -11,14 +11,16 @@
 //   keys      a key script played first, as `--keys` takes it — on a campaign level only
 //   settings  a settings text to start with, as `--settings` takes it — on a campaign level only
 //
+// `at`, `keys` and `settings` are a launch's parts (`src/cli/launch.ts`), read the way the page reads them.
 // Not reached by the page: its demos are stamped into it already checked.
 
-import { parseKeyScript } from "../playtest/keys.ts"
-import { parseRoute } from "../cli/route.ts"
+import { LAUNCH_PARTS, readLaunch } from "../cli/launch.ts"
+import type { LaunchText } from "../cli/launch.ts"
+import { DEFAULT_LEVEL_ROUTE } from "../cli/route.ts"
 
-export type Demo = Readonly<{ label: string; try: string; at?: string; keys?: string; settings?: string }>
+export type Demo = Readonly<{ label: string; try: string }> & LaunchText
 
-const FIELDS: readonly string[] = ["label", "try", "at", "keys", "settings"]
+const FIELDS: readonly string[] = ["label", "try", ...LAUNCH_PARTS]
 
 /** `list` as demos, or an error naming `source`, the demo and what is wrong with it. */
 export function checkDemos(list: unknown, source: string): readonly Demo[] {
@@ -31,29 +33,17 @@ export function checkDemos(list: unknown, source: string): readonly Demo[] {
       const extra = unknown.length > 0 ? `; unknown: ${unknown.join(", ")}` : ""
       throw new Error(`${which} needs a "label" and a "try", and may have "at", "keys" and "settings"${extra}`)
     }
-    for (const field of ["at", "keys", "settings"]) {
+    for (const field of LAUNCH_PARTS) {
       if (demo[field] !== undefined && typeof demo[field] !== "string") throw new Error(`${which}'s "${field}" must be text`)
     }
-    const { at, keys, settings } = demo as Readonly<{ at?: string; keys?: string; settings?: string }>
-    if (at !== undefined) {
-      let destination
-      try {
-        destination = parseRoute(at)
-      } catch (error) {
-        throw new Error(`${which}'s at: ${error instanceof Error ? error.message : String(error)}`)
-      }
-      if (destination.kind !== "level" && (keys !== undefined || settings !== undefined)) {
-        throw new Error(`${which}'s at, "${at}", is on the title menu: its keys and settings are for a campaign level`)
-      }
+    const { at, keys, settings } = demo as LaunchText
+    const { launch, problems } = readLaunch({ at, keys, settings }, DEFAULT_LEVEL_ROUTE)
+    if (launch.destination.kind !== "level" && (keys !== undefined || settings !== undefined)) {
+      throw new Error(`${which}'s at, "${at}", is on the title menu: its keys and settings are for a campaign level`)
     }
-    // A key script the page cannot read would open the Build Phase at its beginning and say nothing.
-    if (keys !== undefined) {
-      try {
-        parseKeyScript(keys)
-      } catch (error) {
-        throw new Error(`${which}'s keys: ${error instanceof Error ? error.message : String(error)}`)
-      }
-    }
+    // A route or a key script the page cannot read would open the Build Phase at its beginning and say nothing.
+    const [problem] = problems
+    if (problem !== undefined) throw new Error(`${which}'s ${problem.part}: ${problem.error.message}`)
     return {
       label: demo["label"],
       try: demo["try"],

@@ -4,9 +4,12 @@
 // campaign level's Build Phase at one of its rounds.
 //
 // **The bare command** opens the title menu today. That is a stand-in for the intended start: once the game can
-// save, a plain launch continues the saved game from its default place beside the settings
-// (`~/.terminal-nexus/`), and opens the title menu only when there is none; `--at` stays the way to go anywhere
-// else, saved game or not. Saves are not built (`launchDestination`).
+// save, a plain launch continues the saved game from its default place beside the settings (a file in
+// `~/.terminal-nexus/`, next to `settings.json`), and opens the title menu only when there is none; `--at` stays
+// the way to go anywhere else, saved game or not. Saves are not built.
+//
+// Where it opens, its settings text and its key script are read the way every other way of starting a run reads
+// them (`./launch.ts`); this file only says they came from `--at`, `--settings` and `--keys`.
 //
 // The Settings screen makes what a session starts with layered: a saved choice
 // (from a previous run's Settings screen) beats `grid`'s own first-run colour-depth guess, and an
@@ -20,14 +23,13 @@ import { dirname, join } from "node:path"
 import { parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
 import { detectCapability } from "./grid-main.ts"
 import { parseArgs, parseInteger } from "./args.ts"
-import type { ParsedArgs } from "./args.ts"
 import { runMenu } from "./menu.ts"
-import { parseKeyScript } from "../playtest/keys.ts"
 import { runBuildPhase } from "./build-phase.ts"
 import type { Exporter } from "./build-phase.ts"
+import { readLaunch } from "./launch.ts"
+import type { LaunchProblem } from "./launch.ts"
 import { DEFAULT_LEVEL, LEVELS } from "./levels.ts"
-import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute, parseRoute } from "./route.ts"
-import type { Destination } from "./route.ts"
+import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute } from "./route.ts"
 import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
@@ -93,21 +95,10 @@ its own setting for this one run without changing what is saved.
 --theme defaults to dark; pass --theme light on a light terminal background.`
 }
 
-/**
- * Where a launch opens: where `--at <route>` says. Throws a `RouteError` for a route that is not a place in the
- * game.
- *
- * **Without it, the title menu.** That is a stand-in for the intended start: once the game can save, a bare
- * launch is meant to continue the saved game from its default place beside the settings (a file in
- * `~/.terminal-nexus/`, next to `settings.json`), and to open the title menu only when there is no saved game;
- * `--at` stays the way to go anywhere else. Saves are not built.
- */
-export function launchDestination(args: ParsedArgs): Destination {
-  return parseRoute(args.options.get("at") ?? "menu")
-}
-
-/** What `--at` says for a route that is not a place: every problem, then where to read what exists. */
-export function routeRefusal(error: RouteError): string {
+/** What the game says for a part of its launch it cannot read: a route's every problem, then where to read what
+ *  exists; a key script's unknown key. */
+function refusal({ part, error }: LaunchProblem): string {
+  if (!(error instanceof RouteError)) return `terminal-nexus: --${part}: ${error.message}\n`
   const problems = error.problems.map((problem) => `  - ${problem}\n`).join("")
   return `terminal-nexus: --at "${error.route}" is not a place in the game:\n${problems}terminal-nexus --help lists every place, with examples.\n`
 }
@@ -122,16 +113,18 @@ export async function main(argv: readonly string[]): Promise<number> {
     return 0
   }
 
-  // Where to open, read before anything is touched: a route that is not a place is refused whole, every
-  // problem at once, and so is a flag the place it names cannot use.
-  let destination: Destination
-  try {
-    destination = launchDestination(args)
-  } catch (error) {
-    if (!(error instanceof RouteError)) throw error
-    process.stderr.write(routeRefusal(error))
+  // Where to open and what to start from, read before anything is touched: a route that is not a place, or a
+  // key the game does not know, is refused whole, every problem at once, and so is a flag the place it names
+  // cannot use. With no --at, the title menu: the bare command's stand-in for the saved game.
+  const { launch, problems } = readLaunch(
+    { at: args.options.get("at"), settings: args.options.get("settings"), keys: args.options.get("keys") },
+    "menu",
+  )
+  if (problems.length > 0) {
+    process.stderr.write(problems.map(refusal).join(""))
     return 2
   }
+  const { destination } = launch
   const unused = BUILD_PHASE_FLAGS.filter((name) => args.options.has(name))
   if (destination.kind === "title" && unused.length > 0) {
     const flags = unused.map((name) => `--${name}`).join(" and ")
@@ -151,7 +144,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   // An exported text (`--settings`) sits between what is saved and a flag of its own: it is how an
   // agent starts from exactly what the owner had, and a flag still overrides one setting of it. What
   // it could not read is said once, before the screen starts.
-  const imported = importSettings(args.options.get("settings"), base)
+  const imported = importSettings(launch.settings, base)
   if (imported.ignored.length > 0) {
     process.stderr.write(`terminal-nexus: --settings ignored ${imported.ignored.join(", ")}\n`)
   }
@@ -168,7 +161,6 @@ export async function main(argv: readonly string[]): Promise<number> {
   // A campaign level: its Build Phase, at the round the route names.
   if (destination.kind === "level") {
     const margin = args.options.get("scroll-margin")
-    const startKeys = args.options.get("keys")
     return runBuildPhase({
       settings,
       settingsStore,
@@ -182,7 +174,7 @@ export async function main(argv: readonly string[]): Promise<number> {
         : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
       experiments: imported.experiments,
       ...(buildId === undefined ? {} : { buildId }),
-      ...(startKeys === undefined ? {} : { startKeys: parseKeyScript(startKeys) }),
+      ...(launch.keys === undefined ? {} : { startKeys: launch.keys }),
       exporter: terminalExporter(process.stdout, exportPath()),
     })
   }

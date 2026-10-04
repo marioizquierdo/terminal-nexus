@@ -7,10 +7,11 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
+import { readLaunch } from "../src/cli/launch.ts"
 import { DEFAULT_LEVEL, LEVELS } from "../src/cli/levels.ts"
 import type { Host } from "../src/cli/lifecycle.ts"
 import { TOP_LEVEL_ITEMS, runMenu } from "../src/cli/menu.ts"
-import { allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
+import { DEFAULT_LEVEL_ROUTE, allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
 import type { LevelDestination, TitleDestination } from "../src/cli/route.ts"
 import { ACTIVITY_EVENTS, createLogger, entryProblems } from "../src/log/index.ts"
 import { keyBytes, parseKeyScript } from "../src/playtest/keys.ts"
@@ -82,6 +83,14 @@ async function buildAt(at: LevelDestination | undefined): Promise<ReadonlyCellFr
   stdin.emit("data", keyBytes("C-c"))
   assert.equal(await running, 0)
   return first
+}
+
+/** Where the scripted playtest's `--at <route>` opens, read as `scripts/playtest.mjs` reads it: refused when the
+ *  route is not a place, or is on the title menu. */
+function playtestAt(route: string): LevelDestination {
+  const { launch, problems } = readLaunch({ at: route }, DEFAULT_LEVEL_ROUTE)
+  if (problems[0] !== undefined) throw problems[0].error
+  return playtestOpening(launch.destination)
 }
 
 /** What a title menu place's screen shows, and must: its subtitle and words only it has. */
@@ -182,7 +191,7 @@ test("the default level is the Build Phase as it opens when told nothing: PERIME
 test("a route to round 2 opens exactly the screen a player reaches by playing round 1 with nothing built", () => {
   // The demos used to walk there with keys: pick the first power, start the Pulse, let it play, then Enter.
   const walked = runBuildPlaytest({ steps: parseKeyScript("Esc n 1 s s wait~1000*16 Enter") })
-  const routed = runBuildPlaytest({ steps: [], at: playtestOpening("campaign?level=vasse-test-1&round=2") })
+  const routed = runBuildPlaytest({ steps: [], at: playtestAt("campaign?level=vasse-test-1&round=2") })
   const reached = walked.frames[walked.frames.length - 1]!
   const opened = routed.frames[0]!
   assert.equal(frameToAnsi(opened.frame, "truecolor", "dark"), frameToAnsi(reached.frame, "truecolor", "dark"))
@@ -191,13 +200,13 @@ test("a route to round 2 opens exactly the screen a player reaches by playing ro
 })
 
 test("the scripted playtest's --at opens a level at a round, and refuses a title menu route", () => {
-  const third = runBuildPlaytest({ steps: [], at: playtestOpening("campaign?level=vasse-test-1&round=3") })
+  const third = runBuildPlaytest({ steps: [], at: playtestAt("campaign?level=vasse-test-1&round=3") })
   assert.match(frameToText(third.frames[0]!.frame), /build phase - round 3 of 3/u)
   assert.equal(third.context.round?.number, 3)
   // With a settings text, the rounds on the way are played with its Experiments too.
-  const settled = runBuildPlaytest({ steps: [], at: playtestOpening("campaign?level=vasse-test-1&round=2"), experiments: { commanderHealth: 20 } })
+  const settled = runBuildPlaytest({ steps: [], at: playtestAt("campaign?level=vasse-test-1&round=2"), experiments: { commanderHealth: 20 } })
   assert.equal(settled.frames[0]!.state.experiments.commanderHealth, 20)
-  assert.throws(() => playtestOpening("settings"), /--at settings is on the title menu, and the scripted playtest plays a campaign level's Build Phase/u)
-  assert.throws(() => playtestOpening("campaign"), /on the title menu/u)
-  assert.throws(() => playtestOpening("campaign?level=nowhere"), /no level "nowhere"/u)
+  assert.throws(() => playtestAt("settings"), /--at settings is on the title menu, and the scripted playtest plays a campaign level's Build Phase/u)
+  assert.throws(() => playtestAt("campaign"), /on the title menu/u)
+  assert.throws(() => playtestAt("campaign?level=nowhere"), /no level "nowhere"/u)
 })

@@ -4,12 +4,10 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { parseArgs } from "../src/cli/args.ts"
 import { DEFAULT_LEVEL, LEVELS } from "../src/cli/levels.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
 import type { Destination } from "../src/cli/route.ts"
-import { launchDestination } from "../src/cli/terminal-nexus.ts"
 
 /** A destination as plain data: its kind, and its place or its level's id and round. */
 const plain = (destination: Destination): string =>
@@ -78,6 +76,8 @@ test("every route the game has reads back to itself, and each place lists the ro
   }
   assert.equal(formatRoute({ kind: "level", level: DEFAULT_LEVEL, round: 1 }), "campaign?level=vasse-test-1")
   assert.equal(formatRoute({ kind: "level", level: DEFAULT_LEVEL, round: 3 }), "campaign?level=vasse-test-1&round=3")
+  // The default level's route is its first round, the one the page and the scripted playtest open unless told.
+  assert.equal(DEFAULT_LEVEL_ROUTE, "campaign?level=vasse-test-1")
   // A title place's route is its name, and opens itself.
   for (const name of PLACE_NAMES) {
     const destination = parseRoute(name)
@@ -118,27 +118,6 @@ test("a broken route is refused whole: every problem at once, each naming what e
     assert.match(error.message, /^"campaign\?level=nowhere&colour=red" is not a place in the game: campaign takes no colour.*; no level "nowhere"/u)
     return true
   })
-})
-
-test("--at arrives through the argument parser, whole, in both of its forms", () => {
-  // A parser that took an unknown option for a flag would drop the route and open the title menu.
-  const route = "campaign?level=vasse-test-1&round=2"
-  assert.equal(parseArgs(["--at", route]).options.get("at"), route)
-  assert.equal(parseArgs([`--at=${route}`]).options.get("at"), route)
-  assert.deepEqual([...parseArgs(["--at", route]).flags], [])
-  assert.throws(() => parseArgs(["--at"]), /option --at needs a value/u)
-})
-
-test("a launch opens where --at says, and on the title menu bare", () => {
-  const destinationOf = (...argv: string[]): string => plain(launchDestination(parseArgs(argv)))
-  assert.equal(destinationOf(), "title menu")
-  assert.equal(destinationOf("--theme", "light"), "title menu")
-  assert.equal(destinationOf("--at", "about"), "title about")
-  assert.equal(destinationOf("--at", "campaign?level=vasse-test-1"), "level vasse-test-1 round 1")
-  assert.equal(destinationOf("--at", "campaign?level=vasse-test-1&round=3"), "level vasse-test-1 round 3")
-  assert.throws(() => launchDestination(parseArgs(["--at", "nowhere"])), RouteError)
-  // The default level's route is its first round, the one the page and the scripted playtest open unless told.
-  assert.equal(DEFAULT_LEVEL_ROUTE, "campaign?level=vasse-test-1")
 })
 
 test("each title menu row that opens a place names its route, the route of the place it is", () => {

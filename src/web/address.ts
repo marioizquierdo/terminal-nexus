@@ -14,16 +14,14 @@
 //
 // A local copy of the page takes any such address. **A link on claude.ai cannot carry a `#` part with `=` in it**,
 // so a published page opens at a place through a demo button instead (a demo's `at`, `scripts/build-web.mjs`).
+//
+// The parts are a launch's (`src/cli/launch.ts`): the address is one more place a run's texts come from, read
+// into the launch's shape here and read as a launch by the page.
 
-/** The parts an address may have, in the order a link usually writes them. */
-export const ADDRESS_PARTS = ["at", "settings", "keys"] as const
+import { LAUNCH_PARTS } from "../cli/launch.ts"
+import type { LaunchPart, LaunchText } from "../cli/launch.ts"
 
-export type AddressPart = (typeof ADDRESS_PARTS)[number]
-
-/** What an address asks for: each part it has, decoded. */
-export type Address = Readonly<Partial<Record<AddressPart, string>>>
-
-const PART_START = new RegExp(`(?:^|&)(${ADDRESS_PARTS.join("|")})=`, "gu")
+const PART_START = new RegExp(`(?:^|&)(${LAUNCH_PARTS.join("|")})=`, "gu")
 
 /** A part percent-decoded, or as written when it is not valid percent-encoding (a lone `%`). */
 function decoded(text: string): string {
@@ -34,14 +32,14 @@ function decoded(text: string): string {
   }
 }
 
-/** The parts of `hash` (`window.location.hash`, with or without its `#`). The first of a repeated part counts;
- *  anything before the first part the page knows is ignored. */
-export function readAddress(hash: string): Address {
+/** The parts of `hash` (`window.location.hash`, with or without its `#`), each decoded. The first of a repeated
+ *  part counts; anything before the first part the page knows is ignored. */
+export function readAddress(hash: string): LaunchText {
   const text = hash.startsWith("#") ? hash.slice(1) : hash
   const starts = [...text.matchAll(PART_START)]
-  const address: Partial<Record<AddressPart, string>> = {}
+  const address: Partial<Record<LaunchPart, string>> = {}
   starts.forEach((match, index) => {
-    const name = match[1] as AddressPart
+    const name = match[1] as LaunchPart
     const from = (match.index ?? 0) + match[0].length
     const to = starts[index + 1]?.index ?? text.length
     if (address[name] === undefined) address[name] = decoded(text.slice(from, to))
