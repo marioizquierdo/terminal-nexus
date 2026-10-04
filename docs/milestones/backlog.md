@@ -112,6 +112,17 @@ Mario liked it; the next pass is his ([his words](../history/feedback/2026-10-04
   a mark on what each side hits first and no trail; a trail only for the group under the cursor; where two
   groups will first meet; the card saying what a unit goes for, either side.
 
+## Posts for your squads (Mario, 2026-10-04)
+
+A post is a place a group of the player's troops holds, rather than the level's target they head for. Mario
+liked the idea and put it after placement ([his words](../history/feedback/2026-10-04-commander-round-4.md)):
+"maybe this can be an experiment, perhaps that is a type of building. But before we start playing with posts,
+I would like to go deep on the simple building placement first." What exists to build it on: a level names the
+target the player's troops head for, and they stand there when nothing is in reach (the order "head for a
+place" is built; "hold" is the half of that open question still waiting). Two shapes to try, each an
+Experiment: a post as a building (a flag placed in territory that the nearest squad holds), or a post as an
+order given to a group from the Build Phase.
+
 ## Decisions fine to leave open for now
 
 Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with
