@@ -12,12 +12,13 @@ import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { footprintDistance } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
-import { foreseeIntents, recall, resolveMissionPulse, restoreCommanders } from "../src/match/index.ts"
+import { foreseeIntents, foreseeRound, recall, resolveMissionPulse, restoreCommanders } from "../src/match/index.ts"
 import type { Absence, Arrival, MissionPulseInput, StructurePlacement } from "../src/match/index.ts"
 import { fallen } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
 import { buildSide, keys } from "./build-helpers.ts"
+import { isTroops } from "../src/view/troops-post.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
 const grid = starterGrid()
@@ -127,7 +128,8 @@ test("the shell's foresee is what the round's real Pulse does on its first tick,
       assert.ok(resolved !== null)
       const [opening, first] = resolved.timeline.states
       assert.ok(opening !== undefined && first !== undefined)
-      for (const group of raid.filter((candidate) => candidate.tick === 0)) {
+      // The raid's groups: the forecast's last group is the player's own troops, which go for no one first.
+      for (const group of raid.filter((candidate) => candidate.player === "B" && candidate.tick === 0)) {
         // Its units, found where the group stands as the round opens.
         const tiles = new Set(group.tiles.map((tile) => `${tile.x},${tile.y}`))
         const units = opening.entities.filter((entity) => entity.player === "B" && tiles.has(`${entity.anchor.x},${entity.anchor.y}`))
@@ -217,6 +219,46 @@ test("the way each group would go is the kernel's own steps: one tile at a time,
   }
   // The Turret just beyond the ridge is such a dead end: the probe presses on the ridge's north face.
   assert.ok(pressed > 0)
+})
+
+test("the forecast says where the player's troops head as each round starts — the line, by its name — and who goes, off the round's own opening", () => {
+  const line = Array.from({ length: 10 }, (_, index) => ({ x: 22 + (index % 5), y: 7 + Math.floor(index / 5) }))
+  let rounds_ = 0
+  for (const plan of PLANS) {
+    for (const input of rounds(plan)) {
+      const { groups, troops } = foreseeRound(input)
+      assert.deepEqual(groups, foreseeIntents(input), "the raid's groups are foreseen once, the same either way")
+      assert.ok(troops !== null, `round ${input.pulse}: no troops foreseen`)
+      assert.deepEqual([troops.player, troops.region, troops.name], ["A", "line", "the line"])
+      assert.deepEqual(troops.tiles, line)
+      // Who goes: every unit of the player's that moves and fights, standing on the Grid as the round opens.
+      const opening = resolveMissionPulse(input).states[0] as MatchState
+      const own = opening.entities.filter((entity) => entity.player === "A" && registry.get(entity.contentId).behavior === "advance" && registry.get(entity.contentId).layer !== "obstacles")
+      assert.equal(troops.units.reduce((sum, entry) => sum + entry.count, 0), own.length, `round ${input.pulse}: the count`)
+      assert.equal(troops.unitTiles.length, own.length)
+      rounds_ += 1
+    }
+  }
+  assert.ok(rounds_ >= 5)
+  // A level that names no target for them foresees none.
+  const [input] = rounds(PLANS[0] ?? [])
+  assert.ok(input !== undefined)
+  const none = { ...PERIMETER, triggers: PERIMETER.triggers.filter((trigger) => trigger.id !== "post") }
+  assert.equal(foreseeRound({ ...input, mission: none }).troops, null)
+})
+
+test("the shell's forecast carries the player's troops after the raid's groups: going for no one, with the line they head for", () => {
+  const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
+  const raid = side.build.raid() ?? []
+  const troops = raid.at(-1)
+  assert.ok(troops !== undefined && isTroops(troops), "the forecast's last group is not the player's troops")
+  assert.deepEqual([troops.player, troops.group, troops.target, troops.path.length, troops.post.name, troops.post.tiles.length], ["A", "your troops", null, 0, "the line", 10])
+  // Round 1's squads: Vasse and the two squads that walk out of the annex.
+  assert.deepEqual(
+    new Map(troops.units.map((entry) => [entry.contentId, entry.count])),
+    new Map([["unit.citizen.vasse", 1], ["unit.citizen.trooper", 3], ["unit.citizen.marksman", 2]]),
+  )
+  assert.ok(raid.slice(0, -1).every((group) => group.player === "B" && !isTroops(group)))
 })
 
 test("foreseeing is pure: the same round and plan give the same answer, and nothing handed in changes", () => {

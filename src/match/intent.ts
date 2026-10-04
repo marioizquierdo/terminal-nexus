@@ -10,7 +10,9 @@
 // the round starts, that is exactly what the Pulse will do on its first tick (`tests/intent.test.ts` holds
 // the two together); for a group that arrives later it is a forecast against the opening positions, since
 // by its tick everything has moved. Place a building nearer the raid and the answer changes, because the
-// kernel's answer does: every unit engages the nearest enemy (`src/pulse/perception.ts`).
+// kernel's answer does: every unit of a side with no target — the raid's — engages the nearest enemy
+// (`src/pulse/perception.ts`). The player's troops head out on that same first tick, so the raid soon meets
+// them on the way; what it goes for *first* is still this, and the panel says no more than that.
 //
 // **Along which way**: the path one of the group's units would take toward that target by the kernel's
 // own step rule (`rankedSteps`: greedy, four-way, sliding along whatever blocks it), over the terrain and
@@ -19,6 +21,11 @@
 // it, since they move. A forecast of the approach that never walks through a ridge, so a trail drawn on it
 // cannot lie about the way round; a group none of whose units can get there is shown pressing on what
 // stops it, which is what the kernel will do too.
+//
+// **And where the player's own troops head** (`foreseeRound`): the target the level names for their side,
+// read off the same opening — which units go, and the region they head for, by the name the mission gives
+// it. That much is data, not a guess; how they get there, and whom they meet on the way, is the kernel's to
+// play and is not foreseen (the owner: "don't over-promise").
 //
 // Deterministic like the kernel: no clock, no randomness, nothing drawn. It reads the mission and the
 // state and never changes either.
@@ -30,9 +37,11 @@ import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 import { contextFor, rankedSteps, stepTick } from "../pulse/index.ts"
+import { followsTarget } from "../pulse/target.ts"
+import { regionTiles } from "../mission/validate.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import type { Arrival, MissionPulseInput } from "./mission.ts"
-import { laterArrivals, missionOpening } from "./mission.ts"
+import { laterArrivals, missionOpening, targetRegionsAt } from "./mission.ts"
 
 /** What a group goes for first: the entity, where it stands as the round starts, and every tile it covers. */
 export type IntentTarget = Readonly<{
@@ -182,8 +191,55 @@ function walk(structures: OccupancyIndex, registry: ContentRegistry, walker: Con
  * goes for first and the way it would go, on the plan `input.structures` holds. In order of arrival.
  */
 export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): GroupIntent[] {
+  return foreseeRound(input, side).groups
+}
+
+/**
+ * Where a side's troops head as a round starts: the target its level names for it (a `target` action, by
+ * the region the mission names), and who goes — every unit of the side that follows a target, standing on
+ * the Grid as the round opens. Not a forecast of the way: the kernel walks them there and has them fight
+ * what comes within reach on it (`src/pulse/target.ts`), and that is not foreseen.
+ */
+export type TroopsIntent = Readonly<{
+  player: PlayerId
+  /** The region they head for: its id, the name the player reads, and every tile of it. */
+  region: string
+  name: string
+  tiles: readonly Coord[]
+  /** Who heads there as the round starts, kind by kind in the order they stand on the Grid, with how many. */
+  units: readonly Readonly<{ contentId: string; count: number }>[]
+  /** Every tile they stand on as the round starts. */
+  unitTiles: readonly Coord[]
+}>
+
+/** What a round's opening says of the side its raid comes for: where its troops head, or `null` when its
+ *  level names no target for it. */
+function troopsOf(input: MissionPulseInput, state: MatchState, side: PlayerId): TroopsIntent | null {
+  const { mission, registry, pulse } = input
+  const region = targetRegionsAt(mission, pulse, 0)[side]
+  if (region === undefined) return null
+  const own = state.entities.filter((entity) => entity.player === side && followsTarget(registry.get(entity.contentId)))
+  const counts = new Map<string, number>()
+  for (const entity of own) counts.set(entity.contentId, (counts.get(entity.contentId) ?? 0) + 1)
+  return {
+    player: side,
+    region: region.id,
+    name: region.name ?? region.id,
+    tiles: regionTiles(region),
+    units: [...counts.entries()].map(([contentId, count]) => ({ contentId, count })),
+    unitTiles: own.flatMap((entity) => tilesOf(entity.anchor, registry.get(entity.contentId).footprint)),
+  }
+}
+
+/**
+ * **What a round brings, foreseen once**: every group of `side` that it brings, with what each goes for
+ * first and the way it would go (`foreseeIntents`), and where the troops of the side it comes for head
+ * (`TroopsIntent`) — both read off the one opening the real Pulse starts from, on the plan as it stands.
+ */
+export function foreseeRound(input: MissionPulseInput, side: PlayerId = "B"): Readonly<{ groups: GroupIntent[]; troops: TroopsIntent | null }> {
   const { mission, registry } = input
   const start = missionOpening(input)
+  const troops = troopsOf(input, start.state, side === "B" ? "A" : "B")
   const later = laterArrivals(input, start.state)
   const born = later.map((arrival) => entityOf(registry, arrival))
   const nextOrdinal = Math.max(start.state.nextOrdinal, ...born.map((entity) => entity.ordinal + 1))
@@ -198,7 +254,7 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
   }
 
   const arrivals = [...start.arrivals, ...later].filter((arrival) => arrival.player === side)
-  return gather(arrivals).map(({ arrivals: own }) => {
+  const groups = gather(arrivals).map(({ arrivals: own }): GroupIntent => {
     const first = own[0] as Arrival
     const tiles = own.flatMap((arrival) => tilesOf(arrival.anchor, registry.get(arrival.contentId).footprint))
     const ordinal = chosenTarget(own, after)
@@ -225,6 +281,7 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
       path: target === null ? [] : pathOf(structures, registry, own, target),
     }
   })
+  return { groups, troops }
 }
 
 /**

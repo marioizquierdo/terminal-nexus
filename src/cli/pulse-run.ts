@@ -37,12 +37,13 @@ import {
   trainingRegistry,
 } from "../match/index.ts"
 import type { Arrival, MissionPulseInput, Restoration, TrainingPace } from "../match/index.ts"
-import { foreseeIntents } from "../match/index.ts"
-import type { GroupIntent } from "../match/index.ts"
+import { foreseeRound } from "../match/index.ts"
+import type { GroupIntent, TroopsIntent } from "../match/index.ts"
+import type { TroopsGroup } from "../view/troops-post.ts"
 import type { RaidForecast, RaidGroup } from "../build/types.ts"
 import { PERIMETER } from "../armies/index.ts"
 import type { MissionDefinition, SceneLine } from "../mission/index.ts"
-import { regionCentre, regionOf, sceneOf, validateMission } from "../mission/index.ts"
+import { regionCentre, regionOf, regionTiles, sceneOf, validateMission } from "../mission/index.ts"
 import type { MatchState } from "../state/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import { setting } from "../build/all-settings.ts"
@@ -97,6 +98,27 @@ const raidOf = (groups: readonly GroupIntent[]): RaidGroup[] =>
     target: target === null ? null : { contentId: target.contentId, player: target.player, anchor: target.anchor, tiles: target.tiles },
     path,
   }))
+
+/** The player's troops as the Build Phase reads them: one more group of the forecast, with the target its
+ *  level names for it (`TroopsGroup`) — or none, when it names none. */
+const troopsGroupOf = (troops: TroopsIntent | null): TroopsGroup[] => {
+  if (troops === null) return []
+  const first = troops.unitTiles[0] ?? troops.tiles[0] ?? { x: 0, y: 0 }
+  return [
+    {
+      group: "your troops",
+      player: troops.player,
+      units: troops.units,
+      tick: 0,
+      intent: null,
+      tiles: troops.unitTiles,
+      centre: troops.unitTiles.length === 0 ? first : middleOf(troops.unitTiles),
+      target: null,
+      path: [],
+      post: { name: troops.name, tiles: troops.tiles },
+    },
+  ]
+}
 
 /** The map a round's Build Phase opens on, split the way the Build Phase draws it: the player's own
  *  buildings, which it plans around, and everything else. */
@@ -163,11 +185,7 @@ function focusOn(mission: MissionDefinition, context: BuildContext, arrivals: re
   if ("region" in focus) {
     const region = regionOf(mission, focus.region)
     if (region === undefined) return null
-    const own = Array.from({ length: region.width * region.height }, (_, index) => ({
-      x: region.x + (index % region.width),
-      y: region.y + Math.floor(index / region.width),
-    }))
-    return { tile: regionCentre(region), own }
+    return { tile: regionCentre(region), own: regionTiles(region) }
   }
   if ("group" in focus) {
     const own = arrivals.filter((arrival) => arrival.group === focus.group).flatMap((arrival) => footprint(arrival.contentId, arrival.anchor))
@@ -285,9 +303,11 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
     mission,
 
     foresee(context, state) {
-      // The Pulse's own opening and content, so what is foreseen is what its first tick will do.
+      // The Pulse's own opening and content, so what is foreseen is what its first tick will do — and, after
+      // the raid's groups, where the player's troops head.
       const registry = pulseRegistry(context, state)
-      return raidOf(foreseeIntents({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state)), registry }))
+      const round = foreseeRound({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state)), registry })
+      return [...raidOf(round.groups), ...troopsGroupOf(round.troops)]
     },
 
     firstRound(base) {

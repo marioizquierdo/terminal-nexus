@@ -27,6 +27,7 @@ import { placementEffectContext, placementLook, placementSchedule, removalSchedu
 import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
 import { drawBuildRange, drawReach } from "./build-areas.ts"
+import { drawTroopsPost } from "./troops-post.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"
@@ -174,6 +175,7 @@ const INCOMING_WASH = 0.2
  *   monochrome. Never red, which is kept for the player's own Nexus being hurt.
  */
 export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+  drawTroopsPost(cells, input, pack)
   const { context, state, layout, raid } = input
   if (raid === undefined || raid.length === 0 || state.committed || input.pulse !== undefined) return
   const range = visibleRange(state.camera, state.viewport)

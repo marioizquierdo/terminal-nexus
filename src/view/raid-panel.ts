@@ -26,10 +26,12 @@ import type { Coord } from "../grid/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
-import { text } from "./draw.ts"
+import { text, wrapWords } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
 import { playerRole } from "./theme.ts"
 import type { BuildCompositionInput } from "./build.ts"
+import { isTroops, troopsIn } from "./troops-post.ts"
+import type { TroopsGroup } from "./troops-post.ts"
 
 /** One run of a line's words, in its own role and weight. */
 export type RaidPart = Readonly<{ text: string; role: StyleRole; bold?: boolean }>
@@ -146,12 +148,61 @@ function linesAt(context: Pick<BuildContext, "registry">, raid: RaidForecast, fr
   return blocks
 }
 
+/** What the troops' line says they do: "6 head for the line". */
+const HEAD_FOR = " head for "
+
 /**
- * The raid's lines for `room` rows of `width` glyphs: every group with its kinds when they fit; else without
- * them (the Explore Map card over any of its units still names them); else the groups that fit whole and a
- * last line saying how many more there are. Measured from `from`, the player's Nexus.
+ * ***Your troops' target*** in the panel (`troops-post.ts`): under the raid, where the player's troops head as
+ * the battle starts, in the raid's voice — how many, then the place, by the name the level gives it:
+ *
+ *   YOUR TROOPS
+ *   6 head for the line
+ *
+ * A name too long to follow on one line goes under it, wrapped at words, so no word is cut. Where it is, not
+ * the way there: that is the battle's to show.
  */
-export function raidLines(context: Pick<BuildContext, "registry">, raid: RaidForecast, from: Coord, width: number, room: number): RaidLine[] {
+export function troopsLines(troops: TroopsGroup, width: number): RaidLine[] {
+  const side = playerRole(troops.player)
+  const count = troops.units.reduce((sum, entry) => sum + entry.count, 0)
+  const place: RaidPart = { text: troops.post.name, role: side, bold: true }
+  // With nobody on the Grid as the round starts, what the Barracks trains heads there all the same.
+  const lead: RaidPart[] = count === 0 ? [{ text: HEAD_FOR.trimStart(), role: side }] : [{ text: String(count), role: side, bold: true }, { text: HEAD_FOR, role: side }]
+  const lines: RaidLine[] = [{ indent: 0, parts: [{ text: "YOUR TROOPS", role: "chrome.label" }] }]
+  const leadLength = lead.reduce((sum, part) => sum + part.text.length, 0)
+  if (leadLength + place.text.length <= width) {
+    lines.push({ indent: 0, parts: [...lead, place] })
+    return lines
+  }
+  lines.push({ indent: 0, parts: lead.map((part, index) => (index === lead.length - 1 ? { ...part, text: part.text.trimEnd() } : part)) })
+  for (const words of wrapWords(place.text, width - INDENT)) lines.push({ indent: INDENT, parts: [{ ...place, text: words }] })
+  return lines
+}
+
+/**
+ * The raid's lines for `room` rows of `width` glyphs, and under them where the player's troops head, when the
+ * level names a target for them. The raid's groups come with their kinds when they fit; else without them (the
+ * Explore Map card over any of its units still names them). The troops' lines follow, after a blank line when
+ * there is room for it — but never at the cost of a whole group of the raid: when the raid would have to leave
+ * one out to make room for them, the troops' lines are left out instead, and the raid shows the groups that fit
+ * whole and a last line saying how many more there are. Measured from `from`, the player's Nexus.
+ */
+export function raidLines(context: Pick<BuildContext, "registry">, forecast: RaidForecast, from: Coord, width: number, room: number): RaidLine[] {
+  const troops = troopsIn(forecast)
+  const raid = forecast.filter((group) => !isTroops(group))
+  const own = troops === null ? [] : troopsLines(troops, width)
+  if (raid.length === 0) return own.length <= room ? own : []
+  // The fewest rows the raid takes with every group whole: without its kinds.
+  const least = linesAt(context, raid, from, width, false).flat().length
+  for (const gap of own.length === 0 ? [] : [1, 0]) {
+    const left = room - own.length - gap
+    if (least > left) continue
+    return [...raidOnly(context, raid, from, width, left), ...Array.from({ length: gap }, () => ({ indent: 0, parts: [] })), ...own]
+  }
+  return raidOnly(context, raid, from, width, room)
+}
+
+/** The raid's own lines, as `raidLines` lays them out. */
+function raidOnly(context: Pick<BuildContext, "registry">, raid: RaidForecast, from: Coord, width: number, room: number): RaidLine[] {
   for (const kinds of [true, false]) {
     const lines = linesAt(context, raid, from, width, kinds).flat()
     if (lines.length <= room) return lines

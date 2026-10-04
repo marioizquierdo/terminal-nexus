@@ -17,7 +17,9 @@ import { SEE_THROUGH_STEP, seeThroughColours } from "../src/view/roles.ts"
 import type { CapabilityMode } from "../src/view/roles.ts"
 import { CHROME_GLYPHS, terrainGlyph } from "../src/view/theme.ts"
 import type { GlyphPack } from "../src/view/theme.ts"
-import { bearing, raidLines, raidRows, targetName } from "../src/view/raid-panel.ts"
+import { bearing, raidLines, raidRows, targetName, troopsLines } from "../src/view/raid-panel.ts"
+import { isTroops } from "../src/view/troops-post.ts"
+import type { TroopsGroup } from "../src/view/troops-post.ts"
 import { trailGlyph, trailMarks } from "../src/view/build-grid.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { MAXIMUM, MINIMUM, WIDE, buildSide, compose, keys, panelLine } from "./build-helpers.ts"
@@ -63,6 +65,9 @@ function tileCell(side: BuildSide, frame: ReadonlyCellFrame, tile: Coord): Cell 
 /** Whether a cell is drawn as a trail's mark: the raid's colour, dim and faded. */
 const isTrail = (cell: Cell): boolean => cell.style.fgRole === "player.b" && cell.style.dim === true && (cell.style.fade ?? 0) > 0
 
+/** Whether a cell is drawn as a corner of the place the player's troops head for: their colour, dim and faded. */
+const isCorner = (cell: Cell): boolean => cell.style.fgRole === "player.a" && cell.style.dim === true && (cell.style.fade ?? 0) > 0
+
 /** Whether a cell carries the mark of what the raid goes for: underlined, under the raid's colour. */
 const isTarget = (cell: Cell): boolean => cell.style.underline === true && cell.style.seeThrough?.role === "player.b"
 
@@ -80,7 +85,8 @@ test("a trail runs from the raid to what it goes for first, and that is marked â
   const side = perimeter()
   const raid = side.build.raid() ?? []
   const probe = raid[0] as RaidGroup
-  assert.equal(raid.length, 1)
+  // The probe, then the player's own troops, which the forecast carries last and which go for no one.
+  assert.deepEqual(raid.map((group) => isTroops(group)), [false, true])
   assert.ok(probe.target !== null)
   const frame = compose(side, {}, "truecolor")
   for (const tile of probe.target.tiles) assert.ok(isTarget(tileCell(side, frame, tile)), `the target is not marked at ${tile.x},${tile.y}`)
@@ -111,30 +117,37 @@ test("a trail never replaces a glyph: only bare open ground under it changes, an
     const ground = new Set([terrainGlyph("terrain.plain", "ascii").glyph, " "])
     let marks = 0
     let targets = 0
+    let corners = 0
     const before = new Map(mapCells(side, bare).map((entry) => [`${entry.x},${entry.y}`, entry.cell]))
     for (const { x, y, cell } of mapCells(side, shown)) {
       const was = before.get(`${x},${y}`) as Cell
       if (cell.glyph !== was.glyph) {
-        // A glyph changed: only ever a trail's mark, over featureless ground.
-        assert.ok(isTrail(cell), `round ${number}: ${x},${y} became "${cell.glyph}" without being a trail mark`)
-        assert.ok(ground.has(was.glyph) && was.style.fgRole === "terrain.plain", `round ${number}: a trail mark replaced "${was.glyph}" at ${x},${y}`)
-        marks += 1
+        // A glyph changed: only ever a trail's mark, or a corner of the line the player's troops head for, over
+        // featureless ground.
+        assert.ok(isTrail(cell) || isCorner(cell), `round ${number}: ${x},${y} became "${cell.glyph}" without being a trail mark or a corner`)
+        assert.ok(ground.has(was.glyph) && was.style.fgRole === "terrain.plain", `round ${number}: a mark replaced "${was.glyph}" at ${x},${y}`)
+        if (isTrail(cell)) marks += 1
+        else corners += 1
       } else if (JSON.stringify(cell.style) !== JSON.stringify(was.style)) {
         // The same glyph, restyled: the target's mark, or a trail mark's blank second column on wide tiles.
-        assert.ok(isTarget(cell) || isTrail(cell), `round ${number}: ${x},${y} restyled as neither a target nor a trail`)
+        assert.ok(isTarget(cell) || isTrail(cell) || isCorner(cell), `round ${number}: ${x},${y} restyled as neither a target nor a trail nor a corner`)
         if (isTarget(cell)) targets += 1
       }
     }
     assert.ok(marks > 0, `round ${number} draws no trail`)
     assert.ok(targets > 0, `round ${number} marks no target`)
+    assert.ok(corners > 0, `round ${number} marks no corner of the line`)
   }
 })
 
 test("the panel says the coming raid in every round, inside the panel's free rows at 80 x 24, no word cut", () => {
+  // Under the raid, where the player's troops head: at 80 x 24 the second and third rounds' raid gives up its
+  // kinds for them, as it would for a group more.
+  const troops = [/^YOUR TROOPS$/, /^\d+ head for the line$/]
   const expected: readonly (readonly RegExp[])[] = [
-    [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}goes for your Barracks$/],
-    [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}4 runners, 3 raiders$/, /^ {2}goes for your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}2 raiders$/, /^ {2}goes for your /],
-    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}6 runners, 4 raiders,$/, /^ {2}3 slingers$/, /^ {2}goes for your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}3 runners, 3 raiders$/, /^ {2}goes for your /],
+    [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}goes for your Barracks$/, ...troops],
+    [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}goes for your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}goes for your /, ...troops],
+    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}goes for your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}goes for your /, ...troops],
   ]
   everyRound().forEach((side, index) => {
     const { layout } = side
@@ -149,7 +162,7 @@ test("the panel says the coming raid in every round, inside the panel's free row
     lines.forEach((line, at) => assert.match(line, (expected[index] as readonly RegExp[])[at] as RegExp, `round ${index + 1}, line ${at + 1}`))
     // Every line is whole: what the panel was asked to say is what it drew, one column in from the divider.
     const asked = raidLines(context, side.build.raid() ?? [], { x: 18, y: 10 }, layout.panelLimit - 1, rows.last - rows.first + 1)
-    assert.deepEqual(lines, asked.map((line) => `${" ".repeat(line.indent)}${line.parts.map((part) => part.text).join("")}`))
+    assert.deepEqual(lines, asked.filter((line) => line.parts.length > 0).map((line) => `${" ".repeat(line.indent)}${line.parts.map((part) => part.text).join("")}`))
     for (const line of lines) assert.ok(line.length <= layout.panelLimit - 1, `"${line}" runs to the divider`)
     // A blank row after the buildings, and before Start Battle Round, which keeps its row.
     assert.equal(panelLine(side, frame, rows.first - 1).trim(), "")
@@ -175,7 +188,8 @@ test("the raid's lines are information, not rows: no click lands on one, and the
 
 test("with fewer free rows the panel drops the kinds first, then whole groups, and says how many more", () => {
   const side = everyRound()[2] as BuildSide
-  const raid = side.build.raid() as RaidForecast
+  // The raid alone: what the player's troops add under it is the next test's.
+  const raid = (side.build.raid() as RaidForecast).filter((group) => !isTroops(group))
   const from = { x: 18, y: 10 }
   const text = (room: number): string[] => raidLines(side.build.round, raid, from, 27, room).map((line) => line.parts.map((part) => part.text).join(""))
   assert.equal(text(9).length, 9)
@@ -255,4 +269,65 @@ test("the panel's words: where from is a point of the compass from the Nexus, as
   assert.equal(targetName(context, { contentId: "structure.citizen.barracks", player: "A", ...at }), "your Barracks")
   assert.equal(targetName(context, { contentId: "structure.citizen.nexus", player: "A", ...at }), "your Nexus")
   assert.equal(targetName(context, { contentId: "unit.citizen.trooper", player: "A", ...at }), "your trooper")
+})
+
+// --- Your troops' target ---------------------------------------------------------------------------------
+
+/** A forecast's troops, as the shell hands them to the screen, with another name for the place. */
+const troopsNamed = (side: BuildSide, name: string): TroopsGroup => {
+  const troops = (side.build.raid() ?? []).find(isTroops)
+  assert.ok(troops !== undefined, "the forecast carries no troops")
+  return { ...troops, post: { ...troops.post, name } }
+}
+
+test("under the raid, the panel says where the player's troops head, in the raid's voice; a long name goes under it, never cut, and with too little room the raid keeps its rows", () => {
+  const side = perimeter()
+  const troops = troopsNamed(side, "the line")
+  const text = (lines: ReturnType<typeof troopsLines>): string[] => lines.map((line) => `${" ".repeat(line.indent)}${line.parts.map((part) => part.text).join("")}`)
+  assert.deepEqual(text(troopsLines(troops, 27)), ["YOUR TROOPS", "6 head for the line"])
+  // In the player's colour, the count and the place bold, as the raid's count and target are.
+  const [, line] = troopsLines(troops, 27)
+  assert.deepEqual(line?.parts.map((part) => [part.role, part.bold === true]), [["player.a", true], ["player.a", false], ["player.a", true]])
+  // A place too long for the line goes under it, wrapped at words.
+  const long = troopsNamed(side, "the open ground before the old survey annex")
+  const wrapped = text(troopsLines(long, 27))
+  assert.deepEqual(wrapped.slice(0, 2), ["YOUR TROOPS", "6 head for"])
+  assert.equal(wrapped.slice(2).map((part) => part.trim()).join(" "), "the open ground before the old survey annex")
+  for (const part of wrapped) assert.ok(part.length <= 27, `"${part}" runs past the panel`)
+  // Nobody on the Grid as the round opens: what the Barracks trains heads there all the same.
+  assert.deepEqual(text(troopsLines({ ...troops, units: [] }, 27)), ["YOUR TROOPS", "head for the line"])
+  // Short of room, the raid comes first: its kinds give way to the troops' lines, then the blank line before
+  // them; never a whole group of the raid, so then the troops' lines are left out.
+  const forecast = side.build.raid() ?? []
+  const lines = (room: number): string[] => text(raidLines(side.build.round, forecast, { x: 18, y: 10 }, 27, room))
+  assert.deepEqual(lines(7), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks", "", "YOUR TROOPS", "6 head for the line"])
+  assert.deepEqual(lines(6), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "", "YOUR TROOPS", "6 head for the line"])
+  assert.deepEqual(lines(5), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "YOUR TROOPS", "6 head for the line"])
+  assert.deepEqual(lines(4), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks"])
+})
+
+test("the line the player's troops head for is marked by its corners: the glyph pack's own, in their colour, quiet, in the Build Phase only and never over a glyph", () => {
+  for (const glyphPack of ["ascii", "unicode"] as const) {
+    const side = perimeter()
+    const troops = (side.build.raid() ?? []).find(isTroops)
+    assert.ok(troops !== undefined)
+    const frame = compose(side, { glyphPack }, "truecolor")
+    const corners = mapCells(side, frame).filter((entry) => isCorner(entry.cell))
+    const own = new Set<string>([CHROME_GLYPHS[glyphPack].topLeft, CHROME_GLYPHS[glyphPack].topRight, CHROME_GLYPHS[glyphPack].bottomLeft, CHROME_GLYPHS[glyphPack].bottomRight])
+    assert.ok(corners.length >= 3, `${glyphPack}: ${corners.length} corners drawn`)
+    for (const { cell } of corners) assert.ok(own.has(cell.glyph), `${glyphPack}: "${cell.glyph}" is not a corner`)
+    // At the line's own corners: the top two, (22,7) and (26,7), are open ground in round 1.
+    for (const tile of [{ x: 22, y: 7 }, { x: 26, y: 7 }]) assert.ok(isCorner(tileCell(side, frame, tile)), `${glyphPack}: no corner at ${tile.x},${tile.y}`)
+    // A squad member standing on a corner keeps its glyph: the corner under it is not drawn.
+    const covered = (side.build.round.incoming ?? []).find((entity) => troops.post.tiles.some((tile) => tile.x === entity.anchor.x && tile.y === entity.anchor.y))
+    if (covered !== undefined) assert.ok(!isCorner(tileCell(side, frame, covered.anchor)))
+  }
+  // During the battle the map shows what happens, not where they were sent: no corner is drawn.
+  const side = perimeter()
+  side.build.dispatch({ kind: "pick-nexus", index: 0 })
+  side.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
+  side.build.advance(0)
+  side.build.advance(1500)
+  assert.ok(side.build.pulse !== null)
+  assert.ok(!compose(side, {}, "truecolor").cells.some(isCorner), "a corner is drawn during the battle")
 })
