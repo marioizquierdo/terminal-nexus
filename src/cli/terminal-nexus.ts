@@ -106,11 +106,35 @@ function refusal({ part, error }: LaunchProblem): string {
 /** The flags only a campaign level's Build Phase reads. */
 const BUILD_PHASE_FLAGS = ["keys", "scroll-margin"] as const
 
+/** Everything the game reads from its command line; anything else is refused rather than ignored, so a command
+ *  pasted from an older note never opens somewhere it did not mean. (`grid` shares the parser and reads others.) */
+const GAME_FLAGS: ReadonlySet<string> = new Set(["help", "reduced-motion"])
+const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "settings", "keys", "capability", "theme", "glyphs", "backend", "scroll-margin"])
+
+/** What the game says for what it does not read: a removed flag names what replaced it; anything else, --help. */
+function unknownArgument(argument: string): string {
+  if (argument === "--build-phase" || argument === "--spike") {
+    return `terminal-nexus: ${argument} is gone: --at '${DEFAULT_LEVEL_ROUTE}' opens its Build Phase.
+`
+  }
+  return `terminal-nexus: ${argument.startsWith("--") ? `unknown option ${argument}` : `unexpected "${argument}"`}.
+`
+}
+
 export async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv)
   if (args.flags.has("help")) {
     process.stdout.write(`${usage()}\n`)
     return 0
+  }
+  const unknown = [
+    ...[...args.flags].filter((name) => !GAME_FLAGS.has(name)).map((name) => `--${name}`),
+    ...[...args.options.keys()].filter((name) => !GAME_OPTIONS.has(name)).map((name) => `--${name}`),
+    ...args.positional,
+  ]
+  if (unknown.length > 0) {
+    process.stderr.write(`${unknown.map(unknownArgument).join("")}terminal-nexus --help lists every option.\n`)
+    return 2
   }
 
   // Where to open and what to start from, read before anything is touched: a route that is not a place, or a

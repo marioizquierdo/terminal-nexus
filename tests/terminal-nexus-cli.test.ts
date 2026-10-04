@@ -41,6 +41,23 @@ test("an unknown --capability is a clear error, not a silent fallback", () => {
   assert.match(result.stderr, /unknown capability/)
 })
 
+test("an argument the game does not read is refused before any screen, and a removed flag names what replaced it", () => {
+  // A command pasted from an older note must not open somewhere it did not mean: the title menu cannot reach the
+  // Build Phase, so an ignored --build-phase would strand whoever typed it there.
+  const old = runTerminalNexus(["--build-phase"])
+  assert.equal(old.status, 2)
+  assert.equal(old.stdout, "")
+  assert.equal(old.stderr, "terminal-nexus: --build-phase is gone: --at 'campaign?level=vasse-test-1' opens its Build Phase.\nterminal-nexus --help lists every option.\n")
+  const several = runTerminalNexus(["--spike", "--fast", "scenarios/melee-kill.map.json"])
+  assert.equal(several.status, 2)
+  assert.match(several.stderr, /--spike is gone: --at 'campaign\?level=vasse-test-1'/)
+  assert.match(several.stderr, /unknown option --fast\./)
+  assert.match(several.stderr, /unexpected "scenarios\/melee-kill\.map\.json"\./)
+  // What the game does read still opens: a flag and an option it knows.
+  const known = runTerminalNexus(["--reduced-motion", "--theme", "light"])
+  assert.equal(known.status, 0, known.stderr)
+})
+
 test("an unknown --theme is a clear error", () => {
   const result = runTerminalNexus(["--theme", "sepia"])
   assert.notEqual(result.status, 0)
