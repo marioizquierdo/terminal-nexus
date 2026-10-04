@@ -223,6 +223,13 @@ node -e "JSON.parse(require('node:fs').readFileSync('.devcontainer/devcontainer.
 
 node scripts/check-markdown-links.mjs || fail "broken local Markdown links"
 
+# A RULE names the tests that hold it: every test file a current document cites must exist, or the rule's
+# holder is a dead pointer (five once named files that had been renamed for months).
+while IFS= read -r cited; do
+  [[ -f "$cited" ]] || fail "a document cites $cited, which does not exist"
+done < <(grep -RhoE 'tests/[A-Za-z0-9._/-]+\.test\.ts' --include='*.md' --exclude-dir='history' \
+  docs AGENTS.md DEVELOPMENT.md README.md CLAUDE.md 2>/dev/null | sort -u)
+
 while IFS= read -r markdown_file; do
   fence_count="$(grep -c '^```' "$markdown_file" || true)"
   if (( fence_count % 2 != 0 )); then
