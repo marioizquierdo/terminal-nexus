@@ -11,6 +11,10 @@
 // It records into the Activity Logs (`src/log/activity.ts`): `session.start` once, `menu.select` for
 // every row picked, and a resize or a failure — so the browser page's log, shared across its screens,
 // shows how a playtester reached the Build Phase.
+//
+// **Its rows are routes** (`./route.ts`): each row that opens a place names the route it opens, and choosing
+// the row follows that route — the same `follow` an opening `--at settings` takes — so a route and a row can
+// never lead to two different screens.
 
 import { aboutSections } from "../title-menu/about.ts"
 import { MenuSession } from "../title-menu/session.ts"
@@ -30,17 +34,19 @@ import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
+import { parseRoute } from "./route.ts"
+import type { TitleDestination, TitlePlace } from "./route.ts"
 
 /** Five rows; a sixth, choosing a Commander upfront, was considered and rejected: a new player starts the
  *  first mission directly. About sits above Exit, so Exit's digit is 5 — the digits stay one sequence in
- *  walking order, and `q` still leaves from every title screen. */
+ *  walking order, and `q` still leaves from every title screen. Each row but Exit names the route it opens. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
-  { id: "campaign", hotkey: "1", label: "Campaign" },
+  { id: "campaign", hotkey: "1", label: "Campaign", route: "campaign" },
   // Dimmed and already saying why: the run screen hasn't landed, and a disabled item shows its
   // reason in the label a player sees before ever pressing anything, not only after.
-  { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true },
-  { id: "settings", hotkey: "3", label: "Settings" },
-  { id: "about", hotkey: "4", label: "About" },
+  { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true, route: "challenge" },
+  { id: "settings", hotkey: "3", label: "Settings", route: "settings" },
+  { id: "about", hotkey: "4", label: "About", route: "about" },
   { id: "exit", hotkey: "5", label: "Exit" },
 ]
 
@@ -53,9 +59,10 @@ const CAMPAIGN_PLACEHOLDER = "Campaign is not built yet - Milestone 4 adds the c
 /**
  * Stub honestly rather than half-build: an option not built yet says plainly what it is waiting
  * on, rather than silently doing nothing. Settings and Campaign have real screens and need no
- * notice (Campaign's is the placeholder above) — only Challenge still shows one, on top of its label already saying why.
+ * notice (Campaign's is the placeholder above) — only Challenge still shows one, on top of its label already
+ * saying why, whether its row was chosen or its route followed.
  */
-const STUB_NOTICES: Readonly<Record<string, string>> = {
+const STUB_NOTICES: Readonly<Partial<Record<TitlePlace, string>>> = {
   challenge: "Challenge is not built yet - Milestone 11 adds the run screen.",
 }
 
@@ -117,6 +124,12 @@ export type MenuOptions = Readonly<{
   hostName?: HostName
   /** The Activity Logs this session records into: the program's own unless a test passes another. */
   activity?: ActivityLog
+  /**
+   * Where to open (`--at settings`, a title menu route): the top-level menu unless given. Opening at a place
+   * follows its route exactly as choosing the row that names it does, and leaves that row highlighted, so Esc
+   * comes back to it as it would for a player who had chosen it.
+   */
+  at?: TitleDestination
 }>
 
 type Screen = "top" | "settings" | "campaign" | "about"
@@ -128,6 +141,23 @@ const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack
   settings: { subtitle: "settings", showBack: true },
   campaign: { subtitle: "campaign", showBack: true },
   about: { subtitle: "about", showBack: true },
+}
+
+/** The screen each title menu place opens: Challenge, not built, stays on the top-level menu with its notice. */
+const PLACE_SCREENS: Readonly<Record<TitlePlace, Screen>> = {
+  menu: "top",
+  campaign: "campaign",
+  challenge: "top",
+  settings: "settings",
+  about: "about",
+}
+
+/** The title menu place a row's route names. Every row's route is a title menu place
+ *  (`tests/route.test.ts`); a row naming any other would be a screen this loop cannot open. */
+function placeOf(route: string): TitlePlace {
+  const destination = parseRoute(route)
+  if (destination.kind !== "title") throw new Error(`a title menu row names "${route}", which is not on the title menu`)
+  return destination.place
 }
 
 
@@ -217,6 +247,13 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     render()
   }
 
+  /** Where a title menu route leads: the one way a chosen row and an opening `--at` both change screen. Draws
+   *  nothing; the caller does once it has finished. */
+  function follow(place: TitlePlace): void {
+    screen = PLACE_SCREENS[place]
+    notice = STUB_NOTICES[place] ?? null
+  }
+
   /** Which session is listening on the current screen — the one place this switches, so a caller
    *  juggling more than one screen (`onData` below) never repeats the same branch. */
   function sessionFor(current: Screen): MenuSession {
@@ -238,20 +275,15 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   const topMenu = new MenuSession({
     items: TOP_LEVEL_ITEMS,
     onActivate: picked("top", (item) => {
-      if (item.id === "exit") {
-        leave()
+      if (item.route !== undefined) {
+        // Challenge too: a dimmed, disabled row that already says why in its own label, still activatable
+        // (`input.md`: a displayed hotkey always works), whose route shows the fuller notice.
+        follow(placeOf(item.route))
+        render()
         return
       }
-      if (item.id === "settings" || item.id === "campaign" || item.id === "about") {
-        notice = null
-        goTo(item.id)
-        return
-      }
-      // Only Challenge reaches here now — a dimmed, disabled row that already says why in its own
-      // label, still activatable (`input.md`: a displayed hotkey always works), still showing the
-      // fuller notice.
-      notice = STUB_NOTICES[item.id] ?? null
-      render()
+      // Exit, the one row that opens no place.
+      if (item.id === "exit") leave()
     }),
     onQuit: leave,
   })
@@ -349,6 +381,15 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   })
   session.onDispose(() => pendingSave)
   session.onDispose(() => backend.stop())
+
+  // Opening at a route: the row that names it highlighted, as a player who chose it would leave it, and its
+  // route followed. Not a pick, so not recorded as one: nobody chose it on this screen.
+  if (options.at !== undefined) {
+    const place = options.at.place
+    const row = TOP_LEVEL_ITEMS.findIndex((item) => item.route !== undefined && placeOf(item.route) === place)
+    if (row >= 0) topMenu.dispatch({ kind: "highlight", index: row })
+    follow(place)
+  }
 
   record.log("session.start", {
     screen: "menu",

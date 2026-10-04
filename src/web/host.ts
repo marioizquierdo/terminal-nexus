@@ -12,6 +12,8 @@
 //   export   -> the clipboard and a text box under the screen, instead of OSC 52 and a file — the
 //               settings' in one box, the Activity Logs' in another
 //   import   -> `#settings=<text>` in the page's address, or that same text box
+//   --at     -> `#at=<route>` in the page's address (`src/web/address.ts`), a mode button's route, or a
+//               demo's `at`: the same routes the terminal's `--at` takes (`src/cli/route.ts`)
 //   errors   -> the page's own uncaught errors, into the Activity Logs (`session.error`, where "page")
 //
 // Built into one self-contained HTML file by `scripts/build-web.mjs`.
@@ -19,6 +21,10 @@
 import { runMenu } from "../cli/menu.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { runBuildPhase } from "../cli/build-phase.ts"
+import { BUILD_PHASE_ROUTE, RouteError, parseRoute } from "../cli/route.ts"
+import type { Destination } from "../cli/route.ts"
+import { readAddress } from "./address.ts"
+import type { Demo } from "./demos.ts"
 import { watchPulse } from "../cli/watch.ts"
 import { buildTimeline } from "../cli/timeline.ts"
 import type { Host } from "../cli/lifecycle.ts"
@@ -42,19 +48,37 @@ import citizensVersusRavels from "../../scenarios/citizens-versus-ravels.map.jso
 declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: string }>
 
 /**
- * This pull request's demos, stamped in by the build (`bun scripts/build-web.mjs --demos <file>`): each a
- * button that starts the Build Phase from a key script with given settings, and says what to try — how a
- * playable page opens the game exactly where its question is. Empty
- * without `--demos`.
+ * This pull request's demos, stamped in by the build (`bun scripts/build-web.mjs --demos <file>`, checked by
+ * `src/web/demos.ts`): each a button that opens the game at a route, from a key script with given settings, and
+ * says what to try — how a playable page opens the game exactly where its question is. Empty without `--demos`.
  */
-type Demo = Readonly<{ label: string; try: string; keys?: string; settings?: string }>
 declare const __TN_DEMOS__: readonly Demo[]
 
-type Mode = "menu" | "build" | "pulse-grand" | "pulse-mirror"
+type PulseName = "pulse-grand" | "pulse-mirror"
 
-const PULSES: Readonly<Record<"pulse-grand" | "pulse-mirror", ScenarioDefinition>> = {
+/**
+ * What a mode button, a demo or the address opens: a place in the game by its route — a title menu screen, or a
+ * campaign level at a round — or one of the engine tool's two Pulse replays, which are not places in the game.
+ */
+type Opening = Readonly<{ kind: "route"; destination: Destination }> | Readonly<{ kind: "pulse"; pulse: PulseName }>
+
+const PULSES: Readonly<Record<PulseName, ScenarioDefinition>> = {
   "pulse-grand": grandBattle as unknown as ScenarioDefinition,
   "pulse-mirror": citizensVersusRavels as unknown as ScenarioDefinition,
+}
+
+/** What the page opens when nothing says otherwise, as `--build-phase` does: the default level's first round. */
+const DEFAULT_OPENING: Opening = { kind: "route", destination: parseRoute(BUILD_PHASE_ROUTE) }
+
+/** Where `route` leads — or, for one that is not a place in the game, the default opening, with why (`where`
+ *  names what asked: "#at", a demo). */
+function routeOpening(route: string, where: string): Readonly<{ opening: Opening; notes: readonly string[] }> {
+  try {
+    return { opening: { kind: "route", destination: parseRoute(route) }, notes: [] }
+  } catch (error) {
+    if (!(error instanceof RouteError)) throw error
+    return { opening: DEFAULT_OPENING, notes: [`${where}: ${error.message}`] }
+  }
 }
 
 // --- The stand-in terminal ------------------------------------------------------------------------
@@ -152,42 +176,16 @@ let backend: CanvasBackend | null = null
 let running: Promise<number> | null = null
 let switching = false
 let shift = false
-let mode: Mode = "build"
+let opening: Opening = DEFAULT_OPENING
 /**
- * Settings text to start the Build Phase with — from `#settings=` in the address, or the text box's
+ * Settings text to start a campaign level with — from `#settings=` in the address, or the text box's
  * "Start the Build Phase with these". Its player settings apply for this visit without being saved,
  * as `--settings` does in a terminal; changing one in the game's Settings saves them all.
  */
 let imported: string | null = null
 
-function importFromAddress(): void {
-  const match = /(?:^#|&)settings=([^&]*)/u.exec(window.location.hash)
-  if (match === null) return
-  try {
-    imported = decodeURIComponent(match[1] ?? "")
-  } catch {
-    imported = match[1] ?? ""
-  }
-  settingsText.value = imported
-}
-
-/** The demo a button just started, until the Build Phase it starts has read its keys. */
+/** The demo a button just started, until the screen it opens has read its keys. */
 let demo: Demo | null = null
-
-/**
- * A key script to open the Build Phase in a particular state — `#keys=<script>` in the address, in
- * the scripted playtest's key names (`#keys=n%201%201%20Enter` picks a power and places a Barracks):
- * how a demo link opens already where it should, as `--keys` does in a terminal.
- */
-function keysFromAddress(): string | null {
-  const match = /(?:^#|&)keys=([^&]*)/u.exec(window.location.hash)
-  if (match === null) return null
-  try {
-    return decodeURIComponent(match[1] ?? "")
-  } catch {
-    return match[1] ?? ""
-  }
-}
 
 /** A tab never exits; a screen that ends just says so, and a mode button starts another. */
 const host: Host = {
@@ -199,7 +197,14 @@ const host: Host = {
   },
 }
 
-async function start(next: Mode): Promise<void> {
+/** Which screen loop an opening runs: the title menu's, a campaign level's Build Phase, or a Pulse replay. */
+function screenOf(next: Opening): "menu" | "build" | PulseName {
+  if (next.kind === "pulse") return next.pulse
+  return next.destination.kind === "title" ? "menu" : "build"
+}
+
+/** `notes`: what to say under the screen first — a route that could not be followed, say. */
+async function start(next: Opening, notes: readonly string[] = []): Promise<void> {
   if (running !== null) {
     // Ctrl+C is every screen's immediate quit, through its own disposer — the Build Phase's `q`
     // asks first, so it cannot be what switches screens.
@@ -208,32 +213,41 @@ async function start(next: Mode): Promise<void> {
     await running
     switching = false
   }
-  mode = next
-  document.body.dataset["mode"] = next
-  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-mode]")) {
-    button.setAttribute("aria-pressed", String(button.dataset["mode"] === next))
+  opening = next
+  const screen = screenOf(next)
+  document.body.dataset["mode"] = screen
+  // A mode button shows pressed while its screen loop runs: Menu for any place on the title menu, Build Phase
+  // for any campaign level and round, a replay for itself.
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at], [data-pulse]")) {
+    const at = button.dataset["at"]
+    const own = at === undefined ? button.dataset["pulse"] : screenOf({ kind: "route", destination: parseRoute(at) })
+    button.setAttribute("aria-pressed", String(own === screen))
   }
   renderKeyBar()
-  status.textContent = ""
+  const said: string[] = [...notes]
+  status.textContent = said.join(" · ")
 
+  const level = next.kind === "route" && next.destination.kind === "level" ? next.destination : null
   const saved: Settings = (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
-  // The settings text reaches the Build Phase only; the menu opens on what is saved.
-  const importing = importSettings(next === "build" ? (imported ?? undefined) : undefined, saved)
-  if (importing.ignored.length > 0) status.textContent = `Settings text: ignored ${importing.ignored.join(", ")}`
-  const chosen = next === "build" ? demo : null
+  // The settings text reaches a campaign level only; the menu opens on what is saved.
+  const importing = importSettings(level !== null ? (imported ?? undefined) : undefined, saved)
+  if (importing.ignored.length > 0) said.push(`Settings text: ignored ${importing.ignored.join(", ")}`)
+  const chosen = demo
   demo = null
-  const startScript = next === "build" ? (chosen?.keys ?? keysFromAddress()) : null
+  // A demo's own keys, or none; otherwise the address's. A key script plays on a campaign level only.
+  const startScript = level === null ? null : chosen !== null ? (chosen.keys ?? null) : (readAddress(window.location.hash).keys ?? null)
   let startKeys: PlaytestStep[] | null = null
   if (startScript !== null) {
     try {
       startKeys = parseKeyScript(startScript)
     } catch (error) {
-      status.textContent = `#keys: ${error instanceof Error ? error.message : String(error)}`
+      said.push(`#keys: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
   const { settings, experiments } = importing
   // What to try, after anything the demo's keys or settings could not use, never over it.
-  if (chosen !== null) status.textContent = `${status.textContent === "" ? "" : `${status.textContent} · `}Try: ${chosen.try}`
+  if (chosen !== null) said.push(`Try: ${chosen.try}`)
+  status.textContent = said.join(" · ")
   backend = new CanvasBackend({
     canvas,
     capability: settings.capability,
@@ -242,12 +256,28 @@ async function start(next: Mode): Promise<void> {
     pixelRatio: () => window.devicePixelRatio || 1,
   })
   const common = { backend, stdout: terminal, stdin: keyboard, host } as const
-  if (next === "menu") running = runMenu({ ...common, settings, settingsStore, buildId: __TN_BUILD__.commit, hostName: "web" })
-  else if (next === "build") {
+  if (next.kind === "pulse") {
+    const scenario = PULSES[next.pulse]
+    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+    const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+    running = watchPulse({
+      ...common,
+      timeline,
+      capability: settings.capability,
+      theme: settings.theme,
+      tileWidth: 1,
+      speed: 1,
+      presentation: { ...DEFAULT_PRESENTATION, reducedMotion: settings.reducedMotion, glyphPack: settings.glyphPack },
+    })
+  } else if (next.destination.kind === "title") {
+    running = runMenu({ ...common, settings, settingsStore, at: next.destination, buildId: __TN_BUILD__.commit, hostName: "web" })
+  } else {
     running = runBuildPhase({
       ...common,
       settings,
       settingsStore,
+      level: next.destination.level,
+      round: next.destination.round,
       buildId: __TN_BUILD__.commit,
       experiments,
       ...(startKeys === null ? {} : { startKeys }),
@@ -274,30 +304,25 @@ async function start(next: Mode): Promise<void> {
       },
     })
   }
-  else {
-    const scenario = PULSES[next]
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-    const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
-    running = watchPulse({
-      ...common,
-      timeline,
-      capability: settings.capability,
-      theme: settings.theme,
-      tileWidth: 1,
-      speed: 1,
-      presentation: { ...DEFAULT_PRESENTATION, reducedMotion: settings.reducedMotion, glyphPack: settings.glyphPack },
-    })
-  }
   const mine = running
-  void mine.then(() => {
-    if (running !== mine) return
-    running = null
-    if (!switching) status.textContent = "That screen has ended. Pick one above to start again."
-  })
+  void mine.then(
+    () => {
+      if (running !== mine) return
+      running = null
+      if (!switching) status.textContent = "That screen has ended. Pick one above to start again."
+    },
+    // A screen that could not open at all — a round its level's mission ends before — says why, here.
+    (error: unknown) => {
+      if (running !== mine) return
+      running = null
+      status.textContent = `That screen could not open: ${error instanceof Error ? error.message : String(error)}`
+    },
+  )
 }
 
 function renderKeyBar(): void {
-  const own = mode === "menu" ? KEY_BAR.menu : mode === "build" ? KEY_BAR.build : KEY_BAR.pulse
+  const screen = screenOf(opening)
+  const own = screen === "menu" ? KEY_BAR.menu : screen === "build" ? KEY_BAR.build : KEY_BAR.pulse
   const keys = [...KEY_BAR.common, ...own]
   keyBar.replaceChildren()
   const button = (label: string, name: string, extra: Partial<HTMLButtonElement> = {}): void => {
@@ -389,8 +414,15 @@ canvas.addEventListener(
   { passive: false },
 )
 
-for (const button of document.querySelectorAll<HTMLButtonElement>("[data-mode]")) {
-  button.addEventListener("click", () => void start(button.dataset["mode"] as Mode))
+// The mode buttons that are game screens open their routes; the replays are the engine tool's battles.
+for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at]")) {
+  button.addEventListener("click", () => {
+    const { opening: next, notes } = routeOpening(button.dataset["at"] ?? "", "this button")
+    void start(next, notes)
+  })
+}
+for (const button of document.querySelectorAll<HTMLButtonElement>("[data-pulse]")) {
+  button.addEventListener("click", () => void start({ kind: "pulse", pulse: button.dataset["pulse"] as PulseName }))
 }
 
 // The terminal size the loops lay out for: 80 x 24 is the game's floor and acceptance target.
@@ -423,13 +455,29 @@ window.addEventListener("unhandledrejection", (event) => {
   const reason: unknown = event.reason
   activity.log("session.error", { where: "page", message: reason instanceof Error ? reason.message : String(reason) })
 })
+// The text box's own button: the campaign level already open starts over with its settings — at the same round —
+// or, from any other screen, the default level.
 element("settings-apply").addEventListener("click", () => {
   imported = settingsText.value
-  void start("build")
+  void start(screenOf(opening) === "build" ? opening : DEFAULT_OPENING)
 })
+
+/**
+ * What the address asks for (`src/web/address.ts`): its settings text kept for the next campaign level, and the
+ * page opened where `#at=` says — the default level's first round without one, so `#keys=` and `#settings=` alone
+ * still work as they always have. A route that is not a place says so under the screen.
+ */
+function followAddress(): void {
+  const address = readAddress(window.location.hash)
+  if (address.settings !== undefined) {
+    imported = address.settings
+    settingsText.value = imported
+  }
+  const { opening: next, notes } = address.at === undefined ? { opening: DEFAULT_OPENING, notes: [] } : routeOpening(address.at, "#at")
+  void start(next, notes)
+}
 window.addEventListener("hashchange", () => {
-  importFromAddress()
-  if (imported !== null) void start("build")
+  if (Object.keys(readAddress(window.location.hash)).length > 0) followAddress()
 })
 
 // The pull request's demos, one button each; the row stays hidden without any.
@@ -443,11 +491,11 @@ for (const entry of typeof __TN_DEMOS__ === "undefined" ? [] : __TN_DEMOS__) {
     demo = entry
     imported = entry.settings ?? null
     settingsText.value = imported ?? ""
-    void start("build")
+    const { opening: next, notes } = routeOpening(entry.at ?? BUILD_PHASE_ROUTE, `the demo's at`)
+    void start(next, notes)
   })
   demos.append(button)
   demos.hidden = false
 }
 
-importFromAddress()
-void start("build")
+followAddress()

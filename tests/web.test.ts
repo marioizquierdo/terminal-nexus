@@ -8,11 +8,12 @@
 //      (Bun only: the bundler is Bun's, and CI runs the Bun pass);
 //   3. the same characters and colours as the terminal — the canvas backend's paint step against
 //      `frameToText` and the colour table;
-//   4. the page's keys are the scripted playtest's keys — one table of what a terminal sends.
+//   4. the page's keys are the scripted playtest's keys — one table of what a terminal sends;
+//   5. its direct links are the game's routes — `#at=`, the mode buttons and a demo's `at` read what `--at` reads.
 
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
-import { dirname, relative, resolve } from "node:path"
+import { readFileSync, readdirSync } from "node:fs"
+import { dirname, join, relative, resolve } from "node:path"
 import test from "node:test"
 import { runInNewContext } from "node:vm"
 
@@ -33,6 +34,9 @@ import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { keysFromChunk } from "../src/terminal/playback.ts"
 import { BACKGROUND_RGB, rgbFor, seeThroughColours } from "../src/view/roles.ts"
 import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, withShift } from "../src/web/keys.ts"
+import { readAddress } from "../src/web/address.ts"
+import { checkDemos } from "../src/web/demos.ts"
+import { BUILD_PHASE_ROUTE, formatRoute, parseRoute } from "../src/cli/route.ts"
 import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
 import { sameness } from "./web-helpers.ts"
 
@@ -290,4 +294,55 @@ test("the page plays a terminal that reports key events: it answers, keeps the f
   input.emit("data", keyBytes("C-c"))
   assert.equal(await running, 0)
   assert.equal(page.flags, 0, "the Build Phase left the page's key events on")
+})
+
+// --- 5. The page's direct links are the game's routes ---------------------------------------------
+
+test("#at= opens a route, whole: a part runs to the next part the page knows, not to the next &", () => {
+  // As a person writes it: the route's own ? = and &, then a settings text with its own & and =, then keys.
+  const address = readAddress("#at=campaign?level=vasse-test-1&round=2&settings=nextRound=auto&trainEvery=6&keys=Esc n 1")
+  assert.deepEqual(address, { at: "campaign?level=vasse-test-1&round=2", settings: "nextRound=auto&trainEvery=6", keys: "Esc n 1" })
+  const at = parseRoute(address.at ?? "")
+  assert.equal(at.kind === "level" ? `${at.level.id} ${at.round}` : at.place, "vasse-test-1 2")
+  // Percent-encoded, as an address often is, and in any order.
+  assert.deepEqual(readAddress("#keys=Esc%20n%201&at=campaign%3Flevel%3Dvasse-test-1%26wave%3D2"), {
+    keys: "Esc n 1",
+    at: "campaign?level=vasse-test-1&wave=2",
+  })
+  // The addresses the page always took still read as they did.
+  assert.deepEqual(readAddress("#settings=raid%3Dprobe%20crew%3Dsome"), { settings: "raid=probe crew=some" })
+  assert.deepEqual(readAddress("#keys=n%201%201%20Enter"), { keys: "n 1 1 Enter" })
+  assert.deepEqual(readAddress("#at=settings"), { at: "settings" })
+  // Nothing it knows: nothing asked. A lone % is kept as written rather than lost.
+  assert.deepEqual(readAddress(""), {})
+  assert.deepEqual(readAddress("#somewhere"), {})
+  assert.deepEqual(readAddress("#at=campaign?level=100%"), { at: "campaign?level=100%" })
+  // The first of a repeated part counts.
+  assert.deepEqual(readAddress("#at=about&at=settings"), { at: "about" })
+})
+
+test("the page's mode buttons that are game screens open their routes; the replays are named as replays", () => {
+  const html = readFileSync(resolve(ROOT, "src/web/page.html"), "utf8")
+  const routes = [...html.matchAll(/data-at="([^"]*)"/gu)].map((match) => match[1] as string)
+  assert.deepEqual(routes, ["menu", BUILD_PHASE_ROUTE])
+  for (const route of routes) assert.equal(formatRoute(parseRoute(route)), route)
+  assert.deepEqual([...html.matchAll(/data-pulse="([^"]*)"/gu)].map((match) => match[1]), ["pulse-grand", "pulse-mirror"])
+  assert.doesNotMatch(html, /data-mode=/u, "a mode button still names a mode rather than a route")
+})
+
+test("every checked-in demo is one the page can follow: its route, its keys, and nothing it does not know", () => {
+  const folder = resolve(ROOT, "scripts/demos")
+  for (const file of readdirSync(folder).filter((name) => name.endsWith(".json"))) {
+    const demos = checkDemos(JSON.parse(readFileSync(join(folder, file), "utf8")), file)
+    assert.ok(demos.length > 0, `${file} has no demos`)
+    for (const demo of demos) if (demo.at !== undefined) parseRoute(demo.at)
+  }
+  // A demo may open a level at a round; one whose route is not a place, or is on the title menu with keys, is refused.
+  const round2 = checkDemos([{ label: "Round 2", try: "-", at: "campaign?level=vasse-test-1&round=2", keys: "Esc" }], "demos.json")
+  assert.equal(round2[0]?.at, "campaign?level=vasse-test-1&round=2")
+  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "campaign?level=nowhere" }], "demos.json"), /demos\.json: demo 1's at: .*no level "nowhere"/u)
+  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "settings", keys: "Down" }], "demos.json"), /is on the title menu: its keys and settings are for a campaign level/u)
+  assert.throws(() => checkDemos([{ label: "x", try: "-", keys: "Dwn" }], "demos.json"), /demo 1's keys: unknown key "Dwn"/u)
+  assert.throws(() => checkDemos([{ label: "x", try: "-", where: "here" }], "demos.json"), /unknown: where/u)
+  assert.throws(() => checkDemos({ label: "x" }, "demos.json"), /expected a list of demos/u)
 })

@@ -453,6 +453,39 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
   }
 })
 
+test("a route's query form reads too: pairs joined by &, and true or false on every on/off setting", () => {
+  const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
+  // The owner's "foo=6&var=true", with names the game has.
+  const query = parseSettingsExport("trainEvery=6&reducedMotion=true&keyReleases=false&popupPulseMs=false", base)
+  assert.equal(query.snapshot.experiments.trainEvery, 6)
+  assert.equal(query.snapshot.settings.reducedMotion, true)
+  assert.equal(query.snapshot.experiments.keyReleases, "off")
+  assert.equal(query.snapshot.experiments.popupPulseMs, 0)
+  assert.deepEqual(query.applied, ["trainEvery", "reducedMotion", "keyReleases", "popupPulseMs"])
+  assert.deepEqual(query.ignored, [])
+  // Yes words too, where a setting has one "on" value besides "off": Key releases is auto or off.
+  const on = parseSettingsExport("keyReleases=off&keyReleases=true", base)
+  assert.equal(on.snapshot.experiments.keyReleases, "auto")
+  for (const word of ["no", "0", "OFF", "False"]) {
+    assert.equal(parseSettingsExport(`keyReleases=${word}`, base).snapshot.experiments.keyReleases, "off", word)
+  }
+  for (const word of ["yes", "1", "on", "TRUE"]) {
+    const read = parseSettingsExport(`keyReleases=off&keyReleases=${word}&reducedMotion=${word}`, base).snapshot
+    assert.equal(read.experiments.keyReleases, "auto", word)
+    assert.equal(read.settings.reducedMotion, true, word)
+  }
+  // But not a guess: the popup pulse has four lengths besides off, and a setting with no "off" takes no no-word.
+  const guessed = parseSettingsExport("popupPulseMs=true&holdWindowMs=false&nextRound=true", base)
+  assert.deepEqual(guessed.ignored, ["popupPulseMs=true", "holdWindowMs=false", "nextRound=true"])
+  assert.deepEqual(guessed.snapshot, base)
+  // A number is still a number first: 0 is off, and a number between the listed ones is that number.
+  assert.equal(parseSettingsExport("popupPulseMs=0", base).snapshot.experiments.popupPulseMs, 0)
+  // The same text through `--settings`, the browser page's `#settings=` and the playtest: one reader.
+  const imported = importSettings("theme=light&keyReleases=false", DEFAULT_SETTINGS)
+  assert.equal(imported.settings.theme, "light")
+  assert.equal(imported.experiments.keyReleases, "off")
+})
+
 test("--settings on the command line: settings over what is saved, and every experiment from the text", () => {
   const saved: Settings = { ...DEFAULT_SETTINGS, capability: "truecolor" }
   assert.deepEqual(importSettings(undefined, saved), { settings: saved, experiments: defaultExperiments(), ignored: [] })

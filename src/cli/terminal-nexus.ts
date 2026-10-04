@@ -1,6 +1,12 @@
 // The `terminal-nexus` executable's own CLI: the game's actual entry
-// point, as distinct from `grid`'s. No subcommand and no map file: `terminal-nexus` launches straight
-// to the top-level menu.
+// point, as distinct from `grid`'s. No subcommand and no map file: a bare `terminal-nexus` opens the title
+// menu, and `--at <route>` opens any other place in the game (`./route.ts`) — a screen of the title menu, or a
+// campaign level's Build Phase at one of its rounds.
+//
+// **The bare command** opens the title menu today. That is a stand-in for the intended start: once the game can
+// save, a plain launch continues the saved game from its default place beside the settings
+// (`~/.terminal-nexus/`), and opens the title menu only when there is none; `--at` stays the way to go anywhere
+// else, saved game or not. Saves are not built (`launchDestination`).
 //
 // The Settings screen makes what a session starts with layered: a saved choice
 // (from a previous run's Settings screen) beats `grid`'s own first-run colour-depth guess, and an
@@ -14,10 +20,14 @@ import { dirname, join } from "node:path"
 import { parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
 import { detectCapability } from "./grid-main.ts"
 import { parseArgs, parseInteger } from "./args.ts"
+import type { ParsedArgs } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { parseKeyScript } from "../playtest/keys.ts"
 import { runBuildPhase } from "./build-phase.ts"
 import type { Exporter } from "./build-phase.ts"
+import { DEFAULT_LEVEL_ID, LEVELS, levelById } from "./levels.ts"
+import { BUILD_PHASE_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute, parseRoute } from "./route.ts"
+import type { Destination } from "./route.ts"
 import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
@@ -25,44 +35,122 @@ import { importSettings } from "../build/settings-export.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { TerminalOutput } from "../view/backends/ports.ts"
 
-const USAGE = `terminal-nexus — the Terminal Nexus game
+/** `--help`: the places a route names and the levels come from the route table and the level list, so the
+ *  text never names a place or a level the game does not have. */
+function usage(): string {
+  const places = PLACE_NAMES.map((name) => `        ${name.padEnd(12)}${PLACES[name]?.opens ?? ""}`).join("\n")
+  const levels = LEVELS.map((level) => `        ${level.id.padEnd(16)}${level.title}, rounds 1 to ${level.rounds}`).join("\n")
+  const title = levelById(DEFAULT_LEVEL_ID)?.title ?? DEFAULT_LEVEL_ID
+  // Quoted only where the shell would read the route itself.
+  const example = (route: string, what: string): string =>
+    `        --at ${/[?&]/u.test(route) ? `'${route}'` : route}`.padEnd(54) + what
+  return `terminal-nexus — the Terminal Nexus game
 
-  terminal-nexus [--capability monochrome|color16|color256|truecolor]
-                  [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
-                  [--backend auto|ansi|opentui]
-      launches the top-level menu: Campaign, Challenge, Settings, About, Exit
+  terminal-nexus [--at <route>] [--settings "<text>"]
+                 [--capability monochrome|color16|color256|truecolor]
+                 [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
+                 [--backend auto|ansi|opentui]
+      With no --at, opens the title menu: Campaign, Challenge, Settings, About, Exit.
+      (Once the game can save, a plain launch will continue the saved game instead.)
 
-  terminal-nexus --build-phase [the same presentation flags]
-      opens the Build Phase on the starter map and plays the first mission from it: a Grid
-      larger than the screen, a cursor that scrolls it, buildings to place by keyboard, by
-      mouse or from a script, a Nexus power to pick, then the Nexus Pulse. (--spike is an
-      alias for one release; both flags are temporary stand-ins for flags that mean
-      something, such as a scenario to load or a screen to open.)
-      --scroll-margin <percent> changes how close to the edge of the view the cursor gets
-      before the map starts scrolling, as a share of the view's width and height
-      (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same). Esc opens the game menu: Settings,
-      in sections - the display settings (saved, like the title menu's) and Experiments, the
-      choices still being tried, live, never saved; d jumps straight to the first of them.
-      "Export settings" copies them all as text. The game menu's Activity logs shows what
-      happened, through a filter; "Export logs" copies it and saves activity-export.txt.
-      --settings "<text>" starts with an exported text's settings and experiments, for this
-      run only: paste the whole export, or just pairs like "nextRound=auto trainEvery=6".
+  --at <route>
+      opens the game at a place, written like a web address without its site: the place,
+      then ? and name=value pairs joined by &. Quote it: the shell reads ? and & itself.
+${places}
+      For example:
+${example("settings", "the title menu's Settings screen")}
+${example(BUILD_PHASE_ROUTE, `${title}'s Build Phase, round 1`)}
+${example(`${BUILD_PHASE_ROUTE}&round=3`, "its round 3, reached as a player who")}
+${"".padEnd(54)}builds nothing reaches it
+${example(`${BUILD_PHASE_ROUTE}&wave=0`, "round 1: a wave counts from 0")}
+      round counts from 1, as the screen does; wave counts from 0, as the raid's waves do
+      (wave=0 is round 1), and may be given instead. The levels:
+${levels}
+
+      A campaign level opens its Build Phase on its map and plays its mission from there: a
+      Grid larger than the screen, a cursor that scrolls it, buildings to place by keyboard,
+      by mouse or from a script, a Nexus power to pick, then the Nexus Pulse. Esc opens the
+      game menu: Settings, in sections - the display settings (saved, like the title menu's)
+      and Experiments, the choices still being tried, live, never saved; d jumps straight to
+      the first of them. "Export settings" copies them all as text. The game menu's Activity
+      logs shows what happened, through a filter; "Export logs" copies it and saves
+      activity-export.txt. Two flags only a campaign level takes:
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
       playtest's key names: --keys "Esc n 1 1 Enter" skips the intro, picks the first power and
-      places a Barracks.
-      For demos and for reproducing a report; the keyboard is yours after the last key.
+      places a Barracks. For demos and for reproducing a report; the keyboard is yours after
+      the last key.
+      --scroll-margin <percent> changes how close to the edge of the view the cursor gets
+      before the map starts scrolling, as a share of the view's width and height
+      (${TUNING.scrollMargin} unless given; "${TUNING.scrollMargin}" and "${TUNING.scrollMargin}%" are the same).
+
+  --settings "<text>"
+      starts with an exported text's settings and experiments, for this run only: paste the
+      whole export, or just pairs, separated by spaces or by & as in a route:
+      "nextRound=auto trainEvery=6" or "trainEvery=6&reducedMotion=true". On and off
+      settings take true and false too.
+
+  --build-phase, --spike
+      the same as --at '${BUILD_PHASE_ROUTE}', kept for one more release so pasted
+      commands keep working; --at wins when both are given.
 
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
 its own setting for this one run without changing what is saved.
 
 --theme defaults to dark; pass --theme light on a light terminal background.`
+}
+
+/**
+ * Where a launch opens. `--at <route>` says where; `--build-phase` and its older name `--spike` are
+ * `--at campaign?level=vasse-test-1` for one more release, and `--at` wins over them. Throws a `RouteError` for
+ * a route that is not a place in the game.
+ *
+ * **With neither, the title menu.** That is a stand-in for the intended start: once the game can save, a bare
+ * launch is meant to continue the saved game from its default place beside the settings (a file in
+ * `~/.terminal-nexus/`, next to `settings.json`), and to open the title menu only when there is no saved game;
+ * `--at` stays the way to go anywhere else. Saves are not built.
+ */
+export function launchDestination(args: ParsedArgs): Destination {
+  const at = args.options.get("at")
+  if (at !== undefined) return parseRoute(at)
+  if (args.flags.has("build-phase") || args.flags.has("spike")) return parseRoute(BUILD_PHASE_ROUTE)
+  return { kind: "title", place: "menu" }
+}
+
+/** What `--at` says for a route that is not a place: every problem, then where to read what exists. */
+export function routeRefusal(error: RouteError): string {
+  const problems = error.problems.map((problem) => `  - ${problem}\n`).join("")
+  return `terminal-nexus: --at "${error.route}" is not a place in the game:\n${problems}terminal-nexus --help lists every place, with examples.\n`
+}
+
+/** The flags only a campaign level's Build Phase reads. */
+const BUILD_PHASE_FLAGS = ["keys", "scroll-margin"] as const
 
 export async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv)
   if (args.flags.has("help")) {
-    process.stdout.write(`${USAGE}\n`)
+    process.stdout.write(`${usage()}\n`)
     return 0
+  }
+
+  // Where to open, read before anything is touched: a route that is not a place is refused whole, every
+  // problem at once, and so is a flag the place it names cannot use.
+  let destination: Destination
+  try {
+    destination = launchDestination(args)
+  } catch (error) {
+    if (!(error instanceof RouteError)) throw error
+    process.stderr.write(routeRefusal(error))
+    return 2
+  }
+  const unused = BUILD_PHASE_FLAGS.filter((name) => args.options.has(name))
+  if (destination.kind === "title" && unused.length > 0) {
+    const flags = unused.map((name) => `--${name}`).join(" and ")
+    process.stderr.write(
+      `terminal-nexus: ${flags} ${unused.length > 1 ? "are" : "is"} for a campaign level's Build Phase, and ` +
+        `${formatRoute(destination)} is on the title menu: try --at '${BUILD_PHASE_ROUTE}'\n`,
+    )
+    return 2
   }
 
   const settingsStore = createSettingsStore(defaultSettingsPath())
@@ -85,17 +173,18 @@ export async function main(argv: readonly string[]): Promise<number> {
     reducedMotion: args.flags.has("reduced-motion") ? true : imported.settings.reducedMotion,
   }
 
-  // `--build-phase` opens the Build Phase directly. `--spike` is its old name, kept as an alias for
-  // one release so pasted commands keep working. Both are temporary: they name a screen rather than
-  // an intent, and should give way to flags that mean something (a scenario to load, a screen to
-  // open, a state to start in) once the Campaign menu leads here on its own.
-  if (args.flags.has("build-phase") || args.flags.has("spike")) {
+  // The commit this build is: named on About, at the top of an export, and at `session.start`.
+  const buildId = currentCommit()
+
+  // A campaign level: its Build Phase, at the round the route names.
+  if (destination.kind === "level") {
     const margin = args.options.get("scroll-margin")
-    const buildId = currentCommit()
     const startKeys = args.options.get("keys")
     return runBuildPhase({
       settings,
       settingsStore,
+      level: destination.level,
+      round: destination.round,
       backend: args.options.get("backend") ?? "auto",
       stdout: process.stdout,
       stdin: process.stdin,
@@ -109,15 +198,15 @@ export async function main(argv: readonly string[]): Promise<number> {
     })
   }
 
-  // The About screen names the build, so a playtester can say which one they played.
-  const commit = currentCommit()
+  // A place on the title menu: the menu, opened where the route says.
   return runMenu({
     settings,
     settingsStore,
+    at: destination,
     backend: args.options.get("backend") ?? "auto",
     stdout: process.stdout,
     stdin: process.stdin,
-    ...(commit === undefined ? {} : { buildId: commit }),
+    ...(buildId === undefined ? {} : { buildId }),
     hostName: "terminal",
   })
 }

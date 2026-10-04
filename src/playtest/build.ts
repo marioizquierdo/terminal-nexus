@@ -1,4 +1,5 @@
-// A scripted playtest of the Build Phase: the `--build-phase` screen, driven by a key script through the
+// A scripted playtest of the Build Phase: a campaign level's screen (`--at campaign?level=<id>&round=<n>`,
+// PERIMETER's first round unless told otherwise), driven by a key script through the
 // real adapters, with every step's frame kept. No terminal, no clock, no capture race — the frames are
 // composed in-process by the very function the live screen presents (`composeBuildFrame`), so step N's
 // frame is exactly what a player would see after pressing step N's key.
@@ -16,6 +17,9 @@ import type { BuildContext, BuildState } from "../build/state.ts"
 import { foresee, nextRound, startPulse } from "../cli/pulse-run.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
 import { starterContext } from "../cli/starter.ts"
+import { openRound } from "../cli/levels.ts"
+import { BUILD_PHASE_ROUTE, parseRoute } from "../cli/route.ts"
+import type { LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
@@ -42,6 +46,13 @@ export type BuildPlaytestOptions = Readonly<{
   settings?: Settings
   /** Experiments to open with instead of this build's defaults — an imported export's. */
   experiments?: Partial<Experiments>
+  /**
+   * The campaign level and round to open (`--at campaign?level=<id>&round=<n>`, `playtestOpening`): that round
+   * as a player who builds nothing reaches it (`openRound`), the rounds before it played with this run's
+   * settings and Experiments, and its rounds played on its own mission. PERIMETER's first round unless given;
+   * `context` and `play`, when given, win.
+   */
+  at?: LevelDestination
   context?: BuildContext
   /** The mission the rounds are played on, when it is not the screen's own (PERIMETER): another mission's
    *  or a test map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`),
@@ -113,8 +124,17 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   // run's Activity Logs read it too, so a line's time is its step's.
   let clock = 0
   const activity = createActivityLog(() => clock)
+  const opened =
+    options.context ??
+    (options.at === undefined
+      ? starterContext()
+      : openRound(options.at.level, options.at.round, undefined, {
+          settings,
+          ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+        }))
+  const play = options.play ?? options.at?.level.play
   const context: BuildContext = {
-    ...(options.context ?? starterContext()),
+    ...opened,
     settings,
     exportDestination: "Not copied anywhere: this is a scripted playtest.",
     activity,
@@ -137,11 +157,11 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     onQuit: () => {
       leftBy = "quit"
     },
-    startPulse: options.play?.startPulse ?? startPulse,
+    startPulse: play?.startPulse ?? startPulse,
     activity,
-    nextRound: options.play?.nextRound ?? nextRound,
+    nextRound: play?.nextRound ?? nextRound,
     // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
-    ...(options.play === undefined ? { foresee } : options.play.foresee === undefined ? {} : { foresee: options.play.foresee }),
+    ...(play === undefined ? { foresee } : play.foresee === undefined ? {} : { foresee: play.foresee }),
     scenes: options.scenes ?? true,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
@@ -186,4 +206,18 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   }
 
   return { context: build.round, layout, frames, ended, activity }
+}
+
+/**
+ * The campaign level and round `--at <route>` names for a scripted playtest (`runBuildPlaytest`'s `at`). A
+ * scripted playtest plays a campaign level's Build Phase, so a route to the title menu is refused, saying so;
+ * a route that is not a place is refused with every problem (`RouteError`).
+ */
+export function playtestOpening(route: string): LevelDestination {
+  const destination = parseRoute(route)
+  if (destination.kind === "level") return destination
+  throw new Error(
+    `--at ${route} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
+      `try --at '${BUILD_PHASE_ROUTE}&round=2'`,
+  )
 }

@@ -23,6 +23,8 @@ const VALUE_OPTIONS = new Set([
   "scroll-margin",
   "settings",
   "keys",
+  // `terminal-nexus --at <route>`: where the game opens (src/cli/route.ts).
+  "at",
 ])
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {

@@ -88,10 +88,11 @@
   <span class="stamp">playtest build <span id="build"></span></span>
 </header>
 <nav class="row" aria-label="Screen">
-  <button type="button" data-mode="menu">Menu</button>
-  <button type="button" data-mode="build">Build Phase</button>
-  <button type="button" data-mode="pulse-grand">Pulse: grand battle</button>
-  <button type="button" data-mode="pulse-mirror">Pulse: Citizens v Ravels</button>
+  <!-- A game screen's button opens its route, as --at does in a terminal; the replays are the engine tool's battles. -->
+  <button type="button" data-at="menu">Menu</button>
+  <button type="button" data-at="campaign?level=vasse-test-1">Build Phase</button>
+  <button type="button" data-pulse="pulse-grand">Pulse: grand battle</button>
+  <button type="button" data-pulse="pulse-mirror">Pulse: Citizens v Ravels</button>
   <span class="spacer"></span>
   <label class="stamp" for="size">terminal</label>
   <select id="size" aria-label="Terminal size in columns by rows">

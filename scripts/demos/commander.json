@@ -12,12 +12,13 @@
   {
     "label": "Round 2",
     "try": "Round 2, round 1 played with nothing built: two groups, as the round starts and seven seconds in, each with its own trail and its own line in the panel. Where would one Turret catch both?",
-    "keys": "Esc n 1 s s wait~1000*16 Enter"
+    "at": "campaign?level=vasse-test-1&round=2"
   },
   {
     "label": "Vasse falls",
     "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 18 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens without her, and its Battle Round screen says so. Press d to change her health.",
-    "keys": "Esc n 1 s s wait~1000*20 Enter n 1 s s",
+    "at": "campaign?level=vasse-test-1&round=2",
+    "keys": "n 1 s s",
     "settings": "commanderHealth=20"
   }
 ]

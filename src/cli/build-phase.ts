@@ -1,4 +1,5 @@
-// `terminal-nexus --build-phase` — the Build Phase's live terminal loop.
+// `terminal-nexus --at campaign?level=<id>&round=<n>` — the Build Phase's live terminal loop, opened on a
+// campaign level at one of its rounds (`./levels.ts`, `./route.ts`); PERIMETER's first unless told otherwise.
 //
 // Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
 // the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
@@ -23,8 +24,8 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { foresee, nextRound, startPulse } from "./pulse-run.ts"
-import { starterContext } from "./starter.ts"
+import { DEFAULT_LEVEL_ID, levelById, openRound } from "./levels.ts"
+import type { PlayableLevel } from "./levels.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -59,6 +60,16 @@ const messageOf = (error: unknown): string => (error instanceof Error ? error.me
 
 export type BuildPhaseOptions = Readonly<{
   settings: Settings
+  /**
+   * The campaign level to open (`--at campaign?level=<id>`), whose mission its rounds play: PERIMETER
+   * (`DEFAULT_LEVEL_ID`) unless given.
+   */
+  level?: PlayableLevel
+  /**
+   * The round to open it at, counted from 1 as the screen counts (`&round=<n>`): 1 unless given. A later round
+   * is reached as a player who builds nothing reaches it (`openRound`), with this run's Experiments.
+   */
+  round?: number
   /** A backend name, or a backend itself (the browser playtest page's canvas). */
   backend: string | NamedBackend
   stdout: TerminalOutput
@@ -105,12 +116,13 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   const { stdout, stdin } = options
 
   if (!stdout.isTTY || !stdin.isTTY) {
-    stdout.write("terminal-nexus --build-phase needs an interactive terminal.\n")
+    stdout.write("terminal-nexus needs an interactive terminal for the Build Phase.\n")
     return 0
   }
 
   const log = options.activity ?? globalActivity
-  const context = starterContext(options.scrollMargin, {
+  const level = options.level ?? defaultLevel()
+  const context = openRound(level, options.round ?? 1, options.scrollMargin, {
     settings: options.settings,
     // The Activity logs window shows the log this screen records into.
     activity: log,
@@ -209,10 +221,11 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     onQuit: leave,
     onSettingsChange: saveSettings,
     onExport: exportText,
-    startPulse,
+    // The level's own mission: its Pulses, the round after each, and its raid foreseen.
+    startPulse: level.play.startPulse,
     activity: log,
-    nextRound,
-    foresee,
+    nextRound: level.play.nextRound,
+    foresee: level.play.foresee,
     scenes: options.scenes ?? true,
   })
 
@@ -444,8 +457,15 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     host.reportError(`terminal-nexus: could not save settings or the export: ${String(sideEffectError)}\n`)
   }
   if (failure !== null) {
-    host.reportError(`terminal-nexus --build-phase failed: ${String(failure)}\n`)
+    host.reportError(`terminal-nexus failed in the Build Phase: ${String(failure)}\n`)
     return 1
   }
   return 0
+}
+
+/** The level the Build Phase opens when it is told none: PERIMETER, Vasse's first. */
+function defaultLevel(): PlayableLevel {
+  const level = levelById(DEFAULT_LEVEL_ID)
+  if (level === undefined) throw new Error(`the default level "${DEFAULT_LEVEL_ID}" is not one the game can open`)
+  return level
 }
