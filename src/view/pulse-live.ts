@@ -10,20 +10,30 @@
 // Two things reach back into the Build Phase's state, both as ordinary named commands (`due`): the view
 // is centred on the player's Grid Nexus when the Pulse starts and again when its ending begins. Nothing
 // here can change what the Pulse did — presentation never can (`docs/system-design/grid-engine.md`).
+//
+// Two more things the presenter works out for the scene, the same way: what the player's Commander says and
+// when (`pulse-voice.ts`, planned once from the resolved Pulse, shown as the "Vasse's voice" Experiment says),
+// and the reach of her aura while the fight is on — both read off the Pulse, neither able to touch it.
 
+import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
-import type { TileWidth } from "../build/camera.ts"
+import type { Camera, TileWidth, Viewport } from "../build/camera.ts"
+import { visibleRange } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
 import type { MissionVerdict } from "../mission/types.ts"
-import type { Outcome } from "../state/types.ts"
+import type { Outcome, PlayerId } from "../state/types.ts"
 import { endingTimes, missionResultOf, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
 import type { EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
 import type { CapabilityMode } from "./roles.ts"
 import { FRAME_MS } from "./build-live.ts"
+import type { ActiveEffect } from "./effects/index.ts"
+import { EFFECT_RECIPES } from "./effects/recipes.ts"
 import { Playback } from "../terminal/playback.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
-import type { PulseFrame } from "./pulse-scene.ts"
+import type { AuraFrame, PulseFrame, VoiceFrame } from "./pulse-scene.ts"
+import type { Speaker, SpokenLine, VoiceMode } from "./pulse-voice.ts"
+import { VOICE, labelPlace, planVoice, shippedBarks, speakerOf, voiceAt, voiceLight, voiceMoments } from "./pulse-voice.ts"
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
@@ -53,6 +63,30 @@ export type MissionRound = Readonly<{
 
 /** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */
 const STEP_FRAMES_PER_SECOND = 30
+
+/** How a frame is drawn: the player's display settings, and — for her voice — the "Vasse's voice"
+ *  Experiment and the part of the map in view (her words go to the panel when she is out of it). */
+export type PulseFrameOptions = Readonly<{
+  capability: CapabilityMode
+  tileWidth: TileWidth
+  reducedMotion: boolean
+  /** Where her words appear. Absent: nowhere, as `off`. */
+  voice?: VoiceMode
+  /** The part of the map on screen. Absent: all of it. */
+  view?: Readonly<{ camera: Camera; viewport: Viewport }>
+}>
+
+/** The player's Commander in a resolved Pulse, as her aura and her voice read her: her ordinal, her unit, and
+ *  her aura's reach in tiles (`null` without one). */
+type Bearer = Readonly<{ ordinal: number; contentId: string; player: PlayerId; aura: number | null }>
+
+/** Her voice in one Pulse, planned once: who speaks, what she says when, where she fell (her last words are
+ *  said there), and where on the map each line beside her is shown, worked out the first time it is drawn. */
+type VoicePlan = Readonly<{ speaker: Speaker; lines: readonly SpokenLine[]; fellAt: Coord | null; places: Map<SpokenLine, Coord> }>
+
+/** How the presenter finds a Commander's lines: by her unit's id, in the armies the game ships unless a test
+ *  hands it others. */
+export type BarksOf = (contentId: string) => Barks
 
 /** A unit rather than a structure: structures sit on the obstacles layer, and a force bar leaves them out
  *  (a 400-point Grid Nexus would swamp it). */
@@ -88,10 +122,15 @@ export class PulsePresenter {
    *  player (the Next round Experiment). */
   private readonly autoNextMs: number | null
 
+  /** The player's Commander in this Pulse, or `null` when she is not on the Grid in it. */
+  private readonly bearer: Bearer | null
+  /** What she says in this Pulse and when, or `null` when she says nothing in it (`pulse-voice.ts`). */
+  private readonly voice: VoicePlan | null
+
   constructor(
     resolved: ResolvedPulse,
     presentation: PresentationOptions = DEFAULT_PRESENTATION,
-    options: Readonly<{ autoNextMs?: number | null }> = {},
+    options: Readonly<{ autoNextMs?: number | null; barksOf?: BarksOf }> = {},
   ) {
     this.resolved = resolved
     this.autoNextMs = options.autoNextMs ?? null
@@ -106,6 +145,43 @@ export class PulsePresenter {
       tickDurationMs: this.view.tickDurationMs,
       frameDurationMs: 1000 / STEP_FRAMES_PER_SECOND,
     })
+    this.bearer = bearerOf(resolved.timeline)
+    this.voice = this.planLines(options.barksOf ?? shippedBarks, presentation.cosmeticSeed)
+  }
+
+  /** Her voice in this Pulse, planned once from the resolved fight: its moments, and the lines she says at the
+   *  ones there is room for. The round's number steps the line each moment picks (`pickLine`). */
+  private planLines(barksOf: BarksOf, cosmeticSeed: number): VoicePlan | null {
+    const { timeline } = this.resolved
+    const speaker = speakerOf(timeline, barksOf)
+    if (speaker === null) return null
+    const end = { stopMs: this.times.stopMs, won: this.result.tone === "success" }
+    const lines = planVoice(voiceMoments(timeline, speaker, end), speaker.barks, { round: this.resolved.mission?.round ?? 1, cosmeticSeed })
+    if (lines.length === 0) return null
+    const fell = timeline.events.find((event) => event.kind === "entity.died" && event.ordinal === speaker.ordinal)
+    return { speaker, lines, fellAt: fell?.kind === "entity.died" ? fell.at : null, places: new Map() }
+  }
+
+  /** What she says in this Pulse, in the order she says it — none when she says nothing. What the session
+   *  records in the Activity Logs as each one starts. */
+  get spoken(): readonly SpokenLine[] {
+    return this.voice?.lines ?? []
+  }
+
+  /** Her name as the screen gives it, when she says anything in this Pulse. */
+  get speakerName(): string | null {
+    return this.voice?.speaker.name ?? null
+  }
+
+  /** The tile she stands on at a presentation instant, by the resolved states (not the drawn glide), or where
+   *  she fell once she has: where a line of hers is said, for the Activity Logs. `null` when she is not on the
+   *  Grid. */
+  speakerTileAt(timeMs: number): Coord | null {
+    const voice = this.voice
+    if (voice === null) return null
+    const tick = Math.max(0, Math.min(this.view.lastTick, Math.floor(timeMs / this.view.tickDurationMs)))
+    const standing = this.resolved.timeline.states[tick]?.entities.find((entity) => entity.ordinal === voice.speaker.ordinal)
+    return standing?.anchor ?? voice.fellAt
   }
 
   /** Where in the Pulse the screen is, in presentation milliseconds. */
@@ -181,34 +257,45 @@ export class PulsePresenter {
   busyUntil(now: number): number | null {
     if (this.playback.paused) return null
     if (this.phase() !== "home") return now + FRAME_MS
+    // A line of hers still typing, being read or thinning out over the result: every frame until it is gone.
+    if (this.voice !== null && this.voice.lines.some((line) => this.timeMs < line.endMs)) return now + FRAME_MS
     // The result stands still; the timer runs on only to begin the next round on its own, when it will.
     if (this.autoNextMs === null || this.fired.has("next")) return null
     return now + Math.max(FRAME_MS, this.times.homeMs + this.autoNextMs - this.timeMs)
   }
 
   /** What the scene draws at the Pulse's current time, the red flashes on the border when the player's
-   *  Nexus is hurt included (the owner kept them, 2026-09-30). */
-  frame(options: Readonly<{ capability: CapabilityMode; tileWidth: TileWidth; reducedMotion: boolean }>): PulseFrame {
+   *  Nexus is hurt included (the owner kept them, 2026-09-30), and — while she is on the Grid — her aura's
+   *  reach and what she is saying. */
+  frame(options: PulseFrameOptions): PulseFrame {
     const { capability, tileWidth, reducedMotion } = options
     const timeMs = this.timeMs
     const times = this.times
-    const sample = this.view.sampleAt(timeMs, capability, tileWidth, reducedMotion)
+    const drawn = this.view.sampleAt(timeMs, capability, tileWidth, reducedMotion)
     const walk = walkPositions(this.resolved.recall.moves, times, timeMs, reducedMotion)
-    const positions = walk.size === 0 ? sample.positions : new Map([...sample.positions, ...walk])
+    const positions = walk.size === 0 ? drawn.positions : new Map([...drawn.positions, ...walk])
     const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
-    for (const entity of sample.state.entities) {
+    for (const entity of drawn.state.entities) {
       if (!isMobile(this.resolved.timeline, entity.contentId)) continue
       forces[entity.player].units += 1
       forces[entity.player].hp += entity.hp
     }
+    const phase = phaseAt(times, timeMs)
+    const aura = this.auraAt(drawn.state.entities, positions, phase)
+    const voice = this.voiceFrame(options, drawn.state.entities, drawn.heldCorpses, positions)
+    // The light on her as she starts to speak, painted with every other effect, under the corruption law.
+    const light = voice === null ? null : this.lightOn(voice, options)
+    const sample = light === null ? drawn : { ...drawn, effects: [...drawn.effects, light] }
     return {
+      ...(aura === null ? {} : { aura }),
+      ...(voice === null ? {} : { voice: voice.frame }),
       sample,
       registry: this.resolved.timeline.registry,
       openingHealth: this.view.openingHealth,
       ticksPerSecond: this.resolved.timeline.ticksPerSecond,
       paused: this.playback.paused,
       speed: this.playback.speed,
-      phase: phaseAt(times, timeMs),
+      phase,
       timeMs,
       times,
       reducedMotion,
@@ -219,4 +306,114 @@ export class PulsePresenter {
       home: this.home,
     }
   }
+
+  /**
+   * Her aura's reach, while the fight is on and she stands in it: the tile she is drawn on, and the radius the
+   * content gives her aura. Gone at cease fire — it protects in a fight, and the walk home is not one — and
+   * gone when she falls.
+   */
+  private auraAt(standing: readonly Readonly<{ ordinal: number }>[], positions: ReadonlyMap<number, Coord>, phase: EndingPhase): AuraFrame | null {
+    const bearer = this.bearer
+    if (bearer === null || bearer.aura === null || bearer.aura <= 0) return null
+    if (phase !== "fighting" && phase !== "final") return null
+    if (!standing.some((entity) => entity.ordinal === bearer.ordinal)) return null
+    const at = positions.get(bearer.ordinal)
+    return at === undefined ? null : { at, radius: bearer.aura, player: bearer.player }
+  }
+
+  /**
+   * What she is saying at this instant, as the scene draws it, or `null` when she is saying nothing — or the
+   * Experiment has her voice off. Said where she is drawn, or where she fell for her last words; in the panel
+   * when the Experiment says so, or when she is out of the part of the map on screen.
+   */
+  private voiceFrame(
+    options: PulseFrameOptions,
+    standing: readonly Readonly<{ ordinal: number }>[],
+    held: readonly Readonly<{ ordinal: number }>[],
+    positions: ReadonlyMap<number, Coord>,
+  ): Readonly<{ frame: VoiceFrame; line: SpokenLine; at: Coord }> | null {
+    const voice = this.voice
+    const mode = options.voice ?? "off"
+    if (voice === null || mode === "off") return null
+    const now = voiceAt(voice.lines, this.timeMs, options.reducedMotion)
+    if (now === null) return null
+    const { speaker } = voice
+    const here = standing.some((entity) => entity.ordinal === speaker.ordinal) || held.some((entity) => entity.ordinal === speaker.ordinal)
+    const at = here ? (positions.get(speaker.ordinal) ?? voice.fellAt) : voice.fellAt
+    if (at === null) return null
+    const place = mode === "beside" ? this.placeFor(now.line, options.view) : null
+    const seen = options.view === undefined || (inRange(at, options.view) && place !== null && inRange({ x: options.view.camera.x, y: place.y }, options.view))
+    const frame: VoiceFrame = {
+      text: now.line.text,
+      typed: now.typed,
+      fading: now.fading,
+      name: speaker.name,
+      contentId: speaker.contentId,
+      player: speaker.player,
+      where: mode === "beside" && seen && place !== null ? "map" : "panel",
+      at,
+      place: place ?? at,
+    }
+    return { frame, line: now.line, at }
+  }
+
+  /** Where on the map a line beside her is shown (`labelPlace`): worked out the first time the line is drawn,
+   *  from where she stands as it begins, everything it will be shown over and the part of the map in view then,
+   *  and kept while it is said. `null` when she is nowhere to say it from. */
+  private placeFor(line: SpokenLine, view: PulseFrameOptions["view"]): Coord | null {
+    const voice = this.voice
+    if (voice === null) return null
+    const known = voice.places.get(line)
+    if (known !== undefined) return known
+    const { timeline } = this.resolved
+    const tickOf = (ms: number): number => Math.max(0, Math.min(this.view.lastTick, Math.floor(ms / this.view.tickDurationMs)))
+    const first = tickOf(line.startMs)
+    const last = tickOf(line.endMs)
+    const her = timeline.states[first]?.entities.find((entity) => entity.ordinal === voice.speaker.ordinal)?.anchor ?? voice.fellAt
+    const opening = timeline.states[0]
+    if (her === null || opening === undefined) return null
+    const within = view === undefined ? undefined : visibleRange(view.camera, view.viewport)
+    const place = labelPlace(line.text, her, timeline.states.slice(first, last + 1), timeline.registry, opening.grid, within)
+    voice.places.set(line, place)
+    return place
+  }
+
+  /** The light on her as a line starts (`voiceLight`), while it lasts: none for her last words — she is gone
+   *  from the tile — and none with the effects off. */
+  private lightOn(voice: Readonly<{ line: SpokenLine; at: Coord }>, options: PulseFrameOptions): ActiveEffect | null {
+    const { line, at } = voice
+    if (line.moment === "falls" || !this.view.presentation.effects) return null
+    if (this.timeMs >= line.startMs + VOICE.lightMs) return null
+    const instance = voiceLight(line, at)
+    const recipe = EFFECT_RECIPES[instance.recipe]
+    if (recipe === undefined) return null
+    const cells = recipe(instance, {
+      timeMs: this.timeMs,
+      cosmeticSeed: this.view.presentation.cosmeticSeed,
+      tileWidth: options.tileWidth,
+      reducedMotion: options.reducedMotion,
+      capability: options.capability,
+    })
+    return { instance, cells }
+  }
+}
+
+/** Whether a tile is in the part of the map on screen. */
+function inRange(tile: Coord, view: Readonly<{ camera: Camera; viewport: Viewport }>): boolean {
+  const range = visibleRange(view.camera, view.viewport)
+  return tile.x >= range.firstX && tile.x <= range.lastX && tile.y >= range.firstY && tile.y <= range.lastY
+}
+
+/** The player's Commander in a resolved Pulse — the first state she stands in — or `null` when she is not on the
+ *  Grid in it. */
+function bearerOf(timeline: PulseTimeline, player: PlayerId = "A"): Bearer | null {
+  for (const state of timeline.states) {
+    for (const entity of state.entities) {
+      if (entity.player !== player) continue
+      const definition = timeline.registry.get(entity.contentId)
+      if (definition.commander !== true) continue
+      return { ordinal: entity.ordinal, contentId: entity.contentId, player, aura: definition.aura?.radius ?? null }
+    }
+  }
+  return null
 }

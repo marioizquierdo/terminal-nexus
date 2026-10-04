@@ -22,10 +22,12 @@ import { keysFromChunk } from "../terminal/playback.ts"
 import { PulsePresenter, outcomeOf } from "./pulse-live.ts"
 import type { ResolvedPulse } from "./pulse-live.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
+import type { SpokenLine } from "./pulse-voice.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { escLabel } from "../build/layout.ts"
 import { popupSpec, placePopup } from "../build/popup.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
+import { visibleRange } from "../build/camera.ts"
 import type { CursorKey } from "../terminal/list-keys.ts"
 import { cursorKeyOf } from "../terminal/list-keys.ts"
 import { buildKeyboardCommand } from "../build/keyboard.ts"
@@ -115,6 +117,9 @@ export class BuildSession {
   private readonly log: ActivityLog
   /** The Pulse on screen has had its result recorded, so watching it again does not record it twice. */
   private resultLogged = false
+  /** The lines of the Commander's on screen already recorded (or passed over while her voice was off), so
+   *  watching the Pulse again does not record them twice. */
+  private voiced = new Set<SpokenLine>()
   /** How far cursor keys move — taps counted, holds on the game's cadence: input-path state, beside the
    *  reducer and never in it. */
   private readonly motion = new KeyMotion()
@@ -206,18 +211,21 @@ export class BuildSession {
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
     for (const command of this.presenter.due()) this.dispatch(command)
+    this.noteVoice()
     this.noteResult()
   }
 
   /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
-   *  none. */
+   *  none. Her voice where the "Vasse's voice" Experiment says, against the part of the map in view. */
   pulseFrame(layout: BuildLayout): PulseFrame | undefined {
     if (this.presenter === null) return undefined
-    const { settings } = this.buildState
+    const { settings, camera, viewport } = this.buildState
     return this.presenter.frame({
       capability: settings.capability,
       tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
+      voice: setting(this.buildState, "commanderVoice"),
+      view: { camera, viewport },
     })
   }
 
@@ -339,6 +347,39 @@ export class BuildSession {
     for (const placement of after.planned) if (!was.has(placement.ordinal)) this.log.log("build.placed", entry(placement))
   }
 
+  /**
+   * Her lines that have begun on screen since the last look, each recorded once (`voice.line`): what she said,
+   * at which moment and second, and where it showed — under the feed, or beside her when she was in view. A
+   * line that began while the Experiment had her voice off was never said, and is not recorded later either;
+   * watching the Pulse again says nothing new.
+   */
+  private noteVoice(): void {
+    const presenter = this.presenter
+    if (presenter === null) return
+    try {
+      const mode = setting(this.buildState, "commanderVoice")
+      const timeMs = presenter.timeMs
+      for (const line of presenter.spoken) {
+        if (line.startMs > timeMs || this.voiced.has(line)) continue
+        this.voiced.add(line)
+        if (mode === "off" || timeMs >= line.endMs) continue
+        const at = presenter.speakerTileAt(line.startMs)
+        const range = visibleRange(this.buildState.camera, this.buildState.viewport)
+        const inView = at !== null && at.x >= range.firstX && at.x <= range.lastX && at.y >= range.firstY && at.y <= range.lastY
+        this.log.log("voice.line", {
+          speaker: presenter.speakerName ?? "",
+          round: this.buildState.pulseNumber,
+          second: Math.round(line.startMs / 100) / 10,
+          moment: line.moment,
+          line: line.text,
+          shown: mode === "beside" && inView ? "beside" : "feed",
+        })
+      }
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
+  }
+
   /** The Pulse on screen has reached its result, the first time: recorded once (`pulse.end`). */
   private noteResult(): void {
     const presenter = this.presenter
@@ -390,6 +431,7 @@ export class BuildSession {
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
     })
     this.resultLogged = false
+    this.voiced = new Set()
     this.log.log("pulse.start", { round: this.buildState.pulseNumber, buildings: this.buildState.planned.length })
     // Started by a key that arrived at a known time: the Pulse is at zero from that moment.
     if (this.now !== undefined) this.presenter.advance(this.now)
