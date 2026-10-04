@@ -194,6 +194,7 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Recall** — what happens when a Pulse ends: surviving units walk home, so the next round starts from what the last one left.
 - **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
 - **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds the cards any Commander may use, `armies/vasse` her Commander and her campaign ([`content.md`](content.md)).
+- **build range** — the ground a player may build on: within the construction radius of their Grid Nexus and of every building linked to it ([`pulse.md`](pulse.md)).
 - **route** — a place in the game written like a web address without its site (`settings`, `campaign?level=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
 - **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
 - **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.

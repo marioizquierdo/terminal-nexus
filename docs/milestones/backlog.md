@@ -135,7 +135,7 @@ genuinely fine to leave unanswered until the project reaches them.
 - drafting modes and player-defined Commanders: designed only when a milestone wants them;
 - the army-breadth caps (structures and tech tree depth, Nexus powers, Specials) and the size of the hand each Build Phase deals;
 - the run's exact numbers (battles, acts, offer size, tier schedule), difficulty ladders, daily seeds and leaderboards ([`game-modes.md`](../game-design/game-modes.md)), retuned by Milestone 11 on runs actually played;
-- radius metric, same-plan chaining, and hidden reveal conflicts;
+- hidden reveal conflicts, and building inside enemy coverage;
 - equal-tick mutual Nexus destruction;
 - exact Nexus draft timing and research stacking;
 - scoring and long-term skirmish progression;

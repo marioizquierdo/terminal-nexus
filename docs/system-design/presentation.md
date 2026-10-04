@@ -294,14 +294,14 @@ point:
 | Band | Fed by |
 | --- | --- |
 | 1 `terrain` | `terrain` layer |
-| 2 `territory` | construction coverage |
+| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase |
 | 3 `ground-items` | salvage, rubble, deposits |
 | 4 `structures` | `obstacles` layer |
 | 5 `units` | `workers` and `units` layers |
 | 6 `air` | `air` layer |
 | 7 `projectiles` | presentation only |
 | 8 `effects` | presentation only |
-| 9 `highlights` | selection, cursor, preview, range |
+| 9 `highlights` | selection, cursor, preview, range: a building's reach |
 | 10 `chrome` | frame, sidebar, status strip, popups |
 
 Each band returns sparse cells; the topmost defined cell replaces the lower complete cell style. Grid

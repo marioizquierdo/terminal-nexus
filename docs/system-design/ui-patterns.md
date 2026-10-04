@@ -228,7 +228,8 @@ title screen's menu.
   The icon is the thing's own glyphs, or a bare tile's; the title sits beside it with the subtitle under
   it — one short line on what the thing is for; the description is two or three plain sentences with a
   little more detail, wrapped under the icon; then the numbers as label/value rows — cost where the menu
-  sells it, health, size and attack, or a bare tile's position. **No status line**: planned, standing or
+  sells it, health, size and attack, the building's build range ("cut off" in Explore Map for one cut off
+  from the Nexus), or a bare tile's position. **No status line**: planned, standing or
   about to be placed is plain from the rest of the screen. The words are written with the content
   (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text never cuts a
   word**; if the words are too long, shorten them. One function draws every card (`drawCardBody`): that is
@@ -264,12 +265,14 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
 - **Explore Map sends the see-through cursor** — a copy of the map cursor at 80% opacity, gliding from
   its row to the cursor over whatever it crosses (see *See-through styles*). Exploring only moves the focus, so it sends
   the cursor itself rather than a ray. (RULE — `tests/build-handoff.test.ts`)
-- **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if the footprint fits;
-  else the nearest spot within reach leaving a free tile around it, else the nearest that fits —
+- **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if the footprint fits
+  inside the build range; else the nearest spot within reach inside the range leaving a free tile around it,
+  else the nearest that fits —
   nearest by the cursor's move, a step up or down costing more than a step sideways, so a run grows to
   the right (the reach and the cost are tuned values, `armSearchTiles` and `armVerticalCost`).
   With none in reach, arming steps one right and one down and draws the building as itself rather than
-  as a refusal, until the player moves or tries. **Explore Map opened from the menu uses the same rule
+  as a refusal, until the player moves or tries, and the bottom line says whether nothing fits nearby or
+  nothing in the build range does. **Explore Map opened from the menu uses the same rule
   for one tile**, landing on clear ground that is easy to follow (or staying put); opened from the map,
   the cursor stays where the player put it. (RULE — `tests/build-focus.test.ts`, `tests/build-handoff.test.ts`)
 
@@ -449,7 +452,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 - **A message is typed** — text, a tone and its tile, never a bare string; hints have the quieter `hint`
   tone, and tones resolve onto style roles in one place (`src/view/status.ts`).
 - **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`. **A refusal names
-  its tile**, and affordability comes before any tile problem. (RULE — `tests/build-help.test.ts`)
+  its tile**: affordability comes first, then the build range (a region), then the tile's own problem. (RULE — `tests/build-help.test.ts`)
 - **Looking reads quietly, trying loudly**: a ghost on a tile it cannot use shows a grey block of `x` and
   a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
   **A command's own answer comes first**, a refusal included; the ghost's reason is what the line says
@@ -490,7 +493,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   nearer the edge, armed or not, so clicking with the ghost keeps scrolling.
   (RULE — `tests/build-focus.test.ts`, `tests/build-motion.test.ts`, `tests/build-phase.test.ts`)
 - **Placing**: a planned building is drawn at full strength; undo and remove keep the plan revisable
-  until the Pulse. A refused try flashes the footprint in the danger colour as the bottom line says why.
+  until the Pulse, except that a building another planned building needs for its build range stays until
+  that one goes; the bottom line names it. A refused try flashes the footprint in the danger colour as the bottom line says why.
   (RULE for the flash — `tests/build-motion.test.ts`)
 - **What else is on the map**: after a round, every survivor stands where Recall put it — the
   player's own and the raid's — and the raid's own structures stand where its plan put them, each in its
@@ -517,6 +521,21 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   dim and faded, never over a glyph; the target is underlined under a wash of the raid's colour, never
   red. Later groups are foreseen against the round's opening. (RULE — `tests/raid-view.test.ts`,
   `tests/intent.test.ts`)
+- ***The build range and a building's reach*** (named patterns; the owner's "a cool and unobstrussive way
+  to show where the turrets will reach ... they also can only be built within the build-range of the other
+  buildings"). Two different things get two different marks. **The build range is an area.** While a
+  building is armed, every open tile inside it shows the ground's own dot, dim, so where the player may
+  build is the densely dotted ground, and where colours blend it is lit by a faint grey wash. **A
+  building's reach is an outline.** The last tiles it reaches, as the kernel measures range, are drawn round
+  its ghost in strokes: `-` and `|` along its footprint's sides, `/` and `\` across the corners (`─ │ ╱ ╲`
+  in Unicode). The outline is dim, in the ghost's own look (the hotkey's colour where Enter would place,
+  grey where it would refuse), moves with the ghost, and is drawn round a placed building the cursor rests
+  on in Explore Map and plain navigation. A reach is an attack's range today; another kind of range joins
+  it in one place (`reachOf`, `src/view/build-areas.ts`). Both are carried by glyphs, so monochrome and 16
+  colours show them. Both are drawn on open ground only, never over anything standing, planned or
+  arriving, nor over the raid's trail, which stays as built: nothing claims what a range would catch on
+  the raid's way. Neither shows under a popup, on a committed plan, or during a Pulse.
+  (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
 
 ## 13. Effects
 

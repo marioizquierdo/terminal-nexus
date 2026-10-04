@@ -18,11 +18,15 @@ numbering. Built on the same pull request as a fourth round of the Commander ste
 > of the other buildings, so we should also reflect that. Hopefully there's a way to represent that in ascii
 > without too much noise.
 
-**Scheduled** (this round). The ghost of a building with range shows where it will reach, quietly, the same
-way any building with a range will later. Construction territory, designed but never built, is built: a
-building may only be placed within the construction radius of the player's other buildings, rooted at the
-Grid Nexus, and the Build Phase shows where that is while a building is armed. Nothing claims what a range
-will catch on the raid's predicted way: the raid's trail stays as built and makes no new promise.
+**Built.** A Turret's ghost shows where it will reach: a thin outline round it, in its colour, moving with
+it, and round a placed Turret the cursor rests on. Any building with a range will show it the same way.
+Construction territory is built: a building may only be placed inside the build range, the ground near the
+Grid Nexus and every building linked to it, buildings linking where their ranges meet. While one is armed,
+that ground is drawn densely dotted and faintly lit, so it reads in monochrome too. A plan can chain outward,
+a building another one needs cannot be removed from under it, and a refusal says "outside your build range"
+and where. How far the range reaches is an Experiment, Build range (2, 3 or 4 tiles; 3 to begin with, the
+smallest at which the starting base is linked). Nothing claims what a range will catch on the raid's way: the
+raid's trail stays as built.
 
 ### F115 — No posts yet; a level names where your troops go
 

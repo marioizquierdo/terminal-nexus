@@ -22,7 +22,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 
 | Id | Question | Status | Waits on |
 | --- | --- | --- | --- |
-| [Q5](#q5--what-is-the-default-construction-radius) | What is the default construction radius? | OPEN | Backlog: construction radius and outposts |
+| [Q5](#q5--what-is-the-default-construction-radius) | What is the default construction radius? | OBSERVABLE | Mario's playtest of the Build range Experiment |
 | [Q7](#q7--do-workers-carry-or-produce-in-place) | Do workers carry, or produce in place? | OPEN | Milestone 7 (worker economy), for the storage half |
 | [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Backlog: routing and economy |
 | [Q14](#q14--should-the-movement-tie-break-be-mirror-fair-or-is-a-fixed-compass-order-enough) | Should the movement tie-break be mirror-fair? | OPEN | Backlog: routing |
@@ -50,13 +50,19 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 
 ### Q5 — What is the default construction radius?
 
-**Status:** OPEN — trivial to answer; blocks nothing, because no content has a radius yet.
+**Status:** OBSERVABLE — built 2026-10-04 as the Build range Experiment; waits on Mario's playtest of it.
 
-[`pulse.md`](../system-design/pulse.md) says two tiles. The builder concept art shows `RADIUS +4`. One
-of the two is stale. The distance metric for radius is separately unlocked and waits with outposts.
+[`pulse.md`](../system-design/pulse.md) said two tiles. The builder concept art shows `RADIUS +4`. One
+of the two is stale.
 
-**Recommendation:** keep two as the default in the design documents and treat `+4` as an outpost value, which is
-what the art is actually showing — it is drawn on an Outpost.
+Construction territory is built (Mario, 2026-10-04: buildings "can only be built within the build-range of the
+other buildings"), with the radius as the **Build range** Experiment: 2, 3 or 4 tiles, 3 to begin with, measured
+as range is (Manhattan, from the footprint). Measured on PERIMETER at the start: at 2 the Barracks beside the
+Nexus is cut off, 24 tiles are buildable and no Turret placed then reaches the raid's way in; at 3 the base
+links and 82 tiles are buildable; at 4, 120.
+
+**Recommendation:** 3, the smallest radius at which the starting base is linked while chaining still matters;
+treat `+4` as an outpost value, which is what the art is actually showing — it is drawn on an Outpost.
 
 ### Q7 — Do workers carry, or produce in place?
 

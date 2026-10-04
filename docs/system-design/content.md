@@ -79,6 +79,10 @@ interface ProductionRecipe {
 }
 ```
 
+The sketch's `buildRadius` is built as `constructionRadius` on `ContentDef`: every building the player places
+has one, the kernel never reads it, and while the "Build range" Experiment is felt its value stands in for each
+([`pulse.md`](pulse.md), construction territory).
+
 The recipe the Pulse runs today (`ProductionRecipe` in `src/content/types.ts`) is the free part of this
 one: `output`, `quantity`, `intervalTicks`, and a `perPulse` cap that stands in for the supply a
 recipe will one day need. `cost` and `spawnRule` arrive with the worker economy. No content definition

@@ -237,6 +237,19 @@ than any one feature:
    reads the bundles, so the map could no longer live in the catalog without a circular import; it moved to
    `src/build/maps.ts`, re-exported where it was, and no importer changed.
 
+## The Commander's fourth round (2026-10-04)
+
+1. **A new placement rule moves every test that places a building.** Construction territory refused dozens of
+   placements chosen years of rounds ago for the camera's convenience. Pin a placement to what it means (inside
+   the range, beside the Barracks), not to a coordinate, and the next rule moves fewer of them.
+2. **Two checks for one invariant leave a loophole between them.** Removal was first checked with "still
+   linked", placement with "inside the range": a stepping-stone building could be placed, built past, then
+   removed. Check the invariant you mean (the plan could still be placed, a building at a time).
+3. **A faint wash is invisible at 16 colours, the player's default, and in monochrome.** An area needs a glyph
+   at every depth: the build range is the ground's own dots, the wash only adds light where colours blend.
+4. **Do the renames before the split.** Renaming bundles to armies and removing a word from the game touched
+   forty files; done first, on its own commit, it cost four agents nothing.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

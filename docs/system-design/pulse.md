@@ -331,14 +331,27 @@ buildable terrain.
 as salvage on the Grid. Workers from either side drain salvage. Building over remaining salvage
 destroys it.
 
-**Construction territory:** the Grid Nexus roots a connected network; structures project a
-construction radius (default two tiles, outposts farther; the default is an open question, Q5); a
-disconnected structure keeps operating but stops projecting; a player cannot build inside enemy
-coverage that was public at Build Phase start.
+**Construction territory** (RULE — `src/build/territory.ts`, `tests/build-territory.test.ts`). The player may
+build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
+build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
+content definition with a `constructionRadius`; today every building the player places) lets its player build
+within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. Two of the
+player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the two
+radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the network
+projects. One cut off from it keeps working (it trains, it shoots) and gives no build range; a structure that
+projects nothing joins only where the network's range reaches it. A new building may be placed only where all
+of its footprint is inside the range. A planned building projects at once, so one Build Phase can chain
+outward. Removing or undoing a planned building is refused when another planned building needs its range: the
+plan always stays one that could be placed, a building at a time, from what stands. A standing building may be
+cut off by a removal, since a standing one keeps working. A range passes over rock, which is refused on its
+own. While the "Build range" Experiment is felt, its value (2, 3 or 4 tiles; 3 to begin with) is every
+projecting structure's radius; outposts that reach farther wait for outposts (Q5). With no Grid Nexus of the
+player's standing there is no network and nothing can be built. The Build Phase enforces this and the kernel
+never reads it, since the Build Phase is the only way a player's plan is made.
 
-The radius metric, footprint-to-radius measurement, same-plan chaining, simultaneous same-cell
-conflicts, path-sealing legality, and refunds for invalid revealed plans are still to be decided
-when construction is built. No other system may guess those answers.
+Still open, because nothing reaches them yet: building inside enemy coverage that was public at Build Phase
+start (no raid stands a building at the start of a Build Phase), simultaneous same-cell conflicts and refunds
+for invalid revealed plans (two plans meeting), and path-sealing legality.
 
 ---
 

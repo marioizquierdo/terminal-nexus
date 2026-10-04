@@ -98,9 +98,9 @@ the same pull request.
 Mario's notes on the third round ([his words](../history/feedback/2026-10-04-commander-round-4.md)). Built on
 the same pull request, by subagents.
 
-- [ ] A building with range shows it on the ghost while it is being placed, quietly; any building with a
+- [x] A building with range shows it on the ghost while it is being placed, quietly; any building with a
       range can show it the same way.
-- [ ] Construction territory is built: a building may only be placed within the construction radius of the
+- [x] Construction territory is built: a building may only be placed within the construction radius of the
       player's other buildings, rooted at the Grid Nexus, and the Build Phase shows where that is.
 - [ ] Each campaign level names the target the player's troops head for; they engage what comes within reach
       on the way, and the Build Phase says where they are going. Posts wait.
