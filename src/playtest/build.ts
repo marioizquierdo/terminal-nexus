@@ -14,10 +14,8 @@ import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { foresee, nextRound, startPulse } from "../cli/pulse-run.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
-import { starterContext } from "../cli/starter.ts"
-import { openRound } from "../cli/levels.ts"
+import { DEFAULT_LEVEL, openRound } from "../cli/levels.ts"
 import { DEFAULT_LEVEL_ROUTE, parseRoute } from "../cli/route.ts"
 import type { LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
@@ -54,9 +52,9 @@ export type BuildPlaytestOptions = Readonly<{
    */
   at?: LevelDestination
   context?: BuildContext
-  /** The mission the rounds are played on, when it is not the screen's own (PERIMETER): another mission's
-   *  or a test map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`),
-   *  with `context` its first round. */
+  /** The mission the rounds are played on, when it is not the level's own: another mission's or a test
+   *  map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`), with
+   *  `context` its first round. */
   play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee">>
   cursor?: Coord
   /**
@@ -124,15 +122,14 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   // run's Activity Logs read it too, so a line's time is its step's.
   let clock = 0
   const activity = createActivityLog(() => clock)
+  const at: LevelDestination = options.at ?? { kind: "level", level: DEFAULT_LEVEL, round: 1 }
   const opened =
     options.context ??
-    (options.at === undefined
-      ? starterContext()
-      : openRound(options.at.level, options.at.round, undefined, {
-          settings,
-          ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
-        }))
-  const play = options.play ?? options.at?.level.play
+    openRound(at.level, at.round, undefined, {
+      settings,
+      ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+    })
+  const play = options.play ?? at.level.play
   const context: BuildContext = {
     ...opened,
     settings,
@@ -157,11 +154,11 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     onQuit: () => {
       leftBy = "quit"
     },
-    startPulse: play?.startPulse ?? startPulse,
+    startPulse: play.startPulse,
     activity,
-    nextRound: play?.nextRound ?? nextRound,
+    nextRound: play.nextRound,
     // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
-    ...(play === undefined ? { foresee } : play.foresee === undefined ? {} : { foresee: play.foresee }),
+    ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
     scenes: options.scenes ?? true,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))

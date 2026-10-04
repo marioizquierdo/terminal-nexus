@@ -25,7 +25,7 @@
 // application shell rather than beside the title menu.
 
 import type { PlayableLevel } from "./levels.ts"
-import { DEFAULT_LEVEL_ID, LEVELS, levelById } from "./levels.ts"
+import { DEFAULT_LEVEL, LEVELS, levelById } from "./levels.ts"
 
 /** The title menu's places: each opens one of its screens, or (Challenge) does what its row does. */
 export type TitlePlace = "menu" | "campaign" | "challenge" | "settings" | "about"
@@ -89,7 +89,7 @@ function campaign(query: Query, problems: string[]): Destination | null {
   const round = query.get("round")
   if (id === undefined) {
     if (round !== undefined) {
-      problems.push(`a round needs a level: campaign?level=${DEFAULT_LEVEL_ID}&round=2`)
+      problems.push(`a round needs a level: ${DEFAULT_LEVEL_ROUTE}&round=2`)
       return null
     }
     return { kind: "title", place: "campaign" }
@@ -216,4 +216,4 @@ export function allRoutes(): readonly string[] {
 
 /** The default level's route, which opens its first round: where the browser page, a demo and the scripted
  *  playtest open when nothing names a place. */
-export const DEFAULT_LEVEL_ROUTE = `campaign?level=${DEFAULT_LEVEL_ID}`
+export const DEFAULT_LEVEL_ROUTE = formatRoute({ kind: "level", level: DEFAULT_LEVEL, round: 1 })

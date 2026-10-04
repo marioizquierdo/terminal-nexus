@@ -7,7 +7,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
-import { DEFAULT_LEVEL_ID, LEVELS, levelById } from "../src/cli/levels.ts"
+import { DEFAULT_LEVEL, LEVELS } from "../src/cli/levels.ts"
 import type { Host } from "../src/cli/lifecycle.ts"
 import { TOP_LEVEL_ITEMS, runMenu } from "../src/cli/menu.ts"
 import { allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
@@ -158,7 +158,7 @@ test("the Activity Logs say where a screen opened, and the route a picked row op
     stdin: build.stdin,
     host: HOST,
     scenes: false,
-    level: levelById(DEFAULT_LEVEL_ID)!,
+    level: DEFAULT_LEVEL,
     round: 2,
     activity: buildLog,
   })
@@ -171,7 +171,7 @@ test("the Activity Logs say where a screen opened, and the route a picked row op
 })
 
 test("the default level is the Build Phase as it opens when told nothing: PERIMETER, round 1", async () => {
-  const level = levelById(DEFAULT_LEVEL_ID)!
+  const level = DEFAULT_LEVEL
   const told = await buildAt({ kind: "level", level, round: 1 })
   const untold = await buildAt(undefined)
   assert.equal(frameToAnsi(told, "color16", "dark"), frameToAnsi(untold, "color16", "dark"))

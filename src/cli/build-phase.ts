@@ -24,7 +24,7 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { DEFAULT_LEVEL_ID, levelById, openRound } from "./levels.ts"
+import { DEFAULT_LEVEL, openRound } from "./levels.ts"
 import type { PlayableLevel } from "./levels.ts"
 import { formatRoute } from "./route.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
@@ -63,7 +63,7 @@ export type BuildPhaseOptions = Readonly<{
   settings: Settings
   /**
    * The campaign level to open (`--at campaign?level=<id>`), whose mission its rounds play: PERIMETER
-   * (`DEFAULT_LEVEL_ID`) unless given.
+   * (`DEFAULT_LEVEL`) unless given.
    */
   level?: PlayableLevel
   /**
@@ -122,7 +122,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   }
 
   const log = options.activity ?? globalActivity
-  const level = options.level ?? defaultLevel()
+  const level = options.level ?? DEFAULT_LEVEL
   const context = openRound(level, options.round ?? 1, options.scrollMargin, {
     settings: options.settings,
     // The Activity logs window shows the log this screen records into.
@@ -464,11 +464,4 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     return 1
   }
   return 0
-}
-
-/** The level the Build Phase opens when it is told none: PERIMETER, Vasse's first. */
-function defaultLevel(): PlayableLevel {
-  const level = levelById(DEFAULT_LEVEL_ID)
-  if (level === undefined) throw new Error(`the default level "${DEFAULT_LEVEL_ID}" is not one the game can open`)
-  return level
 }

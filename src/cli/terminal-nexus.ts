@@ -25,7 +25,7 @@ import { runMenu } from "./menu.ts"
 import { parseKeyScript } from "../playtest/keys.ts"
 import { runBuildPhase } from "./build-phase.ts"
 import type { Exporter } from "./build-phase.ts"
-import { DEFAULT_LEVEL_ID, LEVELS, levelById } from "./levels.ts"
+import { DEFAULT_LEVEL, LEVELS } from "./levels.ts"
 import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute, parseRoute } from "./route.ts"
 import type { Destination } from "./route.ts"
 import type { ExportKind } from "../build/types.ts"
@@ -40,7 +40,6 @@ import type { TerminalOutput } from "../view/backends/ports.ts"
 function usage(): string {
   const places = PLACE_NAMES.map((name) => `        ${name.padEnd(12)}${PLACES[name]?.opens ?? ""}`).join("\n")
   const levels = LEVELS.map((level) => `        ${level.id.padEnd(16)}${level.title}, rounds 1 to ${level.rounds}`).join("\n")
-  const title = levelById(DEFAULT_LEVEL_ID)?.title ?? DEFAULT_LEVEL_ID
   // Quoted only where the shell would read the route itself.
   const example = (route: string, what: string): string =>
     `        --at ${/[?&]/u.test(route) ? `'${route}'` : route}`.padEnd(54) + what
@@ -59,7 +58,7 @@ function usage(): string {
 ${places}
       For example:
 ${example("settings", "the title menu's Settings screen")}
-${example(DEFAULT_LEVEL_ROUTE, `${title}'s Build Phase, round 1`)}
+${example(DEFAULT_LEVEL_ROUTE, `${DEFAULT_LEVEL.title}'s Build Phase, round 1`)}
 ${example(`${DEFAULT_LEVEL_ROUTE}&round=3`, "its round 3, reached as a player who")}
 ${"".padEnd(54)}builds nothing reaches it
       round counts Battle Rounds from 1, as the screen does. The levels:

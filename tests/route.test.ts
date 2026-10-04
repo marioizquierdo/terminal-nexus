@@ -5,13 +5,11 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { parseArgs } from "../src/cli/args.ts"
-import { DEFAULT_LEVEL_ID, LEVELS, levelById } from "../src/cli/levels.ts"
+import { DEFAULT_LEVEL, LEVELS } from "../src/cli/levels.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
 import type { Destination } from "../src/cli/route.ts"
 import { launchDestination } from "../src/cli/terminal-nexus.ts"
-
-const perimeter = levelById(DEFAULT_LEVEL_ID)!
 
 /** A destination as plain data: its kind, and its place or its level's id and round. */
 const plain = (destination: Destination): string =>
@@ -78,8 +76,8 @@ test("every route the game has reads back to itself, and each place lists the ro
       assert.ok(routes.includes(formatRoute({ kind: "level", level, round })), `${level.id} round ${round} is not among the routes`)
     }
   }
-  assert.equal(formatRoute({ kind: "level", level: perimeter, round: 1 }), "campaign?level=vasse-test-1")
-  assert.equal(formatRoute({ kind: "level", level: perimeter, round: 3 }), "campaign?level=vasse-test-1&round=3")
+  assert.equal(formatRoute({ kind: "level", level: DEFAULT_LEVEL, round: 1 }), "campaign?level=vasse-test-1")
+  assert.equal(formatRoute({ kind: "level", level: DEFAULT_LEVEL, round: 3 }), "campaign?level=vasse-test-1&round=3")
   // A title place's route is its name, and opens itself.
   for (const name of PLACE_NAMES) {
     const destination = parseRoute(name)

@@ -4,16 +4,16 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { ARMIES } from "../src/armies/index.ts"
-import { DEFAULT_LEVEL_ID, LEVELS, levelById, openRound } from "../src/cli/levels.ts"
-import { STARTER_MISSION } from "../src/cli/pulse-run.ts"
+import { ARMIES, PERIMETER } from "../src/armies/index.ts"
+import { DEFAULT_LEVEL, LEVELS, levelById, openRound } from "../src/cli/levels.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { VASSE } from "./commander-fixture.ts"
 
 test("a level is found by its id, and the default is Vasse's first: PERIMETER", () => {
   assert.ok(LEVELS.length > 0)
-  const level = levelById(DEFAULT_LEVEL_ID)
+  const level = levelById("vasse-test-1")
   assert.ok(level !== undefined)
+  assert.equal(level, DEFAULT_LEVEL)
   assert.equal(level.campaign, "vasse")
   assert.equal(level.title, "Perimeter")
   assert.equal(level.rounds, 3)
@@ -22,8 +22,7 @@ test("a level is found by its id, and the default is Vasse's first: PERIMETER", 
 })
 
 test("round 1 opens as the level does", () => {
-  const level = levelById(DEFAULT_LEVEL_ID)!
-  const context = openRound(level, 1)
+  const context = openRound(DEFAULT_LEVEL, 1)
   const expected = starterContext()
   assert.equal(context.round?.number, 1)
   assert.deepEqual(context.catalog, expected.catalog)
@@ -32,7 +31,7 @@ test("round 1 opens as the level does", () => {
 })
 
 test("a later round is reached by playing the ones before it with nothing built, the same every time", () => {
-  const level = levelById(DEFAULT_LEVEL_ID)!
+  const level = DEFAULT_LEVEL
   for (const round of [2, 3]) {
     const first = openRound(level, round)
     const again = openRound(level, round)
@@ -47,8 +46,7 @@ test("a later round is reached by playing the ones before it with nothing built,
 })
 
 test("a round the level does not have is refused by name", () => {
-  const level = levelById(DEFAULT_LEVEL_ID)!
-  for (const round of [0, 4, 1.5]) assert.throws(() => openRound(level, round), /has rounds 1 to 3/)
+  for (const round of [0, 4, 1.5]) assert.throws(() => openRound(DEFAULT_LEVEL, round), /has rounds 1 to 3/)
 })
 
 test("the levels are her campaign's, in its order: PERIMETER, then the Commander's cadence", () => {
@@ -63,8 +61,9 @@ test("the levels are her campaign's, in its order: PERIMETER, then the Commander
     LEVELS.map((level) => level.id),
     ARMIES.levels.map((level) => level.id),
   )
-  // The game opened bare and a route to its first level play one connection.
-  assert.equal(levelById(DEFAULT_LEVEL_ID)?.play, STARTER_MISSION)
+  // The game opened with no level and a route to its first level open one level, and it plays PERIMETER.
+  assert.equal(levelById(DEFAULT_LEVEL.id), DEFAULT_LEVEL)
+  assert.equal(DEFAULT_LEVEL.play.mission, PERIMETER)
 })
 
 test("the cadence level opens by id, and her return is played: she falls in round 1, sits round 2 out, and is back for round 3", () => {

@@ -14,7 +14,7 @@ import { applyBuildCommand, createBuildState, withoutScene } from "../build/stat
 import type { Level } from "../armies/index.ts"
 import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
 import type { MissionPlay } from "./pulse-run.ts"
-import { missionPlay, STARTER_MISSION } from "./pulse-run.ts"
+import { missionPlay } from "./pulse-run.ts"
 import { levelContext } from "./starter.ts"
 
 /** A level the game can open. */
@@ -33,29 +33,31 @@ export type PlayableLevel = Readonly<{
   firstRound: (scrollMargin?: number, extra?: Partial<BuildContext>) => BuildContext
 }>
 
-/** A campaign's level, as the screens open it. PERIMETER's connection is the one the screens already hold
- *  (`STARTER_MISSION`), so the game opened bare and a route to its first level play the same one. */
-function playable(level: Level): PlayableLevel {
-  const play = level.id === PERIMETER_LEVEL.id ? STARTER_MISSION : missionPlay(level.mission)
-  return {
-    id: level.id,
-    campaign: level.campaign,
-    title: level.mission.name,
-    rounds: level.mission.pulses,
-    play,
-    firstRound: (scrollMargin, extra) => levelContext(level, play, scrollMargin, extra),
-  }
-}
+/** A campaign's level, as the screens open it. */
+const playable = (level: Level): PlayableLevel => ({
+  id: level.id,
+  campaign: level.campaign,
+  title: level.mission.name,
+  rounds: level.mission.pulses,
+  play: missionPlay(level.mission),
+  firstRound: (scrollMargin, extra) => levelContext(level, scrollMargin, extra),
+})
 
 /** Every level the game can open, in campaign order: every level of every shipped campaign. */
 export const LEVELS: readonly PlayableLevel[] = ARMIES.levels.map(playable)
 
-/** The level the game opens when a route names none: PERIMETER, Vasse's first. */
-export const DEFAULT_LEVEL_ID = "vasse-test-1"
-
 /** A level by id, or `undefined`. */
 export function levelById(id: string): PlayableLevel | undefined {
   return LEVELS.find((level) => level.id === id)
+}
+
+/** The level the game opens when nothing names one: PERIMETER, Vasse's first (`PERIMETER_LEVEL`). */
+export const DEFAULT_LEVEL: PlayableLevel = defaultLevel()
+
+function defaultLevel(): PlayableLevel {
+  const level = levelById(PERIMETER_LEVEL.id)
+  if (level === undefined) throw new Error(`the default level "${PERIMETER_LEVEL.id}" is not one the game can open`)
+  return level
 }
 
 /**
