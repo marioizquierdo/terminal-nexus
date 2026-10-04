@@ -14,8 +14,6 @@ export type Say = (problem: string) => void
 
 /** A JSON value's expected shape. */
 export type Shape<T> = Readonly<{
-  /** What a value of this shape is, as a problem names it: "a number", "a list". */
-  name: string
   /** Whether `value` has this shape. Every way it does not is said, each naming `at`. */
   check(value: unknown, at: string, say: Say): value is T
 }>
@@ -43,13 +41,14 @@ export function itemAt(at: string, item: unknown, index: number): string {
   return `${at}[${id}]`
 }
 
+/** A JSON object: not null, and not a list. */
 export function isObject(value: unknown): value is Readonly<Record<string, unknown>> {
   return value !== null && typeof value === "object" && !Array.isArray(value)
 }
 
+/** A shape one test decides; `name` is what a problem says was expected: "a number". */
 function simple<T>(name: string, test: (value: unknown) => boolean): Shape<T> {
   return {
-    name,
     check(value: unknown, at: string, say: Say): value is T {
       if (test(value)) return true
       say(`${at} should be ${name}, not ${shown(value)}`)
@@ -71,7 +70,7 @@ export const wholeNumber: Shape<number> = simple(
 )
 
 /** Anything at all: a part checked on its own, later, by its own shape. */
-export const anything: Shape<unknown> = { name: "anything", check: (_value: unknown, _at: string, _say: Say): _value is unknown => true }
+export const anything: Shape<unknown> = { check: (_value: unknown, _at: string, _say: Say): _value is unknown => true }
 
 /** One of a few fixed values: a side (`"A"` or `"B"`), `true`. */
 export function literal<const V extends string | number | boolean>(...values: readonly V[]): Shape<V> {
@@ -82,7 +81,6 @@ export function literal<const V extends string | number | boolean>(...values: re
 /** A list, every item of which has `item`'s shape. */
 export function list<T>(item: Shape<T>): Shape<readonly T[]> {
   return {
-    name: "a list",
     check(value: unknown, at: string, say: Say): value is readonly T[] {
       if (!Array.isArray(value)) {
         say(`${at} should be a list, not ${shown(value)}`)
@@ -100,7 +98,6 @@ export function list<T>(item: Shape<T>): Shape<readonly T[]> {
 /** An object whose every value has `entry`'s shape, under any key: a mission's text for each round. */
 export function dictionary<T>(entry: Shape<T>): Shape<Readonly<Record<string, T>>> {
   return {
-    name: "an object",
     check(value: unknown, at: string, say: Say): value is Readonly<Record<string, T>> {
       if (!isObject(value)) {
         say(`${at} should be an object, not ${shown(value)}`)
@@ -129,7 +126,6 @@ export function record<T extends object>(
   const needed = required as Readonly<Record<string, Shape<unknown>>>
   const allowed = optional as Readonly<Record<string, Shape<unknown>>>
   return {
-    name: "an object",
     check(value: unknown, at: string, say: Say): value is T {
       if (!isObject(value)) {
         say(`${at === "" ? "a bundle" : at} should be an object, not ${shown(value)}`)
@@ -168,7 +164,6 @@ export function keyed<V extends Readonly<Record<string, Shape<unknown>>>>(
     .map((key) => `"${key}"`)
     .join(", ")
   return {
-    name: what,
     check(value: unknown, at: string, say: Say): value is { [K in keyof V]: Readonly<Record<K, ShapeOf<V[K]>>> }[keyof V] {
       if (!isObject(value)) {
         say(`${at} should be ${what}, not ${shown(value)}`)

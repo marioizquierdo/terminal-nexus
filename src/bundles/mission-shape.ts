@@ -39,13 +39,13 @@ const condition: Shape<TriggerCondition> = (() => {
     "build.start": record<Readonly<{ event: "build.start"; pulse: number }>>({ event: literal("build.start"), pulse: number }, {}),
   }
   return {
-    name: "a condition",
     check(value: unknown, at: string, say: Say): value is TriggerCondition {
       if (!isObject(value) || !Object.hasOwn(value, "event")) return moment.check(value, at, say)
-      const shape = typeof value["event"] === "string" ? events[value["event"]] : undefined
+      const event = value["event"]
+      const shape = typeof event === "string" && Object.hasOwn(events, event) ? events[event] : undefined
       if (shape !== undefined) return shape.check(value, at, say)
       const known = Object.keys(events).map((event) => `"${event}"`).join(", ")
-      say(`${fieldAt(at, "event")} should be one of ${known}, not ${shown(value["event"])}`)
+      say(`${fieldAt(at, "event")} should be one of ${known}, not ${shown(event)}`)
       return false
     },
   }

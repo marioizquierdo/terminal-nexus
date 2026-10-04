@@ -18,11 +18,8 @@ export * from "./types.ts"
 export { loadBundles } from "./load.ts"
 export type { LoadWorld } from "./load.ts"
 
-/** The manifests the game ships, each after the bundles it requires. */
-export const SHIPPED_MANIFESTS: readonly unknown[] = [common, vasse]
-
 /** Every bundle the game ships, checked and resolved. */
-export const BUNDLES: Bundles = loadBundles(SHIPPED_MANIFESTS, { registry: FIXTURE_REGISTRY, maps: MAPS })
+export const BUNDLES: Bundles = loadBundles([common, vasse], { registry: FIXTURE_REGISTRY, maps: MAPS })
 
 /** A level of a shipped campaign by its id. Throws for one no bundle has: what names it is code that expects it. */
 export function bundleLevel(id: string): Level {
