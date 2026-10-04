@@ -8,7 +8,7 @@ import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { tilesOf } from "../src/grid/coords.ts"
-import { missionOpening, recall, resolveMissionPulse } from "../src/match/index.ts"
+import { missionOpening, recall, resolveMissionPulse, targetRegionsAt, targetsAt } from "../src/match/index.ts"
 import type { MissionPulse } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, validateMission } from "../src/mission/index.ts"
@@ -87,9 +87,12 @@ test("validation refuses every broken shape by name, and reports them all at onc
     ["a tick past the Pulse", withTriggers([{ id: "t", when: { pulse: 1, tick: 360 }, do: [spawn()] }]), /tick 360, but a Pulse runs ticks 0 to 359/],
     ["a Pulse past the mission", withTriggers([{ id: "t", when: { pulse: 4, tick: 0 }, do: [spawn()] }]), /Pulse 4, but the mission has Pulses 1 to 3/],
     ["two triggers with one id", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [spawn()] }, { id: "t", when: { pulse: 2, tick: 0 }, do: [spawn()] }]), /trigger "t" is declared twice/],
-    ["an order for nobody", withTriggers([{ id: "t", when: { pulse: 1, tick: 5 }, do: [{ order: { group: "ghosts", advance: "nexus" } }] }]), /the group "ghosts", which no earlier trigger spawns/],
-    ["an order before the arrival", withTriggers([{ id: "a", when: { pulse: 2, tick: 10 }, do: [spawn({ group: "late" })] }, { id: "b", when: { pulse: 2, tick: 5 }, do: [{ order: { group: "late", advance: "nexus" } }] }]), /orders the group "late" before it arrives/],
-    ["an order the kernel cannot carry out", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [spawn({ order: { hold: "ridge" } })] }]), /the order "hold", which the kernel cannot carry out yet/],
+    ["a target nowhere", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "A", region: "moon" } }] }]), /target\) names the unknown region "moon"/],
+    ["a target with no name", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "A", region: "muster" } }] }]), /sends troops to the region "muster", which has no name for the screen to say/],
+    ["a target on rock", { ...withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "A", region: "rocky" } }] }]), regions: [...PERIMETER.regions, { id: "rocky", name: "the ridge", x: 33, y: 2, width: 2, height: 2 }] }, /region "rocky", which has rock at 33,3: a target is ground they can stand on/],
+    ["a target at an event", withTriggers([{ id: "t", when: { event: "pulse.end", pulse: 1 }, do: [{ target: { side: "A", region: "line" } }] }]), /\(target\) must happen at a moment in a Pulse/],
+    ["a target for nobody", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "C" as "A", region: "line" } }] }]), /\(target\) names the unknown side "C"/],
+    ["a region with an empty name", { ...PERIMETER, regions: [...PERIMETER.regions, { id: "blank", name: " ", x: 1, y: 1, width: 1, height: 1 }] }, /region "blank" has an empty name/],
     ["a plan off tick 0", withTriggers([{ id: "t", when: { pulse: 1, tick: 3 }, do: [{ commitPlan: { side: "B", structures: [{ contentId: "structure.ravel.den", anchor: { x: 46, y: 0 } }] } }] }]), /must be at tick 0 of a Pulse/],
     ["a plan off the map", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ commitPlan: { side: "B", structures: [{ contentId: "structure.ravel.den", anchor: { x: 95, y: 39 } }] } }] }]), /reaching off the map/],
     ["a win at a moment", withTriggers([{ id: "t", when: { pulse: 1, tick: 10 }, do: [{ win: true }] }]), /must wait for an event/],
@@ -170,6 +173,47 @@ test("the raid's own plan reveals at its Pulse's start: the den stands in round 
   const den = (round3.states[0] as MatchState).entities.find((entity) => entity.contentId === "structure.ravel.den")
   assert.ok(den !== undefined && den.player === "B")
   assert.deepEqual(den.anchor, { x: 46, y: 0 })
+})
+
+// --- A side's target -----------------------------------------------------------------------------------
+
+test("PERIMETER sends the player's troops to the line ahead of the base in every round, and gives the raid no target", () => {
+  const line = { x: 22, y: 7, width: 5, height: 2 }
+  assert.deepEqual(targetsAt(PERIMETER, 1, 0), { A: line })
+  for (const [index, round] of playMission(PERIMETER, STRONG).entries()) {
+    assert.deepEqual((round.states[0] as MatchState).targets, { A: line }, `round ${index + 1} opened without the line`)
+    // The kernel reads it and never changes it: the last state of the round still has it.
+    assert.deepEqual(round.final.targets, { A: line })
+  }
+  assert.equal(targetRegionsAt(PERIMETER, 3, 0).A?.name, "the line")
+  assert.equal(targetRegionsAt(PERIMETER, 3, 0).B, undefined)
+})
+
+test("a target holds round after round until another moves it, and one set between two ticks moves the troops from the next", () => {
+  const regions = [...PERIMETER.regions, { id: "front", name: "the front", x: 30, y: 8, width: 2, height: 2 }]
+  const mission: MissionDefinition = {
+    ...PERIMETER,
+    regions,
+    triggers: [...PERIMETER.triggers, { id: "forward", when: { pulse: 2, tick: 60 }, do: [{ target: { side: "A", region: "front" } }] }],
+  }
+  validateMission(mission, grid, registry)
+  const line = { x: 22, y: 7, width: 5, height: 2 }
+  const front = { x: 30, y: 8, width: 2, height: 2 }
+  assert.deepEqual(targetsAt(mission, 2, 59), { A: line })
+  assert.deepEqual(targetsAt(mission, 2, 60), { A: front })
+  assert.deepEqual(targetsAt(mission, 3, 0), { A: front }, "a target set in round 2 did not hold into round 3")
+  const round2 = playMission(mission, STRONG)[1]
+  assert.ok(round2 !== undefined)
+  assert.deepEqual((round2.states[59] as MatchState).targets, { A: line })
+  assert.deepEqual((round2.states[60] as MatchState).targets, { A: front })
+  assert.ok(round2.fired.some((fired) => fired.trigger === "forward" && fired.tick === 60))
+  // Of two at one moment, the later in the list.
+  const twice: MissionDefinition = { ...mission, triggers: [...mission.triggers, { id: "back", when: { pulse: 2, tick: 60 }, do: [{ target: { side: "A", region: "line" } }] }] }
+  assert.deepEqual(targetsAt(twice, 2, 60), { A: line })
+  // A mission that names no target leaves the state without one: it hashes as a battle before targets did.
+  const none: MissionDefinition = { ...PERIMETER, triggers: PERIMETER.triggers.filter((trigger) => trigger.id !== "post") }
+  assert.equal(targetsAt(none, 3, 0), undefined)
+  assert.ok(!("targets" in missionOpening({ mission: none, grid, registry, pulse: 1, carried: null, structures: STARTER_STANDING }).state))
 })
 
 // --- What carries from one Pulse to the next ------------------------------------------------------

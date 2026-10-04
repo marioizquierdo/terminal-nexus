@@ -162,10 +162,12 @@ test("the named scenario is the same every run, and on both runtimes", () => {
   assert.deepEqual(first.map(([hash]) => hash), PINNED_ROUNDS)
 })
 
+// Moved on purpose with By the Book, which guards her and the troopers beside her, and the ambush that grew two
+// runners so she still falls in round 1.
 const PINNED_ROUNDS = [
-  "b56ca4dc7474cd79494b6afba0695b7b16733c010da2f85d1fc9ff0e13dd4ac5",
-  "2d5ea7c9b5fcfbf54d947418cfc09e041d216fb1bfe537350c736faf55b4d61f",
-  "f1f31ffd600d2920bf2aabc32aa9f550a710104b2cf64d8704cc7d468886b443",
+  "ed055a2c4655f1d26a21997a5d2df3ca6def98f9fc02b1a0af64538eb661e663",
+  "70a986cbeaf43652f3fb71688046e16e1f5710f06425ab4dfb3ec38c97676bd5",
+  "f829a7afc2bcc61b43c992f8dccad3275bc1101f37b37a0ef91ce2703bba9ce6",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

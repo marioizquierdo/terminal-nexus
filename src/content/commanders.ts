@@ -37,9 +37,10 @@ export const COMMANDER_CONTENT: readonly ContentDef[] = [
     attack: { kind: "ranged", range: 3, damage: 5, cooldownTicks: 18, projectileTilesPerTick: 3 },
     collidesWith: ["obstacles", "units"],
     behavior: "advance",
-    // By the Book, her protector's aura: the units beside her take three quarters of the damage. A first
-    // fixture, like everything else about her.
-    aura: { radius: 3, damageTakenPercent: 75 },
+    // By the Book, her protector's aura: the units beside her take three quarters of the damage, and so does
+    // she. A first fixture, like everything else about her; while it is tuned, the Pulse reads the Experiment
+    // "By the Book" instead (`auraRegistry`, `src/match/commander.ts`), whose default is this.
+    aura: { radius: 3, damageTakenPercent: 75, name: "By the Book" },
     // The Nexus takes its Symbol back: nothing of her is left on the ground to salvage.
     salvage: 0,
   },

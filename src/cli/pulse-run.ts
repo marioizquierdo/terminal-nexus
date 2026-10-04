@@ -26,6 +26,7 @@ import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 import {
+  auraRegistry,
   commanderRegistry,
   fallen,
   laterArrivals,
@@ -272,9 +273,13 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
   const round = (number: number) => ({ number, of: mission.pulses })
 
   /** The content a round's Pulse runs on: the mission's buildings training at the Experiments' pace, and
-   *  its Commander as tough as the Experiment says. The Build Phase's own registry carries neither. */
+   *  its Commander as tough, and her aura as strong, as the Experiments say. The Build Phase's own registry
+   *  carries none of them. */
   const pulseRegistry = (context: BuildContext, state: BuildState): ContentRegistry =>
-    commanderRegistry(trainingRegistry(mission, context.registry, paceOf(state)), setting(state, "commanderHealth"))
+    auraRegistry(
+      commanderRegistry(trainingRegistry(mission, context.registry, paceOf(state)), setting(state, "commanderHealth")),
+      setting(state, "commanderAura"),
+    )
 
   return {
     mission,

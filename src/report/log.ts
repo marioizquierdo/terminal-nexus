@@ -249,7 +249,8 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             kind: "damage",
             subject: event.entity,
             object: event.source,
-            detail: `amount ${event.amount}  hp ${event.hpBefore}->${event.hpAfter}`,
+            // An aura that guarded the hit is named, so `grep guarded` finds every hit one softened.
+            detail: `amount ${event.amount}  hp ${event.hpBefore}->${event.hpAfter}${event.guardedBy === undefined ? "" : `  guarded by ${event.guardedBy}`}`,
           })
           break
 

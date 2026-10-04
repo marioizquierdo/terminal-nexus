@@ -129,6 +129,14 @@ export type DomainEvent =
         amount: number
         hpBefore: number
         hpAfter: number
+        /**
+         * The bearer of the aura that guarded this hit (`ContentDef.aura`: Vasse's By the Book), when one
+         * did — the hit then dealt the aura's share of what it would have. Absent for an unguarded hit, so
+         * every event of a battle with no aura in it is byte for byte what it was. For presentation; no
+         * rule reads it.
+         */
+        guardedBy?: string
+        guardedByOrdinal?: number
       }>)
   | (Base &
       Readonly<{

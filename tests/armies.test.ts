@@ -179,8 +179,11 @@ test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus
 })
 
 test("PERIMETER and the cadence level are pinned as data: a change to either mission is a change on purpose", () => {
-  // Pinned from the TypeScript literals they were, notes aside, and moved once on purpose since: PERIMETER's raid
-  // triggers and its second round's group were renamed when "wave" left the game (the owner, 2026-10-04).
+  // Pinned from the TypeScript literals they were, notes aside, and moved on purpose since: PERIMETER's raid
+  // triggers and its second round's group were renamed when "wave" left the game (the owner, 2026-10-04); then
+  // both lost the raid's inert `order`, PERIMETER gained the line its troops head for (the owner: "the campaign
+  // levels should have a target well defined"), and the cadence level's ambush two runners, so Vasse still falls
+  // in round 1 now that By the Book guards her.
   const withoutNotes = (value: unknown): unknown => {
     if (Array.isArray(value)) return value.map(withoutNotes)
     if (value === null || typeof value !== "object") return value
@@ -188,11 +191,52 @@ test("PERIMETER and the cadence level are pinned as data: a change to either mis
   }
   const [perimeter, cadence] = ARMIES.levels
   assert.equal(perimeter?.mission, PERIMETER)
-  assert.equal(hashOf(withoutNotes(PERIMETER)), "659be6d1b5b0b391b23bb6e50a92ba545408206d20574c6ec4a4d7c56ae96814")
-  assert.equal(hashOf(withoutNotes(cadence?.mission)), "6fb4235e40c4925df5a1d3d2014f35ca80b434be70095ffd2bfbd6e0b5dba467")
+  assert.equal(hashOf(withoutNotes(PERIMETER)), "989779a1791942c5a48d4cb0e72584c9e6c6c04df63cfc753a1f46a781a53eba")
+  assert.equal(hashOf(withoutNotes(cadence?.mission)), "e9cc454f6dcc82db9bea5454f6999d387f70ec675db9aadc9aabd31bd26dfa0b")
   // Its notes say why, where the comments did.
   assert.match(PERIMETER.notes ?? "", /PULS/)
   assert.ok(PERIMETER.regions.every((region) => region.id === "nexus" || (region.notes ?? "") !== ""))
+})
+
+test("a level's target for the player's troops is data the loader checks: a region it has, with a name, never the retired order", () => {
+  // PERIMETER's: the line ahead of the base, named, set as its first round opens.
+  const post = PERIMETER.triggers.find((trigger) => trigger.id === "post")
+  assert.deepEqual(post?.do, [{ target: { side: "A", region: "line" } }])
+  assert.equal(PERIMETER.regions.find((region) => region.id === "line")?.name, "the line")
+  // The cadence level names none: its line stays at the muster as its own rule has it.
+  assert.ok(!(ARMIES.levels[1]?.mission.triggers ?? []).some((trigger) => trigger.do.some((action) => "target" in action)))
+
+  const withPost = (target: object, regions: readonly object[] = PERIMETER.regions): object => ({
+    ...PERIMETER,
+    id: "mission.post",
+    regions,
+    triggers: [...PERIMETER.triggers.filter((trigger) => trigger.id !== "post"), { id: "post", when: { pulse: 1, tick: 0 }, do: [{ target }] }],
+  })
+  const problems = problemsOf([
+    all,
+    vasse,
+    campaignBundle([
+      level("nowhere", { mission: withPost({ side: "A", region: "moon" }) }),
+      level("unnamed", { mission: withPost({ side: "A", region: "line" }, PERIMETER.regions.map(({ name: _name, ...region }) => region)) }),
+      level("misspelt", { mission: withPost({ side: "A", place: "line" }) }),
+      level("ordered", {
+        mission: {
+          ...PERIMETER,
+          id: "mission.ordered",
+          triggers: PERIMETER.triggers.map((trigger) =>
+            trigger.id !== "raid-1" ? trigger : { ...trigger, do: trigger.do.map((action) => ("spawn" in action ? { spawn: { ...action.spawn, order: { advance: "nexus" } } } : action)) },
+          ),
+        },
+      }),
+    ]),
+  ])
+  assert.deepEqual(problems, [
+    'army "test": campaigns[test].levels[misspelt].mission.triggers[post].do[0].target needs "region"',
+    'army "test": campaigns[test].levels[misspelt].mission.triggers[post].do[0].target has "place", which is not one of its fields ("side", "region")',
+    'army "test": campaigns[test].levels[ordered].mission.triggers[raid-1].do[0].spawn has "order", which is not one of its fields ("side", "units", "at", "group", "intent")',
+    'army "test": level "nowhere", mission "mission.post": trigger "post", action 1 (target) names the unknown region "moon"',
+    'army "test": level "unnamed", mission "mission.post": trigger "post", action 1 (target) sends troops to the region "line", which has no name for the screen to say',
+  ])
 })
 
 test("what the loader hands out cannot be changed by whoever reads it", () => {
@@ -246,9 +290,9 @@ test("the loader refuses, by name and all at once: requires unknown or in a circ
     'two armies are called "vasse"; the second is left out',
     'army "test": campaigns[test].levels[test-3].mission.pulses should be a number, not "three"',
     'army "test": campaigns[test].levels[test-3].mission needs "regions"',
-    'army "test": campaigns[test].levels[test-3].mission.triggers[dance].do[0] should be an action: an object with one of "spawn", "order", "commitPlan", "win", "lose", "say", not "dance"',
+    'army "test": campaigns[test].levels[test-3].mission.triggers[dance].do[0] should be an action: an object with one of "spawn", "target", "commitPlan", "win", "lose", "say", not "dance"',
     'army "test": campaigns[test].levels[test-3].mission.triggers[dawn].when.event should be one of "pulse.end", "nexus.destroyed", "build.start", not "dawn"',
-    'army "test": campaigns[test].levels[test-3].mission.triggers[dawn].do[0] should be an action: an object with one of "spawn", "order", "commitPlan", "win", "lose", "say", not "win" and "lose"',
+    'army "test": campaigns[test].levels[test-3].mission.triggers[dawn].do[0] should be an action: an object with one of "spawn", "target", "commitPlan", "win", "lose", "say", not "win" and "lose"',
     'army "lost" requires "nowhere", which is not an army',
     'armies "a" and "b" require each other in a circle: a -> b -> a',
     'the building "barracks" is in both "all" and "cards"',

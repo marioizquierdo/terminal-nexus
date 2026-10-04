@@ -98,6 +98,26 @@ test("PERIMETER's first round: Vasse is an @ among the squads, and her card name
   assert.match(panelText(side), /HEALTH +20/)
 })
 
+test("her card says what By the Book does in one plain line, at the strength the battle will run on, and nothing while it is off", () => {
+  const side = perimeter()
+  const vasse = (side.build.round.incoming ?? []).find((entity) => entity.contentId === VASSE)
+  assert.ok(vasse !== undefined, "she is not with the squads")
+  side.build.dispatch({ kind: "look-at", x: vasse.anchor.x, y: vasse.anchor.y })
+  side.build.dispatch({ kind: "explore" })
+  // Its name, then one line, under the description; every number still shows beneath it at 80 x 24.
+  assert.match(panelText(side), /Nexus restores her\. By the Book She and her units within 3 tiles take 25% less damage\./)
+  assert.match(panelText(side), /HEALTH +80 ATTACK +5 at range 3/)
+  // The Experiment is what the battle will run on, so it is what the card says.
+  side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: 1 })
+  assert.equal(side.build.state.experiments.commanderAura, 40)
+  assert.match(panelText(side), /take 40% less damage\./)
+  for (let step = 0; step < 3; step += 1) side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: -1 })
+  assert.equal(side.build.state.experiments.commanderAura, 0)
+  // (The bottom line names the Experiment just changed; the card says nothing of the aura.)
+  assert.doesNotMatch(panelText(side), /By the Book She|less damage/)
+  assert.match(panelText(side), /Nexus restores her\. ARRIVES as the round starts/)
+})
+
 test("she falls: the feed says so, the result says the round she is out for, and round 2 is played without her", () => {
   const side = fixture()
   startRound(side)

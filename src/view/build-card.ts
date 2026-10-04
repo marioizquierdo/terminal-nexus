@@ -20,6 +20,7 @@ import { placementLook, placementSchedule } from "./placement.ts"
 import { EASINGS } from "./tween.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { rightAlign, drawMenuRow, menuRowSpec, drawPanel } from "./build-menu.ts"
+import { setting } from "../build/all-settings.ts"
 
 /** The screen row a card's header is drawn on: the panel's first line. */
 export const cardHeaderRow = (layout: BuildLayout): number => layout.panelRow + CARD_HEADER_ROW
@@ -229,6 +230,16 @@ function drawCardBody(
   }
   if (description.length > 0) row += 1
 
+  // A Commander's skill that works on its own, the way a Nexus power is written: its name, then one plain line —
+  // and a blank line before the numbers while there is room for it and every number, at 80 x 24 there is not.
+  const skill = skillLines(input, card, limit)
+  skill.forEach((line, index) => {
+    if (row > floor) return
+    text(cells, band, column, row, look.typed(line), index === 0 ? "chrome.title" : "chrome.value", { limit, ...(index === 0 ? { bold: true } : {}) })
+    row += 1
+  })
+  if (skill.length > 0 && row + card.stats.length <= floor) row += 1
+
   const numbers = cells.length
   for (const stat of card.stats) {
     if (row > floor) break
@@ -237,6 +248,21 @@ function drawCardBody(
     row += 1
   }
   fadeFrom(cells, numbers, look.hidden, look.capability)
+}
+
+/**
+ * What a card says of the skill its unit has on its own — a Commander's aura, Vasse's By the Book: its name,
+ * then one plain line of what it does, wrapped to the panel — at the strength the Experiment sets now, which is
+ * the strength the battle will run on (`auraRegistry`, `src/match/commander.ts`). Nothing for anything else,
+ * nor while the Experiment has turned it off.
+ */
+export function skillLines(input: Pick<BuildCompositionInput, "context" | "state">, card: Card, limit: number): string[] {
+  if (card.icon.kind !== "entity") return []
+  const aura = input.context.registry.get(card.icon.contentId).aura
+  if (aura === undefined) return []
+  const less = setting(input.state, "commanderAura")
+  if (less === 0) return []
+  return [aura.name ?? "Aura", ...wrapWords(`She and her units within ${aura.radius} tiles take ${less}% less damage.`, limit)]
 }
 
 /** A card's icon at `top`: a thing's own glyphs as its side draws them — or, while the card is

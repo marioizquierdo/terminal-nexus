@@ -1,7 +1,7 @@
 // A mission as data — campaigns.md: "a sequence of Build Phase / Nexus Pulse cycles driven
 // by triggers", a trigger being "a condition, and the actions taken when it holds".
 //
-// This file is the **simulation band**, built at the size PERIMETER needs — `spawn`, `order`, `commitPlan`,
+// This file is the **simulation band**, built at the size PERIMETER needs — `spawn`, `target`, `commitPlan`,
 // `win`, `lose` — the **presentation band** at its smallest — `say`, a line of dialog when a round's Build
 // Phase opens — and the four conditions its trigger list uses. The shapes follow the sketch in
 // campaigns.md (`{ pulse: 1, tick: 0 }`, `{ event: "pulse.end", pulse: 3 }`, `{ spawn: {...} }`)
@@ -23,14 +23,19 @@
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 
-/** A named rectangle of the map — where a group arrives, or what an order points at. Inclusive of its
- *  top-left tile, `width` by `height` tiles. */
+/** A named rectangle of the map — where a group arrives, where a side's troops head, what a line of dialog
+ *  looks at. Inclusive of its top-left tile, `width` by `height` tiles. */
 export type Region = Readonly<{
   id: string
   x: number
   y: number
   width: number
   height: number
+  /**
+   * What the player reads it as — "the line" — where the screen names it: the side panel says a
+   * side's troops head for it. A region a `target` sends troops to must have one; others may.
+   */
+  name?: string
   /** Why it is where it is: for whoever edits the mission, never read. */
   notes?: string
 }>
@@ -53,15 +58,6 @@ export type TriggerCondition =
   | Readonly<{ event: "nexus.destroyed"; side: PlayerId }>
   | Readonly<{ event: "build.start"; pulse: number }>
 
-/**
- * What a group does once it is on the Grid. **Only `advance` exists, and today it means what the kernel's
- * one movement rule does — engage the nearest enemy**: the kernel has no order primitive, so the region it
- * names is the stated destination, shown to the player as intention, not a path the kernel steers by
- * (docs/history/reports/2026-09-30-round-loop-and-missions.md). `hold` and `withdraw` wait for that
- * primitive, which is an open question for Mario (Q69).
- */
-export type Order = Readonly<{ advance: string }>
-
 /** Units arriving at a region: set down on the free tiles nearest its centre, in the order listed. */
 export type SpawnAction = Readonly<{
   spawn: Readonly<{
@@ -70,9 +66,8 @@ export type SpawnAction = Readonly<{
     units: readonly Readonly<{ unit: string; count: number }>[]
     /** A region id. */
     at: string
-    /** A name later triggers can `order`, and the preview groups by. */
+    /** The name the preview groups its units by, and a line of dialog can look at. */
     group?: string
-    order?: Order
     /**
      * One plain line of what this group means to do, shown to the player while it is incoming and on the
      * Explore Map card over any of its units — presentation data the runner never reads (the owner's
@@ -82,8 +77,17 @@ export type SpawnAction = Readonly<{
   }>
 }>
 
-/** A group already on the Grid is given a new order. */
-export type OrderAction = Readonly<{ order: Readonly<{ group: string } & Order> }>
+/**
+ * **A side's target**: from this moment, every fighting unit of `side` — those on the Grid, those a building
+ * trains, those carried into later rounds — heads for `region`, engages an enemy that comes within its reach
+ * on the way, and stands there when nothing does (the kernel's rule: `src/pulse/target.ts`). It holds, round
+ * after round, until another `target` for the side moves it. A side no `target` names keeps the one rule
+ * every unit had before: engage the nearest enemy, wherever it is.
+ *
+ * It replaced the `order` a spawned group once carried (`{ advance: region }`), which the kernel never read:
+ * a side's target is what the kernel keeps, and a group's line of `intent` is what the player reads.
+ */
+export type TargetAction = Readonly<{ target: Readonly<{ side: PlayerId; region: string }> }>
 
 /** A scripted side's Build Phase plan for a Pulse: structures that reveal at its start, like the player's
  *  own. Anchors are north-west tiles, the way the Build Phase stores a placement. */
@@ -97,7 +101,7 @@ export type CommitPlanAction = Readonly<{
 export type WinAction = Readonly<{ win: true }>
 export type LoseAction = Readonly<{ lose: true }>
 
-export type SimulationAction = SpawnAction | OrderAction | CommitPlanAction | WinAction | LoseAction
+export type SimulationAction = SpawnAction | TargetAction | CommitPlanAction | WinAction | LoseAction
 
 /**
  * What a line of dialog looks at while it is shown — the camera goes there, and the intro highlight lights

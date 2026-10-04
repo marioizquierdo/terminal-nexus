@@ -11,11 +11,10 @@ import type { Coord } from "../grid/types.ts"
 import type {
   CommitPlanAction,
   MissionDefinition,
-  Order,
-  OrderAction,
   Region,
   SayAction,
   SpawnAction,
+  TargetAction,
   TriggerAction,
   TriggerCondition,
   TriggerDefinition,
@@ -28,7 +27,7 @@ const side: Shape<PlayerId> = literal("A", "B")
 
 const coord: Shape<Coord> = record<Coord>({ x: number, y: number }, {})
 
-const region: Shape<Region> = record<Region>({ id: text, x: number, y: number, width: number, height: number }, { notes: text })
+const region: Shape<Region> = record<Region>({ id: text, x: number, y: number, width: number, height: number }, { name: text, notes: text })
 
 /** The four conditions: a moment (`{ pulse, tick }`), or an event, which names which. */
 const condition: Shape<TriggerCondition> = (() => {
@@ -51,18 +50,16 @@ const condition: Shape<TriggerCondition> = (() => {
   }
 })()
 
-const order: Shape<Order> = record<Order>({ advance: text }, {})
-
 const spawn: Shape<SpawnAction["spawn"]> = record<SpawnAction["spawn"]>(
   {
     side,
     units: list(record<Readonly<{ unit: string; count: number }>>({ unit: text, count: number }, {})),
     at: text,
   },
-  { group: text, order, intent: text },
+  { group: text, intent: text },
 )
 
-const orderAction: Shape<OrderAction["order"]> = record<OrderAction["order"]>({ group: text, advance: text }, {})
+const target: Shape<TargetAction["target"]> = record<TargetAction["target"]>({ side, region: text }, {})
 
 const commitPlan: Shape<CommitPlanAction["commitPlan"]> = record<CommitPlanAction["commitPlan"]>(
   { side, structures: list(record<Readonly<{ contentId: string; anchor: Coord }>>({ contentId: text, anchor: coord }, {})) },
@@ -76,7 +73,7 @@ const sayLine: Shape<SayAction["say"]> = record<SayAction["say"]>(
 
 const action: Shape<TriggerAction> = keyed("an action", {
   spawn,
-  order: orderAction,
+  target,
   commitPlan,
   win: literal(true),
   lose: literal(true),

@@ -117,6 +117,28 @@ export function restoreCommanders(
   return { state: { ...state, entities: [...state.entities, ...born], nextOrdinal }, absent: still, restored }
 }
 
+/**
+ * `registry` with every aura letting through `100 - less` percent of a hit — what the Pulse reads while the
+ * Experiment "By the Book" (Vasse's aura) is tuned — and, with `less` 0, no aura at all. The same registry,
+ * untouched, when nothing in it has an aura.
+ */
+export function auraRegistry(registry: ContentRegistry, less: number): ContentRegistry {
+  if (!Number.isInteger(less) || less < 0 || less >= 100) throw new Error(`an aura takes away 0 to 99 percent of a hit, received ${less}`)
+  const ids = registry.ids()
+  if (!ids.some((id) => registry.get(id).aura !== undefined)) return registry
+  return createRegistry(
+    ids.map((id) => {
+      const definition = registry.get(id)
+      if (definition.aura === undefined) return definition
+      if (less === 0) {
+        const { aura: _off, ...without } = definition
+        return without
+      }
+      return { ...definition, aura: { ...definition.aura, damageTakenPercent: 100 - less } }
+    }),
+  )
+}
+
 /** `registry` with every Commander's health set to `health` — what the Pulse reads while the Experiment
  *  "Vasse's health" is tuned. The same registry, untouched, when nothing in it is a Commander. */
 export function commanderRegistry(registry: ContentRegistry, health: number): ContentRegistry {

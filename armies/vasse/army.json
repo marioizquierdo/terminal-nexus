@@ -51,7 +51,16 @@
               { "id": "muster", "x": 21, "y": 9, "width": 3, "height": 3, "notes": "Beside the Nexus, toward where the raid comes from: where the starting squads stand." },
               { "id": "ridge", "x": 40, "y": 0, "width": 4, "height": 2, "notes": "North of the gap in the ridge: the raid's way in." },
               { "id": "east-flats", "x": 50, "y": 9, "width": 5, "height": 3, "notes": "The open flats east of the base: the second round's flank." },
-              { "id": "nexus", "x": 17, "y": 10, "width": 3, "height": 2, "notes": "The player's Grid Nexus: what every raid advances on." }
+              { "id": "nexus", "x": 17, "y": 10, "width": 3, "height": 2, "notes": "The player's Grid Nexus: what Corvane's last line in the intro looks at." },
+              {
+                "id": "line",
+                "name": "the line",
+                "x": 22,
+                "y": 7,
+                "width": 5,
+                "height": 2,
+                "notes": "Two steps out from the muster, between the Nexus and the way the raid comes round the ridge: where the player's troops stand, a line just ahead of the base."
+              }
             ],
             "triggers": [
               {
@@ -74,6 +83,12 @@
                 ]
               },
               {
+                "id": "post",
+                "notes": "Where the player's troops head, every round: the line just ahead of the base. They fight what comes within their reach and stand there when nothing does, so a building placed beside the line fights beside them, and a raid that goes round them meets the buildings. Set once; it holds every round. Chosen over the gap in the ridge, the pass and the ground before the Barracks, and measured with every place one building can go inside the build range: a plan that builds nothing still loses the last round at every strength of Vasse's aura and every health from 20 to 100, as it did before the line, and the raid needed no change.",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [{ "target": { "side": "A", "region": "line" } }]
+              },
+              {
                 "id": "raid-1",
                 "when": { "pulse": 1, "tick": 0 },
                 "do": [
@@ -86,7 +101,6 @@
                       ],
                       "at": "ridge",
                       "group": "probe",
-                      "order": { "advance": "nexus" },
                       "intent": "Probe the line at the ridge."
                     }
                   }
@@ -116,7 +130,6 @@
                       ],
                       "at": "ridge",
                       "group": "second-push",
-                      "order": { "advance": "nexus" },
                       "intent": "Break through at the ridge."
                     }
                   }
@@ -133,7 +146,6 @@
                       "units": [{ "unit": "unit.ravel.raider", "count": 2 }],
                       "at": "east-flats",
                       "group": "flank",
-                      "order": { "advance": "nexus" },
                       "intent": "Come round from the east."
                     }
                   }
@@ -155,7 +167,6 @@
                       ],
                       "at": "ridge",
                       "group": "push",
-                      "order": { "advance": "nexus" },
                       "intent": "The push: take the Nexus."
                     }
                   }
@@ -174,7 +185,6 @@
                       ],
                       "at": "east-flats",
                       "group": "reserve",
-                      "order": { "advance": "nexus" },
                       "intent": "The reserve, from the east."
                     }
                   }
@@ -219,14 +229,17 @@
               { "id": "line", "when": { "pulse": 1, "tick": 0 }, "do": [{ "spawn": { "side": "A", "units": [{ "unit": "unit.citizen.trooper", "count": 5 }], "at": "muster" } }] },
               {
                 "id": "ambush",
+                "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid.",
                 "when": { "pulse": 1, "tick": 0 },
                 "do": [
                   {
                     "spawn": {
                       "side": "B",
-                      "units": [{ "unit": "unit.ravel.raider", "count": 2 }],
+                      "units": [
+                        { "unit": "unit.ravel.raider", "count": 2 },
+                        { "unit": "unit.ravel.runner", "count": 2 }
+                      ],
                       "at": "ambush",
-                      "order": { "advance": "nexus" },
                       "intent": "Catch the Commander alone."
                     }
                   }

@@ -6,8 +6,9 @@
 // nothing drawn.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { inBounds, tilesOf } from "../grid/coords.ts"
+import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
+import { TERRAIN } from "../grid/types.ts"
 import type {
   MissionDefinition,
   Region,
@@ -28,6 +29,14 @@ export function regionOf(mission: Pick<MissionDefinition, "regions">, id: string
   return mission.regions.find((region) => region.id === id)
 }
 
+/** Every tile of a region, in reading order. */
+export function regionTiles(region: Region): Coord[] {
+  return Array.from({ length: region.width * region.height }, (_, index) => ({
+    x: region.x + (index % region.width),
+    y: region.y + Math.floor(index / region.width),
+  }))
+}
+
 /** Whether a condition is a moment in a Pulse (rather than an event). */
 export function isMoment(condition: TriggerCondition): condition is Readonly<{ pulse: number; tick: number }> {
   return !("event" in condition)
@@ -42,7 +51,7 @@ function whenOf(condition: TriggerCondition): "moment" | "end" {
 export function actionName(action: TriggerAction): string {
   if ("say" in action) return "say"
   if ("spawn" in action) return "spawn"
-  if ("order" in action) return "order"
+  if ("target" in action) return "target"
   if ("commitPlan" in action) return "commitPlan"
   if ("win" in action) return "win"
   return "lose"
@@ -78,11 +87,12 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     else if (registry.get(entry.unit).layer === "obstacles") say(`"${entry.structure}" trains "${entry.unit}", which is a building`)
   }
 
-  // Regions: unique, sized, on the map.
+  // Regions: unique, sized, on the map, and a name, when given, that says something.
   const regionIds = new Set<string>()
   for (const region of mission.regions) {
     if (regionIds.has(region.id)) say(`region "${region.id}" is declared twice`)
     regionIds.add(region.id)
+    if (region.name !== undefined && region.name.trim() === "") say(`region "${region.id}" has an empty name`)
     if (!isPositiveInteger(region.width) || !isPositiveInteger(region.height)) {
       say(`region "${region.id}" must be at least one tile wide and tall`)
       continue
@@ -99,9 +109,9 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     if (!regionIds.has(id)) say(`${where} names the unknown region "${id}"`)
   }
 
-  // Triggers, in order: a group must be spawned by a trigger that fires no later than one that orders it.
+  // Triggers, in order.
   const triggerIds = new Set<string>()
-  const groups = new Map<string, Readonly<{ pulse: number; tick: number }>>()
+  const groups = new Set<string>()
   const lastPulseDecided = { value: false }
 
   const checkCondition = (trigger: TriggerDefinition): void => {
@@ -167,23 +177,23 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
           commanders.add(key)
         }
       }
-      if (spawn.order !== undefined) checkOrder(spawn.order, where)
       if (spawn.group !== undefined && moment !== null) {
         if (groups.has(spawn.group)) say(`${where} spawns the group "${spawn.group}" a second time`)
-        else groups.set(spawn.group, moment)
+        else groups.add(spawn.group)
       }
       return
     }
-    if ("order" in action) {
-      const { order } = action
+    if ("target" in action) {
+      const { target } = action
       if (at !== "moment") say(`${where} must happen at a moment in a Pulse, not at an event`)
-      checkOrder(order, where)
-      const spawned = groups.get(order.group)
-      if (spawned === undefined) {
-        say(`${where} orders the group "${order.group}", which no earlier trigger spawns`)
-      } else if (moment !== null && (moment.pulse < spawned.pulse || (moment.pulse === spawned.pulse && moment.tick < spawned.tick))) {
-        say(`${where} orders the group "${order.group}" before it arrives`)
-      }
+      if (target.side !== "A" && target.side !== "B") say(`${where} names the unknown side "${String(target.side)}"`)
+      knownRegion(target.region, where)
+      const region = regionOf(mission, target.region)
+      if (region === undefined) return
+      // The screen says where a side's troops head, by the region's name; and they must be able to stand there.
+      if ((region.name ?? "").trim() === "") say(`${where} sends troops to the region "${region.id}", which has no name for the screen to say`)
+      const rock = regionTiles(region).find((tile) => inBounds(grid, tile) && TERRAIN[grid.tiles[tileIndex(grid, tile)] ?? "terrain.plain"].impassable)
+      if (rock !== undefined) say(`${where} sends troops to the region "${region.id}", which has rock at ${rock.x},${rock.y}: a target is ground they can stand on`)
       return
     }
     if ("commitPlan" in action) {
@@ -209,18 +219,6 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     if (!isMoment(when) && when.event === "pulse.end" && (when.pulse === undefined || when.pulse === mission.pulses)) {
       lastPulseDecided.value = true
     }
-  }
-
-  const checkOrder = (given: object, where: string): void => {
-    const order = given as Readonly<Record<string, unknown>>
-    const keys = Object.keys(order).filter((key) => key !== "group")
-    for (const key of keys) {
-      if (key !== "advance") {
-        say(`${where} gives the order "${key}", which the kernel cannot carry out yet — only "advance" (Q69)`)
-      }
-    }
-    if (typeof order.advance === "string") knownRegion(order.advance, where)
-    else if (!keys.includes("advance")) say(`${where} gives no order`)
   }
 
   for (const trigger of mission.triggers) {

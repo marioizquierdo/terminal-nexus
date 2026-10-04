@@ -179,5 +179,6 @@ test("PERIMETER's first round with the Barracks training hashes the same on ever
   assert.equal(hashState(round(1, null).final), PINNED_ROUND_1)
 })
 
-// Moved on purpose with the Commander step: Vasse arrives with the squads, so round 1 has one more unit in it.
-const PINNED_ROUND_1 = "1e8083058cc036d0a98b3fa52c2d5d9a0b28493786d001fc6cf302fd4a2f8ebd"
+// Moved on purpose with the Commander step: Vasse arrives with the squads, so round 1 has one more unit in it; and
+// again when the squads came to hold the line ahead of the base and By the Book to guard those beside her.
+const PINNED_ROUND_1 = "760e89bf7088a78c6b5f3633a3f29136810bb771af639d61e6f791a66143cb6c"

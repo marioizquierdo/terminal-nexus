@@ -457,6 +457,26 @@ export const ALL_SETTINGS = {
     values: ["off", "feed", "beside"],
     default: "beside",
   },
+
+  // --- Vasse's aura, By the Book (the Commander round 4) ---------------------------------------------
+  // The owner: Commanders "should be like heroes on warcraft3 ... Vasse should provide boost to nearby units".
+  // It asks the open question on a Commander's passive skill: how strong should it be, strong enough to feel
+  // that she is there and never so strong that standing beside her is the whole plan?
+
+  /** How much less damage By the Book, Vasse's aura, lets the units of her side within its reach take, herself
+   *  included, as a share of every hit; off takes the aura away (`auraRegistry`, `src/match/commander.ts`).
+   *  PERIMETER was measured at every value (the pull request has the table). First guess: a quarter less,
+   *  the content's own value. */
+  commanderAura: {
+    tier: "experiment",
+    section: "mission",
+    label: "By the Book",
+    question: "Vasse's aura: how much less damage your units near her take, and she does, from every hit. Off: none.",
+    values: [0, 10, 25, 40],
+    unit: "percent",
+    names: { "0": "off", "10": "10% less", "25": "25% less", "40": "40% less" },
+    default: 25,
+  },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

@@ -11,6 +11,8 @@ import type { Coord, Direction } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
+import type { Guard } from "./aura.ts"
+import { guardedAmount } from "./aura.ts"
 import type { PulseContext } from "./context.ts"
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] }
@@ -68,6 +70,11 @@ export type TickContext = {
    * and never changed by the kernel (`intents.ts`, `perception.ts`). Empty for a battle with no target.
    */
   targets: Readonly<Partial<Record<PlayerId, TargetArea>>>
+  /**
+   * Who an aura guards this tick, by ordinal (`aura.ts`): decided as the attacks begin and read by every hit
+   * after it in the tick, a blast's included. Empty until then, and for a battle with no aura in it.
+   */
+  guards: Map<number, Guard>
 }
 
 /**
@@ -140,6 +147,10 @@ export function distanceBetween(a: Actor, b: Actor): number {
  *
  * Returns whether *this* call is what killed the target, so a caller that reacts to its own kill —
  * attacks()'s post-kill movement hold — does not have to re-derive it from hp afterward.
+ *
+ * A target an aura guards this tick (`context.guards`, `aura.ts`) takes the aura's share of `amount`, and
+ * the event names the aura's bearer. Here, the one place damage becomes a hit, so a tier's tally, a splash
+ * and a blast are all guarded the same way.
  */
 export function applyDamage(
   context: TickContext,
@@ -147,8 +158,10 @@ export function applyDamage(
   source: Actor,
   amount: number,
 ): boolean {
+  const guard = amount > 0 ? context.guards.get(target.ordinal) : undefined
+  const dealt = guard === undefined ? amount : guardedAmount(amount, guard.damageTakenPercent)
   const hpBefore = target.hp
-  const hpAfter = Math.max(0, hpBefore - amount)
+  const hpAfter = Math.max(0, hpBefore - dealt)
   target.hp = hpAfter
   context.events.push({
     kind: "damage.applied",
@@ -160,6 +173,7 @@ export function applyDamage(
     amount: hpBefore - hpAfter,
     hpBefore,
     hpAfter,
+    ...(guard === undefined ? {} : { guardedBy: guard.bearer.id, guardedByOrdinal: guard.bearer.ordinal }),
   })
   if (hpAfter > 0 || target.pendingDead) return false
   target.pendingDead = true
