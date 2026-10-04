@@ -575,7 +575,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE â€
   letter, in her side's colour. The feed names her and says she **falls** (`5.9s Vasse falls`), not that a
   unit dies. The result says it under Recall, with the round she is out for and the round she is back for
   (`Vasse fell: out for round 2, back for round 3.`; only that she fell, once there is no next round to be
-  out for). The next Build Phase's bottom line says it in place of "the Nexus stands" (`Round 1: victory.
+  out for). The next Build Phase opens on the dialog saying it, in the game's own voice, looking at the Nexus that
+  will restore her, and its bottom line says it in place of "the Nexus stands" (`Round 1: victory.
   Vasse is out this round, back for round 3.`), and so does the Battle Round screen, under the round's own
   words (`Vasse is out this round.`). The round she comes back, the bottom line says `Vasse is back beside
   the Nexus.` and she stands there on the map, and the round opens on the dialog saying it, looking at
