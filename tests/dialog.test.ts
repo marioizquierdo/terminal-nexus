@@ -28,7 +28,7 @@ import { MOUSE_LEFT, buildMouseCommand } from "../src/build/mouse.ts"
 import type { PlacedPopup } from "../src/build/popup.ts"
 import { placePopup, popupHitAt, popupSpec } from "../src/build/popup.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { applyBuildCommand, createBuildState } from "../src/build/state.ts"
+import { applyBuildCommand, createBuildState, nexusTile } from "../src/build/state.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
 import type { MissionPlay } from "../src/cli/pulse-run.ts"
 import { STARTER_MISSION, missionPlay } from "../src/cli/pulse-run.ts"
@@ -611,13 +611,24 @@ test("the live loop breathes the light from the frame that first showed each lin
 
 // --- A Commander back: the game's own line ----------------------------------------------------------
 
-test("round 3 of the Commander's named scenario opens on one line in the game's own voice, looking at her: her highlight as she shows up again", () => {
+test("round 2 of the Commander's named scenario opens on her absence, round 3 on her return, each one line in the game's own voice", () => {
   const side = fixtureSide()
   assert.equal(side.build.state.popup, null, "the named scenario has no intro")
   playRound(side)
   keys(side, ENTER)
   assert.equal(side.build.state.pulseNumber, 2)
-  assert.equal(side.build.state.popup, null, "round 2, with her out, opened on a scene")
+  // Commanders die as part of the game: the round without her opens by saying so, looking at the Nexus that
+  // will restore her.
+  assert.equal(side.build.state.popup, "dialog", "round 2, with her out, did not say so")
+  const nexus = nexusTile(side.build.round)
+  assert.ok(nexus !== null)
+  assert.equal(side.build.round.scene?.length, 1)
+  assert.equal(side.build.round.scene?.[0]?.text, "Vasse is out this round, back for round 3.")
+  assert.equal(side.build.round.scene?.[0]?.speaker, null)
+  assert.deepEqual(side.build.round.scene?.[0]?.focus?.tile, nexus)
+  keys(side, ENTER)
+  assert.equal(side.build.state.popup, null)
+  assert.equal(bottomLineText(side), "Round 1: victory. Vasse is out this round, back for round 3.")
   playRound(side)
   keys(side, ENTER)
   const { state } = side.build

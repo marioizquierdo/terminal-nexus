@@ -210,7 +210,13 @@ function dialogLine(mission: MissionDefinition, context: BuildContext, arrivals:
  * her: her highlight when she shows up again — and then the mission's own lines for the round
  * (`sceneOf`), in trigger order.
  */
-function roundScene(mission: MissionDefinition, context: BuildContext, round: number, restored: readonly Restoration[]): DialogLine[] {
+function roundScene(
+  mission: MissionDefinition,
+  context: BuildContext,
+  round: number,
+  restored: readonly Restoration[],
+  absent: readonly CommanderAbsence[] = [],
+): DialogLine[] {
   const back: DialogLine[] = restored
     .filter((restoration) => restoration.player === "A")
     .map((restoration) => ({
@@ -220,10 +226,26 @@ function roundScene(mission: MissionDefinition, context: BuildContext, round: nu
       text: commanderNews([restoration], [], round, mission.pulses) ?? "",
       focus: { tile: restoration.anchor, own: tilesOf(restoration.anchor, context.registry.get(restoration.contentId).footprint) },
     }))
+  // A Commander out this round is said too, in the same voice, looking at the Nexus that will restore her:
+  // Commanders die as part of the game, and the round without her opens by saying so (the owner, 2026-10-04).
+  const nexus = nexusTile(context)
+  const nexusAt = context.standing.find((structure) => context.registry.get(structure.contentId).nexus === true)
+  const out: DialogLine[] = absent
+    .filter((absence) => absence.player === "A" && absence.fellInRound < round)
+    .map((absence) => ({
+      speaker: null,
+      side: null,
+      unit: null,
+      text: commanderNews([], [absence], round, mission.pulses) ?? "",
+      focus:
+        nexus === null
+          ? null
+          : { tile: nexus, own: nexusAt === undefined ? [nexus] : tilesOf(nexusAt.anchor, context.registry.get(nexusAt.contentId).footprint) },
+    }))
   const lines = sceneOf(mission, round)
-  if (lines.length === 0) return back
+  if (lines.length === 0) return [...back, ...out]
   const arrivals = arrivalsFor(mission, context, round)
-  return [...back, ...lines.map((say) => dialogLine(mission, context, arrivals, say))]
+  return [...back, ...out, ...lines.map((say) => dialogLine(mission, context, arrivals, say))]
 }
 
 /** The round's context with its own scene — none carried over from the round before it. */
@@ -323,7 +345,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         openingStatus: status(news === null ? `${last} Build Phase ${number} - the Nexus stands.` : `${last} ${news}`, "hint"),
       }
       // Its own scene, never the last round's: a Commander back, then the mission's lines for the round.
-      return withRoundScene({ ...next, incoming: forecast(next, number) }, roundScene(mission, next, number, back.restored))
+      return withRoundScene({ ...next, incoming: forecast(next, number) }, roundScene(mission, next, number, back.restored, back.absent))
     },
   }
 }
