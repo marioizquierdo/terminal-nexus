@@ -35,7 +35,7 @@ import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
-import type { MatchState, PlayerId } from "../state/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { buildFlightHoldTicks, flightHoldTicks } from "./effects/derive.ts"
 import { cosmeticHash } from "./effects/random.ts"
 import type { EffectInstance } from "./effects/types.ts"
@@ -122,30 +122,35 @@ export function shippedBarks(contentId: string): Barks {
   return ARMIES.commanders.find((commander) => commander.unit === contentId)?.barks ?? {}
 }
 
-/**
- * The player's Commander in a round, the first state she stands in, with her lines — or `null` when she is not
- * on the Grid this round (out for it, or a mission with none) or has nothing to say.
- */
-export function speakerOf(timeline: VoiceTimeline, barksOf: (contentId: string) => Barks = shippedBarks, player: PlayerId = "A"): Speaker | null {
+/** A side's Commander in a round, as the first state she stands in has her — or `null` when she is not on the
+ *  Grid in it (out for the round, or a mission with none). */
+export function commanderOf(timeline: Pick<VoiceTimeline, "states" | "registry">, player: PlayerId = "A"): EntityState | null {
   for (const state of timeline.states) {
-    for (const entity of state.entities) {
-      if (entity.player !== player) continue
-      const definition = timeline.registry.get(entity.contentId)
-      if (definition.commander !== true) continue
-      const barks = barksOf(entity.contentId)
-      if (Object.keys(barks).length === 0) return null
-      return {
-        ordinal: entity.ordinal,
-        contentId: entity.contentId,
-        player,
-        name: commanderName(entity.contentId),
-        maxHp: definition.maxHp,
-        near: definition.aura?.radius ?? VOICE.nearTiles,
-        barks,
-      }
-    }
+    const found = state.entities.find((entity) => entity.player === player && timeline.registry.get(entity.contentId).commander === true)
+    if (found !== undefined) return found
   }
   return null
+}
+
+/**
+ * The player's Commander in a round, with her lines — or `null` when she is not on the Grid this round or has
+ * nothing to say.
+ */
+export function speakerOf(timeline: VoiceTimeline, barksOf: (contentId: string) => Barks = shippedBarks, player: PlayerId = "A"): Speaker | null {
+  const commander = commanderOf(timeline, player)
+  if (commander === null) return null
+  const barks = barksOf(commander.contentId)
+  if (Object.keys(barks).length === 0) return null
+  const definition = timeline.registry.get(commander.contentId)
+  return {
+    ordinal: commander.ordinal,
+    contentId: commander.contentId,
+    player,
+    name: commanderName(commander.contentId),
+    maxHp: definition.maxHp,
+    near: definition.aura?.radius ?? VOICE.nearTiles,
+    barks,
+  }
 }
 
 /** A moment she may answer: which, and when it shows on screen, in presentation milliseconds from the round's

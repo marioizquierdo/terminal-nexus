@@ -17,7 +17,7 @@
 
 import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
-import type { Camera, TileWidth, Viewport } from "../build/camera.ts"
+import type { Camera, TileWidth, Viewport, VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
@@ -33,7 +33,7 @@ import { Playback } from "../terminal/playback.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { AuraFrame, PulseFrame, VoiceFrame } from "./pulse-scene.ts"
 import type { Speaker, SpokenLine, VoiceMode } from "./pulse-voice.ts"
-import { VOICE, labelPlace, planVoice, shippedBarks, speakerOf, voiceAt, voiceLight, voiceMoments } from "./pulse-voice.ts"
+import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voiceAt, voiceLight, voiceMoments } from "./pulse-voice.ts"
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
@@ -342,7 +342,10 @@ export class PulsePresenter {
     const at = here ? (positions.get(speaker.ordinal) ?? voice.fellAt) : voice.fellAt
     if (at === null) return null
     const place = mode === "beside" ? this.placeFor(now.line, options.view) : null
-    const seen = options.view === undefined || (inRange(at, options.view) && place !== null && inRange({ x: options.view.camera.x, y: place.y }, options.view))
+    // Beside her only while she, and the row her line sits on, are in the part of the map on screen.
+    const range = options.view === undefined ? null : visibleRange(options.view.camera, options.view.viewport)
+    const seen =
+      place !== null && (range === null || (inRange(at, range) && place.y >= range.firstY && place.y <= range.lastY))
     const frame: VoiceFrame = {
       text: now.line.text,
       typed: now.typed,
@@ -350,7 +353,7 @@ export class PulsePresenter {
       name: speaker.name,
       contentId: speaker.contentId,
       player: speaker.player,
-      where: mode === "beside" && seen && place !== null ? "map" : "panel",
+      where: mode === "beside" && seen ? "map" : "panel",
       at,
       place: place ?? at,
     }
@@ -399,21 +402,14 @@ export class PulsePresenter {
 }
 
 /** Whether a tile is in the part of the map on screen. */
-function inRange(tile: Coord, view: Readonly<{ camera: Camera; viewport: Viewport }>): boolean {
-  const range = visibleRange(view.camera, view.viewport)
+function inRange(tile: Coord, range: VisibleRange): boolean {
   return tile.x >= range.firstX && tile.x <= range.lastX && tile.y >= range.firstY && tile.y <= range.lastY
 }
 
-/** The player's Commander in a resolved Pulse — the first state she stands in — or `null` when she is not on the
- *  Grid in it. */
-function bearerOf(timeline: PulseTimeline, player: PlayerId = "A"): Bearer | null {
-  for (const state of timeline.states) {
-    for (const entity of state.entities) {
-      if (entity.player !== player) continue
-      const definition = timeline.registry.get(entity.contentId)
-      if (definition.commander !== true) continue
-      return { ordinal: entity.ordinal, contentId: entity.contentId, player, aura: definition.aura?.radius ?? null }
-    }
-  }
-  return null
+/** The player's Commander in a resolved Pulse, with her aura's reach, or `null` when she is not on the Grid in it. */
+function bearerOf(timeline: PulseTimeline): Bearer | null {
+  const commander = commanderOf(timeline)
+  if (commander === null) return null
+  const aura = timeline.registry.get(commander.contentId).aura?.radius ?? null
+  return { ordinal: commander.ordinal, contentId: commander.contentId, player: commander.player, aura }
 }
