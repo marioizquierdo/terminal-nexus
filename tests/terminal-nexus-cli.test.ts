@@ -66,7 +66,7 @@ test("--spike is still accepted as an alias of --build-phase", () => {
 test("--at reaches the screen loop its route names: a campaign level the Build Phase, a title menu place the menu", () => {
   for (const [route, loop] of [
     ["campaign?level=vasse-test-1&round=2", /for the Build Phase\.$/],
-    ["campaign?level=vasse-test-1&wave=0", /for the Build Phase\.$/],
+    ["campaign?level=vasse-test-1", /for the Build Phase\.$/],
     ["settings", /for its menu\.$/],
     ["challenge", /for its menu\.$/],
     ["", /for its menu\.$/],
@@ -83,7 +83,7 @@ test("a route that is not a place is refused before any screen, every problem at
   assert.equal(result.status, 2)
   assert.equal(result.stdout, "")
   assert.match(result.stderr, /--at "campaign\?level=nowhere&round=9&colour=red" is not a place in the game:/)
-  assert.match(result.stderr, /campaign takes no colour: it reads level, round and wave/)
+  assert.match(result.stderr, /campaign takes no colour: it reads level and round/)
   assert.match(result.stderr, /no level "nowhere": the levels are vasse-test-1 \(/)
   const place = runTerminalNexus(["--at", "nowhere"])
   assert.equal(place.status, 2)

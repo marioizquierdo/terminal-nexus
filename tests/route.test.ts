@@ -48,9 +48,6 @@ test("each route parses to the place it names", () => {
     ["campaign?round=3&level=vasse-test-1", "level vasse-test-1 round 3"],
     ["CAMPAIGN?Level=vasse-test-1&ROUND=2", "level vasse-test-1 round 2"],
     ["campaign?level=vasse%2Dtest%2D1&round=%32", "level vasse-test-1 round 2"],
-    // The owner's own route: "campaign?level=vasse-test-1&wave=0".
-    ["campaign?level=vasse-test-1&wave=0", "level vasse-test-1 round 1"],
-    ["campaign?level=vasse-test-1&wave=2", "level vasse-test-1 round 3"],
   ]
   for (const [route, expected] of cases) assert.equal(plain(parseRoute(route)), expected, `"${route}"`)
 })
@@ -60,13 +57,11 @@ test("an encoded ? is part of the place's name, not the start of a query", () =>
   assert.match(problemsOf("campaign%3Flevel%3Dvasse-test-1")[0] ?? "", /no place named "campaign\?level=vasse-test-1"/u)
 })
 
-test("round and wave name the same round: wave counts from 0, round from 1", () => {
+test("a route counts Battle Rounds from 1, as the screen does, on every level", () => {
   for (const level of LEVELS) {
     for (let round = 1; round <= level.rounds; round += 1) {
-      const byRound = parseRoute(`campaign?level=${level.id}&round=${round}`)
-      const byWave = parseRoute(`campaign?level=${level.id}&wave=${round - 1}`)
-      assert.deepEqual(byWave, byRound, `${level.id}: wave ${round - 1} is not round ${round}`)
-      assert.equal(byRound.kind === "level" ? byRound.round : null, round)
+      const destination = parseRoute(`campaign?level=${level.id}&round=${round}`)
+      assert.equal(destination.kind === "level" ? destination.round : null, round, `${level.id} round ${round}`)
     }
   }
 })
@@ -103,16 +98,15 @@ test("a broken route is refused whole: every problem at once, each naming what e
     ["menu?x=1&y=2", ["menu takes no x: it reads no query", "menu takes no y: it reads no query"]],
     [
       "campaign?level=nowhere&round=9&colour=red",
-      ["campaign takes no colour: it reads level, round and wave", `no level "nowhere": ${levels}`],
+      ["campaign takes no colour: it reads level and round", `no level "nowhere": ${levels}`],
     ],
     ["campaign?level=vasse-test-1&round=0", ['level "vasse-test-1" has rounds 1 to 3, not 0']],
     ["campaign?level=vasse-test-1&round=4", ['level "vasse-test-1" has rounds 1 to 3, not 4']],
     ["campaign?level=vasse-test-1&round=two", ['round must be a whole number, not "two"']],
     ["campaign?level=vasse-test-1&round=-1", ['round must be a whole number, not "-1"']],
-    ["campaign?level=vasse-test-1&wave=3", ['level "vasse-test-1" has waves 0 to 2, one a round, not 3']],
-    ["campaign?level=vasse-test-1&round=2&wave=1", ["round and wave name the same thing (wave=0 is round=1): give one"]],
+    // A route counts Battle Rounds: the word it once took for them is a name the place does not read.
+    ["campaign?level=vasse-test-1&wave=0", ["campaign takes no wave: it reads level and round"]],
     ["campaign?round=2", ["a round needs a level: campaign?level=vasse-test-1&round=2"]],
-    ["campaign?wave=0", ["a wave needs a level: campaign?level=vasse-test-1&round=2"]],
     ["campaign?level", ["level needs a value: level=..."]],
     ["campaign?level=&round=2", ["level needs a value: level=...", "a round needs a level: campaign?level=vasse-test-1&round=2"]],
     ["campaign?=3", ['"=3" has no name before its =']],

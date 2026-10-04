@@ -112,6 +112,14 @@ export type ContentDef = Readonly<{
    */
   commander?: true
   /**
+   * A Commander's passive aura, a skill that works on its own (the owner, 2026-10-04: Commanders "should be like
+   * heroes on warcraft3 ... Vasse should provide boost to nearby units"). While its bearer is on the Grid, the
+   * units of its side within `radius` tiles of it — measured as range is, Manhattan to the nearest tile of each
+   * footprint — take `damageTakenPercent` percent of the damage a hit would deal them. Vasse's is *By the Book*.
+   * The kernel's damage rule reads it; presentation draws its reach.
+   */
+  aura?: Readonly<{ radius: number; damageTakenPercent: number }>
+  /**
    * Hard restriction: this entity may only perceive hostiles on these layers as viable targets — for
    * a normal `attack` and for a contact `detonation.triggerRange` alike, since both are resolved from
    * whatever perception already decided. Undefined means every layer, which preserves every existing

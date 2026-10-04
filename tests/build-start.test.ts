@@ -179,7 +179,7 @@ test("a mission can say its own words for a round, and every other round says th
     own.rows.flatMap((row) => (row.kind === "note" ? [row.text] : [])),
     ["Hold the line until the Nexus is charged."],
   )
-  const other = popupSpec({ ...context, roundText: { 2: "A second wave." } }, session.build.state)!
+  const other = popupSpec({ ...context, roundText: { 2: "A second push." } }, session.build.state)!
   assert.deepEqual(
     other.rows.flatMap((row) => (row.kind === "note" ? [row.text] : [])),
     ["Activate Nexus.", "Collect Resources.", "Spawn Units."],

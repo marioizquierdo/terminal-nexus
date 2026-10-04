@@ -406,7 +406,7 @@ test("the owner's third export is this build: the focus arrow and card reveal ar
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   const result = parseSettingsExport(OWNER_EXPORT_2026_09_30_THIRD, base)
   assert.deepEqual(result.ignored, [])
-  // The raid and the crew were his placeholder Pulse's; PERIMETER's waves are the mission's data now,
+  // The raid and the crew were his placeholder Pulse's; PERIMETER's raid is the mission's data now,
   // so an export that names them reads without a complaint, and they change nothing.
   assert.deepEqual(result.settled, ["focusArrowMs", "cardRevealMs", "crew", "raid"])
   assert.equal(TUNING.focusArrowMs, 250)

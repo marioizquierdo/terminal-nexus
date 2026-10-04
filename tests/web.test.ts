@@ -157,7 +157,7 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
     const op = ops[index]
     assert.ok(op !== undefined)
     const colour = css(rgbFor(cell.style.fgRole, "truecolor", "dark", cell.style.fade ?? 0))
-    // A see-through style that shows — the incoming wave's wash — is the role table's colours mixed as the
+    // A see-through style that shows — the incoming raid's wash — is the role table's colours mixed as the
     // terminal mixes them, glyph and fill.
     const seen = seeThroughColours(cell, "truecolor", "dark")
     if (seen !== null) {
@@ -180,7 +180,7 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
   })
   assert.ok(inverse > 10, "the frame drew no inverse cells to check")
   assert.ok(dim > 0)
-  assert.ok(washed > 0, "the frame drew no incoming wave to check")
+  assert.ok(washed > 0, "the frame drew no incoming raid to check")
 })
 
 // --- 4. The page's keys are the scripted playtest's keys ------------------------------------------
@@ -305,9 +305,9 @@ test("#at= opens a route, whole: a part runs to the next part the page knows, no
   const at = parseRoute(address.at ?? "")
   assert.equal(at.kind === "level" ? `${at.level.id} ${at.round}` : at.place, "vasse-test-1 2")
   // Percent-encoded, as an address often is, and in any order.
-  assert.deepEqual(readAddress("#keys=Esc%20n%201&at=campaign%3Flevel%3Dvasse-test-1%26wave%3D2"), {
+  assert.deepEqual(readAddress("#keys=Esc%20n%201&at=campaign%3Flevel%3Dvasse-test-1%26round%3D3"), {
     keys: "Esc n 1",
-    at: "campaign?level=vasse-test-1&wave=2",
+    at: "campaign?level=vasse-test-1&round=3",
   })
   // The addresses the page always took still read as they did.
   assert.deepEqual(readAddress("#settings=raid%3Dprobe%20crew%3Dsome"), { settings: "raid=probe crew=some" })

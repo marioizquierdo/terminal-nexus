@@ -36,7 +36,7 @@ export type Force = Readonly<{
 /**
  * What a Pulse needs besides the plan: who is on the Grid and how long it may last. **Placeholder
  * content** — the Build Phase's starting force and raid, in the same standing as its placeholder
- * Nexus powers. In a mission the trigger runner (`mission.ts`) supplies PERIMETER's waves instead of
+ * Nexus powers. In a mission the trigger runner (`mission.ts`) supplies PERIMETER's raid instead of
  * the static raid.
  */
 export type PulseSetup = Readonly<{

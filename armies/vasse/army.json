@@ -1,8 +1,8 @@
 {
   "id": "vasse",
   "title": "Edda Vasse",
-  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol, and her campaign. It requires common for the buildings, the Nexus powers and the bench units her levels use, and brings only her own unit. Building her and her campaign is not choosing the Citizens' roster: every building and power she is offered is still the disposable bench.",
-  "requires": ["common"],
+  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol, and her campaign. It requires all for the buildings, the Nexus powers and the bench units her levels use, and brings only her own unit. Building her and her campaign is not choosing the Citizens' roster: every building and power she is offered is still the disposable bench.",
+  "requires": ["all"],
   "content": ["unit.citizen.vasse"],
   "commanders": [
     {
@@ -21,7 +21,7 @@
       "levels": [
         {
           "id": "vasse-test-1",
-          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building and both placeholder Nexus powers common has, one by one, so that when common grows this level keeps what it teaches. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
+          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building and both placeholder Nexus powers all has, one by one, so that when all grows this level keeps what it teaches. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
           "map": "starter",
           "credits": 100,
           "unlocks": {
@@ -31,7 +31,7 @@
           "mission": {
             "id": "mission.citizen.perimeter",
             "name": "Perimeter",
-            "notes": "PERIMETER, mission 1, as the trigger list the runner plays: three Pulses, the raid arriving in three waves, and the hold (campaigns.md sketches it). Played on the Build Phase's starter map, not PERIMETER's own: whether that map needs real scrolling is still an open question, and it exists only as a sketch. The regions are named for this map's landmarks, the gap in the northern ridge and the open flats to the east; a real map would carry its own. The units are the disposable fixture rosters from the first battles (Citizen troopers and marksmen, 'two squads'; Ravel runners and raiders): the campaign design decided on no new content. The wave sizes are a first tuning, not balance: chosen against this map and the starter construct menu so that the first Pulse is a probe the starting squads can meet, the second needs something built, and the third needs most of what the level's credits buy (docs/history/reports/2026-09-30-round-loop-and-missions.md has the outcomes measured against scripted plans). pulseTicks: thirty seconds a Pulse, as the placeholder Pulse was, time enough for a wave to cross the map. seed: 0x50554c53, 'PULS', the placeholder Pulse's seed, so the first round's randomness is the one 6A was tuned on. trains: the Barracks trains troopers, round after round, which is what makes a second round show something the first did not; how often, and how many a round, are the Experiments' (src/build/all-settings.ts). The round texts are placeholder writing in PERIMETER's register ('plain, military, correct'), inside the lore budget; the briefing and debrief written in campaigns.md are the designed ones, and the mission-cutscenes milestone is where they are shown. endText's won line is the debrief's own first sentence (campaigns.md).",
+            "notes": "PERIMETER, mission 1, as the trigger list the runner plays: three Battle Rounds, the raid arriving in each, and the hold (campaigns.md sketches it). Played on the Build Phase's starter map, not PERIMETER's own: whether that map needs real scrolling is still an open question, and it exists only as a sketch. The regions are named for this map's landmarks, the gap in the northern ridge and the open flats to the east; a real map would carry its own. The units are the disposable fixture rosters from the first battles (Citizen troopers and marksmen, 'two squads'; Ravel runners and raiders): the campaign design decided on no new content. The raid's sizes are a first tuning, not balance: chosen against this map and the starter construct menu so that the first Pulse is a probe the starting squads can meet, the second needs something built, and the third needs most of what the level's credits buy (docs/history/reports/2026-09-30-round-loop-and-missions.md has the outcomes measured against scripted plans). pulseTicks: thirty seconds a Pulse, as the placeholder Pulse was, time enough for a group to cross the map. seed: 0x50554c53, 'PULS', the placeholder Pulse's seed, so the first round's randomness is the one 6A was tuned on. trains: the Barracks trains troopers, round after round, which is what makes a second round show something the first did not; how often, and how many a round, are the Experiments' (src/build/all-settings.ts). The round texts are placeholder writing in PERIMETER's register ('plain, military, correct'), inside the lore budget; the briefing and debrief written in campaigns.md are the designed ones, and the mission-cutscenes milestone is where they are shown. endText's won line is the debrief's own first sentence (campaigns.md).",
             "pulses": 3,
             "pulseTicks": 360,
             "seed": 1347767379,
@@ -39,7 +39,7 @@
             "regions": [
               { "id": "muster", "x": 21, "y": 9, "width": 3, "height": 3, "notes": "Beside the Nexus, toward where the raid comes from: where the starting squads stand." },
               { "id": "ridge", "x": 40, "y": 0, "width": 4, "height": 2, "notes": "North of the gap in the ridge: the raid's way in." },
-              { "id": "east-flats", "x": 50, "y": 9, "width": 5, "height": 3, "notes": "The open flats east of the base: the second wave's flank." },
+              { "id": "east-flats", "x": 50, "y": 9, "width": 5, "height": 3, "notes": "The open flats east of the base: the second round's flank." },
               { "id": "nexus", "x": 17, "y": 10, "width": 3, "height": 2, "notes": "The player's Grid Nexus: what every raid advances on." }
             ],
             "triggers": [
@@ -63,7 +63,7 @@
                 ]
               },
               {
-                "id": "wave-1",
+                "id": "raid-1",
                 "when": { "pulse": 1, "tick": 0 },
                 "do": [
                   {
@@ -93,7 +93,7 @@
                 ]
               },
               {
-                "id": "wave-2",
+                "id": "raid-2",
                 "when": { "pulse": 2, "tick": 0 },
                 "do": [
                   {
@@ -104,7 +104,7 @@
                         { "unit": "unit.ravel.raider", "count": 3 }
                       ],
                       "at": "ridge",
-                      "group": "second-wave",
+                      "group": "second-push",
                       "order": { "advance": "nexus" },
                       "intent": "Break through at the ridge."
                     }
@@ -112,8 +112,8 @@
                 ]
               },
               {
-                "id": "wave-2-flank",
-                "notes": "Seven seconds in: a flank that arrives while the main wave is already engaged.",
+                "id": "raid-2-flank",
+                "notes": "Seven seconds in: a flank that arrives while the main group is already engaged.",
                 "when": { "pulse": 2, "tick": 84 },
                 "do": [
                   {
@@ -129,7 +129,7 @@
                 ]
               },
               {
-                "id": "wave-3",
+                "id": "raid-3",
                 "notes": "The raid's own Build Phase plan for the push comes first: a den north of the ridge, its forward camp.",
                 "when": { "pulse": 3, "tick": 0 },
                 "do": [
@@ -151,7 +151,7 @@
                 ]
               },
               {
-                "id": "wave-3-reserve",
+                "id": "raid-3-reserve",
                 "when": { "pulse": 3, "tick": 96 },
                 "do": [
                   {

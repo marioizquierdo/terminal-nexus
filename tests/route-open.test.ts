@@ -190,10 +190,10 @@ test("a route to round 2 opens exactly the screen a player reaches by playing ro
   assert.equal(opened.state.pulseNumber, 2)
 })
 
-test("the scripted playtest's --at opens a level at a round, wave or round alike, and refuses a title menu route", () => {
-  const byWave = runBuildPlaytest({ steps: [], at: playtestOpening("campaign?level=vasse-test-1&wave=2") })
-  assert.match(frameToText(byWave.frames[0]!.frame), /build phase - round 3 of 3/u)
-  assert.equal(byWave.context.round?.number, 3)
+test("the scripted playtest's --at opens a level at a round, and refuses a title menu route", () => {
+  const third = runBuildPlaytest({ steps: [], at: playtestOpening("campaign?level=vasse-test-1&round=3") })
+  assert.match(frameToText(third.frames[0]!.frame), /build phase - round 3 of 3/u)
+  assert.equal(third.context.round?.number, 3)
   // With a settings text, the rounds on the way are played with its Experiments too.
   const settled = runBuildPlaytest({ steps: [], at: playtestOpening("campaign?level=vasse-test-1&round=2"), experiments: { commanderHealth: 20 } })
   assert.equal(settled.frames[0]!.state.experiments.commanderHealth, 20)

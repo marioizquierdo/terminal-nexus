@@ -637,7 +637,7 @@ scripted(
 popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
 // The early Nexus Pulse shots (`pulse-start`, `pulse-fight` and the rest) were taken against a placeholder Pulse that
-// PERIMETER's waves replaced; they are no longer made. The shots that follow are on PERIMETER.
+// PERIMETER's raid replaced; they are no longer made. The shots that follow are on PERIMETER.
 
 // A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
 // tile, then [s] and [s] to start. The strong plan holds PERIMETER; nothing built loses it in round 3.
@@ -670,7 +670,7 @@ scripted(
 
 scripted(
   "mission-round-2",
-  "Build Phase 2: the Turrets and the Hatchery stand, the survivors are home, the credits not spent carry over, and the second wave waits at the ridge",
+  "Build Phase 2: the Turrets and the Hatchery stand, the survivors are home, the credits not spent carry over, and the second round's raid waits at the ridge",
   { keys: STRONG_TO_ROUND_2, expect: "round 2 of 3" },
 )
 

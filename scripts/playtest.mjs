@@ -44,8 +44,8 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        PERIMETER opens on its intro dialog, which Esc skips and Enter reads on
   --file <path>        the same, from a file; # starts a comment
   --at <route>         the campaign level and round to open, as the game's --at takes it:
-                       "campaign?level=vasse-test-1&round=3" (round counts from 1; wave=2 is
-                       the same round, counted from 0). Round 1 of vasse-test-1 unless given;
+                       "campaign?level=vasse-test-1&round=3" (round counts Battle Rounds from
+                       1, as the screen does). Round 1 of vasse-test-1 unless given;
                        a later round is reached as a player who builds nothing reaches it.
                        With --at, the keys may be left out: the screen as it opens
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, 128x24 wide tiles)

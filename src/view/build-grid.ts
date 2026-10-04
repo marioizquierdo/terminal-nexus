@@ -139,7 +139,7 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
 }
 
 /**
- * ***The incoming wave***: what the next round brings, drawn where it will arrive in its side's colour and
+ * ***The incoming raid***: what the next round brings, drawn where it will arrive in its side's colour and
  * see-through — "not here yet", yet read at a glance (the owner: "the enemy units should be visible").
  * It is the see-through style at a low alpha in its own colour: where colours blend (256 and up) a wash
  * lies under its glyphs, which stay near full strength; at 16 colours and in monochrome, where a wash
@@ -151,7 +151,7 @@ function incomingLook(player: PlayerId): CellStyle {
   return { fgRole: playerRole(player), seeThrough: { role: playerRole(player), alpha: INCOMING_WASH } }
 }
 
-/** How strongly the incoming wave's own colour washes its cells, where colours blend. */
+/** How strongly the incoming raid's own colour washes its cells, where colours blend. */
 const INCOMING_WASH = 0.2
 
 /**
@@ -397,7 +397,7 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
   // colour a terminal picks for it, so a coloured screen still needs an explicit, reliably bright role
   // to get the same lift monochrome gets from the attribute alone. The highlight bar's role, so the
   // menu's and the map's "you are here" read as one.
-  // A see-through wash beneath it — the incoming wave's, a raid target's — is set aside (an alpha of 0
+  // A see-through wash beneath it — the incoming raid's, a raid target's — is set aside (an alpha of 0
   // shows nothing), so the one "you are here" looks the same on every tile.
   const look: CellStyle =
     input.cursorBlink === true

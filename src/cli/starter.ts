@@ -1,7 +1,7 @@
 // A level's first round, ready for the Build Phase: its mission laid on its map, offering what its campaign has
 // unlocked by then, with its credits — and the starter round, PERIMETER's, which the screen opens on.
 //
-// The level is its campaign's bundle's (`src/bundles`); its map is the map table's (`src/build/maps.ts`); what it
+// The level is its campaign's army's (`src/armies`); its map is the map table's (`src/build/maps.ts`); what it
 // offers becomes the construct menu and the Nexus draft in `src/build/catalog.ts`. Assembling them into round 1
 // needs the mission (`./pulse-run.ts`), which reaches the kernel, and `src/build` may never do that
 // (`tests/architecture.test.ts`) — so the assembly lives here, in the application shell, beside the other half of
@@ -10,8 +10,8 @@
 import { constructMenu, nexusDraftOf } from "../build/catalog.ts"
 import { MAPS } from "../build/maps.ts"
 import type { BuildContext } from "../build/state.ts"
-import type { Level } from "../bundles/index.ts"
-import { PERIMETER_LEVEL } from "../bundles/index.ts"
+import type { Level } from "../armies/index.ts"
+import { PERIMETER_LEVEL } from "../armies/index.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import type { MissionPlay } from "./pulse-run.ts"
 import { missionPlay, STARTER_MISSION } from "./pulse-run.ts"

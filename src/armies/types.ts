@@ -1,21 +1,22 @@
-// Content bundles, as the game reads them once the loader has checked them (`load.ts`): the shapes a bundle's
-// JSON manifest holds, and what the loader resolves them into — each campaign's levels, with what each offers.
+// Armies, as the game reads them once the loader has checked them (`load.ts`): the shapes an army's JSON
+// manifest holds, and what the loader resolves them into — each campaign's levels, with what each offers.
 //
 // The owner, 2026-10-04: organize content "as a tree where the campaign progression is at the top, depending on
 // levels, that depend on buildings and units (that may be on the same bundle or another dependent bundle like
-// the common)". So a bundle is a folder of data (`bundles/<id>/bundle.json`) that names the bundles it builds
-// on, and sees what they provide and nothing else: `common` holds the buildings and Nexus powers any Commander
-// may use; `vasse` requires it, and holds her Commander and her campaign, its levels in order, what each
-// unlocks and its mission. A level offers what its campaign has unlocked by then.
+// the common)" — and, the round after, "call the folder armies/vasse and armies/all". So an army is a folder of
+// data (`armies/<id>/army.json`) that names the armies it builds on, and sees what they provide and nothing
+// else: `all` holds the buildings and Nexus powers any Commander may use; `vasse` requires it, and holds her
+// Commander and her campaign, its levels in order, what each unlocks and its mission. A level offers what its
+// campaign has unlocked by then.
 //
 // The Campaign is one producer of these shapes; the run mode will be another, with its own progression over
-// the same cards and units, in its own section of a bundle. Nothing here knows which mode reads it, and the
-// kernel never reads a bundle.
+// the same cards and units, in its own section of an army. Nothing here knows which mode reads it, and the
+// kernel never reads an army.
 
 import type { GridTerrain } from "../grid/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 
-// --- What a bundle's manifest holds ---------------------------------------------------------------------
+// --- What an army's manifest holds ---------------------------------------------------------------------
 
 /** A building a Commander may be offered: a structure, and what it costs out of a Build Phase's credits. */
 export type BuildingCard = Readonly<{
@@ -45,12 +46,12 @@ export type PowerCard = Readonly<{
 /** A Commander: her name, and her unit — the persistent `@`, a content definition flagged `commander`. */
 export type CommanderEntry = Readonly<{ id: string; name: string; unit: string; notes?: string }>
 
-/** The cards a level adds to what its campaign offers, by id: from its own bundle or one it requires. */
+/** The cards a level adds to what its campaign offers, by id: from its own army or one it requires. */
 export type Unlocks = Readonly<{ buildings?: readonly string[]; powers?: readonly string[] }>
 
-/** A level of a campaign, as its bundle writes it. */
+/** A level of a campaign, as its army writes it. */
 export type LevelEntry = Readonly<{
-  /** What a route names (`campaign?level=vasse-test-1`): unique across every bundle. */
+  /** What a route names (`campaign?level=vasse-test-1`): unique across every army. */
   id: string
   /** The map it is played on, by its name in the map table (`src/build/maps.ts`). */
   map: string
@@ -66,17 +67,17 @@ export type LevelEntry = Readonly<{
 export type CampaignEntry = Readonly<{
   id: string
   title: string
-  /** Its Commander, by id: defined by its bundle or by one it requires. */
+  /** Its Commander, by id: defined by its army or by one it requires. */
   commander: string
   levels: readonly LevelEntry[]
   notes?: string
 }>
 
-/** A bundle's manifest, `bundles/<id>/bundle.json`. Every section is optional. */
-export type BundleManifest = Readonly<{
+/** An army's manifest, `armies/<id>/army.json`. Every section is optional. */
+export type ArmyManifest = Readonly<{
   id: string
   title: string
-  /** The bundles it builds on. It sees what they provide, and what theirs provide; nothing else. */
+  /** The armies it builds on. It sees what they provide, and what theirs provide; nothing else. */
   requires: readonly string[]
   notes?: string
   /**
@@ -90,7 +91,7 @@ export type BundleManifest = Readonly<{
   campaigns?: readonly CampaignEntry[]
 }>
 
-// --- What the loader needs besides the bundles -----------------------------------------------------------
+// --- What the loader needs besides the armies -----------------------------------------------------------
 
 /** A map a level can name: its Grid, and the structures already standing on it. */
 export type LevelMap = Readonly<{
@@ -100,8 +101,8 @@ export type LevelMap = Readonly<{
 
 // --- What the loader hands the game ----------------------------------------------------------------------
 
-/** A Commander, and the bundle that defines her. */
-export type Commander = Readonly<{ id: string; bundle: string; name: string; unit: string }>
+/** A Commander, and the army that defines her. */
+export type Commander = Readonly<{ id: string; army: string; name: string; unit: string }>
 
 /** What a level offers: every card its campaign has unlocked by then, in the order first unlocked (so a hotkey
  *  never moves when a later level adds a card), and its credits. */
@@ -116,8 +117,8 @@ export type Level = Readonly<{
   id: string
   /** Its campaign's id. */
   campaign: string
-  /** The bundle that defines it. */
-  bundle: string
+  /** The army that defines it. */
+  army: string
   /** Its place in its campaign, counted from 1. */
   number: number
   /** Its map's name in the map table. */
@@ -131,27 +132,27 @@ export type Level = Readonly<{
 /** A campaign, resolved: its Commander and its levels, in order. */
 export type Campaign = Readonly<{
   id: string
-  bundle: string
+  army: string
   title: string
   commander: Commander
   levels: readonly Level[]
 }>
 
-/** Every bundle the loader was given, checked and resolved. */
-export type Bundles = Readonly<{
-  /** Each bundle after the bundles it requires. */
-  bundles: readonly BundleManifest[]
+/** Every army the loader was given, checked and resolved. */
+export type Armies = Readonly<{
+  /** Each army after the armies it requires. */
+  armies: readonly ArmyManifest[]
   commanders: readonly Commander[]
   campaigns: readonly Campaign[]
   /** Every campaign's levels: campaign by campaign, each campaign's in order. */
   levels: readonly Level[]
 }>
 
-/** Bundles that fail to load, with every problem found — not just the first. */
-export class BundleError extends Error {
+/** Armies that fail to load, with every problem found — not just the first. */
+export class ArmyError extends Error {
   readonly problems: readonly string[]
   constructor(problems: readonly string[]) {
-    super(`the content bundles are invalid:\n- ${problems.join("\n- ")}`)
+    super(`the armies are invalid:\n- ${problems.join("\n- ")}`)
     this.problems = problems
   }
 }

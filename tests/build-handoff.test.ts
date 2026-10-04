@@ -494,7 +494,7 @@ test("nothing flies over a popup, from the menu, or once the plan is committed, 
   assert.equal(committed.build.state.committed, true)
   assert.equal(flight(committed, 0.5).length, 0, "something flew over a committed plan")
   // A still frame: the Turret armed from its row draws exactly what it does armed on the map, where
-  // nothing is handed off; Explore Map's frame has no see-through cursor flying — the incoming wave's own
+  // nothing is handed off; Explore Map's frame has no see-through cursor flying — the incoming raid's own
   // wash, in its side's colour, is the only see-through on it.
   const fromRow = buildSide()
   keys(fromRow, TURRET)

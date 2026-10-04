@@ -54,8 +54,8 @@ const isPositiveInteger = (value: number): boolean => Number.isInteger(value) &&
  * Throws `MissionError` listing every problem, or returns the mission unchanged. The grid is the map the
  * mission is played on (its regions must be on it); the registry is the content its units and
  * structures come from. A mission's `notes` are for whoever edits it and are never checked; that the
- * Commander it brings for the player is her campaign's, and that its content is what its bundle sees, are
- * the bundle loader's to check (`src/bundles/load.ts`), since a mission alone knows neither.
+ * Commander it brings for the player is her campaign's, and that its content is what its army sees, are
+ * the army loader's to check (`src/armies/load.ts`), since a mission alone knows neither.
  */
 export function validateMission(mission: MissionDefinition, grid: GridTerrain, registry: ContentRegistry): MissionDefinition {
   const problems: string[] = []

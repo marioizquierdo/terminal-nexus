@@ -359,7 +359,7 @@ export const ALL_SETTINGS = {
 
   // --- The mission's loop ------------------------------------------------------------------
   // Settings opens at the first of them while a Pulse is on screen (`d`). The placeholder Pulse's Raid
-  // and Your units went with it: PERIMETER's waves are the mission's data now (`bundles/vasse/bundle.json`).
+  // and Your units went with it: PERIMETER's raid is the mission's data now (`armies/vasse/army.json`).
 
   /** What starts the next Build Phase once a round's result is on screen: the player (Enter, Space, `n`
    *  or a click on its row), or the game itself a moment later — the owner's early sketch had the

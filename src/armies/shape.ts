@@ -1,4 +1,4 @@
-// The shape a bundle's JSON must have, checked before anything reads it: a modder writes JSON without
+// The shape an army's JSON must have, checked before anything reads it: a modder writes JSON without
 // TypeScript, so the loader is what tells them, by path and all at once, that a field is missing, is
 // misspelt, or holds the wrong kind of value.
 //
@@ -128,13 +128,13 @@ export function record<T extends object>(
   return {
     check(value: unknown, at: string, say: Say): value is T {
       if (!isObject(value)) {
-        say(`${at === "" ? "a bundle" : at} should be an object, not ${shown(value)}`)
+        say(`${at === "" ? "an army" : at} should be an object, not ${shown(value)}`)
         return false
       }
       let fits = true
       for (const [key, shape] of Object.entries(needed)) {
         if (!Object.hasOwn(value, key)) {
-          say(`${at === "" ? "the bundle" : at} needs "${key}"`)
+          say(`${at === "" ? "the army" : at} needs "${key}"`)
           fits = false
         } else if (!shape.check(value[key], fieldAt(at, key), say)) fits = false
       }
@@ -144,7 +144,7 @@ export function record<T extends object>(
       for (const key of Object.keys(value)) {
         if (Object.hasOwn(needed, key) || Object.hasOwn(allowed, key)) continue
         const known = [...Object.keys(needed), ...Object.keys(allowed)].map((name) => `"${name}"`).join(", ")
-        say(`${at === "" ? "the bundle" : at} has "${key}", which is not one of its fields (${known})`)
+        say(`${at === "" ? "the army" : at} has "${key}", which is not one of its fields (${known})`)
         fits = false
       }
       return fits

@@ -7,14 +7,10 @@
 //   settings   about   campaign           the title menu's own screens
 //   challenge                             the title menu, saying Challenge is not built yet, as its row does
 //   campaign?level=vasse-test-1           that level's Build Phase, at its first round
-//   campaign?level=vasse-test-1&round=3   ... at round 3: counted from 1, as the screen counts ("round 3 of 3")
-//   campaign?level=vasse-test-1&wave=2    ... the same round 3: a wave counted from 0, as the owner first wrote
-//                                         it (`wave=0`) — the raid's first wave arrives in round 1
+//   campaign?level=vasse-test-1&round=3   ... at round 3: a Battle Round, counted from 1 as the screen counts
 //
-// **`round` is the route's word, `wave` its alias.** The screen counts rounds from 1 and so does a route. The
-// owner's first route said `wave=0` for the start; a wave is what a mission brings during a round, and PERIMETER
-// brings its first in round 1, its second in round 2 and its third in round 3, so `wave=N` is `round=N+1` on any
-// level. A route gives one or the other, never both.
+// **A route counts Battle Rounds, from 1**, as the screen does: the owner settled the word (2026-10-04, "let's
+// settle in Battle Rounds"), so there is one way to name a round.
 //
 // **A broken route is refused whole, with every problem at once**, each naming what was written and what exists
 // instead: the places, a place's query names, the levels, a level's rounds. Names are read whatever their case
@@ -91,10 +87,9 @@ function whole(name: string, text: string, problems: string[]): number | null {
 function campaign(query: Query, problems: string[]): Destination | null {
   const id = query.get("level")
   const round = query.get("round")
-  const wave = query.get("wave")
   if (id === undefined) {
-    if (round !== undefined || wave !== undefined) {
-      problems.push(`a ${round !== undefined ? "round" : "wave"} needs a level: campaign?level=${DEFAULT_LEVEL_ID}&round=2`)
+    if (round !== undefined) {
+      problems.push(`a round needs a level: campaign?level=${DEFAULT_LEVEL_ID}&round=2`)
       return null
     }
     return { kind: "title", place: "campaign" }
@@ -103,19 +98,6 @@ function campaign(query: Query, problems: string[]): Destination | null {
   if (level === undefined) {
     problems.push(`no level "${id}": the levels are ${LEVELS.map(describeLevel).join(", ")}`)
     return null
-  }
-  if (round !== undefined && wave !== undefined) {
-    problems.push("round and wave name the same thing (wave=0 is round=1): give one")
-    return null
-  }
-  if (wave !== undefined) {
-    const counted = whole("wave", wave, problems)
-    if (counted === null) return null
-    if (counted >= level.rounds) {
-      problems.push(`level "${level.id}" has waves 0 to ${level.rounds - 1}, one a round, not ${counted}`)
-      return null
-    }
-    return { kind: "level", level, round: counted + 1 }
   }
   const counted = round === undefined ? 1 : whole("round", round, problems)
   if (counted === null) return null
@@ -136,8 +118,7 @@ export const PLACES: Readonly<Record<string, Place>> = {
     opens: "the Campaign screen; with a level, that level's Build Phase at a round",
     query: {
       level: "the level's id",
-      round: "the round to open at, counted from 1 as the screen counts; 1 unless given",
-      wave: "the same round counted from 0, as the raid's waves are: wave=0 is round 1",
+      round: "the Battle Round to open at, counted from 1 as the screen counts; 1 unless given",
     },
     resolve: campaign,
     routes: () => [

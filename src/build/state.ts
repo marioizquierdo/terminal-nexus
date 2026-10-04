@@ -126,7 +126,7 @@ export type BuildContext = Readonly<{
    *  shell, and read by the Battle Round screen to say so. Absent: nobody is missing. */
   absent?: readonly CommanderAbsence[]
   /** What the next round's triggers will bring, and where: always drawn, see-through, where it arrives
-   *  (the incoming wave). */
+   *  (the incoming raid). */
   incoming?: readonly IncomingEntity[]
   /** The bottom line's first answer when this Build Phase opens — how the last round ended. */
   openingStatus?: StatusMessage
@@ -286,7 +286,7 @@ export type BuildState = Readonly<{
   /**
    * The Experiments (every setting on the experiment tier, `src/build/all-settings.ts`). State
    * rather than context because they change while the screen is open; the input path reads keyboard
-   * navigation's, the view the popup pulse, and the mission loop the next-round and incoming-wave
+   * navigation's, the view the popup pulse, and the mission loop the next-round and incoming-raid
    * choices — each through `setting(state, name)` where it may move between tiers. Survive a restart; not saved
    * anywhere else.
    */

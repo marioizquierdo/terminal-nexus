@@ -62,9 +62,7 @@ ${example("settings", "the title menu's Settings screen")}
 ${example(BUILD_PHASE_ROUTE, `${title}'s Build Phase, round 1`)}
 ${example(`${BUILD_PHASE_ROUTE}&round=3`, "its round 3, reached as a player who")}
 ${"".padEnd(54)}builds nothing reaches it
-${example(`${BUILD_PHASE_ROUTE}&wave=0`, "round 1: a wave counts from 0")}
-      round counts from 1, as the screen does; wave counts from 0, as the raid's waves do
-      (wave=0 is round 1), and may be given instead. The levels:
+      round counts Battle Rounds from 1, as the screen does. The levels:
 ${levels}
 
       A campaign level opens its Build Phase on its map and plays its mission from there: a

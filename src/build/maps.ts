@@ -1,10 +1,10 @@
 // The maps a level can name, by id — the small map table a campaign's levels point into (`map: "starter"` in
-// `bundles/vasse/bundle.json`) — and the one map there is: the Build Phase's starter map, a Grid big enough that
+// `armies/vasse/army.json`) — and the one map there is: the Build Phase's starter map, a Grid big enough that
 // scrolling is unavoidable, with two structures already standing on it.
 //
-// Still code, not data: a map in a bundle is a later step. It lives here rather than beside the menu it is
-// shown with (`./catalog.ts`, which re-exports it) because the bundles name it and that menu is built from the
-// bundles: one file holding both would be a circular import.
+// Still code, not data: a map in an army is a later step. It lives here rather than beside the menu it is
+// shown with (`./catalog.ts`, which re-exports it) because the armies name it and that menu is built from the
+// armies: one file holding both would be a circular import.
 
 import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
 import type { MapEdgeStyle, StandingStructure } from "./types.ts"

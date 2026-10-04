@@ -1,12 +1,12 @@
 // How what a level offers becomes what the Build Phase offers — its construct menu and its Nexus draft — and the
 // starter content the screen opens on: what PERIMETER, the first level of Vasse's campaign, offers.
 //
-// What can be built and drafted is not chosen here: it is the level's offer (`src/bundles`), everything its
+// What can be built and drafted is not chosen here: it is the level's offer (`src/armies`), everything its
 // campaign has unlocked by then. The starter map is the map table's (`./maps.ts`), re-exported here so the
 // screens keep reading it where they always have.
 
-import { PERIMETER_LEVEL } from "../bundles/index.ts"
-import type { Offer } from "../bundles/types.ts"
+import { PERIMETER_LEVEL } from "../armies/index.ts"
+import type { Offer } from "../armies/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ConstructItem, NexusPowerOption } from "./types.ts"
 

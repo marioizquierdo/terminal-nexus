@@ -1,5 +1,5 @@
 // The loop: after a round's result, the next round's Build Phase — on what Recall left, with the
-// credits not spent and the next wave shown as incoming — until the mission's triggers end it. Played on
+// credits not spent and the next round's raid shown as incoming — until the mission's triggers end it. Played on
 // the game's own mission, PERIMETER, through the real session and the shell's `startPulse` and
 // `nextRound`, by keyboard, mouse and driver alike.
 
@@ -70,7 +70,7 @@ test("after a round's result, Enter opens the next round's Build Phase on what t
   }
   assert.equal(round.allotment, credits)
   assert.equal(state.nexusPick, null)
-  // The survivors are on the map; the next wave is shown as incoming, with what it means to do.
+  // The survivors are on the map; the next round's raid is shown as incoming, with what it means to do.
   assert.ok((round.field ?? []).some((entity) => entity.player === "A"), "no survivor of yours on the map")
   assert.ok((round.incoming ?? []).length > 0 && (round.incoming ?? []).every((entity) => entity.player === "B"))
   assert.ok((round.incoming ?? []).some((entity) => entity.intent === "Break through at the ridge."))
@@ -206,7 +206,7 @@ test("Next round on auto: the next Build Phase begins on its own a moment after 
   assert.equal(standing.busyUntil(standing.times.homeMs + 10_000), null)
 })
 
-test("the incoming wave: drawn where it will arrive, its intention on the card, and always shown", () => {
+test("the incoming raid: drawn where it will arrive, its intention on the card, and always shown", () => {
   const side = perimeter()
   const raider = (side.build.round.incoming ?? []).find((entity) => entity.player === "B")
   assert.ok(raider !== undefined, "PERIMETER's first round shows nothing incoming")

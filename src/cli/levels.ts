@@ -1,7 +1,7 @@
 // The campaign levels the game can open, by id: what a route's `campaign?level=<id>` names, and how a level is
 // opened at any of its rounds.
 //
-// This is the seam between where a level's definition comes from (its campaign's bundle, `src/bundles`) and the
+// This is the seam between where a level's definition comes from (its campaign's army, `src/armies`) and the
 // screens that open it (the title menu, a route, the browser page, the scripted playtest): they ask for a level by
 // id and get its first round, or any later round, ready for the Build Phase. Every level of every shipped
 // campaign is here, in campaign order. In the application shell because opening a round plays the mission, which
@@ -11,8 +11,8 @@ import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { applyBuildCommand, createBuildState, withoutScene } from "../build/state.ts"
-import type { Level } from "../bundles/index.ts"
-import { BUNDLES, PERIMETER_LEVEL } from "../bundles/index.ts"
+import type { Level } from "../armies/index.ts"
+import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
 import type { MissionPlay } from "./pulse-run.ts"
 import { missionPlay, STARTER_MISSION } from "./pulse-run.ts"
 import { levelContext } from "./starter.ts"
@@ -48,7 +48,7 @@ function playable(level: Level): PlayableLevel {
 }
 
 /** Every level the game can open, in campaign order: every level of every shipped campaign. */
-export const LEVELS: readonly PlayableLevel[] = BUNDLES.levels.map(playable)
+export const LEVELS: readonly PlayableLevel[] = ARMIES.levels.map(playable)
 
 /** The level the game opens when a route names none: PERIMETER, Vasse's first. */
 export const DEFAULT_LEVEL_ID = "vasse-test-1"

@@ -1,10 +1,10 @@
 // The levels the game can open by id (src/cli/levels.ts): what a route's `campaign?level=<id>` names, opened at
-// any of its rounds the same way every time. They are the shipped campaigns' levels, in order (src/bundles):
+// any of its rounds the same way every time. They are the shipped campaigns' levels, in order (src/armies):
 // Vasse's PERIMETER, then the Commander's cadence, where her return can be played.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { BUNDLES } from "../src/bundles/index.ts"
+import { ARMIES } from "../src/armies/index.ts"
 import { DEFAULT_LEVEL_ID, LEVELS, levelById, openRound } from "../src/cli/levels.ts"
 import { STARTER_MISSION } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
@@ -61,7 +61,7 @@ test("the levels are her campaign's, in its order: PERIMETER, then the Commander
   )
   assert.deepEqual(
     LEVELS.map((level) => level.id),
-    BUNDLES.levels.map((level) => level.id),
+    ARMIES.levels.map((level) => level.id),
   )
   // The game opened bare and a route to its first level play one connection.
   assert.equal(levelById(DEFAULT_LEVEL_ID)?.play, STARTER_MISSION)

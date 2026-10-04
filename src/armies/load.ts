@@ -1,14 +1,14 @@
-// The bundle loader: the game's content bundles, checked and resolved before anything reads them.
+// The army loader: the game's armies, checked and resolved before anything reads them.
 //
-// A bundle is data a modder can write without TypeScript (`bundles/<id>/bundle.json`), so everything is checked
+// An army is data a modder can write without TypeScript (`armies/<id>/army.json`), so everything is checked
 // here, and every problem is reported at once, by name, the way a mission's own validation reports
 // (`validateMission`): the shape of each manifest, every id unique, every `requires` known and none of them in a
-// circle, every reference to something its bundle can see — its own, or what a bundle it requires (directly or
+// circle, every reference to something its army can see — its own, or what an army it requires (directly or
 // through another) provides — and every level's mission against its map. Then each campaign's levels are
 // resolved into what each one offers: everything the campaign has unlocked by then.
 //
 // Pure, like the rest of the rules around the kernel: no clock, no randomness, nothing read from disk. The
-// manifests, the content registry and the map table are arguments (`src/bundles/index.ts` passes the game's).
+// manifests, the content registry and the map table are arguments (`src/armies/index.ts` passes the game's).
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { MissionDefinition, TriggerAction } from "../mission/types.ts"
@@ -19,8 +19,8 @@ import type { Say, Shape } from "./shape.ts"
 import { anything, fieldAt, isObject, itemAt, list, record, shown, text, wholeNumber } from "./shape.ts"
 import type {
   BuildingCard,
-  BundleManifest,
-  Bundles,
+  ArmyManifest,
+  Armies,
   Campaign,
   CampaignEntry,
   Commander,
@@ -32,11 +32,11 @@ import type {
   PowerEffect,
   Unlocks,
 } from "./types.ts"
-import { BundleError } from "./types.ts"
+import { ArmyError } from "./types.ts"
 
 // --- The shapes of a manifest's parts ----------------------------------------------------------------------
 //
-// A list of a bundle's things is checked item by item, and an item with the wrong shape is left out of
+// A list of an army's things is checked item by item, and an item with the wrong shape is left out of
 // everything after: one broken level, or one broken mission, never hides the problems of the rest.
 
 const buildingCard = record<BuildingCard>({ id: text, structure: text, cost: wholeNumber }, { notes: text })
@@ -57,7 +57,7 @@ const campaignEntry = record<CampaignEntry>(
   { notes: text },
 )
 /** A manifest's own fields. Its sections are checked item by item, after. */
-const manifestEntry = record<BundleManifest>(
+const manifestEntry = record<ArmyManifest>(
   { id: text, title: text, requires: list(text) },
   {
     notes: text,
@@ -83,8 +83,8 @@ function keep<T>(value: unknown, at: string, shape: Shape<T>, say: Say): T[] {
 
 type ReadLevel = Readonly<{ entry: LevelEntry; mission: MissionDefinition | null }>
 type ReadCampaign = Readonly<{ entry: CampaignEntry; levels: readonly ReadLevel[] }>
-type ReadBundle = Readonly<{
-  manifest: BundleManifest
+type ReadArmy = Readonly<{
+  manifest: ArmyManifest
   id: string
   requires: readonly string[]
   content: readonly string[]
@@ -95,12 +95,12 @@ type ReadBundle = Readonly<{
 }>
 
 /** A manifest as far as its shape allows, or `null` when it has no id to be known by. */
-function readManifest(manifest: unknown, label: string, problems: string[]): ReadBundle | null {
+function readManifest(manifest: unknown, label: string, problems: string[]): ReadArmy | null {
   const id = isObject(manifest) && typeof manifest["id"] === "string" && manifest["id"].trim() !== "" ? manifest["id"] : null
-  const say: Say = (problem) => problems.push(`${id === null ? label : `bundle "${id}"`}: ${problem}`)
+  const say: Say = (problem) => problems.push(`${id === null ? label : `army "${id}"`}: ${problem}`)
   manifestEntry.check(manifest, "", say)
   if (!isObject(manifest) || id === null) {
-    if (isObject(manifest) && typeof manifest["id"] === "string") say(`id should be the bundle's name, not ${shown(manifest["id"])}`)
+    if (isObject(manifest) && typeof manifest["id"] === "string") say(`id should be the army's name, not ${shown(manifest["id"])}`)
     return null
   }
   const requires = Array.isArray(manifest["requires"]) ? manifest["requires"].filter((entry): entry is string => typeof entry === "string") : []
@@ -116,21 +116,21 @@ function readManifest(manifest: unknown, label: string, problems: string[]): Rea
     })
     return { entry, levels }
   })
-  return { manifest: manifest as BundleManifest, id, requires, content, buildings, powers, commanders, campaigns }
+  return { manifest: manifest as ArmyManifest, id, requires, content, buildings, powers, commanders, campaigns }
 }
 
-// --- Requires: what each bundle sees, and the circles ----------------------------------------------------------
+// --- Requires: what each army sees, and the circles ----------------------------------------------------------
 
-/** Each circle of `requires` once, as the bundle ids around it, the first id the least. */
-function circles(bundles: ReadonlyMap<string, ReadBundle>): string[][] {
+/** Each circle of `requires` once, as the army ids around it, the first id the least. */
+function circles(armies: ReadonlyMap<string, ReadArmy>): string[][] {
   const found = new Map<string, string[]>()
   const state = new Map<string, "visiting" | "done">()
   const stack: string[] = []
   const visit = (id: string): void => {
     state.set(id, "visiting")
     stack.push(id)
-    for (const next of bundles.get(id)?.requires ?? []) {
-      if (!bundles.has(next)) continue
+    for (const next of armies.get(id)?.requires ?? []) {
+      if (!armies.has(next)) continue
       if (state.get(next) === "visiting") {
         const loop = stack.slice(stack.indexOf(next))
         const start = loop.indexOf([...loop].sort()[0] as string)
@@ -141,35 +141,35 @@ function circles(bundles: ReadonlyMap<string, ReadBundle>): string[][] {
     stack.pop()
     state.set(id, "done")
   }
-  for (const id of bundles.keys()) if (state.get(id) === undefined) visit(id)
+  for (const id of armies.keys()) if (state.get(id) === undefined) visit(id)
   return [...found.values()]
 }
 
-/** The bundles one sees: itself and everything it requires, directly or through another. */
-function seenBy(bundles: ReadonlyMap<string, ReadBundle>, id: string): ReadonlySet<string> {
+/** The armies one sees: itself and everything it requires, directly or through another. */
+function seenBy(armies: ReadonlyMap<string, ReadArmy>, id: string): ReadonlySet<string> {
   const seen = new Set<string>()
   const queue = [id]
   while (queue.length > 0) {
     const next = queue.pop() as string
-    if (seen.has(next) || !bundles.has(next)) continue
+    if (seen.has(next) || !armies.has(next)) continue
     seen.add(next)
-    queue.push(...(bundles.get(next)?.requires ?? []))
+    queue.push(...(armies.get(next)?.requires ?? []))
   }
   return seen
 }
 
-/** The bundles in an order where each comes after the bundles it requires; otherwise in the order given. */
-function loadOrder(bundles: ReadonlyMap<string, ReadBundle>): ReadBundle[] {
-  const ordered: ReadBundle[] = []
+/** The armies in an order where each comes after the armies it requires; otherwise in the order given. */
+function loadOrder(armies: ReadonlyMap<string, ReadArmy>): ReadArmy[] {
+  const ordered: ReadArmy[] = []
   const placed = new Set<string>()
   const place = (id: string, path: ReadonlySet<string>): void => {
-    const bundle = bundles.get(id)
-    if (bundle === undefined || placed.has(id) || path.has(id)) return
-    for (const required of bundle.requires) place(required, new Set([...path, id]))
+    const army = armies.get(id)
+    if (army === undefined || placed.has(id) || path.has(id)) return
+    for (const required of army.requires) place(required, new Set([...path, id]))
     placed.add(id)
-    ordered.push(bundle)
+    ordered.push(army)
   }
-  for (const id of bundles.keys()) place(id, new Set())
+  for (const id of armies.keys()) place(id, new Set())
   return ordered
 }
 
@@ -213,44 +213,44 @@ function frozen<T>(value: T): T {
 
 // --- The loader ---------------------------------------------------------------------------------------------
 
-/** What the loader checks a bundle's references against: the content the game has, and the maps a level can name. */
+/** What the loader checks an army's references against: the content the game has, and the maps a level can name. */
 export type LoadWorld = Readonly<{
   registry: ContentRegistry
   maps: Readonly<Record<string, LevelMap>>
 }>
 
 /**
- * The bundles, checked and resolved: each campaign's levels in order, each with what it offers. Throws
- * `BundleError` listing every problem found in any of them.
+ * The armies, checked and resolved: each campaign's levels in order, each with what it offers. Throws
+ * `ArmyError` listing every problem found in any of them.
  */
-export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bundles {
+export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Armies {
   const { registry, maps } = world
   const problems: string[] = []
 
   // The shapes, every manifest's, and what can be read of each.
-  const read = new Map<string, ReadBundle>()
+  const read = new Map<string, ReadArmy>()
   manifests.forEach((given, index) => {
-    const bundle = readManifest(copied(given), `bundle ${index + 1}`, problems)
-    if (bundle === null) return
-    if (read.has(bundle.id)) problems.push(`two bundles are called "${bundle.id}"; the second is left out`)
-    else read.set(bundle.id, bundle)
+    const army = readManifest(copied(given), `army ${index + 1}`, problems)
+    if (army === null) return
+    if (read.has(army.id)) problems.push(`two armies are called "${army.id}"; the second is left out`)
+    else read.set(army.id, army)
   })
 
-  // Requires: each one a bundle, and none of them in a circle.
-  for (const bundle of read.values()) {
-    for (const required of bundle.requires) {
-      if (required === bundle.id) problems.push(`bundle "${bundle.id}" requires itself`)
-      else if (!read.has(required)) problems.push(`bundle "${bundle.id}" requires "${required}", which is not a bundle`)
+  // Requires: each one an army, and none of them in a circle.
+  for (const army of read.values()) {
+    for (const required of army.requires) {
+      if (required === army.id) problems.push(`army "${army.id}" requires itself`)
+      else if (!read.has(required)) problems.push(`army "${army.id}" requires "${required}", which is not an army`)
     }
   }
   for (const loop of circles(read).filter((ids) => ids.length > 1)) {
-    problems.push(`bundles ${quoted(loop)} require each other in a circle: ${[...loop, loop[0]].join(" -> ")}`)
+    problems.push(`armies ${quoted(loop)} require each other in a circle: ${[...loop, loop[0]].join(" -> ")}`)
   }
   const sees = new Map([...read.keys()].map((id) => [id, seenBy(read, id)] as const))
 
-  // Every id once: content a bundle brings, cards, Commanders, campaigns and levels (a level's id is what a
+  // Every id once: content an army brings, cards, Commanders, campaigns and levels (a level's id is what a
   // route names, so it is unique across every campaign).
-  type Owned<V = object> = Readonly<{ bundle: string }> & V
+  type Owned<V = object> = Readonly<{ army: string }> & V
   const contentBy = new Map<string, Owned>()
   const buildingsBy = new Map<string, Owned<{ card: BuildingCard }>>()
   const powersBy = new Map<string, Owned<{ card: PowerCard }>>()
@@ -258,46 +258,46 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
   const campaignsBy = new Map<string, Owned>()
   const levelsBy = new Map<string, Owned>()
   const once = <V extends Owned>(table: Map<string, V>, id: string, value: V, what: string): void => {
-    const first = table.get(id)?.bundle
+    const first = table.get(id)?.army
     if (first === undefined) table.set(id, value)
-    else problems.push(first === value.bundle ? `bundle "${first}" has the ${what} "${id}" twice` : `the ${what} "${id}" is in both "${first}" and "${value.bundle}"`)
+    else problems.push(first === value.army ? `army "${first}" has the ${what} "${id}" twice` : `the ${what} "${id}" is in both "${first}" and "${value.army}"`)
   }
-  for (const bundle of read.values()) {
-    const owned = { bundle: bundle.id }
-    for (const id of bundle.content) once(contentBy, id, owned, "content")
-    for (const card of bundle.buildings) once(buildingsBy, card.id, { ...owned, card }, "building")
-    for (const card of bundle.powers) once(powersBy, card.id, { ...owned, card }, "Nexus power")
-    for (const entry of bundle.commanders) once(commandersBy, entry.id, { ...owned, entry }, "Commander")
-    for (const campaign of bundle.campaigns) {
+  for (const army of read.values()) {
+    const owned = { army: army.id }
+    for (const id of army.content) once(contentBy, id, owned, "content")
+    for (const card of army.buildings) once(buildingsBy, card.id, { ...owned, card }, "building")
+    for (const card of army.powers) once(powersBy, card.id, { ...owned, card }, "Nexus power")
+    for (const entry of army.commanders) once(commandersBy, entry.id, { ...owned, entry }, "Commander")
+    for (const campaign of army.campaigns) {
       once(campaignsBy, campaign.entry.id, owned, "campaign")
       for (const level of campaign.levels) once(levelsBy, level.entry.id, owned, "level")
     }
   }
 
-  /** Why `id` is not content `bundle` can use, or `null` when it is. */
-  const unseenContent = (bundle: string, id: string): string | null => {
+  /** Why `id` is not content `army` can use, or `null` when it is. */
+  const unseenContent = (army: string, id: string): string | null => {
     if (!registry.has(id)) return `"${id}", which is not content the game has`
-    const owner = contentBy.get(id)?.bundle
-    if (owner === undefined) return `"${id}", which no bundle brings`
-    return sees.get(bundle)?.has(owner) === true ? null : `"${id}", which "${owner}" brings and "${bundle}" does not require`
+    const owner = contentBy.get(id)?.army
+    if (owner === undefined) return `"${id}", which no army brings`
+    return sees.get(army)?.has(owner) === true ? null : `"${id}", which "${owner}" brings and "${army}" does not require`
   }
-  /** Why the card `id` of `kind` is not one `bundle` can offer, or `null` when it is. */
-  const unseenCard = (bundle: string, kind: "building" | "Nexus power", id: string): string | null => {
-    const table: ReadonlyMap<string, Readonly<{ bundle: string }>> = kind === "building" ? buildingsBy : powersBy
-    const owner = table.get(id)?.bundle
+  /** Why the card `id` of `kind` is not one `army` can offer, or `null` when it is. */
+  const unseenCard = (army: string, kind: "building" | "Nexus power", id: string): string | null => {
+    const table: ReadonlyMap<string, Readonly<{ army: string }>> = kind === "building" ? buildingsBy : powersBy
+    const owner = table.get(id)?.army
     if (owner === undefined) {
       const other = kind === "building" ? powersBy.has(id) && "a Nexus power" : buildingsBy.has(id) && "a building"
-      return `the ${kind} "${id}", which no bundle has${other === false ? "" : ` (it is ${other})`}`
+      return `the ${kind} "${id}", which no army has${other === false ? "" : ` (it is ${other})`}`
     }
-    return sees.get(bundle)?.has(owner) === true ? null : `the ${kind} "${id}", which "${owner}" has and "${bundle}" does not require`
+    return sees.get(army)?.has(owner) === true ? null : `the ${kind} "${id}", which "${owner}" has and "${army}" does not require`
   }
 
-  // Content: what each bundle brings exists, and what it puts on the Grid in turn is content the bundle sees.
-  for (const bundle of read.values()) {
+  // Content: what each army brings exists, and what it puts on the Grid in turn is content the army sees.
+  for (const army of read.values()) {
     const say = (problem: string): void => {
-      problems.push(`bundle "${bundle.id}": ${problem}`)
+      problems.push(`army "${army.id}": ${problem}`)
     }
-    for (const id of bundle.content) {
+    for (const id of army.content) {
       if (!registry.has(id)) {
         say(`content names "${id}", which is not content the game has`)
         continue
@@ -305,36 +305,36 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
       const definition = registry.get(id)
       for (const made of [definition.spawn?.contentId, definition.splitOnDeath?.contentId, definition.production?.output]) {
         if (made === undefined) continue
-        const unseen = unseenContent(bundle.id, made)
+        const unseen = unseenContent(army.id, made)
         if (unseen !== null) say(`"${id}" puts on the Grid ${unseen}`)
       }
     }
 
-    // Cards: a building is a structure the bundle sees; a Nexus power says what it is.
-    for (const card of bundle.buildings) {
-      const unseen = unseenContent(bundle.id, card.structure)
+    // Cards: a building is a structure the army sees; a Nexus power says what it is.
+    for (const card of army.buildings) {
+      const unseen = unseenContent(army.id, card.structure)
       if (unseen !== null) say(`the building "${card.id}" names ${unseen}`)
       else if (registry.get(card.structure).layer !== "obstacles") say(`the building "${card.id}" names "${card.structure}", which is not a building`)
     }
-    for (const card of bundle.powers) {
+    for (const card of army.powers) {
       if (card.name.trim() === "" || card.description.trim() === "") say(`the Nexus power "${card.id}" needs a name and a description`)
     }
 
-    // Commanders: her unit is a Commander the bundle sees.
-    for (const entry of bundle.commanders) {
+    // Commanders: her unit is a Commander the army sees.
+    for (const entry of army.commanders) {
       if (entry.name.trim() === "") say(`the Commander "${entry.id}" has no name`)
-      const unseen = unseenContent(bundle.id, entry.unit)
+      const unseen = unseenContent(army.id, entry.unit)
       if (unseen !== null) say(`the Commander "${entry.id}" is ${unseen}`)
       else if (registry.get(entry.unit).commander !== true) say(`the Commander "${entry.id}" is "${entry.unit}", which is not a Commander`)
     }
 
-    // Campaigns: a Commander the bundle sees, levels, and each level's map, unlocks and mission.
-    for (const campaign of bundle.campaigns) {
+    // Campaigns: a Commander the army sees, levels, and each level's map, unlocks and mission.
+    for (const campaign of army.campaigns) {
       const { entry } = campaign
       const owner = commandersBy.get(entry.commander)
-      if (owner === undefined) say(`the campaign "${entry.id}" is led by "${entry.commander}", which is not a Commander any bundle has`)
-      else if (sees.get(bundle.id)?.has(owner.bundle) !== true) {
-        say(`the campaign "${entry.id}" is led by "${entry.commander}", whom "${owner.bundle}" has and "${bundle.id}" does not require`)
+      if (owner === undefined) say(`the campaign "${entry.id}" is led by "${entry.commander}", which is not a Commander any army has`)
+      else if (sees.get(army.id)?.has(owner.army) !== true) {
+        say(`the campaign "${entry.id}" is led by "${entry.commander}", whom "${owner.army}" has and "${army.id}" does not require`)
       }
       if (entry.levels.length === 0) say(`the campaign "${entry.id}" has no levels`)
       const commanderUnit = owner?.entry.unit
@@ -356,7 +356,7 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
             if (own.has(id)) say(`${where} unlocks the ${kind} "${id}" twice`)
             else if (seen.has(id)) say(`${where} unlocks the ${kind} "${id}", which level "${seen.get(id)}" already unlocked`)
             own.add(id)
-            const unseen = unseenCard(bundle.id, kind, id)
+            const unseen = unseenCard(army.id, kind, id)
             if (unseen !== null) say(`${where} unlocks ${unseen}`)
           }
           for (const id of own) if (!seen.has(id)) seen.set(id, level.id)
@@ -372,12 +372,12 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
             for (const problem of error.problems) say(`${inMission}: ${problem}`)
           }
           for (const id of new Set(map.standing.map((structure) => structure.contentId))) {
-            const unseen = unseenContent(bundle.id, id)
+            const unseen = unseenContent(army.id, id)
             if (unseen !== null) say(`${where} is played on the map "${level.map}", which has standing on it ${unseen}`)
           }
         }
         for (const id of contentOfMission(mission, registry)) {
-          const unseen = registry.has(id) ? unseenContent(bundle.id, id) : null
+          const unseen = registry.has(id) ? unseenContent(army.id, id) : null
           if (unseen !== null) say(`${inMission} uses ${unseen}`)
         }
         // The Commander a level brings for the player is her campaign's.
@@ -396,17 +396,17 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
     }
   }
 
-  if (problems.length > 0) throw new BundleError(problems)
+  if (problems.length > 0) throw new ArmyError(problems)
 
   // Resolved: each campaign's levels, each offering what the campaign has unlocked by then.
   const ordered = loadOrder(read)
   const commanders = new Map<string, Commander>()
-  for (const bundle of ordered) {
-    for (const entry of bundle.commanders) commanders.set(entry.id, { id: entry.id, bundle: bundle.id, name: entry.name, unit: entry.unit })
+  for (const army of ordered) {
+    for (const entry of army.commanders) commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit })
   }
   const campaigns: Campaign[] = []
-  for (const bundle of ordered) {
-    for (const campaign of bundle.campaigns) {
+  for (const army of ordered) {
+    for (const campaign of army.campaigns) {
       const levels: Level[] = []
       let buildings: readonly BuildingCard[] = []
       let powers: readonly PowerCard[] = []
@@ -418,7 +418,7 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
         levels.push({
           id: entry.id,
           campaign: campaign.entry.id,
-          bundle: bundle.id,
+          army: army.id,
           number: index + 1,
           map: entry.map,
           mission: mission as MissionDefinition,
@@ -428,7 +428,7 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
       })
       campaigns.push({
         id: campaign.entry.id,
-        bundle: bundle.id,
+        army: army.id,
         title: campaign.entry.title,
         commander: commanders.get(campaign.entry.commander) as Commander,
         levels,
@@ -436,7 +436,7 @@ export function loadBundles(manifests: readonly unknown[], world: LoadWorld): Bu
     }
   }
   return frozen({
-    bundles: ordered.map((bundle) => bundle.manifest),
+    armies: ordered.map((army) => army.manifest),
     commanders: [...commanders.values()],
     campaigns,
     levels: campaigns.flatMap((campaign) => campaign.levels),

@@ -10,7 +10,7 @@ import type { DomainEvent } from "../src/events/types.ts"
 import { tilesOf } from "../src/grid/coords.ts"
 import { missionOpening, recall, resolveMissionPulse } from "../src/match/index.ts"
 import type { MissionPulse } from "../src/match/index.ts"
-import { PERIMETER } from "../src/bundles/index.ts"
+import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, validateMission } from "../src/mission/index.ts"
 import type { MissionDefinition, TriggerDefinition } from "../src/mission/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
@@ -71,7 +71,7 @@ const withTriggers = (triggers: readonly TriggerDefinition[], extra: Partial<Mis
 
 test("PERIMETER validates against the map it is played on", () => {
   assert.equal(validateMission(PERIMETER, grid, registry), PERIMETER)
-  assert.equal(PERIMETER.pulses, 3, "three Pulses, the raid in three waves")
+  assert.equal(PERIMETER.pulses, 3, "three Battle Rounds, the raid in each")
 })
 
 test("validation refuses every broken shape by name, and reports them all at once", () => {
@@ -130,7 +130,7 @@ test("a later arrival comes at its tick, with the kernel's own spawn event, and 
   assert.ok(round3 !== undefined)
   const late = round3.arrivals.filter((arrival) => arrival.tick === 96)
   assert.equal(late.length, 6, "the reserve did not all arrive")
-  assert.ok(late.every((arrival) => arrival.trigger === "wave-3-reserve" && arrival.intent === "The reserve, from the east."))
+  assert.ok(late.every((arrival) => arrival.trigger === "raid-3-reserve" && arrival.intent === "The reserve, from the east."))
   const spawned = round3.events.filter((event): event is Extract<DomainEvent, { kind: "entity.spawned" }> => event.kind === "entity.spawned" && event.tick === 96)
   assert.deepEqual(spawned.map((event) => event.ordinal), late.map((arrival) => arrival.ordinal))
   // Not there before its tick; there at it, with fresh ordinals past everything that came before.
@@ -139,7 +139,7 @@ test("a later arrival comes at its tick, with the kernel's own spawn event, and 
   assert.ok(late.every((arrival) => !before.entities.some((entity) => entity.ordinal === arrival.ordinal)))
   assert.ok(late.every((arrival) => at.entities.some((entity) => entity.ordinal === arrival.ordinal)))
   assert.ok(Math.min(...late.map((arrival) => arrival.ordinal)) >= before.nextOrdinal)
-  assert.ok(round3.fired.some((fired) => fired.trigger === "wave-3-reserve" && fired.tick === 96))
+  assert.ok(round3.fired.some((fired) => fired.trigger === "raid-3-reserve" && fired.tick === 96))
 })
 
 test("an arrival counts for victory: a side that only arrives later can still be wiped out", () => {
@@ -185,7 +185,7 @@ test("a survivor is the same unit next round: its id, its ordinal and its health
     assert.equal(again.id, survivor.id)
     assert.equal(again.hp, survivor.hp, `${survivor.id} came back with different health`)
   }
-  // The wave that arrives is new: ordinals past everything round 1 used.
+  // The group that arrives is new: ordinals past everything round 1 used.
   assert.ok(round2.arrivals.every((arrival) => arrival.ordinal >= round1.final.nextOrdinal))
 })
 

@@ -20,7 +20,7 @@ import {
   restoreCommanders,
 } from "../src/match/index.ts"
 import type { Absence, MissionPulse, Restoration } from "../src/match/index.ts"
-import { PERIMETER } from "../src/bundles/index.ts"
+import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, validateMission } from "../src/mission/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
 import { hashState } from "../src/state/serialize.ts"
