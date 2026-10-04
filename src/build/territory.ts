@@ -108,17 +108,19 @@ export function territoryOf(source: TerritorySource, planned: readonly PlannedPl
     }
   }
 
-  // The ground it projects onto: every tile within a linked member's radius, on the Grid.
+  // The ground it projects onto: every tile within a linked member's radius, on the Grid. Counted in the tiles'
+  // own coordinates, not as offsets from the centre: the offset `-across` is `-0` at the diamond's tips, and a
+  // `-0` in a coordinate slows every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
   const inside = new Uint8Array(grid.width * grid.height)
   for (const member of members) {
     if (!member.linked || member.radius === null) continue
     const reach = member.radius
     for (const offset of member.footprint) {
-      for (let dy = -reach; dy <= reach; dy += 1) {
-        const across = reach - Math.abs(dy)
-        for (let dx = -across; dx <= across; dx += 1) {
-          const tile = { x: member.anchor.x + offset.x + dx, y: member.anchor.y + offset.y + dy }
-          if (inBounds(grid, tile)) inside[tile.y * grid.width + tile.x] = 1
+      const centre = { x: member.anchor.x + offset.x, y: member.anchor.y + offset.y }
+      for (let y = centre.y - reach; y <= centre.y + reach; y += 1) {
+        const across = reach - Math.abs(y - centre.y)
+        for (let x = centre.x - across; x <= centre.x + across; x += 1) {
+          if (inBounds(grid, { x, y })) inside[y * grid.width + x] = 1
         }
       }
     }

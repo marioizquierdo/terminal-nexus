@@ -261,6 +261,14 @@ than any one feature:
 9. **To compare a page before and after a refactor, freeze its clock.** A breathing dialog or a playing Pulse
    draws a different frame every time it is looked at; with `Date.now` and `performance.now` pinned before the
    page loads, every opening is the same frame run to run.
+10. **A negative zero in a coordinate slows every frame.** `-across` at a diamond's tip, or `-1 * 0` for a
+    spark that has not moved, is `-0`, which V8 cannot keep as a small integer. One stored in an `{ x, y }`
+    makes V8 store that field as a double in every object of that shape from then on, and every cell drawn
+    after it pays to convert: the build range's diamond made the Build Phase frame a third dearer, and CI's
+    busier machine ran it past the 16 ms frame (the sparks had cost main a little all along). Count tiles in
+    their own coordinates (`centre.x - across` to `centre.x + across`), never as offsets that can be `-0`, and
+    `| 0` a product that can be. `node --no-sparkplug --trace-generalization` names the store that did it;
+    `--trace-migration` counts what it costs.
 
 ## Habits to keep
 

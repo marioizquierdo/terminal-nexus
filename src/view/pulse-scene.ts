@@ -180,10 +180,12 @@ export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame):
   if (aura === undefined) return
   const range = visibleRange(view.camera, view.viewport)
   const style: CellStyle = { seeThrough: { role: playerRole(aura.player), alpha: AURA_WASH } }
-  for (let dy = -aura.radius; dy <= aura.radius; dy += 1) {
-    const reach = aura.radius - Math.abs(dy)
-    for (let dx = -reach; dx <= reach; dx += 1) {
-      const tile = { x: aura.at.x + dx, y: aura.at.y + dy }
+  // In the tiles' own coordinates, never offsets from her: an offset `-reach` is `-0` at the diamond's tips, and a
+  // `-0` in a coordinate slows every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
+  for (let y = aura.at.y - aura.radius; y <= aura.at.y + aura.radius; y += 1) {
+    const reach = aura.radius - Math.abs(y - aura.at.y)
+    for (let x = aura.at.x - reach; x <= aura.at.x + reach; x += 1) {
+      const tile = { x, y }
       if (!inBounds(view.grid, tile) || !inView(range, tile)) continue
       const cell = cellForTile(view.layout, view.camera, tile)
       for (let extra = 0; extra < view.layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, style })
