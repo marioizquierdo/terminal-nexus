@@ -39,7 +39,9 @@ and replays it.
 
 **`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings, About,
 Exit) that works by hotkey, by arrows and Enter, or by mouse. Campaign and Challenge are honest
-placeholders. The playable part is the **Build Phase**, started with `--build-phase`:
+placeholders. `--at` opens any place in the game by its route, written like a web address without the
+site (`--help` lists them). The playable part is the **Build Phase** of PERIMETER, the first campaign
+level, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its rounds with `&round=2`:
 
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
@@ -124,7 +126,9 @@ tick 90 instead of playing from the start, in watch, headless and verify alike.
 
 ```bash
 npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, About, Exit
-npm run terminal-nexus -- --build-phase   # the Build Phase and the Nexus Pulse
+npm run terminal-nexus -- --at 'campaign?level=vasse-test-1'           # PERIMETER: the Build Phase and the Nexus Pulse
+npm run terminal-nexus -- --at 'campaign?level=vasse-test-1&round=3'   # its last round
+npm run terminal-nexus -- --at settings                                # any screen of the title menu
 ```
 
 Every menu row shows its hotkey (`[1] Campaign`) and works three ways: press the hotkey, arrow to it

@@ -30,14 +30,30 @@ npm run verify-maps # every checked-in map resolves to the same hashes twenty ti
 ./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
 npm run maps                                                          # every checked-in map
 
-# terminal-nexus — the game. No map; straight to the menu.
-./bin/terminal-nexus.ts
-./bin/terminal-nexus.ts --build-phase                                       # the Build Phase (a temporary flag; --spike still works)
-./bin/terminal-nexus.ts --build-phase --settings "$(pbpaste)"               # start from a pasted settings export
-./bin/terminal-nexus.ts --build-phase --keys "Esc n 1 1 Enter"              # open already in a state (Esc skips the intro)
+# terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
+./bin/terminal-nexus.ts                                                      # the title menu
+./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, campaign
+./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'                   # PERIMETER's Build Phase (--build-phase still works)
+./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'           # its round 3, no keys to walk there
+./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
+./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings 'trainEvery=6&reducedMotion=true'
+./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
 
 bun scripts/build-web.mjs                                             # the browser playtest page
 ```
+
+**A route** names a place in the game the way a web address names a page, without the site: the place,
+then `?` and `name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`,
+`campaign` and `challenge`; a campaign level is `campaign?level=<id>`, with `&round=<n>` counted from 1 as
+the screen counts, or `&wave=<n>` counted from 0 as the raid's waves are (the owner's first route said
+`wave=0`; it is round 1). Quote a route on a command line, since the shell reads `?` and `&` itself. The
+same routes serve the game's `--at`, the scripted playtest's `--at`, the browser page's `#at=` and a
+demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
+every problem at once and what exists instead. The grammar and its table, where adding a place is one
+entry, are `src/cli/route.ts`. A bare launch opens the title menu for now; once the game can save, it is
+meant to continue the saved game from beside the settings in `~/.terminal-nexus/`, and `--at` stays the
+way to go anywhere else. `--build-phase` and `--spike` are `--at 'campaign?level=vasse-test-1'` for one
+more release.
 
 `watch` options on either program: `--capability monochrome|color16|color256|truecolor`,
 `--theme dark|light`, `--glyphs ascii|unicode`, `--tile-width 1|2` (2 needs 128 columns),
@@ -100,12 +116,14 @@ remembering a rule instead of relying on one.
 
 A passing test says nothing about spacing, density or where the eye goes. Look.
 
-**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on the Build
-Phase screen without a terminal and keeps what the screen showed after every key: text for every step
+**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a campaign
+level's Build Phase without a terminal and keeps what the screen showed after every key: text for every step
 in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
 sequence (`--gif`). Keys go through the real keyboard and mouse adapters as the bytes a terminal
 sends, one at a time, and every frame comes from the composer the live screen uses, so there is no
-capture race. `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
+capture race. `--at <route>` opens a level at a round (PERIMETER's first unless given; a later round as
+a player who builds nothing reaches it, so a picture of round 3 needs no keys at all, and a title menu
+route is refused); `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
 run recorded in the Activity Logs, as the game's window would export it; `--size`, `--capability`,
 `--theme` and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
 `click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
@@ -114,6 +132,7 @@ run recorded in the Activity Logs, as the game's window would export it; `--size
 node scripts/playtest.mjs --keys "Esc Down Down Space*4"                   # every step's status, then the final screen
 node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --png final --name hatchery-run
 node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a Pulse, twenty seconds in
+node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=3' --png final   # round 3 as it opens
 ```
 
 Output goes to `.playtest/`, which git ignores, and so does every capture script's. **Pictures are not
@@ -143,9 +162,12 @@ target. It cannot show raw keyboard mode, terminal cleanup, signals, a real term
 encodings, the OpenTUI backend or frame timing. Published as a private claude.ai page on a pull
 request only when a change must be played to be judged. Beside the screen it has a text box for each
 export (the settings, the Activity Logs), and `bun scripts/build-web.mjs --demos <file>` adds a button
-per demo, each starting the Build Phase from a key script with given settings and saying what to try
-(`scripts/build-web.mjs` describes the file; a bad key script fails the build; keep a pull request's
-file in `scripts/demos/` until its question is answered).
+per demo, each opening the game at a route (a level at a round, with no key script walking there) from a
+key script with given settings, and saying what to try (`scripts/build-web.mjs` describes the file; a bad
+route or key script fails the build; keep a pull request's file in `scripts/demos/` until its question is
+answered). Its mode buttons that are game screens open their routes, and a copy on disk opens wherever its
+address says: `#at=campaign?level=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A
+claude.ai link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
 
 **The log is the feedback loop for the kernel.** `grid --headless` writes fixed-column lines to one
 stream, `[tick] LEVEL kind subject [-> object] detail...`, at `ERROR`, `WARN` (default), `INFO`,
