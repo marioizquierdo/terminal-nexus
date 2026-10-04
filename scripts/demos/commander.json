@@ -16,9 +16,14 @@
   },
   {
     "label": "Vasse falls",
-    "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 18 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens on a line saying she is out, the camera on your Nexus; Enter again, and its Battle Round screen says so too. Press d to change her health.",
+    "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 18 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens on a line saying she is out, the camera on your Nexus. Enter closes it; press s, and the Battle Round screen says so too. Press d to change her health.",
     "at": "campaign?level=vasse-test-1&round=2",
     "keys": "n 1 s s",
     "settings": "commanderHealth=20"
+  },
+  {
+    "label": "Her return",
+    "try": "The Commander's cadence, on her campaign's second test level: Vasse fell in round 1, so round 2 opens on a line saying she is out, the camera on your Nexus. Press Enter, then n 1 and s s to play the round without her. When it ends, press Enter: round 3 opens on her return, the light around her.",
+    "at": "campaign?level=vasse-test-2&round=2"
   }
 ]
