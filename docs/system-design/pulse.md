@@ -120,6 +120,13 @@ to take. A renderer drawing a tracer holds the impact, the damage flash, and the
 until the end of that window, so what the player sees lands when the tracer does; a renderer that
 draws no tracer (reduced motion, monochrome) still presents damage at the impact beat.
 
+**An aura guards the units beside its bearer** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`, the
+`aura-by-the-book` scenario). A Commander's aura (content's `aura`: a radius and the share of a hit taken) is
+decided once a tick, as the attacks begin: every unit of the bearer's side within its radius, measured as range
+is, the bearer included. A covered unit takes the aura's share of every hit that tick, blasts included, rounded
+down and never below 1. Several auras never stack: the strongest applies. Buildings are not covered. A bearer who
+falls still covers that tick. The hit's `damage.applied` names the bearer (`guardedBy`); no rule reads it.
+
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
 
 ```text
@@ -161,6 +168,19 @@ verification. [`replay-format.md`](replay-format.md) is a first concrete schema 
 it is GUIDANCE and not built.
 
 ---
+
+### 1.5 A side's target — RULE — `src/pulse/target.ts`, `tests/target.test.ts`
+
+A side may have a **target**: a rectangle of the map, kept in the state as `targets` and set only by the
+trigger runner, never by the kernel (the owner, 2026-10-04: "The campaign levels should have a target well
+defined so it is predictable where your troops are moving"). Every unit of that side that moves and fights heads
+for it. On the way it turns on an enemy within its engage range (6 tiles, or its own attack's range when longer,
+measured as range is) and fights it as every unit does. When nothing is in range it walks on, and at the target
+it stands. Units fill the target first, each toward the nearest free tile of it; one that cannot get in stands
+beside one that did, or beside its own building in the target, and claims no tile. A side with no target engages
+the nearest enemy wherever it is. Workers that flee, healers and buildings never follow a target. `targets` is
+absent when no side has one, so such a state hashes as it always did. The named scenario is
+`target-head-engage-stand`.
 
 ## 2. Match structure
 
@@ -235,8 +255,10 @@ restore her to, so her absence goes on until it has one. At a Pulse's end Recall
 Grid Nexus, since no building makes her. A mission brings its Commander once (`src/mission/validate.ts`
 refuses a second arrival, or two of her), and the Commander it brings for the player is its campaign's
 (`src/armies/load.ts` refuses another). How much she can take is an Experiment while it is tuned
-(**Vasse's health**). Her doctrine's behaviour — hold, then advance — waits on an order the kernel can
-keep (Q69): today she engages the nearest enemy like every unit.
+(**Vasse's health**). Her skill, By the Book, is an aura the kernel keeps (the attacks step, above); its
+strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names
+a target for the player's troops she heads there with them, fights what comes within reach and stands with them
+(a side's target, above). Holding a post waits (posts, in the backlog).
 
 ### 2.2 Structures
 

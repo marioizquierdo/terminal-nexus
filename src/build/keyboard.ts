@@ -249,7 +249,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "d") return { kind: "open-settings", section: "experiments" }
   // `?` opens the Controls and hotkeys page from the game — a shortcut the page itself names.
   if (key === HELP_KEY) return { kind: "open-controls" }
-  // `s` is the Start Pulse row's key; `p`, its first key, is kept as another way to press it.
+  // `s` is the Start Battle Round row's key; `p`, its first key, is kept as another way to press it.
   if (key === START_KEY || key === "p") return { kind: "open-battle-round" }
 
   if (focus === "menu") {

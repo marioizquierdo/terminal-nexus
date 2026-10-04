@@ -44,8 +44,9 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
 | [Q63](#q63--should-the-mouse-wheel-move-the-jump-distance-rather-than-5) | Should the wheel move the jump distance rather than 5? | OPEN | Mario's trackpad |
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
-| [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN | Mario, now |
+| [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN (heading for a place built) | Posts, in the backlog |
 | [Q72](#q72--does-vasses-voice-add-to-the-battle-or-get-in-its-way-and-where-should-her-words-appear) | Does Vasse's voice add to the battle, and where should it show? | OBSERVABLE | The Vasse's voice Experiment |
+| [Q73](#q73--how-strong-should-by-the-book-vasses-aura-be) | How strong should By the Book, Vasse's aura, be? | OBSERVABLE | The By the Book Experiment |
 
 ## Open
 
@@ -524,6 +525,13 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
 that is what a readable intention needs and what the Campaign's scripted opponent will be made of.
 
+**Built in part, 2026-10-04.** Mario, on the Commander's fourth round: "The campaign levels should have a target
+well defined so it is predictable where your troops are moving", and of posts, "before we start playing with
+posts, I would like to go deep on the simple building placement first". So heading for a place is built for a
+whole side, as a level's target (`target` in a mission, `targets` in the state; [`pulse.md`](../system-design/pulse.md),
+a side's target), and the inert `order` is removed. Holding a post and withdrawing still wait: posts are in the
+backlog, after placement; a raid group's own plan would reuse the target rule for one group.
+
 ### Q72 — Does Vasse's voice add to the battle, or get in its way, and where should her words appear?
 
 **Status:** OBSERVABLE — registered 2026-10-04; the "Vasse's voice" Experiment shows all three answers.
@@ -540,3 +548,21 @@ never more than three besides her fall and a round won, with a quiet gap between
 
 **Recommendation: A**, with the panel taking her line whenever she is out of view. If it feels busy, she says
 fewer lines a round before her words move to the feed.
+
+### Q73 — How strong should By the Book, Vasse's aura, be?
+
+**Status:** OBSERVABLE — registered 2026-10-04; the "By the Book" Experiment shows each answer.
+
+The owner asked for Commanders as heroes with skills that work on their own: "Vasse should provide boost to nearby
+units." Her aura is built: she and the units of her side within 3 tiles of her take less damage from every hit.
+How strong: enough to feel that she is there, never so strong that standing beside her is the whole plan.
+Measured on PERIMETER's last round, beside the level's target for the player's troops:
+
+| Option | On PERIMETER |
+| --- | --- |
+| A. Off | A Hatchery or a Barracks alone loses the last round |
+| B. 10% less | A single Turret loses |
+| C. **25% less** (the first guess) | Nothing built loses; one building placed toward the raid holds |
+| D. 40% less | Nearly every plan holds; nothing built still loses, by a second |
+
+**Recommendation: C**, and play D and A once each to feel the difference.

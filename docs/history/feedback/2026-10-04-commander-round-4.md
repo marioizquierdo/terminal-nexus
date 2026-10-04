@@ -34,19 +34,27 @@ raid's trail stays as built.
 > we start playing with posts, I would like to go deep on the simple building placement first. The campaign
 > levels should have a target well defined so it is presictable where your troops are moving.
 
-**Scheduled**: posts wait (the backlog, as an Experiment or a building); a level's target is built this
-round. Each campaign level names the target the player's troops head for; they engage what comes within
-reach on the way and stand at the target when nothing does, so where they go can be read before the Pulse.
-This answers the open question about an order primitive in part: heading for a place, built; holding a
-post, later.
+**Built** (the target); posts **Scheduled** (the backlog, as an Experiment or a building, after placement). A
+campaign level names the target the player's troops head for: PERIMETER sends them to "the line", five tiles by
+two just ahead of the base, between the Nexus and where the raid comes round the ridge. Every fighting unit of
+the player's side — the squads, Vasse, the Barracks's trainees, the survivors carried over — heads there, turns
+on an enemy that comes within reach on the way (6 tiles, or a longer attack's range), and stands at the line
+when nothing does. The Build Phase says it under the raid ("YOUR TROOPS / 6 head for the line") and marks the
+line's four corners quietly on the map: where, never the way. The raid keeps its own behaviour, nearest enemy
+first. The mission's old `order`, which nothing ever read, is gone. This answers the open question about an
+order primitive in part: heading for a place is built; holding a post waits with posts.
 
 ### F116 — Commanders are heroes: Vasse boosts the units near her
 
 > Make Commanders matter: yes, they should be like heroes on warcraft3. Even in an autoblattler they should
 > have skills that trigger automatically or are passive. Vasse should provide boost to nearby units.
 
-**Scheduled** (this round). A Commander has skills that work on their own. Vasse's first is a passive aura in
-her protector's doctrine: the player's units near her take less damage.
+**Built.** A Commander has skills that work on their own. Vasse's first is By the Book, a passive aura in her
+protector's doctrine: she and the player's units within 3 tiles of her take a quarter less damage from every hit.
+Her card says so in one line, her reach glows around her during a battle where colours allow, and its strength
+is an Experiment, By the Book (off, 10%, 25% or 40% less; 25% to begin with). On PERIMETER the target and the
+aura only work together: the aura alone let a plan that builds nothing hold, and the line alone made a lone
+Hatchery or Barracks lose; together, nothing built still loses the last round, and most plans that build hold.
 
 ### F117 — Her voice during the Nexus Pulse, as an Experiment
 
@@ -67,30 +75,40 @@ ground around her while the fight is on.
 > Nexus powers for Vasse: Aid Station, Standing Order, all good. Please think more, they are good and we need
 > a bunch.
 
-**Scheduled** (this round, as design). A pool of Nexus powers for Vasse is designed, each a name and one
-plain line in the Citizen Nexus's voice, over the effect kinds the design allows. The Nexus draft step
-builds the first of them.
+**Built** (as design). Vasse's design entry now holds her skill, By the Book, and a pool of fifteen Nexus
+powers: nine of hers (Aid Station Permit, Mutual Support Standard, Field Triage, Plating Revision, Standing
+Order, Countersigned, Emergency Procedure, Expedited Restoration, Early Warning) and six shared Citizen ones
+(Reserve Callup, Drill Schedule, Plate Revision, Zoning Variance, Outpost Permit, Roadworks). Each is a name and
+one plain line that fits the Nexus popup at 80 × 24, all act on her own side, and several build on her skill:
+Standing Order makes it reach twice as far. The Nexus draft step builds the first two or three; Reserve Callup,
+Standing Order and Aid Station Permit are recommended.
 
 ### F119 — Battle Rounds, not waves
 
 > Rounds  or Waves: ok ok, let's settle in Battle Rounds. Please remove the term "waves". We can refer to it
 > as Nexus Pulse in lore and design, but Battle Round is better for the player and UI.
 
-**Scheduled** (this round). "Wave" leaves the game, the routes and the documents: a route counts Battle
-Rounds (`round=`), the interface says Battle Round, and lore and design say Nexus Pulse. A group the raid
-sends is a group, not a wave.
+**Built.** "Wave" has left the game, the routes, the mission data and the documents: a route counts Battle
+Rounds with `round=` only, the raid sends groups, and the interface says Battle Round wherever it names the
+battle — `[s] Start Battle Round`, the battle's title and panel, its bottom line — while Nexus Pulse stays the
+lore's and the design's word. This also answers the open question of what the player calls a Nexus Pulse.
 
 ### F120 — Armies: `armies/all` and `armies/vasse`
 
 > Bundle format: I would prefer to call the folder armies/vasse and armies/all
 
-**Scheduled** (this round). Content bundles become armies: `armies/all` holds what every army may use, and
-`armies/vasse` is Vasse's army, her Commander and her campaign.
+**Built.** Content bundles are armies: `armies/all/army.json` holds what every army may use, and
+`armies/vasse/army.json` is Vasse's army, her Commander, her lines in battle and her campaign; the loader is
+`src/armies`.
 
 ### F121 — Simpler code before the next milestone
 
 > Thanks for the new navigation flag --at and the new menu router. Take this last round to reflect on code
 > simplicity on this term and look for opportunities to cleanu before we move on to the next milestone
 
-**Scheduled** (this round). A cleanup pass over what this milestone added: fewer special cases, one module
-where two do the same job, dead code gone, behaviour unchanged.
+**Built.** The application shell is simpler, with nothing on screen changed: `--build-phase` and `--spike` are
+gone (an old command is refused, naming the `--at` route that replaced it, rather than opening the title menu
+where nothing reaches the Build Phase); one module reads where a run opens, its settings text and its keys for
+the game, the scripted playtest, the browser page and its demos; every level opens the same way, with no special
+case for PERIMETER; the title menu's places are one table; dead code is gone. The validator now checks that every
+test a document cites exists.

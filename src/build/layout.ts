@@ -72,7 +72,7 @@ export type BuildLayout = Readonly<{
   /** Frame row the panel's first line is drawn on — the first row under the rule that closes the
    *  Grid's top, so the panel and the Grid start together. */
   panelRow: number
-  /** Frame row of the panel's last usable line: the Start Pulse row is pinned there (`startRow`), and
+  /** Frame row of the panel's last usable line: the Start Battle Round row is pinned there (`startRow`), and
    *  the Nexus Pulse panel's last control row. (Named for the key help that used to overflow into the
    *  panel's bottom lines; the panel carries no help text now. Renaming it is a pure rename for a
    *  change of its own.) */
@@ -106,7 +106,7 @@ export const CARD_FIRST_ROW = CARD_HEADER_ROW + 2
 
 /**
  * The Nexus Pulse panel's clickable rows: the playback controls with their hotkeys, pinned to
- * the bottom of the panel, where the Build Phase's Start Pulse row sits. The composer draws them and
+ * the bottom of the panel, where the Build Phase's Start Battle Round row sits. The composer draws them and
  * the mouse adapter hit-tests them from this one place, as it does every other row. `[` and `]` (speed)
  * and `.` and `,` (step) are keys only: the panel has room for two rows and these are the two a player
  * reaches for.
@@ -139,7 +139,7 @@ export function pulseControlAt(layout: BuildLayout, column: number, row: number)
 }
 
 /**
- * The Start Pulse entry (the owner: "a regular menu item, at the bottom"): the menu's last row, drawn and hit-tested like every other. It is pinned to the panel's
+ * The Start Battle Round entry (the owner: "a regular menu item, at the bottom"): the menu's last row, drawn and hit-tested like every other. It is pinned to the panel's
  * bottom line rather than placed after the last building, so it does not move as the menu above it
  * grows, and the rest of the menu ends on the row above it. `s` is its hotkey.
  */
@@ -150,7 +150,7 @@ export function startRow(layout: BuildLayout): number {
   return layout.panelLastRow
 }
 
-/** The last panel row the menu's other text may use: the rows above the Start Pulse entry. */
+/** The last panel row the menu's other text may use: the rows above the Start Battle Round entry. */
 export function menuFloor(layout: BuildLayout): number {
   return startRow(layout) - 1
 }
@@ -229,7 +229,7 @@ export function menuEntryAt(
   row: number,
 ): number | null {
   if (!inPanelColumns(layout, column)) return null
-  // Start Pulse first: it is the one row pinned to the panel's bottom, and wins where a taller menu
+  // Start Battle Round first: it is the one row pinned to the panel's bottom, and wins where a taller menu
   // would reach it.
   if (row === startRow(layout)) return startEntry(catalog.length)
   if (row === layout.panelRow + EXPLORE_ROW) return EXPLORE_ENTRY

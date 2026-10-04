@@ -212,6 +212,12 @@ title screen's menu.
   Barracks`). They are information, not rows: nothing to highlight or click. Short of room they drop the
   kinds, then whole groups (`+2 more`), and a count is never split from its kind. Drawn with the menu,
   so it fades when a card covers it. (RULE — `tests/raid-view.test.ts`)
+- ***Your troops' target*** (a named pattern; the owner: "predictable where your troops are moving"): under
+  the raid, in the player's colour, `YOUR TROOPS` / `6 head for the line` — how many, then the place by the
+  level's name for it. Where, never the way. On the map its four corners are marked, dim in the player's
+  colour (`+` in ASCII), on open ground only, under the raid's trail. Never at the cost of a whole raid
+  group: short of room the raid's groups drop their kinds first, then the troops' lines go. Not during a
+  battle, not on a committed plan. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
 - **The action that ends the phase is the last row** (`startRow`), dim and refused with its reason until
   the Nexus power is picked; it opens the Battle Round screen. (RULE — `tests/build-start.test.ts`)
 
@@ -236,6 +242,9 @@ title screen's menu.
   where a later round would change the look for placing a building (where the title repeats the header),
   for exploring in the Build Phase, or for exploring during a Pulse.
   (RULE for the four parts and the fit — `tests/build-card.test.ts`)
+- **A Commander's skill is on her card**: its name, bold, then one plain line at the strength the battle
+  will run on ("She and her units within 3 tiles take 25% less damage."); nothing while the Experiment has
+  it off. (RULE — `tests/commander-screen.test.ts`)
 - It appears with the **card reveal** (see *Motion and transitions*).
 
 ### 6.3 A selection holds the menu

@@ -255,7 +255,10 @@ than any one feature:
    band, under what stands.
 7. **A planner that knows the future plans every line around a cut-in**, so nothing is ever cut in on; let a
    line being read give way, once it has been on screen long enough to read.
-8. **To compare a page before and after a refactor, freeze its clock.** A breathing dialog or a playing Pulse
+8. **Two rules that change a fight are measured together.** The aura alone let a plan that builds nothing
+   hold PERIMETER; the troops' target alone made a lone Hatchery or Barracks lose. Measured together, the level
+   kept its shape. One agent built both and re-measured once, which also kept the hash pins moving once.
+9. **To compare a page before and after a refactor, freeze its clock.** A breathing dialog or a playing Pulse
    draws a different frame every time it is looked at; with `Date.now` and `performance.now` pinned before the
    page loads, every opening is the same frame run to run.
 

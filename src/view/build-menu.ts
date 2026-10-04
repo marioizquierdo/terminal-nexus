@@ -118,7 +118,7 @@ export const ACTIVE_VALUE = ">"
 /**
  * Whether menu entry `entry`'s action is under way right now — **the one test for the "active" style**
  * every menu row shares: a building while it is armed, `[e] Explore
- * Map` while Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Pulse` while its
+ * Map` while Explore Map is open, `[n] Nexus` while its popup is, `[s] Start Battle Round` while its
  * confirmation is. A menu row has two states and no more: *highlighted* by the keyboard (the bar, only
  * while the menu has the keyboard) and *active*.
  */
@@ -298,10 +298,10 @@ function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
 /**
  * The side panel as the menu (shaped over several playtests): `[e] Explore Map`,
  * `[n] Nexus` under it, the credits line, the buildings one to a row in catalog order, and
- * `[s] Start Pulse` on its last line. No headings, no help text: what a row does, and why a placement
+ * `[s] Start Battle Round` on its last line. No headings, no help text: what a row does, and why a placement
  * is refused, are the bottom line's to say, and there is no radius preview, because
  * nothing placed here has a radius. A row the panel is too short for is not drawn (`menuEntryRow` says
- * so, and the mouse reads the same answer). In the free rows between the buildings and Start Pulse, the
+ * so, and the mouse reads the same answer). In the free rows between the buildings and Start Battle Round, the
  * coming raid (`raid-panel.ts`): information, not rows, so it fades and comes back with the menu.
  */
 export function drawPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, capability: CapabilityMode): void {

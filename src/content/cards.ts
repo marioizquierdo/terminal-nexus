@@ -7,7 +7,7 @@
 //
 // Written to the side panel's width at the 80-column floor, where it is narrowest (27 glyphs): a
 // subtitle sits beside the icon, under the title, and should fit on that one line; a description wraps
-// between words and should leave the card's numbers room above the Start Pulse row.
+// between words and should leave the card's numbers room above the Start Battle Round row.
 // `tests/build-card.test.ts` draws every card at 80 x 24 and fails if either does not fit.
 //
 // Plain and short, in the game's voice, and honest: a card says what the thing does in the game as it

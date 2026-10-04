@@ -72,10 +72,10 @@ Actions come in **two bands, and the band is the most important thing on this pa
 
 | Band | Actions | Where they run | Determinism |
 | --- | --- | --- | --- |
-| **Simulation** | `spawn` (units at a region, with an initial order), `order` (a group advances, holds, or withdraws toward a region), `commitPlan` (the scripted opponent's Build Phase plan for a given round), `objective` (set or change one), `win`, `lose`, `endPulse`, `startBuild`, `reveal` | applied by the trigger runner as scripted inputs at the tick the condition holds, validated like any player command, emitted as ordinary events | part of the hashed inputs — a replay re-derives them from mission, seed, and plans |
+| **Simulation** | `spawn` (units at a region, with a line of intention), `target` (where a side's troops head: from this moment its fighting units head for a region, engaging what comes within reach, round after round until another moves it), `commitPlan` (the scripted opponent's Build Phase plan for a given round), `objective` (set or change one), `win`, `lose`, `endPulse`, `startBuild`, `reveal` | applied by the trigger runner as scripted inputs at the tick the condition holds, validated like any player command, emitted as ordinary events | part of the hashed inputs — a replay re-derives them from mission, seed, and plans |
 | **Presentation** | `focus` (camera to an entity or a tile, through the ordinary scroll), `card` (a character's portrait card), `say` (speaker and line, advanced by the player or a timeout), `bark`, `effect`, `pause` / `resume` | in presentation; they never write state | re-derived from the event stream and the trigger list; skipping or replaying them changes nothing |
 
-Built today: `spawn`, `order` (only `advance`, which means what the kernel's one movement rule does: engage the nearest enemy), `commitPlan`, `win` and `lose`, and in the presentation band `say` at its smallest. The rest are GUIDANCE. A Commander's barks in battle are not a mission's action: they are data in her army, said at moments the view reads off the round's events (her voice in battle, in the interface patterns); a mission's own `bark`, for a unit it names, is still not built.
+Built today: `spawn`, `target`, `commitPlan`, `win` and `lose`, and in the presentation band `say` at its smallest. The `order` a group carried, which the kernel never read, is gone: a side's target is what the kernel keeps ([`pulse.md`](../system-design/pulse.md), a side's target), and a group's `intent` is what the player reads. Holding and withdrawing wait. PERIMETER names its target: the line, five tiles by two just ahead of the base. The rest are GUIDANCE. A Commander's barks in battle are not a mission's action: they are data in her army, said at moments the view reads off the round's events (her voice in battle, in the interface patterns); a mission's own `bark`, for a unit it names, is still not built.
 
 **A mission's lines are data, and the dialog shows them** (RULE — `src/mission/scene.ts`, `src/mission/validate.ts`, `tests/dialog.test.ts`). `say: { speaker, side?, text, focus? }` runs only at `build.start`: as that round's Build Phase opens, its lines play in the dialog at the bottom of the screen ([`ui-patterns.md`](../system-design/ui-patterns.md), the dialog), one at a time, the camera on each line's focus (a unit, a group or a region). A speaker is a unit the mission brings — Vasse's name, side and `@` come from her content — or a name off the Grid, as Corvane is. Validation refuses, by name, a line anywhere but `build.start`, an empty speaker or text, a line too long for the box at 80 × 24, a structure as speaker, and any speaker or focus the mission does not bring by that round. The trigger runner never reads them, so a mission's states hash the same with and without its lines. The round a Commander is restored opens on one line in the game's own voice, looking at her. Not built: `card`, `bark`, `effect`, a timeout, a scripted Pulse.
 
@@ -96,7 +96,8 @@ triggers: [
       { focus: { region: "nw-ridge" } },
   ]},
   { id: "raid-1", when: { pulse: 1, tick: 0 }, do: [
-      { spawn: { unit: "unit.ravel.raider", count: 3, at: "nw-ridge", order: { advance: "nexus" } } },
+      { spawn: { unit: "unit.ravel.raider", count: 3, at: "nw-ridge", intent: "Probe the line at the ridge." } },
+      { target: { side: "A", region: "line" } },
       { card: "corvane" }, { say: { speaker: "corvane", text: "Nice fence, roadmakers. We brought wire cutters." } },
   ]},
   { id: "raid-2", when: { pulse: 2, tick: 0 }, do: [ { spawn: { /* larger */ } } ] },
@@ -298,7 +299,7 @@ The same content definition should be usable by the game, a preview tool, and ag
 - **`focus`** — the camera moves to an entity or a tile, through the same cursor-driven scroll the player uses ([`grid.md`](../system-design/grid.md)). No second camera, no cinematic mode: the viewer's eye is taken where the player's cursor could go.
 - **`card`** — a character's portrait card: a hand-authored ASCII tableau of the face, the name, the faction's glyph role, drawn in the side panel or as an overlay in the `chrome` band. The same card is what inspection shows for that character during play, so a face learned in the intro is the face met on the Grid.
 - **`say`** — a line under the card, attributed, advanced by Enter, a click, or the driver — or by a timeout where the mission prefers pace to control. Skip is always available. Built as the dialog at the bottom of the screen, with no card and no timeout yet (section 2.1).
-- **a scripted Pulse** — `spawn` and `order` run while the player watches enemies arrive and take position; then `startBuild` hands over the first Build Phase.
+- **a scripted Pulse** — `spawn` and `target` run while the player watches enemies arrive and take position; then `startBuild` hands over the first Build Phase.
 
 **Skip is a presentation action.** Skipping an intro jumps past its `card`, `say`, and `focus` actions; the scripted Pulse still resolves, so the skipped intro leaves the Grid exactly where the watched one would. That is the property that keeps intros out of the engine's record (the third rule of the belief ramp) while still letting them move things on the Grid.
 

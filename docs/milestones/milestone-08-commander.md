@@ -102,13 +102,13 @@ the same pull request, by subagents.
       range can show it the same way.
 - [x] Construction territory is built: a building may only be placed within the construction radius of the
       player's other buildings, rooted at the Grid Nexus, and the Build Phase shows where that is.
-- [ ] Each campaign level names the target the player's troops head for; they engage what comes within reach
+- [x] Each campaign level names the target the player's troops head for; they engage what comes within reach
       on the way, and the Build Phase says where they are going. Posts wait.
-- [ ] Vasse has a passive aura: the player's units near her take less damage.
+- [x] Vasse has a passive aura: the player's units near her take less damage.
 - [x] Vasse speaks during the Nexus Pulse, behind an Experiment, with a light touch of the effect library.
-- [ ] A pool of Nexus powers for Vasse is designed for the Nexus draft step to build.
-- [ ] "Wave" is gone: Battle Round in the interface, Nexus Pulse in lore and design; a route counts rounds only.
-- [ ] Content bundles are armies: `armies/all` and `armies/vasse`.
+- [x] A pool of Nexus powers for Vasse is designed for the Nexus draft step to build.
+- [x] "Wave" is gone: Battle Round in the interface, Nexus Pulse in lore and design; a route counts rounds only.
+- [x] Content bundles are armies: `armies/all` and `armies/vasse`.
 - [x] A cleanup pass over what this milestone added leaves the code simpler, with behaviour unchanged: `--build-phase`
       and `--spike` gone (an argument the game does not read is refused, naming what replaced them), one
       launch-options module for the game, the scripted playtest, the page and its demos, one default level, the

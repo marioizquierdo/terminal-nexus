@@ -160,7 +160,7 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
  * playing there; a separator across the panel (`-` in ASCII, `─` in Unicode); and under it the card
  * itself (`currentCard`) — in Explore Map whatever is under the cursor, following it as it moves; while
  * placing, the building about to be placed ("This will create visual consistency for anything that
- * gains focus on the map"). No credits and no Start Pulse: both belong to the menu. A click
+ * gains focus on the map"). No credits and no Start Battle Round: both belong to the menu. A click
  * anywhere on the panel goes back, as Esc does.
  */
 function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, look: CardLook): void {

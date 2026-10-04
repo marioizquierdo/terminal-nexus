@@ -50,7 +50,7 @@ export type BuildCommand =
    * A click on menu entry *n* (an index into `menuEntries`). **A click activates what it lands on**
    * (a first click does not merely highlight): a construct row arms at once and hands the mouse to the Grid with the ghost at the
    * cursor, or the nearest spot that takes it; the Nexus entry opens its popup; Explore Map opens the
-   * map; Start Pulse opens its confirmation. All four are the menu's, so finishing them comes back to
+   * map; Start Battle Round opens its confirmation. All four are the menu's, so finishing them comes back to
    * the menu. Only the keyboard has a "highlighted, not yet chosen" state. Two exceptions, both about
    * what the click could see: with a popup open it only closes the popup (and brings focus to the menu,
    * unless a card covers it); and while a card covers the menu — Explore Map's, or the building being
@@ -98,7 +98,7 @@ export type BuildCommand =
   | Readonly<{ kind: "open-game-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
-  /** `s` (or `p`), or the menu's last row, `[s] Start Pulse` — open the Battle Round confirmation.
+  /** `s` (or `p`), or the menu's last row, `[s] Start Battle Round` — open the Battle Round confirmation.
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
    *  while a building is armed. */
   | Readonly<{ kind: "open-battle-round" }>
@@ -240,7 +240,7 @@ export const MAP_EDGE_STYLES: readonly MapEdgeStyle[] = ["solid", "half", "heavy
 export type Focus = "menu" | "grid"
 
 /**
- * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map first, Nexus, the construct rows in hotkey order, and Start Pulse last. The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
+ * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map first, Nexus, the construct rows in hotkey order, and Start Battle Round last. The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
  * construct row keeps its digit.
  */
 export type MenuEntry =

@@ -5,12 +5,15 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Play the Commander's third round** (his notes on pull request 60): open places by route —
-  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'` opens round 2, `--at settings` the
-  Settings screen, and `--help` lists every route. Watch her whole cadence on the second test level:
-  `--at 'campaign?level=vasse-test-2'`, she falls in round 1, round 2 opens on a line saying she is out, and
-  round 3 on her return. The army files change nothing on screen: PERIMETER offers what it always did, now from
-  data. The second round's intro and the raid's intent are unchanged.
+- **Play the Commander's fourth round** (his notes on pull request 60), from
+  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'`: press `3` to arm a Turret — the densely
+  dotted ground is where it may go (the build range) and the outline round it is where it will reach; it can
+  only go on the dots. The panel says where your troops head ("6 head for the line"), and the line's corners are
+  marked; start the battle and watch them stand there with Vasse, her reach glowing around her, her lines
+  beside her. Three Experiments ask what feels right, each under THE MISSION in Settings (`d`): **Build
+  range** (2, 3 or 4), **By the Book** (how much less damage her units take) and **Vasse's voice** (beside her,
+  in the feed, or off). Paste the settings export, and the Activity Logs' **Her voice** filter if a line landed
+  oddly.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -79,6 +82,22 @@ Small, none blocking.
 - The units' and buildings' definitions (stats, footprints) are still TypeScript in `src/content`; an army
   names them by id. Moving them into the army files is the next step for content.
 - A claude.ai link cannot carry `#at=`; the published page opens a place through a demo's route instead.
+
+**From step 8A's fourth round** ([Mario's notes](../history/feedback/2026-10-04-commander-round-4.md)):
+
+- A lone Turret or Hatchery east of the Barracks draws round 1's probe against the ridge, out of the line's
+  reach, and the round runs to time (still survived): units step greedily and have no pathfinding.
+- Round 2 with nothing built is still won, so "the second round needs something built" holds neither before
+  this round nor after it; the level was not tuned for it.
+- By the Book's reach is drawn only where colours blend: at 16 colours and in monochrome her card says what it
+  does.
+- The forecast carries the player's troops as one more forecast group (`TroopsGroup`); a `post` field on the
+  raid's group would be one shape fewer.
+- `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests; the game no longer uses
+  it.
+- Building inside a raid's public coverage waits for a raid that stands buildings at the start of a Build Phase.
+- Undo can be refused, rarely: when a later planned building needs the build range of the one being undone.
+- The title screen's motto keeps the lore's word ("Build. Commit. Pulse. Understand. Adapt.").
 
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 

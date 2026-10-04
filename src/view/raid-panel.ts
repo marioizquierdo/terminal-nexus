@@ -1,5 +1,5 @@
 // ***The raid in the panel***: the coming raid, said in the side panel's free rows between the buildings
-// and Start Pulse, so a player reads it without looking for it (the owner: "reading the enemy intent is
+// and Start Battle Round, so a player reads it without looking for it (the owner: "reading the enemy intent is
 // very important for basic ui/ux interaction"). Under when it comes — as the round starts, or so many
 // seconds in — each group says how many and from where, of what, and what it goes for first:
 //
@@ -46,7 +46,7 @@ const INDENT = 2
 const GOES_FOR = "goes for "
 
 /** The panel rows the raid may use: from the second row under the last building (a blank row between) to
- *  the second row above Start Pulse (a blank row before it) — or `null` when the menu leaves none. */
+ *  the second row above Start Battle Round (a blank row before it) — or `null` when the menu leaves none. */
 export function raidRows(layout: BuildLayout, catalog: BuildContext["catalog"]): Readonly<{ first: number; last: number }> | null {
   const lines = constructLines(layout, catalog)
   // A menu cut short by the panel's height has no room under it.

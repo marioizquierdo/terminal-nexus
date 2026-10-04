@@ -496,7 +496,7 @@ function commitLock(state: BuildState): StatusMessage | null {
 }
 
 /**
- * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Powers entry, every construct row, and Start Pulse last.
+ * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Powers entry, every construct row, and Start Battle Round last.
  * Derived from the catalog rather than stored, so the highlight and the rows drawn can
  * never disagree about how many there are.
  */
@@ -563,7 +563,7 @@ export function entryOfConstruct(index: number): number {
   return index + ENTRIES_BEFORE_CONSTRUCT
 }
 
-/** The menu's last entry, Start Pulse: the one after the last construct row of a catalog this long. */
+/** The menu's last entry, Start Battle Round: the one after the last construct row of a catalog this long. */
 export function startEntry(catalogSize: number): number {
   return entryOfConstruct(catalogSize)
 }
@@ -1058,7 +1058,7 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
   return openExplore(context, highlighted, "menu")
 }
 
-/** `s`, or the Start Pulse entry: open the Battle Round confirmation over the Grid, the menu lit behind
+/** `s`, or the Start Battle Round entry: open the Battle Round confirmation over the Grid, the menu lit behind
  *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
  *  flicker beside the bottom line's reason. With a building armed, the building comes first
  *  (`refuseWhileArmed`). */
