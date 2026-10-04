@@ -15,8 +15,8 @@
 // A local copy of the page takes any such address. **A link on claude.ai cannot carry a `#` part with `=` in it**,
 // so a published page opens at a place through a demo button instead (a demo's `at`, `scripts/build-web.mjs`).
 //
-// The parts are a launch's (`src/cli/launch.ts`): the address is one more place a run's texts come from, read
-// into the launch's shape here and read as a launch by the page.
+// The parts are a launch's (`src/cli/launch.ts`), so the page reads an address as the game reads `--at`,
+// `--settings` and `--keys`.
 
 import { LAUNCH_PARTS } from "../cli/launch.ts"
 import type { LaunchPart, LaunchText } from "../cli/launch.ts"

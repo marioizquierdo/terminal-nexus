@@ -15,9 +15,11 @@ import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
+import { readLaunch } from "../cli/launch.ts"
+import type { LaunchText } from "../cli/launch.ts"
 import { DEFAULT_LEVEL, openRound } from "../cli/levels.ts"
-import { DEFAULT_LEVEL_ROUTE, formatRoute } from "../cli/route.ts"
-import type { Destination, LevelDestination } from "../cli/route.ts"
+import { DEFAULT_LEVEL_ROUTE, RouteError, formatRoute } from "../cli/route.ts"
+import type { LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
@@ -205,13 +207,26 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
 }
 
 /**
- * The campaign level and round a launch opens for a scripted playtest (`runBuildPlaytest`'s `at`): a scripted
- * playtest plays a campaign level's Build Phase, so a place on the title menu is refused, saying so.
+ * Where a scripted playtest opens and what it starts from (`runBuildPlaytest`'s `at` and `steps`), read from its
+ * command line's texts as the game reads its own (`src/cli/launch.ts`): PERIMETER's first round unless `at` names
+ * another. Refused, with every problem said, when the route is not a place, a key the script names does not exist
+ * (`keysFrom` says where the script came from), or the place is on the title menu: a scripted playtest plays a
+ * campaign level's Build Phase.
  */
-export function playtestOpening(destination: Destination): LevelDestination {
-  if (destination.kind === "level") return destination
-  throw new Error(
-    `--at ${formatRoute(destination)} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
-      `try --at '${DEFAULT_LEVEL_ROUTE}&round=2'`,
-  )
+export function playtestOpening(
+  text: LaunchText,
+  keysFrom = "--keys",
+): Readonly<{ at: LevelDestination; steps: readonly PlaytestStep[]; settings?: string }> {
+  const { launch, problems } = readLaunch(text, DEFAULT_LEVEL_ROUTE)
+  if (problems.length > 0) {
+    throw new Error(problems.map(({ error }) => (error instanceof RouteError ? `--at ${error.message}` : `${keysFrom}: ${error.message}`)).join("\n"))
+  }
+  const { destination, settings, keys = [] } = launch
+  if (destination.kind === "title") {
+    throw new Error(
+      `--at ${formatRoute(destination)} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
+        `try --at '${DEFAULT_LEVEL_ROUTE}&round=2'`,
+    )
+  }
+  return { at: destination, steps: keys, ...(settings === undefined ? {} : { settings }) }
 }
