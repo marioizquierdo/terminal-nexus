@@ -1,5 +1,5 @@
-// Vasse's voice in battle and her aura's reach on screen (the owner, on the Commander's fourth round: "Her voice
-// during battle waves: yes that is fantastic! let's experiment with this to see if it gets into the battle or
+// Vasse's voice in battle and her aura's reach on screen (the owner, on her voice in battle in the Commander's
+// fourth round: "yes that is fantastic! let's experiment with this to see if it gets into the battle or
 // enhances the experience even more. A little strategic usage of our effect library should go a long way here
 // too"; and "Vasse should provide boost to nearby units").
 //

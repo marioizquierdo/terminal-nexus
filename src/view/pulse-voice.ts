@@ -1,7 +1,7 @@
 // **Her voice in battle**: what Vasse says during a Battle Round, worked out from the round the kernel has
-// already resolved (the owner, 2026-10-04: "Her voice during battle waves: yes that is fantastic! let's
-// experiment with this to see if it gets into the battle or enhances the experience even more. A little
-// strategic usage of our effect library should go a long way here too").
+// already resolved (the owner, 2026-10-04, on her voice in battle: "yes that is fantastic! let's experiment with
+// this to see if it gets into the battle or enhances the experience even more. A little strategic usage of our
+// effect library should go a long way here too").
 //
 // Presentation, all of it, on the three-worlds line. The moments she answers are read off the round's events
 // and states, as every effect is (`effects/derive.ts`); her lines are data in her army, found by her unit's id
