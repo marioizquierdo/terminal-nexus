@@ -3,6 +3,7 @@
 import { directionOf } from "../grid/coords.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { distanceBetween, isMobile, setTarget } from "./shared.ts"
+import { engageRange, targetFor } from "./target.ts"
 
 export function hostilesOf(context: TickContext, actor: Actor): Actor[] {
   return context.actors.filter((other) => other.player !== actor.player && !other.pendingDead)
@@ -88,6 +89,11 @@ export function perception(context: TickContext): void {
       candidates = woundedAlliesOf(context, actor)
     } else if (actor.definition.behavior === "flee") {
       candidates = hostilesOf(context, actor).filter((other) => other.definition.attack !== undefined)
+    } else if (targetFor(context, actor) !== null) {
+      // A unit whose side has a target fights only what has come within its reach; with nothing there it
+      // heads for the target instead (`target.ts`, `intents.ts`).
+      const reach = engageRange(actor.definition)
+      candidates = eligibleHostiles(actor, hostilesOf(context, actor).filter((other) => distanceBetween(actor, other) <= reach))
     } else {
       candidates = eligibleHostiles(actor, hostilesOf(context, actor))
     }

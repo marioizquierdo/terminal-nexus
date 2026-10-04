@@ -7,8 +7,10 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/grid/index.ts"
-import { DEFAULT_PRESET, ScenarioError, loadScenario, presetDimensions } from "../src/scenario/index.ts"
+import { DEFAULT_PRESET, ScenarioError, TICKS_PER_SECOND, loadScenario, presetDimensions } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { resolvePulse } from "../src/pulse/index.ts"
+import { ENGAGE_RANGE } from "../src/pulse/target.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 
 function baseScenario(): ScenarioDefinition {
@@ -420,4 +422,54 @@ test("tick-limit-draw: neither side can reach the other, and the Pulse ends on i
   assert.equal(resolved.run.finalState.outcome?.winner, null)
   assert.equal(resolved.run.finalState.tick, resolved.run.pulseTicks)
   assert.equal(resolved.run.events.filter((event) => event.kind === "attack.launched").length, 0)
+})
+
+test("target-head-engage-stand: a side with a target heads for it, fights what comes within reach on the way, and stands there", async () => {
+  const resolved = await resolveScenario("target-head-engage-stand.map.json")
+  const { run } = resolved
+  const area = run.initialState.targets?.A
+  assert.deepEqual(area, { x: 15, y: 2, width: 3, height: 3 })
+  assert.equal(run.initialState.targets?.B, undefined)
+  // On the way: the runner comes within reach and the squad turns on it — never from further than that.
+  const turned = run.events.filter((event) => event.kind === "target.selected" && event.entity.startsWith("A:"))
+  assert.ok(turned.length >= 3, "the squad never turned on the runner")
+  for (const event of turned) {
+    if (event.kind !== "target.selected") continue
+    assert.equal(event.target, "B:runner#1", `${event.entity} went for ${event.target}`)
+    assert.ok(event.distance <= ENGAGE_RANGE, `${event.entity} turned on it from ${event.distance} tiles`)
+  }
+  const runnerDied = run.events.find((event) => event.kind === "entity.died" && event.entity === "B:runner#1")
+  assert.ok(runnerDied !== undefined, "the runner lived")
+  // The Nexus in the far corner is never within reach of the target or the way there: nobody goes for it.
+  assert.ok(!run.events.some((event) => event.kind === "attack.launched" && event.target === "B:nexus#6"), "the squad went for the raid's Nexus")
+  // And there: every one of them inside the target or beside one who is, none of them moving for the last two
+  // seconds, none of them pressing on another.
+  const squad = run.finalState.entities.filter((entity) => entity.player === "A")
+  assert.equal(squad.length, 4)
+  const inside = (entity: (typeof squad)[number]): boolean =>
+    entity.anchor.x >= 15 && entity.anchor.x <= 17 && entity.anchor.y >= 2 && entity.anchor.y <= 4
+  const gathered = new Set(squad.filter(inside).map((entity) => entity.ordinal))
+  assert.ok(gathered.size >= 3, `only ${gathered.size} of the squad stand inside the target`)
+  for (let grew = true; grew; ) {
+    grew = false
+    for (const entity of squad) {
+      if (gathered.has(entity.ordinal)) continue
+      if (squad.some((other) => gathered.has(other.ordinal) && Math.abs(other.anchor.x - entity.anchor.x) + Math.abs(other.anchor.y - entity.anchor.y) === 1)) {
+        gathered.add(entity.ordinal)
+        grew = true
+      }
+    }
+  }
+  assert.equal(gathered.size, squad.length, "some of the squad stand away from the target")
+  const late = run.pulseTicks - 2 * TICKS_PER_SECOND
+  assert.ok(!run.events.some((event) => (event.kind === "entity.moved" || event.kind === "move.blocked") && event.tick > late && event.entity.startsWith("A:")), "the squad was still moving at the end")
+  assert.deepEqual([run.finalState.outcome?.winner, run.finalState.outcome?.reason], [null, "tick-limit"])
+
+  // A side with no target keeps the one rule every unit had: the same squad, the runner dead, marches on the Nexus.
+  const scenario = await loadScenarioFile("target-head-engage-stand.map.json")
+  const { targets: _targets, ...untargeted } = scenario
+  const loaded = loadScenario(untargeted, { registry: FIXTURE_REGISTRY })
+  assert.equal(loaded.state.targets, undefined)
+  const old = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: scenario.pulseTicks, seed: scenario.seed })
+  assert.ok(old.events.some((event) => event.kind === "attack.launched" && event.target === "B:nexus#6"), "with no target, nobody went for the Nexus")
 })

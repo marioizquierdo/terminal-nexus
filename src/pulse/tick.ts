@@ -80,6 +80,8 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     // this tick's state in full — nothing needs to be seeded from the previous tick.
     targetObservers: new Map(),
     nextOrdinal: state.nextOrdinal,
+    // The sides' targets are the state's, read and never written: only the trigger runner sets them.
+    targets: state.targets ?? {},
   }
 
   // 1.5. Spawning — from the unit-architecture spike; not one of the nine phases pulse.md names.

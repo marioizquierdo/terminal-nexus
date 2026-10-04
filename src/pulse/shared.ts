@@ -10,7 +10,7 @@ import type { BlockReason } from "../events/types.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
-import type { EntityState, GroundItem, PlayerId } from "../state/types.ts"
+import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
 import type { PulseContext } from "./context.ts"
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] }
@@ -63,6 +63,11 @@ export type TickContext = {
    * finding it exactly the way the old full scan of `context.actors` did.
    */
   targetObservers: Map<number, Set<Actor>>
+  /**
+   * Where each side's fighting units head when no enemy is within reach — the state's own `targets`, read
+   * and never changed by the kernel (`intents.ts`, `perception.ts`). Empty for a battle with no target.
+   */
+  targets: Readonly<Partial<Record<PlayerId, TargetArea>>>
 }
 
 /**

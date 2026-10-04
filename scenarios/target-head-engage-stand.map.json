@@ -1,0 +1,84 @@
+{
+  "id": "target-head-engage-stand",
+  "name": "A side's target: head for it, engage on the way, stand there",
+  "notes": "A campaign level's target for the player's troops, as a rule of its own. Side A's squad heads for its target, the rectangle to the north-east; the raid's runner charges it on the way and comes within reach, so the squad turns, kills it, and goes on. At the target the first in fill it and the rest gather beside them, and there they stand to the end of the Pulse: the raid's Nexus in the far corner is never within reach of the target or the way there, so nobody goes for it. Strip the target and the same squad, killing the runner, marches on the Nexus, as every unit always did.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40990,
+  "pulseTicks": 240,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 1,
+        "y": 5
+      },
+      "rows": [
+        "mt",
+        " t",
+        " t"
+      ],
+      "legend": {
+        "m": {
+          "content": "unit.citizen.marksman"
+        },
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 12,
+        "y": 1
+      },
+      "rows": [
+        "r",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "         n"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.ravel.runner"
+        },
+        "n": {
+          "content": "structure.ravel.nexus"
+        }
+      }
+    }
+  },
+  "targets": {
+    "A": {
+      "x": 15,
+      "y": 2,
+      "width": 3,
+      "height": 3
+    }
+  }
+}

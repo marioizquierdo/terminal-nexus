@@ -1,5 +1,5 @@
 import type { Coord, TerrainId } from "../grid/types.ts"
-import type { PlayerId } from "../state/types.ts"
+import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { GridPreset } from "./presets.ts"
 
 export type GridSpec = Readonly<{ preset: GridPreset }> | Readonly<{ width: number; height: number }>
@@ -75,6 +75,13 @@ export type ScenarioDefinition = Readonly<{
    * the other out, rather than by writing an empty grid.
    */
   placements: Readonly<Partial<Record<PlayerId, PlacementBlock>>>
+  /**
+   * A side's target (pulse.md): the rectangle its fighting units head for, engaging what comes within their
+   * reach on the way and standing there when nothing does — a campaign level's target, written into a map
+   * so the rule has a scenario of its own. Absent for a side that engages the nearest enemy wherever it is,
+   * as every side did before targets.
+   */
+  targets?: Readonly<Partial<Record<PlayerId, TargetArea>>>
 }>
 
 /**

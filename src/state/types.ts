@@ -59,6 +59,12 @@ export type GroundItem = Readonly<{
   sourceContentId: string
 }>
 
+/**
+ * A rectangle of the Grid a side's fighting units head for — a campaign level's target for the player's
+ * troops (pulse.md, perception and intents). Inclusive of its north-west tile, `width` by `height` tiles.
+ */
+export type TargetArea = Readonly<{ x: number; y: number; width: number; height: number }>
+
 export type VictoryReason = "nexus-destroyed" | "annihilation" | "tick-limit"
 
 export type Outcome = Readonly<{
@@ -87,6 +93,17 @@ export type MatchState = Readonly<{
   outcome: Outcome | null
   rng: RngState
   nextOrdinal: number
+  /**
+   * Where each side's fighting units head when no enemy is within their reach: the target a campaign
+   * level names for a side (pulse.md). A side with none keeps the rule every unit had before targets: it
+   * engages the nearest enemy, wherever that is. Only the trigger runner sets it (`src/match/mission.ts`),
+   * at a Pulse's start or between two ticks; the kernel reads it and never changes it.
+   *
+   * Absent, never empty, when no side has one — so a state without a target serializes and hashes byte for
+   * byte as it did before targets existed, which is also why adding it did not bump `SCHEMA_VERSION`, the
+   * way the production timers did not.
+   */
+  targets?: Readonly<Partial<Record<PlayerId, TargetArea>>>
 }>
 
 /**
