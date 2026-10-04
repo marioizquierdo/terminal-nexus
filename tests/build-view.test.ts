@@ -585,7 +585,7 @@ test("a panel with room for the card's words still draws them", () => {
   assert.match(roomy.text, /home to it after\./, "the description is cut short")
 })
 
-test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Pulse", () => {
+test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Battle Round", () => {
   // The panel's height is the viewport's, and the viewport shrinks to fit a Grid smaller than the
   // screen (`isGated` deliberately passes one that fits entirely); every row the panel draws must still
   // be drawn whole, and a building it has no room for is not drawn at all.
@@ -605,7 +605,7 @@ test("on a small Grid the panel's rows are drawn whole, however few fit: the Nex
       assert.ok(item !== undefined)
       assert.match(rows[line.row] as string, new RegExp(`\\[${item.hotkey}\\] ${item.label} +${item.cost}(?:[|+ ]|$)`), `${width}x${height}: ${item.label}`)
     }
-    assert.match(rows[startRow(layout)] as string, /\[s\] Start Pulse/, `${width}x${height}`)
+    assert.match(rows[startRow(layout)] as string, /\[s\] Start Battle Round/, `${width}x${height}`)
   }
 })
 

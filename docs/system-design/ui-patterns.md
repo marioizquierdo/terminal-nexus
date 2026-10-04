@@ -165,7 +165,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   the menu, which stays active as it travels); and **refused** — when a key reached the row but
   had nothing to do, **the words turn grey for a moment and the background stays**, reading "nothing
   here" rather than a press (dim in monochrome). (RULE — `tests/build-menu.test.ts`, `tests/build-card.test.ts`)
-- **Disabled** rows (unaffordable, or Start Pulse before the Nexus pick) are dimmed, and pressing one is
+- **Disabled** rows (unaffordable, or Start Battle Round before the Nexus pick) are dimmed, and pressing one is
   refused with its reason on the bottom line. (RULE — `tests/build-start.test.ts`)
 - **Timing lives in the live loop, never the reducer**: the reducer records an acknowledgement with a
   sequence number (`BuildState.ack`) and `src/view/build-live.ts` shows it from the frame that first
@@ -197,7 +197,7 @@ title screen's menu.
 - **One list**: `[e] Explore Map`, `[n] Nexus` (picks waiting as `(1)` in the hotkey colour), then **the
   credits line** — the blank line before the buildings, what is left to spend right-aligned in the cost
   column after the map's own resource symbol in the deposit's colour (`◆ 130`; `* 130` in ASCII) — every
-  building in catalog order with its cost, and `[s] Start Pulse` on the panel's last line.
+  building in catalog order with its cost, and `[s] Start Battle Round` on the panel's last line.
   (RULE — `tests/build-menu.test.ts`)
 - **Letters above the buildings, digits for them**, so no digit moves when an entry is added. No group
   headings until a real game needs them; if they return, one digit sequence runs through them. A row the
@@ -206,7 +206,7 @@ title screen's menu.
 - **No help text in the panel**: what a row does is the bottom line's to say.
   (RULE — `tests/build-start.test.ts`)
 - ***The raid in the panel*** (a named pattern: the owner's "reading the enemy intent is very important
-  for basic ui/ux interaction"): the free rows between the buildings and Start Pulse say what the coming
+  for basic ui/ux interaction"): the free rows between the buildings and Start Battle Round say what the coming
   round brings, under when it comes (`AS THE ROUND STARTS`, `7 SECONDS IN`): each group's count and where
   from (a compass point from the Nexus), its kinds, and what it goes for first (`goes for your
   Barracks`). They are information, not rows: nothing to highlight or click. Short of room they drop the
@@ -572,7 +572,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 - **The Pulse plays on the Build Phase's screen**; only the panel changes. It opens on the player's
   Nexus, the arrows look around, and the Pulse never waits for the player.
   (RULE — `tests/pulse-screen.test.ts`)
-- **The panel, in order**: `NEXUS PULSE 1` with the time left until the last shot; what the timer counts
+- **The panel, in order**: `BATTLE ROUND 1` with the time left until the last shot; what the timer counts
   and its speed; a line per side (units, a health bar, the number); the last five events in plain words,
   coloured by side; under them, while she is saying something and her voice shows in the feed, her glyph
   and name and her line; then `[space] Pause` and `[r] Watch again`. Speed (`[`, `]`) and stepping (`.`, `,`)

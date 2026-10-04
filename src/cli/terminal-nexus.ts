@@ -68,7 +68,7 @@ ${levels}
 
       A campaign level opens its Build Phase on its map and plays its mission from there: a
       Grid larger than the screen, a cursor that scrolls it, buildings to place by keyboard,
-      by mouse or from a script, a Nexus power to pick, then the Nexus Pulse. Esc opens the
+      by mouse or from a script, a Nexus power to pick, then the Battle Round. Esc opens the
       game menu: Settings, in sections - the display settings (saved, like the title menu's)
       and Experiments, the choices still being tried, live, never saved; d jumps straight to
       the first of them. "Export settings" copies them all as text. The game menu's Activity

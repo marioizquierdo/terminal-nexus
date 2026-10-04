@@ -92,15 +92,15 @@ test("a scripted playtest plays a Nexus Pulse on the script's own clock and show
   // Quarter-second frames, so the half-second cease fire is never stepped over.
   const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${plan} wait~250*80`) })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
-  const started = texts.findIndex((text) => text.includes("nexus pulse"))
+  const started = texts.findIndex((text) => text.includes("battle round"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
-  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:12 /m)
+  assert.match(texts[started]!, /^\| BATTLE ROUND 1 +0:12 /m)
   // Centred on the Nexus's own tile (the position readout that once said so is gone).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })
   assert.equal(first.camera.y, first.cursor.y - Math.floor((first.viewport.height - 1) / 2))
-  const seen = [/^\| NEXUS PULSE /m, /The Pulse is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
+  const seen = [/^\| BATTLE ROUND /m, /The battle is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
     texts.findIndex((text) => phase.test(text)),
   )
   assert.ok(seen.every((index) => index >= 0), `a phase never appeared: ${JSON.stringify(seen)}`)

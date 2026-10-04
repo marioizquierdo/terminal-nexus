@@ -107,8 +107,8 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
     assert.match(card, /^SIZE +3x2$/m)
     // Cost first, as the owner listed them ("cost, health, size, attack").
     assert.ok(card.indexOf("COST") < card.indexOf("HEALTH"))
-    // The card is the whole panel: no menu row, no Start Pulse, no help text.
-    assert.doesNotMatch(card, /\[\d\]|\[n\]|Start Pulse|\[e\]/)
+    // The card is the whole panel: no menu row, no Start Battle Round, no help text.
+    assert.doesNotMatch(card, /\[\d\]|\[n\]|Start Battle Round|\[e\]/)
     assert.equal(panelLine(side, compose(side), startRow(side.layout)).trim(), "")
     assert.doesNotMatch(card, /undo|remove|bksp/)
   }
@@ -227,7 +227,7 @@ test("every card fits the panel whole — its subtitle on one line beside the ic
         for (const stat of card.stats) {
           assert.ok(body.some((line) => line.startsWith(stat.label) && line.endsWith(stat.value)), `${where}: ${stat.label} is missing`)
         }
-        // Nothing runs past the last row the card may use, into the Start Pulse row or the bottom bar.
+        // Nothing runs past the last row the card may use, into the Start Battle Round row or the bottom bar.
         for (let row = menuFloor(side.layout) + 1; row <= side.layout.panelLastRow; row += 1) {
           assert.equal(lines[row - top]?.trim(), "", `${where}: the card runs into row ${row}`)
         }
@@ -272,7 +272,7 @@ test("a click anywhere on the panel while a card shows goes back to where it beg
     ["Explore Map from the menu", ["e"], "menu"],
   ] as const) {
     const { layout } = buildSide()
-    // The header, the card's first line, where Start Pulse and the Nexus rows would be on the menu.
+    // The header, the card's first line, where Start Battle Round and the Nexus rows would be on the menu.
     for (const row of [panelRow({ layout }, CARD_HEADER_ROW), panelRow({ layout }, CARD_FIRST_ROW), startRow(layout), panelRow({ layout }, NEXUS_ROW)]) {
       const side = buildSide()
       keys(side, ...begin)
@@ -340,7 +340,7 @@ test("beat 1: the chosen row, active, stays where it is on the menu while every 
     const frame = compose(side, { cardReveal: reveal(progress) }, capability)
     assert.match(panelLine(side, frame, home), /^\[3\] Turret +>$/)
     assert.match(panelLine(side, frame, panelRow(side, EXPLORE_ROW)), /^\[e\] Explore Map/, "the other rows are already gone")
-    assert.match(panelLine(side, frame, startRow(side.layout)), /^\[s\] Start Pulse/)
+    assert.match(panelLine(side, frame, startRow(side.layout)), /^\[s\] Start Battle Round/)
     assert.doesNotMatch(panelLines(side, frame).join("\n"), /-{10}/, "the card's separator is already drawn")
     const other = cellAt(frame, side.layout.panelColumn + 1, panelRow(side, EXPLORE_ROW)).style
     const chosen = cellAt(frame, side.layout.panelColumn + 1, home).style

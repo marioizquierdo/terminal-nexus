@@ -179,7 +179,7 @@ test("round 2's Battle Round screen is Battle Round 2, in the mission's own word
   assert.match(text, /Battle Round 2/)
   assert.match(text, /They are back, and there are more\./)
   side.build.dispatch({ kind: "start-pulse" })
-  assert.match(screenText(side), /NEXUS PULSE 2/)
+  assert.match(screenText(side), /BATTLE ROUND 2/)
 })
 
 test("Next round on auto: the next Build Phase begins on its own a moment after the result, and waits for no key", () => {

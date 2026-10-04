@@ -166,8 +166,8 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   },
   "menu-start": (context, state) =>
     pendingPicks(context, state) > 0
-      ? "Start Pulse: pick a Nexus power first - [n] opens them."
-      : `Start Pulse: lock in your plan and fight battle round ${state.pulseNumber}. [enter] to begin.`,
+      ? "Start Battle Round: pick a Nexus power first - [n] opens them."
+      : `Start Battle Round ${state.pulseNumber}: lock in your plan and fight. [enter] to begin.`,
 
   // --- The map ---
   // Its own key cancels it, as Esc does; another building waits until it is placed or
@@ -250,7 +250,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
         { keys: "1 2 3 ...", text: "arm a building, anywhere" },
         { keys: "e", text: "Explore Map" },
         { keys: "n", text: "the Nexus powers" },
-        { keys: "s", text: "Start Pulse (p works too)" },
+        { keys: "s", text: "Start Battle Round (or p)" },
         { keys: "u", text: "undo the last building" },
         { keys: "tab", text: "go to the map" },
         { keys: "esc", text: "the game menu" },
@@ -332,7 +332,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       ],
     },
     {
-      heading: "THE NEXUS PULSE",
+      heading: "THE BATTLE ROUND",
       lines: [
         { keys: "space", text: "pause or resume" },
         { keys: "[ and ]", text: "slower, faster" },

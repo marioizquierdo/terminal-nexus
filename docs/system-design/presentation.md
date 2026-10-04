@@ -131,7 +131,7 @@ What differs between the phases is what the side panel holds:
 
 | | Side panel carries |
 | --- | --- |
-| **Build Phase** | what is left to spend on its credits line, then `[e] Explore Map` and `[n] Nexus` (see [`input.md`](input.md)), the buildings with each row's cost, and `[s] Start Pulse` on its last line — or, while Explore Map is open or a building is being placed, a card in the menu's place (below) |
+| **Build Phase** | what is left to spend on its credits line, then `[e] Explore Map` and `[n] Nexus` (see [`input.md`](input.md)), the buildings with each row's cost, and `[s] Start Battle Round` on its last line — or, while Explore Map is open or a building is being placed, a card in the menu's place (below) |
 | **Nexus Pulse** | round number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
 
 **A refused placement is answered on the status line, and names its tile** (RULE —
@@ -185,7 +185,7 @@ symbol and what is left to spend (`* 130`, `◆ 130` in the Unicode pack), the s
 the map draws deposits with, in the deposit's colour, the amount bold, with no label and no maximum. The
 credits are on the menu alone (not on a card, the committed summary or a Nexus Pulse) and list movement
 skips their line. Then **every building as one list** in catalog order, one row each, numbered in that
-order, and `[s] Start Pulse` pinned to the panel's last line (RULE — `tests/build-menu.test.ts`). There
+order, and `[s] Start Battle Round` pinned to the panel's last line (RULE — `tests/build-menu.test.ts`). There
 are no group headings and no Special row; headings come back if a real game shows a list too long to
 read, and an empty group would then be drawn, not skipped, so no hotkey moves when content arrives. A
 building row the panel has no room for is neither drawn nor a click target. **The panel carries no help
@@ -206,7 +206,7 @@ one, or a bare tile's position). The same four parts describe a building being p
 standing building, the Grid Nexus, and bare ground. A card carries no status line, and its words are
 written with the content, not in the view. How it looks may later differ between placing a building,
 exploring in the Build Phase and exploring during a Pulse; that stays a drawing choice over the same
-card. Start Pulse hides with the rest of the menu.
+card. Start Battle Round hides with the rest of the menu.
 
 **The header's own hotkey cancels**: `e` closes Explore Map and a building's digit cancels it, as `x`, Esc
 or a click anywhere on the panel do, back to where the card was opened from (RULE —

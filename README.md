@@ -46,16 +46,16 @@ level, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its round
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
 - A menu on the left that runs the screen: Explore Map, the Nexus powers, a budget, a list of
-  buildings with their costs, and Start Pulse. A card replaces the menu while you explore a tile or
+  buildings with their costs, and Start Battle Round. A card replaces the menu while you explore a tile or
   place a building. Keyboard, mouse and a scripted driver all send the same commands.
 - Buildings are placed at the cursor with a short build animation and sparks. A refused placement
   says why and names its tile on the bottom line.
-- A Nexus power pick that may not be skipped, then **Start Pulse**.
+- A Nexus power pick that may not be skipped, then **Start Battle Round**.
 - **Settings** (Esc, then `s`) holds the player's own saved settings and, below them, **Experiments**:
   open design questions you can flip while playing. Export settings copies them as text to paste into
   a pull request, and `--settings` reads them back.
 
-Start Pulse runs the **Nexus Pulse**: the unmodified rules kernel resolves the plan you built. You
+Start Battle Round runs the **Nexus Pulse**: the unmodified rules kernel resolves the plan you built. You
 watch it with a countdown, a score and a feed of events, and you can pause, change speed, step and
 watch again. The first mission, **PERIMETER**, is three Battle Rounds, with the raid arriving in each.
 After each round there is a result, and Next round opens the next Build Phase on what survived.

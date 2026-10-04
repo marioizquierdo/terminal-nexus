@@ -25,7 +25,7 @@ import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 
 
 /** The title row's clock, whatever styling sits between the words and the time. */
-const timerAt = (write: string): string | undefined => new RegExp(`NEXUS PULSE 1(?:${ESC}\\[[0-9;]*m)* +(\\d:\\d\\d)`).exec(write)?.[1]
+const timerAt = (write: string): string | undefined => new RegExp(`BATTLE ROUND 1(?:${ESC}\\[[0-9;]*m)* +(\\d:\\d\\d)`).exec(write)?.[1]
 
 const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
 
@@ -294,7 +294,7 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
   assert.equal(timerAt(stdout.lastWrite), "0:12", "the Pulse did not open at zero")
-  assert.match(stdout.lastWrite, /nexus pulse/)
+  assert.match(stdout.lastWrite, /battle round/)
 
   t += 3_000
   await sleep(80)

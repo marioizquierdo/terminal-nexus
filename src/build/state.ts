@@ -1660,7 +1660,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return {
         ...closePopups(state),
         committed: false,
-        status: status(`The Nexus Pulse could not start: ${command.reason}`, "danger"),
+        status: status(`The Battle Round could not start: ${command.reason}`, "danger"),
       }
 
     case "focus":

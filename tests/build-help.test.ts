@@ -95,7 +95,7 @@ test("the answers players rely on still show right after their command, and laps
     ["remove", (side) => keys(side, TAB, "1", ENTER, BACKSPACE), /^Barracks removed, 40 back\.$/],
     ["cancel", (side) => keys(side, "1", ESC), /^Cancelled\.$/],
     ["restart", (side) => keys(side, ESC, "r"), /^Build Phase restarted with these settings\.$/],
-    ["a refused Start Pulse", (side) => keys(side, "s"), /^Pick a Nexus power first: \[n\] Nexus\.$/, "warning"],
+    ["a refused Start Battle Round", (side) => keys(side, "s"), /^Pick a Nexus power first: \[n\] Nexus\.$/, "warning"],
   ]
   for (const [name, drive, text, tone] of cases) {
     const side = buildSide()
@@ -181,8 +181,8 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, "1", ENTER, "1", ENTER, UP, DOWN), /^Barracks - Trains troopers\. Costs 40, only 20 left\.$/],
   ],
   "menu-start": [
-    [(side) => keys(side, PAGE_DOWN), /^Start Pulse: pick a Nexus power first - \[n\] opens them\.$/],
-    [(side) => keys(side, "n", "1", PAGE_DOWN), /^Start Pulse: lock in your plan and fight battle round 1\. \[enter\] to begin\.$/],
+    [(side) => keys(side, PAGE_DOWN), /^Start Battle Round: pick a Nexus power first - \[n\] opens them\.$/],
+    [(side) => keys(side, "n", "1", PAGE_DOWN), /^Start Battle Round 1: lock in your plan and fight\. \[enter\] to begin\.$/],
   ],
   placing: [[(side) => keys(side, "2"), /^Place the Hatchery: arrows move, \[enter\] places, \[2\] or \[esc\] cancels\.$/]],
   explore: [[(side) => keys(side, "e"), /^Explore Map: arrows move, the panel shows what is here\. \[esc\] goes back\.$/]],
@@ -339,7 +339,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "ANY LIST", "THE MOUSE", "THE NEXUS PULSE", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = buildSide({ terminal: size })
@@ -421,12 +421,12 @@ test("the Controls page says what Esc and x do on the menu, how placing is cance
 test("during a Nexus Pulse the one row is the Pulse's own line, and a popup over it says its own", () => {
   const played = play({ plan: DEFENCE })
   at(played, 0)
-  assert.equal(bottomLineText(played), "Nexus Pulse - 5 of yours against 7 of the raid.")
+  assert.equal(bottomLineText(played), "Battle Round - 5 of yours against 7 of the raid.")
   assert.equal(played.layout.viewport.height, 18)
   played.build.handleData("?", played.layout)
   assert.equal(played.build.state.popup, "controls")
   assert.equal(bottomLineText(played), "Every key and click, by where you are. Up/down scroll. [esc] closes.")
   played.build.handleData(ESC, played.layout, { now: 10 })
   assert.equal(played.build.state.popup, null)
-  assert.match(bottomLineText(played), /^Nexus Pulse - /)
+  assert.match(bottomLineText(played), /^Battle Round - /)
 })

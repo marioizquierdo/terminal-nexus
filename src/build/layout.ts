@@ -144,7 +144,7 @@ export function pulseControlAt(layout: BuildLayout, column: number, row: number)
  * grows, and the rest of the menu ends on the row above it. `s` is its hotkey.
  */
 export const START_KEY = "s"
-export const START_LABEL = "Start Pulse"
+export const START_LABEL = "Start Battle Round"
 
 export function startRow(layout: BuildLayout): number {
   return layout.panelLastRow

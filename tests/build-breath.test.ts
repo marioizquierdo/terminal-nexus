@@ -344,7 +344,7 @@ test("reduced motion and monochrome keep every border still and the timer quiet"
       for (const now of [0, 100, 300, 1000, 2250]) {
         const live = animation.frame(state, now, options)
         assert.equal(live.popupBorder, undefined, `${JSON.stringify(options)} ${popup}: the border moves at ${now} ms`)
-        // The pressed flash of Start Pulse's row may still be running at 0; after it, nothing.
+        // The pressed flash of Start Battle Round's row may still be running at 0; after it, nothing.
         if (now >= 300) assert.equal(live.busyUntil, null, `${JSON.stringify(options)} ${popup}: the frame timer runs at ${now} ms`)
       }
     }

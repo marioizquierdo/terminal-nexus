@@ -1,4 +1,4 @@
-// The `[s] Start Pulse` row and the Battle Round screen it opens (as the owner shaped them over his playtests):
+// The `[s] Start Battle Round` row and the Battle Round screen it opens (as the owner shaped them over his playtests):
 // the menu's last row, reached by Up/Down and pressed by Enter like every other
 // row, by `s` and by a click as shortcuts; and a confirmation whose title is "Battle Round 1", whose body
 // announces it, and whose one row, `[s] Start`, is what Enter, Space and `s` press. Driven through the
@@ -15,7 +15,7 @@ import { MINIMUM, click, frameOf, newSession, screenText } from "./pulse-helpers
 
 type Session = ReturnType<typeof newSession>
 
-/** A session with a Nexus power picked (the War Chest), so Start Pulse is ready. */
+/** A session with a Nexus power picked (the War Chest), so Start Battle Round is ready. */
 function ready(size = MINIMUM): Session {
   const session = newSession(size)
   session.build.dispatch({ kind: "pick-nexus", index: 1 })
@@ -28,21 +28,21 @@ function startLine(session: Session): string {
   return screenText(session).split("\n")[startRow(layout)]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit)
 }
 
-test("Start Pulse is the menu's last entry, one plain row on the panel's bottom line, with its hotkey", () => {
+test("Start Battle Round is the menu's last entry, one plain row on the panel's bottom line, with its hotkey", () => {
   const session = ready()
   const entries = menuEntries(session.context)
   assert.equal(entries[entries.length - 1]?.kind, "start")
   assert.equal(entries.length - 1, startEntry(session.context.catalog.length))
   assert.equal(startRow(session.layout), session.layout.panelLastRow)
   assert.equal(startLine(session).trimEnd(), `[s] ${START_LABEL}`)
-  assert.equal(START_LABEL, "Start Pulse")
+  assert.equal(START_LABEL, "Start Battle Round")
   // No box: the rows around it in the panel are plain text, not a button's border.
   const rows = screenText(session).split("\n")
   const { layout } = session
   assert.doesNotMatch(rows[startRow(layout) - 1]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit), /[+-]{3}/, "a box's top edge")
 })
 
-test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey and no mouse needed", () => {
+test("Down reaches Start Battle Round, and Enter, Enter starts the Pulse — no hotkey and no mouse needed", () => {
   const session = ready()
   const last = menuEntries(session.context).length - 1
   // Only Down and Enter are pressed: the highlight walks the whole menu and arrives on its last entry.
@@ -51,7 +51,7 @@ test("Down reaches Start Pulse, and Enter, Enter starts the Pulse — no hotkey 
     session.build.handleData(DOWN, session.layout)
     presses += 1
   }
-  assert.equal(session.build.state.menuHighlight, last, "Down never reached Start Pulse")
+  assert.equal(session.build.state.menuHighlight, last, "Down never reached Start Battle Round")
   session.build.handleData("\r", session.layout)
   assert.equal(session.build.state.popup, "battle-round")
   session.build.handleData("\r", session.layout)
@@ -77,7 +77,7 @@ test("the rule: every entry of the menu is reached by Down and done by Enter alo
         assert.equal(state.armed, entry.index, `Enter on construct row ${entry.index} did not arm it`)
         break
       case "start":
-        assert.equal(state.popup, "battle-round", "Enter on Start Pulse did not open its screen")
+        assert.equal(state.popup, "battle-round", "Enter on Start Battle Round did not open its screen")
         break
       default: {
         const unhandled: never = entry
@@ -87,7 +87,7 @@ test("the rule: every entry of the menu is reached by Down and done by Enter alo
   })
 })
 
-test("Start Pulse is dim while a Nexus power waits to be picked, and bright once it is", () => {
+test("Start Battle Round is dim while a Nexus power waits to be picked, and bright once it is", () => {
   const waiting = newSession()
   const { layout } = waiting
   const label = (session: Session) => cellAt(frameOf(session), layout.panelColumn + 4, startRow(layout)).style
@@ -123,13 +123,13 @@ test("s, p, a click and Enter on the highlighted row all ask the same, and refus
   }
 })
 
-test("a click on the row hits the Start Pulse entry, and the row above it hits its own", () => {
+test("a click on the row hits the Start Battle Round entry, and the row above it hits its own", () => {
   const { layout, context } = ready()
   assert.equal(menuEntryAt(layout, context.catalog, layout.panelColumn + 2, startRow(layout)), startEntry(context.catalog.length))
   assert.notEqual(menuEntryAt(layout, context.catalog, layout.panelColumn + 2, startRow(layout) - 1), startEntry(context.catalog.length))
 })
 
-test("Esc on the Battle Round screen goes back to the menu, the highlight on Start Pulse", () => {
+test("Esc on the Battle Round screen goes back to the menu, the highlight on Start Battle Round", () => {
   const session = ready()
   session.build.handleData("s", session.layout)
   assert.equal(session.build.state.popup, "battle-round")
@@ -137,17 +137,17 @@ test("Esc on the Battle Round screen goes back to the menu, the highlight on Sta
   assert.equal(session.build.state.popup, null)
   assert.equal(session.build.state.focus, "menu")
   const entries = menuEntries(session.context)
-  assert.equal(session.build.state.menuHighlight, entries.length - 1, "Esc did not leave the highlight on Start Pulse")
+  assert.equal(session.build.state.menuHighlight, entries.length - 1, "Esc did not leave the highlight on Start Battle Round")
 })
 
-test("the menu gives way to Explore Map, Start Pulse with the rest of it — and a click there only closes Explore Map", () => {
+test("the menu gives way to Explore Map, Start Battle Round with the rest of it — and a click there only closes Explore Map", () => {
   const session = ready()
   session.build.dispatch({ kind: "explore" })
-  assert.doesNotMatch(startLine(session), /Start Pulse/)
+  assert.doesNotMatch(startLine(session), /Start Battle Round/)
   click(session, session.layout.panelColumn + 3, startRow(session.layout))
   assert.equal(session.build.state.popup, null, "a click on the hidden row opened the confirmation")
   assert.equal(session.build.state.exploreMap, false)
-  assert.match(startLine(session), /Start Pulse/)
+  assert.match(startLine(session), /Start Battle Round/)
 })
 
 test("the Battle Round screen: its title, what it announces, and one highlighted row, [s] Start", () => {
@@ -242,18 +242,18 @@ test("s is still Settings inside the game menu, and pressing Start during a Puls
   assert.match(playing.build.state.status.text, /committed/)
 })
 
-test("at the floor the menu and Start Pulse fit with no help text between them, and the armed building's card has room", () => {
-  // The key help that overflowed into the panel used to stack directly above Start Pulse; the panel
+test("at the floor the menu and Start Battle Round fit with no help text between them, and the armed building's card has room", () => {
+  // The key help that overflowed into the panel used to stack directly above Start Battle Round; the panel
   // carries no help text now.
   const session = ready()
   session.build.dispatch({ kind: "focus", target: "menu" })
   const { layout } = session
   const panel = (rows: string[], row: number): string => rows[row]!.slice(layout.panelColumn, layout.panelColumn + layout.panelLimit).trimEnd()
   const menu = screenText(session).split("\n")
-  assert.equal(panel(menu, startRow(layout)), "[s] Start Pulse")
+  assert.equal(panel(menu, startRow(layout)), "[s] Start Battle Round")
   assert.equal(panel(menu, startRow(layout) - 1), "")
   session.build.handleData("1", session.layout) // arm the Barracks: its card replaces the menu
   const card = screenText(session).split("\n")
   assert.match(card.join("\n"), /home to it after\./, "the card has no room for what the building does")
-  assert.equal(panel(card, startRow(layout)), "", "Start Pulse is the menu's, and hides with it")
+  assert.equal(panel(card, startRow(layout)), "", "Start Battle Round is the menu's, and hides with it")
 })

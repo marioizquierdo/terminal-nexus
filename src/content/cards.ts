@@ -21,12 +21,12 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.barracks": {
     title: "Barracks",
     subtitle: "Trains troopers",
-    description: "Trains a trooper every few seconds of a Pulse. They join the fight, and come home to it after.",
+    description: "Trains a trooper every few seconds of a battle. They join the fight, and come home to it after.",
   },
   "structure.bench.hatchery": {
     title: "Hatchery",
     subtitle: "Spawns swarmers",
-    description: "Breeds small biting swarmers during a Pulse, one every few seconds, three at most. They rush the enemy.",
+    description: "Breeds small biting swarmers during a battle, one every few seconds, three at most. They rush the enemy.",
   },
   "structure.bench.beamturret": {
     title: "Turret",
@@ -38,7 +38,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.nexus": {
     title: "Citizen Nexus",
     subtitle: "Your base: guard it",
-    description: "The heart of everything you build. If it falls, the Pulse is lost: put your defences in front of it.",
+    description: "The heart of everything you build. If it falls, the battle is lost: put your defences in front of it.",
   },
 
   // --- On the map between rounds: survivors of both sides, the raid's camp, what is coming ---

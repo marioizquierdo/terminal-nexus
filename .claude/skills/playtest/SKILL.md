@@ -66,7 +66,7 @@ dialog at the bottom, which holds the keyboard: every opening below starts after
 
 - `n 1`: pick the first Nexus power; the popup closes and the highlight stays on the Nexus row.
 - `n 1 Down Down Space`: arm the Hatchery from the menu; the panel becomes its card.
-- `n 1 PgDn Enter`: the Battle Round screen (`PgDn` goes to the last row, Start Pulse; without a power
+- `n 1 PgDn Enter`: the Battle Round screen (`PgDn` goes to the last row, Start Battle Round; without a power
   picked first, the bottom line says so instead).
 - `n 2 s s wait~1000*20`: a whole Pulse with nothing built, twenty seconds in; the second `s` starts it.
 - `--at 'campaign?level=vasse-test-1&round=2'` with no keys: round 2 as it opens, round 1 played with

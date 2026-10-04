@@ -286,9 +286,9 @@ export function pulseSubtitle(pulse: PulseFrame): string {
     case "walking":
       return "recall"
     case "home":
-      return `nexus pulse - ${pulse.result.headline.toLowerCase()}`
+      return `battle round - ${pulse.result.headline.toLowerCase()}`
     default:
-      return "nexus pulse"
+      return "battle round"
   }
 }
 
@@ -302,15 +302,15 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
   const held = pulse.paused && pulse.phase !== "home" ? "Paused. " : ""
   switch (pulse.phase) {
     case "final":
-      return status(`${held}The Pulse is about to end.`)
+      return status(`${held}The battle is about to end.`)
     case "halted":
-      return status(`${held}Cease fire. The Pulse is over.`)
+      return status(`${held}Cease fire. The battle is over.`)
     case "walking":
       return status(`${held}Recall - the survivors are heading home.`)
     case "home":
       return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
     default:
-      return status(`${held}Nexus Pulse - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the raid.`)
+      return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the raid.`)
   }
 }
 
@@ -367,7 +367,7 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
     case "structure.destroyed":
       return { text: `${at} ${whoIs(event.entity).name} falls`, role: sideRole(whoIs(event.entity).player) }
     case "pulse.ended":
-      return { text: `${at} the Pulse ends`, role: "chrome.title" }
+      return { text: `${at} the battle ends`, role: "chrome.title" }
     default:
       return null
   }
@@ -436,7 +436,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
         bold: lit,
         inverse: lit,
       })
-      line(`NEXUS PULSE ${pulseNumber}`, "chrome.title", { bold: true, limit: right - timer.length - 1 })
+      line(`BATTLE ROUND ${pulseNumber}`, "chrome.title", { bold: true, limit: right - timer.length - 1 })
       line(`time left  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
     }
   }

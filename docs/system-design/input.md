@@ -45,7 +45,7 @@ snapshots rather than as pixels or ANSI. Two things follow:
   command.
 
 **Menus — RULE** (`tests/build-help.test.ts`, `tests/build-view.test.ts`, `tests/build-start.test.ts`).
-Every menu item displays its hotkey before its label — `[1] Barracks`, `[s] Start Pulse` — and pressing
+Every menu item displays its hotkey before its label — `[1] Barracks`, `[s] Start Battle Round` — and pressing
 that key activates the item. **A hotkey that is not displayed does not exist**: the bottom line never
 names a key the keyboard adapter does not bind, and the Controls page names only keys the adapters bind
 and lists every command key they bind. Arrow keys and Enter also work on every list, and Esc backs out of
@@ -98,7 +98,7 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 | Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid in plain navigation, nothing armed); does nothing while a popup is open | **Focus is its own state beside `armed`**, and a structure is armed only while the Grid has focus; finishing returns focus to where it began. The bottom line's hint is written for where focus is, because focus makes arrows mean two things. Whether a key should jump the cursor to the player's next own structure is an open question (Q53) |
 | Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit. The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu; Esc does. On the menu, where the cursor is hidden, it is refused: the row flickers, as Left and Right do; refused, naming it, while another planned building needs its build range |
 | `u` | undo the last planned placement | refused the same way, while another planned building needs its build range |
-| `s`, `p` | Start Nexus Pulse — the menu's last row, `[s] Start Pulse`; `p`, its first key, still works | moves focus to the menu and opens the Battle Round screen, where Enter, Space or `s` again start it and Esc goes back; the one action that must not fire by accident. Refused while a dealt Nexus power is still waiting to be picked |
+| `s`, `p` | Start the Battle Round — the menu's last row, `[s] Start Battle Round`; `p`, its first key, still works | moves focus to the menu and opens the Battle Round screen, where Enter, Space or `s` again start it and Esc goes back; the one action that must not fire by accident. Refused while a dealt Nexus power is still waiting to be picked |
 | `n` | open the Nexus powers popup — the menu's `[n] Nexus` entry | pressed again inside the popup, closes it |
 | `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves. Opened from the menu, the cursor first moves to clear ground by the arming rule for a one-tile footprint; opened from the map it stays | a toggle, its row drawn active while open. Tab arrives in plain navigation instead |
 | `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. The top bar's `menu [esc]` is Esc, which on the menu opens it |

@@ -456,7 +456,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       const powers = nexusPowers(context, state)
       const rows: PopupRow[] = [{ kind: "blank" }]
       if (powers.pending.length > 0) {
-        rows.push({ kind: "heading", text: "PICK ONE - needed before the Pulse" })
+        rows.push({ kind: "heading", text: "PICK ONE - needed before the battle" })
         powers.pending.forEach(({ index, option }, position) => {
           rows.push({
             kind: "option",

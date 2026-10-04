@@ -151,10 +151,10 @@ test("the panel says the coming raid in every round, inside the panel's free row
     const asked = raidLines(context, side.build.raid() ?? [], { x: 18, y: 10 }, layout.panelLimit - 1, rows.last - rows.first + 1)
     assert.deepEqual(lines, asked.map((line) => `${" ".repeat(line.indent)}${line.parts.map((part) => part.text).join("")}`))
     for (const line of lines) assert.ok(line.length <= layout.panelLimit - 1, `"${line}" runs to the divider`)
-    // A blank row after the buildings, and before Start Pulse, which keeps its row.
+    // A blank row after the buildings, and before Start Battle Round, which keeps its row.
     assert.equal(panelLine(side, frame, rows.first - 1).trim(), "")
     assert.equal(panelLine(side, frame, startRow(layout) - 1).trim(), "")
-    assert.match(panelLine(side, frame, startRow(layout)), /\[s\] Start Pulse/)
+    assert.match(panelLine(side, frame, startRow(layout)), /\[s\] Start Battle Round/)
   })
 })
 
@@ -165,11 +165,11 @@ test("the raid's lines are information, not rows: no click lands on one, and the
   for (let row = rows.first; row <= rows.last; row += 1) {
     assert.equal(menuEntryAt(side.layout, side.context.catalog, side.layout.panelColumn + 3, row), null, `row ${row} is clickable`)
   }
-  // Down from the last building is Start Pulse.
+  // Down from the last building is Start Battle Round.
   keys(side, "\u001b[F") // End: the last row
   const last = side.build.state.menuHighlight
   keys(side, "\u001b[A") // Up: the last building
-  keys(side, "\u001b[B") // Down: straight back to Start Pulse
+  keys(side, "\u001b[B") // Down: straight back to Start Battle Round
   assert.equal(side.build.state.menuHighlight, last)
 })
 

@@ -593,7 +593,7 @@ scripted(
 
 scripted(
   "build-menu-hint",
-  "The menu, one list: Explore Map, Nexus, the credits with the map's resource symbol in the cost column, the buildings, Start Pulse last. With the Hatchery highlighted the bottom line says what it does and what it costs",
+  "The menu, one list: Explore Map, Nexus, the credits with the map's resource symbol in the cost column, the buildings, Start Battle Round last. With the Hatchery highlighted the bottom line says what it does and what it costs",
   { keys: `${PICK_FIRST_POWER} Down*2`, expect: "Hatchery - Spawns swarmers" },
 )
 
@@ -624,13 +624,13 @@ handoffGif("build-focus-arrow-far", {
 
 scripted(
   "build-start-row",
-  "Start Pulse is the menu's last row: Down reaches it and stops there, PageDown (or Shift+Down, or End) jumps to it, Enter presses it",
-  { keys: `${PICK_FIRST_POWER} PgDn`, expect: "[s] Start Pulse" },
+  "Start Battle Round is the menu's last row: Down reaches it and stops there, PageDown (or Shift+Down, or End) jumps to it, Enter presses it",
+  { keys: `${PICK_FIRST_POWER} PgDn`, expect: "[s] Start Battle Round" },
 )
 
 scripted(
   "build-nexus-confirm",
-  "Start Pulse opens Battle Round 1: what it announces, and one row, [s] Start. Esc goes back",
+  "Start Battle Round opens Battle Round 1: what it announces, and one row, [s] Start. Esc goes back",
   { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1" },
 )
 

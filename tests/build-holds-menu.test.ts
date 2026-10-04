@@ -1,5 +1,5 @@
 // A building being placed holds the menu (docs/system-design/ui-patterns.md, "A selection holds the menu"): it stays
-// the selection until it is placed or cancelled — another building's key, Explore Map and Start Pulse
+// the selection until it is placed or cancelled — another building's key, Explore Map and Start Battle Round
 // are refused, with the header flickering and the bottom line naming the ways out; its own key cancels it
 // as Esc does; and popups still open over it and hand it back, still armed. Explore Map holds nothing.
 // Driven through raw bytes into the real adapters, and through the driver where the lock is the

@@ -1,6 +1,6 @@
 // The Build Phase menu (docs/system-design/ui-patterns.md, "Menu rows" and "The Build Phase menu"): one list —
 // Explore Map, Nexus, the credits line with the map's resource symbol, every building with its cost,
-// Start Pulse on the last line — drawn where the mouse finds it; a row's two states, highlighted and
+// Start Battle Round on the last line — drawn where the mouse finds it; a row's two states, highlighted and
 // active, and its two brief acknowledgements, pressed and refused; Left and Right that only flicker; and
 // the one flash on the way back to the menu. No row or height is hardcoded: every place is read from
 // the layout.
@@ -53,7 +53,7 @@ const barracksRow = (side: Side): number => menuEntryRow(side.layout, STARTER_CA
 
 // --- The list and the credits line ---------------------------------------------------------------------
 
-test("the menu reads Explore Map, Nexus, the credits line, every building with its cost, and Start Pulse on the last line", () => {
+test("the menu reads Explore Map, Nexus, the credits line, every building with its cost, and Start Battle Round on the last line", () => {
   for (const terminal of [MINIMUM, ROOMY]) {
     for (const pack of ["ascii", "unicode"] as const) {
       const side = buildSide({ terminal })
@@ -81,12 +81,12 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
         assert.equal(lines[index]?.row, panelRow(side, CREDITS_ROW) + 1 + index, "the buildings are not one row apart under the credits")
         assert.equal(line(lines[index]?.row as number), `[${item.hotkey}] ${item.label}`.padEnd(layout.panelLimit - String(item.cost).length) + String(item.cost))
       })
-      // Nothing between the last building and Start Pulse: no headings, no help text.
+      // Nothing between the last building and Start Battle Round: no headings, no help text.
       for (let row = (lines.at(-1)?.row as number) + 1; row < startRow(layout); row += 1) {
         assert.equal(line(row).trim(), "", `row ${row} is not empty: "${line(row)}"`)
       }
       assert.equal(startRow(layout), layout.panelLastRow)
-      assert.match(line(startRow(layout)), /^\[s\] Start Pulse +$/)
+      assert.match(line(startRow(layout)), /^\[s\] Start Battle Round +$/)
     }
   }
 })
@@ -120,7 +120,7 @@ test("the map draws its deposits with the very glyph the credits line uses", () 
 })
 
 test("a building row the panel is too short for is neither drawn nor a click target", () => {
-  // Three more buildings than the floor's panel holds between Nexus and Start Pulse.
+  // Three more buildings than the floor's panel holds between Nexus and Start Battle Round.
   const floor = buildLayout(MINIMUM, starterContext().grid)
   const room = menuFloor(floor) - (floor.panelRow + CREDITS_ROW + 1) + 1
   const long: ConstructItem[] = Array.from({ length: room + 3 }, (_, index) => ({
@@ -132,7 +132,7 @@ test("a building row the panel is too short for is neither drawn nor a click tar
   const { layout } = side
   const lines = constructLines(layout, long)
   assert.ok(lines.length < long.length, "the floor's panel holds every row: the test needs a longer list")
-  assert.equal(lines.at(-1)?.row, menuFloor(layout), "the list stops on the row above Start Pulse")
+  assert.equal(lines.at(-1)?.row, menuFloor(layout), "the list stops on the row above Start Battle Round")
   const hidden = lines.length
   assert.equal(menuEntryRow(layout, long, { kind: "construct", index: hidden }), null)
   assert.doesNotMatch(panelLines(side, compose(side)).join("\n"), new RegExp(`Row ${hidden + 1}\\b`))
@@ -162,13 +162,13 @@ test("every menu row is drawn where the mouse finds it and where the keyboard's 
 
 test("an active row keeps its own hotkey and ends in one >, all in the hotkey colour and bold, never underlined or barred — one look for every row, at every colour depth", () => {
   // `[1] Barracks  >` (owner, 2026-09-30). A building and Explore Map head their
-  // card; Nexus and Start Pulse stay on the menu behind their popup.
+  // card; Nexus and Start Battle Round stay on the menu behind their popup.
   const cases: readonly [string, readonly string[], (side: Side) => number, RegExp][] = [
     ["a building by its digit", ["1"], (side) => panelRow(side, CARD_HEADER_ROW), /^\[1\] Barracks +>$/],
     ["a building from its row", [DOWN, DOWN, DOWN, ENTER], (side) => panelRow(side, CARD_HEADER_ROW), /^\[2\] Hatchery +>$/],
     ["Explore Map", ["e"], (side) => panelRow(side, CARD_HEADER_ROW), /^\[e\] Explore Map +>$/],
     ["Nexus", ["n"], (side) => panelRow(side, NEXUS_ROW), /^\[n\] Nexus \(1\) +>$/],
-    ["Start Pulse", ["n", "1", "s"], (side) => startRow(side.layout), /^\[s\] Start Pulse +>$/],
+    ["Start Battle Round", ["n", "1", "s"], (side) => startRow(side.layout), /^\[s\] Start Battle Round +>$/],
   ]
   for (const [name, open, rowOf, reads] of cases) {
     for (const capability of CAPABILITY_MODES) {

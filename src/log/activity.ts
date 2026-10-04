@@ -120,7 +120,7 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.start": {
     defaultLevel: "info",
-    description: "The Nexus Pulse started.",
+    description: "A Battle Round's battle started.",
     props: {
       round: { type: "number", description: "Which Battle Round." },
       buildings: { type: "number", description: "How many buildings the plan placed." },
@@ -128,7 +128,7 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.end": {
     defaultLevel: "info",
-    description: "The Nexus Pulse ended and its result stands.",
+    description: "A Battle Round's battle ended and its result stands.",
     props: {
       result: { type: "string", description: "won, lost, drawn or timed out." },
       reason: { type: "string", description: "Why, as the result line says it." },
@@ -136,7 +136,7 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.trained": {
     defaultLevel: "info",
-    description: "What the Barracks trained in the Nexus Pulse just ended, and what came of them (step 6C).",
+    description: "What the Barracks trained in the battle just ended, and what came of them.",
     props: {
       round: { type: "number", description: "Which Battle Round." },
       buildings: { type: "number", description: "How many of the player's buildings trained this round." },
@@ -224,7 +224,7 @@ export type ActivityLog = typeof activity
 export const ACTIVITY_FILTERS: readonly LogFilter[] = [
   {
     name: "Interactions",
-    question: "What you did and what the game answered: buildings placed and refused, popups, settings, the Pulse, errors.",
+    question: "What you did and what the game answered: buildings placed and refused, popups, settings, the battle, errors.",
     level: "info",
   },
   { name: "Problems", question: "Only errors and warnings.", level: "warn" },

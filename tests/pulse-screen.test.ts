@@ -64,15 +64,15 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.equal(state.focus, "grid", "the keyboard is not on the map, so the arrows would move a menu highlight")
   assert.equal(state.armed, null)
   const text = screenText(played)
-  assert.match(text, /TERMINAL NEXUS nexus pulse/)
-  assert.match(text, /^\| NEXUS PULSE 1 +\d:\d\d +[|+]/m)
+  assert.match(text, /TERMINAL NEXUS battle round/)
+  assert.match(text, /^\| BATTLE ROUND 1 +\d:\d\d +[|+]/m)
   assert.match(text, /^\| time left {2}1x/m)
   assert.match(text, /YOU {3}5 \[#+\]/)
   assert.match(text, /RAID {2}7 \[#+\]/)
   assert.match(text, /\[space\] Pause/)
   assert.match(text, /\[r\] Watch again/)
   // The bottom bar's one line is the Pulse's own; its keys are on the Controls page.
-  assert.match(text, /\| Nexus Pulse - 5 of yours against 7 of the raid\. +\|/)
+  assert.match(text, /\| Battle Round - 5 of yours against 7 of the raid\. +\|/)
   assert.match(text, /menu \[esc\]/)
   // The Build Phase's menu is gone: nothing left to build, nothing to pick, no credits.
   assert.doesNotMatch(text, /\[1\] Barracks|\* \d|\[e\] Explore Map/)
@@ -111,9 +111,9 @@ test("the ending says what is happening in words at every moment: the last secon
   // says the end is near in plain words — no banner, nothing that needs a flash or a colour to be read.
   at(played, moments.warnMs + 40)
   const final = screenText(played)
-  assert.match(final, /TERMINAL NEXUS nexus pulse\b/)
-  assert.match(final, /^\| NEXUS PULSE 1 +0:0[123] +[|+]/m)
-  assert.match(final, /The Pulse is about to end\./)
+  assert.match(final, /TERMINAL NEXUS battle round\b/)
+  assert.match(final, /^\| BATTLE ROUND 1 +0:0[123] +[|+]/m)
+  assert.match(final, /The battle is about to end\./)
   assert.doesNotMatch(final, /PULSE ENDING|hold your fire/)
 
   at(played, moments.stopMs + 20)
@@ -121,7 +121,7 @@ test("the ending says what is happening in words at every moment: the last secon
   assert.match(halted, /TERMINAL NEXUS cease fire/)
   assert.match(halted, /^\| CEASE FIRE /m)
   assert.match(halted, /The shooting has stopped\./)
-  assert.match(halted, /Cease fire\. The Pulse is over\./)
+  assert.match(halted, /Cease fire\. The battle is over\./)
 
   at(played, moments.walkMs + 20)
   const walking = screenText(played)
@@ -132,7 +132,7 @@ test("the ending says what is happening in words at every moment: the last secon
 
   at(played, moments.homeMs + 20)
   const home = screenText(played)
-  assert.match(home, /TERMINAL NEXUS nexus pulse - victory/)
+  assert.match(home, /TERMINAL NEXUS battle round - victory/)
   assert.match(home, /^\| VICTORY /m)
   assert.match(home, /The raid was wiped out\./)
   assert.match(home, /\d+ of yours came home\./)
@@ -152,7 +152,7 @@ test("the timer counts down the seconds left to the last shot, and its last seco
   const stop = Math.ceil(moments.stopMs / 1000)
   const clock = (ms: number): string => {
     at(played, ms)
-    return /^\| NEXUS PULSE 1 +(\d:\d\d) +[|+]/m.exec(screenText(played))?.[1] ?? "none"
+    return /^\| BATTLE ROUND 1 +(\d:\d\d) +[|+]/m.exec(screenText(played))?.[1] ?? "none"
   }
   const m = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
   assert.equal(clock(0), m(stop))
@@ -183,7 +183,7 @@ test("a lost Pulse and a timed-out one say so plainly, and a force wiped out wit
   at(timedOut, 0)
   // A scheduled ending reads like a sudden one: it too gets its last seconds, ahead of the stop.
   at(timedOut, times(timedOut).warnMs! + 40)
-  assert.match(screenText(timedOut), /The Pulse is about to end\./)
+  assert.match(screenText(timedOut), /The battle is about to end\./)
   at(timedOut, times(timedOut).homeMs + 100)
   assert.match(screenText(timedOut), /^\| TIME'S UP /m)
   assert.match(screenText(timedOut), /The time ran out before/)
@@ -542,7 +542,7 @@ test("Watch again replays from the top and frames the view again", () => {
   assert.match(screenText(played), /^\| VICTORY /m)
   played.build.dispatch({ kind: "pulse", control: "restart" })
   at(played, moments.homeMs + 600)
-  assert.match(screenText(played), /^\| NEXUS PULSE /m)
+  assert.match(screenText(played), /^\| BATTLE ROUND /m)
   assert.deepEqual(played.build.state.cursor, nexusTile(played.context), "the view was not framed again")
 })
 
@@ -621,7 +621,7 @@ test("a Pulse the kernel cannot start from undoes the commit and says why, rathe
   assert.equal(build.state.committed, false, "the commit stood with no Pulse behind it")
   assert.equal(build.pulse, null)
   assert.equal(build.state.status.tone, "danger")
-  assert.match(build.state.status.text, /The Nexus Pulse could not start: no room for the units/)
+  assert.match(build.state.status.text, /The Battle Round could not start: no room for the units/)
   // The plan is still editable: they can fix it and try again.
   build.dispatch({ kind: "arm", index: 0 })
   assert.equal(build.state.armed, 0)
@@ -642,7 +642,7 @@ test("nobody draws the Pulse in the Build Phase, and the Build Phase's frame is 
   const session = newSession()
   const plain = frameToText(composeBuildFrame({ context: session.context, state: session.build.state, layout: session.layout }, "monochrome"))
   assert.match(plain, /TERMINAL NEXUS build phase/)
-  assert.doesNotMatch(plain, /NEXUS PULSE|Watch again/)
+  assert.doesNotMatch(plain, /BATTLE ROUND|Watch again/)
   assert.equal(session.build.pulse, null)
   assert.equal(session.build.pulseFrame(session.layout), undefined)
 })
