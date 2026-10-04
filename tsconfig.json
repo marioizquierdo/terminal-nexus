@@ -13,6 +13,7 @@
     "verbatimModuleSyntax": true,
     "erasableSyntaxOnly": true,
     "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
     "rewriteRelativeImportExtensions": false,
     "noEmit": true,
     "skipLibCheck": true,

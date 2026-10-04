@@ -12,10 +12,14 @@
 // reference before anything runs, and a replay re-derive every action from the mission, the seed and the
 // plans.
 //
+// A mission is written as JSON in its campaign's bundle (`bundles/<id>/bundle.json`, read by `src/bundles`), so
+// what a TypeScript comment once said about a choice is said in `notes` — on the mission, a region or a trigger —
+// which nothing reads. The bundle loader checks a mission's JSON against these shapes first
+// (`src/bundles/mission-shape.ts`): a kind added to the vocabulary here is added there too, or it is refused.
+//
 // Pure data: nothing here imports the kernel, so the Build Phase may read a mission's shape without ever
 // reaching `src/pulse` (tests/architecture.test.ts).
 
-import type { DeckOverride } from "../content/armies.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 
@@ -27,6 +31,8 @@ export type Region = Readonly<{
   y: number
   width: number
   height: number
+  /** Why it is where it is: for whoever edits the mission, never read. */
+  notes?: string
 }>
 
 /**
@@ -133,23 +139,19 @@ export type TriggerDefinition = Readonly<{
   id: string
   when: TriggerCondition
   do: readonly TriggerAction[]
+  /** Why it does what it does, when it does: for whoever edits the mission, never read. */
+  notes?: string
 }>
 
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
- * the part of campaigns.md's `MissionDefinition` PERIMETER needs — the player's deck, but no opponent deck,
- * unlock record or objectives list yet; the map is still the Build Phase's starter one, named by the adapter.
+ * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no opponent army or objectives list yet.
+ * What the player may build and draft, the credits and the map are the level's that plays it (a campaign's
+ * level in its bundle: `src/bundles`), not the mission's.
  */
 export type MissionDefinition = Readonly<{
   id: string
   name: string
-  /**
-   * The deck the player plays: a Commander's deck by id (`src/content/armies.ts`), and what this mission makes
-   * of it. The Campaign develops a deck level by level, so a level names what of it is unlocked — or overrides
-   * any part outright — and the Build Phase is built from the result (`deckOf`). Checked with the rest of the
-   * mission: an unknown deck, or an override that names what the deck does not hold, is refused.
-   */
-  player?: Readonly<{ army: string; override?: DeckOverride }>
   /** How many Pulses the mission plans for. The last one's end must decide the mission. */
   pulses: number
   /** Every Pulse's length in ticks: the kernel's tick limit. */
@@ -167,6 +169,8 @@ export type MissionDefinition = Readonly<{
   /** One line the last result says when the mission is won or lost — presentation data, never read by
    *  the runner. */
   endText?: Readonly<{ won: string; lost: string }>
+  /** Why the mission is as it is — its tuning, its seed, what it borrows: for whoever edits it, never read. */
+  notes?: string
 }>
 
 /** A mission that fails validation, with every problem found — not just the first. */

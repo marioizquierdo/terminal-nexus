@@ -5,8 +5,6 @@
 // Deterministic and blind to presentation, like the rest of the rules layer: no clock, no randomness,
 // nothing drawn.
 
-import { armyById, deckOf, deckProblems } from "../content/armies.ts"
-import type { CommanderArmy } from "../content/armies.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { inBounds, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
@@ -53,21 +51,11 @@ export function actionName(action: TriggerAction): string {
 const isPositiveInteger = (value: number): boolean => Number.isInteger(value) && value > 0
 
 /**
- * The deck a mission's player plays, its override applied (`deckOf`), or `null` when the mission names none.
- * Throws `MissionError` when it names a deck that does not exist, so a Build Phase is never assembled from
- * one; everything else about the deck is checked by `validateMission`.
- */
-export function missionDeck(mission: MissionDefinition): CommanderArmy | null {
-  if (mission.player === undefined) return null
-  const army = armyById(mission.player.army)
-  if (army === undefined) throw new MissionError(mission.id, [`player plays the unknown deck "${mission.player.army}"`])
-  return deckOf(army, mission.player.override)
-}
-
-/**
  * Throws `MissionError` listing every problem, or returns the mission unchanged. The grid is the map the
  * mission is played on (its regions must be on it); the registry is the content its units and
- * structures come from.
+ * structures come from. A mission's `notes` are for whoever edits it and are never checked; that the
+ * Commander it brings for the player is her campaign's, and that its content is what its bundle sees, are
+ * the bundle loader's to check (`src/bundles/load.ts`), since a mission alone knows neither.
  */
 export function validateMission(mission: MissionDefinition, grid: GridTerrain, registry: ContentRegistry): MissionDefinition {
   const problems: string[] = []
@@ -89,11 +77,6 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     if (!registry.has(entry.unit)) say(`"${entry.structure}" trains the unknown unit "${entry.unit}"`)
     else if (registry.get(entry.unit).layer === "obstacles") say(`"${entry.structure}" trains "${entry.unit}", which is a building`)
   }
-
-  // The player's deck: one that exists, and an override that names only what it can.
-  const army = mission.player === undefined ? undefined : armyById(mission.player.army)
-  if (mission.player !== undefined && army === undefined) say(`player plays the unknown deck "${mission.player.army}"`)
-  if (army !== undefined) for (const problem of deckProblems(army, registry, mission.player?.override)) say(problem)
 
   // Regions: unique, sized, on the map.
   const regionIds = new Set<string>()
@@ -182,9 +165,6 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
           if (entry.count !== 1) say(`${where} spawns ${entry.count} of the Commander "${entry.unit}"; a side has one`)
           if (commanders.has(key)) say(`${where} spawns the Commander "${entry.unit}" a second time; once she is on the Grid the rules bring her back`)
           commanders.add(key)
-          if (spawn.side === "A" && army !== undefined && entry.unit !== army.commander) {
-            say(`${where} spawns the Commander "${entry.unit}" for the player, whose deck's Commander is "${army.commander}"`)
-          }
         }
       }
       if (spawn.order !== undefined) checkOrder(spawn.order, where)

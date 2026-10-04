@@ -82,7 +82,21 @@ test("src/match never reaches the view, the report, the shell, or the Build Phas
 test("src/mission is data: it never reaches the kernel's tick, the rules layer, the view, the shell or the Build Phase", () => {
   // A mission is typed literals and the checks on them. The Build Phase and the view may read its
   // shapes, so it must not bring the kernel along with it; the runner that steps the kernel is src/match's.
-  assertNoDependencyOn("mission", ["pulse", "match", "view", "report", "cli", "build"])
+  // Nor does it know which missions there are: those are the bundles' (src/bundles), which read it.
+  assertNoDependencyOn("mission", ["pulse", "match", "view", "report", "cli", "build", "bundles"])
+})
+
+test("src/bundles is data: it never reaches the kernel's tick, the rules layer, the view or the shell, and the loader not even the Build Phase", () => {
+  // The Build Phase's catalog reads the bundles (what the first level offers), so they must not bring the kernel
+  // along. The loader takes the content and the maps as arguments; only the game's own list of bundles
+  // (src/bundles/index.ts) names the map table, which is still code beside the Build Phase (src/build/maps.ts).
+  assertNoDependencyOn("bundles", ["pulse", "match", "view", "report", "cli"])
+  for (const loader of ["bundles/load.ts", "bundles/shape.ts", "bundles/mission-shape.ts", "bundles/types.ts"]) {
+    for (const file of transitiveDependencies(resolve(SRC, loader), { asFile: true })) {
+      const path = relative(SRC, file)
+      assert.ok(!path.startsWith("build/"), `src/${loader} reaches src/${path}; the loader is handed the maps, it never imports them`)
+    }
+  }
 })
 
 test("the simulation never reaches a glyph", () => {
@@ -144,7 +158,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission"]
+  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "bundles"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,

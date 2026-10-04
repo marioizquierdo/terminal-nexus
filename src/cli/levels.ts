@@ -1,18 +1,21 @@
 // The campaign levels the game can open, by id: what a route's `campaign?level=<id>` names, and how a level is
 // opened at any of its rounds.
 //
-// This is the seam between where a level's definition comes from (its campaign's bundle) and the screens that
-// open it (the title menu, a route, the browser page, the scripted playtest): they ask for a level by id and get
-// its first round, or any later round, ready for the Build Phase. In the application shell because opening a
-// round plays the mission, which reaches the kernel (`tests/architecture.test.ts`).
+// This is the seam between where a level's definition comes from (its campaign's bundle, `src/bundles`) and the
+// screens that open it (the title menu, a route, the browser page, the scripted playtest): they ask for a level by
+// id and get its first round, or any later round, ready for the Build Phase. Every level of every shipped
+// campaign is here, in campaign order. In the application shell because opening a round plays the mission, which
+// reaches the kernel (`tests/architecture.test.ts`).
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { applyBuildCommand, createBuildState, withoutScene } from "../build/state.ts"
+import type { Level } from "../bundles/index.ts"
+import { BUNDLES, PERIMETER_LEVEL } from "../bundles/index.ts"
 import type { MissionPlay } from "./pulse-run.ts"
-import { STARTER_MISSION } from "./pulse-run.ts"
-import { starterContext } from "./starter.ts"
+import { missionPlay, STARTER_MISSION } from "./pulse-run.ts"
+import { levelContext } from "./starter.ts"
 
 /** A level the game can open. */
 export type PlayableLevel = Readonly<{
@@ -30,17 +33,22 @@ export type PlayableLevel = Readonly<{
   firstRound: (scrollMargin?: number, extra?: Partial<BuildContext>) => BuildContext
 }>
 
-/** Every level the game can open, in campaign order. */
-export const LEVELS: readonly PlayableLevel[] = [
-  {
-    id: "vasse-test-1",
-    campaign: "vasse",
-    title: STARTER_MISSION.mission.name,
-    rounds: STARTER_MISSION.mission.pulses,
-    play: STARTER_MISSION,
-    firstRound: starterContext,
-  },
-]
+/** A campaign's level, as the screens open it. PERIMETER's connection is the one the screens already hold
+ *  (`STARTER_MISSION`), so the game opened bare and a route to its first level play the same one. */
+function playable(level: Level): PlayableLevel {
+  const play = level.id === PERIMETER_LEVEL.id ? STARTER_MISSION : missionPlay(level.mission)
+  return {
+    id: level.id,
+    campaign: level.campaign,
+    title: level.mission.name,
+    rounds: level.mission.pulses,
+    play,
+    firstRound: (scrollMargin, extra) => levelContext(level, play, scrollMargin, extra),
+  }
+}
+
+/** Every level the game can open, in campaign order: every level of every shipped campaign. */
+export const LEVELS: readonly PlayableLevel[] = BUNDLES.levels.map(playable)
 
 /** The level the game opens when a route names none: PERIMETER, Vasse's first. */
 export const DEFAULT_LEVEL_ID = "vasse-test-1"

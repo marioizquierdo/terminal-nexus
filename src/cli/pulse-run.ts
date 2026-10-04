@@ -39,8 +39,9 @@ import type { Arrival, MissionPulseInput, Restoration, TrainingPace } from "../m
 import { foreseeIntents } from "../match/index.ts"
 import type { GroupIntent } from "../match/index.ts"
 import type { RaidForecast, RaidGroup } from "../build/types.ts"
+import { PERIMETER } from "../bundles/index.ts"
 import type { MissionDefinition, SceneLine } from "../mission/index.ts"
-import { PERIMETER, regionCentre, regionOf, sceneOf, validateMission } from "../mission/index.ts"
+import { regionCentre, regionOf, sceneOf, validateMission } from "../mission/index.ts"
 import type { MatchState } from "../state/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import { setting } from "../build/all-settings.ts"
@@ -350,7 +351,8 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
   }
 }
 
-/** The mission the Build Phase's screen plays: PERIMETER's three waves, on the starter map. */
+/** The mission the Build Phase's screen plays: PERIMETER's three waves, on the starter map — the mission of the
+ *  first level of Vasse's campaign (`bundles/vasse/bundle.json`, level `vasse-test-1`). */
 export const STARTER_MISSION: MissionPlay = missionPlay(PERIMETER)
 
 /** The screen's connections to it, as `BuildSession` takes them. */
