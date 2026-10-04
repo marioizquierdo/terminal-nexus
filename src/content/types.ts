@@ -161,6 +161,14 @@ export type ContentDef = Readonly<{
    * barracks on it resolves exactly as it did before buildings trained anything.
    */
   production?: ProductionRecipe
+  /**
+   * Construction territory (pulse.md): a structure with this projects a build range — its player may build
+   * within this many tiles of it, measured as range is, Manhattan to the nearest tile of its footprint — while
+   * it is linked to its side's Grid Nexus. Absent: it projects none. Only the Build Phase reads it
+   * (`src/build/territory.ts`); the kernel never does. While the "Build range" Experiment is being felt, its
+   * value replaces this number on every structure that has one.
+   */
+  constructionRadius?: number
 }>
 
 /**

@@ -53,8 +53,8 @@ test("the owner's menu flow — Down three times, then Space four times — plan
 
 test("a click on a tile goes through the mouse adapter at wherever that tile is drawn", () => {
   // Pick a Nexus power (which closes its popup), arm Barracks by its digit, then click the same tile twice: the first click moves the cursor
-  // there, the second places.
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("n 1 1 click:30,10 click:30,10") })
+  // there, the second places — south of the standing Barracks, inside the build range.
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("n 1 1 click:26,13 click:26,13") })
   const last = run.frames[run.frames.length - 1]!
   assert.equal(last.state.planned.length, 1)
   assert.match(frameToText(last.frame), /Barracks placed \(resources: 90\)/)
@@ -95,7 +95,7 @@ test("a scripted playtest plays a Nexus Pulse on the script's own clock and show
   const started = texts.findIndex((text) => text.includes("nexus pulse"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
-  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:14 /m)
+  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:12 /m)
   // Centred on the Nexus's own tile (the position readout that once said so is gone).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })

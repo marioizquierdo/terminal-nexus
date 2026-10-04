@@ -416,6 +416,28 @@ export const ALL_SETTINGS = {
     unit: "count",
     default: 80,
   },
+
+  // --- Construction territory -----------------------------------------------------------------------
+  // The owner: buildings "can only be built within the build-range of the other buildings" (round 4). How far
+  // that is was an open question (the default construction radius, Q5): two tiles was the recommendation, with
+  // outposts farther.
+
+  /** How far the Grid Nexus and every building linked to it let the player build from them, in tiles, as range
+   *  is measured (`src/build/territory.ts`); it replaces each projecting structure's own `constructionRadius`
+   *  while it is felt. Measured on PERIMETER's starter map at the start of round 1: at 2 the Barracks beside the
+   *  Nexus is cut off, 24 tiles are buildable, a Barracks fits in 2 places and no Turret placed then reaches the
+   *  probe's way in; at 3 the two are linked, 82 tiles are buildable (21 places for a Barracks) and the best
+   *  Turret reaches 9 of the probe's 20 steps; at 4, 120 tiles (53). Reaching the ridge takes six chained
+   *  Turrets at 3, four at 4. First guess: 3. */
+  buildRange: {
+    tier: "experiment",
+    section: "mission",
+    label: "Build range",
+    question: "How many tiles from the Nexus and your linked buildings you may build. Buildings link where their ranges meet.",
+    values: [2, 3, 4],
+    unit: "tiles",
+    default: 3,
+  },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

@@ -31,7 +31,7 @@ test("a waiting Nexus power refuses the commit, and nothing else", () => {
   const { build } = session()
   build.dispatch({ kind: "arm", index: 0 })
   assert.equal(build.state.armed, 0, "arming was refused while a pick was waiting")
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   assert.equal(build.state.planned.length, 1, "placing was refused while a pick was waiting")
   build.dispatch({ kind: "move-cursor", dx: 4, dy: 0 })
   build.dispatch({ kind: "place" })
@@ -168,7 +168,7 @@ test("once picked, the construct menu and every other command work exactly as th
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
   assert.equal(build.state.armed, 0)
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   assert.equal(build.state.planned.length, 1)
 })
 
@@ -188,7 +188,7 @@ test("nothing but the confirmation itself changes state while it is open", () =>
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   const beforeCommit = build.state
   build.dispatch({ kind: "open-battle-round" })
 
@@ -211,7 +211,7 @@ test("going back from the confirmation (Esc) cancels it and changes nothing else
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   const beforeCommit = build.state
   build.dispatch({ kind: "open-battle-round" })
   build.dispatch({ kind: "cancel" })
@@ -230,7 +230,7 @@ test("accepting the confirmation commits, and locks every state-changing command
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   build.dispatch({ kind: "open-battle-round" })
   build.dispatch({ kind: "start-pulse" })
 
@@ -403,14 +403,15 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byKeyboard.build.handleData("n", byKeyboard.layout) // open the Nexus Powers
   byKeyboard.build.handleData("1", byKeyboard.layout) // pick Reserve Fund, which closes the popup
   byKeyboard.build.handleData("1", byKeyboard.layout) // arm Barracks
-  // Row 13, clear of the scroll margin and of the click's edge zones.
-  for (let step = 0; step < 12; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
+  // Row 13, clear of the scroll margin and of the click's edge zones, south of the standing Barracks.
+  for (let step = 0; step < 8; step += 1) byKeyboard.build.handleData(`${ESC}[C`, byKeyboard.layout)
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
-  // new Barracks, so arming another moves it to the nearest spot with a free tile around it — a free
-  // column to its right, 34,13 — and Enter places it there.
+  // new Barracks, so arming another moves it to the nearest spot in the build range with a free tile
+  // around it — a free row below it, 26,16, on ground the first one's range reaches — and Enter places it
+  // there.
   byKeyboard.build.handleData("1", byKeyboard.layout)
-  assert.deepEqual(byKeyboard.build.state.cursor, { x: 34, y: 13 })
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 26, y: 16 })
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
   byKeyboard.build.handleData("y", byKeyboard.layout)
@@ -426,11 +427,11 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   const clickTile = (tile: { x: number; y: number }): void => {
     byMouse.build.handleData(clickTileBytes(byMouse.layout, byMouse.build, tile), byMouse.layout)
   }
-  clickTile({ x: 30, y: 13 })
-  clickTile({ x: 30, y: 13 })
+  clickTile({ x: 26, y: 13 })
+  clickTile({ x: 26, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  // Arming already put the cursor on 34,13, so one click there is the confirming second click.
-  clickTile({ x: 34, y: 13 })
+  // Arming already put the cursor on 26,16, so one click there is the confirming second click.
+  clickTile({ x: 26, y: 16 })
   byMouse.build.handleData("p", byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "start-pulse"), byMouse.layout)
 
@@ -438,7 +439,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     { kind: "open-nexus-powers" },
     { kind: "pick-nexus", index: 0 },
     { kind: "arm", index: 0 },
-    { kind: "move-cursor", dx: 12, dy: 0 },
+    { kind: "move-cursor", dx: 8, dy: 0 },
     { kind: "place" },
     { kind: "arm", index: 0 },
     { kind: "place" },

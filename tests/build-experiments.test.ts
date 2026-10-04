@@ -89,7 +89,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   // In order, group by group: keyboard navigation — the hold window and key releases
   // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
   // popup pulse (every popup's) and the Battle Round flash, and the mission's next round, the Barracks's
-  // pace and Vasse's health.
+  // pace, Vasse's health and the build range.
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
     [
@@ -110,11 +110,12 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "trainEvery",
       "trainPerRound",
       "commanderHealth",
+      "buildRange",
     ],
   )
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.section),
-    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission", "mission", "mission"],
+    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", "mission", "mission", "mission", "mission", "mission"],
   )
   // The bottom line says what the keys do there, and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
@@ -229,7 +230,7 @@ test("a number stops at its ends and says so; a choice comes round", () => {
 
 test("the restart keeps every flag and starts the plan over, on the menu at Explore Map", () => {
   const side = buildSide()
-  keys(side, "n", "1", "1", RIGHT, ENTER) // pick a power, plan a Barracks
+  keys(side, "n", "1", "1", UP, ENTER) // pick a power, plan a Barracks a row up, inside the build range
   assert.equal(side.build.state.planned.length, 1)
   keys(side, "d")
   goToExperiment(side, "nextRound")

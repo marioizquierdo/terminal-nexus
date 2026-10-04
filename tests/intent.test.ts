@@ -116,7 +116,12 @@ test("the shell's foresee is what the round's real Pulse does on its first tick,
   const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
   for (let number = 1; number <= 3; number += 1) {
     for (const placed of [false, true]) {
-      if (placed) side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 29, y: 6 + number }, { kind: "click-tile", x: 29, y: 6 + number }])
+      // A Turret north-east of the Barracks, inside its build range, a row further south each round.
+      if (placed) {
+        const planned = side.build.state.planned.length
+        side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 28, y: 7 + number }, { kind: "click-tile", x: 28, y: 7 + number }])
+        assert.equal(side.build.state.planned.length, planned + 1, `round ${number}: the Turret was not placed`)
+      }
       const raid = side.build.raid() ?? []
       const resolved = startPulse(side.build.round, side.build.state)
       assert.ok(resolved !== null)
@@ -162,21 +167,21 @@ test("placing a building nearer the raid moves what it goes for to it; undoing, 
   // Asked again with nothing changed, it is the same answer, not worked out again.
   assert.equal(side.build.raid(), before)
 
-  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 29, y: 6 }, { kind: "click-tile", x: 29, y: 6 }])
+  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 28, y: 8 }, { kind: "click-tile", x: 28, y: 8 }])
   assert.equal(side.build.state.planned.length, 1)
   const turret = side.build.raid()
-  assert.equal(firstTarget(turret), `${TURRET}@29,6`, "a Turret on the probe's way did not draw it")
-  // The way now ends beside the Turret, round the ridge's west end.
+  assert.equal(firstTarget(turret), `${TURRET}@28,8`, "a Turret on the probe's way did not draw it")
+  // The way now ends beside the Turret.
   const way = turret?.[0]?.path ?? []
   const last = way.at(-1)
-  assert.ok(last !== undefined && footprintDistance(last, [{ x: 0, y: 0 }], { x: 29, y: 6 }, [{ x: 0, y: 0 }]) <= 1)
+  assert.ok(last !== undefined && footprintDistance(last, [{ x: 0, y: 0 }], { x: 28, y: 8 }, [{ x: 0, y: 0 }]) <= 1)
 
   side.build.dispatch({ kind: "undo" })
   assert.equal(side.build.state.planned.length, 0)
   assert.equal(firstTarget(side.build.raid()), `${BARRACKS}@25,10`, "undoing did not move it back")
 
-  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 29, y: 6 }, { kind: "click-tile", x: 29, y: 6 }])
-  assert.equal(firstTarget(side.build.raid()), `${TURRET}@29,6`)
+  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 28, y: 8 }, { kind: "click-tile", x: 28, y: 8 }])
+  assert.equal(firstTarget(side.build.raid()), `${TURRET}@28,8`)
   side.build.run([{ kind: "focus", target: "grid" }, { kind: "remove" }])
   assert.equal(side.build.state.planned.length, 0)
   assert.equal(firstTarget(side.build.raid()), `${BARRACKS}@25,10`, "removing did not move it back")

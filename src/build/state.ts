@@ -13,8 +13,8 @@ import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
-import type { ShownName } from "./all-settings.ts"
-import { setting, shownSetting } from "./all-settings.ts"
+import type { SettingSource, ShownName } from "./all-settings.ts"
+import { defaultValue, setting, shownSetting } from "./all-settings.ts"
 import type { Experiments } from "./experiments.ts"
 import { stepExperiment, defaultExperiments } from "./experiments.ts"
 import { TUNING } from "./tuning.ts"
@@ -34,6 +34,8 @@ import {
   restartMessage,
 } from "./settings.ts"
 import { formatSettingsExport } from "./settings-export.ts"
+import type { Territory } from "./territory.ts"
+import { strandedByRemoving, territoryOf } from "./territory.ts"
 import type { ActivitySource } from "./activity.ts"
 import {
   ACTIVITY_EXPORT_ROW,
@@ -672,6 +674,15 @@ export function costOf(context: BuildContext, contentId: string): number {
 }
 
 /**
+ * **The build range** in force for a plan: the construction territory it gives the player at the "Build
+ * range" Experiment's radius (`src/build/territory.ts`) — what a new building must stand inside, what the map
+ * shows while one is armed, and what removing a planned building may not cut another off from.
+ */
+export function buildRange(context: BuildContext, state: Pick<BuildState, "planned"> & SettingSource): Territory {
+  return territoryOf(context, state.planned, setting(state, "buildRange"))
+}
+
+/**
  * Why a placement is refused, in a sentence a player can act on — and **never a silent correction**.
  * Nothing here moves a structure to a legal tile: a plan the player did not draw is worse than a
  * refusal they can understand.
@@ -679,7 +690,11 @@ export function costOf(context: BuildContext, contentId: string): number {
  * Order matters, and it is cheapest-answer-first only by coincidence; what it really is, is
  * *most-informative*-first. Affordability is checked before the tiles because "you cannot afford
  * this" is true wherever the cursor is, and reporting a rock the player could just move off would
- * send them to fix the wrong thing.
+ * send them to fix the wrong thing. **The build range comes next, for the same reason**: it is about a
+ * region, a rock or a building about one tile, so a ghost far from the range is sent toward the range
+ * rather than off the rock it happens to sit on. Every tile of the footprint must be inside it
+ * (`src/build/territory.ts`); a tile off the Grid is the Grid's to refuse. `radius` is the "Build range"
+ * Experiment's value — its default when the caller has no state to read it from.
  */
 export function legalityAt(
   context: BuildContext,
@@ -687,12 +702,18 @@ export function legalityAt(
   contentId: string,
   anchor: Coord,
   remaining?: number,
+  radius: number = defaultValue("buildRange"),
 ): Legality {
   const item = catalogItem(context, contentId)
   if (item !== undefined && remaining !== undefined && item.cost > remaining) {
     return { ok: false, reason: `costs ${item.cost}, ${remaining} left` }
   }
   const footprint = context.registry.get(contentId).footprint
+  const territory = territoryOf(context, planned, radius)
+  if (!territory.rooted) return { ok: false, reason: "there is no Nexus to build from" }
+  for (const tile of tilesOf(anchor, footprint)) {
+    if (inBounds(context.grid, tile) && !territory.has(tile)) return { ok: false, reason: "outside your build range", tile }
+  }
   const claimed = claimedTiles(context, planned)
   for (const tile of tilesOf(anchor, footprint)) {
     if (!inBounds(context.grid, tile)) {
@@ -727,7 +748,11 @@ export function legalityAt(
  * total order, so there is exactly one answer, and a pure function of the plan and the cursor, so the
  * reducer owns it and a driver can assert it. **Never chosen from the last building placed**: the
  * typical run — place a Barracks, press its key again — finds the spot nearest the cursor, which is
- * sitting on the new Barracks, so the next one lands a gap to its right.
+ * sitting on the new Barracks, so the next one lands a gap from it — to its right where the build range
+ * reaches that far, and where it does not, the nearest way it does.
+ *
+ * **A building's spot is inside the build range** (`territory`, `src/build/territory.ts`): arming proposes
+ * only a spot Enter would take. Explore Map's one tile passes none, since looking is not building.
  *
  * `found: false` when nothing within reach fits: the cursor then steps one tile right and one down,
  * so the player sees something happened, and the preview is drawn as the building rather than the
@@ -752,6 +777,7 @@ export function armingSpot(
   planned: readonly PlannedPlacement[],
   footprint: readonly Coord[],
   cursor: Coord,
+  territory?: Territory,
 ): ArmingSpot {
   const size = footprintExtent(footprint)
   const offset = footprintCentre(footprint)
@@ -762,6 +788,7 @@ export function armingSpot(
   const fits = (anchor: Coord): boolean => {
     for (const tile of tilesOf(anchor, footprint)) {
       if (!inBounds(grid, tile)) return false
+      if (territory !== undefined && !territory.has(tile)) return false
       const terrainId = grid.tiles[tile.y * grid.width + tile.x]
       if (terrainId !== undefined && TERRAIN[terrainId].impassable) return false
       if (claimed.has(`${tile.x},${tile.y}`)) return false
@@ -831,8 +858,8 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
   if (item === undefined) return null
   const footprint = context.registry.get(item.contentId).footprint
   const anchor = anchorForCursor(state.cursor, footprint)
-  // The same call, budget and all, whichever side is asking.
-  const legality = legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state))
+  // The same call, budget and build range and all, whichever side is asking.
+  const legality = legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state), setting(state, "buildRange"))
   const refusal: Refusal | null =
     legality.ok
       ? null
@@ -983,14 +1010,15 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     ack: acknowledge(state, "pressed", entry),
     handoff: handOff(state, from, entry),
   }
-  const spot = armingSpot(context, state.planned, context.registry.get(item.contentId).footprint, state.cursor)
+  const footprint = context.registry.get(item.contentId).footprint
+  const spot = armingSpot(context, state.planned, footprint, state.cursor, buildRange(context, state))
   const moved = withCursor(context, armed, spot.tile)
   if (!spot.found) {
-    return {
-      ...moved,
-      noSpotFound: true,
-      status: status(`${item.label} selected - no room within ${TUNING.armSearchTiles} tiles, move to find one.`, "warning"),
-    }
+    // Room nearby, none of it in the build range — or no room at all: said apart, since only the first is
+    // answered by moving toward the range the map now shows.
+    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor).found
+    const why = roomNearby ? "no room in your build range nearby" : `no room within ${TUNING.armSearchTiles} tiles`
+    return { ...moved, noSpotFound: true, status: status(`${item.label} selected - ${why}, move to find one.`, "warning") }
   }
   return { ...moved, noSpotFound: false, status: NO_STATUS }
 }
@@ -1196,6 +1224,26 @@ function place(context: BuildContext, state: BuildState): BuildState {
     ...back,
     ...(back.focus === "menu" ? { ack: acknowledge(state, "pressed", entry) } : {}),
     status: status(`${item.label} placed (resources: ${remaining(context, placed)}) - [u] undo`, "success"),
+  }
+}
+
+/**
+ * **Removing or undoing a planned building that another one needs is refused**: without its build range the
+ * other would stand outside the range, and the plan would hold a building that could not have been placed
+ * (`strandedByRemoving`, `src/build/territory.ts`) — so a building put down only to reach further cannot be
+ * taken away once something stands on what it reached. Refused rather than taken down with it, since a
+ * removal never takes more than the player pointed at; the bottom line names the first building that needs it
+ * and where it stands, so the player can remove that one first. `null` when nothing needs it. A standing
+ * building it would cut off is no reason: a standing one keeps working.
+ */
+function refuseStranding(context: BuildContext, state: BuildState, target: PlannedPlacement, verb: "remove" | "undo"): BuildState | null {
+  const needing = strandedByRemoving(context, state.planned, target.ordinal, setting(state, "buildRange"))[0]
+  if (needing === undefined) return null
+  const where = footprintCentre(context.registry.get(needing.contentId).footprint)
+  const at = `${needing.anchor.x + where.x},${needing.anchor.y + where.y}`
+  return {
+    ...state,
+    status: status(`Cannot ${verb} the ${displayName(context, target.contentId)}: the ${displayName(context, needing.contentId)} at ${at} needs its build range.`, "warning"),
   }
 }
 
@@ -1551,6 +1599,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (mapMode(state) === "menu") return refuseOnMenu(state)
       const target = plannedAt(context, state.planned, state.cursor)
       if (target === null) return { ...state, status: status("Nothing planned under the cursor.", "warning") }
+      const needed = refuseStranding(context, state, target, "remove")
+      if (needed !== null) return needed
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
@@ -1563,6 +1613,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (lock !== null) return { ...state, status: lock }
       const last = state.planned[state.planned.length - 1]
       if (last === undefined) return { ...state, status: status("Nothing to undo.", "warning") }
+      const needed = refuseStranding(context, state, last, "undo")
+      if (needed !== null) return needed
       return {
         ...state,
         planned: state.planned.slice(0, -1),

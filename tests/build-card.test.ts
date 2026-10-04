@@ -150,7 +150,7 @@ test("Explore Map's card says what is under the cursor as it moves: open ground,
 
   const planned = buildSide()
   keys(planned, "1")
-  planned.build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, { kind: "focus", target: "grid" }, { kind: "open-explore" }])
+  planned.build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }, { kind: "focus", target: "grid" }, { kind: "open-explore" }])
   const text = screenText(planned)
   assert.match(text, /Barracks/)
   assert.match(text, /COST {2,}40/)

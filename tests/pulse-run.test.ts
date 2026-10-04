@@ -10,6 +10,9 @@ import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
+import { createBuildState } from "../src/build/state.ts"
+import type { PlannedPlacement } from "../src/build/types.ts"
+import { missionPlay } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { inBounds, tilesOf } from "../src/grid/coords.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
@@ -85,9 +88,10 @@ test("what the player built is what the Pulse resolves: a different plan is a di
   const opening = defended.timeline.states[0]
   assert.ok(opening !== undefined)
   const turrets = opening.entities.filter((entity) => entity.contentId === "structure.bench.beamturret")
+  // In the opening state's own order, which is not the order they were planned in.
   assert.deepEqual(
     turrets.map((turret) => turret.anchor),
-    [{ x: 22, y: 9 }, { x: 22, y: 12 }],
+    [{ x: 23, y: 12 }, { x: 28, y: 12 }],
     "the planned Turrets are not where they were placed",
   )
   assert.ok(opening.entities.some((entity) => entity.contentId === "structure.bench.hatchery"))
@@ -160,8 +164,20 @@ test("how it is watched cannot change what happened: effects, the cosmetic seed 
 test("the first placeholder Pulse, written as a mission, is the very Pulse it was before missions", () => {
   // The first Pulse's report pinned the winning plan's hashes under Node and Bun; the test mission is that
   // placeholder's forces, muster points, seed and length as data (tests/pulse-helpers.ts), resolved by the
-  // trigger runner rather than handed to the kernel directly — and nothing moved.
-  const { timeline } = play({ plan: DEFENCE }).pulse
+  // trigger runner rather than handed to the kernel directly — and nothing moved. That plan predates the build
+  // range, which it reaches past, so it is handed to the Pulse as a plan rather than placed through the Build
+  // Phase, which would refuse it now: this is about the Pulse, not about where a building may go.
+  const mission = missionPlay(testMission())
+  const context = mission.firstRound(starterContext())
+  const opened = createBuildState(context, STARTER_START_CURSOR, buildLayout(MINIMUM, context.grid).viewport)
+  const placeholderPlan: readonly PlannedPlacement[] = [
+    { ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 22, y: 9 } },
+    { ordinal: 2, contentId: "structure.bench.beamturret", anchor: { x: 22, y: 12 } },
+    { ordinal: 3, contentId: "structure.bench.hatchery", anchor: { x: 20, y: 14 } },
+  ]
+  const resolved = mission.startPulse(context, { ...opened, nexusPick: 1, planned: placeholderPlan, committed: true })
+  assert.ok(resolved !== null)
+  const { timeline } = resolved
   assert.ok(timeline.stateHash.startsWith("9b03136f"), `state hash ${timeline.stateHash}`)
   assert.ok(timeline.eventsHash.startsWith("93638c7e"), `events hash ${timeline.eventsHash}`)
   assert.equal(timeline.states.length - 1, 175)

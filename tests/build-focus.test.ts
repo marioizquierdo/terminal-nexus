@@ -200,9 +200,9 @@ test("Backspace on the menu flickers the row and removes nothing under the hidde
 
 test("a click on a building's row arms it at once, whatever had focus, and its ghost is at the cursor", () => {
   // From the map a click opened: the menu is still drawn, and the ghost goes where the player was
-  // looking — the cursor stays put, since the building fits there.
+  // looking — the cursor stays put, since the building fits there, inside the build range.
   const side = buildSide()
-  clickTile(side, { x: 30, y: 14 })
+  clickTile(side, { x: 26, y: 13 })
   assert.equal(side.build.state.focus, "grid")
   assert.equal(side.build.state.exploreMap, false, "a click on the map from the menu hid the menu")
   assert.match(screenText(side), /\[1\] Barracks/)
@@ -210,7 +210,7 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
   clickPanelRow(side, barracksRow(side))
   assert.equal(side.build.state.armed, 0, "the click only highlighted the row")
   assert.equal(side.build.state.focus, "grid")
-  assert.deepEqual(side.build.state.cursor, { x: 30, y: 14 }, "arming by click moved the cursor off the map spot")
+  assert.deepEqual(side.build.state.cursor, { x: 26, y: 13 }, "arming by click moved the cursor off the map spot")
   assert.match(hint(side.context, side.build.state).text, /^Place the Barracks:/)
   assert.equal(side.build.state.returnTo, "menu", "a click on a row is the menu's, whatever had focus")
 
@@ -225,18 +225,18 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
 
   // Enter in the plain navigation a click opened is Explore Map, as it is after Tab.
   const map = buildSide()
-  clickTile(map, { x: 30, y: 14 })
+  clickTile(map, { x: 26, y: 13 })
   keys(map, ENTER)
   assert.equal(map.build.state.exploreMap, true)
 })
 
 test("a second click on the same tile places, and the menu comes back with nothing looking chosen", () => {
   const side = buildSide()
-  clickTile(side, { x: 30, y: 14 })
+  clickTile(side, { x: 26, y: 12 })
   clickPanelRow(side, barracksRow(side))
-  clickTile(side, { x: 30, y: 15 }) // moves the ghost
+  clickTile(side, { x: 26, y: 13 }) // moves the ghost
   assert.equal(side.build.state.planned.length, 0)
-  clickTile(side, { x: 30, y: 15 }) // the same tile: places
+  clickTile(side, { x: 26, y: 13 }) // the same tile: places
   assert.equal(side.build.state.planned.length, 1)
   assert.equal(side.build.state.focus, "menu")
   assert.equal(side.build.state.armed, null)
@@ -315,19 +315,21 @@ test("the owner's flow — highlight, then space, space, space, space — lays t
 test("a run of the same building lays each one a free tile from the last, never touching", () => {
   const context: BuildContext = { ...starterContext(), allotment: 1000 }
   const side = buildSide({ context })
-  keys(side, DOWN, DOWN)
+  // Hatcheries: each one's build range reaches the free tile and the next one past it, so the run chains
+  // along. (A Barracks is a tile wider than the range lets a row of them grow sideways: its run goes down.)
+  keys(side, DOWN, DOWN, DOWN)
   for (let run = 0; run < 6; run += 1) keys(side, SPACE, SPACE)
   assert.deepEqual(
     side.build.state.planned.map((placement) => placement.anchor),
     // A row to the right (owner, 2026-09-29: "in most cases this should move the cursor only a few
     // tiles to the right"): a tile down costs more than a tile across.
     [
-      { x: 17, y: 13 },
+      { x: 18, y: 13 },
       { x: 21, y: 13 },
-      { x: 25, y: 13 },
-      { x: 29, y: 13 },
+      { x: 24, y: 13 },
+      { x: 27, y: 13 },
+      { x: 30, y: 13 },
       { x: 33, y: 13 },
-      { x: 37, y: 13 },
     ],
   )
   const all = [
@@ -381,8 +383,9 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   for (const t of tilesOf(anchor, footprint)) {
     for (const u of others) assert.ok(Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y)) >= 2, "it touches a structure")
   }
-  // Nearest: a free column to the right of the first — sideways is cheaper than down.
-  assert.deepEqual(spot, { x: 22, y: 13 })
+  // Nearest inside the build range: a free row below the first, on ground its own range reaches. (Sideways
+  // is cheaper than down, but a free column to its right is past the range; the open field below has that.)
+  assert.deepEqual(spot, { x: 18, y: 16 })
 
   // Touching is the fallback when nothing gapped is in reach: a corridor one Turret wide.
   const width = 8
@@ -435,9 +438,9 @@ test("sideways is cheaper than up or down, and ties go the same way every time: 
 test("never chosen from the last building placed: the spot is nearest the cursor, wherever the last one went", () => {
   const side = buildSide({ context: { ...starterContext(), allotment: 1000 } })
   keys(side, TAB, "3", ENTER) // a Turret at the cursor, which stays on it
-  side.build.run([{ kind: "move-cursor", dx: 30, dy: 12 }]) // far away, on open ground
+  side.build.run([{ kind: "move-cursor", dx: 8, dy: -5 }]) // away, on open ground north of the Barracks, in the build range
   keys(side, "3")
-  assert.deepEqual(side.build.state.cursor, { x: OPEN_GROUND.x + 30, y: OPEN_GROUND.y + 12 }, "arming went back to the last building placed")
+  assert.deepEqual(side.build.state.cursor, { x: OPEN_GROUND.x + 8, y: OPEN_GROUND.y - 5 }, "arming went back to the last building placed")
 })
 
 test("with nothing in reach, arming steps one tile right and down, drawn as the building, not x, until moved or tried", () => {
@@ -594,10 +597,10 @@ test("the focus flow by keyboard bytes and the same commands from a driver are t
 
 test("clicks as a terminal sends them and the driver's click commands are the same state and frame", () => {
   const byMouse = buildSide()
-  clickTile(byMouse, { x: 30, y: 14 }) // the map, the menu still drawn
+  clickTile(byMouse, { x: 26, y: 12 }) // the map, the menu still drawn
   clickPanelRow(byMouse, barracksRow(byMouse)) // armed at once
-  clickTile(byMouse, { x: 30, y: 15 })
-  clickTile(byMouse, { x: 30, y: 15 }) // placed; the menu is back
+  clickTile(byMouse, { x: 26, y: 13 })
+  clickTile(byMouse, { x: 26, y: 13 }) // placed; the menu is back
   clickPanelRow(byMouse, panelRow(byMouse, EXPLORE_ROW)) // Explore Map
   clickTile(byMouse, { x: 18, y: 11 }) // the card shows the Grid Nexus
   clickCell(byMouse, byMouse.layout.panelColumn + 2, panelRow(byMouse, 2)) // the panel: closes it
@@ -605,10 +608,10 @@ test("clicks as a terminal sends them and the driver's click commands are the sa
 
   const byDriver = buildSide()
   byDriver.build.run([
-    { kind: "click-tile", x: 30, y: 14 },
+    { kind: "click-tile", x: 26, y: 12 },
     { kind: "click-menu", entry: entryOfConstruct(0) },
-    { kind: "click-tile", x: 30, y: 15 },
-    { kind: "click-tile", x: 30, y: 15 },
+    { kind: "click-tile", x: 26, y: 13 },
+    { kind: "click-tile", x: 26, y: 13 },
     { kind: "click-menu", entry: EXPLORE_ENTRY },
     { kind: "click-tile", x: 18, y: 11 },
     { kind: "click-menu", entry: EXPLORE_ENTRY },
