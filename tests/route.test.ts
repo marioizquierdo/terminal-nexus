@@ -7,7 +7,7 @@ import assert from "node:assert/strict"
 import { parseArgs } from "../src/cli/args.ts"
 import { DEFAULT_LEVEL_ID, LEVELS, levelById } from "../src/cli/levels.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
-import { BUILD_PHASE_ROUTE, PLACES, PLACE_NAMES, RouteError, allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
+import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
 import type { Destination } from "../src/cli/route.ts"
 import { launchDestination } from "../src/cli/terminal-nexus.ts"
 
@@ -131,19 +131,16 @@ test("--at arrives through the argument parser, whole, in both of its forms", ()
   assert.throws(() => parseArgs(["--at"]), /option --at needs a value/u)
 })
 
-test("a launch opens where its flags say: --at, --build-phase and --spike as its alias, the title menu bare", () => {
+test("a launch opens where --at says, and on the title menu bare", () => {
   const destinationOf = (...argv: string[]): string => plain(launchDestination(parseArgs(argv)))
   assert.equal(destinationOf(), "title menu")
   assert.equal(destinationOf("--theme", "light"), "title menu")
   assert.equal(destinationOf("--at", "about"), "title about")
+  assert.equal(destinationOf("--at", "campaign?level=vasse-test-1"), "level vasse-test-1 round 1")
   assert.equal(destinationOf("--at", "campaign?level=vasse-test-1&round=3"), "level vasse-test-1 round 3")
-  // The old flags, for one more release: PERIMETER's first round, as they always opened.
-  assert.equal(BUILD_PHASE_ROUTE, "campaign?level=vasse-test-1")
-  assert.equal(destinationOf("--build-phase"), "level vasse-test-1 round 1")
-  assert.equal(destinationOf("--spike"), "level vasse-test-1 round 1")
-  // --at wins over them.
-  assert.equal(destinationOf("--build-phase", "--at", "settings"), "title settings")
   assert.throws(() => launchDestination(parseArgs(["--at", "nowhere"])), RouteError)
+  // The default level's route is its first round, the one the page and the scripted playtest open unless told.
+  assert.equal(DEFAULT_LEVEL_ROUTE, "campaign?level=vasse-test-1")
 })
 
 test("each title menu row that opens a place names its route, the route of the place it is", () => {

@@ -47,33 +47,20 @@ test("an unknown --theme is a clear error", () => {
   assert.match(result.stderr, /unknown theme/)
 })
 
-test("--build-phase without a TTY says the Build Phase needs one, in one line, and never writes an escape sequence", () => {
-  // Same rule as a plain launch: no terminal, no escape sequences, one line — the Build Phase's, which is how
-  // this shows the old flag still opens the Build Phase rather than the menu.
-  const result = runTerminalNexus(["--build-phase"])
-  assert.equal(result.status, 0)
-  assert.equal(result.stderr, "")
-  assert.doesNotMatch(result.stdout, new RegExp(ESC))
-  assert.match(result.stdout.trimEnd(), /^terminal-nexus needs an interactive terminal for the Build Phase\.$/)
-})
-
-test("--spike is still accepted as an alias of --build-phase", () => {
-  const result = runTerminalNexus(["--spike"])
-  assert.equal(result.status, 0)
-  assert.match(result.stdout.trimEnd(), /^terminal-nexus needs an interactive terminal for the Build Phase\.$/)
-})
-
 test("--at reaches the screen loop its route names: a campaign level the Build Phase, a title menu place the menu", () => {
+  // Same rule as a plain launch: no terminal, no escape sequences, one line — the screen loop's own, which is how
+  // this shows which loop the route reached.
   for (const [route, loop] of [
-    ["campaign?level=vasse-test-1&round=2", /for the Build Phase\.$/],
-    ["campaign?level=vasse-test-1", /for the Build Phase\.$/],
-    ["settings", /for its menu\.$/],
-    ["challenge", /for its menu\.$/],
-    ["", /for its menu\.$/],
+    ["campaign?level=vasse-test-1&round=2", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["campaign?level=vasse-test-1", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["settings", /^terminal-nexus needs an interactive terminal for its menu\.$/],
+    ["challenge", /^terminal-nexus needs an interactive terminal for its menu\.$/],
+    ["", /^terminal-nexus needs an interactive terminal for its menu\.$/],
   ] as const) {
     const result = runTerminalNexus(["--at", route])
     assert.equal(result.status, 0, `--at "${route}": ${result.stderr}`)
     assert.equal(result.stderr, "")
+    assert.doesNotMatch(result.stdout, new RegExp(ESC), `--at "${route}" wrote an escape sequence`)
     assert.match(result.stdout.trimEnd(), loop, `--at "${route}"`)
   }
 })
@@ -99,15 +86,15 @@ test("--keys and --scroll-margin are refused on a title menu route: only a campa
   }
 })
 
-test("--help documents --at with every place and level, the old flags as its alias, and the one tuning flag", () => {
+test("--help documents --at with every place and level, and the one tuning flag", () => {
   // "A hotkey that is not displayed does not exist", applied to the command line: a flag nobody can
   // find is a flag nobody can try.
   const result = runTerminalNexus(["--help"])
   assert.match(result.stdout, /--at <route>/)
   for (const place of ["menu", "campaign", "challenge", "settings", "about"]) assert.match(result.stdout, new RegExp(`^ +${place} +the`, "m"))
+  assert.match(result.stdout, /--at 'campaign\?level=vasse-test-1'/)
   assert.match(result.stdout, /--at 'campaign\?level=vasse-test-1&round=3'/)
   assert.match(result.stdout, /vasse-test-1 +Perimeter, rounds 1 to 3/)
-  assert.match(result.stdout, /--build-phase, --spike\n +the same as --at 'campaign\?level=vasse-test-1', kept for one more release/)
   assert.match(result.stdout, /--scroll-margin/)
   assert.match(result.stdout, /trainEvery=6&reducedMotion=true/)
 })

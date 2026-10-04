@@ -26,7 +26,7 @@ import { parseKeyScript } from "../playtest/keys.ts"
 import { runBuildPhase } from "./build-phase.ts"
 import type { Exporter } from "./build-phase.ts"
 import { DEFAULT_LEVEL_ID, LEVELS, levelById } from "./levels.ts"
-import { BUILD_PHASE_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute, parseRoute } from "./route.ts"
+import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute, parseRoute } from "./route.ts"
 import type { Destination } from "./route.ts"
 import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
@@ -59,8 +59,8 @@ function usage(): string {
 ${places}
       For example:
 ${example("settings", "the title menu's Settings screen")}
-${example(BUILD_PHASE_ROUTE, `${title}'s Build Phase, round 1`)}
-${example(`${BUILD_PHASE_ROUTE}&round=3`, "its round 3, reached as a player who")}
+${example(DEFAULT_LEVEL_ROUTE, `${title}'s Build Phase, round 1`)}
+${example(`${DEFAULT_LEVEL_ROUTE}&round=3`, "its round 3, reached as a player who")}
 ${"".padEnd(54)}builds nothing reaches it
       round counts Battle Rounds from 1, as the screen does. The levels:
 ${levels}
@@ -87,10 +87,6 @@ ${levels}
       "nextRound=auto trainEvery=6" or "trainEvery=6&reducedMotion=true". On and off
       settings take true and false too.
 
-  --build-phase, --spike
-      the same as --at '${BUILD_PHASE_ROUTE}', kept for one more release so pasted
-      commands keep working; --at wins when both are given.
-
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
 its own setting for this one run without changing what is saved.
@@ -99,20 +95,16 @@ its own setting for this one run without changing what is saved.
 }
 
 /**
- * Where a launch opens. `--at <route>` says where; `--build-phase` and its older name `--spike` are
- * `--at campaign?level=vasse-test-1` for one more release, and `--at` wins over them. Throws a `RouteError` for
- * a route that is not a place in the game.
+ * Where a launch opens: where `--at <route>` says. Throws a `RouteError` for a route that is not a place in the
+ * game.
  *
- * **With neither, the title menu.** That is a stand-in for the intended start: once the game can save, a bare
+ * **Without it, the title menu.** That is a stand-in for the intended start: once the game can save, a bare
  * launch is meant to continue the saved game from its default place beside the settings (a file in
  * `~/.terminal-nexus/`, next to `settings.json`), and to open the title menu only when there is no saved game;
  * `--at` stays the way to go anywhere else. Saves are not built.
  */
 export function launchDestination(args: ParsedArgs): Destination {
-  const at = args.options.get("at")
-  if (at !== undefined) return parseRoute(at)
-  if (args.flags.has("build-phase") || args.flags.has("spike")) return parseRoute(BUILD_PHASE_ROUTE)
-  return { kind: "title", place: "menu" }
+  return parseRoute(args.options.get("at") ?? "menu")
 }
 
 /** What `--at` says for a route that is not a place: every problem, then where to read what exists. */
@@ -146,7 +138,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     const flags = unused.map((name) => `--${name}`).join(" and ")
     process.stderr.write(
       `terminal-nexus: ${flags} ${unused.length > 1 ? "are" : "is"} for a campaign level's Build Phase, and ` +
-        `${formatRoute(destination)} is on the title menu: try --at '${BUILD_PHASE_ROUTE}'\n`,
+        `${formatRoute(destination)} is on the title menu: try --at '${DEFAULT_LEVEL_ROUTE}'\n`,
     )
     return 2
   }

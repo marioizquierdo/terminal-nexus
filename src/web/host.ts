@@ -21,7 +21,7 @@
 import { runMenu } from "../cli/menu.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { runBuildPhase } from "../cli/build-phase.ts"
-import { BUILD_PHASE_ROUTE, RouteError, parseRoute } from "../cli/route.ts"
+import { DEFAULT_LEVEL_ROUTE, RouteError, parseRoute } from "../cli/route.ts"
 import type { Destination } from "../cli/route.ts"
 import { readAddress } from "./address.ts"
 import type { Demo } from "./demos.ts"
@@ -67,8 +67,8 @@ const PULSES: Readonly<Record<PulseName, ScenarioDefinition>> = {
   "pulse-mirror": citizensVersusRavels as unknown as ScenarioDefinition,
 }
 
-/** What the page opens when nothing says otherwise, as `--build-phase` does: the default level's first round. */
-const DEFAULT_OPENING: Opening = { kind: "route", destination: parseRoute(BUILD_PHASE_ROUTE) }
+/** What the page opens when nothing says otherwise: the default level's first round. */
+const DEFAULT_OPENING: Opening = { kind: "route", destination: parseRoute(DEFAULT_LEVEL_ROUTE) }
 
 /** Where `route` leads — or, for one that is not a place in the game, the default opening, with why (`where`
  *  names what asked: "#at", a demo). */
@@ -491,7 +491,7 @@ for (const entry of typeof __TN_DEMOS__ === "undefined" ? [] : __TN_DEMOS__) {
     demo = entry
     imported = entry.settings ?? null
     settingsText.value = imported ?? ""
-    const { opening: next, notes } = routeOpening(entry.at ?? BUILD_PHASE_ROUTE, `the demo's at`)
+    const { opening: next, notes } = routeOpening(entry.at ?? DEFAULT_LEVEL_ROUTE, `the demo's at`)
     void start(next, notes)
   })
   demos.append(button)

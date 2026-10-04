@@ -170,7 +170,7 @@ test("the Activity Logs say where a screen opened, and the route a picked row op
   assert.deepEqual(entryProblems(ACTIVITY_EVENTS, start!), [])
 })
 
-test("--build-phase's level is the Build Phase as it opens when told nothing: PERIMETER, round 1", async () => {
+test("the default level is the Build Phase as it opens when told nothing: PERIMETER, round 1", async () => {
   const level = levelById(DEFAULT_LEVEL_ID)!
   const told = await buildAt({ kind: "level", level, round: 1 })
   const untold = await buildAt(undefined)

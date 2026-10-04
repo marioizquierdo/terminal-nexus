@@ -36,7 +36,7 @@ import { BACKGROUND_RGB, rgbFor, seeThroughColours } from "../src/view/roles.ts"
 import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, withShift } from "../src/web/keys.ts"
 import { readAddress } from "../src/web/address.ts"
 import { checkDemos } from "../src/web/demos.ts"
-import { BUILD_PHASE_ROUTE, formatRoute, parseRoute } from "../src/cli/route.ts"
+import { DEFAULT_LEVEL_ROUTE, formatRoute, parseRoute } from "../src/cli/route.ts"
 import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
 import { sameness } from "./web-helpers.ts"
 
@@ -324,7 +324,7 @@ test("#at= opens a route, whole: a part runs to the next part the page knows, no
 test("the page's mode buttons that are game screens open their routes; the replays are named as replays", () => {
   const html = readFileSync(resolve(ROOT, "src/web/page.html"), "utf8")
   const routes = [...html.matchAll(/data-at="([^"]*)"/gu)].map((match) => match[1] as string)
-  assert.deepEqual(routes, ["menu", BUILD_PHASE_ROUTE])
+  assert.deepEqual(routes, ["menu", DEFAULT_LEVEL_ROUTE])
   for (const route of routes) assert.equal(formatRoute(parseRoute(route)), route)
   assert.deepEqual([...html.matchAll(/data-pulse="([^"]*)"/gu)].map((match) => match[1]), ["pulse-grand", "pulse-mirror"])
   assert.doesNotMatch(html, /data-mode=/u, "a mode button still names a mode rather than a route")

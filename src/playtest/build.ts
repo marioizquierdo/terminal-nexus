@@ -18,7 +18,7 @@ import { foresee, nextRound, startPulse } from "../cli/pulse-run.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
 import { starterContext } from "../cli/starter.ts"
 import { openRound } from "../cli/levels.ts"
-import { BUILD_PHASE_ROUTE, parseRoute } from "../cli/route.ts"
+import { DEFAULT_LEVEL_ROUTE, parseRoute } from "../cli/route.ts"
 import type { LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
@@ -218,6 +218,6 @@ export function playtestOpening(route: string): LevelDestination {
   if (destination.kind === "level") return destination
   throw new Error(
     `--at ${route} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
-      `try --at '${BUILD_PHASE_ROUTE}&round=2'`,
+      `try --at '${DEFAULT_LEVEL_ROUTE}&round=2'`,
   )
 }

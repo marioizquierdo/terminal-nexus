@@ -214,5 +214,6 @@ export function allRoutes(): readonly string[] {
   return PLACE_NAMES.flatMap((name) => PLACES[name]?.routes() ?? [])
 }
 
-/** Where `--build-phase` (and `--spike`) open, for one more release: the default level's first round. */
-export const BUILD_PHASE_ROUTE = `campaign?level=${DEFAULT_LEVEL_ID}`
+/** The default level's route, which opens its first round: where the browser page, a demo and the scripted
+ *  playtest open when nothing names a place. */
+export const DEFAULT_LEVEL_ROUTE = `campaign?level=${DEFAULT_LEVEL_ID}`
