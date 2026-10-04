@@ -79,19 +79,19 @@ waiting for Mario's playtest.
 Mario's notes on the second round ([his words](../history/feedback/2026-10-04-commander-round-3.md)). Built on
 the same pull request.
 
-- [ ] `--at <route>` replaces `--build-phase`: the title menu's screens and a campaign level
+- [x] `--at <route>` replaces `--build-phase`: the title menu's screens and a campaign level
       (`campaign?level=<id>`, with the round to open at) are routes, the same grammar for the browser page's
       direct links; `--settings` takes `foo=6&var=true`. The bare command opens the title menu; loading a saved
       game from a default location is written down, not built.
-- [ ] The routing schema is documented, and a test opens every route it names.
+- [x] The routing schema is documented, and a test opens every route it names.
 - [ ] Content is organized as bundles, data rather than code, each naming the bundles it builds on: `common`
       (buildings and Nexus powers any Commander may use) and `vasse` (her Commander and her campaign: its levels
       in order, what each unlocks, and their missions). Validation refuses a broken bundle by name.
 - [ ] What a level offers is what its campaign has unlocked by then. PERIMETER is the campaign's first level;
       the Commander's cadence test map is a second, reachable by route, so her return can be played.
-- [ ] Commanders die as part of the game: the round one is out opens on a line saying so, and the campaign
+- [x] Commanders die as part of the game: the round one is out opens on a line saying so, and the campaign
       design and the lore teach it in the intro levels rather than saving it for a later mission.
-- [ ] The next iteration on intent, the player's own units' targets, is in the backlog.
+- [x] The next iteration on intent, the player's own units' targets, is in the backlog.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

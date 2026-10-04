@@ -18,12 +18,17 @@ third round of the Commander step. Status values: **Built**, **Scheduled**, **Op
 > that also works for dirext links. This model will allow us to target any area of the game by defining the
 > routing later as well, so this should be well documented when we can verify it works.
 
-**Scheduled** (this round). `--build-phase` gives way to `--at <route>`: a location in the game written like a
-URL path and query, the same grammar for the terminal and for the browser page's direct links. The title
-menu's screens are routes, and a campaign level is `campaign?level=<id>`, with the round to open at. Settings
-overrides take the same query form (`foo=6&var=true`). The bare command still opens the title menu; loading a
-saved game from a default location is written down as the intended start, not built (there is no save yet).
-The schema is documented once tests show every route opens where it says.
+**Built.** `--at <route>` opens the game anywhere a route names: `menu`, `campaign`, `challenge`,
+`settings`, `about`, and `campaign?level=<id>` with `&round=N` (counted from 1, as the screen counts) or
+`&wave=N` (counted from 0, as he wrote it: `wave=0` is round 1). A later round is reached as a player who
+builds nothing reaches it, so a route to round 3 opens the same round 3 every time. A broken route is refused
+whole, every problem at once, each naming what exists instead. Each title menu row names its route and
+choosing it follows that route, so a row and its route draw the same frame. `--settings` reads
+`foo=6&var=true`, and every on/off setting takes true and false. The browser page opens `#at=<route>` in a
+local copy, and a demo may carry an `at`. The scripted playtest takes `--at` too. The bare command still opens
+the title menu; the saved-game start is written down as the intended one, not built. `--build-phase` stays one
+more release as an alias. The schema is in the new routing page, and a test opens every route it names. The
+Activity Logs say which route a session opened at.
 
 ### F111 — The campaign's deck is not the run mode's: bundles, with the campaign at the top
 
@@ -64,7 +69,9 @@ already give.
 > Vasse survivavility is fine; commanders die on this game, is part of the gameplay so we better integrate that
 > into the lore and the campaign intro levels
 
-**Scheduled** (this round). The known issue that Vasse falls in PERIMETER's last round is closed: it is the
-game working. The campaign design stops saving a Commander's death for its third mission: the intro levels
-teach that a Commander falls, sits a round out and is restored, and the lore says it is the Nexus's ordinary
-business. The round she is out opens on a line saying so, as the round she returns already does.
+**Built.** The known issue that Vasse falls in PERIMETER's last round is closed: it is the game working. The
+lore now says a Commander's death is the Nexus's ordinary business: it restores her a round later and files
+what it kept. The campaign design stops saving a Commander's death for its third mission: PERIMETER teaches
+the cadence, and the third mission keeps restoration as its subject, what the Nexus restores and what it
+files about her. The round she is out opens on a line saying so, the camera on the Nexus, as the round she
+returns already did.

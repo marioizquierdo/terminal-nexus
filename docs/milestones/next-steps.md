@@ -48,9 +48,6 @@ Small, none blocking.
 
 - Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
   back in a round 4 that does not exist. The named scenario (`tests/commander-fixture.ts`) proves it.
-- She falls in PERIMETER's last round in every plan measured, at every health the Experiment offers, so the
-  mission always ends with "Vasse fell."; the milestone hoped PERIMETER would not force her death. No health
-  keeps her alive there and still lets a plan that builds nothing lose: holding her back waits on Q69.
 - Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
   enemy like every unit, from just behind the line.
 - In round 1 she is incoming with the squads, so her card is the incoming one ("Yours, next round"), not her
