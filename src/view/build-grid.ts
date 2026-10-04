@@ -26,6 +26,7 @@ import { trackEffectsAt } from "./animation.ts"
 import { placementEffectContext, placementLook, placementSchedule, removalSchedule } from "./placement.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
+import { drawBuildRange, drawReach } from "./build-areas.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"
@@ -136,6 +137,8 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   }
   for (const entity of context.field ?? []) drawEntity(entity, false)
   for (const entity of context.incoming ?? []) drawEntity(entity, true)
+  // While a building is armed, where it may go: drawn before the raid's trail, which wins on its tiles.
+  drawBuildRange(cells, input, pack, takenTiles(context, state.planned))
 }
 
 /**
@@ -250,7 +253,20 @@ export function trailGlyph(pack: GlyphPack, dx: number, dy: number): string {
   return chromeGlyph(pack, (dx < 0) === (dy > 0) ? "trailRise" : "trailFall")
 }
 
-/** Every tile something stands on, is planned on or arrives on — what a trail mark never covers. */
+/** Every tile the raid's trail marks while the trail is drawn — what a building's reach yields to. */
+export function trailTiles(input: BuildCompositionInput): Set<string> {
+  const tiles = new Set<string>()
+  const { raid, state } = input
+  if (raid === undefined || state.committed || input.pulse !== undefined) return tiles
+  for (const group of raid) {
+    if (group.target === null) continue
+    for (const mark of trailMarks(group.path, group.target.tiles)) tiles.add(`${mark.tile.x},${mark.tile.y}`)
+  }
+  return tiles
+}
+
+/** Every tile something stands on, is planned on or arrives on — what a trail mark, the build range's dots
+ *  and a building's reach never cover. */
 function takenTiles(context: BuildContext, planned: readonly PlannedPlacement[]): Set<string> {
   const taken = new Set<string>()
   const take = (contentId: string, anchor: Coord): void => {
@@ -326,6 +342,10 @@ export function drawEffects(
  */
 export function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
+  // Where it will reach — round the ghost, or round a building the cursor rests on — yielding to the trail.
+  const avoid = takenTiles(input.context, state.planned)
+  for (const tile of trailTiles(input)) avoid.add(tile)
+  drawReach(cells, input, input.glyphPack ?? "ascii", preview, glideShift(input), avoid)
   if (preview === null) return
   const legal = preview.refusal === null
   const shape = legal || state.noSpotFound

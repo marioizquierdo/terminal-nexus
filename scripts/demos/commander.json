@@ -6,7 +6,7 @@
   },
   {
     "label": "The raid",
-    "try": "Round 1 after the intro. The panel says what is coming, from where and what it goes for first; the trail on the map shows its way to your Barracks. Press 3 and tap a tile on the trail twice to place a Turret there: the raid now goes for the Turret. u undoes it.",
+    "try": "Round 1 after the intro. The panel says what is coming, from where and what it goes for first; the trail on the map shows its way to your Barracks. Press 3: the dotted ground around your buildings is where a Turret may go, and the outline round it is where it will reach. Tap a tile of the trail on the dotted ground twice to place a Turret there: the raid now goes for the Turret. u undoes it.",
     "keys": "Esc"
   },
   {
