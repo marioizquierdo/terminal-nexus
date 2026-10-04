@@ -105,7 +105,7 @@ the same pull request, by subagents.
 - [ ] Each campaign level names the target the player's troops head for; they engage what comes within reach
       on the way, and the Build Phase says where they are going. Posts wait.
 - [ ] Vasse has a passive aura: the player's units near her take less damage.
-- [ ] Vasse speaks during the Nexus Pulse, behind an Experiment, with a light touch of the effect library.
+- [x] Vasse speaks during the Nexus Pulse, behind an Experiment, with a light touch of the effect library.
 - [ ] A pool of Nexus powers for Vasse is designed for the Nexus draft step to build.
 - [ ] "Wave" is gone: Battle Round in the interface, Nexus Pulse in lore and design; a route counts rounds only.
 - [ ] Content bundles are armies: `armies/all` and `armies/vasse`.

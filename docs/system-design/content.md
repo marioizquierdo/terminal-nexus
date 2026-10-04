@@ -103,7 +103,10 @@ whose levels each offer what it has unlocked by then.
 **An army is data, not code** (RULE — `armies/`, `src/armies/`, `tests/armies.test.ts`). An army is a folder
 under `armies/` holding an `army.json`: its id and title, the armies it `requires`, `notes`, and any of five
 sections — `content` (the content ids it brings to the Grid), `buildings` (a structure and its cost),
-`powers` (a Nexus power's name, its one line and its effect), `commanders` (a name and her unit) and
+`powers` (a Nexus power's name, its one line and its effect), `commanders` (a name, her unit, and her
+`barks`: a few lines for each moment of a Battle Round she answers, refused by name for a moment no Commander
+speaks at, a moment with no lines, or a line that says nothing or does not fit the panel's feed or one row of
+the map at 80 × 24) and
 `campaigns` (a Commander and her levels in the order they are played, each with a map by name, its credits,
 what it unlocks and its mission). **An army sees what it and the armies it requires bring, directly or
 through another, and nothing else**, so content forms a tree with a campaign at the top: its levels, then the
@@ -118,7 +121,7 @@ Still code, each named by id from an army: the content definitions themselves (s
 `src/content`; moving them into the armies is the next step), what a Nexus power's effect kinds do, the
 starter map (`src/build/maps.ts`) and the mission vocabulary (`src/mission/`). The game reads only the
 armies `src/armies/index.ts` lists, imported with the code: there is no mod loader looking for folders on
-disk. **To add a Commander**: a folder requiring `all`, her unit's id in `content`, her `commanders` entry, a
+disk. **To add a Commander**: a folder requiring `all`, her unit's id in `content`, her `commanders` entry (with her barks, for her to speak in battle), a
 campaign whose levels unlock `all`'s cards or her own, and one line in that list.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,

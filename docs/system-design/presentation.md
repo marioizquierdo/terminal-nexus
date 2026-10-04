@@ -261,8 +261,11 @@ until it closes, and nothing opens one but the player; a message appears only as
 the player just did. It sits on top of everything else without a drawing band of its own (see bands
 below).
 
-**There is no radius preview until something placed has a radius.** Nothing in the content that exists
-has a radius, and a preview of nothing is a framework built before its first use.
+**A reach is drawn where it is felt.** In the Build Phase a building's reach is an outline round its ghost,
+and the build range the dotted ground while a building is armed (the interface patterns, the build range and a
+building's reach). During a Pulse Vasse's aura is the first radius on the Grid: its reach is a see-through style
+of her side's colour on the ground's band, under every unit, a diamond because range is Manhattan, shown where
+colours blend and said in words on her card where they do not (the interface patterns, her aura's reach).
 
 **The Pulse view shows everything by default.** Selection is an addition the player reaches for, never a
 prerequisite for following the fight. If a Pulse can only be understood by clicking things, the
@@ -294,7 +297,7 @@ point:
 | Band | Fed by |
 | --- | --- |
 | 1 `terrain` | `terrain` layer |
-| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase |
+| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Pulse |
 | 3 `ground-items` | salvage, rubble, deposits |
 | 4 `structures` | `obstacles` layer |
 | 5 `units` | `workers` and `units` layers |

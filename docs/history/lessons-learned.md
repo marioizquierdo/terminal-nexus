@@ -249,6 +249,15 @@ than any one feature:
    at every depth: the build range is the ground's own dots, the wash only adds light where colours blend.
 4. **Do the renames before the split.** Renaming bundles to armies and removing a word from the game touched
    forty files; done first, on its own commit, it cost four agents nothing.
+5. **A label that follows a moving unit tile by tile cannot be read.** When presentation knows the future (a
+   resolved Pulse), choose a label's place once from everything it will be shown over, and hold it still.
+6. **A see-through wash over a glyph changes its hue at 256 colours.** An area's wash belongs on the ground's
+   band, under what stands.
+7. **A planner that knows the future plans every line around a cut-in**, so nothing is ever cut in on; let a
+   line being read give way, once it has been on screen long enough to read.
+8. **To compare a page before and after a refactor, freeze its clock.** A breathing dialog or a playing Pulse
+   draws a different frame every time it is looked at; with `Date.now` and `performance.now` pinned before the
+   page loads, every opening is the same frame run to run.
 
 ## Habits to keep
 

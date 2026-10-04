@@ -54,10 +54,13 @@ her protector's doctrine: the player's units near her take less damage.
 > battle or enhances the experience even more. A little strategic usage of our effect library should go a
 > long way here too
 
-**Scheduled** (this round). Vasse speaks during the Nexus Pulse at the moments that matter, in her own short
-lines, written as data in her army. An Experiment turns it off or chooses where her words appear, so he can
-feel whether they get in the way of the battle or add to it; a light use of the effect library marks the
-moment she speaks.
+**Built.** Vasse now speaks during the Nexus Pulse: a few short lines a round in her own dry voice, written as
+data in her army — as a round starts, at the first shot, when the raid sends more, when one of hers falls near
+her or a building falls, when she is badly hurt, when the Grid Nexus is hit, her last words when she falls,
+and a remark when the round is won — never more than a few, with quiet between them. The Vasse's voice
+Experiment shows them beside her on the map (the first guess), under the panel's recent events, or not at all;
+a moment's light on her marks her as she begins. Her aura's reach shows as a faint glow of her colour on the
+ground around her while the fight is on.
 
 ### F118 — Many more Nexus powers for Vasse
 

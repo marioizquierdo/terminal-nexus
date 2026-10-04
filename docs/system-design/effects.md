@@ -72,7 +72,9 @@ Five rules, all load-bearing:
    gameplay. A particle that consumes a gameplay draw desynchronises the replay, and it takes a day to
    find. The seeded gameplay generator is PCG32 and never reaches an effect.
 4. **Tile coordinates, never columns.** GUIDANCE. The compositor maps tiles to columns at the current
-   tile width; an effect that computes in columns breaks at the other width.
+   tile width; an effect that computes in columns breaks at the other width. Text is not an effect: Vasse's
+   line beside her is laid out in columns (two letters to a tile at the wide width), so the scene draws it,
+   under the corruption law, rather than a recipe (`src/view/pulse-scene.ts`).
 5. **Effects never carry a required cue alone.** GUIDANCE. If the only way to know something was hit
    is a two-frame flash, a player who blinked, a player with reduced motion or a player on a slow link
    did not see it. The settled state must always say it too.
@@ -130,7 +132,8 @@ Nothing fires from the renderer, and nothing reaches state: the effects library 
 can experiment with different effects without any side effect on the gameplay.
 
 Light and sparks are generic recipes (`fx.light.flash`, `fx.sparks.burst`), parameterised by origin,
-footprint and size, usable by anything: a placement today, a death or an impact later.
+footprint and size, usable by anything: a placement and a Commander beginning to speak today, a death or an
+impact later.
 
 ## The shape of a good effect
 
@@ -244,7 +247,7 @@ size of the set, so the count moves only on purpose.
 | `fx.nexus.critical` | Nexus below threshold | `effects` | sustained, looping | A slow pulse across the Nexus footprint, phase-locked to absolute time so it is identical on every client. The one sustained effect, and the one allowed real visual weight |
 | `fx.blast.detonation` | an entity detonated | `effects` | impact, expansion, thinning | A ring that reaches its radius and thins, sparser than it is dense from the first frame. The second effect allowed real weight, because it is the one event that can end an army in a single tick. A death that damages a radius is not just a death |
 | `fx.sparks.burst` | something happened to a thing standing there (a placement today) | `effects` | impact + decay (~400 ms) | Sparks launched from the ring one tile outside the footprint, flying outward and thinning to dust; never on a building. Randomness hashes a `key`/`id` identity when given (a player action: plan ordinal, structure, anchor), otherwise the start time. Reduced motion: a still mark at the four corners |
-| `fx.light.flash` | the same moment, on the thing itself | `highlights` | impact + decay (~400 ms) | Shading: a glyphless tint over the footprint toward the theme's strongest ink, or a rainbow sweep, falling off. Reduced motion: a steady half-strength light. Monochrome: nothing, so the caller keeps its own cue (a placement draws its scaffold plain and the finished building bold) |
+| `fx.light.flash` | the same moment, on the thing itself (a placement; a Commander beginning a line in battle) | `highlights` | impact + decay (~400 ms) | Shading: a glyphless tint over the footprint toward the theme's strongest ink, or a rainbow sweep, falling off. Reduced motion: a steady half-strength light. Monochrome: nothing, so the caller keeps its own cue (a placement draws its scaffold plain and the finished building bold) |
 | `fx.focus.light` | a dialog line names a focus (the intro highlight: Vasse as PERIMETER opens, and the round she is restored) | `highlights` | sustained while the line shows: lit, then breathing | "She should have an intro highlight when she shows up." A see-through light on the ground around the focus, never on its own cells: the ring of tiles around its footprint, reaching two tiles sideways at one column per tile so it reads round, the outer columns at half the light so it reads as a glow. It breathes from 0.34 down to 0.12 at the "Popup pulse" Experiment's pace, from the frame the line appeared, so the Popup pulse at 0 holds it steady. Reduced motion: steady. Monochrome and 16 colours: the focus's own cells inverted, an attribute, never a glyph |
 | focus arrow (interface) | a building armed from the menu | `chrome`, under every popup | action, eased out (250 ms, a tuned value shared with the see-through cursor) | "It almost seems like the energy of the building is transferred from the menu to the grid." A tween from the cell just right of the building's own row on the menu toward the cursor as drawn that frame, so it homes on a cursor that moves meanwhile, stopping one cell short of the cursor's tile; the head points the way it flies (`> < v ^`; Unicode `▶ ◀ ▼ ▲`, a row counting as two columns when the slope is read) and a four-cell trail follows, each cell the step that reached it (`- \| \ /`; `━ ┃ ╲ ╱`), the older two dim. Hotkey colour, bold. On a building's tile or the ghost being placed only the style changes. Never during a Pulse: the shot glyphs are the Pulse's language, and in the Build Phase nothing shoots. Keys work throughout. Reduced motion: dropped, since it is travel, and the blink after it keeps the cue. Monochrome: the glyphs carry it |
 | cursor blink (interface) | the focus arrow or the see-through cursor landed | `highlights` | impact, `n` blinks | An Experiment, settled at 2 blinks. The cursor drawn in a menu row's pressed look (hotkey colour, inverse, bold, underlined) for the pressed flash's own duration (90 ms, a tuned value), with a gap of the same length between blinks: the menu's acknowledgement, moved to where the eye should go. At once under reduced motion or with the arrow off. The arrow and the blink stop for good when the keyboard leaves the map, a popup opens or the plan is committed. Monochrome: inverse and underline carry it |

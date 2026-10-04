@@ -45,6 +45,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q63](#q63--should-the-mouse-wheel-move-the-jump-distance-rather-than-5) | Should the wheel move the jump distance rather than 5? | OPEN | Mario's trackpad |
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN | Mario, now |
+| [Q72](#q72--does-vasses-voice-add-to-the-battle-or-get-in-its-way-and-where-should-her-words-appear) | Does Vasse's voice add to the battle, and where should it show? | OBSERVABLE | The Vasse's voice Experiment |
 
 ## Open
 
@@ -522,3 +523,20 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
 that is what a readable intention needs and what the Campaign's scripted opponent will be made of.
+
+### Q72 — Does Vasse's voice add to the battle, or get in its way, and where should her words appear?
+
+**Status:** OBSERVABLE — registered 2026-10-04; the "Vasse's voice" Experiment shows all three answers.
+
+The owner asked for her voice in battle as an experiment: "let's experiment with this to see if it gets into the
+battle or enhances the experience even more". Built: a few short lines a Battle Round at the moments that matter,
+never more than three besides her fall and a round won, with a quiet gap between them.
+
+| Option | Cost |
+| --- | --- |
+| A. **Beside her** (the first guess): the line on the map near her `@`, held still about three seconds | Where the eye already is; covers a strip of open ground, never a unit or a building |
+| B. **In the feed**: under the panel's recent events, her name over the line | Never covers the map; easy to miss while watching the fight |
+| C. **Off**: the battle as it was | Nothing of her in the fight but her `@` and her aura |
+
+**Recommendation: A**, with the panel taking her line whenever she is out of view. If it feels busy, she says
+fewer lines a round before her words move to the feed.

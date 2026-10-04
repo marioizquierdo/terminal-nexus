@@ -556,6 +556,9 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   it on the ground around it, never on it, breathing at the Popup pulse's pace; steady under reduced
   motion, and in monochrome and at 16 colours the focus's own cells invert instead.
   (RULE — `tests/dialog.test.ts`)
+- **The speaker's light**: as Vasse begins a line during a Pulse, her own tile is lit a moment with the
+  placement's light (`fx.light.flash`, glyphless, its own three forms); none for her last words, when she is
+  gone from it. (RULE — `tests/voice.test.ts`)
 - **A placement is felt, then settles**: a few frames going up, a moment lit with sparks, then the still
   picture. A removal throws the same sparks. Reduced motion shows the finished building at once, unlit,
   with a still mark for the sparks. (RULE — `tests/build-placement.test.ts`)
@@ -571,7 +574,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   (RULE — `tests/pulse-screen.test.ts`)
 - **The panel, in order**: `NEXUS PULSE 1` with the time left until the last shot; what the timer counts
   and its speed; a line per side (units, a health bar, the number); the last five events in plain words,
-  coloured by side; then `[space] Pause` and `[r] Watch again`. Speed (`[`, `]`) and stepping (`.`, `,`)
+  coloured by side; under them, while she is saying something and her voice shows in the feed, her glyph
+  and name and her line; then `[space] Pause` and `[r] Watch again`. Speed (`[`, `]`) and stepping (`.`, `,`)
   are keys, on the Controls page. (RULE — `tests/pulse-screen.test.ts`)
 - **The ending is four beats, in order**: the **last seconds** — only the title's timer flashes, slowly,
   and a soft light sweeps the border like a lighthouse (colour, never a glyph; in monochrome the timer
@@ -610,6 +614,31 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
   is that round's number, in the mission's words for it.
   (RULE — `tests/mission-loop.test.ts`, `tests/build-start.test.ts`)
+- ***Her voice in battle*** (a named pattern; the owner: "let's experiment with this to see if it gets into
+  the battle or enhances the experience even more"): Vasse says a short line at the moments of a Battle Round
+  that matter — it starts, the first shot, a group of the raid arriving, one of hers falling near her, a
+  building of hers falling, her badly hurt, the Grid Nexus first hit, her own fall, and, as the result stands,
+  a round won. Her lines are data in her army, a few a moment. **She does not chatter**: the round is
+  resolved before it plays, so its lines are planned at once — each moment once, at most three lines a round
+  besides the two that cut in, the moments that matter most chosen first, a quiet gap between two lines, and
+  a line that cannot come soon after its moment is not said. **Her fall and a round won cut in** on a line
+  being read; after her fall she says nothing more. **Which line** is a hash of the moment's identity (the
+  moment and the round), never a stream, and steps to another line each round. **Where** is the "Vasse's
+  voice" Experiment: *beside* (the first guess) — the quoted line on a row near her `@`, at the place clearest
+  of what stands there for the whole time it is read, held still while it is read, never over a unit or a
+  building, and in the panel instead whenever she or that row is out of view; *feed* — her glyph and name over
+  the quoted line, under the panel's feed, never into the controls; *off* — silence. A line types in, holds,
+  and thins out; reduced motion shows it whole and steady. As she begins, the effect library's own light lights
+  her tile a moment, none for her last words. Monochrome keeps the words, bold, between quotes. Every line is
+  in the Activity Logs (the "Her voice" filter). Nothing she says can change what resolves.
+  (RULE — `tests/voice.test.ts`)
+- ***Her aura's reach*** (a named pattern; the owner: "Vasse should provide boost to nearby units"): while the
+  fight is on, the ground within By the Book's radius — measured as range is, Manhattan, so a diamond — is
+  washed in her side's colour, moving with her, the radius read from her content. A see-through style on the
+  ground's own band, under everything that stands: a unit she guards stands in the glow with every colour of
+  its own (a wash over a glyph would change its hue at 256 colours), and effects draw over it. Gone at cease
+  fire and when she falls. It shows where colours blend; at 16 colours and in monochrome it does not, and her
+  card says what the aura does. (RULE — `tests/voice.test.ts`)
 
 ## 15. Feedback loops
 

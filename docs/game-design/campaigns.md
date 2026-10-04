@@ -75,7 +75,7 @@ Actions come in **two bands, and the band is the most important thing on this pa
 | **Simulation** | `spawn` (units at a region, with an initial order), `order` (a group advances, holds, or withdraws toward a region), `commitPlan` (the scripted opponent's Build Phase plan for a given round), `objective` (set or change one), `win`, `lose`, `endPulse`, `startBuild`, `reveal` | applied by the trigger runner as scripted inputs at the tick the condition holds, validated like any player command, emitted as ordinary events | part of the hashed inputs — a replay re-derives them from mission, seed, and plans |
 | **Presentation** | `focus` (camera to an entity or a tile, through the ordinary scroll), `card` (a character's portrait card), `say` (speaker and line, advanced by the player or a timeout), `bark`, `effect`, `pause` / `resume` | in presentation; they never write state | re-derived from the event stream and the trigger list; skipping or replaying them changes nothing |
 
-Built today: `spawn`, `order` (only `advance`, which means what the kernel's one movement rule does: engage the nearest enemy), `commitPlan`, `win` and `lose`, and in the presentation band `say` at its smallest. The rest are GUIDANCE.
+Built today: `spawn`, `order` (only `advance`, which means what the kernel's one movement rule does: engage the nearest enemy), `commitPlan`, `win` and `lose`, and in the presentation band `say` at its smallest. The rest are GUIDANCE. A Commander's barks in battle are not a mission's action: they are data in her army, said at moments the view reads off the round's events (her voice in battle, in the interface patterns); a mission's own `bark`, for a unit it names, is still not built.
 
 **A mission's lines are data, and the dialog shows them** (RULE — `src/mission/scene.ts`, `src/mission/validate.ts`, `tests/dialog.test.ts`). `say: { speaker, side?, text, focus? }` runs only at `build.start`: as that round's Build Phase opens, its lines play in the dialog at the bottom of the screen ([`ui-patterns.md`](../system-design/ui-patterns.md), the dialog), one at a time, the camera on each line's focus (a unit, a group or a region). A speaker is a unit the mission brings — Vasse's name, side and `@` come from her content — or a name off the Grid, as Corvane is. Validation refuses, by name, a line anywhere but `build.start`, an empty speaker or text, a line too long for the box at 80 × 24, a structure as speaker, and any speaker or focus the mission does not bring by that round. The trigger runner never reads them, so a mission's states hash the same with and without its lines. The round a Commander is restored opens on one line in the game's own voice, looking at her. Not built: `card`, `bark`, `effect`, a timeout, a scripted Pulse.
 
@@ -216,7 +216,7 @@ CORVANE: ...Why is your pyramid looking at me?
 - Citizen worker, under fire: "Not in the manual!"
 - Citizen soldier, engaging: "Line holds or we hold it."
 - Citizen soldier, dying: "Keep. Building."
-- Vasse, first engagement: "By the book. The new book."
+- Vasse, first engagement: "By the book. The new book." (said in battle: one of her lines for the first shot of a round, in her army)
 - Ravel raider, arriving: "Knock knock, bureaucrats!"
 - Ravel raider, dying: "Worth it. Probably worth it."
 
