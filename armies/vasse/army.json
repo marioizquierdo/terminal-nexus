@@ -9,7 +9,18 @@
       "id": "vasse",
       "name": "Edda Vasse",
       "unit": "unit.citizen.vasse",
-      "notes": "Her unit's definition (her health, her shot, the commander flag) is still TypeScript in src/content/commanders.ts; this names it, and her."
+      "barks": {
+        "round-start": ["Positions. Nobody improvises.", "Stations. Look like a perimeter.", "On my mark. That was it."],
+        "first-contact": ["By the book. The new book.", "Contact. Hold your spacing.", "Weapons free. Paperwork after."],
+        "raid-arrives": ["More of them. Noted.", "Late arrivals. Not on my list.", "Another group. Of course."],
+        "unit-lost": ["Close the gap. I have the name.", "Down one. Close it up.", "Hold. We count them after."],
+        "building-lost": ["Write it off. We rebuild.", "That was ours. Noted.", "Concrete sets faster under fire."],
+        "badly-hurt": ["Still standing. Mostly.", "I'm fine. Keep firing.", "Hit. Not done yet."],
+        "nexus-hit": ["They touched the pyramid.", "Off the Nexus. Now.", "Somebody guard the pyramid."],
+        "falls": ["Hold it without me. Back soon.", "Back the round after next.", "Restoration on file. Hold."],
+        "round-won": ["That's the round. Log it.", "They broke. Write it up.", "File it under victories."]
+      },
+      "notes": "Her unit's definition (her health, her shot, the commander flag) is still TypeScript in src/content/commanders.ts; this names it, and her. Her barks are what she says during a Battle Round, by moment (src/armies/barks.ts says what each moment is): dry, tired, decent, the officer who reads the regulation aloud, in the lore's budget of three to eight words. 'By the book. The new book.' is campaigns.md's bark for her first engagement, 'Concrete sets faster under fire.' and 'File it under victories.' are the lore's Citizen barks, and 'They touched the pyramid.' answers PERIMETER's briefing ('Do not touch the pyramid.'). She falls as ordinary business and knows the schedule: out for a round, restored the round after. When she speaks, and which line, is the view's (the Vasse's voice Experiment shows them, src/view/pulse-voice.ts); none of them explains a rule."
     }
   ],
   "campaigns": [

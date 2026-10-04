@@ -15,6 +15,7 @@
 
 import type { GridTerrain } from "../grid/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
+import type { Barks } from "./barks.ts"
 
 // --- What an army's manifest holds ---------------------------------------------------------------------
 
@@ -44,7 +45,14 @@ export type PowerCard = Readonly<{
 }>
 
 /** A Commander: her name, and her unit — the persistent `@`, a content definition flagged `commander`. */
-export type CommanderEntry = Readonly<{ id: string; name: string; unit: string; notes?: string }>
+export type CommanderEntry = Readonly<{
+  id: string
+  name: string
+  unit: string
+  /** What she says during a Battle Round, by moment (`barks.ts`). Absent: she says nothing. */
+  barks?: Barks
+  notes?: string
+}>
 
 /** The cards a level adds to what its campaign offers, by id: from its own army or one it requires. */
 export type Unlocks = Readonly<{ buildings?: readonly string[]; powers?: readonly string[] }>
@@ -101,8 +109,8 @@ export type LevelMap = Readonly<{
 
 // --- What the loader hands the game ----------------------------------------------------------------------
 
-/** A Commander, and the army that defines her. */
-export type Commander = Readonly<{ id: string; army: string; name: string; unit: string }>
+/** A Commander, and the army that defines her: with her lines by moment, none when her army wrote none. */
+export type Commander = Readonly<{ id: string; army: string; name: string; unit: string; barks: Barks }>
 
 /** What a level offers: every card its campaign has unlocked by then, in the order first unlocked (so a hotkey
  *  never moves when a later level adds a card), and its credits. */

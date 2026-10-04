@@ -67,7 +67,12 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
       ["vasse", ["all"]],
     ],
   )
-  assert.deepEqual(ARMIES.commanders, [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse" }])
+  assert.deepEqual(
+    ARMIES.commanders.map(({ barks: _barks, ...commander }) => commander),
+    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse" }],
+  )
+  // Her lines in battle come with her (tests/voice.test.ts has what is said when).
+  assert.ok(Object.keys(ARMIES.commanders[0]?.barks ?? {}).length > 0, "Vasse has nothing to say")
   assert.equal(ARMIES.campaigns.length, 1)
   const [campaign] = ARMIES.campaigns
   assert.ok(campaign !== undefined)
@@ -401,4 +406,53 @@ test("the Commander a level brings for the player is her campaign's", () => {
   assert.deepEqual(problemsOf([all, vasse, army], { registry: registryWith(other), maps: MAPS }), [
     'army "test": level "test-1", mission "mission.test-1": trigger "squads", action 1 (spawn) brings the Commander "unit.test.other-commander" for the player, whose campaign\'s Commander is "unit.citizen.vasse"',
   ])
+})
+
+// --- A Commander's lines in battle ---------------------------------------------------------------------------
+
+/** Vasse's army with her lines replaced by `barks`. */
+const vasseSaying = (barks: unknown): object => ({
+  ...vasse,
+  commanders: vasse.commanders.map((commander) => ({ ...commander, barks })),
+})
+
+test("her lines in battle are refused by name: a moment she cannot speak at, one with no lines, a line that says nothing or does not fit", () => {
+  assert.deepEqual(
+    problemsOf([
+      all,
+      vasseSaying({
+        "round-start": ["Positions."],
+        victory: ["We won."],
+        "first-contact": [],
+        "raid-arrives": ["", " Noted."],
+        "unit-lost": ["This line is far too long for two rows of the panel at eighty columns."],
+        "nexus-hit": ["They touched the pyramid — again."],
+      }),
+    ]),
+    [
+      'army "vasse": the Commander "vasse" has lines for "victory", which is not a moment a Commander speaks at ("round-start", "first-contact", "raid-arrives", "unit-lost", "building-lost", "badly-hurt", "nexus-hit", "falls", "round-won")',
+      'army "vasse": the Commander "vasse" has no lines for "first-contact": leave the moment out for her to stay quiet there',
+      'army "vasse": the Commander "vasse"\'s line 1 for "raid-arrives" is empty',
+      'army "vasse": the Commander "vasse"\'s line 2 for "raid-arrives" starts or ends with a space',
+      'army "vasse": the Commander "vasse"\'s line 1 for "unit-lost" is too long for the panel: quoted, it takes 3 rows of 26 columns at 80 x 24, and a line has 2',
+      'army "vasse": the Commander "vasse"\'s line 1 for "nexus-hit" has "—", which is not a plain keyboard character',
+    ],
+  )
+  // A line that fits the panel's two rows can still be too wide to show beside her on one row of the map.
+  const wide = "Hold. Hold. Hold. Hold. Hold. Hold. Hold. Hold."
+  assert.deepEqual(problemsOf([all, vasseSaying({ "round-start": [wide] })]), [
+    `army "vasse": the Commander "vasse"'s line 1 for "round-start" is too long to show beside her: quoted, it is 51 columns with a blank either side, and the map is 49 wide at 80 x 24`,
+  ])
+  // Their shape is the manifest's: an object of lists of text. A Commander of the wrong shape is left out of
+  // everything after, as any item is, so her campaign finds no Commander either.
+  const ledByNobody = 'army "vasse": the campaign "vasse" is led by "vasse", which is not a Commander any army has'
+  assert.deepEqual(problemsOf([all, vasseSaying(["Positions."])]), ['army "vasse": commanders[vasse].barks should be an object, not a list', ledByNobody])
+  assert.deepEqual(problemsOf([all, vasseSaying({ "round-start": ["Positions.", 5] })]), [
+    'army "vasse": commanders[vasse].barks.round-start[1] should be text, not 5',
+    ledByNobody,
+  ])
+  // Lines are optional, moment by moment and altogether: a Commander with none says nothing.
+  assert.deepEqual(problemsOf([all, vasseSaying({ falls: ["Back soon."] })]), [])
+  const silent = loadArmies([all, { ...vasse, commanders: vasse.commanders.map(({ barks: _barks, ...commander }) => commander) }], WORLD)
+  assert.deepEqual(silent.commanders[0]?.barks, {})
 })

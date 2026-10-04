@@ -4,8 +4,9 @@
 // here, and every problem is reported at once, by name, the way a mission's own validation reports
 // (`validateMission`): the shape of each manifest, every id unique, every `requires` known and none of them in a
 // circle, every reference to something its army can see — its own, or what an army it requires (directly or
-// through another) provides — and every level's mission against its map. Then each campaign's levels are
-// resolved into what each one offers: everything the campaign has unlocked by then.
+// through another) provides — every level's mission against its map, and every line a Commander says in battle
+// against the moments she can speak at and the room it has on screen (`barks.ts`). Then each campaign's levels
+// are resolved into what each one offers: everything the campaign has unlocked by then.
 //
 // Pure, like the rest of the rules around the kernel: no clock, no randomness, nothing read from disk. The
 // manifests, the content registry and the map table are arguments (`src/armies/index.ts` passes the game's).
@@ -15,8 +16,10 @@ import type { MissionDefinition, TriggerAction } from "../mission/types.ts"
 import { MissionError } from "../mission/types.ts"
 import { actionName, validateMission } from "../mission/validate.ts"
 import { missionShape } from "./mission-shape.ts"
+import type { BarkMoment, Barks } from "./barks.ts"
+import { BARK_MOMENTS, barkProblem } from "./barks.ts"
 import type { Say, Shape } from "./shape.ts"
-import { anything, fieldAt, isObject, itemAt, list, record, shown, text, wholeNumber } from "./shape.ts"
+import { anything, dictionary, fieldAt, isObject, itemAt, list, record, shown, text, wholeNumber } from "./shape.ts"
 import type {
   BuildingCard,
   ArmyManifest,
@@ -44,7 +47,11 @@ const powerCard = record<PowerCard>(
   { id: text, name: text, description: text, effect: record<PowerEffect>({ credits: wholeNumber }, {}) },
   { notes: text },
 )
-const commanderEntry = record<CommanderEntry>({ id: text, name: text, unit: text }, { notes: text })
+/** A Commander's own fields. Her lines' moments and their fit are checked after, with the rest of what she names. */
+const commanderEntry = record<CommanderEntry>(
+  { id: text, name: text, unit: text },
+  { notes: text, barks: dictionary(list(text)) as Shape<Barks> },
+)
 const unlocks = record<Unlocks>({}, { buildings: list(text), powers: list(text) })
 /** A level's own fields. Its mission is checked by its own shape, after. */
 const levelEntry = record<LevelEntry>(
@@ -194,6 +201,32 @@ function contentOfMission(mission: MissionDefinition, registry: ContentRegistry)
   return [...new Set(ids)]
 }
 
+/**
+ * What is wrong with a Commander's lines, each problem by name: a moment she cannot speak at, a moment with no
+ * lines, and a line that says nothing or does not fit where it is shown (`barkProblem`). Her lines' shape — an
+ * object of lists of text — is the manifest's shape check's.
+ */
+function barkProblems(entry: CommanderEntry): string[] {
+  const problems: string[] = []
+  const known = BARK_MOMENTS.map((moment) => `"${moment}"`).join(", ")
+  for (const [moment, lines] of Object.entries(entry.barks ?? {})) {
+    const whose = `the Commander "${entry.id}"`
+    if (!(BARK_MOMENTS as readonly string[]).includes(moment)) {
+      problems.push(`${whose} has lines for "${moment}", which is not a moment a Commander speaks at (${known})`)
+      continue
+    }
+    if (lines === undefined || lines.length === 0) {
+      problems.push(`${whose} has no lines for "${moment as BarkMoment}": leave the moment out for her to stay quiet there`)
+      continue
+    }
+    lines.forEach((line, index) => {
+      const problem = barkProblem(line)
+      if (problem !== null) problems.push(`${whose}'s line ${index + 1} for "${moment}" ${problem}`)
+    })
+  }
+  return problems
+}
+
 /** A copy of a JSON value, so freezing what the loader hands out never freezes what it was given. (Not
  *  `structuredClone`: that is the host's, and the game's code runs where only the language is.) */
 function copied(value: unknown): unknown {
@@ -320,12 +353,14 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
       if (card.name.trim() === "" || card.description.trim() === "") say(`the Nexus power "${card.id}" needs a name and a description`)
     }
 
-    // Commanders: her unit is a Commander the army sees.
+    // Commanders: her unit is a Commander the army sees, and her lines are for moments she can speak at, each
+    // saying something that fits where it is shown.
     for (const entry of army.commanders) {
       if (entry.name.trim() === "") say(`the Commander "${entry.id}" has no name`)
       const unseen = unseenContent(army.id, entry.unit)
       if (unseen !== null) say(`the Commander "${entry.id}" is ${unseen}`)
       else if (registry.get(entry.unit).commander !== true) say(`the Commander "${entry.id}" is "${entry.unit}", which is not a Commander`)
+      for (const problem of barkProblems(entry)) say(problem)
     }
 
     // Campaigns: a Commander the army sees, levels, and each level's map, unlocks and mission.
@@ -402,7 +437,9 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
   const ordered = loadOrder(read)
   const commanders = new Map<string, Commander>()
   for (const army of ordered) {
-    for (const entry of army.commanders) commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit })
+    for (const entry of army.commanders) {
+      commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit, barks: entry.barks ?? {} })
+    }
   }
   const campaigns: Campaign[] = []
   for (const army of ordered) {
