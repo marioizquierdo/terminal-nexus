@@ -76,7 +76,7 @@ async function buildAt(at: LevelDestination | undefined): Promise<ReadonlyCellFr
     stdin,
     host: HOST,
     scenes: false,
-    ...(at === undefined ? {} : { level: at.level, round: at.round }),
+    ...(at === undefined ? {} : { at }),
   })
   await until(() => frames.length > 0, "drew the Build Phase")
   const first = frames[0]!
@@ -167,8 +167,7 @@ test("the Activity Logs say where a screen opened, and the route a picked row op
     stdin: build.stdin,
     host: HOST,
     scenes: false,
-    level: DEFAULT_LEVEL,
-    round: 2,
+    at: { kind: "level", level: DEFAULT_LEVEL, round: 2 },
     activity: buildLog,
   })
   await until(() => build.frames.length > 0, "drew the Build Phase")

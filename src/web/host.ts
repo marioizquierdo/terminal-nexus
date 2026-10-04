@@ -322,16 +322,7 @@ async function startAt(at: string | undefined, from: string, demo?: Demo): Promi
     return
   }
   const { keys } = launch
-  track(
-    runBuildPhase({
-      ...common,
-      level: destination.level,
-      round: destination.round,
-      experiments,
-      ...(keys === undefined ? {} : { startKeys: keys }),
-      exporter,
-    }),
-  )
+  track(runBuildPhase({ ...common, at: destination, experiments, ...(keys === undefined ? {} : { startKeys: keys }), exporter }))
 }
 
 function renderKeyBar(): void {

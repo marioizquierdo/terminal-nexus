@@ -25,8 +25,8 @@ import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
 import { DEFAULT_LEVEL, openRound } from "./levels.ts"
-import type { PlayableLevel } from "./levels.ts"
 import { formatRoute } from "./route.ts"
+import type { LevelDestination } from "./route.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -62,15 +62,11 @@ const messageOf = (error: unknown): string => (error instanceof Error ? error.me
 export type BuildPhaseOptions = Readonly<{
   settings: Settings
   /**
-   * The campaign level to open (`--at campaign?level=<id>`), whose mission its rounds play: PERIMETER
-   * (`DEFAULT_LEVEL`) unless given.
+   * The campaign level to open and the round to open it at (`--at campaign?level=<id>&round=<n>`): the level's
+   * mission plays its rounds, and a later round is reached as a player who builds nothing reaches it
+   * (`openRound`), with this run's Experiments. PERIMETER's first round (`DEFAULT_LEVEL`) unless given.
    */
-  level?: PlayableLevel
-  /**
-   * The round to open it at, counted from 1 as the screen counts (`&round=<n>`): 1 unless given. A later round
-   * is reached as a player who builds nothing reaches it (`openRound`), with this run's Experiments.
-   */
-  round?: number
+  at?: LevelDestination
   /** A backend name, or a backend itself (the browser playtest page's canvas). */
   backend: string | NamedBackend
   stdout: TerminalOutput
@@ -122,8 +118,9 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   }
 
   const log = options.activity ?? globalActivity
-  const level = options.level ?? DEFAULT_LEVEL
-  const context = openRound(level, options.round ?? 1, options.scrollMargin, {
+  const at: LevelDestination = options.at ?? { kind: "level", level: DEFAULT_LEVEL, round: 1 }
+  const { play } = at.level
+  const context = openRound(at.level, at.round, options.scrollMargin, {
     settings: options.settings,
     // The Activity logs window shows the log this screen records into.
     activity: log,
@@ -147,7 +144,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     rows: loggedSize.rows,
     colours: options.settings.capability,
     // Where this screen opened, as a route: a report's log says which round of which level it was.
-    at: formatRoute({ kind: "level", level, round: options.round ?? 1 }),
+    at: formatRoute(at),
   })
 
   let layout = buildLayout(terminalSize(), context.grid)
@@ -225,10 +222,10 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     onSettingsChange: saveSettings,
     onExport: exportText,
     // The level's own mission: its Pulses, the round after each, and its raid foreseen.
-    startPulse: level.play.startPulse,
+    startPulse: play.startPulse,
     activity: log,
-    nextRound: level.play.nextRound,
-    foresee: level.play.foresee,
+    nextRound: play.nextRound,
+    foresee: play.foresee,
     scenes: options.scenes ?? true,
   })
 

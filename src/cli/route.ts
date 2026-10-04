@@ -76,13 +76,6 @@ const titlePlace = (place: TitlePlace, opens: string): Place => ({
 /** A level as a problem names it: its id, its title and its rounds. */
 const describeLevel = (level: PlayableLevel): string => `${level.id} (${level.title}, rounds 1 to ${level.rounds})`
 
-/** A whole number from a query value, or `null` with the problem said. */
-function whole(name: string, text: string, problems: string[]): number | null {
-  if (/^\d+$/u.test(text)) return Number(text)
-  problems.push(`${name} must be a whole number, not "${text}"`)
-  return null
-}
-
 /** `campaign`: the Campaign screen, or with a level, that level's Build Phase at a round. */
 function campaign(query: Query, problems: string[]): Destination | null {
   const id = query.get("level")
@@ -99,8 +92,11 @@ function campaign(query: Query, problems: string[]): Destination | null {
     problems.push(`no level "${id}": the levels are ${LEVELS.map(describeLevel).join(", ")}`)
     return null
   }
-  const counted = round === undefined ? 1 : whole("round", round, problems)
-  if (counted === null) return null
+  if (round !== undefined && !/^\d+$/u.test(round)) {
+    problems.push(`round must be a whole number, not "${round}"`)
+    return null
+  }
+  const counted = round === undefined ? 1 : Number(round)
   if (counted < 1 || counted > level.rounds) {
     problems.push(`level "${level.id}" has rounds 1 to ${level.rounds}, not ${counted}`)
     return null

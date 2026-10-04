@@ -54,18 +54,6 @@ export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
  *  back, so Up, Down and Enter alone still leave it, as every menu must allow. */
 const BACK_ONLY_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
 
-const CAMPAIGN_PLACEHOLDER = "Campaign is not built yet - Milestone 4 adds the campaign menu."
-
-/**
- * Stub honestly rather than half-build: an option not built yet says plainly what it is waiting
- * on, rather than silently doing nothing. Settings and Campaign have real screens and need no
- * notice (Campaign's is the placeholder above) — only Challenge still shows one, on top of its label already
- * saying why, whether its row was chosen or its route followed.
- */
-const STUB_NOTICES: Readonly<Partial<Record<TitlePlace, string>>> = {
-  challenge: "Challenge is not built yet - Milestone 11 adds the run screen.",
-}
-
 /**
  * The Settings screen's five rows, rebuilt fresh from the current values every time one changes.
  * Picking a row (its hotkey, arrows and Enter, or a click — the identical gesture the top-level
@@ -143,13 +131,18 @@ const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack
   about: { subtitle: "about", showBack: true },
 }
 
-/** The screen each title menu place opens: Challenge, not built, stays on the top-level menu with its notice. */
-const PLACE_SCREENS: Readonly<Record<TitlePlace, Screen>> = {
-  menu: "top",
-  campaign: "campaign",
-  challenge: "top",
-  settings: "settings",
-  about: "about",
+/**
+ * The screen each title menu place opens, and the line it says there. Stub honestly rather than half-build: an
+ * option not built yet says plainly what it is waiting on, rather than silently doing nothing — Campaign on a
+ * placeholder screen of its own, Challenge on the top-level menu, on top of its row's label already saying why,
+ * whether its row was chosen or its route followed.
+ */
+const PLACE_SCREENS: Readonly<Record<TitlePlace, Readonly<{ screen: Screen; notice?: string }>>> = {
+  menu: { screen: "top" },
+  campaign: { screen: "campaign", notice: "Campaign is not built yet - Milestone 4 adds the campaign menu." },
+  challenge: { screen: "top", notice: "Challenge is not built yet - Milestone 11 adds the run screen." },
+  settings: { screen: "settings" },
+  about: { screen: "about" },
 }
 
 /** The title menu place a row's route names. Every row's route is a title menu place
@@ -182,6 +175,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
 
   let settings = options.settings
   let screen: Screen = "top"
+  /** The line under the screen's rows: the one its place says (`PLACE_SCREENS`), until the screen changes. */
   let notice: string | null = null
   let gated = false
   let leaving = false
@@ -218,14 +212,13 @@ export async function runMenu(options: MenuOptions): Promise<number> {
 
   function render(): void {
     if (leaving) return
-    const active = sessionFor(screen)
     const info = SCREEN_INFO[screen]
     const frame = gated
       ? gateFrame(stdout.columns ?? MENU_SIZE.width, stdout.rows ?? MENU_SIZE.height, MENU_SIZE)
       : composeMenuFrame(
           {
-            state: active.state,
-            notice: screen === "top" ? notice : screen === "campaign" ? CAMPAIGN_PLACEHOLDER : null,
+            state: sessions[screen].state,
+            notice,
             glyphPack: settings.glyphPack,
             subtitle: info.subtitle,
             showBack: info.showBack,
@@ -242,25 +235,18 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     }
   }
 
-  function goTo(next: Screen): void {
-    screen = next
-    render()
-  }
-
   /** Where a title menu route leads: the one way a chosen row and an opening `--at` both change screen. Draws
    *  nothing; the caller does once it has finished. */
   function follow(place: TitlePlace): void {
-    screen = PLACE_SCREENS[place]
-    notice = STUB_NOTICES[place] ?? null
+    const opens = PLACE_SCREENS[place]
+    screen = opens.screen
+    notice = opens.notice ?? null
   }
 
-  /** Which session is listening on the current screen — the one place this switches, so a caller
-   *  juggling more than one screen (`onData` below) never repeats the same branch. */
-  function sessionFor(current: Screen): MenuSession {
-    if (current === "top") return topMenu
-    if (current === "settings") return settingsMenu
-    if (current === "about") return aboutMenu
-    return campaignMenu
+  /** Back to the top-level menu, from a screen's Back row or Esc: the menu's own route, followed. */
+  function back(): void {
+    follow("menu")
+    render()
   }
 
   /** A screen's own row handler, with the pick recorded first (`menu.select`) — first, so a row that
@@ -288,31 +274,18 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     onQuit: leave,
   })
 
-  const campaignMenu = new MenuSession({
-    items: BACK_ONLY_ITEMS,
-    onActivate: picked("campaign", (item) => {
-      if (item.id === "back") goTo("top")
-    }),
-    onQuit: leave,
-    onBack: () => goTo("top"),
-  })
+  /** A screen with only words to show: its one row, Back, and Esc both go back to the top-level menu. */
+  const wordsOnly = (on: Screen): MenuSession =>
+    new MenuSession({ items: BACK_ONLY_ITEMS, onActivate: picked(on, back), onQuit: leave, onBack: back })
 
   // The About screen's words never change while it runs; only the build it names comes from outside.
   const about = aboutSections(options.buildId)
-  const aboutMenu = new MenuSession({
-    items: BACK_ONLY_ITEMS,
-    onActivate: picked("about", (item) => {
-      if (item.id === "back") goTo("top")
-    }),
-    onQuit: leave,
-    onBack: () => goTo("top"),
-  })
 
   const settingsMenu = new MenuSession({
     items: settingsItems(settings),
     onActivate: picked("settings", (item) => {
       if (item.id === "back") {
-        goTo("top")
+        back()
         return
       }
       settings = withNextValue(settings, item.id)
@@ -331,8 +304,17 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       render()
     }),
     onQuit: leave,
-    onBack: () => goTo("top"),
+    onBack: back,
   })
+
+  /** Which session listens on each screen — the one place this is said, so a caller juggling more than one
+   *  screen (`onData` below) never repeats the same branch. */
+  const sessions: Readonly<Record<Screen, MenuSession>> = {
+    top: topMenu,
+    settings: settingsMenu,
+    campaign: wordsOnly("campaign"),
+    about: wordsOnly("about"),
+  }
 
   /** Below the 80 x 24 floor the too-small frame stands in for the menu. */
   function fitToTerminal(): void {
@@ -362,7 +344,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     // player can no longer see.
     for (const key of keysFromChunk(chunkText(data))) {
       if (leaving) break
-      sessionFor(screen).handleKey(key, MENU_LAYOUT)
+      sessions[screen].handleKey(key, MENU_LAYOUT)
     }
     render()
   }

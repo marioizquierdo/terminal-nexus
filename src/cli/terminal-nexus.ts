@@ -157,38 +157,27 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   // The commit this build is: named on About, at the top of an export, and at `session.start`.
   const buildId = currentCommit()
-
-  // A campaign level: its Build Phase, at the round the route names.
-  if (destination.kind === "level") {
-    const margin = args.options.get("scroll-margin")
-    return runBuildPhase({
-      settings,
-      settingsStore,
-      level: destination.level,
-      round: destination.round,
-      backend: args.options.get("backend") ?? "auto",
-      stdout: process.stdout,
-      stdin: process.stdin,
-      ...(margin === undefined
-        ? {}
-        : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
-      experiments: imported.experiments,
-      ...(buildId === undefined ? {} : { buildId }),
-      ...(launch.keys === undefined ? {} : { startKeys: launch.keys }),
-      exporter: terminalExporter(process.stdout, exportPath()),
-    })
-  }
-
-  // A place on the title menu: the menu, opened where the route says.
-  return runMenu({
+  const common = {
     settings,
     settingsStore,
-    at: destination,
     backend: args.options.get("backend") ?? "auto",
     stdout: process.stdout,
     stdin: process.stdin,
     ...(buildId === undefined ? {} : { buildId }),
-    hostName: "terminal",
+  }
+
+  // A place on the title menu: the menu, opened where the route says.
+  if (destination.kind === "title") return runMenu({ ...common, at: destination })
+
+  // A campaign level: its Build Phase, at the round the route names.
+  const margin = args.options.get("scroll-margin")
+  return runBuildPhase({
+    ...common,
+    at: destination,
+    ...(margin === undefined ? {} : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
+    experiments: imported.experiments,
+    ...(launch.keys === undefined ? {} : { startKeys: launch.keys }),
+    exporter: terminalExporter(process.stdout, exportPath()),
   })
 }
 
