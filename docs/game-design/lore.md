@@ -139,6 +139,8 @@ Symbols are often geniuses, leaders, dangerous mystics, or people whose presence
 
 **RULE:** in battle, a Commander is a persistent frontline `@`. If killed, they remain absent for one complete round (a Build Phase and its Nexus Pulse) before the Prime can replicate them again. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
 
+**On the Grid a Commander's death is ordinary business.** Symbols fall in most battles they fight; the Nexus files the absence and restores them on its schedule, and every army that has a Symbol plans around the round without one. What a death costs is that round, never the war, and that is how the people around a Commander learn to speak of it: as scheduling, not as grief (the owner: "commanders die on this game, is part of the gameplay"). The campaigns teach it from their first missions; the deliberate mystery is not whether a Commander comes back, but what does.
+
 No one can prove that restoration returns the original consciousness. It may restore the same person, reconstruct a pattern, continue a distributed mind, or produce an entity whose belief in continuity is part of the protocol.
 
 ### 5.1 The Operator

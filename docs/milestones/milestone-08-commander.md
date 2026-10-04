@@ -122,9 +122,10 @@ What is still not this milestone: choosing and locking the Citizens' roster. Eve
 deck is the disposable bench content, with no balance claim, as Milestone 1 shipped it; the roster, its
 balance and her four designed powers come later.
 
-Mission 3 is where the belief ramp spends the death, absence and restoration beat in the story ("Vasse dies
-mid-Pulse, and play continues"). The plan was that PERIMETER would not force her death; measured, she falls
-in its last round in every plan, and Mario asked not to worry about balance yet, so it stays a known issue.
+Commanders die as part of the game. The plan was that PERIMETER would not force Vasse's death, to save it for
+the third mission; measured, she falls in its last round in every plan, and Mario settled it in the third round:
+"commanders die on this game, is part of the gameplay so we better integrate that into the lore and the campaign
+intro levels". So PERIMETER letting her fall is the game working, and the intro levels teach it.
 
 ## Out of scope
 

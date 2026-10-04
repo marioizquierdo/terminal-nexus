@@ -99,6 +99,19 @@ puts before any level's balance:
 His third note, how many enemies are coming, is built: the Build Phase shows the coming raid, its count and
 what each group goes for first (the Commander's second round).
 
+## Intent, the next iteration (Mario, 2026-10-04)
+
+The raid's intent is built (a trail to each group's first target, the target marked, the panel's summary), and
+Mario liked it; the next pass is his ([his words](../history/feedback/2026-10-04-commander-round-3.md)):
+
+- **Your own units' targets.** "Your units should also have a clear target to property be an auto-battler":
+  show what each of the player's groups goes for first. The prediction already has it: the first kernel tick
+  the raid's forecast runs (`src/match/intent.ts`) chooses a target for every unit on both sides.
+- **Intent that does not look like a tower defence.** "We will iterate more about how to show intent without
+  lookong like a tower defense game": lanes of arrows read as a tower defence. Ideas to try, each an Experiment:
+  a mark on what each side hits first and no trail; a trail only for the group under the cursor; where two
+  groups will first meet; the card saying what a unit goes for, either side.
+
 ## Decisions fine to leave open for now
 
 Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with
