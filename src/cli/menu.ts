@@ -34,7 +34,7 @@ import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
-import { parseRoute } from "./route.ts"
+import { formatRoute, parseRoute } from "./route.ts"
 import type { TitleDestination, TitlePlace } from "./route.ts"
 
 /** Five rows; a sixth, choosing a Commander upfront, was considered and rejected: a new player starts the
@@ -268,7 +268,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   const picked =
     (on: Screen, act: (item: MenuItem) => void) =>
     (item: MenuItem): void => {
-      record.log("menu.select", { screen: on, item: item.id })
+      record.log("menu.select", { screen: on, item: item.id, ...(item.route === undefined ? {} : { route: item.route }) })
       act(item)
     }
 
@@ -398,6 +398,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     columns: stdout.columns ?? null,
     rows: stdout.rows ?? null,
     colours: settings.capability,
+    ...(options.at === undefined ? {} : { at: formatRoute(options.at) }),
   })
 
   try {

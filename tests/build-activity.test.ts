@@ -651,7 +651,15 @@ test("the live screen records where it started, and hands an Activity Logs expor
   await new Promise((resolve) => setTimeout(resolve, 30))
   const [start] = log.entries()
   assert.equal(start?.event, "session.start")
-  assert.deepEqual(start?.props, { screen: "build", build: "abc1234", host: "terminal", columns: 80, rows: 24, colours: "monochrome" })
+  assert.deepEqual(start?.props, {
+    screen: "build",
+    build: "abc1234",
+    host: "terminal",
+    columns: 80,
+    rows: 24,
+    colours: "monochrome",
+    at: "campaign?level=vasse-test-1",
+  })
   const resized = log.entries().filter((entry) => entry.event === "session.resize")
   assert.deepEqual(resized.map((entry) => entry.props), [{ columns: 104, rows: 32 }])
   assert.deepEqual(exported.map((entry) => entry.kind), ["activity"])

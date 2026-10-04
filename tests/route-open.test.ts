@@ -12,6 +12,7 @@ import type { Host } from "../src/cli/lifecycle.ts"
 import { TOP_LEVEL_ITEMS, runMenu } from "../src/cli/menu.ts"
 import { allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
 import type { LevelDestination, TitleDestination } from "../src/cli/route.ts"
+import { ACTIVITY_EVENTS, createLogger, entryProblems } from "../src/log/index.ts"
 import { keyBytes, parseKeyScript } from "../src/playtest/keys.ts"
 import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
@@ -124,6 +125,49 @@ test("choosing a title menu row and following its route open the same screen, an
     // Back from where the route opened is back to its row, highlighted, as for a player who chose it.
     assert.equal(print(await menuAt(destination, ["Esc"])), print(await menuAt(undefined, [item.hotkey, "Esc"])), `Esc from ${item.route}`)
   }
+})
+
+test("the Activity Logs say where a screen opened, and the route a picked row opens", async () => {
+  // The title menu opened at Settings; Back, then About.
+  const menuLog = createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity: 100 })
+  const menu = standIn()
+  const at = parseRoute("settings")
+  assert.equal(at.kind, "title")
+  if (at.kind !== "title") return
+  const runningMenu = runMenu({ settings: SETTINGS, settingsStore: STORE, backend: menu.backend, stdout: menu.stdout, stdin: menu.stdin, host: HOST, at, activity: menuLog })
+  await until(() => menu.frames.length > 0, "drew the title menu")
+  for (const key of ["Esc", "4"]) {
+    const before = menu.frames.length
+    menu.stdin.emit("data", keyBytes(key))
+    await until(() => menu.frames.length > before, `drew after ${key}`)
+  }
+  menu.stdin.emit("data", keyBytes("C-c"))
+  assert.equal(await runningMenu, 0)
+  for (const entry of menuLog.entries()) assert.deepEqual(entryProblems(ACTIVITY_EVENTS, entry), [], entry.event)
+  assert.equal(menuLog.entries().find((entry) => entry.event === "session.start")?.props["at"], "settings")
+  const pick = menuLog.entries().find((entry) => entry.event === "menu.select")
+  assert.deepEqual(pick?.props, { screen: "top", item: "about", route: "about" })
+
+  // A level's round 2.
+  const buildLog = createLogger({ name: "activity", events: ACTIVITY_EVENTS, capacity: 100 })
+  const build = standIn()
+  const running = runBuildPhase({
+    settings: SETTINGS,
+    backend: build.backend,
+    stdout: build.stdout,
+    stdin: build.stdin,
+    host: HOST,
+    scenes: false,
+    level: levelById(DEFAULT_LEVEL_ID)!,
+    round: 2,
+    activity: buildLog,
+  })
+  await until(() => build.frames.length > 0, "drew the Build Phase")
+  build.stdin.emit("data", keyBytes("C-c"))
+  assert.equal(await running, 0)
+  const start = buildLog.entries().find((entry) => entry.event === "session.start")
+  assert.equal(start?.props["at"], "campaign?level=vasse-test-1&round=2")
+  assert.deepEqual(entryProblems(ACTIVITY_EVENTS, start!), [])
 })
 
 test("--build-phase's level is the Build Phase as it opens when told nothing: PERIMETER, round 1", async () => {

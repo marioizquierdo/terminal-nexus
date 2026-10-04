@@ -36,6 +36,7 @@ export const ACTIVITY_EVENTS = {
       columns: { type: "number", description: "The terminal's width in columns." },
       rows: { type: "number", description: "The terminal's height in rows." },
       colours: { type: "string", description: "The colour depth drawn with, as --capability names it: truecolor, color256, color16 or monochrome." },
+      at: { type: "string", description: "The route the screen opened at: menu, settings, campaign?level=vasse-test-1&round=2.", optional: true },
     },
   },
   "session.resize": {
@@ -60,6 +61,7 @@ export const ACTIVITY_EVENTS = {
     props: {
       screen: { type: "string", description: "The screen the row is on: top, settings, campaign, about." },
       item: { type: "string", description: "The row's id: campaign, settings, about, exit, back, ..." },
+      route: { type: "string", description: "The route the row opens, when it opens a place: settings, campaign.", optional: true },
     },
   },
   "build.command": {

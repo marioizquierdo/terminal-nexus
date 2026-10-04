@@ -26,6 +26,7 @@ import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
 import { DEFAULT_LEVEL_ID, levelById, openRound } from "./levels.ts"
 import type { PlayableLevel } from "./levels.ts"
+import { formatRoute } from "./route.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -145,6 +146,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     columns: loggedSize.columns,
     rows: loggedSize.rows,
     colours: options.settings.capability,
+    // Where this screen opened, as a route: a report's log says which round of which level it was.
+    at: formatRoute({ kind: "level", level, round: options.round ?? 1 }),
   })
 
   let layout = buildLayout(terminalSize(), context.grid)
