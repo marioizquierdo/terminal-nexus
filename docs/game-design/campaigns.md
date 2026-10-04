@@ -4,13 +4,13 @@ _What a campaign and a mission are, how a mission is driven by triggers and judg
 
 ## 1. Development boundary
 
-**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and one named Commander, her mechanic and her deck at the size of the bench content are the most that come before it, not a locked roster.
+**The Campaign is built one mission at a time.** Each mission pulls in exactly the systems it needs rather than waiting for battle presentation, base construction and a two-faction microgame to each finish in full first. The first mission, PERIMETER (section 4.2 below), is played on the starter map with the disposable Citizen and Ravel bench rosters rather than a real Commander Army roster; a full Commander Army is not authored until a real roster is chosen, and one named Commander, her mechanic and her campaign's bundle at the size of the bench content are the most that come before it, not a locked roster.
 
 This document still gives the *destination* — the belief ramp, the later missions' teaching goals, the cast. Nothing beyond PERIMETER and RIGHT OF SALVAGE is built or in scope; the later missions are **IDEA**. A document describes; it does not schedule.
 
 **The Campaign is one of two single-player modes** ([`game-modes.md`](game-modes.md)): the first-time player experience and the world's fixed story, judged on whether a new player comes out able to play a run and whether the world feels real. Replay value, breadth and duration are Challenge mode's job. Nothing in this document is a length or breadth requirement; the belief ramp is direction for what the missions teach and tell, not a count of missions the game owes. Mechanically the Campaign is the mode that grows the player's pool — each mission unlocks the cards it introduces — which makes its last mission a guided run in all but name.
 
-**RULE — the first complete single-player direction is the Citizen origin campaign** (`src/mission/perimeter.ts`, PERIMETER, its first mission; `tests/mission.test.ts`).
+**RULE — the first complete single-player direction is the Citizen origin campaign** (`bundles/vasse/bundle.json`, PERIMETER, its first level; `tests/mission.test.ts`).
 
 ## 2. What defines a campaign
 
@@ -28,9 +28,9 @@ A campaign is an ordered or branching graph of missions plus persistent progress
 
 Campaign unlocks reveal complexity gradually. Full skirmish mode eventually exposes every legal roster without requiring campaign completion.
 
-A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text, and the player's deck), with no opponent deck, unlock record or objectives list yet.
+A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text), held by a level of its campaign's bundle with the level's map, credits and unlocks, and no opponent deck or objectives list yet.
 
-**A mission names the player's deck and may override it** (RULE — `src/mission/types.ts`, `src/mission/validate.ts`, `tests/army.test.ts`). `player: { army, override }` is the sketch's `playerArmy` and `availableContent` in one: a Commander's deck by id ([`commander-armies.md`](commander-armies.md)), and what this level makes of it. The Campaign develops a deck level by level, so a level lists what of it is unlocked (an id picks the deck's own entry) or overrides a part outright (a whole entry, another cost, other credits); a part the override leaves out is the deck's. The Build Phase offers exactly the result, and validation refuses an unknown deck or an override naming what the deck does not hold. PERIMETER names Vasse's deck and lists all of it, one by one, so that when her deck grows the level keeps what it teaches.
+**A campaign is data in its Commander's bundle** (RULE — `bundles/vasse/bundle.json`, `src/bundles/load.ts`, `tests/bundles.test.ts`; bundles are in [`content.md`](../system-design/content.md)). It names its Commander and lists its levels in the order they are played, each with a map by name, the credits a Build Phase starts with, what it unlocks and its mission: the sketch's `playerArmy` and `availableContent`, split between the campaign and its levels. **A level offers everything the levels before it unlocked, and its own unlocks**, in the order first unlocked so that a hotkey never moves, and records what is new in it for the screen between levels to show (not built). The Build Phase offers exactly that. The loader refuses an unlock its bundle cannot see, one an earlier level already gave, and a player Commander that is not the campaign's. PERIMETER, the first level, unlocks every card `common` has, one by one, so that when `common` grows the level keeps what it teaches; the second, the Commander's cadence played in three rounds, has no unlocks of its own. They are called `vasse-test-1` and `vasse-test-2`, the names a route opens them by ([`routing.md`](../system-design/routing.md)), until the campaign has real levels.
 
 ```ts
 interface MissionDefinition {
@@ -87,7 +87,7 @@ The two bands keep the three-worlds rule ([`grid-engine.md`](../system-design/gr
 
 **Custom campaigns.** A mission references armies by id, and an army is a bounded composition validated against its faction's pools ([`commander-armies.md`](commander-armies.md)). A custom campaign is therefore a folder of missions plus the Commander Armies it ships, loaded and validated by the same code as the first-party one. Nothing about that is built or promised now — it is *why* the trigger surface is data and army legality is a load-time check rather than a feature in itself.
 
-**IDEA — PERIMETER's trigger list in this shape**: an intro, a raid in waves across three rounds, and the hold, so the model is concrete rather than described. (The built mission is in `src/mission/perimeter.ts`.)
+**IDEA — PERIMETER's trigger list in this shape**: an intro, a raid in waves across three rounds, and the hold, so the model is concrete rather than described. (The built mission is the first level in `bundles/vasse/bundle.json`.)
 
 ```ts
 triggers: [
@@ -271,7 +271,7 @@ Round counts below are **design estimates for pacing, not contracts**. A round c
 | 2 | RIGHT OF SALVAGE | recover more of the wreck field than the other side | deny them every wreck | ~4 rounds, 10–12 min | workers, deposits, salvage, contested ground | it knows a name nobody entered — *"Who filed that?"* |
 | 3 | RESTORATION (Citizen) · to be authored (Ravel) — **IDEA** | destroy the enemy Grid Nexus | hold the round your Commander is absent without losing a structure | ~5 rounds, 12–15 min | the Commander — her powers, death, absence, restoration | it keeps **personnel files**, and treats a death as a scheduling matter |
 
-**Commanders die from the first mission** (RULE — the owner, 2026-10-04: "commanders die on this game, is part of the gameplay so we better integrate that into the lore and the campaign intro levels"; `tests/commander.test.ts`, `tests/dialog.test.ts`). A Commander's death is ordinary business on the Grid ([`lore.md`](lore.md)), so the intro levels teach it rather than save it: PERIMETER lets Vasse fall when the raid reaches her, the round she is out opens on a line saying so, and the round she returns opens on one saying that, looking at her. Her campaign's test levels include one that spends the whole cadence in three rounds.
+**Commanders die from the first mission** (RULE — the owner, 2026-10-04: "commanders die on this game, is part of the gameplay so we better integrate that into the lore and the campaign intro levels"; `tests/commander.test.ts`, `tests/dialog.test.ts`). A Commander's death is ordinary business on the Grid ([`lore.md`](lore.md)), so the intro levels teach it rather than save it: PERIMETER lets Vasse fall when the raid reaches her, the round she is out opens on a line saying so, and the round she returns opens on one saying that, looking at her. Her campaign's second test level spends the whole cadence in three rounds, so her return can be played (`--at 'campaign?level=vasse-test-2&round=3'`).
 
 **Mission 3 keeps restoration as its subject (IDEA)**, now as the question the lore leaves open rather than the first sight of a death: the round she is absent is played through (`SYMBOL ABSENT — CYCLE 1 OF 1 — HOLD`), and what the Nexus restores, and what it files about her, is what the mission turns over. The bonus goal stays about surviving the absence.
 

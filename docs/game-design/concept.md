@@ -69,7 +69,7 @@ Across the galaxy, ancient pyramidal world machines called Prime Nexuses have aw
 
 The civilizations controlling these machines cannot agree whether the network is a weapon, a trial, a god, an ecological disaster, or an opportunity. Some believe its wars are selecting the one structure that will become the **Terminal Nexus**.
 
-The five long-term factions are Citizens, Ravels, Glitch, Feudals, and Alder. **RULE: the first factions built together are Citizens and Ravels, and the first complete single-player direction is the Citizen origin campaign** (`src/content/citizen.ts`, `src/content/ravel.ts`, `src/mission/perimeter.ts`).
+The five long-term factions are Citizens, Ravels, Glitch, Feudals, and Alder. **RULE: the first factions built together are Citizens and Ravels, and the first complete single-player direction is the Citizen origin campaign** (`src/content/citizen.ts`, `src/content/ravel.ts`, `bundles/vasse/bundle.json`).
 
 See [`lore.md`](lore.md) for the universe and [`commander-armies.md`](commander-armies.md) for the playable rosters.
 

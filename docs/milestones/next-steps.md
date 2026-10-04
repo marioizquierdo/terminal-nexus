@@ -5,12 +5,12 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Play the Commander's second round** (his notes on pull request 60): PERIMETER opens on its intro, the
-  dialog at the bottom, Vasse's line first with the camera on her and her ring lit, then the exchange with
-  Corvane; Enter reads on, Esc skips. Then the raid's intent: the panel says how many are coming, when, from
-  where and what each group goes for first, and a trail on the map shows the way. Place a Turret where a
-  trail runs and watch the raid's target move to it. Vasse's deck is what the Build Phase offers; nothing
-  about it is new to see. Her fall and absence are still there to watch (`d`, **Vasse's health**, at 20).
+- **Play the Commander's third round** (his notes on pull request 60): open places by route —
+  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'` opens round 2, `--at settings` the
+  Settings screen, and `--help` lists every route. Watch her whole cadence on the second test level:
+  `--at 'campaign?level=vasse-test-2'`, she falls in round 1, round 2 opens on a line saying she is out, and
+  round 3 on her return. The bundles change nothing on screen: PERIMETER offers what it always did, now from
+  data. The second round's intro and the raid's intent are unchanged.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -47,7 +47,8 @@ Small, none blocking.
 **From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):
 
 - Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
-  back in a round 4 that does not exist. The named scenario (`tests/commander-fixture.ts`) proves it.
+  back in a round 4 that does not exist. The campaign's second test level shows it:
+  `--at 'campaign?level=vasse-test-2&round=3'`.
 - Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
   enemy like every unit, from just behind the line.
 - In round 1 she is incoming with the squads, so her card is the incoming one ("Yours, next round"), not her
@@ -63,10 +64,22 @@ Small, none blocking.
 - At 16 colours and in monochrome an arriving unit is drawn at full strength (the wash shows only where
   colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
   "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
-- PERIMETER unlocks all of Vasse's deck today, so its override changes nothing on screen; the difference
-  shows when her deck holds her real powers (the Nexus draft step).
+- Both of her campaign's levels offer the same cards (PERIMETER unlocks all of `common`, the cadence level
+  nothing new), so what a level offers changes nothing on screen yet; it shows when a level unlocks a card of
+  its own (the Nexus draft step).
 - PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
   `Esc` (the documented examples do).
+
+**From step 8A's third round** ([Mario's notes](../history/feedback/2026-10-04-commander-round-3.md)):
+
+- No card carries rarity, tier and role yet, though the game modes design says every card does from the day
+  it is authored: the bundles' cards are the bench placeholders, and the first step that deals cards from a
+  pool adds the tags.
+- The bundle loader does not check that a Nexus power's line fits a panel row (28 columns at 80 × 24).
+- The units' and buildings' definitions (stats, footprints) are still TypeScript in `src/content`; a bundle
+  names them by id. Moving them into bundles is the next step for content.
+- `--build-phase` and `--spike` stay one more release, as `--at 'campaign?level=vasse-test-1'`.
+- A claude.ai link cannot carry `#at=`; the published page opens a place through a demo's route instead.
 
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 
@@ -98,7 +111,7 @@ Small, none blocking.
 | Item | Why | Size |
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
-| One launch-options module for the command line and `#settings=` / `#keys=` | A new option can reach one and not the other | small |
+| One launch-options module for the command line and the page's `#at=` / `#settings=` / `#keys=` | A new option can reach one and not the other | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet

@@ -229,6 +229,13 @@ than any one feature:
    next `&`, which a route's query or a settings text in `a=1&b=2` form would cut in half. A part now runs
    to the next part the page knows (`&at=`, `&settings=`, `&keys=`), so links are written as plainly as a
    command line (`src/web/address.ts`).
+3. **The browser page's sandbox has only the language's own builtins.** The bundle loader first froze a
+   `structuredClone` of what it read; the page's sandbox test, which runs the bundled code with no host
+   features, failed on it. It now copies by hand. A pure module that may reach the page uses the language,
+   not the host.
+4. **Data that names code can force code to move.** The bundles name the starter map, and the catalog now
+   reads the bundles, so the map could no longer live in the catalog without a circular import; it moved to
+   `src/build/maps.ts`, re-exported where it was, and no importer changed.
 
 ## Habits to keep
 

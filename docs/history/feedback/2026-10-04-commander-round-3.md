@@ -46,13 +46,18 @@ Activity Logs say which route a session opened at.
 > the same bundle or another dependent bundle like the common). We will only know how to organize it after we
 > have 3-4 different commanders, but we should have a general good idea of where to start.
 
-**Scheduled** (this round). This reverses the single deck of the second round (one Commander deck, overridden
-by a mission): the Campaign and the run mode each get their own definition over shared content. Content is
-organized as bundles, data rather than code, each naming the bundles it builds on: a `common` bundle with the
-buildings and Nexus powers any Commander may use, and a `vasse` bundle with her Commander and her campaign, its
-levels in order, what each level unlocks and its mission. What a level offers is what the campaign has unlocked
-by then, so the screen between levels can show what is new. The run mode's definition is written down as the
-next producer of the same shapes, not built.
+**Built.** This reverses the single deck of the second round (one Commander deck, overridden by a mission).
+Content is now organized as bundles, data rather than code: a folder under `bundles/` whose `bundle.json` names
+the bundles it builds on and sees only what they bring. `common` holds the three bench buildings and the two
+placeholder Nexus powers any Commander may use, and the bench units the first levels put on the Grid. `vasse`
+requires it and holds her Commander and her campaign, its levels in order: PERIMETER, then the Commander's
+cadence as a second level, so her return can be played by route. Each level names its map, its credits, what
+it unlocks and its mission; both missions moved into the data unchanged, and a hash of each holds that. What a
+level offers is everything its campaign has unlocked by then, and it records what is new, for the screen
+between levels (not built). The loader refuses a broken bundle with every problem at once, each named. A mode
+now offers cards its own way: the run mode's definition is written down as a section of a bundle beside the
+campaign, not built. Still code, named by id from the bundles: the units' and buildings' definitions, what a
+power's effect does, the map and the mission vocabulary.
 
 ### F112 — Intent: not a tower defence; your own units' targets too
 

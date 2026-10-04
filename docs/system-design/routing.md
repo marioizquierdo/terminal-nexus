@@ -43,11 +43,14 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `campaign?level=vasse-test-1` | PERIMETER's Build Phase, round 1 |
 | `campaign?level=vasse-test-1&round=2` | its round 2 (`&round=3`, its last) |
 | `campaign?level=vasse-test-1&wave=0` | round 1 again, counted as a wave |
+| `campaign?level=vasse-test-2` | the Commander's cadence, the campaign's second test level: Vasse falls in round 1 |
+| `campaign?level=vasse-test-2&round=2` | its round 2, which opens on a line saying she is out |
+| `campaign?level=vasse-test-2&round=3` | its round 3, which opens on her return |
 
-Every level the game can open is a route the same way, `campaign?level=<id>` with each of its rounds;
-the Commander's cadence test map joins the table as soon as the level list names it. `terminal-nexus
---help` prints the places and the levels from the same table and list, so it never names one the game
-does not have.
+Every level the game can open is a route the same way, `campaign?level=<id>` with each of its rounds: the
+levels are every shipped campaign's, from its bundle ([`content.md`](content.md)). `terminal-nexus --help`
+prints the places and the levels from the same table and list, so it never names one the game does not
+have.
 
 **Round and wave.** `round` counts from 1, as the screen counts ("round 2 of 3"), and is the route's own
 word. `wave` counts from 0 and names the same round: `wave=N` is `round=N+1`, on any level. It exists

@@ -193,6 +193,7 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.
 - **Recall** — what happens when a Pulse ends: surviving units walk home, so the next round starts from what the last one left.
 - **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
+- **bundle** — a folder of content data under `bundles/` that names the bundles it builds on and sees only what they bring: `common` holds the cards any Commander may use, `vasse` her Commander and her campaign ([`content.md`](content.md)).
 - **route** — a place in the game written like a web address without its site (`settings`, `campaign?level=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
 - **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
 - **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.

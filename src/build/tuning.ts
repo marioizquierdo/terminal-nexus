@@ -57,7 +57,7 @@ const SETTLED_CHOICES = [
 const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
 
 /** Experiments retired because what they chose became a mission's data: the placeholder Pulse's Raid and
- *  Your units, replaced by PERIMETER's waves and starting squads (`src/mission/perimeter.ts`). */
+ *  Your units, replaced by PERIMETER's waves and starting squads (`bundles/vasse/bundle.json`). */
 const RETIRED_EXPERIMENTS = ["raid", "crew"] as const
 
 /**

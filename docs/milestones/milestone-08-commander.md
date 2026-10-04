@@ -84,10 +84,10 @@ the same pull request.
       direct links; `--settings` takes `foo=6&var=true`. The bare command opens the title menu; loading a saved
       game from a default location is written down, not built.
 - [x] The routing schema is documented, and a test opens every route it names.
-- [ ] Content is organized as bundles, data rather than code, each naming the bundles it builds on: `common`
+- [x] Content is organized as bundles, data rather than code, each naming the bundles it builds on: `common`
       (buildings and Nexus powers any Commander may use) and `vasse` (her Commander and her campaign: its levels
       in order, what each unlocks, and their missions). Validation refuses a broken bundle by name.
-- [ ] What a level offers is what its campaign has unlocked by then. PERIMETER is the campaign's first level;
+- [x] What a level offers is what its campaign has unlocked by then. PERIMETER is the campaign's first level;
       the Commander's cadence test map is a second, reachable by route, so her return can be played.
 - [x] Commanders die as part of the game: the round one is out opens on a line saying so, and the campaign
       design and the lore teach it in the intro levels rather than saving it for a later mission.
@@ -113,13 +113,14 @@ choices legally available to one player in one match: starting resources, every 
 the full upgrade pool, faction rules, portraits, barks, effect motifs and balance hypotheses. Mario settled
 how much of that this milestone builds, on the Commander's pull request: "this milestone is more about
 building the concept of the commander ... Make sure that the commander deck is properly organized, and
-properly integrated with the campaign." So Vasse's deck is built: her Commander, her starting credits, what
-she can build and her Nexus power pool, defined once beside the content, read whole by any mode that lets a
-player pick her, and overridden by a Campaign level, which develops the deck mission by mission
-(`src/content/armies.ts`; the question about building her early is answered).
+properly integrated with the campaign." The second round built her deck as one definition a Campaign level
+overrode. In the third, Mario separated the campaign's deck from the run mode's ("from the development side
+they don't have to be the same"), so content became bundles: `common` with the buildings and Nexus powers any
+Commander may use, and `vasse` with her Commander and her campaign, whose levels each offer what it has
+unlocked by then (`bundles/`; the question about building her early is answered).
 
-What is still not this milestone: choosing and locking the Citizens' roster. Every building and power in her
-deck is the disposable bench content, with no balance claim, as Milestone 1 shipped it; the roster, its
+What is still not this milestone: choosing and locking the Citizens' roster. Every building and power she is
+offered is the disposable bench content, with no balance claim, as Milestone 1 shipped it; the roster, its
 balance and her four designed powers come later.
 
 Commanders die as part of the game. The plan was that PERIMETER would not force Vasse's death, to save it for

@@ -233,8 +233,8 @@ there through the Build Phase like any survivor. "May replicate" is taken as "do
 third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to
 restore her to, so her absence goes on until it has one. At a Pulse's end Recall sends her home to the
 Grid Nexus, since no building makes her. A mission brings its Commander once (`src/mission/validate.ts`
-refuses a second arrival, or two of her), and the Commander it brings for the player is her deck's
-(`src/content/armies.ts`). How much she can take is an Experiment while it is tuned
+refuses a second arrival, or two of her), and the Commander it brings for the player is its campaign's
+(`src/bundles/load.ts` refuses another). How much she can take is an Experiment while it is tuned
 (**Vasse's health**). Her doctrine's behaviour — hold, then advance — waits on an order the kernel can
 keep (Q69): today she engages the nearest enemy like every unit.
 
@@ -294,9 +294,9 @@ content-defined legal actions or passive rules that execute through validated ke
 
 What the draft is dealt from is settled even though the draft itself is not designed: the Commander
 Army's own Nexus power pool — a subset of the faction's — dealt as a small hand at the start of every
-Build Phase, from which the player keeps one. The pool is built as part of a Commander's deck
-(`src/content/armies.ts`; Vasse's holds the two placeholder powers), and a mission may override it; the
-dealing is still the whole pool, every Build Phase. The draft's tier, size, and redraw rules are still
+Build Phase, from which the player keeps one. The pool is built as what a level offers (`src/bundles/`;
+PERIMETER offers `common`'s two placeholder powers); the dealing is still the whole pool, every Build
+Phase. The draft's tier, size, and redraw rules are still
 undesigned; they are recorded here so the shape of the draft is not accidentally foreclosed.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
