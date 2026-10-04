@@ -6,8 +6,13 @@
   },
   {
     "label": "The raid",
-    "try": "Round 1 after the intro. The panel says what is coming, from where and what it goes for first; the trail on the map shows its way to your Barracks. Press 3: the dotted ground around your buildings is where a Turret may go, and the outline round it is where it will reach. Tap a tile of the trail on the dotted ground twice to place a Turret there: the raid now goes for the Turret. u undoes it.",
+    "try": "Round 1 after the intro. The panel says what is coming, from where and what it goes for first, and under it where your troops head: the line, its corners marked on the map. Press 3: the dotted ground around your buildings is where a Turret may go, and the outline round it is where it will reach. Tap a tile of the trail on the dotted ground twice to place a Turret there: the raid now goes for the Turret. u undoes it.",
     "keys": "Esc"
+  },
+  {
+    "label": "In battle",
+    "try": "Round 1's battle, nothing built. Your troops head for the line and stand there, Vasse among them: the glow around her is By the Book, her aura (her units there take a quarter less damage), and she speaks beside her as the battle goes. Press d: under THE MISSION, Vasse's voice switches between beside her, the feed and off, and By the Book changes how strong her aura is. Watch again with r.",
+    "keys": "Esc n 1 s s"
   },
   {
     "label": "Round 2",
@@ -16,7 +21,7 @@
   },
   {
     "label": "Vasse falls",
-    "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 18 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens on a line saying she is out, the camera on your Nexus. Enter closes it; press s, and the Battle Round screen says so too. Press d to change her health.",
+    "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 11 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens on a line saying she is out, the camera on your Nexus. Enter closes it; press s, and the Battle Round screen says so too. Press d to change her health.",
     "at": "campaign?level=vasse-test-1&round=2",
     "keys": "n 1 s s",
     "settings": "commanderHealth=20"
