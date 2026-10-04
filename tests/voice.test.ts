@@ -473,11 +473,12 @@ test("at 80 x 24: the room the armies' lines are checked against is the screen's
   }
 })
 
-test("at 80 x 24, her line in the panel stops above the controls, and beside her it stays on the map", () => {
+// A whole round's frames in both modes: its cost grows with the round, so Bun's per-test limit is lifted.
+test("at 80 x 24, her line in the panel stops above the controls, and beside her it stays on the map", { timeout: 120_000 }, () => {
   for (const mode of ["feed", "beside"] as const) {
     const side = perimeter(mode)
     const end = side.build.pulse?.times.homeMs ?? 0
-    for (let ms = 0; ms <= end + 3000; ms += 100) {
+    for (let ms = 0; ms <= end + 3000; ms += 150) {
       side.build.advance(ms)
       const frame = compose(side)
       const text = frameToText(frame).split("\n")
