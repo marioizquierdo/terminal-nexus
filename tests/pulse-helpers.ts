@@ -29,14 +29,15 @@ export type Spot = readonly [index: number, x: number, y: number]
  * The plan that beat the probe while the placeholder Pulse was being tuned: two Turrets and a Hatchery — moved
  * inside the build range when construction territory was built (it stood at 22,9, 22,12 and 20,14, past the
  * range at its first default). A Turret on the Barracks's flank and one by the squads' muster, inside the ranges
- * of the Barracks and the Nexus, and the Hatchery behind them on ground only the second Turret's range reaches,
- * so the plan also chains, as a player's does. The first Turret alone still wins, the whole plan sooner, and the
- * survivors still have a walk home worth drawing.
+ * of the Barracks and the Nexus, and the Hatchery behind them inside the Nexus's — a tile further west since a
+ * Hatchery keeps room round it for what it spawns, so a free tile now lies between it and the second Turret.
+ * The first Turret alone still wins, the whole plan sooner, and the survivors still have a walk home worth
+ * drawing.
  */
 export const DEFENCE: readonly Spot[] = [
   [TURRET, 28, 12],
   [TURRET, 23, 12],
-  [HATCHERY, 21, 12],
+  [HATCHERY, 20, 12],
 ]
 
 /** The same plan as a key script: the War Chest, then each spot's building armed by its digit and placed by two

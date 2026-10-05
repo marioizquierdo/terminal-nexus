@@ -345,9 +345,8 @@ test("the status line says why a placement would be refused, and which tile it m
   // sense to show that feedback on the low bar ... so we keep that low bar for cursor status
   // feedback." The panel keeps the menu and what the armed row does, and nothing else.
   const onRock = screenAt(MINIMUM, (build, layout) => {
-    // A Turret north of the Nexus first, so the build range reaches the north-west wall's rock.
-    build.handleData("3", layout)
-    build.run([{ kind: "move-cursor", dx: 19 - 18, dy: 7 - 13 }, { kind: "place" }])
+    // At a build range of 4 the Nexus's own range reaches the row under the north-west wall's rock.
+    build.dispatch({ kind: "experiment-adjust", field: "buildRange", step: 1 })
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 19 - build.state.cursor.x, dy: 5 - build.state.cursor.y }])
   })

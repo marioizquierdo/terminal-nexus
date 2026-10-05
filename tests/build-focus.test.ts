@@ -232,8 +232,10 @@ test("a click on a building's row arms it at once, whatever had focus, and its g
 
 test("a second click on the same tile places, and the menu comes back with nothing looking chosen", () => {
   const side = buildSide()
-  clickTile(side, { x: 26, y: 12 })
+  // Where a Barracks fits, so arming leaves the cursor there: three rows under the standing one.
+  clickTile(side, { x: 26, y: 14 })
   clickPanelRow(side, barracksRow(side))
+  assert.deepEqual(side.build.state.cursor, { x: 26, y: 14 })
   clickTile(side, { x: 26, y: 13 }) // moves the ghost
   assert.equal(side.build.state.planned.length, 0)
   clickTile(side, { x: 26, y: 13 }) // the same tile: places
@@ -304,19 +306,34 @@ test("the owner's flow — highlight, then space, space, space, space — lays t
   const side = buildSide()
   keys(side, DOWN, DOWN, DOWN) // Nexus -> Explore -> Barracks -> Hatchery
   keys(side, SPACE, SPACE, SPACE, SPACE) // arm, place, arm again, place
-  // The first where the cursor is; the second, with the cursor on the first, one free tile east of it.
+  // The first where the cursor is; the second, with the cursor on the first, one free tile from it — west,
+  // since east of it is past the range the standing buildings give, and the first gives none until it stands.
   assert.deepEqual(
     side.build.state.planned.map((placement) => placement.anchor),
-    [OPEN_GROUND, { x: OPEN_GROUND.x + 3, y: OPEN_GROUND.y }],
+    [OPEN_GROUND, { x: OPEN_GROUND.x - 3, y: OPEN_GROUND.y }],
   )
   assert.equal(side.build.state.focus, "menu")
 })
 
 test("a run of the same building lays each one a free tile from the last, never touching", () => {
-  const context: BuildContext = { ...starterContext(), allotment: 1000 }
-  const side = buildSide({ context })
-  // Hatcheries: each one's build range reaches the free tile and the next one past it, so the run chains
-  // along. (A Barracks is a tile wider than the range lets a row of them grow sideways: its run goes down.)
+  // An open field whose standing buildings give a long row of build range: the Nexus at its west edge and a
+  // Turret every four tiles east of it, each linked to the last. Nothing planned adds to the range, so the run
+  // needs one already there.
+  const width = 30
+  const height = 10
+  const context: BuildContext = {
+    ...starterContext(),
+    grid: { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") },
+    standing: [
+      { contentId: "structure.citizen.nexus", anchor: { x: 0, y: 3 } },
+      ...[4, 8, 12, 16, 20, 24].map((x) => ({ contentId: "structure.bench.beamturret", anchor: { x, y: 3 } })),
+    ],
+    field: [],
+    incoming: [],
+    allotment: 1000,
+  }
+  const side = buildSide({ context, cursor: { x: 5, y: 5 } })
+  // Hatcheries, two rows under the Turrets: each a free tile from the last, and from the Turrets.
   keys(side, DOWN, DOWN, DOWN)
   for (let run = 0; run < 6; run += 1) keys(side, SPACE, SPACE)
   assert.deepEqual(
@@ -324,12 +341,12 @@ test("a run of the same building lays each one a free tile from the last, never 
     // A row to the right (owner, 2026-09-29: "in most cases this should move the cursor only a few
     // tiles to the right"): a tile down costs more than a tile across.
     [
-      { x: 18, y: 13 },
-      { x: 21, y: 13 },
-      { x: 24, y: 13 },
-      { x: 27, y: 13 },
-      { x: 30, y: 13 },
-      { x: 33, y: 13 },
+      { x: 5, y: 5 },
+      { x: 8, y: 5 },
+      { x: 11, y: 5 },
+      { x: 14, y: 5 },
+      { x: 17, y: 5 },
+      { x: 20, y: 5 },
     ],
   )
   const all = [
@@ -383,9 +400,10 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   for (const t of tilesOf(anchor, footprint)) {
     for (const u of others) assert.ok(Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y)) >= 2, "it touches a structure")
   }
-  // Nearest inside the build range: a free row below the first, on ground its own range reaches. (Sideways
-  // is cheaper than down, but a free column to its right is past the range; the open field below has that.)
-  assert.deepEqual(spot, { x: 18, y: 16 })
+  // Nearest inside the build range: a free column east of the first, where one of its tiles is on ground the
+  // standing Barracks's range reaches — the first gives none until it stands, so the open field below it is
+  // past the range.
+  assert.deepEqual(spot, { x: 23, y: 13 })
 
   // Touching is the fallback when nothing gapped is in reach: a corridor one Turret wide.
   const width = 8

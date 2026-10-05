@@ -561,7 +561,8 @@ scripted(
 scripted(
   "spike-illegal",
   "The same barracks over rock, after pressing Enter: the preview is a grey block of x and the bottom line says why, naming the tile - in red, because a placement was tried and refused",
-  { keys: `${PICK_FIRST_POWER} 1 Left*14 Up*5 Enter`, expect: "rock in the way" },
+  // At a build range of 4, so the Nexus's own range reaches the row under the north-west wall.
+  { keys: `${PICK_FIRST_POWER} 1 click:19,5 Enter`, expect: "rock in the way", experiments: { buildRange: 4 } },
 )
 
 scripted(
@@ -641,7 +642,7 @@ popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: 
 
 // A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
 // tile, then [s] and [s] to start. The strong plan holds PERIMETER; nothing built loses it in round 3.
-const ROUND_1_STRONG = "n 1 3 click:24,8 click:24,8 3 click:22,7 click:22,7 2 click:21,13 click:21,13 s s"
+const ROUND_1_STRONG = "n 1 3 click:24,8 click:24,8 3 click:25,7 click:25,7 2 click:20,13 click:20,13 s s"
 const ROUND_2_STRONG = "n 1 3 click:27,8 click:27,8 s s"
 const ROUND_3_STRONG = "n 1 3 click:20,8 click:20,8 s s"
 const NOTHING_BUILT = "n 1 s s"

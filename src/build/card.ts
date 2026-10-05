@@ -52,14 +52,17 @@ export function cardText(context: Pick<BuildContext, "registry">, id: string): C
  *  the bare tile under the cursor. `null` only when nothing is armed and no card would show; the caller
  *  asks `cardShowing` first. */
 export function currentCard(context: BuildContext, state: BuildState): Card | null {
+  // A building being placed, or planned, gives its build range only once it stands, next round; a standing one
+  // gives it now, unless it is cut off from the Nexus.
   if (state.armed !== null) {
     const item = context.catalog[state.armed]
-    return item === undefined ? null : entityCard(context, item.contentId, state)
+    return item === undefined ? null : rangeSays(entityCard(context, item.contentId, state), nextRound)
   }
   const structure = structureAtTile(context, state.planned, state.cursor)
   if (structure !== null) {
     const card = entityCard(context, structure.contentId, state)
-    return linkedHere(context, state, structure) ? card : { ...card, stats: card.stats.map((stat) => (stat.label === BUILD_RANGE ? { ...stat, value: "cut off" } : stat)) }
+    if (structure.planned) return rangeSays(card, nextRound)
+    return linkedHere(context, state, structure) ? card : rangeSays(card, () => "cut off")
   }
   const field = (context.field ?? []).find((entity) => covers(context, entity, state.cursor))
   if (field !== undefined) return fieldCard(context, field, state)
@@ -146,8 +149,17 @@ function buildRangeStat(context: Pick<BuildContext, "registry">, contentId: stri
   return radius === null ? null : { label: BUILD_RANGE, value: String(radius) }
 }
 
-/** Whether the structure under the cursor is linked to the Nexus, so its build range counts — or, cut off
- *  from it, gives none (`src/build/territory.ts`). */
+/** `card` with its build range said another way: from next round, or cut off. A card with none is as it was. */
+function rangeSays(card: Card, say: (value: string) => string): Card {
+  return { ...card, stats: card.stats.map((stat) => (stat.label === BUILD_RANGE ? { ...stat, value: say(stat.value) } : stat)) }
+}
+
+/** The build range of a building not standing yet: it gives it from the round after it is planned, when it
+ *  stands (`src/build/territory.ts`). */
+const nextRound = (value: string): string => `${value}, next round`
+
+/** Whether the standing structure under the cursor is linked to the Nexus, so its build range counts — or,
+ *  cut off from it, gives none (`src/build/territory.ts`). */
 function linkedHere(context: BuildContext, state: BuildState, structure: Readonly<{ contentId: string; anchor: Coord }>): boolean {
   const member = buildRange(context, state).members.find(
     (candidate) => candidate.contentId === structure.contentId && candidate.anchor.x === structure.anchor.x && candidate.anchor.y === structure.anchor.y,

@@ -117,10 +117,11 @@ test("the shell's foresee is what the round's real Pulse does on its first tick,
   const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
   for (let number = 1; number <= 3; number += 1) {
     for (const placed of [false, true]) {
-      // A Turret north-east of the Barracks, inside its build range, a row further south each round.
+      // A Turret east of the Barracks, inside its build range and a tile clear of the room it keeps, a row
+      // further south each round.
       if (placed) {
         const planned = side.build.state.planned.length
-        side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 28, y: 7 + number }, { kind: "click-tile", x: 28, y: 7 + number }])
+        side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 29, y: 8 + number }, { kind: "click-tile", x: 29, y: 8 + number }])
         assert.equal(side.build.state.planned.length, planned + 1, `round ${number}: the Turret was not placed`)
       }
       const raid = side.build.raid() ?? []

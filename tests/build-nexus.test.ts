@@ -418,10 +418,10 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
   // new Barracks, so arming another moves it to the nearest spot in the build range with a free tile
-  // around it — a free row below it, 26,16, on ground the first one's range reaches — and Enter places it
-  // there.
+  // around it — 21,13, by the Nexus, since the first one gives no range until it stands — and Enter places
+  // it there.
   byKeyboard.build.handleData("1", byKeyboard.layout)
-  assert.deepEqual(byKeyboard.build.state.cursor, { x: 26, y: 16 })
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 21, y: 13 })
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
   byKeyboard.build.handleData("y", byKeyboard.layout)
@@ -440,8 +440,8 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   clickTile({ x: 26, y: 13 })
   clickTile({ x: 26, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  // Arming already put the cursor on 26,16, so one click there is the confirming second click.
-  clickTile({ x: 26, y: 16 })
+  // Arming already put the cursor on 21,13, so one click there is the confirming second click.
+  clickTile({ x: 21, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "start-pulse"), byMouse.layout)
 

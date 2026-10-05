@@ -171,6 +171,16 @@ export type ContentDef = Readonly<{
    * value replaces this number on every structure that has one.
    */
   constructionRadius?: number
+  /**
+   * Room around a building that makes units (the owner, round 5: "barraks and other spawning buildings should
+   * require minimum distance from other buildings so they leave space for units spawning"): no tile of another
+   * building may stand within this many tiles of it, measured as range is, Manhattan to the nearest tile of each
+   * footprint — so at least this many free tiles lie between them, and the ring its units appear on stays open.
+   * It holds both ways, for a building placed near it and for it placed near a building. Absent: it keeps no
+   * room. Only the Build Phase reads it (`src/build/territory.ts`); the kernel never does. While the "Barracks
+   * room" Experiment is being felt, its value replaces this number on every structure that has one.
+   */
+  clearance?: number
 }>
 
 /**

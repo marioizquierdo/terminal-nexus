@@ -43,9 +43,11 @@ function toResult(side: BuildSide): void {
 }
 
 const TURRET = 2
+// Two Turrets north of the Barracks, facing the raid, both inside the range the standing buildings give: a
+// building planned this round gives none until it stands.
 const DEFENCE = [
   [TURRET, 24, 8],
-  [TURRET, 22, 7],
+  [TURRET, 25, 7],
 ] as const
 
 test("after a round's result, Enter opens the next round's Build Phase on what the last one left", () => {

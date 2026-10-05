@@ -489,9 +489,9 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, grid, 33).y < 10)
 })
 
-/** A spot for a Barracks inside the build range, north of the Nexus — and, with the view where arming from
- *  40,20 leaves it, inside the click's north-west edge zones, so a click there scrolls. */
-const SCROLLING_SPOT = { x: 18, y: 7 } as const
+/** A spot for a Barracks inside the build range, north-west of the Nexus and a tile clear of it — and, with the
+ *  view where arming from 40,20 leaves it, inside the click's north-west edge zones, so a click there scrolls. */
+const SCROLLING_SPOT = { x: 15, y: 8 } as const
 
 test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed", () => {
   const side = exploring(starterContext(), { x: 40, y: 20 })

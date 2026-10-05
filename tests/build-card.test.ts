@@ -166,6 +166,24 @@ test("Explore Map's card says what is under the cursor as it moves: open ground,
   assert.match(screenText(planned), /Open ground/)
 })
 
+test("a building's build range: now for one standing, from next round for one being placed or planned, none for one cut off", () => {
+  // Only what stands gives build range; a building planned this round gives its own once it stands.
+  const range = (side: Side): string | undefined => currentCard(side.context, side.build.state)?.stats.find((stat) => stat.label === "BUILD RANGE")?.value
+  const side = buildSide()
+  keys(side, "3")
+  assert.equal(range(side), "3, next round", "the card of a building being placed")
+  assert.match(panelLines(side, compose(side)).join("\n"), /^BUILD RANGE +3, next round$/m, "the words do not fit the panel")
+  keys(side, ENTER, "e")
+  moveTo(side, OPEN_GROUND)
+  assert.equal(currentCard(side.context, side.build.state)?.title, "Turret")
+  assert.equal(range(side), "3, next round", "the card of a planned building")
+  moveTo(side, { x: 26, y: 10 })
+  assert.equal(range(side), "3", "the card of the standing Barracks")
+  // At a build range of 2 the standing Barracks is cut off from the Nexus, and gives none.
+  side.build.dispatch({ kind: "experiment-adjust", field: "buildRange", step: -1 })
+  assert.equal(range(side), "cut off")
+})
+
 /** Move the map cursor onto `tile`, wherever it is now. */
 function moveTo(side: Side, tile: Readonly<{ x: number; y: number }>): void {
   const { cursor } = side.build.state

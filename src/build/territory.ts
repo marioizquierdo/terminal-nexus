@@ -12,34 +12,39 @@
 //   everything linked to the Nexus, step by step. Only a structure in the network projects: one **cut off**
 //   from it keeps working (it trains, it shoots) but gives no build range. A structure that projects nothing
 //   joins the network only where the network's range reaches it.
-// - **A new building may be placed only where all of its footprint is inside the territory** — the tiles
-//   the network projects onto — so the ground drawn as the build range is exactly where its tiles may go.
-// - **A planned building projects at once**, so one Build Phase can chain outward: a Turret at the edge of
-//   the range extends it for the next building.
-// - **Removing or undoing a planned building is refused when another planned building needs its range**: the
-//   plan always stays one that could be placed, a building at a time, from what stands (`placeableOrdinals`),
-//   so a building put down only to reach further and then taken away leaves nothing beyond the range. A
-//   standing building may be cut off by a removal, since a standing one keeps working.
+// - **Only what stands projects** (the owner, round 5: "building range should only count for buildings already
+//   placed from previous round ... Expansing territory is only done at next round"): a building planned in this
+//   Build Phase gives no build range until it stands, next round. So the range is fixed for the whole phase,
+//   worked out once from what stands (`territoryOf` keeps it), and removing or undoing a planned building can
+//   never leave another outside it.
+// - **A new building may be placed where any tile of its footprint is inside the range** (the owner, round 5:
+//   "should allow to build if at least 1 building tile is within range (not the whole building). This is
+//   important for large buildings otherwise they have no space to build"); rock, another building and the map's
+//   edge are still refused tile by tile.
+// - **A building that makes units keeps room round it** (its content's `clearance`; the owner, round 5:
+//   "barraks and other spawning buildings should require minimum distance from other buildings so they leave
+//   space for units spawning"): no tile of another building may stand within that many tiles of it, measured as
+//   range is (`crowding`). Every building on the map counts — standing or planned, the player's or the raid's,
+//   the Grid Nexus too — and it holds both ways: for a building placed near one, and for one placed near any
+//   building. While the "Barracks room" Experiment is being felt, its value is every such building's room.
 //
 // What it is not: a path. A range passes over rock, which is refused on its own, and nothing the raid stands
 // is part of the player's network, nor (yet) limits it: building inside the enemy's coverage waits for a raid
 // that stands buildings at the start of a Build Phase. With no Grid Nexus of the player's standing there is no
 // network, and nothing can be built.
 //
-// Pure: the reducer's legality, its removals and the view's drawing all read one answer (`territoryOf`).
+// Pure: the reducer's legality and the view's drawing all read one answer (`territoryOf`, `crowding`).
 
 import { footprintDistance, inBounds } from "../grid/coords.ts"
 import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 import type { ContentDef } from "../content/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import type { PlannedPlacement, StandingStructure } from "./types.ts"
+import type { StandingStructure } from "./types.ts"
 
-/** One of the player's structures as the territory sees it: standing (`ordinal: null`) or planned. */
+/** One of the player's standing structures as the territory sees it. */
 export type TerritoryMember = Readonly<{
   contentId: string
   anchor: Coord
-  /** The planned placement's ordinal, or `null` for a structure already standing. */
-  ordinal: number | null
   /** In the network: linked to the Grid Nexus, so it projects its build range. */
   linked: boolean
   /** How far it lets its player build from it, or `null` for a structure that projects nothing. */
@@ -49,7 +54,7 @@ export type TerritoryMember = Readonly<{
 export type Territory = Readonly<{
   /** Whether a tile is inside the build range: within the radius of a structure in the network. */
   has: (tile: Coord) => boolean
-  /** The player's structures, standing then planned in the order planned, each with whether it is linked. */
+  /** The player's standing structures, each with whether it is linked. */
   members: readonly TerritoryMember[]
   /** Whether the player has a Grid Nexus standing — the network's root. Without one nothing is inside. */
   rooted: boolean
@@ -69,27 +74,42 @@ export function constructionRadiusOf(definition: ContentDef, override?: number):
 }
 
 /**
- * The territory a plan gives its player: the standing structures and the planned ones, linked from the Grid
- * Nexus as far as their build ranges meet, and every tile within the radius of a linked one. `radius` is the
- * "Build range" Experiment's value (`constructionRadiusOf`).
+ * The build range a Build Phase opens with, and keeps: the standing structures linked from the Grid Nexus as far
+ * as their build ranges meet, and every tile within the radius of a linked one. `radius` is the "Build range"
+ * Experiment's value (`constructionRadiusOf`). Nothing planned is part of it, so it is worked out once for a
+ * context and a radius and kept (the context never changes while its screen is open; the radius is an
+ * Experiment that may).
  */
-export function territoryOf(source: TerritorySource, planned: readonly PlannedPlacement[], radius?: number): Territory {
-  const { grid, registry } = source
-  type Draft = { contentId: string; anchor: Coord; ordinal: number | null; footprint: Footprint; radius: number | null; linked: boolean }
-  const draft = (contentId: string, anchor: Coord, ordinal: number | null): Draft => {
-    const definition = registry.get(contentId)
-    return { contentId, anchor, ordinal, footprint: definition.footprint, radius: constructionRadiusOf(definition, radius), linked: false }
+export function territoryOf(source: TerritorySource, radius?: number): Territory {
+  let kept = TERRITORIES.get(source)
+  if (kept === undefined) {
+    kept = new Map()
+    TERRITORIES.set(source, kept)
   }
-  const members: Draft[] = [
-    ...source.standing.map((structure) => draft(structure.contentId, structure.anchor, null)),
-    ...planned.map((placement) => draft(placement.contentId, placement.anchor, placement.ordinal)),
-  ]
+  const key = radius ?? "own"
+  const known = kept.get(key)
+  if (known !== undefined) return known
+  const territory = workOut(source, radius)
+  kept.set(key, territory)
+  return territory
+}
+
+/** Every territory worked out, by its source and its radius: a context's range is asked for by every frame. */
+const TERRITORIES = new WeakMap<TerritorySource, Map<number | "own", Territory>>()
+
+function workOut(source: TerritorySource, radius?: number): Territory {
+  const { grid, registry } = source
+  type Draft = { contentId: string; anchor: Coord; footprint: Footprint; radius: number | null; linked: boolean }
+  const members: Draft[] = source.standing.map((structure) => {
+    const definition = registry.get(structure.contentId)
+    return { contentId: structure.contentId, anchor: structure.anchor, footprint: definition.footprint, radius: constructionRadiusOf(definition, radius), linked: false }
+  })
 
   // The network, from the Nexus outward: a structure joins when its range and a member's meet — or, for one
   // that projects nothing, when a member's range reaches it.
   const queue: Draft[] = []
   for (const member of members) {
-    if (member.ordinal === null && registry.get(member.contentId).nexus === true) {
+    if (registry.get(member.contentId).nexus === true) {
       member.linked = true
       queue.push(member)
     }
@@ -128,50 +148,59 @@ export function territoryOf(source: TerritorySource, planned: readonly PlannedPl
 
   return {
     has: (tile) => inBounds(grid, tile) && inside[tile.y * grid.width + tile.x] === 1,
-    members: members.map(({ contentId, anchor, ordinal, linked, radius: own }) => ({ contentId, anchor, ordinal, linked, radius: own })),
+    members: members.map(({ contentId, anchor, linked, radius: own }) => ({ contentId, anchor, linked, radius: own })),
     rooted,
   }
 }
 
-/** Whether all of a footprint anchored at `anchor` is inside the territory — the placement rule. */
-export function wholeInside(territory: Territory, anchor: Coord, footprint: Footprint): boolean {
-  return footprint.every((offset) => territory.has({ x: anchor.x + offset.x, y: anchor.y + offset.y }))
+/** Whether any tile of a footprint anchored at `anchor` is inside the territory — the placement rule. */
+export function anyInside(territory: Territory, anchor: Coord, footprint: Footprint): boolean {
+  return footprint.some((offset) => territory.has({ x: anchor.x + offset.x, y: anchor.y + offset.y }))
+}
+
+// --- Room around a building that makes units ----------------------------------------------------------------
+
+/** A building on the map, as the room rule sees it: what it is, and where. */
+export type Footing = Readonly<{ contentId: string; anchor: Coord }>
+
+/**
+ * How many tiles a structure keeps free round it — `override` (the "Barracks room" Experiment's value) for every
+ * structure that keeps room at all, its own `clearance` without one — or `null` for one that keeps none.
+ */
+export function clearanceOf(definition: ContentDef, override?: number): number | null {
+  if (definition.clearance === undefined) return null
+  return override ?? definition.clearance
 }
 
 /**
- * The planned buildings that could be placed, a building at a time, from what stands: each wholly inside the
- * territory of the standing structures and the ones placed before it, in whatever order works. Placing only ever
- * grows the territory, so taking every building that fits, again and again until none is left that does, finds
- * them all. A plan made by the reducer's own placements holds only such buildings — unless the Experiment's
- * radius changed under it.
+ * Why a building would stand too close to another: the building it is too near, and whose room it would stand
+ * in — `its`, the other one's, a building that makes units; or `own`, the room of the one being placed.
  */
-export function placeableOrdinals(source: TerritorySource, planned: readonly PlannedPlacement[], radius?: number): ReadonlySet<number> {
-  const placed: PlannedPlacement[] = []
-  const waiting = [...planned]
-  for (let progress = true; progress && waiting.length > 0; ) {
-    const territory = territoryOf(source, placed, radius)
-    const fitting = waiting.filter((placement) => wholeInside(territory, placement.anchor, source.registry.get(placement.contentId).footprint))
-    progress = fitting.length > 0
-    for (const placement of fitting) {
-      placed.push(placement)
-      waiting.splice(waiting.indexOf(placement), 1)
-    }
+export type Crowding = Readonly<{ near: Footing; room: "its" | "own" }>
+
+/**
+ * **The room rule**: the building on the map (`buildings`: standing, planned, the raid's) that `contentId`
+ * anchored at `anchor` would stand too close to, or `null` when there is none. Too close is within the room
+ * either of the two keeps (`clearanceOf`), measured as range is. The nearest is named, the first listed on a
+ * tie. A building it would overlap is the occupancy check's to refuse, which comes first.
+ */
+export function crowding(
+  registry: ContentRegistry,
+  buildings: readonly Footing[],
+  contentId: string,
+  anchor: Coord,
+  override?: number,
+): Crowding | null {
+  const definition = registry.get(contentId)
+  const own = clearanceOf(definition, override) ?? 0
+  let found: Readonly<{ near: Footing; distance: number; room: "its" | "own" }> | null = null
+  for (const other of buildings) {
+    const theirs = clearanceOf(registry.get(other.contentId), override) ?? 0
+    const keep = Math.max(own, theirs)
+    if (keep === 0) continue
+    const distance = footprintDistance(anchor, definition.footprint, other.anchor, registry.get(other.contentId).footprint)
+    if (distance > keep || (found !== null && distance >= found.distance)) continue
+    found = { near: other, distance, room: theirs >= distance ? "its" : "own" }
   }
-  return new Set(placed.map((placement) => placement.ordinal))
-}
-
-/**
- * The planned buildings that would be stranded outside the build range if the one with ordinal `ordinal` were
- * removed — placeable now, not without it — in the order planned. Empty when nothing needs it.
- */
-export function strandedByRemoving(
-  source: TerritorySource,
-  planned: readonly PlannedPlacement[],
-  ordinal: number,
-  radius?: number,
-): readonly PlannedPlacement[] {
-  const before = placeableOrdinals(source, planned, radius)
-  const remaining = planned.filter((placement) => placement.ordinal !== ordinal)
-  const after = placeableOrdinals(source, remaining, radius)
-  return remaining.filter((placement) => before.has(placement.ordinal) && !after.has(placement.ordinal))
+  return found === null ? null : { near: found.near, room: found.room }
 }

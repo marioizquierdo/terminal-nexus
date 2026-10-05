@@ -464,6 +464,26 @@ export const ALL_SETTINGS = {
   /** How far into a Battle Round every building's first wave comes; the owner's (2026-10-05). Read when a
    *  battle starts (`src/cli/pulse-run.ts`), in the kernel's ticks. */
   firstWave: { tier: "tuned", unit: "seconds", default: 5 },
+
+  // --- Room around a Barracks (the Commander round 5) ------------------------------------------------
+  // The owner: "barraks and other spawning buildings should require minimum distance from other buildings so
+  // they leave space for units spawning". It asks how much room a Barracks needs: enough that its troops always
+  // have somewhere to appear, and never so much that there is nowhere left to build one.
+
+  /** How many free tiles a building that makes units (a Barracks, a Hatchery) keeps round it, measured as range
+   *  is (`src/build/territory.ts`); it replaces each such structure's own `clearance` while it is felt. 1 keeps
+   *  the ring its troops appear on free. Why not more: a spawner must stand a tile further than this from every
+   *  building and still have a tile in a linked building's range, so 2 needs a Build range of 3 or more, and a
+   *  larger value can leave nowhere to build one. First guess: 1. */
+  spawnClearance: {
+    tier: "experiment",
+    section: "mission",
+    label: "Barracks room",
+    question: "How many free tiles a Barracks or Hatchery keeps round it for its troops. Nothing may be built there.",
+    values: [1, 2],
+    unit: "tiles",
+    default: 1,
+  },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------
