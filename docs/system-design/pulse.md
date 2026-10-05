@@ -216,9 +216,9 @@ At Pulse start plans reveal together and valid construction becomes operational.
 producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
 result (RULE — `tests/pulse-run.test.ts`).
 
-At Pulse end survivors regroup near home producers — the nearest of their side's buildings that trains
-or spawns their kind. Orphans are adopted by the nearest compatible producer or regroup near the Grid
-Nexus. Production cooldowns reset to a full interval, and a producer's count for the Pulse to zero; a
+At Pulse end survivors regroup near home producers — the nearest of their side's buildings that trains or
+spawns their kind. Orphans are adopted by the nearest compatible producer or regroup near the Grid Nexus. A
+producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`).
 
@@ -282,21 +282,30 @@ recipe on a recurring interval. When simultaneous attempts cannot all be paid or
 feasible attempt enters one seeded contention process: one is chosen, paid, and spawned; feasibility is
 recomputed; repeat until nothing legal remains.
 
-What is built is the smallest slice of that: **a building with a recipe trains its unit on its own,
-the first one full interval into the Pulse and every interval after, up to a cap a Pulse**, setting
-each down on the first free tile touching it (the same search a spawner uses). A building whose every
-neighbouring tile is taken does not lose its turn: it trains on the first tick there is room. A recipe
-costs nothing yet, because a Pulse has no resource, so no two attempts can compete and the contention
-process has nothing to decide; it is not built, and arrives with cost and supply in the worker economy.
-A unit a building trained says so on its `entity.spawned` event (`trainedBy`), which is how the Pulse's
-feed and the Activity Logs tell it from an arrival.
+What is built is the smallest slice of that: **a building with a recipe spawns its unit in waves** (RULE —
+`src/pulse/production.ts`, `tests/production.test.ts`). A wave is the units a building sets down at once:
+every unit of it comes out on the same tick, one after another in a fixed order round the building, so it
+stands together beside the building that made it (the owner, 2026-10-05: "spawning units: should happen
+simultaneously at the beginning of the round, creating a more predictable squad formation"). The recipe says
+how many a wave, how many waves a Pulse, when the first comes and the gap to the next; the schedule never
+slips. A building short of room never spawns fewer: what fits comes out on the wave's tick, and the rest on
+the first tick there is room. A recipe costs nothing yet, because a Pulse has no resource, so no two attempts
+can compete and the contention process has nothing to decide; it is not built, and arrives with cost and
+supply in the worker economy. A unit a building spawned says so on its `entity.spawned` event (`trainedBy`),
+which is how the Pulse's feed and the Activity Logs tell it from an arrival.
 
-**No content trains by default** (RULE — `withProduction`, `src/content/index.ts`). A mission names the
-buildings that train and what (`trains`, PERIMETER's Barracks trains troopers), and the Pulse runs on
-content with those recipes added (`src/match/training.ts`); a map that merely has a barracks on it
-resolves exactly as it always did. A producer's two timers are on its state only while it has a recipe,
-so a state without one serializes byte for byte as before. How often and how many a Pulse are
-Experiments while they are tuned (**Barracks trains**, **Troopers a round**).
+**What a building spawns is its own** (RULE — `src/armies/load.ts`, `src/match/training.ts`,
+`tests/armies.test.ts`, `tests/production.test.ts`). Its card in its army carries `spawns`: the unit, how many
+a wave, how many waves a round and the seconds between waves, each a whole number above zero. Every building a
+campaign level offers spawns in that level's battles as its card says. When the first wave comes is the same
+for every building, a tuned value (`firstWave`, five seconds in). The Barracks sends four troopers and the
+Hatchery three swarmers, one wave a round each; a Nexus power that gives a building a second or third wave
+raises its `waves` and nothing else. **No content spawns this way by default** (RULE — `withProduction`,
+`src/content/index.ts`): a `grid` scenario's buildings, and a map that merely has a barracks on it, resolve
+exactly as they always did. **A building makes its units one way in a battle**: one given a recipe loses any
+spawner of its own, so a campaign's Hatchery breeds only its wave, while the bench Hatchery in its `grid`
+scenario keeps its timer. A producer's counters (ticks to its next wave, waves come this Pulse, units still
+owed) are on its state only while it has a recipe, so a state without one serializes byte for byte as before.
 
 Players shape composition by building, protecting, upgrading, pausing, or losing producers.
 
@@ -357,19 +366,33 @@ destroys it.
 build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
 build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
 content definition with a `constructionRadius`; today every building the player places) lets its player build
-within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. Two of the
-player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the two
-radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the network
-projects. One cut off from it keeps working (it trains, it shoots) and gives no build range; a structure that
-projects nothing joins only where the network's range reaches it. A new building may be placed only where all
-of its footprint is inside the range. A planned building projects at once, so one Build Phase can chain
-outward. Removing or undoing a planned building is refused when another planned building needs its range: the
-plan always stays one that could be placed, a building at a time, from what stands. A standing building may be
-cut off by a removal, since a standing one keeps working. A range passes over rock, which is refused on its
-own. While the "Build range" Experiment is felt, its value (2, 3 or 4 tiles; 3 to begin with) is every
-projecting structure's radius; outposts that reach farther wait for outposts (Q5). With no Grid Nexus of the
-player's standing there is no network and nothing can be built. The Build Phase enforces this and the kernel
-never reads it, since the Build Phase is the only way a player's plan is made.
+within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. Two of
+the player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the
+two radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the
+network projects. One cut off from it keeps working (it trains, it shoots) and gives no build range; a
+structure that projects nothing joins only where the network's range reaches it. **Only what stands projects**
+(the owner, 2026-10-05: "building range should only count for buildings already placed from previous round ...
+Expansing territory is only done at next round"): a building planned in this Build Phase gives no build range
+until it stands, next round, so the range is the same all phase, and removing or undoing a planned building
+never leaves another outside it. **A new building may be placed where at least one tile of its footprint is
+inside the range** (the owner: "This is important for large buildings otherwise they have no space to build");
+rock, another building and the map's edge are still refused tile by tile. A range passes over rock, which is
+refused on its own. While the "Build range" Experiment is felt, its value (2, 3 or 4 tiles; 3 to begin with)
+is every projecting structure's radius; outposts that reach farther wait for outposts (Q5). With no Grid Nexus
+of the player's standing there is no network and nothing can be built. The Build Phase enforces this and the
+kernel never reads it, since the Build Phase is the only way a player's plan is made.
+
+**Room round a building that makes units** (RULE — `src/build/territory.ts`, `tests/build-territory.test.ts`).
+A building that makes units — a content definition with a `clearance`; today the Barracks and the Hatchery —
+keeps that many tiles free round it (the owner, 2026-10-05: "so they leave space for units spawning"): no tile
+of another building may stand within it, measured as range is. At one, nothing may stand beside it, though
+another building may touch a corner, which is two tiles away as range is measured, and the sides of the ring
+its units appear on stay open. It holds both ways — a building placed near one, and one placed near any
+building — and against every building on the map: standing or planned, the player's or the raid's, the Grid
+Nexus included. Units take no room. While the "Barracks room" Experiment is felt, its value (1 or 2 tiles; 1
+to begin with) is every such building's room; two needs a Build range of three or more, since a spawner must
+then stand three tiles from every building and still have a tile in range. The Build Phase enforces this and
+the kernel never reads it.
 
 Still open, because nothing reaches them yet: building inside enemy coverage that was public at Build Phase
 start (no raid stands a building at the start of a Build Phase), simultaneous same-cell conflicts and refunds
