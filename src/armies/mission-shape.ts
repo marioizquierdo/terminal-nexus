@@ -97,7 +97,6 @@ export const missionShape: Shape<MissionDefinition> = record<MissionDefinition>(
     triggers: list(trigger),
   },
   {
-    trains: list(record<Readonly<{ structure: string; unit: string }>>({ structure: text, unit: text }, {})),
     roundText,
     endText: record<Readonly<{ won: string; lost: string }>>({ won: text, lost: text }, {}),
     notes: text,

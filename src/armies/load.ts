@@ -19,9 +19,10 @@ import { missionShape } from "./mission-shape.ts"
 import type { BarkMoment, Barks } from "./barks.ts"
 import { BARK_MOMENTS, barkProblem } from "./barks.ts"
 import type { Say, Shape } from "./shape.ts"
-import { anything, dictionary, fieldAt, isObject, itemAt, list, record, shown, text, wholeNumber } from "./shape.ts"
+import { anything, dictionary, fieldAt, isObject, itemAt, list, positiveWholeNumber, record, shown, text, wholeNumber } from "./shape.ts"
 import type {
   BuildingCard,
+  BuildingSpawns,
   ArmyManifest,
   Armies,
   Campaign,
@@ -42,7 +43,12 @@ import { ArmyError } from "./types.ts"
 // A list of an army's things is checked item by item, and an item with the wrong shape is left out of
 // everything after: one broken level, or one broken mission, never hides the problems of the rest.
 
-const buildingCard = record<BuildingCard>({ id: text, structure: text, cost: wholeNumber }, { notes: text })
+/** What a building spawns: every number a whole number above zero, said by name when one is not. */
+const buildingSpawns = record<BuildingSpawns>(
+  { unit: text, perWave: positiveWholeNumber, waves: positiveWholeNumber, secondsBetween: positiveWholeNumber },
+  {},
+)
+const buildingCard = record<BuildingCard>({ id: text, structure: text, cost: wholeNumber }, { spawns: buildingSpawns, notes: text })
 const powerCard = record<PowerCard>(
   { id: text, name: text, description: text, effect: record<PowerEffect>({ credits: wholeNumber }, {}) },
   { notes: text },
@@ -183,10 +189,9 @@ function loadOrder(armies: ReadonlyMap<string, ReadArmy>): ReadArmy[] {
 const quoted = (ids: readonly string[]): string =>
   ids.length === 1 ? `"${ids[0]}"` : `${ids.slice(0, -1).map((id) => `"${id}"`).join(", ")} and "${ids[ids.length - 1]}"`
 
-/** Every content id a mission names: what it spawns, plans, trains, has speak and looks at. */
+/** Every content id a mission names: what it spawns, plans, has speak and looks at. */
 function contentOfMission(mission: MissionDefinition, registry: ContentRegistry): string[] {
   const ids: string[] = []
-  for (const entry of mission.trains ?? []) ids.push(entry.structure, entry.unit)
   for (const trigger of mission.triggers) {
     for (const action of trigger.do) {
       if ("spawn" in action) ids.push(...action.spawn.units.map((entry) => entry.unit))
@@ -343,11 +348,17 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
       }
     }
 
-    // Cards: a building is a structure the army sees; a Nexus power says what it is.
+    // Cards: a building is a structure the army sees, and what it spawns a unit the army sees; a Nexus power
+    // says what it is.
     for (const card of army.buildings) {
       const unseen = unseenContent(army.id, card.structure)
       if (unseen !== null) say(`the building "${card.id}" names ${unseen}`)
       else if (registry.get(card.structure).layer !== "obstacles") say(`the building "${card.id}" names "${card.structure}", which is not a building`)
+      if (card.spawns === undefined) continue
+      const unit = card.spawns.unit
+      const unseenUnit = unseenContent(army.id, unit)
+      if (unseenUnit !== null) say(`the building "${card.id}" spawns ${unseenUnit}`)
+      else if (registry.get(unit).layer === "obstacles") say(`the building "${card.id}" spawns "${unit}", which is a building, not a unit`)
     }
     for (const card of army.powers) {
       if (card.name.trim() === "" || card.description.trim() === "") say(`the Nexus power "${card.id}" needs a name and a description`)
@@ -395,6 +406,20 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
             if (unseen !== null) say(`${where} unlocks ${unseen}`)
           }
           for (const id of own) if (!seen.has(id)) seen.set(id, level.id)
+        }
+
+        // A building spawns one way in a battle: two cards the level offers for one structure may not say two
+        // different things about what it spawns. Said at the level that unlocks the second, once.
+        const spawnsOf = new Map<string, Readonly<{ card: string; spawns: string }>>()
+        for (const [id, unlockedIn] of unlocked.buildings) {
+          const card = buildingsBy.get(id)?.card
+          if (card === undefined) continue
+          const spawns = JSON.stringify(card.spawns ?? null)
+          const first = spawnsOf.get(card.structure)
+          if (first === undefined) spawnsOf.set(card.structure, { card: card.id, spawns })
+          else if (first.spawns !== spawns && unlockedIn === level.id) {
+            say(`${where} offers "${card.structure}" as the buildings "${first.card}" and "${card.id}", which spawn differently; a building spawns one way`)
+          }
         }
 
         if (mission === null) continue

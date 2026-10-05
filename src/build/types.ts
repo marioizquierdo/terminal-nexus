@@ -5,6 +5,7 @@
 // terminal cell. That is what makes "the same plan, entered by hotkeys or by clicks, is the same
 // plan" assertable.
 
+import type { BuildingSpawns } from "../armies/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { ShownName } from "./all-settings.ts"
@@ -21,6 +22,10 @@ export type ConstructItem = Readonly<{
   label: string
   /** What it costs out of the Build Phase's starting allotment. */
   cost: number
+  /** What it spawns in each battle, in waves, as its army's card says (`BuildingSpawns`): what its card
+   *  shows, and what the shell gives it to spawn when a battle starts (`src/cli/pulse-run.ts`). Absent: it
+   *  spawns nothing. */
+  spawns?: BuildingSpawns
   // What it is *for* is not here: a building's card words — title, subtitle, description — are written
   // with the content (`src/content/cards.ts`) and read through `cardText` (`card.ts`).
 }>

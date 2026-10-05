@@ -113,11 +113,27 @@ export function incomingCard(context: Pick<BuildContext, "registry">, entity: In
   }
 }
 
-/** How often a building the mission trains with trains, at the pace the Experiments set now — what a
- *  Barracks's card says — or `null` for a building that trains nothing. */
-export function trainsStat(context: Pick<BuildContext, "trains">, contentId: string, state: SettingSource): CardStat | null {
-  if (!(context.trains ?? []).some((entry) => entry.structure === contentId)) return null
-  return { label: "TRAINS", value: `1 per ${setting(state, "trainEvery")}s, ${setting(state, "trainPerRound")} a round` }
+/** A kind's name as a count of it reads: "1 runner", "6 runners", "2 marksmen", "4 troopers". */
+export function counted(context: Pick<BuildContext, "registry">, contentId: string, count: number): string {
+  const name = cardText(context, contentId).title.toLowerCase()
+  if (count === 1) return `1 ${name}`
+  if (name.endsWith("man")) return `${count} ${name.slice(0, -3)}men`
+  return `${count} ${name}${/(s|x|ch|sh)$/u.test(name) ? "es" : "s"}`
+}
+
+/**
+ * What a building spawns in each battle, as its row of the menu carries it from its army — what a Barracks's
+ * card says, beside its other numbers — or `null` for one that spawns nothing. One wave a round says how many of
+ * what, and when it comes ("WAVE 4 troopers at 5s"); several say how many each and when each comes ("WAVES 4 at
+ * 5s, 15s, 25s"). When the first comes is the tuned `firstWave`, the same for every building.
+ */
+export function wavesStat(context: Pick<BuildContext, "registry" | "catalog">, contentId: string, state: SettingSource): CardStat | null {
+  const spawns = context.catalog.find((item) => item.contentId === contentId)?.spawns
+  if (spawns === undefined) return null
+  const first = setting(state, "firstWave")
+  if (spawns.waves === 1) return { label: "WAVE", value: `${counted(context, spawns.unit, spawns.perWave)} at ${first}s` }
+  const times = Array.from({ length: spawns.waves }, (_, wave) => `${first + wave * spawns.secondsBetween}s`)
+  return { label: "WAVES", value: `${spawns.perWave} at ${times.join(", ")}` }
 }
 
 /** The label of the number a building that projects a build range shows. */
@@ -140,11 +156,11 @@ function linkedHere(context: BuildContext, state: BuildState, structure: Readonl
 }
 
 /** A building's card — the same whether it is being placed, planned or standing: its words,
- *  then its cost where the menu sells it, its health and size, its attack where it has one, what it
- *  trains where the mission has it train, and its build range where it projects one ("cut off" in Explore
+ *  then its cost where the menu sells it, its health and size, its attack where it has one, the wave it
+ *  spawns where it makes units, and its build range where it projects one ("cut off" in Explore
  *  Map for one cut off from the Nexus). */
 export function entityCard(
-  context: Pick<BuildContext, "registry" | "catalog" | "trains">,
+  context: Pick<BuildContext, "registry" | "catalog">,
   contentId: string,
   state?: SettingSource,
 ): Card {
@@ -157,8 +173,8 @@ export function entityCard(
   if (definition.attack !== undefined) {
     stats.push({ label: "ATTACK", value: `${definition.attack.damage} at range ${definition.attack.range}` })
   }
-  const trains = state === undefined ? null : trainsStat(context, contentId, state)
-  if (trains !== null) stats.push(trains)
+  const waves = state === undefined ? null : wavesStat(context, contentId, state)
+  if (waves !== null) stats.push(waves)
   const range = buildRangeStat(context, contentId, state)
   if (range !== null) stats.push(range)
   return { icon: { kind: "entity", contentId }, ...cardText(context, contentId), stats }

@@ -106,6 +106,17 @@ export type Played = Readonly<{
   mission: MissionPlay
 }>
 
+/**
+ * The starter map's context with buildings that spawn nothing — what the placeholder Pulse was played on before
+ * buildings made units: a campaign's buildings spawn their waves because its level offers them so (`spawns` on
+ * each row of the construct menu), and the test mission is no level's, so its first round is still the very
+ * Pulse it was.
+ */
+export function placeholderContext(): BuildContext {
+  const context = starterContext()
+  return { ...context, catalog: context.catalog.map(({ spawns: _spawns, ...item }) => item) }
+}
+
 /** A session on the starter map, opening on the Grid Nexus as the game does, playing the test mission for a
  *  scenario (the probe, by default) with the shell's own `startPulse` and `nextRound`. */
 export function newSession(
@@ -115,7 +126,7 @@ export function newSession(
 ): Omit<Played, "pulse"> {
   const mission = missionPlay(testMission(scenario))
   const { build, context, layout } = buildSide({
-    context: mission.firstRound(starterContext()),
+    context: mission.firstRound(placeholderContext()),
     cursor: STARTER_START_CURSOR,
     terminal: size,
     startPulse: mission.startPulse,

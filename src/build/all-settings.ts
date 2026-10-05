@@ -376,31 +376,6 @@ export const ALL_SETTINGS = {
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
    *  auto; a first guess. */
   autoNextRoundMs: { tier: "tuned", default: 3000 },
-  /** How often a Barracks trains a trooper during a round (step 6C). A round runs thirty seconds at
-   *  most and ends sooner when the raid's units are all dead or the Nexus falls, so the pace decides
-   *  how many a round really trains and how much of the fight they see. First guess: every 10 seconds
-   *  — three in a full round, and a plan that builds nothing still loses PERIMETER's last round, as
-   *  step 6B tuned it (docs/history/reports/2026-10-01-barracks-trains.md has the outcomes at every pace). */
-  trainEvery: {
-    tier: "experiment",
-    section: "mission",
-    label: "Barracks trains",
-    question: "How often each Barracks trains a trooper during a round: one every this many seconds, the first that far in.",
-    values: [4, 6, 8, 10, 15],
-    unit: "seconds",
-    default: 10,
-  },
-  /** How many troopers one Barracks trains in a round, at most (step 6C): how fast the player's side
-   *  grows from round to round. First guess: 3, one squad's worth. */
-  trainPerRound: {
-    tier: "experiment",
-    section: "mission",
-    label: "Troopers a round",
-    question: "The most troopers each Barracks trains in one round. Survivors come home and fight again next round.",
-    values: [1, 2, 3, 4, 6],
-    unit: "count",
-    default: 3,
-  },
   /** How much Vasse, the Commander, can take (the Commander step): how often her fall, a round of absence
    *  and her return come into play at all. First guess: 80, twice a trooper. Measured: from 60 to 100 she
    *  comes out of PERIMETER's first two rounds in every plan tried and a plan that builds nothing still
@@ -477,6 +452,17 @@ export const ALL_SETTINGS = {
     names: { "0": "off", "10": "10% less", "25": "25% less", "40": "40% less" },
     default: 25,
   },
+
+  // --- A building's waves (the Commander round 5) ----------------------------------------------------
+  // The owner: units a building spawns "should happen simultaneously at the beginning of the round, creating a
+  // more predictable squad formation. The first wave is at 5 seconds." How many a wave, how many waves and the
+  // gap between them are each building's own, in its army (`spawns`, `armies/all/army.json`); when the first
+  // comes is not, so it is one number here. It answered the Barracks Experiments (how often it trained, how many
+  // a round), which are gone.
+
+  /** How far into a Battle Round every building's first wave comes; the owner's (2026-10-05). Read when a
+   *  battle starts (`src/cli/pulse-run.ts`), in the kernel's ticks. */
+  firstWave: { tier: "tuned", unit: "seconds", default: 5 },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

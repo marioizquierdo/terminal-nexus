@@ -19,12 +19,10 @@
 // - the popup pulse (`popupPulseMs`) is presentation alone: the view breathes a popup's border;
 // - the mission's: `nextRound` — whether a round's result waits for the player or the next Build Phase
 //   begins on its own (read by the Pulse's presenter, `src/view/pulse-live.ts`) — changes nothing the
-//   kernel is handed; `trainEvery` and `trainPerRound` — how often a Barracks trains and how many a
-//   round — are the pace of the recipe the shell gives the mission's buildings when a Pulse starts
-//   (`src/cli/pulse-run.ts`), and the Barracks's card quotes them.
+//   kernel is handed.
 //
-// None of them reaches the simulation kernel (`src/pulse`, `src/state`) as a setting: the two training
-// numbers arrive as content, a recipe on the building, like any other number the kernel reads.
+// None of them reaches the simulation kernel (`src/pulse`, `src/state`) as a setting: a number the kernel
+// reads arrives as content when a Pulse starts (`src/cli/pulse-run.ts`), like any other.
 
 import type { Applies, Experiments, NamesOn, SettingValue, ShownSetting } from "./all-settings.ts"
 import { SHOWN_SETTINGS, defaultsOn, stepValue } from "./all-settings.ts"

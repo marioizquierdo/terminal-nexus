@@ -76,17 +76,6 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
   if (!isPositiveInteger(mission.pulseTicks)) say(`pulseTicks must be a positive integer, received ${mission.pulseTicks}`)
   if (!Number.isInteger(mission.seed)) say(`seed must be an integer, received ${mission.seed}`)
 
-  // What trains: a known building, training a known unit, each building once.
-  const trainers = new Set<string>()
-  for (const entry of mission.trains ?? []) {
-    if (trainers.has(entry.structure)) say(`"${entry.structure}" is listed to train twice`)
-    trainers.add(entry.structure)
-    if (!registry.has(entry.structure)) say(`trains names the unknown building "${entry.structure}"`)
-    else if (registry.get(entry.structure).layer !== "obstacles") say(`trains names "${entry.structure}", which is not a building`)
-    if (!registry.has(entry.unit)) say(`"${entry.structure}" trains the unknown unit "${entry.unit}"`)
-    else if (registry.get(entry.unit).layer === "obstacles") say(`"${entry.structure}" trains "${entry.unit}", which is a building`)
-  }
-
   // Regions: unique, sized, on the map, and a name, when given, that says something.
   const regionIds = new Set<string>()
   for (const region of mission.regions) {

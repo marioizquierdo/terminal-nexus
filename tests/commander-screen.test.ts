@@ -17,6 +17,7 @@ import type { BuildContext } from "../src/build/state.ts"
 import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
+import type { MissionDefinition } from "../src/mission/index.ts"
 import { buildSide, keys, screenText } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 import { COMMANDER_FALLS, VASSE } from "./commander-fixture.ts"
@@ -28,9 +29,9 @@ function perimeter(experiments: BuildContext["experiments"] = {}): BuildSide {
   return buildSide({ context: starterContext(undefined, { experiments }), cursor: STARTER_START_CURSOR, startPulse, nextRound })
 }
 
-/** The named scenario's first Build Phase, on the starter map. */
-function fixture(): BuildSide {
-  const play = missionPlay(COMMANDER_FALLS)
+/** The named scenario's first Build Phase, on the starter map — or another mission's, on the same. */
+function fixture(mission: MissionDefinition = COMMANDER_FALLS): BuildSide {
+  const play = missionPlay(mission)
   const context = play.firstRound({
     grid: starterGrid(),
     registry: FIXTURE_REGISTRY,
@@ -169,18 +170,24 @@ test("round 3 opens with her back beside the Nexus, at full health, and her card
   assert.doesNotMatch(screenText(side), /is out this round/)
 })
 
-test("PERIMETER at 20 health: she falls in round 2, and the last round opens without her", () => {
-  const side = perimeter({ commanderHealth: 20 })
+test("she falls with one round to go: the result says she is out for the last, and the last round opens without her", () => {
+  // The named scenario cut to two rounds, so the round she is out for is its last. (PERIMETER showed this once, at
+  // 20 health in its second round; since the Barracks's troopers came to arrive in a wave five seconds in, she
+  // comes through PERIMETER's first two rounds at any health, so it no longer can.)
+  const twoRounds: MissionDefinition = {
+    ...COMMANDER_FALLS,
+    pulses: 2,
+    triggers: COMMANDER_FALLS.triggers
+      .filter((trigger) => trigger.id !== "probe-3")
+      .map((trigger) => (trigger.id === "hold" ? { ...trigger, when: { event: "pulse.end", pulse: 2 } } : trigger)),
+  }
+  const side = fixture(twoRounds)
   startRound(side)
   toResult(side)
-  assert.doesNotMatch(panelText(side), /Vasse fell/)
+  assert.match(panelText(side), /Vasse fell: out for round 2, the last\./)
   keys(side, ENTER)
-  startRound(side)
-  toResult(side)
-  assert.match(panelText(side), /Vasse fell: out for round 3, the last\./)
-  keys(side, ENTER)
-  assert.equal(side.build.state.pulseNumber, 3)
-  assert.match(statusLine(side), /^Round 2: \w[\w' ]*\. Vasse is out this round\.$/)
+  assert.equal(side.build.state.pulseNumber, 2)
+  assert.match(statusLine(side), /^Round 1: \w[\w' ]*\. Vasse is out this round\.$/)
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "open-battle-round" })
   assert.match(screenText(side), /Vasse is out this round\./)

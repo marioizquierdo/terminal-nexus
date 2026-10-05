@@ -20,7 +20,7 @@ import { CREDITS_ROW, constructLines, startRow } from "../build/layout.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
-import { cardText } from "../build/card.ts"
+import { cardText, counted } from "../build/card.ts"
 import type { RaidForecast, RaidGroup, RaidTarget } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
@@ -69,14 +69,6 @@ export function bearing(from: Coord, to: Coord): string {
   const angle = Math.atan2(-(to.y - from.y) * 2, to.x - from.x)
   const sector = (Math.round(angle / (Math.PI / 4)) + 8) % 8
   return BEARINGS[sector] ?? "east"
-}
-
-/** A kind's name as a count of it reads: "1 runner", "6 runners", "2 marksmen". */
-function counted(context: Pick<BuildContext, "registry">, contentId: string, count: number): string {
-  const name = cardText(context, contentId).title.toLowerCase()
-  if (count === 1) return `1 ${name}`
-  if (name.endsWith("man")) return `${count} ${name.slice(0, -3)}men`
-  return `${count} ${name}${/(s|x|ch|sh)$/u.test(name) ? "es" : "s"}`
 }
 
 /** What a group goes for, as the panel names it: a building as the menu does ("your Barracks", "your

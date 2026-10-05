@@ -56,9 +56,11 @@ const SETTLED_CHOICES = [
  *  Experiments once). */
 const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
 
-/** Experiments retired because what they chose became a mission's data: the placeholder Pulse's Raid and
- *  Your units, replaced by PERIMETER's raid and starting squads (`armies/vasse/army.json`). */
-const RETIRED_EXPERIMENTS = ["raid", "crew"] as const
+/** Experiments retired because what they chose became data: the placeholder Pulse's Raid and Your units,
+ *  replaced by PERIMETER's raid and starting squads (`armies/vasse/army.json`); and the Barracks's pace — how
+ *  often it trained and how many a round — replaced by the owner's numbers on the Barracks itself, a wave of
+ *  troopers a round (`spawns`, `armies/all/army.json`). */
+const RETIRED_EXPERIMENTS = ["raid", "crew", "trainEvery", "trainPerRound"] as const
 
 /**
  * The names the settled Experiments had in a settings export: every tuned setting's — derived from the

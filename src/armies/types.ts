@@ -19,12 +19,33 @@ import type { Barks } from "./barks.ts"
 
 // --- What an army's manifest holds ---------------------------------------------------------------------
 
-/** A building a Commander may be offered: a structure, and what it costs out of a Build Phase's credits. */
+/**
+ * What a building spawns in a battle, in **waves** — the units it sets down at once, side by side, and the word
+ * means nothing else in the game: the unit, how many a wave, how many waves a round, and the seconds from one
+ * wave to the next. Every number is a positive whole number. When the first wave comes is the same for every
+ * building (a tuned setting, `firstWave`), so it is not here. A Nexus power that gives a building a second or
+ * third wave raises `waves`, and nothing else changes shape.
+ */
+export type BuildingSpawns = Readonly<{
+  /** The unit's content id: a unit, never a building. */
+  unit: string
+  /** How many units one wave sets down. */
+  perWave: number
+  /** How many waves it spawns in a round. */
+  waves: number
+  /** Seconds from one wave to the next; unused while there is one wave. */
+  secondsBetween: number
+}>
+
+/** A building a Commander may be offered: a structure, what it costs out of a Build Phase's credits, and — for
+ *  one that makes units — what it spawns in a battle. */
 export type BuildingCard = Readonly<{
   id: string
   /** The structure's content id: a building (`src/content`). */
   structure: string
   cost: number
+  /** What it spawns in each battle of a campaign that offers it. Absent: it spawns nothing. */
+  spawns?: BuildingSpawns
   notes?: string
 }>
 

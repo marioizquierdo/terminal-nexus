@@ -34,9 +34,10 @@ import {
   recall,
   resolveMissionPulse,
   restoreCommanders,
-  trainingRegistry,
+  spawningRegistry,
 } from "../match/index.ts"
-import type { Arrival, MissionPulseInput, Restoration, TrainingPace } from "../match/index.ts"
+import type { Arrival, MissionPulseInput, Restoration } from "../match/index.ts"
+import type { BuildingSpawns } from "../armies/index.ts"
 import { foreseeRound } from "../match/index.ts"
 import type { GroupIntent, TroopsIntent } from "../match/index.ts"
 import type { TroopsGroup } from "../view/troops-post.ts"
@@ -135,12 +136,16 @@ function mapOf(registry: ContentRegistry, carried: MatchState): Readonly<{ stand
   return { standing, field }
 }
 
-/** How often the mission's buildings train, and how many a round: the two Experiments, in the kernel's
- *  ticks. Read when a Pulse starts, so a change in Settings is felt from the next round. */
-const paceOf = (state: BuildState): TrainingPace => ({
-  intervalTicks: setting(state, "trainEvery") * TICKS_PER_SECOND,
-  perPulse: setting(state, "trainPerRound"),
-})
+/** What each building the level offers spawns in its battles, by its content id: its army's word for it,
+ *  carried on its row of the construct menu (`spawns`). A building the level does not offer spawns nothing. */
+function spawnsOf(context: Pick<BuildContext, "catalog">): Readonly<Record<string, BuildingSpawns>> {
+  const spawns: Record<string, BuildingSpawns> = {}
+  for (const item of context.catalog) if (item.spawns !== undefined) spawns[item.contentId] ??= item.spawns
+  return spawns
+}
+
+/** How far into a round every building's first wave comes, in the kernel's ticks: the owner's tuned number. */
+const firstWaveTicks = (state: BuildState): number => setting(state, "firstWave") * TICKS_PER_SECOND
 
 /** What the next Build Phase's first line says of the player's Commander — back beside the Nexus, or out
  *  this round and, when the mission lasts that long, the round she is back for — or `null` when there is
@@ -290,12 +295,12 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 
   const round = (number: number) => ({ number, of: mission.pulses })
 
-  /** The content a round's Pulse runs on: the mission's buildings training at the Experiments' pace, and
+  /** The content a round's Pulse runs on: the level's buildings spawning their waves as their army says, and
    *  its Commander as tough, and her aura as strong, as the Experiments say. The Build Phase's own registry
    *  carries none of them. */
   const pulseRegistry = (context: BuildContext, state: BuildState): ContentRegistry =>
     auraRegistry(
-      commanderRegistry(trainingRegistry(mission, context.registry, paceOf(state)), setting(state, "commanderHealth")),
+      commanderRegistry(spawningRegistry(context.registry, spawnsOf(context), firstWaveTicks(state)), setting(state, "commanderHealth")),
       setting(state, "commanderAura"),
     )
 
@@ -319,7 +324,6 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         field: [],
         // The mission's own words for its rounds, or none — so every round says the default.
         roundText: mission.roundText ?? {},
-        ...(mission.trains === undefined ? {} : { trains: mission.trains }),
       }
       // The round opens on its scene, when the mission has one for it: PERIMETER's intro.
       return withRoundScene({ ...context, incoming: forecast(context, 1) }, roundScene(mission, context, 1, []))
@@ -327,8 +331,8 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 
     startPulse(context, state) {
       const pulse = context.round?.number ?? 1
-      // The Pulse runs on the content with the mission's buildings training at the Experiments' pace; the
-      // Build Phase's own registry never carries a recipe, so nothing it draws or refuses depends on one.
+      // The Pulse runs on the content with the level's buildings spawning their waves; the Build Phase's own
+      // registry never carries a recipe, so nothing it draws or refuses depends on one.
       const registry = pulseRegistry(context, state)
       const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
       const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)

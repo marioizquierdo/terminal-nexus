@@ -23,7 +23,7 @@ import { outcomeOf } from "../src/view/pulse-live.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { createView } from "../src/view/snapshot.ts"
-import { BARRACKS, DEFENCE, MINIMUM, play, testMission } from "./pulse-helpers.ts"
+import { BARRACKS, DEFENCE, MINIMUM, placeholderContext, play, testMission } from "./pulse-helpers.ts"
 import type { Scenario, Spot } from "./pulse-helpers.ts"
 
 const headlineOf = (pulse: ResolvedPulse): string => resultOf(outcomeOf(pulse.timeline)).headline
@@ -168,7 +168,7 @@ test("the first placeholder Pulse, written as a mission, is the very Pulse it wa
   // range, which it reaches past, so it is handed to the Pulse as a plan rather than placed through the Build
   // Phase, which would refuse it now: this is about the Pulse, not about where a building may go.
   const mission = missionPlay(testMission())
-  const context = mission.firstRound(starterContext())
+  const context = mission.firstRound(placeholderContext())
   const opened = createBuildState(context, STARTER_START_CURSOR, buildLayout(MINIMUM, context.grid).viewport)
   const placeholderPlan: readonly PlannedPlacement[] = [
     { ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 22, y: 9 } },
