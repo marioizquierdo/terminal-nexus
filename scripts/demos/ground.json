@@ -1,25 +1,25 @@
 [
   {
     "label": "As now",
-    "try": "The Ground test, with a row counting as a column, as the rules always have. Two raiders come from the north and two from the east, the same distance away on screen. Press 3 to arm a Turret: its reach is drawn round it, twice as tall as it is wide. Enter places it. Then press s twice to start the battle, and watch which raid arrives first.",
+    "try": "The Ground test, with a row counting as a column, as the rules always have. Two raiders come from the north and two from the east, the same distance away on screen. Press 3 to arm a Turret: its reach is drawn round it, twice as tall as it is wide. Enter places it. Then press s twice to start the battle, and watch how fast each raid comes.",
     "at": "campaign?level=ground-test",
     "settings": "ground=as-now"
   },
   {
     "label": "Rows x2",
-    "try": "The Ground test, with a row counting as two columns: a step up or down takes twice as long as one across. Press 3 to arm a Turret: its reach is as wide as it is tall on screen. Enter places it. Then press s twice to start the battle, and watch which raid arrives first.",
+    "try": "The Ground test, with a row counting as two columns: a step up or down takes twice as long as one across. Press 3 to arm a Turret: its reach is as wide as it is tall on screen. Enter places it. Then press s twice to start the battle, and watch how fast each raid comes.",
     "at": "campaign?level=ground-test",
     "settings": "ground=rows-x2"
   },
   {
     "label": "Sideways x2",
-    "try": "The Ground test, with every number doubled across: up and down as now, across twice as far and twice as fast. Press 3 to arm a Turret: its reach is as tall as before and twice as wide. Enter places it. Then press s twice to start the battle, and watch which raid arrives first.",
+    "try": "The Ground test, with every number doubled across: up and down as now, across twice as far and twice as fast. Press 3 to arm a Turret: its reach is as tall as before and twice as wide. Enter places it. Then press s twice to start the battle, and watch how fast each raid comes.",
     "at": "campaign?level=ground-test",
     "settings": "ground=sideways-x2"
   },
   {
     "label": "Square tiles",
-    "try": "The Ground test, with the rules as they always were and every tile drawn two columns wide, so a tile looks square. The eastern raid starts off the screen to the right: it now looks twice as far away as the northern one, because it is. Press 3 to arm a Turret and see its reach, Enter to place it, then s twice to start the battle, and watch whether what arrives first is what you expected.",
+    "try": "The Ground test, with the rules as they always were and every tile drawn two columns wide, so a tile looks square. The eastern raid starts off the screen to the right: it now looks twice as far away as the northern one, because it is. Press 3 to arm a Turret and see its reach, Enter to place it, then s twice to start the battle, and watch how fast each raid comes: the eastern one has twice as far to go, on screen and in the rules.",
     "at": "campaign?level=ground-test",
     "settings": "ground=square-tiles"
   },

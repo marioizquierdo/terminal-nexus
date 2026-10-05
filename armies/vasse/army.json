@@ -368,7 +368,7 @@
               { "id": "hold", "when": { "event": "pulse.end", "pulse": 2 }, "do": [{ "win": true }] }
             ],
             "roundText": {
-              "1": "Two raids, equally far on screen. One from the north, one from the east. Watch which arrives first.",
+              "1": "Two raids, equally far on screen. One from the north, one from the east. Watch how fast each one comes.",
               "2": "Slingers now, the same two ways in. Watch where each one stops to shoot."
             },
             "endText": { "won": "Both raids broke.", "lost": "The Nexus fell." }
