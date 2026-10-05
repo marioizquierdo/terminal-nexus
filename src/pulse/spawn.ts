@@ -25,7 +25,8 @@ import type { Actor, TickContext } from "./shared.ts"
  * collision rule, and creates one new entity there for `origin`'s player: wired into
  * `context.actors`/`byOrdinal`/`index` and given an `entity.spawned` event exactly as if the scenario
  * loader had placed it. Returns the new actor, or `null` if nothing adjacent fits this attempt — a
- * boxed-in spawner simply tries again next interval (`spawning()`) or does not split further
+ * boxed-in spawner simply tries again next interval (`spawning()`), a building owes the rest of its wave
+ * until the first tick there is room (`production()`), and a dying unit does not split further
  * (`spawnOnDeath()`), rather than searching further afield or erroring.
  */
 export function spawnOneNear(

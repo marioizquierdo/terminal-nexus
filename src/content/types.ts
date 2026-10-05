@@ -157,10 +157,10 @@ export type ContentDef = Readonly<{
    */
   splitOnDeath?: Readonly<{ contentId: string; count: number }>
   /**
-   * Automatic production (pulse.md): a building that trains `output` on its own, `quantity` at a time,
-   * every `intervalTicks` of a Pulse, at most `perPulse` times a Pulse. No content carries one by
-   * default: a battle opts a building in (`withProduction` in `./index.ts`), so a map that merely has a
-   * barracks on it resolves exactly as it did before buildings trained anything.
+   * Automatic production (pulse.md): a building that spawns `output` on its own in waves — `perWave` at
+   * once, the first wave `firstTicks` into a Pulse and one every `intervalTicks` after it, `waves` a Pulse.
+   * No content carries one by default: a battle opts a building in (`withProduction` in `./index.ts`), so a
+   * map that merely has a barracks on it resolves exactly as it did before buildings trained anything.
    */
   production?: ProductionRecipe
   /**
@@ -174,19 +174,26 @@ export type ContentDef = Readonly<{
 }>
 
 /**
- * The smallest recipe the Pulse runs (step 6C): free, unsupplied, and alone — there is no resource in a
- * Pulse yet, so nothing can make two attempts compete, and the seeded contention process pulse.md
- * describes has nothing to decide. Cost, supply and a spawn rule arrive with the worker economy.
+ * The smallest recipe the Pulse runs: free, unsupplied, and alone — there is no resource in a Pulse yet, so
+ * nothing can make two attempts compete, and the seeded contention process pulse.md describes has nothing to
+ * decide. Cost and supply arrive with the worker economy.
+ *
+ * It spawns in **waves** (the owner's word for the units a building sets down at once, and only that): every
+ * unit of a wave on the same tick, so they stand together beside the building (`src/pulse/production.ts`).
+ * Every number is a positive whole number (`withProduction` refuses any other). A later Nexus power that
+ * gives a building a second or third wave raises `waves` and nothing else.
  */
 export type ProductionRecipe = Readonly<{
-  /** The content id it trains: a unit, never a structure. */
+  /** The content id it spawns: a unit, never a structure. */
   output: string
-  /** How many each time it trains. */
-  quantity: number
-  /** Ticks between two trainings; the first comes one full interval into the Pulse. */
+  /** How many units one wave sets down. */
+  perWave: number
+  /** How many waves it spawns in one Pulse. */
+  waves: number
+  /** Ticks into the Pulse its first wave comes. */
+  firstTicks: number
+  /** Ticks from one wave to the next. */
   intervalTicks: number
-  /** How many times it trains in one Pulse, at most. */
-  perPulse: number
 }>
 
 /**
@@ -206,6 +213,7 @@ export function freshEntityFields(definition: ContentDef): Readonly<{
   focusStreak: number
   productionCooldown?: number
   produced?: number
+  owed?: number
 }> {
   return {
     moveCredit: 0,
@@ -219,13 +227,13 @@ export function freshEntityFields(definition: ContentDef): Readonly<{
 }
 
 /**
- * A producer's two timers as a Pulse starts: a full interval to its first training, and nothing trained
- * yet. Empty for anything without a recipe, so the fields never appear on it and a state that holds no
+ * A producer's counters as a Pulse starts: its first wave `firstTicks` away, no wave come yet, and no unit
+ * owed. Empty for anything without a recipe, so the fields never appear on it and a state that holds no
  * producer hashes exactly as it did before production existed (`state/canonical.ts` skips an absent key).
  */
-export function productionFields(definition: ContentDef): Readonly<{ productionCooldown?: number; produced?: number }> {
+export function productionFields(definition: ContentDef): Readonly<{ productionCooldown?: number; produced?: number; owed?: number }> {
   if (definition.production === undefined) return {}
-  return { productionCooldown: definition.production.intervalTicks, produced: 0 }
+  return { productionCooldown: definition.production.firstTicks, produced: 0, owed: 0 }
 }
 
 export function rectFootprint(width: number, height: number): Footprint {

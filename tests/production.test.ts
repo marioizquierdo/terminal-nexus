@@ -1,8 +1,9 @@
-// Automatic production, at step 6C's size: a building with a recipe trains its unit on an interval
-// during a Pulse (pulse.md, "Automatic production"). The kernel's half — the timer, the cap, where a
-// trained unit stands, and that nothing without a recipe changes by a byte — and the match's half: a
-// Barracks the player placed trains, trained survivors come home to it, and the timers start each
-// Pulse at a full interval. PERIMETER's Barracks, round by round, on the screen, is
+// Automatic production: a building with a recipe spawns its unit in waves during a Pulse (pulse.md,
+// "Automatic production") — every unit of a wave on the same tick, side by side round the building, the first
+// wave a fixed delay into the Pulse and the rest a fixed gap apart. The kernel's half — the schedule, the cap,
+// where a wave stands, that a crowded building never spawns fewer, and that nothing without a recipe changes by
+// a byte — and the match's half: a Barracks the player placed spawns, its survivors come home to it, and the
+// counters start each Pulse afresh. PERIMETER's Barracks, round by round, on the screen, is
 // tests/mission-loop.test.ts.
 
 import { test } from "node:test"
@@ -10,9 +11,9 @@ import assert from "node:assert/strict"
 import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import type { ProductionRecipe } from "../src/content/index.ts"
-import { footprintDistance } from "../src/grid/coords.ts"
+import { footprintRing } from "../src/grid/coords.ts"
 import { openingState, recall, resolveMissionPulse, trainingRegistry } from "../src/match/index.ts"
-import type { MissionPulse } from "../src/match/index.ts"
+import type { Force, MissionPulse } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, validateMission } from "../src/mission/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
@@ -20,30 +21,35 @@ import { hashState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
 
 const BARRACKS = "structure.citizen.barracks"
+const HATCHERY = "structure.bench.hatchery"
 const TROOPER = "unit.citizen.trooper"
 const grid = starterGrid()
 const recipe = (overrides: Partial<ProductionRecipe> = {}): ProductionRecipe => ({
   output: TROOPER,
-  quantity: 1,
-  intervalTicks: 12,
-  perPulse: 3,
+  perWave: 4,
+  waves: 1,
+  firstTicks: 60,
+  intervalTicks: 120,
   ...overrides,
 })
 
-/** A Barracks alone on the starter map, trained at `given`'s pace, for `ticks` ticks. */
-function lone(given: ProductionRecipe, ticks = 60) {
+/** A Barracks alone at `anchor` on the starter map (where the map's own stands, unless told), spawning by
+ *  `given`, for `ticks` ticks — with `forces` on the map besides it, when given. */
+function lone(given: ProductionRecipe, ticks = 90, anchor = { x: 25, y: 10 }, forces: readonly Force[] = []) {
   const registry = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: given })
   const initialState = openingState({
     grid,
     registry,
-    structures: [{ contentId: BARRACKS, anchor: { x: 25, y: 10 } }],
-    setup: { seed: 1, pulseTicks: ticks, forces: [] },
+    structures: [{ contentId: BARRACKS, anchor }],
+    setup: { seed: 1, pulseTicks: ticks, forces },
   })
   return { registry, run: resolvePulse({ initialState, registry, pulseTicks: ticks, seed: 1 }) }
 }
 
 const trainedEvents = (events: MissionPulse["events"]) =>
   events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined)
+
+const ticksOf = (events: MissionPulse["events"]): number[] => trainedEvents(events).map((event) => event.tick)
 
 // --- The recipe on content ------------------------------------------------------------------------
 
@@ -57,16 +63,42 @@ test("no content trains by default: a recipe is given to a building by name, and
   assert.throws(() => withProduction(FIXTURE_REGISTRY, { [TROOPER]: recipe() }), /not a building/)
   assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ output: "unit.nope" }) }), /unknown "unit\.nope"/)
   assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ output: BARRACKS }) }), /a building/)
-  assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ intervalTicks: 0 }) }), /intervalTicks must be a positive integer/)
-  assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ perPulse: 1.5 }) }), /perPulse must be a positive integer/)
+  // Every number by its name: a wave of nothing, a wave and a half, a first wave before the Pulse, no gap.
+  assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ perWave: 0 }) }), /perWave must be a positive integer, received 0/)
+  assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ waves: 1.5 }) }), /waves must be a positive integer, received 1\.5/)
+  assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ firstTicks: 0 }) }), /firstTicks must be a positive integer/)
+  assert.throws(() => withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe({ intervalTicks: -12 }) }), /intervalTicks must be a positive integer/)
+})
+
+test("a building makes its units one way in a battle: given a recipe, the Hatchery breeds by it alone, and keeps its own spawner everywhere else", () => {
+  const ownSpawner = FIXTURE_REGISTRY.get(HATCHERY).spawn
+  assert.ok(ownSpawner !== undefined, "the bench Hatchery no longer has a spawner of its own")
+  const brood = recipe({ output: ownSpawner.contentId, perWave: 3 })
+  const opted = withProduction(FIXTURE_REGISTRY, { [HATCHERY]: brood })
+  assert.equal(opted.get(HATCHERY).spawn, undefined, "an opted-in Hatchery still breeds by its own timer too")
+  assert.deepEqual(opted.get(HATCHERY).production, brood)
+  // The shared content keeps it, so a grid scenario with a Hatchery (hatchery-spawn) breeds as it always did.
+  assert.deepEqual(FIXTURE_REGISTRY.get(HATCHERY).spawn, ownSpawner)
+
+  // On the Grid: its whole brood on the wave's tick, and nothing from the old timer before or after it.
+  const initialState = openingState({
+    grid,
+    registry: opted,
+    structures: [{ contentId: HATCHERY, anchor: { x: 21, y: 13 } }],
+    setup: { seed: 1, pulseTicks: 180, forces: [] },
+  })
+  const run = resolvePulse({ initialState, registry: opted, pulseTicks: 180, seed: 1 })
+  const born = run.events.filter((event) => event.kind === "entity.spawned" && event.tick > 0)
+  assert.deepEqual(born.map((event) => event.tick), [60, 60, 60])
+  assert.ok(born.every((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined), "a swarmer was bred by the old timer")
 })
 
 // --- The kernel's production phase -----------------------------------------------------------------
 
-test("a Barracks trains one trooper every interval, the first one interval in, until its cap for the Pulse", () => {
-  const { run, registry } = lone(recipe())
+test("a wave comes whole on its tick: every unit of it at once, side by side in the ring round the building", () => {
+  const { run } = lone(recipe())
   const trained = trainedEvents(run.events)
-  assert.deepEqual(trained.map((event) => event.tick), [12, 24, 36], "trained at the wrong ticks, or past its cap")
+  assert.deepEqual(trained.map((event) => event.tick), [60, 60, 60, 60], "the wave came at the wrong tick, or not all at once")
   const barracks = run.finalState.entities.find((entity) => entity.contentId === BARRACKS)
   assert.ok(barracks !== undefined)
   for (const event of trained) {
@@ -75,18 +107,46 @@ test("a Barracks trains one trooper every interval, the first one interval in, u
     assert.equal(event.player, "A")
     assert.equal(event.contentId, TROOPER)
   }
-  assert.equal(barracks.produced, 3)
-  // Set down in the ring of tiles touching it (a corner of that ring is two steps away, not one).
-  const first = trained[0]
-  assert.ok(first?.kind === "entity.spawned")
-  const definition = registry.get(BARRACKS)
-  assert.ok(footprintDistance(first.at, registry.get(TROOPER).footprint, barracks.anchor, definition.footprint) <= 2)
-  assert.equal(run.finalState.entities.filter((entity) => entity.contentId === TROOPER).length, 3)
+  // The first four tiles of the ring, in its fixed order: a row of four along the Barracks's north side.
+  const ring = footprintRing(3, 2, 1).map((offset) => ({ x: barracks.anchor.x + offset.x, y: barracks.anchor.y + offset.y }))
+  assert.deepEqual(trained.map((event) => (event.kind === "entity.spawned" ? event.at : null)), ring.slice(0, 4))
+  assert.ok(ring.slice(0, 4).every((tile) => tile.y === barracks.anchor.y - 1))
+  assert.deepEqual([barracks.produced, barracks.owed], [1, 0])
+  assert.equal(run.finalState.entities.filter((entity) => entity.contentId === TROOPER).length, 4)
 })
 
-test("quantity is how many each time; the cap counts trainings, not troopers", () => {
-  const { run } = lone(recipe({ quantity: 2, perPulse: 2 }))
-  assert.deepEqual(trainedEvents(run.events).map((event) => event.tick), [12, 12, 24, 24])
+test("waves after the first follow at the building's own gap, up to its waves a Pulse", () => {
+  const { run } = lone(recipe({ perWave: 2, waves: 3, firstTicks: 12, intervalTicks: 24 }), 120)
+  assert.deepEqual(ticksOf(run.events), [12, 12, 36, 36, 60, 60], "the waves came at the wrong ticks, or past their number")
+  const barracks = run.finalState.entities.find((entity) => entity.contentId === BARRACKS)
+  assert.deepEqual([barracks?.produced, barracks?.owed], [3, 0])
+})
+
+test("a crowded building never spawns fewer: what fits comes out on the wave's tick, the rest on the first tick there is room", () => {
+  // In the corner of the north-west wall, where rock takes most of the ring: six tiles touch the Barracks.
+  const corner = { x: 9, y: 6 }
+  const raider: Force = { player: "B", muster: { x: 30, y: 9 }, units: ["unit.ravel.raider"] }
+  const { run } = lone(recipe({ perWave: 8 }), 90, corner, [raider])
+  const ticks = ticksOf(run.events)
+  assert.equal(ticks.filter((tick) => tick === 60).length, 6, `the wave did not fill the room it had: ${JSON.stringify(ticks)}`)
+  // The two it still owed come out once the first have stepped toward the raider — never dropped.
+  const late = ticks.filter((tick) => tick > 60)
+  assert.equal(late.length, 2, `the wave lost units it owed: ${JSON.stringify(ticks)}`)
+  assert.ok(late.every((tick) => tick <= 72), `the owed units waited too long: ${JSON.stringify(late)}`)
+  const barracks = run.finalState.entities.find((entity) => entity.contentId === BARRACKS)
+  assert.deepEqual([barracks?.produced, barracks?.owed], [1, 0])
+
+  // Walled in by its own side, a trooper on each of those six tiles, it owes every wave and spawns nothing; the
+  // schedule does not wait for it, so both waves have come and both are owed.
+  const free = footprintRing(3, 2, 1)
+    .map((offset) => ({ x: corner.x + offset.x, y: corner.y + offset.y }))
+    .filter((tile) => grid.tiles[tile.y * grid.width + tile.x] !== "terrain.rock")
+  assert.equal(free.length, 6)
+  const crowd: Force[] = free.map((tile) => ({ player: "A", muster: tile, units: [TROOPER] }))
+  const boxed = lone(recipe({ perWave: 2, waves: 2, firstTicks: 12, intervalTicks: 24 }), 60, corner, crowd)
+  const walledIn = boxed.run.finalState.entities.find((entity) => entity.contentId === BARRACKS)
+  assert.equal(ticksOf(boxed.run.events).length, 0)
+  assert.deepEqual([walledIn?.produced, walledIn?.owed], [2, 4])
 })
 
 test("a building without a recipe carries no production fields, so a state without a producer is byte for byte what it was", () => {
@@ -98,13 +158,13 @@ test("a building without a recipe carries no production fields, so a state witho
     setup: { seed: 1, pulseTicks: 30, forces: [] },
   })
   const run = resolvePulse({ initialState, registry, pulseTicks: 30, seed: 1 })
-  assert.doesNotMatch(serializeState(run.finalState), /productionCooldown|produced/)
+  assert.doesNotMatch(serializeState(run.finalState), /productionCooldown|produced|owed/)
   assert.equal(trainedEvents(run.events).length, 0)
 })
 
 test("the same Barracks, the same seed, the same ticks: the same hash, every run", () => {
   const hashes = new Set<string>()
-  for (let run = 0; run < 5; run += 1) hashes.add(lone(recipe()).run.stateHash)
+  for (let run = 0; run < 5; run += 1) hashes.add(lone(recipe({ waves: 2 }), 200).run.stateHash)
   assert.equal(hashes.size, 1)
 })
 
@@ -180,5 +240,6 @@ test("PERIMETER's first round with the Barracks training hashes the same on ever
 })
 
 // Moved on purpose with the Commander step: Vasse arrives with the squads, so round 1 has one more unit in it; and
-// again when the squads came to hold the line ahead of the base and By the Book to guard those beside her.
-const PINNED_ROUND_1 = "760e89bf7088a78c6b5f3633a3f29136810bb771af639d61e6f791a66143cb6c"
+// again when the squads came to hold the line ahead of the base and By the Book to guard those beside her; and when
+// a producer came to count the units of its wave it still owes (`owed`), which is the only thing that moved then.
+const PINNED_ROUND_1 = "9970e7748d37ca1566eb3acd6108416ffe1a1369b3ee371616d9aed01d2c73d3"
