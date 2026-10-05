@@ -45,6 +45,7 @@
 
 import type { Settings } from "../settings/types.ts"
 import { CAPABILITY_MODES, GLYPH_PACKS, THEMES } from "../terminal/display.ts"
+import { GROUNDS } from "./ground.ts"
 
 /** Where a setting stands: shown and saved, shown for playtests, or a constant in code. */
 export type Tier = "player" | "experiment" | "tuned"
@@ -472,6 +473,29 @@ export const ALL_SETTINGS = {
     values: [1, 2],
     unit: "tiles",
     default: 1,
+  },
+
+  // --- Tall tiles: the ground (the Commander round 6) ------------------------------------------------
+  // The owner: "the range is severely skewed vertically. That is because a termial tiles are made of tall
+  // rectangles", and, choosing how to fix it, "What matters is how intuitive it feels for a human player, this is
+  // the time to get it right". A terminal cell is about twice as tall as it is wide, and the rules have always
+  // counted a row as a column. It asks the open question on the cell's aspect ratio, by feel: which way of
+  // making a reach and a walk look as they play feels most natural? The report on the options draws each one,
+  // the ones not built included (docs/history/reports/2026-10-05-tall-tiles-options.md).
+
+  /** How the ground is measured and drawn (`src/build/ground.ts`): as now; a row counting two columns in every
+   *  distance and every step, with the Build range counted in rows so it keeps its height; every content number
+   *  doubled across in that count; or the rules as now with every tile drawn two columns wide. Applies at once,
+   *  to what the Build Phase draws and allows and to the next battle. First guess: as now, so nothing changes
+   *  until it is chosen. */
+  ground: {
+    tier: "experiment",
+    section: "mission",
+    label: "Ground",
+    question: "Tiles are twice as tall as wide: as now, up counts like across. Rows x2, sideways x2 or square tiles even it out.",
+    values: GROUNDS,
+    names: { "as-now": "as now", "rows-x2": "rows x2", "sideways-x2": "sideways x2", "square-tiles": "square tiles" },
+    default: "as-now",
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

@@ -1,4 +1,14 @@
-import type { Coord, Direction, Footprint, GridTerrain } from "./types.ts"
+import type { Coord, Direction, Footprint, GridMeasure, GridTerrain } from "./types.ts"
+
+/** The measure the rules have always used: a row counts as a column, and a content tile is one of them
+ *  (`GridMeasure`). Every function here that takes a measure defaults to it, so a caller that never names one
+ *  measures as the rules always did. */
+export const SQUARE: GridMeasure = { row: 1, tile: 1 }
+
+/** Whether a measure is `SQUARE`'s: the rules as they always were. */
+export function isSquare(measure: GridMeasure): boolean {
+  return measure.row === 1 && measure.tile === 1
+}
 
 /**
  * The four directions a mover may step in, in a fixed order (grid.md), revised after
@@ -28,14 +38,15 @@ export function step(from: Coord, direction: Direction): Coord {
 /**
  * The compass direction from `from` toward `to`, collapsed to the four points movement actually
  * uses. A target that sits on a true diagonal has no single cardinal answer, so the axis with the
- * larger delta wins; an exact tie prefers east/west, which is an arbitrary but deterministic and
+ * larger delta wins — larger as `measure` counts it, so when a row counts two columns a mover heads along
+ * the screen's diagonal; an exact tie prefers east/west, which is an arbitrary but deterministic and
  * documented choice. Falls back to `s` for a zero-length vector.
  */
-export function directionOf(from: Coord, to: Coord, fallback: Direction = "s"): Direction {
+export function directionOf(from: Coord, to: Coord, fallback: Direction = "s", measure: GridMeasure = SQUARE): Direction {
   const dx = to.x - from.x
   const dy = to.y - from.y
   if (dx === 0 && dy === 0) return fallback
-  if (Math.abs(dx) >= Math.abs(dy)) return dx > 0 ? "e" : "w"
+  if (Math.abs(dx) >= measure.row * Math.abs(dy)) return dx > 0 ? "e" : "w"
   return dy > 0 ? "s" : "n"
 }
 
@@ -45,9 +56,27 @@ export function directionOf(from: Coord, to: Coord, fallback: Direction = "s"): 
  * is exactly the number of cardinal steps between two tiles, so "in range" and "reachable in that
  * many steps" mean the same thing again. Presentation is exempt — a tracer or a trail may still draw
  * a diagonal line, because that is a cosmetic choice about a path, not a claim about one.
+ *
+ * A row counts `measure.row` columns (the Ground Experiment, `GridMeasure`): under `SQUARE` this is plain
+ * Manhattan; when a row counts two, "in range" and "reachable in that time" still agree, because a step up or
+ * down takes twice as long as one across (`pulse/movement.ts`).
  */
-export function gridDistance(a: Coord, b: Coord): number {
+export function gridDistance(a: Coord, b: Coord, measure: GridMeasure = SQUARE): number {
+  return Math.abs(a.x - b.x) + measure.row * Math.abs(a.y - b.y)
+}
+
+/**
+ * Four-way steps between two tiles, a row counting as a column whatever the measure: 1 is touching along a
+ * side. What "touching" and "beside" mean — melee's reach, a follower gathered beside a building — so they
+ * never change with how rows are counted.
+ */
+export function gridSteps(a: Coord, b: Coord): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+}
+
+/** A content range or radius in the measure's count: `radius` content tiles are `radius * measure.tile` of it. */
+export function reachOf(radius: number, measure: GridMeasure = SQUARE): number {
+  return radius * measure.tile
 }
 
 /**
@@ -100,17 +129,42 @@ export function footprintDistance(
   footprintA: Footprint,
   anchorB: Coord,
   footprintB: Footprint,
+  measure: GridMeasure = SQUARE,
 ): number {
   let best = Number.POSITIVE_INFINITY
   for (const offsetA of footprintA) {
     const a = { x: anchorA.x + offsetA.x, y: anchorA.y + offsetA.y }
     for (const offsetB of footprintB) {
       const b = { x: anchorB.x + offsetB.x, y: anchorB.y + offsetB.y }
-      const distance = gridDistance(a, b)
+      const distance = gridDistance(a, b, measure)
       if (distance < best) best = distance
     }
   }
   return best
+}
+
+/** `gridSteps` between the nearest occupied tiles of two footprints: 1 when they touch along a side. */
+export function footprintSteps(anchorA: Coord, footprintA: Footprint, anchorB: Coord, footprintB: Footprint): number {
+  return footprintDistance(anchorA, footprintA, anchorB, footprintB)
+}
+
+/**
+ * Whether footprint B is within content radius `radius` of footprint A, measured as range is: the nearest tiles
+ * within `reachOf(radius)` in the measure's count — and, for any radius of at least 1, a footprint touching A
+ * along a side always is, so a neighbour above or below stays within a radius of 1 when a row counts two.
+ * Exactly `footprintDistance(...) <= radius` under `SQUARE`.
+ */
+export function footprintWithin(
+  anchorA: Coord,
+  footprintA: Footprint,
+  anchorB: Coord,
+  footprintB: Footprint,
+  radius: number,
+  measure: GridMeasure = SQUARE,
+): boolean {
+  if (footprintDistance(anchorA, footprintA, anchorB, footprintB, measure) <= reachOf(radius, measure)) return true
+  if (isSquare(measure)) return false
+  return radius >= 1 && footprintSteps(anchorA, footprintA, anchorB, footprintB) <= 1
 }
 
 /**
@@ -122,12 +176,12 @@ export function footprintDistance(
  * sidestep is a tile closer to the target by the very metric that decides whether it is in range.
  * Routing now aims at the same tile targeting already measures to.
  */
-export function nearestFootprintTile(from: Coord, anchor: Coord, footprint: Footprint): Coord {
+export function nearestFootprintTile(from: Coord, anchor: Coord, footprint: Footprint, measure: GridMeasure = SQUARE): Coord {
   let best: Coord = anchor
   let bestDistance = Number.POSITIVE_INFINITY
   for (const offset of footprint) {
     const tile = { x: anchor.x + offset.x, y: anchor.y + offset.y }
-    const distance = gridDistance(from, tile)
+    const distance = gridDistance(from, tile, measure)
     if (distance < bestDistance) {
       bestDistance = distance
       best = tile

@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8A, round 5 — Mario's notes after the Commander's pull request merged: build range from standing buildings and any tile in it, room around a Barracks, troops in waves on a building's own schedule, an optional Nexus pick, a unit's range when explored, a moving intent trail, and her voice settled beside her.
+**Current step:** 8A, round 6 — tall tiles, felt: the ways to make a reach and a walk look as they play, drawn in ASCII, and the simple ones built as an Experiment Mario can play, with a test level that shows the difference.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -135,6 +135,24 @@ Built on a new pull request, by subagents.
 - [x] Vasse speaks beside her on the map; the Vasse's voice Experiment is settled and gone.
 - [x] Tall tiles: a spike shows range and movement with tiles as now, square tiles, and rows counting double
       in the rules, with what each costs and a recommendation; nothing is built for real before Mario decides.
+
+### Step 8A, round 6 — Tall tiles, felt
+
+Mario's notes after the fifth round merged ([his words](../history/feedback/2026-10-05-tall-tiles.md)): the
+next update is the vertical space alone, judged by how it feels to play, not by today's maps. Built on a new
+pull request.
+
+- [ ] Each option is drawn in ASCII, the ones not built included: a reach, a second of walking down and across,
+      a melee touch and a building.
+- [ ] One Experiment, Ground, with four choices: as now, rows count double, sideways doubled, and square tiles.
+- [ ] The rule a Battle Round measures by travels with it; with "as now" every battle and every pinned hash is
+      exactly what it was.
+- [ ] Under rows counting double, melee is touching, the build range keeps its rows, and every reach, aura and
+      outline on screen is the kernel's own.
+- [ ] Square tiles draw two columns a tile at every terminal size; the other choices of the rules draw one.
+- [ ] A test level, reachable by route, shows a reach to place, a raid from above and one from the side at the
+      same distance on screen, and a melee line; the playable page opens it under each choice.
+- [ ] Nothing is settled before Mario plays it: the hex grid and a tilted camera are drawn, not built.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 
