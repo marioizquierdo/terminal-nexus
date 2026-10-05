@@ -24,6 +24,8 @@ import type { KeyPhase } from "../src/terminal/key-events.ts"
 import { MOUSE_LEFT, formatMouseEvent } from "../src/build/mouse.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
+import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
+import type { LevelDestination } from "../src/cli/route.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
@@ -489,9 +491,9 @@ test("exploring, a click near an edge scrolls further the nearer the edge it lan
   assert.ok(edgeClickCamera({ x: 30, y: 10 }, { x: 40, y: 10 }, view, grid, 33).y < 10)
 })
 
-/** A spot for a Barracks inside the build range, north of the Nexus — and, with the view where arming from
- *  40,20 leaves it, inside the click's north-west edge zones, so a click there scrolls. */
-const SCROLLING_SPOT = { x: 18, y: 7 } as const
+/** A spot for a Barracks inside the build range, north-west of the Nexus and a tile clear of it — and, with the
+ *  view where arming from 40,20 leaves it, inside the click's north-west edge zones, so a click there scrolls. */
+const SCROLLING_SPOT = { x: 15, y: 8 } as const
 
 test("armed, a click scrolls like an exploring one, and a quick double click places where the first pointed", () => {
   const side = exploring(starterContext(), { x: 40, y: 20 })
@@ -796,11 +798,17 @@ class FakeStdin extends EventEmitter {
 
 const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
+/** PERIMETER's first round with nothing foreseen of its raid: no trail moves, so nothing on the screen moves
+ *  unless a key moved it. */
+const QUIET_ROUND: LevelDestination = { kind: "level", level: { ...DEFAULT_LEVEL, play: { ...DEFAULT_LEVEL.play, foresee: () => [] } }, round: 1 }
+
 test("the live screen redraws on a timer while the view slides, and not at all once it is still", async () => {
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const session = runBuildPhase({
     settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    // The raid's trail never settles (the next test): here nothing is foreseen, so only the slide moves.
+    at: QUIET_ROUND,
     scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
@@ -827,6 +835,58 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   const settled = stdout.frames
   await wait(120)
   assert.equal(stdout.frames, settled, "the frame timer kept running after the slide")
+  stdin.emit("data", Buffer.from([3]))
+  await session
+})
+
+// Several of the trail's steps in real time, so Bun's per-test limit is lifted.
+test("with only the raid's trail moving, the live screen redraws at the trail's own pace — never every frame — and not at all under a popup or with the trail out of view", { timeout: 120_000 }, async () => {
+  const stdout = new FakeStdout()
+  const stdin = new FakeStdin()
+  const session = runBuildPhase({
+    // Monochrome: the trail changes twice a step there (an arrow steps on, then its copy goes), and a popup's
+    // border does not breathe, so under a popup nothing on the screen moves at all.
+    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    scenes: false,
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: () => {},
+  })
+  await wait(80)
+  const start = stdout.frames
+  const span = 4 * TUNING.trailStepMs
+  await wait(span)
+  // Two changes a step: at most that many frames, give or take the edges of the window — where every frame
+  // would be dozens; and at least one, or the trail is not moving at all. A busy machine draws fewer, never
+  // more.
+  const idle = stdout.frames - start
+  const changes = Math.ceil((2 * span) / TUNING.trailStepMs)
+  assert.ok(idle >= 1, "the trail never moved on its own")
+  assert.ok(idle <= changes + 1, `${idle} frames in ${span} ms: more than the trail's ${changes} changes`)
+  // A popup holds the trail still: the Nexus powers open, and once the row's pressed flash is over the screen
+  // stops drawing until a key comes.
+  stdin.emit("data", Buffer.from("n"))
+  await wait(TUNING.pressedFlashMs + 150)
+  const held = stdout.frames
+  await wait(2 * TUNING.trailStepMs)
+  assert.equal(stdout.frames, held, "the trail kept the screen drawing under a popup")
+  // The popup closed, it moves again; the view taken far south, away from it, nothing on screen moves.
+  stdin.emit("data", Buffer.from(ESC))
+  await wait(TUNING.escTimeoutMs + 100)
+  const again = stdout.frames
+  await wait(2 * TUNING.trailStepMs)
+  assert.ok(stdout.frames > again, "the trail did not move again once the popup closed")
+  stdin.emit("data", Buffer.from(TAB))
+  // Three jumps, each its own press: a held jump repeats no faster than it can be seen to land.
+  for (let jump = 0; jump < 3; jump += 1) {
+    stdin.emit("data", Buffer.from(SHIFT_DOWN))
+    await wait(TUNING.jumpRepeatMs + 100)
+  }
+  await wait(TUNING.easeMs + TUNING.cursorGlideMs + 200)
+  const away = stdout.frames
+  await wait(2 * TUNING.trailStepMs)
+  assert.equal(stdout.frames, away, "the trail kept the screen drawing while out of view")
   stdin.emit("data", Buffer.from([3]))
   await session
 })

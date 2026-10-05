@@ -23,6 +23,10 @@
 //   - when a Nexus Pulse's last seconds begin, the view slides to centre on the player's Nexus; and the
 //     map's border flashes a faint red when that Nexus is hurt.
 //
+// And settled later, each on its own: the incoming raid is always shown (below), and Vasse speaks in battle
+// beside her on the map, in the panel whenever she is out of view (the owner, after the Commander's pull
+// request: "it looks cool when they "speak" during battle") — "the feed" and "off" are gone.
+//
 // Pure data: nothing here reads a clock, a file or a flag, so the reducer, the input path and the view
 // may all read it.
 
@@ -48,6 +52,8 @@ const SETTLED_CHOICES = [
   // The incoming raid: the next round's raid is always shown, with what it goes for first (the owner, after
   // the Commander's pull request: "the enemy units should be visible without nexus powers").
   "incoming",
+  // Vasse's voice in battle: beside her, the first guess and the owner's choice (round 5).
+  "commanderVoice",
 ] as const
 
 /** Tuned values since retired, because the rule they tuned is gone: the held-key ramp's hold step,
@@ -56,9 +62,11 @@ const SETTLED_CHOICES = [
  *  Experiments once). */
 const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
 
-/** Experiments retired because what they chose became a mission's data: the placeholder Pulse's Raid and
- *  Your units, replaced by PERIMETER's raid and starting squads (`armies/vasse/army.json`). */
-const RETIRED_EXPERIMENTS = ["raid", "crew"] as const
+/** Experiments retired because what they chose became data: the placeholder Pulse's Raid and Your units,
+ *  replaced by PERIMETER's raid and starting squads (`armies/vasse/army.json`); and the Barracks's pace — how
+ *  often it trained and how many a round — replaced by the owner's numbers on the Barracks itself, a wave of
+ *  troopers a round (`spawns`, `armies/all/army.json`). */
+const RETIRED_EXPERIMENTS = ["raid", "crew", "trainEvery", "trainPerRound"] as const
 
 /**
  * The names the settled Experiments had in a settings export: every tuned setting's — derived from the

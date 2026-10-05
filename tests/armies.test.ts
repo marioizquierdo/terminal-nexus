@@ -183,7 +183,8 @@ test("PERIMETER and the cadence level are pinned as data: a change to either mis
   // triggers and its second round's group were renamed when "wave" left the game (the owner, 2026-10-04); then
   // both lost the raid's inert `order`, PERIMETER gained the line its troops head for (the owner: "the campaign
   // levels should have a target well defined"), and the cadence level's ambush two runners, so Vasse still falls
-  // in round 1 now that By the Book guards her.
+  // in round 1 now that By the Book guards her; then PERIMETER lost `trains`, since what a building spawns is the
+  // building's own, on its card (the owner, 2026-10-05).
   const withoutNotes = (value: unknown): unknown => {
     if (Array.isArray(value)) return value.map(withoutNotes)
     if (value === null || typeof value !== "object") return value
@@ -191,7 +192,7 @@ test("PERIMETER and the cadence level are pinned as data: a change to either mis
   }
   const [perimeter, cadence] = ARMIES.levels
   assert.equal(perimeter?.mission, PERIMETER)
-  assert.equal(hashOf(withoutNotes(PERIMETER)), "989779a1791942c5a48d4cb0e72584c9e6c6c04df63cfc753a1f46a781a53eba")
+  assert.equal(hashOf(withoutNotes(PERIMETER)), "fb6dfe988fe5e60764bc8bb0a977dca30a07c8facec20863139585ae7ad5d73d")
   assert.equal(hashOf(withoutNotes(cadence?.mission)), "e9cc454f6dcc82db9bea5454f6999d387f70ec675db9aadc9aabd31bd26dfa0b")
   // Its notes say why, where the comments did.
   assert.match(PERIMETER.notes ?? "", /PULS/)
@@ -311,6 +312,52 @@ test("the loader refuses, by name and all at once: requires unknown or in a circ
     { id: "x", title: "X", requires: ["y"] },
   ]
   assert.deepEqual(problemsOf(three), ['armies "x", "y" and "z" require each other in a circle: x -> y -> z -> x'])
+})
+
+test("what a building spawns is its own, on its card: the loader refuses by name a unit it cannot be, a number that is not a whole one above zero, two cards spawning one building two ways, and a mission still listing what trains", () => {
+  // The game's own: the Barracks's four troopers and the Hatchery's three swarmers, one wave a round each.
+  const cards = Object.fromEntries((all.buildings as readonly { id: string; spawns?: object }[]).map((card) => [card.id, card.spawns]))
+  assert.deepEqual(cards, {
+    barracks: { unit: "unit.citizen.trooper", perWave: 4, waves: 1, secondsBetween: 10 },
+    hatchery: { unit: "unit.bench.spawnling", perWave: 3, waves: 1, secondsBetween: 10 },
+    turret: undefined,
+  })
+  const spawns = (unit: string, extra: object = {}): object => ({ unit, perWave: 2, waves: 1, secondsBetween: 10, ...extra })
+  const problems = problemsOf([
+    all,
+    vasse,
+    {
+      id: "yards",
+      title: "Yards",
+      requires: ["all"],
+      buildings: [
+        { id: "numbers", structure: "structure.bench.hatchery", cost: 10, spawns: spawns("unit.bench.spawnling", { perWave: 0, waves: 1.5, secondsBetween: -10 }) },
+        { id: "short", structure: "structure.bench.hatchery", cost: 10, spawns: { unit: "unit.bench.spawnling", perWave: 2, waves: 1 } },
+        { id: "ghost", structure: "structure.bench.beamturret", cost: 10, spawns: spawns("unit.citizen.ghost") },
+        { id: "nested", structure: "structure.bench.beamturret", cost: 10, spawns: spawns("structure.citizen.barracks") },
+        { id: "officer", structure: "structure.bench.beamturret", cost: 10, spawns: spawns("unit.citizen.vasse") },
+      ],
+    },
+    campaignBundle(
+      [
+        level("test-1", { unlocks: { buildings: ["barracks", "big-barracks"] } }),
+        level("test-2", { mission: { ...PERIMETER, id: "mission.test-2", trains: [{ structure: "structure.citizen.barracks", unit: "unit.citizen.trooper" }] } }),
+      ],
+      { buildings: [{ id: "big-barracks", structure: "structure.citizen.barracks", cost: 60, spawns: spawns("unit.citizen.trooper", { perWave: 6 }) }] },
+    ),
+  ])
+  const fields = '"id", "name", "pulses", "pulseTicks", "seed", "regions", "triggers", "roundText", "endText", "notes"'
+  assert.deepEqual(problems, [
+    'army "yards": buildings[numbers].spawns.perWave should be a whole number above zero, not 0',
+    'army "yards": buildings[numbers].spawns.waves should be a whole number above zero, not 1.5',
+    'army "yards": buildings[numbers].spawns.secondsBetween should be a whole number above zero, not -10',
+    'army "yards": buildings[short].spawns needs "secondsBetween"',
+    `army "test": campaigns[test].levels[test-2].mission has "trains", which is not one of its fields (${fields})`,
+    'army "yards": the building "ghost" spawns "unit.citizen.ghost", which is not content the game has',
+    'army "yards": the building "nested" spawns "structure.citizen.barracks", which is a building, not a unit',
+    'army "yards": the building "officer" spawns "unit.citizen.vasse", which "vasse" brings and "yards" does not require',
+    'army "test": level "test-1" offers "structure.citizen.barracks" as the buildings "barracks" and "big-barracks", which spawn differently; a building spawns one way',
+  ])
 })
 
 test("a manifest's shape is checked field by field, by path: the wrong kind of value, a misspelt field, a missing one", () => {

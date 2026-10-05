@@ -1,7 +1,7 @@
 {
   "id": "all",
   "title": "All armies",
-  "notes": "The buildings and Nexus powers any Commander may use, and the content the first campaign's levels put on the Grid. At the size of what exists: the disposable bench rosters (Citizen and Ravel) and the bench buildings PERIMETER has always offered, with no balance claim, and two placeholder Nexus powers. Choosing the Citizens' real roster, its balance and the effect kinds behind real Nexus powers are still to come. The content definitions themselves (stats, footprints) are still TypeScript in src/content: this army names the ids it brings, and the loader checks that each exists. The Ravel units are here, not in a Ravel army, because they are the raid's bench units and no Ravel Commander exists yet. The three buildings have three footprints (3x2, 2x2, 1x1), so placement exercises three anchor calculations and three ways to straddle a rock; their costs are round numbers, not balance, and real costs wait for the content-iteration milestone. Each Nexus power's description fits the 28 glyphs a panel row has at the 80-column floor.",
+  "notes": "The buildings and Nexus powers any Commander may use, and the content the first campaign's levels put on the Grid. At the size of what exists: the disposable bench rosters (Citizen and Ravel) and the bench buildings PERIMETER has always offered, with no balance claim, and two placeholder Nexus powers. Choosing the Citizens' real roster, its balance and the effect kinds behind real Nexus powers are still to come. The content definitions themselves (stats, footprints) are still TypeScript in src/content: this army names the ids it brings, and the loader checks that each exists. The Ravel units are here, not in a Ravel army, because they are the raid's bench units and no Ravel Commander exists yet. The three buildings have three footprints (3x2, 2x2, 1x1), so placement exercises three anchor calculations and three ways to straddle a rock; their costs are round numbers, not balance, and real costs wait for the content-iteration milestone. A building that makes units says what it spawns in each battle under spawns, in waves (the units it sets down at once, side by side): the unit, how many a wave, how many waves a round and the seconds between waves; when the first wave comes is the same for every building (firstWave, src/build/all-settings.ts). A building with no spawns makes nothing. Each Nexus power's description fits the 28 glyphs a panel row has at the 80-column floor.",
   "requires": [],
   "content": [
     "structure.citizen.nexus",
@@ -17,8 +17,20 @@
     "unit.ravel.slinger"
   ],
   "buildings": [
-    { "id": "barracks", "structure": "structure.citizen.barracks", "cost": 40 },
-    { "id": "hatchery", "structure": "structure.bench.hatchery", "cost": 30 },
+    {
+      "id": "barracks",
+      "structure": "structure.citizen.barracks",
+      "cost": 40,
+      "spawns": { "unit": "unit.citizen.trooper", "perWave": 4, "waves": 1, "secondsBetween": 10 },
+      "notes": "Four troopers in one wave a round, the owner's numbers (2026-10-05: 'Barraks could spawn 4 troops per round and that's is for now'). secondsBetween is unused while there is one wave; it is here for the day a Nexus power gives the Barracks a second and third wave."
+    },
+    {
+      "id": "hatchery",
+      "structure": "structure.bench.hatchery",
+      "cost": 30,
+      "spawns": { "unit": "unit.bench.spawnling", "perWave": 3, "waves": 1, "secondsBetween": 10 },
+      "notes": "Three swarmers in one wave a round: every building the player places that makes units spawns in waves, the same rule as the Barracks. Before, it bred one every few seconds, three alive at most (its own spawner, which a grid scenario's Hatchery still has)."
+    },
     { "id": "turret", "structure": "structure.bench.beamturret", "cost": 15 }
   ],
   "powers": [

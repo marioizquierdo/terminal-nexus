@@ -5,9 +5,10 @@
 //
 // What is said when is planned from the resolved round (`src/view/pulse-voice.ts`): the moments read off a known
 // event stream, at most a few lines a round with a quiet gap between them, her fall and the round won cutting in,
-// the line picked by a hash of the moment's identity. Where it shows is the "Vasse's voice" Experiment's — off,
-// under the panel's feed, or beside her on the map — and none of it can change what resolves. Played through the
-// real session on PERIMETER, the screen's clock handed in as a number.
+// the line picked by a hash of the moment's identity. It shows beside her on the map — the owner settled it there:
+// "it looks cool when they "speak" during battle" — and in the panel while she is out of view, and none of it
+// can change what resolves. Played through the real session on PERIMETER, the screen's clock handed in as a
+// number.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -29,6 +30,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
+import { ACTIVITY_FILTERS, filteredEntries } from "../src/log/activity.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
 import type { BuildSession } from "../src/view/build-session.ts"
@@ -36,7 +38,7 @@ import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { AURA_WASH } from "../src/view/pulse-scene.ts"
 import type { PulseFrame } from "../src/view/pulse-scene.ts"
-import type { Moment, Speaker, SpokenLine, VoiceMode } from "../src/view/pulse-voice.ts"
+import type { Moment, Speaker, SpokenLine } from "../src/view/pulse-voice.ts"
 import { CUTS_IN, PRIORITY, VOICE, lineLength, pickLine, planVoice, speakerOf, voiceAt, voiceMoments } from "../src/view/pulse-voice.ts"
 import { CAPABILITY_MODES } from "../src/view/roles.ts"
 import type { CapabilityMode } from "../src/view/roles.ts"
@@ -261,14 +263,16 @@ test("which line she says is a hash of the moment's identity: the same every tim
 
 // --- On screen, through the real session ------------------------------------------------------------------
 
-/** PERIMETER's first round with her voice where `mode` says, the Nexus power picked and nothing built, its Pulse
- *  started and its clock at zero. */
-function perimeter(mode: VoiceMode, extra: Partial<BuildContext> = {}): BuildSide {
+/** PERIMETER's first round, the Nexus power picked and nothing built, its Pulse started and its clock at zero —
+ *  Vasse with her own lines, or, `silent`, with none at all: the test's own way to quiet her, since the player
+ *  has no switch for it. */
+function perimeter(extra: Partial<BuildContext> = {}, silent = false): BuildSide {
   const side = buildSide({
-    context: starterContext(undefined, { experiments: { commanderVoice: mode }, ...extra }),
+    context: starterContext(undefined, extra),
     cursor: STARTER_START_CURSOR,
     startPulse,
     nextRound,
+    ...(silent ? { barksOf: (): Barks => ({}) } : {}),
   })
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
@@ -297,7 +301,7 @@ function firstLineShowing(side: BuildSide): SpokenLine {
 }
 
 test("PERIMETER's first round: she speaks a few times, in order, each line hers, and the raid breaking last when it breaks", () => {
-  const side = perimeter("beside")
+  const side = perimeter()
   const spoken = spokenIn(side.build)
   assert.ok(spoken.length >= 2 && spoken.length <= VOICE.perRound + CUTS_IN.size, `she says ${spoken.length} lines`)
   const barks = ARMIES.commanders.find((commander) => commander.unit === VASSE)?.barks ?? {}
@@ -308,75 +312,73 @@ test("PERIMETER's first round: she speaks a few times, in order, each line hers,
   if (side.build.pulse?.resolved.timeline.states.at(-1)?.outcome?.winner === "A") assert.equal(spoken.at(-1)?.moment, "round-won")
 })
 
-test("the Experiment's three answers: nothing, the line under the panel's feed, or the line beside her on the map", () => {
-  for (const mode of ["off", "feed", "beside"] as const) {
-    const side = perimeter(mode)
-    const line = firstLineShowing(side)
-    const frame = compose(side)
-    const words = quoted(line.text)
-    const map = mapOf(frame, side)
-    const panel = panelOf(frame, side)
-    if (mode === "off") {
-      assert.ok(!map.includes(words) && !panel.includes("@ VASSE"), "her voice is off, and she is heard")
-      continue
-    }
-    if (mode === "feed") {
-      // Under the feed: her glyph and name, as the dialog titles her, then the words, quoted, wrapped.
-      assert.match(panel, /RECENT/)
-      assert.ok(panel.includes("@ VASSE"), `no name in the panel:\n${panel}`)
-      assert.ok(panel.replace(/\n/g, " ").includes(words), `the line is not in the panel:\n${panel}`)
-      assert.ok(!map.includes(words), "the line is on the map too")
-      continue
-    }
-    // Beside her: on the map, a few rows from hers (she may have stepped since it began), whole — clear of what
-    // stands there; the panel keeps only the feed.
-    assert.ok(map.includes(words), `the line is not on the map:\n${map}`)
-    assert.ok(!panel.includes("@ VASSE"), "the line is in the panel too")
-    const rows = map.split("\n")
-    const lineRow = rows.findIndex((row) => row.includes(words))
-    const herRow = rows.findIndex((row) => row.includes("@"))
-    assert.ok(herRow >= 0 && lineRow !== herRow && Math.abs(lineRow - herRow) <= 5, `the line is ${lineRow - herRow} rows from her`)
-  }
+test("beside her: the line on the map, a few rows from her and whole, and the panel keeps only the feed", () => {
+  const side = perimeter()
+  const line = firstLineShowing(side)
+  const frame = compose(side)
+  const words = quoted(line.text)
+  const map = mapOf(frame, side)
+  const panel = panelOf(frame, side)
+  // On the map, a few rows from hers (she may have stepped since it began), whole — clear of what stands there.
+  assert.ok(map.includes(words), `the line is not on the map:\n${map}`)
+  assert.ok(!panel.includes("@ VASSE"), "the line is in the panel too")
+  assert.match(panel, /RECENT/)
+  const rows = map.split("\n")
+  const lineRow = rows.findIndex((row) => row.includes(words))
+  const herRow = rows.findIndex((row) => row.includes("@"))
+  assert.ok(herRow >= 0 && lineRow !== herRow && Math.abs(lineRow - herRow) <= 5, `the line is ${lineRow - herRow} rows from her`)
 })
 
-test("beside her, out of view: the words go to the panel, so a line is never lost to the camera", () => {
-  const side = perimeter("beside")
+test("beside her, out of view: the words go to the panel under the feed, so a line is never lost to the camera", () => {
+  const side = perimeter()
   const line = firstLineShowing(side)
   // The view slides to the far corner of the map, away from her and the base.
   side.build.dispatch({ kind: "look-at", x: 95, y: 39 })
   const frame = compose(side)
-  assert.ok(panelOf(frame, side).replace(/\n/g, " ").includes(quoted(line.text)), "her line is lost while she is out of view")
+  const panel = panelOf(frame, side)
+  // Under the feed: her glyph and name, as the dialog titles her, then the words, quoted, wrapped.
+  assert.match(panel, /RECENT/)
+  assert.ok(panel.includes("@ VASSE"), `no name in the panel:\n${panel}`)
+  assert.ok(panel.replace(/\n/g, " ").includes(quoted(line.text)), "her line is lost while she is out of view")
   assert.ok(!mapOf(frame, side).includes(quoted(line.text)))
 })
 
-test("she types her line in, holds it, and it thins out before it goes; reduced motion shows it whole and steady", () => {
-  const side = perimeter("feed")
+/** The cell her line opens on, beside her on the map: the first opening quote in the map's cells. */
+function openingQuote(side: BuildSide, frame: ReadonlyCellFrame): ReturnType<typeof cellAt> {
+  const { layout } = side
+  for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
+    for (let x = layout.origin.column; x < layout.origin.column + layout.viewport.width * layout.tileWidth; x += 1) {
+      if (cellAt(frame, x, y).glyph === '"') return cellAt(frame, x, y)
+    }
+  }
+  assert.fail("her line is not on the map")
+}
+
+test("she types her line in beside her, holds it, and it thins out before it goes; reduced motion shows it whole and steady", () => {
+  const side = perimeter()
   const line = spokenIn(side.build)[0]
   assert.ok(line !== undefined)
   const words = quoted(line.text)
-  const shown = (): string => panelOf(compose(side), side).replace(/\n/g, " ")
+  const shown = (): string => mapOf(compose(side), side)
   side.build.advance(line.startMs + 1)
   assert.ok(!shown().includes(words) && shown().includes('"'), "the line did not type in")
   side.build.advance(line.startMs + lineLength(line.text).typeMs + 1)
   assert.ok(shown().includes(words))
+  assert.equal(openingQuote(side, compose(side)).style.bold, true, "the line is not bold while it is read")
   // Thinning out: drawn dim in its last moments, then gone.
   side.build.advance(line.endMs - 100)
-  const fading = compose(side)
-  const quoteRow = panelLines(side, fading).findIndex((row) => row.trim().startsWith('"'))
-  assert.equal(cellAt(fading, side.layout.panelColumn, side.layout.panelRow + quoteRow).style.dim, true, "the line does not thin out")
+  assert.equal(openingQuote(side, compose(side)).style.dim, true, "the line does not thin out")
   side.build.advance(line.endMs + 1)
-  assert.ok(!shown().includes(line.text.split(" ")[0] as string) || !shown().includes("@ VASSE"), "the line outstays its time")
+  assert.ok(!shown().includes(words), "the line outstays its time")
 
   // Reduced motion: the whole line from its first frame to its last, never dim; the light on her is the steady one.
-  const still = perimeter("feed", { settings: { ...DEFAULT_SETTINGS, reducedMotion: true } })
+  const still = perimeter({ settings: { ...DEFAULT_SETTINGS, reducedMotion: true } })
   const first = spokenIn(still.build)[0]
   assert.ok(first !== undefined)
   still.build.advance(first.startMs + 1)
-  assert.ok(panelOf(compose(still), still).replace(/\n/g, " ").includes(quoted(first.text)), "reduced motion types the line in")
+  assert.ok(mapOf(compose(still), still).includes(quoted(first.text)), "reduced motion types the line in")
   still.build.advance(first.endMs - 1)
-  const late = compose(still)
-  const row = panelLines(still, late).findIndex((each) => each.trim().startsWith('"'))
-  assert.notEqual(cellAt(late, still.layout.panelColumn, still.layout.panelRow + row).style.dim, true, "reduced motion fades the line")
+  assert.notEqual(openingQuote(still, compose(still)).style.dim, true, "reduced motion fades the line")
 })
 
 /** The Pulse frame the session hands the composer right now. */
@@ -386,51 +388,49 @@ const pulseFrameOf = (side: BuildSide): PulseFrame => {
   return frame
 }
 
-test("a light on her marks the moment she speaks: the effect library's own, on her tile, never with her voice off", () => {
-  for (const mode of ["feed", "beside", "off"] as const) {
-    const side = perimeter(mode)
-    const line = spokenIn(side.build)[0]
-    assert.ok(line !== undefined)
-    side.build.advance(line.startMs + 50)
-    const frame = pulseFrameOf(side)
-    const lights = frame.sample.effects.filter((effect) => effect.instance.recipe === "fx.light.flash")
-    if (mode === "off") {
-      assert.equal(lights.length, 0, "a light with her voice off")
-      continue
-    }
-    assert.equal(lights.length, 1, `no light on her as she speaks (${mode})`)
-    assert.deepEqual(lights[0]?.instance.origin, frame.voice?.at)
-    // Shading: glyphless, so her @ keeps its glyph — and gone a moment later.
-    assert.ok(lights[0]?.cells.every((cell) => cell.glyph === ""))
-    side.build.advance(line.startMs + VOICE.lightMs + 1)
-    assert.ok(!pulseFrameOf(side).sample.effects.some((effect) => effect.instance.recipe === "fx.light.flash"))
-  }
+test("a light on her marks the moment she speaks: the effect library's own, on her tile, and none when she has nothing to say", () => {
+  const side = perimeter()
+  const line = spokenIn(side.build)[0]
+  assert.ok(line !== undefined)
+  side.build.advance(line.startMs + 50)
+  const frame = pulseFrameOf(side)
+  const lights = frame.sample.effects.filter((effect) => effect.instance.recipe === "fx.light.flash")
+  assert.equal(lights.length, 1, "no light on her as she speaks")
+  assert.deepEqual(lights[0]?.instance.origin, frame.voice?.at)
+  // Shading: glyphless, so her @ keeps its glyph — and gone a moment later.
+  assert.ok(lights[0]?.cells.every((cell) => cell.glyph === ""))
+  side.build.advance(line.startMs + VOICE.lightMs + 1)
+  assert.ok(!pulseFrameOf(side).sample.effects.some((effect) => effect.instance.recipe === "fx.light.flash"))
+  // The light belongs to her words, not to her standing there: a Commander with no lines is never lit.
+  const silent = perimeter({}, true)
+  assert.deepEqual(spokenIn(silent.build), [])
+  silent.build.advance(line.startMs + 50)
+  assert.ok(!pulseFrameOf(silent).sample.effects.some((effect) => effect.instance.recipe === "fx.light.flash"), "a light with nothing said")
+  assert.equal(pulseFrameOf(silent).voice, undefined)
 })
 
-test("her voice changes nothing that resolves: the same round, the same states, events and Recall in every mode", () => {
-  const sides = (["off", "feed", "beside"] as const).map((mode) => perimeter(mode))
+test("her voice changes nothing that resolves: the same round, the same states, events and Recall whether she speaks or not", () => {
+  const sides = [perimeter(), perimeter({}, true)]
   const fingerprint = (side: BuildSide) => {
     const resolved = side.build.pulse?.resolved
     assert.ok(resolved !== undefined)
     return [resolved.timeline.stateHash, resolved.timeline.eventsHash, hashState(resolved.recall.state)]
   }
-  const [off, ...others] = sides.map(fingerprint)
-  for (const other of others) assert.deepEqual(other, off)
-  // What she says is planned the same whatever shows it.
-  const [quiet, ...heard] = sides.map((side) => spokenIn(side.build))
-  for (const lines of heard) assert.deepEqual(lines, quiet)
-  // And played to its end, every mode's round goes on to the same next round.
+  const [heard, silent] = sides.map(fingerprint)
+  assert.deepEqual(silent, heard)
+  assert.ok(spokenIn((sides[0] as BuildSide).build).length > 0, "she says nothing, so nothing is compared")
+  // And played to its end, the round goes on to the same next round either way.
   for (const side of sides) side.build.advance((side.build.pulse?.times.homeMs ?? 0) + 4000)
   const next = sides.map((side) => {
     side.build.dispatch({ kind: "next-round" })
     return JSON.stringify(side.build.round.field ?? [])
   })
-  assert.equal(new Set(next).size, 1, "a mode changed what the next round opens on")
+  assert.equal(new Set(next).size, 1, "what she said changed what the next round opens on")
 })
 
-test("the Activity Logs record what she said and when, once a line, where it showed — and nothing with her voice off", () => {
+test("the Activity Logs record what she said and when, once a line, and where it showed: beside her, or in the panel while she was out of view", () => {
   const lines = (side: BuildSide) => side.activity.entries().filter((entry) => entry.event === "voice.line").map((entry) => entry.props)
-  const side = perimeter("beside")
+  const side = perimeter()
   const end = side.build.pulse?.times.homeMs ?? 0
   for (let ms = 0; ms <= end + 3000; ms += 250) side.build.advance(ms)
   const spoken = spokenIn(side.build)
@@ -442,19 +442,21 @@ test("the Activity Logs record what she said and when, once a line, where it sho
   side.build.dispatch({ kind: "pulse", control: "restart" })
   for (let ms = end + 3250; ms <= 2 * end + 6000; ms += 250) side.build.advance(ms)
   assert.equal(lines(side).length, spoken.length)
-  // In the feed it is recorded as shown there; with her voice off it was never said.
-  const feed = perimeter("feed")
-  for (let ms = 0; ms <= end + 3000; ms += 250) feed.build.advance(ms)
-  assert.deepEqual(new Set(lines(feed).map((entry) => entry["shown"])), new Set(["feed"]))
-  const off = perimeter("off")
-  for (let ms = 0; ms <= end + 3000; ms += 250) off.build.advance(ms)
-  assert.deepEqual(lines(off), [])
+  // With the view far from her as a line begins, it was shown in the panel, and is recorded so.
+  const away = perimeter()
+  away.build.dispatch({ kind: "look-at", x: 95, y: 39 })
+  for (let ms = 0; ms <= end + 3000; ms += 250) away.build.advance(ms)
+  assert.equal(lines(away)[0]?.["shown"], "panel")
+  // The game's other filters still carry her lines: what the player did and what the game said.
+  const interactions = ACTIVITY_FILTERS.find((filter) => filter.name === "Interactions")
+  assert.ok(interactions !== undefined)
+  assert.equal(filteredEntries(side.activity.entries(), interactions).filter((entry) => entry.event === "voice.line").length, spoken.length)
 })
 
 // --- At the floor --------------------------------------------------------------------------------------------
 
 test("at 80 x 24: the room the armies' lines are checked against is the screen's, and every line she has fits it", () => {
-  const side = perimeter("feed")
+  const side = perimeter()
   assert.deepEqual([side.layout.frame.width, side.layout.frame.height], [MINIMUM.columns, MINIMUM.rows])
   // The panel's prose width, one column in from the divider; the map's width at one column a tile.
   assert.equal(side.layout.panelLimit - 1, BARK_ROOM.panelColumns)
@@ -473,10 +475,12 @@ test("at 80 x 24: the room the armies' lines are checked against is the screen's
   }
 })
 
-// A whole round's frames in both modes: its cost grows with the round, so Bun's per-test limit is lifted.
+// A whole round's frames twice over: its cost grows with the round, so Bun's per-test limit is lifted.
 test("at 80 x 24, her line in the panel stops above the controls, and beside her it stays on the map", { timeout: 120_000 }, () => {
-  for (const mode of ["feed", "beside"] as const) {
-    const side = perimeter(mode)
+  for (const away of [true, false]) {
+    const side = perimeter()
+    // Looking far from her, her lines go to the panel until the view comes back for the round's last seconds.
+    if (away) side.build.dispatch({ kind: "look-at", x: 95, y: 39 })
     const end = side.build.pulse?.times.homeMs ?? 0
     for (let ms = 0; ms <= end + 3000; ms += 150) {
       side.build.advance(ms)
@@ -498,7 +502,8 @@ test("at 80 x 24, her line in the panel stops above the controls, and beside her
 // --- Her aura's reach ----------------------------------------------------------------------------------------
 
 test("her aura's reach: a diamond of the content's radius around her, washed on the ground under everything, while the fight is on", () => {
-  const side = perimeter("off")
+  // Silent, so no line of hers is drawn over the ground her aura reaches.
+  const side = perimeter({}, true)
   side.build.advance(2000)
   const pulse = pulseFrameOf(side)
   const aura = pulse.aura
@@ -563,7 +568,7 @@ test("her aura goes when she falls, and so does every line but her last words", 
     allotment: STARTER_ALLOTMENT,
     nexusDraft: STARTER_NEXUS_DRAFT,
   })
-  const side = buildSide({ context: { ...context, experiments: { commanderVoice: "beside" } }, cursor: STARTER_START_CURSOR, startPulse: play.startPulse, nextRound: play.nextRound })
+  const side = buildSide({ context, cursor: STARTER_START_CURSOR, startPulse: play.startPulse, nextRound: play.nextRound })
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
   side.build.advance(0)

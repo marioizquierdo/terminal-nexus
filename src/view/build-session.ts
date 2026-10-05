@@ -20,7 +20,7 @@ import { decodeKeyEvent } from "../terminal/key-events.ts"
 import type { KeyPhase } from "../terminal/key-events.ts"
 import { keysFromChunk } from "../terminal/playback.ts"
 import { PulsePresenter, outcomeOf } from "./pulse-live.ts"
-import type { ResolvedPulse } from "./pulse-live.ts"
+import type { BarksOf, ResolvedPulse } from "./pulse-live.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
 import type { SpokenLine } from "./pulse-voice.ts"
 import type { BuildLayout } from "../build/layout.ts"
@@ -92,6 +92,12 @@ export type BuildSessionOptions = Readonly<{
    * have after the scene.
    */
   scenes?: boolean
+  /**
+   * A Commander's lines in battle, by her unit's id: the armies the game ships unless a test hands it others
+   * — none at all, for a test that needs her silent (her voice has no off switch for the player: the owner
+   * settled it beside her).
+   */
+  barksOf?: BarksOf
 }>
 
 /**
@@ -117,7 +123,7 @@ export class BuildSession {
   private readonly log: ActivityLog
   /** The Pulse on screen has had its result recorded, so watching it again does not record it twice. */
   private resultLogged = false
-  /** The lines of the Commander's on screen already recorded (or passed over while her voice was off), so
+  /** The lines of the Commander's on screen already recorded (or passed over whole by the clock), so
    *  watching the Pulse again does not record them twice. */
   private voiced = new Set<SpokenLine>()
   /** How far cursor keys move — taps counted, holds on the game's cadence: input-path state, beside the
@@ -141,6 +147,8 @@ export class BuildSession {
    *  zero when that key arrived. `undefined` for a driver that never says. */
   private now: number | undefined
   private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
+  /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
+  private readonly barksOf: BarksOf | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
   private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; raid: RaidForecast }> | null = null
 
@@ -161,6 +169,7 @@ export class BuildSession {
       return next === null ? null : staged(next)
     }
     this.foresee = options.foresee ?? null
+    this.barksOf = options.barksOf
     this.recordDialog(null)
   }
 
@@ -216,7 +225,7 @@ export class BuildSession {
   }
 
   /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
-   *  none. Her voice where the "Vasse's voice" Experiment says, against the part of the map in view. */
+   *  none. Her voice beside her, or in the panel while she is out of the part of the map in view. */
   pulseFrame(layout: BuildLayout): PulseFrame | undefined {
     if (this.presenter === null) return undefined
     const { settings, camera, viewport } = this.buildState
@@ -224,7 +233,6 @@ export class BuildSession {
       capability: settings.capability,
       tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
-      voice: setting(this.buildState, "commanderVoice"),
       view: { camera, viewport },
     })
   }
@@ -349,20 +357,19 @@ export class BuildSession {
 
   /**
    * Her lines that have begun on screen since the last look, each recorded once (`voice.line`): what she said,
-   * at which moment and second, and where it showed — under the feed, or beside her when she was in view. A
-   * line that began while the Experiment had her voice off was never said, and is not recorded later either;
+   * at which moment and second, and where it showed — beside her when she was in view, in the panel when she
+   * was not. A line the clock passed over whole (a jump past it) was never on screen, and is not recorded;
    * watching the Pulse again says nothing new.
    */
   private noteVoice(): void {
     const presenter = this.presenter
     if (presenter === null) return
     try {
-      const mode = setting(this.buildState, "commanderVoice")
       const timeMs = presenter.timeMs
       for (const line of presenter.spoken) {
         if (line.startMs > timeMs || this.voiced.has(line)) continue
         this.voiced.add(line)
-        if (mode === "off" || timeMs >= line.endMs) continue
+        if (timeMs >= line.endMs) continue
         const at = presenter.speakerTileAt(line.startMs)
         const range = visibleRange(this.buildState.camera, this.buildState.viewport)
         const inView = at !== null && at.x >= range.firstX && at.x <= range.lastX && at.y >= range.firstY && at.y <= range.lastY
@@ -372,7 +379,7 @@ export class BuildSession {
           second: Math.round(line.startMs / 100) / 10,
           moment: line.moment,
           line: line.text,
-          shown: mode === "beside" && inView ? "beside" : "feed",
+          shown: inView ? "beside" : "panel",
         })
       }
     } catch {
@@ -429,6 +436,7 @@ export class BuildSession {
     if (resolved === null) return
     this.presenter = new PulsePresenter(resolved, undefined, {
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
+      ...(this.barksOf === undefined ? {} : { barksOf: this.barksOf }),
     })
     this.resultLogged = false
     this.voiced = new Set()
@@ -653,8 +661,8 @@ function directionOf(key: CursorKey): string {
   return key.dx < 0 ? "left" : "right"
 }
 
-/** What the player's buildings trained in a resolved Pulse, read from its events and its states as the
- *  `pulse.trained` entry records it: how many buildings could train, how many troopers they did, the
+/** What the player's buildings spawned in a resolved Pulse, read from its events and its states as the
+ *  `pulse.trained` entry records it: how many buildings could spawn, how many units their waves brought, the
  *  second the first came, how many of them Recall brought home, and the second the fighting stopped. */
 function trainedIn(resolved: ResolvedPulse): Readonly<{ buildings: number; trained: number; first?: number; home: number; ended: number }> {
   const { timeline } = resolved

@@ -322,6 +322,14 @@ export const ALL_SETTINGS = {
     values: [50, 65, 80, 95],
     default: 80,
   },
+  /** How long each arrow of the raid's intent trail takes to step one tile on toward what the raid goes for —
+   *  the owner's "a slow-moving line of arrows". A first guess he has not felt yet: slower than any of
+   *  PERIMETER's raid walks (`movementRate`, `src/content/ravel.ts`), so the trail reads as the way they will come
+   *  rather than the raid already coming, and calm enough to sit at the edge of the eye while the player builds. */
+  trailStepMs: { tier: "tuned", default: 400 },
+  /** How many tiles apart the trail's arrows are; the owner's "1 arrow every 3 tiles", so the line is less
+   *  obtrusive than an arrow every other tile. */
+  trailSpacing: { tier: "tuned", unit: "tiles", default: 3 },
 
   // --- Acknowledgements ----------------------------------------------------------------------------
 
@@ -376,37 +384,13 @@ export const ALL_SETTINGS = {
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
    *  auto; a first guess. */
   autoNextRoundMs: { tier: "tuned", default: 3000 },
-  /** How often a Barracks trains a trooper during a round (step 6C). A round runs thirty seconds at
-   *  most and ends sooner when the raid's units are all dead or the Nexus falls, so the pace decides
-   *  how many a round really trains and how much of the fight they see. First guess: every 10 seconds
-   *  — three in a full round, and a plan that builds nothing still loses PERIMETER's last round, as
-   *  step 6B tuned it (docs/history/reports/2026-10-01-barracks-trains.md has the outcomes at every pace). */
-  trainEvery: {
-    tier: "experiment",
-    section: "mission",
-    label: "Barracks trains",
-    question: "How often each Barracks trains a trooper during a round: one every this many seconds, the first that far in.",
-    values: [4, 6, 8, 10, 15],
-    unit: "seconds",
-    default: 10,
-  },
-  /** How many troopers one Barracks trains in a round, at most (step 6C): how fast the player's side
-   *  grows from round to round. First guess: 3, one squad's worth. */
-  trainPerRound: {
-    tier: "experiment",
-    section: "mission",
-    label: "Troopers a round",
-    question: "The most troopers each Barracks trains in one round. Survivors come home and fight again next round.",
-    values: [1, 2, 3, 4, 6],
-    unit: "count",
-    default: 3,
-  },
   /** How much Vasse, the Commander, can take (the Commander step): how often her fall, a round of absence
-   *  and her return come into play at all. First guess: 80, twice a trooper. Measured: from 60 to 100 she
-   *  comes out of PERIMETER's first two rounds in every plan tried and a plan that builds nothing still
-   *  loses; at 150 that plan wins the last round on time, and at 20 she falls in round 2 whatever is built.
-   *  At every value she falls in the last round of every plan tried
-   *  (docs/history/reports/2026-10-01-commander-vasse.md has the outcomes). */
+   *  and her return come into play at all. First guess: 80, twice a trooper. Measured again once buildings sent
+   *  their units in waves (the Commander round 5): at every value she comes out of PERIMETER's first two rounds
+   *  in every plan tried, the Barracks's wave in front of her, and a plan that builds nothing holds the last
+   *  round, where she falls; with something built she lives through it in four plans of five from 60 up, and in
+   *  two of five at 20 and 40. Before the waves she fell in the last round of every plan, and a plan that built
+   *  nothing lost it (docs/history/reports/2026-10-01-commander-vasse.md has those outcomes). */
   commanderHealth: {
     tier: "experiment",
     section: "mission",
@@ -439,25 +423,6 @@ export const ALL_SETTINGS = {
     default: 3,
   },
 
-  // --- Vasse's voice in battle (the Commander round 4) -----------------------------------------------
-  // The owner, on her voice during the battle: "let's experiment with this to see if it gets into the battle or
-  // enhances the experience even more". It asks the open question on her voice in battle: does it add to the
-  // fight or get in its way, and where should her words appear?
-
-  /** Whether Vasse speaks during a Battle Round, and where her words appear: under the panel's feed, or
-   *  beside her `@` on the map for a moment (in the panel instead whenever she is out of view). Her lines are
-   *  data in her army (`armies/vasse/army.json`); when she speaks, and which line, is the view's
-   *  (`src/view/pulse-voice.ts`), and none of it reaches the kernel: a round resolves the same in every mode.
-   *  First guess: beside her, the answer that puts her in the battle. */
-  commanderVoice: {
-    tier: "experiment",
-    section: "mission",
-    label: "Vasse's voice",
-    question: "Whether Vasse speaks in battle, and where: under the panel's feed, or beside her on the map for a moment.",
-    values: ["off", "feed", "beside"],
-    default: "beside",
-  },
-
   // --- Vasse's aura, By the Book (the Commander round 4) ---------------------------------------------
   // The owner: Commanders "should be like heroes on warcraft3 ... Vasse should provide boost to nearby units".
   // It asks the open question on a Commander's passive skill: how strong should it be, strong enough to feel
@@ -476,6 +441,37 @@ export const ALL_SETTINGS = {
     unit: "percent",
     names: { "0": "off", "10": "10% less", "25": "25% less", "40": "40% less" },
     default: 25,
+  },
+
+  // --- A building's waves (the Commander round 5) ----------------------------------------------------
+  // The owner: units a building spawns "should happen simultaneously at the beginning of the round, creating a
+  // more predictable squad formation. The first wave is at 5 seconds." How many a wave, how many waves and the
+  // gap between them are each building's own, in its army (`spawns`, `armies/all/army.json`); when the first
+  // comes is not, so it is one number here. It answered the Barracks Experiments (how often it trained, how many
+  // a round), which are gone.
+
+  /** How far into a Battle Round every building's first wave comes; the owner's (2026-10-05). Read when a
+   *  battle starts (`src/cli/pulse-run.ts`), in the kernel's ticks. */
+  firstWave: { tier: "tuned", unit: "seconds", default: 5 },
+
+  // --- Room around a Barracks (the Commander round 5) ------------------------------------------------
+  // The owner: "barraks and other spawning buildings should require minimum distance from other buildings so
+  // they leave space for units spawning". It asks how much room a Barracks needs: enough that its troops always
+  // have somewhere to appear, and never so much that there is nowhere left to build one.
+
+  /** How many free tiles a building that makes units (a Barracks, a Hatchery) keeps round it, measured as range
+   *  is (`src/build/territory.ts`); it replaces each such structure's own `clearance` while it is felt. 1 keeps
+   *  the ring its troops appear on free. Why not more: a spawner must stand a tile further than this from every
+   *  building and still have a tile in a linked building's range, so 2 needs a Build range of 3 or more, and a
+   *  larger value can leave nowhere to build one. First guess: 1. */
+  spawnClearance: {
+    tier: "experiment",
+    section: "mission",
+    label: "Barracks room",
+    question: "How many free tiles a Barracks or Hatchery keeps round it for its troops. Nothing may be built there.",
+    values: [1, 2],
+    unit: "tiles",
+    default: 1,
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8A, round 4 — Mario's notes on round 3: a building's range and construction territory, a level's target for your troops, Vasse as a hero (an aura and her voice in battle), more Nexus powers for her, Battle Rounds, armies, and a cleanup.
+**Current step:** 8A, round 5 — Mario's notes after the Commander's pull request merged: build range from standing buildings and any tile in it, room around a Barracks, troops in waves on a building's own schedule, an optional Nexus pick, a unit's range when explored, a moving intent trail, and her voice settled beside her.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -114,12 +114,35 @@ the same pull request, by subagents.
       launch-options module for the game, the scripted playtest, the page and its demos, one default level, the
       title menu's places in one table.
 
+### Step 8A, round 5 — Placement by standing range, troops in waves, and polish
+
+Mario's notes after the Commander's pull request merged ([his words](../history/feedback/2026-10-05-commander-round-5.md)).
+Built on a new pull request, by subagents.
+
+- [x] Only buildings standing when the Build Phase opens give build range; a building planned this phase gives
+      none until the next round.
+- [x] A building may be placed where at least one of its tiles is inside the build range.
+- [x] A building that spawns units keeps room around it: no other building within its clearance, shown while
+      placing, and the clearance is an Experiment.
+- [x] A building's units spawn together in waves, from the building's own numbers: how many a wave, how many
+      waves, how long between them; the first wave 5 seconds into the round. The Barracks sends 4 troopers in
+      one wave, and the Barracks Experiments are gone.
+- [x] A Nexus power that adds a wave is in Vasse's pool, as design.
+- [x] A round can start with the Nexus power still unpicked.
+- [x] Exploring a unit shows its range, the way a building's reach shows.
+- [x] The raid's intent trail is a slow line of arrows, one every three tiles, each leaving a fading arrow
+      behind; still under reduced motion.
+- [x] Vasse speaks beside her on the map; the Vasse's voice Experiment is settled and gone.
+- [x] Tall tiles: a spike shows range and movement with tiles as now, square tiles, and rows counting double
+      in the rules, with what each costs and a recommendation; nothing is built for real before Mario decides.
+
 ### Step 8B — The Nexus draft, dealt from a pool
 
 - [ ] A hand is dealt at each Build Phase from the army's Nexus power pool, one is kept, and it fills
       Milestone 5's slot.
-- [ ] PERIMETER has two real, mechanically distinct powers. The pick may never be declined (Q45,
-      answered).
+- [ ] PERIMETER has two real, mechanically distinct powers. The pick is optional for now (Mario's fifth
+      round: easier to test), reversing the earlier answer that it may never be declined (Q45); this step
+      decides with him whether it stays optional once the powers are real.
 - [ ] A power is a name and one plain line of description. The effect kinds behind it are code names
       the player never sees (Q42, answered); build two or three of the six, not all.
 - [ ] The dealer built here is the one Milestone 11's run draft reuses at the next scale.

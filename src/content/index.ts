@@ -51,27 +51,33 @@ export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([
 
 /**
  * `registry`, with each named building given a production recipe — how a battle opts its buildings into
- * training (step 6C's Barracks, in PERIMETER). The shared content carries none, so every other map that
- * has the same building on it resolves exactly as it did. Throws for an unknown id, or one that is not a
- * structure, or a recipe whose output is a structure or unknown.
+ * spawning units in waves (a campaign's buildings, each as its army says: `src/match/training.ts`). The
+ * shared content carries none, so every other map that has the same building on it resolves exactly as it
+ * did. **A building makes its units one way in a battle**: one given a recipe loses any `spawn` of its own,
+ * the periodic spawner the bench Hatchery has, so the recipe alone decides what it makes and when. Throws
+ * for an unknown id, or one that is not a structure, a recipe whose output is a structure or unknown, or
+ * one of its numbers that is not a positive whole number.
  */
 export function withProduction(
   registry: ContentRegistry,
   recipes: Readonly<Record<string, ProductionRecipe>>,
 ): ContentRegistry {
-  const definitions = registry.ids().map((id) => {
-    const definition = registry.get(id)
-    const recipe = recipes[id]
-    return recipe === undefined ? definition : { ...definition, production: recipe }
-  })
   for (const [id, recipe] of Object.entries(recipes)) {
     if (!registry.has(id)) throw new Error(`production: unknown building "${id}"`)
     if (registry.get(id).layer !== "obstacles") throw new Error(`production: "${id}" is not a building`)
-    if (!registry.has(recipe.output)) throw new Error(`production: "${id}" trains the unknown "${recipe.output}"`)
-    if (registry.get(recipe.output).layer === "obstacles") throw new Error(`production: "${id}" trains "${recipe.output}", a building`)
-    for (const [field, value] of [["quantity", recipe.quantity], ["intervalTicks", recipe.intervalTicks], ["perPulse", recipe.perPulse]] as const) {
+    if (!registry.has(recipe.output)) throw new Error(`production: "${id}" spawns the unknown "${recipe.output}"`)
+    if (registry.get(recipe.output).layer === "obstacles") throw new Error(`production: "${id}" spawns "${recipe.output}", a building`)
+    for (const field of ["perWave", "waves", "firstTicks", "intervalTicks"] as const) {
+      const value = recipe[field]
       if (!Number.isInteger(value) || value <= 0) throw new Error(`production: "${id}" ${field} must be a positive integer, received ${value}`)
     }
   }
+  const definitions = registry.ids().map((id) => {
+    const definition = registry.get(id)
+    const recipe = recipes[id]
+    if (recipe === undefined) return definition
+    const { spawn: _ownSpawn, ...rest } = definition
+    return { ...rest, production: recipe }
+  })
   return createRegistry(definitions)
 }

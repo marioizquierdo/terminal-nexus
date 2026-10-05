@@ -36,7 +36,7 @@ npm run maps                                                          # every ch
 ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'                   # PERIMETER's Build Phase
 ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'           # its round 3, no keys to walk there
 ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings 'trainEvery=6&reducedMotion=true'
+./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings 'jumpStep=12&reducedMotion=true'
 ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
 
 bun scripts/build-web.mjs                                             # the browser playtest page

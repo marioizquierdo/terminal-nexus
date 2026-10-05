@@ -69,6 +69,12 @@ export const wholeNumber: Shape<number> = simple(
   (value) => typeof value === "number" && Number.isInteger(value) && value >= 0,
 )
 
+/** A whole number, one or more: how many a wave, how many waves. */
+export const positiveWholeNumber: Shape<number> = simple(
+  "a whole number above zero",
+  (value) => typeof value === "number" && Number.isInteger(value) && value > 0,
+)
+
 /** Anything at all: a part checked on its own, later, by its own shape. */
 export const anything: Shape<unknown> = { check: (_value: unknown, _at: string, _say: Say): _value is unknown => true }
 

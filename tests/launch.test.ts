@@ -29,9 +29,9 @@ test("a launch opens where its route says, and where its host starts without one
 })
 
 test("a launch keeps its settings text as written, and reads its keys as a key script", () => {
-  const { launch, problems } = readLaunch({ at: "campaign?level=vasse-test-1&round=2", settings: "trainEvery=6&reducedMotion=true", keys: "Esc n 1" }, "menu")
+  const { launch, problems } = readLaunch({ at: "campaign?level=vasse-test-1&round=2", settings: "jumpStep=12&reducedMotion=true", keys: "Esc n 1" }, "menu")
   assert.deepEqual(problems, [])
-  assert.equal(launch.settings, "trainEvery=6&reducedMotion=true")
+  assert.equal(launch.settings, "jumpStep=12&reducedMotion=true")
   assert.deepEqual(launch.keys, parseKeyScript("Esc n 1"))
   // An empty script is no keys, and no problem; a launch with neither part keeps neither.
   assert.deepEqual(readLaunch({ keys: "" }, "menu").launch.keys, [])

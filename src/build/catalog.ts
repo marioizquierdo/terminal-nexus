@@ -16,7 +16,7 @@ export { STARTER_EDGE_STYLE, STARTER_GRID_SIZE, STARTER_STANDING, STARTER_START_
  * An offer's construct menu: its buildings in the order they were unlocked, each row's digit its place in that
  * order (a level that unlocks a building puts it after the ones already there, so no hotkey moves). A row's
  * label is the building's card title, so a building says the same about itself wherever it is named
- * (`src/content/cards.ts`).
+ * (`src/content/cards.ts`). A building that makes units carries what it spawns, as its army's card says.
  */
 export function constructMenu(offer: Pick<Offer, "buildings">): ConstructItem[] {
   return offer.buildings.map((card, index) => ({
@@ -24,6 +24,7 @@ export function constructMenu(offer: Pick<Offer, "buildings">): ConstructItem[] 
     contentId: card.structure,
     label: CARD_TEXT[card.structure]?.title ?? card.structure,
     cost: card.cost,
+    ...(card.spawns === undefined ? {} : { spawns: card.spawns }),
   }))
 }
 

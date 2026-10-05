@@ -12,7 +12,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { hint } from "../src/build/help.ts"
-import { currentCard } from "../src/build/card.ts"
+import { currentCard, wavesStat } from "../src/build/card.ts"
 import { STARTER_CATALOG } from "../src/build/catalog.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, menuFloor, startRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
@@ -101,7 +101,7 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
     assert.match(lines[CARD_FIRST_ROW] as string, /^\[b\] +Barracks/)
     // The subtitle sits where "to build" was (owner: "use that subtitle space for the subtitle").
     assert.match(lines[CARD_FIRST_ROW + 1] as string, /^\|_\| +Trains troopers +$/)
-    assert.match(card, /Trains a trooper every few/)
+    assert.match(card, /Trains a wave of troopers,/)
     assert.match(card, /^COST +40$/m)
     assert.match(card, /^HEALTH +120$/m)
     assert.match(card, /^SIZE +3x2$/m)
@@ -114,18 +114,25 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
   }
 })
 
-test("the Barracks's card says how often it trains, at the pace the Experiments set now", () => {
+test("a building's card says the wave it spawns — how many of what, and when — from its army's own numbers", () => {
   const side = buildSide()
-  keys(side, DOWN, DOWN, ENTER)
-  const card = () => panelLines(side, compose(side)).join("\n")
-  assert.match(card(), /^TRAINS +1 per 10s, 3 a round$/m)
-  side.build.dispatch({ kind: "experiment-adjust", field: "trainEvery", step: -1 })
-  side.build.dispatch({ kind: "experiment-adjust", field: "trainPerRound", step: 1 })
-  assert.match(card(), /^TRAINS +1 per 8s, 4 a round$/m)
-  // Nothing else trains: the Turret's card has no such line.
+  keys(side, DOWN, DOWN, ENTER) // the Barracks, from the menu
+  assert.match(panelLines(side, compose(side)).join("\n"), /^WAVE +4 troopers at 5s$/m)
+  // The Hatchery's brood, the same way.
+  const hatchery = buildSide()
+  keys(hatchery, "2")
+  assert.match(panelLines(hatchery, compose(hatchery)).join("\n"), /^WAVE +3 swarmers at 5s$/m)
+  // Nothing else makes units: the Turret's card has no such line.
   const turret = buildSide()
   keys(turret, "3")
-  assert.doesNotMatch(panelLines(turret, compose(turret)).join("\n"), /TRAINS/)
+  assert.doesNotMatch(panelLines(turret, compose(turret)).join("\n"), /WAVE/)
+
+  // A building with several waves (a Nexus power's to give, one day) says when each comes.
+  const barracks = STARTER_CATALOG.find((item) => item.contentId === "structure.citizen.barracks")
+  assert.ok(barracks?.spawns !== undefined)
+  const three = { ...side.context, catalog: [{ ...barracks, spawns: { ...barracks.spawns, waves: 3 } }] }
+  assert.deepEqual(wavesStat(three, barracks.contentId, side.build.state), { label: "WAVES", value: "4 at 5s, 15s, 25s" })
+  assert.ok("WAVES 4 at 5s, 15s, 25s".length <= side.layout.panelLimit, "three waves do not fit the narrowest card")
 })
 
 test("a turret's card shows its attack", () => {
@@ -157,6 +164,24 @@ test("Explore Map's card says what is under the cursor as it moves: open ground,
   assert.match(text, /Trains troopers/)
   planned.build.run([{ kind: "move-cursor", dx: 0, dy: 4 }])
   assert.match(screenText(planned), /Open ground/)
+})
+
+test("a building's build range: now for one standing, from next round for one being placed or planned, none for one cut off", () => {
+  // Only what stands gives build range; a building planned this round gives its own once it stands.
+  const range = (side: Side): string | undefined => currentCard(side.context, side.build.state)?.stats.find((stat) => stat.label === "BUILD RANGE")?.value
+  const side = buildSide()
+  keys(side, "3")
+  assert.equal(range(side), "3, next round", "the card of a building being placed")
+  assert.match(panelLines(side, compose(side)).join("\n"), /^BUILD RANGE +3, next round$/m, "the words do not fit the panel")
+  keys(side, ENTER, "e")
+  moveTo(side, OPEN_GROUND)
+  assert.equal(currentCard(side.context, side.build.state)?.title, "Turret")
+  assert.equal(range(side), "3, next round", "the card of a planned building")
+  moveTo(side, { x: 26, y: 10 })
+  assert.equal(range(side), "3", "the card of the standing Barracks")
+  // At a build range of 2 the standing Barracks is cut off from the Nexus, and gives none.
+  side.build.dispatch({ kind: "experiment-adjust", field: "buildRange", step: -1 })
+  assert.equal(range(side), "cut off")
 })
 
 /** Move the map cursor onto `tile`, wherever it is now. */

@@ -136,12 +136,12 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.trained": {
     defaultLevel: "info",
-    description: "What the Barracks trained in the battle just ended, and what came of them.",
+    description: "What the player's buildings spawned in their waves in the battle just ended, and what came of them.",
     props: {
       round: { type: "number", description: "Which Battle Round." },
-      buildings: { type: "number", description: "How many of the player's buildings trained this round." },
-      trained: { type: "number", description: "How many troopers they trained." },
-      first: { type: "number", description: "The second of the round the first one was trained at.", optional: true },
+      buildings: { type: "number", description: "How many of the player's buildings could spawn units this round." },
+      trained: { type: "number", description: "How many units they spawned, every wave's together." },
+      first: { type: "number", description: "The second of the round the first of them came out at.", optional: true },
       home: { type: "number", description: "How many of those trained came home alive at the end." },
       ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once the raid's units are all dead, or the Nexus falls." },
     },
@@ -175,14 +175,14 @@ export const ACTIVITY_EVENTS = {
   },
   "voice.line": {
     defaultLevel: "info",
-    description: "A Commander said a line during a Battle Round, as the Vasse's voice Experiment shows it: under the panel's feed, or beside her on the map.",
+    description: "A Commander said a line during a Battle Round: beside her on the map, or in the side panel while she was out of view.",
     props: {
       speaker: { type: "string", description: "Who said it, by the name the screen gives her: Vasse." },
       round: { type: "number", description: "Which Battle Round." },
       second: { type: "number", description: "When in the round she said it, in seconds from its start, as the feed counts them." },
       moment: { type: "string", description: "What she was answering: round-start, first-contact, raid-arrives, unit-lost, building-lost, badly-hurt, nexus-hit, falls or round-won." },
       line: { type: "string", description: "What she said." },
-      shown: { type: "string", description: "Where it was shown: feed (under the panel's feed) or beside (beside her on the map); feed when beside her was asked for but she was out of view." },
+      shown: { type: "string", description: "Where it was shown: beside (beside her on the map) or panel (under the side panel's feed, because she was out of view as it began)." },
     },
   },
   "move.step": {
@@ -229,28 +229,12 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
   },
   { name: "Problems", question: "Only errors and warnings.", level: "warn" },
   { name: "Everything", question: "Every event recorded, down to each command and each key's move.", level: "debug" },
-  // Step 6C's question, last rather than first: the window's tests walk the first three by position, and
-  // Left from the first filter reaches this one in a single key. Remove it once the pace is settled.
-  {
-    name: "Barracks",
-    question: "What each round's Barracks trained, how many came home, and when the fighting stopped.",
-    level: "info",
-    events: ["pulse.start", "pulse.trained", "pulse.end", "setting.change"],
-  },
   // The Commander round's question — was the intro read? — last for the same reason. Remove it once answered.
   {
     name: "Intro",
     question: "Whether the lines a round opens with were read: each line the dialog showed, and where the rest was skipped.",
     level: "info",
     events: ["dialog.line", "dialog.skip", "pulse.start"],
-  },
-  // The Commander round 4's question — does Vasse's voice add to the battle or get in its way? — last for the
-  // same reason: what she said when, and where, beside how each round went. Remove it once answered.
-  {
-    name: "Her voice",
-    question: "What Vasse said in each Battle Round, when and where it showed, and how each round went.",
-    level: "info",
-    events: ["voice.line", "pulse.start", "pulse.end", "setting.change"],
   },
 ]
 

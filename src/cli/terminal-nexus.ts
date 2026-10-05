@@ -85,7 +85,7 @@ ${levels}
   --settings "<text>"
       starts with an exported text's settings and experiments, for this run only: paste the
       whole export, or just pairs, separated by spaces or by & as in a route:
-      "nextRound=auto trainEvery=6" or "trainEvery=6&reducedMotion=true". On and off
+      "nextRound=auto jumpStep=12" or "jumpStep=12&reducedMotion=true". On and off
       settings take true and false too.
 
 A first launch guesses colour depth the way \`grid\` does; every launch after that remembers whatever

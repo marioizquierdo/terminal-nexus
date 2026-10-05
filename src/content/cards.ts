@@ -21,12 +21,12 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.barracks": {
     title: "Barracks",
     subtitle: "Trains troopers",
-    description: "Trains a trooper every few seconds of a battle. They join the fight, and come home to it after.",
+    description: "Trains a wave of troopers, all at once, a few seconds into each Battle Round. They join the fight, and come home to it after.",
   },
   "structure.bench.hatchery": {
     title: "Hatchery",
     subtitle: "Spawns swarmers",
-    description: "Breeds small biting swarmers during a battle, one every few seconds, three at most. They rush the enemy.",
+    description: "Breeds a wave of small biting swarmers a few seconds into each Battle Round, all at once. They rush the enemy.",
   },
   "structure.bench.beamturret": {
     title: "Turret",
@@ -60,7 +60,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "unit.bench.spawnling": {
     title: "Swarmer",
     subtitle: "From your Hatchery",
-    description: "Small and quick. It rushes the enemy, and the Hatchery breeds another.",
+    description: "Small and quick. It rushes the enemy, and a Hatchery breeds more every Battle Round.",
   },
   "unit.ravel.runner": {
     title: "Runner",

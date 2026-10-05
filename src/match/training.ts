@@ -1,24 +1,35 @@
-// The registry a mission's Pulse runs on, with the buildings it lists under `trains` given a recipe
-// (step 6C). The mission says which building trains what; how often and how many a round is the
-// caller's — the shell reads it from the Experiments — so the mission's data holds no number Mario
-// should be the one to feel. One unit each time: the smallest recipe there is.
+// The registry a campaign's battle runs on: each building that makes units given a production recipe from what
+// its army says it spawns (`spawns` on its card, `armies/all/army.json`), so it spawns them in waves
+// (`src/pulse/production.ts`). What a building spawns is the building's own — the unit, how many a wave, how
+// many waves a round, the seconds between them — and when the first wave comes is every building's, one tuned
+// number the caller hands in. Nothing else carries a recipe: a grid scenario's buildings, or a building no
+// level offers, spawn nothing this way.
 
-import type { ContentRegistry } from "../content/index.ts"
+import type { BuildingSpawns } from "../armies/types.ts"
+import type { ContentRegistry, ProductionRecipe } from "../content/index.ts"
 import { withProduction } from "../content/index.ts"
-import type { MissionDefinition } from "../mission/types.ts"
+import { TICKS_PER_SECOND } from "../scenario/load.ts"
 
-export type TrainingPace = Readonly<{
-  /** Ticks between two trainings, the first one full interval into the Pulse. */
-  intervalTicks: number
-  /** How many times one building trains in a Pulse, at most. */
-  perPulse: number
-}>
+/** The recipe a building's spawns become in a battle: its waves, the first `firstTicks` into the round and
+ *  each after it `secondsBetween` later. */
+export function spawnRecipe(spawns: BuildingSpawns, firstTicks: number): ProductionRecipe {
+  return {
+    output: spawns.unit,
+    perWave: spawns.perWave,
+    waves: spawns.waves,
+    firstTicks,
+    intervalTicks: spawns.secondsBetween * TICKS_PER_SECOND,
+  }
+}
 
-export function trainingRegistry(mission: MissionDefinition, registry: ContentRegistry, pace: TrainingPace): ContentRegistry {
-  const trains = mission.trains ?? []
-  if (trains.length === 0) return registry
-  return withProduction(
-    registry,
-    Object.fromEntries(trains.map((entry) => [entry.structure, { output: entry.unit, quantity: 1, ...pace }])),
-  )
+/** `registry`, with each building in `spawns` (by its content id) spawning as it says, its first wave
+ *  `firstTicks` into the round. `registry` itself when nothing spawns. */
+export function spawningRegistry(
+  registry: ContentRegistry,
+  spawns: Readonly<Record<string, BuildingSpawns>>,
+  firstTicks: number,
+): ContentRegistry {
+  const entries = Object.entries(spawns)
+  if (entries.length === 0) return registry
+  return withProduction(registry, Object.fromEntries(entries.map(([structure, own]) => [structure, spawnRecipe(own, firstTicks)])))
 }

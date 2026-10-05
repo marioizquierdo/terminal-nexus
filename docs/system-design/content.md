@@ -80,14 +80,18 @@ interface ProductionRecipe {
 ```
 
 The sketch's `buildRadius` is built as `constructionRadius` on `ContentDef`: every building the player places
-has one, the kernel never reads it, and while the "Build range" Experiment is felt its value stands in for each
-([`pulse.md`](pulse.md), construction territory).
+has one, the kernel never reads it, and while the "Build range" Experiment is felt its value stands in for
+each ([`pulse.md`](pulse.md), construction territory).
 
-The recipe the Pulse runs today (`ProductionRecipe` in `src/content/types.ts`) is the free part of this
-one: `output`, `quantity`, `intervalTicks`, and a `perPulse` cap that stands in for the supply a
-recipe will one day need. `cost` and `spawnRule` arrive with the worker economy. No content definition
-carries a recipe; a mission opts a building in (see "Automatic production" in
-[`pulse.md`](pulse.md)).
+Beside it, `clearance`: the room a building that makes units keeps free round it (the Barracks and the
+Hatchery have one, of one tile); the kernel never reads it either, and while the "Barracks room" Experiment is
+felt its value stands in for each ([`pulse.md`](pulse.md), room round a building that makes units).
+
+The recipe the Pulse runs today (`ProductionRecipe` in `src/content/types.ts`) is the free part of this one,
+in waves: `output`, `perWave`, `waves` (a cap that stands in for the supply a recipe will one day need),
+`firstTicks` and `intervalTicks`, the gap between waves. `cost` and `spawnRule` arrive with the worker
+economy. No content definition carries a recipe; a battle opts a building in from what its card in the army
+spawns (see "Automatic production" in [`pulse.md`](pulse.md)).
 
 Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
 [`commander-armies.md`](../game-design/commander-armies.md). A Commander today is a unit whose content says so
@@ -102,20 +106,21 @@ whose levels each offer what it has unlocked by then.
 
 **An army is data, not code** (RULE — `armies/`, `src/armies/`, `tests/armies.test.ts`). An army is a folder
 under `armies/` holding an `army.json`: its id and title, the armies it `requires`, `notes`, and any of five
-sections — `content` (the content ids it brings to the Grid), `buildings` (a structure and its cost),
-`powers` (a Nexus power's name, its one line and its effect), `commanders` (a name, her unit, and her
-`barks`: a few lines for each moment of a Battle Round she answers, refused by name for a moment no Commander
-speaks at, a moment with no lines, or a line that says nothing or does not fit the panel's feed or one row of
-the map at 80 × 24) and
-`campaigns` (a Commander and her levels in the order they are played, each with a map by name, its credits,
-what it unlocks and its mission). **An army sees what it and the armies it requires bring, directly or
-through another, and nothing else**, so content forms a tree with a campaign at the top: its levels, then the
-cards and units they use, from its own army or one beneath it. `armies/all` holds the buildings and Nexus
-powers any Commander may use; `armies/vasse` requires it and holds her Commander and her campaign (the
-owner's names, 2026-10-04: "call the folder armies/vasse and armies/all"). The loader (`src/armies/load.ts`,
-pure: the content registry and the map table are its arguments) refuses a broken army with every problem at
-once, each naming where by ids (`campaigns[vasse].levels[vasse-test-2].mission.pulses`), and freezes what it
-hands the game. The kernel never reads an army; the Build Phase's assembly reads what a level offers.
+sections — `content` (the content ids it brings to the Grid), `buildings` (a structure, its cost and, for one
+that makes units, what it spawns in each battle: `spawns`, the unit, how many a wave, how many waves a round
+and the seconds between waves, each a whole number above zero), `powers` (a Nexus power's name, its one line
+and its effect), `commanders` (a name, her unit, and her `barks`: a few lines for each moment of a Battle
+Round she answers, refused by name for a moment no Commander speaks at, a moment with no lines, or a line that
+says nothing or does not fit the panel's feed or one row of the map at 80 × 24) and `campaigns` (a Commander
+and her levels in the order they are played, each with a map by name, its credits, what it unlocks and its
+mission). **An army sees what it and the armies it requires bring, directly or through another, and nothing
+else**, so content forms a tree with a campaign at the top: its levels, then the cards and units they use,
+from its own army or one beneath it. `armies/all` holds the buildings and Nexus powers any Commander may use;
+`armies/vasse` requires it and holds her Commander and her campaign (the owner's names, 2026-10-04: "call the
+folder armies/vasse and armies/all"). The loader (`src/armies/load.ts`, pure: the content registry and the map
+table are its arguments) refuses a broken army with every problem at once, each naming where by ids
+(`campaigns[vasse].levels[vasse-test-2].mission.pulses`), and freezes what it hands the game. The kernel never
+reads an army; the Build Phase's assembly reads what a level offers.
 
 Still code, each named by id from an army: the content definitions themselves (stats and footprints, in
 `src/content`; moving them into the armies is the next step), what a Nexus power's effect kinds do, the

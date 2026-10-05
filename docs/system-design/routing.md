@@ -126,7 +126,7 @@ The page reads its address after `#` (`src/web/address.ts`):
 | Part | Is | Example |
 | --- | --- | --- |
 | `at=` | where to open: a route | `#at=campaign?level=vasse-test-1&round=3` |
-| `settings=` | a settings text for a campaign level, as `--settings` takes it | `&settings=trainEvery=6&reducedMotion=true` |
+| `settings=` | a settings text for a campaign level, as `--settings` takes it | `&settings=jumpStep=12&reducedMotion=true` |
 | `keys=` | a key script played first on a campaign level, as `--keys` takes it | `&keys=Esc n 1` |
 
 **A route and a settings text have `&` and `=` of their own**, so a part runs until the next `&at=`,

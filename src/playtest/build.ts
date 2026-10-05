@@ -9,7 +9,7 @@
 // shape: take steps, return frames.
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
-import { isGated } from "../build/camera.ts"
+import { isGated, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
@@ -22,6 +22,8 @@ import { DEFAULT_LEVEL_ROUTE, RouteError, formatRoute } from "../cli/route.ts"
 import type { LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
+import { hasTrail } from "../view/build-grid.ts"
+import { TrailClock } from "../view/build-live.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { CapabilityMode } from "../view/roles.ts"
 import type { Experiments } from "../build/experiments.ts"
@@ -164,13 +166,19 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 
+  // The raid's trail's clock, as the live loop keeps one, on the script's clock.
+  const trail = new TrailClock()
   // Drawn with the settings the script has reached: a step that changes the colour depth or the
   // symbols in Settings shows the change, as the live screen does.
   const compose = (): ReadonlyCellFrame => {
-    // A Nexus Pulse on screen is drawn at the script's clock: the frame after a step shows the Pulse as it
-    // is that long after it began. Nothing else on this screen depends on time in a scripted playtest.
+    // Two things are drawn at the script's clock. A Nexus Pulse on screen: the frame after a step shows the
+    // Pulse as it is that long after it began. And the raid's trail, which moves from the first frame that drew
+    // it moving, as the live loop moves it (`TrailClock`): the same keys draw it in the same place, and
+    // `wait~MS` steps show it moving. Nothing else on this screen depends on time in a scripted playtest.
     const pulse = build.pulseFrame(layout)
     const raid = build.raid()
+    const inView = hasTrail(raid, visibleRange(build.state.camera, build.state.viewport))
+    const raidTrail = trail.at(build.state, clock, { reducedMotion: build.state.settings.reducedMotion, raidTrail: inView })
     return composeBuildFrame(
       {
         // This round's: what stands on the map changes from round to round.
@@ -181,6 +189,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
         reducedMotion: build.state.settings.reducedMotion,
         ...(pulse === undefined ? {} : { pulse }),
         ...(raid === undefined ? {} : { raid }),
+        ...(raidTrail === null ? {} : { raidTrail }),
       },
       build.state.settings.capability,
     )

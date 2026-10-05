@@ -23,14 +23,14 @@
 // stops it, which is what the kernel will do too.
 //
 // **And where the player's own troops head** (`foreseeRound`): the target the level names for their side,
-// read off the same opening — which units go, and the region they head for, by the name the mission gives
-// it. That much is data, not a guess; how they get there, and whom they meet on the way, is the kernel's to
-// play and is not foreseen (the owner: "don't over-promise").
+// read off the same opening — which units go, those standing and those the round's waves will bring, and the
+// region they head for, by the name the mission gives it. That much is data, not a guess; how they get there,
+// and whom they meet on the way, is the kernel's to play and is not foreseen (the owner: "don't over-promise").
 //
 // Deterministic like the kernel: no clock, no randomness, nothing drawn. It reads the mission and the
 // state and never changes either.
 
-import type { ContentDef, ContentRegistry } from "../content/index.ts"
+import type { ContentDef, ContentRegistry, ProductionRecipe } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
 import { footprintDistance, nearestFootprintTile, tilesOf } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
@@ -195,10 +195,11 @@ export function foreseeIntents(input: MissionPulseInput, side: PlayerId = "B"): 
 }
 
 /**
- * Where a side's troops head as a round starts: the target its level names for it (a `target` action, by
- * the region the mission names), and who goes — every unit of the side that follows a target, standing on
- * the Grid as the round opens. Not a forecast of the way: the kernel walks them there and has them fight
- * what comes within reach on it (`src/pulse/target.ts`), and that is not foreseen.
+ * Where a side's troops head this round: the target its level names for it (a `target` action, by the region
+ * the mission names), and who goes — every unit of the side that follows a target, standing on the Grid as the
+ * round opens, and every one its buildings will spawn in the round's waves, which head there the moment they
+ * are set down. Not a forecast of the way: the kernel walks them there and has them fight what comes within
+ * reach on it (`src/pulse/target.ts`), and that is not foreseen; nor is a round that ends before a wave comes.
  */
 export type TroopsIntent = Readonly<{
   player: PlayerId
@@ -206,11 +207,25 @@ export type TroopsIntent = Readonly<{
   region: string
   name: string
   tiles: readonly Coord[]
-  /** Who heads there as the round starts, kind by kind in the order they stand on the Grid, with how many. */
+  /** Who heads there this round, kind by kind, with how many: the kinds on the Grid as it starts, in the order
+   *  they stand there, then any kind only a wave brings; a wave's units are counted with their kind. */
   units: readonly Readonly<{ contentId: string; count: number }>[]
-  /** Every tile they stand on as the round starts. */
+  /** Every tile they stand on as the round starts (a wave's units stand nowhere yet). */
   unitTiles: readonly Coord[]
 }>
+
+/**
+ * The units a producer will set down in a round `pulseTicks` long, from the state it opens in: each wave still
+ * to come whose tick falls inside the round (the first `productionCooldown` ticks in, each after it a gap
+ * later), all of it — a crowded building owes what it cannot set down at once, and sets it down later.
+ */
+function wavesThisRound(entity: EntityState, recipe: ProductionRecipe, pulseTicks: number): number {
+  const first = entity.productionCooldown ?? recipe.firstTicks
+  const left = recipe.waves - (entity.produced ?? 0)
+  let waves = 0
+  while (waves < left && first + waves * recipe.intervalTicks <= pulseTicks) waves += 1
+  return (entity.owed ?? 0) + waves * recipe.perWave
+}
 
 /** What a round's opening says of the side its raid comes for: where its troops head, or `null` when its
  *  level names no target for it. */
@@ -221,6 +236,13 @@ function troopsOf(input: MissionPulseInput, state: MatchState, side: PlayerId): 
   const own = state.entities.filter((entity) => entity.player === side && followsTarget(registry.get(entity.contentId)))
   const counts = new Map<string, number>()
   for (const entity of own) counts.set(entity.contentId, (counts.get(entity.contentId) ?? 0) + 1)
+  // And what the side's buildings will spawn this round that heads there too, building by building in order.
+  for (const entity of state.entities) {
+    const recipe = entity.player === side ? registry.get(entity.contentId).production : undefined
+    if (recipe === undefined || !followsTarget(registry.get(recipe.output))) continue
+    const spawned = wavesThisRound(entity, recipe, mission.pulseTicks)
+    if (spawned > 0) counts.set(recipe.output, (counts.get(recipe.output) ?? 0) + spawned)
+  }
   return {
     player: side,
     region: region.id,

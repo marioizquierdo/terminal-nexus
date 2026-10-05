@@ -11,6 +11,7 @@ import { bottomLine } from "../src/build/help.ts"
 import { menuEntryRow } from "../src/build/layout.ts"
 import { EXPLORE_ENTRY, armedPreview, entryOfConstruct } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
+import { starterContext } from "../src/cli/starter.ts"
 import { DOWN, ENTER, ESC, TAB, buildSide, clickPanelRow, keys } from "./build-helpers.ts"
 
 const barracksEntry = entryOfConstruct(0)
@@ -136,10 +137,9 @@ test("Explore Map holds nothing: a digit arms from the map, and n opens the Nexu
 })
 
 test("the lock's refusal is what the bottom line says, even with the ghost on rock; the ghost's reason comes back at the next move", () => {
-  const side = buildSide()
-  // A Turret north of the Nexus first, so the build range reaches the north-west wall.
-  keys(side, "3")
-  side.build.run([{ kind: "move-cursor", dx: 19 - side.build.state.cursor.x, dy: 7 - side.build.state.cursor.y }, { kind: "place" }])
+  // At a build range of 4 the Nexus's own range reaches the row under the north-west wall: a Barracks there has
+  // a tile in range and one on the rock.
+  const side = buildSide({ context: { ...starterContext(), experiments: { buildRange: 4 } } })
   keys(side, "1")
   const cursor = side.build.state.cursor
   // Onto the north-west wall, where the Barracks cannot go.

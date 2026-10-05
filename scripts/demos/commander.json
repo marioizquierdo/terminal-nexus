@@ -1,34 +1,32 @@
 [
   {
-    "label": "Intro",
-    "try": "Round 1 as a player opens it: Vasse and Corvane's four lines in the box at the bottom, the camera on whoever is talked about and a light breathing around them. Enter or a click reads on; Esc skips the rest.",
-    "keys": ""
+    "label": "Placing",
+    "try": "Round 1 after the intro, a Barracks armed. The dotted ground is your build range, from what stood when the round opened, and a Barracks needs only one tile on it: it may hang over the edge. The dim ticks round each Barracks are its room, where nothing may stand; move it beside the standing one and it is refused, too close. Press d: under THE MISSION, Barracks room sets one tile or two.",
+    "keys": "Esc 1"
   },
   {
-    "label": "The raid",
-    "try": "Round 1 after the intro. The panel says what is coming, from where and what it goes for first, and under it where your troops head: the line, its corners marked on the map. Press 3: the dotted ground around your buildings is where a Turret may go, and the outline round it is where it will reach. Tap a tile of the trail on the dotted ground twice to place a Turret there: the raid now goes for the Turret. u undoes it.",
-    "keys": "Esc"
+    "label": "Range next round",
+    "try": "A Turret planned at the edge of the build range, and a second one armed. The dotted ground has not grown: a building gives range from the round after it stands, and its card says 3, next round. Tap below the first Turret: outside your build range. Taking a planned building away is never refused.",
+    "keys": "Esc 3 click:19,14 click:19,14 3"
   },
   {
-    "label": "In battle",
-    "try": "Round 1's battle, nothing built. Your troops head for the line and stand there, Vasse among them: the glow around her is By the Book, her aura (her units there take a quarter less damage), and she speaks beside her as the battle goes. Press d: under THE MISSION, Vasse's voice switches between beside her, the feed and off, and By the Book changes how strong her aura is. Watch again with r.",
-    "keys": "Esc n 1 s s"
+    "label": "First wave",
+    "try": "Round 1's battle, nothing built and no Nexus power picked. Five seconds in, four troopers come out of the Barracks together, in a row, and Vasse speaks beside her as the battle goes. Watch again with r.",
+    "keys": "Esc s s"
   },
   {
-    "label": "Round 2",
-    "try": "Round 2, round 1 played with nothing built: two groups, as the round starts and seven seconds in, each with its own trail and its own line in the panel. Where would one Turret catch both?",
+    "label": "Ranged units",
+    "try": "Explore Map on a marksman: its range is drawn round it, as a Turret's reach is. Move onto a trooper and there is none, because a trooper fights hand to hand.",
+    "keys": "Esc e click:22,8"
+  },
+  {
+    "label": "Moving trail",
+    "try": "Round 2: two groups, each trail a slow line of arrows, one every three tiles, each leaving a fading copy behind as it moves. Reduced motion, in Settings, holds them still.",
     "at": "campaign?level=vasse-test-1&round=2"
   },
   {
-    "label": "Vasse falls",
-    "try": "Round 2, with Vasse's health turned down to 20 and nothing built. About 11 seconds in the feed says she falls; the result says she is out for round 3. Press Enter: round 3 opens on a line saying she is out, the camera on your Nexus. Enter closes it; press s, and the Battle Round screen says so too. Press d to change her health.",
-    "at": "campaign?level=vasse-test-1&round=2",
-    "keys": "n 1 s s",
-    "settings": "commanderHealth=20"
-  },
-  {
     "label": "Her return",
-    "try": "The Commander's cadence, on her campaign's second test level: Vasse fell in round 1, so round 2 opens on a line saying she is out, the camera on your Nexus. Press Enter, then n 1 and s s to play the round without her. When it ends, press Enter: round 3 opens on her return, the light around her.",
+    "try": "The Commander's cadence, on her campaign's second test level: Vasse fell in round 1, so round 2 opens on a line saying she is out, the camera on your Nexus. Press Enter, then s s to play the round without her. When it ends, press Enter: round 3 opens on her return, the light around her.",
     "at": "campaign?level=vasse-test-2&round=2"
   }
 ]

@@ -1,8 +1,9 @@
 // What a player sees of the raid's intent (the owner: "reading the enemy intent is very important"):
-// the coming raid drawn so it reads at a glance, a trail from each group to what it goes for first and
-// that target marked — in the Build Phase only, never over a glyph — and the panel's free rows saying
-// how many, of what, from where, when and what they go for, in every round of PERIMETER at 80 x 24. And
-// the Commander, never faint. The prediction itself is tests/intent.test.ts.
+// the coming raid drawn so it reads at a glance, a trail from each group to what it goes for first — its
+// arrows moving slowly toward it — and that target marked, in the Build Phase only, never over a glyph;
+// and the panel's free rows saying how many, of what, from where, when and what they go for, in every
+// round of PERIMETER at 80 x 24. And the Commander, never faint. The prediction itself is
+// tests/intent.test.ts.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -12,15 +13,21 @@ import type { RaidForecast, RaidGroup } from "../src/build/types.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
-import { cellAt } from "../src/view/frame.ts"
-import { SEE_THROUGH_STEP, seeThroughColours } from "../src/view/roles.ts"
+import { cellAt, frameToText } from "../src/view/frame.ts"
+import { CAPABILITY_MODES, SEE_THROUGH_STEP, resolveCell, seeThroughColours } from "../src/view/roles.ts"
 import type { CapabilityMode } from "../src/view/roles.ts"
 import { CHROME_GLYPHS, terrainGlyph } from "../src/view/theme.ts"
 import type { GlyphPack } from "../src/view/theme.ts"
 import { bearing, raidLines, raidRows, targetName, troopsLines } from "../src/view/raid-panel.ts"
 import { isTroops } from "../src/view/troops-post.ts"
 import type { TroopsGroup } from "../src/view/troops-post.ts"
-import { trailGlyph, trailMarks } from "../src/view/build-grid.ts"
+import { GHOST_FADES, TRAIL_MOTION, hasTrail, trailGlyph, trailMarks, trailTiles } from "../src/view/build-grid.ts"
+import { visibleRange } from "../src/build/camera.ts"
+import { BuildAnimation, FRAME_MS } from "../src/view/build-live.ts"
+import { TUNING } from "../src/build/tuning.ts"
+import { parseKeyScript } from "../src/playtest/keys.ts"
+import { runBuildPlaytest } from "../src/playtest/build.ts"
+import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { MAXIMUM, MINIMUM, WIDE, buildSide, compose, keys, panelLine } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
@@ -109,10 +116,12 @@ test("a trail runs from the raid to what it goes for first, and that is marked �
   assert.ok(!during.cells.some(isTarget), "a target is marked during the Pulse")
 })
 
-test("a trail never replaces a glyph: only bare open ground under it changes, and the target keeps its own glyphs", () => {
-  for (const side of everyRound()) {
+test("a trail never replaces a glyph: only bare open ground under it changes, and the target keeps its own glyphs — still or moving", () => {
+  // Still, then moving: a copy in its first look and its second, and the arrows alone.
+  const instants = [undefined, TRAIL_MOTION.stepMs, 2 * TRAIL_MOTION.stepMs + TRAIL_MOTION.stepMs / 4, 2 * TRAIL_MOTION.stepMs + TRAIL_MOTION.stepMs / 2]
+  for (const [side, elapsedMs] of everyRound().flatMap((side) => instants.map((at) => [side, at] as const))) {
     const number = side.build.state.pulseNumber
-    const shown = compose(side, {}, "truecolor")
+    const shown = compose(side, elapsedMs === undefined ? {} : { raidTrail: { elapsedMs } }, "truecolor")
     const bare = compose(side, { raid: [] }, "truecolor")
     const ground = new Set([terrainGlyph("terrain.plain", "ascii").glyph, " "])
     let marks = 0
@@ -256,6 +265,234 @@ test("a trail's marks are the glyph pack's own arrowheads and strokes, at every 
   assert.equal(trailGlyph("unicode", 0, -1), CHROME_GLYPHS.unicode.arrowUp)
 })
 
+// --- The trail moves -------------------------------------------------------------------------------------
+// The owner: "instead of a static arror, it should be a slow-moving line of arrows with enough distance betwwen
+// them to be less obstrussive. For example 1 arrow every 3 tiles, leaving a transparent arrow behind then moving
+// that fades."
+
+/** PERIMETER's probe, the first round's one group, with somewhere to go. */
+function probeOf(side: BuildSide): RaidGroup & Readonly<{ target: NonNullable<RaidGroup["target"]> }> {
+  const probe = (side.build.raid() ?? [])[0]
+  assert.ok(probe !== undefined && probe.target !== null && probe.path.length > 2 * TRAIL_MOTION.spacing, "the probe has no way to show")
+  return probe as RaidGroup & Readonly<{ target: NonNullable<RaidGroup["target"]> }>
+}
+
+/** Where along the probe's way a tile is. */
+const wayIndex = (probe: RaidGroup, tile: Coord): number => probe.path.findIndex((step) => step.x === tile.x && step.y === tile.y)
+
+test("the trail moves: an arrow every three tiles, each a tile further on every step, the one beside the target going in as a new one comes out", () => {
+  const probe = probeOf(perimeter())
+  const { spacing, stepMs } = TRAIL_MOTION
+  assert.equal(spacing, 3, "the owner's one arrow every three tiles")
+  const last = probe.path.length - 1
+  const arrows = (elapsedMs: number | null): number[] =>
+    trailMarks(probe.path, probe.target.tiles, elapsedMs)
+      .filter((mark) => mark.ghost === undefined)
+      .map((mark) => wayIndex(probe, mark.tile))
+  // Still: every third tile, counted back from the last, so the arrow beside the target is drawn.
+  const still = arrows(null)
+  assert.equal(still.at(-1), last)
+  assert.ok((still[0] ?? spacing) < spacing, "the trail does not start at the group")
+  // Moving, it starts from the still trail and holds still until the step is over.
+  assert.deepEqual(arrows(0), still)
+  assert.deepEqual(arrows(stepMs - 1), still)
+  for (let step = 1; step <= 2 * spacing; step += 1) {
+    const before = arrows((step - 1) * stepMs)
+    const now = arrows(step * stepMs)
+    for (const index of now) assert.ok(before.includes(index - 1) || index === 0, `step ${step}: an arrow at ${index} came from nowhere`)
+    for (const index of before) assert.ok(now.includes(index + 1) || index === last, `step ${step}: the arrow at ${index} did not step on`)
+    for (let at = 1; at < now.length; at += 1) assert.equal((now[at] as number) - (now[at - 1] as number), spacing, `step ${step}: not three tiles apart`)
+    assert.deepEqual(arrows(step * stepMs + stepMs - 1), now, `step ${step}: an arrow moved mid-step`)
+  }
+  // Every three steps the line is where it began.
+  assert.deepEqual(arrows(spacing * stepMs), still)
+  // An arrow points the same way from a tile wherever the motion is: two steps on along the way, or at the target.
+  const ways = new Map<number, string>()
+  for (let at = 0; at < spacing * stepMs; at += stepMs / 4) {
+    for (const mark of trailMarks(probe.path, probe.target.tiles, at)) {
+      const index = wayIndex(probe, mark.tile)
+      const way = `${mark.dx},${mark.dy}`
+      assert.equal(ways.get(index) ?? way, way, `the mark at ${index} turned`)
+      ways.set(index, way)
+    }
+  }
+})
+
+test("each arrow leaves a fading copy on the tile it just left — fainter at once, fainter again a quarter step on, gone at the half — the one that went into the target too", () => {
+  const probe = probeOf(perimeter())
+  const { stepMs } = TRAIL_MOTION
+  const last = probe.path.length - 1
+  const marks = (elapsedMs: number) => trailMarks(probe.path, probe.target.tiles, elapsedMs)
+  const arrowsAt = (elapsedMs: number): number[] => marks(elapsedMs).filter((mark) => mark.ghost === undefined).map((mark) => wayIndex(probe, mark.tile))
+  const copiesAt = (elapsedMs: number) => marks(elapsedMs).filter((mark) => mark.ghost !== undefined)
+  // The motion starts from the still trail: nothing is left behind before the first step.
+  assert.deepEqual(copiesAt(0), [])
+  assert.deepEqual(copiesAt(stepMs - 1), [])
+  let wentIn = 0
+  for (let step = 1; step <= 6; step += 1) {
+    const start = step * stepMs
+    const left = arrowsAt(start - 1)
+    // A copy on every tile an arrow stood on a moment ago, in its own glyph: the way it pointed from there.
+    const copies = copiesAt(start)
+    assert.deepEqual(copies.map((mark) => wayIndex(probe, mark.tile)), left, `step ${step}: the copies are not where the arrows were`)
+    const before = new Map(marks(start - 1).map((mark) => [wayIndex(probe, mark.tile), `${mark.dx},${mark.dy}`]))
+    for (const copy of copies) assert.equal(`${copy.dx},${copy.dy}`, before.get(wayIndex(probe, copy.tile)))
+    if (left.includes(last)) wentIn += 1
+    // Its first look, then its second a quarter step on, then gone at the half, until the next step.
+    assert.ok(copies.every((mark) => mark.ghost === 0))
+    assert.ok(copiesAt(start + stepMs / 4).every((mark) => mark.ghost === 1))
+    assert.equal(copiesAt(start + stepMs / 4).length, copies.length)
+    assert.deepEqual(copiesAt(start + stepMs / 2), [])
+    assert.deepEqual(copiesAt(start + stepMs - 1), [])
+  }
+  assert.ok(wentIn >= 2, "the arrow beside the target left no copy as it went in")
+  // Fainter than the arrow from the start, fainter again, as far toward the background as the depth can blend.
+  assert.ok((GHOST_FADES[0] as number) > 0.3 && (GHOST_FADES[1] as number) > (GHOST_FADES[0] as number) && (GHOST_FADES[1] as number) < 1)
+})
+
+test("drawn, a copy is the arrow's glyph further faded where colours blend, and dim, then gone, at 16 colours and in monochrome: every depth draws the same glyphs", () => {
+  const side = perimeter()
+  const probe = probeOf(side)
+  const { stepMs } = TRAIL_MOTION
+  for (const elapsedMs of [stepMs, stepMs + stepMs / 4, stepMs + stepMs / 2]) {
+    const texts = CAPABILITY_MODES.map((capability) => frameToText(compose(side, { raidTrail: { elapsedMs } }, capability)))
+    for (const text of texts) assert.equal(text, texts[0], `${elapsedMs} ms: a depth draws other glyphs`)
+  }
+  const frame = compose(side, { raidTrail: { elapsedMs: stepMs } }, "truecolor")
+  const drawn = (mark: ReturnType<typeof trailMarks>[number]): boolean => {
+    const cell = tileCell(side, frame, mark.tile)
+    return cell.glyph === trailGlyph("ascii", mark.dx, mark.dy) && isTrail(cell)
+  }
+  const marks = trailMarks(probe.path, probe.target.tiles, stepMs)
+  const copies = marks.filter((mark) => mark.ghost !== undefined && drawn(mark))
+  const arrows = marks.filter((mark) => mark.ghost === undefined && drawn(mark))
+  assert.ok(copies.length >= 3 && arrows.length >= 3, `${copies.length} copies and ${arrows.length} arrows drawn`)
+  const [copy, arrow] = [tileCell(side, frame, (copies[0] as (typeof marks)[number]).tile), tileCell(side, frame, (arrows[0] as (typeof marks)[number]).tile)]
+  assert.deepEqual(copy.style, { fgRole: "player.b", dim: true, fade: GHOST_FADES[0] })
+  assert.ok((arrow.style.fade ?? 0) < (copy.style.fade ?? 0))
+  // Composed the same at every depth, the copy's look included: only resolving it differs.
+  for (const capability of CAPABILITY_MODES) {
+    const at = compose(side, { raidTrail: { elapsedMs: stepMs } }, capability)
+    assert.deepEqual(tileCell(side, at, (copies[0] as (typeof marks)[number]).tile), copy, capability)
+  }
+  // Where colours blend the copy is a fainter colour than the arrow; at 16 colours and in monochrome, which
+  // cannot blend, it is the arrow's own dim look — until it is gone.
+  for (const capability of ["truecolor", "color256"] as const) {
+    assert.notDeepEqual(resolveCell(copy, capability).sgr, resolveCell(arrow, capability).sgr, capability)
+  }
+  for (const capability of ["color16", "monochrome"] as const) {
+    assert.deepEqual(resolveCell(copy, capability).sgr, resolveCell(arrow, capability).sgr, capability)
+    assert.ok(resolveCell(copy, capability).dim, capability)
+  }
+})
+
+test("still under reduced motion, under a popup and in every still frame: an arrow every three tiles, nothing left behind", () => {
+  const side = perimeter()
+  const probe = probeOf(side)
+  const still = compose(side, {}, "truecolor")
+  // A still frame is the trail at the start of its motion.
+  assert.deepEqual(still, compose(side, { raidTrail: { elapsedMs: 0 } }, "truecolor"))
+  assert.equal(trailMarks(probe.path, probe.target.tiles).filter((mark) => mark.ghost !== undefined).length, 0)
+  // The live loop hands the view no motion while a popup is open, motion is reduced, or the plan is committed.
+  const animation = new BuildAnimation()
+  const moving = { raidTrail: true, capability: "monochrome" as const }
+  assert.ok(animation.frame(side.build.state, 0, moving).raidTrail !== undefined)
+  assert.equal(animation.frame(side.build.state, 100, { ...moving, reducedMotion: true }).raidTrail, undefined)
+  const popup = { ...side.build.state, popup: "nexus-powers" as const }
+  assert.equal(animation.frame(popup, 200, moving).raidTrail, undefined)
+  assert.equal(animation.frame({ ...side.build.state, committed: true }, 300, moving).raidTrail, undefined)
+  // With reduced motion every frame is the still one, whatever the time; without it, the same waits move it.
+  const waits = parseKeyScript(`wait~${TRAIL_MOTION.stepMs / 4}*8`)
+  const reduced = runBuildPlaytest({ scenes: false, steps: waits, settings: { ...DEFAULT_SETTINGS, capability: "truecolor", reducedMotion: true } })
+  assert.equal(new Set(reduced.frames.map((each) => frameToText(each.frame))).size, 1, "the trail moved under reduced motion")
+  const moved = runBuildPlaytest({ scenes: false, steps: waits, settings: { ...DEFAULT_SETTINGS, capability: "truecolor" } })
+  assert.ok(new Set(moved.frames.map((each) => frameToText(each.frame))).size > 1, "the trail never moved")
+})
+
+test("the live loop moves it from the first frame that drew it moving, asks for a frame only when it next looks different, and starts again from the still trail after a popup", () => {
+  const side = perimeter()
+  const { stepMs } = TRAIL_MOTION
+  const quarter = stepMs / 4
+  // Where colours blend, three changes a step: an arrow steps on, its copy fades, its copy goes.
+  const blended = new BuildAnimation()
+  const options = { raidTrail: true, capability: "truecolor" as const }
+  const first = blended.frame(side.build.state, 1000, options)
+  assert.deepEqual(first.raidTrail, { elapsedMs: 0 })
+  assert.deepEqual([first.busyUntil, first.frameMs], [1000 + 4 * quarter, 4 * quarter], "the still trail asked before its first step")
+  assert.deepEqual(blended.frame(side.build.state, 1000 + 4 * quarter, options).busyUntil, 1000 + 5 * quarter)
+  assert.deepEqual(blended.frame(side.build.state, 1000 + 5 * quarter, options).busyUntil, 1000 + 6 * quarter)
+  assert.deepEqual(blended.frame(side.build.state, 1000 + 6 * quarter, options).busyUntil, 1000 + 8 * quarter)
+  // A frame drawn between two changes (a key's) asks for the next change, not a frame's length on.
+  const between = blended.frame(side.build.state, 1000 + 6 * quarter + 7, options)
+  assert.equal(between.busyUntil, 1000 + 8 * quarter)
+  assert.ok((between.frameMs ?? 0) > FRAME_MS, "the trail asks for every frame")
+  // At 16 colours and in monochrome, two: an arrow steps on, its copy goes.
+  for (const capability of ["color16", "monochrome"] as const) {
+    const plain = new BuildAnimation()
+    const opts = { raidTrail: true, capability }
+    assert.equal(plain.frame(side.build.state, 0, opts).busyUntil, 4 * quarter)
+    assert.equal(plain.frame(side.build.state, 4 * quarter, opts).busyUntil, 6 * quarter, capability)
+    assert.equal(plain.frame(side.build.state, 6 * quarter, opts).busyUntil, 8 * quarter, capability)
+  }
+  // A popup holds it still and asks for nothing (no breath in monochrome); as it closes the motion starts over
+  // from the still trail, so nothing jumps.
+  const animation = new BuildAnimation()
+  const mono = { raidTrail: true, capability: "monochrome" as const }
+  animation.frame(side.build.state, 0, mono)
+  assert.deepEqual(animation.frame(side.build.state, 5 * quarter, mono).raidTrail, { elapsedMs: 5 * quarter })
+  const held = animation.frame({ ...side.build.state, popup: "game-menu" }, 6 * quarter, mono)
+  assert.deepEqual([held.raidTrail, held.busyUntil], [undefined, null])
+  assert.deepEqual(animation.frame(side.build.state, 9000, mono).raidTrail, { elapsedMs: 0 })
+  // Something faster moving keeps every frame until it ends: a placement or a glide sets the pace, not the trail.
+  const glide = new BuildAnimation()
+  glide.frame(side.build.state, 0, options)
+  const moved = { ...side.build.state, cursor: { x: side.build.state.cursor.x + 3, y: side.build.state.cursor.y } }
+  const gliding = glide.frame(moved, 10, options)
+  assert.equal(gliding.frameMs, undefined)
+  assert.equal(gliding.busyUntil, 10 + TUNING.cursorGlideMs)
+  // Without a trail on the map it asks for nothing.
+  assert.equal(new BuildAnimation().frame(side.build.state, 0, { capability: "truecolor" }).busyUntil, null)
+})
+
+test("a building's reach yields to every tile of the trail's way, wherever its arrows are this instant: the same set, moving or still — and the trail moves only while some of that way is in view", () => {
+  const side = perimeter()
+  const raid = side.build.raid() ?? []
+  const input = { context: side.build.round, state: side.build.state, layout: side.layout, raid }
+  const way = new Set(raid.filter((group) => group.target !== null).flatMap((group) => group.path.map((tile) => `${tile.x},${tile.y}`)))
+  assert.ok(way.size > 10)
+  assert.deepEqual(trailTiles(input), way)
+  for (const elapsedMs of [0, 100, 450, 900, 1300]) {
+    assert.deepEqual(trailTiles({ ...input, raidTrail: { elapsedMs } }), way, `${elapsedMs} ms`)
+    // Every mark, arrow or copy, is on it.
+    for (const group of raid) {
+      if (group.target === null) continue
+      for (const mark of trailMarks(group.path, group.target.tiles, elapsedMs)) assert.ok(way.has(`${mark.tile.x},${mark.tile.y}`))
+    }
+  }
+  // Nothing to yield to once the plan is committed.
+  assert.equal(trailTiles({ ...input, state: { ...input.state, committed: true } }).size, 0)
+  // The live loop times the motion only while some of the way is in view: scrolled away, nothing on screen moves.
+  assert.equal(hasTrail(raid), true)
+  assert.equal(hasTrail(raid, visibleRange(side.build.state.camera, side.build.state.viewport)), true)
+  assert.equal(hasTrail(raid, { firstX: 60, lastX: 95, firstY: 25, lastY: 39 }), false)
+  assert.equal(hasTrail([]), false)
+  assert.equal(hasTrail(undefined), false)
+})
+
+test("the scripted playtest moves the trail on the script's own clock: the same keys draw the same frames, and waiting shows it move", () => {
+  // Esc, then a quarter of a step at a time for three and a half steps.
+  const steps = parseKeyScript(`Esc wait~${TRAIL_MOTION.stepMs / 4}*14`)
+  const once = runBuildPlaytest({ steps }).frames.map((each) => frameToText(each.frame))
+  const again = runBuildPlaytest({ steps }).frames.map((each) => frameToText(each.frame))
+  assert.deepEqual(again, once)
+  // Esc closes the intro and the trail starts from its still form; a step on, every arrow has moved; and three
+  // steps on, once the copies are gone, it is the still trail again.
+  const closed = once[1]
+  assert.notEqual(once[5], closed, "the trail did not move")
+  assert.notEqual(once[9], closed)
+  assert.equal(once[15], closed, "three steps on, the line is not where it began")
+})
+
 test("the panel's words: where from is a point of the compass from the Nexus, as the map is seen; what is hit, by its plain name", () => {
   const nexus = { x: 18, y: 10 }
   assert.equal(bearing(nexus, { x: 41, y: 1 }), "north-east")
@@ -284,25 +521,26 @@ test("under the raid, the panel says where the player's troops head, in the raid
   const side = perimeter()
   const troops = troopsNamed(side, "the line")
   const text = (lines: ReturnType<typeof troopsLines>): string[] => lines.map((line) => `${" ".repeat(line.indent)}${line.parts.map((part) => part.text).join("")}`)
-  assert.deepEqual(text(troopsLines(troops, 27)), ["YOUR TROOPS", "6 head for the line"])
+  // Ten: the six on the map as the round opens, and the four the Barracks sends five seconds in.
+  assert.deepEqual(text(troopsLines(troops, 27)), ["YOUR TROOPS", "10 head for the line"])
   // In the player's colour, the count and the place bold, as the raid's count and target are.
   const [, line] = troopsLines(troops, 27)
   assert.deepEqual(line?.parts.map((part) => [part.role, part.bold === true]), [["player.a", true], ["player.a", false], ["player.a", true]])
   // A place too long for the line goes under it, wrapped at words.
   const long = troopsNamed(side, "the open ground before the old survey annex")
   const wrapped = text(troopsLines(long, 27))
-  assert.deepEqual(wrapped.slice(0, 2), ["YOUR TROOPS", "6 head for"])
+  assert.deepEqual(wrapped.slice(0, 2), ["YOUR TROOPS", "10 head for"])
   assert.equal(wrapped.slice(2).map((part) => part.trim()).join(" "), "the open ground before the old survey annex")
   for (const part of wrapped) assert.ok(part.length <= 27, `"${part}" runs past the panel`)
-  // Nobody on the Grid as the round opens: what the Barracks trains heads there all the same.
+  // Nobody to send, none standing and no wave coming: the line still names the place.
   assert.deepEqual(text(troopsLines({ ...troops, units: [] }, 27)), ["YOUR TROOPS", "head for the line"])
   // Short of room, the raid comes first: its kinds give way to the troops' lines, then the blank line before
   // them; never a whole group of the raid, so then the troops' lines are left out.
   const forecast = side.build.raid() ?? []
   const lines = (room: number): string[] => text(raidLines(side.build.round, forecast, { x: 18, y: 10 }, 27, room))
-  assert.deepEqual(lines(7), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks", "", "YOUR TROOPS", "6 head for the line"])
-  assert.deepEqual(lines(6), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "", "YOUR TROOPS", "6 head for the line"])
-  assert.deepEqual(lines(5), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "YOUR TROOPS", "6 head for the line"])
+  assert.deepEqual(lines(7), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks", "", "YOUR TROOPS", "10 head for the line"])
+  assert.deepEqual(lines(6), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "", "YOUR TROOPS", "10 head for the line"])
+  assert.deepEqual(lines(5), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "YOUR TROOPS", "10 head for the line"])
   assert.deepEqual(lines(4), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks"])
 })
 

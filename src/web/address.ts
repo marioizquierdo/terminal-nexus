@@ -4,10 +4,10 @@
 //   #at=<route>          where to open, in the game's route grammar (`src/cli/route.ts`): `#at=settings`,
 //                        `#at=campaign?level=vasse-test-1&round=3`
 //   #settings=<text>     a settings text to start a campaign level with, as `--settings` takes it:
-//                        `#settings=nextRound=auto&trainEvery=6`
+//                        `#settings=nextRound=auto&jumpStep=12`
 //   #keys=<key script>   keys to play first on a campaign level, as `--keys` takes them: `#keys=Esc n 1`
 //
-// Joined by `&`: `#at=campaign?level=vasse-test-1&round=2&settings=trainEvery=6&keys=Esc`. **A route and a
+// Joined by `&`: `#at=campaign?level=vasse-test-1&round=2&settings=jumpStep=12&keys=Esc`. **A route and a
 // settings text have `&` and `=` of their own**, so a part runs until the next `&at=`, `&settings=` or `&keys=`,
 // not until the next `&`: everything between belongs to it, written as plainly as on a command line. Each part
 // may also be percent-encoded, as an address often is (`%20` for a space, `%26` for an `&` inside a part).

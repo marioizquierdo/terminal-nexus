@@ -456,13 +456,17 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
 test("a route's query form reads too: pairs joined by &, and true or false on every on/off setting", () => {
   const base: SettingsSnapshot = { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() }
   // The owner's "foo=6&var=true", with names the game has.
-  const query = parseSettingsExport("trainEvery=6&reducedMotion=true&keyReleases=false&popupPulseMs=false", base)
-  assert.equal(query.snapshot.experiments.trainEvery, 6)
+  const query = parseSettingsExport("holdWindowMs=250&reducedMotion=true&keyReleases=false&popupPulseMs=false", base)
+  assert.equal(query.snapshot.experiments.holdWindowMs, 250)
   assert.equal(query.snapshot.settings.reducedMotion, true)
   assert.equal(query.snapshot.experiments.keyReleases, "off")
   assert.equal(query.snapshot.experiments.popupPulseMs, 0)
-  assert.deepEqual(query.applied, ["trainEvery", "reducedMotion", "keyReleases", "popupPulseMs"])
+  assert.deepEqual(query.applied, ["holdWindowMs", "reducedMotion", "keyReleases", "popupPulseMs"])
   assert.deepEqual(query.ignored, [])
+  // The Barracks's pace, from an export made before its own numbers answered it, reads quietly as settled.
+  const old = parseSettingsExport("trainEvery=6&trainPerRound=4", base)
+  assert.deepEqual([old.applied, old.ignored], [[], []])
+  assert.deepEqual(old.snapshot, base)
   // Yes words too, where a setting has one "on" value besides "off": Key releases is auto or off.
   const on = parseSettingsExport("keyReleases=off&keyReleases=true", base)
   assert.equal(on.snapshot.experiments.keyReleases, "auto")

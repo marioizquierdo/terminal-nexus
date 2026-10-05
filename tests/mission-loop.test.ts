@@ -43,9 +43,11 @@ function toResult(side: BuildSide): void {
 }
 
 const TURRET = 2
+// Two Turrets north of the Barracks, facing the raid, both inside the range the standing buildings give: a
+// building planned this round gives none until it stands.
 const DEFENCE = [
   [TURRET, 24, 8],
-  [TURRET, 22, 7],
+  [TURRET, 25, 7],
 ] as const
 
 test("after a round's result, Enter opens the next round's Build Phase on what the last one left", () => {
@@ -108,12 +110,11 @@ test("Enter, Space, n, a click on the row and the driver's command all open the 
 })
 
 test("the Barracks trains during the round: round 2 opens with its troopers at home beside it, and the log says so", () => {
-  // Nothing built, so the probe lasts past the first trooper (ten seconds in): two Turrets and Vasse end
-  // round 1 before it.
+  // Its wave, four troopers together five seconds in: well before round 1's probe is beaten, whatever is built.
   const side = perimeter()
   startRound(side)
   const trained = side.build.pulse!.resolved.timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined)
-  assert.ok(trained.length > 0, "the Barracks trained nothing in round 1")
+  assert.deepEqual(trained.map((event) => event.tick), [60, 60, 60, 60], "the Barracks did not send its wave in round 1")
   toResult(side)
   const entry = side.activity.entries().find((logged) => logged.event === "pulse.trained")
   assert.ok(entry !== undefined, "the round's training was not logged")
@@ -147,10 +148,12 @@ test("the whole mission, round by round, to its end; Play again and Restart both
     toResult(side)
     if (round < 3 && /Next round/.test(screenText(side))) keys(side, ENTER)
   }
-  // Nothing built: the Nexus falls in the last round.
+  // Nothing built: the Barracks's wave each round is enough, and the perimeter holds to the last round's end.
+  // (Before the troopers came in a wave, four together five seconds in, nothing built lost the last round. A
+  // mission that ends with the Nexus fallen says so too: tests/pulse-screen.test.ts.)
   const end = screenText(side)
-  assert.match(end, /MISSION FAILED/)
-  assert.match(end, /The Nexus fell\./)
+  assert.match(end, /MISSION COMPLETE/)
+  assert.match(end, /The perimeter held\./)
   assert.match(end, /\[enter\] Play again/)
   keys(side, ENTER)
   assert.equal(side.build.state.pulseNumber, 1)

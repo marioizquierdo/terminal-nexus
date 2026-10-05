@@ -16,6 +16,7 @@ import type { BuildState } from "../src/build/state.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import type { BuildPlaytest } from "../src/playtest/build.ts"
+import { foresee } from "../src/cli/pulse-run.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
 import { BuildAnimation, livePresentation } from "../src/view/build-live.ts"
@@ -529,24 +530,29 @@ test("the browser page's canvas paints the light the terminal shows", () => {
 // --- Frame budget ----------------------------------------------------------------------------------
 
 test("with three buildings going up at once, the Build Phase still draws well inside a frame", () => {
-  // Three buildings going up at once, their light and sparks, at the largest view, through the
-  // truecolor encoder — the live loop's whole per-frame cost. (The many sparks and the rainbow this once
-  // measured were settled away, 2026-09-30.) The live loop asks for a frame every 16 ms; the budget
-  // asserted is that p95 stays under it, and the measurement is what the report records.
+  // Three buildings going up at once, their light and sparks, and the raid's trail moving — as PERIMETER's
+  // Build Phase always has it — at the largest view, through the truecolor encoder: the live loop's whole
+  // per-frame cost. (The many sparks and the rainbow this once measured were settled away, 2026-09-30.) The
+  // live loop asks for a frame every 16 ms; the budget asserted is that p95 stays under it, and the
+  // measurement is what the report records.
   const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${PLACE_BARRACKS} Down Space Space Down Space Space`), columns: 104, rows: 32 })
   const state = run.frames[run.frames.length - 1]!.state
   assert.equal(state.planned.length, 3)
+  const raid = foresee(run.context, state)
+  assert.ok(raid.some((group) => group.target !== null), "no trail on the map")
   const total = placementTiming(false).totalMs
   const samples: number[] = []
   for (let frame = 0; frame < 200; frame += 1) {
     const t = (frame * 5) % total
     const placing = state.planned.map((p, index) => ({ ordinal: p.ordinal, elapsedMs: (t + index * 120) % total }))
+    // The trail a little further on each frame, through its steps and its copies' looks.
+    const raidTrail = { elapsedMs: frame * 37 }
     const start = performance.now()
-    frameToAnsi(composeBuildFrame({ context: run.context, state, layout: run.layout, placing }, "truecolor"), "truecolor")
+    frameToAnsi(composeBuildFrame({ context: run.context, state, layout: run.layout, placing, raid, raidTrail }, "truecolor"), "truecolor")
     samples.push(performance.now() - start)
   }
   samples.sort((a, b) => a - b)
   const p95 = samples[Math.floor(samples.length * 0.95)] ?? 0
   assert.ok(p95 < 16, `p95 ${p95.toFixed(2)} ms is over the live loop's 16 ms frame`)
-  console.log(`# build frame with placement juice: p50 ${samples[100]?.toFixed(2)} ms, p95 ${p95.toFixed(2)} ms`)
+  console.log(`# build frame with placement juice and the trail moving: p50 ${samples[100]?.toFixed(2)} ms, p95 ${p95.toFixed(2)} ms`)
 })

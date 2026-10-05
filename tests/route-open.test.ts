@@ -200,10 +200,10 @@ test("the scripted playtest's --at opens a level at a round, and refuses a title
   assert.throws(() => playtestOpening({ at: "campaign" }), /on the title menu/u)
   assert.throws(() => playtestOpening({ at: "campaign?level=nowhere" }), /no level "nowhere"/u)
   // Without --at, PERIMETER's first round; its keys are read as the game reads --keys, and refused by name.
-  const opening = playtestOpening({ keys: "Esc n 1", settings: "trainEvery=6" })
+  const opening = playtestOpening({ keys: "Esc n 1", settings: "jumpStep=12" })
   assert.equal(formatRoute(opening.at), "campaign?level=vasse-test-1")
   assert.deepEqual(opening.steps, parseKeyScript("Esc n 1"))
-  assert.equal(opening.settings, "trainEvery=6")
+  assert.equal(opening.settings, "jumpStep=12")
   assert.throws(() => playtestOpening({ keys: "Esc Dwn" }), /^Error: --keys: unknown key "Dwn"/u)
   assert.throws(() => playtestOpening({ keys: "Esc Dwn" }, "my-flow.keys"), /^Error: my-flow\.keys: unknown key "Dwn"/u)
 })

@@ -125,6 +125,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
       // Only a producer has these; leaving them off everything else keeps every other state's bytes.
       ...(actor.productionCooldown === undefined ? {} : { productionCooldown: actor.productionCooldown }),
       ...(actor.produced === undefined ? {} : { produced: actor.produced }),
+      ...(actor.owed === undefined ? {} : { owed: actor.owed }),
     }))
     .sort((a, b) => a.ordinal - b.ordinal)
 

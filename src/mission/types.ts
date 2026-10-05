@@ -151,7 +151,8 @@ export type TriggerDefinition = Readonly<{
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
  * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no opponent army or objectives list yet.
  * What the player may build and draft, the credits and the map are the level's that plays it (a campaign's
- * level in its army: `src/armies`), not the mission's.
+ * level in its army: `src/armies`), not the mission's; and what a building spawns in its battles is the
+ * building's own, on its card in its army (`spawns`).
  */
 export type MissionDefinition = Readonly<{
   id: string
@@ -164,10 +165,6 @@ export type MissionDefinition = Readonly<{
   seed: number
   regions: readonly Region[]
   triggers: readonly TriggerDefinition[]
-  /** The player's buildings that train during a Pulse, and what each trains (step 6C): the mission's
-   *  opt-in to automatic production. How often and how many is the match's to say
-   *  (`trainingRegistry`, `src/match/training.ts`); a building not listed trains nothing. */
-  trains?: readonly Readonly<{ structure: string; unit: string }>[]
   /** What the Battle Round screen announces for round *n*: the seam where a briefing line for each round goes. */
   roundText?: Readonly<Record<number, string>>
   /** One line the last result says when the mission is won or lost — presentation data, never read by

@@ -87,8 +87,11 @@ dialog at the bottom, which holds the keyboard: every opening below starts after
   Mario the exact state a report is about.
 
 What a script cannot show is time between keys on the live screen: the view sliding, a flash, a
-building going up (script frames always draw buildings finished; a Pulse is the exception, since a
-`wait` moves its clock). For those, compose a frame with `camera` / `refusedTry` / `ack` /
+building going up (script frames always draw buildings finished). Two things are the exception, since a
+`wait` moves their clock: a Pulse, and the raid's intent trail, whose arrows step on toward what the raid
+goes for from the first frame that drew them moving (after `Esc` closes PERIMETER's intro, or as a round
+opened by `--at` starts). `--at 'campaign?level=vasse-test-1&round=2' --keys "wait~100*23" --gif --delay 100
+--hold 100 --scale 1` makes a GIF of it moving, a frame every 100 ms, as fast as it plays. For those, compose a frame with `camera` / `refusedTry` / `ack` /
 `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal, contentId, anchor, elapsedMs }]`
 yourself, or step `BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`,
 `placementGif` and `placementSheet` in `scripts/capture-build-phase-screenshots.mjs` do exactly that.

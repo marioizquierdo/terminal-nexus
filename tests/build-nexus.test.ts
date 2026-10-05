@@ -1,7 +1,8 @@
-// The Nexus draft slot and commit, and the draft as a popup the player opens. "A dealt
-// Nexus power may not be skipped" (docs/game-design/commander-armies.md, the Nexus power) — so the commit is
-// refused until one is picked, and *only* the commit: an optional popup must not nag like a forced
-// screen. Committing asks once — docs/system-design/input.md: "the one action that must not fire by accident."
+// The Nexus draft slot and commit, and the draft as a popup the player opens. For now a dealt Nexus power may
+// be left unpicked (the owner, round 5: "Nexus Powers should be optional for now, it's easier for testing if I
+// can just start a round"): nothing refuses for want of a pick, the commit included, and an optional popup must
+// not nag like a forced screen. Committing asks once — docs/system-design/input.md: "the one action that must not
+// fire by accident."
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -24,10 +25,9 @@ function session(): BuildSide {
   return buildSide({ startPulse })
 }
 
-test("a waiting Nexus power refuses the commit, and nothing else", () => {
-  // The draft once refused every edit until the pick was made, which was right for a forced full screen.
-  // With a popup the player opens when they choose, the invariant is kept where it has to hold — the
-  // Build Phase cannot end without a pick — and nowhere else (docs/system-design/input.md, the Nexus power pick).
+test("a waiting Nexus power refuses nothing: the round starts without it, and nothing is taken", () => {
+  // The draft once refused every edit until the pick was made, which was right for a forced full screen; then
+  // only the commit (a dealt power could not be skipped). For now it refuses nothing at all.
   const { build } = session()
   build.dispatch({ kind: "arm", index: 0 })
   assert.equal(build.state.armed, 0, "arming was refused while a pick was waiting")
@@ -40,10 +40,15 @@ test("a waiting Nexus power refuses the commit, and nothing else", () => {
   build.dispatch({ kind: "undo" })
   assert.equal(build.state.planned.length, 0, "undo was refused while a pick was waiting")
 
+  // The Battle Round screen opens, says the power is waiting, and starts the round without it.
   build.dispatch({ kind: "open-battle-round" })
-  assert.equal(build.state.popup === "battle-round", false)
-  assert.match(build.state.status.text, /Pick a Nexus power first: \[n\] Nexus\./)
-  assert.equal(build.state.status.tone, "warning")
+  assert.equal(build.state.popup, "battle-round")
+  assert.match(build.state.status.text, /^Battle Round 1: Enter starts it/)
+  build.dispatch({ kind: "start-pulse" })
+  assert.equal(build.state.committed, true)
+  assert.ok(build.pulse !== null, "the round did not start")
+  assert.equal(build.state.nexusPick, null, "a power was picked for the player")
+  assert.equal(build.state.bonusAllotment, 0, "an unpicked power's credits were given")
 })
 
 test("moving the cursor is never refused while a pick is waiting", () => {
@@ -172,16 +177,21 @@ test("once picked, the construct menu and every other command work exactly as th
   assert.equal(build.state.planned.length, 1)
 })
 
-test("commit is refused before a pick, and opens the confirmation once one is made", () => {
-  const { build } = session()
+test("the confirmation opens before a pick and after one, and only before it says a power is waiting", () => {
+  const { build, layout } = session()
   build.dispatch({ kind: "open-battle-round" })
-  assert.equal(build.state.popup === "battle-round", false, "commit opened the prompt before a pick")
-  assert.match(build.state.status.text, /Pick a Nexus power first/)
+  assert.equal(build.state.popup, "battle-round", "the confirmation was refused for want of a pick")
+  assert.match(build.state.status.text, /Battle Round 1/)
+  const waiting = frameToText(composeBuildFrame({ context: starterContext(), state: build.state, layout }, "monochrome"))
+  assert.match(waiting, /A Nexus power is still waiting\./)
+  build.dispatch({ kind: "cancel" })
 
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "open-battle-round" })
   assert.equal(build.state.popup, "battle-round")
   assert.match(build.state.status.text, /Battle Round 1/)
+  const picked = frameToText(composeBuildFrame({ context: starterContext(), state: build.state, layout }, "monochrome"))
+  assert.doesNotMatch(picked, /still waiting/)
 })
 
 test("nothing but the confirmation itself changes state while it is open", () => {
@@ -408,10 +418,10 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
   // new Barracks, so arming another moves it to the nearest spot in the build range with a free tile
-  // around it — a free row below it, 26,16, on ground the first one's range reaches — and Enter places it
-  // there.
+  // around it — 21,13, by the Nexus, since the first one gives no range until it stands — and Enter places
+  // it there.
   byKeyboard.build.handleData("1", byKeyboard.layout)
-  assert.deepEqual(byKeyboard.build.state.cursor, { x: 26, y: 16 })
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 21, y: 13 })
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
   byKeyboard.build.handleData("y", byKeyboard.layout)
@@ -430,8 +440,8 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   clickTile({ x: 26, y: 13 })
   clickTile({ x: 26, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  // Arming already put the cursor on 26,16, so one click there is the confirming second click.
-  clickTile({ x: 26, y: 16 })
+  // Arming already put the cursor on 21,13, so one click there is the confirming second click.
+  clickTile({ x: 21, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "start-pulse"), byMouse.layout)
 

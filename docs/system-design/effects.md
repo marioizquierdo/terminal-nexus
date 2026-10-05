@@ -198,11 +198,12 @@ to discover. See [`ascii-art-references.md`](../game-design/ascii-art-references
    that is never its own glyph. Every other effect still decays by thinning. Do not reach for `fade`
    to make a glyph-bearing effect (debris, a blast ring, a death collapse) dissolve instead of thin.
 
-   **Two interface departures, which are the interface's and not effects':** the card reveal fades the
-   Build Phase panel's own text with `fade` (chrome, never an effect's glyph), and the see-through
-   cursor uses a real alpha, the `seeThrough` field ([`presentation.md`](presentation.md)), because it
-   is a cursor passing over the map, not an effect decaying on it. Neither licenses fading a
-   glyph-bearing effect.
+   **Three interface departures, which are the interface's and not effects':** the card reveal fades the Build
+   Phase panel's own text with `fade` (chrome, never an effect's glyph); the raid's intent trail, a map mark
+   rather than an effect, draws its arrows faded and lets the copy each moving arrow leaves behind fade away
+   within half a step; and the see-through cursor uses a real alpha, the `seeThrough` field
+   ([`presentation.md`](presentation.md)), because it is a cursor passing over the map, not an effect decaying
+   on it. None licenses fading a glyph-bearing effect.
 8. **Fresh eyes are the only real test.** The author of an effect cannot see it any more after twenty
    minutes.
 
@@ -254,10 +255,11 @@ size of the set, so the count moves only on purpose.
 | see-through cursor (interface) | Explore Map opened from the menu | `chrome`, under every popup | action, eased out, on the focus arrow's timeline | "Exploring is just moving the focus to the map": a copy of the map cursor, one tile wide, from Explore Map's row to the cursor as drawn, homing on it; glyphless writes carrying `seeThrough` (the cursor's role at an alpha, mixed with the cell's background and glyph colour) at 0.8 at the head, 0.45 and 0.2 one and two tile-steps behind; never on the real cursor's own cells, into which it settles. The glyph beneath always survives. Truecolor exact, 256 nearest, 16 and monochrome the plain cursor from alpha one half. Reduced motion: dropped with the arrow; the blink keeps the cue |
 | card reveal (interface) | the side panel becomes a card (Explore Map opened, a building armed) | `chrome` | anticipation, action, settle (400 ms, a tuned value) | Three beats, 25% / 30% / 45%: the other rows fade (`fade` where colour blends, dim for the nearer-gone half at 16 colours and monochrome); the chosen row, drawn active, slides whole rows up to the header line; the separator and the card fade in, the name, subtitle and description typed, a building's icon playing its own placement frames. From one card to another only the last beat plays; closing is instant; a still frame is the finished card. Timed by the live loop from the state becoming a card. Reduced motion: none |
 | popup border: opening, then breath (interface) | any popup is open | `chrome` | an opening played once (the Battle Round screen: two flashes, 530 ms), then sustained and looping (one breath per "Popup pulse" — a Settings name for the breath of light, unrelated to the Nexus Pulse — 2000 ms) | Experiments: "Popup pulse", "Battle Round flash", "Flash strength". A subtle, unobtrusive breath on every popup, and for the Battle Round screen an initial double flash with more contrast range, then the default breath. Only the border plays (never its title, text or shadow); which popup has which opening is a table in the view. The breath follows a sine: a tint toward `chrome.title` on the lighter half (up to 0.4) and a fade toward the background on the darker half (up to 0.25), both below the 16-colour half-way step. The double flash is two 220 ms flashes 90 ms apart, each lit fast and faded slowly, up to 0.8 of the way to `chrome.title`; it ends at rest and the breath starts from rest, so there is no jump. Both are timed from the frame that first showed the popup and restart when another popup replaces it; every still frame draws the border at rest. The flash is drawn every frame; while only the breath moves the live loop redraws 20 times a second, and it stops when the last popup closes. Reduced motion and monochrome: still. 16 colours: the flash only, as two steps onto the title's colour, then still. The screen's words carry the cue |
+| raid's intent trail (interface) | a raid group is foreseen, in the Build Phase | `territory` | sustained and looping, a step per `trailStepMs` (400 ms, a tuned value) | The owner's "slow-moving line of arrows ... 1 arrow every 3 tiles, leaving a transparent arrow behind". An arrow every three tiles along the group's way, pointing two steps on; each step every arrow moves a tile on, the one beside the target going in as a new one comes out of the group, leaving a copy that fades (0.6, then 0.8) and is gone at half a step. Open ground only, never over a glyph. The live loop asks for a frame only when it changes, and none while it is out of view. Holds still under a popup and on a committed plan, and starts again from the still trail. Reduced motion: still. Monochrome and 16 colours: the copy is the arrow's own dim look, then gone |
 
 `fx.focus.light` is held by `tests/dialog.test.ts` and `tests/effects.test.ts`. The interface rows are held by `tests/build-handoff.test.ts` (focus arrow and blink),
-`tests/see-through.test.ts` (the see-through cursor), `tests/build-card.test.ts` (card reveal) and
-`tests/build-breath.test.ts` (popup border).
+`tests/see-through.test.ts` (the see-through cursor), `tests/build-card.test.ts` (card reveal),
+`tests/build-breath.test.ts` (popup border) and `tests/raid-view.test.ts` (the raid's intent trail).
 
 **Simultaneous instances of the same effect are staggered in presentation.** A detonation chain
 resolves inside one tick, and drawn that way it is one frame of noise rather than a chain, so each

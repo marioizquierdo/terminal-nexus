@@ -20,7 +20,7 @@ import { CREDITS_ROW, constructLines, startRow } from "../build/layout.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
-import { cardText } from "../build/card.ts"
+import { cardText, counted } from "../build/card.ts"
 import type { RaidForecast, RaidGroup, RaidTarget } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
@@ -69,14 +69,6 @@ export function bearing(from: Coord, to: Coord): string {
   const angle = Math.atan2(-(to.y - from.y) * 2, to.x - from.x)
   const sector = (Math.round(angle / (Math.PI / 4)) + 8) % 8
   return BEARINGS[sector] ?? "east"
-}
-
-/** A kind's name as a count of it reads: "1 runner", "6 runners", "2 marksmen". */
-function counted(context: Pick<BuildContext, "registry">, contentId: string, count: number): string {
-  const name = cardText(context, contentId).title.toLowerCase()
-  if (count === 1) return `1 ${name}`
-  if (name.endsWith("man")) return `${count} ${name.slice(0, -3)}men`
-  return `${count} ${name}${/(s|x|ch|sh)$/u.test(name) ? "es" : "s"}`
 }
 
 /** What a group goes for, as the panel names it: a building as the menu does ("your Barracks", "your
@@ -153,10 +145,11 @@ const HEAD_FOR = " head for "
 
 /**
  * ***Your troops' target*** in the panel (`troops-post.ts`): under the raid, where the player's troops head as
- * the battle starts, in the raid's voice — how many, then the place, by the name the level gives it:
+ * the battle starts, in the raid's voice — how many, those standing and those the round's waves will bring
+ * (`TroopsIntent`, `src/match/intent.ts`), then the place, by the name the level gives it:
  *
  *   YOUR TROOPS
- *   6 head for the line
+ *   10 head for the line
  *
  * A name too long to follow on one line goes under it, wrapped at words, so no word is cut. Where it is, not
  * the way there: that is the battle's to show.
@@ -165,7 +158,7 @@ export function troopsLines(troops: TroopsGroup, width: number): RaidLine[] {
   const side = playerRole(troops.player)
   const count = troops.units.reduce((sum, entry) => sum + entry.count, 0)
   const place: RaidPart = { text: troops.post.name, role: side, bold: true }
-  // With nobody on the Grid as the round starts, what the Barracks trains heads there all the same.
+  // With nobody to send, none standing and no wave coming, the line still names the place.
   const lead: RaidPart[] = count === 0 ? [{ text: HEAD_FOR.trimStart(), role: side }] : [{ text: String(count), role: side, bold: true }, { text: HEAD_FOR, role: side }]
   const lines: RaidLine[] = [{ indent: 0, parts: [{ text: "YOUR TROOPS", role: "chrome.label" }] }]
   const leadLength = lead.reduce((sum, part) => sum + part.text.length, 0)

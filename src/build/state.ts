@@ -34,8 +34,9 @@ import {
   restartMessage,
 } from "./settings.ts"
 import { formatSettingsExport } from "./settings-export.ts"
-import type { Territory } from "./territory.ts"
-import { strandedByRemoving, territoryOf } from "./territory.ts"
+import type { Crowding, Footing, Territory } from "./territory.ts"
+import { anyInside, crowding, territoryOf } from "./territory.ts"
+import { CARD_TEXT } from "../content/cards.ts"
 import type { ActivitySource } from "./activity.ts"
 import {
   ACTIVITY_EXPORT_ROW,
@@ -119,9 +120,6 @@ export type BuildContext = Readonly<{
    * to the shell untouched (the reducer never reads it). `null` or absent for a first round.
    */
   carried?: MatchState | null
-  /** The player's buildings that train during a Pulse, and what each trains — the mission's own list —
-   *  so a card can say so, at the pace the Experiments set. Absent: nothing trains. */
-  trains?: readonly Readonly<{ structure: string; unit: string }>[]
   /** What else is on the map: survivors of both sides, and a scripted side's structures. */
   field?: readonly FieldEntity[]
   /** The Commanders sitting this round out, and when each is back — handed on to the next round by the
@@ -270,10 +268,10 @@ export type BuildState = Readonly<{
    *  tile (`status.tile`). */
   status: StatusMessage
   nextOrdinal: number
-  /** Index into `context.nexusDraft`, or `null` before a pick. A Nexus power, once dealt, may not be
-   *  skipped (docs/game-design/commander-armies.md), so the **commit** is refused until this stops being
-   *  `null` — and only the commit: everything else proceeds, so an optional popup does not nag like a
-   *  forced one (docs/system-design/input.md). */
+  /** Index into `context.nexusDraft`, or `null` before a pick — or with none made at all: **for now a dealt
+   *  power may be left unpicked** (the owner, round 5: "Nexus Powers should be optional for now, it's easier
+   *  for testing if I can just start a round"). The round then starts without it, nothing is taken, and the
+   *  next Build Phase deals as every one does (docs/game-design/commander-armies.md). */
   nexusPick: number | null
   /** Added to `context.allotment` by whichever option `nexusPick` names. Kept separately rather than
    *  folded into a mutated allotment, for the same reason `spent` is summed rather than tracked: one
@@ -467,31 +465,20 @@ function nextLine(context: BuildContext, state: BuildState): BuildState {
 }
 
 /**
- * Why a command that edits the plan (arm, place, remove, undo) is refused right now, or `null` when
- * none of these apply. Checked in priority order — most-final first, exactly the way `legalityAt`
- * checks affordability before a tile: a player told to answer the confirmation when the real reason
- * is "already committed" would be sent to fix the wrong thing.
+ * Why a command that edits the plan (arm, place, remove, undo) — or opens the Battle Round screen — is
+ * refused right now, or `null` when none of these apply. Checked in priority order — most-final first,
+ * exactly the way `legalityAt` checks affordability before a tile: a player told to answer the
+ * confirmation when the real reason is "already committed" would be sent to fix the wrong thing. So
+ * `armedPreview` draws no ghost behind a popup or the commit question.
  *
- * **A Nexus power still waiting to be picked is not one of these**. Refusing every
- * edit until the pick was made would suit a forced full-screen draft; for a popup the
- * player opens when they choose, it would make every other action nag just as hard. The invariant
- * only has to hold where the Build Phase ends, so that is the only place it is checked —
- * `commitLock`, below. Split rather than loosened, so `armedPreview` still draws no ghost behind an
- * popup or the commit question.
+ * **A Nexus power still waiting to be picked is not one of these**, the commit included: for now a dealt
+ * power may be left unpicked (the owner, round 5: "Nexus Powers should be optional for now"), so the menu's
+ * "(1)" and the Battle Round screen say it is waiting, and nothing refuses for it.
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
   if (state.popup === "battle-round") return status("Start or go back first: [s] start, [esc] back.", "warning")
   if (state.popup !== null) return status("Close the popup first: [esc].", "warning")
-  return null
-}
-
-/** Why the commit is refused right now: everything `editLock` says, and — the one place it is
- *  enforced — a dealt Nexus power that has not been picked (docs/game-design/commander-armies.md). */
-function commitLock(state: BuildState): StatusMessage | null {
-  const edit = editLock(state)
-  if (edit !== null) return edit
-  if (state.nexusPick === null) return status("Pick a Nexus power first: [n] Nexus.", "warning")
   return null
 }
 
@@ -636,16 +623,10 @@ function claimedTiles(
   planned: readonly PlannedPlacement[],
 ): Map<string, string> {
   const claimed = new Map<string, string>()
-  const record = (contentId: string, anchor: Coord): void => {
-    const footprint = context.registry.get(contentId).footprint
-    for (const tile of tilesOf(anchor, footprint)) claimed.set(`${tile.x},${tile.y}`, contentId)
-  }
-  for (const structure of context.standing) record(structure.contentId, structure.anchor)
-  for (const placement of planned) record(placement.contentId, placement.anchor)
-  // A scripted side's structure blocks a placement like the player's own; a unit steps aside for one
-  // when the Pulse starts, so it claims nothing here.
-  for (const entity of context.field ?? []) {
-    if (context.registry.get(entity.contentId).layer === "obstacles") record(entity.contentId, entity.anchor)
+  // Every building on the map, a scripted side's included: it blocks a placement like the player's own. A
+  // unit steps aside for one when the Pulse starts, so it claims nothing here.
+  for (const { contentId, anchor } of buildingsOn(context, planned)) {
+    for (const tile of tilesOf(anchor, context.registry.get(contentId).footprint)) claimed.set(`${tile.x},${tile.y}`, contentId)
   }
   return claimed
 }
@@ -662,10 +643,10 @@ export function catalogItem(context: Pick<BuildContext, "catalog">, contentId: s
   return context.catalog.find((row) => row.contentId === contentId)
 }
 
-/** A structure's name as the menu writes it ("Barracks"), for a sentence that starts with it; the
- *  content's short name for anything the menu does not sell. */
+/** A structure's name as the menu writes it ("Barracks"), for a sentence that starts with it; for anything
+ *  the menu does not sell, its card's title ("Citizen Nexus"), or its short name when it has no card. */
 export function displayName(context: BuildContext, contentId: string): string {
-  return catalogItem(context, contentId)?.label ?? shortName(context, contentId)
+  return catalogItem(context, contentId)?.label ?? CARD_TEXT[contentId]?.title ?? shortName(context, contentId)
 }
 
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
@@ -674,12 +655,30 @@ export function costOf(context: BuildContext, contentId: string): number {
 }
 
 /**
- * **The build range** in force for a plan: the construction territory it gives the player at the "Build
- * range" Experiment's radius (`src/build/territory.ts`) — what a new building must stand inside, what the map
- * shows while one is armed, and what removing a planned building may not cut another off from.
+ * **The build range** in force: the construction territory the standing buildings give the player at the
+ * "Build range" Experiment's radius (`src/build/territory.ts`) — what a new building must have a tile inside,
+ * and what the map shows while one is armed. Nothing planned adds to it: a building gives its range from the
+ * round after it is planned, so the range is the same all phase long.
  */
-export function buildRange(context: BuildContext, state: Pick<BuildState, "planned"> & SettingSource): Territory {
-  return territoryOf(context, state.planned, setting(state, "buildRange"))
+export function buildRange(context: BuildContext, state: SettingSource): Territory {
+  return territoryOf(context, setting(state, "buildRange"))
+}
+
+/** Every building on the map — the player's standing and planned ones, and the raid's — as the room rule
+ *  counts them (`crowding`, `src/build/territory.ts`). */
+export function buildingsOn(context: BuildContext, planned: readonly PlannedPlacement[]): Footing[] {
+  const buildings: Footing[] = [...context.standing, ...planned]
+  for (const entity of context.field ?? []) {
+    if (context.registry.get(entity.contentId).layer === "obstacles") buildings.push(entity)
+  }
+  return buildings
+}
+
+/** A building too close to another, in the bottom line's words: the building it is too near, and why — the
+ *  room that one keeps for its troops, or the room the building being placed would keep for its own. */
+function crowdingReason(context: BuildContext, crowded: Crowding): string {
+  const near = displayName(context, crowded.near.contentId)
+  return crowded.room === "its" ? `too close to the ${near} - its troops need room` : `too close to the ${near} - troops need room`
 }
 
 /**
@@ -692,9 +691,12 @@ export function buildRange(context: BuildContext, state: Pick<BuildState, "plann
  * this" is true wherever the cursor is, and reporting a rock the player could just move off would
  * send them to fix the wrong thing. **The build range comes next, for the same reason**: it is about a
  * region, a rock or a building about one tile, so a ghost far from the range is sent toward the range
- * rather than off the rock it happens to sit on. Every tile of the footprint must be inside it
- * (`src/build/territory.ts`); a tile off the Grid is the Grid's to refuse. `radius` is the "Build range"
- * Experiment's value — its default when the caller has no state to read it from.
+ * rather than off the rock it happens to sit on. One tile of the footprint inside it is enough
+ * (`src/build/territory.ts`); when none is, the first of its tiles on the Grid is named. Then each tile's own
+ * problem — off the Grid, rock, a building already there — and last **the room a building that makes units
+ * keeps** (`crowding`), which names the building it is too near. `radius` and `clearance` are the "Build
+ * range" and "Barracks room" Experiments' values — their defaults when the caller has no state to read them
+ * from.
  */
 export function legalityAt(
   context: BuildContext,
@@ -703,19 +705,22 @@ export function legalityAt(
   anchor: Coord,
   remaining?: number,
   radius: number = defaultValue("buildRange"),
+  clearance: number = defaultValue("spawnClearance"),
 ): Legality {
   const item = catalogItem(context, contentId)
   if (item !== undefined && remaining !== undefined && item.cost > remaining) {
     return { ok: false, reason: `costs ${item.cost}, ${remaining} left` }
   }
   const footprint = context.registry.get(contentId).footprint
-  const territory = territoryOf(context, planned, radius)
+  const territory = territoryOf(context, radius)
   if (!territory.rooted) return { ok: false, reason: "there is no Nexus to build from" }
-  for (const tile of tilesOf(anchor, footprint)) {
-    if (inBounds(context.grid, tile) && !territory.has(tile)) return { ok: false, reason: "outside your build range", tile }
+  const tiles = tilesOf(anchor, footprint)
+  if (!anyInside(territory, anchor, footprint)) {
+    const first = tiles.find((tile) => inBounds(context.grid, tile))
+    return { ok: false, reason: "outside your build range", ...(first === undefined ? {} : { tile: first }) }
   }
   const claimed = claimedTiles(context, planned)
-  for (const tile of tilesOf(anchor, footprint)) {
+  for (const tile of tiles) {
     if (!inBounds(context.grid, tile)) {
       return { ok: false, reason: "it would hang off the Grid" }
     }
@@ -728,6 +733,8 @@ export function legalityAt(
       return { ok: false, reason: `the ${shortName(context, occupant)} is here`, tile }
     }
   }
+  const crowded = crowding(context.registry, buildingsOn(context, planned), contentId, anchor, clearance)
+  if (crowded !== null) return { ok: false, reason: crowdingReason(context, crowded) }
   return { ok: true }
 }
 
@@ -751,8 +758,9 @@ export function legalityAt(
  * sitting on the new Barracks, so the next one lands a gap from it — to its right where the build range
  * reaches that far, and where it does not, the nearest way it does.
  *
- * **A building's spot is inside the build range** (`territory`, `src/build/territory.ts`): arming proposes
- * only a spot Enter would take. Explore Map's one tile passes none, since looking is not building.
+ * **A building's spot is one Enter would take** (`rules`, `src/build/territory.ts`): a tile of it inside the
+ * build range (`territory`), and the room a building that makes units keeps left free, its own and its
+ * neighbours' (`room`). Explore Map's one tile passes neither, since looking is not building.
  *
  * `found: false` when nothing within reach fits: the cursor then steps one tile right and one down,
  * so the player sees something happened, and the preview is drawn as the building rather than the
@@ -769,6 +777,16 @@ export function legalityAt(
  */
 export type ArmingSpot = Readonly<{ tile: Coord; found: boolean }>
 
+/**
+ * The rules a spot is held to beyond fitting on open ground: a tile inside the build range (`territory`), and
+ * the room of a building that makes units (`room`: the building being armed, and the "Barracks room"
+ * Experiment's value). Neither, for Explore Map's tile.
+ */
+export type ArmingRules = Readonly<{
+  territory?: Territory
+  room?: Readonly<{ contentId: string; clearance: number }>
+}>
+
 /** The footprint Explore Map's cursor is placed by, opened from the menu: one tile. */
 export const ONE_TILE: readonly Coord[] = [{ x: 0, y: 0 }]
 
@@ -777,23 +795,27 @@ export function armingSpot(
   planned: readonly PlannedPlacement[],
   footprint: readonly Coord[],
   cursor: Coord,
-  territory?: Territory,
+  rules: ArmingRules = {},
 ): ArmingSpot {
   const size = footprintExtent(footprint)
   const offset = footprintCentre(footprint)
   const claimed = claimedTiles(context, planned)
   const { grid } = context
+  const { territory, room } = rules
+  const buildings = room === undefined ? [] : buildingsOn(context, planned)
 
   const anchorOf = (tile: Coord): Coord => ({ x: tile.x - offset.x, y: tile.y - offset.y })
   const fits = (anchor: Coord): boolean => {
+    let inRange = territory === undefined
     for (const tile of tilesOf(anchor, footprint)) {
       if (!inBounds(grid, tile)) return false
-      if (territory !== undefined && !territory.has(tile)) return false
       const terrainId = grid.tiles[tile.y * grid.width + tile.x]
       if (terrainId !== undefined && TERRAIN[terrainId].impassable) return false
       if (claimed.has(`${tile.x},${tile.y}`)) return false
+      if (!inRange && territory?.has(tile) === true) inRange = true
     }
-    return true
+    if (!inRange) return false
+    return room === undefined || crowding(context.registry, buildings, room.contentId, anchor, room.clearance) === null
   }
   // One free tile between structures: nothing claimed on the ring around the footprint's box.
   const spaced = (anchor: Coord): boolean => {
@@ -858,8 +880,16 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
   if (item === undefined) return null
   const footprint = context.registry.get(item.contentId).footprint
   const anchor = anchorForCursor(state.cursor, footprint)
-  // The same call, budget and build range and all, whichever side is asking.
-  const legality = legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state), setting(state, "buildRange"))
+  // The same call, budget, build range, room and all, whichever side is asking.
+  const legality = legalityAt(
+    context,
+    state.planned,
+    item.contentId,
+    anchor,
+    remaining(context, state),
+    setting(state, "buildRange"),
+    setting(state, "spawnClearance"),
+  )
   const refusal: Refusal | null =
     legality.ok
       ? null
@@ -1011,12 +1041,13 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     handoff: handOff(state, from, entry),
   }
   const footprint = context.registry.get(item.contentId).footprint
-  const spot = armingSpot(context, state.planned, footprint, state.cursor, buildRange(context, state))
+  const room = { contentId: item.contentId, clearance: setting(state, "spawnClearance") }
+  const spot = armingSpot(context, state.planned, footprint, state.cursor, { territory: buildRange(context, state), room })
   const moved = withCursor(context, armed, spot.tile)
   if (!spot.found) {
     // Room nearby, none of it in the build range — or no room at all: said apart, since only the first is
     // answered by moving toward the range the map now shows.
-    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor).found
+    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor, { room }).found
     const why = roomNearby ? "no room in your build range nearby" : `no room within ${TUNING.armSearchTiles} tiles`
     return { ...moved, noSpotFound: true, status: status(`${item.label} selected - ${why}, move to find one.`, "warning") }
   }
@@ -1059,14 +1090,15 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
 }
 
 /** `s`, or the Start Battle Round entry: open the Battle Round confirmation over the Grid, the menu lit behind
- *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
- *  flicker beside the bottom line's reason. With a building armed, the building comes first
+ *  it. Its row flashes "pressed" however it was reached — or, refused (a popup or a committed plan holds
+ *  it), a flicker beside the bottom line's reason. A Nexus power still waiting is no reason: the screen
+ *  says it is waiting, and the round can start without it. With a building armed, the building comes first
  *  (`refuseWhileArmed`). */
 function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
   const refused = refuseWhileArmed(context, state)
   if (refused !== null) return refused
-  const lock = commitLock(state)
+  const lock = editLock(state)
   if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
   return {
     ...pushPopup(toMenu(state), "battle-round", 0),
@@ -1224,26 +1256,6 @@ function place(context: BuildContext, state: BuildState): BuildState {
     ...back,
     ...(back.focus === "menu" ? { ack: acknowledge(state, "pressed", entry) } : {}),
     status: status(`${item.label} placed (resources: ${remaining(context, placed)}) - [u] undo`, "success"),
-  }
-}
-
-/**
- * **Removing or undoing a planned building that another one needs is refused**: without its build range the
- * other would stand outside the range, and the plan would hold a building that could not have been placed
- * (`strandedByRemoving`, `src/build/territory.ts`) — so a building put down only to reach further cannot be
- * taken away once something stands on what it reached. Refused rather than taken down with it, since a
- * removal never takes more than the player pointed at; the bottom line names the first building that needs it
- * and where it stands, so the player can remove that one first. `null` when nothing needs it. A standing
- * building it would cut off is no reason: a standing one keeps working.
- */
-function refuseStranding(context: BuildContext, state: BuildState, target: PlannedPlacement, verb: "remove" | "undo"): BuildState | null {
-  const needing = strandedByRemoving(context, state.planned, target.ordinal, setting(state, "buildRange"))[0]
-  if (needing === undefined) return null
-  const where = footprintCentre(context.registry.get(needing.contentId).footprint)
-  const at = `${needing.anchor.x + where.x},${needing.anchor.y + where.y}`
-  return {
-    ...state,
-    status: status(`Cannot ${verb} the ${displayName(context, target.contentId)}: the ${displayName(context, needing.contentId)} at ${at} needs its build range.`, "warning"),
   }
 }
 
@@ -1599,8 +1611,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (mapMode(state) === "menu") return refuseOnMenu(state)
       const target = plannedAt(context, state.planned, state.cursor)
       if (target === null) return { ...state, status: status("Nothing planned under the cursor.", "warning") }
-      const needed = refuseStranding(context, state, target, "remove")
-      if (needed !== null) return needed
+      // Nothing planned gives build range this phase, so no other building ever needs the one removed.
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
@@ -1613,8 +1624,6 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (lock !== null) return { ...state, status: lock }
       const last = state.planned[state.planned.length - 1]
       if (last === undefined) return { ...state, status: status("Nothing to undo.", "warning") }
-      const needed = refuseStranding(context, state, last, "undo")
-      if (needed !== null) return needed
       return {
         ...state,
         planned: state.planned.slice(0, -1),

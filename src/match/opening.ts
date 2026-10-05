@@ -186,10 +186,11 @@ export function opening(input: OpeningInput): Opening {
   })
   const kept: EntityState[] = placed
     .filter((entry) => entry.carried !== undefined)
-    // A carried producer starts the Pulse on the recipe this Pulse runs: Recall already set it to a full
-    // interval, and this keeps it so when the recipe itself changed between rounds (an Experiment did).
+    // A carried producer starts the Pulse on the recipe this Pulse runs: Recall already set its first wave
+    // `firstTicks` away, and this keeps it so when the recipe itself changed between rounds — a building
+    // given another wave, or none any more.
     .map((entry) => {
-      const { productionCooldown: _cooldown, produced: _produced, ...entity } = entry.carried as EntityState
+      const { productionCooldown: _cooldown, produced: _produced, owed: _owed, ...entity } = entry.carried as EntityState
       // Never more health than its content now allows: a Commander's health is an Experiment while it is
       // tuned, and may have been turned down between rounds. Nothing else ever carries more.
       return { ...entity, hp: Math.min(entity.hp, entry.definition.maxHp), anchor: entry.anchor, ...productionFields(entry.definition) }

@@ -20,7 +20,8 @@
 //   collision mask, one survivor at a time in ordinal order — so the answer never depends on anything
 //   but the state, the registry and the order of the entities;
 // - every entity's transient fields go back to what a fresh one starts with (`freshEntityFields`), which
-//   is what resets a producer's cooldown to a full interval and clears a shot in progress; and
+//   is what starts a producer's waves afresh (its first one its recipe's delay away, none come, nothing
+//   owed) and clears a shot in progress; and
 // - the Pulse's own bookkeeping is cleared: the clock is zero, there is no outcome, no tile is still
 //   cooling from a death. The gameplay stream carries on where it stopped.
 

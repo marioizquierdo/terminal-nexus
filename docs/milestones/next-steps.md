@@ -5,15 +5,18 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Play the Commander's fourth round** (his notes on pull request 60), from
-  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'`: press `3` to arm a Turret — the densely
-  dotted ground is where it may go (the build range) and the outline round it is where it will reach; it can
-  only go on the dots. The panel says where your troops head ("6 head for the line"), and the line's corners are
-  marked; start the battle and watch them stand there with Vasse, her reach glowing around her, her lines
-  beside her. Three Experiments ask what feels right, each under THE MISSION in Settings (`d`): **Build
-  range** (2, 3 or 4), **By the Book** (how much less damage her units take) and **Vasse's voice** (beside her,
-  in the feed, or off). Paste the settings export, and the Activity Logs' **Her voice** filter if a line landed
-  oddly.
+- **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
+  --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
+  given only by what stood when the round opened, and a building needs one tile on it; the dim ticks round
+  each Barracks and Hatchery are the room it keeps, where nothing may stand. Explore Map (`e`) over a marksman
+  draws its range; the raid's trail is a slow line of arrows. Start the battle without picking a Nexus power:
+  four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
+  MISSION in Settings (`d`), **Barracks room** (1 or 2 tiles) is new beside **Build range** and **By the
+  Book**; paste the settings export.
+- **Decide the tall tiles** (his note on range skewed vertically): [the spike's
+  report](../history/reports/2026-10-05-tall-tiles-spike.md) compares tiles as now, square tiles and rows
+  counting double. Recommended: build rows counting double as an Experiment, with square tiles beside it, so
+  he can feel both before the distance rules change; it is a step of its own.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -23,14 +26,13 @@ it is done.*
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
   means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
+- **Open questions** (each has a recommendation in the register): the tall tiles (Q24, above), an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
   letter hotkeys for buildings (Q67), and the exploring click, the wheel step and the light theme's light (Q63;
   Q62 and Q64 are answered).
 - **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
   spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
-  loop's and the Barracks's under THE MISSION (Next round, Barracks trains, Troopers a round),
-  with the Activity logs' **Barracks** filter beside them.
+  loop's under THE MISSION (Next round).
 
 ## Carry-over
 
@@ -56,8 +58,6 @@ Small, none blocking.
   enemy like every unit, from just behind the line.
 - In round 1 she is incoming with the squads, so her card is the incoming one ("Yours, next round"), not her
   own ("Your Commander"); from round 2 on it is hers.
-- With her in the squads, a round 1 with Turrets built ends near 9.8 seconds, before the Barracks's first
-  trooper at the default pace; with nothing built it ends near 11 seconds and the Barracks trains one.
 
 **From step 8A's second round** ([Mario's notes](../history/feedback/2026-10-03-commander-round-2.md)):
 
@@ -96,14 +96,31 @@ Small, none blocking.
 - `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests; the game no longer uses
   it.
 - Building inside a raid's public coverage waits for a raid that stands buildings at the start of a Build Phase.
-- Undo can be refused, rarely: when a later planned building needs the build range of the one being undone.
 - The title screen's motto keeps the lore's word ("Build. Commit. Pulse. Understand. Adapt.").
+
+**From step 8A's fifth round** ([Mario's notes](../history/feedback/2026-10-05-commander-round-5.md)):
+
+- PERIMETER is easier: a Barracks's four troopers at five seconds hold its last round even with nothing built
+  (narrowly, the Nexus at 77 of 400), and Vasse now lives through it in most plans, so her health Experiment
+  matters only in round 3. The raid is not retuned until the tall-tiles question settles movement and range.
+- The battle feed gives each unit of a wave its own line ("5.0s trooper trained" four times), and a swarmer
+  reads "spawnling" there (the feed's short ids); one line a wave would read better.
+- Without chaining, round 1's build range is the Nexus's and the Barracks's alone, and reaching further takes a
+  round a step. A room of one tile leaves a Barracks's corners open, corner to corner; Barracks room 2 with
+  Build range 2 leaves nowhere for a Barracks. The room shows only while a building is armed.
+- Her round-opening line rarely fits now that first contact comes sooner: the moments that matter more come first.
+- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts its Hatchery outside the build range;
+  the tests skip the placement check, so the plan could not be placed in the game as written.
+- At 16 colours each moving arrow is a pair for a moment (its copy looks like itself). The trail is the second
+  animation that never settles, beside a popup's breath: the screen redraws five to seven times a second while
+  it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.
 
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
-- Only a mission's listed buildings train: a barracks in a `grid` scenario still trains nothing.
+- Only the buildings a campaign level offers spawn: a barracks in a `grid` scenario still spawns nothing,
+  and the bench Hatchery there keeps its own breeding.
 
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):

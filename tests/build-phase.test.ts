@@ -107,9 +107,9 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // Two barracks, one behind the other, at tiles that are on screen from the start: 1 arms it where the
   // cursor is, the cursor walks to 26,13 (south of the standing Barracks, inside the build range), Enter
   // places (and leaves the keyboard on the map, where the arming began); 1 arms it again, which moves the
-  // cursor off the new one to the nearest spot inside the build range with a free tile around it — a free
-  // row below it, 26,16, on ground only the first one's range reaches — and one more Enter places the
-  // second there.
+  // cursor off the new one to the nearest spot inside the build range with a free tile around it — 21,13,
+  // by the Nexus, since the first gives no range until it stands — and one more Enter places the second
+  // there.
   // An armed click scrolls the view inside its edge zones and an arrow scrolls at the margin; the
   // parity asserted here is the whole state, camera included, so the tiles are ones where the two
   // come to the same view.
@@ -118,7 +118,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   for (let step = 0; step < 8; step += 1) byKeyboard.build.handleData(RIGHT, byKeyboard.layout)
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
   byKeyboard.build.handleData("1", byKeyboard.layout)
-  assert.deepEqual(byKeyboard.build.state.cursor, { x: 26, y: 16 })
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 21, y: 13 })
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
 
   const byMouse = session()
@@ -137,8 +137,8 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   clickTile({ x: 26, y: 13 })
   clickTile({ x: 26, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  // Arming already put the cursor on 26,16, so one click there is the confirming second click.
-  clickTile({ x: 26, y: 16 })
+  // Arming already put the cursor on 21,13, so one click there is the confirming second click.
+  clickTile({ x: 21, y: 13 })
   assert.equal(byMouse.build.state.focus, "grid", "a placement armed on the map left the map")
 
   const script: readonly BuildCommand[] = [
@@ -410,34 +410,37 @@ test("a misclick costs one undo, which is what makes a two-click placement revis
 test("legality: an illegal placement is refused with a reason and nothing is moved to fit", () => {
   const { build, layout } = session()
   const context = starterContext()
-  // A Turret north of the Nexus first, so the build range reaches the north-west wall: no rock stands
-  // inside the range the map opens with.
-  build.handleData("3", layout)
-  moveTo(build, { x: 19, y: 7 })
-  build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 1)
+  // A build range of 4, so the Nexus's own range reaches the row under the north-west wall: no rock stands
+  // inside the range the map opens with at 3, and a building planned now gives none until it stands.
+  build.dispatch({ kind: "experiment-adjust", field: "buildRange", step: 1 })
   build.handleData("1", layout)
 
   // The north-west wall: rock at 8,5 through 21,5.
   moveTo(build, { x: 19, y: 5 })
   const cursorBefore = { ...build.state.cursor }
   build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 1)
+  assert.equal(build.state.planned.length, 0)
   assert.match(build.state.status.text, /rock in the way at 18,5/)
   assert.deepEqual(build.state.cursor, cursorBefore, "the cursor did not slide somewhere legal")
 
   // The standing Grid Nexus, at 17,10 through 19,11.
   moveTo(build, { x: 18, y: 10 })
   build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 1)
+  assert.equal(build.state.planned.length, 0)
   assert.match(build.state.status.text, /the nexus is here/)
 
   // Beyond the build range: the open ground east of the base.
   moveTo(build, { x: 34, y: 14 })
   build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 1)
+  assert.equal(build.state.planned.length, 0)
   assert.match(build.state.status.text, /outside your build range at 33,14/)
   assert.deepEqual(build.state.cursor, { x: 34, y: 14 }, "the cursor did not slide into the range")
+
+  // Beside the standing Barracks, in the room it keeps for its troops.
+  moveTo(build, { x: 29, y: 10 })
+  build.handleData(ENTER, layout)
+  assert.equal(build.state.planned.length, 0)
+  assert.match(build.state.status.text, /too close to the Barracks - its troops need room/)
 
   // The Grid's own edge, where a 3x2 footprint hangs off it: a Nexus standing at the north-west corner, so the
   // range reaches the edge.
@@ -448,8 +451,8 @@ test("legality: an illegal placement is refused with a reason and nothing is mov
   // And a legal one, for contrast: the refusals above are about the tile, not about placement.
   moveTo(build, { x: 26, y: 13 })
   build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 2)
-  const placed = build.state.planned[1]!
+  assert.equal(build.state.planned.length, 1)
+  const placed = build.state.planned[0]!
   assert.ok(
     legalityAt(context, [], placed.contentId, placed.anchor).ok,
     "what was planned is legal on its own terms",
@@ -472,13 +475,13 @@ test("a plan is revisable: remove under the cursor, and undo the last one", () =
   const { build, layout } = session()
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }, { kind: "arm", index: 0 }])
-  moveTo(build, { x: 26, y: 16 })
+  moveTo(build, { x: 21, y: 13 })
   build.run([{ kind: "place" }])
   assert.equal(build.state.planned.length, 2)
   build.handleData("u", layout)
   assert.equal(build.state.planned.length, 1)
   // Backspace, on the Grid, removes whatever is under the cursor, wherever in the plan it came from.
-  build.run([{ kind: "focus", target: "grid" }, { kind: "move-cursor", dx: 0, dy: -3 }])
+  build.run([{ kind: "focus", target: "grid" }, { kind: "move-cursor", dx: 5, dy: 0 }])
   build.handleData(String.fromCharCode(127), layout)
   assert.equal(build.state.planned.length, 0)
   build.handleData("u", layout)
@@ -537,8 +540,9 @@ test("spending is exactly as revisable as the plan: placing spends, removing and
   build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   assert.equal(spent(context, build.state), barracks.cost)
 
+  // A Turret east of it, inside the standing Barracks's range and clear of both Barracks's room.
   build.handleData("3", layout)
-  moveTo(build, { x: 30, y: 13 })
+  moveTo(build, { x: 29, y: 12 })
   build.run([{ kind: "place" }])
   assert.equal(spent(context, build.state), barracks.cost + turret.cost)
   assert.equal(remaining(context, build.state), STARTER_ALLOTMENT - barracks.cost - turret.cost)
@@ -546,7 +550,7 @@ test("spending is exactly as revisable as the plan: placing spends, removing and
   // Undo refunds the last one exactly, and Backspace refunds whichever is under the cursor.
   build.handleData("u", layout)
   assert.equal(spent(context, build.state), barracks.cost)
-  build.run([{ kind: "focus", target: "grid" }, { kind: "move-cursor", dx: -4, dy: 0 }])
+  build.run([{ kind: "focus", target: "grid" }, { kind: "move-cursor", dx: -3, dy: 1 }])
   build.handleData(String.fromCharCode(127), layout)
   assert.equal(spent(context, build.state), 0)
   assert.equal(remaining(context, build.state), STARTER_ALLOTMENT, "the allotment came back whole")
@@ -558,7 +562,7 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
   // Spend down to less than the barracks costs, then try a barracks.
   build.handleData("1", layout)
   build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }, { kind: "arm", index: 0 }])
-  moveTo(build, { x: 26, y: 16 })
+  moveTo(build, { x: 21, y: 13 })
   build.run([{ kind: "place" }])
   const before = build.state
   const left = remaining(context, build.state)
@@ -578,20 +582,19 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
 test("affordability is reported before a tile problem, because it is true wherever the cursor is", () => {
   const context = starterContext()
   // Onto rock, with a budget that cannot pay for it either. Reporting the rock would send the
-  // player to move the cursor, which would not help. The rock of the north-west wall, with a Turret planned
-  // north of the Nexus so the build range reaches it.
-  const turret: readonly PlannedPlacement[] = [{ ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 19, y: 7 } }]
+  // player to move the cursor, which would not help. The rock of the north-west wall, at a build range of 4,
+  // which brings the row under it into the Nexus's range.
   const anchor = anchorForCursor({ x: 19, y: 5 }, context.registry.get(STARTER_CATALOG[0]!.contentId).footprint)
-  const broke = legalityAt(context, turret, STARTER_CATALOG[0]!.contentId, anchor, 5)
+  const broke = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 5, 4)
   assert.equal(broke.ok, false)
   assert.match(broke.ok === false ? broke.reason : "", /costs 40, 5 left/)
   // With money, the same tile reports the rock, and says which tile it means.
-  const rich = legalityAt(context, turret, STARTER_CATALOG[0]!.contentId, anchor, 100)
+  const rich = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 100, 4)
   assert.equal(rich.ok, false)
   assert.match(rich.ok === false ? rich.reason : "", /rock in the way/)
   assert.deepEqual(rich.ok === false ? rich.tile : null, { x: 18, y: 5 })
-  // The build range is reported before a tile too, for the same reason: without the Turret the same rock is
-  // outside the range, and moving off the rock would not help either.
+  // The build range is reported before a tile too, for the same reason: at 3 the same rock is outside the
+  // range, and moving off the rock would not help either.
   const beyond = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 100)
   assert.match(beyond.ok === false ? beyond.reason : "", /outside your build range/)
   assert.deepEqual(beyond.ok === false ? beyond.tile : null, { x: 18, y: 5 })
