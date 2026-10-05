@@ -135,8 +135,8 @@ export const STARTER_MAP: MapDefinition = {
 //
 // The Ground Experiment (the Commander round 6) asks how a reach and a walk should look when a terminal cell is
 // about twice as tall as it is wide. Its test level (`ground-test`, `armies/vasse/army.json`) puts two raids the
-// same distance from the Nexus on screen — one 12 rows above its top edge, one 24 columns past its right edge —
-// and asks which arrives first. So this ground is open: plain, a few rocks as landmarks well off both ways in,
+// same distance from the Nexus on screen — one 9 rows above its top edge, one 18 columns past its right edge —
+// and asks how fast each one comes. So this ground is open: plain, a few rocks as landmarks well off both ways in,
 // and nothing between either raid and the base. The owner: "the map is not important, we will make new maps
 // later. What matters is how intuitive it feels."
 //
@@ -146,26 +146,28 @@ export const STARTER_MAP: MapDefinition = {
 // off the screen and walk into it, and the race would be watched from its middle. Here the camera has no room to
 // move up or down, so both raids, the Nexus and the ground between them are in view from the Build Phase's first
 // frame to the battle's last — under every Ground choice that draws a tile one column wide. (Square tiles draw it
-// two: the eastern raid then really is twice as far on screen, and walks in from the right.)
+// two: the eastern raid then really is twice as far on screen, and walks in from the right.) The Nexus stands in
+// the middle rows, not low, so a Turret placed beside it has the six rows its reach needs below it as well as
+// above: a reach cut off by the map's edge would hide the very shape the level is for.
 
 /** The open ground's size, in tiles: 60 across, and the 18 rows the view has at 80 x 24. */
 export const OPEN_GROUND_SIZE = { width: 60, height: 18 } as const
 
 /**
- * The Grid Nexus's anchor on open ground: its three columns 17 to 19, its two rows 15 and 16. Low on the map, so
- * the 12 rows above it hold the northern raid with two rows to spare above it, and far enough west that the
- * eastern raid, 24 columns past its right edge, still stands inside the view at 80 x 24.
+ * The Grid Nexus's anchor on open ground: its three columns 17 to 19, its two rows 10 and 11. The 9 rows above it
+ * hold the northern raid, its front on row 1; the 6 below hold a Turret's whole reach; and it stands far enough
+ * west that the eastern raid, 18 columns past its right edge, is well inside the view at 80 x 24.
  */
-const OPEN_GROUND_NEXUS: Coord = { x: 17, y: 15 }
+const OPEN_GROUND_NEXUS: Coord = { x: 17, y: 10 }
 
 /** Landmarks, not obstacles: none stands on the ground straight north of the Nexus or straight east of it, nor
  *  where the player can build, so a rock never decides which raid arrives first. */
 const OPEN_GROUND_ROCKS: readonly Rect[] = [
   { x: 4, y: 4, width: 5, height: 1 }, // a low wall in the north-west
-  { x: 7, y: 9, width: 2, height: 2 }, // a pillar west of the way down from the north
+  { x: 5, y: 15, width: 2, height: 2 }, // a pillar in the south-west, clear of the base
   { x: 29, y: 5, width: 2, height: 2 }, // a pillar between the two ways in, out of both
   { x: 51, y: 3, width: 3, height: 2 }, // the far north-east, past where the eastern raid starts
-  { x: 55, y: 12, width: 2, height: 3 }, // behind the eastern raid
+  { x: 55, y: 12, width: 2, height: 3 }, // far behind the eastern raid
   { x: 2, y: 13, width: 2, height: 2 }, // the far west, beyond the Barracks
 ]
 
@@ -186,7 +188,7 @@ export function openGroundGrid(): GridTerrain {
  *  neither raid is nearer to it than to the Nexus, and its troopers come out five seconds into every round. */
 export const OPEN_GROUND_STANDING: readonly StandingStructure[] = [
   { contentId: "structure.citizen.nexus", anchor: OPEN_GROUND_NEXUS },
-  { contentId: "structure.citizen.barracks", anchor: { x: 9, y: 15 } },
+  { contentId: "structure.citizen.barracks", anchor: { x: 9, y: 10 } },
 ]
 
 /** Open ground, whole: a plain solid edge, and the cursor on the Nexus's centre tile, as on the starter map. */

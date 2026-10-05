@@ -1,7 +1,7 @@
 // The Ground test (`ground-test`, the last level of Vasse's campaign, `armies/vasse/army.json`): the place to feel
 // the Ground Experiment (the Commander round 6). A terminal cell is about twice as tall as it is wide, and the rules
-// count a row like a column, so the level puts two raids the same distance from the Nexus on screen — one 12 rows
-// above its top edge, one 24 columns past its right edge — and asks which arrives first. Under the rules as they
+// count a row like a column, so the level puts two raids the same distance from the Nexus on screen — one 9 rows
+// above its top edge, one 18 columns past its right edge — and asks how fast each one comes. Under the rules as they
 // are the northern raid does; with rows counting double the two arrive together. Round 2 brings slingers the same
 // two ways, so a ranged reach is seen in battle. The playable page opens it under each Ground choice
 // (`scripts/demos/ground.json`).
@@ -119,20 +119,20 @@ test("the route opens the Ground test, a level of Vasse's campaign whose army va
   assert.equal(PERIMETER_LEVEL.map, "starter")
 })
 
-test("round 1: two raids the same distance from the Nexus on screen, 12 rows north and 24 columns east, the same kind and count, on the same tick, both going for the Nexus", () => {
+test("round 1: two raids the same distance from the Nexus on screen, 9 rows north and 18 columns east, the same kind and count, on the same tick, both going for the Nexus", () => {
   const level = groundTest()
   const context = openRound(level, 1)
   const nexus = boxOf(nexusTiles(context))
   const { north, east } = raidOf(level, context)
 
-  // Due north: over the Nexus's columns, its front row 12 rows above the Nexus's top edge.
+  // Due north: over the Nexus's columns, its front row 9 rows above the Nexus's top edge.
   const above = boxOf(north.tiles)
   assert.ok(above.left >= nexus.left && above.right <= nexus.right, `the northern raid stands at columns ${above.left} to ${above.right}, not over the Nexus`)
-  assert.equal(nexus.top - above.bottom, 12, "the northern raid's front is not 12 rows above the Nexus")
-  // Due east: level with the Nexus's rows, its front 24 columns past the Nexus's right edge.
+  assert.equal(nexus.top - above.bottom, 9, "the northern raid's front is not 9 rows above the Nexus")
+  // Due east: level with the Nexus's rows, its front 18 columns past the Nexus's right edge.
   const beside = boxOf(east.tiles)
   assert.ok(beside.top >= nexus.top && beside.bottom <= nexus.bottom, `the eastern raid stands at rows ${beside.top} to ${beside.bottom}, not level with the Nexus`)
-  assert.equal(beside.left - nexus.right, 24, "the eastern raid's front is not 24 columns past the Nexus")
+  assert.equal(beside.left - nexus.right, 18, "the eastern raid's front is not 18 columns past the Nexus")
   // A row is about two columns tall: the same distance on screen.
   assert.equal(2 * (nexus.top - above.bottom), beside.left - nexus.right)
 
@@ -158,8 +158,8 @@ test("nothing stands in either raid's way, and at 80 x 24 the battle's camera sh
     for (let y = nexus.top; y <= nexus.bottom; y += 1) assert.ok(plain(x, y), `rock at ${x},${y}, on the way in from the east`)
   }
   // Each raid's path to the Nexus is the straight one, a tile a step.
-  assert.equal(north.path.length, 11)
-  assert.equal(east.path.length, 23)
+  assert.equal(north.path.length, 8)
+  assert.equal(east.path.length, 17)
 
   // A battle centres its camera on the Nexus. Open ground is as tall as the view at the floor, so that camera
   // has nowhere to go up or down, and everything the race needs is on screen from the battle's first frame.
@@ -182,10 +182,10 @@ function screenDistance(tile: Coord, nexus: Box): number {
 
 /**
  * Round 1's battle under a Ground choice, with nothing built: the tick each raid's front first comes within 12 columns
- * of the Nexus on screen — halfway in from the 24 it starts at, and before the player's troops meet either raid, so
- * it is the walk alone that is timed, not who the troops reach first.
+ * of the Nexus on screen — a third of the way in from the 18 it starts at, before the player's troops step out to
+ * either raid, so it is the walk alone that is timed, not who the troops reach first.
  */
-function halfwayIn(ground: Ground) {
+function thirdIn(ground: Ground) {
   const level = groundTest()
   const context = openRound(level, 1)
   const resolved = level.play.startPulse(context, opened(context, ground))
@@ -198,39 +198,40 @@ function halfwayIn(ground: Ground) {
   assert.deepEqual([north.size, east.size], [2, 2])
   const start = (group: ReadonlySet<number>): number =>
     Math.min(...(states[0]?.entities ?? []).filter((entity) => group.has(entity.ordinal)).map((entity) => screenDistance(entity.anchor, nexus)))
-  assert.deepEqual([start(north), start(east)], [24, 24], "the two raids do not start the same distance away on screen")
+  assert.deepEqual([start(north), start(east)], [18, 18], "the two raids do not start the same distance away on screen")
   const reached = (group: ReadonlySet<number>): number =>
     states.find((state) => state.entities.some((entity) => group.has(entity.ordinal) && screenDistance(entity.anchor, nexus) <= 12))?.tick ??
     Number.POSITIVE_INFINITY
   const [fromNorth, fromEast] = [reached(north), reached(east)]
-  assert.ok(fromNorth < Number.POSITIVE_INFINITY && fromEast < Number.POSITIVE_INFINITY, "a raid never came halfway in")
+  assert.ok(fromNorth < Number.POSITIVE_INFINITY && fromEast < Number.POSITIVE_INFINITY, "a raid never came a third of the way in")
   return { resolved, states, fromNorth, fromEast }
 }
 
 test("under the rules as they are, the northern raid comes twice as fast as the eastern one", () => {
-  const { resolved, states, fromNorth, fromEast } = halfwayIn("as-now")
-  // A row counts as a column, so 6 rows down is half the walk of 12 columns across.
-  assert.ok(2 * fromNorth <= fromEast + 12, `the north came halfway in at tick ${fromNorth}, the east at ${fromEast}`)
-  // A plan that builds nothing still holds round 1 with the Nexus whole, so the race is watched, not lost, and a
-  // route reaches round 2.
+  const { resolved, states, fromNorth, fromEast } = thirdIn("as-now")
+  // A row counts as a column, so the three rows down to a third of the way are half the walk of the six columns
+  // across: the north is there a second or more before the east.
+  assert.ok(2 * fromNorth <= fromEast + 6 && fromNorth + 12 <= fromEast, `the north came a third of the way in at tick ${fromNorth}, the east at ${fromEast}`)
+  // A plan that builds nothing still holds round 1 — the Nexus is struck, and stands — so the race is watched, not
+  // lost, and a route reaches round 2.
   assert.equal(resolved.mission?.verdict.kind, "continue")
   const standing = states.at(-1)?.entities.find((entity) => entity.contentId === NEXUS)
-  assert.equal(standing?.hp, FIXTURE_REGISTRY.get(NEXUS).maxHp)
+  assert.ok((standing?.hp ?? 0) > 0, "the Nexus fell in round 1")
 })
 
 test("with a row counting two columns the two raids come as fast as each other; sideways doubled, both as fast as the north did", () => {
-  const now = halfwayIn("as-now")
-  const rows = halfwayIn("rows-x2")
-  const sideways = halfwayIn("sideways-x2")
-  // The same distance on screen is the same walk, within a second, under either count. Not exactly: a rate's
+  const now = thirdIn("as-now")
+  const rows = thirdIn("rows-x2")
+  const sideways = thirdIn("sideways-x2")
+  // The same distance on screen is the same walk, within half a second, under either count. Not exactly: a rate's
   // remainder is dropped each step, as it always was, so a raider's step across and its step down round apart.
   for (const [name, run] of [["rows x2", rows], ["sideways x2", sideways]] as const) {
-    assert.ok(Math.abs(run.fromNorth - run.fromEast) <= 12, `${name}: the north came halfway in at tick ${run.fromNorth}, the east at ${run.fromEast}`)
+    assert.ok(Math.abs(run.fromNorth - run.fromEast) <= 6, `${name}: the north came a third of the way in at tick ${run.fromNorth}, the east at ${run.fromEast}`)
   }
   // Rows counting double walk the north as slowly as the east always walked; sideways doubled walks the east as
   // fast as the north always walked.
-  assert.ok(Math.abs(rows.fromNorth - now.fromEast) <= 12, `rows x2 brought the north at tick ${rows.fromNorth}; as now the east came at ${now.fromEast}`)
-  assert.ok(Math.abs(sideways.fromEast - now.fromNorth) <= 12, `sideways x2 brought the east at tick ${sideways.fromEast}; as now the north came at ${now.fromNorth}`)
+  assert.ok(Math.abs(rows.fromNorth - now.fromEast) <= 6, `rows x2 brought the north at tick ${rows.fromNorth}; as now the east came at ${now.fromEast}`)
+  assert.ok(Math.abs(sideways.fromEast - now.fromNorth) <= 6, `sideways x2 brought the east at tick ${sideways.fromEast}; as now the north came at ${now.fromNorth}`)
 })
 
 test("round 2 brings ranged units from both directions, the same distance away, with melee beside them", () => {
@@ -245,8 +246,8 @@ test("round 2 brings ranged units from both directions, the same distance away, 
     assert.equal(group.tick, 0)
   }
   assert.deepEqual(north.units, east.units)
-  assert.equal(nexus.top - boxOf(north.tiles).bottom, 12)
-  assert.equal(boxOf(east.tiles).left - nexus.right, 24)
+  assert.equal(nexus.top - boxOf(north.tiles).bottom, 9)
+  assert.equal(boxOf(east.tiles).left - nexus.right, 18)
   // The round has its own words for the Battle Round screen, as round 1 does.
   assert.match(context.roundText?.[2] ?? "", /[Ss]lingers/u)
   assert.match(context.roundText?.[1] ?? "", /how fast each one comes/u)
