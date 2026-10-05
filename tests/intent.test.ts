@@ -12,12 +12,12 @@ import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { footprintDistance } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
-import { foreseeIntents, foreseeRound, recall, resolveMissionPulse, restoreCommanders } from "../src/match/index.ts"
+import { foreseeIntents, foreseeRound, recall, resolveMissionPulse, restoreCommanders, spawningRegistry } from "../src/match/index.ts"
 import type { Absence, Arrival, MissionPulseInput, StructurePlacement } from "../src/match/index.ts"
 import { fallen } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
-import { buildSide, keys } from "./build-helpers.ts"
+import { ENTER, buildSide, keys } from "./build-helpers.ts"
 import { isTroops } from "../src/view/troops-post.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
@@ -253,12 +253,34 @@ test("the shell's forecast carries the player's troops after the raid's groups: 
   const troops = raid.at(-1)
   assert.ok(troops !== undefined && isTroops(troops), "the forecast's last group is not the player's troops")
   assert.deepEqual([troops.player, troops.group, troops.target, troops.path.length, troops.post.name, troops.post.tiles.length], ["A", "your troops", null, 0, "the line", 10])
-  // Round 1's squads: Vasse and the two squads that walk out of the annex.
+  // Round 1's squads — Vasse and the two squads that walk out of the annex — and the four troopers the Barracks
+  // on the map sends five seconds in, who head for the line as soon as they are out: seven troopers in all.
   assert.deepEqual(
     new Map(troops.units.map((entry) => [entry.contentId, entry.count])),
-    new Map([["unit.citizen.vasse", 1], ["unit.citizen.trooper", 3], ["unit.citizen.marksman", 2]]),
+    new Map([["unit.citizen.vasse", 1], ["unit.citizen.trooper", 7], ["unit.citizen.marksman", 2]]),
   )
+  // Where they stand as the round starts is the squads' alone: a wave stands nowhere until it comes.
+  assert.equal(troops.tiles.length, 6)
+  // A Barracks planned this round sends its wave too, and the count says so.
+  keys(side, "1", ENTER)
+  assert.equal(side.build.state.planned.length, 1, "the Barracks was not planned")
+  const more = (side.build.raid() ?? []).find(isTroops)
+  assert.equal(more?.units.find((entry) => entry.contentId === "unit.citizen.trooper")?.count, 11)
   assert.ok(raid.slice(0, -1).every((group) => group.player === "B" && !isTroops(group)))
+})
+
+test("the troops foreseen count every wave a building has time to send in the round, and no more", () => {
+  const [input] = rounds(PLANS[0] ?? [])
+  assert.ok(input !== undefined)
+  const troopers = (registry: MissionPulseInput["registry"]): number | undefined =>
+    foreseeRound({ ...input, registry }).troops?.units.find((entry) => entry.contentId === "unit.citizen.trooper")?.count
+  // On content that spawns nothing, the squads' three alone.
+  assert.equal(troopers(registry), 3)
+  // Four waves of four, ten seconds apart from five seconds in: three come inside a thirty-second round, and the
+  // fourth would come at thirty-five.
+  const fourWaves = spawningRegistry(registry, { [BARRACKS]: { unit: "unit.citizen.trooper", perWave: 4, waves: 4, secondsBetween: 10 } }, 60)
+  assert.equal(PERIMETER.pulseTicks, 360)
+  assert.equal(troopers(fourWaves), 3 + 3 * 4)
 })
 
 test("foreseeing is pure: the same round and plan give the same answer, and nothing handed in changes", () => {

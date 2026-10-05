@@ -101,7 +101,7 @@ test("a building's card: its glyphs, its title and subtitle, its description, it
     assert.match(lines[CARD_FIRST_ROW] as string, /^\[b\] +Barracks/)
     // The subtitle sits where "to build" was (owner: "use that subtitle space for the subtitle").
     assert.match(lines[CARD_FIRST_ROW + 1] as string, /^\|_\| +Trains troopers +$/)
-    assert.match(card, /Trains a trooper every few/)
+    assert.match(card, /Trains a wave of troopers,/)
     assert.match(card, /^COST +40$/m)
     assert.match(card, /^HEALTH +120$/m)
     assert.match(card, /^SIZE +3x2$/m)

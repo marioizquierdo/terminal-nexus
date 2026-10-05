@@ -284,25 +284,26 @@ test("under the raid, the panel says where the player's troops head, in the raid
   const side = perimeter()
   const troops = troopsNamed(side, "the line")
   const text = (lines: ReturnType<typeof troopsLines>): string[] => lines.map((line) => `${" ".repeat(line.indent)}${line.parts.map((part) => part.text).join("")}`)
-  assert.deepEqual(text(troopsLines(troops, 27)), ["YOUR TROOPS", "6 head for the line"])
+  // Ten: the six on the map as the round opens, and the four the Barracks sends five seconds in.
+  assert.deepEqual(text(troopsLines(troops, 27)), ["YOUR TROOPS", "10 head for the line"])
   // In the player's colour, the count and the place bold, as the raid's count and target are.
   const [, line] = troopsLines(troops, 27)
   assert.deepEqual(line?.parts.map((part) => [part.role, part.bold === true]), [["player.a", true], ["player.a", false], ["player.a", true]])
   // A place too long for the line goes under it, wrapped at words.
   const long = troopsNamed(side, "the open ground before the old survey annex")
   const wrapped = text(troopsLines(long, 27))
-  assert.deepEqual(wrapped.slice(0, 2), ["YOUR TROOPS", "6 head for"])
+  assert.deepEqual(wrapped.slice(0, 2), ["YOUR TROOPS", "10 head for"])
   assert.equal(wrapped.slice(2).map((part) => part.trim()).join(" "), "the open ground before the old survey annex")
   for (const part of wrapped) assert.ok(part.length <= 27, `"${part}" runs past the panel`)
-  // Nobody on the Grid as the round opens: what the Barracks trains heads there all the same.
+  // Nobody to send, none standing and no wave coming: the line still names the place.
   assert.deepEqual(text(troopsLines({ ...troops, units: [] }, 27)), ["YOUR TROOPS", "head for the line"])
   // Short of room, the raid comes first: its kinds give way to the troops' lines, then the blank line before
   // them; never a whole group of the raid, so then the troops' lines are left out.
   const forecast = side.build.raid() ?? []
   const lines = (room: number): string[] => text(raidLines(side.build.round, forecast, { x: 18, y: 10 }, 27, room))
-  assert.deepEqual(lines(7), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks", "", "YOUR TROOPS", "6 head for the line"])
-  assert.deepEqual(lines(6), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "", "YOUR TROOPS", "6 head for the line"])
-  assert.deepEqual(lines(5), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "YOUR TROOPS", "6 head for the line"])
+  assert.deepEqual(lines(7), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks", "", "YOUR TROOPS", "10 head for the line"])
+  assert.deepEqual(lines(6), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "", "YOUR TROOPS", "10 head for the line"])
+  assert.deepEqual(lines(5), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "YOUR TROOPS", "10 head for the line"])
   assert.deepEqual(lines(4), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks"])
 })
 
