@@ -15,7 +15,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { groundTileWidth, openingSettings } from "../build/state.ts"
+import { groundTileWidth, nexusTile, openingSettings } from "../build/state.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
 import { readLaunch } from "../cli/launch.ts"
 import type { LaunchText } from "../cli/launch.ts"
@@ -159,7 +159,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   let leftBy: "quit" | null = null
   const build = new BuildSession({
     context,
-    cursor: options.cursor ?? STARTER_START_CURSOR,
+    cursor: options.cursor ?? nexusTile(context) ?? STARTER_START_CURSOR,
     viewport: layout.viewport,
     onQuit: () => {
       leftBy = "quit"

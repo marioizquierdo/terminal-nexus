@@ -13,7 +13,7 @@ import { isGated, visibleRange } from "../build/camera.ts"
 import type { TerminalSize, TileWidth } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
-import { groundTileWidth, openingSettings } from "../build/state.ts"
+import { groundTileWidth, nexusTile, openingSettings } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { hasTrail } from "../view/build-grid.ts"
 import { BuildAnimation, livePresentation, nextFrameDelay } from "../view/build-live.ts"
@@ -223,7 +223,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
 
   const build = new BuildSession({
     context,
-    cursor: STARTER_START_CURSOR,
+    // On the level's own Nexus, as every later round opens (`moveOn`); the starter map's spot without one.
+    cursor: nexusTile(context) ?? STARTER_START_CURSOR,
     viewport: layout.viewport,
     onQuit: leave,
     onSettingsChange: saveSettings,

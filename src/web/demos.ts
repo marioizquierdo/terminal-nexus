@@ -1,6 +1,8 @@
 // A pull request's demos for the browser playtest page (`bun scripts/build-web.mjs --demos <file>`): each a
 // button that opens the game where a question is, and says what to try there. Checked here, at build time, as the
-// page will read them — a demo the page could not follow would open somewhere else and say nothing.
+// page will read them — a demo the page could not follow would open somewhere else and say nothing, and one whose
+// settings text names a setting this build does not have, or a value it does not take, would quietly open with
+// the default instead.
 //
 // A demos file is a list of `{ "label", "try", "at"?, "keys"?, "settings"? }`:
 //
@@ -14,9 +16,11 @@
 // `at`, `keys` and `settings` are a launch's parts (`src/cli/launch.ts`), read the way the page reads them.
 // Not reached by the page: its demos are stamped into it already checked.
 
+import { importSettings } from "../build/settings-export.ts"
 import { LAUNCH_PARTS, readLaunch } from "../cli/launch.ts"
 import type { LaunchText } from "../cli/launch.ts"
 import { DEFAULT_LEVEL_ROUTE } from "../cli/route.ts"
+import { DEFAULT_SETTINGS } from "../settings/types.ts"
 
 export type Demo = Readonly<{ label: string; try: string }> & LaunchText
 
@@ -44,6 +48,12 @@ export function checkDemos(list: unknown, source: string): readonly Demo[] {
     // A route or a key script the page cannot read would open the Build Phase at its beginning and say nothing.
     const [problem] = problems
     if (problem !== undefined) throw new Error(`${which}'s ${problem.part}: ${problem.error.message}`)
+    // A settings text is read leniently where a person pastes one, skipping what this build does not know; a demo's
+    // is this build's own, so anything skipped is a mistake.
+    const skipped = settings === undefined ? [] : importSettings(settings, DEFAULT_SETTINGS).ignored
+    if (skipped.length > 0) {
+      throw new Error(`${which}'s settings: ${skipped.join(", ")} is not a setting this build has, or not a value it takes`)
+    }
     return {
       label: demo["label"],
       try: demo["try"],
