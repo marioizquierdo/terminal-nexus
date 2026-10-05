@@ -49,14 +49,23 @@
 //   - **the intro highlight breathes**: while the dialog shows a line of the round's scene, the ring of
 //     light around what the line looks at breathes from the frame that first showed that line, at the
 //     border's own "Popup pulse" pace and on its slow frames (`src/view/build-dialog.ts`). Reduced
-//     motion, 16 colours, monochrome and the Experiment at 0 hold it still.
+//     motion, 16 colours, monochrome and the Experiment at 0 hold it still;
+//   - **the raid's trail moves**: while the raid's intent is on the map and nothing holds it still, its
+//     arrows step a tile on toward what the raid goes for every `trailStepMs`, each leaving a copy behind
+//     that fades (`trailMarks`, `src/view/build-grid.ts`), timed from the first frame that drew it moving
+//     (`TrailClock`). It never settles, like the border's breath, so while it is the only thing moving the
+//     frame timer asks for a frame only when the trail next looks different (`nextTrailChange`) — three
+//     times a step where colours blend, twice at 16 colours and in monochrome — never every frame. A popup
+//     open, reduced motion and a committed plan hold it still, and it asks for nothing then; it moves again
+//     from the still trail when they let it go.
 //
 // The numbers in backticks are the owner's tuned values (`src/build/tuning.ts`), which a `BuildAnimation`
 // is handed when it is made (a test hands it others).
 //
 // `busyUntil` says whether anything is still moving, and until when: the live loop runs its frame
 // timer only while it is not `null`, and otherwise draws once per input, as the screen always has.
-// `frameMs`, when present, says the timer may wait that long between frames (the breath alone).
+// `frameMs`, when present, says the timer may wait that long before the next frame (the breath, or the
+// trail, alone).
 //
 // Under reduced motion both snap: the view jumps and the cursor jumps.
 //
@@ -83,6 +92,7 @@ import { placementRequest, removalSchedule } from "./placement.ts"
 import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
+import { nextTrailChange } from "./build-grid.ts"
 
 /**
  * What a live frame hands the composer — the fields of `BuildCompositionInput` that depend on time, and
@@ -103,13 +113,14 @@ export type LivePresentation = Pick<
   | "cardReveal"
   | "popupBorder"
   | "dialogLight"
+  | "raidTrail"
 >
 
 /** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
  *  own once they have finished moving — and when the last thing still moving ends, or `null` when
- *  nothing is. `frameMs` is present only when the one thing moving is slow enough to be drawn less often
- *  than every frame — a popup border's breath — and says how often: `busyUntil` is then that long from
- *  now, the next frame the breath needs. */
+ *  nothing is. `frameMs` is present only when what is moving is slow enough to be drawn less often than
+ *  every frame — a popup border's breath, the raid's trail — and says how long until the next frame it
+ *  needs: `busyUntil` is then that long from now. */
 export type LiveFrame = LivePresentation &
   Readonly<{ camera: Camera; cursor: Coord; busyUntil: number | null; frameMs?: number }>
 
@@ -118,9 +129,10 @@ export function livePresentation(live: LiveFrame): LivePresentation {
   return presentation
 }
 
-/** Whether a colour depth can show a breath at all: its tint and fade are continuous blends, which only
- *  256 colours and millions have (16 colours would step, and the breath is kept under the step). */
-const breathShows = (capability: CapabilityMode | undefined): boolean =>
+/** Whether a colour depth blends: tint and fade are continuous only at 256 colours and millions (16 colours
+ *  would step, and the breath is kept under the step; monochrome has no colour). A breath shows only there,
+ *  and only there does the copy the raid's trail leaves behind fade by more than one look. */
+const blends = (capability: CapabilityMode | undefined): boolean =>
   capability === undefined || capability === "truecolor" || capability === "color256"
 
 /** Whether a colour depth can show a flash: a blend at 256 colours and millions, and at 16 colours a step
@@ -151,7 +163,7 @@ export function popupBorderEffect(
   if (state.popup === null || reducedMotion) return null
   const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && flashShows(capability) ? flash : null
   const lengthMs = state.experiments.popupPulseMs
-  const breathMs = lengthMs > 0 && breathShows(capability) ? lengthMs : null
+  const breathMs = lengthMs > 0 && blends(capability) ? lengthMs : null
   const effect = { opening, breathMs }
   return breathMs === null && openingLengthMs(effect) === 0 ? null : effect
 }
@@ -219,7 +231,35 @@ export type LiveOptions = Readonly<{
    *  one settles, all this loop reads, depends on the timings alone — so without it (a test) every
    *  structure is scheduled as one tile. */
   footprintOf?: (contentId: string) => Footprint
+  /** Whether the raid's intent trail is on the map this frame — the forecast the composer is handed has one
+   *  (`hasTrail`): only then does it move and ask for frames. Absent (a test of something else), no trail. */
+  raidTrail?: boolean
 }>
+
+/**
+ * **The raid's trail's own clock.** The trail moves while it is on the map and nothing holds it still; it holds
+ * still — drawn as every still frame draws it — with no trail in the forecast, a popup open (the popup holds the
+ * eye, and the trail waits under it), motion reduced, or the plan committed (a Pulse shows what happens, not
+ * what was foreseen). Its clock runs from the first frame that drew it moving, and starts over the next time it
+ * moves after holding still — so the motion always begins from the still trail, with no jump: as a round opens,
+ * and as a popup closes. Watched, not recorded, like the popup's border. The live loop keeps one
+ * (`BuildAnimation`); a scripted playtest keeps its own on the script's clock, so the same keys draw the same
+ * moving trail and a screen opened by a route draws what one reached by playing does.
+ */
+export class TrailClock {
+  /** The first frame of the motion under way, or `null` while the trail holds still. */
+  private since: number | null = null
+
+  /** How far into its motion the trail is in the frame at `now`, or `null` when it holds still. */
+  at(state: BuildState, now: number, options: Pick<LiveOptions, "reducedMotion" | "raidTrail">): Readonly<{ elapsedMs: number }> | null {
+    if (options.raidTrail !== true || options.reducedMotion === true || state.popup !== null || state.committed) {
+      this.since = null
+      return null
+    }
+    this.since ??= now
+    return { elapsedMs: Math.max(0, now - this.since) }
+  }
+}
 
 const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
@@ -287,6 +327,8 @@ export class BuildAnimation {
   private removals: Readonly<{ placement: PlacedStructure; removedAt: number }>[] = []
   /** False until the first frame: whatever is already planned then was not placed just now. */
   private primed = false
+  /** The raid's trail's clock: from the first frame that drew it moving. */
+  private readonly trail = new TrailClock()
 
   constructor(tuning: LiveTuning = TUNING) {
     this.tuning = tuning
@@ -486,9 +528,20 @@ export class BuildAnimation {
     if (state.popup === "dialog" && state.dialog !== null) {
       if (this.seenLine?.line !== state.dialog.line) this.seenLine = { line: state.dialog.line, at: now }
       dialogLight = { elapsedMs: now - this.seenLine.at }
-      if (options.reducedMotion !== true && breathShows(options.capability) && state.experiments.popupPulseMs > 0) breathing = true
+      if (options.reducedMotion !== true && blends(options.capability) && state.experiments.popupPulseMs > 0) breathing = true
     } else this.seenLine = null
-    const breathOnly = breathing && ends.length === 0
+
+    // The raid's trail, timed from the first frame that drew it moving. It never settles either, so it asks for
+    // a frame only when it next looks different — never every frame — and none at all while it holds still.
+    const raidTrail = this.trail.at(state, now, options)
+    // The slow things moving — a breath, the trail — and the first frame either needs: the timer's pace while
+    // nothing faster is moving, whose own ends keep it at every frame until they pass.
+    let slowUntil: number | null = breathing ? now + BREATH_FRAME_MS : null
+    if (raidTrail !== null) {
+      const next = now - raidTrail.elapsedMs + nextTrailChange(raidTrail.elapsedMs, blends(options.capability))
+      slowUntil = slowUntil === null ? next : Math.min(slowUntil, next)
+    }
+    const slowOnly = slowUntil !== null && ends.length === 0
 
     return {
       camera,
@@ -503,8 +556,9 @@ export class BuildAnimation {
       ...(cardReveal === undefined ? {} : { cardReveal }),
       ...(popupBorder === undefined ? {} : { popupBorder }),
       ...(dialogLight === undefined ? {} : { dialogLight }),
-      busyUntil: breathOnly ? now + BREATH_FRAME_MS : ends.length === 0 ? null : Math.max(...ends),
-      ...(breathOnly ? { frameMs: BREATH_FRAME_MS } : {}),
+      ...(raidTrail === null ? {} : { raidTrail }),
+      busyUntil: slowOnly ? slowUntil : ends.length === 0 ? null : Math.max(...ends),
+      ...(slowOnly && slowUntil !== null ? { frameMs: slowUntil - now } : {}),
     }
   }
 }
@@ -515,9 +569,10 @@ export const FRAME_MS = 16
 /**
  * How often the frame timer draws while a popup border's breath is the only thing moving: 20
  * frames a second, a third of the fast rate. One breath lasts seconds and moves the border's colour by a
- * few dozen steps of 255, so that is still smooth, and it is the one animation that runs for as long as
- * the popup stays open — the ANSI writer sends the whole screen every frame, so a breath at 60 frames a
- * second would triple what the terminal receives for nothing the eye can see.
+ * few dozen steps of 255, so that is still smooth, and it runs for as long as the popup stays open — the
+ * ANSI writer sends the whole screen every frame, so a breath at 60 frames a second would triple what the
+ * terminal receives for nothing the eye can see. (The raid's trail, which runs whenever no popup is open,
+ * asks for fewer still: only the frames on which it changes, `nextTrailChange`.)
  */
 export const BREATH_FRAME_MS = 50
 

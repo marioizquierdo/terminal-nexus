@@ -125,6 +125,13 @@ export type BuildCompositionInput = Readonly<{
    *  (`BuildSession.raid`): drawn on the map and said in the panel during the Build Phase. Absent — a
    *  session with no mission — nothing is foreseen. */
   raid?: RaidForecast
+  /**
+   * **The raid's trail moving**: how far into its motion it is, from the first frame that drew it moving
+   * (`TrailClock`, `src/view/build-live.ts` — the live loop's, or a scripted playtest's on the script's clock).
+   * Its arrows step on toward the target and fade behind them as a pure function of it (`trailMarks`). Absent —
+   * every still frame, a popup open, reduced motion — the trail is drawn still.
+   */
+  raidTrail?: Readonly<{ elapsedMs: number }>
 }>
 
 /** A menu row's acknowledgement as the live loop shows it: the state's `ack` without its sequence

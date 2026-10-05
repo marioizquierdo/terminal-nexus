@@ -9,7 +9,8 @@ import type { VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { ArmedPreview, BuildContext } from "../build/state.ts"
-import type { PlannedPlacement } from "../build/types.ts"
+import { TUNING } from "../build/tuning.ts"
+import type { PlannedPlacement, RaidForecast } from "../build/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put } from "./draw.ts"
@@ -165,11 +166,19 @@ const INCOMING_WASH = 0.2
  * Phase only: a Pulse shows what happens, not what was foreseen.
  *
  * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the kernel's own step
- *   rule), a direction mark every other tile counted back from the last, each pointing at the next — the
- *   glyph pack's own arrowheads where the way runs straight, its diagonal strokes where it steps both ways.
- *   On open ground only: never over anything standing, planned or arriving (the corruption law), nor over
- *   rock or a deposit, which are information too. In the raid's colour and see-through: dim, and faded
- *   where colour allows, quieter than the raid itself.
+ *   rule): an arrow every few tiles (`trailSpacing`, the owner's "1 arrow every 3 tiles"), each pointing two
+ *   steps on along the way — the glyph pack's own arrowheads where the way runs straight, its diagonal strokes
+ *   where it steps both ways. **It moves** (the owner: "a slow-moving line of arrows ... leaving a transparent
+ *   arrow behind then moving that fades"): every `trailStepMs` each arrow steps a tile on toward the target —
+ *   the one beside it going in as a new one comes out of the group — and leaves a copy of itself on the tile it
+ *   left, which fades out within half a step (`trailMarks`). A pure function of the clock the live loop hands in
+ *   (`raidTrail`); without one — every still frame, a popup open, reduced motion — the trail is still, its
+ *   arrows where the moving ones stand every few steps, the one beside the target drawn.
+ * - On open ground only: never over anything standing, planned or arriving (the corruption law), nor over
+ *   rock or a deposit, which are information too. In the raid's colour and quieter than the raid itself: dim,
+ *   and faded where colours blend. The copy left behind is the same glyph, further faded where colours blend —
+ *   at 16 colours and in monochrome, which have no blend, it is dim, then gone — so every depth draws the same
+ *   glyphs at every instant.
  * - The target is a glyphless write over its tiles, so its own glyphs stay: a wash of the raid's colour
  *   where colours blend, and underlined at every depth — the form that carries it at 16 colours and in
  *   monochrome. Never red, which is kept for the player's own Nexus being hurt.
@@ -180,17 +189,20 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
   if (raid === undefined || raid.length === 0 || state.committed || input.pulse !== undefined) return
   const range = visibleRange(state.camera, state.viewport)
   const taken = takenTiles(context, state.planned)
-  for (const group of raid) {
-    if (group.target === null) continue
-    const style: CellStyle = { fgRole: playerRole(group.player), dim: true, fade: TRAIL_FADE }
-    for (const mark of trailMarks(group.path, group.target.tiles)) {
-      const { tile } = mark
-      if (!inBounds(context.grid, tile) || !inView(range, tile) || taken.has(`${tile.x},${tile.y}`)) continue
-      if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
-      const cell = cellForTile(layout, state.camera, tile)
-      cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
-      for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style } })
-    }
+  const elapsedMs = input.raidTrail?.elapsedMs ?? null
+  // Every trail's copies first, then its arrows: where two trails cross, an arrow is never covered by a copy.
+  const marks = raid.flatMap((group) =>
+    group.target === null ? [] : trailMarks(group.path, group.target.tiles, elapsedMs).map((mark) => ({ mark, player: group.player })),
+  )
+  const ordered = [...marks.filter(({ mark }) => mark.ghost !== undefined), ...marks.filter(({ mark }) => mark.ghost === undefined)]
+  for (const { mark, player } of ordered) {
+    const { tile } = mark
+    if (!inBounds(context.grid, tile) || !inView(range, tile) || taken.has(`${tile.x},${tile.y}`)) continue
+    if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
+    const style: CellStyle = { fgRole: playerRole(player), dim: true, fade: mark.ghost === undefined ? TRAIL_FADE : (GHOST_FADES[mark.ghost] ?? 1) }
+    const cell = cellForTile(layout, state.camera, tile)
+    cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
+    for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style } })
   }
   const marked = new Set<string>()
   for (const group of raid) {
@@ -206,28 +218,87 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
   }
 }
 
-/** How far toward the background a trail's marks are drawn, where colour allows: quieter than the raid. */
+/** How far toward the background a trail's arrows are drawn, where colour allows: quieter than the raid. */
 const TRAIL_FADE = 0.3
+
+/**
+ * How far toward the background the copy an arrow leaves behind is drawn, where colours blend — fainter than
+ * the arrow from the start, a "transparent arrow" — one look a quarter of a step each, from the moment the arrow
+ * moves on; then it is gone, half a step after. `fade` resolves only at 256 colours and millions, so at 16
+ * colours and in monochrome the copy is the arrow's own dim look for those two quarters, then gone.
+ */
+export const GHOST_FADES: readonly number[] = [0.6, 0.8]
 
 /** How strongly the raid's colour washes the tiles of what it goes for first, where colours blend. */
 const TARGET_WASH = 0.25
 
-/** One mark of a trail: its tile, and the way it points — toward the next mark, the last toward the target. */
-type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number }>
+/** How the raid's trail moves: how many tiles apart its arrows are, and how long each takes to step a tile on. */
+export type TrailMotion = Readonly<{ spacing: number; stepMs: number }>
+
+/** The owner's tuned motion (`trailSpacing`, `trailStepMs`). */
+export const TRAIL_MOTION: TrailMotion = { spacing: TUNING.trailSpacing, stepMs: TUNING.trailStepMs }
+
+/** A step of the trail is counted in quarters: the copy an arrow leaves takes a new look on each of the first
+ *  two, and is gone from the third. */
+const QUARTERS = 4
+
+/** Which step of its motion the trail is on `elapsedMs` into it, and which quarter of that step. Whole quarters,
+ *  counted from the start, so the trail looks the same for a whole quarter and the live loop knows when it next
+ *  changes (`nextTrailChange`). */
+function trailBeat(elapsedMs: number, motion: TrailMotion): Readonly<{ step: number; quarter: number }> {
+  const quarters = Math.floor((Math.max(0, elapsedMs) * QUARTERS) / motion.stepMs)
+  const step = Math.floor(quarters / QUARTERS)
+  return { step, quarter: quarters - step * QUARTERS }
+}
 
 /**
- * Where a trail's marks go along `path`: every other tile, counted back from the last so the mark beside
- * the target is always drawn, each pointing at the mark after it — or, for the last, at the target's
- * nearest tile.
+ * When the trail next looks different, on the clock `elapsedMs` is read on: the next quarter whose start changes
+ * what is drawn. An arrow steps on at a step's start, its copy takes its second look a quarter in and is gone at
+ * the half — so three changes a step where colours blend, and where they do not (16 colours, monochrome) two: the
+ * step, and the copy going, its two looks being one there. Before the first step nothing has been left behind, so
+ * the first step is the first change.
  */
-export function trailMarks(path: readonly Coord[], target: readonly Coord[]): TrailMark[] {
-  const marks: TrailMark[] = []
-  for (let index = path.length - 1; index >= 0; index -= 2) {
-    const tile = path[index] as Coord
-    const toward = path[index + 2] ?? nearestOf(tile, target)
-    marks.push({ tile, dx: toward.x - tile.x, dy: toward.y - tile.y })
+export function nextTrailChange(elapsedMs: number, blends: boolean, motion: TrailMotion = TRAIL_MOTION): number {
+  const { step, quarter } = trailBeat(elapsedMs, motion)
+  const changes = step === 0 ? [] : blends ? [1, GHOST_FADES.length] : [GHOST_FADES.length]
+  const next = changes.find((at) => at > quarter)
+  const quarters = step * QUARTERS + (next ?? QUARTERS)
+  return Math.ceil((quarters * motion.stepMs) / QUARTERS)
+}
+
+/** One mark of a trail: its tile, and the way it points — two steps on along the way, or at the target. `ghost` is
+ *  set on the copy an arrow leaves on the tile it just left: which of its looks it is in (`GHOST_FADES`). */
+export type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number; ghost?: number }>
+
+/**
+ * Where a trail's marks are along `path`. **Still** (no `elapsedMs`): an arrow every `motion.spacing` tiles,
+ * counted back from the last so the arrow beside the target is always drawn, each pointing two steps on along the
+ * way — or, the last two, at the target's nearest tile. **Moving**, `elapsedMs` into its motion: every arrow is a
+ * tile further on each `motion.stepMs`, so the still trail comes round every `spacing` steps — the arrow beside
+ * the target goes into it as a new one comes out of the group, one tile from it — and for the first half of
+ * each step every arrow's copy stands on the tile it just left, the one that went into the target included.
+ * Copies come first in the list, then the arrows, each in the order of the way, so the last mark is the arrow
+ * nearest the target. Tiles only: what stands on them, and whether they are in view, is the drawing's to judge.
+ */
+export function trailMarks(path: readonly Coord[], target: readonly Coord[], elapsedMs: number | null = null, motion: TrailMotion = TRAIL_MOTION): TrailMark[] {
+  const last = path.length - 1
+  if (last < 0) return []
+  const spacing = Math.max(1, Math.round(motion.spacing))
+  const beat = elapsedMs === null ? null : trailBeat(elapsedMs, motion)
+  const shift = beat === null ? 0 : beat.step % spacing
+  const ghost = beat !== null && beat.step > 0 && beat.quarter < GHOST_FADES.length ? beat.quarter : null
+  // The places every `spacing` tiles along the way that are `by` tiles on from the still trail's, in the way's
+  // order: where the arrows stand `by` steps into the motion.
+  const placesAt = (by: number, look: number | null): TrailMark[] => {
+    const places: TrailMark[] = []
+    for (let index = last - ((spacing - by) % spacing); index >= 0; index -= spacing) {
+      const tile = path[index] as Coord
+      const toward = path[index + 2] ?? nearestOf(tile, target)
+      places.push({ tile, dx: toward.x - tile.x, dy: toward.y - tile.y, ...(look === null ? {} : { ghost: look }) })
+    }
+    return places.reverse()
   }
-  return marks.reverse()
+  return [...(ghost === null ? [] : placesAt((shift + spacing - 1) % spacing, ghost)), ...placesAt(shift, null)]
 }
 
 /** The tile of `tiles` nearest `from`, the first of them on a tie; `from` itself when there are none. */
@@ -255,16 +326,27 @@ export function trailGlyph(pack: GlyphPack, dx: number, dy: number): string {
   return chromeGlyph(pack, (dx < 0) === (dy > 0) ? "trailRise" : "trailFall")
 }
 
-/** Every tile the raid's trail marks while the trail is drawn — what a building's reach yields to. */
+/**
+ * Every tile of the raid's trails, while the trails are drawn — what a building's reach yields to, as
+ * `x,y` keys. The whole way each trail runs along, not only the tiles its arrows stand on this instant: the
+ * arrows move, and a reach that gave way only where they stood would flicker as they passed. The same set at
+ * every instant, moving or still; empty on a committed plan and while a Pulse plays.
+ */
 export function trailTiles(input: BuildCompositionInput): Set<string> {
   const tiles = new Set<string>()
   const { raid, state } = input
   if (raid === undefined || state.committed || input.pulse !== undefined) return tiles
   for (const group of raid) {
     if (group.target === null) continue
-    for (const mark of trailMarks(group.path, group.target.tiles)) tiles.add(`${mark.tile.x},${mark.tile.y}`)
+    for (const tile of group.path) tiles.add(`${tile.x},${tile.y}`)
   }
   return tiles
+}
+
+/** Whether a forecast draws a trail at all: a group with something to go for and a way to it. What the live
+ *  loop asks before it times the trail's motion. */
+export function hasTrail(raid: RaidForecast | undefined): boolean {
+  return raid !== undefined && raid.some((group) => group.target !== null && group.path.length > 0)
 }
 
 /** Every tile something stands on, is planned on or arrives on — what a trail mark, the build range's dots
