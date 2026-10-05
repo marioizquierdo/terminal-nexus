@@ -388,7 +388,7 @@ And from the shared Citizen pool, in `armies/all`, which any Citizen Commander m
 | Power | Its line | Kind |
 | --- | --- | --- |
 | *Reserve Callup* | "Two troopers join at your Nexus." | `spawnUnits` |
-| *Drill Schedule* | "Barracks train twice as fast." | `modifyContent` |
+| *Drill Schedule* | "Barracks send a second wave." | `modifyContent` (a building's waves: the owner, 2026-10-05, "Nexus Powers could upgrade the Barracks to spawn a second and third wave") |
 | *Plate Revision* | "Troopers gain +2 integrity." | `modifyContent` |
 | *Zoning Variance* | "Build two tiles farther out." | `modifyRule` (construction radius) |
 | *Outpost Permit* | "Unlocks building: Outpost." | `unlockStructure` (a building that projects territory far and does nothing else) |
