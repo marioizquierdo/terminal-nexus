@@ -9,8 +9,8 @@ as one walking across. The open question he parked in August about the cell's as
 
 **Question.** Which fix is worth building?
 
-**What was built to answer it.** A throwaway prototype on its own worktree branch (spike commit `728bfc9`, scripts
-in `spike/aspect/` there; never merged), with two switches: **square tiles** (two columns a tile at every size)
+**What was built to answer it.** A throwaway prototype, never merged and not kept: its findings are the
+deliverable, and the next step would build the chosen option properly. It had two switches: **square tiles** (two columns a tile at every size)
 and **rows count double** (a row counts as two columns in every distance, and a step up or down takes twice as
 long), the latter at two scales: halve vertically (Mario's idea: a range 4 reaches 4 columns and 2 rows) and
 double horizontally (a range 4 reaches 8 columns and 4 rows). The same moments were captured under each: a Turret
