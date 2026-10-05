@@ -7,6 +7,12 @@
 //   (`footprintDistance`, `src/grid/coords.ts`). While the "Build range" Experiment is being felt, its value is
 //   every projecting structure's radius (it replaces the number on the content, as "Vasse's health" replaces
 //   hers).
+// - **Measured as the battle will be** (the Ground Experiment, `GridMeasure`): where a row counts two columns, the
+//   build range is **counted in rows**, so it keeps its height — a radius of 3 reaches 3 rows up and down and 6
+//   columns across, a reach of `radius * measure.row` in the measure's count (`rangeReach`). It is a number about
+//   the map, not a content range: counted in content tiles it would reach a single row at 3, and the line
+//   PERIMETER's troops hold could not be built on in round 1. Under the rules as they always were (`SQUARE`) it is
+//   the radius itself.
 // - **The player's Grid Nexus roots a network.** Two of the player's structures are linked when their build
 //   ranges meet — share a tile, so their footprints are at most the two radii apart — and the network is
 //   everything linked to the Nexus, step by step. Only a structure in the network projects: one **cut off**
@@ -24,9 +30,10 @@
 // - **A building that makes units keeps room round it** (its content's `clearance`; the owner, round 5:
 //   "barraks and other spawning buildings should require minimum distance from other buildings so they leave
 //   space for units spawning"): no tile of another building may stand within that many tiles of it, measured as
-//   range is (`crowding`). Every building on the map counts — standing or planned, the player's or the raid's,
-//   the Grid Nexus too — and it holds both ways: for a building placed near one, and for one placed near any
-//   building. While the "Barracks room" Experiment is being felt, its value is every such building's room.
+//   range is, under the battle's measure (`crowding`, `footprintWithin`). Every building on the map counts —
+//   standing or planned, the player's or the raid's, the Grid Nexus too — and it holds both ways: for a building
+//   placed near one, and for one placed near any building. While the "Barracks room" Experiment is being felt, its
+//   value is every such building's room.
 //
 // What it is not: a path. A range passes over rock, which is refused on its own, and nothing the raid stands
 // is part of the player's network, nor (yet) limits it: building inside the enemy's coverage waits for a raid
@@ -35,8 +42,8 @@
 //
 // Pure: the reducer's legality and the view's drawing all read one answer (`territoryOf`, `crowding`).
 
-import { footprintDistance, inBounds } from "../grid/coords.ts"
-import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
+import { SQUARE, footprintDistance, footprintWithin, gridDistance, inBounds } from "../grid/coords.ts"
+import type { Coord, Footprint, GridMeasure, GridTerrain } from "../grid/types.ts"
 import type { ContentDef } from "../content/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { StandingStructure } from "./types.ts"
@@ -74,30 +81,41 @@ export function constructionRadiusOf(definition: ContentDef, override?: number):
 }
 
 /**
+ * How far a build range of `radius` reaches in the measure's count: `radius` rows, so `radius * measure.row` —
+ * the build range keeps its height whatever a row counts. Under `SQUARE`, the radius.
+ */
+export function rangeReach(radius: number, measure: GridMeasure = SQUARE): number {
+  return radius * measure.row
+}
+
+/**
  * The build range a Build Phase opens with, and keeps: the standing structures linked from the Grid Nexus as far
  * as their build ranges meet, and every tile within the radius of a linked one. `radius` is the "Build range"
- * Experiment's value (`constructionRadiusOf`). Nothing planned is part of it, so it is worked out once for a
- * context and a radius and kept (the context never changes while its screen is open; the radius is an
- * Experiment that may).
+ * Experiment's value (`constructionRadiusOf`); `measure` the battle's (the Ground Experiment), the radius counted
+ * in rows (`rangeReach`). Nothing planned is part of it, so it is worked out once for a context, a radius and a
+ * measure and kept (the context never changes while its screen is open; the radius and the measure are
+ * Experiments that may).
  */
-export function territoryOf(source: TerritorySource, radius?: number): Territory {
+export function territoryOf(source: TerritorySource, radius?: number, measure: GridMeasure = SQUARE): Territory {
   let kept = TERRITORIES.get(source)
   if (kept === undefined) {
     kept = new Map()
     TERRITORIES.set(source, kept)
   }
-  const key = radius ?? "own"
+  // Only what a row counts changes the build range: what a content tile is worth does not enter it (`rangeReach`).
+  const key = `${radius ?? "own"}/${measure.row}`
   const known = kept.get(key)
   if (known !== undefined) return known
-  const territory = workOut(source, radius)
+  const territory = workOut(source, radius, measure)
   kept.set(key, territory)
   return territory
 }
 
-/** Every territory worked out, by its source and its radius: a context's range is asked for by every frame. */
-const TERRITORIES = new WeakMap<TerritorySource, Map<number | "own", Territory>>()
+/** Every territory worked out, by its source, its radius and what a row counts: a context's range is asked for by
+ *  every frame. */
+const TERRITORIES = new WeakMap<TerritorySource, Map<string, Territory>>()
 
-function workOut(source: TerritorySource, radius?: number): Territory {
+function workOut(source: TerritorySource, radius: number | undefined, measure: GridMeasure): Territory {
   const { grid, registry } = source
   type Draft = { contentId: string; anchor: Coord; footprint: Footprint; radius: number | null; linked: boolean }
   const members: Draft[] = source.standing.map((structure) => {
@@ -106,7 +124,9 @@ function workOut(source: TerritorySource, radius?: number): Territory {
   })
 
   // The network, from the Nexus outward: a structure joins when its range and a member's meet — or, for one
-  // that projects nothing, when a member's range reaches it.
+  // that projects nothing, when a member's range reaches it. Both in the measure's count, each radius counted in
+  // rows (`rangeReach`): two reaches of whole rows share a tile exactly when the footprints are at most the two
+  // reaches apart.
   const queue: Draft[] = []
   for (const member of members) {
     if (registry.get(member.contentId).nexus === true) {
@@ -120,25 +140,26 @@ function workOut(source: TerritorySource, radius?: number): Territory {
     if (from.radius === null) continue
     for (const other of members) {
       if (other.linked) continue
-      const distance = footprintDistance(from.anchor, from.footprint, other.anchor, other.footprint)
-      if (distance <= from.radius + (other.radius ?? 0)) {
+      const distance = footprintDistance(from.anchor, from.footprint, other.anchor, other.footprint, measure)
+      if (distance <= rangeReach(from.radius + (other.radius ?? 0), measure)) {
         other.linked = true
         queue.push(other)
       }
     }
   }
 
-  // The ground it projects onto: every tile within a linked member's radius, on the Grid. Counted in the tiles'
-  // own coordinates, not as offsets from the centre: the offset `-across` is `-0` at the diamond's tips, and a
-  // `-0` in a coordinate slows every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
+  // The ground it projects onto: every tile within a linked member's reach, on the Grid — its radius in rows up and
+  // down, and across each row what is left of its reach in the measure's count (`gridDistance`). Counted in the
+  // tiles' own coordinates, not as offsets from the centre: the offset `-across` is `-0` at the diamond's tips, and
+  // a `-0` in a coordinate slows every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
   const inside = new Uint8Array(grid.width * grid.height)
   for (const member of members) {
     if (!member.linked || member.radius === null) continue
-    const reach = member.radius
+    const reach = rangeReach(member.radius, measure)
     for (const offset of member.footprint) {
       const centre = { x: member.anchor.x + offset.x, y: member.anchor.y + offset.y }
-      for (let y = centre.y - reach; y <= centre.y + reach; y += 1) {
-        const across = reach - Math.abs(y - centre.y)
+      for (let y = centre.y - member.radius; y <= centre.y + member.radius; y += 1) {
+        const across = reach - gridDistance(centre, { x: centre.x, y }, measure)
         for (let x = centre.x - across; x <= centre.x + across; x += 1) {
           if (inBounds(grid, { x, y })) inside[y * grid.width + x] = 1
         }
@@ -181,8 +202,9 @@ export type Crowding = Readonly<{ near: Footing; room: "its" | "own" }>
 /**
  * **The room rule**: the building on the map (`buildings`: standing, planned, the raid's) that `contentId`
  * anchored at `anchor` would stand too close to, or `null` when there is none. Too close is within the room
- * either of the two keeps (`clearanceOf`), measured as range is. The nearest is named, the first listed on a
- * tie. A building it would overlap is the occupancy check's to refuse, which comes first.
+ * either of the two keeps (`clearanceOf`), measured as range is, under the battle's measure (`footprintWithin`:
+ * a building touching another along a side is within a room of 1 whatever a row counts). The nearest is named,
+ * the first listed on a tie. A building it would overlap is the occupancy check's to refuse, which comes first.
  */
 export function crowding(
   registry: ContentRegistry,
@@ -190,6 +212,7 @@ export function crowding(
   contentId: string,
   anchor: Coord,
   override?: number,
+  measure: GridMeasure = SQUARE,
 ): Crowding | null {
   const definition = registry.get(contentId)
   const own = clearanceOf(definition, override) ?? 0
@@ -198,9 +221,12 @@ export function crowding(
     const theirs = clearanceOf(registry.get(other.contentId), override) ?? 0
     const keep = Math.max(own, theirs)
     if (keep === 0) continue
-    const distance = footprintDistance(anchor, definition.footprint, other.anchor, registry.get(other.contentId).footprint)
-    if (distance > keep || (found !== null && distance >= found.distance)) continue
-    found = { near: other, distance, room: theirs >= distance ? "its" : "own" }
+    const footprint = registry.get(other.contentId).footprint
+    if (!footprintWithin(anchor, definition.footprint, other.anchor, footprint, keep, measure)) continue
+    const distance = footprintDistance(anchor, definition.footprint, other.anchor, footprint, measure)
+    if (found !== null && distance >= found.distance) continue
+    const room = footprintWithin(anchor, definition.footprint, other.anchor, footprint, theirs, measure) ? "its" : "own"
+    found = { near: other, distance, room }
   }
   return found === null ? null : { near: found.near, room: found.room }
 }

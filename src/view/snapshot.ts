@@ -7,7 +7,8 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
+import { SQUARE } from "../grid/coords.ts"
+import type { Coord, GridMeasure, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import type { ActiveEffect } from "./effects/index.ts"
 import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
@@ -31,6 +32,17 @@ export type PulseTimeline = Readonly<{
   stateHash: string
   eventsHash: string
 }>
+
+/**
+ * How a battle measured the Grid (`GridMeasure`, the Ground Experiment): its state's own measure, which travels
+ * with the Battle Round, or `SQUARE` — the rules as they always were — when it carries none (and for a hand-built
+ * timeline with no state at all). Whatever the screen draws as a reach in a battle, it draws under this, so the
+ * picture is the kernel's own. Read through this one accessor, which tolerates a state without the field: the
+ * state's `measure` arrives with the battle's own change.
+ */
+export function battleMeasure(state: MatchState | undefined): GridMeasure {
+  return (state as (MatchState & Readonly<{ measure?: GridMeasure }>) | undefined)?.measure ?? SQUARE
+}
 
 export type ViewControls = Readonly<{ paused: boolean; speed: number }>
 
