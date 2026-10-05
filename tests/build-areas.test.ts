@@ -411,9 +411,8 @@ test("exploring a unit that shoots past the tiles touching it shows its reach; o
   // of its trail, whose diagonal steps are the same strokes, dim in the raid's colour.
   const third = buildSide({ cursor: STARTER_START_CURSOR, context: openRound(DEFAULT_LEVEL, 3), startPulse, nextRound, foresee })
   const coming = third.context.incoming ?? []
-  const trail = new Set(
-    (third.build.raid() ?? []).flatMap((group) => (group.target === null ? [] : trailMarks(group.path, group.target.tiles))).map((mark) => `${mark.tile.x},${mark.tile.y}`),
-  )
+  // A reach gives way along the trail's whole way, wherever its moving arrows are, so it never flickers as they pass.
+  const trail = new Set((third.build.raid() ?? []).flatMap((group) => (group.target === null ? [] : group.path)).map((tile) => `${tile.x},${tile.y}`))
   // The open ground off the trail round a slinger's reach, where its strokes go: the slinger with the most.
   const ringOf = (anchor: Coord) => reachOutline(anchor, ONE, 4).filter(({ tile }) => open(third, tile) && !trail.has(`${tile.x},${tile.y}`))
   const slinger = coming.filter((entity) => entity.contentId === "unit.ravel.slinger").sort((a, b) => ringOf(b.anchor).length - ringOf(a.anchor).length)[0]
