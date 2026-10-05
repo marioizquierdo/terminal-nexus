@@ -172,8 +172,9 @@ Design commitments the game documents own, GUIDANCE until built and played:
   of cards" is not the model ([`commander-armies.md`](../game-design/commander-armies.md)).
 - A mode is data over one match loop and one army shape; Campaign and Challenge are uncorrelated
   ([`game-modes.md`](../game-design/game-modes.md)).
-- A Nexus power is a name and one plain line, with no player-facing classification, and a dealt one may
-  not be skipped; a mission has goals rather than a fixed length ([`commander-armies.md`](../game-design/commander-armies.md),
+- A Nexus power is a name and one plain line, with no player-facing classification, and, for now, a dealt one
+  may be left unpicked; a mission has goals rather than a fixed length
+  ([`commander-armies.md`](../game-design/commander-armies.md),
   [`campaigns.md`](../game-design/campaigns.md)).
 - Each Nexus is named for the faction that holds it, with Prime or Grid appended where it matters;
   Prime Nexuses stay home and replicate Grid Nexuses ([`lore.md`](../game-design/lore.md)).
@@ -189,13 +190,15 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Nexus Pulse** — the fixed-tick, deterministic battle that resolves both plans in ASCII: the resolution the kernel runs.
 - **round**, **Battle Round** — one Build Phase and the Nexus Pulse that follows it, which is the unit the player counts: "round 2 of 3". **The player reads Battle Round, never Pulse** (the owner, 2026-10-04: "We can refer to it as Nexus Pulse in lore and design, but Battle Round is better for the player and UI"): the interface names the battle Battle Round wherever it names it, and Nexus Pulse is the lore's and the design's word. In code the round's number is `pulseNumber`; identifiers are not renamed.
 - **mission** — a sequence of rounds driven by triggers, with goals rather than a fixed length.
-- **group** — units a mission trigger brings onto the Grid together during a round, at a chosen tick, with a name and an intention. The game does not say "wave" (the owner, 2026-10-04).
+- **group** — units a mission trigger brings onto the Grid together during a round, at a chosen tick, with a name and an intention. A group is never a wave (the owner, 2026-10-04).
+- **wave** — the units one building spawns at once in a Battle Round, set down together beside it (the owner, 2026-10-05: "The first wave is at 5 seconds"). How many a wave, how many waves a round and the seconds between them are the building's own, on its card in its army; the first wave comes at the same moment for every building (`firstWave`). The word means only this: a round is a Battle Round, and what a mission brings is a group.
 - **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.
 - **Recall** — what happens when a Pulse ends: surviving units walk home, so the next round starts from what the last one left.
 - **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
 - **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds the cards any Commander may use, `armies/vasse` her Commander and her campaign ([`content.md`](content.md)).
 - **target** — the place a level sends a side's troops: they head for it, engage what comes within reach on the way, and stand there ([`pulse.md`](pulse.md)). PERIMETER's is the line.
-- **build range** — the ground a player may build on: within the construction radius of their Grid Nexus and of every building linked to it ([`pulse.md`](pulse.md)).
+- **build range** — the ground a new building needs a tile on: within the construction radius of the player's Grid Nexus and of every standing building linked to it; a building planned this round gives its range from the next ([`pulse.md`](pulse.md)).
+- **room** — the tiles a building that makes units keeps free round it, so its waves have somewhere to appear: no other building may stand there ([`pulse.md`](pulse.md)).
 - **route** — a place in the game written like a web address without its site (`settings`, `campaign?level=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
 - **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
 - **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.

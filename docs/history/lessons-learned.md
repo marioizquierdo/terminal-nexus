@@ -270,6 +270,29 @@ than any one feature:
     `| 0` a product that can be. `node --no-sparkplug --trace-generalization` names the store that did it;
     `--trace-migration` counts what it costs.
 
+## The Commander's fifth round (2026-10-05)
+
+1. **Changing what a building makes can flip a level.** Four troopers at five seconds, instead of one every ten,
+   made PERIMETER's last round hold with nothing built. Measure the level's plans whenever a building's numbers
+   change, and say what moved in the pull request rather than retuning quietly.
+2. **A battle's content comes from the level's offer.** A hand-written mission played on a campaign level's
+   context inherits that level's spawning buildings; the test mission plays on `placeholderContext()` so its
+   pins hold.
+3. **A rule that takes something away moves every flow that leaned on it.** Without chaining, every fixture
+   that placed a building beyond another planned one moved into the standing range, and the screenshot script's
+   flows had been failing unnoticed since round 4. A script whose flows nobody runs rots: check every flow's
+   expected text with the renderer stubbed, which takes a minute.
+4. **Check a new mark against every mark in its colour, not only its glyph.** A unit's reach in the raid's
+   colour read as more of the raid's trail, whose diagonal steps use the same strokes.
+5. **An animation that never settles changes what "idle" means.** The moving trail made "an idle screen draws
+   nothing" hang a test: give such a test a round with nothing ambient, and test the ambient pace on its own.
+   Start a motion's clock from the first frame that draws it moving, or "a route opens the screen you reach by
+   playing there" breaks.
+6. **A merge can break a test both sides passed.** The explored-unit reach test assumed the trail's old marks;
+   the merged trail keeps its whole way clear. Run the whole suite after every merge.
+7. **The capture scripts delete `.capture-tmp/` when they finish.** Tell an agent to keep the scratch it needs
+   elsewhere in its worktree, and ask for the key scripts rather than the files.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

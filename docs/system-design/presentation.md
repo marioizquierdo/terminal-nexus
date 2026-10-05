@@ -67,13 +67,15 @@ flip its case, and `tests/effects.test.ts`). A mirror match stays legible, and m
 **The style attributes beyond roles** are each a role and a number, so "never a colour" stays literally
 true. Each resolves in one place for every renderer.
 
-- **`fade`** is a continuous scalar the resolver blends toward the active theme's background before
-  quantizing to the capability tier. It resolves at `color256` and `truecolor` only; `color16` and
-  `monochrome` have no continuum to express it on and ignore it. It is `fgRole`-only: a background is
-  never faded. RULE — `tests/roles.test.ts`, `tests/view.test.ts`. Its scope is deliberately narrow, a
-  recorded departure from the "decay is not fade-out" craft rule in [`effects.md`](effects.md): no
-  effect recipe sets `fade` except `fx.damage.flash` (RULE — `tests/effects.test.ts`). The Build Phase
-  panel's own text also uses it for the card reveal, which is chrome rather than an effect's glyph.
+- **`fade`** is a continuous scalar the resolver blends toward the active theme's background before quantizing
+  to the capability tier. It resolves at `color256` and `truecolor` only; `color16` and `monochrome` have no
+  continuum to express it on and ignore it. It is `fgRole`-only: a background is never faded. RULE —
+  `tests/roles.test.ts`, `tests/view.test.ts`. Its scope is deliberately narrow, a recorded departure from the
+  "decay is not fade-out" craft rule in [`effects.md`](effects.md): no effect recipe sets `fade` except
+  `fx.damage.flash` (RULE — `tests/effects.test.ts`). Two interface marks use it too, neither an effect's
+  glyph: the card reveal fades the Build Phase panel's own text, and the raid's intent trail is drawn faded,
+  the copy each moving arrow leaves behind fading further until it is gone (at 16 colours and in monochrome,
+  which ignore `fade`, that copy is the arrow's own dim look until it goes).
 - **`tint`** pulls the cell's `fgRole` part of the way (`amount` 0 to 1) toward another role. `truecolor`
   interpolates the two roles' colours; `color256` interpolates, then takes the nearest palette colour;
   `color16` has no continuum and steps onto the other role's own colour from 0.5 up; `monochrome`
@@ -261,10 +263,11 @@ until it closes, and nothing opens one but the player; a message appears only as
 the player just did. It sits on top of everything else without a drawing band of its own (see bands
 below).
 
-**A reach is drawn where it is felt.** In the Build Phase a building's reach is an outline round its ghost,
-and the build range the dotted ground while a building is armed (the interface patterns, the build range and a
-building's reach). During a Pulse Vasse's aura is the first radius on the Grid: its reach is a see-through style
-of her side's colour on the ground's band, under every unit, a diamond because range is Manhattan, shown where
+**A reach is drawn where it is felt.** In the Build Phase a building's reach is an outline round its ghost, or
+round a building or ranged unit the cursor rests on; the build range is the dotted ground while a building is
+armed, and a Barracks's room a ring of ticks on it (the interface patterns, the build range, a Barracks's room
+and a reach). During a Pulse Vasse's aura is the first radius on the Grid: its reach is a see-through style of
+her side's colour on the ground's band, under every unit, a diamond because range is Manhattan, shown where
 colours blend and said in words on her card where they do not (the interface patterns, her aura's reach).
 
 **The Pulse view shows everything by default.** Selection is an addition the player reaches for, never a
@@ -297,7 +300,7 @@ point:
 | Band | Fed by |
 | --- | --- |
 | 1 `terrain` | `terrain` layer |
-| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Pulse |
+| 2 `territory` | construction coverage: the build range and a Barracks's room while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Pulse |
 | 3 `ground-items` | salvage, rubble, deposits |
 | 4 `structures` | `obstacles` layer |
 | 5 `units` | `workers` and `units` layers |

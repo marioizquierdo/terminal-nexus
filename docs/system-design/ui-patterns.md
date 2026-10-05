@@ -213,13 +213,17 @@ title screen's menu.
   kinds, then whole groups (`+2 more`), and a count is never split from its kind. Drawn with the menu,
   so it fades when a card covers it. (RULE — `tests/raid-view.test.ts`)
 - ***Your troops' target*** (a named pattern; the owner: "predictable where your troops are moving"): under
-  the raid, in the player's colour, `YOUR TROOPS` / `6 head for the line` — how many, then the place by the
-  level's name for it. Where, never the way. On the map its four corners are marked, dim in the player's
-  colour (`+` in ASCII), on open ground only, under the raid's trail. Never at the cost of a whole raid
-  group: short of room the raid's groups drop their kinds first, then the troops' lines go. Not during a
-  battle, not on a committed plan. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
-- **The action that ends the phase is the last row** (`startRow`), dim and refused with its reason until
-  the Nexus power is picked; it opens the Battle Round screen. (RULE — `tests/build-start.test.ts`)
+  the raid, in the player's colour, `YOUR TROOPS` / `10 head for the line` — how many, those standing as the
+  round starts and those its buildings' waves will bring, then the place by the level's name for it. Where,
+  never the way. On the map its four corners are marked, dim in the player's colour (`+` in ASCII), on open
+  ground only, under the raid's trail. Never at the cost of a whole raid group: short of room the raid's
+  groups drop their kinds first, then the troops' lines go. Not during a battle, not on a committed plan.
+  (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
+- **The action that ends the phase is the last row** (`startRow`); it opens the Battle Round screen. A Nexus
+  power still waiting holds nothing back — for now the pick is optional (the owner: "it's easier for testing
+  if I can just start a round") — so the row is never dim; its hint asks whether to start without one, and the
+  Battle Round screen says in one quiet line that a power is still waiting. (RULE —
+  `tests/build-start.test.ts`, `tests/build-nexus.test.ts`)
 
 ### 6.2 Cards
 
@@ -230,18 +234,19 @@ title screen's menu.
   hotkey — `[e] Explore Map  >`, `[1] Barracks  >` — over a separator (`-` or `─`). **That hotkey
   cancels**, as Esc, `x` and a click on the panel do. No credits line on a card.
   (RULE — `tests/build-card.test.ts`)
-- **A card is four parts, as data: a title, a subtitle, a description and its numbers.**
-  The icon is the thing's own glyphs, or a bare tile's; the title sits beside it with the subtitle under
-  it — one short line on what the thing is for; the description is two or three plain sentences with a
-  little more detail, wrapped under the icon; then the numbers as label/value rows — cost where the menu
-  sells it, health, size and attack, the building's build range ("cut off" in Explore Map for one cut off
-  from the Nexus), or a bare tile's position. **No status line**: planned, standing or
-  about to be placed is plain from the rest of the screen. The words are written with the content
-  (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text never cuts a
-  word**; if the words are too long, shorten them. One function draws every card (`drawCardBody`): that is
-  where a later round would change the look for placing a building (where the title repeats the header),
-  for exploring in the Build Phase, or for exploring during a Pulse.
-  (RULE for the four parts and the fit — `tests/build-card.test.ts`)
+- **A card is four parts, as data: a title, a subtitle, a description and its numbers.** The icon is the
+  thing's own glyphs, or a bare tile's; the title sits beside it with the subtitle under it — one short line
+  on what the thing is for; the description is two or three plain sentences with a little more detail, wrapped
+  under the icon; then the numbers as label/value rows — cost where the menu sells it, health, size and
+  attack, the wave a building spawns (`WAVE 4 troopers at 5s`, or `WAVES 4 at 5s, 15s, 25s` for several), the
+  building's build range ("3, next round" for one being placed or planned, which gives none until it stands;
+  "cut off" in Explore Map for a standing one cut off from the Nexus), or a bare tile's position. **No status
+  line**: planned, standing or about to be placed is plain from the rest of the screen. The words are written
+  with the content (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text
+  never cuts a word**; if the words are too long, shorten them. One function draws every card
+  (`drawCardBody`): that is where a later round would change the look for placing a building (where the title
+  repeats the header), for exploring in the Build Phase, or for exploring during a Pulse. (RULE for the four
+  parts and the fit — `tests/build-card.test.ts`)
 - **A Commander's skill is on her card**: its name, bold, then one plain line at the strength the battle
   will run on ("She and her units within 3 tiles take 25% less damage."); nothing while the Experiment has
   it off. (RULE — `tests/commander-screen.test.ts`)
@@ -274,22 +279,23 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
 - **Explore Map sends the see-through cursor** — a copy of the map cursor at 80% opacity, gliding from
   its row to the cursor over whatever it crosses (see *See-through styles*). Exploring only moves the focus, so it sends
   the cursor itself rather than a ray. (RULE — `tests/build-handoff.test.ts`)
-- **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if the footprint fits
-  inside the build range; else the nearest spot within reach inside the range leaving a free tile around it,
-  else the nearest that fits —
-  nearest by the cursor's move, a step up or down costing more than a step sideways, so a run grows to
-  the right (the reach and the cost are tuned values, `armSearchTiles` and `armVerticalCost`).
-  With none in reach, arming steps one right and one down and draws the building as itself rather than
-  as a refusal, until the player moves or tries, and the bottom line says whether nothing fits nearby or
-  nothing in the build range does. **Explore Map opened from the menu uses the same rule
-  for one tile**, landing on clear ground that is easy to follow (or staying put); opened from the map,
-  the cursor stays where the player put it. (RULE — `tests/build-focus.test.ts`, `tests/build-handoff.test.ts`)
+- **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if Enter would take it there
+  — a tile of it inside the build range, and the room a Barracks keeps left free; else the nearest such spot
+  within reach leaving a free tile around it, else the nearest such spot touching — nearest by the cursor's
+  move, a step up or down costing more than a step sideways, so a run grows to the right (the reach and the
+  cost are tuned values, `armSearchTiles` and `armVerticalCost`). With none in reach, arming steps one right
+  and one down and draws the building as itself rather than as a refusal, until the player moves or tries, and
+  the bottom line says whether nothing fits nearby or nothing in the build range does. **Explore Map opened
+  from the menu uses the same rule for one tile**, landing on clear ground that is easy to follow (or staying
+  put); opened from the map, the cursor stays where the player put it. (RULE — `tests/build-focus.test.ts`,
+  `tests/build-handoff.test.ts`)
 
 ## 8. Motion and transitions
 
-- **Motion explains a change, then the screen is still.** Nothing moves unless something changed, and
-  an idle screen draws once per input. Keys never wait: they act on the destination at once, and the
-  animation catches up or stops. (RULE — `tests/build-motion.test.ts`)
+- **Motion explains a change, then the screen is still.** Nothing moves unless something changed, and an idle
+  screen draws once per input — save for the two ambient animations below, which ask for a frame only when
+  they change. Keys never wait: they act on the destination at once, and the animation catches up or stops.
+  (RULE — `tests/build-motion.test.ts`)
 - **Nothing teleports**: every camera change slides and every cursor move glides from wherever it is
   drawn, so a move mid-way continues smoothly. These are **tweens** (`src/view/tween.ts`): the state
   holds the destination, the tween is how the screen gets there. The cursor glides across the *view*, so
@@ -302,10 +308,14 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
   never flashes back between them. Going back is plain: the menu returns
   with its row lit. The live loop starts it by watching the state become a card (`cardRevealAt` in
   `src/view/build-live.ts`); the reducer never hears of it. (RULE — `tests/build-card.test.ts`)
-- **An ambient effect breathes slowly and draws less often.** A popup's border breath is the one
-  animation that never settles, so while it is the only thing moving the screen redraws 20 times a
-  second instead of 60, and stops the moment the last popup closes. It starts at rest on the first frame
-  that shows the popup, and every still frame draws it at rest. (RULE — `tests/build-breath.test.ts`)
+- **An ambient effect moves slowly and draws less often.** Two never settle: a popup's border breath, and the
+  raid's intent trail while no popup is open. While the breath is the only thing moving the screen redraws 20
+  times a second instead of 60, and stops the moment the last popup closes; while the trail is, the screen
+  redraws only when the trail next changes — three times a step where colours blend, twice at 16 colours and
+  in monochrome — and not at all under reduced motion, under a popup, or with the trail out of view. The
+  breath starts at rest on the first frame that shows the popup, and every still frame draws it at rest; the
+  trail starts again from the still trail whenever it starts to move. (RULE — `tests/build-breath.test.ts`,
+  `tests/raid-view.test.ts`, `tests/build-motion.test.ts`)
 - **An opening plays once, then gives way.** An element can open with a short, stronger effect
   that overrides its ambient one: the **popup opening**, today the Battle Round screen's **double
   flash**. It is drawn at the full frame rate, ends at rest, and hands over to the breath from rest, so
@@ -460,8 +470,12 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   refusal about a tile goes when the cursor leaves it. (RULE — `tests/build-help.test.ts`)
 - **A message is typed** — text, a tone and its tile, never a bare string; hints have the quieter `hint`
   tone, and tones resolve onto style roles in one place (`src/view/status.ts`).
-- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`. **A refusal names
-  its tile**: affordability comes first, then the build range (a region), then the tile's own problem. (RULE — `tests/build-help.test.ts`)
+- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`. **A refusal names its
+  tile**: affordability comes first, then the build range (a region; with no tile of the building inside it,
+  its first tile is named), then the tile's own problem, and last the room a building that makes units keeps,
+  which names the building rather than a tile: "too close to the Barracks - its troops need room", or, for a
+  Barracks placed too near something, "too close to the Citizen Nexus - troops need room". (RULE —
+  `tests/build-help.test.ts`)
 - **Looking reads quietly, trying loudly**: a ghost on a tile it cannot use shows a grey block of `x` and
   a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
   **A command's own answer comes first**, a refusal included; the ghost's reason is what the line says
@@ -501,10 +515,10 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   click pointed**, even if the view moved (`BuildSession`). A click near an edge scrolls further the
   nearer the edge, armed or not, so clicking with the ghost keeps scrolling.
   (RULE — `tests/build-focus.test.ts`, `tests/build-motion.test.ts`, `tests/build-phase.test.ts`)
-- **Placing**: a planned building is drawn at full strength; undo and remove keep the plan revisable
-  until the Pulse, except that a building another planned building needs for its build range stays until
-  that one goes; the bottom line names it. A refused try flashes the footprint in the danger colour as the bottom line says why.
-  (RULE for the flash — `tests/build-motion.test.ts`)
+- **Placing**: a planned building is drawn at full strength; undo and remove keep the plan revisable until the
+  Pulse — nothing planned gives build range, so no building ever needs another. A refused try flashes the
+  footprint in the danger colour as the bottom line says why. (RULE for the flash —
+  `tests/build-motion.test.ts`)
 - **What else is on the map**: after a round, every survivor stands where Recall put it — the
   player's own and the raid's — and the raid's own structures stand where its plan put them, each in its
   side's colour. A structure of the raid's refuses a placement like the player's own; a unit does not,
@@ -521,30 +535,46 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   buildings like any unit, and the cursor sets its wash aside. A forecast: it is placed against the map
   without the plan, and a building planned where an arrival would stand moves it when the Pulse starts.
   (RULE — `tests/mission-loop.test.ts`, `tests/raid-view.test.ts`)
-- ***The raid's intent*** (a named pattern): in the Build Phase, never during a Pulse, each coming group
-  has a **trail** to what it goes for first, and **that target is marked**. The target is the kernel's own
-  choice on the Pulse's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so
-  placing, undoing or removing a building changes it at once: a building nearer the raid becomes what it
-  goes for. The trail is the kernel's own steps, round a ridge, or pressing on it when nothing gets
-  through. Its marks go every other tile on open ground only, in the glyph pack's arrowheads and strokes,
-  dim and faded, never over a glyph; the target is underlined under a wash of the raid's colour, never
-  red. Later groups are foreseen against the round's opening. (RULE — `tests/raid-view.test.ts`,
-  `tests/intent.test.ts`)
-- ***The build range and a building's reach*** (named patterns; the owner's "a cool and unobstrussive way
-  to show where the turrets will reach ... they also can only be built within the build-range of the other
-  buildings"). Two different things get two different marks. **The build range is an area.** While a
-  building is armed, every open tile inside it shows the ground's own dot, dim, so where the player may
-  build is the densely dotted ground, and where colours blend it is lit by a faint grey wash. **A
-  building's reach is an outline.** The last tiles it reaches, as the kernel measures range, are drawn round
-  its ghost in strokes: `-` and `|` along its footprint's sides, `/` and `\` across the corners (`─ │ ╱ ╲`
-  in Unicode). The outline is dim, in the ghost's own look (the hotkey's colour where Enter would place,
-  grey where it would refuse), moves with the ghost, and is drawn round a placed building the cursor rests
-  on in Explore Map and plain navigation. A reach is an attack's range today; another kind of range joins
-  it in one place (`reachOf`, `src/view/build-areas.ts`). Both are carried by glyphs, so monochrome and 16
-  colours show them. Both are drawn on open ground only, never over anything standing, planned or
-  arriving, nor over the raid's trail, which stays as built: nothing claims what a range would catch on
-  the raid's way. Neither shows under a popup, on a committed plan, or during a Pulse.
-  (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
+- ***The raid's intent*** (a named pattern): in the Build Phase, never during a Pulse, each coming group has a
+  **trail** to what it goes for first, and **that target is marked**. The target is the kernel's own choice on
+  the Pulse's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
+  removing a building changes it at once: a building nearer the raid becomes what it goes for. The trail is
+  the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand every
+  three tiles (the owner's "1 arrow every 3 tiles"), in the glyph pack's arrowheads and strokes, dim and
+  faded, on open ground only and never over a glyph, and **they move** (the owner: "a slow-moving line of
+  arrows ... leaving a transparent arrow behind then moving that fades"): every step, a tuned value slower
+  than the raid itself walks, each arrow moves a tile on toward the target — the one beside it going in as a
+  new one comes out of the group — and leaves a copy of itself on the tile it left, fainter at once and gone
+  within half a step: blended away where colours blend, the arrow's own dim look and then gone at 16 colours
+  and in monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold
+  it still, as the still trail: an arrow every three tiles, the one beside the target drawn; it moves again
+  from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
+  against the round's opening. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
+- ***The build range, a Barracks's room and a reach*** (named patterns; the owner's "a cool and unobstrussive
+  way to show where the turrets will reach ... they also can only be built within the build-range of the other
+  buildings", and "so they leave space for units spawning"). Three different things get three different marks.
+  **The build range is an area.** While a building is armed, every open tile inside it shows the ground's own
+  dot, dim, so where a building may have a tile is the densely dotted ground, and where colours blend it is
+  lit by a faint grey wash; a building may hang over its edge. **A Barracks's room is an apron.** While a
+  building is armed, every open tile of the room a building that makes units keeps — round every standing or
+  planned Barracks and Hatchery, the raid's too, and round the armed one's ghost, moving with it — shows a dim
+  tick (`'`) in the ground's colour where the ground would show its dot, keeping the range's light where it
+  lies in the range. A tick, not a gap: nothing may ever stand on it, while a gap in the dots would read as
+  ground outside the range, which a building may hang over. **A reach is an outline.** The last tiles a
+  building reaches, as the kernel measures range, are drawn round its ghost in strokes: `-` and `|` along its
+  footprint's sides, `/` and `\` across the corners (`─ │ ╱ ╲` in Unicode). The outline is dim, in the ghost's
+  own look (the hotkey's colour where Enter would place it, grey where it would refuse), moves with the ghost,
+  and in Explore Map and plain navigation is drawn round what the cursor rests on, in the hotkey's colour: a
+  placed building, or a unit of either side that shoots past the tiles touching it (the owner: "exploring a
+  unit should also show thier range"). A unit that fights hand to hand shows none, and that absence is what
+  says "ranged". Never in the raid's own colour: the raid's trail draws its diagonal steps with the same
+  strokes, dim in that colour. A reach is an attack's range today; another kind of range joins it in one place
+  (`reachOf`, `unitReachOf`, `src/view/build-areas.ts`). All three are carried by glyphs, so monochrome and 16
+  colours show them. All are drawn on open ground only, never over anything standing, planned or arriving, nor
+  over the raid's trail — a reach gives way along the trail's whole way, wherever its moving arrows are, so
+  the outline never flickers as they pass — and nothing claims what a range would catch on the raid's way.
+  Where a reach crosses a room, the reach's strokes are drawn. None shows under a popup, on a committed plan,
+  or during a Pulse. (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
 
 ## 13. Effects
 
@@ -581,11 +611,11 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 - **The Pulse plays on the Build Phase's screen**; only the panel changes. It opens on the player's
   Nexus, the arrows look around, and the Pulse never waits for the player.
   (RULE — `tests/pulse-screen.test.ts`)
-- **The panel, in order**: `BATTLE ROUND 1` with the time left until the last shot; what the timer counts
-  and its speed; a line per side (units, a health bar, the number); the last five events in plain words,
-  coloured by side; under them, while she is saying something and her voice shows in the feed, her glyph
-  and name and her line; then `[space] Pause` and `[r] Watch again`. Speed (`[`, `]`) and stepping (`.`, `,`)
-  are keys, on the Controls page. (RULE — `tests/pulse-screen.test.ts`)
+- **The panel, in order**: `BATTLE ROUND 1` with the time left until the last shot; what the timer counts and
+  its speed; a line per side (units, a health bar, the number); the last five events in plain words, coloured
+  by side; under them, while she is saying something out of view, her glyph and name and her line; then
+  `[space] Pause` and `[r] Watch again`. Speed (`[`, `]`) and stepping (`.`, `,`) are keys, on the Controls
+  page. (RULE — `tests/pulse-screen.test.ts`)
 - **The ending is four beats, in order**: the **last seconds** — only the title's timer flashes, slowly,
   and a soft light sweeps the border like a lighthouse (colour, never a glyph; in monochrome the timer
   reverses and the border goes bold) — then **cease fire**, **Recall** (survivors walk home) and the
@@ -624,23 +654,23 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   is that round's number, in the mission's words for it.
   (RULE — `tests/mission-loop.test.ts`, `tests/build-start.test.ts`)
 - ***Her voice in battle*** (a named pattern; the owner: "let's experiment with this to see if it gets into
-  the battle or enhances the experience even more"): Vasse says a short line at the moments of a Battle Round
-  that matter — it starts, the first shot, a group of the raid arriving, one of hers falling near her, a
-  building of hers falling, her badly hurt, the Grid Nexus first hit, her own fall, and, as the result stands,
-  a round won. Her lines are data in her army, a few a moment. **She does not chatter**: the round is
-  resolved before it plays, so its lines are planned at once — each moment once, at most three lines a round
-  besides the two that cut in, the moments that matter most chosen first, a quiet gap between two lines, and
-  a line that cannot come soon after its moment is not said. **Her fall and a round won cut in** on a line
-  being read; after her fall she says nothing more. **Which line** is a hash of the moment's identity (the
-  moment and the round), never a stream, and steps to another line each round. **Where** is the "Vasse's
-  voice" Experiment: *beside* (the first guess) — the quoted line on a row near her `@`, at the place clearest
-  of what stands there for the whole time it is read, held still while it is read, never over a unit or a
-  building, and in the panel instead whenever she or that row is out of view; *feed* — her glyph and name over
-  the quoted line, under the panel's feed, never into the controls; *off* — silence. A line types in, holds,
-  and thins out; reduced motion shows it whole and steady. As she begins, the effect library's own light lights
-  her tile a moment, none for her last words. Monochrome keeps the words, bold, between quotes. Every line is
-  in the Activity Logs (the "Her voice" filter). Nothing she says can change what resolves.
-  (RULE — `tests/voice.test.ts`)
+  the battle or enhances the experience even more", and once played, "it looks cool"): Vasse says a short line
+  at the moments of a Battle Round that matter — it starts, the first shot, a group of the raid arriving, one
+  of hers falling near her, a building of hers falling, her badly hurt, the Grid Nexus first hit, her own
+  fall, and, as the result stands, a round won. Her lines are data in her army, a few a moment. **She does not
+  chatter**: the round is resolved before it plays, so its lines are planned at once — each moment once, at
+  most three lines a round besides the two that cut in, the moments that matter most chosen first, a quiet gap
+  between two lines, and a line that cannot come soon after its moment is not said. **Her fall and a round won
+  cut in** on a line being read; after her fall she says nothing more. **Which line** is a hash of the
+  moment's identity (the moment and the round), never a stream, and steps to another line each round.
+  **Where**: beside her (the owner settled it: "it looks cool when they 'speak' during battle") — the quoted
+  line on a row near her `@`, at the place clearest of what stands there for the whole time it is read, held
+  still while it is read, never over a unit or a building; and in the panel whenever she or that row is out of
+  view, her glyph and name over the quoted line under the feed, never into the controls. A line types in,
+  holds, and thins out; reduced motion shows it whole and steady. As she begins, the effect library's own
+  light lights her tile a moment, none for her last words. Monochrome keeps the words, bold, between quotes.
+  Every line is in the Activity Logs, with where it showed. Nothing she says can change what resolves. (RULE —
+  `tests/voice.test.ts`)
 - ***Her aura's reach*** (a named pattern; the owner: "Vasse should provide boost to nearby units"): while the
   fight is on, the ground within By the Book's radius — measured as range is, Manhattan, so a diamond — is
   washed in her side's colour, moving with her, the radius read from her content. A see-through style on the

@@ -96,9 +96,9 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 | Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus powers, or explore. On the Grid while placing: place the armed structure at the cursor. On the map after a click brought the keyboard there: open Explore Map. In the Nexus powers popup: pick the highlighted power (the two questions answer to their own letters) | Space is an alias of Enter everywhere on this screen, never a second meaning of its own |
 | Esc, `x` | **go back one level** — Esc is the `cancel` command, `x` the `back` command: close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave placing or Explore Map for where it began, disarming; else leave plain navigation for the menu; else, on the menu, **Esc** opens the **game menu** (`[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart`, `[q] Quit`) while **`x` does nothing** — no message, no flicker, on the menu, a committed plan or a Nexus Pulse alike — so `x x x` always lands on the menu. No popup has a row that only goes back | **RULE: Esc never leaves the game by itself — leaving always asks** (`tests/build-settings.test.ts`, `tests/lifecycle-build-phase.test.ts`). `x` is Esc everywhere but there, and a right click is `x`. A lone Esc at the end of a read waits a short timeout (50 ms, a tuned value) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (`tests/build-motion.test.ts`) |
 | Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid in plain navigation, nothing armed); does nothing while a popup is open | **Focus is its own state beside `armed`**, and a structure is armed only while the Grid has focus; finishing returns focus to where it began. The bottom line's hint is written for where focus is, because focus makes arrows mean two things. Whether a key should jump the cursor to the player's next own structure is an open question (Q53) |
-| Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit. The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu; Esc does. On the menu, where the cursor is hidden, it is refused: the row flickers, as Left and Right do; refused, naming it, while another planned building needs its build range |
-| `u` | undo the last planned placement | refused the same way, while another planned building needs its build range |
-| `s`, `p` | Start the Battle Round — the menu's last row, `[s] Start Battle Round`; `p`, its first key, still works | moves focus to the menu and opens the Battle Round screen, where Enter, Space or `s` again start it and Esc goes back; the one action that must not fire by accident. Refused while a dealt Nexus power is still waiting to be picked |
+| Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit. The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu; Esc does. On the menu, where the cursor is hidden, it is refused: the row flickers, as Left and Right do |
+| `u` | undo the last planned placement | plans are revisable until commit |
+| `s`, `p` | Start the Battle Round — the menu's last row, `[s] Start Battle Round`; `p`, its first key, still works | moves focus to the menu and opens the Battle Round screen, where Enter, Space or `s` again start it and Esc goes back; the one action that must not fire by accident. A Nexus power still waiting does not hold it back; the screen says so in one quiet line |
 | `n` | open the Nexus powers popup — the menu's `[n] Nexus` entry | pressed again inside the popup, closes it |
 | `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves. Opened from the menu, the cursor first moves to clear ground by the arming rule for a one-tile footprint; opened from the map it stays | a toggle, its row drawn active while open. Tab arrives in plain navigation instead |
 | `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. The top bar's `menu [esc]` is Esc, which on the menu opens it |
@@ -148,12 +148,11 @@ pick, and the player is back on the menu; the status line and the entry's "1 act
 reopening lists the pick as active. Esc, `n` or a click outside close it without a pick. The popup is
 one of the shapes in [`ui-patterns.md`](ui-patterns.md).
 
-**A dealt Nexus power still may not be skipped** ([`commander-armies.md`](../game-design/commander-armies.md)),
-but the check is enforced only where the invariant has to hold: only the commit itself (`p`, and its
-confirmation) is refused while a pick is outstanding, and arming, placing, undoing and removing proceed
-freely (RULE — `tests/build-nexus.test.ts`; `commitLock` in `src/build/state.ts`). The Build Phase still
-cannot end without a pick; the refusal fires only at the one place that matters, so an optional popup
-does not feel forced.
+**For now a dealt Nexus power may be left unpicked**
+([`commander-armies.md`](../game-design/commander-armies.md)): nothing is refused for want of a pick, the
+commit included (RULE — `tests/build-nexus.test.ts`, `tests/build-start.test.ts`). The menu's "(1)" still says
+one is waiting, the Start row's hint asks whether to start without one, and the Battle Round screen says in
+one quiet line that a power is still waiting.
 
 ## 5. Settings and Experiments
 
@@ -188,7 +187,7 @@ command-line flag and a rebuild.
 - **`--settings "<text>"`** (the terminal game and the scripted playtest) and `#settings=` (the browser
   page) read an export back, skipping an unknown name or a bad value one at a time, so an agent sees
   exactly what the owner saw. Pairs may be separated by spaces, lines or `&`, as a route's query is
-  (`trainEvery=6&reducedMotion=true`), and every on/off setting takes on/off, true/false, yes/no and
+  (`jumpStep=12&reducedMotion=true`), and every on/off setting takes on/off, true/false, yes/no and
   1/0 — a yes/no one, and one whose values hold an "off" (Key releases' `true` is `auto`; the popup
   pulse's `false` is 0); a yes word with several "on" values to choose from is skipped, not guessed. An
   old export's names are read by the tier each setting is on now: a settled one is skipped quietly, a

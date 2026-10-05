@@ -119,20 +119,20 @@ the same pull request, by subagents.
 Mario's notes after the Commander's pull request merged ([his words](../history/feedback/2026-10-05-commander-round-5.md)).
 Built on a new pull request, by subagents.
 
-- [ ] Only buildings standing when the Build Phase opens give build range; a building planned this phase gives
+- [x] Only buildings standing when the Build Phase opens give build range; a building planned this phase gives
       none until the next round.
-- [ ] A building may be placed where at least one of its tiles is inside the build range.
-- [ ] A building that spawns units keeps room around it: no other building within its clearance, shown while
+- [x] A building may be placed where at least one of its tiles is inside the build range.
+- [x] A building that spawns units keeps room around it: no other building within its clearance, shown while
       placing, and the clearance is an Experiment.
-- [ ] A building's units spawn together in waves, from the building's own numbers: how many a wave, how many
+- [x] A building's units spawn together in waves, from the building's own numbers: how many a wave, how many
       waves, how long between them; the first wave 5 seconds into the round. The Barracks sends 4 troopers in
       one wave, and the Barracks Experiments are gone.
-- [ ] A Nexus power that adds a wave is in Vasse's pool, as design.
-- [ ] A round can start with the Nexus power still unpicked.
-- [ ] Exploring a unit shows its range, the way a building's reach shows.
-- [ ] The raid's intent trail is a slow line of arrows, one every three tiles, each leaving a fading arrow
+- [x] A Nexus power that adds a wave is in Vasse's pool, as design.
+- [x] A round can start with the Nexus power still unpicked.
+- [x] Exploring a unit shows its range, the way a building's reach shows.
+- [x] The raid's intent trail is a slow line of arrows, one every three tiles, each leaving a fading arrow
       behind; still under reduced motion.
-- [ ] Vasse speaks beside her on the map; the Vasse's voice Experiment is settled and gone.
+- [x] Vasse speaks beside her on the map; the Vasse's voice Experiment is settled and gone.
 - [ ] Tall tiles: a spike shows range and movement with tiles as now, square tiles, and rows counting double
       in the rules, with what each costs and a recommendation; nothing is built for real before Mario decides.
 

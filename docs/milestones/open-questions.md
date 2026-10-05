@@ -293,6 +293,10 @@ combat rule shape, judged the way volatile munitions was — by whether it makes
 legible without a word of lore ([`lore.md`](../game-design/lore.md)), not by whether it creates entities.
 Revisit if a real Commander Army's spawn needs a cost; at that point it is the worker economy's.
 
+The Commander's fifth round settled half of it, for buildings the player places: they make units in waves, as
+production (Mario, 2026-10-05; the campaign's Hatchery by the same rule as the Barracks). A spawner stays a
+combat rule shape only for a unit that makes units, which is what this question still asks.
+
 ### Q27 — Should "ground cannot target air" be the schema's default, not an opt-in field?
 
 **Status:** OPEN — blocks nothing until a played roster mixes air and ground. Air is real content now (the Ravel buzzard and corsair, `src/content/ravel.ts`, `scenarios/air-crossing.map.json`), but no real unit sets `targetLayers`.
