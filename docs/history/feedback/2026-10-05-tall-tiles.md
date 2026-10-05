@@ -39,7 +39,7 @@ as a picture.
 > Please try to represent each option with ascii art in code blocks so I can visualize the tradeoffs.
 
 **Built.** Each option drawn in code blocks, a reach, a second of walking down and across, a melee touch and a
-building, in the pull request and in the comparison report.
+building, in the pull request and in [the comparison](../reports/2026-10-05-tall-tiles-options.md).
 
 ### F134 — Build the simple options as an Experiment; only draw the complicated ones
 
