@@ -31,7 +31,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
 | [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-Pulse regrouping via outposts |
-| [Q24](#q24--does-the-terminal-cells-own-aspect-ratio-distort-movement-and-fire-enough-to-fix) | Does the cell's aspect ratio distort movement enough to fix? | OPEN | Mario, now |
+| [Q24](#q24--does-the-terminal-cells-own-aspect-ratio-distort-movement-and-fire-enough-to-fix) | Does the cell's aspect ratio distort movement enough to fix? | OPEN, being felt | Mario, now |
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
@@ -249,28 +249,36 @@ design it is alongside the routing and worker-economy work.
 
 ### Q24 — Does the terminal cell's own aspect ratio distort movement and fire enough to fix?
 
-**Status:** OPEN — ready for Mario; explored by a spike on 2026-10-05
-([the report](../history/reports/2026-10-05-tall-tiles-spike.md)).
+**Status:** OPEN — being felt: four options are built as the Ground Experiment, with a test level to play them on
+(2026-10-05; [the options, drawn](../history/reports/2026-10-05-tall-tiles-options.md),
+[the spike](../history/reports/2026-10-05-tall-tiles-spike.md)).
 
 Owner playtest, 2026-08-22: "it makes movement and diagonal shooting look a bit distorted; too fast when
 moving up and down, too slow when moving sideways... Let's explore the vertical-rectangle issue later, for now
-just take note." And on 2026-10-05: "the range is severely skewed vertically ... one idea would be counting
-distance and speed by half vertically". A terminal cell is about twice as tall as it is wide: at one column a
-tile every range, aura and build range is drawn twice as tall as it is wide, and a unit walking down the screen
-looks twice as fast as one walking across. The mitigation built so far is adaptive tile width
-([`presentation.md`](../system-design/presentation.md)): two columns a tile at 128 columns or wider.
+just take note." On 2026-10-05: "the range is severely skewed vertically ... one idea would be counting distance
+and speed by half vertically", and, choosing: "the map is not important, we will make nee maps later. What
+matters is how intuitive it feels for a human player, this is the time to get it right, we can still change all
+numbers and formulas to fit." A terminal cell is about twice as tall as it is wide: at one column a tile every
+range, aura and build range is drawn twice as tall as it is wide, and a unit walking down the screen looks twice
+as fast as one walking across.
 
 | Option | Cost |
 | --- | --- |
-| A. **Leave it**: the two-column screen at 128 columns and wider is the answer | Free. Nothing changes at 80 × 24, the acceptance target |
-| B. **Square tiles everywhere**: two columns a tile even at 80 × 24 | No rule changes, a few lines. Shows half the map (24 × 18 tiles at 80 × 24), so PERIMETER's base and the raid's ridge no longer fit one view; buildings and units read with gaps (`[ b ]`) |
+| A. **As now** (Ground: as now) | Free. Reaches drawn tall, walking down twice as fast on screen; two columns a tile at 128 columns or wider |
+| B. **Square tiles** (Ground: square tiles) | No rule changes, every step a tile either way. 24 × 18 tiles at 80 × 24; buildings and units read with gaps (`[ b ]`) until they have two-character art; a step across hops two columns |
 | C. **Draw a step up or down over more time** | Not viable: units are drawn on whole tiles, so a slower crawl draws them rows from where they fight, and it fixes no shape |
 | D. **Change the acceptance target** | The owner does not want it pursued; named for completeness |
-| E. **Rows count double** (his idea): a row counts as two columns in every distance, and a step up or down takes twice as long | Ranges, auras and movement look right at 80 × 24 with the whole map in view, and PERIMETER kept its shape. Melee becomes "touching"; the build range goes from 3 to 6 to keep its rows; a raid from the north arrives later; the two-column screen goes; every pinned hash and about a hundred tests move once. A step of its own |
+| E. **Rows count double** (Ground: rows x2) | Reaches and walks look right at 80 × 24 with today's art and view. Melee is touching; the build range is counted in rows; every other reach loses half its rows (odd ranges round down); a step up or down is a row at a time, half as often |
+| F. **Sideways doubled** (Ground: sideways x2) | E's rule with every number doubled across: up and down as now, across twice as far and as fast, so every reach covers twice the ground and the battle speeds up |
+| G. **Hex grid** (drawn only) | The nearest to round; every map, footprint and path redone, rectangular buildings sit badly |
+| H. **A tilted camera: rows count three** (drawn only) | Reaches wider than tall, like depth; up and down too coarse at 18 rows |
 
-**Recommendation: E, at his scale (a range reaches half as far up and down as across), felt first as an
-Experiment** with the build range at 6 while it is on, and B beside it as a second Experiment, so both can be
-compared in an evening of PERIMETER before the distance and tile-width rules change for good.
+**Recommendation: play the Ground test under each choice, then PERIMETER under the one that feels best.** Before
+he plays, the lean is E, rows x2: it fixes both the shapes and the walk while keeping the whole battle in view at
+80 × 24 and today's art; B is the plainest rules if a closer view and new two-column art are acceptable. Whichever
+is kept, its choice becomes the rule in one pull request with the retune: the Experiment and the other choices go,
+the grid design's distance and the presentation's tile width say the one answer, and the numbers (build range,
+her aura, blasts, the engage reach, PERIMETER's raid) are set by feel.
 
 ### Q26 — Is a unit that spawns other units a combat ability rather than "production", or does Mario need to sign off before real content uses it?
 

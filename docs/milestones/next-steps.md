@@ -13,10 +13,13 @@ it is done.*
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
   MISSION in Settings (`d`), **Barracks room** (1 or 2 tiles) is new beside **Build range** and **By the
   Book**; paste the settings export.
-- **Decide the tall tiles** (his note on range skewed vertically): [the spike's
-  report](../history/reports/2026-10-05-tall-tiles-spike.md) compares tiles as now, square tiles and rows
-  counting double. Recommended: build rows counting double as an Experiment, with square tiles beside it, so
-  he can feel both before the distance rules change; it is a step of its own.
+- **Play the Ground Experiment** (his notes on tall tiles): every option is drawn in [the
+  comparison](../history/reports/2026-10-05-tall-tiles-options.md), and four are built as the Ground Experiment,
+  last under THE MISSION in Settings (`d`, `End`, `Up`, then Left or Right): as now, rows x2, sideways x2, square
+  tiles. It applies at once. The Ground test (`--at 'campaign?level=ground-test'`, or a button on the playable
+  page) puts two raids the same distance from the Nexus on screen, one from the north, one from the east: press
+  `3` to see a Turret's reach, `s` twice to watch how fast each comes. Then PERIMETER under the one that feels
+  best, and paste the settings export.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -37,6 +40,16 @@ it is done.*
 ## Carry-over
 
 Small, none blocking.
+
+**From the tall tiles** ([the options, drawn](../history/reports/2026-10-05-tall-tiles-options.md)):
+
+- Under rows x2 and sideways x2 the content's numbers are today's: Vasse's aura of 3 reaches one row, a blast of 2
+  one row, and a card's "within 3 tiles" counts in the battle's measure. The retune comes with the choice.
+- A rate that does not divide its step evenly drops the remainder each step, as it always has, so under sideways
+  x2 not every unit walks across exactly twice as fast (the flak trooper steps every 3 ticks, not 2.5).
+- Found while testing melee, under every measure and as now too: two melee units of one speed set down
+  diagonally from each other step round each other without ever touching. Real pathfinding, not the greedy
+  step, is what closes it.
 
 **From step 6B** ([the round-loop report](../history/reports/2026-09-30-round-loop-and-missions.md) has the reasons):
 

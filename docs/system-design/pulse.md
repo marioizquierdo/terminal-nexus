@@ -384,7 +384,9 @@ destroys it.
 build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
 build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
 content definition with a `constructionRadius`; today every building the player places) lets its player build
-within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. Two of
+within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. **The
+build range is counted in rows**, so it keeps its height under the Ground Experiment: where a row counts two
+columns, a radius of 3 reaches 3 rows up and down and 6 columns across (`tests/ground-view.test.ts`). Two of
 the player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the
 two radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the
 network projects. One cut off from it keeps working (it trains, it shoots) and gives no build range; a

@@ -142,17 +142,17 @@ Mario's notes after the fifth round merged ([his words](../history/feedback/2026
 next update is the vertical space alone, judged by how it feels to play, not by today's maps. Built on a new
 pull request.
 
-- [ ] Each option is drawn in ASCII, the ones not built included: a reach, a second of walking down and across,
+- [x] Each option is drawn in ASCII, the ones not built included: a reach, a second of walking down and across,
       a melee touch and a building.
-- [ ] One Experiment, Ground, with four choices: as now, rows count double, sideways doubled, and square tiles.
-- [ ] The rule a Battle Round measures by travels with it; with "as now" every battle and every pinned hash is
+- [x] One Experiment, Ground, with four choices: as now, rows count double, sideways doubled, and square tiles.
+- [x] The rule a Battle Round measures by travels with it; with "as now" every battle and every pinned hash is
       exactly what it was.
-- [ ] Under rows counting double, melee is touching, the build range keeps its rows, and every reach, aura and
+- [x] Under rows counting double, melee is touching, the build range keeps its rows, and every reach, aura and
       outline on screen is the kernel's own.
-- [ ] Square tiles draw two columns a tile at every terminal size; the other choices of the rules draw one.
-- [ ] A test level, reachable by route, shows a reach to place, a raid from above and one from the side at the
+- [x] Square tiles draw two columns a tile at every terminal size; the other choices of the rules draw one.
+- [x] A test level, reachable by route, shows a reach to place, a raid from above and one from the side at the
       same distance on screen, and a melee line; the playable page opens it under each choice.
-- [ ] Nothing is settled before Mario plays it: the hex grid and a tilted camera are drawn, not built.
+- [x] Nothing is settled before Mario plays it: the hex grid and a tilted camera are drawn, not built.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

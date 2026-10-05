@@ -46,9 +46,13 @@ building, in the pull request and in [the comparison](../reports/2026-10-05-tall
 > And yes, build playable scenarios with experiental flags so I can try them out. Don't implement the complicated
 > versions (only visualize)
 
-**Built.** One Experiment, Ground, with four choices: as now, rows count double, sideways doubled, and square
-tiles. Under the first three choices of the rules, the rule travels with the Battle Round, so a battle under one
-measure never mixes with another; with "as now" every battle is exactly what it was. A test level, the Proving
-Ground, sets a Turret's reach to place, a raid from the north and one from the east at the same distance on screen,
-and a melee line, and the playable page opens it under each choice. The hex grid and a tilted camera are drawn, not
-built.
+**Built.** One Experiment, Ground, last under THE MISSION in Settings, with four choices that apply at once: as now;
+rows x2, a row counting two columns in every distance and every step, with melee as touching and the build range
+counted in rows so a base still grows up and down; sideways x2, the same count with every number doubled across;
+and square tiles, the rules as now with every tile drawn two columns wide. A battle carries its measure in its
+state, so it plays from its first tick to its last by one rule; with as now every battle and every pinned hash is
+exactly what it was. Every reach the Build Phase draws, Vasse's aura and the raid's trail follow the choice. A test
+level, the Ground test (`campaign?level=ground-test`), puts two raids the same distance from the Nexus on screen,
+9 rows north and 18 columns east, with room on its map for a Turret's whole reach; under rows x2 the two come at one
+pace, as now the northern one twice as fast. The playable page opens it under each choice, and PERIMETER under rows
+x2. The hex grid and a tilted camera are drawn, not built.

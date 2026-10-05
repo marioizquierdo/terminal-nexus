@@ -171,3 +171,26 @@ rtr      |_|
 - Walking down is slower on screen than walking across, like depth.
 - With 18 rows on screen up and down get coarse: a reach needs 3 more to gain a row.
 - It is rows x2's rule with three in place of two.
+
+## Built to feel
+
+The first four are the Ground Experiment, last under THE MISSION in Settings (`d`, `End`, `Up`, then Left or
+Right), applied at once to what the Build Phase draws and allows and to the next battle. A battle carries its
+measure in its state, so it plays from its first tick to its last by one rule; as now, every battle and every
+pinned hash is what it was.
+
+The Ground test (`campaign?level=ground-test`) is the place to feel them: open ground, the Nexus in the middle rows
+with room for a Turret's whole reach, and two pairs of raiders the same distance away on screen, one 9 rows north
+and one 18 columns east. Measured there with nothing built, in ticks (twelve a second):
+
+| | As now | Rows x2 | Sideways x2 |
+| --- | --- | --- | --- |
+| A third of the way in, north and east | 15 and 30 | 27 and 30 | 15 and 18 |
+| First blow, north and east | 24 and 86 | 72 and 66 | 22 and 52 |
+
+Square tiles play as now; on its screen the eastern raid really is twice as far, and starts off it to the right.
+The same trooper racing 11 rows down against 22 columns across in the kernel arrives in 44 and 88 ticks as now, 88
+and 88 with rows x2, and 44 and 44 sideways x2. A Turret's reach of 6 covers 13 × 13 tiles as now and with square
+tiles (drawn 26 columns wide there), 13 × 7 with rows x2, and 25 × 13 sideways x2.
+
+Not tried by a person yet.
