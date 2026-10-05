@@ -9,7 +9,7 @@
 // shape: take steps, return frames.
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
-import { isGated } from "../build/camera.ts"
+import { isGated, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
@@ -177,7 +177,8 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     // `wait~MS` steps show it moving. Nothing else on this screen depends on time in a scripted playtest.
     const pulse = build.pulseFrame(layout)
     const raid = build.raid()
-    const raidTrail = trail.at(build.state, clock, { reducedMotion: build.state.settings.reducedMotion, raidTrail: hasTrail(raid) })
+    const inView = hasTrail(raid, visibleRange(build.state.camera, build.state.viewport))
+    const raidTrail = trail.at(build.state, clock, { reducedMotion: build.state.settings.reducedMotion, raidTrail: inView })
     return composeBuildFrame(
       {
         // This round's: what stands on the map changes from round to round.

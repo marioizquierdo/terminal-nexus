@@ -839,7 +839,8 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   await session
 })
 
-test("with only the raid's trail moving, the live screen redraws at the trail's own pace — never every frame — and not at all under a popup", async () => {
+// Several of the trail's steps in real time, so Bun's per-test limit is lifted.
+test("with only the raid's trail moving, the live screen redraws at the trail's own pace — never every frame — and not at all under a popup or with the trail out of view", { timeout: 120_000 }, async () => {
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const session = runBuildPhase({
@@ -870,6 +871,22 @@ test("with only the raid's trail moving, the live screen redraws at the trail's 
   const held = stdout.frames
   await wait(2 * TUNING.trailStepMs)
   assert.equal(stdout.frames, held, "the trail kept the screen drawing under a popup")
+  // The popup closed, it moves again; the view taken far south, away from it, nothing on screen moves.
+  stdin.emit("data", Buffer.from(ESC))
+  await wait(TUNING.escTimeoutMs + 100)
+  const again = stdout.frames
+  await wait(2 * TUNING.trailStepMs)
+  assert.ok(stdout.frames > again, "the trail did not move again once the popup closed")
+  stdin.emit("data", Buffer.from(TAB))
+  // Three jumps, each its own press: a held jump repeats no faster than it can be seen to land.
+  for (let jump = 0; jump < 3; jump += 1) {
+    stdin.emit("data", Buffer.from(SHIFT_DOWN))
+    await wait(TUNING.jumpRepeatMs + 100)
+  }
+  await wait(TUNING.easeMs + TUNING.cursorGlideMs + 200)
+  const away = stdout.frames
+  await wait(2 * TUNING.trailStepMs)
+  assert.equal(stdout.frames, away, "the trail kept the screen drawing while out of view")
   stdin.emit("data", Buffer.from([3]))
   await session
 })

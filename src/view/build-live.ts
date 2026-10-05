@@ -50,7 +50,7 @@
 //     light around what the line looks at breathes from the frame that first showed that line, at the
 //     border's own "Popup pulse" pace and on its slow frames (`src/view/build-dialog.ts`). Reduced
 //     motion, 16 colours, monochrome and the Experiment at 0 hold it still;
-//   - **the raid's trail moves**: while the raid's intent is on the map and nothing holds it still, its
+//   - **the raid's trail moves**: while the raid's intent is in view and nothing holds it still, its
 //     arrows step a tile on toward what the raid goes for every `trailStepMs`, each leaving a copy behind
 //     that fades (`trailMarks`, `src/view/build-grid.ts`), timed from the first frame that drew it moving
 //     (`TrailClock`). It never settles, like the border's breath, so while it is the only thing moving the
@@ -231,18 +231,19 @@ export type LiveOptions = Readonly<{
    *  one settles, all this loop reads, depends on the timings alone — so without it (a test) every
    *  structure is scheduled as one tile. */
   footprintOf?: (contentId: string) => Footprint
-  /** Whether the raid's intent trail is on the map this frame — the forecast the composer is handed has one
-   *  (`hasTrail`): only then does it move and ask for frames. Absent (a test of something else), no trail. */
+  /** Whether some of the raid's intent trail is in view this frame (`hasTrail`, of the forecast the composer is
+   *  handed and the part of the map on screen): only then does it move and ask for frames. Absent (a test of
+   *  something else), no trail. */
   raidTrail?: boolean
 }>
 
 /**
- * **The raid's trail's own clock.** The trail moves while it is on the map and nothing holds it still; it holds
- * still — drawn as every still frame draws it — with no trail in the forecast, a popup open (the popup holds the
- * eye, and the trail waits under it), motion reduced, or the plan committed (a Pulse shows what happens, not
- * what was foreseen). Its clock runs from the first frame that drew it moving, and starts over the next time it
+ * **The raid's trail's own clock.** The trail moves while it is in view and nothing holds it still; it holds
+ * still — drawn as every still frame draws it — with no trail in view, a popup open (the popup holds the eye,
+ * and the trail waits under it), motion reduced, or the plan committed (a Pulse shows what happens, not what
+ * was foreseen). Its clock runs from the first frame that drew it moving, and starts over the next time it
  * moves after holding still — so the motion always begins from the still trail, with no jump: as a round opens,
- * and as a popup closes. Watched, not recorded, like the popup's border. The live loop keeps one
+ * as a popup closes, as the view comes back to it. Watched, not recorded, like the popup's border. The live loop keeps one
  * (`BuildAnimation`); a scripted playtest keeps its own on the script's clock, so the same keys draw the same
  * moving trail and a screen opened by a route draws what one reached by playing does.
  */

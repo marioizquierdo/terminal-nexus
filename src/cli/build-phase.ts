@@ -9,7 +9,7 @@
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../title-menu/mouse.ts"
 import { BuildSession } from "../view/build-session.ts"
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
-import { isGated } from "../build/camera.ts"
+import { isGated, visibleRange } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
@@ -252,7 +252,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
   // flash, the cursor's flash on a refused placement, a building going up, the focus arrow
   // and the cursor's blink, the menu turning into a card, a popup's
-  // border flashing and breathing, the raid's trail moving — is
+  // border flashing and breathing, the raid's trail moving while it is in view — is
   // `BuildAnimation`'s pure function of the state and the time read here, and the frame timer below
   // runs only while one of them is still moving; an idle screen draws once per input, as it always
   // has. The same clock times how far a cursor key moves — taps counted, holds on the game's cadence —
@@ -287,7 +287,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     build.advance(now, gated)
     // The player's settings as the Settings popup last left them — changed live, mid-screen.
     const settings = build.state.settings
-    // The raid the round brings, first: its trail moves, and asks for frames, only while it is on the map.
+    // The raid the round brings, first: its trail moves, and asks for frames, only while some of it is in view.
     const raid = gated ? undefined : build.raid()
     const live = gated
       ? null
@@ -295,7 +295,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           reducedMotion: settings.reducedMotion,
           capability: settings.capability,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
-          raidTrail: hasTrail(raid),
+          raidTrail: hasTrail(raid, visibleRange(build.state.camera, build.state.viewport)),
         })
     const pulse = gated ? undefined : build.pulseFrame(layout)
     const frame =

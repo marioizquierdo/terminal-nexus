@@ -343,10 +343,12 @@ export function trailTiles(input: BuildCompositionInput): Set<string> {
   return tiles
 }
 
-/** Whether a forecast draws a trail at all: a group with something to go for and a way to it. What the live
- *  loop asks before it times the trail's motion. */
-export function hasTrail(raid: RaidForecast | undefined): boolean {
-  return raid !== undefined && raid.some((group) => group.target !== null && group.path.length > 0)
+/** Whether a forecast draws a trail at all — a group with something to go for and a way to it — and, given the
+ *  part of the map in view, whether any of that way is in it. What the live loop asks before it times the trail's
+ *  motion: a trail scrolled out of view changes nothing on screen, so it asks for no frames. */
+export function hasTrail(raid: RaidForecast | undefined, range?: VisibleRange): boolean {
+  if (raid === undefined) return false
+  return raid.some((group) => group.target !== null && group.path.some((tile) => range === undefined || inView(range, tile)))
 }
 
 /** Every tile something stands on, is planned on or arrives on — what a trail mark, the build range's dots

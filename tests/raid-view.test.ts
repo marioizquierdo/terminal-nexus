@@ -21,7 +21,8 @@ import type { GlyphPack } from "../src/view/theme.ts"
 import { bearing, raidLines, raidRows, targetName, troopsLines } from "../src/view/raid-panel.ts"
 import { isTroops } from "../src/view/troops-post.ts"
 import type { TroopsGroup } from "../src/view/troops-post.ts"
-import { GHOST_FADES, TRAIL_MOTION, trailGlyph, trailMarks, trailTiles } from "../src/view/build-grid.ts"
+import { GHOST_FADES, TRAIL_MOTION, hasTrail, trailGlyph, trailMarks, trailTiles } from "../src/view/build-grid.ts"
+import { visibleRange } from "../src/build/camera.ts"
 import { BuildAnimation, FRAME_MS } from "../src/view/build-live.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
@@ -453,7 +454,7 @@ test("the live loop moves it from the first frame that drew it moving, asks for 
   assert.equal(new BuildAnimation().frame(side.build.state, 0, { capability: "truecolor" }).busyUntil, null)
 })
 
-test("a building's reach yields to every tile of the trail's way, wherever its arrows are this instant: the same set, moving or still", () => {
+test("a building's reach yields to every tile of the trail's way, wherever its arrows are this instant: the same set, moving or still — and the trail moves only while some of that way is in view", () => {
   const side = perimeter()
   const raid = side.build.raid() ?? []
   const input = { context: side.build.round, state: side.build.state, layout: side.layout, raid }
@@ -470,6 +471,12 @@ test("a building's reach yields to every tile of the trail's way, wherever its a
   }
   // Nothing to yield to once the plan is committed.
   assert.equal(trailTiles({ ...input, state: { ...input.state, committed: true } }).size, 0)
+  // The live loop times the motion only while some of the way is in view: scrolled away, nothing on screen moves.
+  assert.equal(hasTrail(raid), true)
+  assert.equal(hasTrail(raid, visibleRange(side.build.state.camera, side.build.state.viewport)), true)
+  assert.equal(hasTrail(raid, { firstX: 60, lastX: 95, firstY: 25, lastY: 39 }), false)
+  assert.equal(hasTrail([]), false)
+  assert.equal(hasTrail(undefined), false)
 })
 
 test("the scripted playtest moves the trail on the script's own clock: the same keys draw the same frames, and waiting shows it move", () => {
