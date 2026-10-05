@@ -113,7 +113,7 @@ test("--help documents --at with every place and level, and the one tuning flag"
   assert.match(result.stdout, /--at 'campaign\?level=vasse-test-1&round=3'/)
   assert.match(result.stdout, /vasse-test-1 +Perimeter, rounds 1 to 3/)
   assert.match(result.stdout, /--scroll-margin/)
-  assert.match(result.stdout, /trainEvery=6&reducedMotion=true/)
+  assert.match(result.stdout, /jumpStep=12&reducedMotion=true/)
 })
 
 test("a nonsense --scroll-margin is a clear error, not a silently ignored flag", () => {

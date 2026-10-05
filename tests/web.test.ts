@@ -300,8 +300,8 @@ test("the page plays a terminal that reports key events: it answers, keeps the f
 
 test("#at= opens a route, whole: a part runs to the next part the page knows, not to the next &", () => {
   // As a person writes it: the route's own ? = and &, then a settings text with its own & and =, then keys.
-  const address = readAddress("#at=campaign?level=vasse-test-1&round=2&settings=nextRound=auto&trainEvery=6&keys=Esc n 1")
-  assert.deepEqual(address, { at: "campaign?level=vasse-test-1&round=2", settings: "nextRound=auto&trainEvery=6", keys: "Esc n 1" })
+  const address = readAddress("#at=campaign?level=vasse-test-1&round=2&settings=nextRound=auto&jumpStep=12&keys=Esc n 1")
+  assert.deepEqual(address, { at: "campaign?level=vasse-test-1&round=2", settings: "nextRound=auto&jumpStep=12", keys: "Esc n 1" })
   const at = parseRoute(address.at ?? "")
   assert.equal(at.kind === "level" ? `${at.level.id} ${at.round}` : at.place, "vasse-test-1 2")
   // Percent-encoded, as an address often is, and in any order.

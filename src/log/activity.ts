@@ -136,12 +136,12 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.trained": {
     defaultLevel: "info",
-    description: "What the Barracks trained in the battle just ended, and what came of them.",
+    description: "What the player's buildings spawned in their waves in the battle just ended, and what came of them.",
     props: {
       round: { type: "number", description: "Which Battle Round." },
-      buildings: { type: "number", description: "How many of the player's buildings trained this round." },
-      trained: { type: "number", description: "How many troopers they trained." },
-      first: { type: "number", description: "The second of the round the first one was trained at.", optional: true },
+      buildings: { type: "number", description: "How many of the player's buildings could spawn units this round." },
+      trained: { type: "number", description: "How many units they spawned, every wave's together." },
+      first: { type: "number", description: "The second of the round the first of them came out at.", optional: true },
       home: { type: "number", description: "How many of those trained came home alive at the end." },
       ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once the raid's units are all dead, or the Nexus falls." },
     },
@@ -229,14 +229,6 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
   },
   { name: "Problems", question: "Only errors and warnings.", level: "warn" },
   { name: "Everything", question: "Every event recorded, down to each command and each key's move.", level: "debug" },
-  // Step 6C's question, last rather than first: the window's tests walk the first three by position, and
-  // Left from the first filter reaches this one in a single key. Remove it once the pace is settled.
-  {
-    name: "Barracks",
-    question: "What each round's Barracks trained, how many came home, and when the fighting stopped.",
-    level: "info",
-    events: ["pulse.start", "pulse.trained", "pulse.end", "setting.change"],
-  },
   // The Commander round's question — was the intro read? — last for the same reason. Remove it once answered.
   {
     name: "Intro",

@@ -653,8 +653,8 @@ function directionOf(key: CursorKey): string {
   return key.dx < 0 ? "left" : "right"
 }
 
-/** What the player's buildings trained in a resolved Pulse, read from its events and its states as the
- *  `pulse.trained` entry records it: how many buildings could train, how many troopers they did, the
+/** What the player's buildings spawned in a resolved Pulse, read from its events and its states as the
+ *  `pulse.trained` entry records it: how many buildings could spawn, how many units their waves brought, the
  *  second the first came, how many of them Recall brought home, and the second the fighting stopped. */
 function trainedIn(resolved: ResolvedPulse): Readonly<{ buildings: number; trained: number; first?: number; home: number; ended: number }> {
   const { timeline } = resolved

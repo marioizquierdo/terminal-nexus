@@ -23,7 +23,7 @@
 //
 // **Parsing is forgiving**, in the style of `parseSettings`: any `name = value` pair anywhere is read
 // (lines, spaces, commas, semicolons or `&` all separate them, so a one-line `--settings
-// "raid=probe crew=some"` works too, and so does a route's query form, `trainEvery=6&reducedMotion=true`:
+// "raid=probe crew=some"` works too, and so does a route's query form, `jumpStep=12&reducedMotion=true`:
 // the owner's "foo=6&var=true"); an unknown name is ignored and reported; a value that is not one
 // the setting can take leaves that one setting as it was. **Every on/off setting takes the usual yes and
 // no words** — on/off, true/false, yes/no, 1/0 — a yes/no one (reduced motion) and one whose values are a
