@@ -120,9 +120,6 @@ export type BuildContext = Readonly<{
    * to the shell untouched (the reducer never reads it). `null` or absent for a first round.
    */
   carried?: MatchState | null
-  /** The player's buildings that train during a Pulse, and what each trains — the mission's own list —
-   *  so a card can say so, at the pace the Experiments set. Absent: nothing trains. */
-  trains?: readonly Readonly<{ structure: string; unit: string }>[]
   /** What else is on the map: survivors of both sides, and a scripted side's structures. */
   field?: readonly FieldEntity[]
   /** The Commanders sitting this round out, and when each is back — handed on to the next round by the
