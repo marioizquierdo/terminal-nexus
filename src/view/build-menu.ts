@@ -247,8 +247,8 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
     case "explore":
       return { hotkey: "e", label: "Explore Map", ...look }
     case "nexus": {
-      // Its "(1)" is the number of picks waiting — the one thing that will stop the commit — drawn in
-      // the hotkey's colour so it catches the eye without a popup forcing it.
+      // Its "(1)" is the number of picks waiting — optional for now, so it stops nothing — drawn in the
+      // hotkey's colour so it catches the eye without a popup forcing it.
       const pending = pendingPicks(context, state)
       const active = nexusPowers(context, state).active.length
       return {
@@ -260,9 +260,9 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
       }
     }
     case "start":
-      // Dim while a Nexus power still waits to be picked, because pressing it would only be refused —
-      // it still answers, with the reason.
-      return { hotkey: START_KEY, label: START_LABEL, ...look, disabled: pendingPicks(context, state) > 0 }
+      // Never dim: a Nexus power still waiting to be picked does not hold the round back (the owner, round 5:
+      // "Nexus Powers should be optional for now"), and the Battle Round screen says it is waiting.
+      return { hotkey: START_KEY, label: START_LABEL, ...look }
     case "construct": {
       const item = context.catalog[target.index]
       if (item === undefined) return null

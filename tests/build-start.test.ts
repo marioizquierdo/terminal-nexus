@@ -87,16 +87,19 @@ test("the rule: every entry of the menu is reached by Down and done by Enter alo
   })
 })
 
-test("Start Battle Round is dim while a Nexus power waits to be picked, and bright once it is", () => {
+test("Start Battle Round is ready whether or not a Nexus power waits to be picked: never dim", () => {
+  // The owner, round 5: "Nexus Powers should be optional for now, it's easier for testing if I can just start
+  // a round." The menu's "(1)" still says a power is waiting.
   const waiting = newSession()
   const { layout } = waiting
   const label = (session: Session) => cellAt(frameOf(session), layout.panelColumn + 4, startRow(layout)).style
-  assert.equal(label(waiting).dim, true, "the row looks ready with a pick still waiting")
+  assert.notEqual(label(waiting).dim, true, "the row looks refused with a pick waiting")
+  assert.match(screenText(waiting), /\[n\] Nexus \(1\)/)
   waiting.build.dispatch({ kind: "pick-nexus", index: 1 })
   assert.notEqual(label(waiting).dim, true)
 })
 
-test("s, p, a click and Enter on the highlighted row all ask the same, and refuse the same way while a pick waits", () => {
+test("s, p, a click and Enter on the highlighted row all ask the same, with a pick waiting or made", () => {
   const onRow = (session: Session): void => {
     session.build.dispatch({ kind: "highlight", delta: 1, jump: true }) // the last row
     session.build.handleData("\r", session.layout)
@@ -114,12 +117,15 @@ test("s, p, a click and Enter on the highlighted row all ask the same, and refus
     assert.equal(session.build.state.popup, "battle-round", `${name} did not open the Battle Round screen`)
     assert.match(session.build.state.status.text, /^Battle Round 1:/, name)
   }
-  // With the pick still waiting, each is refused with its reason and no screen opens.
+  // With the pick still waiting, each opens the same screen, which says so in one quiet line.
   for (const [name, press] of presses) {
     const session = newSession()
     press(session)
-    assert.equal(session.build.state.popup, null, `${name} opened the screen with a pick waiting`)
-    assert.match(session.build.state.status.text, /Pick a Nexus power first/, name)
+    assert.equal(session.build.state.popup, "battle-round", `${name} did not open the screen with a pick waiting`)
+    assert.match(session.build.state.status.text, /^Battle Round 1:/, name)
+    const spec = popupSpec(session.context, session.build.state)
+    const waiting = spec?.rows.find((row) => row.kind === "text" && row.text === "A Nexus power is still waiting.")
+    assert.ok(waiting !== undefined && waiting.kind === "text" && waiting.muted === true, `${name}: the screen does not say quietly that a power waits`)
   }
 })
 

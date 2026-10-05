@@ -151,9 +151,11 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   // --- The menu, by the highlighted row ---
   "menu-mouse": () => "Click a row or press its key - or use up/down and [enter].",
   "menu-explore": () => "Explore Map: look around and read what is on each tile. [enter] opens it.",
+  // A dealt power is optional for now (the owner, round 5: "it's easier for testing if I can just start a
+  // round"): the hints say one is waiting, never that it must be picked.
   "menu-nexus": (context, state) =>
     pendingPicks(context, state) > 0
-      ? "Nexus powers: pick one before the battle round. [enter] opens them."
+      ? "Nexus powers: one is waiting to be picked. [enter] opens them."
       : "Nexus powers: read the powers you have. [enter] opens them.",
   "menu-building": (context, state) => {
     const item = highlightedItem(context, state)
@@ -166,7 +168,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   },
   "menu-start": (context, state) =>
     pendingPicks(context, state) > 0
-      ? "Start Battle Round: pick a Nexus power first - [n] opens them."
+      ? `Start Battle Round ${state.pulseNumber} without a Nexus power? [n] picks one, [enter] begins.`
       : `Start Battle Round ${state.pulseNumber}: lock in your plan and fight. [enter] to begin.`,
 
   // --- The map ---

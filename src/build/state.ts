@@ -270,10 +270,10 @@ export type BuildState = Readonly<{
    *  tile (`status.tile`). */
   status: StatusMessage
   nextOrdinal: number
-  /** Index into `context.nexusDraft`, or `null` before a pick. A Nexus power, once dealt, may not be
-   *  skipped (docs/game-design/commander-armies.md), so the **commit** is refused until this stops being
-   *  `null` — and only the commit: everything else proceeds, so an optional popup does not nag like a
-   *  forced one (docs/system-design/input.md). */
+  /** Index into `context.nexusDraft`, or `null` before a pick — or with none made at all: **for now a dealt
+   *  power may be left unpicked** (the owner, round 5: "Nexus Powers should be optional for now, it's easier
+   *  for testing if I can just start a round"). The round then starts without it, nothing is taken, and the
+   *  next Build Phase deals as every one does (docs/game-design/commander-armies.md). */
   nexusPick: number | null
   /** Added to `context.allotment` by whichever option `nexusPick` names. Kept separately rather than
    *  folded into a mutated allotment, for the same reason `spent` is summed rather than tracked: one
@@ -467,31 +467,20 @@ function nextLine(context: BuildContext, state: BuildState): BuildState {
 }
 
 /**
- * Why a command that edits the plan (arm, place, remove, undo) is refused right now, or `null` when
- * none of these apply. Checked in priority order — most-final first, exactly the way `legalityAt`
- * checks affordability before a tile: a player told to answer the confirmation when the real reason
- * is "already committed" would be sent to fix the wrong thing.
+ * Why a command that edits the plan (arm, place, remove, undo) — or opens the Battle Round screen — is
+ * refused right now, or `null` when none of these apply. Checked in priority order — most-final first,
+ * exactly the way `legalityAt` checks affordability before a tile: a player told to answer the
+ * confirmation when the real reason is "already committed" would be sent to fix the wrong thing. So
+ * `armedPreview` draws no ghost behind a popup or the commit question.
  *
- * **A Nexus power still waiting to be picked is not one of these**. Refusing every
- * edit until the pick was made would suit a forced full-screen draft; for a popup the
- * player opens when they choose, it would make every other action nag just as hard. The invariant
- * only has to hold where the Build Phase ends, so that is the only place it is checked —
- * `commitLock`, below. Split rather than loosened, so `armedPreview` still draws no ghost behind an
- * popup or the commit question.
+ * **A Nexus power still waiting to be picked is not one of these**, the commit included: for now a dealt
+ * power may be left unpicked (the owner, round 5: "Nexus Powers should be optional for now"), so the menu's
+ * "(1)" and the Battle Round screen say it is waiting, and nothing refuses for it.
  */
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The Build Phase is committed.", "warning")
   if (state.popup === "battle-round") return status("Start or go back first: [s] start, [esc] back.", "warning")
   if (state.popup !== null) return status("Close the popup first: [esc].", "warning")
-  return null
-}
-
-/** Why the commit is refused right now: everything `editLock` says, and — the one place it is
- *  enforced — a dealt Nexus power that has not been picked (docs/game-design/commander-armies.md). */
-function commitLock(state: BuildState): StatusMessage | null {
-  const edit = editLock(state)
-  if (edit !== null) return edit
-  if (state.nexusPick === null) return status("Pick a Nexus power first: [n] Nexus.", "warning")
   return null
 }
 
@@ -1059,14 +1048,15 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
 }
 
 /** `s`, or the Start Battle Round entry: open the Battle Round confirmation over the Grid, the menu lit behind
- *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
- *  flicker beside the bottom line's reason. With a building armed, the building comes first
+ *  it. Its row flashes "pressed" however it was reached — or, refused (a popup or a committed plan holds
+ *  it), a flicker beside the bottom line's reason. A Nexus power still waiting is no reason: the screen
+ *  says it is waiting, and the round can start without it. With a building armed, the building comes first
  *  (`refuseWhileArmed`). */
 function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
   const refused = refuseWhileArmed(context, state)
   if (refused !== null) return refused
-  const lock = commitLock(state)
+  const lock = editLock(state)
   if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
   return {
     ...pushPopup(toMenu(state), "battle-round", 0),

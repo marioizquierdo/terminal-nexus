@@ -39,7 +39,7 @@ import {
   shownEntries,
 } from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { exportText, nexusPowers } from "./state.ts"
+import { exportText, nexusPowers, pendingPicks } from "./state.ts"
 import type { BuildCommand, DialogLine, PopupMessage } from "./types.ts"
 
 export type PopupRow =
@@ -431,6 +431,9 @@ export function dialogSpec(context: BuildContext, state: BuildState): PopupSpec 
 /** What the Battle Round confirmation announces when a mission has nothing of its own to say. */
 export const DEFAULT_ROUND_TEXT = "Activate Nexus. Collect Resources. Spawn Units."
 
+/** The Battle Round confirmation's quiet line while a dealt Nexus power is left unpicked. */
+export const UNPICKED_POWER = "A Nexus power is still waiting."
+
 /** What the confirmation says for round `round`: the mission's own text for it, or the default. */
 export function roundAnnouncement(context: BuildContext, round: number): string {
   return context.roundText?.[round] ?? DEFAULT_ROUND_TEXT
@@ -456,7 +459,8 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       const powers = nexusPowers(context, state)
       const rows: PopupRow[] = [{ kind: "blank" }]
       if (powers.pending.length > 0) {
-        rows.push({ kind: "heading", text: "PICK ONE - needed before the battle" })
+        // Optional for now (the owner, round 5): a round can start with the pick still waiting.
+        rows.push({ kind: "heading", text: "PICK ONE - or start without" })
         powers.pending.forEach(({ index, option }, position) => {
           rows.push({
             kind: "option",
@@ -481,13 +485,15 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
     case "battle-round":
       // A confirmation screen, not a question: the round's title,
       // what it announces (and that the Commander is out, when she is), and the one row, `[s] Start`,
-      // highlighted because it is what Enter, Space and `s` do. Esc goes back, as from every popup.
+      // highlighted because it is what Enter, Space and `s` do. Esc goes back, as from every popup. A Nexus
+      // power left unpicked is said in one quiet line, and starts nothing and stops nothing.
       return {
         title: `Battle Round ${state.pulseNumber}`,
         rows: [
           { kind: "blank" },
           ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): PopupRow => ({ kind: "note", text })),
           ...absentCommanders(context).map((text): PopupRow => ({ kind: "note", text })),
+          ...(pendingPicks(context, state) > 0 ? [{ kind: "text", text: UNPICKED_POWER, muted: true } as const] : []),
           { kind: "blank" },
           { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "start-pulse" }, highlighted: true },
         ],
