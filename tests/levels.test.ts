@@ -1,6 +1,7 @@
 // The levels the game can open by id (src/cli/levels.ts): what a route's `campaign?level=<id>` names, opened at
 // any of its rounds the same way every time. They are the shipped campaigns' levels, in order (src/armies):
-// Vasse's PERIMETER, then the Commander's cadence, where her return can be played.
+// Vasse's PERIMETER, the Commander's cadence, where her return can be played, and the Ground test
+// (tests/ground-level.test.ts).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -49,12 +50,13 @@ test("a round the level does not have is refused by name", () => {
   for (const round of [0, 4, 1.5]) assert.throws(() => openRound(DEFAULT_LEVEL, round), /has rounds 1 to 3/)
 })
 
-test("the levels are her campaign's, in its order: PERIMETER, then the Commander's cadence", () => {
+test("the levels are her campaign's, in its order: PERIMETER, the Commander's cadence, then the Ground test", () => {
   assert.deepEqual(
     LEVELS.map((level) => [level.id, level.campaign, level.title, level.rounds]),
     [
       ["vasse-test-1", "vasse", "Perimeter", 3],
       ["vasse-test-2", "vasse", "The Commander falls", 3],
+      ["ground-test", "vasse", "Ground test", 2],
     ],
   )
   assert.deepEqual(
