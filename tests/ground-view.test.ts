@@ -32,7 +32,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
 import { reachOutline, roomApron } from "../src/view/build-areas.ts"
-import { trailGlyph, trailMarks } from "../src/view/build-grid.ts"
+import { TRAIL_MOTION, trailGlyph, trailMarks } from "../src/view/build-grid.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { AURA_WASH } from "../src/view/pulse-scene.ts"
@@ -424,6 +424,36 @@ test("with square tiles the trail's arrowheads read a row as one tile: at either
     }
   }
   assert.ok(seen >= 3, `only ${seen} trail marks drawn in view`)
+})
+
+test("where a row counts two, a trail along the screen's diagonal is one stroke, not an arrow turning as it moves", () => {
+  // Two steps across and one down, again and again: the screen's diagonal when a row counts two columns, the way a
+  // raid walks it (PERIMETER's raid off the ridge, under rows x2).
+  const path: Coord[] = [{ x: 40, y: 2 }]
+  for (let stair = 0; stair < 8; stair += 1) {
+    for (const [dx, dy] of [[-1, 0], [-1, 0], [0, 1]] as const) {
+      const at = path.at(-1) as Coord
+      path.push({ x: at.x + dx, y: at.y + dy })
+    }
+  }
+  const end = path.at(-1) as Coord
+  const target = [{ x: end.x - 1, y: end.y }]
+  const index = new Map(path.map((tile, at) => [`${tile.x},${tile.y}`, at]))
+  /** The glyphs of the arrows that look along the way itself, not at the target, `elapsedMs` into the motion. */
+  const glyphs = (ahead: number, row: number, elapsedMs: number): Set<string> =>
+    new Set(
+      trailMarks(path, target, elapsedMs, TRAIL_MOTION, ahead)
+        .filter((mark) => (index.get(`${mark.tile.x},${mark.tile.y}`) ?? path.length) + ahead < path.length)
+        .map((mark) => trailGlyph("ascii", mark.dx, mark.dy, row)),
+    )
+  // A whole stair ahead, a row counting two: every arrow is the same stroke, still and at every step of its motion.
+  for (const elapsedMs of [0, 400, 800, 1200]) assert.deepEqual([...glyphs(3, 2, elapsedMs)], ["/"], `at ${elapsedMs} ms`)
+  // Two steps ahead, a row counting one — the trail as it reads the rules as they are — the same way turns from an
+  // arrowhead to a stroke and back.
+  assert.ok([0, 400, 800].some((elapsedMs) => glyphs(2, 1, elapsedMs).size > 1), "the old reading never turned")
+  // As now nothing changes.
+  assert.equal(trailGlyph("ascii", -2, 1), "<")
+  assert.equal(trailGlyph("ascii", -2, 1, 2), "/")
 })
 
 test("arming counts a row as one tile with square tiles, as two otherwise: on PERIMETER's opening a Turret goes up, not across", () => {
