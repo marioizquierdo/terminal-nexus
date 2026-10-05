@@ -26,7 +26,7 @@ import { trackEffectsAt } from "./animation.ts"
 import { placementEffectContext, placementLook, placementSchedule, removalSchedule } from "./placement.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
-import { drawBuildRange, drawReach } from "./build-areas.ts"
+import { drawBuildRange, drawReach, drawRoom } from "./build-areas.ts"
 import { drawTroopsPost } from "./troops-post.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
@@ -344,15 +344,17 @@ export function drawEffects(
  */
 export function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
-  // Where it will reach — round the ghost, or round a building the cursor rests on — yielding to the trail.
+  // The room a Barracks keeps, round it and round the ghost; and where something will reach — round the ghost,
+  // or round a building the cursor rests on. Both yield to the raid's trail.
   const avoid = takenTiles(input.context, state.planned)
   for (const tile of trailTiles(input)) avoid.add(tile)
-  drawReach(cells, input, input.glyphPack ?? "ascii", preview, glideShift(input), avoid)
+  const shift = glideShift(input)
+  drawRoom(cells, input, preview, shift, avoid)
+  drawReach(cells, input, input.glyphPack ?? "ascii", preview, shift, avoid)
   if (preview === null) return
   const legal = preview.refusal === null
   const shape = legal || state.noSpotFound
   const range = visibleRange(state.camera, state.viewport)
-  const shift = glideShift(input)
 
   for (const offset of preview.footprint) {
     const tile = { x: preview.anchor.x + offset.x + shift.x, y: preview.anchor.y + offset.y + shift.y }

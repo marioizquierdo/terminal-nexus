@@ -1,12 +1,19 @@
-// Two areas the Build Phase draws on the map while a building is being placed (the owner, round 4: "we should
+// The areas the Build Phase draws on the map while a building is being placed (the owner, round 4: "we should
 // have a cool and unobstrussive way to show where the turrets will reach ... They also can only be built within
 // the build-range of the other buildings, so we should also reflect that. Hopefully there's a way to represent
-// that in ascii without too much noise"). Two different things, so two different kinds of mark:
+// that in ascii without too much noise"). Different things, so different kinds of mark:
 //
-// - ***The build range*** is an **area**: where a new building may stand. While one is armed, every open tile
-//   inside it shows the ground's own dot, so the ground the player may build on is the densely dotted ground
-//   (outside it the map keeps its sparse lattice), and where colours blend it is lit by a faint grey wash. The
-//   dots carry it at every depth, monochrome included; the wash is fidelity.
+// - ***The build range*** is an **area**: where a new building may stand, any tile of it. While one is armed,
+//   every open tile inside it shows the ground's own dot, so the ground the player may build on is the densely
+//   dotted ground (outside it the map keeps its sparse lattice), and where colours blend it is lit by a faint
+//   grey wash. The dots carry it at every depth, monochrome included; the wash is fidelity.
+// - ***A Barracks's room*** is an **apron**: the ground a building that makes units keeps free round it (the
+//   owner, round 5: "so they leave space for units spawning"), where nothing may stand — unlike the build
+//   range's edge, which a building may hang over. While a building is armed, every open tile of it shows a mark
+//   of its own, a dim tick (`'`) where the ground would show a dot, round every standing or planned building
+//   that keeps room and round the armed one's ghost, moving with it. A tick, not a gap: an apron with no dots
+//   would read as ground outside the range, where a building may still hang. Inside the range it keeps the
+//   range's light, so it reads as drawn on that floor.
 // - ***A building's reach*** is an **outline**: the last tiles a building with a range reaches, as the kernel
 //   measures range (Manhattan, to the nearest tile of its footprint), drawn as a ring of strokes round it — `-`
 //   and `|` where the ring runs straight along the footprint, `/` and `\` where it runs diagonally. It follows
@@ -15,16 +22,18 @@
 //   a stroke: a ring yields to everything drawn on the map, the raid's trail included, so it never claims what
 //   it would catch on the raid's way (the owner: "don't over-promise on the enemy route").
 //
-// Both are presentation alone: nothing here decides a placement (`src/build/territory.ts` does), and neither is
+// All are presentation alone: nothing here decides a placement (`src/build/territory.ts` does), and none is
 // drawn while a popup holds the keyboard, once the plan is committed, or while a Pulse plays.
 
-import { footprintDistance } from "../grid/coords.ts"
+import { footprintDistance, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
+import { setting } from "../build/all-settings.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { ArmedPreview, BuildContext } from "../build/state.ts"
-import { buildRange, mapMode, structureAtTile } from "../build/state.ts"
+import { buildRange, buildingsOn, mapMode, structureAtTile } from "../build/state.ts"
 import type { Territory } from "../build/territory.ts"
+import { clearanceOf } from "../build/territory.ts"
 import type { ContentDef } from "../content/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
@@ -83,6 +92,86 @@ export function drawBuildRange(cells: BandCell[], input: BuildCompositionInput, 
 export function reachOf(definition: ContentDef): number | null {
   return definition.attack?.range ?? null
 }
+
+// --- A Barracks's room ----------------------------------------------------------------------------------------
+
+/** The mark on a tile of a Barracks's room, in both glyph packs: a tick, where open ground would show a dot. */
+export const ROOM_GLYPH = "'"
+
+/** The room's look: the ground's own role, dim, the lightest there is — the tick says the rest. */
+const ROOM_STYLE: CellStyle = { fgRole: "terrain.plain", dim: true }
+
+/** The room's look on the build range's ground: the range's light kept, so it reads as drawn on that floor. */
+const ROOM_ON_FLOOR: CellStyle = { ...ROOM_STYLE, ...BUILD_RANGE_LIGHT }
+
+/**
+ * The room a building that makes units keeps: every tile within `clearance` of the footprint anchored at
+ * `anchor`, measured as range is (Manhattan, to its nearest tile), and not on it — in reading order. Counted in
+ * the tiles' own coordinates, never as offsets that could be `-0`. Pure, and in tiles: the view lays it on cells.
+ */
+export function roomApron(anchor: Coord, footprint: Footprint, clearance: number): Coord[] {
+  let left = Number.POSITIVE_INFINITY
+  let right = Number.NEGATIVE_INFINITY
+  let top = Number.POSITIVE_INFINITY
+  let bottom = Number.NEGATIVE_INFINITY
+  for (const offset of footprint) {
+    left = Math.min(left, anchor.x + offset.x)
+    right = Math.max(right, anchor.x + offset.x)
+    top = Math.min(top, anchor.y + offset.y)
+    bottom = Math.max(bottom, anchor.y + offset.y)
+  }
+  const apron: Coord[] = []
+  for (let y = top - clearance; y <= bottom + clearance; y += 1) {
+    for (let x = left - clearance; x <= right + clearance; x += 1) {
+      const tile = { x, y }
+      const distance = footprintDistance(anchor, footprint, tile, ONE_TILE)
+      if (distance >= 1 && distance <= clearance) apron.push(tile)
+    }
+  }
+  return apron
+}
+
+/**
+ * ***A Barracks's room***, while a building is armed: round every building on the map that keeps room —
+ * standing, planned or the raid's — and round the armed one's ghost, moving with it (`shift`), every open tile of
+ * the room shows a dim tick, at the "Barracks room" Experiment's size. In the `territory` band, over the build
+ * range's dot and under everything that stands; never on a tile in `avoid` (anything standing, planned or
+ * arriving, and the raid's trail), under the ghost, on rock or on a deposit. A building's reach, drawn above it,
+ * keeps its strokes where the two cross.
+ */
+export function drawRoom(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null, shift: Coord, avoid: ReadonlySet<string>): void {
+  const { context, state, layout } = input
+  const floor = shownBuildRange(input)
+  if (floor === null) return
+  const override = setting(state, "spawnClearance")
+  const keepers: Readonly<{ anchor: Coord; footprint: Footprint; room: number }>[] = []
+  for (const building of buildingsOn(context, state.planned)) {
+    const definition = context.registry.get(building.contentId)
+    const room = clearanceOf(definition, override)
+    if (room !== null) keepers.push({ anchor: building.anchor, footprint: definition.footprint, room })
+  }
+  const ghost = preview === null ? null : { x: preview.anchor.x + shift.x, y: preview.anchor.y + shift.y }
+  const armed = preview === null ? null : clearanceOf(context.registry.get(preview.item.contentId), override)
+  if (preview !== null && ghost !== null && armed !== null) keepers.push({ anchor: ghost, footprint: preview.footprint, room: armed })
+  if (keepers.length === 0) return
+  const under = new Set<string>()
+  if (preview !== null && ghost !== null) for (const tile of tilesOf(ghost, preview.footprint)) under.add(`${tile.x},${tile.y}`)
+  const range = visibleRange(state.camera, state.viewport)
+  const marked = new Set<string>()
+  for (const keeper of keepers) {
+    for (const tile of roomApron(keeper.anchor, keeper.footprint, keeper.room)) {
+      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
+      const key = `${tile.x},${tile.y}`
+      if (marked.has(key) || avoid.has(key) || under.has(key)) continue
+      if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
+      marked.add(key)
+      const cell = cellForTile(layout, state.camera, tile)
+      cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: ROOM_GLYPH, style: floor.has(tile) ? ROOM_ON_FLOOR : ROOM_STYLE } })
+    }
+  }
+}
+
+// --- A building's reach ----------------------------------------------------------------------------------------
 
 /** Which stroke a tile of a reach's outline is drawn with: along the footprint's side, or across a corner. */
 export type RingStroke = "level" | "upright" | "rise" | "fall"
