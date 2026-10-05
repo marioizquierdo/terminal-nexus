@@ -138,6 +138,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     collidesWith: STRUCTURE_COLLISIONS,
     behavior: "static",
     salvage: 100,
+    constructionRadius: 3,
   },
   {
     id: "structure.citizen.barracks",
@@ -149,5 +150,6 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     collidesWith: STRUCTURE_COLLISIONS,
     behavior: "static",
     salvage: 30,
+    constructionRadius: 3,
   },
 ]

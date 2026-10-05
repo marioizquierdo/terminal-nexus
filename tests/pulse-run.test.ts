@@ -10,6 +10,9 @@ import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
+import { createBuildState } from "../src/build/state.ts"
+import type { PlannedPlacement } from "../src/build/types.ts"
+import { missionPlay } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { inBounds, tilesOf } from "../src/grid/coords.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
@@ -25,17 +28,20 @@ import type { Scenario, Spot } from "./pulse-helpers.ts"
 
 const headlineOf = (pulse: ResolvedPulse): string => resultOf(outcomeOf(pulse.timeline)).headline
 
-test("every ending the kernel has is reachable from the starter map's own data", () => {
+test("every ending the player can meet is reachable from the starter map's own data", () => {
   // The question is whether the ending reads "regardless of whether they won, lost, or
-  // reached the mission's own tick limit". Nothing can be judged that cannot be reached.
+  // reached the mission's own tick limit". Nothing can be judged that cannot be reached. A defeat is
+  // only ever the Nexus falling (Mario, 2026-10-01): a force wiped out with its Nexus standing plays on,
+  // so a side wiped out and a draw belong to battles with no Nexus (`grid`'s scenarios), and their words
+  // are ending.test.ts's.
   const table: readonly (readonly [string, Scenario, string, string | null, string])[] = [
     // name, scenario, headline, winner, reason
-    ["nothing built", {}, "DEFEAT", "B", "annihilation"],
-    ["one Turret", { plan: [DEFENCE[0] as Spot] }, "DRAW", null, "annihilation"],
+    ["nothing built", {}, "TIME'S UP", null, "tick-limit"],
+    ["one Turret", { plan: [DEFENCE[0] as Spot] }, "VICTORY", "A", "annihilation"],
     ["two Turrets and a Hatchery", { plan: DEFENCE }, "VICTORY", "A", "annihilation"],
     ["nobody comes", { raid: "none" }, "TIME'S UP", null, "tick-limit"],
     ["no units of your own", { crew: "none" }, "DEFEAT", "B", "nexus-destroyed"],
-    ["a heavy raid, nothing built", { raid: "heavy" }, "DEFEAT", "B", "annihilation"],
+    ["a heavy raid, nothing built", { raid: "heavy" }, "DEFEAT", "B", "nexus-destroyed"],
   ]
   for (const [name, scenario, headline, winner, reason] of table) {
     const { pulse } = play(scenario)
@@ -44,6 +50,13 @@ test("every ending the kernel has is reachable from the starter map's own data",
     assert.equal(outcome.winner, winner, `${name}: the winner`)
     assert.equal(outcome.reason, reason, `${name}: why`)
   }
+  // With nothing built the squads still fall, and the Pulse plays on past them to its end.
+  const nothing = play().pulse
+  const final = nothing.timeline.states.at(-1)
+  assert.ok(final !== undefined)
+  assert.equal(final.entities.filter((entity) => entity.player === "A" && FIXTURE_REGISTRY.get(entity.contentId).layer === "units").length, 0)
+  const lastDeath = nothing.timeline.events.filter((event) => event.kind === "entity.died" && event.player === "A").at(-1)
+  assert.ok(lastDeath !== undefined && lastDeath.tick < final.tick, "the Pulse stopped when the squads fell")
 })
 
 test("the same plan is the same Pulse: hashes stable across runs, and identical to the kernel run directly", () => {
@@ -75,9 +88,10 @@ test("what the player built is what the Pulse resolves: a different plan is a di
   const opening = defended.timeline.states[0]
   assert.ok(opening !== undefined)
   const turrets = opening.entities.filter((entity) => entity.contentId === "structure.bench.beamturret")
+  // In the opening state's own order, which is not the order they were planned in.
   assert.deepEqual(
     turrets.map((turret) => turret.anchor),
-    [{ x: 22, y: 9 }, { x: 22, y: 12 }],
+    [{ x: 23, y: 12 }, { x: 28, y: 12 }],
     "the planned Turrets are not where they were placed",
   )
   assert.ok(opening.entities.some((entity) => entity.contentId === "structure.bench.hatchery"))
@@ -150,8 +164,20 @@ test("how it is watched cannot change what happened: effects, the cosmetic seed 
 test("the first placeholder Pulse, written as a mission, is the very Pulse it was before missions", () => {
   // The first Pulse's report pinned the winning plan's hashes under Node and Bun; the test mission is that
   // placeholder's forces, muster points, seed and length as data (tests/pulse-helpers.ts), resolved by the
-  // trigger runner rather than handed to the kernel directly — and nothing moved.
-  const { timeline } = play({ plan: DEFENCE }).pulse
+  // trigger runner rather than handed to the kernel directly — and nothing moved. That plan predates the build
+  // range, which it reaches past, so it is handed to the Pulse as a plan rather than placed through the Build
+  // Phase, which would refuse it now: this is about the Pulse, not about where a building may go.
+  const mission = missionPlay(testMission())
+  const context = mission.firstRound(starterContext())
+  const opened = createBuildState(context, STARTER_START_CURSOR, buildLayout(MINIMUM, context.grid).viewport)
+  const placeholderPlan: readonly PlannedPlacement[] = [
+    { ordinal: 1, contentId: "structure.bench.beamturret", anchor: { x: 22, y: 9 } },
+    { ordinal: 2, contentId: "structure.bench.beamturret", anchor: { x: 22, y: 12 } },
+    { ordinal: 3, contentId: "structure.bench.hatchery", anchor: { x: 20, y: 14 } },
+  ]
+  const resolved = mission.startPulse(context, { ...opened, nexusPick: 1, planned: placeholderPlan, committed: true })
+  assert.ok(resolved !== null)
+  const { timeline } = resolved
   assert.ok(timeline.stateHash.startsWith("9b03136f"), `state hash ${timeline.stateHash}`)
   assert.ok(timeline.eventsHash.startsWith("93638c7e"), `events hash ${timeline.eventsHash}`)
   assert.equal(timeline.states.length - 1, 175)

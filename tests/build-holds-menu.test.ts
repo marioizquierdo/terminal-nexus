@@ -1,5 +1,5 @@
 // A building being placed holds the menu (docs/system-design/ui-patterns.md, "A selection holds the menu"): it stays
-// the selection until it is placed or cancelled — another building's key, Explore Map and Start Pulse
+// the selection until it is placed or cancelled — another building's key, Explore Map and Start Battle Round
 // are refused, with the header flickering and the bottom line naming the ways out; its own key cancels it
 // as Esc does; and popups still open over it and hand it back, still armed. Explore Map holds nothing.
 // Driven through raw bytes into the real adapters, and through the driver where the lock is the
@@ -137,10 +137,13 @@ test("Explore Map holds nothing: a digit arms from the map, and n opens the Nexu
 
 test("the lock's refusal is what the bottom line says, even with the ghost on rock; the ghost's reason comes back at the next move", () => {
   const side = buildSide()
+  // A Turret north of the Nexus first, so the build range reaches the north-west wall.
+  keys(side, "3")
+  side.build.run([{ kind: "move-cursor", dx: 19 - side.build.state.cursor.x, dy: 7 - side.build.state.cursor.y }, { kind: "place" }])
   keys(side, "1")
   const cursor = side.build.state.cursor
   // Onto the north-west wall, where the Barracks cannot go.
-  side.build.run([{ kind: "move-cursor", dx: 10 - cursor.x, dy: 5 - cursor.y }])
+  side.build.run([{ kind: "move-cursor", dx: 19 - cursor.x, dy: 5 - cursor.y }])
   const line = (): string => bottomLine(side.context, side.build.state, armedPreview(side.context, side.build.state)).text
   assert.match(line(), /^Cannot build here: rock in the way/)
   keys(side, "3")

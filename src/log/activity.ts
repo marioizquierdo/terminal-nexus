@@ -36,6 +36,7 @@ export const ACTIVITY_EVENTS = {
       columns: { type: "number", description: "The terminal's width in columns." },
       rows: { type: "number", description: "The terminal's height in rows." },
       colours: { type: "string", description: "The colour depth drawn with, as --capability names it: truecolor, color256, color16 or monochrome." },
+      at: { type: "string", description: "The route the screen opened at: menu, settings, campaign?level=vasse-test-1&round=2.", optional: true },
     },
   },
   "session.resize": {
@@ -60,6 +61,7 @@ export const ACTIVITY_EVENTS = {
     props: {
       screen: { type: "string", description: "The screen the row is on: top, settings, campaign, about." },
       item: { type: "string", description: "The row's id: campaign, settings, about, exit, back, ..." },
+      route: { type: "string", description: "The route the row opens, when it opens a place: settings, campaign.", optional: true },
     },
   },
   "build.command": {
@@ -104,7 +106,7 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A popup opened over the Build Phase.",
     props: {
-      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message." },
+      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog." },
     },
   },
   "setting.change": {
@@ -118,7 +120,7 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.start": {
     defaultLevel: "info",
-    description: "The Nexus Pulse started.",
+    description: "A Battle Round's battle started.",
     props: {
       round: { type: "number", description: "Which Battle Round." },
       buildings: { type: "number", description: "How many buildings the plan placed." },
@@ -126,7 +128,7 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.end": {
     defaultLevel: "info",
-    description: "The Nexus Pulse ended and its result stands.",
+    description: "A Battle Round's battle ended and its result stands.",
     props: {
       result: { type: "string", description: "won, lost, drawn or timed out." },
       reason: { type: "string", description: "Why, as the result line says it." },
@@ -134,14 +136,14 @@ export const ACTIVITY_EVENTS = {
   },
   "pulse.trained": {
     defaultLevel: "info",
-    description: "What the Barracks trained in the Nexus Pulse just ended, and what came of them (step 6C).",
+    description: "What the Barracks trained in the battle just ended, and what came of them.",
     props: {
       round: { type: "number", description: "Which Battle Round." },
       buildings: { type: "number", description: "How many of the player's buildings trained this round." },
       trained: { type: "number", description: "How many troopers they trained." },
       first: { type: "number", description: "The second of the round the first one was trained at.", optional: true },
       home: { type: "number", description: "How many of those trained came home alive at the end." },
-      ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once one side's units are all dead." },
+      ended: { type: "number", description: "The second the round's fighting stopped: a round ends early once the raid's units are all dead, or the Nexus falls." },
     },
   },
   export: {
@@ -150,6 +152,37 @@ export const ACTIVITY_EVENTS = {
     props: {
       kind: { type: "string", description: "settings or activity." },
       events: { type: "number", description: "How many events an activity export held.", optional: true },
+    },
+  },
+  "dialog.line": {
+    defaultLevel: "info",
+    description: "A line of a round's opening scene was shown in the dialog at the bottom of the map.",
+    props: {
+      round: { type: "number", description: "Which round's Build Phase the scene opened." },
+      line: { type: "number", description: "Which line of the scene, from 1." },
+      of: { type: "number", description: "How many lines the scene has." },
+      speaker: { type: "string", description: "Who says it, as the dialog names them: game for the game's own voice." },
+    },
+  },
+  "dialog.skip": {
+    defaultLevel: "info",
+    description: "The rest of a scene was skipped — Esc, x or a right click — with lines still unread.",
+    props: {
+      round: { type: "number", description: "Which round's Build Phase the scene opened." },
+      line: { type: "number", description: "The line on screen when it was skipped, from 1." },
+      of: { type: "number", description: "How many lines the scene has." },
+    },
+  },
+  "voice.line": {
+    defaultLevel: "info",
+    description: "A Commander said a line during a Battle Round, as the Vasse's voice Experiment shows it: under the panel's feed, or beside her on the map.",
+    props: {
+      speaker: { type: "string", description: "Who said it, by the name the screen gives her: Vasse." },
+      round: { type: "number", description: "Which Battle Round." },
+      second: { type: "number", description: "When in the round she said it, in seconds from its start, as the feed counts them." },
+      moment: { type: "string", description: "What she was answering: round-start, first-contact, raid-arrives, unit-lost, building-lost, badly-hurt, nexus-hit, falls or round-won." },
+      line: { type: "string", description: "What she said." },
+      shown: { type: "string", description: "Where it was shown: feed (under the panel's feed) or beside (beside her on the map); feed when beside her was asked for but she was out of view." },
     },
   },
   "move.step": {
@@ -191,7 +224,7 @@ export type ActivityLog = typeof activity
 export const ACTIVITY_FILTERS: readonly LogFilter[] = [
   {
     name: "Interactions",
-    question: "What you did and what the game answered: buildings placed and refused, popups, settings, the Pulse, errors.",
+    question: "What you did and what the game answered: buildings placed and refused, popups, settings, the battle, errors.",
     level: "info",
   },
   { name: "Problems", question: "Only errors and warnings.", level: "warn" },
@@ -203,6 +236,21 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
     question: "What each round's Barracks trained, how many came home, and when the fighting stopped.",
     level: "info",
     events: ["pulse.start", "pulse.trained", "pulse.end", "setting.change"],
+  },
+  // The Commander round's question — was the intro read? — last for the same reason. Remove it once answered.
+  {
+    name: "Intro",
+    question: "Whether the lines a round opens with were read: each line the dialog showed, and where the rest was skipped.",
+    level: "info",
+    events: ["dialog.line", "dialog.skip", "pulse.start"],
+  },
+  // The Commander round 4's question — does Vasse's voice add to the battle or get in its way? — last for the
+  // same reason: what she said when, and where, beside how each round went. Remove it once answered.
+  {
+    name: "Her voice",
+    question: "What Vasse said in each Battle Round, when and where it showed, and how each round went.",
+    level: "info",
+    events: ["voice.line", "pulse.start", "pulse.end", "setting.change"],
   },
 ]
 

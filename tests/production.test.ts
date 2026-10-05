@@ -13,7 +13,8 @@ import type { ProductionRecipe } from "../src/content/index.ts"
 import { footprintDistance } from "../src/grid/coords.ts"
 import { openingState, recall, resolveMissionPulse, trainingRegistry } from "../src/match/index.ts"
 import type { MissionPulse } from "../src/match/index.ts"
-import { MissionError, PERIMETER, validateMission } from "../src/mission/index.ts"
+import { PERIMETER } from "../src/armies/index.ts"
+import { MissionError, validateMission } from "../src/mission/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { hashState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
@@ -178,4 +179,6 @@ test("PERIMETER's first round with the Barracks training hashes the same on ever
   assert.equal(hashState(round(1, null).final), PINNED_ROUND_1)
 })
 
-const PINNED_ROUND_1 = "f31abf984c4057654ac02468a25138f95a6b807b4cbb0278181884c181f4deb8"
+// Moved on purpose with the Commander step: Vasse arrives with the squads, so round 1 has one more unit in it; and
+// again when the squads came to hold the line ahead of the base and By the Book to guard those beside her.
+const PINNED_ROUND_1 = "760e89bf7088a78c6b5f3633a3f29136810bb771af639d61e6f791a66143cb6c"

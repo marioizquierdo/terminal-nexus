@@ -22,10 +22,12 @@ import { keysFromChunk } from "../terminal/playback.ts"
 import { PulsePresenter, outcomeOf } from "./pulse-live.ts"
 import type { ResolvedPulse } from "./pulse-live.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
+import type { SpokenLine } from "./pulse-voice.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { escLabel } from "../build/layout.ts"
 import { popupSpec, placePopup } from "../build/popup.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
+import { visibleRange } from "../build/camera.ts"
 import type { CursorKey } from "../terminal/list-keys.ts"
 import { cursorKeyOf } from "../terminal/list-keys.ts"
 import { buildKeyboardCommand } from "../build/keyboard.ts"
@@ -34,11 +36,11 @@ import { KeyMotion, moveTuning, pressTiles } from "../build/motion.ts"
 import type { MouseEvent } from "../build/mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "../build/mouse.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport } from "../build/state.ts"
+import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport, withoutScene } from "../build/state.ts"
 import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
 import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCommand, ExportKind } from "../build/types.ts"
+import type { BuildCommand, ExportKind, RaidForecast } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
 
@@ -76,6 +78,20 @@ export type BuildSessionOptions = Readonly<{
    * same reason as `startPulse`. Absent: a round's result is where the screen stops.
    */
   nextRound?: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
+  /**
+   * What each group of the raid the round brings goes for first, and the way it would go, on the plan as
+   * it stands — the kernel's own first choice. Injected for the same reason as `startPulse`, and asked
+   * only when the screen draws it (`raid`). Absent: no raid is foreseen.
+   */
+  foresee?: (context: BuildContext, state: BuildState) => RaidForecast
+  /**
+   * Whether a round that opens with a scene (`BuildContext.scene`: the mission's lines, a Commander's
+   * return) plays it in the dialog before the player has the keyboard: on in the game, the browser page and
+   * the scripted playtest. Off unless asked — a session a test builds directly — so every test that starts
+   * on round 1 starts on the menu, as the screen did before scenes; the rounds open exactly as they would
+   * have after the scene.
+   */
+  scenes?: boolean
 }>
 
 /**
@@ -101,6 +117,9 @@ export class BuildSession {
   private readonly log: ActivityLog
   /** The Pulse on screen has had its result recorded, so watching it again does not record it twice. */
   private resultLogged = false
+  /** The lines of the Commander's on screen already recorded (or passed over while her voice was off), so
+   *  watching the Pulse again does not record them twice. */
+  private voiced = new Set<SpokenLine>()
   /** How far cursor keys move — taps counted, holds on the game's cadence: input-path state, beside the
    *  reducer and never in it. */
   private readonly motion = new KeyMotion()
@@ -121,17 +140,50 @@ export class BuildSession {
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
    *  zero when that key arrived. `undefined` for a driver that never says. */
   private now: number | undefined
+  private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
+  /** The raid last foreseen, and the round and plan it was foreseen on. */
+  private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; raid: RaidForecast }> | null = null
 
   constructor(options: BuildSessionOptions) {
-    this.context = options.context
-    this.firstContext = options.context
-    this.buildState = createBuildState(options.context, options.cursor, options.viewport)
+    // Without scenes, no round is handed one: each opens on the menu, as it would after its scene.
+    const staged = (context: BuildContext): BuildContext => (options.scenes === true ? context : withoutScene(context))
+    this.context = staged(options.context)
+    this.firstContext = this.context
+    this.buildState = createBuildState(this.context, options.cursor, options.viewport)
     this.onQuit = options.onQuit ?? ((): void => {})
     this.onExport = options.onExport ?? ((): void => {})
     this.onSettingsChange = options.onSettingsChange ?? ((): void => {})
     this.startPulse = options.startPulse ?? ((): null => null)
     this.log = options.activity ?? globalActivity
-    this.nextRound = options.nextRound ?? ((): null => null)
+    const nextRound = options.nextRound ?? ((): null => null)
+    this.nextRound = (context, state, resolved) => {
+      const next = nextRound(context, state, resolved)
+      return next === null ? null : staged(next)
+    }
+    this.foresee = options.foresee ?? null
+    this.recordDialog(null)
+  }
+
+  /**
+   * The raid this round brings and what each group goes for first, on the plan as it stands — for the
+   * composer, which draws it in the Build Phase only. Worked out when first asked and kept until the round
+   * or the plan changes, so a frame costs nothing more and placing, undoing or removing a building is seen
+   * at once. `undefined` when the session was given no way to foresee one; empty when it cannot be
+   * foreseen (a plan that leaves the raid no room says why when the Pulse is started).
+   */
+  raid(): RaidForecast | undefined {
+    if (this.foresee === null) return undefined
+    const { planned } = this.buildState
+    const last = this.foreseen
+    if (last !== null && last.context === this.context && last.planned === planned) return last.raid
+    let raid: RaidForecast
+    try {
+      raid = this.foresee(this.context, this.buildState)
+    } catch {
+      raid = []
+    }
+    this.foreseen = { context: this.context, planned, raid }
+    return raid
   }
 
   get state(): BuildState {
@@ -159,18 +211,21 @@ export class BuildSession {
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
     for (const command of this.presenter.due()) this.dispatch(command)
+    this.noteVoice()
     this.noteResult()
   }
 
   /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
-   *  none. */
+   *  none. Her voice where the "Vasse's voice" Experiment says, against the part of the map in view. */
   pulseFrame(layout: BuildLayout): PulseFrame | undefined {
     if (this.presenter === null) return undefined
-    const { settings } = this.buildState
+    const { settings, camera, viewport } = this.buildState
     return this.presenter.frame({
       capability: settings.capability,
       tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
+      voice: setting(this.buildState, "commanderVoice"),
+      view: { camera, viewport },
     })
   }
 
@@ -251,6 +306,29 @@ export class BuildSession {
       if (after.activityExports > before.activityExports) {
         log.log("export", { kind: "activity", events: shownEntries(after).length })
       }
+      this.recordDialog(before)
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
+  }
+
+  /**
+   * The dialog's lines, into the Activity Logs, read off the states like everything `record` logs:
+   * `dialog.line` each time a line comes on screen — the scene opening with a round (`before` `null`), the
+   * next line, a restart's — and `dialog.skip` when the dialog closes with lines still unread.
+   */
+  private recordDialog(before: BuildState | null): void {
+    try {
+      const after = this.buildState
+      const scene = this.context.scene ?? []
+      const was = before?.dialog ?? null
+      const shown = after.dialog === null || after.dialog === was ? undefined : scene[after.dialog.line]
+      if (after.dialog !== null && shown !== undefined) {
+        this.log.log("dialog.line", { round: after.pulseNumber, line: after.dialog.line + 1, of: scene.length, speaker: shown.speaker ?? "game" })
+      }
+      if (before !== null && was !== null && after.dialog === null && was.line < scene.length - 1) {
+        this.log.log("dialog.skip", { round: before.pulseNumber, line: was.line + 1, of: scene.length })
+      }
     } catch {
       // A log that could break the game would not be worth having.
     }
@@ -267,6 +345,39 @@ export class BuildSession {
     }
     for (const placement of before.planned) if (!now.has(placement.ordinal)) this.log.log("build.removed", entry(placement))
     for (const placement of after.planned) if (!was.has(placement.ordinal)) this.log.log("build.placed", entry(placement))
+  }
+
+  /**
+   * Her lines that have begun on screen since the last look, each recorded once (`voice.line`): what she said,
+   * at which moment and second, and where it showed — under the feed, or beside her when she was in view. A
+   * line that began while the Experiment had her voice off was never said, and is not recorded later either;
+   * watching the Pulse again says nothing new.
+   */
+  private noteVoice(): void {
+    const presenter = this.presenter
+    if (presenter === null) return
+    try {
+      const mode = setting(this.buildState, "commanderVoice")
+      const timeMs = presenter.timeMs
+      for (const line of presenter.spoken) {
+        if (line.startMs > timeMs || this.voiced.has(line)) continue
+        this.voiced.add(line)
+        if (mode === "off" || timeMs >= line.endMs) continue
+        const at = presenter.speakerTileAt(line.startMs)
+        const range = visibleRange(this.buildState.camera, this.buildState.viewport)
+        const inView = at !== null && at.x >= range.firstX && at.x <= range.lastX && at.y >= range.firstY && at.y <= range.lastY
+        this.log.log("voice.line", {
+          speaker: presenter.speakerName ?? "",
+          round: this.buildState.pulseNumber,
+          second: Math.round(line.startMs / 100) / 10,
+          moment: line.moment,
+          line: line.text,
+          shown: mode === "beside" && inView ? "beside" : "feed",
+        })
+      }
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
   }
 
   /** The Pulse on screen has reached its result, the first time: recorded once (`pulse.end`). */
@@ -302,6 +413,7 @@ export class BuildSession {
     // The sequences keep counting up, so the live loop never mistakes a new one for one it has shown.
     this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
     this.presenter = null
+    this.recordDialog(null)
   }
 
   /** Resolve the committed plan and put its Pulse on screen. A Pulse that cannot start — a plan that
@@ -319,6 +431,7 @@ export class BuildSession {
       autoNextMs: setting(this.buildState, "nextRound") === "auto" ? TUNING.autoNextRoundMs : null,
     })
     this.resultLogged = false
+    this.voiced = new Set()
     this.log.log("pulse.start", { round: this.buildState.pulseNumber, buildings: this.buildState.planned.length })
     // Started by a key that arrived at a known time: the Pulse is at zero from that moment.
     if (this.now !== undefined) this.presenter.advance(this.now)

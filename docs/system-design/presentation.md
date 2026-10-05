@@ -131,7 +131,7 @@ What differs between the phases is what the side panel holds:
 
 | | Side panel carries |
 | --- | --- |
-| **Build Phase** | what is left to spend on its credits line, then `[e] Explore Map` and `[n] Nexus` (see [`input.md`](input.md)), the buildings with each row's cost, and `[s] Start Pulse` on its last line — or, while Explore Map is open or a building is being placed, a card in the menu's place (below) |
+| **Build Phase** | what is left to spend on its credits line, then `[e] Explore Map` and `[n] Nexus` (see [`input.md`](input.md)), the buildings with each row's cost, and `[s] Start Battle Round` on its last line — or, while Explore Map is open or a building is being placed, a card in the menu's place (below) |
 | **Nexus Pulse** | round number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
 
 **A refused placement is answered on the status line, and names its tile** (RULE —
@@ -185,7 +185,7 @@ symbol and what is left to spend (`* 130`, `◆ 130` in the Unicode pack), the s
 the map draws deposits with, in the deposit's colour, the amount bold, with no label and no maximum. The
 credits are on the menu alone (not on a card, the committed summary or a Nexus Pulse) and list movement
 skips their line. Then **every building as one list** in catalog order, one row each, numbered in that
-order, and `[s] Start Pulse` pinned to the panel's last line (RULE — `tests/build-menu.test.ts`). There
+order, and `[s] Start Battle Round` pinned to the panel's last line (RULE — `tests/build-menu.test.ts`). There
 are no group headings and no Special row; headings come back if a real game shows a list too long to
 read, and an empty group would then be drawn, not skipped, so no hotkey moves when content arrives. A
 building row the panel has no room for is neither drawn nor a click target. **The panel carries no help
@@ -206,7 +206,7 @@ one, or a bare tile's position). The same four parts describe a building being p
 standing building, the Grid Nexus, and bare ground. A card carries no status line, and its words are
 written with the content, not in the view. How it looks may later differ between placing a building,
 exploring in the Build Phase and exploring during a Pulse; that stays a drawing choice over the same
-card. Start Pulse hides with the rest of the menu.
+card. Start Battle Round hides with the rest of the menu.
 
 **The header's own hotkey cancels**: `e` closes Explore Map and a building's digit cancels it, as `x`, Esc
 or a click anywhere on the panel do, back to where the card was opened from (RULE —
@@ -261,8 +261,11 @@ until it closes, and nothing opens one but the player; a message appears only as
 the player just did. It sits on top of everything else without a drawing band of its own (see bands
 below).
 
-**There is no radius preview until something placed has a radius.** Nothing in the content that exists
-has a radius, and a preview of nothing is a framework built before its first use.
+**A reach is drawn where it is felt.** In the Build Phase a building's reach is an outline round its ghost,
+and the build range the dotted ground while a building is armed (the interface patterns, the build range and a
+building's reach). During a Pulse Vasse's aura is the first radius on the Grid: its reach is a see-through style
+of her side's colour on the ground's band, under every unit, a diamond because range is Manhattan, shown where
+colours blend and said in words on her card where they do not (the interface patterns, her aura's reach).
 
 **The Pulse view shows everything by default.** Selection is an addition the player reaches for, never a
 prerequisite for following the fight. If a Pulse can only be understood by clicking things, the
@@ -294,14 +297,14 @@ point:
 | Band | Fed by |
 | --- | --- |
 | 1 `terrain` | `terrain` layer |
-| 2 `territory` | construction coverage |
+| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Pulse |
 | 3 `ground-items` | salvage, rubble, deposits |
 | 4 `structures` | `obstacles` layer |
 | 5 `units` | `workers` and `units` layers |
 | 6 `air` | `air` layer |
 | 7 `projectiles` | presentation only |
 | 8 `effects` | presentation only |
-| 9 `highlights` | selection, cursor, preview, range |
+| 9 `highlights` | selection, cursor, preview, range: a building's reach |
 | 10 `chrome` | frame, sidebar, status strip, popups |
 
 Each band returns sparse cells; the topmost defined cell replaces the lower complete cell style. Grid

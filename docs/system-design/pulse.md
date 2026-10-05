@@ -120,6 +120,13 @@ to take. A renderer drawing a tracer holds the impact, the damage flash, and the
 until the end of that window, so what the player sees lands when the tracer does; a renderer that
 draws no tracer (reduced motion, monochrome) still presents damage at the impact beat.
 
+**An aura guards the units beside its bearer** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`, the
+`aura-by-the-book` scenario). A Commander's aura (content's `aura`: a radius and the share of a hit taken) is
+decided once a tick, as the attacks begin: every unit of the bearer's side within its radius, measured as range
+is, the bearer included. A covered unit takes the aura's share of every hit that tick, blasts included, rounded
+down and never below 1. Several auras never stack: the strongest applies. Buildings are not covered. A bearer who
+falls still covers that tick. The hit's `damage.applied` names the bearer (`guardedBy`); no rule reads it.
+
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
 
 ```text
@@ -162,6 +169,19 @@ it is GUIDANCE and not built.
 
 ---
 
+### 1.5 A side's target — RULE — `src/pulse/target.ts`, `tests/target.test.ts`
+
+A side may have a **target**: a rectangle of the map, kept in the state as `targets` and set only by the
+trigger runner, never by the kernel (the owner, 2026-10-04: "The campaign levels should have a target well
+defined so it is predictable where your troops are moving"). Every unit of that side that moves and fights heads
+for it. On the way it turns on an enemy within its engage range (6 tiles, or its own attack's range when longer,
+measured as range is) and fights it as every unit does. When nothing is in range it walks on, and at the target
+it stands. Units fill the target first, each toward the nearest free tile of it; one that cannot get in stands
+beside one that did, or beside its own building in the target, and claims no tile. A side with no target engages
+the nearest enemy wherever it is. Workers that flee, healers and buildings never follow a target. `targets` is
+absent when no side has one, so such a state hashes as it always did. The named scenario is
+`target-head-engage-stand`.
+
 ## 2. Match structure
 
 **A Grid Nexus is a flag on a content definition, never a content id the kernel recognises** (RULE —
@@ -184,8 +204,8 @@ watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 **The kernel's victory condition never learns about a mission's goal.** A mission's objective is
 resolved one level up, by the scenario and trigger layer, which fires an ordinary `win`/`lose` action
 when its own condition holds (see [`campaigns.md`](../game-design/campaigns.md)). What follows — Grid
-Nexus destroyed, one side annihilated, tick limit reached — is the unchanged fallback a battle with
-no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
+Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
+battle with no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
 `src/pulse/victory.ts`).
 
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
@@ -206,13 +226,39 @@ producer carried into the next Pulse starts on the recipe that Pulse runs (RULE 
 `tests/scenario.test.ts`). Any attacker in a legal attack position may damage it. Defences and
 terrain make practical outer layers; there is no hidden exposure meter.
 
+**A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/pulse/victory.ts`,
+`scenarios/nexus-stands.map.json`, `tests/scenario.test.ts`). Its Pulse goes on until the Nexus falls or
+the time runs out, and a mission may add a losing condition of its own; a side with no Nexus, a raid, is
+still beaten by losing every unit. So a defence round no longer stops with the raid at the gate when the
+player's units fall: the raid comes on to the Nexus, and the round ends when it falls or the time is up.
+Before this, every side was wiped out by losing its last unit, and a defence round could end with the
+Nexus untouched and count as held.
+
 ### 2.1 Commander
 
 A persistent frontline unit, normally `@` — fictionally a Nexus Symbol — on the `units` layer. It may
 take Nexus-specific upgrades and competes for investment with army, economy, research, and
 fortification. **On death it is absent for the rest of that round's Pulse and for one full round
-after it, then the Prime Nexus may replicate it again** (RULE — settled; no code holds it yet). **Commander death is not the victory
-condition** (RULE — `src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
+after it, then the Prime Nexus may replicate it again** (RULE — `src/match/commander.ts`,
+`tests/commander.test.ts`). **Commander death is not the victory condition** (RULE —
+`src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
+
+What is built is that cadence, for one Commander, Vasse (`src/content/commanders.ts`). A unit is a
+Commander by a flag on its content (`commander`), which only the rules between rounds read: the kernel
+sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her
+back. When she falls, the round loop carries an absence beside the state — whose, which, the round she fell
+in and the round she is due — and as that round begins, after Recall and before its Build Phase, the
+Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body, at full health, standing
+there through the Build Phase like any survivor. "May replicate" is taken as "does", as the campaign's
+third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to
+restore her to, so her absence goes on until it has one. At a Pulse's end Recall sends her home to the
+Grid Nexus, since no building makes her. A mission brings its Commander once (`src/mission/validate.ts`
+refuses a second arrival, or two of her), and the Commander it brings for the player is its campaign's
+(`src/armies/load.ts` refuses another). How much she can take is an Experiment while it is tuned
+(**Vasse's health**). Her skill, By the Book, is an aura the kernel keeps (the attacks step, above); its
+strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names
+a target for the player's troops she heads there with them, fights what comes within reach and stands with them
+(a side's target, above). Holding a post waits (posts, in the backlog).
 
 ### 2.2 Structures
 
@@ -270,7 +316,9 @@ content-defined legal actions or passive rules that execute through validated ke
 
 What the draft is dealt from is settled even though the draft itself is not designed: the Commander
 Army's own Nexus power pool — a subset of the faction's — dealt as a small hand at the start of every
-Build Phase, from which the player keeps one. The draft's tier, size, and redraw rules are still
+Build Phase, from which the player keeps one. The pool is built as what a level offers (`src/armies/`;
+PERIMETER offers `armies/all`'s two placeholder powers); the dealing is still the whole pool, every Build
+Phase. The draft's tier, size, and redraw rules are still
 undesigned; they are recorded here so the shape of the draft is not accidentally foreclosed.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
@@ -305,14 +353,27 @@ buildable terrain.
 as salvage on the Grid. Workers from either side drain salvage. Building over remaining salvage
 destroys it.
 
-**Construction territory:** the Grid Nexus roots a connected network; structures project a
-construction radius (default two tiles, outposts farther; the default is an open question, Q5); a
-disconnected structure keeps operating but stops projecting; a player cannot build inside enemy
-coverage that was public at Build Phase start.
+**Construction territory** (RULE — `src/build/territory.ts`, `tests/build-territory.test.ts`). The player may
+build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
+build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
+content definition with a `constructionRadius`; today every building the player places) lets its player build
+within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. Two of the
+player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the two
+radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the network
+projects. One cut off from it keeps working (it trains, it shoots) and gives no build range; a structure that
+projects nothing joins only where the network's range reaches it. A new building may be placed only where all
+of its footprint is inside the range. A planned building projects at once, so one Build Phase can chain
+outward. Removing or undoing a planned building is refused when another planned building needs its range: the
+plan always stays one that could be placed, a building at a time, from what stands. A standing building may be
+cut off by a removal, since a standing one keeps working. A range passes over rock, which is refused on its
+own. While the "Build range" Experiment is felt, its value (2, 3 or 4 tiles; 3 to begin with) is every
+projecting structure's radius; outposts that reach farther wait for outposts (Q5). With no Grid Nexus of the
+player's standing there is no network and nothing can be built. The Build Phase enforces this and the kernel
+never reads it, since the Build Phase is the only way a player's plan is made.
 
-The radius metric, footprint-to-radius measurement, same-plan chaining, simultaneous same-cell
-conflicts, path-sealing legality, and refunds for invalid revealed plans are still to be decided
-when construction is built. No other system may guess those answers.
+Still open, because nothing reaches them yet: building inside enemy coverage that was public at Build Phase
+start (no raid stands a building at the start of a Build Phase), simultaneous same-cell conflicts and refunds
+for invalid revealed plans (two plans meeting), and path-sealing legality.
 
 ---
 

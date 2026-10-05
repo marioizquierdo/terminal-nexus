@@ -1,0 +1,258 @@
+{
+  "id": "vasse",
+  "title": "Edda Vasse",
+  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol, and her campaign. It requires all for the buildings, the Nexus powers and the bench units her levels use, and brings only her own unit. Building her and her campaign is not choosing the Citizens' roster: every building and power she is offered is still the disposable bench.",
+  "requires": ["all"],
+  "content": ["unit.citizen.vasse"],
+  "commanders": [
+    {
+      "id": "vasse",
+      "name": "Edda Vasse",
+      "unit": "unit.citizen.vasse",
+      "barks": {
+        "round-start": ["Positions. Nobody improvises.", "Stations. Look like a perimeter.", "On my mark. That was it."],
+        "first-contact": ["By the book. The new book.", "Contact. Hold your spacing.", "Weapons free. Paperwork after."],
+        "raid-arrives": ["More of them. Noted.", "Late arrivals. Not on my list.", "Another group. Of course."],
+        "unit-lost": ["Close the gap. I have the name.", "Down one. Close it up.", "Hold. We count them after."],
+        "building-lost": ["Write it off. We rebuild.", "That was ours. Noted.", "Concrete sets faster under fire."],
+        "badly-hurt": ["Still standing. Mostly.", "I'm fine. Keep firing.", "Hit. Not done yet."],
+        "nexus-hit": ["They touched the pyramid.", "Off the Nexus. Now.", "Somebody guard the pyramid."],
+        "falls": ["Hold it without me. Back soon.", "Back the round after next.", "Restoration on file. Hold."],
+        "round-won": ["That's the round. Log it.", "They broke. Write it up.", "File it under victories."]
+      },
+      "notes": "Her unit's definition (her health, her shot, the commander flag) is still TypeScript in src/content/commanders.ts; this names it, and her. Her barks are what she says during a Battle Round, by moment (src/armies/barks.ts says what each moment is): dry, tired, decent, the officer who reads the regulation aloud, in the lore's budget of three to eight words. 'By the book. The new book.' is campaigns.md's bark for her first engagement, 'Concrete sets faster under fire.' and 'File it under victories.' are the lore's Citizen barks, and 'They touched the pyramid.' answers PERIMETER's briefing ('Do not touch the pyramid.'). She falls as ordinary business and knows the schedule: out for a round, restored the round after. When she speaks, and which line, is the view's (the Vasse's voice Experiment shows them, src/view/pulse-voice.ts); none of them explains a rule."
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "vasse",
+      "title": "The Citizen origin",
+      "commander": "vasse",
+      "notes": "Her campaign: its levels in the order they are played. What a level offers is everything the levels before it unlocked and its own unlocks, so the screen between levels (not built) can show what is new; each level sets its own credits. vasse-test-1 and vasse-test-2 are working names, the levels a route opens (campaign?level=vasse-test-1) while the campaign is built.",
+      "levels": [
+        {
+          "id": "vasse-test-1",
+          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building and both placeholder Nexus powers all has, one by one, so that when all grows this level keeps what it teaches. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
+          "map": "starter",
+          "credits": 100,
+          "unlocks": {
+            "buildings": ["barracks", "hatchery", "turret"],
+            "powers": ["reserve-fund", "war-chest"]
+          },
+          "mission": {
+            "id": "mission.citizen.perimeter",
+            "name": "Perimeter",
+            "notes": "PERIMETER, mission 1, as the trigger list the runner plays: three Battle Rounds, the raid arriving in each, and the hold (campaigns.md sketches it). Played on the Build Phase's starter map, not PERIMETER's own: whether that map needs real scrolling is still an open question, and it exists only as a sketch. The regions are named for this map's landmarks, the gap in the northern ridge and the open flats to the east; a real map would carry its own. The units are the disposable fixture rosters from the first battles (Citizen troopers and marksmen, 'two squads'; Ravel runners and raiders): the campaign design decided on no new content. The raid's sizes are a first tuning, not balance: chosen against this map and the starter construct menu so that the first Pulse is a probe the starting squads can meet, the second needs something built, and the third needs most of what the level's credits buy (docs/history/reports/2026-09-30-round-loop-and-missions.md has the outcomes measured against scripted plans). pulseTicks: thirty seconds a Pulse, as the placeholder Pulse was, time enough for a group to cross the map. seed: 0x50554c53, 'PULS', the placeholder Pulse's seed, so the first round's randomness is the one 6A was tuned on. trains: the Barracks trains troopers, round after round, which is what makes a second round show something the first did not; how often, and how many a round, are the Experiments' (src/build/all-settings.ts). The round texts are placeholder writing in PERIMETER's register ('plain, military, correct'), inside the lore budget; the briefing and debrief written in campaigns.md are the designed ones, and the mission-cutscenes milestone is where they are shown. endText's won line is the debrief's own first sentence (campaigns.md).",
+            "pulses": 3,
+            "pulseTicks": 360,
+            "seed": 1347767379,
+            "trains": [{ "structure": "structure.citizen.barracks", "unit": "unit.citizen.trooper" }],
+            "regions": [
+              { "id": "muster", "x": 21, "y": 9, "width": 3, "height": 3, "notes": "Beside the Nexus, toward where the raid comes from: where the starting squads stand." },
+              { "id": "ridge", "x": 40, "y": 0, "width": 4, "height": 2, "notes": "North of the gap in the ridge: the raid's way in." },
+              { "id": "east-flats", "x": 50, "y": 9, "width": 5, "height": 3, "notes": "The open flats east of the base: the second round's flank." },
+              { "id": "nexus", "x": 17, "y": 10, "width": 3, "height": 2, "notes": "The player's Grid Nexus: what Corvane's last line in the intro looks at." },
+              {
+                "id": "line",
+                "name": "the line",
+                "x": 22,
+                "y": 7,
+                "width": 5,
+                "height": 2,
+                "notes": "Two steps out from the muster, between the Nexus and the way the raid comes round the ridge: where the player's troops stand, a line just ahead of the base."
+              }
+            ],
+            "triggers": [
+              {
+                "id": "squads",
+                "notes": "'Commander Vasse holds the ground with what walked out of the annex: two squads' (the briefing). She is listed first, so she takes the muster's centre with the squads around her: listed last she stood at their edge and fell in round 2 behind every Turret plan measured. She arrives once; when she falls, the rules between rounds bring her back.",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        { "unit": "unit.citizen.vasse", "count": 1 },
+                        { "unit": "unit.citizen.trooper", "count": 3 },
+                        { "unit": "unit.citizen.marksman", "count": 2 }
+                      ],
+                      "at": "muster",
+                      "group": "squads"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "post",
+                "notes": "Where the player's troops head, every round: the line just ahead of the base. They fight what comes within their reach and stand there when nothing does, so a building placed beside the line fights beside them, and a raid that goes round them meets the buildings. Set once; it holds every round. Chosen over the gap in the ridge, the pass and the ground before the Barracks, and measured with every place one building can go inside the build range: a plan that builds nothing still loses the last round at every strength of Vasse's aura and every health from 20 to 100, as it did before the line, and the raid needed no change.",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [{ "target": { "side": "A", "region": "line" } }]
+              },
+              {
+                "id": "raid-1",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        { "unit": "unit.ravel.runner", "count": 3 },
+                        { "unit": "unit.ravel.raider", "count": 2 }
+                      ],
+                      "at": "ridge",
+                      "group": "probe",
+                      "intent": "Probe the line at the ridge."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "intro",
+                "notes": "The intro, as round 1's Build Phase opens: Vasse's own bark, then the pre-battle exchange, every line already written in campaigns.md (mission one, in full), none new. The camera goes where each line looks: at her, at the raid on the ridge, and at the Nexus for Corvane's last. Corvane is not on the Grid; the raid speaks for them.",
+                "when": { "event": "build.start", "pulse": 1 },
+                "do": [
+                  { "say": { "speaker": "unit.citizen.vasse", "text": "By the book. The new book.", "focus": { "unit": "unit.citizen.vasse" } } },
+                  { "say": { "speaker": "Corvane", "side": "B", "text": "Nice fence, roadmakers. We brought wire cutters.", "focus": { "group": "probe" } } },
+                  { "say": { "speaker": "unit.citizen.vasse", "text": "It is not our fence I would worry about.", "focus": { "unit": "unit.citizen.vasse" } } },
+                  { "say": { "speaker": "Corvane", "side": "B", "text": "...Why is your pyramid looking at me?", "focus": { "region": "nexus" } } }
+                ]
+              },
+              {
+                "id": "raid-2",
+                "when": { "pulse": 2, "tick": 0 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        { "unit": "unit.ravel.runner", "count": 4 },
+                        { "unit": "unit.ravel.raider", "count": 3 }
+                      ],
+                      "at": "ridge",
+                      "group": "second-push",
+                      "intent": "Break through at the ridge."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-2-flank",
+                "notes": "Seven seconds in: a flank that arrives while the main group is already engaged.",
+                "when": { "pulse": 2, "tick": 84 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [{ "unit": "unit.ravel.raider", "count": 2 }],
+                      "at": "east-flats",
+                      "group": "flank",
+                      "intent": "Come round from the east."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-3",
+                "notes": "The raid's own Build Phase plan for the push comes first: a den north of the ridge, its forward camp.",
+                "when": { "pulse": 3, "tick": 0 },
+                "do": [
+                  { "commitPlan": { "side": "B", "structures": [{ "contentId": "structure.ravel.den", "anchor": { "x": 46, "y": 0 } }] } },
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        { "unit": "unit.ravel.runner", "count": 6 },
+                        { "unit": "unit.ravel.raider", "count": 4 },
+                        { "unit": "unit.ravel.slinger", "count": 3 }
+                      ],
+                      "at": "ridge",
+                      "group": "push",
+                      "intent": "The push: take the Nexus."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-3-reserve",
+                "when": { "pulse": 3, "tick": 96 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        { "unit": "unit.ravel.runner", "count": 3 },
+                        { "unit": "unit.ravel.raider", "count": 3 }
+                      ],
+                      "at": "east-flats",
+                      "group": "reserve",
+                      "intent": "The reserve, from the east."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "fallen",
+                "notes": "Listed before the hold on purpose: at the last Pulse's end both could hold, and the first win or lose in list order decides.",
+                "when": { "event": "nexus.destroyed", "side": "A" },
+                "do": [{ "lose": true }]
+              },
+              { "id": "hold", "when": { "event": "pulse.end", "pulse": 3 }, "do": [{ "win": true }] }
+            ],
+            "roundText": {
+              "1": "A hostile force is inbound from the ridge. Hold the perimeter.",
+              "2": "They are back, and there are more. Watch the east.",
+              "3": "This is the push. Hold until their schedule ends."
+            },
+            "endText": { "won": "The perimeter held.", "lost": "The Nexus fell." }
+          }
+        },
+        {
+          "id": "vasse-test-2",
+          "notes": "The Commander's cadence as a level: Vasse stands alone out in front, falls in round 1, sits round 2 out, and the Nexus restores her for round 3. It was built as the named scenario that proves the rule (tests/commander.test.ts pins the hash each of its rounds ends on), and is a level so the game can open it by route and her return can be played: in PERIMETER she cannot fall before round 2, so her return would come in a round 4 that does not exist. It unlocks nothing new.",
+          "map": "starter",
+          "credits": 100,
+          "mission": {
+            "id": "mission.test.commander-falls",
+            "name": "The Commander falls",
+            "notes": "pulseTicks: twenty seconds a round, more than the line needs to finish what kills her. seed: 0x56415353, 'VASS'.",
+            "pulses": 3,
+            "pulseTicks": 240,
+            "seed": 1447121747,
+            "regions": [
+              { "id": "front", "x": 30, "y": 10, "width": 1, "height": 1, "notes": "Out in front of the base, alone: where the ambush finds her." },
+              { "id": "muster", "x": 21, "y": 9, "width": 3, "height": 3, "notes": "Beside the Nexus, where the line stands." },
+              { "id": "ambush", "x": 32, "y": 9, "width": 2, "height": 3, "notes": "Right beside her." },
+              { "id": "nexus", "x": 17, "y": 10, "width": 3, "height": 2 }
+            ],
+            "triggers": [
+              { "id": "vasse", "when": { "pulse": 1, "tick": 0 }, "do": [{ "spawn": { "side": "A", "units": [{ "unit": "unit.citizen.vasse", "count": 1 }], "at": "front" } }] },
+              { "id": "line", "when": { "pulse": 1, "tick": 0 }, "do": [{ "spawn": { "side": "A", "units": [{ "unit": "unit.citizen.trooper", "count": 5 }], "at": "muster" } }] },
+              {
+                "id": "ambush",
+                "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid.",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        { "unit": "unit.ravel.raider", "count": 2 },
+                        { "unit": "unit.ravel.runner", "count": 2 }
+                      ],
+                      "at": "ambush",
+                      "intent": "Catch the Commander alone."
+                    }
+                  }
+                ]
+              },
+              { "id": "probe-2", "when": { "pulse": 2, "tick": 0 }, "do": [{ "spawn": { "side": "B", "units": [{ "unit": "unit.ravel.runner", "count": 2 }], "at": "ambush" } }] },
+              { "id": "probe-3", "when": { "pulse": 3, "tick": 0 }, "do": [{ "spawn": { "side": "B", "units": [{ "unit": "unit.ravel.runner", "count": 2 }], "at": "ambush" } }] },
+              { "id": "fallen", "when": { "event": "nexus.destroyed", "side": "A" }, "do": [{ "lose": true }] },
+              { "id": "hold", "when": { "event": "pulse.end", "pulse": 3 }, "do": [{ "win": true }] }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

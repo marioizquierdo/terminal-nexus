@@ -2,16 +2,18 @@
 // A scripted playtest: press keys on a screen of the game without a terminal, and get back what the
 // screen showed after every key — as text, as PNGs, and as an animated GIF.
 //
-//   node scripts/playtest.mjs --keys "Down Down Space*4"
-//   node scripts/playtest.mjs --keys "n 1 n Tab S-Left*3 Enter" --png final
+//   node scripts/playtest.mjs --keys "Esc Down Down Space*4"          # Esc skips PERIMETER's intro
+//   node scripts/playtest.mjs --keys "Esc n 1 n Tab S-Left*3 Enter" --png final
 //   node scripts/playtest.mjs --file my-flow.keys --gif --name hatchery-run
-//   node scripts/playtest.mjs --keys "1 click:24,13 click:24,13" --print all
-//   node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what it logged
+//   node scripts/playtest.mjs --keys "Esc 1 click:24,13 click:24,13" --print all
+//   node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what it logged
+//   node scripts/playtest.mjs --at "campaign?level=vasse-test-1&round=3" --png final   # round 3, no keys
 //
 // The keys go through the real keyboard and mouse adapters as the exact bytes a terminal sends, one
 // key at a time (`src/playtest/keys.ts` has the names). The frames come from the same composer the
 // live screen presents, in-process, so there is no capture race: every picture is of the state the
-// script actually reached. Only the Build Phase screen (`terminal-nexus --build-phase`) is wired up so far;
+// script actually reached. Only a campaign level's Build Phase is wired up so far — `--at` names which level
+// and round, as the game's own `--at` does (`src/cli/route.ts`), and refuses a title menu route;
 // `src/playtest/build.ts` is the shape another screen would copy.
 //
 // Output goes to `.playtest/` (ignored by git) unless `--out` says otherwise. A picture for a pull
@@ -23,10 +25,9 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
-import { parseKeyScript } from "../src/playtest/keys.ts"
 import { importSettings } from "../src/build/settings-export.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
-import { runBuildPlaytest } from "../src/playtest/build.ts"
+import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
 import { ACTIVITY_FILTERS, formatActivityExport } from "../src/log/activity.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { parseCapability, parseTheme } from "../src/view/roles.ts"
@@ -35,16 +36,22 @@ import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 
-const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <path>) [options]
+const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <path> | --at <route>) [options]
 
-  --keys "<script>"    keys to press, e.g. "Down Down Space*4" (names: src/playtest/keys.ts)
+  --keys "<script>"    keys to press, e.g. "Esc Down Down Space*4" (names: src/playtest/keys.ts);
+                       PERIMETER opens on its intro dialog, which Esc skips and Enter reads on
   --file <path>        the same, from a file; # starts a comment
+  --at <route>         the campaign level and round to open, as the game's --at takes it:
+                       "campaign?level=vasse-test-1&round=3" (round counts Battle Rounds from
+                       1, as the screen does). Round 1 of vasse-test-1 unless given;
+                       a later round is reached as a player who builds nothing reaches it.
+                       With --at, the keys may be left out: the screen as it opens
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, 128x24 wide tiles)
   --capability <mode>  truecolor (default), color256, color16, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode
   --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the
-                       whole export, or pairs like "incoming=hidden nextRound=auto"; the three
+                       whole export, or pairs like "nextRound=auto trainEvery=6"; the three
                        flags above still win for their own setting
   --out <dir>          where files go (default .playtest/, ignored by git)
   --name <name>        file name prefix (default playtest)
@@ -75,6 +82,7 @@ const { values } = parseArgs({
   options: {
     keys: { type: "string" },
     file: { type: "string" },
+    at: { type: "string" },
     size: { type: "string", default: "80x24" },
     capability: { type: "string" },
     theme: { type: "string" },
@@ -104,29 +112,40 @@ if (activityFilter === undefined) {
   throw new Error(`--activity: no filter named "${values.activity}"; the filters are ${ACTIVITY_FILTERS.map((filter) => filter.name).join(", ")}`)
 }
 
-if (values.help || (values.keys === undefined && values.file === undefined)) {
+if (values.help || (values.keys === undefined && values.file === undefined && values.at === undefined)) {
   process.stdout.write(USAGE)
   process.exit(values.help ? 0 : 2)
+}
+
+// Where the run opens and what it starts from, read as the game reads them and refused before anything runs: a
+// route that is not a place, with every problem at once, a key the script names that does not exist, or a place
+// on the title menu, which this playtest does not play.
+const script = values.file === undefined ? values.keys : readFileSync(values.file, "utf8")
+let opening
+try {
+  opening = playtestOpening({ at: values.at, settings: values.settings, keys: script }, values.file)
+} catch (error) {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
+  process.exit(2)
 }
 
 const size = /^(\d+)x(\d+)$/u.exec(values.size)
 if (size === null) throw new Error(`--size wants COLSxROWS, like 80x24, not "${values.size}"`)
 // An exported settings text first, then the flags over it; truecolor, dark and ascii otherwise.
-const imported = importSettings(values.settings, { ...DEFAULT_SETTINGS, capability: "truecolor" })
+const imported = importSettings(opening.settings, { ...DEFAULT_SETTINGS, capability: "truecolor" })
 if (imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
 const startSettings = imported.settings
 const capability = parseCapability(values.capability ?? startSettings.capability)
 const theme = parseTheme(values.theme ?? startSettings.theme)
 const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
-const script = values.file === undefined ? values.keys : readFileSync(values.file, "utf8")
 
-const steps = parseKeyScript(script)
 const run = runBuildPlaytest({
-  steps,
+  steps: opening.steps,
   columns: Number(size[1]),
   rows: Number(size[2]),
   settings: { ...startSettings, capability, theme, glyphPack },
   experiments: imported.experiments,
+  at: opening.at,
 })
 const last = run.frames.length - 1
 

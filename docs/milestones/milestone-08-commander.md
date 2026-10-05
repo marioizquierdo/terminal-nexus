@@ -1,7 +1,11 @@
 # Milestone 8 — Commander
 
-**Status:** PLANNED
-**Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives), Milestone 6 (the Pulse is where the Commander acts)
+**Status:** CURRENT
+**Current step:** 8A, round 4 — Mario's notes on round 3: a building's range and construction territory, a level's target for your troops, Vasse as a hero (an aura and her voice in battle), more Nexus powers for her, Battle Rounds, armies, and a cleanup.
+**Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
+
+Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
+the next milestone stage!"
 
 This milestone widens Level 1's scope on purpose. Earlier plans deferred the Commander mechanic to
 Mission 3 (RESTORATION) and said not to author a Commander Army before Milestone 12. The plan now puts
@@ -38,9 +42,77 @@ this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 
 ### Step 8A — The Commander mechanic
 
-- [ ] Vasse is a persistent `@` on the `units` layer.
-- [ ] Death, absence for the rest of that Pulse and one full cycle, and restoration work on a named
-      scenario that hashes the same every run.
+Built; waiting for Mario's playtest.
+
+- [x] Vasse is a persistent `@` on the `units` layer. She walks out of the annex with PERIMETER's squads,
+      fights from just behind the line, comes home to the Nexus after each round, and her health is an
+      Experiment.
+- [x] Death, absence for the rest of that Pulse and one full cycle, and restoration work on a named
+      scenario that hashes the same every run (`tests/commander-fixture.ts`, on Node and Bun). The feed, the
+      result, the next Build Phase and its Battle Round say she is out, and then that she is back.
+- [x] Built first, because Vasse made it urgent: Mario's answer that only the Nexus falling loses a round.
+
+### Step 8A, round 2 — Her deck, her entrance, and the raid's intent
+
+Mario's notes on the Commander's pull request ([his words](../history/feedback/2026-10-03-commander-round-2.md)):
+the milestone is the Commander's concept, not PERIMETER's balance or her health. Built on the same pull request;
+waiting for Mario's playtest.
+
+- [x] Vasse's deck is defined once, with the content: her Commander, the credits she starts with, what she can
+      build and her Nexus power pool. Any mode that lets a player pick her reads it whole.
+- [x] A mission names the deck it plays and may override any part of it, since the Campaign develops the deck
+      level by level. PERIMETER names Vasse's and says what it unlocks; the Build Phase is built from the
+      result; validation refuses a deck or an override that names what does not exist.
+- [x] Vasse is drawn bold at full strength wherever she stands, arriving included, in the Build Phase and in
+      the Pulse.
+- [x] A dialog box at the bottom of the screen: a speaker and a line, Enter or a click for the next, Esc to
+      skip, the camera on whoever is talking. A mission writes its lines as data; PERIMETER opens with its
+      pre-battle exchange.
+- [x] She has an intro highlight when she shows up: as PERIMETER opens, and the round she is restored.
+- [x] The raid is always shown (the Incoming wave Experiment settled and removed), and the Build Phase shows,
+      without looking for it, what each group goes for first, along which way, how many and when. The
+      prediction is the kernel's own, run on the plan as it stands.
+- [x] Played as a player at 80 × 24; the pull request says what the raid's intent made the player plan.
+
+### Step 8A, round 3 — Navigation by route, content bundles, and Commanders who die
+
+Mario's notes on the second round ([his words](../history/feedback/2026-10-04-commander-round-3.md)). Built on
+the same pull request.
+
+- [x] `--at <route>` replaces `--build-phase`: the title menu's screens and a campaign level
+      (`campaign?level=<id>`, with the round to open at) are routes, the same grammar for the browser page's
+      direct links; `--settings` takes `foo=6&var=true`. The bare command opens the title menu; loading a saved
+      game from a default location is written down, not built.
+- [x] The routing schema is documented, and a test opens every route it names.
+- [x] Content is organized as bundles, data rather than code, each naming the bundles it builds on: `common`
+      (buildings and Nexus powers any Commander may use) and `vasse` (her Commander and her campaign: its levels
+      in order, what each unlocks, and their missions). Validation refuses a broken bundle by name.
+- [x] What a level offers is what its campaign has unlocked by then. PERIMETER is the campaign's first level;
+      the Commander's cadence test map is a second, reachable by route, so her return can be played.
+- [x] Commanders die as part of the game: the round one is out opens on a line saying so, and the campaign
+      design and the lore teach it in the intro levels rather than saving it for a later mission.
+- [x] The next iteration on intent, the player's own units' targets, is in the backlog.
+
+### Step 8A, round 4 — Range and territory, a target for your troops, Vasse as a hero, and a cleanup
+
+Mario's notes on the third round ([his words](../history/feedback/2026-10-04-commander-round-4.md)). Built on
+the same pull request, by subagents.
+
+- [x] A building with range shows it on the ghost while it is being placed, quietly; any building with a
+      range can show it the same way.
+- [x] Construction territory is built: a building may only be placed within the construction radius of the
+      player's other buildings, rooted at the Grid Nexus, and the Build Phase shows where that is.
+- [x] Each campaign level names the target the player's troops head for; they engage what comes within reach
+      on the way, and the Build Phase says where they are going. Posts wait.
+- [x] Vasse has a passive aura: the player's units near her take less damage.
+- [x] Vasse speaks during the Nexus Pulse, behind an Experiment, with a light touch of the effect library.
+- [x] A pool of Nexus powers for Vasse is designed for the Nexus draft step to build.
+- [x] "Wave" is gone: Battle Round in the interface, Nexus Pulse in lore and design; a route counts rounds only.
+- [x] Content bundles are armies: `armies/all` and `armies/vasse`.
+- [x] A cleanup pass over what this milestone added leaves the code simpler, with behaviour unchanged: `--build-phase`
+      and `--spike` gone (an argument the game does not read is refused, naming what replaced them), one
+      launch-options module for the game, the scripted playtest, the page and its demos, one default level, the
+      title menu's places in one table.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 
@@ -57,24 +129,25 @@ order ([`README.md`](README.md)).
 
 ## Is this a Commander Army?
 
-No, and this is the exact line. A Commander Army (see the Commander Army design) is the complete set of
-choices legally available to one player in one match: starting resources, every legal unit and
-structure, the full upgrade pool, faction rules, portraits, barks, effect motifs and balance
-hypotheses. This milestone builds one named Commander's mechanic and a two-option draft scoped to one
-mission. Everything else the player can do in PERIMETER is still the disposable Citizen fixture roster,
-with no balance claim, as Milestone 1 shipped it. Building the mechanism a Commander Army will need,
-and using it once and narrowly for a story character the mission already requires, is not the same as
-choosing and locking the real Citizens roster (Q34).
+Its shape, yes; its roster, no. A Commander Army (see the Commander Army design) is the complete set of
+choices legally available to one player in one match: starting resources, every legal unit and structure,
+the full upgrade pool, faction rules, portraits, barks, effect motifs and balance hypotheses. Mario settled
+how much of that this milestone builds, on the Commander's pull request: "this milestone is more about
+building the concept of the commander ... Make sure that the commander deck is properly organized, and
+properly integrated with the campaign." The second round built her deck as one definition a Campaign level
+overrode. In the third, Mario separated the campaign's deck from the run mode's ("from the development side
+they don't have to be the same"), so content became data: `armies/all` with the buildings and Nexus powers any
+Commander may use, and `vasse` with her Commander and her campaign, whose levels each offer what it has
+unlocked by then (`armies/`; the question about building her early is answered).
 
-The recommendation: build the mechanism and Vasse specifically, keep the draft to the one or two
-options this mission needs, and do not treat this milestone as Milestone 12's roster selection. Say so
-in the pull request, so a later reader does not mistake "Vasse exists" for "the Citizens Commander Army
-is locked."
+What is still not this milestone: choosing and locking the Citizens' roster. Every building and power she is
+offered is the disposable bench content, with no balance claim, as Milestone 1 shipped it; the roster, its
+balance and her four designed powers come later.
 
-Mission 3 is where the belief ramp spends the death, absence and restoration beat in the story
-("Vasse dies mid-Pulse, and play continues"). Building the mechanic now need not spend that beat early:
-PERIMETER's map and raid strength should simply not force Vasse's death, so the mechanism exists and
-is testable without the story using it before Mission 3 is ready.
+Commanders die as part of the game. The plan was that PERIMETER would not force Vasse's death, to save it for
+the third mission; measured, she falls in its last round in every plan, and Mario settled it in the third round:
+"commanders die on this game, is part of the gameplay so we better integrate that into the lore and the campaign
+intro levels". So PERIMETER letting her fall is the game working, and the intro levels teach it.
 
 ## Out of scope
 

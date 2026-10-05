@@ -215,9 +215,9 @@ test("the Grid drawn is the Grid under the camera, not the Grid's north-west cor
 test("the placement preview says whether Enter will work, by shape rather than by colour", () => {
   const legal = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
+    build.run([{ kind: "move-cursor", dx: 8, dy: 0 }])
   })
-  const legalCell = cellForTile(legal.layout, legal.build.state.camera, { x: 30, y: 14 })
+  const legalCell = cellForTile(legal.layout, legal.build.state.camera, { x: 26, y: 13 })
   assert.notEqual(cellAt(legal.frame, legalCell.x, legalCell.y).glyph, "x")
 
   const illegal = screenAt(MINIMUM, (build, layout) => {
@@ -249,9 +249,9 @@ test("a planned structure is drawn at full strength, like one already standing",
   // built." Undo and remove are what keep a plan revisable, not the grey.
   const planned = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+    build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   })
-  const cell = cellForTile(planned.layout, planned.build.state.camera, { x: 30, y: 14 })
+  const cell = cellForTile(planned.layout, planned.build.state.camera, { x: 26, y: 13 })
   assert.notEqual(cellAt(planned.frame, cell.x, cell.y).style.dim, true, "a plan is not dimmed")
   assert.equal(cellAt(planned.frame, cell.x, cell.y).style.bold, true)
 })
@@ -263,10 +263,10 @@ test("right after a placement the tile reads as built, and the status line says 
   // the side panel independently made the identical mistake with its own refusal block.
   const justPlaced = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+    build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   })
   assert.doesNotMatch(justPlaced.text, /Cannot build here/i, "nothing refuses the tile it just built on")
-  const cell = cellForTile(justPlaced.layout, justPlaced.build.state.camera, { x: 30, y: 14 })
+  const cell = cellForTile(justPlaced.layout, justPlaced.build.state.camera, { x: 26, y: 13 })
   assert.notEqual(cellAt(justPlaced.frame, cell.x, cell.y).glyph, "x", "no illegal block over the built structure")
   // Owner, 2026-09-27: "hatch placed (resources: 30) - [u] undo" — what is left, and the way back.
   assert.match(justPlaced.text, /Barracks placed \(resources: 60\) - \[u\] undo/, "the footer reports the success")
@@ -284,7 +284,7 @@ test("undoing the placement just made lets the same tile be built on again at on
     const layout = buildLayout(MINIMUM, context.grid)
     const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }, revise])
+    build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }, revise])
     assert.equal(build.state.planned.length, 0, `${revise.kind} did not take the placement back`)
     build.handleData("1", layout) // placing returned the keyboard to the menu; arm again, in place
     const cell = cellForTile(layout, build.state.camera, build.state.cursor)
@@ -345,10 +345,13 @@ test("the status line says why a placement would be refused, and which tile it m
   // sense to show that feedback on the low bar ... so we keep that low bar for cursor status
   // feedback." The panel keeps the menu and what the armed row does, and nothing else.
   const onRock = screenAt(MINIMUM, (build, layout) => {
+    // A Turret north of the Nexus first, so the build range reaches the north-west wall's rock.
+    build.handleData("3", layout)
+    build.run([{ kind: "move-cursor", dx: 19 - 18, dy: 7 - 13 }, { kind: "place" }])
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
+    build.run([{ kind: "move-cursor", dx: 19 - build.state.cursor.x, dy: 5 - build.state.cursor.y }])
   })
-  assert.equal(statusRow(onRock), "Cannot build here: rock in the way at 8,5.")
+  assert.equal(statusRow(onRock), "Cannot build here: rock in the way at 18,5.")
   assert.doesNotMatch(onRock.text, /CANNOT BUILD HERE/, "not shouted, and not on the panel as well")
   assert.match(onRock.text, /Trains troopers/, "the panel still says what the armed building does")
 
@@ -358,10 +361,17 @@ test("the status line says why a placement would be refused, and which tile it m
   })
   assert.match(statusRow(onNexus), /^Cannot build here: the nexus is here at \d+,\d+\.$/)
 
+  // Beyond the build range, the first of the ghost's tiles outside it.
+  const beyond = screenAt(MINIMUM, (build, layout) => {
+    build.handleData("1", layout)
+    build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }])
+  })
+  assert.equal(statusRow(beyond), "Cannot build here: outside your build range at 7,5.")
+
   // And it is gone the moment the placement is legal again, rather than lingering.
   const fine = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }])
+    build.run([{ kind: "move-cursor", dx: 8, dy: 0 }])
   })
   assert.doesNotMatch(fine.text, /Cannot build here/i)
 })
@@ -389,7 +399,7 @@ test("looking at an illegal tile reads quietly, trying to build there reads in r
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 8 - 18, dy: 5 - 13 }, { kind: "place" }])
   })
-  assert.equal(statusRow(tried), "Cannot build here: rock in the way at 8,5.", "the same sentence")
+  assert.equal(statusRow(tried), "Cannot build here: outside your build range at 7,5.", "the same sentence")
   const loud = cellAt(tried.frame, statusColumn, tried.layout.footerRow).style
   assert.equal(loud.fgRole, "notice.gate", "an attempt that was refused is")
   assert.equal(loud.bold, true)
@@ -428,13 +438,13 @@ test("the budget on screen is the budget the reducer is enforcing", () => {
   build.dispatch({ kind: "focus", target: "menu" })
   assert.match(show(), new RegExp(`\\* ${STARTER_ALLOTMENT}[|+]`))
   build.handleData("1", layout)
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
   assert.match(show(), new RegExp(`\\* ${remaining(context, build.state)}[|+]`))
-  build.handleData("1", layout) // placing disarms; the digit arms again, in place
+  build.handleData("1", layout) // placing disarms; the digit arms again, at the nearest spot in the build range
   // A row that can no longer be afforded is dimmed — an attribute, not a colour, so it survives
   // monochrome. Checked on an *unselected* row: the selected one is inverse video, which is what
   // "selected" means everywhere in this game, and its unaffordability is the status line's to say.
-  build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+  build.run([{ kind: "place" }])
   // Back on the menu: move the highlight to the cheap turret, leaving the barracks row unselected.
   build.run([{ kind: "highlight", delta: 1 }, { kind: "highlight", delta: 1 }])
   assert.ok(remaining(context, build.state) < STARTER_CATALOG[0]!.cost, "not actually unaffordable")
@@ -457,9 +467,9 @@ test("selecting something unaffordable says so before the player tries it", () =
   const layout = buildLayout(MINIMUM, context.grid)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
-  build.handleData("1", layout)
-  build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
+  build.handleData("1", layout) // armed again at the nearest spot in the build range, and placed there
+  build.run([{ kind: "place" }])
   // Arming the barracks again, now unaffordable wherever the cursor is: refused at the menu, before
   // any tile question, and the row stays unarmed.
   build.handleData("1", layout)
@@ -517,9 +527,9 @@ test("a row that costs more than is left cannot be armed: it flickers and says w
   const layout = buildLayout(MINIMUM, context.grid)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   build.handleData("1", layout)
-  build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
-  build.handleData("1", layout)
-  build.run([{ kind: "move-cursor", dx: 4, dy: 0 }, { kind: "place" }])
+  build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
+  build.handleData("1", layout) // armed again at the nearest spot in the build range, and placed there
+  build.run([{ kind: "place" }])
   assert.ok(remaining(context, build.state) < STARTER_CATALOG[0]!.cost, "not actually unaffordable")
   const before = build.state.ack?.seq ?? 0
   build.handleData("1", layout)
@@ -575,7 +585,7 @@ test("a panel with room for the card's words still draws them", () => {
   assert.match(roomy.text, /home to it after\./, "the description is cut short")
 })
 
-test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Pulse", () => {
+test("on a small Grid the panel's rows are drawn whole, however few fit: the Nexus entry, the buildings it has room for, and Start Battle Round", () => {
   // The panel's height is the viewport's, and the viewport shrinks to fit a Grid smaller than the
   // screen (`isGated` deliberately passes one that fits entirely); every row the panel draws must still
   // be drawn whole, and a building it has no room for is not drawn at all.
@@ -595,7 +605,7 @@ test("on a small Grid the panel's rows are drawn whole, however few fit: the Nex
       assert.ok(item !== undefined)
       assert.match(rows[line.row] as string, new RegExp(`\\[${item.hotkey}\\] ${item.label} +${item.cost}(?:[|+ ]|$)`), `${width}x${height}: ${item.label}`)
     }
-    assert.match(rows[startRow(layout)] as string, /\[s\] Start Pulse/, `${width}x${height}`)
+    assert.match(rows[startRow(layout)] as string, /\[s\] Start Battle Round/, `${width}x${height}`)
   }
 })
 
@@ -635,7 +645,7 @@ test("no line is drawn over another, at every terminal size in the supported ran
       // moment ago — and it stays whole through the whole range.
       assert.match(
         lines[layout.footerRow] as string,
-        /Cannot build here: rock in the way at 8,5\./,
+        /Cannot build here: outside your build range at 7,5\./,
         `status at ${columns}x${rows}`,
       )
       // The rule under the Grid is its own row: the Grid's last row never touches the bottom line,
@@ -755,7 +765,7 @@ test("the commit confirmation is a screen over the Grid: Battle Round 1, what it
 test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {
   const built = screenAt(MINIMUM, (build, layout) => {
     build.handleData("1", layout)
-    build.run([{ kind: "move-cursor", dx: 12, dy: 1 }, { kind: "place" }])
+    build.run([{ kind: "move-cursor", dx: 8, dy: 0 }, { kind: "place" }])
     build.dispatch({ kind: "open-battle-round" })
     build.dispatch({ kind: "start-pulse" })
   })

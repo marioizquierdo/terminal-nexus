@@ -3,7 +3,6 @@
 // all drawn through the camera and clipped to the view.
 
 import { inBounds, tilesOf } from "../grid/coords.ts"
-import { setting } from "../build/all-settings.ts"
 import type { PlayerId } from "../state/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { VisibleRange } from "../build/camera.ts"
@@ -16,7 +15,7 @@ import { BANDS } from "./frame.ts"
 import { put } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
 import type { CapabilityMode, StyleRole } from "./roles.ts"
-import { entityGlyph, playerRole } from "./theme.ts"
+import { chromeGlyph, entityGlyph, playerRole } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
@@ -27,6 +26,8 @@ import { trackEffectsAt } from "./animation.ts"
 import { placementEffectContext, placementLook, placementSchedule, removalSchedule } from "./placement.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
+import { drawBuildRange, drawReach } from "./build-areas.ts"
+import { drawTroopsPost } from "./troops-post.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"
@@ -101,8 +102,8 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, animating.get(placement.ordinal))
 
   // What else is on the map after a round: survivors of both sides where Recall left them, and a
-  // scripted side's structures, each in its side's colour. Then, see-through and dim, what the next round
-  // brings — dim so it reads as "not here yet" at every colour depth, monochrome included.
+  // scripted side's structures, each in its side's colour. Then what the next round brings, always (the
+  // owner: "the enemy units should be visible"), in the incoming look — see-through, "not here yet".
   // A unit steps aside for a building when the Pulse starts — a survivor or an arrival alike — so neither
   // is drawn over one: a tile a building holds, standing, planned or the raid's, shows the building.
   const built = new Set<string>()
@@ -122,23 +123,162 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
       if (!inBounds(context.grid, tile) || !inView(range, tile)) continue
       if (definition.layer !== "obstacles" && built.has(`${tile.x},${tile.y}`)) continue
       const cell = cellForTile(layout, state.camera, tile)
-      const style = incoming
-        ? { fgRole: playerRole(entity.player), dim: true, fade: INCOMING_FADE }
-        : { fgRole: playerRole(entity.player), ...(definition.layer === "obstacles" ? { bold: true } : {}) }
+      // A Commander is never faint: bold at full strength in her side's colour, arriving or standing (the
+      // owner: "make sure vasse is visible, prominent").
+      const commander = definition.commander === true
+      const style: CellStyle = commander
+        ? { fgRole: playerRole(entity.player), bold: true }
+        : incoming
+          ? incomingLook(entity.player)
+          : { fgRole: playerRole(entity.player), ...(definition.layer === "obstacles" ? { bold: true } : {}) }
       cells.push({ band, x: cell.x, y: cell.y, cell: { glyph: entityGlyph(entity.contentId, entity.player, offset), style } })
-      for (let extra = 1; extra < layout.tileWidth; extra += 1) put(cells, band, cell.x + extra, cell.y, " ", playerRole(entity.player))
+      const blank: CellStyle = incoming && !commander ? incomingLook(entity.player) : { fgRole: playerRole(entity.player) }
+      for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style: blank } })
     }
   }
   for (const entity of context.field ?? []) drawEntity(entity, false)
-  if (showsIncoming(state)) for (const entity of context.incoming ?? []) drawEntity(entity, true)
+  for (const entity of context.incoming ?? []) drawEntity(entity, true)
+  // While a building is armed, where it may go: drawn before the raid's trail, which wins on its tiles.
+  drawBuildRange(cells, input, pack, takenTiles(context, state.planned))
 }
 
-/** How far toward the background an incoming unit is drawn, where colour allows (256 colours and up). */
-const INCOMING_FADE = 0.45
+/**
+ * ***The incoming raid***: what the next round brings, drawn where it will arrive in its side's colour and
+ * see-through — "not here yet", yet read at a glance (the owner: "the enemy units should be visible").
+ * It is the see-through style at a low alpha in its own colour: where colours blend (256 and up) a wash
+ * lies under its glyphs, which stay near full strength; at 16 colours and in monochrome, where a wash
+ * that light shows nothing, it is the style's plain look — the glyphs at full strength. It once was dim
+ * and faded, and played as a player it was easy to miss; "not here yet" is said in words where colour
+ * cannot: the panel's heading for when it comes, and Explore Map's card ("Incoming").
+ */
+function incomingLook(player: PlayerId): CellStyle {
+  return { fgRole: playerRole(player), seeThrough: { role: playerRole(player), alpha: INCOMING_WASH } }
+}
 
-/** Whether the next round's arrivals are drawn: the Incoming wave Experiment. */
-export function showsIncoming(state: BuildCompositionInput["state"]): boolean {
-  return setting(state, "incoming") === "shown"
+/** How strongly the incoming raid's own colour washes its cells, where colours blend. */
+const INCOMING_WASH = 0.2
+
+/**
+ * ***The raid's intent***: for every group the round brings, a **trail** from the group toward what it
+ * goes for first, and that **target** marked — so the player sees, without looking for it, which way each
+ * group comes and what it will hit, and sees both move when a building changes the answer. In the Build
+ * Phase only: a Pulse shows what happens, not what was foreseen.
+ *
+ * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the kernel's own step
+ *   rule), a direction mark every other tile counted back from the last, each pointing at the next — the
+ *   glyph pack's own arrowheads where the way runs straight, its diagonal strokes where it steps both ways.
+ *   On open ground only: never over anything standing, planned or arriving (the corruption law), nor over
+ *   rock or a deposit, which are information too. In the raid's colour and see-through: dim, and faded
+ *   where colour allows, quieter than the raid itself.
+ * - The target is a glyphless write over its tiles, so its own glyphs stay: a wash of the raid's colour
+ *   where colours blend, and underlined at every depth — the form that carries it at 16 colours and in
+ *   monochrome. Never red, which is kept for the player's own Nexus being hurt.
+ */
+export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
+  drawTroopsPost(cells, input, pack)
+  const { context, state, layout, raid } = input
+  if (raid === undefined || raid.length === 0 || state.committed || input.pulse !== undefined) return
+  const range = visibleRange(state.camera, state.viewport)
+  const taken = takenTiles(context, state.planned)
+  for (const group of raid) {
+    if (group.target === null) continue
+    const style: CellStyle = { fgRole: playerRole(group.player), dim: true, fade: TRAIL_FADE }
+    for (const mark of trailMarks(group.path, group.target.tiles)) {
+      const { tile } = mark
+      if (!inBounds(context.grid, tile) || !inView(range, tile) || taken.has(`${tile.x},${tile.y}`)) continue
+      if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
+      const cell = cellForTile(layout, state.camera, tile)
+      cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
+      for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style } })
+    }
+  }
+  const marked = new Set<string>()
+  for (const group of raid) {
+    if (group.target === null) continue
+    for (const tile of group.target.tiles) {
+      const key = `${tile.x},${tile.y}`
+      if (marked.has(key) || !inBounds(context.grid, tile) || !inView(range, tile)) continue
+      marked.add(key)
+      const cell = cellForTile(layout, state.camera, tile)
+      const style: CellStyle = { underline: true, seeThrough: { role: playerRole(group.player), alpha: TARGET_WASH } }
+      for (let extra = 0; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.effects, x: cell.x + extra, y: cell.y, style })
+    }
+  }
+}
+
+/** How far toward the background a trail's marks are drawn, where colour allows: quieter than the raid. */
+const TRAIL_FADE = 0.3
+
+/** How strongly the raid's colour washes the tiles of what it goes for first, where colours blend. */
+const TARGET_WASH = 0.25
+
+/** One mark of a trail: its tile, and the way it points — toward the next mark, the last toward the target. */
+type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number }>
+
+/**
+ * Where a trail's marks go along `path`: every other tile, counted back from the last so the mark beside
+ * the target is always drawn, each pointing at the mark after it — or, for the last, at the target's
+ * nearest tile.
+ */
+export function trailMarks(path: readonly Coord[], target: readonly Coord[]): TrailMark[] {
+  const marks: TrailMark[] = []
+  for (let index = path.length - 1; index >= 0; index -= 2) {
+    const tile = path[index] as Coord
+    const toward = path[index + 2] ?? nearestOf(tile, target)
+    marks.push({ tile, dx: toward.x - tile.x, dy: toward.y - tile.y })
+  }
+  return marks.reverse()
+}
+
+/** The tile of `tiles` nearest `from`, the first of them on a tie; `from` itself when there are none. */
+function nearestOf(from: Coord, tiles: readonly Coord[]): Coord {
+  let best = from
+  let bestDistance = Number.POSITIVE_INFINITY
+  for (const tile of tiles) {
+    const distance = Math.abs(tile.x - from.x) + Math.abs(tile.y - from.y)
+    if (distance < bestDistance) {
+      best = tile
+      bestDistance = distance
+    }
+  }
+  return best
+}
+
+/** A trail mark pointing `dx`, `dy`, in the glyph pack's own characters — the focus arrow's: an arrowhead
+ *  where the way runs mostly along one axis, a diagonal stroke where it runs along both. */
+export function trailGlyph(pack: GlyphPack, dx: number, dy: number): string {
+  const across = Math.abs(dx)
+  const down = Math.abs(dy)
+  if (down === 0 || across >= 2 * down) return chromeGlyph(pack, dx < 0 ? "arrowLeft" : "arrowRight")
+  if (across === 0 || down >= 2 * across) return chromeGlyph(pack, dy < 0 ? "arrowUp" : "arrowDown")
+  // Down and to the left, or up and to the right, runs along `/`; the other two along `\`.
+  return chromeGlyph(pack, (dx < 0) === (dy > 0) ? "trailRise" : "trailFall")
+}
+
+/** Every tile the raid's trail marks while the trail is drawn — what a building's reach yields to. */
+export function trailTiles(input: BuildCompositionInput): Set<string> {
+  const tiles = new Set<string>()
+  const { raid, state } = input
+  if (raid === undefined || state.committed || input.pulse !== undefined) return tiles
+  for (const group of raid) {
+    if (group.target === null) continue
+    for (const mark of trailMarks(group.path, group.target.tiles)) tiles.add(`${mark.tile.x},${mark.tile.y}`)
+  }
+  return tiles
+}
+
+/** Every tile something stands on, is planned on or arrives on — what a trail mark, the build range's dots
+ *  and a building's reach never cover. */
+function takenTiles(context: BuildContext, planned: readonly PlannedPlacement[]): Set<string> {
+  const taken = new Set<string>()
+  const take = (contentId: string, anchor: Coord): void => {
+    for (const tile of tilesOf(anchor, context.registry.get(contentId).footprint)) taken.add(`${tile.x},${tile.y}`)
+  }
+  for (const structure of context.standing) take(structure.contentId, structure.anchor)
+  for (const placement of planned) take(placement.contentId, placement.anchor)
+  for (const entity of context.field ?? []) take(entity.contentId, entity.anchor)
+  for (const entity of context.incoming ?? []) take(entity.contentId, entity.anchor)
+  return taken
 }
 
 /**
@@ -204,6 +344,10 @@ export function drawEffects(
  */
 export function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
+  // Where it will reach — round the ghost, or round a building the cursor rests on — yielding to the trail.
+  const avoid = takenTiles(input.context, state.planned)
+  for (const tile of trailTiles(input)) avoid.add(tile)
+  drawReach(cells, input, input.glyphPack ?? "ascii", preview, glideShift(input), avoid)
   if (preview === null) return
   const legal = preview.refusal === null
   const shape = legal || state.noSpotFound
@@ -275,12 +419,15 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
   // colour a terminal picks for it, so a coloured screen still needs an explicit, reliably bright role
   // to get the same lift monochrome gets from the attribute alone. The highlight bar's role, so the
   // menu's and the map's "you are here" read as one.
-  const style: CellStyle =
+  // A see-through wash beneath it — the incoming raid's, a raid target's — is set aside (an alpha of 0
+  // shows nothing), so the one "you are here" looks the same on every tile.
+  const look: CellStyle =
     input.cursorBlink === true
       ? { inverse: true, bold: PRESSED_LOOK.bold, underline: PRESSED_LOOK.underline, dim: false, fgRole: PRESSED_LOOK.role }
       : onStructure
         ? { inverse: true }
         : { inverse: true, bold: true, dim: false, fgRole: CURSOR_ROLE }
+  const style: CellStyle = { ...look, seeThrough: { role: CURSOR_ROLE, alpha: 0 } }
   for (let extra = 0; extra < layout.tileWidth; extra += 1) {
     cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })
   }

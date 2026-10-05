@@ -6,12 +6,14 @@
 // worked out for one presentation instant — and paints cells. It reads no clock and asks nothing of the
 // kernel, and the frame it draws is a pure function of the resolved Pulse and the time.
 
+import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile, nextRoundRow, pulseControlRows } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { inBounds, tileIndex } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
@@ -21,7 +23,7 @@ import type { StatusMessage } from "../build/status.ts"
 import { status } from "../build/status.ts"
 import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
-import { forceBar } from "./compose.ts"
+import { drawnBold, forceBar } from "./compose.ts"
 import { inView } from "./build-grid.ts"
 import { paintEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
@@ -58,6 +60,34 @@ export type PulseFrame = Readonly<{
   forces: Readonly<Record<PlayerId, Readonly<{ units: number; hp: number }>>>
   /** After Recall: how many mobile units the player has, standing where the next Build Phase finds them. */
   home: number
+  /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
+  aura?: AuraFrame
+  /** What she is saying at this instant, and where (the "Vasse's voice" Experiment). Absent: nothing. */
+  voice?: VoiceFrame
+}>
+
+/** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
+ *  as range is, Manhattan, so a diamond — and whose side it guards. */
+export type AuraFrame = Readonly<{ at: Coord; radius: number; player: PlayerId }>
+
+/** A line she is saying, as the scene draws it (`pulse-voice.ts` plans them, `pulse-live.ts` times them). */
+export type VoiceFrame = Readonly<{
+  /** The words, unquoted. */
+  text: string
+  /** How many characters of the quoted line are typed in: all of them, once typed. */
+  typed: number
+  /** In its last moments: drawn dim, thinning out before it goes. */
+  fading: boolean
+  /** Her name as the screen gives it, her unit (for her glyph) and her side (for her colour). */
+  name: string
+  contentId: string
+  player: PlayerId
+  /** On the map beside her, or in the panel under the feed — where "beside her" goes when she is out of view. */
+  where: "map" | "panel"
+  /** The tile she is drawn on, or where she fell for her last words. */
+  at: Coord
+  /** On the map, the tile the line is centred on, held still while it is read (`labelPlace`). */
+  place: Coord
 }>
 
 /** The words for a side: the player's own units are "you", the other side "raid". */
@@ -84,7 +114,7 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
       occupied.add(tileIndex(view.grid, tile))
       const cell = cellForTile(view.layout, view.camera, tile)
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
-        bold: definition.layer === "obstacles",
+        bold: drawnBold(definition),
       })
       for (let extra = 1; extra < view.layout.tileWidth; extra += 1) {
         put(cells, band, cell.x + extra, cell.y, " ", playerRole(entity.player))
@@ -97,11 +127,11 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
 }
 
 /**
- * What every effect is painting, through the camera. The corruption law, enforced here as the Pulse
- * view enforces it and the Build Phase's placement effects do: a glyphless cell only restyles what is
- * beneath it, and one that would replace a unit's or a structure's glyph is dropped on that tile —
- * the screen may look wrong, but the player can always see what is attacking them. Two effects on one
- * tile merge the way they always have.
+ * What every effect is painting, through the camera — over her aura's reach, and under what she is saying beside
+ * her. The corruption law, enforced here as the Pulse view enforces it and the Build Phase's placement effects
+ * do: a glyphless cell only restyles what is beneath it, and one that would replace a unit's or a structure's
+ * glyph is dropped on that tile — the screen may look wrong, but the player can always see what is attacking
+ * them. Two effects on one tile merge the way they always have.
  */
 export function drawPulseEffects(
   cells: BandCell[],
@@ -109,6 +139,7 @@ export function drawPulseEffects(
   pulse: PulseFrame,
   occupied: ReadonlySet<number>,
 ): void {
+  drawAura(cells, view, pulse)
   const range = visibleRange(view.camera, view.viewport)
   const sources: EffectCellSource[] = []
   for (const painted of pulse.sample.effects) {
@@ -125,6 +156,77 @@ export function drawPulseEffects(
     (tile) => cellForTile(view.layout, view.camera, tile),
     (tile) => occupied.has(tileIndex(view.grid, tile)),
   )
+  drawVoiceOnMap(cells, view, pulse, occupied)
+}
+
+/**
+ * How strongly her side's colour washes the ground her aura reaches, where colours blend (256 and up): a
+ * see-through style a little quieter than the incoming raid's, so it reads as a glow under the fight rather than
+ * a shape on top of it. At 16 colours and in monochrome a wash this light shows nothing, and her card's words
+ * carry what the aura does.
+ */
+export const AURA_WASH = 0.16
+
+/**
+ * ***Her aura's reach*** (By the Book: her side's units near her take less damage): every tile within its radius
+ * of her — measured as range is, Manhattan, so a diamond — washed in her side's colour on the ground, moving with
+ * her while the fight is on. A glyphless write on the ground's own band, under everything that stands: a unit or
+ * a building in her reach keeps its glyph and every colour of its own, standing in the glow rather than tinted by
+ * it (at 256 colours a washed glyph would change hue), and an effect draws over it. Read from the content's aura
+ * (`ContentDef.aura`), so a Commander with a wider one is drawn wider.
+ */
+export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame): void {
+  const aura = pulse.aura
+  if (aura === undefined) return
+  const range = visibleRange(view.camera, view.viewport)
+  const style: CellStyle = { seeThrough: { role: playerRole(aura.player), alpha: AURA_WASH } }
+  // In the tiles' own coordinates, never offsets from her: an offset `-reach` is `-0` at the diamond's tips, and a
+  // `-0` in a coordinate slows every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
+  for (let y = aura.at.y - aura.radius; y <= aura.at.y + aura.radius; y += 1) {
+    const reach = aura.radius - Math.abs(y - aura.at.y)
+    for (let x = aura.at.x - reach; x <= aura.at.x + reach; x += 1) {
+      const tile = { x, y }
+      if (!inBounds(view.grid, tile) || !inView(range, tile)) continue
+      const cell = cellForTile(view.layout, view.camera, tile)
+      for (let extra = 0; extra < view.layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, style })
+    }
+  }
+}
+
+/**
+ * ***Her line beside her*** (the "Vasse's voice" Experiment's `beside her`): what she is saying, between double
+ * quotes, at the place beside her `@` chosen as the line began (`labelPlace`: near her, clear of what stands
+ * there while it is read) — held still while it is read, kept inside the map's view, typed in and thinning out. A
+ * blank cell either side sets it off from the ground. Bold in her side's colour, so it reads in monochrome by
+ * weight and by its quotes. **It never covers a unit or a building**: a letter that would is left out (the
+ * corruption law), and the words are said in the panel instead whenever she, or the place, is out of view.
+ */
+export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>): void {
+  const voice = pulse.voice
+  if (voice === undefined || voice.where !== "map") return
+  const { layout, camera, viewport, grid } = view
+  const words = quoted(voice.text)
+  // The opening blank, what is typed of the line, and the closing blank once it is whole.
+  const label = ` ${words.slice(0, voice.typed)}${voice.typed >= words.length ? " " : ""}`
+  const width = ` ${words} `.length
+  const place = cellForTile(layout, camera, voice.place)
+  const mapLeft = layout.origin.column
+  const mapRight = mapLeft + viewport.width * layout.tileWidth - 1
+  const centre = place.x + Math.floor(layout.tileWidth / 2)
+  const left = Math.max(mapLeft, Math.min(centre - Math.floor(width / 2), mapRight - width + 1))
+  const y = place.y
+  const top = layout.origin.row
+  if (y < top || y >= top + viewport.height) return
+  const role = playerRole(voice.player)
+  const extra: DrawExtra = voice.fading ? { dim: true } : { bold: true }
+  const glyphs = [...label]
+  for (let index = 0; index < glyphs.length; index += 1) {
+    const x = left + index
+    if (x > mapRight) break
+    const tile = { x: camera.x + Math.floor((x - mapLeft) / layout.tileWidth), y: camera.y + (y - top) }
+    if (!inBounds(grid, tile) || occupied.has(tileIndex(grid, tile))) continue
+    put(cells, BANDS.effects, x, y, glyphs[index] as string, role, extra)
+  }
 }
 
 /** The border's cells, clockwise from the top left corner — the same list every frame of a layout. */
@@ -186,9 +288,9 @@ export function pulseSubtitle(pulse: PulseFrame): string {
     case "walking":
       return "recall"
     case "home":
-      return `nexus pulse - ${pulse.result.headline.toLowerCase()}`
+      return `battle round - ${pulse.result.headline.toLowerCase()}`
     default:
-      return "nexus pulse"
+      return "battle round"
   }
 }
 
@@ -202,15 +304,15 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
   const held = pulse.paused && pulse.phase !== "home" ? "Paused. " : ""
   switch (pulse.phase) {
     case "final":
-      return status(`${held}The Pulse is about to end.`)
+      return status(`${held}The battle is about to end.`)
     case "halted":
-      return status(`${held}Cease fire. The Pulse is over.`)
+      return status(`${held}Cease fire. The battle is over.`)
     case "walking":
       return status(`${held}Recall - the survivors are heading home.`)
     case "home":
       return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
     default:
-      return status(`${held}Nexus Pulse - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the raid.`)
+      return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the raid.`)
   }
 }
 
@@ -228,9 +330,24 @@ function whoIs(id: string): Readonly<{ player: PlayerId | null; name: string }> 
   return { player: side === "A" || side === "B" ? side : null, name }
 }
 
+/** The Commanders' names, by the short name their ids carry (`A:vasse#7` is "Vasse"), for each registry. */
+const COMMANDER_NAMES = new WeakMap<ContentRegistry, ReadonlyMap<string, string>>()
+
+/** A unit's name in the feed: its short name, or a Commander's own. */
+function feedName(pulse: PulseFrame, id: string): string {
+  let names = COMMANDER_NAMES.get(pulse.registry)
+  if (names === undefined) {
+    const { registry } = pulse
+    names = new Map(registry.ids().filter((contentId) => registry.get(contentId).commander === true).map((contentId) => [registry.get(contentId).short, commanderName(contentId)]))
+    COMMANDER_NAMES.set(registry, names)
+  }
+  const { name } = whoIs(id)
+  return names.get(name) ?? name
+}
+
 /**
  * One line of the feed in plain words — "3.5s trooper > raider", "3.8s raider dies", "10.0s trooper
- * trained" — drawn in the colour of
+ * trained", "18.3s Vasse falls" — drawn in the colour of
  * the side it is about, or `null` for an event the feed does not carry. Short enough for the panel at the
  * floor without cutting a word: the units' own names say whose they are (a trooper is yours, a raider is
  * the raid's) and the colour says it again where colour reaches.
@@ -239,19 +356,20 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
   const at = `${secondsOf(pulse, event.tick)}s`
   const sideRole = (player: PlayerId | null): StyleRole => (player === null ? "chrome.value" : playerRole(player))
   switch (event.kind) {
-    case "attack.launched": {
-      const by = whoIs(event.attacker)
-      return { text: `${at} ${by.name} > ${whoIs(event.target).name}`, role: sideRole(by.player) }
-    }
+    case "attack.launched":
+      return { text: `${at} ${feedName(pulse, event.attacker)} > ${feedName(pulse, event.target)}`, role: sideRole(whoIs(event.attacker).player) }
+    // A Commander falls rather than dies, by name: her absence is news the result spells out.
     case "entity.died":
-      return { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
+      return pulse.registry.get(event.contentId).commander === true
+        ? { text: `${at} ${commanderName(event.contentId)} falls`, role: sideRole(event.player) }
+        : { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
     // Only what a building trained: an arrival or a spawner's brood is not news the feed has room for.
     case "entity.spawned":
       return event.trainedBy === undefined ? null : { text: `${at} ${whoIs(event.entity).name} trained`, role: sideRole(event.player) }
     case "structure.destroyed":
       return { text: `${at} ${whoIs(event.entity).name} falls`, role: sideRole(whoIs(event.entity).player) }
     case "pulse.ended":
-      return { text: `${at} the Pulse ends`, role: "chrome.title" }
+      return { text: `${at} the battle ends`, role: "chrome.title" }
     default:
       return null
   }
@@ -320,7 +438,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
         bold: lit,
         inverse: lit,
       })
-      line(`NEXUS PULSE ${pulseNumber}`, "chrome.title", { bold: true, limit: right - timer.length - 1 })
+      line(`BATTLE ROUND ${pulseNumber}`, "chrome.title", { bold: true, limit: right - timer.length - 1 })
       line(`time left  ${pulse.speed}x${pulse.paused ? " paused" : ""}`, "chrome.label")
     }
   }
@@ -333,6 +451,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   if (pulse.phase === "home") {
     line("RECALL", "chrome.label")
     line(cameHome(pulse.home), "chrome.value")
+    for (const words of wrapWords(pulse.result.commander ?? "", limit - 1)) line(words, "chrome.value")
     // A Pulse with no mission goes nowhere: the game menu's Restart is the way back.
     if (pulse.result.goOn === undefined) {
       gap()
@@ -341,6 +460,26 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   } else {
     line("RECENT", "chrome.label")
     for (const entry of recentLines(pulse)) line(entry.text, entry.role)
+  }
+
+  // Her line, when the panel is where it shows: under the feed — or under what Recall did, once the result
+  // stands — her glyph and name over it, as the dialog titles her, the words quoted and typed in. Never into
+  // the controls: with too little room the name goes first, then the line (it is in the Activity Logs).
+  const voice = pulse.voice
+  if (voice !== undefined && voice.where === "panel") {
+    const rows = barkPanelRows(voice.text, limit - 1)
+    const room = Math.min(...pulseControlRows(layout).map((control) => control.row)) - layout.panelRow - at
+    if (rows.length <= room) {
+      const role = playerRole(voice.player)
+      const look: DrawExtra = voice.fading ? { dim: true } : {}
+      if (rows.length < room) line(`${entityGlyph(voice.contentId, voice.player, { x: 0, y: 0 })} ${voice.name.toUpperCase()}`, role, { bold: !voice.fading, ...look })
+      let typed = voice.typed
+      for (const row of rows) {
+        line(row.slice(0, Math.max(0, typed)), role, look)
+        // The space the wrap took between this row and the next was typed too.
+        typed -= row.length + 1
+      }
+    }
   }
 
   // The controls, where the mouse can reach them: the hotkey in its own colour, then what it does.

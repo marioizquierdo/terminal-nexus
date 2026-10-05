@@ -24,6 +24,7 @@ import { START_KEY } from "./layout.ts"
 import { CONTROLS_TITLE, controlsPage } from "./help.ts"
 import { ACTIVITY_DESCRIPTION, CONTROLS_DESCRIPTION, GAME_MENU_ROWS, RESTART_DESCRIPTION, SETTINGS_ROWS, sectionOfRow } from "./settings.ts"
 import { ACTIVITY_FILTERS } from "../log/activity.ts"
+import { commanderName } from "../content/cards.ts"
 import {
   ACTIVITY_EMPTY,
   ACTIVITY_EXPORT_ROW,
@@ -39,7 +40,7 @@ import {
 } from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { exportText, nexusPowers } from "./state.ts"
-import type { BuildCommand, PopupMessage } from "./types.ts"
+import type { BuildCommand, DialogLine, PopupMessage } from "./types.ts"
 
 export type PopupRow =
   | Readonly<{ kind: "blank" }>
@@ -85,8 +86,9 @@ export type PopupRow =
     }>
   /** Text wrapped at words to the popup's width. With `lines`, in exactly that many lines, so the
    *  popup keeps its height whichever text it holds — a line that does not fit is dropped, never cut;
-   *  without, in as many as the text needs (a message). */
-  | Readonly<{ kind: "note"; text: string; lines?: number }>
+   *  without, in as many as the text needs (a message), or as the longest of `room` needs — the texts it
+   *  keeps room for, so the dialog keeps its height as it reads on through a scene. */
+  | Readonly<{ kind: "note"; text: string; lines?: number; room?: readonly string[] }>
   /** A line across the popup, border to border: what is above it is apart from what is below — in
    *  Settings, the list from what its highlighted row is for. */
   | Readonly<{ kind: "rule" }>
@@ -118,8 +120,17 @@ export type PopupScroll = Readonly<{
 
 /** A popup as data. `valueWidth` widens its setting rows' `< value >` box past the usual twelve columns
  *  (`VALUE_WIDTH`), for values longer than a number and its unit — the Activity logs window's filter
- *  names. */
-export type PopupSpec = Readonly<{ title: string; rows: readonly PopupRow[]; scroll?: PopupScroll; valueWidth?: number }>
+ *  names. `dock` puts it at the bottom of the map rather than in its middle, with no padding row: the
+ *  dialog, which sits under what it talks about. `click` is what a left click sends wherever it lands,
+ *  on the popup or off it: a popup that is read rather than chosen from (the dialog reads on). */
+export type PopupSpec = Readonly<{
+  title: string
+  rows: readonly PopupRow[]
+  scroll?: PopupScroll
+  valueWidth?: number
+  dock?: "bottom"
+  click?: BuildCommand
+}>
 
 /** How many lines the Settings popup keeps under its list, below a line across the popup, for what
  *  the highlighted row is for. Every question fits in this many at the narrowest popup (a test holds
@@ -392,12 +403,44 @@ export function messageSpec(message: PopupMessage): PopupSpec {
   return { title: message.title, rows: [{ kind: "blank" }, { kind: "note", text: message.text }] }
 }
 
+/** The dialog's title for a line: its speaker's name, as a script writes it, or nothing for the game's
+ *  own voice. The view colours it in the speaker's side and puts their glyph before it
+ *  (`src/view/build-dialog.ts`). */
+export function speakerTitle(line: DialogLine): string {
+  return line.speaker === null ? "" : line.speaker.toUpperCase()
+}
+
+/**
+ * **The dialog**: the line on screen, under its speaker's name, wrapped in as many lines as the scene's
+ * longest line takes — so the box keeps its height as it reads on — docked at the bottom of the map, where
+ * it sits under what it talks about. Nothing to choose: Enter, Space or a click anywhere reads on, and
+ * Esc skips the rest, as it closes every popup. `null` with no line to show.
+ */
+export function dialogSpec(context: BuildContext, state: BuildState): PopupSpec | null {
+  const scene = context.scene ?? []
+  const line = state.dialog === null ? undefined : scene[state.dialog.line]
+  if (line === undefined) return null
+  return {
+    title: speakerTitle(line),
+    rows: [{ kind: "note", text: line.text, room: scene.map((each) => each.text) }],
+    dock: "bottom",
+    click: { kind: "dialog-next" },
+  }
+}
+
 /** What the Battle Round confirmation announces when a mission has nothing of its own to say. */
 export const DEFAULT_ROUND_TEXT = "Activate Nexus. Collect Resources. Spawn Units."
 
 /** What the confirmation says for round `round`: the mission's own text for it, or the default. */
 export function roundAnnouncement(context: BuildContext, round: number): string {
   return context.roundText?.[round] ?? DEFAULT_ROUND_TEXT
+}
+
+/** "Vasse is out this round." for each of the player's Commanders sitting this round out. */
+function absentCommanders(context: BuildContext): string[] {
+  return (context.absent ?? [])
+    .filter((absence) => absence.player === "A")
+    .map((absence) => `${commanderName(absence.contentId)} is out this round.`)
 }
 
 /** An announcement's sentences, each its own line on the screen: short orders read as a list, and the
@@ -413,7 +456,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       const powers = nexusPowers(context, state)
       const rows: PopupRow[] = [{ kind: "blank" }]
       if (powers.pending.length > 0) {
-        rows.push({ kind: "heading", text: "PICK ONE - needed before the Pulse" })
+        rows.push({ kind: "heading", text: "PICK ONE - needed before the battle" })
         powers.pending.forEach(({ index, option }, position) => {
           rows.push({
             kind: "option",
@@ -437,13 +480,14 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
     }
     case "battle-round":
       // A confirmation screen, not a question: the round's title,
-      // what it announces, and the one row, `[s] Start`, highlighted because it is what Enter, Space and
-      // `s` do. Esc goes back, as from every popup.
+      // what it announces (and that the Commander is out, when she is), and the one row, `[s] Start`,
+      // highlighted because it is what Enter, Space and `s` do. Esc goes back, as from every popup.
       return {
         title: `Battle Round ${state.pulseNumber}`,
         rows: [
           { kind: "blank" },
           ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): PopupRow => ({ kind: "note", text })),
+          ...absentCommanders(context).map((text): PopupRow => ({ kind: "note", text })),
           { kind: "blank" },
           { kind: "option", hotkey: START_KEY, label: "Start", command: { kind: "start-pulse" }, highlighted: true },
         ],
@@ -460,6 +504,8 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return controlsSpec(state)
     case "activity-logs":
       return activitySpec(context, state)
+    case "dialog":
+      return dialogSpec(context, state)
     default:
       return null
   }
@@ -506,7 +552,8 @@ function linesOf(entry: PopupRow, textLimit: number): readonly (string | undefin
     // A line break starts a new paragraph on a line of its own: an Activity logs entry's line, then
     // what its event means.
     const wrapped = entry.text.split("\n").flatMap((paragraph) => wrapWords(paragraph, textLimit))
-    return Array.from({ length: entry.lines ?? Math.max(1, wrapped.length) }, (_, index) => wrapped[index] ?? "")
+    const room = (entry.room ?? []).map((text) => wrapWords(text, textLimit).length)
+    return Array.from({ length: entry.lines ?? Math.max(1, wrapped.length, ...room) }, (_, index) => wrapped[index] ?? "")
   }
   return [undefined]
 }
@@ -559,10 +606,14 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   const lines = spec.rows.reduce((count, row, index) => count + (shown(index) ? linesOf(row, textLimit).length : 0), 0)
   // A list that fills the room is followed by blank lines up to it, so the popup keeps its height.
   const fill = scroll?.fill === true ? Math.max(0, room - lines) : 0
-  // Border, the rows, a blank row of padding, border.
-  const height = lines + fill + 3
+  // Border, the rows, a blank row of padding, border — or, docked, the rows straight between the borders.
+  const docked = spec.dock === "bottom"
+  const height = lines + fill + (docked ? 2 : 3)
   const left = layout.gridBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
-  const top = Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
+  // Docked at the bottom of the map, its shadow on the map's last row and the bottom line clear below it.
+  const top = docked
+    ? Math.max(layout.gridBox.top + 1, layout.paneBottom - 1 - height)
+    : Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
   const right = left + width - 1
   const placed: PlacedRow[] = []
   let row = top + 1
@@ -621,6 +672,8 @@ export function popupHitAt(placed: PlacedPopup, column: number, row: number): Po
     const command = scrollBarCommand(placed, row)
     return command === null ? { kind: "none" } : { kind: "command", command }
   }
+  // A popup that is read rather than chosen from answers a click anywhere on it the same way.
+  if (placed.spec.click !== undefined) return { kind: "command", command: placed.spec.click }
   if (column < placed.textColumn || column >= placed.textColumn + placed.textLimit) return { kind: "none" }
   const hit = placed.rows.find((candidate) => candidate.row === row)
   if (hit !== undefined && hit.spec.kind === "option") return { kind: "command", command: hit.spec.command }

@@ -6,16 +6,18 @@
 // nothing drawn.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { inBounds, tilesOf } from "../grid/coords.ts"
+import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
+import { TERRAIN } from "../grid/types.ts"
 import type {
   MissionDefinition,
   Region,
-  SimulationAction,
+  TriggerAction,
   TriggerCondition,
   TriggerDefinition,
 } from "./types.ts"
 import { MissionError } from "./types.ts"
+import { checkSay, isBuildStart } from "./scene.ts"
 
 /** The centre tile of a region — where its arrivals gather around. */
 export function regionCentre(region: Region): Coord {
@@ -25,6 +27,14 @@ export function regionCentre(region: Region): Coord {
 /** A region by id, or `undefined`. */
 export function regionOf(mission: Pick<MissionDefinition, "regions">, id: string): Region | undefined {
   return mission.regions.find((region) => region.id === id)
+}
+
+/** Every tile of a region, in reading order. */
+export function regionTiles(region: Region): Coord[] {
+  return Array.from({ length: region.width * region.height }, (_, index) => ({
+    x: region.x + (index % region.width),
+    y: region.y + Math.floor(index / region.width),
+  }))
 }
 
 /** Whether a condition is a moment in a Pulse (rather than an event). */
@@ -38,9 +48,10 @@ function whenOf(condition: TriggerCondition): "moment" | "end" {
 }
 
 /** What an action is, as the error messages name it. */
-export function actionName(action: SimulationAction): string {
+export function actionName(action: TriggerAction): string {
+  if ("say" in action) return "say"
   if ("spawn" in action) return "spawn"
-  if ("order" in action) return "order"
+  if ("target" in action) return "target"
   if ("commitPlan" in action) return "commitPlan"
   if ("win" in action) return "win"
   return "lose"
@@ -51,7 +62,9 @@ const isPositiveInteger = (value: number): boolean => Number.isInteger(value) &&
 /**
  * Throws `MissionError` listing every problem, or returns the mission unchanged. The grid is the map the
  * mission is played on (its regions must be on it); the registry is the content its units and
- * structures come from.
+ * structures come from. A mission's `notes` are for whoever edits it and are never checked; that the
+ * Commander it brings for the player is her campaign's, and that its content is what its army sees, are
+ * the army loader's to check (`src/armies/load.ts`), since a mission alone knows neither.
  */
 export function validateMission(mission: MissionDefinition, grid: GridTerrain, registry: ContentRegistry): MissionDefinition {
   const problems: string[] = []
@@ -74,11 +87,12 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     else if (registry.get(entry.unit).layer === "obstacles") say(`"${entry.structure}" trains "${entry.unit}", which is a building`)
   }
 
-  // Regions: unique, sized, on the map.
+  // Regions: unique, sized, on the map, and a name, when given, that says something.
   const regionIds = new Set<string>()
   for (const region of mission.regions) {
     if (regionIds.has(region.id)) say(`region "${region.id}" is declared twice`)
     regionIds.add(region.id)
+    if (region.name !== undefined && region.name.trim() === "") say(`region "${region.id}" has an empty name`)
     if (!isPositiveInteger(region.width) || !isPositiveInteger(region.height)) {
       say(`region "${region.id}" must be at least one tile wide and tall`)
       continue
@@ -95,9 +109,9 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     if (!regionIds.has(id)) say(`${where} names the unknown region "${id}"`)
   }
 
-  // Triggers, in order: a group must be spawned by a trigger that fires no later than one that orders it.
+  // Triggers, in order.
   const triggerIds = new Set<string>()
-  const groups = new Map<string, Readonly<{ pulse: number; tick: number }>>()
+  const groups = new Set<string>()
   const lastPulseDecided = { value: false }
 
   const checkCondition = (trigger: TriggerDefinition): void => {
@@ -122,11 +136,22 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
       if (when.side !== "A" && when.side !== "B") say(`${where} names the unknown side "${String(when.side)}"`)
       return
     }
+    if (when.event === "build.start") {
+      if (!isPositiveInteger(when.pulse) || when.pulse > mission.pulses) {
+        say(`${where} waits for the Build Phase of round ${when.pulse}, but the mission has rounds 1 to ${mission.pulses}`)
+      }
+      return
+    }
     say(`${where} has a condition this vocabulary does not know: ${JSON.stringify(when)}`)
   }
 
-  const checkAction = (trigger: TriggerDefinition, action: SimulationAction, index: number): void => {
+  // Each side's Commander, once spawned.
+  const commanders = new Set<string>()
+  const checkAction = (trigger: TriggerDefinition, action: TriggerAction, index: number): void => {
     const where = `trigger "${trigger.id}", action ${index + 1} (${actionName(action)})`
+    // The presentation band: a line of dialog (`scene.ts`). Nothing but it runs when a Build Phase opens.
+    if ("say" in action) return checkSay(mission, registry, trigger, action, where, say)
+    if (isBuildStart(trigger.when)) return say(`${where} cannot run when a Build Phase opens: only a line of dialog (say) can`)
     const at = whenOf(trigger.when)
     const moment = isMoment(trigger.when) ? trigger.when : null
 
@@ -143,24 +168,32 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
           say(`${where} spawns "${entry.unit}", a structure — structures arrive by commitPlan`)
         }
         if (!isPositiveInteger(entry.count)) say(`${where} spawns ${entry.count} of "${entry.unit}"; a count is a positive integer`)
+        // A side has one Commander, and a mission brings her once: after that the rules between rounds
+        // bring her back when she falls (pulse.md), and a second arrival would be a second Commander.
+        if (registry.has(entry.unit) && registry.get(entry.unit).commander === true) {
+          const key = `${spawn.side}:${entry.unit}`
+          if (entry.count !== 1) say(`${where} spawns ${entry.count} of the Commander "${entry.unit}"; a side has one`)
+          if (commanders.has(key)) say(`${where} spawns the Commander "${entry.unit}" a second time; once she is on the Grid the rules bring her back`)
+          commanders.add(key)
+        }
       }
-      if (spawn.order !== undefined) checkOrder(spawn.order, where)
       if (spawn.group !== undefined && moment !== null) {
         if (groups.has(spawn.group)) say(`${where} spawns the group "${spawn.group}" a second time`)
-        else groups.set(spawn.group, moment)
+        else groups.add(spawn.group)
       }
       return
     }
-    if ("order" in action) {
-      const { order } = action
+    if ("target" in action) {
+      const { target } = action
       if (at !== "moment") say(`${where} must happen at a moment in a Pulse, not at an event`)
-      checkOrder(order, where)
-      const spawned = groups.get(order.group)
-      if (spawned === undefined) {
-        say(`${where} orders the group "${order.group}", which no earlier trigger spawns`)
-      } else if (moment !== null && (moment.pulse < spawned.pulse || (moment.pulse === spawned.pulse && moment.tick < spawned.tick))) {
-        say(`${where} orders the group "${order.group}" before it arrives`)
-      }
+      if (target.side !== "A" && target.side !== "B") say(`${where} names the unknown side "${String(target.side)}"`)
+      knownRegion(target.region, where)
+      const region = regionOf(mission, target.region)
+      if (region === undefined) return
+      // The screen says where a side's troops head, by the region's name; and they must be able to stand there.
+      if ((region.name ?? "").trim() === "") say(`${where} sends troops to the region "${region.id}", which has no name for the screen to say`)
+      const rock = regionTiles(region).find((tile) => inBounds(grid, tile) && TERRAIN[grid.tiles[tileIndex(grid, tile)] ?? "terrain.plain"].impassable)
+      if (rock !== undefined) say(`${where} sends troops to the region "${region.id}", which has rock at ${rock.x},${rock.y}: a target is ground they can stand on`)
       return
     }
     if ("commitPlan" in action) {
@@ -186,18 +219,6 @@ export function validateMission(mission: MissionDefinition, grid: GridTerrain, r
     if (!isMoment(when) && when.event === "pulse.end" && (when.pulse === undefined || when.pulse === mission.pulses)) {
       lastPulseDecided.value = true
     }
-  }
-
-  const checkOrder = (given: object, where: string): void => {
-    const order = given as Readonly<Record<string, unknown>>
-    const keys = Object.keys(order).filter((key) => key !== "group")
-    for (const key of keys) {
-      if (key !== "advance") {
-        say(`${where} gives the order "${key}", which the kernel cannot carry out yet — only "advance" (Q69)`)
-      }
-    }
-    if (typeof order.advance === "string") knownRegion(order.advance, where)
-    else if (!keys.includes("advance")) say(`${where} gives no order`)
   }
 
   for (const trigger of mission.triggers) {

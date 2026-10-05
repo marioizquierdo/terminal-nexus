@@ -21,6 +21,9 @@ const VALUE_OPTIONS = new Set([
   "glyphs",
   "theme",
   "scroll-margin",
+  // A launch's parts (src/cli/launch.ts): where the game opens, the settings text and the keys it starts from.
+  // Every one must be here (tests/launch.test.ts), or the parser would take it for a flag and drop its text.
+  "at",
   "settings",
   "keys",
 ])

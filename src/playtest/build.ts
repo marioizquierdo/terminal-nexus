@@ -1,4 +1,5 @@
-// A scripted playtest of the Build Phase: the `--build-phase` screen, driven by a key script through the
+// A scripted playtest of the Build Phase: a campaign level's screen (`--at campaign?level=<id>&round=<n>`,
+// PERIMETER's first round unless told otherwise), driven by a key script through the
 // real adapters, with every step's frame kept. No terminal, no clock, no capture race — the frames are
 // composed in-process by the very function the live screen presents (`composeBuildFrame`), so step N's
 // frame is exactly what a player would see after pressing step N's key.
@@ -13,8 +14,12 @@ import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { nextRound, startPulse } from "../cli/pulse-run.ts"
-import { starterContext } from "../cli/starter.ts"
+import type { MissionPlay } from "../cli/pulse-run.ts"
+import { readLaunch } from "../cli/launch.ts"
+import type { LaunchText } from "../cli/launch.ts"
+import { DEFAULT_LEVEL, openRound } from "../cli/levels.ts"
+import { DEFAULT_LEVEL_ROUTE, RouteError, formatRoute } from "../cli/route.ts"
+import type { LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
@@ -41,7 +46,18 @@ export type BuildPlaytestOptions = Readonly<{
   settings?: Settings
   /** Experiments to open with instead of this build's defaults — an imported export's. */
   experiments?: Partial<Experiments>
+  /**
+   * The campaign level and round to open (`--at campaign?level=<id>&round=<n>`, `playtestOpening`): that round
+   * as a player who builds nothing reaches it (`openRound`), the rounds before it played with this run's
+   * settings and Experiments, and its rounds played on its own mission. PERIMETER's first round unless given;
+   * `context` and `play`, when given, win.
+   */
+  at?: LevelDestination
   context?: BuildContext
+  /** The mission the rounds are played on, when it is not the level's own: another mission's or a test
+   *  map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`), with
+   *  `context` its first round. */
+  play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee">>
   cursor?: Coord
   /**
    * Play a terminal that reports key presses, repeats and releases (the kitty keyboard protocol, which
@@ -50,6 +66,9 @@ export type BuildPlaytestOptions = Readonly<{
    * (`Right/repeat`), and off otherwise — a classic terminal.
    */
   keyReleases?: boolean
+  /** Whether a round that opens with a scene plays it in the dialog first, as the game does — on unless
+   *  said otherwise, so a script starts where a player starts: PERIMETER's intro (`Esc` skips it). */
+  scenes?: boolean
 }>
 
 export type PlaytestFrame = Readonly<{
@@ -83,7 +102,6 @@ export type BuildPlaytest = Readonly<{
   ended: Readonly<{ by: "quit"; atStep: number; skipped: number }> | null
 }>
 
-export { UNTIMED_GAP_MS } from "./deliver.ts"
 
 /** This step's cursor key's move as the summary prints it, `tap 2` — `null` when the step made none:
  *  another key, a click or a wait (every cursor key's move is a new record, so an unchanged one is the
@@ -105,8 +123,16 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   // run's Activity Logs read it too, so a line's time is its step's.
   let clock = 0
   const activity = createActivityLog(() => clock)
+  const at: LevelDestination = options.at ?? { kind: "level", level: DEFAULT_LEVEL, round: 1 }
+  const opened =
+    options.context ??
+    openRound(at.level, at.round, undefined, {
+      settings,
+      ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+    })
+  const play = options.play ?? at.level.play
   const context: BuildContext = {
-    ...(options.context ?? starterContext()),
+    ...opened,
     settings,
     exportDestination: "Not copied anywhere: this is a scripted playtest.",
     activity,
@@ -129,9 +155,12 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     onQuit: () => {
       leftBy = "quit"
     },
-    startPulse,
+    startPulse: play.startPulse,
     activity,
-    nextRound,
+    nextRound: play.nextRound,
+    // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
+    ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
+    scenes: options.scenes ?? true,
   })
   build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 
@@ -141,6 +170,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     // A Nexus Pulse on screen is drawn at the script's clock: the frame after a step shows the Pulse as it
     // is that long after it began. Nothing else on this screen depends on time in a scripted playtest.
     const pulse = build.pulseFrame(layout)
+    const raid = build.raid()
     return composeBuildFrame(
       {
         // This round's: what stands on the map changes from round to round.
@@ -150,6 +180,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
         glyphPack: build.state.settings.glyphPack,
         reducedMotion: build.state.settings.reducedMotion,
         ...(pulse === undefined ? {} : { pulse }),
+        ...(raid === undefined ? {} : { raid }),
       },
       build.state.settings.capability,
     )
@@ -173,4 +204,29 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   }
 
   return { context: build.round, layout, frames, ended, activity }
+}
+
+/**
+ * Where a scripted playtest opens and what it starts from (`runBuildPlaytest`'s `at` and `steps`), read from its
+ * command line's texts as the game reads its own (`src/cli/launch.ts`): PERIMETER's first round unless `at` names
+ * another. Refused, with every problem said, when the route is not a place, a key the script names does not exist
+ * (`keysFrom` says where the script came from), or the place is on the title menu: a scripted playtest plays a
+ * campaign level's Build Phase.
+ */
+export function playtestOpening(
+  text: LaunchText,
+  keysFrom = "--keys",
+): Readonly<{ at: LevelDestination; steps: readonly PlaytestStep[]; settings?: string }> {
+  const { launch, problems } = readLaunch(text, DEFAULT_LEVEL_ROUTE)
+  if (problems.length > 0) {
+    throw new Error(problems.map(({ error }) => (error instanceof RouteError ? `--at ${error.message}` : `${keysFrom}: ${error.message}`)).join("\n"))
+  }
+  const { destination, settings, keys = [] } = launch
+  if (destination.kind === "title") {
+    throw new Error(
+      `--at ${formatRoute(destination)} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
+        `try --at '${DEFAULT_LEVEL_ROUTE}&round=2'`,
+    )
+  }
+  return { at: destination, steps: keys, ...(settings === undefined ? {} : { settings }) }
 }

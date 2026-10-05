@@ -12,15 +12,25 @@ after every key with the same composer the live screen uses. No terminal, no tim
 ## Commands
 
 ```bash
-node scripts/playtest.mjs --keys "Down Down Space*4"                 # status per step + final screen
-node scripts/playtest.mjs --keys "Down Down Space*4" --print all     # every step's full screen
-node scripts/playtest.mjs --keys "n 1 Tab S-Left*5" --png final    # one PNG
-node scripts/playtest.mjs --keys "Down Down Space*4" --gif --name hatchery-run
+node scripts/playtest.mjs --keys "Esc Down Down Space*4"             # status per step + final screen
+node scripts/playtest.mjs --keys "Esc Down Down Space*4" --print all # every step's full screen
+node scripts/playtest.mjs --keys "Esc n 1 Tab S-Left*5" --png final  # one PNG
+node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --name hatchery-run
 node scripts/playtest.mjs --file flow.keys --size 104x30 --capability monochrome --png all
-node scripts/playtest.mjs --settings "popupPulseMs=3000 incoming=hidden" --keys "1 Enter"  # start from an export
-node scripts/playtest.mjs --keys "n 1 1 Enter" --activity Interactions   # what the run recorded
+node scripts/playtest.mjs --settings "popupPulseMs=3000 nextRound=auto" --keys "Esc 1 Enter"  # start from an export
+node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what the run recorded
+node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=3' --png final   # round 3, no keys at all
+node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=2' --keys "n 1 s s wait~1000*20"
 node scripts/playtest.mjs --help
 ```
+
+`--at <route>` opens a campaign level at a round, in the game's own route grammar (`src/cli/route.ts`,
+the same as `terminal-nexus --at`): `campaign?level=vasse-test-1` is PERIMETER's first round (what runs
+without `--at`), and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who picks the first Nexus power and builds nothing
+reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc n 1 s s wait~1000*16
+Enter` reach for round 2, without them. Quote the route: the shell reads `?` and `&`. A title menu route
+(`settings`) is refused, since only a campaign level's Build Phase is wired up here; with `--at`, `--keys`
+may be left out to see the round as it opens.
 
 Output lands in `.playtest/` (git-ignored): `<name>.txt` always holds every step's screen as text.
 Only for an image going into a pull request, add `--out docs/pr-pictures` (see Workflow; keep each
@@ -47,27 +57,34 @@ the same targets. `#` starts a comment in a `--file`. The table with bytes is at
 
 ## Useful openings
 
-Each reaches a state on the `--build-phase` screen; what the screens are and every key on them is in
+Each reaches a state on a campaign level's Build Phase (PERIMETER's first round unless `--at` says
+another); what the screens are and every key on them is in
 [`docs/system-design/ui-patterns.md`](../../../docs/system-design/ui-patterns.md) and
-[`docs/system-design/input.md`](../../../docs/system-design/input.md).
+[`docs/system-design/input.md`](../../../docs/system-design/input.md). **PERIMETER opens on its intro**, the
+dialog at the bottom, which holds the keyboard: every opening below starts after `Esc`, which skips it
+(`Enter` reads the next line; `--keys "Enter Enter Enter" --png all` shows each line).
 
 - `n 1`: pick the first Nexus power; the popup closes and the highlight stays on the Nexus row.
 - `n 1 Down Down Space`: arm the Hatchery from the menu; the panel becomes its card.
-- `n 1 PgDn Enter`: the Battle Round screen (`PgDn` goes to the last row, Start Pulse; without a power
+- `n 1 PgDn Enter`: the Battle Round screen (`PgDn` goes to the last row, Start Battle Round; without a power
   picked first, the bottom line says so instead).
 - `n 2 s s wait~1000*20`: a whole Pulse with nothing built, twenty seconds in; the second `s` starts it.
+- `--at 'campaign?level=vasse-test-1&round=2'` with no keys: round 2 as it opens, round 1 played with
+  nothing built. A round that opens with a scene (PERIMETER's first, a Commander's return) plays it first,
+  as the game does; `Esc` skips it.
 - `Esc s`: Settings from the menu; from the map it is `Tab Esc Esc s` (Esc on the map goes back to the
   menu first). `Esc s Right` switches the background to light; `d` opens the Experiments.
 - `Esc a`: the Activity logs window (`Right` steps the filter, `e` exports).
 - `click@3,7`: click a screen cell (0-based column, row); `click:22,9` clicks Grid tile 22,9.
-- `--settings "popupPulseMs=3000 incoming=hidden"`: start from an export, or just pairs; a name that
+- `--settings "popupPulseMs=3000 nextRound=auto"`: start from an export, or just pairs; a name that
   is no longer an Experiment is skipped with a note on stderr.
 - `--activity [filter]`: print what the run recorded in the Activity Logs (Everything when no filter
   is named; `Interactions`, `Problems`) and save `<name>-activity.txt`, with times on the script's own
   clock. The quickest check that an event you added fires, and with what.
-- `./bin/terminal-nexus.ts --build-phase --keys "n 1 1 Enter"`: the same key script opens the live
-  game in a state (`#keys=` on the browser page's address), for a demo link or to hand Mario the exact
-  state a report is about.
+- `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys "Esc n 1 1 Enter"`: the same route
+  and key script open the live game in a state (`#at=campaign?level=vasse-test-1&keys=Esc n 1 1 Enter` on
+  a local copy of the browser page; a demo's `at` and `keys` on a published one), for a demo or to hand
+  Mario the exact state a report is about.
 
 What a script cannot show is time between keys on the live screen: the view sliding, a flash, a
 building going up (script frames always draw buildings finished; a Pulse is the exception, since a
@@ -103,7 +120,8 @@ yourself, or step `BuildAnimation` (`src/view/build-live.ts`) with a fake clock:
 
 ## Extending to another screen
 
-Only the Build Phase is wired. For the main menu or a `grid` battle, write a sibling of
-`src/playtest/build.ts` (take steps, drive that screen's session through `handleData`, return
-frames), and let `scripts/playtest.mjs` pick it with a `--screen` option. The key grammar and the
-image code (`scripts/lib/frame-capture.mjs`) do not change.
+Only the Build Phase is wired. For the title menu, write a sibling of `src/playtest/build.ts` (take
+steps, drive that screen's session through `handleData`, return frames), and let `--at` pick it: a title
+menu route is refused today exactly where it would be handed over (`playtestOpening`). A `grid` battle
+is not a place in the game and would take its own option. The key grammar and the image code
+(`scripts/lib/frame-capture.mjs`) do not change.

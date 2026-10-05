@@ -18,7 +18,7 @@
      Raw image URLs pinned to a commit SHA. With a playable page, two sub-headings:
      ### On Claude Web Artifact — the page link, then 3-6 numbered steps with exact keys, each ending in
      what should happen (a demo button can start a step where it needs to be);
-     ### On MacOS — copy-paste commands for a terminal, e.g. `git pull && ./bin/terminal-nexus.ts --build-phase`. -->
+     ### On MacOS — copy-paste commands for a terminal, e.g. `git pull && ./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'`. -->
 
 ## Decisions
 

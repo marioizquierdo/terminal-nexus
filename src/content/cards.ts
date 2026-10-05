@@ -7,7 +7,7 @@
 //
 // Written to the side panel's width at the 80-column floor, where it is narrowest (27 glyphs): a
 // subtitle sits beside the icon, under the title, and should fit on that one line; a description wraps
-// between words and should leave the card's numbers room above the Start Pulse row.
+// between words and should leave the card's numbers room above the Start Battle Round row.
 // `tests/build-card.test.ts` draws every card at 80 x 24 and fails if either does not fit.
 //
 // Plain and short, in the game's voice, and honest: a card says what the thing does in the game as it
@@ -21,12 +21,12 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.barracks": {
     title: "Barracks",
     subtitle: "Trains troopers",
-    description: "Trains a trooper every few seconds of a Pulse. They join the fight, and come home to it after.",
+    description: "Trains a trooper every few seconds of a battle. They join the fight, and come home to it after.",
   },
   "structure.bench.hatchery": {
     title: "Hatchery",
     subtitle: "Spawns swarmers",
-    description: "Breeds small biting swarmers during a Pulse, one every few seconds, three at most. They rush the enemy.",
+    description: "Breeds small biting swarmers during a battle, one every few seconds, three at most. They rush the enemy.",
   },
   "structure.bench.beamturret": {
     title: "Turret",
@@ -38,7 +38,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.nexus": {
     title: "Citizen Nexus",
     subtitle: "Your base: guard it",
-    description: "The heart of everything you build. If it falls, the Pulse is lost: put your defences in front of it.",
+    description: "The heart of everything you build. If it falls, the battle is lost: put your defences in front of it.",
   },
 
   // --- On the map between rounds: survivors of both sides, the raid's camp, what is coming ---
@@ -46,6 +46,11 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     title: "Trooper",
     subtitle: "Your foot soldier",
     description: "Fights at close range and holds the line. You start with a squad; a Barracks trains more.",
+  },
+  "unit.citizen.vasse": {
+    title: "Vasse",
+    subtitle: "Your Commander",
+    description: "Commander Edda Vasse leads from just behind the line. If she falls, she misses the next round; then the Nexus restores her.",
   },
   "unit.citizen.marksman": {
     title: "Marksman",
@@ -94,4 +99,10 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Resources lie here",
     description: "A seam of what your credits are counted in, under the same mark. For now you can build and walk on it.",
   },
+}
+
+/** A Commander's name as a player reads it — her card's title — for the lines that say she fell, is out
+ *  or is back. */
+export function commanderName(contentId: string): string {
+  return CARD_TEXT[contentId]?.title ?? "Your Commander"
 }

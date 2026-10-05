@@ -139,6 +139,8 @@ Symbols are often geniuses, leaders, dangerous mystics, or people whose presence
 
 **RULE:** in battle, a Commander is a persistent frontline `@`. If killed, they remain absent for one complete round (a Build Phase and its Nexus Pulse) before the Prime can replicate them again. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
 
+**On the Grid a Commander's death is ordinary business.** Symbols fall in most battles they fight; the Nexus files the absence and restores them on its schedule, and every army that has a Symbol plans around the round without one. What a death costs is that round, never the war, and that is how the people around a Commander learn to speak of it: as scheduling, not as grief (the owner: "commanders die on this game, is part of the gameplay"). The campaigns teach it from their first missions; the deliberate mystery is not whether a Commander comes back, but what does.
+
 No one can prove that restoration returns the original consciousness. It may restore the same person, reconstruct a pattern, continue a distributed mind, or produce an entity whose belief in continuity is part of the protocol.
 
 ### 5.1 The Operator
@@ -200,7 +202,7 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 - **Philosophy:** Utilitarianism and stoicism. They value standardized technology, constant infrastructure expansion, and humanity's manifest destiny among the stars. A standard is a promise made to strangers: any Citizen part fits any Citizen machine, which sounds like bureaucracy until a settlement is burning and any passing crew can repair its pumps.
 - **The player:** Citizens are for the engineer — the player whose pleasure is watching a system they designed hold under load, and who answers a defeat by filing a change order. They are deliberately the first faction a new player learns: the fewest exceptions, the steadiest economy, the most recoverable mistakes.
   - *Likable because:* the everyman army. No chosen ones — procedures, and people being brave inside them. A Citizen victory is earned twice, once in the plan and once in the proof.
-  - *Signature moment:* **the line holds.** The enemy wave breaks exactly where the plan said it would, and the counterattack leaves on schedule through the smoke.
+  - *Signature moment:* **the line holds.** The enemy assault breaks exactly where the plan said it would, and the counterattack leaves on schedule through the smoke.
   - *Not for:* players who want to improvise mid-crisis or gamble on a miracle. Citizens answer emergencies with the manual, and the manual is the fun.
 - **Strengths:** Defensive resilience, modular supply lines, and predictable economic scaling. They excel at overlapping fields of fire and an impenetrable frontline. Theirs is the least random doctrine in the game — production, drafts, and defense run to schedule, and the schedule is the weapon.
 - **The Operator:** Command authority — a lawful office in the chain. The rank of Operator entered Citizen regulations one revision after it appeared in their interfaces, and no archivist has explained the order of events.
@@ -240,12 +242,12 @@ Each faction entry below carries the same anatomy, because the audit that keeps 
 - **Philosophy:** Transhumanism and nihilism. Algorithmic resurrection, iteration, and devotion to the collective. Individual consciousness is an error; the Queen is truth. Nothing Glitch is chaotic — that is the Ravels' word, and the deepest possible misreading of this faction. An error, once accepted, propagates in perfect order. Death is a parse failure, and a parse failure is an instruction.
 - **The player:** Glitch is for the engine-builder — the player who assembles a perverse machine and enjoys the exact moment its arithmetic becomes irreversible.
   - *Likable because:* ego-death as belonging. The swarm is not the player's army; it is the player. And a crack of pathos runs through the whole faction — a Glitch process can become contradictory enough to become a person (the story seeds, below) — which keeps the horror humane.
-  - *Signature moment:* **the second wave is larger.** The enemy annihilates the assault, and the next assault walks out of both armies' wreckage.
+  - *Signature moment:* **the second assault is larger.** The enemy annihilates the assault, and the next assault walks out of both armies' wreckage.
   - *Not for:* hero players, or anyone who needs individual units to matter. Glitch metabolizes losses; it does not mourn them.
 - **Strengths:** Mechanical necromancy, attrition, grid corruption, and recycling Grid scrap into reinforcements. Their randomness converges — wild early mutation, locked late certainty — as the collective closes on its answer.
 - **The Operator:** A Queen-process — a process signed by the Queen, possibly her oldest, possibly her. No unit is authorized to wonder. All of them do.
 - **Energy:** Inverted crown chakra—void, violet, and deep black; disconnection from the divine cosmos through cold mechanical will.
-- **Visual semiotics:** Static, broken characters, and terminal corruption. They appear as literal software errors and glitching geometric shapes, completely rejecting traditional vehicle or humanoid forms. The swarm moves as one program in many bodies — identical steps propagating through the ranks like a wave.
+- **Visual semiotics:** Static, broken characters, and terminal corruption. They appear as literal software errors and glitching geometric shapes, completely rejecting traditional vehicle or humanoid forms. The swarm moves as one program in many bodies — identical steps propagating through the ranks like a ripple.
   - *ASCII examples:* `%`, `&`, `?`, `$`, `~`, `#`. An advancing swarm might look like `&%#`, reading less like an army and more like a creeping segmentation fault.
 - **References:** The hive mind, digital lich, Borg, computer virus, and inevitable undead.
 - **Alignment:**

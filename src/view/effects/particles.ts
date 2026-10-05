@@ -85,7 +85,9 @@ const sparksBurst: EffectRecipe = (instance, context) => {
     const dy = from.y < 0 ? -1 : from.y >= height ? 1 : 0
     const travel = 1 + (draw(hash, 4) % reach)
     const distance = Math.min(travel, Math.floor(EASINGS.easeOutQuad(q) * (travel + 1)))
-    const tile = { x: origin.x + from.x + dx * distance, y: origin.y + from.y + dy * distance }
+    // `| 0` makes a spark that has not moved yet (`-1 * 0`, which is `-0`) a plain 0: a `-0` in a coordinate slows
+    // every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
+    const tile = { x: origin.x + from.x + ((dx * distance) | 0), y: origin.y + from.y + ((dy * distance) | 0) }
     const spark = q < 0.3
     const dust = q >= 0.65
     // A spark is a star; in flight it leans the way it is going (`'` up, `,` down), then settles to dust.

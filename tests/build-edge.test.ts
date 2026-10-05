@@ -238,7 +238,7 @@ test("the shared west side: the divider is the Grid's west side, the Grid gets i
 })
 
 test("a scripted playtest draws every tile where the layout says, and a click on the Grid's first column lands on the tile drawn there", () => {
-  const run = runBuildPlaytest({ steps: parseKeyScript("Tab") })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("Tab") })
   const last = run.frames[run.frames.length - 1]
   assert.ok(last !== undefined)
   assert.equal(run.layout.viewport.width, 49)
@@ -259,7 +259,7 @@ test("a scripted playtest draws every tile where the layout says, and a click on
   // A click on a screen cell of the Grid's first column lands on the tile drawn there.
   const column = run.layout.origin.column
   const row = run.layout.origin.row + 4
-  const clicked = runBuildPlaytest({ steps: parseKeyScript(`Tab click@${column},${row}`) })
+  const clicked = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`Tab click@${column},${row}`) })
   const final = clicked.frames[clicked.frames.length - 1]
   const before = clicked.frames[clicked.frames.length - 2]
   assert.ok(final !== undefined && before !== undefined)

@@ -105,6 +105,23 @@ export type ContentDef = Readonly<{
    */
   nexus?: boolean
   /**
+   * This unit is its side's Commander (pulse.md): a persistent frontline unit that, when it falls, is
+   * absent for the rest of that round's Pulse and the whole of the next round, and is then restored
+   * beside its side's Grid Nexus. Only the rules between rounds read it (`src/match/commander.ts`); the
+   * kernel sees a unit like any other, so a Commander's death is never the victory condition.
+   */
+  commander?: true
+  /**
+   * A Commander's passive aura, a skill that works on its own (the owner, 2026-10-04: Commanders "should be like
+   * heroes on warcraft3 ... Vasse should provide boost to nearby units"). While its bearer is on the Grid, the
+   * units of its side within `radius` tiles of it — measured as range is, Manhattan to the nearest tile of each
+   * footprint — take `damageTakenPercent` percent of the damage a hit would deal them. Vasse's is *By the Book*.
+   * The kernel's damage rule reads it (`src/pulse/aura.ts`: rounded down, never below 1, the bearer covered
+   * too, the strongest aura alone when several reach a unit); presentation draws its reach. `name` is what a
+   * card calls it, the way a Nexus power has a name; no rule reads it.
+   */
+  aura?: Readonly<{ radius: number; damageTakenPercent: number; name?: string }>
+  /**
    * Hard restriction: this entity may only perceive hostiles on these layers as viable targets — for
    * a normal `attack` and for a contact `detonation.triggerRange` alike, since both are resolved from
    * whatever perception already decided. Undefined means every layer, which preserves every existing
@@ -146,6 +163,14 @@ export type ContentDef = Readonly<{
    * barracks on it resolves exactly as it did before buildings trained anything.
    */
   production?: ProductionRecipe
+  /**
+   * Construction territory (pulse.md): a structure with this projects a build range — its player may build
+   * within this many tiles of it, measured as range is, Manhattan to the nearest tile of its footprint — while
+   * it is linked to its side's Grid Nexus. Absent: it projects none. Only the Build Phase reads it
+   * (`src/build/territory.ts`); the kernel never does. While the "Build range" Experiment is being felt, its
+   * value replaces this number on every structure that has one.
+   */
+  constructionRadius?: number
 }>
 
 /**

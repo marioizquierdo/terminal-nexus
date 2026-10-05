@@ -13,8 +13,8 @@ import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
-import type { ShownName } from "./all-settings.ts"
-import { setting, shownSetting } from "./all-settings.ts"
+import type { SettingSource, ShownName } from "./all-settings.ts"
+import { defaultValue, setting, shownSetting } from "./all-settings.ts"
 import type { Experiments } from "./experiments.ts"
 import { stepExperiment, defaultExperiments } from "./experiments.ts"
 import { TUNING } from "./tuning.ts"
@@ -34,6 +34,8 @@ import {
   restartMessage,
 } from "./settings.ts"
 import { formatSettingsExport } from "./settings-export.ts"
+import type { Territory } from "./territory.ts"
+import { strandedByRemoving, territoryOf } from "./territory.ts"
 import type { ActivitySource } from "./activity.ts"
 import {
   ACTIVITY_EXPORT_ROW,
@@ -52,6 +54,7 @@ import { controlsLineCount } from "./help.ts"
 import type {
   Ack,
   BuildCommand,
+  CommanderAbsence,
   ConstructItem,
   FieldEntity,
   Focus,
@@ -63,6 +66,7 @@ import type {
   PlannedPlacement,
   PopupMessage,
   StandingStructure,
+  DialogLine,
 } from "./types.ts"
 
 /** Everything about the screen that never changes while it is open. Split from the state proper so
@@ -120,11 +124,21 @@ export type BuildContext = Readonly<{
   trains?: readonly Readonly<{ structure: string; unit: string }>[]
   /** What else is on the map: survivors of both sides, and a scripted side's structures. */
   field?: readonly FieldEntity[]
-  /** What the next round's triggers will bring, and where (drawn while the Incoming wave
-   *  Experiment shows it). */
+  /** The Commanders sitting this round out, and when each is back — handed on to the next round by the
+   *  shell, and read by the Battle Round screen to say so. Absent: nobody is missing. */
+  absent?: readonly CommanderAbsence[]
+  /** What the next round's triggers will bring, and where: always drawn, see-through, where it arrives
+   *  (the incoming raid). */
   incoming?: readonly IncomingEntity[]
   /** The bottom line's first answer when this Build Phase opens — how the last round ended. */
   openingStatus?: StatusMessage
+  /**
+   * **The round's scene**: the lines the dialog shows as this Build Phase opens, in order — the mission's
+   * `say`s for the round, and the game's own line the round a Commander is restored — each resolved on this
+   * round's map (`src/cli/pulse-run.ts`). Absent or empty: the round opens straight onto the menu. A session
+   * that does not play scenes (one a test builds) never passes one on (`withoutScene`).
+   */
+  scene?: readonly DialogLine[]
   /**
    * What the Battle Round confirmation announces for round *n*, keyed by its number ("campaign missions may
    * inject pulse-n text here", the owner). A round with no entry says
@@ -227,7 +241,8 @@ export type BuildState = Readonly<{
    *  the Battle Round confirmation (`s` — "the one action that must not fire by accident", from
    *  docs/system-design/input.md), the game menu, Settings, the export, or a message. Never opened by anything but the player —
    *  a message only as the answer to something the player did (closing Settings with a change that
-   *  needs a restart). */
+   *  needs a restart) — **except the dialog**, which a round that opens with a scene opens itself
+   *  (`dialog`). */
   popup: Popup | null
   /** The open popup's highlight, an index into its list (`popupRowCount`), set whenever one opens: the
    *  Nexus popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
@@ -241,6 +256,14 @@ export type BuildState = Readonly<{
   /** What the message popup says while `popup` is `"message"`, and `null` otherwise:
    *  a title and text, nothing to choose. */
   message: PopupMessage | null
+  /**
+   * **The dialog's own memory** while the round's scene plays (`BuildContext.scene`): the line on screen,
+   * and the cursor and camera the round put there before the first line took the camera away — given back
+   * when the dialog closes, so the Build Phase after it is exactly the one the round opened. `null` with no
+   * scene playing. The dialog shows while `popup` is `"dialog"`; a popup the player opens over it (the game
+   * menu) goes back to it.
+   */
+  dialog: Readonly<{ line: number; cursor: Coord; camera: Camera }> | null
   planned: readonly PlannedPlacement[]
   /** The last command's answer, which the bottom line shows: what just happened, or why it did not.
    *  It lapses at the next command that says nothing (`lapseStatus`); a refused placement names its
@@ -265,7 +288,7 @@ export type BuildState = Readonly<{
   /**
    * The Experiments (every setting on the experiment tier, `src/build/all-settings.ts`). State
    * rather than context because they change while the screen is open; the input path reads keyboard
-   * navigation's, the view the popup pulse, and the mission loop the next-round and incoming-wave
+   * navigation's, the view the popup pulse, and the mission loop the next-round and incoming-raid
    * choices — each through `setting(state, name)` where it may move between tiers. Survive a restart; not saved
    * anywhere else.
    */
@@ -349,7 +372,7 @@ export function createBuildState(
   settings: Settings = context.settings ?? DEFAULT_SETTINGS,
 ): BuildState {
   const start = clampToGrid(cursor, context.grid)
-  return {
+  const opened: BuildState = {
     cursor: start,
     camera: followCursor({ x: 0, y: 0 }, start, viewport, context.grid, marginOf(context, viewport)),
     viewport,
@@ -369,6 +392,7 @@ export function createBuildState(
     popupHighlight: 0,
     popupUnder: [],
     message: null,
+    dialog: null,
     planned: [],
     status: context.openingStatus ?? NO_STATUS,
     nextOrdinal: 1,
@@ -385,6 +409,61 @@ export function createBuildState(
     activityFrozen: [],
     activityExports: 0,
   }
+  // A round that opens with a scene opens on the dialog: the one popup the player does not open.
+  return (context.scene ?? []).length > 0 ? openDialog(context, opened) : opened
+}
+
+/** `context` without its scene: what a session that does not play scenes hands the reducer, so its rounds
+ *  open on the menu (`BuildSession`'s `scenes`). */
+export function withoutScene(context: BuildContext): BuildContext {
+  if (context.scene === undefined) return context
+  const { scene: _scene, ...rest } = context
+  return rest
+}
+
+// --- The dialog ------------------------------------------------------------------------------------
+//
+// **The dialog** (a named pattern): a round's scene, a line at a time, in a popup docked at the bottom of
+// the map. It opens by itself as the round opens — the one popup the player does not open — and holds the
+// keyboard and the mouse like any popup: Enter, Space or a click shows the next line, Esc, `x` or a right
+// click skip the rest. Each line takes the camera to what it looks at (the Pulse's own `look-at`); the map
+// cursor is hidden, as under every popup. After the last line, or a skip, the round's cursor and camera
+// come back and the Build Phase is exactly the one the round opened. The highlight around a line's focus
+// and the words are the view's (`src/view/build-dialog.ts`); the clock that breathes it is the live loop's.
+
+/** The tile the camera centres on and the cursor goes to: the Pulse's `look-at`, and each dialog line's. */
+function lookAt(context: BuildContext, state: BuildState, tile: Coord): BuildState {
+  return withCursor(context, state, tile, (_camera, cursor) => centreOn(cursor, state.viewport, context.grid))
+}
+
+/** Line `line` of the scene on screen: the camera on what it looks at, or where it was for a line that
+ *  looks at nothing. */
+function showLine(context: BuildContext, state: BuildState, line: number): BuildState {
+  if (state.dialog === null) return state
+  const focus = context.scene?.[line]?.focus ?? null
+  const shown: BuildState = { ...state, dialog: { ...state.dialog, line } }
+  return focus === null ? shown : lookAt(context, shown, focus.tile)
+}
+
+/** The dialog opens on the scene's first line, remembering the cursor and camera to give back. */
+function openDialog(context: BuildContext, state: BuildState): BuildState {
+  const dialog = { line: 0, cursor: state.cursor, camera: state.camera }
+  return showLine(context, { ...state, popup: "dialog", popupHighlight: 0, popupUnder: [], message: null, dialog }, 0)
+}
+
+/** The dialog gone, the round's own cursor and camera back — whatever closed it. */
+function closeDialog(state: BuildState): BuildState {
+  const { dialog } = state
+  if (dialog === null) return state
+  return { ...state, cursor: dialog.cursor, camera: dialog.camera, dialog: null }
+}
+
+/** Enter, Space or a click with the dialog open: the next line, or — after the last — the dialog closed. */
+function nextLine(context: BuildContext, state: BuildState): BuildState {
+  if (state.popup !== "dialog" || state.dialog === null) return state
+  const next = state.dialog.line + 1
+  if (next >= (context.scene ?? []).length) return closePopups(state)
+  return showLine(context, state, next)
 }
 
 /**
@@ -417,7 +496,7 @@ function commitLock(state: BuildState): StatusMessage | null {
 }
 
 /**
- * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Powers entry, every construct row, and Start Pulse last.
+ * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Powers entry, every construct row, and Start Battle Round last.
  * Derived from the catalog rather than stored, so the highlight and the rows drawn can
  * never disagree about how many there are.
  */
@@ -484,7 +563,7 @@ export function entryOfConstruct(index: number): number {
   return index + ENTRIES_BEFORE_CONSTRUCT
 }
 
-/** The menu's last entry, Start Pulse: the one after the last construct row of a catalog this long. */
+/** The menu's last entry, Start Battle Round: the one after the last construct row of a catalog this long. */
 export function startEntry(catalogSize: number): number {
   return entryOfConstruct(catalogSize)
 }
@@ -595,6 +674,15 @@ export function costOf(context: BuildContext, contentId: string): number {
 }
 
 /**
+ * **The build range** in force for a plan: the construction territory it gives the player at the "Build
+ * range" Experiment's radius (`src/build/territory.ts`) — what a new building must stand inside, what the map
+ * shows while one is armed, and what removing a planned building may not cut another off from.
+ */
+export function buildRange(context: BuildContext, state: Pick<BuildState, "planned"> & SettingSource): Territory {
+  return territoryOf(context, state.planned, setting(state, "buildRange"))
+}
+
+/**
  * Why a placement is refused, in a sentence a player can act on — and **never a silent correction**.
  * Nothing here moves a structure to a legal tile: a plan the player did not draw is worse than a
  * refusal they can understand.
@@ -602,7 +690,11 @@ export function costOf(context: BuildContext, contentId: string): number {
  * Order matters, and it is cheapest-answer-first only by coincidence; what it really is, is
  * *most-informative*-first. Affordability is checked before the tiles because "you cannot afford
  * this" is true wherever the cursor is, and reporting a rock the player could just move off would
- * send them to fix the wrong thing.
+ * send them to fix the wrong thing. **The build range comes next, for the same reason**: it is about a
+ * region, a rock or a building about one tile, so a ghost far from the range is sent toward the range
+ * rather than off the rock it happens to sit on. Every tile of the footprint must be inside it
+ * (`src/build/territory.ts`); a tile off the Grid is the Grid's to refuse. `radius` is the "Build range"
+ * Experiment's value — its default when the caller has no state to read it from.
  */
 export function legalityAt(
   context: BuildContext,
@@ -610,12 +702,18 @@ export function legalityAt(
   contentId: string,
   anchor: Coord,
   remaining?: number,
+  radius: number = defaultValue("buildRange"),
 ): Legality {
   const item = catalogItem(context, contentId)
   if (item !== undefined && remaining !== undefined && item.cost > remaining) {
     return { ok: false, reason: `costs ${item.cost}, ${remaining} left` }
   }
   const footprint = context.registry.get(contentId).footprint
+  const territory = territoryOf(context, planned, radius)
+  if (!territory.rooted) return { ok: false, reason: "there is no Nexus to build from" }
+  for (const tile of tilesOf(anchor, footprint)) {
+    if (inBounds(context.grid, tile) && !territory.has(tile)) return { ok: false, reason: "outside your build range", tile }
+  }
   const claimed = claimedTiles(context, planned)
   for (const tile of tilesOf(anchor, footprint)) {
     if (!inBounds(context.grid, tile)) {
@@ -650,7 +748,11 @@ export function legalityAt(
  * total order, so there is exactly one answer, and a pure function of the plan and the cursor, so the
  * reducer owns it and a driver can assert it. **Never chosen from the last building placed**: the
  * typical run — place a Barracks, press its key again — finds the spot nearest the cursor, which is
- * sitting on the new Barracks, so the next one lands a gap to its right.
+ * sitting on the new Barracks, so the next one lands a gap from it — to its right where the build range
+ * reaches that far, and where it does not, the nearest way it does.
+ *
+ * **A building's spot is inside the build range** (`territory`, `src/build/territory.ts`): arming proposes
+ * only a spot Enter would take. Explore Map's one tile passes none, since looking is not building.
  *
  * `found: false` when nothing within reach fits: the cursor then steps one tile right and one down,
  * so the player sees something happened, and the preview is drawn as the building rather than the
@@ -675,6 +777,7 @@ export function armingSpot(
   planned: readonly PlannedPlacement[],
   footprint: readonly Coord[],
   cursor: Coord,
+  territory?: Territory,
 ): ArmingSpot {
   const size = footprintExtent(footprint)
   const offset = footprintCentre(footprint)
@@ -685,6 +788,7 @@ export function armingSpot(
   const fits = (anchor: Coord): boolean => {
     for (const tile of tilesOf(anchor, footprint)) {
       if (!inBounds(grid, tile)) return false
+      if (territory !== undefined && !territory.has(tile)) return false
       const terrainId = grid.tiles[tile.y * grid.width + tile.x]
       if (terrainId !== undefined && TERRAIN[terrainId].impassable) return false
       if (claimed.has(`${tile.x},${tile.y}`)) return false
@@ -754,8 +858,8 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
   if (item === undefined) return null
   const footprint = context.registry.get(item.contentId).footprint
   const anchor = anchorForCursor(state.cursor, footprint)
-  // The same call, budget and all, whichever side is asking.
-  const legality = legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state))
+  // The same call, budget and build range and all, whichever side is asking.
+  const legality = legalityAt(context, state.planned, item.contentId, anchor, remaining(context, state), setting(state, "buildRange"))
   const refusal: Refusal | null =
     legality.ok
       ? null
@@ -906,14 +1010,15 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     ack: acknowledge(state, "pressed", entry),
     handoff: handOff(state, from, entry),
   }
-  const spot = armingSpot(context, state.planned, context.registry.get(item.contentId).footprint, state.cursor)
+  const footprint = context.registry.get(item.contentId).footprint
+  const spot = armingSpot(context, state.planned, footprint, state.cursor, buildRange(context, state))
   const moved = withCursor(context, armed, spot.tile)
   if (!spot.found) {
-    return {
-      ...moved,
-      noSpotFound: true,
-      status: status(`${item.label} selected - no room within ${TUNING.armSearchTiles} tiles, move to find one.`, "warning"),
-    }
+    // Room nearby, none of it in the build range — or no room at all: said apart, since only the first is
+    // answered by moving toward the range the map now shows.
+    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor).found
+    const why = roomNearby ? "no room in your build range nearby" : `no room within ${TUNING.armSearchTiles} tiles`
+    return { ...moved, noSpotFound: true, status: status(`${item.label} selected - ${why}, move to find one.`, "warning") }
   }
   return { ...moved, noSpotFound: false, status: NO_STATUS }
 }
@@ -953,7 +1058,7 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
   return openExplore(context, highlighted, "menu")
 }
 
-/** `s`, or the Start Pulse entry: open the Battle Round confirmation over the Grid, the menu lit behind
+/** `s`, or the Start Battle Round entry: open the Battle Round confirmation over the Grid, the menu lit behind
  *  it. Its row flashes "pressed" however it was reached — or, refused (a Nexus power still waiting), a
  *  flicker beside the bottom line's reason. With a building armed, the building comes first
  *  (`refuseWhileArmed`). */
@@ -1046,13 +1151,13 @@ function popPopup(state: BuildState): BuildState {
 }
 
 /** Every popup closed at once — a click outside, a pick, the Pulse starting — and a message's words
- *  with them. */
+ *  with them, and the dialog's scene if it was under them (the round's cursor and camera back). */
 function closePopups(state: BuildState): BuildState {
-  return { ...state, popup: null, popupHighlight: 0, popupUnder: [], message: null }
+  return closeDialog({ ...state, popup: null, popupHighlight: 0, popupUnder: [], message: null })
 }
 
 /** A popup that belongs to no other — the Nexus powers, the game menu — opened alone, over whatever
- *  was open. */
+ *  was open. Over the dialog it opens on top, and going back from it comes back to the line. */
 function openPopup(state: BuildState, popup: Popup): BuildState {
   // The start-the-Pulse question and a committed Build Phase each own the whole screen; a popup over
   // either would be a second question on top of one. The game menu is the one exception: leaving can
@@ -1061,6 +1166,7 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
     const lock = state.committed || state.popup === "battle-round" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
+  if (state.popup === "dialog") return pushPopup(state, popup, 0)
   return pushPopup(closePopups(state), popup, 0)
 }
 
@@ -1121,12 +1227,34 @@ function place(context: BuildContext, state: BuildState): BuildState {
   }
 }
 
+/**
+ * **Removing or undoing a planned building that another one needs is refused**: without its build range the
+ * other would stand outside the range, and the plan would hold a building that could not have been placed
+ * (`strandedByRemoving`, `src/build/territory.ts`) — so a building put down only to reach further cannot be
+ * taken away once something stands on what it reached. Refused rather than taken down with it, since a
+ * removal never takes more than the player pointed at; the bottom line names the first building that needs it
+ * and where it stands, so the player can remove that one first. `null` when nothing needs it. A standing
+ * building it would cut off is no reason: a standing one keeps working.
+ */
+function refuseStranding(context: BuildContext, state: BuildState, target: PlannedPlacement, verb: "remove" | "undo"): BuildState | null {
+  const needing = strandedByRemoving(context, state.planned, target.ordinal, setting(state, "buildRange"))[0]
+  if (needing === undefined) return null
+  const where = footprintCentre(context.registry.get(needing.contentId).footprint)
+  const at = `${needing.anchor.x + where.x},${needing.anchor.y + where.y}`
+  return {
+    ...state,
+    status: status(`Cannot ${verb} the ${displayName(context, target.contentId)}: the ${displayName(context, needing.contentId)} at ${at} needs its build range.`, "warning"),
+  }
+}
+
 /** The screen's "back" — Esc (and `x`, a right click, until their last step: `goBack`). One level per
  *  press: a popup goes back to the one it was opened from (Settings to the game menu, the export to
  *  Settings), or closes; placing or Explore Map goes back to where it began; the map to the menu; and
  *  on the menu, the game menu opens. */
 function cancel(state: BuildState): BuildState {
   if (state.popup === "battle-round") return { ...closePopups(state), status: status("Cancelled.") }
+  // The dialog: the rest of the scene skipped, and the round as it opened.
+  if (state.popup === "dialog") return closePopups(state)
   if (state.popup !== null) return popPopup(state)
   if (state.committed) return openPopup(state, "game-menu")
   switch (mapMode(state)) {
@@ -1361,7 +1489,10 @@ export function applyBuildCommand(
   const applied = applyCommand(context, base, command)
   // Nothing armed, nothing to draw as a ghost.
   const next = applied.armed === null && applied.noSpotFound ? { ...applied, noSpotFound: false } : applied
-  return lapseStatus(state, warnIfRestartNeeded(base, next))
+  const result = warnIfRestartNeeded(base, next)
+  // The dialog says nothing of its own on the bottom line, and lapses nothing either: the answer the round
+  // opened with — how the last round went — is still there when the scene is over.
+  return state.popup === "dialog" ? result : lapseStatus(state, result)
 }
 
 /**
@@ -1392,6 +1523,9 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return withCursor(context, state, { x: state.cursor.x + command.dx, y: state.cursor.y + command.dy })
 
     case "click-tile": {
+      // The dialog is read, not chosen from: a click anywhere shows the next line, and a stray one never
+      // skips the scene (the mouse sends the same for a click on it or off it).
+      if (state.popup === "dialog") return nextLine(context, state)
       const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
       // A click outside an open popup closes it and brings focus to where it landed — and does
       // nothing else, so a click meant to dismiss never also places or picks.
@@ -1421,6 +1555,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     }
 
     case "click-menu": {
+      if (state.popup === "dialog") return nextLine(context, state)
       if (state.committed) return state
       // A click anywhere outside a popup dismisses it first — and only that, plus focus.
       if (state.popup !== null) {
@@ -1464,6 +1599,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (mapMode(state) === "menu") return refuseOnMenu(state)
       const target = plannedAt(context, state.planned, state.cursor)
       if (target === null) return { ...state, status: status("Nothing planned under the cursor.", "warning") }
+      const needed = refuseStranding(context, state, target, "remove")
+      if (needed !== null) return needed
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
@@ -1476,6 +1613,8 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (lock !== null) return { ...state, status: lock }
       const last = state.planned[state.planned.length - 1]
       if (last === undefined) return { ...state, status: status("Nothing to undo.", "warning") }
+      const needed = refuseStranding(context, state, last, "undo")
+      if (needed !== null) return needed
       return {
         ...state,
         planned: state.planned.slice(0, -1),
@@ -1511,16 +1650,17 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       }
     }
 
-    case "look-at": {
-      const tile = clampToGrid({ x: command.x, y: command.y }, context.grid)
-      return withCursor(context, state, tile, (_camera, cursor) => centreOn(cursor, state.viewport, context.grid))
-    }
+    case "look-at":
+      return lookAt(context, state, { x: command.x, y: command.y })
+
+    case "dialog-next":
+      return nextLine(context, state)
 
     case "pulse-failed":
       return {
         ...closePopups(state),
         committed: false,
-        status: status(`The Nexus Pulse could not start: ${command.reason}`, "danger"),
+        status: status(`The Battle Round could not start: ${command.reason}`, "danger"),
       }
 
     case "focus":
@@ -1627,9 +1767,13 @@ export function withViewport(
   state: BuildState,
   viewport: Viewport,
 ): BuildState {
+  const margin = marginOf(context, viewport)
+  const { dialog } = state
   return {
     ...state,
     viewport,
-    camera: followCursor(state.camera, state.cursor, viewport, context.grid, marginOf(context, viewport)),
+    camera: followCursor(state.camera, state.cursor, viewport, context.grid, margin),
+    // The camera the dialog gives back fits the new view too.
+    ...(dialog === null ? {} : { dialog: { ...dialog, camera: followCursor(dialog.camera, dialog.cursor, viewport, context.grid, margin) } }),
   }
 }

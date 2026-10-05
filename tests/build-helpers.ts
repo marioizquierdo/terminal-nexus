@@ -76,7 +76,7 @@ export type SideOptions = Readonly<{
   cursor?: Coord
   terminal?: Readonly<{ columns: number; rows: number }>
 }> &
-  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "activity">
+  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "foresee" | "activity">
 
 /** An Activity Logs of a test's own, on `now` — a clock standing still at 0 unless
  *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */
@@ -189,6 +189,7 @@ export function goToGameMenuRow(side: Side, row: GameMenuRow): void {
 export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
   const { build, layout } = side
   const pulse = build.pulseFrame(layout)
+  const raid = build.raid()
   return composeBuildFrame(
     {
       // The session's own round: after a Pulse the mission moves on to a new context.
@@ -198,6 +199,7 @@ export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, 
       glyphPack: build.state.settings.glyphPack,
       reducedMotion: build.state.settings.reducedMotion,
       ...(pulse === undefined ? {} : { pulse }),
+      ...(raid === undefined ? {} : { raid }),
       ...extra,
     },
     capability,

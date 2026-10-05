@@ -78,7 +78,7 @@ const PICK_FIRST_POWER = "n 1"
  *  screen that shows them (Settings) says what the picture is. */
 function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", present, experiments }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({
+  const run = runBuildPlaytest({ scenes: false,
     steps: parseKeyScript(keys),
     columns: cols,
     rows,
@@ -109,7 +109,7 @@ function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capabilit
 /** A whole key script as an animated GIF, one frame per key. */
 function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", delayMs = 900, holdMs = 2500 }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(keys), columns: cols, rows, capability })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, capability })
   const lastIndex = run.frames.length - 1
   if (!frameToText(run.frames[lastIndex].frame).includes(expect)) {
     throw new Error(`${name}: expected "${expect}" on screen after "${keys}"`)
@@ -138,7 +138,7 @@ function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments,
   if (only !== null && only !== name) return
   const planSteps = parseKeyScript(plan).length
   const waits = Array.from({ length: Math.round((toMs - fromMs) / stepMs) }, () => `wait~${stepMs}`)
-  const run = runBuildPlaytest({
+  const run = runBuildPlaytest({ scenes: false,
     steps: parseKeyScript([plan, `wait~${fromMs}`, ...waits].join(" ")),
     columns: cols,
     rows,
@@ -184,7 +184,7 @@ function settledAnimation(state, options = {}) {
  */
 function slideGif(name, { before, move, cols = 80, rows = 24, capability = "truecolor" }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${move}`), columns: cols, rows, capability })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${before} ${move}`), columns: cols, rows, capability })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
   const animation = settledAnimation(from.state)
@@ -212,7 +212,7 @@ function placementGif(
   { before, place, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", reducedMotion = false, stepMs = 50, showMs = 100, stillAtMs, caption },
 ) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({
+  const run = runBuildPlaytest({ scenes: false,
     steps: parseKeyScript(`${before} ${place}`),
     columns: cols,
     rows,
@@ -253,7 +253,7 @@ function placementGif(
  */
 function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 20, showMs = 100 }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({
+  const run = runBuildPlaytest({ scenes: false,
     steps: parseKeyScript(`${before} ${hand}`),
     columns: cols,
     rows,
@@ -300,7 +300,7 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
  */
 function popupGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 100, flashStepMs = 30 }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(keys), columns: cols, rows, settings: { ...DEFAULT_SETTINGS, capability, theme, glyphPack } })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, settings: { ...DEFAULT_SETTINGS, capability, theme, glyphPack } })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${keys}", got:\n${frameToText(to.frame)}`)
@@ -327,7 +327,7 @@ function popupGif(name, { keys, expect, cols = 80, rows = 24, capability = "true
  */
 function placementSheet(name, { before, place, expect, timesMs, capability = "truecolor", theme = "dark", caption, span = { x: 5, y: 3 } }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${before} ${place}`), settings: { ...DEFAULT_SETTINGS, capability, theme } })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${before} ${place}`), settings: { ...DEFAULT_SETTINGS, capability, theme } })
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${before} ${place}"`)
   const placement = to.state.planned[to.state.planned.length - 1]
@@ -593,7 +593,7 @@ scripted(
 
 scripted(
   "build-menu-hint",
-  "The menu, one list: Explore Map, Nexus, the credits with the map's resource symbol in the cost column, the buildings, Start Pulse last. With the Hatchery highlighted the bottom line says what it does and what it costs",
+  "The menu, one list: Explore Map, Nexus, the credits with the map's resource symbol in the cost column, the buildings, Start Battle Round last. With the Hatchery highlighted the bottom line says what it does and what it costs",
   { keys: `${PICK_FIRST_POWER} Down*2`, expect: "Hatchery - Spawns swarmers" },
 )
 
@@ -624,20 +624,20 @@ handoffGif("build-focus-arrow-far", {
 
 scripted(
   "build-start-row",
-  "Start Pulse is the menu's last row: Down reaches it and stops there, PageDown (or Shift+Down, or End) jumps to it, Enter presses it",
-  { keys: `${PICK_FIRST_POWER} PgDn`, expect: "[s] Start Pulse" },
+  "Start Battle Round is the menu's last row: Down reaches it and stops there, PageDown (or Shift+Down, or End) jumps to it, Enter presses it",
+  { keys: `${PICK_FIRST_POWER} PgDn`, expect: "[s] Start Battle Round" },
 )
 
 scripted(
   "build-nexus-confirm",
-  "Start Pulse opens Battle Round 1: what it announces, and one row, [s] Start. Esc goes back",
+  "Start Battle Round opens Battle Round 1: what it announces, and one row, [s] Start. Esc goes back",
   { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1" },
 )
 
 popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
 // The early Nexus Pulse shots (`pulse-start`, `pulse-fight` and the rest) were taken against a placeholder Pulse that
-// PERIMETER's waves replaced; they are no longer made. The shots that follow are on PERIMETER.
+// PERIMETER's raid replaced; they are no longer made. The shots that follow are on PERIMETER.
 
 // A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
 // tile, then [s] and [s] to start. The strong plan holds PERIMETER; nothing built loses it in round 3.
@@ -652,8 +652,8 @@ const STRONG_TO_ROUND_3 = `${STRONG_TO_ROUND_2} ${ROUND_2_STRONG} ${TO_RESULT} E
 
 scripted(
   "mission-round-1",
-  "PERIMETER, round 1 of 3: the raid at the ridge and your squads beside the Nexus are drawn see-through - they arrive when the round starts",
-  { keys: "n 1", expect: "round 1 of 3" },
+  "PERIMETER, round 1 of 3: the raid at the ridge, a trail round it to the Barracks it goes for first, and the panel saying how many, of what, from where and when",
+  { keys: "n 1", expect: "goes for your Barracks" },
 )
 
 scripted(
@@ -670,7 +670,7 @@ scripted(
 
 scripted(
   "mission-round-2",
-  "Build Phase 2: the Turrets and the Hatchery stand, the survivors are home, the credits not spent carry over, and the second wave waits at the ridge",
+  "Build Phase 2: the Turrets and the Hatchery stand, the survivors are home, the credits not spent carry over, and the second round's raid waits at the ridge",
   { keys: STRONG_TO_ROUND_2, expect: "round 2 of 3" },
 )
 
@@ -694,7 +694,7 @@ scripted(
 
 scripted(
   "mission-experiments",
-  "d over a Pulse opens Settings at the mission's two Experiments: Next round and Incoming wave",
+  "d over a Pulse opens Settings at the mission's Experiments, Next round first",
   { keys: `${ROUND_1_STRONG} wait~3000 d`, expect: "Next round" },
 )
 
@@ -820,7 +820,8 @@ function live(name, caption, { cols = 80, rows = 24, args = "--capability trueco
     String(cols),
     "-y",
     String(rows),
-    `./bin/terminal-nexus.ts --build-phase ${args}`,
+    // `--keys Esc`: past round 1's intro before the first frame, so these shots open where they always did.
+    `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys Esc ${args}`,
   ])
   waitFor(
     repoRoot,

@@ -23,14 +23,18 @@
 //
 // **Parsing is forgiving**, in the style of `parseSettings`: any `name = value` pair anywhere is read
 // (lines, spaces, commas, semicolons or `&` all separate them, so a one-line `--settings
-// "raid=probe crew=some"` works too); an unknown name is ignored and reported; a value that is not one
-// the setting can take leaves that one setting as it was. **A name is read by the tier its setting
-// stands on now**, not the one it had when the text was written (`src/build/all-settings.ts`): a player
-// setting or an Experiment is applied to whichever it is; **a settled Experiment's name is skipped
-// quietly** (`SETTLED_EXPERIMENTS`): an export from before the owner settled it still names it, and its
-// value is the code's own now, so it is neither applied nor reported as a name the game does not know;
-// and **a renamed setting's old name reads as its new one** (`RENAMED_SETTINGS`). Nothing here touches
-// a clock, a file or a clipboard — the adapters do that (`src/cli/terminal-nexus.ts`, `src/web/host.ts`).
+// "raid=probe crew=some"` works too, and so does a route's query form, `trainEvery=6&reducedMotion=true`:
+// the owner's "foo=6&var=true"); an unknown name is ignored and reported; a value that is not one
+// the setting can take leaves that one setting as it was. **Every on/off setting takes the usual yes and
+// no words** — on/off, true/false, yes/no, 1/0 — a yes/no one (reduced motion) and one whose values are a
+// choice or a number with an "off" among them (Key releases, the popup pulse) alike. **A name is read by
+// the tier its setting stands on now**, not the one it had when the text was written
+// (`src/build/all-settings.ts`): a player setting or an Experiment is applied to whichever it is; **a
+// settled Experiment's name is skipped quietly** (`SETTLED_EXPERIMENTS`): an export from before the owner
+// settled it still names it, and its value is the code's own now, so it is neither applied nor reported as
+// a name the game does not know; and **a renamed setting's old name reads as its new one**
+// (`RENAMED_SETTINGS`). Nothing here touches a clock, a file or a clipboard — the adapters do that
+// (`src/cli/terminal-nexus.ts`, `src/web/host.ts`).
 
 import type { Settings } from "../settings/types.ts"
 import { parseSettings } from "../settings/types.ts"
@@ -94,8 +98,9 @@ const FALSE_WORDS = new Set(["off", "false", "no", "0"])
 /**
  * A shown setting's value from text, or `null` when it is not one the setting can take. Accepted: the
  * value as the export writes it, as the popup shows it ("off", "16", "4 tiles"); for a yes/no, any of the
- * usual words; and for a number, any number between the setting's smallest and largest listed values,
- * with a unit or not ("200", "200ms"), since a number the list does not hold is a legal starting value.
+ * usual words; for a number, any number between the setting's smallest and largest listed values,
+ * with a unit or not ("200", "200ms"), since a number the list does not hold is a legal starting value;
+ * and for any setting with an "off" value, the usual words for it (`onOffValue`).
  */
 function valueFromText(field: ShownName, text: string): number | string | boolean | null {
   const spec = shownSetting(field)
@@ -115,6 +120,25 @@ function valueFromText(field: ShownName, text: string): number | string | boolea
     const numbers = spec.values as readonly number[]
     if (digits !== undefined && number >= Math.min(...numbers) && number <= Math.max(...numbers)) return number
   }
+  return onOffValue(spec.values, spec.format, lower)
+}
+
+/**
+ * The value an on/off word means for a setting that is not a plain yes/no but has an "off" among its values —
+ * Key releases (`auto` or `off`), the popup pulse (0 reads "off"): a no word (off, false, no, 0) is that value,
+ * and a yes word (on, true, yes, 1) the other one, where there is exactly one other. `null` for anything else,
+ * a yes word on a number with several "on" values among them: which one would be a guess.
+ */
+function onOffValue(
+  values: readonly (number | string | boolean)[],
+  format: (value: number | string | boolean) => string,
+  lower: string,
+): number | string | boolean | null {
+  const off = values.find((value) => raw(value).toLowerCase() === "off" || format(value).toLowerCase() === "off")
+  if (off === undefined) return null
+  if (FALSE_WORDS.has(lower)) return off
+  const on = values.filter((value) => value !== off)
+  if (TRUE_WORDS.has(lower) && on.length === 1) return on[0] ?? null
   return null
 }
 

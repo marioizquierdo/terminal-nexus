@@ -190,7 +190,9 @@ export function opening(input: OpeningInput): Opening {
     // interval, and this keeps it so when the recipe itself changed between rounds (an Experiment did).
     .map((entry) => {
       const { productionCooldown: _cooldown, produced: _produced, ...entity } = entry.carried as EntityState
-      return { ...entity, anchor: entry.anchor, ...productionFields(entry.definition) }
+      // Never more health than its content now allows: a Commander's health is an Experiment while it is
+      // tuned, and may have been turned down between rounds. Nothing else ever carries more.
+      return { ...entity, hp: Math.min(entity.hp, entry.definition.maxHp), anchor: entry.anchor, ...productionFields(entry.definition) }
     })
   const entities = [...kept, ...born].sort((a, b) => a.ordinal - b.ordinal)
 

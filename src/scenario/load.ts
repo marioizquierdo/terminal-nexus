@@ -8,7 +8,7 @@ import { footprintCentre, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import { gameplayRng } from "../rng/pcg32.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import type { EntityState, MatchState, PlayerId, TargetArea } from "../state/types.ts"
 import { PLAYERS, SCHEMA_VERSION } from "../state/types.ts"
 import { presetDimensions } from "./presets.ts"
 import type { PlacementEntry, ScenarioDefinition } from "./types.ts"
@@ -261,6 +261,7 @@ export function loadScenario(
   const seed = options.seed ?? scenario.seed
   if (!Number.isInteger(seed)) fail(scenario, `seed must be an integer, received ${seed}`)
 
+  const targets = targetsOf(scenario, grid)
   const state: MatchState = {
     schemaVersion: SCHEMA_VERSION,
     tick: 0,
@@ -272,7 +273,38 @@ export function loadScenario(
     outcome: null,
     rng: gameplayRng(seed).snapshot(),
     nextOrdinal: ordinal,
+    // Only when a side has one: a map with no target loads into exactly the state it always did.
+    ...(targets === undefined ? {} : { targets }),
   }
 
   return { scenario, registry, state }
+}
+
+/** A map's targets, checked: a side's is a rectangle of whole tiles on the Grid, on ground its units can
+ *  stand on. `undefined` when the map gives none. */
+function targetsOf(scenario: ScenarioDefinition, grid: GridTerrain): MatchState["targets"] {
+  const given = scenario.targets
+  if (given === undefined) return undefined
+  const targets: Partial<Record<PlayerId, TargetArea>> = {}
+  for (const [side, area] of Object.entries(given)) {
+    if (side !== "A" && side !== "B") fail(scenario, `targets names the unknown side "${side}"`)
+    if (area === undefined) continue
+    const { x, y, width, height } = area
+    if (![x, y, width, height].every((value) => Number.isInteger(value)) || width < 1 || height < 1) {
+      fail(scenario, `the target for side ${side} must be whole tiles, at least one wide and tall`)
+    }
+    if (x < 0 || y < 0 || x + width > grid.width || y + height > grid.height) {
+      fail(scenario, `the target for side ${side} reaches off the ${grid.width}x${grid.height} Grid`)
+    }
+    for (let row = y; row < y + height; row += 1) {
+      for (let column = x; column < x + width; column += 1) {
+        const terrainId = grid.tiles[row * grid.width + column]
+        if (terrainId !== undefined && TERRAIN[terrainId].impassable) {
+          fail(scenario, `the target for side ${side} covers (${column},${row}), which is impassable ${terrainId}: a target is ground its units can stand on`)
+        }
+      }
+    }
+    targets[side] = { x, y, width, height }
+  }
+  return Object.keys(targets).length === 0 ? undefined : targets
 }

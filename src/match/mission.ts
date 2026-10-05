@@ -6,22 +6,29 @@
 // state, to an outcome or the tick limit — with the mission's actions applied at the only two places a
 // rules layer outside the kernel can reach:
 //
-// - **at tick 0**, into the opening state: what arrives when the Pulse starts (`spawn`) and the
-//   scripted side's own Build Phase plan (`commitPlan`), beside the player's plan and whatever survived
-//   the last Pulse (`opening.ts`);
-// - **between two ticks**, for a `spawn` at a later tick: new entities go into the state the kernel just
-//   settled, with the kernel's own conventions (the next ordinal, a fresh entity's fields, the id format)
-//   and the kernel's own `entity.spawned` event, so a report or a renderer reading only events learns of
-//   them exactly as it learns of a spawner's children. They act from the next tick.
+// - **at tick 0**, into the opening state: what arrives when the Pulse starts (`spawn`), the scripted
+//   side's own Build Phase plan (`commitPlan`), beside the player's plan and whatever survived the last
+//   Pulse (`opening.ts`), and where each side's troops head (`target`, as the state's `targets`: the last
+//   one set for a side, this round or an earlier one);
+// - **between two ticks**, for a `spawn` or a `target` at a later tick: new entities go into the state the
+//   kernel just settled, with the kernel's own conventions (the next ordinal, a fresh entity's fields, the id
+//   format) and the kernel's own `entity.spawned` event, so a report or a renderer reading only events learns
+//   of them exactly as it learns of a spawner's children; a side's new target goes into it the same way. Both
+//   act from the next tick.
 //
 // campaigns.md imagines scripted actions running "inside the kernel, as scripted intents"; the kernel has
 // no door for intents yet (the narrow hook content.md describes is unbuilt), so between ticks is the nearest
 // place that needs no kernel change — a finding recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md.
 //
-// One consequence is deliberate and visible: **the kernel's victory rule still ends a Pulse the moment a
-// side is wiped out**, so a reinforcement scheduled after that tick never comes. The victory check reads
-// what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
+// One consequence is deliberate and visible: **the kernel's victory rule ends a Pulse the moment a side with
+// no Grid Nexus standing is wiped out** — a raid — so a reinforcement of its scheduled after that tick never
+// comes. A side whose Nexus stands is never wiped out and plays on (Mario, 2026-10-01). The victory check
+// reads what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
 // roster for the rest of the Pulse, so a side that only arrives later can still be wiped out, and win.
+//
+// **The presentation band is never read here** — a line of dialog (`say`) and the Build Phase opening it
+// runs at (`build.start`) are the screen's (`src/mission/scene.ts`) — so a mission's lines cannot change
+// what its Pulses resolve: the same plans give the same states with or without them.
 //
 // After the Pulse, the triggers waiting for its end are read in list order and the first `win` or `lose`
 // decides the mission — the kernel's own outcome is never overridden, only read (a mission's goal is
@@ -35,10 +42,10 @@ import { OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import { isMoment, regionCentre, regionOf } from "../mission/validate.ts"
-import type { MissionDefinition, MissionVerdict, Order, SpawnAction, TriggerDefinition } from "../mission/types.ts"
+import type { MissionDefinition, MissionVerdict, Region, SpawnAction, TriggerDefinition } from "../mission/types.ts"
 import type { PulseContext } from "../pulse/context.ts"
 import { contextFor, spawnEvents, stepTick } from "../pulse/index.ts"
-import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
+import type { EntityState, MatchState, PlayerId, TargetArea } from "../state/types.ts"
 import { opening } from "./opening.ts"
 import { nearestFit } from "./placement.ts"
 import type { Force, StructurePlacement } from "./types.ts"
@@ -59,8 +66,8 @@ export type MissionPulseInput = Readonly<{
   structures: readonly StructurePlacement[]
 }>
 
-/** A unit that arrived by a mission's `spawn`, and what it came with — the group, its order, its line of
- *  intention. What the preview draws as incoming, and the card over it reads. */
+/** A unit that arrived by a mission's `spawn`, and what it came with — the group and its line of intention.
+ *  What the preview draws as incoming, and the card over it reads. */
 export type Arrival = Readonly<{
   ordinal: number
   player: PlayerId
@@ -70,7 +77,6 @@ export type Arrival = Readonly<{
   tick: number
   trigger: string
   group: string | null
-  order: Order | null
   intent: string | null
 }>
 
@@ -103,7 +109,59 @@ function spawnsAt(mission: MissionDefinition, pulse: number, tick: number): Sche
   return found
 }
 
-/** The ticks after 0 at which this Pulse has something arriving. */
+/**
+ * **Each side's target at a moment of the mission** (`TargetAction`): the region the last `target` for the
+ * side at or before round `pulse`, tick `tick` sends its troops to — round after round until another moves
+ * it, and of two at one moment, the later in the list. `undefined` when no side has one yet: a state then
+ * carries no `targets` at all, and hashes as a battle with no target always did.
+ */
+export function targetsAt(mission: MissionDefinition, pulse: number, tick: number): MatchState["targets"] {
+  const regions = targetRegionsAt(mission, pulse, tick)
+  const targets: Partial<Record<PlayerId, TargetArea>> = {}
+  for (const side of ["A", "B"] as const) {
+    const region = regions[side]
+    if (region !== undefined) targets[side] = { x: region.x, y: region.y, width: region.width, height: region.height }
+  }
+  return Object.keys(targets).length === 0 ? undefined : targets
+}
+
+/** The region each side's troops head for at a moment of the mission, as the mission names it — what
+ *  `targetsAt` puts in the state, with the id and the name the screen says. */
+export function targetRegionsAt(mission: MissionDefinition, pulse: number, tick: number): Partial<Record<PlayerId, Region>> {
+  const set: Partial<Record<PlayerId, Readonly<{ at: readonly [number, number]; region: Region }>>> = {}
+  for (const trigger of mission.triggers) {
+    const { when } = trigger
+    if (!isMoment(when) || when.pulse > pulse || (when.pulse === pulse && when.tick > tick)) continue
+    for (const action of trigger.do) {
+      if (!("target" in action)) continue
+      const region = regionOf(mission, action.target.region)
+      if (region === undefined) throw new Error(`unknown region "${action.target.region}" — validate the mission first`)
+      const earlier = set[action.target.side]
+      // List order breaks a tie within one moment, so an equal moment replaces what came before it.
+      if (earlier !== undefined && (earlier.at[0] > when.pulse || (earlier.at[0] === when.pulse && earlier.at[1] > when.tick))) continue
+      set[action.target.side] = { at: [when.pulse, when.tick], region }
+    }
+  }
+  const regions: Partial<Record<PlayerId, Region>> = {}
+  for (const side of ["A", "B"] as const) {
+    const found = set[side]
+    if (found !== undefined) regions[side] = found.region
+  }
+  return regions
+}
+
+/** `state` with the sides' targets as `targets` says: the field set, or left off when no side has one. */
+function withTargets(state: MatchState, targets: MatchState["targets"]): MatchState {
+  const { targets: _old, ...rest } = state
+  return targets === undefined ? rest : { ...rest, targets }
+}
+
+/** Whether a trigger at this moment sends a side's troops somewhere new. */
+function retargetsAt(mission: MissionDefinition, pulse: number, tick: number): boolean {
+  return mission.triggers.some(({ when, do: actions }) => isMoment(when) && when.pulse === pulse && when.tick === tick && actions.some((action) => "target" in action))
+}
+
+/** The ticks after 0 at which this Pulse has something arriving, or a side's target moving. */
 function laterTicks(mission: MissionDefinition, pulse: number): Set<number> {
   const ticks = new Set<number>()
   for (const { when } of mission.triggers) if (isMoment(when) && when.pulse === pulse && when.tick > 0) ticks.add(when.tick)
@@ -127,7 +185,6 @@ const arrivalOf = (scheduled: Scheduled, entity: EntityState, tick: number): Arr
   tick,
   trigger: scheduled.trigger.id,
   group: scheduled.spawn.group ?? null,
-  order: scheduled.spawn.order ?? null,
   intent: scheduled.spawn.intent ?? null,
 })
 
@@ -166,7 +223,8 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
     const force = result.forceOf.get(entity.ordinal)
     if (force !== undefined) arrivals.push(arrivalOf(scheduled[force] as Scheduled, entity, 0))
   }
-  return { state: result.state, arrivals, fired }
+  // Where each side's troops head as the Pulse starts: the targets set by now, this round's tick 0 included.
+  return { state: withTargets(result.state, targetsAt(mission, pulse, 0)), arrivals, fired }
 }
 
 /**
@@ -270,7 +328,8 @@ function verdictAt(
   let verdict: MissionVerdict = { kind: "continue" }
   for (const trigger of mission.triggers) {
     const { when } = trigger
-    if (isMoment(when)) continue
+    // A Build Phase opening is the presentation band's (`src/mission/scene.ts`): never a Pulse's end.
+    if (isMoment(when) || when.event === "build.start") continue
     const holds =
       when.event === "pulse.end"
         ? when.pulse === undefined || when.pulse === pulse
@@ -304,12 +363,16 @@ export function resolveMissionPulse(input: MissionPulseInput): MissionPulse {
     state = result.state
     events.push(...result.events)
     if (state.outcome === null && later.has(state.tick)) {
-      const scheduled = spawnsAt(mission, pulse, state.tick)
-      for (const trigger of new Set(scheduled.map((entry) => entry.trigger.id))) fired.push({ trigger, pulse, tick: state.tick })
-      const arrived = arriveBetweenTicks(mission, registry, state, scheduled)
+      const tick = state.tick
+      for (const trigger of mission.triggers) {
+        if (isMoment(trigger.when) && trigger.when.pulse === pulse && trigger.when.tick === tick) fired.push({ trigger: trigger.id, pulse, tick })
+      }
+      const arrived = arriveBetweenTicks(mission, registry, state, spawnsAt(mission, pulse, tick))
       state = arrived.state
       events.push(...arrived.events)
       arrivals.push(...arrived.arrivals)
+      // A side's target moved at this moment: its troops head for the new one from the next tick.
+      if (retargetsAt(mission, pulse, tick)) state = withTargets(state, targetsAt(mission, pulse, tick))
       context = widened(context, state, registry)
     }
     states.push(state)

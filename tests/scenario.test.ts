@@ -7,8 +7,11 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/grid/index.ts"
-import { DEFAULT_PRESET, ScenarioError, loadScenario, presetDimensions } from "../src/scenario/index.ts"
+import { DEFAULT_PRESET, ScenarioError, TICKS_PER_SECOND, loadScenario, presetDimensions } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import type { DomainEvent } from "../src/events/types.ts"
+import { resolvePulse } from "../src/pulse/index.ts"
+import { ENGAGE_RANGE } from "../src/pulse/target.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 
 function baseScenario(): ScenarioDefinition {
@@ -394,6 +397,17 @@ test("salvage-drop: death leaves a ground item on the tile it died on", async ()
   assert.equal(item.amount, FIXTURE_REGISTRY.get(death.contentId).salvage)
 })
 
+test("nexus-stands: a side whose Grid Nexus stands is never wiped out; its Pulse goes on until the Nexus falls", async () => {
+  // Mario, 2026-10-01: "the player should only lose when the nexus is destroyed".
+  const resolved = await resolveScenario("nexus-stands.map.json")
+  const fell = resolved.run.events.find((event) => event.kind === "entity.died" && event.player === "A")
+  assert.ok(fell !== undefined, "the trooper never fell")
+  const outcome = resolved.run.finalState.outcome
+  assert.equal(outcome?.reason, "nexus-destroyed")
+  assert.equal(outcome?.winner, "B")
+  assert.ok(fell.tick < (outcome?.tick ?? 0), "the Pulse ended when the trooper fell, with the Nexus standing")
+})
+
 test("annihilation-victory: the Pulse ends only once every mobile entity is dead", async () => {
   const resolved = await resolveScenario("annihilation-victory.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")
@@ -409,4 +423,82 @@ test("tick-limit-draw: neither side can reach the other, and the Pulse ends on i
   assert.equal(resolved.run.finalState.outcome?.winner, null)
   assert.equal(resolved.run.finalState.tick, resolved.run.pulseTicks)
   assert.equal(resolved.run.events.filter((event) => event.kind === "attack.launched").length, 0)
+})
+
+test("target-head-engage-stand: a side with a target heads for it, fights what comes within reach on the way, and stands there", async () => {
+  const resolved = await resolveScenario("target-head-engage-stand.map.json")
+  const { run } = resolved
+  const area = run.initialState.targets?.A
+  assert.deepEqual(area, { x: 15, y: 2, width: 3, height: 3 })
+  assert.equal(run.initialState.targets?.B, undefined)
+  // On the way: the runner comes within reach and the squad turns on it — never from further than that.
+  const turned = run.events.filter((event) => event.kind === "target.selected" && event.entity.startsWith("A:"))
+  assert.ok(turned.length >= 3, "the squad never turned on the runner")
+  for (const event of turned) {
+    if (event.kind !== "target.selected") continue
+    assert.equal(event.target, "B:runner#1", `${event.entity} went for ${event.target}`)
+    assert.ok(event.distance <= ENGAGE_RANGE, `${event.entity} turned on it from ${event.distance} tiles`)
+  }
+  const runnerDied = run.events.find((event) => event.kind === "entity.died" && event.entity === "B:runner#1")
+  assert.ok(runnerDied !== undefined, "the runner lived")
+  // The Nexus in the far corner is never within reach of the target or the way there: nobody goes for it.
+  assert.ok(!run.events.some((event) => event.kind === "attack.launched" && event.target === "B:nexus#6"), "the squad went for the raid's Nexus")
+  // And there: every one of them inside the target or beside one who is, none of them moving for the last two
+  // seconds, none of them pressing on another.
+  const squad = run.finalState.entities.filter((entity) => entity.player === "A")
+  assert.equal(squad.length, 4)
+  const inside = (entity: (typeof squad)[number]): boolean =>
+    entity.anchor.x >= 15 && entity.anchor.x <= 17 && entity.anchor.y >= 2 && entity.anchor.y <= 4
+  const gathered = new Set(squad.filter(inside).map((entity) => entity.ordinal))
+  assert.ok(gathered.size >= 3, `only ${gathered.size} of the squad stand inside the target`)
+  for (let grew = true; grew; ) {
+    grew = false
+    for (const entity of squad) {
+      if (gathered.has(entity.ordinal)) continue
+      if (squad.some((other) => gathered.has(other.ordinal) && Math.abs(other.anchor.x - entity.anchor.x) + Math.abs(other.anchor.y - entity.anchor.y) === 1)) {
+        gathered.add(entity.ordinal)
+        grew = true
+      }
+    }
+  }
+  assert.equal(gathered.size, squad.length, "some of the squad stand away from the target")
+  const late = run.pulseTicks - 2 * TICKS_PER_SECOND
+  assert.ok(!run.events.some((event) => (event.kind === "entity.moved" || event.kind === "move.blocked") && event.tick > late && event.entity.startsWith("A:")), "the squad was still moving at the end")
+  assert.deepEqual([run.finalState.outcome?.winner, run.finalState.outcome?.reason], [null, "tick-limit"])
+
+  // A side with no target keeps the one rule every unit had: the same squad, the runner dead, marches on the Nexus.
+  const scenario = await loadScenarioFile("target-head-engage-stand.map.json")
+  const { targets: _targets, ...untargeted } = scenario
+  const loaded = loadScenario(untargeted, { registry: FIXTURE_REGISTRY })
+  assert.equal(loaded.state.targets, undefined)
+  const old = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: scenario.pulseTicks, seed: scenario.seed })
+  assert.ok(old.events.some((event) => event.kind === "attack.launched" && event.target === "B:nexus#6"), "with no target, nobody went for the Nexus")
+})
+
+test("aura-by-the-book: the units near Vasse take three quarters of every hit, she does too, and the one beyond her reach takes it all", async () => {
+  const resolved = await resolveScenario("aura-by-the-book.map.json")
+  const { run } = resolved
+  const vasse = run.initialState.entities.find((entity) => entity.contentId === "unit.citizen.vasse")
+  assert.ok(vasse !== undefined)
+  const hits = (entity: string) =>
+    run.events.filter((event): event is Extract<DomainEvent, { kind: "damage.applied" }> => event.kind === "damage.applied" && event.entity === entity)
+  // Beside her: every hit guarded, by her, a raider's eleven down to eight and its blast's ten to seven.
+  const near = hits("A:trooper#2")
+  assert.ok(near.length > 0)
+  for (const hit of near) assert.equal(hit.guardedBy, vasse.id, `a hit on the trooper beside her at tick ${hit.tick} was not guarded`)
+  assert.ok(near.some((hit) => hit.amount === 8 && hit.hpBefore >= 8), "no raider's hit came to eight")
+  assert.ok(near.some((hit) => hit.amount === 7 && hit.source === "B:raider#3" && hit.tick === run.events.find((event) => event.kind === "entity.detonated" && event.entity === "B:raider#3")?.tick), "the blast was not guarded")
+  // Five tiles from her: never guarded, the whole eleven.
+  const far = hits("A:trooper#4")
+  assert.ok(far.length > 0)
+  for (const hit of far) assert.equal(hit.guardedBy, undefined, `the trooper beyond her reach was guarded at tick ${hit.tick}`)
+  assert.ok(far.some((hit) => hit.amount === 11))
+  // Her own: guarded by her too.
+  const own = hits(vasse.id)
+  assert.ok(own.length > 0 && own.every((hit) => hit.guardedBy === vasse.id), "she was not guarded herself")
+  // The raid's are never guarded: an aura guards its own side.
+  assert.ok(run.events.every((event) => event.kind !== "damage.applied" || !event.entity.startsWith("B:") || event.guardedBy === undefined))
+  // The one beyond her reach falls first.
+  const fell = (entity: string): number => run.events.find((event) => event.kind === "entity.died" && event.entity === entity)?.tick ?? Number.POSITIVE_INFINITY
+  assert.ok(fell("A:trooper#4") < fell("A:trooper#2"), "the guarded trooper fell first")
 })

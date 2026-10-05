@@ -87,7 +87,6 @@ type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
   (Readonly<{ tier: "tuned" } & Partial<Description>> | (Readonly<{ tier: "player" | "experiment" }> & Description))
 
 const NEXT_ROUND = ["key", "auto"] as const
-const INCOMING = ["shown", "hidden"] as const
 
 export const ALL_SETTINGS = {
   // --- Display: the player's own, saved with the title menu's Settings -----------------------------
@@ -360,7 +359,7 @@ export const ALL_SETTINGS = {
 
   // --- The mission's loop ------------------------------------------------------------------
   // Settings opens at the first of them while a Pulse is on screen (`d`). The placeholder Pulse's Raid
-  // and Your units went with it: PERIMETER's waves are the mission's data now (`src/mission/perimeter.ts`).
+  // and Your units went with it: PERIMETER's raid is the mission's data now (`armies/vasse/army.json`).
 
   /** What starts the next Build Phase once a round's result is on screen: the player (Enter, Space, `n`
    *  or a click on its row), or the game itself a moment later — the owner's early sketch had the
@@ -377,22 +376,11 @@ export const ALL_SETTINGS = {
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
    *  auto; a first guess. */
   autoNextRoundMs: { tier: "tuned", default: 3000 },
-  /** Whether the Build Phase shows the next round's arrivals on the map, see-through, with their line of
-   *  intention on the Explore Map card (the owner: "so the user can Explore map and see what is
-   *  coming"). First guess: shown. */
-  incoming: {
-    tier: "experiment",
-    section: "mission",
-    label: "Incoming wave",
-    question: "Whether the Build Phase shows the next round's raid on the map, see-through, with what it means to do.",
-    values: INCOMING,
-    default: "shown",
-  },
   /** How often a Barracks trains a trooper during a round (step 6C). A round runs thirty seconds at
-   *  most and ends sooner when one side's units are all dead, so the pace decides how many a round
-   *  really trains and how much of the fight they see. First guess: every 10 seconds — three in a full
-   *  round, and a plan that builds nothing still loses PERIMETER's last round, as step 6B tuned it
-   *  (docs/history/reports/2026-10-01-barracks-trains.md has the outcomes at every pace). */
+   *  most and ends sooner when the raid's units are all dead or the Nexus falls, so the pace decides
+   *  how many a round really trains and how much of the fight they see. First guess: every 10 seconds
+   *  — three in a full round, and a plan that builds nothing still loses PERIMETER's last round, as
+   *  step 6B tuned it (docs/history/reports/2026-10-01-barracks-trains.md has the outcomes at every pace). */
   trainEvery: {
     tier: "experiment",
     section: "mission",
@@ -412,6 +400,82 @@ export const ALL_SETTINGS = {
     values: [1, 2, 3, 4, 6],
     unit: "count",
     default: 3,
+  },
+  /** How much Vasse, the Commander, can take (the Commander step): how often her fall, a round of absence
+   *  and her return come into play at all. First guess: 80, twice a trooper. Measured: from 60 to 100 she
+   *  comes out of PERIMETER's first two rounds in every plan tried and a plan that builds nothing still
+   *  loses; at 150 that plan wins the last round on time, and at 20 she falls in round 2 whatever is built.
+   *  At every value she falls in the last round of every plan tried
+   *  (docs/history/reports/2026-10-01-commander-vasse.md has the outcomes). */
+  commanderHealth: {
+    tier: "experiment",
+    section: "mission",
+    label: "Vasse's health",
+    question: "How much Vasse can take: enough to come through most rounds, or little enough that keeping her alive shapes the plan.",
+    values: [20, 40, 60, 80, 100, 150],
+    unit: "count",
+    default: 80,
+  },
+
+  // --- Construction territory -----------------------------------------------------------------------
+  // The owner: buildings "can only be built within the build-range of the other buildings" (round 4). How far
+  // that is was an open question (the default construction radius, Q5): two tiles was the recommendation, with
+  // outposts farther.
+
+  /** How far the Grid Nexus and every building linked to it let the player build from them, in tiles, as range
+   *  is measured (`src/build/territory.ts`); it replaces each projecting structure's own `constructionRadius`
+   *  while it is felt. Measured on PERIMETER's starter map at the start of round 1: at 2 the Barracks beside the
+   *  Nexus is cut off, 24 tiles are buildable, a Barracks fits in 2 places and no Turret placed then reaches the
+   *  probe's way in; at 3 the two are linked, 82 tiles are buildable (21 places for a Barracks) and the best
+   *  Turret reaches 9 of the probe's 20 steps; at 4, 120 tiles (53). Reaching the ridge takes six chained
+   *  Turrets at 3, four at 4. First guess: 3. */
+  buildRange: {
+    tier: "experiment",
+    section: "mission",
+    label: "Build range",
+    question: "How many tiles from the Nexus and your linked buildings you may build. Buildings link where their ranges meet.",
+    values: [2, 3, 4],
+    unit: "tiles",
+    default: 3,
+  },
+
+  // --- Vasse's voice in battle (the Commander round 4) -----------------------------------------------
+  // The owner, on her voice during the battle: "let's experiment with this to see if it gets into the battle or
+  // enhances the experience even more". It asks the open question on her voice in battle: does it add to the
+  // fight or get in its way, and where should her words appear?
+
+  /** Whether Vasse speaks during a Battle Round, and where her words appear: under the panel's feed, or
+   *  beside her `@` on the map for a moment (in the panel instead whenever she is out of view). Her lines are
+   *  data in her army (`armies/vasse/army.json`); when she speaks, and which line, is the view's
+   *  (`src/view/pulse-voice.ts`), and none of it reaches the kernel: a round resolves the same in every mode.
+   *  First guess: beside her, the answer that puts her in the battle. */
+  commanderVoice: {
+    tier: "experiment",
+    section: "mission",
+    label: "Vasse's voice",
+    question: "Whether Vasse speaks in battle, and where: under the panel's feed, or beside her on the map for a moment.",
+    values: ["off", "feed", "beside"],
+    default: "beside",
+  },
+
+  // --- Vasse's aura, By the Book (the Commander round 4) ---------------------------------------------
+  // The owner: Commanders "should be like heroes on warcraft3 ... Vasse should provide boost to nearby units".
+  // It asks the open question on a Commander's passive skill: how strong should it be, strong enough to feel
+  // that she is there and never so strong that standing beside her is the whole plan?
+
+  /** How much less damage By the Book, Vasse's aura, lets the units of her side within its reach take, herself
+   *  included, as a share of every hit; off takes the aura away (`auraRegistry`, `src/match/commander.ts`).
+   *  PERIMETER was measured at every value (the pull request has the table). First guess: a quarter less,
+   *  the content's own value. */
+  commanderAura: {
+    tier: "experiment",
+    section: "mission",
+    label: "By the Book",
+    question: "Vasse's aura: how much less damage your units near her take, and she does, from every hit. Off: none.",
+    values: [0, 10, 25, 40],
+    unit: "percent",
+    names: { "0": "off", "10": "10% less", "25": "25% less", "40": "40% less" },
+    default: 25,
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

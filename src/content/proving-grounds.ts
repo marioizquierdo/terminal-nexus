@@ -295,6 +295,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     behavior: "static",
     salvage: 40,
     spawn: { contentId: "unit.bench.spawnling", intervalTicks: 50, maxAlive: 3 },
+    constructionRadius: 3,
   },
   {
     // The disposable minion both the hatchery (periodically, while alive) and the shard-giant
@@ -357,5 +358,6 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     collidesWith: STRUCTURE_COLLISIONS,
     behavior: "static",
     salvage: 24,
+    constructionRadius: 3,
   },
 ]

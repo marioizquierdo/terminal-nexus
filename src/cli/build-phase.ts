@@ -1,4 +1,5 @@
-// `terminal-nexus --build-phase` — the Build Phase's live terminal loop.
+// `terminal-nexus --at campaign?level=<id>&round=<n>` — the Build Phase's live terminal loop, opened on a
+// campaign level at one of its rounds (`./levels.ts`, `./route.ts`); PERIMETER's first unless told otherwise.
 //
 // Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
 // the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
@@ -23,8 +24,9 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { nextRound, startPulse } from "./pulse-run.ts"
-import { starterContext } from "./starter.ts"
+import { DEFAULT_LEVEL, openRound } from "./levels.ts"
+import { formatRoute } from "./route.ts"
+import type { LevelDestination } from "./route.ts"
 import type { PlaytestStep } from "../playtest/keys.ts"
 import { UNTIMED_GAP_MS, deliverStep } from "../playtest/deliver.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
@@ -41,7 +43,7 @@ const ESC = "\u001b"
 const CLEAR = `${ESC}[2J`
 
 /** The floor the resize gate is measured against: 80 x 24 is the floor and the acceptance target. */
-export const STARTER_MINIMUM = { width: 80, height: 24 } as const
+const FLOOR = { width: 80, height: 24 } as const
 
 /**
  * What an export does besides showing its text, told which export it is (`ExportKind`): the terminal
@@ -59,6 +61,12 @@ const messageOf = (error: unknown): string => (error instanceof Error ? error.me
 
 export type BuildPhaseOptions = Readonly<{
   settings: Settings
+  /**
+   * The campaign level to open and the round to open it at (`--at campaign?level=<id>&round=<n>`): the level's
+   * mission plays its rounds, and a later round is reached as a player who builds nothing reaches it
+   * (`openRound`), with this run's Experiments. PERIMETER's first round (`DEFAULT_LEVEL`) unless given.
+   */
+  at?: LevelDestination
   /** A backend name, or a backend itself (the browser playtest page's canvas). */
   backend: string | NamedBackend
   stdout: TerminalOutput
@@ -96,18 +104,23 @@ export type BuildPhaseOptions = Readonly<{
   activity?: ActivityLog
   /** Where the screen runs, as `session.start` records it: `terminal` unless the playtest page says `web`. */
   hostName?: HostName
+  /** Whether a round that opens with a scene plays it in the dialog first — PERIMETER's intro, a
+   *  Commander's return. On unless a test turns it off to start on the menu. */
+  scenes?: boolean
 }>
 
 export async function runBuildPhase(options: BuildPhaseOptions): Promise<number> {
   const { stdout, stdin } = options
 
   if (!stdout.isTTY || !stdin.isTTY) {
-    stdout.write("terminal-nexus --build-phase needs an interactive terminal.\n")
+    stdout.write("terminal-nexus needs an interactive terminal for the Build Phase.\n")
     return 0
   }
 
   const log = options.activity ?? globalActivity
-  const context = starterContext(options.scrollMargin, {
+  const at: LevelDestination = options.at ?? { kind: "level", level: DEFAULT_LEVEL, round: 1 }
+  const { play } = at.level
+  const context = openRound(at.level, at.round, options.scrollMargin, {
     settings: options.settings,
     // The Activity logs window shows the log this screen records into.
     activity: log,
@@ -118,8 +131,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       : { exportDestination: options.exporter.destination.settings, activityExportDestination: options.exporter.destination.activity }),
   })
   const terminalSize = (): { columns: number; rows: number } => ({
-    columns: stdout.columns ?? STARTER_MINIMUM.width,
-    rows: stdout.rows ?? STARTER_MINIMUM.height,
+    columns: stdout.columns ?? FLOOR.width,
+    rows: stdout.rows ?? FLOOR.height,
   })
   // The first line of a playtest's story: which screen, from which build, where, and at what size.
   let loggedSize = terminalSize()
@@ -130,6 +143,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     columns: loggedSize.columns,
     rows: loggedSize.rows,
     colours: options.settings.capability,
+    // Where this screen opened, as a route: a report's log says which round of which level it was.
+    at: formatRoute(at),
   })
 
   let layout = buildLayout(terminalSize(), context.grid)
@@ -206,9 +221,12 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     onQuit: leave,
     onSettingsChange: saveSettings,
     onExport: exportText,
-    startPulse,
+    // The level's own mission: its Pulses, the round after each, and its raid foreseen.
+    startPulse: play.startPulse,
     activity: log,
-    nextRound,
+    nextRound: play.nextRound,
+    foresee: play.foresee,
+    scenes: options.scenes ?? true,
   })
 
   // Start in a state: the script's own clock, a second between untimed steps as in a scripted
@@ -276,9 +294,10 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
         })
     const pulse = gated ? undefined : build.pulseFrame(layout)
+    const raid = gated ? undefined : build.raid()
     const frame =
       gated || live === null
-        ? gateFrame(size.columns, size.rows, STARTER_MINIMUM)
+        ? gateFrame(size.columns, size.rows, FLOOR)
         : composeBuildFrame(
             {
               // This round's: what stands on the map changes from round to round.
@@ -291,6 +310,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
               ...livePresentation(live),
               reducedMotion: settings.reducedMotion,
               ...(pulse === undefined ? {} : { pulse }),
+              ...(raid === undefined ? {} : { raid }),
             },
             settings.capability,
           )
@@ -437,7 +457,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     host.reportError(`terminal-nexus: could not save settings or the export: ${String(sideEffectError)}\n`)
   }
   if (failure !== null) {
-    host.reportError(`terminal-nexus --build-phase failed: ${String(failure)}\n`)
+    host.reportError(`terminal-nexus failed in the Build Phase: ${String(failure)}\n`)
     return 1
   }
   return 0

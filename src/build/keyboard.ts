@@ -169,6 +169,9 @@ function popupCommand(key: string, popup: Popup, context: KeyboardContext): Buil
   // A message has nothing to choose: only the cancel above closes it ("clicking outside
   // or pressing esc should close it").
   if (popup === "message") return null
+  // The dialog reads on with Enter or Space, and Esc and `x` above skip the rest. `q` opens the game menu
+  // over it, as from anywhere; every other key waits for the scene to be over.
+  if (popup === "dialog") return PLACE_KEYS.has(key) ? { kind: "dialog-next" } : key === "q" ? { kind: "open-game-menu" } : null
   const own = popupOwnKey(key, popup)
   if (own !== null) return own
   const spec = context.popupSpec ?? null
@@ -246,7 +249,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "d") return { kind: "open-settings", section: "experiments" }
   // `?` opens the Controls and hotkeys page from the game — a shortcut the page itself names.
   if (key === HELP_KEY) return { kind: "open-controls" }
-  // `s` is the Start Pulse row's key; `p`, its first key, is kept as another way to press it.
+  // `s` is the Start Battle Round row's key; `p`, its first key, is kept as another way to press it.
   if (key === START_KEY || key === "p") return { kind: "open-battle-round" }
 
   if (focus === "menu") {

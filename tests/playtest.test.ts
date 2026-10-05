@@ -33,7 +33,7 @@ test("an unknown key name fails loudly instead of becoming some other key", () =
 
 test("the owner's menu flow — Down three times, then Space four times — plans two hatcheries", () => {
   // Nexus, Explore, Barracks, Hatchery: the menu gained an Explore entry under Nexus (2026-09-27).
-  const run = runBuildPlaytest({ steps: parseKeyScript("Down*3 Space*4") })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("Down*3 Space*4") })
   assert.equal(run.frames.length, 8, "the opening screen plus one frame per key")
   const states = run.frames.map((frame) => frame.state)
   // Arming from the menu moves focus to the Grid; placing sends it back to the menu.
@@ -53,8 +53,8 @@ test("the owner's menu flow — Down three times, then Space four times — plan
 
 test("a click on a tile goes through the mouse adapter at wherever that tile is drawn", () => {
   // Pick a Nexus power (which closes its popup), arm Barracks by its digit, then click the same tile twice: the first click moves the cursor
-  // there, the second places.
-  const run = runBuildPlaytest({ steps: parseKeyScript("n 1 1 click:30,10 click:30,10") })
+  // there, the second places — south of the standing Barracks, inside the build range.
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("n 1 1 click:26,13 click:26,13") })
   const last = run.frames[run.frames.length - 1]!
   assert.equal(last.state.planned.length, 1)
   assert.match(frameToText(last.frame), /Barracks placed \(resources: 90\)/)
@@ -63,7 +63,7 @@ test("a click on a tile goes through the mouse adapter at wherever that tile is 
 
 test("leaving the screen stops the script and says how many steps were not run", () => {
   // q asks "Exit the game?" first; its own q is what leaves.
-  const run = runBuildPlaytest({ steps: parseKeyScript("Tab q q Down Down") })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("Tab q q Down Down") })
   assert.deepEqual(run.ended, { by: "quit", atStep: 3, skipped: 2 })
   assert.equal(run.frames.length, 4)
 })
@@ -89,17 +89,18 @@ test("wait is a step where nothing is pressed and time passes: a second by defau
 test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
   // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
   const plan = `${DEFENCE_KEYS} s s`
-  const run = runBuildPlaytest({ steps: parseKeyScript(`${plan} wait~1000*20`) })
+  // Quarter-second frames, so the half-second cease fire is never stepped over.
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${plan} wait~250*80`) })
   const texts = run.frames.map((frame) => frameToText(frame.frame))
-  const started = texts.findIndex((text) => text.includes("nexus pulse"))
+  const started = texts.findIndex((text) => text.includes("battle round"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus.
-  assert.match(texts[started]!, /^\| NEXUS PULSE 1 +0:09 /m)
+  assert.match(texts[started]!, /^\| BATTLE ROUND 1 +0:11 /m)
   // Centred on the Nexus's own tile (the position readout that once said so is gone).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })
   assert.equal(first.camera.y, first.cursor.y - Math.floor((first.viewport.height - 1) / 2))
-  const seen = [/^\| NEXUS PULSE /m, /The Pulse is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
+  const seen = [/^\| BATTLE ROUND /m, /The battle is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
     texts.findIndex((text) => phase.test(text)),
   )
   assert.ok(seen.every((index) => index >= 0), `a phase never appeared: ${JSON.stringify(seen)}`)

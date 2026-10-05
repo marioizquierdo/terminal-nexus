@@ -45,15 +45,17 @@ Each faction should eventually support two or three Commanders. Commanders share
 
 The differences should be smaller than the differences between factions but large enough to produce a distinct opening and one recognizable build path.
 
-**The Commander is a prominent, persistent frontline `@`** (RULE — settled; no code holds it yet), not only a portrait or menu choice. Fictionally it is a Nexus Symbol. When it dies, one full round of absence passes before it is restored. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
+**The Commander is a prominent, persistent frontline `@`** (RULE — `src/match/commander.ts`, `tests/commander.test.ts`; Vasse, at the size PERIMETER needs, is the one built), not only a portrait or menu choice. Fictionally it is a Nexus Symbol. When it dies, one full round of absence passes before it is restored. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
 
 ### 2.1 Commander Army composition
 
 **A faction is a wide pool; a Commander Army fields a few of them** (RULE — settled; no code holds it yet). In the owner's words, "the faction is like the whole pool of 'cards' and the army is like the actual deck used during a single fight." A faction defines *everything its civilization can field* — every unit, structure, upgrade, and Nexus power. A Commander Army fields **a few of them**. Nothing a match, a Pulse, or a renderer touches ever sees a faction; it sees an army. That boundary is what the rest of this section protects.
 
-**The "an army is a deck of cards" framing is retracted.** It is not GUIDANCE and not a rule; it is kept only as an **IDEA** that may or may not turn out true once the game is built and played. The army is more than a deck: it is composed of a bunch of different things, and the game has to be built and played before anyone knows what it is. What is withdrawn is the leap from "an army is a bounded subset of a faction's pools" to "therefore the whole thing behaves like a deck of cards": uniform draw odds, dilution from adding options, a single homogeneous collection. The faction/army boundary itself stands.
+**The "an army is a deck of cards" framing is retracted.** It is not GUIDANCE and not a rule; it is kept only as an **IDEA** that may or may not turn out true once the game is built and played. The army is more than a deck: it is composed of a bunch of different things, and the game has to be built and played before anyone knows what it is. What is withdrawn is the leap from "an army is a bounded subset of a faction's pools" to "therefore the whole thing behaves like a deck of cards": uniform draw odds, dilution from adding options, a single homogeneous collection. The faction/army boundary itself stands. **The owner's word for one Commander's army is her deck** ("the commander deck", 2026-10-03): the word names the package a player brings, never deck behaviour, so the retraction above stands. The code has no deck: it has cards in armies, and what a mode offers of them.
 
-**The parts list** (RULE — settled; no code holds it yet). A Commander Army is composed of these parts:
+**What is built: cards in armies, offered by a mode** (RULE — `armies/`, `src/armies/`, `tests/armies.test.ts`; the army files themselves are in [`content.md`](../system-design/content.md)). The owner, on the Commander's third round: the campaign's Commander deck and the run mode's are "similar" for the player, but "from the development side they don't have to be the same." So no deck is defined once and overridden. Buildings and Nexus powers are **cards**, each defined once in an army file — `armies/all` for those any Commander may use, a Commander's own army for hers — and each mode offers them its own way. The Campaign offers them through its levels: a level unlocks cards, and offers everything its campaign has unlocked by then, with its own credits (see the campaign as data in [`campaigns.md`](campaigns.md)). The run mode will offer the same cards through its own progression ([`game-modes.md`](game-modes.md)). Vasse's army (`armies/vasse`) holds her Commander and her campaign; the cards she is offered are `all`'s three bench buildings and two placeholder powers. Of the parts below, what is built is the Commander, the buildable structures, the Nexus powers and, per level, the starting credits; the faction pools, the tech tree, upgrades, Specials and starting units and structures (still placed by the mission) are not.
+
+**The parts list** (RULE — settled; parts of it are built, as the paragraph above says). A Commander Army is composed of these parts:
 
 1. **A Nexus and a faction.** The army belongs to one faction (two, for a Dual-bound Commander, section 2.2), anchored on the Grid by a **Grid Nexus**. This document keeps the one name, Grid Nexus, and never "Nexus Proxy".
 2. **A Commander** — the persistent `@` (section 2).
@@ -89,11 +91,11 @@ Around those sit the things that frame this composition rather than fill it: the
 - **Army breadth is a number, and a fixed one.** An army carries at most *N* army structures (tech tree nodes), *M* Nexus powers, and a small Special pool. The numbers are for the real rosters to decide — three to five structures and six to ten powers are the working guesses — but a cap is not optional: a cap is what makes a choice a choice, and what makes drafting a game rather than a menu.
 - **Rule shapes before roster breadth.** The bench finding in section 1 is an argument about where the work on real rosters spends its passes: one rule made the Ravels legible where stats alone did not. A pass that adds a rule shape is usually worth more than one that adds three more units, and an army's cap is better spent on what the faction *does differently* than on how many rows fill its menu.
 - **Legality is data validation.** An army may reference only content from its own faction's pools, within the caps, checked at load time the way every scenario field already is. The loader, not a reviewer, says whether an army is legal — which is what makes accepting a player-defined Commander safe later.
-- **Three producers, one shape, genuinely uncorrelated** (RULE — settled; no code holds it yet). A first-party authored army, a campaign's bonus goals (only for content not already unlocked, see [`campaigns.md`](campaigns.md)), and **Challenge's own progression** — playing runs unlocks more of the faction's pool directly, independent of the Campaign ([`game-modes.md`](game-modes.md)) — all add to the same `CommanderArmyDefinition` shape. The match never knows which one did, and neither mode gates the other. Challenge ships with basic Commander packages and unlocks the rest of the faction pools through its own play. The Campaign's bonus goals add a few more unlocks, only for things Challenge has not already granted: additive, never gating. Opening Challenge before the Campaign shows a dismissible recommendation, never a block. A player-built army at match start is a fourth producer of the same shape, still undesigned.
+- **Three producers, one shape, genuinely uncorrelated** (RULE — settled; the shape is built as what a level offers, `Offer` in `src/armies/types.ts`, produced by a campaign's levels; neither bonus goals nor Challenge's progression is built). A first-party authored army, a campaign's bonus goals (only for content not already unlocked, see [`campaigns.md`](campaigns.md)), and **Challenge's own progression** — playing runs unlocks more of the faction's pool directly, independent of the Campaign ([`game-modes.md`](game-modes.md)) — all add to the same `CommanderArmyDefinition` shape. The match never knows which one did, and neither mode gates the other. Challenge ships with basic Commander packages and unlocks the rest of the faction pools through its own play. The Campaign's bonus goals add a few more unlocks, only for things Challenge has not already granted: additive, never gating. Opening Challenge before the Campaign shows a dismissible recommendation, never a block. A player-built army at match start is a fourth producer of the same shape, still undesigned.
 - **Every offerable item carries `rarity`, `tier`, and `role` from the day it is authored** ([`game-modes.md`](game-modes.md)). Rarity is how often a draft offers it, tier is the earliest depth it may appear at (for a tech tree node, its depth in the tree), role is what it is for — and both modes read all three: the Campaign unlocks by tier, a run deals by rarity and varies by role. An item without tags cannot be dealt, which is the cheapest possible way to make sure nobody forgets them.
 - **Alder fits without an exception.** Their refusal is a near-empty Nexus power pool and a larger structure pool — expressed by the numbers, not by a special case in the model.
 
-The sketch below is in the same spirit as the content interfaces in [`content.md`](../system-design/content.md): names will move the first time real content touches them.
+The sketch below is in the same spirit as the content interfaces in [`content.md`](../system-design/content.md): names will move the first time real content touches them. They have, twice: the Commander's second round built a `CommanderArmy` and a mission's override of it, and the third replaced both with cards in army files and what a level offers of them (`Offer`: credits, buildings and Nexus powers, `src/armies/types.ts`).
 
 **IDEA — the faction and army schema:**
 
@@ -284,7 +286,7 @@ Each faction's signature moment (defined in [`lore.md`](lore.md)) implies a smal
 | --- | --- | --- |
 | The line holds | Citizens | Derived per-tick modifiers: bonuses computed as a pure function of the state at tick start (adjacency, alignment, overlapping arcs). Fits the narrow-hook sketch in [`content.md`](../system-design/content.md) |
 | The cascade | Ravels | Event-triggered effects: on-death area damage resolving inside the tick's Resolution step, with cascades bounded by a decreasing progress measure — the same discipline arbitration already has |
-| The second wave is larger | Glitch | Production recipes with Grid-state inputs: a producer consuming salvage tiles within a radius. A small extension of `ProductionRecipe` |
+| The second assault is larger | Glitch | Production recipes with Grid-state inputs: a producer consuming salvage tiles within a radius. A small extension of `ProductionRecipe` |
 | The shield dies standing | Feudals | Damage interception: a Resolution-step rule redirecting damage between adjacent units, deterministic under the existing tick order |
 | The Grid turns | Alder | Two capabilities: forced displacement — moves imposed on enemies, resolved through the same collision masks and tie-breaks as voluntary intents — and scheduled terrain mutation — tiles changing cost or passability at a declared tick, emitted as first-class events |
 
@@ -325,7 +327,7 @@ Identity proposals only — names, stances, and the disagreement each embodies. 
 
 ### 4.5 What a Nexus power does
 
-**A Nexus power is a name and one plain line of description** (RULE — settled; no code holds it yet). That is the whole player-facing contract; today's draft in `src/build/catalog.ts` is a stand-in list:
+**A Nexus power is a name and one plain line of description** (RULE — settled; no code holds it yet). That is the whole player-facing contract; today's draft is a stand-in list, the two placeholder powers in `armies/all/army.json`. A real one reads like this:
 
 ```text
 Factory Permit
@@ -334,7 +336,7 @@ Unlocks building: Factory
 
 The name carries the faction's voice — the Citizen Nexus issues permits, orders, and revisions; the Ravel Nexus deals scores, hauls, and rigs — and the description says what happens, in one line, in ordinary words. **There is no player-facing classification to learn.** The description just says what it does; the power types are tracked in code, under names that make sense for the code, not for the faction.
 
-**RULE — in code the effect is one of six kinds**, a small bounded union named for engineers rather than for anyone's fiction. `reveal` keeps information something a player spends a pick on rather than something the HUD gives away.
+**RULE — in code the effect is one of six kinds**, a small bounded union named for engineers rather than for anyone's fiction. `reveal` grants what the screen does not give away: in the Campaign the coming raid is shown for free — where, how many, of what, when, and what it goes for first (Q71, answered by Mario: "The enemy units should be visible without nexus powers") — so a reveal shows what that view cannot, such as the round after next, a group that arrives unannounced, or, against another Commander, a plan that is otherwise hidden.
 
 | Kind | Does | Example card |
 | --- | --- | --- |
@@ -342,10 +344,10 @@ The name carries the faction's voice — the Citizen Nexus issues permits, order
 | `spawnUnits` | places units on the Grid | *Second Shift* — "Two workers arrive at your Nexus" |
 | `modifyContent` | changes a content definition for the rest of the match | *Plate Revision* — "All troopers gain +2 integrity, including ones already fielded" |
 | `modifyRule` | changes a match rule for the rest of the match | *Roadworks* — "Your units move faster inside your own territory" |
-| `modifyCommander` | changes the Commander | *Standing Order* — "Units beside Vasse take less damage while holding position" |
-| `reveal` | grants information | *Early Warning* — "Shows where the next wave arrives, and what is in it" |
+| `modifyCommander` | changes the Commander | *Standing Order* — "By the Book reaches twice as far" |
+| `reveal` | grants information the screen does not give | *Early Warning* — "Shows the raid two rounds ahead" |
 
-Why bound the union at all, when a player never sees it: the Build Phase, the Nexus draft and the run draft each render these, and a bounded set is what lets a card, a panel, and a schema be sized before any of them is built. A seventh kind should have to argue for itself. The same reason makes `reveal` worth keeping a power: knowing what is coming is something a player *spends a pick on*, which is what keeps a hidden simultaneous plan worth hiding.
+Why bound the union at all, when a player never sees it: the Build Phase, the Nexus draft and the run draft each render these, and a bounded set is what lets a card, a panel, and a schema be sized before any of them is built. A seventh kind should have to argue for itself. `reveal` stays a power for what is genuinely hidden: a hidden simultaneous plan is still worth hiding against another Commander, while the Campaign's scripted raid, whose plan is public by design, is read for free.
 
 **RULE — a dealt Nexus power may not be skipped** (`src/build/state.ts`, which refuses the commit while a pick waits; `tests/build-nexus.test.ts`, "a waiting Nexus power refuses the commit, and nothing else"). Nexus powers are almost always strictly advantageous. Adding a card to a Slay the Spire deck dilutes the good cards; here, adding a power only adds. Unlike a typical deckbuilder's rares, a Nexus power dealt is a power gained — there is no probabilistic downside to manage, so there is no reason to let a player decline one. **Alder is the single named exception**: their faction mechanic converts a power they would otherwise take into "honor," spent elsewhere (the refusal doctrine of section 4.1, sharpened). A tutorial-level Alder campaign may lock even that choice out, the way many strategy games gate an advanced mechanic behind a difficulty or content tier rather than exposing it on day one.
 
@@ -355,7 +357,7 @@ The first real draft needs only two or three kinds for one mission; the pool ear
 
 ### 4.6 The three starting Commanders
 
-Three Commanders open the game, and a player may keep more than one campaign in progress. The shape is **two Citizens who are almost the same, plus one Ravel who is not.** Only Vasse is offered at first: **RULE — there is no upfront Commander-choice screen.** A new player starts Vasse's mission 1 directly, and completing it unlocks Averno and Dob Hunter as two more campaign rows (see the opening campaigns in [`campaigns.md`](campaigns.md)). The holder is the top-level menu, which has no Commander choice (`src/cli/menu.ts`, `TOP_LEVEL_ITEMS`; `tests/menu-campaign-screen.test.ts`).
+Three Commanders open the game, and a player may keep more than one campaign in progress. The shape is **two Citizens who are almost the same, plus one Ravel who is not.** Only Vasse is offered at first: **RULE — there is no upfront Commander-choice screen.** A new player starts Vasse's mission 1 directly, and completing it unlocks Averno and Dob Hunter as two more campaign rows (see the opening campaigns in [`campaigns.md`](campaigns.md)). The holder is the top-level menu, which has no Commander choice (`src/cli/menu.ts`, `TOP_LEVEL_ITEMS`; `tests/title-menu-campaign-screen.test.ts`).
 
 #### Edda Vasse — Citizen Nexus — Native — *the protector*
 
@@ -365,14 +367,38 @@ Three Commanders open the game, and a player may keep more than one campaign in 
 
 **Play — hold and repair.** The forgiving default: cheap defences, reversible damage, and a line drawn well worth more than a line drawn wide. Misplaying a round costs ground, not the mission. Her synergy is *repair × adjacency* — Citizens' alignment bonus already rewards unbroken orthogonal runs, and her powers make those runs **heal each other**, so geometry compounds instead of adding.
 
-**Her few, over the shared Citizen pool.**
+**Her skill: By the Book** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`; passive, always on): she and the units of her side within 3 tiles of her take a quarter less damage from every hit, rounded down but never below 1. Her buildings are not covered (*Countersigned*, below, would add them). Auras never stack. Her card says it in one line, and its strength is the By the Book Experiment while it is felt. A Commander is a hero, as in Warcraft III: "even in an autobattler they should have skills that trigger automatically or are passive" (the owner, 2026-10-04). Several of her Nexus powers below build on it.
 
-- *Mutual Support Standard* — "Structures in an unbroken line repair each other each round."
-- *Aid Station Permit* — "Unlocks building: Aid Station. Repairs adjacent units each round."
-- *Standing Order* — "Units beside Vasse take less damage while holding position."
-- *Early Warning* — "Shows where the next wave arrives, and what is in it."
+**Her Nexus powers** (IDEA — a pool for the Nexus draft step to build from; the owner, 2026-10-04, of the first two: "they are good and we need a bunch"). Each is a name and one plain line, and the line fits the Nexus popup's row at 80 × 24 (about 36 glyphs). They all act on her own side — her buildings, her units, her — never on the enemy: acting on the enemy is Averno's difference. Hers, in `armies/vasse`:
+
+| Power | Its line | Kind | Why it is hers |
+| --- | --- | --- | --- |
+| *Aid Station Permit* | "Unlocks building: Aid Station." | `unlockStructure` | The Aid Station repairs the units beside it each Battle Round: repair, placed where the line will stand |
+| *Mutual Support Standard* | "Buildings in a line mend each other." | `modifyRule` | Her synergy, repair × adjacency: geometry that compounds |
+| *Field Triage* | "Survivors come home fully repaired." | `modifyRule` | Recall heals; damage is reversible, as her doctrine promises |
+| *Plating Revision* | "Your buildings take 25% less damage." | `modifyContent` | A line drawn well is worth more than a line drawn wide |
+| *Standing Order* | "By the Book reaches twice as far." | `modifyCommander` | Her skill, wider. (It once read "Units beside Vasse take less damage while holding position", which By the Book now does by itself) |
+| *Countersigned* | "By the Book covers your buildings." | `modifyCommander` | Her skill, onto the architecture the Citizens defend |
+| *Emergency Procedure* | "Once a round, she spares one ally." | `modifyCommander` | An automatic skill: the first unit beside her that would fall each Battle Round is left standing instead |
+| *Expedited Restoration* | "Vasse is back a round sooner." | `modifyCommander` | The Nexus files her faster: her absence is shortened, which her campaign makes a question of what it costs her |
+| *Early Warning* | "Shows the raid two rounds ahead." | `reveal` | Rewritten as the answered question about the free view asked: the next raid is shown for free, so this shows the one after |
+
+And from the shared Citizen pool, in `armies/all`, which any Citizen Commander may draw and she draws too:
+
+| Power | Its line | Kind |
+| --- | --- | --- |
+| *Reserve Callup* | "Two troopers join at your Nexus." | `spawnUnits` |
+| *Drill Schedule* | "Barracks train twice as fast." | `modifyContent` |
+| *Plate Revision* | "Troopers gain +2 integrity." | `modifyContent` |
+| *Zoning Variance* | "Build two tiles farther out." | `modifyRule` (construction radius) |
+| *Outpost Permit* | "Unlocks building: Outpost." | `unlockStructure` (a building that projects territory far and does nothing else) |
+| *Roadworks* | "Faster movement in your territory." | `modifyRule` |
+
+The Nexus draft step builds two or three of these and PERIMETER deals them. Recommended for it, because they are mechanically distinct, cheap on the kernel and readable on first sight: *Reserve Callup* (units arrive), *Standing Order* (her skill, which exists, reaches further) and *Aid Station Permit* (a building to place, whose job is repair).
 
 **What she costs.** She cannot take ground. A player who only ever holds will stall the first time a mission asks them to attack — which is the lesson the second campaign exists to teach.
+
+**What is built of her** (the Commander milestone's first step): the `@` that walks out of the annex with PERIMETER's two squads, eighty health (an Experiment while it is tuned), a short-range shot from just behind the line, and the death, absence and restoration every Commander has ([`pulse.md`](../system-design/pulse.md)). Her skill, By the Book, is built (above), and so is where she goes: with the player's troops, toward the target her level names (PERIMETER's line), fighting what comes within reach ([`pulse.md`](../system-design/pulse.md), a side's target); holding a post waits. Her **voice in battle** is built, behind an Experiment: her barks are data in her army (`barks` on her Commander entry; `src/armies/barks.ts` names the moments), said at the moments of a Battle Round that matter, a few a round at most (the interface patterns, her voice in battle). They are the officer reading the regulation aloud — dry, tired, decent, inside the lore's three-to-eight-word budget — and her fall is scheduling ("Back the round after next."). By the Book's reach shows around her during a battle. None of her Nexus powers is built. Her army is built (`armies/vasse/army.json`): her Commander and her campaign, whose first level, PERIMETER, unlocks the three bench buildings and the two placeholder powers the Build Phase has always offered, all from `armies/all`. Building her and her campaign is not choosing the Citizens' roster: every building and power she is offered is still the disposable bench, and the roster, its balance and her four powers come later.
 
 #### Marshal Averno — Citizen Nexus — Native, with a leak — *the mirror*
 

@@ -8,9 +8,10 @@ import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { tilesOf } from "../src/grid/coords.ts"
-import { missionOpening, recall, resolveMissionPulse } from "../src/match/index.ts"
+import { missionOpening, recall, resolveMissionPulse, targetRegionsAt, targetsAt } from "../src/match/index.ts"
 import type { MissionPulse } from "../src/match/index.ts"
-import { MissionError, PERIMETER, validateMission } from "../src/mission/index.ts"
+import { PERIMETER } from "../src/armies/index.ts"
+import { MissionError, validateMission } from "../src/mission/index.ts"
 import type { MissionDefinition, TriggerDefinition } from "../src/mission/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { hashState } from "../src/state/serialize.ts"
@@ -70,7 +71,7 @@ const withTriggers = (triggers: readonly TriggerDefinition[], extra: Partial<Mis
 
 test("PERIMETER validates against the map it is played on", () => {
   assert.equal(validateMission(PERIMETER, grid, registry), PERIMETER)
-  assert.equal(PERIMETER.pulses, 3, "three Pulses, the raid in three waves")
+  assert.equal(PERIMETER.pulses, 3, "three Battle Rounds, the raid in each")
 })
 
 test("validation refuses every broken shape by name, and reports them all at once", () => {
@@ -86,9 +87,12 @@ test("validation refuses every broken shape by name, and reports them all at onc
     ["a tick past the Pulse", withTriggers([{ id: "t", when: { pulse: 1, tick: 360 }, do: [spawn()] }]), /tick 360, but a Pulse runs ticks 0 to 359/],
     ["a Pulse past the mission", withTriggers([{ id: "t", when: { pulse: 4, tick: 0 }, do: [spawn()] }]), /Pulse 4, but the mission has Pulses 1 to 3/],
     ["two triggers with one id", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [spawn()] }, { id: "t", when: { pulse: 2, tick: 0 }, do: [spawn()] }]), /trigger "t" is declared twice/],
-    ["an order for nobody", withTriggers([{ id: "t", when: { pulse: 1, tick: 5 }, do: [{ order: { group: "ghosts", advance: "nexus" } }] }]), /the group "ghosts", which no earlier trigger spawns/],
-    ["an order before the arrival", withTriggers([{ id: "a", when: { pulse: 2, tick: 10 }, do: [spawn({ group: "late" })] }, { id: "b", when: { pulse: 2, tick: 5 }, do: [{ order: { group: "late", advance: "nexus" } }] }]), /orders the group "late" before it arrives/],
-    ["an order the kernel cannot carry out", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [spawn({ order: { hold: "ridge" } })] }]), /the order "hold", which the kernel cannot carry out yet/],
+    ["a target nowhere", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "A", region: "moon" } }] }]), /target\) names the unknown region "moon"/],
+    ["a target with no name", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "A", region: "muster" } }] }]), /sends troops to the region "muster", which has no name for the screen to say/],
+    ["a target on rock", { ...withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "A", region: "rocky" } }] }]), regions: [...PERIMETER.regions, { id: "rocky", name: "the ridge", x: 33, y: 2, width: 2, height: 2 }] }, /region "rocky", which has rock at 33,3: a target is ground they can stand on/],
+    ["a target at an event", withTriggers([{ id: "t", when: { event: "pulse.end", pulse: 1 }, do: [{ target: { side: "A", region: "line" } }] }]), /\(target\) must happen at a moment in a Pulse/],
+    ["a target for nobody", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ target: { side: "C" as "A", region: "line" } }] }]), /\(target\) names the unknown side "C"/],
+    ["a region with an empty name", { ...PERIMETER, regions: [...PERIMETER.regions, { id: "blank", name: " ", x: 1, y: 1, width: 1, height: 1 }] }, /region "blank" has an empty name/],
     ["a plan off tick 0", withTriggers([{ id: "t", when: { pulse: 1, tick: 3 }, do: [{ commitPlan: { side: "B", structures: [{ contentId: "structure.ravel.den", anchor: { x: 46, y: 0 } }] } }] }]), /must be at tick 0 of a Pulse/],
     ["a plan off the map", withTriggers([{ id: "t", when: { pulse: 1, tick: 0 }, do: [{ commitPlan: { side: "B", structures: [{ contentId: "structure.ravel.den", anchor: { x: 95, y: 39 } }] } }] }]), /reaching off the map/],
     ["a win at a moment", withTriggers([{ id: "t", when: { pulse: 1, tick: 10 }, do: [{ win: true }] }]), /must wait for an event/],
@@ -129,7 +133,7 @@ test("a later arrival comes at its tick, with the kernel's own spawn event, and 
   assert.ok(round3 !== undefined)
   const late = round3.arrivals.filter((arrival) => arrival.tick === 96)
   assert.equal(late.length, 6, "the reserve did not all arrive")
-  assert.ok(late.every((arrival) => arrival.trigger === "wave-3-reserve" && arrival.intent === "The reserve, from the east."))
+  assert.ok(late.every((arrival) => arrival.trigger === "raid-3-reserve" && arrival.intent === "The reserve, from the east."))
   const spawned = round3.events.filter((event): event is Extract<DomainEvent, { kind: "entity.spawned" }> => event.kind === "entity.spawned" && event.tick === 96)
   assert.deepEqual(spawned.map((event) => event.ordinal), late.map((arrival) => arrival.ordinal))
   // Not there before its tick; there at it, with fresh ordinals past everything that came before.
@@ -138,7 +142,7 @@ test("a later arrival comes at its tick, with the kernel's own spawn event, and 
   assert.ok(late.every((arrival) => !before.entities.some((entity) => entity.ordinal === arrival.ordinal)))
   assert.ok(late.every((arrival) => at.entities.some((entity) => entity.ordinal === arrival.ordinal)))
   assert.ok(Math.min(...late.map((arrival) => arrival.ordinal)) >= before.nextOrdinal)
-  assert.ok(round3.fired.some((fired) => fired.trigger === "wave-3-reserve" && fired.tick === 96))
+  assert.ok(round3.fired.some((fired) => fired.trigger === "raid-3-reserve" && fired.tick === 96))
 })
 
 test("an arrival counts for victory: a side that only arrives later can still be wiped out", () => {
@@ -171,6 +175,47 @@ test("the raid's own plan reveals at its Pulse's start: the den stands in round 
   assert.deepEqual(den.anchor, { x: 46, y: 0 })
 })
 
+// --- A side's target -----------------------------------------------------------------------------------
+
+test("PERIMETER sends the player's troops to the line ahead of the base in every round, and gives the raid no target", () => {
+  const line = { x: 22, y: 7, width: 5, height: 2 }
+  assert.deepEqual(targetsAt(PERIMETER, 1, 0), { A: line })
+  for (const [index, round] of playMission(PERIMETER, STRONG).entries()) {
+    assert.deepEqual((round.states[0] as MatchState).targets, { A: line }, `round ${index + 1} opened without the line`)
+    // The kernel reads it and never changes it: the last state of the round still has it.
+    assert.deepEqual(round.final.targets, { A: line })
+  }
+  assert.equal(targetRegionsAt(PERIMETER, 3, 0).A?.name, "the line")
+  assert.equal(targetRegionsAt(PERIMETER, 3, 0).B, undefined)
+})
+
+test("a target holds round after round until another moves it, and one set between two ticks moves the troops from the next", () => {
+  const regions = [...PERIMETER.regions, { id: "front", name: "the front", x: 30, y: 8, width: 2, height: 2 }]
+  const mission: MissionDefinition = {
+    ...PERIMETER,
+    regions,
+    triggers: [...PERIMETER.triggers, { id: "forward", when: { pulse: 2, tick: 60 }, do: [{ target: { side: "A", region: "front" } }] }],
+  }
+  validateMission(mission, grid, registry)
+  const line = { x: 22, y: 7, width: 5, height: 2 }
+  const front = { x: 30, y: 8, width: 2, height: 2 }
+  assert.deepEqual(targetsAt(mission, 2, 59), { A: line })
+  assert.deepEqual(targetsAt(mission, 2, 60), { A: front })
+  assert.deepEqual(targetsAt(mission, 3, 0), { A: front }, "a target set in round 2 did not hold into round 3")
+  const round2 = playMission(mission, STRONG)[1]
+  assert.ok(round2 !== undefined)
+  assert.deepEqual((round2.states[59] as MatchState).targets, { A: line })
+  assert.deepEqual((round2.states[60] as MatchState).targets, { A: front })
+  assert.ok(round2.fired.some((fired) => fired.trigger === "forward" && fired.tick === 60))
+  // Of two at one moment, the later in the list.
+  const twice: MissionDefinition = { ...mission, triggers: [...mission.triggers, { id: "back", when: { pulse: 2, tick: 60 }, do: [{ target: { side: "A", region: "line" } }] }] }
+  assert.deepEqual(targetsAt(twice, 2, 60), { A: line })
+  // A mission that names no target leaves the state without one: it hashes as a battle before targets did.
+  const none: MissionDefinition = { ...PERIMETER, triggers: PERIMETER.triggers.filter((trigger) => trigger.id !== "post") }
+  assert.equal(targetsAt(none, 3, 0), undefined)
+  assert.ok(!("targets" in missionOpening({ mission: none, grid, registry, pulse: 1, carried: null, structures: STARTER_STANDING }).state))
+})
+
 // --- What carries from one Pulse to the next ------------------------------------------------------
 
 test("a survivor is the same unit next round: its id, its ordinal and its health carry over", () => {
@@ -184,7 +229,7 @@ test("a survivor is the same unit next round: its id, its ordinal and its health
     assert.equal(again.id, survivor.id)
     assert.equal(again.hp, survivor.hp, `${survivor.id} came back with different health`)
   }
-  // The wave that arrives is new: ordinals past everything round 1 used.
+  // The group that arrives is new: ordinals past everything round 1 used.
   assert.ok(round2.arrivals.every((arrival) => arrival.ordinal >= round1.final.nextOrdinal))
 })
 
@@ -221,7 +266,7 @@ test("a building planned where a survivor stands moves the survivor aside, and n
 
 // --- How a mission ends ---------------------------------------------------------------------------
 
-test("PERIMETER is won by holding and lost when the Nexus falls; a lost round is not a lost mission", () => {
+test("PERIMETER is won by holding and lost when the Nexus falls; a round the player's force fell in plays on, and is not a lost mission", () => {
   const strong = playMission(PERIMETER, STRONG)
   assert.equal(strong.length, 3)
   assert.deepEqual(strong.map((pulse) => pulse.verdict), [{ kind: "continue" }, { kind: "continue" }, { kind: "won", trigger: "hold" }])
@@ -229,11 +274,25 @@ test("PERIMETER is won by holding and lost when the Nexus falls; a lost round is
   const nothing = playMission(PERIMETER, NOTHING)
   assert.deepEqual(nothing.at(-1)?.verdict, { kind: "lost", trigger: "fallen" })
   assert.equal(nothing.at(-1)?.final.outcome?.reason, "nexus-destroyed")
-  // Round 2 was a lost fight — the squads wiped out — and the mission went on to round 3.
-  const round2 = nothing[1]
-  assert.ok(round2 !== undefined)
-  assert.equal(round2.final.outcome?.winner, "B")
-  assert.equal(round2.verdict.kind, "continue")
+
+  // A single trooper for squads: it falls in round 1, the Nexus stands, and the round runs to its time
+  // rather than stopping there (Mario, 2026-10-01: only the Nexus falling loses) — and the mission goes on.
+  // Without the intro, too: its lines are Vasse's, and she is not in this squad.
+  const thin: MissionDefinition = {
+    ...PERIMETER,
+    triggers: PERIMETER.triggers
+      .filter((trigger) => trigger.id !== "intro")
+      .map((trigger) =>
+        trigger.id !== "squads" ? trigger : { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] },
+      ),
+  }
+  validateMission(thin, grid, registry)
+  const [round1] = playMission(thin, NOTHING)
+  assert.ok(round1 !== undefined)
+  assert.ok(round1.events.some((event) => event.kind === "entity.died" && event.player === "A"), "the trooper never fell")
+  assert.equal(round1.final.entities.filter((entity) => entity.player === "A" && registry.get(entity.contentId).layer === "units").length, 0)
+  assert.equal(round1.final.outcome?.reason, "tick-limit")
+  assert.equal(round1.verdict.kind, "continue")
 })
 
 test("at a Pulse's end the triggers are read in list order: the first win or lose decides", () => {

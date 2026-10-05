@@ -11,6 +11,10 @@
 // It records into the Activity Logs (`src/log/activity.ts`): `session.start` once, `menu.select` for
 // every row picked, and a resize or a failure — so the browser page's log, shared across its screens,
 // shows how a playtester reached the Build Phase.
+//
+// **Its rows are routes** (`./route.ts`): each row that opens a place names the route it opens, and choosing
+// the row follows that route — the same `follow` an opening `--at settings` takes — so a route and a row can
+// never lead to two different screens.
 
 import { aboutSections } from "../title-menu/about.ts"
 import { MenuSession } from "../title-menu/session.ts"
@@ -21,7 +25,6 @@ import type { ActivityLog, HostName } from "../log/activity.ts"
 import { composeMenuFrame, MENU_LAYOUT, MENU_SIZE } from "../view/menu.ts"
 import { keysFromChunk } from "../terminal/playback.ts"
 import { gateFrame } from "../view/index.ts"
-import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
 import { chunkText } from "../view/backends/ports.ts"
@@ -30,34 +33,25 @@ import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
+import { formatRoute, parseRoute } from "./route.ts"
+import type { TitleDestination, TitlePlace } from "./route.ts"
 
 /** Five rows; a sixth, choosing a Commander upfront, was considered and rejected: a new player starts the
  *  first mission directly. About sits above Exit, so Exit's digit is 5 — the digits stay one sequence in
- *  walking order, and `q` still leaves from every title screen. */
+ *  walking order, and `q` still leaves from every title screen. Each row but Exit names the route it opens. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
-  { id: "campaign", hotkey: "1", label: "Campaign" },
+  { id: "campaign", hotkey: "1", label: "Campaign", route: "campaign" },
   // Dimmed and already saying why: the run screen hasn't landed, and a disabled item shows its
   // reason in the label a player sees before ever pressing anything, not only after.
-  { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true },
-  { id: "settings", hotkey: "3", label: "Settings" },
-  { id: "about", hotkey: "4", label: "About" },
+  { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true, route: "challenge" },
+  { id: "settings", hotkey: "3", label: "Settings", route: "settings" },
+  { id: "about", hotkey: "4", label: "About", route: "about" },
   { id: "exit", hotkey: "5", label: "Exit" },
 ]
 
 /** A screen with only words to show — Campaign's placeholder and About — has exactly one row, the way
  *  back, so Up, Down and Enter alone still leave it, as every menu must allow. */
 const BACK_ONLY_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
-
-const CAMPAIGN_PLACEHOLDER = "Campaign is not built yet - Milestone 4 adds the campaign menu."
-
-/**
- * Stub honestly rather than half-build: an option not built yet says plainly what it is waiting
- * on, rather than silently doing nothing. Settings and Campaign have real screens and need no
- * notice (Campaign's is the placeholder above) — only Challenge still shows one, on top of its label already saying why.
- */
-const STUB_NOTICES: Readonly<Record<string, string>> = {
-  challenge: "Challenge is not built yet - Milestone 11 adds the run screen.",
-}
 
 /**
  * The Settings screen's five rows, rebuilt fresh from the current values every time one changes.
@@ -117,6 +111,12 @@ export type MenuOptions = Readonly<{
   hostName?: HostName
   /** The Activity Logs this session records into: the program's own unless a test passes another. */
   activity?: ActivityLog
+  /**
+   * Where to open (`--at settings`, a title menu route): the top-level menu unless given. Opening at a place
+   * follows its route exactly as choosing the row that names it does, and leaves that row highlighted, so Esc
+   * comes back to it as it would for a player who had chosen it.
+   */
+  at?: TitleDestination
 }>
 
 type Screen = "top" | "settings" | "campaign" | "about"
@@ -128,6 +128,28 @@ const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack
   settings: { subtitle: "settings", showBack: true },
   campaign: { subtitle: "campaign", showBack: true },
   about: { subtitle: "about", showBack: true },
+}
+
+/**
+ * The screen each title menu place opens, and the line it says there. Stub honestly rather than half-build: an
+ * option not built yet says plainly what it is waiting on, rather than silently doing nothing — Campaign on a
+ * placeholder screen of its own, Challenge on the top-level menu, on top of its row's label already saying why,
+ * whether its row was chosen or its route followed.
+ */
+const PLACE_SCREENS: Readonly<Record<TitlePlace, Readonly<{ screen: Screen; notice?: string }>>> = {
+  menu: { screen: "top" },
+  campaign: { screen: "campaign", notice: "Campaign is not built yet - Milestone 4 adds the campaign menu." },
+  challenge: { screen: "top", notice: "Challenge is not built yet - Milestone 11 adds the run screen." },
+  settings: { screen: "settings" },
+  about: { screen: "about" },
+}
+
+/** The title menu place a row's route names. Every row's route is a title menu place
+ *  (`tests/route.test.ts`); a row naming any other would be a screen this loop cannot open. */
+function placeOf(route: string): TitlePlace {
+  const destination = parseRoute(route)
+  if (destination.kind !== "title") throw new Error(`a title menu row names "${route}", which is not on the title menu`)
+  return destination.place
 }
 
 
@@ -152,6 +174,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
 
   let settings = options.settings
   let screen: Screen = "top"
+  /** The line under the screen's rows: the one its place says (`PLACE_SCREENS`), until the screen changes. */
   let notice: string | null = null
   let gated = false
   let leaving = false
@@ -188,14 +211,13 @@ export async function runMenu(options: MenuOptions): Promise<number> {
 
   function render(): void {
     if (leaving) return
-    const active = sessionFor(screen)
     const info = SCREEN_INFO[screen]
     const frame = gated
       ? gateFrame(stdout.columns ?? MENU_SIZE.width, stdout.rows ?? MENU_SIZE.height, MENU_SIZE)
       : composeMenuFrame(
           {
-            state: active.state,
-            notice: screen === "top" ? notice : screen === "campaign" ? CAMPAIGN_PLACEHOLDER : null,
+            state: sessions[screen].state,
+            notice,
             glyphPack: settings.glyphPack,
             subtitle: info.subtitle,
             showBack: info.showBack,
@@ -212,18 +234,18 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     }
   }
 
-  function goTo(next: Screen): void {
-    screen = next
-    render()
+  /** Where a title menu route leads: the one way a chosen row and an opening `--at` both change screen. Draws
+   *  nothing; the caller does once it has finished. */
+  function follow(place: TitlePlace): void {
+    const opens = PLACE_SCREENS[place]
+    screen = opens.screen
+    notice = opens.notice ?? null
   }
 
-  /** Which session is listening on the current screen — the one place this switches, so a caller
-   *  juggling more than one screen (`onData` below) never repeats the same branch. */
-  function sessionFor(current: Screen): MenuSession {
-    if (current === "top") return topMenu
-    if (current === "settings") return settingsMenu
-    if (current === "about") return aboutMenu
-    return campaignMenu
+  /** Back to the top-level menu, from a screen's Back row or Esc: the menu's own route, followed. */
+  function back(): void {
+    follow("menu")
+    render()
   }
 
   /** A screen's own row handler, with the pick recorded first (`menu.select`) — first, so a row that
@@ -231,56 +253,38 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   const picked =
     (on: Screen, act: (item: MenuItem) => void) =>
     (item: MenuItem): void => {
-      record.log("menu.select", { screen: on, item: item.id })
+      record.log("menu.select", { screen: on, item: item.id, ...(item.route === undefined ? {} : { route: item.route }) })
       act(item)
     }
 
   const topMenu = new MenuSession({
     items: TOP_LEVEL_ITEMS,
     onActivate: picked("top", (item) => {
-      if (item.id === "exit") {
-        leave()
+      if (item.route !== undefined) {
+        // Challenge too: a dimmed, disabled row that already says why in its own label, still activatable
+        // (`input.md`: a displayed hotkey always works), whose route shows the fuller notice.
+        follow(placeOf(item.route))
+        render()
         return
       }
-      if (item.id === "settings" || item.id === "campaign" || item.id === "about") {
-        notice = null
-        goTo(item.id)
-        return
-      }
-      // Only Challenge reaches here now — a dimmed, disabled row that already says why in its own
-      // label, still activatable (`input.md`: a displayed hotkey always works), still showing the
-      // fuller notice.
-      notice = STUB_NOTICES[item.id] ?? null
-      render()
+      // Exit, the one row that opens no place.
+      if (item.id === "exit") leave()
     }),
     onQuit: leave,
   })
 
-  const campaignMenu = new MenuSession({
-    items: BACK_ONLY_ITEMS,
-    onActivate: picked("campaign", (item) => {
-      if (item.id === "back") goTo("top")
-    }),
-    onQuit: leave,
-    onBack: () => goTo("top"),
-  })
+  /** A screen with only words to show: its one row, Back, and Esc both go back to the top-level menu. */
+  const wordsOnly = (on: Screen): MenuSession =>
+    new MenuSession({ items: BACK_ONLY_ITEMS, onActivate: picked(on, back), onQuit: leave, onBack: back })
 
   // The About screen's words never change while it runs; only the build it names comes from outside.
   const about = aboutSections(options.buildId)
-  const aboutMenu = new MenuSession({
-    items: BACK_ONLY_ITEMS,
-    onActivate: picked("about", (item) => {
-      if (item.id === "back") goTo("top")
-    }),
-    onQuit: leave,
-    onBack: () => goTo("top"),
-  })
 
   const settingsMenu = new MenuSession({
     items: settingsItems(settings),
     onActivate: picked("settings", (item) => {
       if (item.id === "back") {
-        goTo("top")
+        back()
         return
       }
       settings = withNextValue(settings, item.id)
@@ -299,8 +303,17 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       render()
     }),
     onQuit: leave,
-    onBack: () => goTo("top"),
+    onBack: back,
   })
+
+  /** Which session listens on each screen — the one place this is said, so a caller juggling more than one
+   *  screen (`onData` below) never repeats the same branch. */
+  const sessions: Readonly<Record<Screen, MenuSession>> = {
+    top: topMenu,
+    settings: settingsMenu,
+    campaign: wordsOnly("campaign"),
+    about: wordsOnly("about"),
+  }
 
   /** Below the 80 x 24 floor the too-small frame stands in for the menu. */
   function fitToTerminal(): void {
@@ -330,7 +343,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     // player can no longer see.
     for (const key of keysFromChunk(chunkText(data))) {
       if (leaving) break
-      sessionFor(screen).handleKey(key, MENU_LAYOUT)
+      sessions[screen].handleKey(key, MENU_LAYOUT)
     }
     render()
   }
@@ -350,6 +363,15 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   session.onDispose(() => pendingSave)
   session.onDispose(() => backend.stop())
 
+  // Opening at a route: the row that names it highlighted, as a player who chose it would leave it, and its
+  // route followed. Not a pick, so not recorded as one: nobody chose it on this screen.
+  if (options.at !== undefined) {
+    const place = options.at.place
+    const row = TOP_LEVEL_ITEMS.findIndex((item) => item.route !== undefined && placeOf(item.route) === place)
+    if (row >= 0) topMenu.dispatch({ kind: "highlight", index: row })
+    follow(place)
+  }
+
   record.log("session.start", {
     screen: "menu",
     ...(options.buildId === undefined ? {} : { build: options.buildId }),
@@ -357,6 +379,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     columns: stdout.columns ?? null,
     rows: stdout.rows ?? null,
     colours: settings.capability,
+    ...(options.at === undefined ? {} : { at: formatRoute(options.at) }),
   })
 
   try {
@@ -393,5 +416,3 @@ export async function runMenu(options: MenuOptions): Promise<number> {
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
-
-export { AnsiBackend }

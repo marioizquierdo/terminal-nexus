@@ -83,6 +83,46 @@ then measures an orbit rather than a route.
   corridor.
 - Answers to Q5 and Q7 in [`open-questions.md`](open-questions.md), earned rather than assumed.
 
+## The Pulse screen (Mario, 2026-10-01)
+
+After playing PERIMETER across three rounds Mario named what the Pulse screen lacks, and said it can wait for
+the right time ([his words](../history/feedback/2026-10-01-multi-pulse.md)). It is interface work, which he
+puts before any level's balance:
+
+- **Look at units during a Pulse.** "I should be able to hover over units and see their details, same as with
+  the Explore feature": pointing at a unit while a Pulse plays (the mouse, or a cursor the keyboard moves)
+  shows the card Explore Map shows in the Build Phase. Playback stays read-only.
+- **Fewer numbers.** "The pulse doesn't need to track that many stats": today the panel shows, for each side,
+  a count of units, a health bar and a health total, and a feed line for every shot and death. Keep what a
+  player reads in a fight; drop the rest.
+
+His third note, how many enemies are coming, is built: the Build Phase shows the coming raid, its count and
+what each group goes for first (the Commander's second round).
+
+## Intent, the next iteration (Mario, 2026-10-04)
+
+The raid's intent is built (a trail to each group's first target, the target marked, the panel's summary), and
+Mario liked it; the next pass is his ([his words](../history/feedback/2026-10-04-commander-round-3.md)):
+
+- **Your own units' targets.** "Your units should also have a clear target to property be an auto-battler":
+  show what each of the player's groups goes for first. The prediction already has it: the first kernel tick
+  the raid's forecast runs (`src/match/intent.ts`) chooses a target for every unit on both sides.
+- **Intent that does not look like a tower defence.** "We will iterate more about how to show intent without
+  lookong like a tower defense game": lanes of arrows read as a tower defence. Ideas to try, each an Experiment:
+  a mark on what each side hits first and no trail; a trail only for the group under the cursor; where two
+  groups will first meet; the card saying what a unit goes for, either side.
+
+## Posts for your squads (Mario, 2026-10-04)
+
+A post is a place a group of the player's troops holds, rather than the level's target they head for. Mario
+liked the idea and put it after placement ([his words](../history/feedback/2026-10-04-commander-round-4.md)):
+"maybe this can be an experiment, perhaps that is a type of building. But before we start playing with posts,
+I would like to go deep on the simple building placement first." What exists to build it on: a level names the
+target the player's troops head for, and they stand there when nothing is in reach (the order "head for a
+place" is built; "hold" is the half of that open question still waiting). Two shapes to try, each an
+Experiment: a post as a building (a flag placed in territory that the nearest squad holds), or a post as an
+order given to a group from the Build Phase.
+
 ## Decisions fine to leave open for now
 
 Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with
@@ -95,7 +135,7 @@ genuinely fine to leave unanswered until the project reaches them.
 - drafting modes and player-defined Commanders: designed only when a milestone wants them;
 - the army-breadth caps (structures and tech tree depth, Nexus powers, Specials) and the size of the hand each Build Phase deals;
 - the run's exact numbers (battles, acts, offer size, tier schedule), difficulty ladders, daily seeds and leaderboards ([`game-modes.md`](../game-design/game-modes.md)), retuned by Milestone 11 on runs actually played;
-- radius metric, same-plan chaining, and hidden reveal conflicts;
+- hidden reveal conflicts, and building inside enemy coverage;
 - equal-tick mutual Nexus destruction;
 - exact Nexus draft timing and research stacking;
 - scoring and long-term skirmish progression;

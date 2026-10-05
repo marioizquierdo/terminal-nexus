@@ -1,5 +1,5 @@
 // The loop: after a round's result, the next round's Build Phase — on what Recall left, with the
-// credits not spent and the next wave shown as incoming — until the mission's triggers end it. Played on
+// credits not spent and the next round's raid shown as incoming — until the mission's triggers end it. Played on
 // the game's own mission, PERIMETER, through the real session and the shell's `startPulse` and
 // `nextRound`, by keyboard, mouse and driver alike.
 
@@ -11,6 +11,10 @@ import { remaining } from "../src/build/state.ts"
 import type { BuildCommand } from "../src/build/types.ts"
 import { nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { TUNING } from "../src/build/tuning.ts"
+import { isSettingName } from "../src/build/all-settings.ts"
+import { defaultExperiments } from "../src/build/experiments.ts"
+import { parseSettingsExport } from "../src/build/settings-export.ts"
+import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { buildSide, clickCell, keys, screenText } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
@@ -66,7 +70,7 @@ test("after a round's result, Enter opens the next round's Build Phase on what t
   }
   assert.equal(round.allotment, credits)
   assert.equal(state.nexusPick, null)
-  // The survivors are on the map; the next wave is shown as incoming, with what it means to do.
+  // The survivors are on the map; the next round's raid is shown as incoming, with what it means to do.
   assert.ok((round.field ?? []).some((entity) => entity.player === "A"), "no survivor of yours on the map")
   assert.ok((round.incoming ?? []).length > 0 && (round.incoming ?? []).every((entity) => entity.player === "B"))
   assert.ok((round.incoming ?? []).some((entity) => entity.intent === "Break through at the ridge."))
@@ -104,8 +108,10 @@ test("Enter, Space, n, a click on the row and the driver's command all open the 
 })
 
 test("the Barracks trains during the round: round 2 opens with its troopers at home beside it, and the log says so", () => {
+  // Nothing built, so the probe lasts past the first trooper (ten seconds in): two Turrets and Vasse end
+  // round 1 before it.
   const side = perimeter()
-  startRound(side, DEFENCE)
+  startRound(side)
   const trained = side.build.pulse!.resolved.timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined)
   assert.ok(trained.length > 0, "the Barracks trained nothing in round 1")
   toResult(side)
@@ -173,7 +179,7 @@ test("round 2's Battle Round screen is Battle Round 2, in the mission's own word
   assert.match(text, /Battle Round 2/)
   assert.match(text, /They are back, and there are more\./)
   side.build.dispatch({ kind: "start-pulse" })
-  assert.match(screenText(side), /NEXUS PULSE 2/)
+  assert.match(screenText(side), /BATTLE ROUND 2/)
 })
 
 test("Next round on auto: the next Build Phase begins on its own a moment after the result, and waits for no key", () => {
@@ -200,7 +206,7 @@ test("Next round on auto: the next Build Phase begins on its own a moment after 
   assert.equal(standing.busyUntil(standing.times.homeMs + 10_000), null)
 })
 
-test("the incoming wave: drawn see-through where it will arrive, its intention on the card, hidden by the Experiment", () => {
+test("the incoming raid: drawn where it will arrive, its intention on the card, and always shown", () => {
   const side = perimeter()
   const raider = (side.build.round.incoming ?? []).find((entity) => entity.player === "B")
   assert.ok(raider !== undefined, "PERIMETER's first round shows nothing incoming")
@@ -211,10 +217,10 @@ test("the incoming wave: drawn see-through where it will arrive, its intention o
   assert.match(shown, /Probe the line at the/)
   assert.match(shown, /as the round starts/)
 
-  side.build.dispatch({ kind: "experiment-adjust", field: "incoming", step: 1 })
-  assert.equal(side.build.state.experiments.incoming, "hidden")
-  const hidden = screenText(side)
-  assert.doesNotMatch(hidden, /Probe the line/)
-  assert.doesNotMatch(hidden, /as the round starts/)
-  assert.match(hidden, /Open ground|Deposit|Rock/)
+  // The owner settled the Experiment that could hide it ("the enemy units should be visible"): nothing in
+  // Settings hides the raid now, and an older export that hid it is read without a word.
+  assert.equal(isSettingName("incoming"), false)
+  const old = parseSettingsExport("incoming = hidden", { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
+  assert.deepEqual(old.settled, ["incoming"])
+  assert.deepEqual(old.ignored, [])
 })

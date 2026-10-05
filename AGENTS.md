@@ -39,7 +39,7 @@ If that is empty too, say so and stop; never start the next step to fill the tim
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) is the practices manual: the toolchain, the tests, how to see a
 change, how milestones and spikes work, the feedback loop with Mario, how a design change lands. The
-project's own words (Nexus Pulse, round, mission, wave, Recall, Experiment, starter map, bench roster)
+project's own words (Nexus Pulse, Battle Round, mission, group, Recall, Experiment, starter map, bench roster, army file)
 are defined once, in the engine overview's [vocabulary](docs/system-design/grid-engine.md).
 
 ## How we work
@@ -95,6 +95,7 @@ IDEA (a sketch). The ones every session needs:
 | Path | What it is |
 | --- | --- |
 | `src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/` | The deterministic kernel. |
+| `armies/`, `src/armies/` | Armies as data: `armies/all` (the cards any Commander may use) and `armies/vasse` (her Commander and her campaign, its levels and what each unlocks), and their loader. |
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format and the checked-in maps. |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, Recall, missions and their trigger runner. |

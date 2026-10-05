@@ -64,8 +64,8 @@ Phase, Pulse playback) handed a stand-in terminal: it converts frames to pixels,
 terminal bytes, and settings to browser storage, and decides nothing about what the game shows or
 does. A terminal at 80 × 24 stays the acceptance target; the page never is one. Tools **around** the
 screen are the page's to add because they serve the feedback loop (see [`ui-patterns.md`](ui-patterns.md)):
-text boxes holding the settings and Activity Logs exports, and demo buttons that start the Build Phase from
-a key script with given settings. The game's own screen and behaviour stay the terminal's. What a host
+text boxes holding the settings and Activity Logs exports, and demo buttons that open the game at a
+route ([`routing.md`](routing.md)), from a key script with given settings. The game's own screen and behaviour stay the terminal's. What a host
 would have to provide to run the game elsewhere is in [`portability.md`](portability.md).
 
 ## 4. Logs

@@ -54,6 +54,7 @@ export type HintSituation =
   | "message"
   | "controls"
   | "activity-logs"
+  | "dialog"
   | "committed"
   | "menu-mouse"
   | "menu-explore"
@@ -75,6 +76,7 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "controls":
     case "activity-logs":
     case "game-menu":
+    case "dialog":
       return state.popup
     default:
       break
@@ -135,6 +137,13 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   message: () => "Read it, then [esc] or a click outside closes it.",
   controls: (_context, state) => `Every key and click, by where you are. Up/down scroll. ${escBack(state)}`,
   "activity-logs": (_context, state) => `Left/right change the filter, [e] exports, up/down read. ${escBack(state)}`,
+  // The dialog's two keys, and how far through the scene it is.
+  dialog: (context, state) => {
+    const of = context.scene?.length ?? 0
+    const line = (state.dialog?.line ?? 0) + 1
+    if (of <= 1) return "[enter] or [esc] closes it."
+    return line < of ? `Line ${line} of ${of}. [enter] next line, [esc] skips the rest.` : `Line ${line} of ${of}. [enter] or [esc] closes it.`
+  },
 
   // --- A committed plan with no Pulse on screen (a Pulse says its own line) ---
   committed: () => "The plan is locked in. [esc] opens the menu.",
@@ -157,8 +166,8 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   },
   "menu-start": (context, state) =>
     pendingPicks(context, state) > 0
-      ? "Start Pulse: pick a Nexus power first - [n] opens them."
-      : `Start Pulse: lock in your plan and fight battle round ${state.pulseNumber}. [enter] to begin.`,
+      ? "Start Battle Round: pick a Nexus power first - [n] opens them."
+      : `Start Battle Round ${state.pulseNumber}: lock in your plan and fight. [enter] to begin.`,
 
   // --- The map ---
   // Its own key cancels it, as Esc does; another building waits until it is placed or
@@ -203,6 +212,9 @@ export function commandAnswer(state: BuildState, preview: ArmedPreview | null): 
  * instead (`pulseStatus`), unless a popup over it holds the keyboard.
  */
 export function bottomLine(context: BuildContext, state: BuildState, preview: ArmedPreview | null): StatusMessage {
+  // The dialog names its two keys while it is open; the answer the round opened with waits under it, and is
+  // the line again once the scene is over.
+  if (state.popup === "dialog") return hint(context, state)
   const answer = commandAnswer(state, preview)
   return answer.text === "" ? hint(context, state) : answer
 }
@@ -238,7 +250,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
         { keys: "1 2 3 ...", text: "arm a building, anywhere" },
         { keys: "e", text: "Explore Map" },
         { keys: "n", text: "the Nexus powers" },
-        { keys: "s", text: "Start Pulse (p works too)" },
+        { keys: "s", text: "Start Battle Round (or p)" },
         { keys: "u", text: "undo the last building" },
         { keys: "tab", text: "go to the map" },
         { keys: "esc", text: "the game menu" },
@@ -288,6 +300,15 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       ],
     },
     {
+      // The dialog at the bottom of the map, as a round opens with a scene.
+      heading: "THE DIALOG",
+      lines: [
+        { keys: "enter/space", text: "the next line" },
+        { keys: "click", text: "the next line, anywhere" },
+        { keys: "esc/x", text: "skip the rest" },
+      ],
+    },
+    {
       heading: "ANY LIST",
       lines: [
         { keys: "up/down", text: "a row; stops at the ends" },
@@ -311,7 +332,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       ],
     },
     {
-      heading: "THE NEXUS PULSE",
+      heading: "THE BATTLE ROUND",
       lines: [
         { keys: "space", text: "pause or resume" },
         { keys: "[ and ]", text: "slower, faster" },

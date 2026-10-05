@@ -75,13 +75,32 @@ instant. A renderer that leaves the terminal in raw mode is a reason to reject i
 
 ### Keyboard, mouse and driver parity
 
-RULE — `tests/menu-adapters.test.ts`, `tests/key-events.test.ts`, `tests/playtest.test.ts`,
+RULE — `tests/title-menu-adapters.test.ts`, `tests/key-events.test.ts`, `tests/playtest.test.ts`,
 `tests/build-motion.test.ts`. Keyboard, mouse and the scripted driver must reach the identical named
 command from *raw input*: every case starts from a byte or an SGR mouse sequence, never a hand-built
 command, and mouse coordinates come from the same layout functions the composer draws with. The same
 intent as timed presses and as press, repeat and release events lands on the same tile. A script's key
 names map to the exact bytes a terminal sends, an unknown name fails loudly, and a click goes through
 the mouse adapter wherever the tile is drawn.
+
+### Armies load whole or are refused whole
+
+RULE — `tests/armies.test.ts`, `tests/levels.test.ts`. The shipped armies load, and a broken one is refused
+with every problem at once, each naming where: a card, a Commander or an unlock from an army it does not
+require, a content id that does not exist, a duplicate id, an unlock an earlier level already gave, a mission
+with a bad shape. What a level offers adds up level by level in the order first unlocked, and is what its
+Build Phase offers: the menu, the credits and the Nexus draft. PERIMETER and the cadence level are pinned by
+a hash of each, so moving them into data changed nothing they play ([`content.md`](content.md)).
+
+### Every route opens where it says
+
+RULE — `tests/route.test.ts`, `tests/route-open.test.ts`. Each route parses to its place or is refused
+with every problem at once; each title menu place opens through the title menu's loop and each level at
+each round through the Build Phase's, on a stand-in terminal; a row and its route draw the same frame; a
+route to round 2 is the screen the keys reach ([`routing.md`](routing.md)). A route, a settings text and a
+key script are read as one launch, once, for the game, the scripted playtest, the page's address and a demo:
+what cannot be read is said part by part and left out, a route that is not a place opens the host's own
+start, and every launch part reaches the game's argument parser as an option (RULE — `tests/launch.test.ts`).
 
 ### The browser page held to the terminal
 

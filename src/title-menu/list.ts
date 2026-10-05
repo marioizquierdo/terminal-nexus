@@ -52,7 +52,5 @@ export function applyMenuCommand(state: MenuListState, command: MenuCommand): Me
     case "quit":
     case "back":
       return { state, activated: null }
-    default:
-      return { state, activated: null }
   }
 }

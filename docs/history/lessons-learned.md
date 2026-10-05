@@ -187,6 +187,89 @@ than any one feature:
    the filters by position; a new first filter broke them all. The question's filter went last instead,
    one Left from where the window opens.
 
+## The Commander (2026-10-01)
+
+1. **A new unit on a fixture side moves every outcome, so measure the mission before and after.** Adding
+   Vasse to PERIMETER's squads let a plan that built nothing win (through the old annihilation rule), ended
+   round 1 before the Barracks's first trooper, and, listed last rather than first, moved every squad
+   member's starting tile and had her fall behind every Turret plan. Each was found by playing the mission
+   round by round across a few plans and her numbers, not by the tests that failed.
+2. **A decided rule a new feature leans on goes first, in its own commit.** Mario had just answered that only
+   the Nexus falling loses a round, and asked for it later. The Commander made the old rule decide the
+   mission, so the rule was built first, alone, green on its own, and the Commander built on top of it: the
+   history says which change moved which outcome.
+3. **A test that samples a Pulse in steps can step over a short phase.** One-second steps happened to land in
+   the half-second cease fire until round 1's length moved. Sample at a fraction of the shortest phase you
+   assert on.
+4. **Measure again before the pull request repeats a claim.** The report's outcome table shortened two rows to
+   "held", and a fixture's comment carried the milestone's hope (PERIMETER does not force her death) as a
+   fact. Measured again for the description, she falls in the last round of every plan at every health. A
+   hope from the plan is not a result until a run says so.
+
+## The Commander's second round (2026-10-03)
+
+1. **A trail must be the way the kernel walks, not a straight line.** The first trail ran straight from the
+   ridge to the Barracks, across rock the raid walks round; units step greedily toward their target and can
+   stand pressed against a ridge face. The trail is now the kernel's own steps, from the unit whose walk
+   arrives, and shows the raid pressing on the ridge when none gets through.
+2. **A screen that opens something by itself changes every test that starts there.** PERIMETER's intro would
+   have taken the first keys of every round-1 test and key script. The session decides whether scenes play
+   (on in the game, the browser page and the playtest; off for a session a test builds, unless asked), so the
+   tests kept their meaning and only the documented key scripts gained an `Esc`.
+3. **Parallel workers collide in the files they share, not the ones they own.** The session's options, the
+   composition's input and the round loop each took additions from both sides; naming in each prompt which
+   hunks the other worker would add kept every conflict a keep-both, resolved in minutes.
+
+## The Commander's third round (2026-10-04)
+
+1. **Write the seam before splitting the work.** Routes and bundles both needed "a level by id, opened at a
+   round". Building that one small module first (`src/cli/levels.ts`, with its tests) and naming it in both
+   prompts let the two workers build on it at once without touching each other's files.
+2. **An address part can hold `&` and `=` of its own.** The browser page once read `#settings=` up to the
+   next `&`, which a route's query or a settings text in `a=1&b=2` form would cut in half. A part now runs
+   to the next part the page knows (`&at=`, `&settings=`, `&keys=`), so links are written as plainly as a
+   command line (`src/web/address.ts`).
+3. **The browser page's sandbox has only the language's own builtins.** The bundle loader first froze a
+   `structuredClone` of what it read; the page's sandbox test, which runs the bundled code with no host
+   features, failed on it. It now copies by hand. A pure module that may reach the page uses the language,
+   not the host.
+4. **Data that names code can force code to move.** The bundles name the starter map, and the catalog now
+   reads the bundles, so the map could no longer live in the catalog without a circular import; it moved to
+   `src/build/maps.ts`, re-exported where it was, and no importer changed.
+
+## The Commander's fourth round (2026-10-04)
+
+1. **A new placement rule moves every test that places a building.** Construction territory refused dozens of
+   placements chosen years of rounds ago for the camera's convenience. Pin a placement to what it means (inside
+   the range, beside the Barracks), not to a coordinate, and the next rule moves fewer of them.
+2. **Two checks for one invariant leave a loophole between them.** Removal was first checked with "still
+   linked", placement with "inside the range": a stepping-stone building could be placed, built past, then
+   removed. Check the invariant you mean (the plan could still be placed, a building at a time).
+3. **A faint wash is invisible at 16 colours, the player's default, and in monochrome.** An area needs a glyph
+   at every depth: the build range is the ground's own dots, the wash only adds light where colours blend.
+4. **Do the renames before the split.** Renaming bundles to armies and removing a word from the game touched
+   forty files; done first, on its own commit, it cost four agents nothing.
+5. **A label that follows a moving unit tile by tile cannot be read.** When presentation knows the future (a
+   resolved Pulse), choose a label's place once from everything it will be shown over, and hold it still.
+6. **A see-through wash over a glyph changes its hue at 256 colours.** An area's wash belongs on the ground's
+   band, under what stands.
+7. **A planner that knows the future plans every line around a cut-in**, so nothing is ever cut in on; let a
+   line being read give way, once it has been on screen long enough to read.
+8. **Two rules that change a fight are measured together.** The aura alone let a plan that builds nothing
+   hold PERIMETER; the troops' target alone made a lone Hatchery or Barracks lose. Measured together, the level
+   kept its shape. One agent built both and re-measured once, which also kept the hash pins moving once.
+9. **To compare a page before and after a refactor, freeze its clock.** A breathing dialog or a playing Pulse
+   draws a different frame every time it is looked at; with `Date.now` and `performance.now` pinned before the
+   page loads, every opening is the same frame run to run.
+10. **A negative zero in a coordinate slows every frame.** `-across` at a diamond's tip, or `-1 * 0` for a
+    spark that has not moved, is `-0`, which V8 cannot keep as a small integer. One stored in an `{ x, y }`
+    makes V8 store that field as a double in every object of that shape from then on, and every cell drawn
+    after it pays to convert: the build range's diamond made the Build Phase frame a third dearer, and CI's
+    busier machine ran it past the 16 ms frame (the sparks had cost main a little all along). Count tiles in
+    their own coordinates (`centre.x - across` to `centre.x + across`), never as offsets that can be `-0`, and
+    `| 0` a product that can be. `node --no-sparkplug --trace-generalization` names the store that did it;
+    `--trace-migration` counts what it costs.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

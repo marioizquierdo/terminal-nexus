@@ -45,6 +45,9 @@ const SETTLED_CHOICES = [
   "fastRecentres",
   "endCentre",
   "redAlerts",
+  // The incoming raid: the next round's raid is always shown, with what it goes for first (the owner, after
+  // the Commander's pull request: "the enemy units should be visible without nexus powers").
+  "incoming",
 ] as const
 
 /** Tuned values since retired, because the rule they tuned is gone: the held-key ramp's hold step,
@@ -54,7 +57,7 @@ const SETTLED_CHOICES = [
 const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
 
 /** Experiments retired because what they chose became a mission's data: the placeholder Pulse's Raid and
- *  Your units, replaced by PERIMETER's waves and starting squads (`src/mission/perimeter.ts`). */
+ *  Your units, replaced by PERIMETER's raid and starting squads (`armies/vasse/army.json`). */
 const RETIRED_EXPERIMENTS = ["raid", "crew"] as const
 
 /**

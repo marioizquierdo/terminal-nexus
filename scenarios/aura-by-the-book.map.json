@@ -1,0 +1,70 @@
+{
+  "id": "aura-by-the-book",
+  "name": "By the Book: the units near Vasse take less damage",
+  "notes": "A Commander's aura, Vasse's By the Book. Two troopers each meet a raider at the same moment: the one beside Vasse is within its reach and takes three quarters of every hit (eight of a raider's eleven, seven of its blast's ten), and so does she; the one five tiles from her takes all of it and falls first. Her own shots land on the near raider too; the rest of the difference between the two fights is the aura.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40991,
+  "pulseTicks": 360,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 6,
+        "y": 4
+      },
+      "rows": [
+        "vt",
+        "",
+        "",
+        "",
+        " t"
+      ],
+      "legend": {
+        "v": {
+          "content": "unit.citizen.vasse"
+        },
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 9,
+        "y": 4
+      },
+      "rows": [
+        "r",
+        "",
+        "",
+        "",
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.ravel.raider"
+        }
+      }
+    }
+  }
+}

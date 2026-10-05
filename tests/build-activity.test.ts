@@ -588,7 +588,7 @@ test("a session given no log of its own records into the game's global one", asy
 // --- A scripted playtest ----------------------------------------------------------------------------
 
 test("a scripted playtest records on the script's own clock, and its window shows that log", () => {
-  const run = runBuildPlaytest({ steps: parseKeyScript("1 Enter Esc a") })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") })
   const placedEntry = run.activity.entries().find((entry) => entry.event === "build.placed")
   // The second step, a second after the first: the time is the step's, the same on every run.
   assert.equal(placedEntry?.time, 2000)
@@ -596,7 +596,7 @@ test("a scripted playtest records on the script's own clock, and its window show
   const last = run.frames[run.frames.length - 1]
   assert.equal(last?.state.popup, "activity-logs")
   assert.ok(frameToText(last?.frame ?? compose(buildSide())).includes("00:02.000 info  build.placed building=Ba"))
-  assert.deepEqual(runBuildPlaytest({ steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
+  assert.deepEqual(runBuildPlaytest({ scenes: false, steps: parseKeyScript("1 Enter Esc a") }).activity.entries(), run.activity.entries())
 })
 
 // --- The live screen --------------------------------------------------------------------------------
@@ -651,7 +651,15 @@ test("the live screen records where it started, and hands an Activity Logs expor
   await new Promise((resolve) => setTimeout(resolve, 30))
   const [start] = log.entries()
   assert.equal(start?.event, "session.start")
-  assert.deepEqual(start?.props, { screen: "build", build: "abc1234", host: "terminal", columns: 80, rows: 24, colours: "monochrome" })
+  assert.deepEqual(start?.props, {
+    screen: "build",
+    build: "abc1234",
+    host: "terminal",
+    columns: 80,
+    rows: 24,
+    colours: "monochrome",
+    at: "campaign?level=vasse-test-1",
+  })
   const resized = log.entries().filter((entry) => entry.event === "session.resize")
   assert.deepEqual(resized.map((entry) => entry.props), [{ columns: 104, rows: 32 }])
   assert.deepEqual(exported.map((entry) => entry.kind), ["activity"])

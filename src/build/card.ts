@@ -16,7 +16,8 @@ import type { Coord, TerrainId } from "../grid/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { CardText } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { structureAtTile } from "./state.ts"
+import { buildRange, structureAtTile } from "./state.ts"
+import { constructionRadiusOf } from "./territory.ts"
 
 /** What a card's icon is: a thing's own glyphs, or a bare tile's. The view resolves either to glyphs. */
 export type CardIcon =
@@ -56,21 +57,32 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
     return item === undefined ? null : entityCard(context, item.contentId, state)
   }
   const structure = structureAtTile(context, state.planned, state.cursor)
-  if (structure !== null) return entityCard(context, structure.contentId, state)
+  if (structure !== null) {
+    const card = entityCard(context, structure.contentId, state)
+    return linkedHere(context, state, structure) ? card : { ...card, stats: card.stats.map((stat) => (stat.label === BUILD_RANGE ? { ...stat, value: "cut off" } : stat)) }
+  }
   const field = (context.field ?? []).find((entity) => covers(context, entity, state.cursor))
-  if (field !== undefined) return fieldCard(context, field)
-  const incoming = setting(state, "incoming") === "shown" ? (context.incoming ?? []).find((entity) => covers(context, entity, state.cursor)) : undefined
-  if (incoming !== undefined) return incomingCard(context, incoming)
+  if (field !== undefined) return fieldCard(context, field, state)
+  const incoming = (context.incoming ?? []).find((entity) => covers(context, entity, state.cursor))
+  if (incoming !== undefined) return incomingCard(context, incoming, state)
   return groundCard(context, state.cursor)
 }
 
 const covers = (context: Pick<BuildContext, "registry">, entity: Readonly<{ contentId: string; anchor: Coord }>, tile: Coord): boolean =>
   tilesOf(entity.anchor, context.registry.get(entity.contentId).footprint).some((t) => t.x === tile.x && t.y === tile.y)
 
-/** A thing's health and attack, the numbers a unit's card shows. */
-function fightStats(context: Pick<BuildContext, "registry">, contentId: string, hp?: number): CardStat[] {
+/** How much a thing can take: its content's health, or — for a Commander, while the Experiment "Vasse's
+ *  health" is tuned — the Experiment's, which is what the Pulse will run on. */
+function maxHpOf(context: Pick<BuildContext, "registry">, contentId: string, state?: SettingSource): number {
   const definition = context.registry.get(contentId)
-  const stats: CardStat[] = [{ label: "HEALTH", value: hp === undefined ? String(definition.maxHp) : `${hp}/${definition.maxHp}` }]
+  return definition.commander === true && state !== undefined ? setting(state, "commanderHealth") : definition.maxHp
+}
+
+/** A thing's health and attack, the numbers a unit's card shows. */
+function fightStats(context: Pick<BuildContext, "registry">, contentId: string, hp?: number, state?: SettingSource): CardStat[] {
+  const definition = context.registry.get(contentId)
+  const max = maxHpOf(context, contentId, state)
+  const stats: CardStat[] = [{ label: "HEALTH", value: hp === undefined ? String(max) : `${Math.min(hp, max)}/${max}` }]
   if (definition.attack !== undefined) {
     stats.push({ label: "ATTACK", value: `${definition.attack.damage} at range ${definition.attack.range}` })
   }
@@ -79,17 +91,17 @@ function fightStats(context: Pick<BuildContext, "registry">, contentId: string, 
 
 /** Something on the map after a round — a survivor of either side, or the raid's structure: its
  *  words, whose it is, and its health as it stands now. */
-export function fieldCard(context: Pick<BuildContext, "registry">, entity: FieldEntity): Card {
+export function fieldCard(context: Pick<BuildContext, "registry">, entity: FieldEntity, state?: SettingSource): Card {
   return {
     icon: { kind: "entity", contentId: entity.contentId, player: entity.player },
     ...cardText(context, entity.contentId),
-    stats: [{ label: "SIDE", value: entity.player === "A" ? "yours" : "the raid" }, ...fightStats(context, entity.contentId, entity.hp)],
+    stats: [{ label: "SIDE", value: entity.player === "A" ? "yours" : "the raid" }, ...fightStats(context, entity.contentId, entity.hp, state)],
   }
 }
 
 /** A unit the next round will bring ("see what is coming"): what it is, when it arrives, and —
  *  where its group has one — what it means to do, in place of its description. */
-export function incomingCard(context: Pick<BuildContext, "registry">, entity: IncomingEntity): Card {
+export function incomingCard(context: Pick<BuildContext, "registry">, entity: IncomingEntity, state?: SettingSource): Card {
   const text = cardText(context, entity.contentId)
   const seconds = Math.round(entity.tick / TICKS_PER_SECOND)
   return {
@@ -97,7 +109,7 @@ export function incomingCard(context: Pick<BuildContext, "registry">, entity: In
     title: text.title,
     subtitle: entity.player === "A" ? "Yours, next round" : "Incoming",
     description: entity.intent ?? text.description,
-    stats: [{ label: "ARRIVES", value: seconds === 0 ? "as the round starts" : `${seconds}s in` }, ...fightStats(context, entity.contentId)],
+    stats: [{ label: "ARRIVES", value: seconds === 0 ? "as the round starts" : `${seconds}s in` }, ...fightStats(context, entity.contentId, undefined, state)],
   }
 }
 
@@ -108,9 +120,29 @@ export function trainsStat(context: Pick<BuildContext, "trains">, contentId: str
   return { label: "TRAINS", value: `1 per ${setting(state, "trainEvery")}s, ${setting(state, "trainPerRound")} a round` }
 }
 
+/** The label of the number a building that projects a build range shows. */
+const BUILD_RANGE = "BUILD RANGE"
+
+/** How far a building lets its player build from it — the "Build range" Experiment's value while it is felt —
+ *  or `null` for one that projects none (the raid's, today). */
+function buildRangeStat(context: Pick<BuildContext, "registry">, contentId: string, state?: SettingSource): CardStat | null {
+  const radius = constructionRadiusOf(context.registry.get(contentId), state === undefined ? undefined : setting(state, "buildRange"))
+  return radius === null ? null : { label: BUILD_RANGE, value: String(radius) }
+}
+
+/** Whether the structure under the cursor is linked to the Nexus, so its build range counts — or, cut off
+ *  from it, gives none (`src/build/territory.ts`). */
+function linkedHere(context: BuildContext, state: BuildState, structure: Readonly<{ contentId: string; anchor: Coord }>): boolean {
+  const member = buildRange(context, state).members.find(
+    (candidate) => candidate.contentId === structure.contentId && candidate.anchor.x === structure.anchor.x && candidate.anchor.y === structure.anchor.y,
+  )
+  return member === undefined || member.linked
+}
+
 /** A building's card — the same whether it is being placed, planned or standing: its words,
- *  then its cost where the menu sells it, its health and size, its attack where it has one, and what it
- *  trains where the mission has it train. */
+ *  then its cost where the menu sells it, its health and size, its attack where it has one, what it
+ *  trains where the mission has it train, and its build range where it projects one ("cut off" in Explore
+ *  Map for one cut off from the Nexus). */
 export function entityCard(
   context: Pick<BuildContext, "registry" | "catalog" | "trains">,
   contentId: string,
@@ -127,6 +159,8 @@ export function entityCard(
   }
   const trains = state === undefined ? null : trainsStat(context, contentId, state)
   if (trains !== null) stats.push(trains)
+  const range = buildRangeStat(context, contentId, state)
+  if (range !== null) stats.push(range)
   return { icon: { kind: "entity", contentId }, ...cardText(context, contentId), stats }
 }
 

@@ -9,7 +9,7 @@
 // on more Grid. The Grids this screen draws fit entirely, so there is no scrolling, no cursor, and no
 // selection.
 
-import type { ContentRegistry } from "../content/index.ts"
+import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
@@ -31,6 +31,16 @@ export const VIEWPORT_TILES = { width: 48, height: 16 } as const
 export const PANEL_COLUMNS = 30
 export const HEADER_ROWS = 3
 export const FOOTER_ROWS = 3
+
+/**
+ * Whether an entity is drawn bold while a Pulse plays: a structure, as everything that stands is, and a
+ * Commander — the one `@`, bold at full strength in her side's colour, so she is found at a glance among
+ * the squads she walks with (the owner: "make sure vasse is visible, prominent"). One rule for both Pulse
+ * views, this one and the Build Phase screen's (`pulse-scene.ts`).
+ */
+export function drawnBold(definition: Pick<ContentDef, "layer" | "commander">): boolean {
+  return definition.layer === "obstacles" || definition.commander === true
+}
 
 export function compositionSize(tileWidth: TileWidth): { width: number; height: number } {
   return {
@@ -209,7 +219,7 @@ export function composeFrame(
       occupied.add(`${tile.x},${tile.y}`)
       const column = origin.column + tile.x * tileWidth
       put(cells, band, column, origin.row + tile.y, glyph, playerRole(entity.player), {
-        bold: definition.layer === "obstacles",
+        bold: drawnBold(definition),
       })
       for (let extra = 1; extra < tileWidth; extra += 1) {
         put(cells, band, column + extra, origin.row + tile.y, " ", playerRole(entity.player))

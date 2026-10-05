@@ -12,7 +12,7 @@ version of the design beyond git.
 - [`game-modes.md`](game-design/game-modes.md) — Campaign and Challenge, and the vocabulary they share.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
 - [`campaigns.md`](game-design/campaigns.md) — missions, the Citizen opening, PERIMETER, cutscenes.
-- [`scripted-opponent.md`](game-design/scripted-opponent.md) — waves, intentions and the Campaign's opponent (working design).
+- [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions and the Campaign's opponent (working design).
 - [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take from each source.
 - [`concept-art/`](game-design/concept-art/README.md) — early concept art and the first prototype captures.
 
@@ -24,6 +24,7 @@ version of the design beyond git.
 - [`testing.md`](system-design/testing.md) — what the suite proves and how.
 - [`replay-format.md`](system-design/replay-format.md) — the unbuilt replay file design (GUIDANCE).
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
+- [`routing.md`](system-design/routing.md) — how a place in the game is named and reached: routes, `--at`, the title menu's rows and the browser page's links.
 
 ## Planning — what is next (`milestones/`)
 

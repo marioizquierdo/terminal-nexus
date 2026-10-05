@@ -19,6 +19,12 @@ export type MenuItem = Readonly<{
   hotkey: string
   label: string
   disabled?: boolean
+  /**
+   * The route this row opens (`src/cli/route.ts`) — `settings`, `campaign` — when it opens a place: choosing
+   * the row and following its route are one thing, so `--at settings` and pressing Settings open the same
+   * screen. A row that does something else (Exit) or changes a value (a Settings row) names none.
+   */
+  route?: string
 }>
 
 /**
