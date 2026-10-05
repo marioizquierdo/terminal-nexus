@@ -1,14 +1,15 @@
 // **Her voice in battle**: what Vasse says during a Battle Round, worked out from the round the kernel has
 // already resolved (the owner, 2026-10-04, on her voice in battle: "yes that is fantastic! let's experiment with
 // this to see if it gets into the battle or enhances the experience even more. A little strategic usage of our
-// effect library should go a long way here too").
+// effect library should go a long way here too"; and once he had played it: "it looks cool when they "speak"
+// during battle").
 //
 // Presentation, all of it, on the three-worlds line. The moments she answers are read off the round's events
 // and states, as every effect is (`effects/derive.ts`); her lines are data in her army, found by her unit's id
 // (`armies/vasse/army.json`, `src/armies/barks.ts`); which of a moment's lines she says is cosmetic randomness —
 // a hash of the moment's identity (`effects/random.ts`), never a stream, so the gameplay generator and her voice
-// can never touch. Nothing here can reach a state, an event or a hash: a round resolves identically in every
-// mode of the "Vasse's voice" Experiment, off included.
+// can never touch. Nothing here can reach a state, an event or a hash: a round resolves identically whether she
+// says anything or not.
 //
 // **She must not chatter.** The whole round is known before its first frame, so its lines are planned at once,
 // the way the ending counts down to a stop it already knows:
@@ -23,13 +24,13 @@
 //   - nothing once she has fallen, and nothing in a round she sits out.
 //
 // A line types in, holds long enough to read, and thins out (dim) before it goes; reduced motion shows it whole
-// for as long. Where it shows — under the panel's feed, or beside her on the map — is the Experiment's, and the
-// scene draws it (`pulse-scene.ts`); the presenter (`pulse-live.ts`) asks this file what is said when.
+// for as long. It shows beside her on the map, and in the side panel whenever she or her line's place is out of
+// view; the scene draws it (`pulse-scene.ts`), and the presenter (`pulse-live.ts`) asks this file what is said
+// when.
 
 import type { BarkMoment, Barks } from "../armies/barks.ts"
 import { barkMapWidth, quoted } from "../armies/barks.ts"
 import { ARMIES } from "../armies/index.ts"
-import type { SettingValue } from "../build/all-settings.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
@@ -39,9 +40,6 @@ import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { buildFlightHoldTicks, flightHoldTicks } from "./effects/derive.ts"
 import { cosmeticHash } from "./effects/random.ts"
 import type { EffectInstance } from "./effects/types.ts"
-
-/** Where her words appear: the "Vasse's voice" Experiment — not at all, under the panel's feed, or beside her. */
-export type VoiceMode = SettingValue<"commanderVoice">
 
 /**
  * Her voice's numbers: first guesses, watched on PERIMETER's rounds rather than measured, kept here beside the

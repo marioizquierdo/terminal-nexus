@@ -175,14 +175,14 @@ export const ACTIVITY_EVENTS = {
   },
   "voice.line": {
     defaultLevel: "info",
-    description: "A Commander said a line during a Battle Round, as the Vasse's voice Experiment shows it: under the panel's feed, or beside her on the map.",
+    description: "A Commander said a line during a Battle Round: beside her on the map, or in the side panel while she was out of view.",
     props: {
       speaker: { type: "string", description: "Who said it, by the name the screen gives her: Vasse." },
       round: { type: "number", description: "Which Battle Round." },
       second: { type: "number", description: "When in the round she said it, in seconds from its start, as the feed counts them." },
       moment: { type: "string", description: "What she was answering: round-start, first-contact, raid-arrives, unit-lost, building-lost, badly-hurt, nexus-hit, falls or round-won." },
       line: { type: "string", description: "What she said." },
-      shown: { type: "string", description: "Where it was shown: feed (under the panel's feed) or beside (beside her on the map); feed when beside her was asked for but she was out of view." },
+      shown: { type: "string", description: "Where it was shown: beside (beside her on the map) or panel (under the side panel's feed, because she was out of view as it began)." },
     },
   },
   "move.step": {
@@ -235,14 +235,6 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
     question: "Whether the lines a round opens with were read: each line the dialog showed, and where the rest was skipped.",
     level: "info",
     events: ["dialog.line", "dialog.skip", "pulse.start"],
-  },
-  // The Commander round 4's question — does Vasse's voice add to the battle or get in its way? — last for the
-  // same reason: what she said when, and where, beside how each round went. Remove it once answered.
-  {
-    name: "Her voice",
-    question: "What Vasse said in each Battle Round, when and where it showed, and how each round went.",
-    level: "info",
-    events: ["voice.line", "pulse.start", "pulse.end", "setting.change"],
   },
 ]
 

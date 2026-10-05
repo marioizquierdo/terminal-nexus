@@ -89,7 +89,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   // In order, group by group: keyboard navigation — the hold window and key releases
   // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
   // popup pulse (every popup's) and the Battle Round flash, and the mission's next round, Vasse's health,
-  // the build range, her voice in battle, her aura and the room a Barracks keeps.
+  // the build range, her aura and the room a Barracks keeps. (Her voice in battle was settled beside her.)
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
     [
@@ -109,14 +109,13 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "nextRound",
       "commanderHealth",
       "buildRange",
-      "commanderVoice",
       "commanderAura",
       "spawnClearance",
     ],
   )
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.section),
-    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", ...Array.from({ length: 6 }, () => "mission")],
+    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", ...Array.from({ length: 5 }, () => "mission")],
   )
   // The bottom line says what the keys do there, and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.

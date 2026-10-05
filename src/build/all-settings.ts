@@ -415,25 +415,6 @@ export const ALL_SETTINGS = {
     default: 3,
   },
 
-  // --- Vasse's voice in battle (the Commander round 4) -----------------------------------------------
-  // The owner, on her voice during the battle: "let's experiment with this to see if it gets into the battle or
-  // enhances the experience even more". It asks the open question on her voice in battle: does it add to the
-  // fight or get in its way, and where should her words appear?
-
-  /** Whether Vasse speaks during a Battle Round, and where her words appear: under the panel's feed, or
-   *  beside her `@` on the map for a moment (in the panel instead whenever she is out of view). Her lines are
-   *  data in her army (`armies/vasse/army.json`); when she speaks, and which line, is the view's
-   *  (`src/view/pulse-voice.ts`), and none of it reaches the kernel: a round resolves the same in every mode.
-   *  First guess: beside her, the answer that puts her in the battle. */
-  commanderVoice: {
-    tier: "experiment",
-    section: "mission",
-    label: "Vasse's voice",
-    question: "Whether Vasse speaks in battle, and where: under the panel's feed, or beside her on the map for a moment.",
-    values: ["off", "feed", "beside"],
-    default: "beside",
-  },
-
   // --- Vasse's aura, By the Book (the Commander round 4) ---------------------------------------------
   // The owner: Commanders "should be like heroes on warcraft3 ... Vasse should provide boost to nearby units".
   // It asks the open question on a Commander's passive skill: how strong should it be, strong enough to feel

@@ -76,7 +76,7 @@ export type SideOptions = Readonly<{
   cursor?: Coord
   terminal?: Readonly<{ columns: number; rows: number }>
 }> &
-  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "foresee" | "activity">
+  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "foresee" | "activity" | "barksOf">
 
 /** An Activity Logs of a test's own, on `now` — a clock standing still at 0 unless
  *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */

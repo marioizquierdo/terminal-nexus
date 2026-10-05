@@ -12,8 +12,8 @@
 // here can change what the Pulse did — presentation never can (`docs/system-design/grid-engine.md`).
 //
 // Two more things the presenter works out for the scene, the same way: what the player's Commander says and
-// when (`pulse-voice.ts`, planned once from the resolved Pulse, shown as the "Vasse's voice" Experiment says),
-// and the reach of her aura while the fight is on — both read off the Pulse, neither able to touch it.
+// when (`pulse-voice.ts`, planned once from the resolved Pulse, shown beside her, or in the panel while she is out
+// of view), and the reach of her aura while the fight is on — both read off the Pulse, neither able to touch it.
 
 import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
@@ -32,7 +32,7 @@ import { EFFECT_RECIPES } from "./effects/recipes.ts"
 import { Playback } from "../terminal/playback.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { AuraFrame, PulseFrame, VoiceFrame } from "./pulse-scene.ts"
-import type { Speaker, SpokenLine, VoiceMode } from "./pulse-voice.ts"
+import type { Speaker, SpokenLine } from "./pulse-voice.ts"
 import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voiceAt, voiceLight, voiceMoments } from "./pulse-voice.ts"
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
@@ -64,14 +64,12 @@ export type MissionRound = Readonly<{
 /** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */
 const STEP_FRAMES_PER_SECOND = 30
 
-/** How a frame is drawn: the player's display settings, and — for her voice — the "Vasse's voice"
- *  Experiment and the part of the map in view (her words go to the panel when she is out of it). */
+/** How a frame is drawn: the player's display settings, and — for her voice — the part of the map in view (her
+ *  words go to the panel when she is out of it). */
 export type PulseFrameOptions = Readonly<{
   capability: CapabilityMode
   tileWidth: TileWidth
   reducedMotion: boolean
-  /** Where her words appear. Absent: nowhere, as `off`. */
-  voice?: VoiceMode
   /** The part of the map on screen. Absent: all of it. */
   view?: Readonly<{ camera: Camera; viewport: Viewport }>
 }>
@@ -329,9 +327,9 @@ export class PulsePresenter {
   }
 
   /**
-   * What she is saying at this instant, as the scene draws it, or `null` when she is saying nothing — or the
-   * Experiment has her voice off. Said where she is drawn, or where she fell for her last words; in the panel
-   * when the Experiment says so, or when she is out of the part of the map on screen.
+   * What she is saying at this instant, as the scene draws it, or `null` when she is saying nothing. Said where
+   * she is drawn, or where she fell for her last words: beside her on the map, or in the panel while she, or the
+   * row her line sits on, is out of the part of the map on screen.
    */
   private voiceFrame(
     options: PulseFrameOptions,
@@ -340,15 +338,14 @@ export class PulsePresenter {
     positions: ReadonlyMap<number, Coord>,
   ): Readonly<{ frame: VoiceFrame; line: SpokenLine; at: Coord }> | null {
     const voice = this.voice
-    const mode = options.voice ?? "off"
-    if (voice === null || mode === "off") return null
+    if (voice === null) return null
     const now = voiceAt(voice.lines, this.timeMs, options.reducedMotion)
     if (now === null) return null
     const { speaker } = voice
     const here = standing.some((entity) => entity.ordinal === speaker.ordinal) || held.some((entity) => entity.ordinal === speaker.ordinal)
     const at = here ? (positions.get(speaker.ordinal) ?? voice.fellAt) : voice.fellAt
     if (at === null) return null
-    const place = mode === "beside" ? this.placeFor(now.line, options.view) : null
+    const place = this.placeFor(now.line, options.view)
     // Beside her only while she, and the row her line sits on, are in the part of the map on screen.
     const range = options.view === undefined ? null : visibleRange(options.view.camera, options.view.viewport)
     const seen =
@@ -360,7 +357,7 @@ export class PulsePresenter {
       name: speaker.name,
       contentId: speaker.contentId,
       player: speaker.player,
-      where: mode === "beside" && seen ? "map" : "panel",
+      where: seen ? "map" : "panel",
       at,
       place: place ?? at,
     }

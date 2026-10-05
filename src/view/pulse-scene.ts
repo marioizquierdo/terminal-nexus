@@ -62,7 +62,8 @@ export type PulseFrame = Readonly<{
   home: number
   /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
   aura?: AuraFrame
-  /** What she is saying at this instant, and where (the "Vasse's voice" Experiment). Absent: nothing. */
+  /** What she is saying at this instant, and where: beside her, or in the panel while she is out of view.
+   *  Absent: nothing. */
   voice?: VoiceFrame
 }>
 
@@ -82,7 +83,7 @@ export type VoiceFrame = Readonly<{
   name: string
   contentId: string
   player: PlayerId
-  /** On the map beside her, or in the panel under the feed — where "beside her" goes when she is out of view. */
+  /** On the map beside her, or in the panel under the feed — where her line goes while she is out of view. */
   where: "map" | "panel"
   /** The tile she is drawn on, or where she fell for her last words. */
   at: Coord
@@ -194,12 +195,13 @@ export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame):
 }
 
 /**
- * ***Her line beside her*** (the "Vasse's voice" Experiment's `beside her`): what she is saying, between double
- * quotes, at the place beside her `@` chosen as the line began (`labelPlace`: near her, clear of what stands
- * there while it is read) — held still while it is read, kept inside the map's view, typed in and thinning out. A
- * blank cell either side sets it off from the ground. Bold in her side's colour, so it reads in monochrome by
- * weight and by its quotes. **It never covers a unit or a building**: a letter that would is left out (the
- * corruption law), and the words are said in the panel instead whenever she, or the place, is out of view.
+ * ***Her line beside her*** (the owner, settling it: "it looks cool when they "speak" during battle"): what she
+ * is saying, between double quotes, at the place beside her `@` chosen as the line began (`labelPlace`: near
+ * her, clear of what stands there while it is read) — held still while it is read, kept inside the map's view,
+ * typed in and thinning out. A blank cell either side sets it off from the ground. Bold in her side's colour, so
+ * it reads in monochrome by weight and by its quotes. **It never covers a unit or a building**: a letter that
+ * would is left out (the corruption law), and the words are said in the panel instead whenever she, or the
+ * place, is out of view.
  */
 export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>): void {
   const voice = pulse.voice
@@ -462,9 +464,10 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
     for (const entry of recentLines(pulse)) line(entry.text, entry.role)
   }
 
-  // Her line, when the panel is where it shows: under the feed — or under what Recall did, once the result
-  // stands — her glyph and name over it, as the dialog titles her, the words quoted and typed in. Never into
-  // the controls: with too little room the name goes first, then the line (it is in the Activity Logs).
+  // Her line, while she (or the row it sits on beside her) is out of view: under the feed — or under what Recall
+  // did, once the result stands — her glyph and name over it, as the dialog titles her, the words quoted and
+  // typed in. Never into the controls: with too little room the name goes first, then the line (it is in the
+  // Activity Logs).
   const voice = pulse.voice
   if (voice !== undefined && voice.where === "panel") {
     const rows = barkPanelRows(voice.text, limit - 1)
