@@ -69,3 +69,20 @@ decides with him whether it stays so once the powers are real.
 > 3 tiles, leaving a transparent arrow behind then moving that fades.
 
 **Scheduled.**
+
+### F130 — Tall tiles skew range and movement: explore fixes
+
+> The next thing I want to explore before keep moving with next milestone is the horizontal vs vertical
+> distance: as you can see on any screenshot that shows range, the range is severely skewed vertically. That is
+> because a termial tiles are made of tall rectangles instead of a rectangular grid, and I think this is standard
+> for every terminal because they are optimized to print text. For a battle simulator, this creates an odd
+> perspective. A terrain perspective should be wide horizontally (isometric angled camera) or rectangular (top
+> camera from above), but there' no perspective case where the vertical space would go taller.
+>
+> Let's explore ways to address this and see if they are worth implementing. For example, one idea would be
+> counting distance and speed by half vertically, so ranges and movement would make more sense visually
+
+**Scheduled** (a spike). Sent separately, after the notes above; it reopens the question he parked in August about
+the terminal cell's aspect ratio. A throwaway build shows the same moments with tiles as now, with square tiles
+(two columns a tile at every size), and with rows counting double in the rules (his idea), then measures what each
+costs; the findings and a recommendation come back before anything is built for real.
