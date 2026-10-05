@@ -11,17 +11,18 @@ import { setting } from "../src/build/all-settings.ts"
 import { cellForTile } from "../src/build/layout.ts"
 import { buildRange, buildingsOn } from "../src/build/state.ts"
 import { clearanceOf } from "../src/build/territory.ts"
+import { DEFAULT_LEVEL, openRound } from "../src/cli/levels.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { footprintDistance } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
-import { ROOM_GLYPH, reachOf, reachOutline, roomApron } from "../src/view/build-areas.ts"
+import { ROOM_GLYPH, reachOf, reachOutline, roomApron, unitReachOf } from "../src/view/build-areas.ts"
 import { trailMarks } from "../src/view/build-grid.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { cellAt, frameToAnsi, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
-import { ENTER, ESC, MINIMUM, WIDE, buildSide, compose, keys } from "./build-helpers.ts"
+import { ENTER, ESC, MINIMUM, TAB, WIDE, buildSide, compose, keys } from "./build-helpers.ts"
 import type { Side } from "./build-helpers.ts"
 import { isColourCode, sgrCodes } from "./helpers.ts"
 
@@ -113,14 +114,14 @@ test("a building with no reach draws none, and a placed Turret shows its reach w
     frame.cells.filter((cell) => ["-", "|", "/", "\\"].includes(cell.glyph) && cell.style.fgRole === "chrome.hotkey" && cell.style.dim === true).length
   assert.equal(strokes(barracks), 0)
   keys(side, ESC)
-  // A Turret planned, then Explore Map over it: its outline; one tile off it, none.
+  // A Turret planned, then Explore Map over it: its outline; on open ground beside it, none.
   keys(side, "3", "\r")
   const turret = side.build.state.planned[0]
   assert.ok(turret !== undefined)
   keys(side, "e")
   moveTo(side, turret.anchor)
   assert.ok(strokes(compose(side)) >= 16, "the placed Turret's reach is not drawn under the cursor")
-  moveTo(side, { x: turret.anchor.x, y: turret.anchor.y + 1 })
+  moveTo(side, openNear(side, turret.anchor))
   assert.equal(strokes(compose(side)), 0)
 })
 
@@ -137,6 +138,17 @@ function roomTiles(side: Side): Set<string> {
   return tiles
 }
 
+/** The open tile nearest `tile` (not `tile` itself), searched ring by ring in reading order. */
+function openNear(side: Side, tile: Coord): Coord {
+  for (let ring = 1; ring < 10; ring += 1) {
+    for (let y = tile.y - ring; y <= tile.y + ring; y += 1) {
+      for (let x = tile.x - ring; x <= tile.x + ring; x += 1) {
+        if (Math.max(Math.abs(x - tile.x), Math.abs(y - tile.y)) === ring && open(side, { x, y })) return { x, y }
+      }
+    }
+  }
+  throw new Error(`no open ground near ${tile.x},${tile.y}`)
+}
 
 // --- The build range ----------------------------------------------------------------------------------
 
@@ -354,4 +366,66 @@ test("the room never covers the raid's trail, reads by its tick alone in monochr
     assert.ok(open(wide, tile), `${tile.x},${tile.y} is not open ground`)
     assert.equal(at(wide, frame, tile).glyph, ROOM_GLYPH, `${tile.x},${tile.y} at two tiles`)
   }
+})
+
+// --- A unit's reach, explored ---------------------------------------------------------------------------------
+
+/** The cells of a frame that are a reach's strokes in `role`, dim. */
+const strokesIn = (frame: ReadonlyCellFrame, role: string): number =>
+  frame.cells.filter((cell) => STROKES.includes(cell.glyph) && cell.style.fgRole === role && cell.style.dim === true).length
+
+test("exploring a unit that shoots past the tiles touching it shows its reach; one that fights hand to hand shows none", () => {
+  assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.citizen.marksman")), 5)
+  assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.ravel.slinger")), 4)
+  assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.citizen.trooper")), null)
+  assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.ravel.runner")), null)
+
+  // Round 1: the player's squad arrives beside the Nexus — marksmen, troopers and Vasse.
+  const side = buildSide({ cursor: STARTER_START_CURSOR })
+  const squad = side.context.incoming ?? []
+  const marksman = squad.find((entity) => entity.contentId === "unit.citizen.marksman")
+  const trooper = squad.find((entity) => entity.contentId === "unit.citizen.trooper")
+  assert.ok(marksman !== undefined && trooper !== undefined)
+  keys(side, "e")
+  moveTo(side, marksman.anchor)
+  const ranged = compose(side)
+  let drawn = 0
+  for (const { tile, stroke } of reachOutline(marksman.anchor, ONE, 5)) {
+    if (!open(side, tile)) continue
+    const cell = at(side, ranged, tile)
+    assert.equal(cell.glyph, { level: "-", upright: "|", rise: "/", fall: "\\" }[stroke], `${tile.x},${tile.y}`)
+    assert.equal(cell.style.fgRole, "chrome.hotkey", "the player's own unit's reach is drawn as a building's is")
+    assert.equal(cell.style.dim, true)
+    drawn += 1
+  }
+  assert.ok(drawn >= 12, `only ${drawn} strokes round the marksman`)
+  assert.equal(strokesIn(ranged, "chrome.hotkey"), drawn, "a stroke was drawn off the outline")
+  moveTo(side, trooper.anchor)
+  assert.equal(strokesIn(compose(side), "chrome.hotkey"), 0, "a trooper, who fights hand to hand, showed a reach")
+  // In plain navigation too, where a building's reach shows under the cursor.
+  keys(side, ESC, TAB)
+  moveTo(side, marksman.anchor)
+  assert.equal(strokesIn(compose(side), "chrome.hotkey"), drawn)
+
+  // Round 3: the raid brings slingers. Their reach is drawn in the same colour — the raid's own would read as more
+  // of its trail, whose diagonal steps are the same strokes, dim in the raid's colour.
+  const third = buildSide({ cursor: STARTER_START_CURSOR, context: openRound(DEFAULT_LEVEL, 3), startPulse, nextRound, foresee })
+  const coming = third.context.incoming ?? []
+  const trail = new Set(
+    (third.build.raid() ?? []).flatMap((group) => (group.target === null ? [] : trailMarks(group.path, group.target.tiles))).map((mark) => `${mark.tile.x},${mark.tile.y}`),
+  )
+  // The open ground off the trail round a slinger's reach, where its strokes go: the slinger with the most.
+  const ringOf = (anchor: Coord) => reachOutline(anchor, ONE, 4).filter(({ tile }) => open(third, tile) && !trail.has(`${tile.x},${tile.y}`))
+  const slinger = coming.filter((entity) => entity.contentId === "unit.ravel.slinger").sort((a, b) => ringOf(b.anchor).length - ringOf(a.anchor).length)[0]
+  const raider = coming.find((entity) => entity.contentId === "unit.ravel.raider")
+  assert.ok(slinger !== undefined && raider !== undefined, "round 3 brings no slinger and no raider")
+  keys(third, "e")
+  moveTo(third, slinger.anchor)
+  const theirs = compose(third)
+  const ring = ringOf(slinger.anchor)
+  assert.ok(ring.length >= 3, `only ${ring.length} tiles of the slinger's reach are open ground`)
+  for (const { tile } of ring) assert.equal(at(third, theirs, tile).style.fgRole, "chrome.hotkey", `${tile.x},${tile.y}`)
+  assert.equal(strokesIn(theirs, "chrome.hotkey"), ring.length, "a stroke was drawn off the outline, or over the trail")
+  moveTo(third, raider.anchor)
+  assert.equal(strokesIn(compose(third), "chrome.hotkey"), 0, "a raider showed a reach")
 })

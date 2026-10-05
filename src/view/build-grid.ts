@@ -345,7 +345,7 @@ export function drawEffects(
 export function drawPreview(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null): void {
   const { state, layout } = input
   // The room a Barracks keeps, round it and round the ghost; and where something will reach — round the ghost,
-  // or round a building the cursor rests on. Both yield to the raid's trail.
+  // or round a building or a unit the cursor rests on. Both yield to the raid's trail.
   const avoid = takenTiles(input.context, state.planned)
   for (const tile of trailTiles(input)) avoid.add(tile)
   const shift = glideShift(input)

@@ -18,9 +18,13 @@
 //   measures range (Manhattan, to the nearest tile of its footprint), drawn as a ring of strokes round it — `-`
 //   and `|` where the ring runs straight along the footprint, `/` and `\` where it runs diagonally. It follows
 //   the ghost while the building is armed, in the ghost's own look (its colour when Enter would place it, grey
-//   when not), and is drawn for a building already placed while the cursor rests on it. Only open ground takes
-//   a stroke: a ring yields to everything drawn on the map, the raid's trail included, so it never claims what
-//   it would catch on the raid's way (the owner: "don't over-promise on the enemy route").
+//   when not), and is drawn for a building already placed while the cursor rests on it — and, in Explore Map
+//   and plain navigation, for a unit of either side that shoots past the tiles touching it (the owner, round 5:
+//   "exploring a unit should also show thier range"), in the same hotkey colour; a unit that fights hand to hand
+//   shows none, which is what makes a ranged one read as ranged.
+//   Only open ground takes a stroke: a ring yields to everything drawn on the map, the raid's trail included,
+//   so it never claims what it would catch on the raid's way (the owner: "don't over-promise on the enemy
+//   route").
 //
 // All are presentation alone: nothing here decides a placement (`src/build/territory.ts` does), and none is
 // drawn while a popup holds the keyboard, once the plan is committed, or while a Pulse plays.
@@ -91,6 +95,16 @@ export function drawBuildRange(cells: BandCell[], input: BuildCompositionInput, 
  */
 export function reachOf(definition: ContentDef): number | null {
   return definition.attack?.range ?? null
+}
+
+/**
+ * How far a unit reaches, for the outline drawn round it while it is explored — or anything else on the map that
+ * is not the player's building: its attack's range when it reaches past the tiles touching it, and none for one
+ * that fights hand to hand, so the outline itself says "ranged".
+ */
+export function unitReachOf(definition: ContentDef): number | null {
+  const range = reachOf(definition)
+  return range !== null && range >= 2 ? range : null
 }
 
 // --- A Barracks's room ----------------------------------------------------------------------------------------
@@ -171,7 +185,7 @@ export function drawRoom(cells: BandCell[], input: BuildCompositionInput, previe
   }
 }
 
-// --- A building's reach ----------------------------------------------------------------------------------------
+// --- A building's reach, and a unit's -------------------------------------------------------------------------
 
 /** Which stroke a tile of a reach's outline is drawn with: along the footprint's side, or across a corner. */
 export type RingStroke = "level" | "upright" | "rise" | "fall"
@@ -217,16 +231,18 @@ const RING_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<RingStroke, string
   unicode: { level: "─", upright: "│", rise: "╱", fall: "╲" },
 }
 
-/** What the outline is drawn round, and in which look: the ghost, or a building under the cursor. */
-type Reaching = Readonly<{ contentId: string; anchor: Coord; footprint: Footprint; role: StyleRole }>
+/** What the outline is drawn round, how far, and in which look: the ghost, or a building or a unit under the
+ *  cursor. */
+type Reaching = Readonly<{ anchor: Coord; footprint: Footprint; radius: number; role: StyleRole }>
 
 /**
  * ***A building's reach***: the outline round the armed building's ghost — moving with it, glide included
  * (`shift`), in the ghost's look: the hotkey's colour when Enter would place it, grey when not — or, with nothing
- * armed and the map looked at (Explore Map, plain navigation), round the building under the cursor, standing or
- * planned. Dim, in the `highlights` band, on open ground only: a tile with anything on it, rock and deposits
- * included, or one of the raid's trail marks (`avoid`), keeps its own look. A stroke on the build range's
- * ground keeps its light, so the outline reads as drawn on that floor.
+ * armed and the map looked at (Explore Map, plain navigation), round what is under the cursor, in the hotkey's
+ * colour (`EXPLORED_REACH`): a building, standing or planned, or a unit of either side that shoots past the
+ * tiles touching it (`unitReachOf`). Dim, in the `highlights` band, on open ground only: a tile with anything on
+ * it, rock and deposits included, or one of the raid's trail marks (`avoid`), keeps its own look. A stroke on
+ * the build range's ground keeps its light, so the outline reads as drawn on that floor.
  */
 export function drawReach(
   cells: BandCell[],
@@ -241,13 +257,11 @@ export function drawReach(
   if (state.focus !== "grid" || state.popup !== null || state.committed || input.pulse !== undefined) return
   const reaching = reachingNow(context, input, preview, shift)
   if (reaching === null) return
-  const radius = reachOf(context.registry.get(reaching.contentId))
-  if (radius === null) return
   const range = visibleRange(state.camera, state.viewport)
   const floor = shownBuildRange(input)
   const style: CellStyle = { fgRole: reaching.role, dim: true }
   const lit: CellStyle = { ...style, ...BUILD_RANGE_LIGHT }
-  for (const { tile, stroke } of reachOutline(reaching.anchor, reaching.footprint, radius)) {
+  for (const { tile, stroke } of reachOutline(reaching.anchor, reaching.footprint, reaching.radius)) {
     if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
     if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain" || avoid.has(`${tile.x},${tile.y}`)) continue
     const cell = cellForTile(layout, state.camera, tile)
@@ -255,20 +269,43 @@ export function drawReach(
   }
 }
 
-/** The building whose reach is drawn now, if any: the armed one's ghost, else one under the cursor. */
+/**
+ * The look of what the cursor rests on's reach, a building's or a unit's, either side's: the hotkey's colour, the
+ * colour of what the player is pointing at. Never the raid's own colour for the raid's units: the raid's trail
+ * draws its diagonal steps with the same strokes, dim in that colour, so a slinger's outline beside the trail
+ * would read as more trail. The unit itself, and its card, say whose it is.
+ */
+const EXPLORED_REACH: StyleRole = "chrome.hotkey"
+
+/** Whatever's reach is drawn now, if any: the armed building's ghost; else a building under the cursor; else a
+ *  unit under it — one that came through the last round, or one arriving — that shoots past the tiles touching
+ *  it. A unit is never drawn over a building, so a building under the cursor is what the cursor is on. */
 function reachingNow(context: BuildContext, input: BuildCompositionInput, preview: ArmedPreview | null, shift: Coord): Reaching | null {
   const { state } = input
   if (preview !== null) {
+    const radius = reachOf(context.registry.get(preview.item.contentId))
+    if (radius === null) return null
     return {
-      contentId: preview.item.contentId,
       anchor: { x: preview.anchor.x + shift.x, y: preview.anchor.y + shift.y },
       footprint: preview.footprint,
+      radius,
       role: preview.refusal === null ? "chrome.hotkey" : "chrome.muted",
     }
   }
   const mode = mapMode(state)
   if (mode !== "explore" && mode !== "plain") return null
-  const under = structureAtTile(context, state.planned, input.cursor ?? state.cursor)
-  if (under === null) return null
-  return { contentId: under.contentId, anchor: under.anchor, footprint: context.registry.get(under.contentId).footprint, role: "chrome.hotkey" }
+  const cursor = input.cursor ?? state.cursor
+  const under = structureAtTile(context, state.planned, cursor)
+  if (under !== null) {
+    const definition = context.registry.get(under.contentId)
+    const radius = reachOf(definition)
+    return radius === null ? null : { anchor: under.anchor, footprint: definition.footprint, radius, role: EXPLORED_REACH }
+  }
+  const covers = (entity: Readonly<{ contentId: string; anchor: Coord }>): boolean =>
+    tilesOf(entity.anchor, context.registry.get(entity.contentId).footprint).some((tile) => tile.x === cursor.x && tile.y === cursor.y)
+  const unit = (context.field ?? []).find(covers) ?? (context.incoming ?? []).find(covers)
+  if (unit === undefined) return null
+  const definition = context.registry.get(unit.contentId)
+  const radius = unitReachOf(definition)
+  return radius === null ? null : { anchor: unit.anchor, footprint: definition.footprint, radius, role: EXPLORED_REACH }
 }
