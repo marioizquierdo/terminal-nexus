@@ -377,11 +377,12 @@ export const ALL_SETTINGS = {
    *  auto; a first guess. */
   autoNextRoundMs: { tier: "tuned", default: 3000 },
   /** How much Vasse, the Commander, can take (the Commander step): how often her fall, a round of absence
-   *  and her return come into play at all. First guess: 80, twice a trooper. Measured: from 60 to 100 she
-   *  comes out of PERIMETER's first two rounds in every plan tried and a plan that builds nothing still
-   *  loses; at 150 that plan wins the last round on time, and at 20 she falls in round 2 whatever is built.
-   *  At every value she falls in the last round of every plan tried
-   *  (docs/history/reports/2026-10-01-commander-vasse.md has the outcomes). */
+   *  and her return come into play at all. First guess: 80, twice a trooper. Measured again once buildings sent
+   *  their units in waves (the Commander round 5): at every value she comes out of PERIMETER's first two rounds
+   *  in every plan tried, the Barracks's wave in front of her, and a plan that builds nothing holds the last
+   *  round, where she falls; with something built she lives through it in four plans of five from 60 up, and in
+   *  two of five at 20 and 40. Before the waves she fell in the last round of every plan, and a plan that built
+   *  nothing lost it (docs/history/reports/2026-10-01-commander-vasse.md has those outcomes). */
   commanderHealth: {
     tier: "experiment",
     section: "mission",
