@@ -133,7 +133,7 @@ Built on a new pull request, by subagents.
 - [x] The raid's intent trail is a slow line of arrows, one every three tiles, each leaving a fading arrow
       behind; still under reduced motion.
 - [x] Vasse speaks beside her on the map; the Vasse's voice Experiment is settled and gone.
-- [ ] Tall tiles: a spike shows range and movement with tiles as now, square tiles, and rows counting double
+- [x] Tall tiles: a spike shows range and movement with tiles as now, square tiles, and rows counting double
       in the rules, with what each costs and a recommendation; nothing is built for real before Mario decides.
 
 ### Step 8B — The Nexus draft, dealt from a pool

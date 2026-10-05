@@ -13,6 +13,10 @@ it is done.*
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
   MISSION in Settings (`d`), **Barracks room** (1 or 2 tiles) is new beside **Build range** and **By the
   Book**; paste the settings export.
+- **Decide the tall tiles** (his note on range skewed vertically): [the spike's
+  report](../history/reports/2026-10-05-tall-tiles-spike.md) compares tiles as now, square tiles and rows
+  counting double. Recommended: build rows counting double as an Experiment, with square tiles beside it, so
+  he can feel both before the distance rules change; it is a step of its own.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -22,7 +26,7 @@ it is done.*
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
   means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
+- **Open questions** (each has a recommendation in the register): the tall tiles (Q24, above), an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
   letter hotkeys for buildings (Q67), and the exploring click, the wheel step and the light theme's light (Q63;
   Q62 and Q64 are answered).
@@ -105,6 +109,8 @@ Small, none blocking.
   round a step. A room of one tile leaves a Barracks's corners open, corner to corner; Barracks room 2 with
   Build range 2 leaves nowhere for a Barracks. The room shows only while a building is armed.
 - Her round-opening line rarely fits now that first contact comes sooner: the moments that matter more come first.
+- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts its Hatchery outside the build range;
+  the tests skip the placement check, so the plan could not be placed in the game as written.
 - At 16 colours each moving arrow is a pair for a moment (its copy looks like itself). The trail is the second
   animation that never settles, beside a popup's breath: the screen redraws five to seven times a second while
   it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.

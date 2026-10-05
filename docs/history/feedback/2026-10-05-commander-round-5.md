@@ -102,7 +102,11 @@ popup, reduced motion or a committed plan holds the trail still. The pace is a t
 > Let's explore ways to address this and see if they are worth implementing. For example, one idea would be
 > counting distance and speed by half vertically, so ranges and movement would make more sense visually
 
-**Scheduled** (a spike). Sent separately, after the notes above; it reopens the question he parked in August about
-the terminal cell's aspect ratio. A throwaway build shows the same moments with tiles as now, with square tiles
-(two columns a tile at every size), and with rows counting double in the rules (his idea), then measures what each
-costs; the findings and a recommendation come back before anything is built for real.
+**Built** (as a spike; [the report](../reports/2026-10-05-tall-tiles-spike.md)). A throwaway build showed the
+same moments with tiles as now, with square tiles (two columns a tile at every size) and with rows counting
+double in the rules, his idea, at two scales. Rows counting double, at his scale, is the only one that makes
+ranges and movement look right at 80 × 24 with the whole map in view; it needs melee as "touching", a build range
+of 6 instead of 3, and a step of its own, and it means one column a tile everywhere. Square tiles show half the
+map at 80 × 24 and have no two-column art. Drawing vertical steps slower fixes nothing. The recommendation, in
+the open question about the cell's aspect ratio, is to build rows counting double as an Experiment first, with
+square tiles beside it, so he can feel both; nothing changes in the game until he chooses.
