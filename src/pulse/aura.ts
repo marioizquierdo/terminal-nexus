@@ -5,7 +5,8 @@
 //
 // - **Who is guarded is decided once a tick, as the attacks begin** (`guardsOf`), from where everyone stands
 //   once the tick's moves have settled: a mobile entity of the bearer's side whose footprint is within the
-//   radius of the bearer's, measured as range is (Manhattan, to the nearest tile of each footprint). The
+//   radius of the bearer's, measured as range is (to the nearest tile of each footprint, by the battle's
+//   measure: Manhattan under `SQUARE`, and a unit touching her along a side always). The
 //   bearer is within it of herself, so she is guarded too, as a Warcraft III aura covers its hero.
 //   Structures are not: it is the units near her.
 // - **It holds for the whole of that tick's damage** — every speed tier's attacks and every blast in the
@@ -19,7 +20,7 @@
 //
 // Deterministic like every phase: integers only, ordinal order throughout, nothing but the tick's actors read.
 
-import { footprintDistance } from "../grid/coords.ts"
+import { footprintWithin } from "../grid/coords.ts"
 // Types only: `shared.ts` reads `guardedAmount` from here, so nothing here reads a value from there.
 import type { Actor, TickContext } from "./shared.ts"
 
@@ -39,8 +40,8 @@ export function guardsOf(context: TickContext): Map<number, Guard> {
     for (const bearer of bearers) {
       const aura = bearer.definition.aura
       if (aura === undefined || bearer.player !== unit.player) continue
-      // Measured as range is: to the nearest tile of each footprint (`distanceBetween`, `shared.ts`).
-      if (footprintDistance(bearer.anchor, bearer.definition.footprint, unit.anchor, unit.definition.footprint) > aura.radius) continue
+      // Measured as range is: to the nearest tile of each footprint, by the battle's measure (`within`, `shared.ts`).
+      if (!footprintWithin(bearer.anchor, bearer.definition.footprint, unit.anchor, unit.definition.footprint, aura.radius, context.measure)) continue
       const best = guards.get(unit.ordinal)
       if (best === undefined || aura.damageTakenPercent < best.damageTakenPercent) {
         guards.set(unit.ordinal, { bearer, damageTakenPercent: aura.damageTakenPercent })

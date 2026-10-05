@@ -10,8 +10,10 @@
 // triggerRange`) — the one of the four with no `attack` at all, bucketed by tier alongside the rest
 // rather than swept into an end-of-function pass that would let it act after every tier already had.
 
+import { SQUARE } from "../grid/coords.ts"
+import type { GridMeasure } from "../grid/types.ts"
 import { guardsOf } from "./aura.ts"
-import { actorsWithin, applyDamage, applyHeal, distanceBetween, resolveTarget, speedTier } from "./shared.ts"
+import { actorsWithin, applyDamage, applyHeal, distanceBetween, inAttackRange, resolveTarget, speedTier, within } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
 type Tally = { total: number; source: Actor }
@@ -75,8 +77,10 @@ export function attacks(context: TickContext): void {
       if (context.movedThisTick.has(actor.ordinal)) continue
       const target = resolveTarget(context, actor)
       if (target === null || target.pendingDead) continue
-      const distance = distanceBetween(actor, target)
-      if (distance > attack.range) continue
+      // Melee reaches what touches it along a side; a shot or a heal reaches as far as its range does, measured
+      // as range is (`inAttackRange`, the test intents holds by too).
+      if (!inAttackRange(context, actor, target, attack)) continue
+      const distance = distanceBetween(context, actor, target)
 
       // Windup: a one-time hold before this actor's *first* shot at whatever it is currently
       // holding a lock on, spent only on a tick it would otherwise fire (never while marching, and
@@ -106,7 +110,7 @@ export function attacks(context: TickContext): void {
         distance,
         flightWindowTicks:
           attack.kind === "ranged"
-            ? flightWindowTicks(distance, attack.projectileTilesPerTick)
+            ? flightWindowTicks(distance, attack.projectileTilesPerTick, context.measure)
             : 0,
       })
 
@@ -205,7 +209,8 @@ export function attacks(context: TickContext): void {
       if (context.movedThisTick.has(actor.ordinal)) continue
       const target = resolveTarget(context, actor)
       if (target === null || target.pendingDead) continue
-      if (distanceBetween(actor, target) > triggerRange) continue
+      // Measured as range is (`within`).
+      if (!within(context, actor, target, triggerRange)) continue
       actor.pendingDead = true
     }
   }
@@ -216,8 +221,12 @@ export function attacks(context: TickContext): void {
  * speed at all (melee, or a ranged attack that never declared one). Presentation metadata on the
  * `attack.launched` event (see pulse.md), read by no rule; `tests/rules.test.ts` proves changing
  * it moves no state.
+ *
+ * The distance is the battle's measure, and a shot's speed is content counted in it as a unit's is: its tiles
+ * a tick are `measure.tile` of the count each. So a shot two rows up takes as long as one four columns across
+ * when a row counts two, and under `SQUARE` this is the window it always was.
  */
-export function flightWindowTicks(distance: number, tilesPerTick: number | undefined): number {
+export function flightWindowTicks(distance: number, tilesPerTick: number | undefined, measure: GridMeasure = SQUARE): number {
   if (tilesPerTick === undefined || tilesPerTick <= 0) return 0
-  return Math.max(1, Math.ceil(distance / tilesPerTick))
+  return Math.max(1, Math.ceil(distance / (tilesPerTick * measure.tile)))
 }

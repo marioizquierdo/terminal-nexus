@@ -12,6 +12,7 @@
 // context, call the phases in order, fold the result back into a MatchState.
 
 import type { DomainEvent } from "../events/types.ts"
+import { SQUARE } from "../grid/coords.ts"
 import { OccupancyIndex, VacatedOverlay } from "../grid/occupancy.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, MatchState } from "../state/types.ts"
@@ -82,6 +83,9 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     nextOrdinal: state.nextOrdinal,
     // The sides' targets are the state's, read and never written: only the trigger runner sets them.
     targets: state.targets ?? {},
+    // How the battle measures the Grid is the state's too, and the same every tick of it: `SQUARE` when it
+    // names none, the rules as they always were.
+    measure: state.measure ?? SQUARE,
     // Who an aura guards is decided as the attacks begin (`attacks.ts`), once the tick's moves have settled.
     guards: new Map(),
   }

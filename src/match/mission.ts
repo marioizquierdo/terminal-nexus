@@ -26,6 +26,10 @@
 // reads what each side has fielded (its roster) from the opening state; an arrival between ticks widens that
 // roster for the rest of the Pulse, so a side that only arrives later can still be wiped out, and win.
 //
+// **How the Grid is measured travels with the round** (`measure`, the Ground Experiment): the opening state
+// carries the measure the input names, or the carried state's own when it names none, and nothing between two
+// ticks changes it — so every tick of a Pulse, and the forecast of it (`intent.ts`), measures one way.
+//
 // **The presentation band is never read here** — a line of dialog (`say`) and the Build Phase opening it
 // runs at (`build.start`) are the screen's (`src/mission/scene.ts`) — so a mission's lines cannot change
 // what its Pulses resolve: the same plans give the same states with or without them.
@@ -39,7 +43,7 @@ import type { ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
+import type { Coord, GridMeasure, GridTerrain } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import { isMoment, regionCentre, regionOf } from "../mission/validate.ts"
 import type { MissionDefinition, MissionVerdict, Region, SpawnAction, TriggerDefinition } from "../mission/types.ts"
@@ -64,6 +68,13 @@ export type MissionPulseInput = Readonly<{
   /** The player's buildings newly standing this Pulse: for the first, the map's own and the plan's; for
    *  a later one, only what the plan added (the rest is in `carried`). */
   structures: readonly StructurePlacement[]
+  /**
+   * How the Pulse measures the Grid (`GridMeasure`, the Ground Experiment), as the round's settings say: the
+   * opening state carries it, absent when it is `SQUARE`, and the Pulse measures by it from its first tick to
+   * its last. Absent, the carried state keeps its own — a mission goes on measuring as it began unless told
+   * otherwise — and a first Pulse measures as the rules always did.
+   */
+  measure?: GridMeasure
 }>
 
 /** A unit that arrived by a mission's `spawn`, and what it came with — the group and its line of intention.
@@ -217,6 +228,7 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
     structures,
     setup: { seed: mission.seed, pulseTicks: mission.pulseTicks, forces },
     ...(carried === null ? {} : { carried }),
+    ...(input.measure === undefined ? {} : { measure: input.measure }),
   })
   const arrivals: Arrival[] = []
   for (const entity of result.state.entities) {

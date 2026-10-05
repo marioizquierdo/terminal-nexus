@@ -4,6 +4,12 @@
 //
 // Deterministic by construction: a fixed search order, no randomness, no clock. Nothing here decides an
 // outcome — it decides *where* something that has already been decided goes.
+//
+// **Square under every measure.** When the Ground Experiment counts a row as two columns (`GridMeasure`), the
+// battle measures by it, but this search does not: where a crowded arrival or a survivor coming home is set
+// down is not a distance a player judges, the rings below are the same ones the opening, the forecast of it
+// and Recall all search, so they agree whatever the measure, and every placement under "as now" stays exactly
+// where it was.
 
 import { footprintCentre, gridDistance } from "../grid/coords.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
@@ -11,8 +17,8 @@ import type { Coord, Footprint } from "../grid/types.ts"
 
 /**
  * Offsets at exactly Manhattan distance `radius` from `(0,0)`, in reading order (north to south, west
- * to east). Manhattan because that is the distance the kernel measures everything in (grid.md),
- * so "nearest" here means what it means to a unit walking there.
+ * to east). Manhattan because that is the distance the kernel has always measured in (grid.md), and
+ * it stays so under every measure (above).
  */
 function diamond(radius: number): Coord[] {
   if (radius === 0) return [{ x: 0, y: 0 }]

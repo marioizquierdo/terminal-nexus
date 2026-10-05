@@ -12,21 +12,25 @@ export type AttackKind = "melee" | "ranged" | "heal"
  * at two different trigger moments, not two mechanisms that happen to share a shape.
  */
 export type AreaDamage = Readonly<{
-  /** Manhattan tiles, measured from the impact point to the nearest occupied tile of each victim. */
+  /** Tiles, measured as range is: from the impact point to the nearest occupied tile of each victim, in the
+   *  battle's measure (Manhattan as now; `GridMeasure`), and a victim touching it along a side always. */
   radius: number
   damage: number
 }>
 
 export type AttackDef = Readonly<{
   kind: AttackKind
-  /** Manhattan tiles, measured to the nearest occupied tile of the target — grid/coords.ts. */
+  /** Tiles, measured to the nearest occupied tile of the target in the battle's measure (Manhattan as now;
+   *  `GridMeasure`, grid/coords.ts) — save that melee reaches what touches it along a side, however rows are
+   *  counted (`inAttackRange`, src/pulse/shared.ts). */
   range: number
   /** For `kind: "heal"`, this is the amount restored, not damage dealt. */
   damage: number
   cooldownTicks: number
   /**
    * Presentation metadata only. The flight window on a ranged attack event is
-   * `ceil(distance / projectileTilesPerTick)` ticks, and **no rule reads it** (pulse.md).
+   * `ceil(distance / projectileTilesPerTick)` ticks — the distance in the battle's measure, each of these tiles
+   * worth `measure.tile` of it — and **no rule reads it** (pulse.md).
    */
   projectileTilesPerTick?: number
   /**
@@ -114,8 +118,9 @@ export type ContentDef = Readonly<{
   /**
    * A Commander's passive aura, a skill that works on its own (the owner, 2026-10-04: Commanders "should be like
    * heroes on warcraft3 ... Vasse should provide boost to nearby units"). While its bearer is on the Grid, the
-   * units of its side within `radius` tiles of it — measured as range is, Manhattan to the nearest tile of each
-   * footprint — take `damageTakenPercent` percent of the damage a hit would deal them. Vasse's is *By the Book*.
+   * units of its side within `radius` tiles of it — measured as range is, to the nearest tile of each footprint in
+   * the battle's measure (Manhattan as now) — take `damageTakenPercent` percent of the damage a hit would deal
+   * them. Vasse's is *By the Book*.
    * The kernel's damage rule reads it (`src/pulse/aura.ts`: rounded down, never below 1, the bearer covered
    * too, the strongest aura alone when several reach a unit); presentation draws its reach. `name` is what a
    * card calls it, the way a Nexus power has a name; no rule reads it.
