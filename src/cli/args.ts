@@ -28,17 +28,16 @@ const VALUE_OPTIONS = new Set([
 ])
 
 /**
- * Options no command line reads any more, each with what to say instead: both `grid` and `terminal-nexus` refuse
- * one, saying what changed, rather than run a command copied from an older note as something it did not mean.
- * Each took a value and still takes it here, so the value is refused with its option rather than read as a map or
- * a stray word.
+ * Retired options, each with what to say instead of reading it: `grid` and `terminal-nexus` both refuse one with its
+ * reason, so a command copied from an older note is told what changed rather than run as something it did not mean.
+ * Each takes a value, which is refused with it rather than read as a map or a stray word.
  */
 export const RETIRED_OPTIONS: ReadonlyMap<string, string> = new Map([
   ["tile-width", "a tile is one column wide at every terminal size"],
 ])
 
-/** What a command line says, after its own name, of an option it no longer reads, or `undefined` for one that was
- *  never retired: `--tile-width is gone: a tile is one column wide at every terminal size.` */
+/** What a command line says, after its own name, of a retired option (`RETIRED_OPTIONS`), or `undefined` for any
+ *  other argument: `--tile-width is gone: a tile is one column wide at every terminal size.` */
 export function retiredOption(argument: string): string | undefined {
   const why = argument.startsWith("--") ? RETIRED_OPTIONS.get(argument.slice(2)) : undefined
   return why === undefined ? undefined : `${argument} is gone: ${why}.`

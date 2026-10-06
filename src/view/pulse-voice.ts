@@ -401,7 +401,7 @@ const LABEL_SLIDE = { most: 16, step: 2 } as const
  * while it is read** — text that hops a row each time she steps cannot be read — so it is chosen once a line,
  * from everything the line will be shown over, which the resolved round already knows: of the rows near her
  * (`LABEL_ROWS`), centred on her or slid a little to either side (`LABEL_SLIDE`), the place whose span — the
- * quoted line and a blank either side, at one column a tile, its widest — covers least of what stands there
+ * quoted line and a blank either side, a tile for each letter — covers least of what stands there
  * while the line shows, hides least rock, and is nearest her, above before below (`LABEL_COST`). Kept on the
  * map. A letter that would still cover a unit or a building is left out when it is drawn (the corruption law,
  * `pulse-scene.ts`).
