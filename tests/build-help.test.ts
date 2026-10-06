@@ -341,7 +341,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = buildSide({ terminal: size })
@@ -401,6 +401,30 @@ test("the page names only keys the adapters bind, and every command key they bin
   for (const name of ["shift+arrow", "option+arrow", "pgup/pgdn", "home/end", "bksp/delete", "tab", "ctrl+c", "wheel", "right click"]) {
     assert.ok(text.includes(name), `${name} is not on the page`)
   }
+})
+
+test("one group has no keys: THE GROUND says units stand tall, and how a row counts, in the text's column", () => {
+  const page = controlsPage()
+  // Every other line is a key and what it does; only THE GROUND's lines have no key.
+  for (const section of page) {
+    for (const entry of section.lines) {
+      assert.equal(entry.keys === "", section.heading === "THE GROUND", `${section.heading}: "${entry.text}"`)
+    }
+  }
+  // Right after the map's keys, its lines read as one passage: units stand tall, so more fit side by side than
+  // one behind another, and a row up or down counts two steps across — the rule every reach is drawn by.
+  const headings = page.map((section) => section.heading)
+  assert.equal(headings.indexOf("THE GROUND"), headings.indexOf("THE MAP") + 1)
+  const passage = page.find((section) => section.heading === "THE GROUND")?.lines.map((entry) => entry.text).join(" ") ?? ""
+  assert.match(passage, /^units stand tall, so more fit side by side than one behind another; a row up or down counts two steps across$/)
+  // On the page at 80 x 24, scrolled to it: each line whole, in the column the keys' words are in.
+  const side = buildSide()
+  keys(side, "?", ...Array.from({ length: 20 }, () => DOWN))
+  const screen = screenText(side)
+  for (const entry of page.find((section) => section.heading === "THE GROUND")?.lines ?? []) {
+    assert.ok(screen.includes(` ${entry.text} `), `"${entry.text}" is not drawn whole`)
+  }
+  assert.match(screen, /THE GROUND/)
 })
 
 test("the Controls page says what Esc and x do on the menu, how placing is cancelled, and how lists move", () => {

@@ -227,7 +227,8 @@ export function bottomLine(context: BuildContext, state: BuildState, preview: Ar
 
 export const CONTROLS_TITLE = "CONTROLS AND HOTKEYS"
 
-/** One line of the page: the keys (or the click) on the left, what they do on the right. */
+/** One line of the page: the keys (or the click) on the left, what they do on the right — or, with no keys,
+ *  a line of a group that has none: how the game reads, in the text's column, wrapped by hand to its width. */
 export type ControlsLine = Readonly<{ keys: string; text: string }>
 export type ControlsSection = Readonly<{ heading: string; lines: readonly ControlsLine[] }>
 
@@ -241,6 +242,11 @@ export const CONTROLS_KEYS_WIDTH = 14
  * the adapters (`src/build/keyboard.ts`, `src/build/mouse.ts`); the Shift jump is the "Jump distance"
  * setting as it is now (`jumpStep`; its default without one), so the page says what Shift does. `?` opens it from the game
  * — a shortcut named only here, under ANYWHERE.
+ *
+ * One group has no keys: THE GROUND, after THE MAP, the one thing on the page that is not a key — that units
+ * stand tall, so more fit side by side than one behind another, and a row up or down counts two steps across
+ * (the rule every reach on the map and on a card is drawn by, `src/build/reach.ts`). It is the page that
+ * teaches how to play, so how the ground is counted is said here once.
  */
 export function controlsPage(jumpStep: number = defaultValue("jumpStep")): readonly ControlsSection[] {
   return [
@@ -270,6 +276,16 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
         { keys: "enter/space", text: "Explore Map here" },
         { keys: "bksp/delete", text: "remove what is planned here" },
         { keys: "tab/esc/x", text: "back to the menu" },
+      ],
+    },
+    {
+      // No keys: how the ground is counted (rows x2), which every reach is drawn and said by.
+      heading: "THE GROUND",
+      lines: [
+        { keys: "", text: "units stand tall, so more" },
+        { keys: "", text: "fit side by side than one" },
+        { keys: "", text: "behind another; a row up or" },
+        { keys: "", text: "down counts two steps across" },
       ],
     },
     {
