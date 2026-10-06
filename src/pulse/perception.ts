@@ -1,6 +1,8 @@
 // 3. Perception (phase order in pulse.md). Who each actor sees, and who it decides to fight or flee.
 
+import type { ContentDef } from "../content/types.ts"
 import { directionOf } from "../grid/coords.ts"
+import { wholeRows } from "../grid/reach.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { distanceBetween, isMobile, setTarget, within } from "./shared.ts"
 import { engageRange, targetFor } from "./target.ts"
@@ -127,7 +129,11 @@ export function perception(context: TickContext): void {
   }
 }
 
-/** "when a hostile attacker is within range + 2": a unit flees a threat that can already reach it or nearly can. */
-export function fleeTrigger(threat: Actor): number {
-  return (threat.definition.attack?.range ?? 0) + 2
+/**
+ * How near a threat must come before a unit that flees runs from it, measured as range is: "when a hostile attacker
+ * is within range + 2", a threat that can already reach it or nearly can, rounded up to whole rows (`wholeRows`).
+ * Against a trooper's melee that is 4: four columns across, or two rows straight up or down, as far on screen.
+ */
+export function fleeTrigger(threat: ContentDef): number {
+  return wholeRows((threat.attack?.range ?? 0) + 2)
 }

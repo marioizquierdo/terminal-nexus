@@ -14,6 +14,8 @@
 // Every set of tiles a distance picks out is worked out here, from `rowsWithin` and `columnsWithin`: the rings a
 // group is set down on, nearest first (`ringOffsets`), and the ground within a reach of a footprint
 // (`tilesWithin`) — the build range, the room a building keeps, a reach drawn round a building or a unit, an aura.
+// A reach worked out from content numbers, rather than given by them, is rounded up to whole rows here too
+// (`wholeRows`).
 
 import type { Coord, Footprint } from "./types.ts"
 import { ROW_DISTANCE, footprintBox, footprintWithin } from "./coords.ts"
@@ -28,6 +30,16 @@ export function rowsWithin(distance: number): number {
  *  of the distance once those rows are paid for. Negative where the row is beyond it. */
 export function columnsWithin(distance: number, rows: number): number {
   return distance - ROW_DISTANCE * Math.abs(rows)
+}
+
+/**
+ * A reach rounded up to whole rows: the least multiple of `ROW_DISTANCE` at or above it, so its last point is a whole
+ * row, as every reach the content gives is (grid.md, whole rows). It is for a reach the rules work out from content
+ * numbers: a worker's nerve, a threat's range and two more, comes to 3 against a trooper's melee, which reaches three
+ * columns across but only one row up or down, and rounds up to 4, two rows up or down as well as four columns across.
+ */
+export function wholeRows(reach: number): number {
+  return ROW_DISTANCE * Math.ceil(reach / ROW_DISTANCE)
 }
 
 /**

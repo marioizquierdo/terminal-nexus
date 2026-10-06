@@ -54,7 +54,7 @@ export function intents(context: TickContext): Intent[] {
     } else {
       if (actor.definition.behavior === "flee") {
         // Measured as range is, so the threat's reach and the worker's nerve are counted alike.
-        if (!within(actor, target, fleeTrigger(target))) continue
+        if (!within(actor, target, fleeTrigger(target.definition))) continue
         intent = "away"
         context.events.push({
           kind: "behavior.flee",

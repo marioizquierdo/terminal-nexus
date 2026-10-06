@@ -9,7 +9,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { ALL_SETTINGS } from "../src/build/all-settings.ts"
 import { FIXTURE_REGISTRY, createRegistry } from "../src/content/index.ts"
-import type { ContentRegistry } from "../src/content/index.ts"
+import type { ContentDef, ContentRegistry } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import {
   DIRECTIONS,
@@ -31,6 +31,7 @@ import {
   step,
   stepLength,
   tilesWithin,
+  wholeRows,
 } from "../src/grid/index.ts"
 import type { Coord, Footprint, GridTerrain } from "../src/grid/index.ts"
 import { foreseeIntents, recall, resolveMissionPulse } from "../src/match/index.ts"
@@ -38,7 +39,8 @@ import type { MissionPulseInput } from "../src/match/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
 import { validateMission } from "../src/mission/index.ts"
 import { contextFor, resolvePulse, stepCost, stepTick } from "../src/pulse/index.ts"
-import { followsTarget } from "../src/pulse/target.ts"
+import { fleeTrigger } from "../src/pulse/perception.ts"
+import { engageRange, followsTarget } from "../src/pulse/target.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import type { MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
@@ -109,6 +111,13 @@ test("a step goes as far as it counts: one across a column, two up or down a row
     assert.equal(stepLength(direction), gridDistance(ORIGIN, to), direction)
     assert.equal(gridSteps(ORIGIN, to), 1, direction)
   }
+})
+
+test("a reach the rules work out from content numbers is rounded up to whole rows: the least even reach at or above it", () => {
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7, 8].map(wholeRows), [0, 2, 2, 4, 4, 6, 6, 8, 8])
+  // A reach of 3 stops at one row up and down, a column short of a whole second row at each end; rounded to 4, it
+  // covers both rows whole.
+  assert.deepEqual([rowsWithin(3), rowsWithin(wholeRows(3))], [1, 2])
 })
 
 test("a reach covers its length in columns on its own row and two columns less each row out: a diamond twice as wide as it is tall", () => {
@@ -354,6 +363,19 @@ test("two raiders, one nine rows above their target and one eighteen columns bes
   assert.equal(fromAbove, 30)
 })
 
+test("a worker runs from a trooper two rows straight above it as from one two columns across: its nerve is whole rows, 4 against melee", () => {
+  const WORKER = "unit.citizen.worker"
+  /** Whether a worker, alone with an enemy trooper `dx` columns across and `dy` rows down from it, runs on the first
+   *  tick. */
+  const flees = (dx: number, dy: number): boolean =>
+    play(field({ A: [[20, 10, WORKER]], B: [[20 + dx, 10 + dy, TROOPER]] }), 1).events.some((event) => event.kind === "behavior.flee")
+  assert.equal(fleeTrigger(FIXTURE_REGISTRY.get(TROOPER)), 4)
+  // Two rows straight up or down is four away and one step from touching: it runs, as from two columns across.
+  assert.deepEqual([flees(0, -2), flees(0, 2), flees(2, 0), flees(-2, 0)], [true, true, true, true])
+  // Four columns across is as far on screen as two rows up; three rows up and five columns across are beyond it.
+  assert.deepEqual([flees(4, 0), flees(0, -3), flees(5, 0)], [true, false, false])
+})
+
 test("melee is touching: a trooper swings at the enemy straight above it, and steps beside a building a row and a column off first", () => {
   const above = play(field({ A: [[10, 10, TROOPER]], B: [[10, 9, TROOPER]] }), 24).events
   const swings = above.filter((event) => event.kind === "attack.launched" && event.tick === 1)
@@ -527,7 +549,7 @@ test("the battle with the most rules in it resolves the same way on every run, a
 // The Citizens against the Ravels, blasts among its rules: its state and its events.
 const PINNED_BATTLE = ["030e40b3ca69c383c53e3f4455db901360e0bbbaa39cc09c0a2bfb829d863181", "9349bec06ff8fcbdec9cca65d68ccf434259599c47730a44b28bf4477dba6cfe"] as const
 
-test("every reach the content and the Experiments offer is a whole number of rows: 1, which is touching, or even", () => {
+test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of
   // its rows and no row: the grid design's "whole rows". Content keeps to even reaches; 1 means touching.
   const whole = (reach: number): boolean => reach === 1 || reach % 2 === 0
@@ -542,6 +564,10 @@ test("every reach the content and the Experiments offer is a whole number of row
       "aura radius": definition.aura?.radius,
       "construction radius": definition.constructionRadius,
       clearance: definition.clearance,
+      // Worked out from those: the reach a unit heading for its side's target turns to fight within, and how near
+      // an attacker may come before a worker runs from it.
+      "engage reach": followsTarget(definition) ? engageRange(definition) : undefined,
+      "flight trigger": definition.attack === undefined ? undefined : fleeTrigger(definition),
     }
     for (const [what, reach] of Object.entries(reaches)) if (reach !== undefined && !whole(reach)) odd.push(`${id} ${what} ${reach}`)
   }
@@ -549,4 +575,7 @@ test("every reach the content and the Experiments offer is a whole number of row
     for (const value of ALL_SETTINGS[name].values) if (!whole(value)) odd.push(`the ${name} Experiment offers ${value}`)
   }
   assert.deepEqual(odd, [])
+  // Whatever the content says: an attack that reached 7 would turn its unit at 8, and send a worker running at 10.
+  const seven: ContentDef = { ...FIXTURE_REGISTRY.get(TROOPER), attack: { kind: "ranged", range: 7, damage: 1, cooldownTicks: 12 } }
+  assert.deepEqual([engageRange(seven), fleeTrigger(seven)], [8, 10])
 })

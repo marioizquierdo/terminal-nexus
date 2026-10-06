@@ -21,6 +21,7 @@
 
 import type { ContentDef } from "../content/types.ts"
 import { footprintSteps, gridDistance, tilesOf } from "../grid/coords.ts"
+import { wholeRows } from "../grid/reach.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
@@ -35,9 +36,10 @@ import { stepsBetween } from "./shared.ts"
  */
 export const ENGAGE_RANGE = 6
 
-/** How near an enemy must come before `definition` turns from its side's target to fight it. */
+/** How near an enemy must come before `definition` turns from its side's target to fight it: `ENGAGE_RANGE`, or its
+ *  own attack's range when that is longer, in whole rows (`wholeRows`) whatever the content says. */
 export function engageRange(definition: ContentDef): number {
-  return Math.max(ENGAGE_RANGE, definition.attack?.range ?? 0)
+  return wholeRows(Math.max(ENGAGE_RANGE, definition.attack?.range ?? 0))
 }
 
 /** Whether a unit of this content follows its side's target: one that moves and fights (`advance`), not a
