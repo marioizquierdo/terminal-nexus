@@ -34,7 +34,7 @@ import type { MissionPlay } from "../src/cli/pulse-run.ts"
 import { STARTER_MISSION, missionPlay } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { tilesOf } from "../src/grid/coords.ts"
+import { ROW_DISTANCE, tilesOf } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { ACTIVITY_FILTERS, filteredEntries } from "../src/log/activity.ts"
 import { recall, resolveMissionPulse } from "../src/match/index.ts"
@@ -491,7 +491,6 @@ const focusInstance = (origin: Coord, params: Record<string, number> = { periodM
 const effectAt = (overrides: Partial<EffectContext> = {}): EffectContext => ({
   timeMs: 0,
   cosmeticSeed: 0,
-  tileWidth: 1,
   reducedMotion: false,
   capability: "truecolor",
   ...overrides,
@@ -505,11 +504,14 @@ test("the intro highlight's three forms: a breathing ring, a steady one under re
   const alphaAt = (timeMs: number, tile: Coord, overrides: Partial<EffectContext> = {}): number | undefined =>
     recipe(focusInstance(origin), effectAt({ timeMs, ...overrides })).find((cell) => key(cell.tile) === key(tile))?.seeThrough?.alpha
 
-  // Full: a ring of glyphless light around the focus — two tiles deep at the sides where a tile is a
-  // column wide, one where it is two — never on the focus itself.
+  // Full: a ring of glyphless light around the focus — a row deep above and below, and as many columns deep at
+  // the sides as a row counts, so it is as deep on screen every way round — never on the focus itself.
   const full = recipe(focusInstance(origin), effectAt())
-  assert.equal(full.length, 5 * 3 - 1)
-  assert.equal(recipe(focusInstance(origin), effectAt({ tileWidth: 2 })).length, 3 * 3 - 1)
+  assert.equal(full.length, (2 * ROW_DISTANCE + 1) * 3 - 1)
+  assert.deepEqual(
+    [Math.min(...full.map((cell) => cell.tile.x)), Math.max(...full.map((cell) => cell.tile.x))],
+    [origin.x - ROW_DISTANCE, origin.x + ROW_DISTANCE],
+  )
   assert.ok(full.every((cell) => cell.glyph === "" && cell.seeThrough?.role === "fx.flash" && cell.inverse !== true))
   assert.ok(!full.some((cell) => key(cell.tile) === key(origin)), "the light falls on the focus's own glyph")
   // Lit as the line appears, at rest half a breath later, lit again a breath on; the far columns at half.

@@ -19,8 +19,8 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
-/** The 80x24 RULE floor (`docs/system-design/grid.md`) — the same footprint `compose.ts`'s Grid screen uses
- *  at `tileWidth` 1, so the terminal never resizes when the game moves from the menu into a match. */
+/** The 80x24 RULE floor (`docs/system-design/grid.md`) — the same footprint as `compose.ts`'s Pulse view
+ *  (`COMPOSITION_SIZE`), so the terminal never resizes when the game moves from the menu into a match. */
 export const MENU_SIZE = { width: 80, height: 24 } as const
 
 /** Where every menu screen's rows are drawn — the one layout the composer and the mouse adapter both

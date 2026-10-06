@@ -283,7 +283,6 @@ async function startPulse(pulse: PulseName): Promise<void> {
       timeline,
       capability: settings.capability,
       theme: settings.theme,
-      tileWidth: 1,
       speed: 1,
       presentation: { ...DEFAULT_PRESENTATION, reducedMotion: settings.reducedMotion, glyphPack: settings.glyphPack },
     }),

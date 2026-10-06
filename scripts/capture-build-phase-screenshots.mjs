@@ -25,8 +25,9 @@
 // this after a change touches only the pictures that change actually shows.
 //
 // Each shot names its own terminal size, because the size *is* the subject: 80x24 is the minimum
-// viewport and the acceptance floor, 104x30 the maximum, 128x24 the two-columns-per-tile
-// composition, and 79x24 the resize gate one column below the floor.
+// viewport and the acceptance floor, 104x30 the maximum, 128x24 a wide terminal (a tile is one column
+// at every size, so it shows the maximum's width and centres it), and 79x24 the resize gate one column
+// below the floor.
 
 import { mkdirSync, rmSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
@@ -547,8 +548,8 @@ scripted(
 )
 
 scripted(
-  "spike-wide-tiles",
-  "128x24: a 48x18 viewport at two terminal columns per tile, where a tile stops being squashed 2:1",
+  "spike-wide-terminal",
+  "128x24: a wide terminal draws a tile one column wide too - 72x18 tiles, the columns to spare spent on centring",
   { keys: PICK_FIRST_POWER, expect: "* 130", cols: 128, rows: 24 },
 )
 

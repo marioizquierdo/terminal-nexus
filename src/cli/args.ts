@@ -14,7 +14,6 @@ const VALUE_OPTIONS = new Set([
   "events",
   "runs",
   "capability",
-  "tile-width",
   "speed",
   "backend",
   "cosmetic-seed",
@@ -27,6 +26,23 @@ const VALUE_OPTIONS = new Set([
   "settings",
   "keys",
 ])
+
+/**
+ * Options no command line reads any more, each with what to say instead: both `grid` and `terminal-nexus` refuse
+ * one, saying what changed, rather than run a command copied from an older note as something it did not mean.
+ * Each took a value and still takes it here, so the value is refused with its option rather than read as a map or
+ * a stray word.
+ */
+export const RETIRED_OPTIONS: ReadonlyMap<string, string> = new Map([
+  ["tile-width", "a tile is one column wide at every terminal size"],
+])
+
+/** What a command line says, after its own name, of an option it no longer reads, or `undefined` for one that was
+ *  never retired: `--tile-width is gone: a tile is one column wide at every terminal size.` */
+export function retiredOption(argument: string): string | undefined {
+  const why = argument.startsWith("--") ? RETIRED_OPTIONS.get(argument.slice(2)) : undefined
+  return why === undefined ? undefined : `${argument} is gone: ${why}.`
+}
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   const positional: string[] = []
@@ -42,7 +58,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
     }
     const name = token.slice(2)
     const [key, inline] = name.includes("=") ? splitOnce(name, "=") : [name, undefined]
-    if (VALUE_OPTIONS.has(key)) {
+    if (VALUE_OPTIONS.has(key) || RETIRED_OPTIONS.has(key)) {
       const value = inline ?? argv[index + 1]
       if (value === undefined) throw new Error(`option --${key} needs a value`)
       if (inline === undefined) index += 1

@@ -24,16 +24,15 @@ import type { ReportInput } from "../report/index.ts"
 import { hashState } from "../state/serialize.ts"
 import { loadMapFile, loadScenario } from "../scenario/index.ts"
 import { DEFAULT_PRESENTATION, parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
-import type { CapabilityMode, PresentationOptions, TileWidth } from "../view/index.ts"
-import { parseArgs, parseInteger } from "./args.ts"
+import type { CapabilityMode, PresentationOptions } from "../view/index.ts"
+import { parseArgs, parseInteger, retiredOption } from "./args.ts"
 import type { ParsedArgs } from "./args.ts"
 import { buildTimeline } from "./timeline.ts"
 import { watchPulse } from "./watch.ts"
 
 const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
 
-  grid <map.map.json>          [--seed 0xABCD] [--ticks 120] [--turn 90]
-                                [--speed 1] [--tile-width 1|2]
+  grid <map.map.json>          [--seed 0xABCD] [--ticks 120] [--turn 90] [--speed 1]
                                 [--capability monochrome|color16|color256|truecolor]
                                 [--theme dark|light] [--glyphs ascii|unicode]
                                 [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
@@ -266,8 +265,6 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
     await writeFile(savePath, `${buildLog(input, level).join("\n")}\n`, "utf8")
   }
 
-  const tileWidthOption = args.options.get("tile-width")
-  const tileWidth: TileWidth = tileWidthOption === "2" ? 2 : 1
   const cosmeticSeed = args.options.get("cosmetic-seed")
   const presentation: PresentationOptions = {
     effects: !args.flags.has("no-effects"),
@@ -283,7 +280,6 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
     timeline,
     capability: parseCapability(args.options.get("capability") ?? detectCapability()),
     theme: parseTheme(args.options.get("theme") ?? "dark"),
-    tileWidth,
     speed: Number(args.options.get("speed") ?? "1"),
     backend: args.options.get("backend") ?? "auto",
     presentation,
@@ -293,11 +289,49 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
   })
 }
 
+/** Everything `grid` reads from its command line, besides the map; anything else is refused rather than ignored, as
+ *  the game's own command line refuses it (`terminal-nexus.ts`). */
+const GRID_FLAGS: ReadonlySet<string> = new Set(["help", "headless", "verify", "json", "no-effects", "reduced-motion"])
+const GRID_OPTIONS: ReadonlySet<string> = new Set([
+  "seed",
+  "ticks",
+  "turn",
+  "log-level",
+  "save-log",
+  "events",
+  "runs",
+  "capability",
+  "theme",
+  "glyphs",
+  "speed",
+  "backend",
+  "cosmetic-seed",
+])
+
+/** What `grid` says for what it does not read: a retired option what changed (`RETIRED_OPTIONS`); anything else,
+ *  --help. */
+function unknownArgument(argument: string): string {
+  const retired = retiredOption(argument)
+  if (retired !== undefined) return `grid: ${retired}\n`
+  return `grid: ${argument.startsWith("--") ? `unknown option ${argument}` : `unexpected "${argument}"`}.\n`
+}
+
 export async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv)
   if (args.flags.has("help") || args.positional[0] === "help") {
     process.stdout.write(`${USAGE}\n`)
     return 0
+  }
+  // The map is the one positional argument; any other, and any option `grid` does not read, is refused whole,
+  // before anything runs.
+  const unknown = [
+    ...[...args.flags].filter((name) => !GRID_FLAGS.has(name)).map((name) => `--${name}`),
+    ...[...args.options.keys()].filter((name) => !GRID_OPTIONS.has(name)).map((name) => `--${name}`),
+    ...args.positional.slice(1),
+  ]
+  if (unknown.length > 0) {
+    process.stderr.write(`${unknown.map(unknownArgument).join("")}grid --help lists every option.\n`)
+    return 2
   }
 
   const path = args.positional[0]

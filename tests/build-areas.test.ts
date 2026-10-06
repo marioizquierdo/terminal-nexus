@@ -256,7 +256,7 @@ test("the raid's trail stays as built: a building armed draws neither dots nor s
   assert.ok(compared >= 4, `only ${compared} trail marks were in view`)
 })
 
-test("at 80x24 and at two columns a tile, the frame keeps its size and its glyphs, armed and refused", () => {
+test("at 80x24 and on a wide terminal, the frame keeps its size and its glyphs, armed and refused", () => {
   for (const terminal of [MINIMUM, WIDE]) {
     for (const glyphPack of ["ascii", "unicode"] as const) {
       const side = buildSide({ cursor: STARTER_START_CURSOR, terminal })

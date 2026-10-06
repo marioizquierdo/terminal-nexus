@@ -40,7 +40,6 @@ function context(overrides: Partial<EffectContext> = {}): EffectContext {
   return {
     timeMs: 1000,
     cosmeticSeed: 0x0c05e7,
-    tileWidth: 1,
     reducedMotion: false,
     capability: "color16",
     ...overrides,
@@ -451,7 +450,7 @@ test("a real fight's damage flash carries fade all the way to the composed frame
 
   let foundAt: number | undefined
   for (let timeMs = 0; timeMs < view.durationMs && foundAt === undefined; timeMs += tickMs) {
-    const frame = view.snapshotAt(timeMs, "truecolor", 1)
+    const frame = view.snapshotAt(timeMs, "truecolor")
     if (frame.cells.some((cell) => cell.style.fade !== undefined)) foundAt = timeMs
   }
   assert.ok(foundAt !== undefined, "no frame across the whole fight ever carried a fade")
@@ -493,7 +492,7 @@ test("the cosmetic seed cannot reach the kernel", async () => {
     hashes.add(`${view.timeline.stateHash}:${view.timeline.eventsHash}`)
     framesPerSeed.set(
       cosmeticSeed,
-      sampleTimes.map((timeMs) => frameToText(view.snapshotAt(timeMs, "color16", 1))),
+      sampleTimes.map((timeMs) => frameToText(view.snapshotAt(timeMs, "color16"))),
     )
   }
   assert.equal(hashes.size, 1, "a cosmetic seed changed a gameplay hash")
@@ -526,8 +525,8 @@ test("effects are derived from the event stream, and turning them off changes on
   // already moved it once (every mover in the fixture reaches contact sooner).
   const timeMs = 25 * (1000 / 12) + 40
   assert.notEqual(
-    frameToText(withEffects.snapshotAt(timeMs, "monochrome", 1)),
-    frameToText(without.snapshotAt(timeMs, "monochrome", 1)),
+    frameToText(withEffects.snapshotAt(timeMs, "monochrome")),
+    frameToText(without.snapshotAt(timeMs, "monochrome")),
   )
 })
 
@@ -546,7 +545,7 @@ test("composed frames stay inside the Grid, one ASCII cell each, at every render
       const view = createView(timeline, { ...DEFAULT_PRESENTATION, reducedMotion })
       for (const capability of CAPABILITY_MODES) {
         for (const fraction of [0.1, 0.35, 0.5, 0.8]) {
-          const frame = view.snapshotAt(view.durationMs * fraction, capability, 1)
+          const frame = view.snapshotAt(view.durationMs * fraction, capability)
           assert.equal(frame.width, 80)
           assert.equal(frame.height, 24)
           assert.equal(offendingGlyph(frame), null, `${name} at ${capability}`)
@@ -573,7 +572,7 @@ test("every render tier shows the same Pulse, and only monochrome shows no colou
   const timeMs = 200 * (1000 / 12)
 
   const glyphs = new Set(
-    CAPABILITY_MODES.map((capability) => frameToText(view.snapshotAt(timeMs, capability, 1))),
+    CAPABILITY_MODES.map((capability) => frameToText(view.snapshotAt(timeMs, capability))),
   )
   assert.equal(glyphs.size, 1, "a render tier changed which glyphs are on screen")
 })
@@ -625,8 +624,8 @@ test("the glyph pack changes the field and the frame, never the actors", async (
   const unicode = createView(timeline, { ...DEFAULT_PRESENTATION, glyphPack: "unicode" })
   const timeMs = 178 * (1000 / 12)
 
-  const asciiFrame = ascii.snapshotAt(timeMs, "truecolor", 1)
-  const unicodeFrame = unicode.snapshotAt(timeMs, "truecolor", 1)
+  const asciiFrame = ascii.snapshotAt(timeMs, "truecolor")
+  const unicodeFrame = unicode.snapshotAt(timeMs, "truecolor")
   assert.notEqual(frameToText(asciiFrame), frameToText(unicodeFrame))
   assert.equal(offendingGlyph(asciiFrame), null)
   assert.equal(offendingGlyph(unicodeFrame), null, "the pack put a glyph on screen it may not use")

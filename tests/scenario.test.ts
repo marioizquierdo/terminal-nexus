@@ -40,7 +40,7 @@ function block(
 }
 
 test("the default preset is 48 x 16, which the 80-column composition is derived from", () => {
-  // RULE: change this and the 80- and 128-column layouts stop falling out of one number.
+  // RULE: change this and the 80-column floor stops falling out of it: 1 + 48 + 1 + 30, a column a tile.
   assert.equal(DEFAULT_PRESET, "medium-extra-wide")
   assert.deepEqual(presetDimensions(DEFAULT_PRESET), { width: 48, height: 16 })
 })

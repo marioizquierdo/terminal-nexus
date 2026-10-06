@@ -93,9 +93,6 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
           },
         })
       }
-      for (let extra = 1; extra < layout.tileWidth; extra += 1) {
-        put(cells, BANDS.structures, cell.x + extra, cell.y, " ", playerRole("A"))
-      }
     }
   }
 
@@ -133,8 +130,6 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
           ? incomingLook(entity.player)
           : { fgRole: playerRole(entity.player), ...(definition.layer === "obstacles" ? { bold: true } : {}) }
       cells.push({ band, x: cell.x, y: cell.y, cell: { glyph: entityGlyph(entity.contentId, entity.player, offset), style } })
-      const blank: CellStyle = incoming && !commander ? incomingLook(entity.player) : { fgRole: playerRole(entity.player) }
-      for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style: blank } })
     }
   }
   for (const entity of context.field ?? []) drawEntity(entity, false)
@@ -202,7 +197,6 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
     const style: CellStyle = { fgRole: playerRole(player), dim: true, fade: mark.ghost === undefined ? TRAIL_FADE : (GHOST_FADES[mark.ghost] ?? 1) }
     const cell = cellForTile(layout, state.camera, tile)
     cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
-    for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style } })
   }
   const marked = new Set<string>()
   for (const group of raid) {
@@ -213,7 +207,7 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
       marked.add(key)
       const cell = cellForTile(layout, state.camera, tile)
       const style: CellStyle = { underline: true, seeThrough: { role: playerRole(group.player), alpha: TARGET_WASH } }
-      for (let extra = 0; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.effects, x: cell.x + extra, y: cell.y, style })
+      cells.push({ band: BANDS.effects, x: cell.x, y: cell.y, style })
     }
   }
 }
@@ -400,7 +394,7 @@ export function drawEffects(
   const range = visibleRange(state.camera, state.viewport)
   const sources: EffectCellSource[] = []
   for (const { schedule, elapsedMs } of tracks) {
-    const effectContext = placementEffectContext(elapsedMs, reducedMotion, capability, layout.tileWidth)
+    const effectContext = placementEffectContext(elapsedMs, reducedMotion, capability)
     for (const instance of trackEffectsAt(schedule, elapsedMs)) {
       const recipe = EFFECT_RECIPES[instance.recipe]
       if (recipe === undefined) continue
@@ -522,9 +516,7 @@ export function drawCursor(cells: BandCell[], input: BuildCompositionInput): voi
         ? { inverse: true }
         : { inverse: true, bold: true, dim: false, fgRole: CURSOR_ROLE }
   const style: CellStyle = { ...look, seeThrough: { role: CURSOR_ROLE, alpha: 0 } }
-  for (let extra = 0; extra < layout.tileWidth; extra += 1) {
-    cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })
-  }
+  cells.push({ band: BANDS.highlights, x: cell.x, y: cell.y, style })
 }
 
 /**
@@ -550,8 +542,6 @@ export function drawRefusedTry(cells: BandCell[], input: BuildCompositionInput, 
   for (const tile of tiles) {
     if (!inView(range, tile)) continue
     const cell = cellForTile(layout, state.camera, tile)
-    for (let extra = 0; extra < layout.tileWidth; extra += 1) {
-      cells.push({ band: BANDS.highlights, x: cell.x + extra, y: cell.y, style })
-    }
+    cells.push({ band: BANDS.highlights, x: cell.x, y: cell.y, style })
   }
 }

@@ -17,7 +17,7 @@
 
 import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
-import type { Camera, TileWidth, Viewport, VisibleRange } from "../build/camera.ts"
+import type { Camera, Viewport, VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
@@ -68,7 +68,6 @@ const STEP_FRAMES_PER_SECOND = 30
  *  words go to the panel when she is out of it). */
 export type PulseFrameOptions = Readonly<{
   capability: CapabilityMode
-  tileWidth: TileWidth
   reducedMotion: boolean
   /** The part of the map on screen. Absent: all of it. */
   view?: Readonly<{ camera: Camera; viewport: Viewport }>
@@ -273,10 +272,10 @@ export class PulsePresenter {
    *  Nexus is hurt included (the owner kept them, 2026-09-30), and — while she is on the Grid — her aura's
    *  reach and what she is saying. */
   frame(options: PulseFrameOptions): PulseFrame {
-    const { capability, tileWidth, reducedMotion } = options
+    const { capability, reducedMotion } = options
     const timeMs = this.timeMs
     const times = this.times
-    const drawn = this.view.sampleAt(timeMs, capability, tileWidth, reducedMotion)
+    const drawn = this.view.sampleAt(timeMs, capability, reducedMotion)
     const walk = walkPositions(this.resolved.recall.moves, times, timeMs, reducedMotion)
     const positions = walk.size === 0 ? drawn.positions : new Map([...drawn.positions, ...walk])
     const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
@@ -398,7 +397,6 @@ export class PulsePresenter {
     const cells = recipe(instance, {
       timeMs: this.timeMs,
       cosmeticSeed: this.view.presentation.cosmeticSeed,
-      tileWidth: options.tileWidth,
       reducedMotion: options.reducedMotion,
       capability: options.capability,
     })

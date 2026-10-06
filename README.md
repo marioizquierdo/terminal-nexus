@@ -79,8 +79,7 @@ have no runtime dependency, so every `grid` command works from a clean checkout.
 
 ### Play it
 
-Make your terminal **at least 80 x 24** — bigger is fine, 128 columns wide unlocks the two-column
-composition — then:
+Make your terminal **at least 80 x 24** — bigger is fine — then:
 
 ```bash
 npm install     # only needed once, and only for typechecking and the OpenTUI backend
@@ -114,7 +113,6 @@ npm run grid -- scenarios/citizen-mirror-skirmish                          # the
 npm run grid -- <map> \
   --capability monochrome|color16|color256|truecolor \
   --glyphs ascii|unicode \
-  --tile-width 1|2          # 2 needs a 128-column terminal
   --speed 2 --no-effects --reduced-motion --seed 0x1234 --turn 90
 ```
 

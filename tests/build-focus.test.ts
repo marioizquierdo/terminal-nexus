@@ -74,8 +74,8 @@ test("the side panel is on the left of the Grid at every size in the supported r
     assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
     // The Grid page's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
-    // given to the Grid: 1 + 29 + 49 + 1 at 80 columns.
-    assert.equal(layout.composition.width, 31 + layout.viewport.width * layout.tileWidth)
+    // given to the Grid: 1 + 29 + 49 + 1 at 80 columns, a column a tile.
+    assert.equal(layout.composition.width, 31 + layout.viewport.width)
   }
 })
 

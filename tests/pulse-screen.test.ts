@@ -225,7 +225,7 @@ test("the survivors are drawn walking home, and home when the walk ends", () => 
   assert.ok(moves.length > 0, "nobody survived to walk")
   const drawn = (ms: number) => {
     at(played, ms)
-    const frame = played.build.pulseFrame(played.layout)
+    const frame = played.build.pulseFrame()
     assert.ok(frame !== undefined)
     return frame.positions
   }
@@ -257,13 +257,13 @@ test("reduced motion holds the timer and the light steady and puts the survivors
     assert.equal(shown(ms), first, `the timer or the light moved at ${ms} ms`)
   }
   at(played, moments.walkMs + 5)
-  const positions = played.build.pulseFrame(played.layout)!.positions
+  const positions = played.build.pulseFrame()!.positions
   for (const move of played.pulse.recall.moves) assert.deepEqual(positions.get(move.ordinal), move.to)
   // With motion, the same instant is mid-walk.
   const moving = victorious()
   at(moving, moments.walkMs + 5)
   assert.ok(moving.pulse.recall.moves.some((move) => {
-    const drawnAt = moving.build.pulseFrame(moving.layout)!.positions.get(move.ordinal)
+    const drawnAt = moving.build.pulseFrame()!.positions.get(move.ordinal)
     return drawnAt !== undefined && (drawnAt.x !== move.to.x || drawnAt.y !== move.to.y)
   }), "nothing was still walking with motion on")
 })
@@ -355,7 +355,7 @@ test("red is for the player's Nexus being hurt: faint, brief, and never under re
     const levels: number[] = []
     for (let ms = 0; ms < times(played).homeMs + 400; ms += 25) {
       at(played, ms)
-      levels.push(played.build.pulseFrame(played.layout)!.redAlert)
+      levels.push(played.build.pulseFrame()!.redAlert)
     }
     return levels
   }
@@ -646,5 +646,5 @@ test("nobody draws the Pulse in the Build Phase, and the Build Phase's frame is 
   assert.match(plain, /TERMINAL NEXUS build phase/)
   assert.doesNotMatch(plain, /BATTLE ROUND|Watch again/)
   assert.equal(session.build.pulse, null)
-  assert.equal(session.build.pulseFrame(session.layout), undefined)
+  assert.equal(session.build.pulseFrame(), undefined)
 })

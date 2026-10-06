@@ -9,7 +9,7 @@
 // shape: take steps, return frames.
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
-import { GAME_TILE_WIDTH, isGated, visibleRange } from "../build/camera.ts"
+import { isGated, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
@@ -148,8 +148,8 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   if (isGated(terminal, context.grid)) {
     throw new Error(`${terminal.columns}x${terminal.rows} is below the Build Phase's 80x24 floor`)
   }
-  // One column a tile at every size, as the live screen (`GAME_TILE_WIDTH`).
-  const layout = buildLayout(terminal, context.grid, GAME_TILE_WIDTH)
+  // Laid out as the live screen lays out a terminal of this size.
+  const layout = buildLayout(terminal, context.grid)
 
   let leftBy: "quit" | null = null
   const build = new BuildSession({
@@ -177,7 +177,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     // Pulse as it is that long after it began. And the raid's trail, which moves from the first frame that drew
     // it moving, as the live loop moves it (`TrailClock`): the same keys draw it in the same place, and
     // `wait~MS` steps show it moving. Nothing else on this screen depends on time in a scripted playtest.
-    const pulse = build.pulseFrame(layout)
+    const pulse = build.pulseFrame()
     const raid = build.raid()
     const inView = hasTrail(raid, visibleRange(build.state.camera, build.state.viewport))
     const raidTrail = trail.at(build.state, clock, { reducedMotion: build.state.settings.reducedMotion, raidTrail: inView })

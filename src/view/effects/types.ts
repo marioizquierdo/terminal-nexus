@@ -24,7 +24,7 @@ export const EFFECT_BANDS: readonly EffectBand[] = [
 ]
 
 export type PositionedCell = Readonly<{
-  /** Tile coordinates. The compositor maps them to columns at the current tile width. */
+  /** Tile coordinates. A tile is one cell on screen; the compositor places it through the camera. */
   tile: Coord
   glyph: string
   role?: StyleRole
@@ -55,7 +55,6 @@ export type EffectContext = Readonly<{
   /** Absolute presentation time, not time since the effect started. */
   timeMs: number
   cosmeticSeed: number
-  tileWidth: 1 | 2
   reducedMotion: boolean
   capability: CapabilityMode
 }>

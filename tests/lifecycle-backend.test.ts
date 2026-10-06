@@ -9,7 +9,7 @@ import { EventEmitter } from "node:events"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { selectBackend } from "../src/view/backends/index.ts"
 import { createTerminalSession } from "../src/cli/lifecycle.ts"
-import { DEFAULT_PRESENTATION, compositionSize, composeBands } from "../src/view/index.ts"
+import { COMPOSITION_SIZE, DEFAULT_PRESENTATION, composeBands } from "../src/view/index.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { watchPulse } from "../src/cli/watch.ts"
@@ -166,7 +166,7 @@ function backendOptions() {
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
     capability: "monochrome" as const,
-    ...compositionSize(1),
+    ...COMPOSITION_SIZE,
   }
 }
 
@@ -205,7 +205,6 @@ async function watchSession(
   const session = watchPulse({
     timeline,
     capability: "monochrome",
-    tileWidth: 1,
     speed: 1,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,
@@ -249,7 +248,6 @@ test("q also finishes the playback itself, so whatever ran the Pulse can carry o
   const finished = watchPulse({
     timeline,
     capability: "monochrome",
-    tileWidth: 1,
     speed: 1,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,
@@ -316,7 +314,6 @@ test("watch holds on the final frame after the Pulse ends, and only quits on q",
   const session = watchPulse({
     timeline,
     capability: "monochrome",
-    tileWidth: 1,
     speed: 200,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,
@@ -363,7 +360,6 @@ test("a render failure is caught, and still restores the terminal", async () => 
   const status = await watchPulse({
     timeline,
     capability: "monochrome",
-    tileWidth: 1,
     speed: 1,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,

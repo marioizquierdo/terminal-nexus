@@ -46,7 +46,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        1, as the screen does). Round 1 of vasse-test-1 unless given;
                        a later round is reached as a player who builds nothing reaches it.
                        With --at, the keys may be left out: the screen as it opens
-  --size 80x24         terminal size (default 80x24; 104x30 is the largest view, 128x24 wide tiles)
+  --size 80x24         terminal size (default 80x24; 104x30 is the largest view, and a larger one centres it)
   --capability <mode>  truecolor (default), color256, color16, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode

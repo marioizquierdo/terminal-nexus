@@ -152,8 +152,8 @@ test("how it is watched cannot change what happened: effects, the cosmetic seed 
   const dressed = createView(timeline, { effects: true, reducedMotion: false, cosmeticSeed: 0xfeed, glyphPack: "unicode" })
   assert.equal(dressed.effectCount > 0, true, "the dressed view drew nothing")
   for (let ms = 0; ms <= plain.durationMs; ms += 397) {
-    const a = plain.sampleAt(ms, "monochrome", 1)
-    const b = dressed.sampleAt(ms, "truecolor", 2, false)
+    const a = plain.sampleAt(ms, "monochrome")
+    const b = dressed.sampleAt(ms, "truecolor", false)
     assert.equal(hashState(a.state), hashState(b.state), `the state at ${ms} ms depends on how it is drawn`)
     assert.deepEqual([...a.positions], [...b.positions], `entity positions at ${ms} ms depend on how it is drawn`)
   }

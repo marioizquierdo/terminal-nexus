@@ -173,6 +173,23 @@ test("a map that fails to load reports an ERROR and a non-zero status", () => {
   assert.match(result.stderr, /ERROR/)
 })
 
+test("an argument grid does not read is refused before anything runs, and a retired option says what changed", () => {
+  // A tile is one column at every size: the option that once chose two is refused, value and all, saying so.
+  const retired = runGrid(["scenarios/melee-kill", "--tile-width", "2"])
+  assert.equal(retired.status, 2)
+  assert.equal(retired.stdout, "")
+  assert.equal(retired.stderr, "grid: --tile-width is gone: a tile is one column wide at every terminal size.\ngrid --help lists every option.\n")
+  // Every problem at once: a flag and an option grid does not read, and a second map.
+  const several = runGrid(["scenarios/melee-kill", "--fast", "--at", "settings", "scenarios/ranged-kill"])
+  assert.equal(several.status, 2)
+  assert.match(several.stderr, /^grid: unknown option --fast\.$/m)
+  assert.match(several.stderr, /^grid: unknown option --at\.$/m)
+  assert.match(several.stderr, /^grid: unexpected "scenarios\/ranged-kill"\.$/m)
+  // What grid does read still runs.
+  const known = runGrid(["scenarios/melee-kill", "--headless", "--json", "--seed", "0x1", "--reduced-motion", "--glyphs", "unicode"])
+  assert.equal(known.status, 0, known.stderr)
+})
+
 test("no map given is a usage error, not a crash", () => {
   const result = runGrid([])
   assert.equal(result.status, 2)

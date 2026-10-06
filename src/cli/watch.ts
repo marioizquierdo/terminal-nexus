@@ -10,14 +10,8 @@
 // themselves rather than the session vanishing out from under them.
 
 import { Playback, controlForKey, keysFromChunk } from "../terminal/playback.ts"
-import { compositionSize, createView, gateFrame } from "../view/index.ts"
-import type {
-  CapabilityMode,
-  PresentationOptions,
-  PulseTimeline,
-  Theme,
-  TileWidth,
-} from "../view/index.ts"
+import { COMPOSITION_SIZE, createView, gateFrame } from "../view/index.ts"
+import type { CapabilityMode, PresentationOptions, PulseTimeline, Theme } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
@@ -33,7 +27,6 @@ export type WatchOptions = Readonly<{
   capability: CapabilityMode
   /** Which background the palette assumes. Defaults to `DEFAULT_THEME` ("dark") when omitted. */
   theme?: Theme
-  tileWidth: TileWidth
   speed: number
   /** A backend name, or a backend itself (the browser playtest page's canvas). */
   backend: string | NamedBackend
@@ -63,7 +56,7 @@ function hashLine(timeline: PulseTimeline): string {
 export async function watchPulse(options: WatchOptions): Promise<number> {
   const { timeline, stdout, stdin } = options
   const view = createView(timeline, options.presentation)
-  const required = compositionSize(options.tileWidth)
+  const required = COMPOSITION_SIZE
 
   // Non-TTY prints one line and no escapes. It still reports the hashes, so a scripted watch and a
   // headless run can be compared without a terminal in the loop.
@@ -161,12 +154,10 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
             return
           }
           backend.present(
-            view.composeAt(
-              playback.presentationTimeMs,
-              options.capability,
-              options.tileWidth,
-              { paused: playback.paused, speed: playback.speed },
-            ),
+            view.composeAt(playback.presentationTimeMs, options.capability, {
+              paused: playback.paused,
+              speed: playback.speed,
+            }),
           )
           // No auto-exit here: the viewer asked to hold on the final frame until they choose to
           // leave. `composeAt` already clamps past the Pulse's end, so this just keeps redrawing an

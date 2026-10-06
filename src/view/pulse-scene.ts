@@ -10,7 +10,7 @@ import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { cellForTile, nextRoundRow, pulseControlRows } from "../build/layout.ts"
+import { cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { commanderName } from "../content/cards.ts"
@@ -119,9 +119,6 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
         bold: drawnBold(definition),
       })
-      for (let extra = 1; extra < view.layout.tileWidth; extra += 1) {
-        put(cells, band, cell.x + extra, cell.y, " ", playerRole(entity.player))
-      }
     }
   }
   pulse.sample.state.entities.forEach(draw)
@@ -190,7 +187,7 @@ export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame):
   for (const tile of tilesWithin(aura.at, ONE_TILE, aura.radius)) {
     if (!inBounds(view.grid, tile) || !inView(range, tile)) continue
     const cell = cellForTile(view.layout, view.camera, tile)
-    for (let extra = 0; extra < view.layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, style })
+    cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, style })
   }
 }
 
@@ -213,9 +210,8 @@ export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseF
   const width = ` ${words} `.length
   const place = cellForTile(layout, camera, voice.place)
   const mapLeft = layout.origin.column
-  const mapRight = mapLeft + viewport.width * layout.tileWidth - 1
-  const centre = place.x + Math.floor(layout.tileWidth / 2)
-  const left = Math.max(mapLeft, Math.min(centre - Math.floor(width / 2), mapRight - width + 1))
+  const mapRight = mapLeft + viewport.width - 1
+  const left = Math.max(mapLeft, Math.min(place.x - Math.floor(width / 2), mapRight - width + 1))
   const y = place.y
   const top = layout.origin.row
   if (y < top || y >= top + viewport.height) return
@@ -225,8 +221,9 @@ export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseF
   for (let index = 0; index < glyphs.length; index += 1) {
     const x = left + index
     if (x > mapRight) break
-    const tile = { x: camera.x + Math.floor((x - mapLeft) / layout.tileWidth), y: camera.y + (y - top) }
-    if (!inBounds(grid, tile) || occupied.has(tileIndex(grid, tile))) continue
+    // A letter is a tile's cell: the one it would cover.
+    const tile = tileAtCell(layout, camera, x, y)
+    if (tile === null || !inBounds(grid, tile) || occupied.has(tileIndex(grid, tile))) continue
     put(cells, BANDS.effects, x, y, glyphs[index] as string, role, extra)
   }
 }

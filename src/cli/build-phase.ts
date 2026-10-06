@@ -9,7 +9,7 @@
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../title-menu/mouse.ts"
 import { BuildSession } from "../view/build-session.ts"
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
-import { GAME_TILE_WIDTH, isGated, visibleRange } from "../build/camera.ts"
+import { isGated, visibleRange } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
@@ -149,8 +149,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     at: formatRoute(at),
   })
 
-  // Laid out by the terminal's size, one column a tile at every size (`GAME_TILE_WIDTH`).
-  let layout = buildLayout(terminalSize(), context.grid, GAME_TILE_WIDTH)
+  // Laid out by the terminal's size, a tile to a column.
+  let layout = buildLayout(terminalSize(), context.grid)
   const backend = await selectBackend(options.backend, {
     stdout,
     stdin,
@@ -300,7 +300,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
           raidTrail: hasTrail(raid, visibleRange(build.state.camera, build.state.viewport)),
         })
-    const pulse = gated ? undefined : build.pulseFrame(layout)
+    const pulse = gated ? undefined : build.pulseFrame()
     const frame =
       gated || live === null
         ? gateFrame(size.columns, size.rows, FLOOR)
@@ -351,7 +351,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     // time had passed: the moment the gate closes or opens, the clock is moved on without the Pulse.
     if (wasGated || gated) build.advance(clock(), true)
     if (!gated) {
-      layout = buildLayout(size, context.grid, GAME_TILE_WIDTH)
+      layout = buildLayout(size, context.grid)
       build.resize(layout.viewport)
       animation.snap(build.state, clock())
     }

@@ -83,7 +83,7 @@ function mapCells(side: BuildSide, frame: ReadonlyCellFrame): { x: number; y: nu
   const { layout } = side
   const cells: { x: number; y: number; cell: Cell }[] = []
   for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
-    for (let x = layout.origin.column; x < layout.origin.column + layout.viewport.width * layout.tileWidth; x += 1) cells.push({ x, y, cell: cellAt(frame, x, y) })
+    for (let x = layout.origin.column; x < layout.origin.column + layout.viewport.width; x += 1) cells.push({ x, y, cell: cellAt(frame, x, y) })
   }
   return cells
 }
@@ -138,9 +138,9 @@ test("a trail never replaces a glyph: only bare open ground under it changes, an
         if (isTrail(cell)) marks += 1
         else corners += 1
       } else if (JSON.stringify(cell.style) !== JSON.stringify(was.style)) {
-        // The same glyph, restyled: the target's mark, or a trail mark's blank second column on wide tiles.
-        assert.ok(isTarget(cell) || isTrail(cell) || isCorner(cell), `round ${number}: ${x},${y} restyled as neither a target nor a trail nor a corner`)
-        if (isTarget(cell)) targets += 1
+        // The same glyph, restyled: only ever the target's mark, a glyphless write over what it goes for.
+        assert.ok(isTarget(cell), `round ${number}: ${x},${y} restyled as something other than the target's mark`)
+        targets += 1
       }
     }
     assert.ok(marks > 0, `round ${number} draws no trail`)

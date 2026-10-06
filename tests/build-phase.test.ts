@@ -677,7 +677,7 @@ test("a resize keeps the cursor where it was and re-fits the camera around it", 
   const small = buildLayout(MINIMUM, context.grid)
   const build = readyBuildSession({ context, cursor: { x: 60, y: 30 }, viewport: small.viewport })
   const cursor = { ...build.state.cursor }
-  build.resize(fitViewport(MAXIMUM, context.grid, 1))
+  build.resize(fitViewport(MAXIMUM, context.grid))
   assert.deepEqual(build.state.cursor, cursor)
   assert.deepEqual(build.state.viewport, { width: 72, height: 24 })
   assert.ok(build.state.camera.x >= 0 && build.state.camera.x <= context.grid.width - 72)

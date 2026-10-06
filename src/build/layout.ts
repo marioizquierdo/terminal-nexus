@@ -7,7 +7,7 @@ import type { PlaybackControl } from "../terminal/playback.ts"
 import type { BuildState } from "./state.ts"
 import { EXPLORE_ENTRY, NEXUS_ENTRY, entryOfConstruct, mapMode, startEntry } from "./state.ts"
 import type { ConstructItem, MenuEntry } from "./types.ts"
-import type { Camera, TerminalSize, TileWidth, Viewport } from "./camera.ts"
+import type { Camera, TerminalSize, Viewport } from "./camera.ts"
 import {
   BORDER_COLUMNS,
   FOOTER_ROWS,
@@ -16,7 +16,6 @@ import {
   PANEL_COLUMNS,
   availableTiles,
   fitViewport,
-  tileWidthFor,
 } from "./camera.ts"
 
 export type BuildLayout = Readonly<{
@@ -30,8 +29,8 @@ export type BuildLayout = Readonly<{
   /** Where that composition sits inside the frame. Terminal space beyond the maximum viewport is
    *  spent on centring, "never on more Grid" (docs/system-design/grid.md). */
   offset: Readonly<{ column: number; row: number }>
+  /** The tiles on screen, a tile to a column (`src/build/camera.ts`). */
   viewport: Viewport
-  tileWidth: TileWidth
   /** Frame cell of the viewport's own north-west tile. */
   origin: Readonly<{ column: number; row: number }>
   /**
@@ -239,21 +238,20 @@ export function menuEntryAt(
 }
 
 /**
- * The frame for a terminal of this size. `fixed` is the tile width at every size — the game's, one column a tile
- * (`GAME_TILE_WIDTH`, which the live loop, the scripted playtest and the tests pass) — or `null` where the
- * terminal's width decides (`tileWidthFor`).
+ * The frame for a terminal of this size: the same layout at every size, a tile to a column, the Grid pane as many
+ * columns wide as the viewport is tiles (`fitViewport`), and whatever the terminal has beyond the composition
+ * spent on centring it.
  */
-export function buildLayout(terminal: TerminalSize, grid: GridTerrain, fixed: TileWidth | null = null): BuildLayout {
-  const tileWidth = tileWidthFor(terminal, grid, fixed)
-  const viewport = fitViewport(terminal, grid, tileWidth)
+export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
+  const viewport = fitViewport(terminal, grid)
   // The pane between the two full-width rules is as tall as the viewport — but never shorter than
   // the minimum viewport's 16 rows while the terminal has them, because the side panel is designed at
   // that height and, since the top bar runs the whole width, has no rows beside it to
   // borrow. A Grid smaller than the minimum viewport is still never gated (docs/system-design/grid.md); it just
   // sits in the top of a pane taller than itself, closed by its own bottom edge.
-  const paneHeight = Math.max(viewport.height, Math.min(MIN_VIEWPORT.height, availableTiles(terminal, 1).height))
+  const paneHeight = Math.max(viewport.height, Math.min(MIN_VIEWPORT.height, availableTiles(terminal).height))
   const composition = {
-    width: BORDER_COLUMNS + PANEL_COLUMNS + viewport.width * tileWidth,
+    width: BORDER_COLUMNS + PANEL_COLUMNS + viewport.width,
     height: BORDER_COLUMNS + HEADER_ROWS + paneHeight + FOOTER_ROWS,
   }
   const frame = { width: Math.max(terminal.columns, composition.width), height: Math.max(terminal.rows, composition.height) }
@@ -286,7 +284,6 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain, fixed: Ti
     composition,
     offset,
     viewport,
-    tileWidth,
     origin,
     gridBox,
     paneBottom,
@@ -302,10 +299,11 @@ export function buildLayout(terminal: TerminalSize, grid: GridTerrain, fixed: Ti
   }
 }
 
-/** The frame cell a Grid tile is drawn at — the composer's direction of travel. */
+/** The frame cell a Grid tile is drawn at — the composer's direction of travel. A tile is one cell: a column
+ *  of the Grid pane for each tile across, a row for each tile down. */
 export function cellForTile(layout: BuildLayout, camera: Camera, tile: Coord): Coord {
   return {
-    x: layout.origin.column + (tile.x - camera.x) * layout.tileWidth,
+    x: layout.origin.column + (tile.x - camera.x),
     y: layout.origin.row + (tile.y - camera.y),
   }
 }
@@ -324,7 +322,6 @@ export function tileAtCell(
   const relativeRow = row - layout.origin.row
   if (relativeColumn < 0 || relativeRow < 0) return null
   if (relativeRow >= layout.viewport.height) return null
-  const tileX = Math.floor(relativeColumn / layout.tileWidth)
-  if (tileX >= layout.viewport.width) return null
-  return { x: camera.x + tileX, y: camera.y + relativeRow }
+  if (relativeColumn >= layout.viewport.width) return null
+  return { x: camera.x + relativeColumn, y: camera.y + relativeRow }
 }

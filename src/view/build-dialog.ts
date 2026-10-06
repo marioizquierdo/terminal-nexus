@@ -77,8 +77,8 @@ const lightOn = (tile: Coord, periodMs: number): EffectInstance => ({
 /**
  * The intro highlight around the line's focus: the recipe around each of the focus's own tiles — a unit's
  * one, each of a group's units', every tile of a region — so the ring outlines the whole focus and never
- * lights a tile of the focus itself; each tile lit once, on the map and in the view, across the tile's
- * whole width. One breath is the "Popup pulse" Experiment's, the dialog's border's own (0 holds it steady).
+ * lights a tile of the focus itself; each tile lit once, on the map and in the view. One breath is the
+ * "Popup pulse" Experiment's, the dialog's border's own (0 holds it steady).
  */
 function drawFocusLight(cells: BandCell[], input: BuildCompositionInput, line: DialogLine, capability: CapabilityMode): void {
   const focus = line.focus
@@ -90,7 +90,6 @@ function drawFocusLight(cells: BandCell[], input: BuildCompositionInput, line: D
   const effect: EffectContext = {
     timeMs: input.dialogLight?.elapsedMs ?? 0,
     cosmeticSeed: 0,
-    tileWidth: layout.tileWidth,
     reducedMotion: input.reducedMotion === true,
     capability,
   }
@@ -106,8 +105,7 @@ function drawFocusLight(cells: BandCell[], input: BuildCompositionInput, line: D
       if (!inBounds(context.grid, cell.tile) || !inView(range, cell.tile)) continue
       lit.add(at)
       const place = cellForTile(layout, state.camera, cell.tile)
-      const style = effectCellStyle(cell)
-      for (let extra = 0; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.highlights, x: place.x + extra, y: place.y, style })
+      cells.push({ band: BANDS.highlights, x: place.x, y: place.y, style: effectCellStyle(cell) })
     }
   }
 }

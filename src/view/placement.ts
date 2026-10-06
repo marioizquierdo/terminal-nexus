@@ -222,9 +222,8 @@ export function placementEffectContext(
   elapsedMs: number,
   reducedMotion: boolean,
   capability: CapabilityMode = "truecolor",
-  tileWidth: 1 | 2 = 1,
 ): EffectContext {
-  return { timeMs: elapsedMs, cosmeticSeed: 0, tileWidth, reducedMotion, capability }
+  return { timeMs: elapsedMs, cosmeticSeed: 0, reducedMotion, capability }
 }
 
 /** One tile, with the light it carries. */

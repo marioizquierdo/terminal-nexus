@@ -41,7 +41,7 @@ export function sameness(scenario: ScenarioDefinition): Sameness {
   const view = createView(timeline, DEFAULT_PRESENTATION)
   const pulseFrames: string[] = []
   for (let time = 0; time <= view.durationMs; time += Math.max(1, Math.floor(view.durationMs / 40))) {
-    pulseFrames.push(print(view.composeAt(time, "truecolor", 1, { paused: false, speed: 1 })))
+    pulseFrames.push(print(view.composeAt(time, "truecolor", { paused: false, speed: 1 })))
   }
 
   const context = starterContext()

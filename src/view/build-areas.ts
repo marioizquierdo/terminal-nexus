@@ -87,7 +87,7 @@ export function drawBuildRange(cells: BandCell[], input: BuildCompositionInput, 
       const cell = cellForTile(layout, state.camera, { x, y })
       const open = context.grid.tiles[y * context.grid.width + x] === "terrain.plain" && !taken.has(`${x},${y}`)
       if (open) cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: dot.glyph, style: { fgRole: dot.role, dim: true } } })
-      for (let extra = 0; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, style: wash })
+      cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, style: wash })
     }
   }
 }

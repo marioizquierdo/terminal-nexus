@@ -90,6 +90,5 @@ export function drawTroopsPost(cells: BandCell[], input: BuildCompositionInput, 
     if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
     const cell = cellForTile(layout, state.camera, tile)
     cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: chromeGlyph(pack, part), style } })
-    for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style } })
   }
 }

@@ -3,7 +3,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { Playback, controlForKey, keysFromChunk } from "../src/terminal/playback.ts"
-import { compositionSize } from "../src/view/index.ts"
+import { COMPOSITION_SIZE } from "../src/view/index.ts"
 
 const TICK_MS = 1000 / 12
 const FRAME_MS = 1000 / 30
@@ -67,7 +67,7 @@ test("restart returns to the beginning without touching speed", () => {
 })
 
 test("the resize gate freezes presentation time and resumes from the same instant", () => {
-  const required = compositionSize(1)
+  const required = COMPOSITION_SIZE
   const clock = playback()
   clock.fit(80, 24, required)
   assert.equal(clock.gated, false)
@@ -100,7 +100,7 @@ test("the resize gate freezes presentation time and resumes from the same instan
 })
 
 test("too few rows gates just as too few columns does", () => {
-  const required = compositionSize(1)
+  const required = COMPOSITION_SIZE
   const clock = playback()
   clock.fit(80, 23, required)
   assert.equal(clock.gated, true)

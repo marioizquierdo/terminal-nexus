@@ -228,11 +228,12 @@ test("the shared west side: the divider is the Grid's west side, the Grid gets i
   // The menu's click targets are on the panel, left of the divider.
   assert.equal(menuEntryAt(layout, context.catalog, layout.panelColumn, layout.panelRow + EXPLORE_ROW), 0)
   assert.equal(menuEntryAt(layout, context.catalog, layout.dividerColumn, layout.panelRow + EXPLORE_ROW), null)
-  // Wide tiles and the largest view keep the arithmetic.
+  // The largest view and the wider terminals keep the arithmetic: a column of the Grid pane for each tile.
   for (const terminal of [{ columns: 104, rows: 32 }, { columns: 128, rows: 24 }, { columns: 200, rows: 44 }]) {
     const wide = buildLayout(terminal, context.grid)
     assert.equal(wide.gridBox.left, wide.dividerColumn, `${terminal.columns}: shared`)
-    assert.equal(wide.composition.width, 2 + 29 + wide.viewport.width * wide.tileWidth, `${terminal.columns}`)
+    assert.equal(wide.composition.width, 2 + 29 + wide.viewport.width, `${terminal.columns}`)
+    assert.equal(wide.gridBox.right - wide.gridBox.left - 1, wide.viewport.width, `${terminal.columns}: a column a tile`)
     assert.ok(wide.composition.width <= wide.frame.width)
   }
 })

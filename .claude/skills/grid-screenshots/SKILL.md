@@ -28,7 +28,7 @@ const scenario = await sc.loadMapFile("scenarios/citizens-versus-ravels.map.json
 const loaded = sc.loadScenario(scenario)
 const timeline = tl.buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
 const view = v.createView(timeline, { ...v.DEFAULT_PRESENTATION, glyphPack: "unicode" })
-console.log(v.frameToText(view.snapshotAt(178 * 1000 / 12 + 40, "truecolor", 1)))
+console.log(v.frameToText(view.snapshotAt(178 * 1000 / 12 + 40, "truecolor")))
 '
 ```
 
@@ -51,7 +51,7 @@ pause, because an Esc and the next key in one read become one Option+key) and ph
 
 Add a frame worth looking at by editing the `shots` array at the top of the script. Each entry takes
 `name`, `caption`, `scenario`, `tick`, `cols`, `rows`, and optionally `capability`, `glyphs`,
-`tileWidth`, `effects`, `reducedMotion`, and `expectGate` (true for a shot of a terminal too small
+`theme`, `effects`, `reducedMotion`, and `expectGate` (true for a shot of a terminal too small
 for the composition, where playback freezes behind the too-small notice).
 
 **The tick is exact.** The script pauses the session and steps to the tick you asked for, so a
@@ -92,8 +92,10 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
    climax.
 2. **Monochrome.** It is the acceptance floor, not the degraded mode. If you cannot follow who moved,
    who shot whom, and who died without colour, the frame is not finished.
-3. **Both tile widths.** One column per tile squashes the Grid 2:1; two columns at 128 makes tiles
-   read square. Anything authored for the wide composition must survive the narrow one.
+3. **Round on screen.** A tile is one column, a cell about twice as tall as it is wide, and a row counts
+   two columns in every distance, so whatever the rules measure — a blast, an aura, a reach — looks as
+   wide as it is tall. A shape that looks twice as tall as it is wide is being drawn by some other
+   measure than the rules' (`src/grid/reach.ts` is the rules' own).
 4. **Effects off** (`--no-effects`). If the fight is unreadable without them, the effects are
    carrying a cue they are not allowed to carry alone.
 5. **Reduced motion.** Causality must survive it: you must still be able to tell what hit what.
@@ -103,5 +105,5 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 ```bash
 ./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
 ./bin/grid.ts scenarios/ravel-cascade --capability monochrome --speed 0.5
-./bin/grid.ts scenarios/citizens-versus-ravels --tile-width 2   # needs 128 columns
+./bin/grid.ts scenarios/citizens-versus-ravels --reduced-motion
 ```

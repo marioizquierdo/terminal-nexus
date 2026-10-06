@@ -226,12 +226,11 @@ export class BuildSession {
 
   /** What the Pulse on screen is showing right now, for the composer — or `undefined` when there is
    *  none. Her voice beside her, or in the panel while she is out of the part of the map in view. */
-  pulseFrame(layout: BuildLayout): PulseFrame | undefined {
+  pulseFrame(): PulseFrame | undefined {
     if (this.presenter === null) return undefined
     const { settings, camera, viewport } = this.buildState
     return this.presenter.frame({
       capability: settings.capability,
-      tileWidth: layout.tileWidth,
       reducedMotion: settings.reducedMotion,
       view: { camera, viewport },
     })

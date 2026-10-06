@@ -453,13 +453,12 @@ test("over a building or the ghost being placed the focus arrow changes only the
   assert.ok(ghost > 0, "the arrow never crossed the ghost")
 })
 
-test("Explore Map's see-through cursor is glyphless see-through writes in the cursor's role, a head at the owner's 80% over a fainter trail, never on the cursor's own cells", () => {
+test("Explore Map's see-through cursor is glyphless see-through writes in the cursor's role, a head at the owner's 80% over a fainter trail, never on the cursor's own cell", () => {
   const alphas = new Set(SEE_THROUGH_TRAIL.map((copy) => copy.alpha))
   for (const terminal of [MINIMUM, ROOMY]) {
     const side = buildSide({ terminal })
     keys(side, "e")
-    const { layout } = side
-    const cursor = cellForTile(layout, side.build.state.camera, side.build.state.cursor)
+    const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
     for (const progress of [0, 0.1, 0.3, 0.6, 0.9]) {
       const cells = flight(side, progress, {}, "truecolor")
       assert.ok(cells.length > 0, `nothing drawn at ${progress}`)
@@ -469,7 +468,7 @@ test("Explore Map's see-through cursor is glyphless see-through writes in the cu
         assert.deepEqual(rest, was.style, `the style beneath changed at ${x},${y}`)
         assert.equal(seeThrough?.role, "chrome.title")
         assert.ok(alphas.has(seeThrough?.alpha as number), `alpha ${seeThrough?.alpha}`)
-        assert.ok(!(y === cursor.y && x >= cursor.x && x < cursor.x + layout.tileWidth), `drawn on the cursor at ${x},${y}`)
+        assert.ok(!(y === cursor.y && x === cursor.x), `drawn on the cursor at ${x},${y}`)
       }
     }
     // The head leaves at full strength; later a fainter trail follows it.

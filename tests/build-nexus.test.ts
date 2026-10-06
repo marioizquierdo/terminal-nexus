@@ -484,6 +484,6 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     assert.equal(pulseOf(other).timeline.stateHash, pulseOf(byKeyboard).timeline.stateHash)
     assert.equal(pulseOf(other).timeline.eventsHash, pulseOf(byKeyboard).timeline.eventsHash)
     assert.deepEqual(pulseOf(other).recall.moves, pulseOf(byKeyboard).recall.moves)
-    assert.deepEqual(other.build.pulseFrame(other.layout)?.sample.state, byKeyboard.build.pulseFrame(byKeyboard.layout)?.sample.state)
+    assert.deepEqual(other.build.pulseFrame()?.sample.state, byKeyboard.build.pulseFrame()?.sample.state)
   }
 })

@@ -1,7 +1,7 @@
-// The composition (`docs/system-design/grid.md` and `presentation.md`), within an 8-row chrome budget.
+// The engine tool's own Pulse view (`grid watch`): one fixed composition (`docs/system-design/grid.md` and
+// `presentation.md`), a tile to a column, within an 8-row chrome budget.
 //
-//   80 columns = 1 border + 48 grid columns + 1 border + 30 side panel, at one column per tile.
-//  128 columns = the same arithmetic at two columns per tile.
+//   80 columns = 1 border + 48 grid columns + 1 border + 30 side panel.
 //   24 rows    = 1 border + 3 header + 16 grid rows + 3 footer + 1 border.
 //
 // The Grid pane is always the 48 x 16 minimum viewport. A Grid smaller than that is centred inside
@@ -24,13 +24,18 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, salvageGlyph, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
-export type TileWidth = 1 | 2
-
 /** The minimum viewport, in tiles — RULE (`grid.md`). */
 export const VIEWPORT_TILES = { width: 48, height: 16 } as const
 export const PANEL_COLUMNS = 30
 export const HEADER_ROWS = 3
 export const FOOTER_ROWS = 3
+
+/** The whole frame, which is exactly the 80 x 24 floor: the Grid pane is as many columns as the minimum viewport
+ *  is tiles. Below it, `watch` shows the resize gate. */
+export const COMPOSITION_SIZE: Readonly<{ width: number; height: number }> = {
+  width: 1 + VIEWPORT_TILES.width + 1 + PANEL_COLUMNS,
+  height: 1 + HEADER_ROWS + VIEWPORT_TILES.height + FOOTER_ROWS + 1,
+}
 
 /**
  * Whether an entity is drawn bold while a Pulse plays: a structure, as everything that stands is, and a
@@ -40,13 +45,6 @@ export const FOOTER_ROWS = 3
  */
 export function drawnBold(definition: Pick<ContentDef, "layer" | "commander">): boolean {
   return definition.layer === "obstacles" || definition.commander === true
-}
-
-export function compositionSize(tileWidth: TileWidth): { width: number; height: number } {
-  return {
-    width: 1 + VIEWPORT_TILES.width * tileWidth + 1 + PANEL_COLUMNS,
-    height: 1 + HEADER_ROWS + VIEWPORT_TILES.height + FOOTER_ROWS + 1,
-  }
 }
 
 /**
@@ -97,11 +95,10 @@ function drawGridEdge(
   cells: BandCell[],
   grid: GridTerrain,
   origin: { column: number; row: number },
-  tileWidth: TileWidth,
   pack: GlyphPack,
 ): void {
   const left = origin.column - 1
-  const right = origin.column + grid.width * tileWidth
+  const right = origin.column + grid.width
   const top = origin.row - 1
   const bottom = origin.row + grid.height
   if (left < 1 || top < 1 + HEADER_ROWS) return
@@ -126,28 +123,24 @@ function drawGridEdge(
   }
 }
 
-export function gridOrigin(
-  grid: GridTerrain,
-  tileWidth: TileWidth,
-): { column: number; row: number } {
+/** The frame cell of the Grid's own north-west tile: a Grid smaller than the pane is centred in it, a tile to a
+ *  column. */
+export function gridOrigin(grid: GridTerrain): { column: number; row: number } {
   const offsetTilesX = Math.floor((VIEWPORT_TILES.width - Math.min(grid.width, VIEWPORT_TILES.width)) / 2)
   const offsetTilesY = Math.floor(
     (VIEWPORT_TILES.height - Math.min(grid.height, VIEWPORT_TILES.height)) / 2,
   )
-  return { column: 1 + offsetTilesX * tileWidth, row: 1 + HEADER_ROWS + offsetTilesY }
+  return { column: 1 + offsetTilesX, row: 1 + HEADER_ROWS + offsetTilesY }
 }
 
-export function composeFrame(
-  input: CompositionInput,
-  capability: CapabilityMode,
-  tileWidth: TileWidth,
-): ReadonlyCellFrame {
+export function composeFrame(input: CompositionInput, capability: CapabilityMode): ReadonlyCellFrame {
   void capability
-  const size = compositionSize(tileWidth)
+  const size = COMPOSITION_SIZE
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
-  const origin = gridOrigin(input.grid, tileWidth)
-  const gridColumns = VIEWPORT_TILES.width * tileWidth
+  const origin = gridOrigin(input.grid)
+  // The frame cell a tile is drawn on: one cell a tile.
+  const cellOf = (tile: Coord): Coord => ({ x: origin.column + tile.x, y: origin.row + tile.y })
 
   // Band 1 — terrain.
   for (let y = 0; y < input.grid.height; y += 1) {
@@ -155,37 +148,20 @@ export function composeFrame(
       const terrainId = input.grid.tiles[y * input.grid.width + x]
       if (terrainId === undefined) continue
       const { glyph, role } = terrainGlyph(terrainId, pack)
-      const column = origin.column + x * tileWidth
+      const cell = cellOf({ x, y })
       // Featureless ground is drawn as a coarse lattice rather than a dot per tile: negative space
       // is material, and 288 identical marks compete with every unit and every effect on top of
       // them. Rock and deposits are features and are always drawn.
       const featureless = terrainId === "terrain.plain"
       const onLattice = x % 4 === 0 && y % 2 === 0
-      put(
-        cells,
-        BANDS.terrain,
-        column,
-        origin.row + y,
-        featureless && !onLattice ? " " : glyph,
-        role,
-        { dim: true },
-      )
-      for (let extra = 1; extra < tileWidth; extra += 1) {
-        put(cells, BANDS.terrain, column + extra, origin.row + y, " ", role)
-      }
+      put(cells, BANDS.terrain, cell.x, cell.y, featureless && !onLattice ? " " : glyph, role, { dim: true })
     }
   }
 
   // Band 3 — ground items: salvage dropped where something died.
   for (const item of input.state.groundItems) {
-    put(
-      cells,
-      BANDS.groundItems,
-      origin.column + item.at.x * tileWidth,
-      origin.row + item.at.y,
-      salvageGlyph(pack),
-      "item.salvage",
-    )
+    const cell = cellOf(item.at)
+    put(cells, BANDS.groundItems, cell.x, cell.y, salvageGlyph(pack), "item.salvage")
   }
 
   // Bands 4, 5 and 6 — structures, workers and units, air. The Grid layers map onto them directly.
@@ -217,13 +193,8 @@ export function composeFrame(
       }
       const glyph = entityGlyph(entity.contentId, entity.player, offset)
       occupied.add(`${tile.x},${tile.y}`)
-      const column = origin.column + tile.x * tileWidth
-      put(cells, band, column, origin.row + tile.y, glyph, playerRole(entity.player), {
-        bold: drawnBold(definition),
-      })
-      for (let extra = 1; extra < tileWidth; extra += 1) {
-        put(cells, band, column + extra, origin.row + tile.y, " ", playerRole(entity.player))
-      }
+      const cell = cellOf(tile)
+      put(cells, band, cell.x, cell.y, glyph, playerRole(entity.player), { bold: drawnBold(definition) })
     }
   }
 
@@ -231,7 +202,7 @@ export function composeFrame(
   // lattice-drawn field has no visible edge, and a player cannot tell empty ground from off-Grid.
   // When the Grid fills the pane — the default 48 x 16 preset does — the frame's own border is
   // already that edge, so this draws nothing.
-  drawGridEdge(cells, input.grid, origin, tileWidth, pack)
+  drawGridEdge(cells, input.grid, origin, pack)
 
   // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (`effects.md`),
   // they are clipped to the Grid, and they can never move a glyph the simulation put down.
@@ -259,15 +230,10 @@ export function composeFrame(
   // The corruption law, enforced by the compositor rather than by recipe discipline: an effect that would
   // replace a unit, a structure or a wreck's glyph is dropped on that tile — the screen may look wrong;
   // the player must still be able to see what is attacking them.
-  paintEffectCells(
-    cells,
-    effectSources,
-    (tile) => ({ x: origin.column + tile.x * tileWidth, y: origin.row + tile.y }),
-    (tile) => occupied.has(`${tile.x},${tile.y}`),
-  )
+  paintEffectCells(cells, effectSources, cellOf, (tile) => occupied.has(`${tile.x},${tile.y}`))
 
   // Band 10 — chrome: frame, header, footer, side panel.
-  drawChrome(cells, input, size, tileWidth, gridColumns, pack)
+  drawChrome(cells, input, size, pack)
 
   return composeBands(size.width, size.height, cells)
 }
@@ -276,12 +242,10 @@ function drawChrome(
   cells: BandCell[],
   input: CompositionInput,
   size: { width: number; height: number },
-  tileWidth: TileWidth,
-  gridColumns: number,
   pack: GlyphPack,
 ): void {
   const band = BANDS.chrome
-  const right = 1 + gridColumns
+  const right = 1 + VIEWPORT_TILES.width
   const paneLimit = right - 3
   const panelX = right + 2
   const panelLimit = size.width - 1 - panelX
@@ -318,8 +282,7 @@ function drawChrome(
     band,
     2,
     footerTop,
-    `view (0,0)-(${input.grid.width - 1},${input.grid.height - 1}) of ` +
-      `${input.grid.width}x${input.grid.height}  ${tileWidth} col/tile`,
+    `view (0,0)-(${input.grid.width - 1},${input.grid.height - 1}) of ${input.grid.width}x${input.grid.height}`,
     "chrome.label",
     { limit: paneLimit },
   )

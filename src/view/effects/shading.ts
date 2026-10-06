@@ -8,6 +8,7 @@
 // Nexus power landing on a unit or a projectile's impact later. `fx.damage.flash` (`recipes.ts`) is
 // shading too, older than this file and kept where the Pulse vocabulary lives.
 
+import { ROW_DISTANCE } from "../../grid/coords.ts"
 import type { PositionedCell, EffectRecipe } from "./types.ts"
 import { paramNumber, paramString, progressOf } from "./types.ts"
 import { RAINBOW_ROLES } from "../roles.ts"
@@ -84,9 +85,10 @@ export const FOCUS_BREATH_MS = 2000
  * long as the line is shown. The focus itself — `width` × `height` tiles from `origin`: a unit's tile, a
  * region — keeps its own look, glyphs at full strength; the ring of tiles around it is lit, a see-through
  * style of the theme's strongest ink laid over the ground (`CellStyle.seeThrough`), so whatever stands on
- * the ring stays readable. The ring is a row deep above and below and, where a tile is one column wide —
- * half as wide as it is tall — two tiles deep at the sides, so it reads as a ring rather than a slot at
- * either tile width. It breathes, one breath every `periodMs`: lit to `FOCUS_LIGHT.peak` the moment the
+ * the ring stays readable. The ring is a row deep above and below and as many columns deep at the sides as a
+ * row counts (`ROW_DISTANCE`, src/grid/coords.ts): a tile is half as wide as it is tall, so the ring is as deep
+ * on screen every way round and reads as a ring rather than a slot. It is a picture of attention, not a reach:
+ * it claims no ground. It breathes, one breath every `periodMs`: lit to `FOCUS_LIGHT.peak` the moment the
  * line appears, easing down to `rest` at half a breath and back up — a cosine, so it never jolts.
  *
  * Params: `width`, `height` — the focus's extent (default 1 × 1); `periodMs` — one breath (default
@@ -112,8 +114,8 @@ const focusLight: EffectRecipe = (instance, context) => {
   const periodMs = Math.max(0, paramNumber(instance, "periodMs", FOCUS_BREATH_MS))
   const level = context.reducedMotion || periodMs === 0 ? 0.5 : (1 + Math.cos((2 * Math.PI * (since % periodMs)) / periodMs)) / 2
   const alpha = roundAmount(FOCUS_LIGHT.rest + (FOCUS_LIGHT.peak - FOCUS_LIGHT.rest) * level)
-  const side = context.tileWidth === 1 ? 2 : 1
-  // The far columns of a one-column ring carry half the light: a glow that fades out, not a box.
+  const side = ROW_DISTANCE
+  // The columns beyond the first at either side carry half the light: a glow that fades out, not a box.
   const faint = roundAmount(alpha / 2)
   for (let y = -1; y <= height; y += 1) {
     for (let x = -side; x < width + side; x += 1) {

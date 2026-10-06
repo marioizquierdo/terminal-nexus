@@ -7,7 +7,6 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
 import { ARMIES } from "../src/armies/index.ts"
-import { GAME_TILE_WIDTH } from "../src/build/camera.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { buildLayout, cellForTile, tileAtCell } from "../src/build/layout.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -72,17 +71,29 @@ function extent(tiles: readonly Coord[]): Readonly<{ width: number; height: numb
 
 test("a tile is drawn one column wide at every size the game is played at", () => {
   const { grid } = starterContext()
-  assert.equal(GAME_TILE_WIDTH, 1)
-  assert.deepEqual([MINIMUM, MAXIMUM, WIDE].map((terminal) => buildLayout(terminal, grid, GAME_TILE_WIDTH).tileWidth), [1, 1, 1])
+  for (const terminal of [MINIMUM, MAXIMUM, WIDE, { columns: 200, rows: 60 }]) {
+    const layout = buildLayout(terminal, grid)
+    const camera = { x: 0, y: 0 }
+    // The tile beside a tile is the cell beside its cell, and a cell of the Grid pane is the tile drawn on it.
+    for (let x = 0; x < layout.viewport.width; x += 1) {
+      const cell = cellForTile(layout, camera, { x, y: 3 })
+      assert.equal(cell.x, layout.origin.column + x, `${terminal.columns} columns: tile ${x}`)
+      assert.deepEqual(tileAtCell(layout, camera, cell.x, cell.y), { x, y: 3 })
+    }
+    // The pane is as many columns as the view is tiles, and not one more.
+    assert.equal(tileAtCell(layout, camera, layout.origin.column + layout.viewport.width, layout.origin.row), null)
+    assert.equal(layout.composition.width, 2 + 29 + layout.viewport.width, `${terminal.columns} columns`)
+  }
   // At 80 x 24, 49 tiles across and 18 rows; at 128 columns, 72 across.
-  assert.deepEqual(buildLayout(MINIMUM, grid, GAME_TILE_WIDTH).viewport, { width: 49, height: 18 })
-  assert.equal(buildLayout(WIDE, grid, GAME_TILE_WIDTH).viewport.width, 72)
+  assert.deepEqual(buildLayout(MINIMUM, grid).viewport, { width: 49, height: 18 })
+  assert.equal(buildLayout(WIDE, grid).viewport.width, 72)
   // The scripted playtest at 128 columns: the Nexus is three columns, `[=]`, not spread over six.
   const wide = runBuildPlaytest({ scenes: false, steps: [], columns: WIDE.columns, rows: WIDE.rows })
-  assert.equal(wide.layout.tileWidth, 1)
+  assert.equal(wide.layout.viewport.width, 72)
   const last = wide.frames.at(-1)
   assert.ok(last !== undefined)
   assert.match(frameToText(last.frame), /\[=\]/)
+  assert.doesNotMatch(frameToText(last.frame), /\[ = \]/, "a tile was drawn two columns wide")
 })
 
 class FakeStdout extends EventEmitter {
