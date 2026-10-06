@@ -39,10 +39,10 @@ snapshots rather than as pixels or ANSI. Two things follow:
   to the mouse and to every screen.
 - **Mouse geometry lives only in the mouse adapter** (RULE — `tests/playtest.test.ts`,
   `tests/build-edge.test.ts`, `src/build/mouse.ts`, `src/title-menu/mouse.ts`). A click arrives as a terminal
-  cell; the adapter converts it to a tile using the tile width (see [`presentation.md`](presentation.md))
-  and the composition's layout, and emits a command that names a tile or a menu item. Nothing downstream
-  ever learns a cell coordinate, so a change of tile width or panel layout changes one adapter and no
-  command.
+  cell; a tile is one cell ([`presentation.md`](presentation.md)), so the adapter converts it through the
+  camera and the composition's layout alone (`tileAtCell`, `src/build/layout.ts`), and emits a command that
+  names a tile or a menu item. Nothing downstream ever learns a cell coordinate, so a change of panel layout
+  changes one adapter and no command.
 
 **Menus — RULE** (`tests/build-help.test.ts`, `tests/build-view.test.ts`, `tests/build-start.test.ts`).
 Every menu item displays its hotkey before its label — `[1] Barracks`, `[s] Start Battle Round` — and pressing

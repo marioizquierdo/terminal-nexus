@@ -44,10 +44,10 @@ Which gives twelve presets:
 | `extra-large` | 24 × 24 | 48 × 24 | 72 × 24 |
 
 **RULE — `src/scenario/presets.ts`, `tests/scenario.test.ts`: the default preset is `medium-extra-wide`
-(48 × 16)** and the one every early scenario uses. It is locked because both compositions are derived
-from it: at one column per tile it needs 48 + 2 border + 30 sidebar = **exactly 80 columns**, and at two
-columns per tile **exactly 128**. Change 48 × 16 and the 80- and 128-column layouts stop falling out
-of one number (the compositions are in [`presentation.md`](presentation.md)).
+(48 × 16)** and the one every early scenario uses. It is locked because the floor is derived from it: a
+tile is one column ([`presentation.md`](presentation.md)), so 48 tiles + 2 border + a 30-column side panel =
+**exactly 80 columns**, and 16 rows of Grid within the 8-row chrome budget below = **exactly 24 rows**. Change
+48 × 16 and the 80 × 24 floor stops falling out of one number.
 
 A preset is a convenience, not a constraint. A scenario may declare explicit dimensions.
 
@@ -92,28 +92,26 @@ part of the Grid.
 **Fitting, in order** (RULE — `tests/build-camera.test.ts`):
 
 1. Subtract chrome from the terminal: a border, a header, a footer, and a 29-column side panel whose
-   divider is the Grid's west side (below). The resize gate and the choice of tile width still measure
-   against a 30-column panel, so 80 × 24 stays the floor and two columns per tile still starts at 128.
-2. Choose tile width: 2 columns per tile if the terminal can show the viewport that way, otherwise 1
-   (RULE, tile width is adaptive presentation, see [`presentation.md`](presentation.md); held by
-   `tests/build-camera.test.ts`).
-3. `viewport = min(availableTiles, maximumViewport, gridSize)`.
-4. Gate when `availableTiles < min(minimumViewport, gridSize)` at one column per tile. **A Grid smaller
-   than the minimum viewport needs only its own size**, so a small tutorial Grid is never gated on a
-   terminal that can show all of it. Below that, show the resize gate and freeze presentation time.
+   divider is the Grid's west side (below). What is left is the tiles the terminal has room for, a tile
+   to a column ([`presentation.md`](presentation.md)).
+2. `viewport = min(availableTiles, maximumViewport, gridSize)`.
+3. Gate when `availableTiles < min(minimumViewport, gridSize)`, measured against the floor's own 30-column
+   panel and 8-row budget, so 80 × 24 stays the floor. **A Grid smaller than the minimum viewport needs only
+   its own size**, so a small tutorial Grid is never gated on a terminal that can show all of it. Below that,
+   show the resize gate and freeze presentation time.
 
 Which gives these terminal sizes:
 
-| | Tile width 1 | Tile width 2 |
-| --- | --- | --- |
-| Minimum viewport (48 × 16) | **80 × 24** | 128 × 24 |
-| Maximum viewport (72 × 24) | 103 × 30 | 175 × 30 |
+| | Terminal |
+| --- | --- |
+| Minimum viewport (48 × 16) | **80 × 24** |
+| Maximum viewport (72 × 24) | 103 × 30 |
 
 The minimum row is the resize gate's, which measures against the floor's 30-column panel and 8-row
-budget, so it is the floor at both tile widths. The maximum row is where the Build Phase's actual
-29-column panel and 6-row chrome first show 72 × 24 tiles: 72 + 2 + 29 = 103 columns and 24 + 6 = 30
-rows at one column per tile. The shots and the camera test use 104 × 30, one column past it. Any
-terminal larger than that buys margin, never more Grid.
+budget. The maximum row is where the Build Phase's actual 29-column panel and 6-row chrome first show
+72 × 24 tiles: 72 + 2 + 29 = 103 columns and 24 + 6 = 30 rows. The shots and the camera test use 104 × 30,
+one column past it. Any terminal larger than that buys margin, never more Grid and never a wider tile: at
+128 columns the view is still 72 tiles, centred.
 
 **80 × 24 is the floor and the acceptance target.** Everything must work there.
 

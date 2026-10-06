@@ -1,6 +1,6 @@
 # Terminal Nexus — presentation
 
-_How state becomes what is on screen: the cell frame, composition by phase, tile width, bands, the effects hook-up and accessibility._
+_How state becomes what is on screen: the cell frame, composition by phase, the tile, bands, the effects hook-up and accessibility._
 
 ## 1. The cell frame — RULE
 
@@ -276,27 +276,32 @@ reach).
 prerequisite for following the fight. If a Pulse can only be understood by clicking things, the
 presentation has failed and no panel will rescue it.
 
-## 3. Tile width — RULE
+## 3. A tile is one column — RULE
 
-**RULE** — `tests/rows-view.test.ts`, `tests/view.test.ts`.
+**RULE** — `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/view.test.ts`.
 
-**One Grid tile is one terminal column, at every terminal size.** A terminal cell is about twice as tall as it is
-wide, and the rules count a row as two columns ([`grid.md`](grid.md), distance, reach and movement), so drawn one
-column a tile a reach is as wide on screen as it is tall, and a unit walking down the screen crosses it at the
-pace of one walking across. A larger terminal never widens a tile: it buys margin, never another shape. At 80 × 24
-the map shows 49 × 18 tiles, and **80 × 24 is the acceptance target**; every size shows the same tiles and the same
-information.
+**One Grid tile is one terminal cell, one column wide, at every terminal size**: the Build Phase, the Nexus Pulse,
+the engine tool's own view and the browser page alike. A cell is about twice as tall as it is wide, and the rules
+count a row as two columns in every distance ([`grid.md`](grid.md), distance, reach and movement), so a reach is
+twice as wide as it is tall in tiles and, drawn a column a tile, as wide as it is tall on screen; a unit walking
+down the screen crosses it at the pace of one walking across. A larger terminal never widens a tile: past the
+largest view it buys centring, never another shape. At 80 × 24 the map shows 49 × 18 tiles, and **80 × 24 is the
+acceptance target**; every size shows the same tiles and the same information.
 
-Range previews and area effects are authored in tiles and drawn from the rules' own functions (`tilesWithin`,
-`ringOffsets`, `src/grid/reach.ts`), so what the screen draws as a reach is what the rules count.
+**A picture of an area the rules decide draws the rules' own tiles**: a building's or a unit's reach, the build
+range, a Barracks's room, Vasse's aura and a blast are each drawn from the Grid's own sets of tiles (`tilesWithin`,
+`src/grid/reach.ts`; a reach's outline, the last tiles it covers, is `outlineWithin`), so what the screen shows
+as a reach is what the rules count. A picture that claims no area — death debris and its shockwave, the tracer's
+line, the intro highlight's ring — may take a shape of its own.
 
 **What reads a slope off the map weighs a row as two columns** (`inColumns`, `src/grid/coords.ts`): the raid
 panel's compass point, the focus arrow, and the raid trail's arrows, each the glyph nearest its way on screen and
 looking a whole stair on (two across, one down) along the way, so a way down the screen's diagonal is one steady
-stroke. Arming looks for the nearest free spot with a row costing the tuned `armVerticalCost`.
+stroke. Arming looks for the nearest free spot with a row costing the tuned `armVerticalCost`, a cost of the
+cursor's rather than a distance.
 
-Effects are authored against **tile coordinates**, never column counts, so one effect written once works
-at both widths.
+Effects are authored in **tile coordinates**, never column counts: a tile is one cell, and the compositor places
+it through the camera.
 
 ## 4. Bands — RULE
 

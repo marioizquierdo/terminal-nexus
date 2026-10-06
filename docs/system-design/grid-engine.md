@@ -155,7 +155,7 @@ are not repeated here.
 | Speed tier is initiative and lower acts first, for movement claims and attacks alike; it is not a movement rate | `tests/rules.test.ts` | [`pulse.md`](pulse.md) |
 | A Grid Nexus is a flag on a content definition, never a content id the kernel recognises | `src/content/types.ts` | [`grid.md`](grid.md), [`content.md`](content.md) |
 | Composition produces an engine-owned cell frame; cells carry style roles, never literal colours; monochrome seven-bit ASCII is the floor | `tests/roles.test.ts`, `tests/view.test.ts` | [`presentation.md`](presentation.md) |
-| A tile is one terminal column wide at every size, so a reach is drawn as wide as it is tall; the same tiles and information at every size | `tests/rows-view.test.ts` | [`presentation.md`](presentation.md) |
+| A tile is one terminal column at every size, so a reach is as wide as it is tall on screen, and a picture of an area the rules decide (a reach, the build range, a room, an aura, a blast) draws the rules' own tiles | `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/effects.test.ts` | [`presentation.md`](presentation.md) |
 | Effects are pure functions of absolute presentation time; presentation has four families (animations, particles, shading, tweens) and an animation's completion is scheduled data, never a callback | `tests/effects.test.ts`, `tests/animation.test.ts`, `tests/tween.test.ts` | [`effects.md`](effects.md) |
 | The corruption law: effects live in the `effects` band or above and never remove the only carrier of a semantic cue; the compositor drops any effect cell that would replace an entity's glyph | `tests/effects.test.ts` | [`effects.md`](effects.md) |
 | Faction identity lives in the glyph family and the effect language; ownership keeps the colour, so a mirror match stays legible and monochrome stays whole | (RULE — settled; no code holds it yet) | [`presentation.md`](presentation.md) |
@@ -222,7 +222,7 @@ This document is the overview. The design is in its parts, one document each:
 - [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
 - [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, match structure, economy, events.
 - [`content.md`](content.md) — content interfaces.
-- [`presentation.md`](presentation.md) — the cell frame, composition, tile width, bands, effects, accessibility.
+- [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.
 - [`input.md`](input.md) — the command vocabulary, the three adapters, hotkeys and bindings.
 - [`runtime.md`](runtime.md) — terminal lifecycle, delivery, tools and modding, scaling.
 - [`effects.md`](effects.md) — animations, particles, shading and tweens.

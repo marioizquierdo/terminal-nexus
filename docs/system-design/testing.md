@@ -56,7 +56,7 @@ The rules layer above the kernel (openings, Recall, missions) is held the same w
 
 RULE — `tests/view.test.ts`, `tests/backend-opentui.test.ts`, `tests/roles.test.ts`,
 `tests/see-through.test.ts`. The frame is engine-owned, so two backends drawing the same frame must
-produce the same characters. Frames are exactly the composition size at both tile widths; every glyph
+produce the same characters. Frames are exactly the composition size, a tile to a column at every terminal size; every glyph
 is one printable ASCII cell; identical arguments give identical frames and skipping frames changes
 nothing; at a tick boundary every entity stands on the tile the kernel put it on; monochrome renders
 every scenario with no cell depending on colour to exist; the compositor emits only roles from the

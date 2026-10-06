@@ -594,9 +594,9 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   counts with (`tilesWithin`, [`grid.md`](grid.md), distance, reach and movement). Build range 6 reaches 6
   columns across and 3 rows up and down, and what the dots allow is what Enter takes; a Turret's reach of 6 is
   drawn 13 wide by 7 tall, as tall as it is wide on screen. An outline is the last tiles reached — every tile in
-  reach with a four-way neighbour out of it, never the footprint's own — so it is two tiles thick on its slants,
-  where each row steps in by two columns, and has no gaps. (RULE — `tests/rows-view.test.ts`,
-  `tests/build-areas.test.ts`)
+  reach with a four-way neighbour out of it, never the footprint's own (`outlineWithin`) — so it is two tiles
+  thick on its slants, where each row steps in by two columns, and has no gaps; a blast's ring during a Pulse is
+  the same outline. (RULE — `tests/rows-view.test.ts`, `tests/build-areas.test.ts`)
 
 ## 13. Effects
 
