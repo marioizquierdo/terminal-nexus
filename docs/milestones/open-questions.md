@@ -17,7 +17,7 @@ when it is genuinely his call, state the assumption you proceed under, then keep
 
 ## Index
 
-Three are ready for Mario to decide now ("Mario, now"); every other question is parked until the
+Two are ready for Mario to decide now ("Mario, now"); every other question is parked until the
 milestone or backlog entry named, and nothing in the current milestone is blocked by any of them.
 
 | Id | Question | Status | Waits on |
@@ -31,7 +31,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
 | [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-Pulse regrouping via outposts |
-| [Q24](#q24--does-the-terminal-cells-own-aspect-ratio-distort-movement-and-fire-enough-to-fix) | Does the cell's aspect ratio distort movement enough to fix? | OPEN, rows x2 chosen | Mario, now |
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
@@ -246,40 +245,6 @@ itself: no structure does it, and Recall already walks units home to their build
 
 **Recommendation: C.** A real idea worth keeping, but it presupposes outposts and production. The place to
 design it is alongside the routing and worker-economy work.
-
-### Q24 — Does the terminal cell's own aspect ratio distort movement and fire enough to fix?
-
-**Status:** OPEN — chosen, not yet settled: Mario played the Ground Experiment and chose rows x2 (2026-10-06:
-"Rose X2 definitely feels better. That's gonna be our choice"); it becomes the rule, with its retune, once he has
-seen the math and says go ([the options, drawn](../history/reports/2026-10-05-tall-tiles-options.md),
-[the spike](../history/reports/2026-10-05-tall-tiles-spike.md)).
-
-Owner playtest, 2026-08-22: "it makes movement and diagonal shooting look a bit distorted; too fast when
-moving up and down, too slow when moving sideways... Let's explore the vertical-rectangle issue later, for now
-just take note." On 2026-10-05: "the range is severely skewed vertically ... one idea would be counting distance
-and speed by half vertically", and, choosing: "the map is not important, we will make nee maps later. What
-matters is how intuitive it feels for a human player, this is the time to get it right, we can still change all
-numbers and formulas to fit." A terminal cell is about twice as tall as it is wide: at one column a tile every
-range, aura and build range is drawn twice as tall as it is wide, and a unit walking down the screen looks twice
-as fast as one walking across.
-
-| Option | Cost |
-| --- | --- |
-| A. **As now** (Ground: as now) | Free. Reaches drawn tall, walking down twice as fast on screen; two columns a tile at 128 columns or wider |
-| B. **Square tiles** (Ground: square tiles) | No rule changes, every step a tile either way. 24 × 18 tiles at 80 × 24; buildings and units read with gaps (`[ b ]`) until they have two-character art; a step across hops two columns |
-| C. **Draw a step up or down over more time** | Not viable: units are drawn on whole tiles, so a slower crawl draws them rows from where they fight, and it fixes no shape |
-| D. **Change the acceptance target** | The owner does not want it pursued; named for completeness |
-| E. **Rows count double** (Ground: rows x2) | Reaches and walks look right at 80 × 24 with today's art and view. Melee is touching; the build range is counted in rows; every other reach loses half its rows (odd ranges round down); a step up or down is a row at a time, half as often |
-| F. **Sideways doubled** (Ground: sideways x2) | E's rule with every number doubled across: up and down as now, across twice as far and as fast, so every reach covers twice the ground and the battle speeds up |
-| G. **Hex grid** (drawn only) | The nearest to round; every map, footprint and path redone, rectangular buildings sit badly |
-| H. **A tilted camera: rows count three** (drawn only) | Reaches wider than tall, like depth; up and down too coarse at 18 rows |
-
-**Recommendation: play the Ground test under each choice, then PERIMETER under the one that feels best.** Before
-he plays, the lean is E, rows x2: it fixes both the shapes and the walk while keeping the whole battle in view at
-80 × 24 and today's art; B is the plainest rules if a closer view and new two-column art are acceptable. Whichever
-is kept, its choice becomes the rule in one pull request with the retune: the Experiment and the other choices go,
-the grid design's distance and the presentation's tile width say the one answer, and the numbers (build range,
-her aura, blasts, the engage reach, PERIMETER's raid) are set by feel.
 
 ### Q26 — Is a unit that spawns other units a combat ability rather than "production", or does Mario need to sign off before real content uses it?
 
