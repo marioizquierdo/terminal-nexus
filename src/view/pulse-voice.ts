@@ -34,12 +34,13 @@ import { ARMIES } from "../armies/index.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
-import { tilesOf } from "../grid/coords.ts"
-import type { Coord } from "../grid/types.ts"
+import { footprintWithin, tilesOf } from "../grid/coords.ts"
+import type { Coord, Footprint } from "../grid/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { buildFlightHoldTicks, flightHoldTicks } from "./effects/derive.ts"
 import { cosmeticHash } from "./effects/random.ts"
 import type { EffectInstance } from "./effects/types.ts"
+import { battleMeasure } from "./snapshot.ts"
 
 /**
  * Her voice's numbers: first guesses, watched on PERIMETER's rounds rather than measured, kept here beside the
@@ -159,7 +160,8 @@ export type Moment = Readonly<{ moment: BarkMoment; atMs: number }>
  *  survivors home — and whether her side won it (a victory, or the mission's goal met). */
 export type RoundEnd = Readonly<{ resultMs: number; won: boolean }>
 
-const manhattan = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
+/** "Near her" is measured from her one tile to the one tile a unit fell on. */
+const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 /**
  * The moments of a round she may answer, the first of each, in the order they show on screen. A blow that lands
@@ -168,7 +170,8 @@ const manhattan = (a: Coord, b: Coord): number => Math.abs(a.x - b.x) + Math.abs
  * - **round-start**: a beat in, when she stands on the Grid as the round begins;
  * - **first-contact**: the first shot either side fires at the other;
  * - **raid-arrives**: the other side's units arriving after the round began (a building's training excluded);
- * - **unit-lost**: one of her side's units falls within `near` tiles of her (structures and Commanders aside);
+ * - **unit-lost**: one of her side's units falls within `near` tiles of her (structures and Commanders aside),
+ *   measured as her aura reaches, under the battle's own measure (`battleMeasure`, `footprintWithin`);
  * - **building-lost**: one of her side's buildings falls, the Grid Nexus aside (its fall ends the round);
  * - **badly-hurt**: a hit leaves her standing on `VOICE.hurtFraction` of her health or less;
  * - **nexus-hit**: her side's Grid Nexus is first hit;
@@ -189,6 +192,8 @@ export function voiceMoments(timeline: VoiceTimeline, speaker: Speaker, end: Rou
   for (const entity of timeline.states[0]?.entities ?? []) cast.set(entity.ordinal, entity)
   for (const event of timeline.events) if (event.kind === "entity.spawned") cast.set(event.ordinal, event)
   const herAt = (tick: number): Coord | undefined => timeline.states[tick]?.entities.find((entity) => entity.ordinal === speaker.ordinal)?.anchor
+  const measure = battleMeasure(timeline.states[0])
+  const near = (her: Coord, at: Coord): boolean => footprintWithin(her, ONE_TILE, at, ONE_TILE, speaker.near, measure)
 
   if (timeline.states[0]?.entities.some((entity) => entity.ordinal === speaker.ordinal) === true) {
     add("round-start", VOICE.startDelayMs)
@@ -228,7 +233,7 @@ export function voiceMoments(timeline: VoiceTimeline, speaker: Speaker, end: Rou
         const definition = timeline.registry.get(event.contentId)
         if (definition.layer === "obstacles" || definition.commander === true) break
         const her = herAt(event.tick) ?? herAt(event.tick - 1)
-        if (her !== undefined && manhattan(her, event.at) <= speaker.near) add("unit-lost", landed(event.tick, event.ordinal))
+        if (her !== undefined && near(her, event.at)) add("unit-lost", landed(event.tick, event.ordinal))
         break
       }
       case "structure.destroyed":

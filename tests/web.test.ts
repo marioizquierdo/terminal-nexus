@@ -343,6 +343,10 @@ test("every checked-in demo is one the page can follow: its route, its keys, and
   assert.throws(() => checkDemos([{ label: "x", try: "-", at: "campaign?level=nowhere" }], "demos.json"), /demos\.json: demo 1's at: .*no level "nowhere"/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", at: "settings", keys: "Down" }], "demos.json"), /is on the title menu: its keys and settings are for a campaign level/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", keys: "Dwn" }], "demos.json"), /demo 1's keys: unknown key "Dwn"/u)
+  // A settings text this build would skip is a mistake in a demo: it would open with the default and say nothing.
+  assert.equal(checkDemos([{ label: "x", try: "-", settings: "ground=rows-x2&jumpStep=12" }], "demos.json")[0]?.settings, "ground=rows-x2&jumpStep=12")
+  assert.throws(() => checkDemos([{ label: "x", try: "-", settings: "ground=rows-x3" }], "demos.json"), /demo 1's settings: ground=rows-x3 is not a setting/u)
+  assert.throws(() => checkDemos([{ label: "x", try: "-", settings: "nonsense=1" }], "demos.json"), /demo 1's settings: nonsense=1/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", where: "here" }], "demos.json"), /unknown: where/u)
   assert.throws(() => checkDemos({ label: "x" }, "demos.json"), /expected a list of demos/u)
 })

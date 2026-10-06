@@ -324,9 +324,16 @@ interface Placement {
 
 ## 7. Distance and movement
 
-**Four-way movement** (the compass points, never a diagonal), uniform cost per step, and **Manhattan
-distance** (`|dx| + |dy|`) for range and routing (RULE — `src/grid/coords.ts`: `DIRECTIONS` and
-`gridDistance`).
+**Four-way movement** (the compass points, never a diagonal), and **distance counted as the battle measures
+the Grid** (RULE — `src/grid/coords.ts`: `DIRECTIONS`, `gridDistance` and `footprintWithin`;
+`tests/grid-measure.test.ts`, `tests/ground-rules.test.ts`). A battle carries its measure in its state and keeps
+it from its first tick to its last. As now, a row counts as a column: **Manhattan distance** (`|dx| + |dy|`) for
+range and routing, and every step takes as long as another. While the Ground Experiment is felt, a row can count
+as two columns: a range of 4 then reaches four columns across and two rows up, as wide as it is tall on the
+screen, and a step up or down takes twice as long as one across, so "in range" and "reachable in that time" still
+agree. Sideways x2 is the same count with every range, radius and speed doubled in it. Whatever the measure,
+touching is one step along a side: melee reaches what touches it, a unit stands beside another when they touch,
+and any reach of one or more includes what touches the one reaching.
 
 Diagonal movement was the single biggest legibility problem the first watch of the Pulse found: a
 unit that can cut a corner is a unit whose next tile a viewer cannot predict, and a diagonal step

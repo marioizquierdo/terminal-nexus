@@ -82,6 +82,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
     [
       [1, "vasse-test-1", "vasse", "starter", "Perimeter"],
       [2, "vasse-test-2", "vasse", "starter", "The Commander falls"],
+      [3, "ground-test", "vasse", "open-ground", "Ground test"],
     ],
   )
   assert.deepEqual(ARMIES.levels, campaign.levels)
@@ -460,7 +461,7 @@ test("a level's mission is checked against its map, its content against what its
     'army "solo": content names "unit.test.ghost", which is not content the game has',
     'army "solo": the Nexus power "blank" needs a name and a description',
     'army "solo": the Commander "trooper" is "unit.citizen.trooper", which "all" brings and "solo" does not require',
-    'army "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter")',
+    'army "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter", "open-ground")',
     'army "solo": level "solo-1" unlocks the building "nest" twice',
     'army "solo": level "solo-1" unlocks the building "reserve-fund", which no army has (it is a Nexus power)',
     'army "solo": level "solo-1", mission "mission.solo-1" uses "unit.citizen.vasse", which "vasse" brings and "solo" does not require',

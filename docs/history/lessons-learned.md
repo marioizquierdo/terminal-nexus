@@ -293,6 +293,27 @@ than any one feature:
 7. **The capture scripts delete `.capture-tmp/` when they finish.** Tell an agent to keep the scratch it needs
    elsewhere in its worktree, and ask for the key scripts rather than the files.
 
+## Tall tiles, felt (2026-10-05)
+
+1. **Time a race by where the runners are, not by their first blows.** The Ground test's first blows measured who
+   the player's troops stepped out to first, so under rows x2 the northern raid still struck first though both
+   walked the screen at one pace. Time each runner's front coming a set distance in, before anyone meets it.
+2. **A test map's edge can hide the shape it is for.** The Ground test's Nexus stood two rows from the bottom, so a
+   Turret's reach lost its lower half off the map under every choice but one. Leave a reach's room on every side
+   of where it is placed, and look at the picture before trusting the test.
+3. **A look-ahead shorter than a stair makes a direction flip.** Under rows x2 a diagonal way is two steps across
+   and one down; trail arrows that looked two steps on turned from `<` to `/` and back as they moved. Look a whole
+   stair on, and read the slope as the battle measures it.
+4. **Check a slope rule against screen angles before changing it.** The trail's `across >= 2 * down` reads like a
+   row weighted twice, but its two thresholds were mirror images in tiles; the spike's report had it wrong.
+5. **A design sentence about what the eye sees is worth a picture.** The presentation design said one column a
+   tile squashes the Grid "horizontally" into a wide rectangle; a tile is tall, so a square reach is drawn tall.
+6. **Read strictly what the build writes, leniently what a person pastes.** The page build read a demo's settings
+   text as a pasted export is read, skipping what it did not know, so a misspelt value opened the demo with the
+   default and said nothing.
+7. **A scratch copy of the repository inside a worktree is read as the repository**: the validator and Bun's
+   runner both walk `tmp/`. Keep such copies outside the worktree.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

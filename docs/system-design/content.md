@@ -124,7 +124,7 @@ reads an army; the Build Phase's assembly reads what a level offers.
 
 Still code, each named by id from an army: the content definitions themselves (stats and footprints, in
 `src/content`; moving them into the armies is the next step), what a Nexus power's effect kinds do, the
-starter map (`src/build/maps.ts`) and the mission vocabulary (`src/mission/`). The game reads only the
+maps (`src/build/maps.ts`: the starter map, and open ground, the Ground test's) and the mission vocabulary (`src/mission/`). The game reads only the
 armies `src/armies/index.ts` lists, imported with the code: there is no mod loader looking for folders on
 disk. **To add a Commander**: a folder requiring `all`, her unit's id in `content`, her `commanders` entry (with her barks, for her to speak in battle), a
 campaign whose levels unlock `all`'s cards or her own, and one line in that list.

@@ -2,12 +2,12 @@
 // (Intent, Grant) live next to the phase that creates them; only what more than one file needs is
 // here. pulse.md has the phase order these types and helpers serve.
 
-import type { ContentDef } from "../content/types.ts"
+import type { AttackDef, ContentDef } from "../content/types.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import { ClaimOverlay, OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
-import { footprintDistance } from "../grid/coords.ts"
+import { footprintDistance, footprintSteps, footprintWithin } from "../grid/coords.ts"
 import type { BlockReason } from "../events/types.ts"
-import type { Coord, Direction } from "../grid/types.ts"
+import type { Coord, Direction, GridMeasure } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
@@ -71,6 +71,13 @@ export type TickContext = {
    */
   targets: Readonly<Partial<Record<PlayerId, TargetArea>>>
   /**
+   * How this battle measures the Grid — the state's own `measure`, `SQUARE` when it has none — read and never
+   * changed by the kernel. Every distance a phase measures counts a row as `measure.row` columns and a content
+   * range, radius or speed as `measure.tile` of them (`distanceBetween`, `within`, `stepCost`); touching and
+   * "beside" count steps, whatever the measure (`stepsBetween`).
+   */
+  measure: GridMeasure
+  /**
    * Who an aura guards this tick, by ordinal (`aura.ts`): decided as the attacks begin and read by every hit
    * after it in the tick, a blast's included. Empty until then, and for a battle with no aura in it.
    */
@@ -125,15 +132,49 @@ export function resolveTarget(context: TickContext, actor: Actor): Actor | null 
 }
 
 /**
- * The distance between two actors, to the nearest occupied tile of each footprint (grid.md).
+ * The distance between two actors, to the nearest occupied tile of each footprint (grid.md), as this
+ * battle's measure counts it (`context.measure`: under `SQUARE`, Manhattan).
  * Perception, intents, attacks, and detonation all measure this same way; wrapping the two anchors
  * and two footprints here (rather than every call site reaching into both actors' `definition`
  * itself) is what keeps a future actor-to-actor measurement — a healer's range to an ally, a splash
  * radius from an impact point — from having a second, slightly different way to ask the same
  * question.
  */
-export function distanceBetween(a: Actor, b: Actor): number {
-  return footprintDistance(a.anchor, a.definition.footprint, b.anchor, b.definition.footprint)
+export function distanceBetween(context: TickContext, a: Actor, b: Actor): number {
+  return footprintDistance(a.anchor, a.definition.footprint, b.anchor, b.definition.footprint, context.measure)
+}
+
+/**
+ * Four-way steps between two actors' nearest tiles, a row counting as a column whatever the measure: 1 when
+ * they touch along a side. What "touching" and "beside" mean — melee's reach, a follower gathered beside
+ * another — so they never change with how rows are counted (`gridSteps`). Under `SQUARE` it is
+ * `distanceBetween` exactly.
+ */
+export function stepsBetween(a: Actor, b: Actor): number {
+  return footprintSteps(a.anchor, a.definition.footprint, b.anchor, b.definition.footprint)
+}
+
+/**
+ * Whether `b` is within content radius `radius` of `a`, measured as range is (`footprintWithin`): the nearest
+ * tiles within the radius as this battle's measure counts it, or — for a radius of at least 1 — touching along
+ * a side. Exactly `distanceBetween(context, a, b) <= radius` under `SQUARE`. A unit's engage reach, a worker's
+ * flight trigger and a contact detonator's trigger are all asked this way.
+ */
+export function within(context: TickContext, a: Actor, b: Actor, radius: number): boolean {
+  return footprintWithin(a.anchor, a.definition.footprint, b.anchor, b.definition.footprint, radius, context.measure)
+}
+
+/**
+ * Whether `actor` can land `attack` on `target` from where it stands — the one test intents (hold, it is in
+ * range) and attacks (fire) both ask, so the two can never disagree. **Melee is touching**: a melee attack
+ * reaches what is within `range` steps along the Grid's sides, however rows are counted, so a swing at an
+ * enemy directly above lands whatever the measure. A ranged shot or a heal reaches as far as its range does,
+ * measured as range is (`within`). Under `SQUARE` both are exactly `distanceBetween(context, actor, target)
+ * <= attack.range`.
+ */
+export function inAttackRange(context: TickContext, actor: Actor, target: Actor, attack: AttackDef): boolean {
+  if (attack.kind === "melee") return stepsBetween(actor, target) <= attack.range
+  return within(context, actor, target, attack.range)
 }
 
 /**
@@ -182,11 +223,11 @@ export function applyDamage(
 }
 
 /**
- * The distance from an *area* — an anchor plus a footprint, which is exactly what `distanceBetween`
- * already measures one side of — to the nearest occupied tile of `b`'s footprint. Generalises
- * `distanceBetween` rather than sitting beside it: passing `b.definition.footprint` as `originFootprint`
- * reproduces `distanceBetween` exactly, and a bare impact point is just a one-tile footprint,
- * `[{x:0,y:0}]`, at the point in question. One primitive under both call shapes, not two.
+ * Whether `b` is within `radius` of an *area* — an anchor plus a footprint, which is exactly what `within`
+ * already measures one side of — measured as range is, to the nearest occupied tile of `b`'s footprint, by
+ * this battle's measure. Generalises `within` rather than sitting beside it: passing `a.anchor` and
+ * `a.definition.footprint` as the origin reproduces `within` exactly, and a bare impact point is just a
+ * one-tile footprint, `[{x:0,y:0}]`, at the point in question. One primitive under both call shapes, not two.
  *
  * Caught by actually running a scenario, not by inspection: the first cut of this measured every
  * blast from a bare point at the dying entity's *anchor*, which is correct for a 1x1 body and silently
@@ -196,12 +237,14 @@ export function applyDamage(
  * `citizens-versus-ravels.map.json` and `grand-battle.map.json` are what caught it, hash-compared
  * against `main` before this fix landed.
  */
-export function distanceFromArea(
+export function withinArea(
+  context: TickContext,
   originAnchor: Coord,
   originFootprint: readonly Coord[],
   b: Actor,
-): number {
-  return footprintDistance(originAnchor, originFootprint, b.anchor, b.definition.footprint)
+  radius: number,
+): boolean {
+  return footprintWithin(originAnchor, originFootprint, b.anchor, b.definition.footprint, radius, context.measure)
 }
 
 /**
@@ -220,7 +263,7 @@ export function actorsWithin(
 ): readonly Actor[] {
   return context.actors
     .filter((other) => other !== exclude && !other.pendingDead)
-    .filter((other) => distanceFromArea(anchor, footprint, other) <= radius)
+    .filter((other) => withinArea(context, anchor, footprint, other, radius))
     .sort((a, b) => a.ordinal - b.ordinal)
 }
 

@@ -28,7 +28,7 @@
       "id": "vasse",
       "title": "The Citizen origin",
       "commander": "vasse",
-      "notes": "Her campaign: its levels in the order they are played. What a level offers is everything the levels before it unlocked and its own unlocks, so the screen between levels (not built) can show what is new; each level sets its own credits. vasse-test-1 and vasse-test-2 are working names, the levels a route opens (campaign?level=vasse-test-1) while the campaign is built.",
+      "notes": "Her campaign: its levels in the order they are played. What a level offers is everything the levels before it unlocked and its own unlocks, so the screen between levels (not built) can show what is new; each level sets its own credits. vasse-test-1 and vasse-test-2 are working names, the levels a route opens (campaign?level=vasse-test-1) while the campaign is built. ground-test, last, is a test level for one Experiment rather than a step of her story, named for what it tests.",
       "levels": [
         {
           "id": "vasse-test-1",
@@ -249,6 +249,129 @@
               { "id": "fallen", "when": { "event": "nexus.destroyed", "side": "A" }, "do": [{ "lose": true }] },
               { "id": "hold", "when": { "event": "pulse.end", "pulse": 3 }, "do": [{ "win": true }] }
             ]
+          }
+        },
+        {
+          "id": "ground-test",
+          "notes": "The Ground Experiment's test level (the Commander round 6): a terminal cell is about twice as tall as it is wide, and the rules count a row like a column, so this level puts two raids the same distance from the Nexus on screen and asks which arrives first. Round 1: two raiders 9 rows above the Nexus's top edge and two 18 columns past its right edge, arriving on the same tick and both going for the Nexus first. Under the rules as they are the northern raid comes twice as fast (with nothing built, a third of the way in at tick 15 against the eastern raid's 30, and its first blow at 2 seconds against 7); with rows counting double the two come together (ticks 27 and 30, first blows at 72 and 66). Round 2 brings slingers the same two ways, so a ranged reach is seen in battle. Played on open ground (src/build/maps.ts), where both raids, the Nexus and the ground between them are on screen together at 80 x 24. It unlocks nothing new: it offers what PERIMETER unlocked, with credits for about two Turrets and a Barracks, so a Turret can be placed and its reach seen. A test level like the cadence level before it, reachable by route (campaign?level=ground-test); the playable page opens it under each Ground choice (scripts/demos/ground.json).",
+          "map": "open-ground",
+          "credits": 70,
+          "mission": {
+            "id": "mission.test.ground",
+            "name": "Ground test",
+            "notes": "The race as a mission: two Battle Rounds, two raids each, and the hold. The raid is small on purpose, so the race is watched rather than lost: with nothing built, round 1 ends with the Nexus struck but standing under every Ground choice, and round 2 with both raids broken, which is also what lets a route open round 2. With four raiders each way, a plan that built nothing lost the Nexus in round 1, and with three it lost more than half of it; measured on the rules as they are, with the line at the Nexus's north-east corner. pulseTicks: thirty seconds a round, as PERIMETER's, time enough for the slower raid to arrive and the fight to finish, so no raider is left standing into the next round. seed: 0x47524e44, 'GRND'. The raid's units are the bench's, as every level's are: raiders for the race, slingers for the ranged reach.",
+            "pulses": 2,
+            "pulseTicks": 360,
+            "seed": 1196576324,
+            "regions": [
+              { "id": "nexus", "x": 17, "y": 10, "width": 3, "height": 2, "notes": "The player's Grid Nexus, where it stands on open ground: columns 17 to 19, rows 10 and 11." },
+              {
+                "id": "muster",
+                "x": 13,
+                "y": 10,
+                "width": 3,
+                "height": 2,
+                "notes": "Beside the Nexus on the west, away from both ways in: where Vasse and the squad stand as round 1 opens, so on the first tick the Nexus, not one of them, is what each raid is nearest."
+              },
+              {
+                "id": "line",
+                "name": "the line",
+                "x": 20,
+                "y": 10,
+                "width": 3,
+                "height": 2,
+                "notes": "Beside the Nexus on the east, level with it, touching the northern raid's way down and facing the eastern raid: where the player's troops head and hold. Higher, at the Nexus's north-east corner, they stepped out to the northern raid before it was a third of the way in, under every Ground choice, which hid the race."
+              },
+              {
+                "id": "north",
+                "x": 17,
+                "y": 0,
+                "width": 3,
+                "height": 3,
+                "notes": "Straight north of the Nexus. A group gathers round the centre, 18,1: its front row is 9 rows above the Nexus's top edge, and its raiders stand over the Nexus's three columns."
+              },
+              {
+                "id": "east",
+                "x": 37,
+                "y": 10,
+                "width": 3,
+                "height": 3,
+                "notes": "Straight east of the Nexus. A group gathers round the centre, 38,11: its front is 18 columns past the Nexus's right edge, level with the Nexus's two rows. A row is about two columns tall, so this is as far away on screen as the northern group."
+              }
+            ],
+            "triggers": [
+              {
+                "id": "squad",
+                "notes": "Vasse and three troopers, the melee line. She is listed first, so she takes the muster's centre, as in PERIMETER; she arrives once, and when she falls the rules between rounds bring her back.",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        { "unit": "unit.citizen.vasse", "count": 1 },
+                        { "unit": "unit.citizen.trooper", "count": 3 }
+                      ],
+                      "at": "muster",
+                      "group": "squad"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "post",
+                "notes": "Where the player's troops head, every round: the line at the Nexus's corner. The Barracks's troopers head there too, as soon as they are out.",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [{ "target": { "side": "A", "region": "line" } }]
+              },
+              {
+                "id": "raid-1",
+                "notes": "The race: two raiders each way, on the same tick, the same distance from the Nexus on screen. Two, so each group stands square to the Nexus: the northern pair one behind the other over its columns, the eastern pair side by side level with its rows.",
+                "when": { "pulse": 1, "tick": 0 },
+                "do": [
+                  { "spawn": { "side": "B", "units": [{ "unit": "unit.ravel.raider", "count": 2 }], "at": "north", "group": "north-raid", "intent": "Down from the north, for the Nexus." } },
+                  { "spawn": { "side": "B", "units": [{ "unit": "unit.ravel.raider", "count": 2 }], "at": "east", "group": "east-raid", "intent": "In from the east, for the Nexus." } }
+                ]
+              },
+              {
+                "id": "raid-2",
+                "notes": "Ranged, the same two ways: two slingers and two runners each. The slingers stop at their reach to shoot, so where each stops shows how far a reach goes up and across; the runners beside them go on to fight hand to hand.",
+                "when": { "pulse": 2, "tick": 0 },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        { "unit": "unit.ravel.slinger", "count": 2 },
+                        { "unit": "unit.ravel.runner", "count": 2 }
+                      ],
+                      "at": "north",
+                      "group": "north-slingers",
+                      "intent": "Slingers, down from the north."
+                    }
+                  },
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        { "unit": "unit.ravel.slinger", "count": 2 },
+                        { "unit": "unit.ravel.runner", "count": 2 }
+                      ],
+                      "at": "east",
+                      "group": "east-slingers",
+                      "intent": "Slingers, in from the east."
+                    }
+                  }
+                ]
+              },
+              { "id": "fallen", "when": { "event": "nexus.destroyed", "side": "A" }, "do": [{ "lose": true }] },
+              { "id": "hold", "when": { "event": "pulse.end", "pulse": 2 }, "do": [{ "win": true }] }
+            ],
+            "roundText": {
+              "1": "Two raids, equally far on screen. One from the north, one from the east. Watch how fast each one comes.",
+              "2": "Slingers now, the same two ways in. Watch where each one stops to shoot."
+            },
+            "endText": { "won": "Both raids broke.", "lost": "The Nexus fell." }
           }
         }
       ]

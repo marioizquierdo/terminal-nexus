@@ -9,6 +9,7 @@ import type { VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { ArmedPreview, BuildContext } from "../build/state.ts"
+import { groundMeasure } from "../build/state.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { PlannedPlacement, RaidForecast } from "../build/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
@@ -190,9 +191,15 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
   const range = visibleRange(state.camera, state.viewport)
   const taken = takenTiles(context, state.planned)
   const elapsedMs = input.raidTrail?.elapsedMs ?? null
+  // Where a row counts two columns (the Ground Experiment), a way along the screen's diagonal is a staircase of two
+  // steps across and one down: an arrow looks a whole stair on, and reads its slope with a row counting two, or it
+  // would turn from `<` to `/` and back as it moves.
+  const { row } = groundMeasure(state)
   // Every trail's copies first, then its arrows: where two trails cross, an arrow is never covered by a copy.
   const marks = raid.flatMap((group) =>
-    group.target === null ? [] : trailMarks(group.path, group.target.tiles, elapsedMs).map((mark) => ({ mark, player: group.player })),
+    group.target === null
+      ? []
+      : trailMarks(group.path, group.target.tiles, elapsedMs, TRAIL_MOTION, row + 1).map((mark) => ({ mark, player: group.player })),
   )
   const ordered = [...marks.filter(({ mark }) => mark.ghost !== undefined), ...marks.filter(({ mark }) => mark.ghost === undefined)]
   for (const { mark, player } of ordered) {
@@ -201,7 +208,7 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
     if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
     const style: CellStyle = { fgRole: playerRole(player), dim: true, fade: mark.ghost === undefined ? TRAIL_FADE : (GHOST_FADES[mark.ghost] ?? 1) }
     const cell = cellForTile(layout, state.camera, tile)
-    cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
+    cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy, row), style } })
     for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style } })
   }
   const marked = new Set<string>()
@@ -266,8 +273,9 @@ export function nextTrailChange(elapsedMs: number, blends: boolean, motion: Trai
   return Math.ceil((quarters * motion.stepMs) / QUARTERS)
 }
 
-/** One mark of a trail: its tile, and the way it points — two steps on along the way, or at the target. `ghost` is
- *  set on the copy an arrow leaves on the tile it just left: which of its looks it is in (`GHOST_FADES`). */
+/** One mark of a trail: its tile, and the way it points — `ahead` steps on along the way (two, unless a row counts
+ *  two columns), or at the target. `ghost` is set on the copy an arrow leaves on the tile it just left: which of its
+ *  looks it is in (`GHOST_FADES`). */
 export type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number; ghost?: number }>
 
 /**
@@ -280,7 +288,13 @@ export type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number; ghost?: 
  * Copies come first in the list, then the arrows, each in the order of the way, so the last mark is the arrow
  * nearest the target. Tiles only: what stands on them, and whether they are in view, is the drawing's to judge.
  */
-export function trailMarks(path: readonly Coord[], target: readonly Coord[], elapsedMs: number | null = null, motion: TrailMotion = TRAIL_MOTION): TrailMark[] {
+export function trailMarks(
+  path: readonly Coord[],
+  target: readonly Coord[],
+  elapsedMs: number | null = null,
+  motion: TrailMotion = TRAIL_MOTION,
+  ahead = 2,
+): TrailMark[] {
   const last = path.length - 1
   if (last < 0) return []
   const spacing = Math.max(1, Math.round(motion.spacing))
@@ -293,7 +307,7 @@ export function trailMarks(path: readonly Coord[], target: readonly Coord[], ela
     const places: TrailMark[] = []
     for (let index = last - ((spacing - by) % spacing); index >= 0; index -= spacing) {
       const tile = path[index] as Coord
-      const toward = path[index + 2] ?? nearestOf(tile, target)
+      const toward = path[index + ahead] ?? nearestOf(tile, target)
       places.push({ tile, dx: toward.x - tile.x, dy: toward.y - tile.y, ...(look === null ? {} : { ghost: look }) })
     }
     return places.reverse()
@@ -316,10 +330,11 @@ function nearestOf(from: Coord, tiles: readonly Coord[]): Coord {
 }
 
 /** A trail mark pointing `dx`, `dy`, in the glyph pack's own characters — the focus arrow's: an arrowhead
- *  where the way runs mostly along one axis, a diagonal stroke where it runs along both. */
-export function trailGlyph(pack: GlyphPack, dx: number, dy: number): string {
+ *  where the way runs mostly along one axis, a diagonal stroke where it runs along both. A row counts `row`
+ *  columns, as the battle measures it: two across and one down is the screen's diagonal where a row counts two. */
+export function trailGlyph(pack: GlyphPack, dx: number, dy: number, row = 1): string {
   const across = Math.abs(dx)
-  const down = Math.abs(dy)
+  const down = Math.abs(dy) * row
   if (down === 0 || across >= 2 * down) return chromeGlyph(pack, dx < 0 ? "arrowLeft" : "arrowRight")
   if (across === 0 || down >= 2 * across) return chromeGlyph(pack, dy < 0 ? "arrowUp" : "arrowDown")
   // Down and to the left, or up and to the right, runs along `/`; the other two along `\`.

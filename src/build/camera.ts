@@ -76,8 +76,14 @@ export function availableTiles(
  * and the tile-width rule in docs/system-design/presentation.md ("one column at 80, two at 128 or
  * wider") agree by construction — 128 is exactly
  * the width at which two columns per tile still leaves room for the 48-tile minimum viewport.
+ *
+ * `fixed`, when given, is the width at every size instead: the Ground Experiment's (`tileWidthOf`,
+ * `src/build/ground.ts`) — square tiles draw two columns a tile even at 80 x 24, where the view is then 24 tiles
+ * across, and a choice that counts a row as two columns draws one at every size, so no reach comes out twice as
+ * wide as it is tall. `null` is the adaptive width, as it always was.
  */
-export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain): TileWidth {
+export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain, fixed: TileWidth | null = null): TileWidth {
+  if (fixed !== null) return fixed
   const wanted = Math.min(MIN_VIEWPORT.width, grid.width)
   return availableTiles(terminal, 2, FLOOR_PANEL_COLUMNS).width >= wanted ? 2 : 1
 }

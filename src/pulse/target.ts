@@ -15,16 +15,17 @@
 //   leaving them pressing on each other.
 //
 // Read from the state the tick began with, like every phase before the moves settle; the kernel never
-// changes a target (`MatchState.targets`). Manhattan, integers, reading and ordinal order: nothing here can
+// changes a target (`MatchState.targets`). Distances are the battle's measure (Manhattan under `SQUARE`), and
+// "beside" is a step along a side whatever the measure; integers, reading and ordinal order: nothing here can
 // make two runs differ.
 
 import type { ContentDef } from "../content/types.ts"
-import { footprintDistance, tilesOf } from "../grid/coords.ts"
+import { SQUARE, footprintSteps, gridDistance, tilesOf } from "../grid/coords.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
-import type { Coord, Footprint } from "../grid/types.ts"
+import type { Coord, Footprint, GridMeasure } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { distanceBetween } from "./shared.ts"
+import { stepsBetween } from "./shared.ts"
 
 /**
  * How near an enemy must come before a unit heading for its side's target turns to fight it, in tiles,
@@ -51,13 +52,14 @@ export function targetFor(context: TickContext, actor: Actor): TargetArea | null
   return context.targets[actor.player] ?? null
 }
 
-/** How far a footprint anchored at `anchor` is from an area: 0 inside it, else the steps to its nearest tile. */
-export function distanceToArea(anchor: Coord, footprint: Footprint, area: TargetArea): number {
+/** How far a footprint anchored at `anchor` is from an area: 0 inside it, else the distance to its nearest tile,
+ *  as `measure` counts it (the steps to it under `SQUARE`). */
+export function distanceToArea(anchor: Coord, footprint: Footprint, area: TargetArea, measure: GridMeasure = SQUARE): number {
   let best = Number.POSITIVE_INFINITY
   for (const tile of tilesOf(anchor, footprint)) {
     const dx = Math.max(area.x - tile.x, 0, tile.x - (area.x + area.width - 1))
     const dy = Math.max(area.y - tile.y, 0, tile.y - (area.y + area.height - 1))
-    best = Math.min(best, dx + dy)
+    best = Math.min(best, dx + measure.row * dy)
   }
   return best
 }
@@ -79,15 +81,16 @@ export function areaTiles(area: TargetArea): Coord[] {
 /**
  * The tile of the area a mover walks toward: the nearest one its own mask leaves clear — no building, no
  * unit it would bump, no rock — the first in reading order on a tie; and when none is clear, the nearest of
- * all. A mover aims at it as it aims at the nearest tile of an enemy's footprint (`movementGoal`).
+ * all. Nearest as the battle's measure counts it. A mover aims at it as it aims at the nearest tile of an
+ * enemy's footprint (`movementGoal`).
  */
-export function areaGoal(from: Coord, area: TargetArea, mask: CollisionMask): Coord {
+export function areaGoal(from: Coord, area: TargetArea, mask: CollisionMask, measure: GridMeasure): Coord {
   let clear: Coord | null = null
   let clearDistance = Number.POSITIVE_INFINITY
   let nearest: Coord = { x: area.x, y: area.y }
   let nearestDistance = Number.POSITIVE_INFINITY
   for (const tile of areaTiles(area)) {
-    const distance = Math.abs(tile.x - from.x) + Math.abs(tile.y - from.y)
+    const distance = gridDistance(from, tile, measure)
     if (distance < nearestDistance) {
       nearest = tile
       nearestDistance = distance
@@ -103,9 +106,10 @@ export function areaGoal(from: Coord, area: TargetArea, mask: CollisionMask): Co
 /**
  * The fighting units of `player` gathered at its target this tick, by ordinal: every one inside it or beside
  * a building of its own side that stands in it, and — outward from them — every one beside one already
- * gathered. Beside is one step away, footprint to footprint. Worked out as a whole from where everyone stood
- * as the tick began, so the answer is the same whichever unit asks first. A unit in it that nothing brings
- * closer stands, rather than pressing on its own.
+ * gathered. Beside is one step away along a side, footprint to footprint, whatever the measure counts a row
+ * (`stepsBetween`). Worked out as a whole from where everyone stood as the tick began, so the answer is the
+ * same whichever unit asks first. A unit in it that nothing brings closer stands, rather than pressing on its
+ * own.
  */
 export function gatheredAt(context: TickContext, player: PlayerId, area: TargetArea): ReadonlySet<number> {
   const followers = context.actors.filter((actor) => actor.player === player && !actor.pendingDead && targetFor(context, actor) !== null)
@@ -114,7 +118,7 @@ export function gatheredAt(context: TickContext, player: PlayerId, area: TargetA
   const queue: Actor[] = []
   for (const follower of followers) {
     const beside = (building: Actor): boolean =>
-      footprintDistance(building.anchor, building.definition.footprint, follower.anchor, follower.definition.footprint) === 1
+      footprintSteps(building.anchor, building.definition.footprint, follower.anchor, follower.definition.footprint) === 1
     if (insideArea(follower, area) || buildings.some(beside)) {
       gathered.add(follower.ordinal)
       queue.push(follower)
@@ -123,7 +127,7 @@ export function gatheredAt(context: TickContext, player: PlayerId, area: TargetA
   for (let next = 0; next < queue.length; next += 1) {
     const standing = queue[next] as Actor
     for (const follower of followers) {
-      if (gathered.has(follower.ordinal) || distanceBetween(standing, follower) !== 1) continue
+      if (gathered.has(follower.ordinal) || stepsBetween(standing, follower) !== 1) continue
       gathered.add(follower.ordinal)
       queue.push(follower)
     }

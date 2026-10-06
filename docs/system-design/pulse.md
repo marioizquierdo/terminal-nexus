@@ -44,15 +44,20 @@ is expensive.
 An integer accumulator, no floating point:
 
 - each tick, `credit += rate.numerator`
-- a step costs `rate.denominator × 12`
-- when `credit >= cost`, the actor attempts one step and `credit -= cost`
+- a tile of movement costs `rate.denominator × 12`; as the battle measures the Grid, a step across costs that
+  over the measure's tile, and a step up or down the measure's row times a step across. As now both are
+  `rate.denominator × 12`; when a row counts two columns, a step down costs twice a step across
+- when `credit >= cost` of the step it wants, the actor attempts that step and `credit -= cost`
 
 Check it against the table: `1/1` accrues 1 per tick against a cost of 12 — one step every 12 ticks.
 `3/2` accrues 3 against a cost of 24 — every 8 ticks. It reproduces the table exactly.
 
 Two rules govern what happens when an actor cannot step:
 
-- **Credit is capped at one step's cost.** An actor that could not move cannot bank a sprint.
+- **Credit is capped at one step's cost** — the dearest step's, when steps differ. An actor that could not
+  move cannot bank a sprint: it waits for the step it wants rather than taking a cheaper one it likes less, and
+  once it can pay, its credit is capped at that step's own cost, so saving up for a step down never buys two
+  quick steps across. A loser of a contested tile is offered only steps it can pay for.
 - **A blocked step keeps its credit.** An actor jostled out of a claim steps the moment the tile
   frees, rather than restarting its timer. This stops traffic jams from silently halving an army's
   speed.
@@ -60,6 +65,11 @@ Two rules govern what happens when an actor cannot step:
 The same file asserts both: the cadence holds across a second step, credit never exceeds one step's
 cost over five hundred ticks, and in the jammed-corridor fixture a mover blocked on one tick steps on
 the next — which is only possible if a refused step spends nothing.
+
+Steps are ranked by the distance they gain for the time they take, then by how little they turn, then by
+compass order. When a row counts two columns a step down gains two in twice the time, so it ties with a step
+across and the turn decides: a unit walks the screen's diagonal, not straight down first
+(`tests/ground-rules.test.ts`).
 
 ### 1.3 Tick order — RULE — `src/pulse/tick.ts`, `tests/rules.test.ts`
 
@@ -94,6 +104,13 @@ unit may still strike first.
 Melee is an attempt to enter an enemy-occupied tile on the same layer. When the defender dies in
 step 8, the winning claimant may occupy the tile on the following tick.
 
+**Melee is touching** (RULE — `src/pulse/shared.ts`, `tests/ground-rules.test.ts`): a melee attack reaches what
+is within its range in steps along the Grid's sides, however the battle counts a row, so a trooper swings at an
+enemy directly above it under every measure. Everything else that reaches — a shot, a heal, an aura, a blast or
+splash, an engage reach, a worker's flight and a contact detonator's trigger — is measured as range is: in the
+battle's measure, to the nearest tile of each footprint, and a reach of one or more always includes what
+touches.
+
 **A mover's origin tile does not free within the same tick.** Every phase reads the state settled at
 the end of the previous phase, so a follower steps one tick behind the actor in front of it rather
 than in lockstep. This keeps "no two entities ever overlap" true by construction and keeps
@@ -113,8 +130,8 @@ be intercepted, unless some specific mechanic later earns that complexity, which
 **Damage from a ranged attack is authoritative at the tick it resolves** — steps 7 and 8 of that same
 tick, always. The attack event additionally carries a **flight window**, measured in ticks and
 derived deterministically from the distance to the target as
-`max(1, ceil(distance / projectileTilesPerTick))`, where the tiles-per-tick figure is a property of
-the attack. It is part of the event and its hash, and it is read by **no rule**
+`max(1, ceil(distance / (projectileTilesPerTick × the measure's tile)))`, the distance in the battle's
+measure, where the tiles-per-tick figure is a property of the attack. It is part of the event and its hash, and it is read by **no rule**
 (RULE — `tests/rules.test.ts`): it exists so that presentation knows how long the shot should appear
 to take. A renderer drawing a tracer holds the impact, the damage flash, and the visible health change
 until the end of that window, so what the player sees lands when the tracer does; a renderer that
@@ -217,7 +234,8 @@ producers attempt recipes, actors move and fight automatically. Playback control
 result (RULE — `tests/pulse-run.test.ts`).
 
 At Pulse end survivors regroup near home producers — the nearest of their side's buildings that trains or
-spawns their kind. Orphans are adopted by the nearest compatible producer or regroup near the Grid Nexus. A
+spawns their kind, nearest as the battle measured the Grid. Orphans are adopted by the nearest compatible
+producer or regroup near the Grid Nexus. Where each survivor is set down is searched square, as it always was. A
 producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`).
@@ -366,7 +384,9 @@ destroys it.
 build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
 build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
 content definition with a `constructionRadius`; today every building the player places) lets its player build
-within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. Two of
+within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. **The
+build range is counted in rows**, so it keeps its height under the Ground Experiment: where a row counts two
+columns, a radius of 3 reaches 3 rows up and down and 6 columns across (`tests/ground-view.test.ts`). Two of
 the player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the
 two radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the
 network projects. One cut off from it keeps working (it trains, it shoots) and gives no build range; a

@@ -15,8 +15,8 @@ import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
-import { inBounds, tileIndex } from "../grid/coords.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
+import { footprintWithin, inBounds, reachOf, tileIndex } from "../grid/coords.ts"
+import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
 import type { StatusMessage } from "../build/status.ts"
@@ -33,6 +33,7 @@ import type { DrawExtra } from "./draw.ts"
 import { put, text } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
 import type { PulseSample } from "./snapshot.ts"
+import { battleMeasure } from "./snapshot.ts"
 import { entityGlyph, playerRole } from "./theme.ts"
 
 /** What the Pulse's scene needs for one presentation instant. Built by `PulsePresenter.frame`. */
@@ -68,7 +69,8 @@ export type PulseFrame = Readonly<{
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
- *  as range is, Manhattan, so a diamond — and whose side it guards. */
+ *  as range is, Manhattan under the battle's measure, so a diamond, twice as wide as tall where a row counts two
+ *  columns — and whose side it guards. */
 export type AuraFrame = Readonly<{ at: Coord; radius: number; player: PlayerId }>
 
 /** A line she is saying, as the scene draws it (`pulse-voice.ts` plans them, `pulse-live.ts` times them). */
@@ -168,26 +170,34 @@ export function drawPulseEffects(
  */
 export const AURA_WASH = 0.16
 
+/** Her aura is measured from her one tile, to the one tile a unit in it stands on. */
+const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
+
 /**
  * ***Her aura's reach*** (By the Book: her side's units near her take less damage): every tile within its radius
- * of her — measured as range is, Manhattan, so a diamond — washed in her side's colour on the ground, moving with
- * her while the fight is on. A glyphless write on the ground's own band, under everything that stands: a unit or
- * a building in her reach keeps its glyph and every colour of its own, standing in the glow rather than tinted by
- * it (at 256 colours a washed glyph would change hue), and an effect draws over it. Read from the content's aura
- * (`ContentDef.aura`), so a Commander with a wider one is drawn wider.
+ * of her — measured as range is, Manhattan, so a diamond, and under the battle's own measure (`battleMeasure`:
+ * where a row counts two columns, the kernel's own test, `footprintWithin`, so a diamond twice as wide as it is
+ * tall) — washed in her side's colour on the ground, moving with her while the fight is on. A glyphless write on
+ * the ground's own band, under everything that stands: a unit or a building in her reach keeps its glyph and every
+ * colour of its own, standing in the glow rather than tinted by it (at 256 colours a washed glyph would change
+ * hue), and an effect draws over it. Read from the content's aura (`ContentDef.aura`), so a Commander with a wider
+ * one is drawn wider.
  */
 export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame): void {
   const aura = pulse.aura
   if (aura === undefined) return
   const range = visibleRange(view.camera, view.viewport)
   const style: CellStyle = { seeThrough: { role: playerRole(aura.player), alpha: AURA_WASH } }
+  const measure = battleMeasure(pulse.sample.state)
+  // Never more rows than its radius, and across as far as its reach in the measure's count.
+  const span = Math.max(aura.radius, reachOf(aura.radius, measure))
   // In the tiles' own coordinates, never offsets from her: an offset `-reach` is `-0` at the diamond's tips, and a
   // `-0` in a coordinate slows every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
   for (let y = aura.at.y - aura.radius; y <= aura.at.y + aura.radius; y += 1) {
-    const reach = aura.radius - Math.abs(y - aura.at.y)
-    for (let x = aura.at.x - reach; x <= aura.at.x + reach; x += 1) {
+    for (let x = aura.at.x - span; x <= aura.at.x + span; x += 1) {
       const tile = { x, y }
       if (!inBounds(view.grid, tile) || !inView(range, tile)) continue
+      if (!footprintWithin(aura.at, ONE_TILE, tile, ONE_TILE, aura.radius, measure)) continue
       const cell = cellForTile(view.layout, view.camera, tile)
       for (let extra = 0; extra < view.layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, style })
     }

@@ -238,8 +238,14 @@ export function menuEntryAt(
   return line === undefined ? null : entryOfConstruct(line.index)
 }
 
-export function buildLayout(terminal: TerminalSize, grid: GridTerrain): BuildLayout {
-  const tileWidth = tileWidthFor(terminal, grid)
+/**
+ * The frame for a terminal of this size. `fixed` is the tile width the Ground Experiment draws at every size
+ * (`groundTileWidth`, `src/build/state.ts`), or `null` where the terminal's width decides (`tileWidthFor`): the
+ * live loop and the scripted playtest pass it, and lay the frame out again the moment it changes, as a resize
+ * does.
+ */
+export function buildLayout(terminal: TerminalSize, grid: GridTerrain, fixed: TileWidth | null = null): BuildLayout {
+  const tileWidth = tileWidthFor(terminal, grid, fixed)
   const viewport = fitViewport(terminal, grid, tileWidth)
   // The pane between the two full-width rules is as tall as the viewport — but never shorter than
   // the minimum viewport's 16 rows while the terminal has them, because the side panel is designed at
