@@ -5,7 +5,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { gridDistance, gridSteps, tilesOf } from "../src/grid/coords.ts"
+import { gridDistance, tilesOf } from "../src/grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { PulseSetupError, centreTile, openingState, recall } from "../src/match/index.ts"
 import type { Force, PulseSetup, StructurePlacement } from "../src/match/index.ts"
@@ -189,6 +189,30 @@ test("units gather on the free tiles nearest their muster point, none on top of 
   assertNoTileShared(state, "muster")
   // The first unit takes the muster tile itself.
   assert.ok(units.some((unit) => centreOf(unit).x === 20 && centreOf(unit).y === 12))
+})
+
+test("a group comes out round on screen: thirteen troopers fill every tile within three of their muster, seven across and three rows", () => {
+  const muster = { x: 20, y: 12 }
+  const state = open([{ contentId: NEXUS, anchor: { x: 2, y: 2 } }], [{ player: "A", muster, units: Array.from({ length: 13 }, () => TROOPER) }])
+  // Listed in reading order, as ordinals are: every tile within three of the muster by the Grid's own distance, and
+  // no other — three columns either side on its row, one either side on the rows above and below.
+  const tiles = state.entities.filter((entity) => definitionOf(entity).layer === "units").map(centreOf)
+  assert.deepEqual(tiles, [
+    { x: 19, y: 11 },
+    { x: 20, y: 11 },
+    { x: 21, y: 11 },
+    { x: 17, y: 12 },
+    { x: 18, y: 12 },
+    { x: 19, y: 12 },
+    { x: 20, y: 12 },
+    { x: 21, y: 12 },
+    { x: 22, y: 12 },
+    { x: 23, y: 12 },
+    { x: 19, y: 13 },
+    { x: 20, y: 13 },
+    { x: 21, y: 13 },
+  ])
+  for (const tile of tiles) assert.ok(distance(tile, muster) <= 3, `${tile.x},${tile.y} is further than three`)
 })
 
 test("a building committed on the muster point moves the units aside rather than refusing the Pulse", () => {
@@ -440,9 +464,10 @@ test("a big army comes home without overlapping: the search widens until everyon
   const { state } = recall(before, FIXTURE_REGISTRY)
   assertNoTileShared(state, "forty troopers")
   const nexus = state.entities.find((entity) => entity.contentId === NEXUS) as EntityState
-  // Counted in four-way steps, the rings Recall's search widens by.
+  // By the Grid's own distance, the rings Recall's search widens by: everyone within twelve rows of the Nexus, or
+  // twenty-four columns.
   for (const entity of state.entities.filter((candidate) => definitionOf(candidate).layer === "units")) {
-    assert.ok(gridSteps(centreOf(entity), centreOf(nexus)) <= 12, `${entity.id} is too far from the Nexus`)
+    assert.ok(distance(centreOf(entity), centreOf(nexus)) <= 24, `${entity.id} is too far from the Nexus`)
   }
 })
 

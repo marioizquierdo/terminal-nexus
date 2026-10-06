@@ -412,8 +412,8 @@ export const ALL_SETTINGS = {
    *  value is a whole number of rows, so two buildings' ranges meet exactly where the buildings are no further
    *  apart than the two ranges. Measured on PERIMETER's starter map at the start of round 1, where the Barracks
    *  beside the Nexus is linked at every value: at 4, 66 tiles are buildable, a Barracks fits in 55 places and the
-   *  best Turret reaches 7 of the probe's 20 steps; at 6, 112 tiles (109 places for a Barracks) and the best
-   *  Turret 9; at 8, 166 tiles (160) and 10. Reaching the ridge takes four chained Turrets at 4, three at 6, two
+   *  best Turret reaches 5 of the probe's 19 steps; at 6, 112 tiles (109 places for a Barracks) and the best
+   *  Turret 6; at 8, 166 tiles (160) and 7. Reaching the ridge takes four chained Turrets at 4, three at 6, two
    *  at 8. First guess: 6. */
   buildRange: {
     tier: "experiment",
@@ -463,9 +463,10 @@ export const ALL_SETTINGS = {
 
   /** How many free tiles a building that makes units (a Barracks, a Hatchery) keeps round it, measured as range
    *  is (`src/build/territory.ts`); it replaces each such structure's own `clearance` while it is felt. 1 keeps
-   *  every tile touching it free, the ring its troops appear on; 2 also the second column either side, a row
-   *  counting two columns. Why not more: a spawner must stand further than this from every building and still have
-   *  a tile in a linked building's range, and a larger value can leave nowhere to build one. First guess: 1. */
+   *  every tile along its sides free, so its troops always have room to appear; 2 also the second column either
+   *  side, a row counting two columns. Why not more: a spawner must stand further than this from every building
+   *  and still have a tile in a linked building's range, and a larger value can leave nowhere to build one. First
+   *  guess: 1. */
   spawnClearance: {
     tier: "experiment",
     section: "mission",

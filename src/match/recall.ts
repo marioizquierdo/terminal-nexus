@@ -36,10 +36,11 @@ import type { EntityState, MatchState } from "../state/types.ts"
 import { centreTile, nearestFit } from "./placement.ts"
 import type { RecallMove, RecallResult } from "./types.ts"
 
-/** How far from its home a survivor may be set down before Recall gives the search up and widens it. */
-const HOME_RADIUS = 8
+/** How far from its home a survivor may be set down before Recall gives the search up and widens it, by the
+ *  Grid's own distance (`nearestFit`): 8 rows up and down, 16 columns across. */
+const HOME_RADIUS = 16
 /** The wider search a survivor whose own tile was taken falls back on, around where it stands. */
-const FALLBACK_RADIUS = 40
+const FALLBACK_RADIUS = 80
 
 type Home = Readonly<{ entity: EntityState; definition: ContentDef; kind: "producer" | "nexus" }>
 

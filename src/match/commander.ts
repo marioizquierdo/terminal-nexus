@@ -32,8 +32,9 @@ import { centreTile, nearestFit } from "./placement.ts"
 /** How many whole rounds a fallen Commander sits out after the one she fell in (pulse.md: one). */
 export const ROUNDS_ABSENT = 1
 
-/** How far from her Grid Nexus a restored Commander may be set down. */
-const RESTORE_RADIUS = 8
+/** How far from her Grid Nexus a restored Commander may be set down, by the Grid's own distance (`nearestFit`): 8
+ *  rows up and down, 16 columns across. */
+const RESTORE_RADIUS = 16
 
 /** A Commander who fell and is not on the Grid: whose, which, when she fell, and the round she is due back
  *  at the start of. */

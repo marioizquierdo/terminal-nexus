@@ -248,9 +248,10 @@ test("the room holds both ways, against every building on the map: the Nexus, a 
   const raided: BuildContext = { ...context, field: [{ contentId: DEN, anchor: { x: 13, y: 7 }, player: "B", hp: 90 }] }
   assert.deepEqual(legal(raided, [], BARRACKS, { x: 17, y: 7 }), { ok: false, reason: "too close to the Den - troops need room" })
   assert.ok(legal(raided, [], TURRET, { x: 16, y: 8 }).ok)
-  // A unit is no building: the squad's marksman arriving beside it takes no room from a Barracks.
-  assert.ok((context.incoming ?? []).some((unit) => unit.anchor.x === 22 && unit.anchor.y === 11))
-  assert.ok(legal(context, [], BARRACKS, { x: 22, y: 12 }).ok)
+  // A unit is no building: Vasse, arriving in the middle of the squad's line, takes no room from a Barracks placed
+  // right under her.
+  assert.ok((context.incoming ?? []).some((unit) => unit.contentId === "unit.citizen.vasse" && unit.anchor.x === 22 && unit.anchor.y === 10))
+  assert.ok(legal(context, [], BARRACKS, { x: 22, y: 11 }).ok)
 })
 
 test("the room names the nearest building too close, and is measured as range is", () => {

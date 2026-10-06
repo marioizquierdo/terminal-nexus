@@ -50,8 +50,9 @@ import { opening } from "./opening.ts"
 import { nearestFit } from "./placement.ts"
 import type { Force, StructurePlacement } from "./types.ts"
 
-/** How far from a region's centre an arrival may be set down. */
-const ARRIVAL_RADIUS = 12
+/** How far from a region's centre an arrival may be set down, by the Grid's own distance (`nearestFit`): 12 rows up
+ *  and down, 24 columns across. */
+const ARRIVAL_RADIUS = 24
 
 export type MissionPulseInput = Readonly<{
   mission: MissionDefinition

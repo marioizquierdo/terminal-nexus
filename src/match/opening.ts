@@ -30,8 +30,9 @@ import { centreTile, nearestFit } from "./placement.ts"
 import type { PulseSetup, StructurePlacement } from "./types.ts"
 import { PulseSetupError } from "./types.ts"
 
-/** How far from its muster point a unit may be set down before the Pulse is refused for lack of room. */
-const MUSTER_RADIUS = 12
+/** How far from its muster point a unit may be set down before the Pulse is refused for lack of room, by the
+ *  Grid's own distance (`nearestFit`): 12 rows up and down, 24 columns across. */
+const MUSTER_RADIUS = 24
 
 export type OpeningInput = Readonly<{
   grid: GridTerrain

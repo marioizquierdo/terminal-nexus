@@ -17,7 +17,7 @@
   {
     "label": "Ranged units",
     "try": "Explore Map on a marksman: its range is drawn round it, as a Turret's reach is. Move onto a trooper and there is none, because a trooper fights hand to hand.",
-    "keys": "Esc e click:22,8"
+    "keys": "Esc e click:20,10"
   },
   {
     "label": "Moving trail",

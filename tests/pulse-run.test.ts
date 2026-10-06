@@ -40,7 +40,7 @@ test("every ending the player can meet is reachable from the starter map's own d
     ["one Turret", { plan: [DEFENCE[0] as Spot] }, "VICTORY", "A", "annihilation"],
     ["two Turrets and a Hatchery", { plan: DEFENCE }, "VICTORY", "A", "annihilation"],
     ["nobody comes", { raid: "none" }, "TIME'S UP", null, "tick-limit"],
-    ["no units of your own", { crew: "none" }, "DEFEAT", "B", "nexus-destroyed"],
+    ["no units of your own, a heavy raid", { crew: "none", raid: "heavy" }, "DEFEAT", "B", "nexus-destroyed"],
     ["a heavy raid, nothing built", { raid: "heavy" }, "DEFEAT", "B", "nexus-destroyed"],
   ]
   for (const [name, scenario, headline, winner, reason] of table) {
@@ -178,7 +178,7 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   const resolved = mission.startPulse(context, { ...opened, nexusPick: 1, planned: placeholderPlan, committed: true })
   assert.ok(resolved !== null)
   const { timeline } = resolved
-  assert.ok(timeline.stateHash.startsWith("cf7e41ae"), `state hash ${timeline.stateHash}`)
-  assert.ok(timeline.eventsHash.startsWith("c8aa9661"), `events hash ${timeline.eventsHash}`)
-  assert.equal(timeline.states.length - 1, 204)
+  assert.ok(timeline.stateHash.startsWith("1519738f"), `state hash ${timeline.stateHash}`)
+  assert.ok(timeline.eventsHash.startsWith("d78a72cd"), `events hash ${timeline.eventsHash}`)
+  assert.equal(timeline.states.length - 1, 217)
 })

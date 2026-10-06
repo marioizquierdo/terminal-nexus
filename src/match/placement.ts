@@ -1,29 +1,19 @@
-// Finding a free place for a unit — shared by the opening (units mustered around a point) and Recall
-// (units regrouped around a home building), which are the same question asked at the two ends of a
-// Pulse: where is the nearest room for this footprint?
+// Finding a free place for a unit — shared by the opening (units mustered around a point), a mission's arrivals,
+// Recall (units regrouped around a home building) and a Commander's return, which are the same question asked at
+// different moments of a round: where is the nearest room for this footprint?
+//
+// Nearest by the Grid's own distance (`gridDistance`: a row counts two columns), searched outward one ring of it at
+// a time (`ringOffsets`, src/grid/reach.ts). A group set down round a point fills a diamond twice as wide as it is
+// tall in tiles, so it comes out round on screen, as every reach does.
 //
 // Deterministic by construction: a fixed search order, no randomness, no clock. Nothing here decides an
 // outcome — it decides *where* something that has already been decided goes. The opening, the forecast of it and
 // Recall all search these same rings, so they agree.
 
-import { footprintCentre, gridSteps } from "../grid/coords.ts"
+import { footprintCentre, gridDistance } from "../grid/coords.ts"
+import { ringOffsets } from "../grid/reach.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
-
-/**
- * Offsets exactly `radius` four-way steps from `(0,0)` (`gridSteps`), in reading order (north to south, west to
- * east): a diamond of steps.
- */
-function diamond(radius: number): Coord[] {
-  if (radius === 0) return [{ x: 0, y: 0 }]
-  const offsets: Coord[] = []
-  for (let dy = -radius; dy <= radius; dy += 1) {
-    const across = radius - Math.abs(dy)
-    if (across === 0) offsets.push({ x: 0, y: dy })
-    else offsets.push({ x: -across, y: dy }, { x: across, y: dy })
-  }
-  return offsets
-}
 
 /** The tile at the centre of a footprint whose anchor is `anchor` — where a thing is, for "nearest". */
 export function centreTile(anchor: Coord, footprint: Footprint): Coord {
@@ -33,26 +23,27 @@ export function centreTile(anchor: Coord, footprint: Footprint): Coord {
 
 /**
  * The anchor for `footprint` whose **centre tile** is nearest `around` and whose whole footprint fits
- * the mask — `null` when nothing within `maxRadius` does.
+ * the mask — `null` when nothing within `maxDistance` of it does.
  *
- * Candidates are tried in expanding diamonds of centre tiles. Within one diamond they are tried nearest
- * to `prefer` first (a unit coming home takes the side of the building it came from), then in reading
- * order, so the answer never depends on anything but the mask, the footprint and the two points.
+ * Candidates are tried one ring of the Grid's own distance at a time, outward from `around` (`ringOffsets`).
+ * Within one ring they are tried nearest to `prefer` first (a unit coming home takes the side of the building it
+ * came from), then in reading order, so the answer never depends on anything but the mask, the footprint and the
+ * two points.
  */
 export function nearestFit(
   mask: CollisionMask,
   footprint: Footprint,
   around: Coord,
-  maxRadius: number,
+  maxDistance: number,
   prefer: Coord = around,
 ): Coord | null {
   const centre = footprintCentre(footprint)
-  for (let radius = 0; radius <= maxRadius; radius += 1) {
-    const candidates = diamond(radius)
+  for (let distance = 0; distance <= maxDistance; distance += 1) {
+    const candidates = ringOffsets(distance)
       .map((offset) => ({ x: around.x + offset.x, y: around.y + offset.y }))
       .map((tile) => ({ tile, anchor: { x: tile.x - centre.x, y: tile.y - centre.y } }))
-    // Stable sort: equal distances keep the diamond's own reading order.
-    candidates.sort((a, b) => gridSteps(a.tile, prefer) - gridSteps(b.tile, prefer))
+    // Stable sort: equal distances keep the ring's own reading order.
+    candidates.sort((a, b) => gridDistance(a.tile, prefer) - gridDistance(b.tile, prefer))
     for (const { anchor } of candidates) {
       if (mask.footprintFits(anchor, footprint)) return anchor
     }

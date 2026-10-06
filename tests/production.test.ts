@@ -277,4 +277,4 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // PERIMETER's round 1 as the rules play it: Vasse arriving with the squads, who hold the line ahead of the base, By
 // the Book guarding those beside her, the Barracks's four troopers together five seconds in, and a row counting
 // two columns in every distance and step.
-const PINNED_ROUND_1 = "64b0725b5a6f294108d51e426968a665712e66af752fe8e121bbbdc595cecc25"
+const PINNED_ROUND_1 = "52fe1365f4e047e51e989357fbda44dd5b404bde7089b5e0a8376bdf79775ab0"

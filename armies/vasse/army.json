@@ -228,7 +228,7 @@
               { "id": "line", "when": { "pulse": 1, "tick": 0 }, "do": [{ "spawn": { "side": "A", "units": [{ "unit": "unit.citizen.trooper", "count": 5 }], "at": "muster" } }] },
               {
                 "id": "ambush",
-                "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid.",
+                "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid at all of them but her least health with the weakest aura (20, and 10% less), where the raid outlasts the round.",
                 "when": { "pulse": 1, "tick": 0 },
                 "do": [
                   {

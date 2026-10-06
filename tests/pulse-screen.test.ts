@@ -173,7 +173,7 @@ test("a lost Pulse and a timed-out one say so plainly, and a force wiped out wit
   assert.doesNotMatch(screenText(fallen), /\b0 of yours came home/)
 
   // A Nexus that falls ends the mission: the mission's verdict leads, and the fight's reason stays under it.
-  const nexusFell = play({ crew: "none" })
+  const nexusFell = play({ crew: "none", raid: "heavy" })
   atHome(nexusFell)
   assert.match(screenText(nexusFell), /^\| MISSION FAILED /m)
   assert.match(screenText(nexusFell), /The Nexus fell\./)
@@ -359,7 +359,7 @@ test("red is for the player's Nexus being hurt: faint, brief, and never under re
     }
     return levels
   }
-  const fell = redLevels(play({ crew: "none" }))
+  const fell = redLevels(play({ crew: "none", raid: "heavy" }))
   assert.equal(fell[0], 0, "the border was red before anything was hit")
   assert.ok(Math.max(...fell) > 0, "a Nexus that fell never flashed red")
   assert.ok(Math.max(...fell) <= 0.6, `the red reached ${Math.max(...fell)}: it should stay a faint tint`)
@@ -372,7 +372,7 @@ test("red is for the player's Nexus being hurt: faint, brief, and never under re
 
   // Under reduced motion it is gone, every flash of it being said again in words. (It was an Experiment
   // that could switch it off until the owner kept it, 2026-09-30.)
-  const still = redLevels(play({ crew: "none" }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
+  const still = redLevels(play({ crew: "none", raid: "heavy" }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
   assert.equal(Math.max(...still), 0, "red under reduced motion")
 })
 

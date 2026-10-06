@@ -293,17 +293,17 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
-  assert.equal(timerAt(stdout.lastWrite), "0:13", "the Pulse did not open at zero")
+  assert.equal(timerAt(stdout.lastWrite), "0:16", "the Pulse did not open at zero")
   assert.match(stdout.lastWrite, /battle round/)
 
   t += 3_000
   await sleep(80)
-  assert.equal(timerAt(stdout.lastWrite), "0:10", "the Pulse did not follow the screen's clock")
+  assert.equal(timerAt(stdout.lastWrite), "0:13", "the Pulse did not follow the screen's clock")
 
-  // The last seconds, in the run-up to the stop (PERIMETER's first round ends near 12.2 s with this plan,
+  // The last seconds, in the run-up to the stop (PERIMETER's first round ends near 15.7 s with this plan,
   // Vasse in the squads, the squads holding the line and the Barracks's wave beside them five seconds in, and
   // the warning is three seconds).
-  t += 8_000
+  t += 11_000
   await sleep(80)
   assert.match(stdout.lastWrite, /about to end/, "no warning before the fight stopped")
 
@@ -349,7 +349,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   await sleep(60)
   t += 3_000
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:10")
+  assert.equal(timerAt(stdout.lastWrite), "0:13")
 
   stdout.columns = 60
   stdout.emit("resize")
@@ -360,7 +360,7 @@ test("a Nexus Pulse holds still behind the resize gate and resumes from the same
   stdout.columns = 80
   stdout.emit("resize")
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:10", "the Pulse ran on behind the gate")
+  assert.equal(timerAt(stdout.lastWrite), "0:13", "the Pulse ran on behind the gate")
   stdin.emit("data", Buffer.from([3]))
   await sleep(30)
 })
