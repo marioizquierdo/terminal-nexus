@@ -408,8 +408,9 @@ cards in [`ui-patterns.md`](ui-patterns.md)).
 
 **The arithmetic is tidy** (RULE — `tests/grid-pictures.test.ts`). The tiles exactly r away form a ring of exactly
 2r tiles, whatever r is: an odd ring crosses r rows with a tile at each end of every one, and an even ring crosses
-r + 1 rows, with a single tile at its top and its bottom. So a reach of R holds 1 + 2 + 4 + 6 + … + 2R =
-**R² + R + 1** tiles: 7 for a reach of 2, 21 for 4, 43 for 6.
+r + 1 rows, with a single tile at its top and its bottom. So a reach of R, from 2 up, holds 1 + 2 + 4 + 6 + … + 2R
+= **R² + R + 1** tiles: 7 for a reach of 2, 21 for 4, 43 for 6. A reach of 1 holds the five of touching: its own
+tile, the two beside and the two straight above and below.
 
 **Reaches are whole rows** (RULE for the content — `tests/rows.test.ts`). A reach of R covers R ÷ 2 rows up and
 down, rounded down (`rowsWithin`): a reach of 4 and a reach of 5 cover the same two rows, and the fifth point buys
