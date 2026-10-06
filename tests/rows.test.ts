@@ -8,14 +8,17 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { ALL_SETTINGS } from "../src/build/all-settings.ts"
-import { FIXTURE_REGISTRY } from "../src/content/index.ts"
+import { FIXTURE_REGISTRY, createRegistry } from "../src/content/index.ts"
+import type { ContentRegistry } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import {
   DIRECTIONS,
   ROW_DISTANCE,
   columnsWithin,
   directionOf,
+  footprintCentre,
   footprintDistance,
+  footprintExtent,
   footprintSteps,
   footprintWithin,
   gridDistance,
@@ -35,6 +38,7 @@ import type { MissionPulseInput } from "../src/match/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
 import { validateMission } from "../src/mission/index.ts"
 import { contextFor, resolvePulse, stepCost, stepTick } from "../src/pulse/index.ts"
+import { followsTarget } from "../src/pulse/target.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import type { MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
@@ -196,30 +200,37 @@ function block(placed: readonly Placed[]): PlacementBlock {
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** An open Grid, 50 by 30, with each side placed as given, and each side's target where `targets` says. */
-function field(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>, targets: Readonly<Partial<Record<PlayerId, TargetArea>>> = {}): MatchState {
+/** An open Grid, 50 by 30, with each side placed as given, each side's target where `targets` says, and rock on
+ *  every tile `rocks` names; the content is `registry`'s. */
+function field(
+  sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>,
+  targets: Readonly<Partial<Record<PlayerId, TargetArea>>> = {},
+  { rocks = [], registry = FIXTURE_REGISTRY }: Readonly<{ rocks?: readonly Coord[]; registry?: ContentRegistry }> = {},
+): MatchState {
   const placements: Partial<Record<PlayerId, PlacementBlock>> = {}
   for (const side of ["A", "B"] as const) {
     const placed = sides[side]
     if (placed !== undefined) placements[side] = block(placed)
   }
+  const rock = (x: number, y: number): boolean => rocks.some((tile) => tile.x === x && tile.y === y)
   const scenario: ScenarioDefinition = {
     id: "rows-field",
     name: "rows field",
     grid: { width: 50, height: 30 },
     seed: 1,
     pulseTicks: 400,
-    terrain: Array.from({ length: 30 }, () => ".".repeat(50)),
-    terrainLegend: { ".": "terrain.plain" },
+    terrain: Array.from({ length: 30 }, (_, y) => Array.from({ length: 50 }, (_, x) => (rock(x, y) ? "#" : ".")).join("")),
+    terrainLegend: { ".": "terrain.plain", "#": "terrain.rock" },
     placements,
     ...(Object.keys(targets).length === 0 ? {} : { targets }),
   }
-  return loadScenario(scenario, { registry: FIXTURE_REGISTRY }).state
+  return loadScenario(scenario, { registry }).state
 }
 
-/** A state resolved tick by tick for at most `ticks`: every state after the first, and every event, in order. */
-function play(state: MatchState, ticks: number): Readonly<{ states: MatchState[]; events: DomainEvent[] }> {
-  const context = contextFor(state, FIXTURE_REGISTRY, ticks)
+/** A state resolved tick by tick for at most `ticks`, on `registry`'s content: every state after the first, and every
+ *  event, in order. */
+function play(state: MatchState, ticks: number, registry: ContentRegistry = FIXTURE_REGISTRY): Readonly<{ states: MatchState[]; events: DomainEvent[] }> {
+  const context = contextFor(state, registry, ticks)
   const states: MatchState[] = []
   const events: DomainEvent[] = []
   let at = state
@@ -260,17 +271,59 @@ test("a trooper walks eleven rows down in the time it walks twenty-two columns a
   // A trooper steps every four ticks across and every eight down.
   assert.ok(gaps(across).every((gap) => gap === 4), `across: ${gaps(across).join(",")}`)
   assert.ok(gaps(down).every((gap) => gap === 8), `down: ${gaps(down).join(",")}`)
-  // Each step says what it cost: a row twice a column, and the dearest step, a row's, is what credit is capped at.
+  // Each step says what it cost: a row twice a column, and the dearest step, a row's, is what credit is capped at. A
+  // trooper's 10/3 earns ten a tick, and its beat is four ticks: forty for a step across, eighty for one down.
   const rate = FIXTURE_REGISTRY.get(TROOPER).movementRate
   assert.ok(rate !== undefined)
   const costs = (to: Coord): Set<number> =>
     new Set(play(field({ A: [[5, 2, TROOPER]] }, { A: targetAt(to) }), 120).events.flatMap((event) => (event.kind === "move.intended" ? [event.cost] : [])))
   assert.deepEqual([...costs({ x: 5, y: 13 })], [stepCost(rate, "s")])
   assert.deepEqual([...costs({ x: 27, y: 2 })], [stepCost(rate, "e")])
-  assert.deepEqual([stepCost(rate, "s"), stepCost(rate, "e"), stepCost(rate)], [72, 36, 72])
+  assert.deepEqual([stepCost(rate, "s"), stepCost(rate, "e"), stepCost(rate)], [80, 40, 80])
 })
 
-test("two raiders, one nine rows above their target and one eighteen columns beside it, come a third of the way in on about the same tick", () => {
+/** Every content that walks, as a unit that heads for its side's target: a worker that flees and a healer follow
+ *  none, so here they are told to advance, with their own rate, footprint and layer. */
+const WALKERS: ContentRegistry = createRegistry(
+  FIXTURE_REGISTRY.ids().map((id) => {
+    const definition = FIXTURE_REGISTRY.get(id)
+    return definition.movementRate === undefined || followsTarget(definition) ? definition : { ...definition, behavior: "advance" as const }
+  }),
+)
+
+test("every unit that walks crosses twenty-four columns in exactly the time it walks twelve rows down: a step across takes its beat, a step down two", () => {
+  // Alone on open ground, each walks to its side's target, once twenty-four columns straight across and once twelve
+  // rows straight down: as far by the rule, and as far on screen. A placement block sets a unit down by its centre
+  // tile; each target lies straight along the way from the footprint's edge.
+  const beats = new Map<string, number>()
+  for (const id of WALKERS.ids()) {
+    const definition = WALKERS.get(id)
+    const rate = definition.movementRate
+    if (rate === undefined) continue
+    const { width, height } = footprintExtent(definition.footprint)
+    const centre = footprintCentre(definition.footprint)
+    const anchor = { x: 5 - centre.x, y: 2 - centre.y }
+    const steps = (to: Coord): number[] =>
+      play(field({ A: [[5, 2, id]] }, { A: targetAt(to) }, { registry: WALKERS }), 400, WALKERS)
+        .events.filter((event) => event.kind === "entity.moved")
+        .map((event) => event.tick)
+    const across = steps({ x: anchor.x + width - 1 + 24, y: anchor.y })
+    const down = steps({ x: anchor.x, y: anchor.y + height - 1 + 12 })
+    assert.deepEqual([across.length, down.length], [24, 12], `${id} did not walk straight there`)
+    assert.equal(down.at(-1), across.at(-1), `${id}: twelve rows down in ${down.at(-1)} ticks, twenty-four columns across in ${across.at(-1)}`)
+    // Its beat, the ticks a step across takes: a whole number, the credit for a step coming in whole ticks.
+    const beat = across[0] as number
+    assert.equal(beat, Math.ceil((12 * rate.denominator) / rate.numerator), `${id}'s beat`)
+    assert.ok(gaps(across).every((gap) => gap === beat), `${id} across, every ${beat} ticks: ${across.join(",")}`)
+    assert.ok([down[0], ...gaps(down)].every((gap) => gap === 2 * beat), `${id} down, every ${2 * beat} ticks: ${down.join(",")}`)
+    beats.set(id, beat)
+  }
+  // Every unit steps across as often as it ever did: a trooper every four ticks, a raider every five, a colossus
+  // every fifteen.
+  assert.deepEqual([TROOPER, RAIDER, "unit.citizen.colossus"].map((id) => beats.get(id)), [4, 5, 15])
+})
+
+test("two raiders, one nine rows above their target and one eighteen columns beside it, come a third of the way in on the same tick", () => {
   // Their side's target is one tile on open ground; nothing stands in either's way and nothing shoots. Both start
   // eighteen away by the rule — nine rows of two columns, eighteen columns — and each is timed by where it stands
   // tick by tick, from its footprint's nearest tile to the target.
@@ -293,13 +346,10 @@ test("two raiders, one nine rows above their target and one eighteen columns bes
     return state.tick
   }
   const [fromAbove, fromBeside] = [thirdIn(above), thirdIn(beside)]
-  // About the same tick: no further apart than one step across takes, the credit for a step coming in whole ticks.
-  // Were a row one column, the one above would come in twice as fast.
-  const rate = FIXTURE_REGISTRY.get(RAIDER).movementRate
-  assert.ok(rate !== undefined)
-  const stepAcrossTicks = Math.ceil(stepCost(rate, "e") / rate.numerator)
-  assert.ok(Math.abs(fromAbove - fromBeside) <= stepAcrossTicks, `a third of the way in on ticks ${fromAbove} and ${fromBeside}`)
-  assert.deepEqual([fromAbove, fromBeside], [27, 30])
+  // The same tick: a raider's step down takes exactly two of the five-tick beats a step across takes, so three rows
+  // down take as long as six columns across. Were a row one column, the one above would come in twice as fast.
+  assert.equal(fromAbove, fromBeside, `a third of the way in on ticks ${fromAbove} and ${fromBeside}`)
+  assert.equal(fromAbove, 30)
 })
 
 test("melee is touching: a trooper swings at the enemy straight above it, and steps beside a building a row and a column off first", () => {
@@ -335,8 +385,10 @@ test("a range of 4 reaches four columns across and two rows up, never three; two
 
 test("waiting never banks a sprint across: credit saved for a step down buys one step across, at a step across's pace", () => {
   // A trooper that stood long enough to save up for a step down, a row's worth of credit, then walks across.
+  const rate = FIXTURE_REGISTRY.get(TROOPER).movementRate
+  assert.ok(rate !== undefined)
   const saved = field({ A: [[5, 2, TROOPER]] }, { A: targetAt({ x: 27, y: 2 }) })
-  const rich: MatchState = { ...saved, entities: saved.entities.map((entity) => ({ ...entity, moveCredit: 72 })) }
+  const rich: MatchState = { ...saved, entities: saved.entities.map((entity) => ({ ...entity, moveCredit: stepCost(rate, "s") })) }
   const moved = play(rich, 40)
     .events.filter((event) => event.kind === "entity.moved")
     .map((event) => event.tick)
@@ -446,7 +498,7 @@ test("the battle with the most rules in it resolves the same way on every run, a
 })
 
 // The Citizens against the Ravels, blasts among its rules: its state and its events.
-const PINNED_BATTLE = ["0b3e85ba31440f7c95a436d857f38d2e9531f6e99d31624d4261eec21a57f0a0", "61140abd763fc9551704973c84537ce9c32f69dc780f7353978d353eb52fe43f"] as const
+const PINNED_BATTLE = ["030e40b3ca69c383c53e3f4455db901360e0bbbaa39cc09c0a2bfb829d863181", "9349bec06ff8fcbdec9cca65d68ccf434259599c47730a44b28bf4477dba6cfe"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows: 1, which is touching, or even", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of

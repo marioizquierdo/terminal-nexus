@@ -1,7 +1,9 @@
 // Movement credit and step choice (pulse.md).
 //
-// A step's cost is in proportion to how far it goes (`stepLength`, src/grid/coords.ts): a step across a column
-// costs `denominator x 12` credit, a step up or down a row `ROW_DISTANCE` times that. So a unit walks every
+// A unit walks to a **beat**: the whole number of ticks a step across a column takes, `ceil(12 x denominator /
+// numerator)` at 12 ticks a second. A step costs a beat's worth of credit for each column of distance it covers
+// (`stepLength`, src/grid/coords.ts), one across and `ROW_DISTANCE` up or down, and each tick adds `numerator`, so a
+// step across takes exactly one beat and a step up or down exactly two, whatever the rate. So a unit walks every
 // distance at one pace — a walk down the screen and one across it cover the same ground in the same time, and a
 // unit that can reach a tile within a range by walking reaches it in the time the range says.
 
@@ -16,16 +18,22 @@ const LONGEST_STEP = Math.max(...DIRECTIONS.map(stepLength))
 /** The shortest step there is, across a column: what an actor needs credit for before it steps at all. */
 const SHORTEST_STEP = Math.min(...DIRECTIONS.map(stepLength))
 
-/** What walking `length` columns of distance costs in movement credit: `denominator x 12` a column. Each tick adds
- *  `numerator`. Integers only, no float anywhere. */
+/**
+ * What walking `length` columns of distance costs in movement credit: a beat's worth of credit a column, `numerator
+ * x beat`. The beat is the whole number of ticks a step across takes at 12 ticks a second, `ceil(12 x denominator /
+ * numerator)`: 4 for a trooper's 10/3, 5 for a raider's 8/3, 3 for a runner's 4/1. Each tick adds `numerator`, so a
+ * step takes exactly as many beats as the columns it covers. Whole numbers only: the beat is a whole number of ticks,
+ * so every cost is a whole number of credit.
+ */
 function creditFor(rate: MovementRate, length: number): number {
-  return rate.denominator * 12 * length
+  const beat = Math.ceil((12 * rate.denominator) / rate.numerator)
+  return rate.numerator * beat * length
 }
 
 /**
- * What a step costs in movement credit, in proportion to how far it goes (`stepLength`): a step across costs
- * `denominator x 12`, and a step up or down `ROW_DISTANCE` times that. With no direction, the dearest step's cost:
- * what credit is capped at (`accrueCredit`).
+ * What a step costs in movement credit, in proportion to how far it goes (`stepLength`): a step across costs a beat's
+ * worth of credit, and a step up or down `ROW_DISTANCE` times that, so it takes exactly two beats. With no direction,
+ * the dearest step's cost: what credit is capped at (`accrueCredit`).
  */
 export function stepCost(rate: MovementRate, direction?: Direction): number {
   return creditFor(rate, direction === undefined ? LONGEST_STEP : stepLength(direction))

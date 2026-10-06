@@ -163,11 +163,12 @@ test("the named scenario is the same every run, and on both runtimes", () => {
 })
 
 // The three rounds as the rules play them: By the Book guarding her and the troopers beside her, the ambush's two
-// runners making sure she falls in round 1, a row counting two columns in every distance and step.
+// runners making sure she falls in round 1, a row counting two columns in every distance and step, and every step
+// taking whole beats, one across and two up or down.
 const PINNED_ROUNDS = [
-  "d6b44a9b41b36f9d5b81bdb75e4be60ebccdc4a54f69fb1653ce2ea55b9c66e8",
-  "14905e605f045660d0b22242497ecb589268feebc978af1ed9234018ff1b6194",
-  "421de8052ba180b28353592029cc1cc870e8517d195abfaa258515f7c5672c2b",
+  "9b9606aa2e68a83d65d0485301702c87c266773e3afabcb9a0e32e11c1f84764",
+  "92a62feefdba826ea643475f030a01b8a5637c3de4e468e7767abf533aa29c35",
+  "4db4c46d8cd5c03dc1a848d8c34e0e5672a51ef6e1d00ab3fe99dab79fa115cf",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

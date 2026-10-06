@@ -290,6 +290,13 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
 
     const deathAtMs = death.tick * tickMs
     const impactAtMs = (death.tick + launch.flightWindowTicks) * tickMs
+    // Two shots that kill it on one tick can fly for different times: it is held until the last of them lands.
+    const lastFlight = Math.max(
+      ...launches.flatMap((other) =>
+        other.kind === "attack.launched" && other.tick === launch.tick && other.targetOrdinal === launch.targetOrdinal ? [other.flightWindowTicks] : [],
+      ),
+    )
+    const lastImpactAtMs = (death.tick + lastFlight) * tickMs
     assert.equal(
       cellAt(deathAtMs + 1),
       expectedGlyph,
@@ -301,7 +308,7 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
       `${death.entity} disappeared before its own tracer landed`,
     )
     assert.notEqual(
-      cellAt(impactAtMs + 1),
+      cellAt(lastImpactAtMs + 1),
       expectedGlyph,
       `${death.entity} was still drawn after the impact beat it should have vanished at`,
     )

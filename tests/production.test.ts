@@ -245,7 +245,9 @@ test("a building the player placed spawns too, its wave on the same tick as the 
 })
 
 test("a wave's survivors come home to their building; Recall and the next opening start its counters afresh, on the recipe that round runs", () => {
-  const first = round(1, null)
+  // A Turret north of the Barracks, facing the raid's way in, so some of the wave live to come home: with nothing
+  // built, the raid's raiders outlast all four.
+  const first = round(1, null, [{ contentId: "structure.bench.beamturret", anchor: { x: 25, y: 7 } }])
   const trained = trainedEvents(first.events)
   assert.equal(trained.length, 4, "round 1 did not train its wave")
   const back = recall(first.final, campaignRegistry)
@@ -275,6 +277,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 })
 
 // PERIMETER's round 1 as the rules play it: Vasse arriving with the squads, who hold the line ahead of the base, By
-// the Book guarding those beside her, the Barracks's four troopers together five seconds in, and a row counting
-// two columns in every distance and step.
-const PINNED_ROUND_1 = "52fe1365f4e047e51e989357fbda44dd5b404bde7089b5e0a8376bdf79775ab0"
+// the Book guarding those beside her, the Barracks's four troopers together five seconds in, a row counting two
+// columns in every distance and step, and every step taking whole beats, one across and two up or down.
+const PINNED_ROUND_1 = "6b85d3a6fdb4ebf900a694863bdcf14489b4aa64e95fabb6b52470b81e4aad3c"
