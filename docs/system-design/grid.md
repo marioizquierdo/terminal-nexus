@@ -354,8 +354,9 @@ Every tile's distance from a unit at `T`:
 ```
 
 Read it the way the screen shows it, not as a table: each number stands about that many columns from `T`,
-whichever way it lies. The 4 four columns to the right and the 4 two rows up are the same length on screen, because
-a row is as tall as two columns are wide, so equal numbers ring `T` as wide as they are tall. Every range, reach and
+whichever way it lies. The 4 that stands four columns to the right and the 4 that stands two rows up are the same
+length from `T` on screen, because a row is as tall as two columns are wide, so equal numbers ring `T` as wide as
+they are tall. Every range, reach and
 radius in the game is this distance, measured between the nearest tiles of two footprints (section 6), and every
 distance is worked out by the functions in `src/grid/coords.ts` and `src/grid/reach.ts`, never by hand.
 
@@ -400,8 +401,8 @@ reach 1     reach 2      reach 4         reach 6
 ```
 
 In tiles, a reach is a diamond twice as wide as it is tall. Every row is two squares tall, so on screen the same
-diamond is as tall as it is wide: a square standing on one corner, R columns from its middle to each of its four
-points. Every reach the game draws is made of it (a Turret's round its ghost, a marksman's when explored, Vasse's
+diamond is as tall as it is wide: a square standing on one corner, and for an even reach exactly R columns from
+its middle to each of its four points. Every reach the game draws is made of it (a Turret's round its ghost, a marksman's when explored, Vasse's
 aura, the build range's dotted ground), and a card says it in words: "6 across, 3 up/down" (`reachShape`; the
 cards in [`ui-patterns.md`](ui-patterns.md)).
 
