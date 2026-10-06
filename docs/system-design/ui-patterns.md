@@ -72,8 +72,8 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   what Esc does. The **side panel**, on the left because building comes first: the menu, a card, or the
   Nexus Pulse's panel. The **map**, a closed rectangle whose west side is the panel's divider. The
   **bottom line** (whole width): one line of contextual help. Popups open over the map. At 80 × 24 the
-  map shows 49 × 18 tiles, or 24 × 18 with square tiles (the Ground Experiment). (RULE —
-  `tests/build-focus.test.ts`, `tests/build-help.test.ts`, `tests/ground-view.test.ts`)
+  map shows 49 × 18 tiles, one column a tile. (RULE — `tests/build-focus.test.ts`, `tests/build-help.test.ts`,
+  `tests/rows-view.test.ts`)
 - **One place has the keyboard**, shown by exactly one "you are here": the menu's highlight bar or the
   map cursor, never both. Focus is state (`BuildState.focus`), so a script sets it and a test reads it.
   (RULE — `tests/build-focus.test.ts`)
@@ -241,17 +241,28 @@ title screen's menu.
   on what the thing is for; the description is two or three plain sentences with a little more detail, wrapped
   under the icon; then the numbers as label/value rows — cost where the menu sells it, health, size and
   attack, the wave a building spawns (`WAVE 4 troopers at 5s`, or `WAVES 4 at 5s, 15s, 25s` for several), the
-  building's build range ("3, next round" for one being placed or planned, which gives none until it stands;
-  "cut off" in Explore Map for a standing one cut off from the Nexus), or a bare tile's position. **No status
+  building's build range (its shape, see *A reach's shape*; `from next round` for one being placed or planned,
+  which gives none until it stands; `cut off` in Explore Map for a standing one cut off from the Nexus), or a bare
+  tile's position. **No status
   line**: planned, standing or about to be placed is plain from the rest of the screen. The words are written
   with the content (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text
   never cuts a word**; if the words are too long, shorten them. One function draws every card
   (`drawCardBody`): that is where a later round would change the look for placing a building (where the title
   repeats the header), for exploring in the Build Phase, or for exploring during a Pulse. (RULE for the four
   parts and the fit — `tests/build-card.test.ts`)
-- **A Commander's skill is on her card**: its name, bold, then one plain line at the strength the battle
-  will run on ("She and her units within 3 tiles take 25% less damage."); nothing while the Experiment has
-  it off. (RULE — `tests/commander-screen.test.ts`)
+- ***A reach's shape*** (a named pattern; a row counts two columns in every distance, [`grid.md`](grid.md)):
+  **every reach a card states is said by its shape, never as a bare number** — an attack's, the build range, a
+  Commander's aura. A reach of R is "R across, M up/down", M being R ÷ 2 rounded down (`6 across, 3 up/down`), and a
+  reach of 1 is `touching`; one helper says it (`reachShape`, `src/build/reach.ts`). An attack keeps its damage on
+  its row; `touching` goes beside it (`ATTACK  7, touching`), any other shape on the row under it, right-aligned
+  like a value, with no label of its own. The build range's shape goes under its label, or under `from next
+  round`. "up/down" rather than "up and down" so the tallest card, Vasse's, keeps her skill to three lines at
+  80 × 24. (RULE — `tests/build-card.test.ts`)
+- **A Commander's skill is on her card**: its name, bold, opening one plain sentence at the strength the battle
+  will run on, its reach said as every reach is ("By the Book: she and her units take 25% less damage within 4
+  across, 2 up/down."); nothing while the Experiment has it off. Hers is the tallest card: at 80 × 24 the blank
+  lines before her skill and before her numbers close up rather than lose a number. (RULE —
+  `tests/commander-screen.test.ts`, `tests/build-card.test.ts`)
 - It appears with the **card reveal** (see *Motion and transitions*).
 
 ### 6.3 A selection holds the menu
@@ -284,8 +295,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
 - **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if Enter would take it there
   — a tile of it inside the build range, and the room a Barracks keeps left free; else the nearest such spot
   within reach leaving a free tile around it, else the nearest such spot touching — nearest by the cursor's
-  move, a step up or down costing more than a step sideways where a tile is one column wide, and the same as one
-  sideways with square tiles, so a run grows to the right (the reach and the
+  move, a step up or down costing more than a step sideways, so a run grows to the right (the reach and the
   cost are tuned values, `armSearchTiles` and `armVerticalCost`). With none in reach, arming steps one right
   and one down and draws the building as itself rather than as a refusal, until the player moves or tries, and
   the bottom line says whether nothing fits nearby or nothing in the build range does. **Explore Map opened
@@ -427,7 +437,9 @@ uses it rather than a new blend.
   (RULE — `tests/build-settings.test.ts`, `tests/build-experiments.test.ts`)
 - **The Controls and hotkeys page** (`[c]` in the game menu, or `?`): every key and click grouped by where
   the player is, from one table (`controlsPage` in `src/build/help.ts`), so a new key is one line there.
-  (RULE — `tests/build-help.test.ts`)
+  One group has no keys: **THE GROUND**, after THE MAP, the page's one passage on how the ground is counted —
+  "units stand tall, so more fit side by side than one behind another; a row up or down counts two steps across"
+  — in the text's column, wrapped by hand to the 28 columns it has at 80 × 24. (RULE — `tests/build-help.test.ts`)
 - **The Activity logs window** (`[a]` in the game menu; `a` closes it again) shows what the game
   recorded, newest first: a Filter row whose value Left and Right step through the filters (it comes
   round), `[e] Export logs`, then the list — one line per entry exactly as an export writes it, detail
@@ -578,14 +590,13 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   the outline never flickers as they pass — and nothing claims what a range would catch on the raid's way.
   Where a reach crosses a room, the reach's strokes are drawn. None shows under a popup, on a committed plan,
   or during a Pulse. (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
-  **Measured as the battle will be.** All three are the rules' own under the Ground Experiment's measure. The
-  build range is counted in rows, so it keeps its height: where a row counts two columns, Build range 3 reaches 3
-  rows up and down and 6 columns across, and what the dots allow is what Enter takes. A Barracks's room and a
-  reach are measured as range is under that measure: a Turret's reach of 6 is drawn 13 wide by 7 tall with rows
-  x2, and 25 wide by 13 tall sideways x2. An outline is the last tiles reached — every tile in reach with a
-  four-way neighbour out of it, never the footprint's own — which as now and with square tiles is exactly the
-  diamond's ring, and where a row counts two columns is two tiles thick on its slants, so it has no gaps. (RULE —
-  `tests/ground-view.test.ts`)
+  **Measured as the battle will be.** All three are the rules' own, drawn from the same functions the battle
+  counts with (`tilesWithin`, [`grid.md`](grid.md), distance, reach and movement). Build range 6 reaches 6
+  columns across and 3 rows up and down, and what the dots allow is what Enter takes; a Turret's reach of 6 is
+  drawn 13 wide by 7 tall, as tall as it is wide on screen. An outline is the last tiles reached — every tile in
+  reach with a four-way neighbour out of it, never the footprint's own — so it is two tiles thick on its slants,
+  where each row steps in by two columns, and has no gaps. (RULE — `tests/rows-view.test.ts`,
+  `tests/build-areas.test.ts`)
 
 ## 13. Effects
 
@@ -683,8 +694,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   Every line is in the Activity Logs, with where it showed. Nothing she says can change what resolves. (RULE —
   `tests/voice.test.ts`)
 - ***Her aura's reach*** (a named pattern; the owner: "Vasse should provide boost to nearby units"): while the
-  fight is on, the ground within By the Book's radius — measured as range is, under the battle's own measure, so a
-  diamond, twice as wide as tall in tiles where a row counts two columns — is
+  fight is on, the ground within By the Book's radius — measured as range is, a diamond twice as wide as tall in
+  tiles and round on screen — is
   washed in her side's colour, moving with her, the radius read from her content. A see-through style on the
   ground's own band, under everything that stands: a unit she guards stands in the glow with every colour of
   its own (a wash over a glyph would change its hue at 256 colours), and effects draw over it. Gone at cease

@@ -7,6 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { ALL_SETTINGS } from "../src/build/all-settings.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import {
@@ -446,3 +447,27 @@ test("the battle with the most rules in it resolves the same way on every run, a
 
 // The Citizens against the Ravels, blasts among its rules: its state and its events.
 const PINNED_BATTLE = ["0b3e85ba31440f7c95a436d857f38d2e9531f6e99d31624d4261eec21a57f0a0", "61140abd763fc9551704973c84537ce9c32f69dc780f7353978d353eb52fe43f"] as const
+
+test("every reach the content and the Experiments offer is a whole number of rows: 1, which is touching, or even", () => {
+  // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of
+  // its rows and no row: the grid design's "whole rows". Content keeps to even reaches; 1 means touching.
+  const whole = (reach: number): boolean => reach === 1 || reach % 2 === 0
+  const odd: string[] = []
+  for (const id of FIXTURE_REGISTRY.ids()) {
+    const definition = FIXTURE_REGISTRY.get(id)
+    const reaches: Record<string, number | undefined> = {
+      "attack range": definition.attack?.range,
+      "splash radius": definition.attack?.splash?.radius,
+      "detonation radius": definition.detonation?.radius,
+      "detonation trigger": definition.detonation?.triggerRange,
+      "aura radius": definition.aura?.radius,
+      "construction radius": definition.constructionRadius,
+      clearance: definition.clearance,
+    }
+    for (const [what, reach] of Object.entries(reaches)) if (reach !== undefined && !whole(reach)) odd.push(`${id} ${what} ${reach}`)
+  }
+  for (const name of ["buildRange", "spawnClearance"] as const) {
+    for (const value of ALL_SETTINGS[name].values) if (!whole(value)) odd.push(`the ${name} Experiment offers ${value}`)
+  }
+  assert.deepEqual(odd, [])
+})

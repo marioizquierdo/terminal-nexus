@@ -229,9 +229,12 @@ test("a building's build range is a reach's shape: now for one standing, from ne
   })
   keys(apart, "e")
   moveTo(apart, far)
-  for (const step of [0, 1, -1, -1]) {
-    if (step !== 0) apart.build.dispatch({ kind: "experiment-adjust", field: "buildRange", step })
+  const cutOff = (): void =>
     assert.deepEqual(range(apart), { label: "BUILD RANGE", value: "cut off" }, `at a build range of ${setting(apart.build.state, "buildRange")}`)
+  cutOff()
+  for (const step of [1, -1, -1] as const) {
+    apart.build.dispatch({ kind: "experiment-adjust", field: "buildRange", step })
+    cutOff()
   }
 })
 

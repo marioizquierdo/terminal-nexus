@@ -44,9 +44,9 @@ is expensive.
 An integer accumulator, no floating point:
 
 - each tick, `credit += rate.numerator`
-- a tile of movement costs `rate.denominator × 12`; as the battle measures the Grid, a step across costs that
-  over the measure's tile, and a step up or down the measure's row times a step across. As now both are
-  `rate.denominator × 12`; when a row counts two columns, a step down costs twice a step across
+- a step costs `rate.denominator × 12` for each column of distance it covers (`stepCost`, `stepLength`): a step
+  across costs `rate.denominator × 12`, and a step up or down twice that, since a row counts two columns
+  ([`grid.md`](grid.md), distance, reach and movement)
 - when `credit >= cost` of the step it wants, the actor attempts that step and `credit -= cost`
 
 Check it against the table: `1/1` accrues 1 per tick against a cost of 12 — one step every 12 ticks.
@@ -66,10 +66,10 @@ The same file asserts both: the cadence holds across a second step, credit never
 cost over five hundred ticks, and in the jammed-corridor fixture a mover blocked on one tick steps on
 the next — which is only possible if a refused step spends nothing.
 
-Steps are ranked by the distance they gain for the time they take, then by how little they turn, then by
-compass order. When a row counts two columns a step down gains two in twice the time, so it ties with a step
-across and the turn decides: a unit walks the screen's diagonal, not straight down first
-(`tests/ground-rules.test.ts`).
+Steps are ranked by the distance they gain for the time they take, then by how little they turn from the way
+straight at the goal, then by compass order. A step down gains two in twice the time, so it ties with a step
+across and the turn decides: a unit walks the screen's diagonal, two columns across for each row down
+(`tests/rows.test.ts`).
 
 ### 1.3 Tick order — RULE — `src/pulse/tick.ts`, `tests/rules.test.ts`
 
@@ -104,12 +104,11 @@ unit may still strike first.
 Melee is an attempt to enter an enemy-occupied tile on the same layer. When the defender dies in
 step 8, the winning claimant may occupy the tile on the following tick.
 
-**Melee is touching** (RULE — `src/pulse/shared.ts`, `tests/ground-rules.test.ts`): a melee attack reaches what
-is within its range in steps along the Grid's sides, however the battle counts a row, so a trooper swings at an
-enemy directly above it under every measure. Everything else that reaches — a shot, a heal, an aura, a blast or
-splash, an engage reach, a worker's flight and a contact detonator's trigger — is measured as range is: in the
-battle's measure, to the nearest tile of each footprint, and a reach of one or more always includes what
-touches.
+**Melee is touching** (RULE — `src/pulse/shared.ts`, `tests/rows.test.ts`): a melee attack reaches what is
+within its range in steps along the Grid's sides, so a trooper swings at an enemy straight above it as at one
+beside it. Everything else that reaches — a shot, a heal, an aura, a blast or splash, an engage reach, a worker's
+flight and a contact detonator's trigger — is measured as range is, to the nearest tile of each footprint, a row
+counting two columns, and a reach of one or more always includes what touches.
 
 **A mover's origin tile does not free within the same tick.** Every phase reads the state settled at
 the end of the previous phase, so a follower steps one tick behind the actor in front of it rather
@@ -130,8 +129,8 @@ be intercepted, unless some specific mechanic later earns that complexity, which
 **Damage from a ranged attack is authoritative at the tick it resolves** — steps 7 and 8 of that same
 tick, always. The attack event additionally carries a **flight window**, measured in ticks and
 derived deterministically from the distance to the target as
-`max(1, ceil(distance / (projectileTilesPerTick × the measure's tile)))`, the distance in the battle's
-measure, where the tiles-per-tick figure is a property of the attack. It is part of the event and its hash, and it is read by **no rule**
+`max(1, ceil(distance / projectileTilesPerTick))`, the distance counted as range is, where the tiles-per-tick
+figure is a property of the attack: a shot two rows up takes as long as one four columns across. It is part of the event and its hash, and it is read by **no rule**
 (RULE — `tests/rules.test.ts`): it exists so that presentation knows how long the shot should appear
 to take. A renderer drawing a tracer holds the impact, the damage flash, and the visible health change
 until the end of that window, so what the player sees lands when the tracer does; a renderer that
@@ -234,8 +233,9 @@ producers attempt recipes, actors move and fight automatically. Playback control
 result (RULE — `tests/pulse-run.test.ts`).
 
 At Pulse end survivors regroup near home producers — the nearest of their side's buildings that trains or
-spawns their kind, nearest as the battle measured the Grid. Orphans are adopted by the nearest compatible
-producer or regroup near the Grid Nexus. Where each survivor is set down is searched square, as it always was. A
+spawns their kind, nearest by the Grid's distance. Orphans are adopted by the nearest compatible producer or
+regroup near the Grid Nexus. Each survivor is set down on the nearest free tile, searched one ring of the Grid's
+distance at a time, so a group comes home round on screen ([`grid.md`](grid.md), setting a group down). A
 producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`).
@@ -384,9 +384,8 @@ destroys it.
 build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
 build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
 content definition with a `constructionRadius`; today every building the player places) lets its player build
-within that many tiles of it, measured as range is: Manhattan, to the nearest tile of its footprint. **The
-build range is counted in rows**, so it keeps its height under the Ground Experiment: where a row counts two
-columns, a radius of 3 reaches 3 rows up and down and 6 columns across (`tests/ground-view.test.ts`). Two of
+within that many tiles of it, measured as range is, to the nearest tile of its footprint, a row counting two
+columns: a build range of 6 reaches 6 columns across and 3 rows up and down (`tests/rows-view.test.ts`). Two of
 the player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the
 two radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the
 network projects. One cut off from it keeps working (it trains, it shoots) and gives no build range; a
@@ -397,7 +396,7 @@ until it stands, next round, so the range is the same all phase, and removing or
 never leaves another outside it. **A new building may be placed where at least one tile of its footprint is
 inside the range** (the owner: "This is important for large buildings otherwise they have no space to build");
 rock, another building and the map's edge are still refused tile by tile. A range passes over rock, which is
-refused on its own. While the "Build range" Experiment is felt, its value (2, 3 or 4 tiles; 3 to begin with)
+refused on its own. While the "Build range" Experiment is felt, its value (4, 6 or 8; 6 to begin with)
 is every projecting structure's radius; outposts that reach farther wait for outposts (Q5). With no Grid Nexus
 of the player's standing there is no network and nothing can be built. The Build Phase enforces this and the
 kernel never reads it, since the Build Phase is the only way a player's plan is made.
@@ -405,14 +404,14 @@ kernel never reads it, since the Build Phase is the only way a player's plan is 
 **Room round a building that makes units** (RULE — `src/build/territory.ts`, `tests/build-territory.test.ts`).
 A building that makes units — a content definition with a `clearance`; today the Barracks and the Hatchery —
 keeps that many tiles free round it (the owner, 2026-10-05: "so they leave space for units spawning"): no tile
-of another building may stand within it, measured as range is. At one, nothing may stand beside it, though
-another building may touch a corner, which is two tiles away as range is measured, and the sides of the ring
-its units appear on stay open. It holds both ways — a building placed near one, and one placed near any
+of another building may stand within it, measured as range is. At one, nothing may touch it, beside or above or
+below, though another building may stand at a corner, which is three away as range is measured, and the sides of
+the ring its units appear on stay open. It holds both ways — a building placed near one, and one placed near any
 building — and against every building on the map: standing or planned, the player's or the raid's, the Grid
-Nexus included. Units take no room. While the "Barracks room" Experiment is felt, its value (1 or 2 tiles; 1
-to begin with) is every such building's room; two needs a Build range of three or more, since a spawner must
-then stand three tiles from every building and still have a tile in range. The Build Phase enforces this and
-the kernel never reads it.
+Nexus included. Units take no room. While the "Barracks room" Experiment is felt, its value (1 or 2; 1 to begin
+with) is every such building's room. Every Build range offered leaves a place for a room of two: a spawner must
+then stand more than two away from every building and still have a tile in range. The Build Phase enforces this
+and the kernel never reads it.
 
 Still open, because nothing reaches them yet: building inside enemy coverage that was public at Build Phase
 start (no raid stands a building at the start of a Build Phase), simultaneous same-cell conflicts and refunds

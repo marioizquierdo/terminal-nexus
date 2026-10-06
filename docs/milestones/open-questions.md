@@ -56,13 +56,14 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 of the two is stale.
 
 Construction territory is built (Mario, 2026-10-04: buildings "can only be built within the build-range of the
-other buildings"), with the radius as the **Build range** Experiment: 2, 3 or 4 tiles, 3 to begin with, measured
-as range is (Manhattan, from the footprint). Measured on PERIMETER at the start: at 2 the Barracks beside the
-Nexus is cut off, 24 tiles are buildable and no Turret placed then reaches the raid's way in; at 3 the base
-links and 82 tiles are buildable; at 4, 120.
+other buildings"), with the radius as the **Build range** Experiment: 4, 6 or 8, 6 to begin with, measured as
+range is, from the footprint, a row counting two columns (so 6 reaches 6 columns across and 3 rows up and down).
+Measured on PERIMETER at the start of round 1, the Barracks linked at every value: at 4, 66 tiles are buildable,
+the best Turret reaches 5 of the raid's 19 steps in, and four chained Turrets reach the ridge; at 6, 112 tiles,
+6 steps and three Turrets; at 8, 166 tiles, 7 steps and two.
 
-**Recommendation:** 3, the smallest radius at which the starting base is linked while chaining still matters;
-treat `+4` as an outpost value, which is what the art is actually showing — it is drawn on an Outpost.
+**Recommendation:** 6, the middle value: the starting base is linked and chaining still matters; treat `+4` as an
+outpost value, which is what the art is actually showing — it is drawn on an Outpost.
 
 ### Q7 — Do workers carry, or produce in place?
 
@@ -514,7 +515,7 @@ backlog, after placement; a raid group's own plan would reuse the target rule fo
 **Status:** OBSERVABLE — registered 2026-10-04; the "By the Book" Experiment shows each answer.
 
 The owner asked for Commanders as heroes with skills that work on their own: "Vasse should provide boost to nearby
-units." Her aura is built: she and the units of her side within 3 tiles of her take less damage from every hit.
+units." Her aura is built: she and the units of her side within a reach of 4 of her (4 across, 2 up and down) take less damage from every hit.
 How strong: enough to feel that she is there, never so strong that standing beside her is the whole plan.
 Measured on PERIMETER's last round, beside the level's target for the player's troops:
 

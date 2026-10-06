@@ -38,15 +38,16 @@ it is done.*
 
 Small, none blocking.
 
-**From the tall tiles** ([the options, drawn](../history/reports/2026-10-05-tall-tiles-options.md)):
+**From rows x2** ([his words](../history/feedback/2026-10-06-rows-x2.md); the rule is in
+[`grid.md`](../system-design/grid.md), distance, reach and movement):
 
-- Under rows x2 and sideways x2 the content's numbers are today's: Vasse's aura of 3 reaches one row, a blast of 2
-  one row, and a card's "within 3 tiles" counts in the battle's measure. The retune comes with the choice.
-- A rate that does not divide its step evenly drops the remainder each step, as it always has, so under sideways
-  x2 not every unit walks across exactly twice as fast (the flak trooper steps every 3 ticks, not 2.5).
-- Found while testing melee, under every measure and as now too: two melee units of one speed set down
-  diagonally from each other step round each other without ever touching. Real pathfinding, not the greedy
-  step, is what closes it.
+- Ranges and raids are not tuned for balance: every reach became a whole number of rows and nothing more, since
+  ranges get adjusted as units are made (his words). As played, PERIMETER is won in all three rounds with nothing
+  built, and with two Turrets and one more each round.
+- Two melee units of one speed set down diagonally from each other step round each other without ever touching.
+  Real pathfinding, not the greedy step, is what closes it.
+- Moving the view still counts tiles both ways: a tap moves one row or one column, and the fast move jumps ten
+  tiles either way, which is twice as far on screen up or down as across. Worth his eye before anything changes.
 
 **From step 6B** ([the round-loop report](../history/reports/2026-09-30-round-loop-and-missions.md) has the reasons):
 
@@ -110,9 +111,8 @@ Small, none blocking.
 
 **From step 8A's fifth round** ([Mario's notes](../history/feedback/2026-10-05-commander-round-5.md)):
 
-- PERIMETER is easier: a Barracks's four troopers at five seconds hold its last round even with nothing built
-  (narrowly, the Nexus at 77 of 400), and Vasse now lives through it in most plans, so her health Experiment
-  matters only in round 3. The raid is not retuned until the tall-tiles question settles movement and range.
+- PERIMETER is easier: a Barracks's four troopers at five seconds hold its last round even with nothing built,
+  and Vasse now lives through it in most plans, so her health Experiment matters only in round 3.
 - The battle feed gives each unit of a wave its own line ("5.0s trooper trained" four times), and a swarmer
   reads "spawnling" there (the feed's short ids); one line a wave would read better.
 - Without chaining, round 1's build range is the Nexus's and the Barracks's alone, and reaching further takes a

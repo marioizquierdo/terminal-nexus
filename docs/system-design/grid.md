@@ -15,7 +15,9 @@ A Grid may be any integer size. Content and tools standardise on a small matrix 
 maps, scenarios and compositions can be reasoned about without measuring each one. The matrix is
 GUIDANCE: add, drop or rename a preset when content shows a better set.
 
-**Shape** is the ratio of width to height in tiles, treating a tile as square:
+**Shape** is the ratio of width to height in tiles. A tile is twice as tall as it is wide (section 7), so on screen,
+and by the rules' own distance, a `wide` Grid is as wide as it is tall and a `squared` one twice as tall as it is
+wide:
 
 | Shape | Width : height |
 | --- | --- |
@@ -314,45 +316,229 @@ interface Placement {
   ties break on it, presentation hangs badges and portraits off it, and it is what "where is that
   thing" means.
 - **Range is measured to the nearest occupied tile** of the target's footprint, not to its anchor
-  (RULE — `tests/grid.test.ts`). A large structure is easier to reach because it is large, which is
-  the intuitive answer.
+  (RULE — `tests/grid.test.ts`), in the distance section 7 describes. A large structure is easier to reach
+  because it is large, which is the intuitive answer.
 - **Facing is presentation-only for now** (RULE for now; whether it should ever affect rules is an open
   question, Q9, answered as no). It is derived from the last movement step, or from the current target when
   stationary. Nothing in the rules reads it. It exists in state because a renderer that has to guess
   facing produces jitter, and because arcs may want it later. It is the one deliberate exception to
   "state carries nothing only presentation reads" (see [`grid-engine.md`](grid-engine.md)).
 
-## 7. Distance and movement
+## 7. Distance, reach and movement
 
-**Four-way movement** (the compass points, never a diagonal), and **distance counted as the battle measures
-the Grid** (RULE — `src/grid/coords.ts`: `DIRECTIONS`, `gridDistance` and `footprintWithin`;
-`tests/grid-measure.test.ts`, `tests/ground-rules.test.ts`). A battle carries its measure in its state and keeps
-it from its first tick to its last. As now, a row counts as a column: **Manhattan distance** (`|dx| + |dy|`) for
-range and routing, and every step takes as long as another. While the Ground Experiment is felt, a row can count
-as two columns: a range of 4 then reaches four columns across and two rows up, as wide as it is tall on the
-screen, and a step up or down takes twice as long as one across, so "in range" and "reachable in that time" still
-agree. Sideways x2 is the same count with every range, radius and speed doubled in it. Whatever the measure,
-touching is one step along a side: melee reaches what touches it, a unit stands beside another when they touch,
-and any reach of one or more includes what touches the one reaching.
+The Grid's geometry fits in one sentence: **a unit stands two squares tall.** A terminal cell is about twice as tall
+as it is wide, and a tile is one cell. Cut every tile across its middle and the ground is a grid of squares, each a
+column wide and half a row tall, so every tile is two squares, one above the other. How far is far, what a reach
+covers, how long a walk takes, what touching means and why a squad fights wider than it fights deep all follow
+from that. The marked pictures below are drawn by the game's own code (`scripts/grid-pictures.ts`), and
+`tests/grid-pictures.test.ts` fails if one stops being what the game does.
 
-Diagonal movement was the single biggest legibility problem the first watch of the Pulse found: a
-unit that can cut a corner is a unit whose next tile a viewer cannot predict, and a diagonal step
-covers about 1.41 times the ground of an orthogonal one. Restricting movement to the compass points
-makes every step read as "up", "down", "left" or "right", and Manhattan is its natural partner: it is
-exactly the count of cardinal steps between two tiles, so "in range" and "reachable in that many
-steps" mean the same thing.
+### 7.1 A row counts two columns
 
-The cost is a sharper version of a limitation the routing floor already had. Under Manhattan, every
-legal step changes distance by exactly ±1; there is no step that merely holds distance level. An actor
-approaching an obstacle off-axis still has two improving directions and can slide along the
-obstacle's face; an actor approaching exactly on-axis with its goal has exactly one, and if a wall
-takes it there is no fallback at all. What a mover with no route should do is an open question (Q15 in
-[`open-questions.md`](../milestones/open-questions.md), with the measurement and the recommendation);
-real pathfinding is what closes it, and the greedy floor was never meant to.
+**Distance is counted on the squares, the four ways a unit walks** (RULE — `gridDistance` and `ROW_DISTANCE`,
+`src/grid/coords.ts`; `tests/rows.test.ts`). A tile across is one square away, and a tile up or down is two:
 
-Terrain may modify movement cost. Immutable terrain cannot be attacked; only blockers explicitly
-marked destructible enter targeting and damage.
+```text
+distance = columns across + 2 × rows up or down
+```
 
-There is **no fractional authoritative position** (RULE — `src/grid/types.ts`). Between-tile
-positions are something the renderer invents for smoothness and the kernel never hears about. The
-integer movement credit that spaces steps in time is in [`pulse.md`](pulse.md).
+Every tile's distance from a unit at `T`:
+
+<!-- grid-picture: distance -->
+```text
+876545678
+654323456
+4321T1234
+654323456
+876545678
+```
+
+Read it the way the screen shows it, not as a table: each number stands about that many columns from `T`,
+whichever way it lies. The 4 four columns to the right and the 4 two rows up are the same length on screen, because
+a row is as tall as two columns are wide, so equal numbers ring `T` as wide as they are tall. Every range, reach and
+radius in the game is this distance, measured between the nearest tiles of two footprints (section 6), and every
+distance is worked out by the functions in `src/grid/coords.ts` and `src/grid/reach.ts`, never by hand.
+
+**Touching is a side shared** (RULE — `gridSteps`, `footprintSteps`): beside, or straight above or below. It asks
+whether two bodies meet, not how far apart their middles are, so it is the one count in which a row is one step,
+the same as a column. Each letter on the right is one square:
+
+```text
+                on screen      on the squares
+
+side by side       rt               rt
+                                    rt
+
+one above          r                r
+the other          t                r
+                                    t
+                                    t
+```
+
+Side by side, two tall bodies meet along their long sides, their middles one square apart. One above the other,
+they meet end to end, their middles two squares apart. Both touch: **melee reaches what touches it**, a unit stands
+beside what it touches, and two units meeting at a corner do not touch.
+
+### 7.2 A reach is a diamond that looks round
+
+**Within a reach of R** is every tile at distance R or less; **a reach of 1 is touching**, the tiles beside and the
+tiles straight above and below, and every longer reach covers what touches too (RULE — `footprintWithin`,
+`tilesWithin` in `src/grid/reach.ts`):
+
+<!-- grid-picture: reaches -->
+```text
+                                            .
+                            .             .....
+   .           .          .....         .........
+  .T.        ..T..      ....T....     ......T......
+   .           .          .....         .........
+                            .             .....
+                                            .
+
+reach 1     reach 2      reach 4         reach 6
+5 tiles     7 tiles     21 tiles        43 tiles
+```
+
+In tiles, a reach is a diamond twice as wide as it is tall. Every row is two squares tall, so on screen the same
+diamond is as tall as it is wide: a square standing on one corner, R columns from its middle to each of its four
+points. Every reach the game draws is made of it (a Turret's round its ghost, a marksman's when explored, Vasse's
+aura, the build range's dotted ground), and a card says it in words: "6 across, 3 up/down" (`reachShape`; the
+cards in [`ui-patterns.md`](ui-patterns.md)).
+
+**The arithmetic is tidy** (RULE — `tests/grid-pictures.test.ts`). The tiles exactly r away form a ring of exactly
+2r tiles, whatever r is: an odd ring crosses r rows with a tile at each end of every one, and an even ring crosses
+r + 1 rows, with a single tile at its top and its bottom. So a reach of R holds 1 + 2 + 4 + 6 + … + 2R =
+**R² + R + 1** tiles: 7 for a reach of 2, 21 for 4, 43 for 6.
+
+**Reaches are whole rows** (RULE for the content — `tests/rows.test.ts`). A reach of R covers R ÷ 2 rows up and
+down, rounded down (`rowsWithin`): a reach of 4 and a reach of 5 cover the same two rows, and the fifth point buys
+only a column at each end of each row.
+
+<!-- grid-picture: whole-rows -->
+```text
+        .                        ...
+      .....                    .......
+    ....T....                .....T.....
+      .....                    .......
+        .                        ...
+
+     reach 4                   reach 5
+2 rows up and down        2 rows up and down
+```
+
+An even reach ends on a single tile at its top and bottom, so its last point is a whole row. Every reach the content
+and the Experiments offer is even, except 1, which means touching.
+
+**A diamond, not a circle.** Units walk the four ways and a step takes as long as the distance it covers (7.3), so
+the tiles a unit can reach in a given time form exactly this diamond: every tile on its edge is the same walk away,
+straight along a row or round a corner. A circle would promise reach along the diagonals that no walk delivers in
+the same time. With a diamond, "in range" and "can get there in that time" are one question.
+
+### 7.3 Walking: a row takes two beats
+
+**Four-way movement**: the compass points, never a diagonal (RULE — `DIRECTIONS`). Every step reads as up, down,
+left or right, so a viewer can always say where a unit goes next.
+
+**A step takes as long as the distance it covers** (RULE — `stepLength`, and `stepCost` in
+`src/pulse/movement.ts`; `tests/rows.test.ts`): one across a column, two up or down a row. The integer movement
+credit that spaces the steps in time is in [`pulse.md`](pulse.md). So walking time is distance, and on screen every
+unit crosses the same ground per second whichever way it walks. Two troopers set off on the same tick, one eight
+columns across and one four rows down:
+
+<!-- grid-picture: walking -->
+```text
+t>>>>>>>X    8 columns across: there at 2.7 s
+
+t
+v
+v
+v
+X            4 rows down: there at 2.7 s
+```
+
+**A walk to a corner is a staircase along the screen's own diagonal** (RULE — `directionOf` and `rankedSteps`).
+Every step toward a goal gains distance in proportion to the time it takes, so no step is better than another by
+pace alone, and the way straight at the goal decides: a mover steps along whichever way has more columns left, a
+row counting two. It walks two columns across for every row down, and two columns by one row is the screen's 45°:
+
+<!-- grid-picture: stairs -->
+```text
+t>
+ v>>
+   v>>
+     v>>
+       vX
+```
+
+The staircase takes exactly as long as the L along its two sides, which is why every tile on a reach's edge is the
+same walk away.
+
+**A shot is drawn flying at one speed on screen**: its flight lasts the distance over the shot's speed, rounded up
+(`flightWindowTicks`, [`pulse.md`](pulse.md)), so a shot two rows up lands when one four columns across does.
+
+### 7.4 Formations: more fit side by side
+
+A tile holds one unit and tiles are tall, so a squad that looks square on screen is twice as wide in tiles as it is
+deep, and it meets twice as many enemies facing up or down as facing sideways:
+
+```text
+the same two squads, eight units each
+
+facing up and down      facing sideways
+       rrrr                rrrrtttt
+       rrrr                rrrrtttt
+       tttt
+       tttt
+  four pairs touch       two pairs touch
+```
+
+Fronts across the screen are wide and their fights go fast; fronts down the screen are narrow and last longer.
+What stays the same whichever way a squad faces: it holds as many units for its area on screen; a gap of one width
+on screen lets troops through at one rate, four abreast at half the pace going down or two abreast at the full pace
+going across; and every unit crosses the same ground per second. The Controls page says it in one line: units stand
+tall, so more fit side by side than one behind another.
+
+**IDEA — a sparse formation** (the owner's, for the step after this one): units prefer a free column beside them,
+and not to stand straight above or below another, so a group spreads into a staggered grid whose fronts are nearer
+even both ways. A preference, never a block: a unit behind waits a beat for the one ahead to move on, and the space
+between can still be taken.
+
+```text
+ t t t . . t
+t t t t . . t
+```
+
+**IDEA, held in reserve — square bodies**: every unit two columns wide, a footprint of two tiles across, would make
+fronts match both ways, at the cost of two-character art for every unit and half as many units across.
+
+### 7.5 Setting a group down
+
+**A group set down round a point fills the rings of the Grid's own distance**, nearest first and in reading order
+within a ring (RULE — `nearestFit` in `src/match/placement.ts`, `ringOffsets`; `tests/match.test.ts`), so it comes
+out round on screen. The opening's musters, the forecast of them, a mission's arrivals and Recall's regrouping all
+search the same rings. The first thirteen places, `a` first:
+
+<!-- grid-picture: rings -->
+```text
+  hdi
+jebacfk
+  lgm
+```
+
+### 7.6 Where greedy steps stop
+
+Every four-way step changes the distance to a goal, by one across or two up or down; no step merely holds it level.
+An actor approaching an obstacle off-axis still has two improving directions and can slide along the obstacle's
+face; an actor exactly on-axis with its goal has one, and if a wall takes it there is no fallback at all. What a
+mover with no route should do is an open question (Q15 in [`open-questions.md`](../milestones/open-questions.md),
+with the measurement and the recommendation); real pathfinding is what closes it, and greedy steps were never
+meant to.
+
+### 7.7 Terrain and positions
+
+Terrain may modify movement cost. Immutable terrain cannot be attacked; only blockers explicitly marked
+destructible enter targeting and damage.
+
+There is **no fractional authoritative position** (RULE — `src/grid/types.ts`). A unit stands on a whole tile, both
+its squares at once; between-tile positions are something the renderer invents for smoothness and the kernel never
+hears about.
