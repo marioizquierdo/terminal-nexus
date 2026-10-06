@@ -161,12 +161,12 @@ test("how it is watched cannot change what happened: effects, the cosmetic seed 
   assert.equal(timeline.stateHash, hashState(timeline.states[timeline.states.length - 1] as never))
 })
 
-test("the first placeholder Pulse, written as a mission, is the very Pulse it was before missions", () => {
-  // The first Pulse's report pinned the winning plan's hashes under Node and Bun; the test mission is that
-  // placeholder's forces, muster points, seed and length as data (tests/pulse-helpers.ts), resolved by the
-  // trigger runner rather than handed to the kernel directly — and nothing moved. That plan predates the build
-  // range, which it reaches past, so it is handed to the Pulse as a plan rather than placed through the Build
-  // Phase, which would refuse it now: this is about the Pulse, not about where a building may go.
+test("the first placeholder Pulse, written as a mission, resolves its winning plan the same on every run and runtime", () => {
+  // The test mission is the first placeholder Pulse's forces, muster points, seed and length as data
+  // (tests/pulse-helpers.ts), resolved by the trigger runner rather than handed to the kernel directly; its winning
+  // plan's hashes are pinned under Node and Bun, as the rules play it. That plan predates the build range, which
+  // it reaches past, so it is handed to the Pulse as a plan rather than placed through the Build Phase, which
+  // would refuse it now: this is about the Pulse, not about where a building may go.
   const mission = missionPlay(testMission())
   const context = mission.firstRound(placeholderContext())
   const opened = createBuildState(context, STARTER_START_CURSOR, buildLayout(MINIMUM, context.grid).viewport)
@@ -178,7 +178,7 @@ test("the first placeholder Pulse, written as a mission, is the very Pulse it wa
   const resolved = mission.startPulse(context, { ...opened, nexusPick: 1, planned: placeholderPlan, committed: true })
   assert.ok(resolved !== null)
   const { timeline } = resolved
-  assert.ok(timeline.stateHash.startsWith("9b03136f"), `state hash ${timeline.stateHash}`)
-  assert.ok(timeline.eventsHash.startsWith("93638c7e"), `events hash ${timeline.eventsHash}`)
-  assert.equal(timeline.states.length - 1, 175)
+  assert.ok(timeline.stateHash.startsWith("ec48d6b9"), `state hash ${timeline.stateHash}`)
+  assert.ok(timeline.eventsHash.startsWith("ea43d48b"), `events hash ${timeline.eventsHash}`)
+  assert.equal(timeline.states.length - 1, 204)
 })

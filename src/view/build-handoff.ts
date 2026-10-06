@@ -2,6 +2,7 @@
 // place to the cursor — the focus arrow from a building's row, the see-through cursor from Explore
 // Map's. One flight, two travellers.
 
+import { inColumns } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile, menuEntryRow, tileAtCell } from "../build/layout.ts"
@@ -27,14 +28,13 @@ const AXIS_SLOPE = 0.4142
 
 /**
  * The focus arrow's head and trail glyphs for a line running `dx` columns and `dy` rows. A terminal
- * cell is about twice as tall as it is wide, so a row counts as two columns when the slope is read:
- * within 22.5 degrees of level the head points left or right and the trail is level; within 22.5
+ * cell is about twice as tall as it is wide, so a row counts as two columns when the slope is read
+ * (`inColumns`): within 22.5 degrees of level the head points left or right and the trail is level; within 22.5
  * degrees of upright it points up or down and the trail is upright; between them the trail is a
  * diagonal and the head points along whichever way the line runs further on screen.
  */
 function arrowGlyphs(pack: GlyphPack, dx: number, dy: number): Readonly<{ head: string; trail: string }> {
-  const across = dx
-  const down = 2 * dy
+  const { across, down } = inColumns(dx, dy)
   const horizontal = chromeGlyph(pack, across >= 0 ? "arrowRight" : "arrowLeft")
   const vertical = chromeGlyph(pack, down >= 0 ? "arrowDown" : "arrowUp")
   if (Math.abs(down) <= Math.abs(across) * AXIS_SLOPE) return { head: horizontal, trail: chromeGlyph(pack, "trailLevel") }

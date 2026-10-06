@@ -107,9 +107,9 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   // Two barracks, one behind the other, at tiles that are on screen from the start: 1 arms it where the
   // cursor is, the cursor walks to 26,13 (south of the standing Barracks, inside the build range), Enter
   // places (and leaves the keyboard on the map, where the arming began); 1 arms it again, which moves the
-  // cursor off the new one to the nearest spot inside the build range with a free tile around it — 21,13,
-  // by the Nexus, since the first gives no range until it stands — and one more Enter places the second
-  // there.
+  // cursor off the new one to the nearest spot inside the build range with a free tile around it — 30,13,
+  // east of it, on ground the standing Barracks's range reaches (the first gives no range until it
+  // stands) — and one more Enter places the second there.
   // An armed click scrolls the view inside its edge zones and an arrow scrolls at the margin; the
   // parity asserted here is the whole state, camera included, so the tiles are ones where the two
   // come to the same view.
@@ -118,7 +118,7 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   for (let step = 0; step < 8; step += 1) byKeyboard.build.handleData(RIGHT, byKeyboard.layout)
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
   byKeyboard.build.handleData("1", byKeyboard.layout)
-  assert.deepEqual(byKeyboard.build.state.cursor, { x: 21, y: 13 })
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 30, y: 13 })
   byKeyboard.build.handleData(ENTER, byKeyboard.layout)
 
   const byMouse = session()
@@ -137,8 +137,8 @@ test("the same plan by hotkeys, by clicks, and from a script is the same plan an
   clickTile({ x: 26, y: 13 })
   clickTile({ x: 26, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  // Arming already put the cursor on 21,13, so one click there is the confirming second click.
-  clickTile({ x: 21, y: 13 })
+  // Arming already put the cursor on 30,13, so one click there is the confirming second click.
+  clickTile({ x: 30, y: 13 })
   assert.equal(byMouse.build.state.focus, "grid", "a placement armed on the map left the map")
 
   const script: readonly BuildCommand[] = [
@@ -582,18 +582,18 @@ test("a placement that cannot be afforded is refused, and changes nothing at all
 test("affordability is reported before a tile problem, because it is true wherever the cursor is", () => {
   const context = starterContext()
   // Onto rock, with a budget that cannot pay for it either. Reporting the rock would send the
-  // player to move the cursor, which would not help. The rock of the north-west wall, at a build range of 4,
-  // which brings the row under it into the Nexus's range.
+  // player to move the cursor, which would not help. The rock of the north-west wall, at a build range of 8,
+  // which brings the row under it, four rows up, into the Nexus's range.
   const anchor = anchorForCursor({ x: 19, y: 5 }, context.registry.get(STARTER_CATALOG[0]!.contentId).footprint)
-  const broke = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 5, 4)
+  const broke = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 5, 8)
   assert.equal(broke.ok, false)
   assert.match(broke.ok === false ? broke.reason : "", /costs 40, 5 left/)
   // With money, the same tile reports the rock, and says which tile it means.
-  const rich = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 100, 4)
+  const rich = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 100, 8)
   assert.equal(rich.ok, false)
   assert.match(rich.ok === false ? rich.reason : "", /rock in the way/)
   assert.deepEqual(rich.ok === false ? rich.tile : null, { x: 18, y: 5 })
-  // The build range is reported before a tile too, for the same reason: at 3 the same rock is outside the
+  // The build range is reported before a tile too, for the same reason: at 6 the same rock is outside the
   // range, and moving off the rock would not help either.
   const beyond = legalityAt(context, [], STARTER_CATALOG[0]!.contentId, anchor, 100)
   assert.match(beyond.ok === false ? beyond.reason : "", /outside your build range/)

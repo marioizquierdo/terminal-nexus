@@ -39,12 +39,9 @@ function eligibleHostiles(actor: Actor, hostiles: readonly Actor[]): readonly Ac
 }
 
 /**
- * The whole scoring function is "nearest enemy by Manhattan distance across every hostile layer,
- * ties broken by entity id". The metric was Chebyshev (eight-way) when this was first written and moved
- * to Manhattan (four-way) after the first playtests (grid/coords.ts, `gridDistance`); it is the battle's
- * measure now, which is Manhattan under `SQUARE` and counts a row as two columns when the Ground
- * Experiment says so, so "nearest" is nearest on the screen. The scoring function itself is kept this
- * plain on purpose: a smarter one would be a design change, not a fix.
+ * The whole scoring function is "nearest enemy across every hostile layer, ties broken by entity id", nearest by
+ * the Grid's own distance (`distanceBetween`: a row counts two columns), so the nearest is the nearest on screen.
+ * It is kept this plain on purpose: a smarter one would be a design change, not a fix.
  */
 export function selectTarget(
   context: TickContext,
@@ -53,7 +50,7 @@ export function selectTarget(
 ): { target: Actor; distance: number } | null {
   let best: { target: Actor; distance: number } | null = null
   for (const candidate of candidates) {
-    const distance = distanceBetween(context, actor, candidate)
+    const distance = distanceBetween(actor, candidate)
     if (best === null || distance < best.distance) {
       best = { target: candidate, distance }
     }
@@ -95,7 +92,7 @@ export function perception(context: TickContext): void {
       // A unit whose side has a target fights only what has come within its reach, measured as range is;
       // with nothing there it heads for the target instead (`target.ts`, `intents.ts`).
       const reach = engageRange(actor.definition)
-      candidates = eligibleHostiles(actor, hostilesOf(context, actor).filter((other) => within(context, actor, other, reach)))
+      candidates = eligibleHostiles(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
     } else {
       candidates = eligibleHostiles(actor, hostilesOf(context, actor))
     }
@@ -114,7 +111,7 @@ export function perception(context: TickContext): void {
     setTarget(context, actor, selection.target.ordinal)
     // Facing is derived from the current target when stationary, and from the last step when
     // moving. Nothing in the rules reads it; facing is presentation-only, a settled decision (Q9, answered).
-    actor.facing = directionOf(actor.anchor, selection.target.anchor, actor.facing, context.measure)
+    actor.facing = directionOf(actor.anchor, selection.target.anchor, actor.facing)
     if (changed) {
       context.events.push({
         kind: "target.selected",

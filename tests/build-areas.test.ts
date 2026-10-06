@@ -9,12 +9,12 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { setting } from "../src/build/all-settings.ts"
 import { cellForTile } from "../src/build/layout.ts"
-import { buildRange, buildingsOn } from "../src/build/state.ts"
+import { armedPreview, buildRange, buildingsOn } from "../src/build/state.ts"
 import { clearanceOf } from "../src/build/territory.ts"
 import { DEFAULT_LEVEL, openRound } from "../src/cli/levels.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { footprintDistance } from "../src/grid/coords.ts"
+import { footprintDistance, footprintSteps, footprintWithin } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { ROOM_GLYPH, reachOf, reachOutline, roomApron, unitReachOf } from "../src/view/build-areas.ts"
 import { trailMarks } from "../src/view/build-grid.ts"
@@ -53,25 +53,50 @@ function open(side: Side, tile: Coord): boolean {
 
 // --- A building's reach ------------------------------------------------------------------------------
 
-test("a reach's outline is every tile exactly its range away, measured as range is, with a stroke for its side", () => {
-  const ring = reachOutline({ x: 10, y: 10 }, ONE, 6)
-  assert.equal(ring.length, 24)
-  for (const { tile } of ring) assert.equal(footprintDistance({ x: 10, y: 10 }, ONE, tile, ONE), 6)
+/** Whether `tile` is within a reach of `radius` of a footprint at `anchor` (the kernel's own test) and has a four-way
+ *  neighbour that is not: one of the last tiles the reach covers. */
+function onEdge(anchor: Coord, footprint: readonly Coord[], radius: number, tile: Coord): boolean {
+  const within = (x: number, y: number): boolean => footprintWithin(anchor, footprint, { x, y }, ONE, radius)
+  return within(tile.x, tile.y) && !(within(tile.x - 1, tile.y) && within(tile.x + 1, tile.y) && within(tile.x, tile.y - 1) && within(tile.x, tile.y + 1))
+}
+
+test("a reach's outline is the last tiles it reaches, measured as range is, with a stroke for its side", () => {
+  const centre = { x: 10, y: 10 }
+  const ring = reachOutline(centre, ONE, 6)
+  for (const { tile } of ring) assert.ok(onEdge(centre, ONE, 6, tile), `${tile.x},${tile.y} is not an edge of the reach`)
+  // A row counts two columns: 6 columns either side, 3 rows up and down, two tiles a row along each slant.
+  const rows = new Map<number, number[]>()
+  for (const { tile } of ring) rows.set(tile.y - centre.y, [...(rows.get(tile.y - centre.y) ?? []), tile.x - centre.x])
+  assert.deepEqual(
+    [...rows.entries()],
+    [
+      [-3, [0]],
+      [-2, [-2, -1, 1, 2]],
+      [-1, [-4, -3, 3, 4]],
+      [0, [-6, -5, 5, 6]],
+      [1, [-4, -3, 3, 4]],
+      [2, [-2, -1, 1, 2]],
+      [3, [0]],
+    ],
+  )
   const stroke = (x: number, y: number): string | undefined => ring.find((entry) => entry.tile.x === x && entry.tile.y === y)?.stroke
   // Straight above and below a one-tile building, level; beside it, upright; across the corners, `/` to the
   // north-west and south-east and `\\` to the north-east and south-west.
-  assert.equal(stroke(10, 4), "level")
-  assert.equal(stroke(10, 16), "level")
+  assert.equal(stroke(10, 7), "level")
+  assert.equal(stroke(10, 13), "level")
   assert.equal(stroke(4, 10), "upright")
   assert.equal(stroke(16, 10), "upright")
-  assert.equal(stroke(7, 7), "rise")
-  assert.equal(stroke(13, 13), "rise")
-  assert.equal(stroke(13, 7), "fall")
-  assert.equal(stroke(7, 13), "fall")
-  // A wider footprint: measured to its nearest tile, so the outline runs straight along each side.
-  const wide = reachOutline({ x: 10, y: 10 }, FIXTURE_REGISTRY.get("structure.citizen.barracks").footprint, 2)
-  for (const { tile } of wide) assert.equal(footprintDistance({ x: 10, y: 10 }, FIXTURE_REGISTRY.get("structure.citizen.barracks").footprint, tile, ONE), 2)
-  assert.deepEqual(wide.filter((entry) => entry.tile.y === 8).map((entry) => [entry.tile.x, entry.stroke]), [[10, "level"], [11, "level"], [12, "level"]])
+  assert.equal(stroke(8, 8), "rise")
+  assert.equal(stroke(12, 12), "rise")
+  assert.equal(stroke(12, 8), "fall")
+  assert.equal(stroke(8, 12), "fall")
+  // A wider footprint: measured to its nearest tile, so the outline runs straight along each side — a reach of 2
+  // is a row above and below it, and two columns either side.
+  const footprint = FIXTURE_REGISTRY.get("structure.citizen.barracks").footprint
+  const wide = reachOutline(centre, footprint, 2)
+  for (const { tile } of wide) assert.ok(onEdge(centre, footprint, 2, tile), `${tile.x},${tile.y} is not an edge of the Barracks's reach`)
+  assert.deepEqual(wide.filter((entry) => entry.tile.y === 9).map((entry) => [entry.tile.x, entry.stroke]), [[10, "level"], [11, "level"], [12, "level"]])
+  assert.equal(wide.filter((entry) => entry.tile.y === 8).length, 0)
   assert.deepEqual(wide.filter((entry) => entry.tile.x === 8).map((entry) => [entry.tile.y, entry.stroke]), [[10, "upright"], [11, "upright"]])
   // What has a reach today: a building with an attack.
   assert.equal(reachOf(FIXTURE_REGISTRY.get(TURRET)), 6)
@@ -98,10 +123,12 @@ test("the armed Turret's ghost shows where it will reach: a dim outline on open 
     drawn += 1
   }
   assert.ok(drawn >= 16, `only ${drawn} strokes were drawn`)
-  // Where Enter would refuse, the outline is the refused ghost's grey.
-  moveTo(side, { x: 31, y: 10 })
+  // Where Enter would refuse, the outline is the refused ghost's grey: seven columns past the Barracks, outside the
+  // build range.
+  moveTo(side, { x: 34, y: 10 })
+  assert.equal(armedPreview(side.context, side.build.state)?.refusal?.reason, "outside your build range")
   const refused = compose(side)
-  const east = at(side, refused, { x: 37, y: 10 })
+  const east = at(side, refused, { x: 40, y: 10 })
   assert.equal(east.glyph, "|")
   assert.equal(east.style.fgRole, "chrome.muted")
 })
@@ -258,16 +285,28 @@ const ticks = (frame: ReadonlyCellFrame): number => frame.cells.filter((cell) =>
 test("a room is every tile within its size of the footprint, measured as range is, and not on it; the buildings that make units keep one", () => {
   const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
   const one = roomApron({ x: 10, y: 10 }, footprint, 1)
-  // A Barracks keeps the ten tiles beside its sides; its corners are two away, as range is measured.
+  // A Barracks keeps the ten tiles touching its sides; its corners are three away, as range is measured (a row
+  // counts two columns).
   assert.equal(one.length, 10)
-  for (const tile of one) assert.equal(footprintDistance({ x: 10, y: 10 }, footprint, tile, ONE), 1)
+  for (const tile of one) assert.equal(footprintSteps({ x: 10, y: 10 }, footprint, tile, ONE), 1, `${tile.x},${tile.y} does not touch it`)
   assert.ok(!one.some((tile) => tile.x === 9 && tile.y === 9), "a corner is in a room of one tile")
+  // A room of two adds the second column either side; a row above is two away already, and touches.
   const two = roomApron({ x: 10, y: 10 }, footprint, 2)
-  assert.equal(two.length, 24)
+  assert.equal(two.length, 14)
   for (const tile of two) {
     const distance = footprintDistance({ x: 10, y: 10 }, footprint, tile, ONE)
     assert.ok(distance >= 1 && distance <= 2, `${tile.x},${tile.y} is ${distance} away`)
+    assert.ok(footprintWithin({ x: 10, y: 10 }, footprint, tile, ONE, 2))
   }
+  assert.deepEqual(
+    two.filter((tile) => !one.some((near) => near.x === tile.x && near.y === tile.y)),
+    [
+      { x: 8, y: 10 },
+      { x: 14, y: 10 },
+      { x: 8, y: 11 },
+      { x: 14, y: 11 },
+    ],
+  )
   // Counted in the tiles' own coordinates: no negative zero, even at the map's corner.
   for (const tile of roomApron({ x: 0, y: 0 }, ONE, 2)) assert.ok(!Object.is(tile.x, -0) && !Object.is(tile.y, -0), `${tile.x},${tile.y}`)
   // What keeps room: the Barracks and the Hatchery, the buildings the player places that make units.
@@ -357,15 +396,18 @@ test("the room never covers the raid's trail, reads by its tick alone in monochr
   assert.equal(sgrCodes(frameToAnsi(mono, "monochrome")).filter(isColourCode).length, 0)
   assert.ok(ticks(mono) >= 6)
 
-  // At two tiles, the room reaches a second tile out, the corners included.
+  // At two tiles, the room reaches a second column out either side of the Barracks (25 to 27, rows 10 and 11); a
+  // corner, three away, stays out of it.
   const wide = buildSide({ cursor: STARTER_START_CURSOR, context: { ...starterContext(), experiments: { spawnClearance: 2 } } })
   keys(wide, "3")
   moveTo(wide, { x: 16, y: 13 })
   const frame = compose(wide)
-  for (const tile of [{ x: 26, y: 8 }, { x: 24, y: 9 }, { x: 28, y: 12 }]) {
+  for (const tile of [{ x: 23, y: 11 }, { x: 29, y: 10 }, { x: 29, y: 11 }]) {
     assert.ok(open(wide, tile), `${tile.x},${tile.y} is not open ground`)
     assert.equal(at(wide, frame, tile).glyph, ROOM_GLYPH, `${tile.x},${tile.y} at two tiles`)
+    assert.notEqual(at(side, armed, tile).glyph, ROOM_GLYPH, `${tile.x},${tile.y} at one tile`)
   }
+  assert.notEqual(at(wide, frame, { x: 24, y: 9 }).glyph, ROOM_GLYPH, "a corner is in a room of two tiles")
 })
 
 // --- A unit's reach, explored ---------------------------------------------------------------------------------

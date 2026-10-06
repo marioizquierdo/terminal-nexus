@@ -45,7 +45,6 @@
 
 import type { Settings } from "../settings/types.ts"
 import { CAPABILITY_MODES, GLYPH_PACKS, THEMES } from "../terminal/display.ts"
-import { GROUNDS } from "./ground.ts"
 
 /** Where a setting stands: shown and saved, shown for playtests, or a constant in code. */
 export type Tier = "player" | "experiment" | "tuned"
@@ -408,20 +407,22 @@ export const ALL_SETTINGS = {
   // outposts farther.
 
   /** How far the Grid Nexus and every building linked to it let the player build from them, in tiles, as range
-   *  is measured (`src/build/territory.ts`); it replaces each projecting structure's own `constructionRadius`
-   *  while it is felt. Measured on PERIMETER's starter map at the start of round 1: at 2 the Barracks beside the
-   *  Nexus is cut off, 24 tiles are buildable, a Barracks fits in 2 places and no Turret placed then reaches the
-   *  probe's way in; at 3 the two are linked, 82 tiles are buildable (21 places for a Barracks) and the best
-   *  Turret reaches 9 of the probe's 20 steps; at 4, 120 tiles (53). Reaching the ridge takes six chained
-   *  Turrets at 3, four at 4. First guess: 3. */
+   *  is measured (`src/build/territory.ts`): a row counts two columns, so 6 reaches 6 columns either side and 3
+   *  rows up and down. It replaces each projecting structure's own `constructionRadius` while it is felt. Every
+   *  value is a whole number of rows, so two buildings' ranges meet exactly where the buildings are no further
+   *  apart than the two ranges. Measured on PERIMETER's starter map at the start of round 1, where the Barracks
+   *  beside the Nexus is linked at every value: at 4, 66 tiles are buildable, a Barracks fits in 55 places and the
+   *  best Turret reaches 7 of the probe's 20 steps; at 6, 112 tiles (109 places for a Barracks) and the best
+   *  Turret 9; at 8, 166 tiles (160) and 10. Reaching the ridge takes four chained Turrets at 4, three at 6, two
+   *  at 8. First guess: 6. */
   buildRange: {
     tier: "experiment",
     section: "mission",
     label: "Build range",
-    question: "How many tiles from the Nexus and your linked buildings you may build. Buildings link where their ranges meet.",
-    values: [2, 3, 4],
+    question: "How far you may build from the Nexus and linked buildings, a row counting two tiles. Buildings link where ranges meet.",
+    values: [4, 6, 8],
     unit: "tiles",
-    default: 3,
+    default: 6,
   },
 
   // --- Vasse's aura, By the Book (the Commander round 4) ---------------------------------------------
@@ -462,9 +463,9 @@ export const ALL_SETTINGS = {
 
   /** How many free tiles a building that makes units (a Barracks, a Hatchery) keeps round it, measured as range
    *  is (`src/build/territory.ts`); it replaces each such structure's own `clearance` while it is felt. 1 keeps
-   *  the ring its troops appear on free. Why not more: a spawner must stand a tile further than this from every
-   *  building and still have a tile in a linked building's range, so 2 needs a Build range of 3 or more, and a
-   *  larger value can leave nowhere to build one. First guess: 1. */
+   *  every tile touching it free, the ring its troops appear on; 2 also the second column either side, a row
+   *  counting two columns. Why not more: a spawner must stand further than this from every building and still have
+   *  a tile in a linked building's range, and a larger value can leave nowhere to build one. First guess: 1. */
   spawnClearance: {
     tier: "experiment",
     section: "mission",
@@ -473,29 +474,6 @@ export const ALL_SETTINGS = {
     values: [1, 2],
     unit: "tiles",
     default: 1,
-  },
-
-  // --- Tall tiles: the ground (the Commander round 6) ------------------------------------------------
-  // The owner: "the range is severely skewed vertically. That is because a termial tiles are made of tall
-  // rectangles", and, choosing how to fix it, "What matters is how intuitive it feels for a human player, this is
-  // the time to get it right". A terminal cell is about twice as tall as it is wide, and the rules have always
-  // counted a row as a column. It asks the open question on the cell's aspect ratio, by feel: which way of
-  // making a reach and a walk look as they play feels most natural? The report on the options draws each one,
-  // the ones not built included (docs/history/reports/2026-10-05-tall-tiles-options.md).
-
-  /** How the ground is measured and drawn (`src/build/ground.ts`): as now; a row counting two columns in every
-   *  distance and every step, with the Build range counted in rows so it keeps its height; every content number
-   *  doubled across in that count; or the rules as now with every tile drawn two columns wide. Applies at once,
-   *  to what the Build Phase draws and allows and to the next battle. First guess: as now, so nothing changes
-   *  until it is chosen. */
-  ground: {
-    tier: "experiment",
-    section: "mission",
-    label: "Ground",
-    question: "Tiles are twice as tall as wide: as now, up counts like across. Rows x2, sideways x2 or square tiles even it out.",
-    values: GROUNDS,
-    names: { "as-now": "as now", "rows-x2": "rows x2", "sideways-x2": "sideways x2", "square-tiles": "square tiles" },
-    default: "as-now",
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

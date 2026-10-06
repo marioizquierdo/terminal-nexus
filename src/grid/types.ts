@@ -1,7 +1,8 @@
 // The Grid: coordinates, layers, footprints, and placement.
 //
 // The design is in grid.md: layers are render order, collision is a composed mask, coordinates have an
-// anchor, a footprint and a facing, and distance is Manhattan with four-way movement.
+// anchor, a footprint and a facing, movement is four-way, and a row counts two columns in every distance
+// (`ROW_DISTANCE`, coords.ts).
 //
 // Coordinate convention, used by every module without exception:
 //   (0,0) is the north-west tile, x grows east, y grows south, "n" points toward y - 1.
@@ -48,24 +49,6 @@ export type GridTerrain = Readonly<{
   /** Row-major, `y * width + x`. */
   tiles: readonly TerrainId[]
 }>
-
-/**
- * How the rules measure the Grid (grid.md): what one row counts against one column in every distance, and what
- * one tile of content — a range, a radius, a speed — is worth in that count. Integers only.
- *
- * A terminal cell is about twice as tall as it is wide, and the rules have always counted a row as a column, so a
- * reach is drawn twice as tall as it is wide and a unit walking down crosses the screen twice as fast as one
- * walking across. The Ground Experiment (the Commander round 6) lets the rules agree with the screen instead:
- *
- * - `{ row: 1, tile: 1 }`, `SQUARE` (`coords.ts`) — as the rules have always measured: a step is a tile either way.
- * - `{ row: 2, tile: 1 }` — rows count double: a row counts two columns, so a range 4 reaches 4 columns across and
- *   2 rows up, and a step up or down takes twice as long as a step across.
- * - `{ row: 2, tile: 2 }` — sideways doubled: the same count with every content number doubled in it, so a range 4
- *   reaches 4 rows up and 8 columns across, and a step across takes half as long as a step up or down.
- *
- * A battle carries its measure in its state (`MatchState.measure`), absent when it is `SQUARE`.
- */
-export type GridMeasure = Readonly<{ row: 1 | 2; tile: 1 | 2 }>
 
 export type Placement = Readonly<{
   layer: EntityLayer

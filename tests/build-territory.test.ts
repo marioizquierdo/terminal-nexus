@@ -66,22 +66,23 @@ function field(rock: readonly Coord[] = []): BuildContext {
 
 // --- The build range --------------------------------------------------------------------------------------
 
-test("the Grid Nexus roots the build range: three tiles round it to begin with, measured as range is", () => {
+test("the Grid Nexus roots the build range: six tiles round it to begin with, measured as range is", () => {
   const context = starterContext()
-  assert.equal(defaultValue("buildRange"), 3)
+  assert.equal(defaultValue("buildRange"), 6)
   const territory = territoryOf(context, defaultValue("buildRange"))
   assert.equal(territory.rooted, true)
-  // The Nexus stands at 17,10 to 19,11: Manhattan to its nearest tile, west, north and south.
-  for (const tile of [{ x: 14, y: 10 }, { x: 18, y: 7 }, { x: 18, y: 14 }, { x: 16, y: 13 }]) assert.ok(territory.has(tile), `${tile.x},${tile.y} is inside`)
-  for (const tile of [{ x: 13, y: 10 }, { x: 18, y: 6 }, { x: 18, y: 15 }, { x: 15, y: 13 }]) assert.ok(!territory.has(tile), `${tile.x},${tile.y} is outside`)
+  // The Nexus stands at 17,10 to 19,11. To its nearest tile, a row counting two columns: six columns west, three
+  // rows north and south, and two columns and two rows off its corner.
+  for (const tile of [{ x: 11, y: 10 }, { x: 18, y: 7 }, { x: 18, y: 14 }, { x: 15, y: 13 }]) assert.ok(territory.has(tile), `${tile.x},${tile.y} is inside`)
+  for (const tile of [{ x: 10, y: 10 }, { x: 18, y: 6 }, { x: 18, y: 15 }, { x: 14, y: 13 }]) assert.ok(!territory.has(tile), `${tile.x},${tile.y} is outside`)
 })
 
-test("standing buildings link where their ranges meet: the Barracks beside the Nexus links at 3, and is cut off at 2", () => {
+test("standing buildings link where their ranges meet: the Barracks beside the Nexus links at 4, and is cut off at 2", () => {
   const context = starterContext()
-  // Six tiles apart: at 3 their ranges share a column, so the Barracks links and lends its range.
-  const three = territoryOf(context, 3)
-  assert.deepEqual(three.members.map((member) => [member.contentId, member.linked]), [[NEXUS, true], [BARRACKS, true]])
-  assert.ok(three.has({ x: 30, y: 10 }), "the linked Barracks gives its range")
+  // Six columns apart: at 4 their ranges overlap, so the Barracks links and lends its range.
+  const four = territoryOf(context, 4)
+  assert.deepEqual(four.members.map((member) => [member.contentId, member.linked]), [[NEXUS, true], [BARRACKS, true]])
+  assert.ok(four.has({ x: 30, y: 10 }), "the linked Barracks gives its range")
   // At 2 they do not meet: the Barracks keeps standing, and gives nothing.
   const two = territoryOf(context, 2)
   assert.deepEqual(two.members.map((member) => [member.contentId, member.linked]), [[NEXUS, true], [BARRACKS, false]])
@@ -95,7 +96,7 @@ test("standing buildings link where their ranges meet: the Barracks beside the N
 
 test("with no Grid Nexus standing there is nothing to build from", () => {
   const context: BuildContext = { ...starterContext(), standing: [{ contentId: BARRACKS, anchor: { x: 25, y: 10 } }] }
-  const territory = territoryOf(context, 3)
+  const territory = territoryOf(context, defaultValue("buildRange"))
   assert.equal(territory.rooted, false)
   assert.ok(!territory.has({ x: 26, y: 13 }))
   const refused = legal(context, [], TURRET, { x: 26, y: 14 })
@@ -115,12 +116,13 @@ test("one tile of a building inside the build range is enough; with none inside,
 })
 
 test("rock and the map's edge are still refused tile by tile, whichever tile is in range", () => {
-  // The Nexus's range reaches column 5 on its rows; a Barracks centred on 6,4 has 5,4 inside and 7,4 on rock.
-  const rocky = field([{ x: 7, y: 4 }])
-  assert.deepEqual(legal(rocky, [], BARRACKS, { x: 6, y: 4 }), { ok: false, reason: "rock in the way", tile: { x: 7, y: 4 } })
+  // The Nexus's range reaches column 8 on its rows; a Barracks centred on 9,4 has 8,4 inside and 9,4 on rock.
+  const rocky = field([{ x: 9, y: 4 }])
+  assert.ok(territoryOf(rocky, defaultValue("buildRange")).has({ x: 8, y: 4 }) && !territoryOf(rocky, defaultValue("buildRange")).has({ x: 9, y: 4 }))
+  assert.deepEqual(legal(rocky, [], BARRACKS, { x: 9, y: 4 }), { ok: false, reason: "rock in the way", tile: { x: 9, y: 4 } })
   // A Barracks hanging off the west edge, its middle column in range.
   const edge = field()
-  assert.ok(territoryOf(edge, 3).has({ x: 0, y: 1 }))
+  assert.ok(territoryOf(edge, defaultValue("buildRange")).has({ x: 0, y: 1 }))
   assert.deepEqual(legal(edge, [], BARRACKS, { x: 0, y: 1 }), { ok: false, reason: "it would hang off the Grid" })
 })
 
@@ -147,13 +149,14 @@ test("only what stands gives build range: a building planned this phase gives no
 test("placing outside the build range is refused in words, naming the tile, and nothing moves", () => {
   const side = buildSide()
   keys(side, "3")
-  moveTo(side, { x: 31, y: 10 })
+  // Seven columns past the Barracks (25 to 27), one past its range.
+  moveTo(side, { x: 34, y: 10 })
   // Looking reads quietly; trying is the reducer's own answer, in the danger tone, and the cursor stays.
   keys(side, ENTER)
   assert.equal(side.build.state.planned.length, 0)
-  assert.equal(side.build.state.status.text, "Cannot build here: outside your build range at 31,10.")
+  assert.equal(side.build.state.status.text, "Cannot build here: outside your build range at 34,10.")
   assert.equal(side.build.state.status.tone, "danger")
-  assert.deepEqual(side.build.state.cursor, { x: 31, y: 10 })
+  assert.deepEqual(side.build.state.cursor, { x: 34, y: 10 })
 })
 
 test("arming proposes only a spot Enter would take, and says so when none is near", () => {
@@ -188,26 +191,27 @@ test("removing and undoing a planned building is never refused: nothing planned 
   assert.equal(side.build.state.planned.length, 0)
 })
 
-test("the build range is an Experiment: 2, 3 or 4 tiles, felt at once, and written into the export", () => {
+test("the build range is an Experiment: 4, 6 or 8 tiles, felt at once, and written into the export", () => {
   const spec = shownSetting("buildRange")
   assert.equal(spec.tier, "experiment")
   assert.equal(spec.section, "mission")
-  assert.deepEqual(spec.values, [2, 3, 4])
+  assert.deepEqual(spec.values, [4, 6, 8])
   assert.equal(spec.applies, "now")
   assert.doesNotMatch(spec.question, /\((F|Q)\d+\)/)
-  // A Turret four tiles from the Barracks: refused at 3, placed once the range is 4, without a restart.
+  // A Turret eight tiles from the Barracks (two columns and three rows off its corner): refused at 6, placed once
+  // the range is 8, without a restart.
   const side = buildSide({ context: { ...starterContext(), allotment: 1000 } })
   keys(side, "3")
-  moveTo(side, { x: 23, y: 13 })
+  moveTo(side, { x: 23, y: 14 })
   keys(side, ENTER)
   assert.equal(side.build.state.planned.length, 0)
   side.build.dispatch({ kind: "experiment-adjust", field: "buildRange", step: 1 })
-  assert.equal(side.build.state.experiments.buildRange, 4)
+  assert.equal(side.build.state.experiments.buildRange, 8)
   keys(side, ENTER)
   assert.equal(side.build.state.planned.length, 1, side.build.state.status.text)
-  assert.match(formatSettingsExport({ settings: side.build.state.settings, experiments: side.build.state.experiments }), /^buildRange = 4\b/m)
+  assert.match(formatSettingsExport({ settings: side.build.state.settings, experiments: side.build.state.experiments }), /^buildRange = 8\b/m)
   // And a Hatchery is one of the buildings that project one: every building the player places does.
-  assert.equal(FIXTURE_REGISTRY.get(HATCHERY).constructionRadius, 3)
+  assert.equal(FIXTURE_REGISTRY.get(HATCHERY).constructionRadius, 6)
 })
 
 // --- The room a building that makes units keeps ---------------------------------------------------------------
@@ -215,7 +219,7 @@ test("the build range is an Experiment: 2, 3 or 4 tiles, felt at once, and writt
 test("a Barracks keeps a tile of room round it: nothing may stand beside it, and the refusal says why", () => {
   const context = starterContext()
   // The standing Barracks is 25,10 to 27,11. Beside it to the east, refused; a tile further, or at its corner
-  // (two away, as range is measured), allowed.
+  // (three away, as range is measured: a row counts two columns), allowed.
   assert.deepEqual(legal(context, [], TURRET, { x: 28, y: 10 }), { ok: false, reason: "too close to the Barracks - its troops need room" })
   assert.ok(legal(context, [], TURRET, { x: 29, y: 10 }).ok)
   assert.ok(legal(context, [], TURRET, { x: 28, y: 12 }).ok)
@@ -301,15 +305,15 @@ test("how much room is an Experiment: 1 or 2 tiles, felt at once, and written in
   assert.equal(defaultValue("spawnClearance"), 1)
   assert.equal(spec.applies, "now")
   assert.doesNotMatch(spec.question, /\((F|Q)\d+\)/)
-  // A Turret two tiles above the Barracks: placed at 1, refused at 2, without a restart.
+  // A Turret two columns beside the Barracks: placed at 1, refused at 2, without a restart.
   const context = { ...starterContext(), allotment: 1000 }
-  assert.ok(legal(context, [], TURRET, { x: 26, y: 8 }, undefined, 1).ok)
-  assert.equal(legal(context, [], TURRET, { x: 26, y: 8 }, undefined, 2).ok, false)
+  assert.ok(legal(context, [], TURRET, { x: 29, y: 10 }, undefined, 1).ok)
+  assert.equal(legal(context, [], TURRET, { x: 29, y: 10 }, undefined, 2).ok, false)
   const side = buildSide({ context })
   side.build.dispatch({ kind: "experiment-adjust", field: "spawnClearance", step: 1 })
   assert.equal(side.build.state.experiments.spawnClearance, 2)
   keys(side, "3")
-  moveTo(side, { x: 26, y: 8 })
+  moveTo(side, { x: 29, y: 10 })
   keys(side, ENTER)
   assert.equal(side.build.state.planned.length, 0)
   assert.equal(side.build.state.status.text, "Cannot build here: too close to the Barracks - its troops need room.")
@@ -323,5 +327,5 @@ test("how much room is an Experiment: 1 or 2 tiles, felt at once, and written in
   keys(room, "1")
   assert.equal(room.build.state.noSpotFound, false, room.build.state.status.text)
   const anchor = anchorForCursor(room.build.state.cursor, FIXTURE_REGISTRY.get(BARRACKS).footprint)
-  assert.ok(legalityAt(room.context, [], BARRACKS, anchor, undefined, 3, 2).ok)
+  assert.ok(legalityAt(room.context, [], BARRACKS, anchor, undefined, defaultValue("buildRange"), 2).ok)
 })

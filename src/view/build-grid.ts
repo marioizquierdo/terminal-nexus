@@ -2,14 +2,13 @@
 // and their effects), the ghost of the building being placed, the cursor, and a refused try's flash —
 // all drawn through the camera and clipped to the view.
 
-import { inBounds, tilesOf } from "../grid/coords.ts"
+import { ROW_DISTANCE, inBounds, inColumns, nearestTile, tilesOf } from "../grid/coords.ts"
 import type { PlayerId } from "../state/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { ArmedPreview, BuildContext } from "../build/state.ts"
-import { groundMeasure } from "../build/state.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { PlannedPlacement, RaidForecast } from "../build/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
@@ -167,9 +166,9 @@ const INCOMING_WASH = 0.2
  * Phase only: a Pulse shows what happens, not what was foreseen.
  *
  * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the kernel's own step
- *   rule): an arrow every few tiles (`trailSpacing`, the owner's "1 arrow every 3 tiles"), each pointing two
- *   steps on along the way — the glyph pack's own arrowheads where the way runs straight, its diagonal strokes
- *   where it steps both ways. **It moves** (the owner: "a slow-moving line of arrows ... leaving a transparent
+ *   rule): an arrow every few tiles (`trailSpacing`, the owner's "1 arrow every 3 tiles"), each pointing a whole
+ *   stair on along the way (`LOOK_AHEAD`) — the glyph pack's own arrowheads where the way runs straight, its
+ *   diagonal strokes where it runs along the screen's diagonal (`trailGlyph`). **It moves** (the owner: "a slow-moving line of arrows ... leaving a transparent
  *   arrow behind then moving that fades"): every `trailStepMs` each arrow steps a tile on toward the target —
  *   the one beside it going in as a new one comes out of the group — and leaves a copy of itself on the tile it
  *   left, which fades out within half a step (`trailMarks`). A pure function of the clock the live loop hands in
@@ -191,15 +190,9 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
   const range = visibleRange(state.camera, state.viewport)
   const taken = takenTiles(context, state.planned)
   const elapsedMs = input.raidTrail?.elapsedMs ?? null
-  // Where a row counts two columns (the Ground Experiment), a way along the screen's diagonal is a staircase of two
-  // steps across and one down: an arrow looks a whole stair on, and reads its slope with a row counting two, or it
-  // would turn from `<` to `/` and back as it moves.
-  const { row } = groundMeasure(state)
   // Every trail's copies first, then its arrows: where two trails cross, an arrow is never covered by a copy.
   const marks = raid.flatMap((group) =>
-    group.target === null
-      ? []
-      : trailMarks(group.path, group.target.tiles, elapsedMs, TRAIL_MOTION, row + 1).map((mark) => ({ mark, player: group.player })),
+    group.target === null ? [] : trailMarks(group.path, group.target.tiles, elapsedMs).map((mark) => ({ mark, player: group.player })),
   )
   const ordered = [...marks.filter(({ mark }) => mark.ghost !== undefined), ...marks.filter(({ mark }) => mark.ghost === undefined)]
   for (const { mark, player } of ordered) {
@@ -208,7 +201,7 @@ export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, 
     if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
     const style: CellStyle = { fgRole: playerRole(player), dim: true, fade: mark.ghost === undefined ? TRAIL_FADE : (GHOST_FADES[mark.ghost] ?? 1) }
     const cell = cellForTile(layout, state.camera, tile)
-    cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy, row), style } })
+    cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: trailGlyph(pack, mark.dx, mark.dy), style } })
     for (let extra = 1; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, cell: { glyph: " ", style } })
   }
   const marked = new Set<string>()
@@ -273,28 +266,30 @@ export function nextTrailChange(elapsedMs: number, blends: boolean, motion: Trai
   return Math.ceil((quarters * motion.stepMs) / QUARTERS)
 }
 
-/** One mark of a trail: its tile, and the way it points — `ahead` steps on along the way (two, unless a row counts
- *  two columns), or at the target. `ghost` is set on the copy an arrow leaves on the tile it just left: which of its
- *  looks it is in (`GHOST_FADES`). */
+/**
+ * How many steps on along the way a trail's arrow points: a whole stair of the screen's diagonal, `ROW_DISTANCE`
+ * steps across and one up or down — the way a unit walks it (`rankedSteps`). Looking less far, an arrow on a
+ * diagonal way would read a step across one moment and a step down the next, and turn from `<` to `/` and back as
+ * it moves.
+ */
+export const LOOK_AHEAD = ROW_DISTANCE + 1
+
+/** One mark of a trail: its tile, and the way it points — `LOOK_AHEAD` steps on along the way, or at the target.
+ *  `ghost` is set on the copy an arrow leaves on the tile it just left: which of its looks it is in
+ *  (`GHOST_FADES`). */
 export type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number; ghost?: number }>
 
 /**
  * Where a trail's marks are along `path`. **Still** (no `elapsedMs`): an arrow every `motion.spacing` tiles,
- * counted back from the last so the arrow beside the target is always drawn, each pointing two steps on along the
- * way — or, the last two, at the target's nearest tile. **Moving**, `elapsedMs` into its motion: every arrow is a
+ * counted back from the last so the arrow beside the target is always drawn, each pointing a whole stair on along
+ * the way (`LOOK_AHEAD`) — or, near its end, at the target's nearest tile. **Moving**, `elapsedMs` into its motion: every arrow is a
  * tile further on each `motion.stepMs`, so the still trail comes round every `spacing` steps — the arrow beside
  * the target goes into it as a new one comes out of the group, one tile from it — and for the first half of
  * each step every arrow's copy stands on the tile it just left, the one that went into the target included.
  * Copies come first in the list, then the arrows, each in the order of the way, so the last mark is the arrow
  * nearest the target. Tiles only: what stands on them, and whether they are in view, is the drawing's to judge.
  */
-export function trailMarks(
-  path: readonly Coord[],
-  target: readonly Coord[],
-  elapsedMs: number | null = null,
-  motion: TrailMotion = TRAIL_MOTION,
-  ahead = 2,
-): TrailMark[] {
+export function trailMarks(path: readonly Coord[], target: readonly Coord[], elapsedMs: number | null = null, motion: TrailMotion = TRAIL_MOTION): TrailMark[] {
   const last = path.length - 1
   if (last < 0) return []
   const spacing = Math.max(1, Math.round(motion.spacing))
@@ -307,7 +302,7 @@ export function trailMarks(
     const places: TrailMark[] = []
     for (let index = last - ((spacing - by) % spacing); index >= 0; index -= spacing) {
       const tile = path[index] as Coord
-      const toward = path[index + ahead] ?? nearestOf(tile, target)
+      const toward = path[index + LOOK_AHEAD] ?? nearestTile(tile, target) ?? tile
       places.push({ tile, dx: toward.x - tile.x, dy: toward.y - tile.y, ...(look === null ? {} : { ghost: look }) })
     }
     return places.reverse()
@@ -315,28 +310,26 @@ export function trailMarks(
   return [...(ghost === null ? [] : placesAt((shift + spacing - 1) % spacing, ghost)), ...placesAt(shift, null)]
 }
 
-/** The tile of `tiles` nearest `from`, the first of them on a tie; `from` itself when there are none. */
-function nearestOf(from: Coord, tiles: readonly Coord[]): Coord {
-  let best = from
-  let bestDistance = Number.POSITIVE_INFINITY
-  for (const tile of tiles) {
-    const distance = Math.abs(tile.x - from.x) + Math.abs(tile.y - from.y)
-    if (distance < bestDistance) {
-      best = tile
-      bestDistance = distance
-    }
-  }
-  return best
-}
-
-/** A trail mark pointing `dx`, `dy`, in the glyph pack's own characters — the focus arrow's: an arrowhead
- *  where the way runs mostly along one axis, a diagonal stroke where it runs along both. A row counts `row`
- *  columns, as the battle measures it: two across and one down is the screen's diagonal where a row counts two. */
-export function trailGlyph(pack: GlyphPack, dx: number, dy: number, row = 1): string {
-  const across = Math.abs(dx)
-  const down = Math.abs(dy) * row
-  if (down === 0 || across >= 2 * down) return chromeGlyph(pack, dx < 0 ? "arrowLeft" : "arrowRight")
-  if (across === 0 || down >= 2 * across) return chromeGlyph(pack, dy < 0 ? "arrowUp" : "arrowDown")
+/**
+ * A trail mark pointing `dx` columns across and `dy` rows down, in the glyph pack's own characters — the focus
+ * arrow's: whichever of an arrowhead along a row, an arrowhead along a column and a diagonal stroke runs nearest
+ * the way **on screen**. A row is `ROW_DISTANCE` columns tall (`inColumns`), and a diagonal stroke runs corner to
+ * corner of a cell, one column across and one row down: so two across and one down, the screen's diagonal, is a
+ * stroke, as is one across and one down, and four across and one down an arrowhead. Whole numbers only: the way
+ * is nearer the stroke than the arrowhead when its angle to the stroke is the smaller, compared through the cosines
+ * squared.
+ */
+export function trailGlyph(pack: GlyphPack, dx: number, dy: number): string {
+  const way = inColumns(Math.abs(dx), Math.abs(dy))
+  const stroke = inColumns(1, 1)
+  // The way against the stroke and against each axis, as the cosines of the angles between them, squared and
+  // brought to one denominator: `along` for the stroke, `level` for a row, `upright` for a column.
+  const along = (way.across * stroke.across + way.down * stroke.down) ** 2
+  const strokeLength = stroke.across ** 2 + stroke.down ** 2
+  const level = way.across ** 2 * strokeLength
+  const upright = way.down ** 2 * strokeLength
+  if (way.down === 0 || level > along) return chromeGlyph(pack, dx < 0 ? "arrowLeft" : "arrowRight")
+  if (way.across === 0 || upright > along) return chromeGlyph(pack, dy < 0 ? "arrowUp" : "arrowDown")
   // Down and to the left, or up and to the right, runs along `/`; the other two along `\`.
   return chromeGlyph(pack, (dx < 0) === (dy > 0) ? "trailRise" : "trailFall")
 }

@@ -5,7 +5,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { gridDistance, tilesOf } from "../src/grid/coords.ts"
+import { gridDistance, gridSteps, tilesOf } from "../src/grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { PulseSetupError, centreTile, openingState, recall } from "../src/match/index.ts"
 import type { Force, PulseSetup, StructurePlacement } from "../src/match/index.ts"
@@ -440,8 +440,9 @@ test("a big army comes home without overlapping: the search widens until everyon
   const { state } = recall(before, FIXTURE_REGISTRY)
   assertNoTileShared(state, "forty troopers")
   const nexus = state.entities.find((entity) => entity.contentId === NEXUS) as EntityState
+  // Counted in four-way steps, the rings Recall's search widens by.
   for (const entity of state.entities.filter((candidate) => definitionOf(candidate).layer === "units")) {
-    assert.ok(distance(centreOf(entity), centreOf(nexus)) <= 12, `${entity.id} is too far from the Nexus`)
+    assert.ok(gridSteps(centreOf(entity), centreOf(nexus)) <= 12, `${entity.id} is too far from the Nexus`)
   }
 })
 

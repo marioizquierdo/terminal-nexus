@@ -6,7 +6,7 @@
   },
   {
     "label": "Range next round",
-    "try": "A Turret planned at the edge of the build range, and a second one armed. The dotted ground has not grown: a building gives range from the round after it stands, and its card says 3, next round. Tap below the first Turret: outside your build range. Taking a planned building away is never refused.",
+    "try": "A Turret planned at the edge of the build range, and a second one armed. The dotted ground has not grown: a building gives range from the round after it stands, and its card says 6, next round. Tap below the first Turret: outside your build range. Taking a planned building away is never refused.",
     "keys": "Esc 3 click:19,14 click:19,14 3"
   },
   {

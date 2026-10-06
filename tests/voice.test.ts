@@ -28,6 +28,7 @@ import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
+import { footprintWithin } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { ACTIVITY_FILTERS, filteredEntries } from "../src/log/activity.ts"
@@ -534,7 +535,8 @@ test("her aura's reach: a diamond of the content's radius around her, washed on 
   for (let dy = -radius - 1; dy <= radius + 1; dy += 1) {
     for (let dx = -radius - 1; dx <= radius + 1; dx += 1) {
       const tile: Coord = { x: centre.x + dx, y: centre.y + dy }
-      const inside = Math.abs(dx) + Math.abs(dy) <= radius
+      // In reach as range is measured: a row counts two columns, so the diamond is twice as wide as it is tall.
+      const inside = footprintWithin(centre, [{ x: 0, y: 0 }], tile, [{ x: 0, y: 0 }], radius)
       if (covered.has(key(tile))) {
         // A unit in her reach keeps every colour of its own: it stands in the glow, untinted.
         if (pulse.sample.state.entities.some((each) => key(pulse.positions.get(each.ordinal) ?? each.anchor) === key(tile))) {

@@ -344,9 +344,11 @@ test("every checked-in demo is one the page can follow: its route, its keys, and
   assert.throws(() => checkDemos([{ label: "x", try: "-", at: "settings", keys: "Down" }], "demos.json"), /is on the title menu: its keys and settings are for a campaign level/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", keys: "Dwn" }], "demos.json"), /demo 1's keys: unknown key "Dwn"/u)
   // A settings text this build would skip is a mistake in a demo: it would open with the default and say nothing.
-  assert.equal(checkDemos([{ label: "x", try: "-", settings: "ground=rows-x2&jumpStep=12" }], "demos.json")[0]?.settings, "ground=rows-x2&jumpStep=12")
-  assert.throws(() => checkDemos([{ label: "x", try: "-", settings: "ground=rows-x3" }], "demos.json"), /demo 1's settings: ground=rows-x3 is not a setting/u)
+  assert.equal(checkDemos([{ label: "x", try: "-", settings: "buildRange=8&jumpStep=12" }], "demos.json")[0]?.settings, "buildRange=8&jumpStep=12")
+  assert.throws(() => checkDemos([{ label: "x", try: "-", settings: "buildRange=9" }], "demos.json"), /demo 1's settings: buildRange=9 is not a setting/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", settings: "nonsense=1" }], "demos.json"), /demo 1's settings: nonsense=1/u)
+  // A settled Experiment's name too: a pasted export may still carry it, a demo of this build may not.
+  assert.throws(() => checkDemos([{ label: "x", try: "-", settings: "ground=rows-x2" }], "demos.json"), /demo 1's settings: ground is an Experiment this build has settled/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", where: "here" }], "demos.json"), /unknown: where/u)
   assert.throws(() => checkDemos({ label: "x" }, "demos.json"), /expected a list of demos/u)
 })

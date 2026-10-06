@@ -1,8 +1,8 @@
 // A pull request's demos for the browser playtest page (`bun scripts/build-web.mjs --demos <file>`): each a
 // button that opens the game where a question is, and says what to try there. Checked here, at build time, as the
 // page will read them — a demo the page could not follow would open somewhere else and say nothing, and one whose
-// settings text names a setting this build does not have, or a value it does not take, would quietly open with
-// the default instead.
+// settings text names a setting this build does not have, a value it does not take or an Experiment it has settled
+// would quietly open with the default instead.
 //
 // A demos file is a list of `{ "label", "try", "at"?, "keys"?, "settings"? }`:
 //
@@ -16,7 +16,8 @@
 // `at`, `keys` and `settings` are a launch's parts (`src/cli/launch.ts`), read the way the page reads them.
 // Not reached by the page: its demos are stamped into it already checked.
 
-import { importSettings } from "../build/settings-export.ts"
+import { defaultExperiments } from "../build/experiments.ts"
+import { parseSettingsExport } from "../build/settings-export.ts"
 import { LAUNCH_PARTS, readLaunch } from "../cli/launch.ts"
 import type { LaunchText } from "../cli/launch.ts"
 import { DEFAULT_LEVEL_ROUTE } from "../cli/route.ts"
@@ -48,11 +49,14 @@ export function checkDemos(list: unknown, source: string): readonly Demo[] {
     // A route or a key script the page cannot read would open the Build Phase at its beginning and say nothing.
     const [problem] = problems
     if (problem !== undefined) throw new Error(`${which}'s ${problem.part}: ${problem.error.message}`)
-    // A settings text is read leniently where a person pastes one, skipping what this build does not know; a demo's
-    // is this build's own, so anything skipped is a mistake.
-    const skipped = settings === undefined ? [] : importSettings(settings, DEFAULT_SETTINGS).ignored
-    if (skipped.length > 0) {
-      throw new Error(`${which}'s settings: ${skipped.join(", ")} is not a setting this build has, or not a value it takes`)
+    // A settings text is read leniently where a person pastes one, skipping what this build does not know and the
+    // names of the Experiments it has settled; a demo's is this build's own, so anything skipped is a mistake.
+    const read = settings === undefined ? null : parseSettingsExport(settings, { settings: DEFAULT_SETTINGS, experiments: defaultExperiments() })
+    if (read !== null && read.ignored.length > 0) {
+      throw new Error(`${which}'s settings: ${read.ignored.join(", ")} is not a setting this build has, or not a value it takes`)
+    }
+    if (read !== null && read.settled.length > 0) {
+      throw new Error(`${which}'s settings: ${read.settled.join(", ")} is an Experiment this build has settled`)
     }
     return {
       label: demo["label"],

@@ -23,6 +23,7 @@ import type { BuildContext } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
 import { cardText, counted } from "../build/card.ts"
 import type { RaidForecast, RaidGroup, RaidTarget } from "../build/types.ts"
+import { inColumns } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { BandCell } from "./frame.ts"
@@ -63,20 +64,15 @@ const BEARINGS = ["east", "north-east", "north", "north-west", "west", "south-we
 
 /**
  * Where `to` lies from `from`, as one of the eight points of the compass, **as the map is seen**: a terminal
- * cell is about twice as tall as it is wide, so where a tile is one column (`tileWidth`, as at 80 x 24) a row
- * weighs as two tiles across, and where a tile is two columns wide (square tiles, or 128 columns and wider) a
- * row is as tall as a tile is wide and weighs one. So at one column a tile the ridge at the top right of
- * PERIMETER's map is to the north-east of the Nexus, and the flats level with it to the east.
+ * cell is about twice as tall as it is wide, so a row is `ROW_DISTANCE` columns tall (`inColumns`), and a tile is
+ * `tileWidth` columns wide (one in the game). So the ridge at the top right of PERIMETER's map is to the north-east
+ * of the Nexus, and the flats level with it to the east.
  */
 export function bearing(from: Coord, to: Coord, tileWidth: TileWidth = 1): string {
-  const angle = Math.atan2(-(to.y - from.y) * rowWeight(tileWidth), to.x - from.x)
+  const { across, down } = inColumns(to.x - from.x, to.y - from.y)
+  const angle = Math.atan2(-down, across * tileWidth)
   const sector = (Math.round(angle / (Math.PI / 4)) + 8) % 8
   return BEARINGS[sector] ?? "east"
-}
-
-/** How many tiles across a row is as tall as, on screen: two where a tile is one column, one where it is two. */
-function rowWeight(tileWidth: TileWidth): number {
-  return 2 / tileWidth
 }
 
 /** What a group goes for, as the panel names it: a building as the menu does ("your Barracks", "your

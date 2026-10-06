@@ -20,9 +20,8 @@
 // greedy step can leave some pressing on a ridge that others go round. Units are left out of what blocks
 // it, since they move. A forecast of the approach that never walks through a ridge, so a trail drawn on it
 // cannot lie about the way round; a group none of whose units can get there is shown pressing on what
-// stops it, which is what the kernel will do too. Walked by the round's own measure (the opening state's,
-// `MatchState.measure`), so when a row counts two columns the trail follows the screen's diagonal as the
-// units will, and "next to it" is a step along a side, as melee's touch is.
+// stops it, which is what the kernel will do too. The kernel's own step rule walks it, so the trail follows the
+// screen's diagonal as the units will, and "next to it" is touching along a side, as melee's touch is.
 //
 // **And where the player's own troops head** (`foreseeRound`): the target the level names for their side,
 // read off the same opening — which units go, those standing and those the round's waves will bring, and the
@@ -34,9 +33,9 @@
 
 import type { ContentDef, ContentRegistry, ProductionRecipe } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { SQUARE, footprintDistance, footprintSteps, nearestFootprintTile, tilesOf } from "../grid/coords.ts"
+import { footprintDistance, footprintSteps, nearestFootprintTile, nearestTile, tilesOf } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord, GridMeasure } from "../grid/types.ts"
+import type { Coord } from "../grid/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 import { contextFor, rankedSteps, stepTick } from "../pulse/index.ts"
 import { followsTarget } from "../pulse/target.ts"
@@ -120,20 +119,13 @@ function countsOf(mission: MissionDefinition, arrivals: readonly Arrival[]): Rea
   return [...counts.entries()].sort(([a], [b]) => rank(a) - rank(b)).map(([contentId, count]) => ({ contentId, count }))
 }
 
-/** The tile of `tiles` nearest their mean — the first such, read in the order given. */
+/** The tile of `tiles` nearest their mean (`nearestTile`) — the first such, read in the order given. */
 function middleOf(tiles: readonly Coord[]): Coord {
-  const meanX = tiles.reduce((sum, tile) => sum + tile.x, 0) / tiles.length
-  const meanY = tiles.reduce((sum, tile) => sum + tile.y, 0) / tiles.length
-  let best = tiles[0] ?? { x: 0, y: 0 }
-  let bestDistance = Number.POSITIVE_INFINITY
-  for (const tile of tiles) {
-    const distance = Math.abs(tile.x - meanX) + Math.abs(tile.y - meanY)
-    if (distance < bestDistance) {
-      best = tile
-      bestDistance = distance
-    }
+  const mean = {
+    x: tiles.reduce((sum, tile) => sum + tile.x, 0) / tiles.length,
+    y: tiles.reduce((sum, tile) => sum + tile.y, 0) / tiles.length,
   }
-  return best
+  return nearestTile(mean, tiles) ?? { x: 0, y: 0 }
 }
 
 /** A later arrival as the entity it will be — the kernel's conventions for a fresh entity, as the trigger
@@ -169,19 +161,18 @@ function chosenTarget(arrivals: readonly Arrival[], after: ReadonlyMap<number, E
 /**
  * The way `walker`, standing at `from`, would walk toward `target` by the kernel's step rule, over the
  * terrain and `structures` (an index of the structures alone): every step's anchor, until it stands next
- * to the target — touching it along a side, whatever the measure counts a row — or no step gets it closer.
- * Next to it rather than in range: a group's ranged units stop short and its others close in, and the way is
- * drawn to what it goes for. Each step brings it closer as `measure` counts it, so the walk ends within the
- * distance it started at.
+ * to the target — touching it along a side (`footprintSteps`) — or no step gets it closer. Next to it rather
+ * than in range: a group's ranged units stop short and its others close in, and the way is drawn to what it
+ * goes for. Each step brings it closer, so the walk ends within the distance it started at.
  */
-function walk(structures: OccupancyIndex, registry: ContentRegistry, walker: ContentDef, from: Coord, target: IntentTarget, measure: GridMeasure): Coord[] {
+function walk(structures: OccupancyIndex, registry: ContentRegistry, walker: ContentDef, from: Coord, target: IntentTarget): Coord[] {
   const mask = maskFrom(structures, { layers: walker.collidesWith, terrain: walker.layer === "air" ? "ignore" : "impassable" })
   const footprint = registry.get(target.contentId).footprint
   const path: Coord[] = []
   let at = from
   while (footprintSteps(at, walker.footprint, target.anchor, footprint) > 1) {
-    const goal = nearestFootprintTile(at, target.anchor, footprint, measure)
-    const next = rankedSteps(at, walker, mask, { goal, intent: "toward", measure })[0]
+    const goal = nearestFootprintTile(at, target.anchor, footprint)
+    const next = rankedSteps(at, walker, mask, { goal, intent: "toward" })[0]
     if (next === undefined) break
     at = next.to
     path.push(at)
@@ -270,8 +261,6 @@ export function foreseeRound(input: MissionPulseInput, side: PlayerId = "B"): Re
   const nextOrdinal = Math.max(start.state.nextOrdinal, ...born.map((entity) => entity.ordinal + 1))
   const state: MatchState = { ...start.state, entities: [...start.state.entities, ...born], nextOrdinal }
   const after = new Map(stepTick(state, contextFor(state, registry, mission.pulseTicks)).state.entities.map((entity) => [entity.ordinal, entity]))
-  // The way is walked by the round's own measure, the one its first tick just measured by.
-  const measure = state.measure ?? SQUARE
   const before = new Map(state.entities.map((entity) => [entity.ordinal, entity]))
   // What a way goes round: the terrain and the structures as the round starts. Units move, so none blocks it.
   const structures = new OccupancyIndex(state.grid)
@@ -305,7 +294,7 @@ export function foreseeRound(input: MissionPulseInput, side: PlayerId = "B"): Re
       tiles,
       centre: middleOf(tiles),
       target,
-      path: target === null ? [] : pathOf(structures, registry, own, target, measure),
+      path: target === null ? [] : pathOf(structures, registry, own, target),
     }
   })
   return { groups, troops }
@@ -317,19 +306,19 @@ export function foreseeRound(input: MissionPulseInput, side: PlayerId = "B"): Re
  * the target is the group's; when none does, the nearest unit's. The step rule is greedy, so units can be
  * left pressing on a ridge that others walk round or come through the gap in (PERIMETER's raiders on the
  * ridge's north face, while its runners go round the west end): the trail shows the way the attack gets
- * there, and only a group that cannot get there at all is shown pressing on what stops it. Nearest as the
- * round's measure counts it; a way reaches the target when it ends touching it along a side.
+ * there, and only a group that cannot get there at all is shown pressing on what stops it. Nearest by the
+ * Grid's own distance (`footprintDistance`); a way reaches the target when it ends touching it along a side.
  */
-function pathOf(structures: OccupancyIndex, registry: ContentRegistry, arrivals: readonly Arrival[], target: IntentTarget, measure: GridMeasure): Coord[] {
+function pathOf(structures: OccupancyIndex, registry: ContentRegistry, arrivals: readonly Arrival[], target: IntentTarget): Coord[] {
   const footprint = registry.get(target.contentId).footprint
   const distanceOf = (arrival: Arrival): number =>
-    footprintDistance(arrival.anchor, registry.get(arrival.contentId).footprint, target.anchor, footprint, measure)
+    footprintDistance(arrival.anchor, registry.get(arrival.contentId).footprint, target.anchor, footprint)
   // Stable: units at the same distance stay in the order they arrived.
   const fronts = [...arrivals].sort((a, b) => distanceOf(a) - distanceOf(b))
   let nearest: Coord[] | null = null
   for (const front of fronts) {
     const walker = registry.get(front.contentId)
-    const way = walk(structures, registry, walker, front.anchor, target, measure)
+    const way = walk(structures, registry, walker, front.anchor, target)
     if (footprintSteps(way.at(-1) ?? front.anchor, walker.footprint, target.anchor, footprint) <= 1) return way
     nearest ??= way
   }

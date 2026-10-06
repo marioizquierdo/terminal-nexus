@@ -98,10 +98,9 @@ function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): St
   const rate = actor.definition.movementRate
   const mask = maskForActor(context, actor, overlay)
   // Only a step it can pay for: its credit was capped at the cost of the step it declared (`intents.ts`), so a
-  // loser of a claim across cannot take a dearer step up or down instead. Under `SQUARE` every step costs the
-  // same and every one is offered, as it always was.
-  const choices = rankedSteps(actor.anchor, actor.definition, mask, { goal: intent.goal, intent: intent.heading, measure: context.measure }).filter(
-    (choice) => rate === undefined || stepCost(rate, context.measure, choice.direction) <= actor.moveCredit,
+  // loser of a claim across cannot take a dearer step up or down instead.
+  const choices = rankedSteps(actor.anchor, actor.definition, mask, { goal: intent.goal, intent: intent.heading }).filter(
+    (choice) => rate === undefined || stepCost(rate, choice.direction) <= actor.moveCredit,
   )
   return choices.length === 0 ? null : choices
 }
@@ -124,7 +123,7 @@ function reportBlocked(context: TickContext, intent: Intent, overlay: ClaimOverl
     blocker: typeof blocker === "number" ? (context.byOrdinal.get(blocker)?.id ?? null) : null,
     credit: actor.moveCredit,
     // The cost of the step it lost.
-    cost: actor.definition.movementRate === undefined ? 0 : stepCost(actor.definition.movementRate, context.measure, intent.choices[intent.chosen]?.direction),
+    cost: actor.definition.movementRate === undefined ? 0 : stepCost(actor.definition.movementRate, intent.choices[intent.chosen]?.direction),
   })
 }
 
@@ -221,8 +220,8 @@ export function settle(context: TickContext, grants: readonly Grant[]): void {
     )
     actor.anchor = grant.to
     actor.facing = grant.direction
-    // The step it took: a row's may cost more than a column's (`stepCost`).
-    actor.moveCredit -= stepCost(rate, context.measure, grant.direction)
+    // The step it took: a row's costs more than a column's (`stepCost`).
+    actor.moveCredit -= stepCost(rate, grant.direction)
     // A unit that just arrived does not also fire this tick — attacks() skips it. Stop first,
     // then attack, is the owner's second finding: without this a unit can step into range and
     // land a hit in the same instant, which reads as the shot causing the step rather than the

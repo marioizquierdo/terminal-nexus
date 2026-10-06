@@ -9,13 +9,12 @@
 // shape: take steps, return frames.
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
-import { isGated, visibleRange } from "../build/camera.ts"
-import type { TileWidth } from "../build/camera.ts"
+import { GAME_TILE_WIDTH, isGated, visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { buildLayout } from "../build/layout.ts"
 import { BuildSession } from "../view/build-session.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { groundTileWidth, nexusTile, openingSettings } from "../build/state.ts"
+import { nexusTile } from "../build/state.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
 import { readLaunch } from "../cli/launch.ts"
 import type { LaunchText } from "../cli/launch.ts"
@@ -92,8 +91,6 @@ export type PlaytestFrame = Readonly<{
 
 export type BuildPlaytest = Readonly<{
   context: BuildContext
-  /** The frame's layout as the last step left it: a step that flips Ground lays the frame out again, as the live
-   *  screen does. */
   layout: BuildLayout
   frames: readonly PlaytestFrame[]
   /**
@@ -151,10 +148,8 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   if (isGated(terminal, context.grid)) {
     throw new Error(`${terminal.columns}x${terminal.rows} is below the Build Phase's 80x24 floor`)
   }
-  // Laid out by the Ground the run opens on (an export's `ground = square-tiles` draws two columns a tile), and laid
-  // out again whenever a step flips it, as the live screen does (`src/cli/build-phase.ts`).
-  let laidFor: TileWidth | null = groundTileWidth(openingSettings(context))
-  let layout = buildLayout(terminal, context.grid, laidFor)
+  // One column a tile at every size, as the live screen (`GAME_TILE_WIDTH`).
+  const layout = buildLayout(terminal, context.grid, GAME_TILE_WIDTH)
 
   let leftBy: "quit" | null = null
   const build = new BuildSession({
@@ -212,12 +207,6 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     // What the live loop's next render would do first: let a Nexus Pulse on screen catch up with the clock
     // (and, the moment it starts, look at the player's Nexus), so the frame is the one a player sees.
     build.advance(clock)
-    // And lay the frame out again if the step flipped Ground in Settings, which applies at once.
-    if (groundTileWidth(build.state) !== laidFor) {
-      laidFor = groundTileWidth(build.state)
-      layout = buildLayout(terminal, context.grid, laidFor)
-      build.resize(layout.viewport)
-    }
     frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: moveLabel(build.lastMove, moveBefore) })
     if (leftBy !== null) {
       ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }

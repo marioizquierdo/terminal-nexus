@@ -72,21 +72,23 @@ export function availableTiles(
 }
 
 /**
- * Step 2: two columns per tile if the terminal can show the viewport that way, otherwise one. This
- * and the tile-width rule in docs/system-design/presentation.md ("one column at 80, two at 128 or
- * wider") agree by construction — 128 is exactly
- * the width at which two columns per tile still leaves room for the 48-tile minimum viewport.
- *
- * `fixed`, when given, is the width at every size instead: the Ground Experiment's (`tileWidthOf`,
- * `src/build/ground.ts`) — square tiles draw two columns a tile even at 80 x 24, where the view is then 24 tiles
- * across, and a choice that counts a row as two columns draws one at every size, so no reach comes out twice as
- * wide as it is tall. `null` is the adaptive width, as it always was.
+ * Step 2: how many columns a tile is drawn. `fixed`, when given, is the width at every size: the game's
+ * (`GAME_TILE_WIDTH`), which every screen of the game passes. Without it, the adaptive width: two columns per tile
+ * if the terminal can show the viewport that way, otherwise one — 128 columns is exactly the width at which two
+ * columns per tile still leaves room for the 48-tile minimum viewport.
  */
 export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain, fixed: TileWidth | null = null): TileWidth {
   if (fixed !== null) return fixed
   const wanted = Math.min(MIN_VIEWPORT.width, grid.width)
   return availableTiles(terminal, 2, FLOOR_PANEL_COLUMNS).width >= wanted ? 2 : 1
 }
+
+/**
+ * How many columns the game draws a tile, at every terminal size: one. A tile is one cell, about twice as tall as
+ * it is wide, and a row counts two columns in every distance (`ROW_DISTANCE`, src/grid/coords.ts), so drawn one
+ * column a tile a reach is as wide as it is tall on screen; two columns a tile would draw it twice as wide.
+ */
+export const GAME_TILE_WIDTH: TileWidth = 1
 
 /**
  * Step 4, asked as a question rather than acted on: is this terminal below the floor? A Grid smaller

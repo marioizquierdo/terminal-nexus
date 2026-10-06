@@ -1,7 +1,7 @@
 // STATE — what is true. Plain serializable data that knows nothing about time passing and nothing
 // about drawing (grid-engine.md). Only the Pulse mutates it.
 
-import type { Coord, Direction, GridMeasure, GridTerrain, VacatedEntry } from "../grid/types.ts"
+import type { Coord, Direction, GridTerrain, VacatedEntry } from "../grid/types.ts"
 import type { RngState } from "../rng/pcg32.ts"
 
 export type PlayerId = "A" | "B"
@@ -106,18 +106,6 @@ export type MatchState = Readonly<{
    * way the production timers did not.
    */
   targets?: Readonly<Partial<Record<PlayerId, TargetArea>>>
-  /**
-   * How the rules measure the Grid in this Battle Round (`GridMeasure`, the Ground Experiment): what a row
-   * counts against a column in every distance and every step, and what a content tile is worth in that count.
-   * The kernel reads it every tick and never changes it; the rules layer sets it as a round opens
-   * (`src/match/mission.ts`), so a battle is measured one way from its first tick to its last, and a replay
-   * of it knows which.
-   *
-   * Absent when the measure is `SQUARE` — the rules as they always were — so such a state serializes and
-   * hashes byte for byte as it did before the measure existed, which is also why adding it did not bump
-   * `SCHEMA_VERSION`, the way `targets` did not.
-   */
-  measure?: GridMeasure
 }>
 
 /**

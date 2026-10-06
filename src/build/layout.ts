@@ -239,10 +239,9 @@ export function menuEntryAt(
 }
 
 /**
- * The frame for a terminal of this size. `fixed` is the tile width the Ground Experiment draws at every size
- * (`groundTileWidth`, `src/build/state.ts`), or `null` where the terminal's width decides (`tileWidthFor`): the
- * live loop and the scripted playtest pass it, and lay the frame out again the moment it changes, as a resize
- * does.
+ * The frame for a terminal of this size. `fixed` is the tile width at every size — the game's, one column a tile
+ * (`GAME_TILE_WIDTH`, which the live loop, the scripted playtest and the tests pass) — or `null` where the
+ * terminal's width decides (`tileWidthFor`).
  */
 export function buildLayout(terminal: TerminalSize, grid: GridTerrain, fixed: TileWidth | null = null): BuildLayout {
   const tileWidth = tileWidthFor(terminal, grid, fixed)

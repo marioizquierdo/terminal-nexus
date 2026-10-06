@@ -274,7 +274,7 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
   assert.equal(hashState(round(1, null).final), PINNED_ROUND_1)
 })
 
-// Moved on purpose with the Commander step: Vasse arrives with the squads, so round 1 has one more unit in it; and
-// again when the squads came to hold the line ahead of the base and By the Book to guard those beside her; and when
-// the Barracks came to send its troopers in a wave, four together five seconds in, rather than one at ten.
-const PINNED_ROUND_1 = "73515654ddc91e7946f7ab9b586b81109d6e0486f33c9e402911d2999afc6d95"
+// PERIMETER's round 1 as the rules play it: Vasse arriving with the squads, who hold the line ahead of the base, By
+// the Book guarding those beside her, the Barracks's four troopers together five seconds in, and a row counting
+// two columns in every distance and step.
+const PINNED_ROUND_1 = "31b0234e4146225066c6fca084067f1ffcd55b92c2f5565aa8d072a611a727ca"

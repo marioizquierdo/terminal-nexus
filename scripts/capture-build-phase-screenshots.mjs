@@ -561,8 +561,8 @@ scripted(
 scripted(
   "spike-illegal",
   "The same barracks over rock, after pressing Enter: the preview is a grey block of x and the bottom line says why, naming the tile - in red, because a placement was tried and refused",
-  // At a build range of 4, so the Nexus's own range reaches the row under the north-west wall.
-  { keys: `${PICK_FIRST_POWER} 1 click:19,5 Enter`, expect: "rock in the way", experiments: { buildRange: 4 } },
+  // At a build range of 8, so the Nexus's own range reaches the row under the north-west wall, four rows up.
+  { keys: `${PICK_FIRST_POWER} 1 click:19,5 Enter`, expect: "rock in the way", experiments: { buildRange: 8 } },
 )
 
 scripted(

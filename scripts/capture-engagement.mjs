@@ -12,7 +12,7 @@
 //
 //   node scripts/capture-engagement.mjs --scenario citizens-versus-ravels
 //   node scripts/capture-engagement.mjs --scenario grand-battle --lead-ticks 2 --frames 12
-//   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 48 --frames 20
+//   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 25 --frames 20
 //
 // Output lands in .playtest/screenshots/engagement-<scenario>/frame-NN.png (git ignores it; --out <dir>
 // replaces .playtest/screenshots), oldest first, plus an index.md naming the presentation-ms each one landed on.

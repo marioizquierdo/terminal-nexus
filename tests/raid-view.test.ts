@@ -156,7 +156,9 @@ test("the panel says the coming raid in every round, inside the panel's free row
   const expected: readonly (readonly RegExp[])[] = [
     [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}goes for your Barracks$/, ...troops],
     [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}goes for your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}goes for your /, ...troops],
-    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}goes for your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}goes for your /, ...troops],
+    // What a group goes for first is the kernel's choice (tests/intent.test.ts): one of the player's buildings, or
+    // Vasse, who is named.
+    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}goes for your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}goes for (your |Vasse$)/, ...troops],
   ]
   everyRound().forEach((side, index) => {
     const { layout } = side
