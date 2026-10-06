@@ -15,7 +15,8 @@ import { defaultExperiments } from "../src/build/experiments.ts"
 import { hint } from "../src/build/help.ts"
 import { currentCard, wavesStat } from "../src/build/card.ts"
 import { reachShape } from "../src/build/reach.ts"
-import { STARTER_CATALOG } from "../src/build/catalog.ts"
+import { STARTER_CATALOG, STARTER_STANDING } from "../src/build/catalog.ts"
+import { starterContext } from "../src/cli/starter.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, menuFloor, startRow } from "../src/build/layout.ts"
 import { MOUSE_LEFT, buildMouseCommand, formatMouseEvent, parseMouseEvent } from "../src/build/mouse.ts"
 import { cardEntry, cardShowing, entryOfConstruct, remaining } from "../src/build/state.ts"
@@ -220,9 +221,18 @@ test("a building's build range is a reach's shape: now for one standing, from ne
   moveTo(side, { x: 26, y: 10 })
   assert.deepEqual(range(side), { label: "BUILD RANGE", value: "", shape }, "the card of the standing Barracks")
   assert.match(panelLines(side, compose(side)).join("\n"), new RegExp(`^BUILD RANGE *\\n +${shape}$`, "m"), "the standing Barracks's shape is not under its label")
-  // At a build range of 2 the standing Barracks is cut off from the Nexus, and gives none: no shape to say.
-  side.build.dispatch({ kind: "experiment-adjust", field: "buildRange", step: -1 })
-  assert.deepEqual(range(side), { label: "BUILD RANGE", value: "cut off" })
+  // A Barracks standing beyond the reach of every building linked to the Nexus is cut off, and gives none: no
+  // shape to say, at every build range offered.
+  const far = { x: 34, y: 18 }
+  const apart = buildSide({
+    context: starterContext(undefined, { standing: [...STARTER_STANDING, { contentId: "structure.citizen.barracks", anchor: far }] }),
+  })
+  keys(apart, "e")
+  moveTo(apart, far)
+  for (const step of [0, 1, -1, -1]) {
+    if (step !== 0) apart.build.dispatch({ kind: "experiment-adjust", field: "buildRange", step })
+    assert.deepEqual(range(apart), { label: "BUILD RANGE", value: "cut off" }, `at a build range of ${setting(apart.build.state, "buildRange")}`)
+  }
 })
 
 /** Move the map cursor onto `tile`, wherever it is now. */

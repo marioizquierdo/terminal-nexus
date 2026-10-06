@@ -6,7 +6,7 @@
   },
   {
     "label": "Range next round",
-    "try": "A Turret planned at the edge of the build range, and a second one armed. The dotted ground has not grown: a building gives range from the round after it stands, and its card says 6, next round. Tap below the first Turret: outside your build range. Taking a planned building away is never refused.",
+    "try": "A Turret planned at the edge of the build range, and a second one armed. The dotted ground has not grown: a building gives range from the round after it stands, and its card says from next round, with the shape it will give: 6 across, 3 up/down. Tap below the first Turret: outside your build range. Taking a planned building away is never refused.",
     "keys": "Esc 3 click:19,14 click:19,14 3"
   },
   {
@@ -16,7 +16,7 @@
   },
   {
     "label": "Ranged units",
-    "try": "Explore Map on a marksman: its range is drawn round it, as a Turret's reach is. Move onto a trooper and there is none, because a trooper fights hand to hand.",
+    "try": "Explore Map on a marksman: its range is drawn round it, as a Turret's reach is. Its card says the reach's shape, 6 across, 3 up/down. Move onto a trooper and there is none: a trooper fights hand to hand, and its card says touching.",
     "keys": "Esc e click:20,10"
   },
   {
