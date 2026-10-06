@@ -42,8 +42,10 @@ export function stepCost(rate: MovementRate, direction?: Direction): number {
 /**
  * Credit is capped at one step's cost, the dearest step's: an actor that could not move cannot bank a sprint
  * (pulse.md), and an actor waiting for a step up or down saves up for it. Once it can pay for the step it wants,
- * its credit is capped again at that step's own cost (`intents.ts`), so waiting never buys two quick steps across. A
- * blocked step keeps its credit, which is simply what *not* subtracting means.
+ * its credit is capped again at that step's own cost (`intents.ts`), and at the cost of the step it is granted
+ * (`settle`, `arbitration.ts`), so waiting never buys two quick steps across, not even for a mover that lost its
+ * claim on a step down and took a step across instead. A blocked step keeps its credit, which is simply what *not*
+ * subtracting means.
  */
 export function accrueCredit(credit: number, rate: MovementRate): number {
   return Math.min(credit + rate.numerator, stepCost(rate))

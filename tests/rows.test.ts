@@ -50,6 +50,8 @@ const BARRACKS = "structure.citizen.barracks"
 const TROOPER = "unit.citizen.trooper"
 const RAIDER = "unit.ravel.raider"
 const FLAK = "unit.bench.flaktrooper"
+const HOG = "unit.bench.hogrider"
+const NEXUS = "structure.citizen.nexus"
 
 /** Every tile within `span` columns and `span` rows of `centre`, in reading order. */
 function around(centre: Coord, span: number): Coord[] {
@@ -396,6 +398,32 @@ test("waiting never banks a sprint across: credit saved for a step down buys one
   assert.ok(gaps(moved).every((gap) => gap === 4), `it sprinted: steps on ticks ${moved.join(",")}`)
 })
 
+test("losing a claim on a step down banks no sprint: the step across taken instead spends the credit saved, and the next waits a whole beat", () => {
+  // A trooper wants the step down to 20,11, toward the raid's Nexus; a hogrider, quicker to claim, takes that tile on
+  // the same tick, and the trooper steps aside to 19,10. Rock at 19,11 leaves it only steps across from there. (A
+  // placement block puts a building by its centre tile, so the Nexus covers columns 15 to 17 of rows 12 and 13.)
+  const rate = FIXTURE_REGISTRY.get(TROOPER).movementRate
+  const hogRate = FIXTURE_REGISTRY.get(HOG).movementRate
+  assert.ok(rate !== undefined && hogRate !== undefined)
+  const beat = stepCost(rate, "e") / rate.numerator
+  const rocks = [{ x: 19, y: 11 }]
+  // Saved by standing: the trooper holds a step down's credit, and the hogrider stands one step from the tile.
+  const near = field({ A: [[20, 10, TROOPER], [21, 11, HOG]], B: [[16, 12, NEXUS]] }, {}, { rocks })
+  const credit = (contentId: string): number => (contentId === TROOPER ? stepCost(rate, "s") : contentId === HOG ? stepCost(hogRate, "e") : 0)
+  const saved: MatchState = { ...near, entities: near.entities.map((entity) => ({ ...entity, moveCredit: credit(entity.contentId) })) }
+  // Saved on its own: the trooper waits two beats for its step down, and the hogrider walks in along the row and
+  // takes the tile on that very tick.
+  const waited = field({ A: [[20, 10, TROOPER], [24, 11, HOG]], B: [[16, 12, NEXUS]] }, {}, { rocks })
+  for (const [how, state, lostOn] of [["saved by standing", saved, 1], ["saved on its own", waited, 2 * beat]] as const) {
+    const { events } = play(state, 24)
+    const trooper = state.entities.find((entity) => entity.contentId === TROOPER)?.id
+    const lost = events.flatMap((event) => (event.kind === "move.contested" && event.losers.includes(trooper ?? "") ? [event.tick] : []))
+    assert.deepEqual(lost, [lostOn], `${how}: the trooper did not lose its step down once`)
+    const steps = events.flatMap((event) => (event.kind === "entity.moved" && event.entity === trooper ? [[event.tick, event.facing]] : []))
+    assert.deepEqual(steps.slice(0, 2), [[lostOn, "w"], [lostOn + beat, "w"]], `${how}: it sprinted, ${JSON.stringify(steps)}`)
+  }
+})
+
 test("every battle on file keeps every unit's credit between none and its dearest step: no step is taken on credit it did not have", async () => {
   for (const name of scenarioFiles()) {
     const scenario = await loadScenarioFile(name)
@@ -479,7 +507,6 @@ test("the forecast's way is the Pulse's own walk: down the screen's diagonal fro
 test("Recall sends a survivor to the home nearest by the rule: a Nexus four columns beside it, not one three rows above", () => {
   // Two Grid Nexuses of the player's: one whose nearest tile is three rows above the trooper (six away), one whose
   // nearest is four columns beside it (four away). A placement block puts a building by its centre tile.
-  const NEXUS = "structure.citizen.nexus"
   const home = recall(field({ A: [[20, 6, NEXUS], [25, 10, NEXUS], [20, 10, TROOPER]] }), FIXTURE_REGISTRY).moves[0]?.to
   assert.deepEqual(home, { x: 23, y: 10 }, "beside the Nexus four columns across")
 })

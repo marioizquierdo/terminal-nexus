@@ -220,8 +220,11 @@ export function settle(context: TickContext, grants: readonly Grant[]): void {
     )
     actor.anchor = grant.to
     actor.facing = grant.direction
-    // The step it took: a row's costs more than a column's (`stepCost`).
-    actor.moveCredit -= stepCost(rate, grant.direction)
+    // The step it took spends that step's cost (`stepCost`), its credit capped there first as it is at the step it
+    // declared (`intents.ts`): a loser of a claim on a step up or down granted a step across instead spends all it
+    // saved, so waiting never banks a sprint on this path either.
+    const cost = stepCost(rate, grant.direction)
+    actor.moveCredit = Math.min(actor.moveCredit, cost) - cost
     // A unit that just arrived does not also fire this tick — attacks() skips it. Stop first,
     // then attack, is the owner's second finding: without this a unit can step into range and
     // land a hit in the same instant, which reads as the shot causing the step rather than the
