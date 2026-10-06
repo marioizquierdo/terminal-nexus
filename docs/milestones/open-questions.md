@@ -31,7 +31,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
 | [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-Pulse regrouping via outposts |
-| [Q24](#q24--does-the-terminal-cells-own-aspect-ratio-distort-movement-and-fire-enough-to-fix) | Does the cell's aspect ratio distort movement enough to fix? | OPEN, being felt | Mario, now |
+| [Q24](#q24--does-the-terminal-cells-own-aspect-ratio-distort-movement-and-fire-enough-to-fix) | Does the cell's aspect ratio distort movement enough to fix? | OPEN, rows x2 chosen | Mario, now |
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
@@ -249,8 +249,9 @@ design it is alongside the routing and worker-economy work.
 
 ### Q24 — Does the terminal cell's own aspect ratio distort movement and fire enough to fix?
 
-**Status:** OPEN — being felt: four options are built as the Ground Experiment, with a test level to play them on
-(2026-10-05; [the options, drawn](../history/reports/2026-10-05-tall-tiles-options.md),
+**Status:** OPEN — chosen, not yet settled: Mario played the Ground Experiment and chose rows x2 (2026-10-06:
+"Rose X2 definitely feels better. That's gonna be our choice"); it becomes the rule, with its retune, once he has
+seen the math and says go ([the options, drawn](../history/reports/2026-10-05-tall-tiles-options.md),
 [the spike](../history/reports/2026-10-05-tall-tiles-spike.md)).
 
 Owner playtest, 2026-08-22: "it makes movement and diagonal shooting look a bit distorted; too fast when

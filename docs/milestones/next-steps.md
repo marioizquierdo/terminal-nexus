@@ -13,6 +13,8 @@ it is done.*
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
   MISSION in Settings (`d`), **Barracks room** (1 or 2 tiles) is new beside **Build range** and **By the
   Book**; paste the settings export.
+- **Say go on rows x2** (his choice, 2026-10-06, once he has seen its math): the next update makes it the rule and
+  retunes for it. Until then, the Ground Experiment as it was offered:
 - **Play the Ground Experiment** (his notes on tall tiles): every option is drawn in [the
   comparison](../history/reports/2026-10-05-tall-tiles-options.md), and four are built as the Ground Experiment,
   last under THE MISSION in Settings (`d`, `End`, `Up`, then Left or Right): as now, rows x2, sideways x2, square

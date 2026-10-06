@@ -56,3 +56,32 @@ level, the Ground test (`campaign?level=ground-test`), puts two raids the same d
 9 rows north and 18 columns east, with room on its map for a Turret's whole reach; under rows x2 the two come at one
 pace, as now the northern one twice as fast. The playable page opens it under each choice, and PERIMETER under rows
 x2. The hex grid and a tilted camera are drawn, not built.
+
+### F135 — Rows x2 is the choice; first, the math, what it implies, and what could soften it
+
+> Rose X2 definitely feels better. That's gonna be our choice. However, before we move forward, I would like to
+> understand how the math works here. Do we have any different options to implement the math? I will imagine, for
+> me, this will be the equivalent of making the smallest possible unit two tiles tall. And the only possible
+> movement vertically is moving two tiles. So yeah, I can visualize this as an actual grid where every two rows are
+> clamped into one and units can only move up and down uh, at once and, and a slow speed instead of being able to
+> move half, half tile and then the other half. So yeah, that seems, that looks better. The battle feels okay. But I
+> want to understand if there is any serious implications. So, for example, unit formations are going to be wildly
+> different when they operate vertically or horizontally. Um, for example, going horizon- going vertically, melee
+> units will have the equivalent of a double reach, basically. We could improve that by counting in which half they
+> are moving. And basically waiting until they are actually on the top half and the bottom half when they are next
+> to each other. Um, maybe the limitation is just the rendering, but even if the rendering is the limitation, we
+> only allow units to be in one of the two tiles, on one of the two rows that are vertical. Uh, what about when
+> battles are going in diagonal? And what about auras? Like Base, Aura will be able to enclose more units on the
+> sides rather than up and down as well. So yeah, can you think about differencing formations and will that have to
+> wildly affect the user strategic choices? Because that part will not be very intuitive, but maybe it's okay as
+> long as we explain it well. So yeah, can you visualize the math for me? Explain what are the trade-offs, what are
+> the things that actually don't matter that much, and maybe when exploring this, we find out different ways to
+> mitigate that. Otherwise, we just can assume units are two tiles tall and they only move in blocks of two.
+
+**Open** — answered in the conversation, the math drawn: his picture is the rule as built (a unit fills a cell,
+which is two half-rows of ground; a step up or down moves both halves at once, in twice the time). Melee's "double
+reach" is two tall bodies touching. Counting halves would put two units in one cell or hide which half a unit is
+in. Fronts differ by direction because a cell holds one unit and cells are tall, which was already so on screen;
+area, chokepoints and diagonals do not change. Mitigations offered: even reaches, groups set down round, the shape
+said on cards, a retune, and square bodies held in reserve. Rows x2 becomes the rule in the next update when he
+says go.
