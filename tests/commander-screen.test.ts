@@ -13,6 +13,7 @@ import {
   STARTER_START_CURSOR,
   starterGrid,
 } from "../src/build/catalog.ts"
+import { reachShape } from "../src/build/reach.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
@@ -99,23 +100,27 @@ test("PERIMETER's first round: Vasse is an @ among the squads, and her card name
   assert.match(panelText(side), /HEALTH +20/)
 })
 
-test("her card says what By the Book does in one plain line, at the strength the battle will run on, and nothing while it is off", () => {
+test("her card says what By the Book does in one plain sentence with its reach's shape, at the strength the battle will run on, and nothing while it is off", () => {
   const side = perimeter()
   const vasse = (side.build.round.incoming ?? []).find((entity) => entity.contentId === VASSE)
   assert.ok(vasse !== undefined, "she is not with the squads")
   side.build.dispatch({ kind: "look-at", x: vasse.anchor.x, y: vasse.anchor.y })
   side.build.dispatch({ kind: "explore" })
-  // Its name, then one line, under the description; every number still shows beneath it at 80 x 24.
-  assert.match(panelText(side), /Nexus restores her\. By the Book She and her units within 3 tiles take 25% less damage\./)
-  assert.match(panelText(side), /HEALTH +80 ATTACK +5 at range 3/)
+  const { aura, attack } = side.build.round.registry.get(VASSE)
+  assert.ok(aura !== undefined && attack !== undefined)
+  // Its name opening one sentence, under the description, saying how far it reaches as every reach is said; and
+  // at 80 x 24 every number still shows beneath it, down to her own reach's shape under her attack.
+  const reach = (radius: number): string => reachShape(radius).replace("/", "\\/")
+  assert.match(panelText(side), new RegExp(`Nexus restores her\\. By the Book: she and her units take 25% less damage within ${reach(aura.radius)}\\.`))
+  assert.match(panelText(side), new RegExp(`HEALTH +80 ATTACK +5 ${reach(attack.range)} `))
   // The Experiment is what the battle will run on, so it is what the card says.
   side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: 1 })
   assert.equal(side.build.state.experiments.commanderAura, 40)
-  assert.match(panelText(side), /take 40% less damage\./)
+  assert.match(panelText(side), /take 40% less damage within /)
   for (let step = 0; step < 3; step += 1) side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: -1 })
   assert.equal(side.build.state.experiments.commanderAura, 0)
   // (The bottom line names the Experiment just changed; the card says nothing of the aura.)
-  assert.doesNotMatch(panelText(side), /By the Book She|less damage/)
+  assert.doesNotMatch(panelText(side), /By the Book: she|less damage/)
   assert.match(panelText(side), /Nexus restores her\. ARRIVES as the round starts/)
 })
 
