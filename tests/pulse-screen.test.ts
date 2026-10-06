@@ -14,6 +14,7 @@ import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { nexusTile } from "../src/build/state.ts"
 import { starterContext } from "../src/cli/starter.ts"
+import { gridDistance } from "../src/grid/coords.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
@@ -228,7 +229,8 @@ test("the survivors are drawn walking home, and home when the walk ends", () => 
     assert.ok(frame !== undefined)
     return frame.positions
   }
-  const far = moves.find((move) => Math.abs(move.from.x - move.to.x) + Math.abs(move.from.y - move.to.y) > 6)
+  // A walk long on screen, by the Grid's own distance.
+  const far = moves.find((move) => gridDistance(move.from, move.to) > 6)
   assert.ok(far !== undefined, "every survivor was already home; the test proves nothing")
   assert.deepEqual(drawn(moments.walkMs - 50).get(far.ordinal) ?? far.from, far.from, "it walked before the walk began")
   const middle = drawn((moments.walkMs + moments.homeMs) / 2).get(far.ordinal)

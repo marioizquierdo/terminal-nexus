@@ -417,7 +417,7 @@ const strokesIn = (frame: ReadonlyCellFrame, role: string): number =>
   frame.cells.filter((cell) => STROKES.includes(cell.glyph) && cell.style.fgRole === role && cell.style.dim === true).length
 
 test("exploring a unit that shoots past the tiles touching it shows its reach; one that fights hand to hand shows none", () => {
-  assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.citizen.marksman")), 5)
+  assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.citizen.marksman")), 6)
   assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.ravel.slinger")), 4)
   assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.citizen.trooper")), null)
   assert.equal(unitReachOf(FIXTURE_REGISTRY.get("unit.ravel.runner")), null)
@@ -432,7 +432,7 @@ test("exploring a unit that shoots past the tiles touching it shows its reach; o
   moveTo(side, marksman.anchor)
   const ranged = compose(side)
   let drawn = 0
-  for (const { tile, stroke } of reachOutline(marksman.anchor, ONE, 5)) {
+  for (const { tile, stroke } of reachOutline(marksman.anchor, ONE, 6)) {
     if (!open(side, tile)) continue
     const cell = at(side, ranged, tile)
     assert.equal(cell.glyph, { level: "-", upright: "|", rise: "/", fall: "\\" }[stroke], `${tile.x},${tile.y}`)

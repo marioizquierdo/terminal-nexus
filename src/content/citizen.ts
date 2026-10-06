@@ -60,7 +60,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     // 10/3 rather than 2/1 - same speed pass as the trooper above.
     movementRate: { numerator: 10, denominator: 3 },
     speedTier: 1,
-    attack: { kind: "ranged", range: 5, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
+    attack: { kind: "ranged", range: 6, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
     collidesWith: GROUND_UNIT_COLLISIONS,
     behavior: "advance",
     salvage: 6,

@@ -178,7 +178,7 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   const resolved = mission.startPulse(context, { ...opened, nexusPick: 1, planned: placeholderPlan, committed: true })
   assert.ok(resolved !== null)
   const { timeline } = resolved
-  assert.ok(timeline.stateHash.startsWith("ec48d6b9"), `state hash ${timeline.stateHash}`)
-  assert.ok(timeline.eventsHash.startsWith("ea43d48b"), `events hash ${timeline.eventsHash}`)
+  assert.ok(timeline.stateHash.startsWith("cf7e41ae"), `state hash ${timeline.stateHash}`)
+  assert.ok(timeline.eventsHash.startsWith("c8aa9661"), `events hash ${timeline.eventsHash}`)
   assert.equal(timeline.states.length - 1, 204)
 })

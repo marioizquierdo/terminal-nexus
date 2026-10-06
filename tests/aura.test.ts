@@ -162,7 +162,7 @@ test("a bearer who falls guards to the end of the tick she falls in, and from th
 test("By the Book's strength is the Experiment's: off takes the aura away, and every other value sets the share a hit lets through", () => {
   const off = auraRegistry(FIXTURE_REGISTRY, 0)
   assert.equal(off.get(VASSE).aura, undefined)
-  assert.deepEqual(auraRegistry(FIXTURE_REGISTRY, 25).get(VASSE).aura, { radius: 3, damageTakenPercent: 75, name: "By the Book" })
+  assert.deepEqual(auraRegistry(FIXTURE_REGISTRY, 25).get(VASSE).aura, { radius: 4, damageTakenPercent: 75, name: "By the Book" })
   assert.equal(auraRegistry(FIXTURE_REGISTRY, 40).get(VASSE).aura?.damageTakenPercent, 60)
   assert.equal(auraRegistry(FIXTURE_REGISTRY, 10).get(VASSE).aura?.damageTakenPercent, 90)
   // Nothing else is touched, and a registry with no aura in it comes back as it was.

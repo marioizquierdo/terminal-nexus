@@ -69,8 +69,9 @@ export const VOICE = {
   perRound: 3,
   /** Badly hurt: down to this share of her health, and still standing. */
   hurtFraction: 0.35,
-  /** Near her, for a Commander with no aura to measure it by: this many tiles. */
-  nearTiles: 3,
+  /** Near her, for a Commander with no aura to measure it by: this many tiles, measured as range is — as far as
+   *  Vasse's aura reaches. */
+  nearTiles: 4,
   /** How long the light on her lasts as she starts to speak (`fx.light.flash`, a placement's own length). */
   lightMs: 400,
 } as const

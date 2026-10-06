@@ -486,7 +486,8 @@ test("the cosmetic seed cannot reach the kernel", async () => {
   )
   const hashes = new Set<string>()
   const framesPerSeed = new Map<number, string[]>()
-  const sampleTimes = [140, 168, 200, 244, 268].map((tick) => tick * (1000 / 12) + 30)
+  // Instants with shots, blasts and deaths on screen, where cosmetic randomness shows.
+  const sampleTimes = [60, 72, 100, 154, 194].map((tick) => tick * (1000 / 12) + 30)
   for (const cosmeticSeed of [1, 2, 0xbeef, 0x0c05e7]) {
     const view = createView(timeline, { ...DEFAULT_PRESENTATION, cosmeticSeed })
     hashes.add(`${view.timeline.stateHash}:${view.timeline.eventsHash}`)

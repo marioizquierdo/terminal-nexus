@@ -445,4 +445,4 @@ test("the battle with the most rules in it resolves the same way on every run, a
 })
 
 // The Citizens against the Ravels, blasts among its rules: its state and its events.
-const PINNED_BATTLE = ["60aeed9f4aff22203fa1a7674d35a7bc1e09f81b74cab1855f101d24206f84af", "c8a3a4dc58cd579a4c9c71ad8f9a1b79643117e0ff211d8192848dfb167c4ba2"] as const
+const PINNED_BATTLE = ["0b3e85ba31440f7c95a436d857f38d2e9531f6e99d31624d4261eec21a57f0a0", "61140abd763fc9551704973c84537ce9c32f69dc780f7353978d353eb52fe43f"] as const

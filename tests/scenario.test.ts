@@ -308,7 +308,7 @@ test("ranged-kill: the fixture's own arithmetic", async () => {
   )
   const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(shots.length, 7, "seven ranged shots in total")
-  assert.equal(melee.length, 6, "six melee swings from the trooper before it dies")
+  assert.equal(melee.length, 5, "five melee swings from the trooper before it dies")
   assert.equal(deaths.length, 2, "one marksman and the trooper both die now, not the trooper alone")
   assert.equal(deaths[0]?.entity, "A:marksman#1", "the trooper no longer dies before landing a hit")
   assert.equal(deaths[0]?.player, "A")
@@ -322,7 +322,7 @@ test("ranged-kill: the fixture's own arithmetic", async () => {
 
   const survivor = resolved.run.finalState.entities.find((entity) => entity.id === "A:marksman#3")
   assert.ok(survivor !== undefined, "the second marksman should still be standing")
-  assert.equal(survivor.hp, 10, "the trooper should reach and wound the second marksman before dying")
+  assert.equal(survivor.hp, 17, "the trooper should reach and wound the second marksman before dying")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
@@ -482,7 +482,7 @@ test("aura-by-the-book: the units near Vasse take three quarters of every hit, s
   for (const hit of near) assert.equal(hit.guardedBy, vasse.id, `a hit on the trooper beside her at tick ${hit.tick} was not guarded`)
   assert.ok(near.some((hit) => hit.amount === 8 && hit.hpBefore >= 8), "no raider's hit came to eight")
   assert.ok(near.some((hit) => hit.amount === 7 && hit.source === "B:raider#3" && hit.tick === run.events.find((event) => event.kind === "entity.detonated" && event.entity === "B:raider#3")?.tick), "the blast was not guarded")
-  // Five tiles from her: never guarded, the whole eleven.
+  // Four rows below her, beyond her reach: never guarded, the whole eleven.
   const far = hits("A:trooper#4")
   assert.ok(far.length > 0)
   for (const hit of far) assert.equal(hit.guardedBy, undefined, `the trooper beyond her reach was guarded at tick ${hit.tick}`)
