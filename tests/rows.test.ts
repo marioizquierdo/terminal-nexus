@@ -33,7 +33,7 @@ import {
   tilesWithin,
   wholeRows,
 } from "../src/grid/index.ts"
-import type { Coord, Footprint, GridTerrain } from "../src/grid/index.ts"
+import type { Coord, Direction, Footprint, GridTerrain } from "../src/grid/index.ts"
 import { foreseeIntents, recall, resolveMissionPulse } from "../src/match/index.ts"
 import type { MissionPulseInput } from "../src/match/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
@@ -111,6 +111,11 @@ test("a step goes as far as it counts: one across a column, two up or down a row
     assert.equal(stepLength(direction), gridDistance(ORIGIN, to), direction)
     assert.equal(gridSteps(ORIGIN, to), 1, direction)
   }
+  // Worked out from the way the step goes, for every direction there is: a diagonal, which no mover takes, is a
+  // column and a row, three.
+  const everyWay: readonly Direction[] = ["n", "ne", "e", "se", "s", "sw", "w", "nw"]
+  for (const direction of everyWay) assert.equal(stepLength(direction), gridDistance(ORIGIN, step(ORIGIN, direction)), direction)
+  assert.deepEqual(["ne", "se", "sw", "nw"].map((direction) => stepLength(direction as Direction)), [3, 3, 3, 3])
 })
 
 test("a reach the rules work out from content numbers is rounded up to whole rows: the least even reach at or above it", () => {

@@ -76,13 +76,19 @@ export function gridSteps(a: Coord, b: Coord): number {
   return Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 }
 
+/** How far a step in each direction goes: `gridDistance` from a tile to the one its vector lands on, worked out once. */
+const STEP_LENGTHS = Object.fromEntries(
+  Object.entries(DIRECTION_VECTORS).map(([direction, vector]) => [direction, gridDistance({ x: 0, y: 0 }, vector)]),
+) as Readonly<Record<Direction, number>>
+
 /**
- * How far one step in `direction` goes: 1 across a column, `ROW_DISTANCE` up or down a row — `gridDistance` from
- * where it starts to where it lands. A step takes time in proportion (`stepCost`, `src/pulse/movement.ts`), so
- * every step covers its distance at one pace.
+ * How far one step in `direction` goes: `gridDistance` from where it starts to where it lands, worked out from the
+ * direction's own vector, so 1 across a column, `ROW_DISTANCE` up or down a row, and the two together on a diagonal,
+ * which no mover takes. A step takes time in proportion (`stepCost`, `src/pulse/movement.ts`), so every step covers
+ * its distance at one pace.
  */
 export function stepLength(direction: Direction): number {
-  return direction === "n" || direction === "s" ? ROW_DISTANCE : 1
+  return STEP_LENGTHS[direction]
 }
 
 /**
