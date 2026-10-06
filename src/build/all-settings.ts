@@ -322,14 +322,16 @@ export const ALL_SETTINGS = {
     values: [50, 65, 80, 95],
     default: 80,
   },
-  /** How long each arrow of the raid's intent trail takes to step one tile on toward what the raid goes for —
-   *  the owner's "a slow-moving line of arrows". A first guess he has not felt yet: slower than any of
-   *  PERIMETER's raid walks (`movementRate`, `src/content/ravel.ts`), so the trail reads as the way they will come
-   *  rather than the raid already coming, and calm enough to sit at the edge of the eye while the player builds. */
+  /** How long each arrow of the raid's intent trail takes to go a column's distance on toward what the raid goes
+   *  for, a row taking twice as long — the owner's "a slow-moving line of arrows". A first guess he has not felt
+   *  yet: about a raider's pace (a step across every 5 ticks, 417 ms) and slower than a runner's or a slinger's
+   *  (`movementRate`, `src/content/ravel.ts`), so the trail reads as the way they will come rather than the raid
+   *  already coming, and calm enough to sit at the edge of the eye while the player builds. */
   trailStepMs: { tier: "tuned", default: 400 },
-  /** How many tiles apart the trail's arrows are; the owner's "1 arrow every 3 tiles", so the line is less
-   *  obtrusive than an arrow every other tile. */
-  trailSpacing: { tier: "tuned", unit: "tiles", default: 3 },
+  /** How far apart the trail's arrows are along their way, by the Grid's own distance: four, four columns or two
+   *  rows — the owner's "1 arrow every 3 tiles" made whole rows, so the arrows stand evenly apart on screen
+   *  whichever way the way runs, and the line is less obtrusive than an arrow every other tile. */
+  trailSpacing: { tier: "tuned", unit: "tiles", default: 4 },
 
   // --- Acknowledgements ----------------------------------------------------------------------------
 

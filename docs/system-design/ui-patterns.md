@@ -553,16 +553,16 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   **trail** to what it goes for first, and **that target is marked**. The target is the kernel's own choice on
   the Pulse's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
   removing a building changes it at once: a building nearer the raid becomes what it goes for. The trail is
-  the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand every
-  three tiles (the owner's "1 arrow every 3 tiles"), in the glyph pack's arrowheads and strokes, dim and
-  faded, on open ground only and never over a glyph, and **they move** (the owner: "a slow-moving line of
-  arrows ... leaving a transparent arrow behind then moving that fades"): every step, a tuned value slower
-  than the raid itself walks, each arrow moves a tile on toward the target — the one beside it going in as a
-  new one comes out of the group — and leaves a copy of itself on the tile it left, fainter at once and gone
-  within half a step: blended away where colours blend, the arrow's own dim look and then gone at 16 colours
-  and in monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold
-  it still, as the still trail: an arrow every three tiles, the one beside the target drawn; it moves again
-  from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
+  the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand four
+  apart along the way by the Grid's own distance, four columns or two rows (the owner's "1 arrow every 3 tiles",
+  made whole rows), in the glyph pack's arrowheads and strokes, dim and faded, on open ground only and never over
+  a glyph, and **they move** (the owner: "a slow-moving line of arrows ... leaving a transparent arrow behind then
+  moving that fades"): every step, a tuned value about a raider's pace, each arrow goes a column's distance on
+  toward the target, a row taking two steps as it does a unit — the one beside the target going in as a new one
+  comes out of the group — and leaves a copy of itself on each tile it leaves, fainter at once and gone within
+  half a step: blended away where colours blend, the arrow's own dim look and then gone at 16 colours and in
+  monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold it still,
+  as the still trail, the one beside the target drawn; it moves again from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
   against the round's opening. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
 - ***The build range, a Barracks's room and a reach*** (named patterns; the owner's "a cool and unobstrussive
   way to show where the turrets will reach ... they also can only be built within the build-range of the other
@@ -585,8 +585,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   strokes, dim in that colour. A reach is an attack's range today; another kind of range joins it in one place
   (`reachOf`, `unitReachOf`, `src/view/build-areas.ts`). All three are carried by glyphs, so monochrome and 16
   colours show them. All are drawn on open ground only, never over anything standing, planned or arriving, nor
-  over the raid's trail — a reach gives way along the trail's whole way, wherever its moving arrows are, so
-  the outline never flickers as they pass — and nothing claims what a range would catch on the raid's way.
+  over the raid's trail — all three give way along the trail's whole way, wherever its moving arrows are, so
+  nothing flickers as they pass and no tile of a room on the way reads as open ground — and nothing claims what a range would catch on the raid's way.
   Where a reach crosses a room, the reach's strokes are drawn. None shows under a popup, on a committed plan,
   or during a Pulse. (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
   **Measured as the battle will be.** All three are the rules' own, drawn from the same functions the battle

@@ -17,7 +17,7 @@ import { starterContext } from "../src/cli/starter.ts"
 import { footprintDistance, footprintSteps, footprintWithin } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { ROOM_GLYPH, reachOf, reachOutline, roomApron, unitReachOf } from "../src/view/build-areas.ts"
-import { trailMarks } from "../src/view/build-grid.ts"
+import { trailMarks, trailTiles } from "../src/view/build-grid.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { cellAt, frameToAnsi, frameToText, offendingGlyph } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -371,6 +371,23 @@ test("while a building is armed, the room a Barracks keeps is a ring of dim tick
   // Explore Map and the menu draw none of it.
   keys(side, ESC, "e")
   assert.equal(ticks(compose(side)), 0)
+})
+
+test("the build range's dots give way along the raid's trail's whole way, as a reach and a room do: a tile of the way draws the same armed or not", () => {
+  const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
+  const glyphsOnTheWay = (): string[] => {
+    const frame = compose(side)
+    const way = [...trailTiles({ raid: side.build.raid(), state: side.build.state } as Parameters<typeof trailTiles>[0])]
+    return way.map((key) => {
+      const [x, y] = key.split(",").map(Number) as [number, number]
+      return `${key} ${at(side, frame, { x, y }).glyph}`
+    })
+  }
+  const unarmed = glyphsOnTheWay()
+  assert.ok(unarmed.length > 0, "no trail to give way to")
+  keys(side, "3")
+  assert.ok(buildRange(side.context, side.build.state).has({ x: 27, y: 9 }), "the build range does not reach the trail")
+  assert.deepEqual(glyphsOnTheWay(), unarmed)
 })
 
 test("the room never covers the raid's trail, reads by its tick alone in monochrome, and grows with the Barracks room Experiment", () => {

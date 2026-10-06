@@ -286,7 +286,7 @@ count a row as two columns in every distance ([`grid.md`](grid.md), distance, re
 twice as wide as it is tall in tiles and, drawn a column a tile, as wide as it is tall on screen; a unit walking
 down the screen crosses it at the pace of one walking across. A larger terminal never widens a tile: past the
 largest view it buys centring, never another shape. At 80 × 24 the map shows 49 × 18 tiles, and **80 × 24 is the
-acceptance target**; every size shows the same tiles and the same information.
+acceptance target**; a larger terminal shows more of the same Grid, up to 72 × 24 tiles, and the same information.
 
 **A picture of an area the rules decide draws the rules' own tiles**: a building's or a unit's reach, the build
 range, a Barracks's room, Vasse's aura and a blast are each drawn from the Grid's own sets of tiles (`tilesWithin`,

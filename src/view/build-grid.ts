@@ -2,7 +2,7 @@
 // and their effects), the ghost of the building being placed, the cursor, and a refused try's flash —
 // all drawn through the camera and clipped to the view.
 
-import { ROW_DISTANCE, inBounds, inColumns, nearestTile, tilesOf } from "../grid/coords.ts"
+import { ROW_DISTANCE, gridDistance, inBounds, inColumns, nearestTile, tilesOf } from "../grid/coords.ts"
 import type { PlayerId } from "../state/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { VisibleRange } from "../build/camera.ts"
@@ -134,8 +134,11 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   }
   for (const entity of context.field ?? []) drawEntity(entity, false)
   for (const entity of context.incoming ?? []) drawEntity(entity, true)
-  // While a building is armed, where it may go: drawn before the raid's trail, which wins on its tiles.
-  drawBuildRange(cells, input, pack, takenTiles(context, state.planned))
+  // While a building is armed, where it may go. Its dots give way along the raid's trail's whole way, as a reach
+  // and a room do, so they never flicker as the arrows pass and never call a tile of a room open ground.
+  const open = takenTiles(context, state.planned)
+  for (const tile of trailTiles(input)) open.add(tile)
+  drawBuildRange(cells, input, pack, open)
 }
 
 /**
@@ -161,12 +164,13 @@ const INCOMING_WASH = 0.2
  * Phase only: a Pulse shows what happens, not what was foreseen.
  *
  * - The trail follows the way the group's front unit would walk (`RaidGroup.path`, the kernel's own step
- *   rule): an arrow every few tiles (`trailSpacing`, the owner's "1 arrow every 3 tiles"), each pointing a whole
+ *   rule): an arrow every few columns of the Grid's own distance along it (`trailSpacing`, the owner's "1 arrow
+ *   every 3 tiles" made whole rows: four columns, or two rows), each pointing a whole
  *   stair on along the way (`LOOK_AHEAD`) — the glyph pack's own arrowheads where the way runs straight, its
  *   diagonal strokes where it runs along the screen's diagonal (`trailGlyph`). **It moves** (the owner: "a slow-moving line of arrows ... leaving a transparent
- *   arrow behind then moving that fades"): every `trailStepMs` each arrow steps a tile on toward the target —
- *   the one beside it going in as a new one comes out of the group — and leaves a copy of itself on the tile it
- *   left, which fades out within half a step (`trailMarks`). A pure function of the clock the live loop hands in
+ *   arrow behind then moving that fades"): every `trailStepMs` each arrow goes a column's distance on toward the
+ *   target, a row taking two — the one beside it going in as a new one comes out of the group — and leaves a copy of
+ *   itself on each tile it leaves, which fades out within half a step (`trailMarks`). A pure function of the clock the live loop hands in
  *   (`raidTrail`); without one — every still frame, a popup open, reduced motion — the trail is still, its
  *   arrows where the moving ones stand every few steps, the one beside the target drawn.
  * - On open ground only: never over anything standing, planned or arriving (the corruption law), nor over
@@ -226,7 +230,8 @@ export const GHOST_FADES: readonly number[] = [0.6, 0.8]
 /** How strongly the raid's colour washes the tiles of what it goes for first, where colours blend. */
 const TARGET_WASH = 0.25
 
-/** How the raid's trail moves: how many tiles apart its arrows are, and how long each takes to step a tile on. */
+/** How the raid's trail moves: how far apart its arrows are along the way, by the Grid's own distance, and how long
+ *  each takes to go one further (a column's distance; a row is two). */
 export type TrailMotion = Readonly<{ spacing: number; stepMs: number }>
 
 /** The owner's tuned motion (`trailSpacing`, `trailStepMs`). */
@@ -274,34 +279,54 @@ export const LOOK_AHEAD = ROW_DISTANCE + 1
 export type TrailMark = Readonly<{ tile: Coord; dx: number; dy: number; ghost?: number }>
 
 /**
- * Where a trail's marks are along `path`. **Still** (no `elapsedMs`): an arrow every `motion.spacing` tiles,
- * counted back from the last so the arrow beside the target is always drawn, each pointing a whole stair on along
- * the way (`LOOK_AHEAD`) — or, near its end, at the target's nearest tile. **Moving**, `elapsedMs` into its motion: every arrow is a
- * tile further on each `motion.stepMs`, so the still trail comes round every `spacing` steps — the arrow beside
- * the target goes into it as a new one comes out of the group, one tile from it — and for the first half of
- * each step every arrow's copy stands on the tile it just left, the one that went into the target included.
- * Copies come first in the list, then the arrows, each in the order of the way, so the last mark is the arrow
- * nearest the target. Tiles only: what stands on them, and whether they are in view, is the drawing's to judge.
+ * Where a trail's marks are along `path`, placed by the Grid's own distance along the way (`gridDistance`: a step
+ * across goes one, a step up or down two), so its arrows stand as far apart on screen, and move as fast, whichever
+ * way the way runs, at the pace a unit walks it. **Still** (no `elapsedMs`): an arrow every `motion.spacing` of
+ * distance, counted back from the last tile so the arrow beside the target is always drawn, each on the tile it has
+ * reached and pointing a whole stair on along the way (`LOOK_AHEAD`) — or, near its end, at the target's nearest
+ * tile. **Moving**, `elapsedMs` into its motion: every arrow goes one further on each `motion.stepMs`, standing on
+ * a tile until it has gone that tile's whole step — a step up or down takes two — so the still trail comes round
+ * every `spacing` steps, the arrow beside the target going into it as a new one comes out of the group; for the
+ * first half of each step, an arrow that has just moved on leaves a copy on the tile it left, the one that went
+ * into the target included. Copies come first in the list, then the arrows, each in the order of the way, so the
+ * last mark is the arrow nearest the target. Tiles only: what stands on them, and whether they are in view, is the
+ * drawing's to judge.
  */
 export function trailMarks(path: readonly Coord[], target: readonly Coord[], elapsedMs: number | null = null, motion: TrailMotion = TRAIL_MOTION): TrailMark[] {
   const last = path.length - 1
   if (last < 0) return []
   const spacing = Math.max(1, Math.round(motion.spacing))
+  // How far along the way each of its tiles is, by the Grid's own distance.
+  const along: number[] = [0]
+  for (let index = 1; index <= last; index += 1) along.push((along[index - 1] as number) + gridDistance(path[index - 1] as Coord, path[index] as Coord))
+  const end = along[last] as number
   const beat = elapsedMs === null ? null : trailBeat(elapsedMs, motion)
   const shift = beat === null ? 0 : beat.step % spacing
   const ghost = beat !== null && beat.step > 0 && beat.quarter < GHOST_FADES.length ? beat.quarter : null
-  // The places every `spacing` tiles along the way that are `by` tiles on from the still trail's, in the way's
-  // order: where the arrows stand `by` steps into the motion.
-  const placesAt = (by: number, look: number | null): TrailMark[] => {
-    const places: TrailMark[] = []
-    for (let index = last - ((spacing - by) % spacing); index >= 0; index -= spacing) {
-      const tile = path[index] as Coord
-      const toward = path[index + LOOK_AHEAD] ?? nearestTile(tile, target) ?? tile
-      places.push({ tile, dx: toward.x - tile.x, dy: toward.y - tile.y, ...(look === null ? {} : { ghost: look }) })
-    }
+  // Where the arrows are `by` steps into the motion: every `spacing` along the way, the last that far from the end.
+  const placesAt = (by: number): number[] => {
+    const places: number[] = []
+    for (let distance = end - ((spacing - by) % spacing); distance >= 0; distance -= spacing) places.push(distance)
     return places.reverse()
   }
-  return [...(ghost === null ? [] : placesAt((shift + spacing - 1) % spacing, ghost)), ...placesAt(shift, null)]
+  // The tile an arrow `distance` along the way stands on: the last one it has reached.
+  const tileAt = (distance: number): number => {
+    let index = 0
+    while (index < last && (along[index + 1] as number) <= distance) index += 1
+    return index
+  }
+  const markAt = (index: number, look: number | null): TrailMark => {
+    const tile = path[index] as Coord
+    const toward = path[index + LOOK_AHEAD] ?? nearestTile(tile, target) ?? tile
+    return { tile, dx: toward.x - tile.x, dy: toward.y - tile.y, ...(look === null ? {} : { ghost: look }) }
+  }
+  const arrows = placesAt(shift).map((distance) => markAt(tileAt(distance), null))
+  if (ghost === null) return arrows
+  // A step ago every arrow stood one back; those that have reached another tile since leave a copy on theirs.
+  const copies = placesAt((shift + spacing - 1) % spacing)
+    .filter((distance) => distance + 1 > end || tileAt(distance + 1) !== tileAt(distance))
+    .map((distance) => markAt(tileAt(distance), ghost))
+  return [...copies, ...arrows]
 }
 
 /**

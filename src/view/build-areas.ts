@@ -70,10 +70,10 @@ export function shownBuildRange(input: BuildCompositionInput): Territory | null 
 
 /**
  * ***The build range***, while a building is armed: every open tile inside it — plain ground, nothing standing,
- * planned or arriving on it — shows the ground's dot, dim in the ground's own role, so the range is the densely
- * dotted ground; and where colours blend, every tile inside it is lit by a faint grey wash, glyphless, so
- * whatever stands there keeps its look. Drawn in the `territory` band before the raid's trail, whose marks win
- * on their tiles.
+ * planned or arriving on it, and off the raid's trail — shows the ground's dot, dim in the ground's own role, so
+ * the range is the densely dotted ground; and where colours blend, every tile inside it is lit by a faint grey
+ * wash, glyphless, so whatever stands there keeps its look. `taken` is every tile the dots give way to: what stands
+ * or is planned, and the raid's trail's whole way, as a reach and a room give way to it.
  */
 export function drawBuildRange(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, taken: ReadonlySet<string>): void {
   const { context, state, layout } = input
