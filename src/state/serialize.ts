@@ -42,6 +42,9 @@ export function parseState(text: string): MatchState {
     throw new Error("serialized grid tile count does not match its dimensions")
   }
   if (record["targets"] !== undefined) checkTargets(record["targets"], terrain)
+  if (record["measure"] !== undefined) {
+    throw new Error("state carries a measure, but every state measures the Grid by the one rule, a row counting two columns, and carries none")
+  }
   return { ...(parsed as MatchState), grid: terrain }
 }
 

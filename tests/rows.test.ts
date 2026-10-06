@@ -43,6 +43,7 @@ import { fleeTrigger } from "../src/pulse/perception.ts"
 import { engageRange, followsTarget } from "../src/pulse/target.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
 import { loadScenarioFile, scenarioFiles } from "./helpers.ts"
 
@@ -449,6 +450,14 @@ test("losing a claim on a step down banks no sprint: the step across taken inste
     const steps = events.flatMap((event) => (event.kind === "entity.moved" && event.entity === trooper ? [[event.tick, event.facing]] : []))
     assert.deepEqual(steps.slice(0, 2), [[lostOn, "w"], [lostOn + beat, "w"]], `${how}: it sprinted, ${JSON.stringify(steps)}`)
   }
+})
+
+test("a state measures the Grid by the one rule and carries no measure: one that does is refused, not carried along", () => {
+  const state = field({ A: [[5, 5, TROOPER]], B: [[30, 20, TROOPER]] })
+  const text = serializeState(state)
+  assert.equal(hashState(parseState(text)), hashState(state))
+  const measured = JSON.stringify({ ...(JSON.parse(text) as Record<string, unknown>), measure: { row: 2, tile: 1 } })
+  assert.throws(() => parseState(measured), /^Error: state carries a measure, but every state measures the Grid by the one rule/)
 })
 
 test("every battle on file keeps every unit's credit between none and its dearest step: no step is taken on credit it did not have", async () => {
