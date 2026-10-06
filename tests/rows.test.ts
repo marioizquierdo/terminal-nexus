@@ -337,8 +337,7 @@ test("every unit that walks crosses twenty-four columns in exactly the time it w
     assert.ok([down[0], ...gaps(down)].every((gap) => gap === 2 * beat), `${id} down, every ${2 * beat} ticks: ${down.join(",")}`)
     beats.set(id, beat)
   }
-  // Every unit steps across as often as it ever did: a trooper every four ticks, a raider every five, a colossus
-  // every fifteen.
+  // A trooper steps across every four ticks, a raider every five, a colossus every fifteen.
   assert.deepEqual([TROOPER, RAIDER, "unit.citizen.colossus"].map((id) => beats.get(id)), [4, 5, 15])
 })
 
