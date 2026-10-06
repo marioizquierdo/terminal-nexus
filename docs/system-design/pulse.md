@@ -10,16 +10,18 @@ A Pulse runs a fixed number of **logical ticks** at **12 ticks per simulation se
 rules update. Twelve is chosen because it produces exact integer cadences at every speed the game
 wants:
 
-| Display speed | Exact rate | One-tile step every |
+| Speed across | Exact rate | A step across every |
 | ---: | ---: | ---: |
-| 0.5 tiles/s | `1/2` | 24 ticks |
-| 0.67 tiles/s | `2/3` | 18 ticks |
-| 0.75 tiles/s | `3/4` | 16 ticks |
-| 1 tile/s | `1/1` | 12 ticks |
-| 1.2 tiles/s | `6/5` | 10 ticks |
-| 1.33 tiles/s | `4/3` | 9 ticks |
-| 1.5 tiles/s | `3/2` | 8 ticks |
-| 2 tiles/s | `2/1` | 6 ticks |
+| 0.5 columns/s | `1/2` | 24 ticks |
+| 0.67 columns/s | `2/3` | 18 ticks |
+| 0.75 columns/s | `3/4` | 16 ticks |
+| 1 column/s | `1/1` | 12 ticks |
+| 1.2 columns/s | `6/5` | 10 ticks |
+| 1.33 columns/s | `4/3` | 9 ticks |
+| 1.5 columns/s | `3/2` | 8 ticks |
+| 2 columns/s | `2/1` | 6 ticks |
+
+A step up or down takes twice as many ticks.
 
 Rates are rational, never floating point. `tests/rules.test.ts` reproduces the cadence table above
 exactly at all eight rates on every run.
@@ -51,10 +53,10 @@ An integer accumulator, no floating point:
   row counts two columns ([`grid.md`](grid.md), distance, reach and movement)
 - when `credit >= cost` of the step it wants, the actor attempts that step and `credit -= cost`
 
-So a step across takes exactly one beat and a step up or down exactly two, at every rate: walking time is
-distance. Check it against the table: `1/1` has a beat of 12 and accrues 1 against a cost of 12 — one step every
+So a step across takes exactly one beat and a step up or down exactly two, at every rate: a walk takes as many
+beats as its distance. Check it against the table: `1/1` has a beat of 12 and accrues 1 against a cost of 12 — one step every
 12 ticks; `3/2` a beat of 8, accruing 3 against 24 — every 8 ticks. It reproduces the table exactly. A rate whose
-numerator does not divide `12 × denominator` keeps its pace across, rounded up to whole ticks: a raider's `8/3`
+numerator does not divide `12 × denominator` rounds its step across up to whole ticks: a raider's `8/3`
 steps across every 5 ticks (40 credit) and down every 10 (80).
 
 Two rules govern what happens when an actor cannot step:
@@ -69,7 +71,7 @@ Two rules govern what happens when an actor cannot step:
   frees, rather than restarting its timer. This stops traffic jams from silently halving an army's
   speed.
 
-The same file asserts both: the cadence holds across a second step, credit never exceeds one step's
+`tests/rules.test.ts` asserts both: the cadence holds across a second step, credit never exceeds one step's
 cost over five hundred ticks, and in the jammed-corridor fixture a mover blocked on one tick steps on
 the next — which is only possible if a refused step spends nothing.
 
@@ -198,8 +200,9 @@ it is GUIDANCE and not built.
 A side may have a **target**: a rectangle of the map, kept in the state as `targets` and set only by the
 trigger runner, never by the kernel (the owner, 2026-10-04: "The campaign levels should have a target well
 defined so it is predictable where your troops are moving"). Every unit of that side that moves and fights heads
-for it. On the way it turns on an enemy within its engage range (6 tiles, or its own attack's range when longer,
-measured as range is) and fights it as every unit does. When nothing is in range it walks on, and at the target
+for it. On the way it turns on an enemy within its engage range (6, six columns across and three rows up and
+down, or its own attack's range when longer, rounded up to whole rows; measured as range is) and fights it as
+every unit does. When nothing is in range it walks on, and at the target
 it stands. Units fill the target first, each toward the nearest free tile of it; one that cannot get in stands
 beside one that did, or beside its own building in the target, and claims no tile. A side with no target engages
 the nearest enemy wherever it is. Workers that flee, healers and buildings never follow a target. `targets` is
@@ -392,7 +395,7 @@ destroys it.
 build only inside their *build range* (the owner, 2026-10-04: "they also can only be built within the
 build-range of the other buildings"). The Grid Nexus roots it, and every structure that projects one (a
 content definition with a `constructionRadius`; today every building the player places) lets its player build
-within that many tiles of it, measured as range is, to the nearest tile of its footprint, a row counting two
+within that reach of it, measured as range is, to the nearest tile of its footprint, a row counting two
 columns: a build range of 6 reaches 6 columns across and 3 rows up and down (`tests/rows-view.test.ts`). Two of
 the player's structures are linked when their ranges meet, sharing a tile, so their footprints are at most the
 two radii apart. Everything linked to the Nexus, step by step, is the network, and only a structure in the

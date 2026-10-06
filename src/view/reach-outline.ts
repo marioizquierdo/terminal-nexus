@@ -1,5 +1,5 @@
 // The outline of a reach: the last tiles it covers, as the rules count them (`tilesWithin`, src/grid/reach.ts).
-// Every picture of how far something reaches draws this one shape — a building's or a unit's reach in the Build
+// Every outline of a reach draws this one shape — a building's or a unit's reach in the Build
 // Phase (`build-areas.ts`), a blast as it spreads (`effects/recipes.ts`) — so what the screen shows is the rule's
 // own area, never a square of tiles or a shape of the picture's own.
 //

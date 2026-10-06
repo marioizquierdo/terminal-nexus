@@ -48,7 +48,7 @@ type EffectRecipe = (
 ) => readonly PositionedCell[]
 ```
 
-Five rules, all load-bearing:
+Six rules, all load-bearing:
 
 1. **Absolute time in, cells out.** RULE — `tests/effects.test.ts`, `tests/tween.test.ts`,
    `tests/animation.test.ts`. `f(t)` must not depend on `f(t-1)`. No accumulated state, no "step the

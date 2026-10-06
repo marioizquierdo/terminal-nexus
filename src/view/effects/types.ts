@@ -5,10 +5,10 @@
 // something, and **Shading**, glyphless cells that change the colour or attributes of what is already
 // drawn. A cell with `glyph: ""` is shading; anything else is a particle.
 //
-// An effect is a **pure function from absolute presentation time to sparse cells**. Five rules, all
+// An effect is a **pure function from absolute presentation time to sparse cells**. Six rules, all
 // load-bearing: absolute time in and cells out with no accumulated state; effects cannot touch
-// state; cosmetic randomness only; tile coordinates, never columns; and an effect never carries a
-// required cue alone.
+// state; cosmetic randomness only; tile coordinates, never columns; an effect that shows an area the
+// rules decide draws the rules' own tiles; and an effect never carries a required cue alone.
 
 import type { Coord } from "../../grid/types.ts"
 import type { CapabilityMode, RoleTint, SeeThrough, StyleRole } from "../roles.ts"

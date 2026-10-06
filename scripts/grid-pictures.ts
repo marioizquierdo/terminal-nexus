@@ -10,8 +10,9 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { fileURLToPath, pathToFileURL } from "node:url"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { gridDistance, ringOffsets, rowsWithin, tilesWithin } from "../src/grid/index.ts"
-import type { Coord, Footprint } from "../src/grid/index.ts"
+import { ENTITY_LAYERS, OccupancyIndex, gridDistance, maskFrom, rowsWithin, tilesWithin } from "../src/grid/index.ts"
+import type { Coord, Footprint, GridTerrain } from "../src/grid/index.ts"
+import { nearestFit } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { TICKS_PER_SECOND, loadScenario } from "../src/scenario/index.ts"
 import type { MatchState } from "../src/state/types.ts"
@@ -87,19 +88,32 @@ function wholeRows(): string {
   return sideBySide([4, 5].map((radius) => reachBlock(radius, () => [`reach ${radius}`, rows(radius)])), 8)
 }
 
-/** The first thirteen tiles a group set down round one point fills, in order, `a` first: one ring of the
- *  Grid's own distance at a time, nearest first, in reading order within a ring. */
+/** Plain ground, `width` by `height`. */
+function plainGround(width: number, height: number): GridTerrain {
+  return { width, height, tiles: Array.from({ length: width * height }, () => "terrain.plain" as const) }
+}
+
+/** The first thirteen tiles a group set down round one point fills, in order, `a` first: the opening's own search
+ *  (`nearestFit`), each unit claiming its tile before the next one looks, on open ground. */
 function rings(): string {
-  const order = [0, 1, 2, 3].flatMap((distance) => ringOffsets(distance)).slice(0, 13)
+  const around: Coord = { x: 7, y: 4 }
+  const index = new OccupancyIndex(plainGround(15, 9))
+  const mask = maskFrom(index, { layers: ENTITY_LAYERS, terrain: "impassable" })
+  const order: Coord[] = []
+  for (let unit = 0; unit < 13; unit += 1) {
+    const anchor = nearestFit(mask, ONE, around, 24)
+    if (anchor === null) throw new Error("no room to set a unit down on open ground")
+    index.add("units", unit, anchor, ONE)
+    order.push(anchor)
+  }
   const left = Math.min(...order.map((tile) => tile.x))
   const top = Math.min(...order.map((tile) => tile.y))
   const lines: string[] = []
-  order.forEach((tile, index) => {
+  order.forEach((tile, unit) => {
     const y = tile.y - top
     while (lines.length <= y) lines.push("")
-    const line = lines[y] as string
-    const x = tile.x - left
-    lines[y] = line.padEnd(x, " ").slice(0, x) + "abcdefghijklm"[index] + line.slice(x + 1)
+    const line = (lines[y] as string).padEnd(tile.x - left + 1, " ")
+    lines[y] = line.slice(0, tile.x - left) + "abcdefghijklm"[unit] + line.slice(tile.x - left + 1)
   })
   return picture(lines)
 }

@@ -11,7 +11,7 @@ it is done.*
   each Barracks and Hatchery are the room it keeps, where nothing may stand. Explore Map (`e`) over a marksman
   draws its range; the raid's trail is a slow line of arrows. Start the battle without picking a Nexus power:
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
-  MISSION in Settings (`d`), **Barracks room** (1 or 2 tiles) is new beside **Build range** and **By the
+  MISSION in Settings (`d`), **Barracks room** (1 or 2) is new beside **Build range** and **By the
   Book**; paste the settings export.
 - **The pull request after this one: a sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)):
   units prefer a free column beside them and not to stand straight above or below another, so a group spreads into
@@ -120,11 +120,11 @@ Small, none blocking.
 - The battle feed gives each unit of a wave its own line ("5.0s trooper trained" four times), and a swarmer
   reads "spawnling" there (the feed's short ids); one line a wave would read better.
 - Without chaining, round 1's build range is the Nexus's and the Barracks's alone, and reaching further takes a
-  round a step. A room of one tile leaves a Barracks's corners open, corner to corner; Barracks room 2 with
-  Build range 2 leaves nowhere for a Barracks. The room shows only while a building is armed.
+  round a step. A room of 1 leaves a Barracks's corners open, corner to corner. The room shows only while a
+  building is armed.
 - Her round-opening line rarely fits now that first contact comes sooner: the moments that matter more come first.
-- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts its Hatchery outside the build range;
-  the tests skip the placement check, so the plan could not be placed in the game as written.
+- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts a Turret (22,7) outside the build
+  range at every value; the tests skip the placement check, so the plan could not be placed in the game as written.
 - At 16 colours each moving arrow is a pair for a moment (its copy looks like itself). The trail is the second
   animation that never settles, beside a popup's breath: the screen redraws five to seven times a second while
   it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.

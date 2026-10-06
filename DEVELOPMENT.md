@@ -150,7 +150,7 @@ with a dated name and a row in its README, one or two per era.
 skill) drive `grid` inside a tmux pseudo-terminal, so the ANSI backend takes the path a person gets,
 pause at an exact tick and render the pane to a PNG through the Chromium already present for
 Playwright. `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes that matter
-(80 × 24, 104 × 30, 128 × 24 — a wide terminal, still a tile to a column — and 79 × 24 for the resize gate); most of its shots are composed
+(80 × 24, 104 × 30, a wide 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
 in-process through the scripted playtest, a few stay on tmux because the terminal path is what they
 prove. An unchanged shot is not rewritten: every image records a hash of the page it came from, so a
 regeneration touches only the pictures a change shows up in. Set an Experiment by name with

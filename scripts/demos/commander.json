@@ -1,7 +1,7 @@
 [
   {
     "label": "Placing",
-    "try": "Round 1 after the intro, a Barracks armed. The dotted ground is your build range, from what stood when the round opened, and a Barracks needs only one tile on it: it may hang over the edge. The dim ticks round each Barracks are its room, where nothing may stand; move it beside the standing one and it is refused, too close. Press d: under THE MISSION, Barracks room sets one tile or two.",
+    "try": "Round 1 after the intro, a Barracks armed. The dotted ground is your build range, from what stood when the round opened, and a Barracks needs only one tile on it: it may hang over the edge. The dim ticks round each Barracks are its room, where nothing may stand; move it beside the standing one and it is refused, too close. Press d: under THE MISSION, Barracks room sets 1, what touches it, or 2, two columns across as well.",
     "keys": "Esc 1"
   },
   {

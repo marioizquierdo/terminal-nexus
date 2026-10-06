@@ -42,7 +42,7 @@ function eligibleHostiles(actor: Actor, hostiles: readonly Actor[]): readonly Ac
 
 /**
  * The whole scoring function is "nearest enemy across every hostile layer, ties broken by entity id", nearest by
- * the Grid's own distance (`distanceBetween`: a row counts two columns), so the nearest is the nearest on screen.
+ * the Grid's own distance (`distanceBetween`: a row counts two columns), the shortest walk on screen.
  * It is kept this plain on purpose: a smarter one would be a design change, not a fix.
  */
 export function selectTarget(

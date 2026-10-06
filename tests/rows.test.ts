@@ -1,7 +1,7 @@
 // A row counts two columns: the one rule of distance on the Grid (grid.md). A terminal cell is about twice as tall
 // as it is wide, so the rules count the ground the way the screen shows it: every distance, range and radius counts
 // a row up or down as two columns (`ROW_DISTANCE`), a step up or down takes twice as long as a step across, and
-// touching is still a side shared. First the few functions every distance is worked out with (`src/grid/coords.ts`,
+// touching is a side shared. First the few functions every distance is worked out with (`src/grid/coords.ts`,
 // `src/grid/reach.ts`), then what a battle and the rules round it do with them. What the screen draws by the same
 // rule is tests/rows-view.test.ts's.
 
@@ -667,6 +667,9 @@ test("every reach the content and the Experiments offer is a whole number of row
       "flight trigger": definition.attack === undefined ? undefined : fleeTrigger(definition),
     }
     for (const [what, reach] of Object.entries(reaches)) if (reach !== undefined && !whole(reach)) odd.push(`${id} ${what} ${reach}`)
+    // Melee is touching, counted in steps, not in the Grid's distance: a melee range is 1, or it would reach a row
+    // and a corner its card's words do not say.
+    if (definition.attack?.kind === "melee" && definition.attack.range !== 1) odd.push(`${id} melee range ${definition.attack.range}`)
   }
   for (const name of ["buildRange", "spawnClearance"] as const) {
     for (const value of ALL_SETTINGS[name].values) if (!whole(value)) odd.push(`the ${name} Experiment offers ${value}`)

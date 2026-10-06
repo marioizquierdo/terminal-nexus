@@ -170,7 +170,7 @@ design it is. Built on a new pull request.
       with).
 - [ ] A group set down on the Grid comes out round on screen: the raid's groups, the opening's musters and Recall
       search the same rings, counted the way the rule counts.
-- [ ] A card says a reach's shape ("6 across, 3 up and down"), and a reach of 1 says touching.
+- [ ] A card says a reach's shape ("6 across, 3 up/down"), and a reach of 1 says touching.
 - [ ] One line where players read how to play says units stand tall, so more fit side by side than one behind
       another.
 - [ ] The math is clean: every distance, reach, ring and step is computed by a few named functions of the grid, and

@@ -367,7 +367,7 @@ Three Commanders open the game, and a player may keep more than one campaign in 
 
 **Play — hold and repair.** The forgiving default: cheap defences, reversible damage, and a line drawn well worth more than a line drawn wide. Misplaying a round costs ground, not the mission. Her synergy is *repair × adjacency* — Citizens' alignment bonus already rewards unbroken orthogonal runs, and her powers make those runs **heal each other**, so geometry compounds instead of adding.
 
-**Her skill: By the Book** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`; passive, always on): she and the units of her side within a reach of 4 of her (4 across, 2 up and down) take a quarter less damage from every hit, rounded down but never below 1. Her buildings are not covered (*Countersigned*, below, would add them). Auras never stack. Her card says it in one line, and its strength is the By the Book Experiment while it is felt. A Commander is a hero, as in Warcraft III: "even in an autobattler they should have skills that trigger automatically or are passive" (the owner, 2026-10-04). Several of her Nexus powers below build on it.
+**Her skill: By the Book** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`; passive, always on): she and the units of her side within a reach of 4 of her (4 across, 2 up and down) take a quarter less damage from every hit, rounded down but never below 1. Her buildings are not covered (*Countersigned*, below, would add them). Auras never stack. Her card says it in one sentence, and its strength is the By the Book Experiment while it is felt. A Commander is a hero, as in Warcraft III: "even in an autobattler they should have skills that trigger automatically or are passive" (the owner, 2026-10-04). Several of her Nexus powers below build on it.
 
 **Her Nexus powers** (IDEA — a pool for the Nexus draft step to build from; the owner, 2026-10-04, of the first two: "they are good and we need a bunch"). Each is a name and one plain line, and the line fits the Nexus popup's row at 80 × 24 (about 36 glyphs). They all act on her own side — her buildings, her units, her — never on the enemy: acting on the enemy is Averno's difference. Hers, in `armies/vasse`:
 
@@ -390,7 +390,7 @@ And from the shared Citizen pool, in `armies/all`, which any Citizen Commander m
 | *Reserve Callup* | "Two troopers join at your Nexus." | `spawnUnits` |
 | *Drill Schedule* | "Barracks send a second wave." | `modifyContent` (a building's waves: the owner, 2026-10-05, "Nexus Powers could upgrade the Barracks to spawn a second and third wave") |
 | *Plate Revision* | "Troopers gain +2 integrity." | `modifyContent` |
-| *Zoning Variance* | "Build two tiles farther out." | `modifyRule` (construction radius) |
+| *Zoning Variance* | "Build range reaches 2 farther." | `modifyRule` (construction radius) |
 | *Outpost Permit* | "Unlocks building: Outpost." | `unlockStructure` (a building that projects territory far and does nothing else) |
 | *Roadworks* | "Faster movement in your territory." | `modifyRule` |
 

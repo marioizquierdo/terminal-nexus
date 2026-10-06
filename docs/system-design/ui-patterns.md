@@ -209,8 +209,7 @@ title screen's menu.
 - ***The raid in the panel*** (a named pattern: the owner's "reading the enemy intent is very important
   for basic ui/ux interaction"): the free rows between the buildings and Start Battle Round say what the coming
   round brings, under when it comes (`AS THE ROUND STARTS`, `7 SECONDS IN`): each group's count and where
-  from (a compass point from the Nexus, as the map is drawn: a row weighs as two tiles across at one column a
-  tile, as one at two), its kinds, and what it goes for first (`goes for your
+  from (a compass point from the Nexus, as the map is drawn: a row weighs as two columns, `inColumns`), its kinds, and what it goes for first (`goes for your
   Barracks`). They are information, not rows: nothing to highlight or click. Short of room they drop the
   kinds, then whole groups (`+2 more`), and a count is never split from its kind. Drawn with the menu,
   so it fades when a card covers it. (RULE — `tests/raid-view.test.ts`)

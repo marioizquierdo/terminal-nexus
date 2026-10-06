@@ -106,8 +106,8 @@ worker. Whether the dragging is visible still wants someone to watch it.
 
 **Status:** OPEN — parked under the backlog's routing work, whose rewrite is likely to make it moot.
 
-When two steps close the same distance, the tie breaks on turn cost and then on a fixed compass order
-(`n, ne, e, se, s, sw, w, nw`). Both sides prefer their own left, so in the mirror skirmish player A's
+When two steps gain as much for the time they take — every step toward a goal does — the tie breaks on how far
+each turns from the way straight at the goal, then on a fixed compass order (`n, e, s, w`). Both sides prefer their own left, so in the mirror skirmish player A's
 formation drifts north and player B's south, and the squads meet at an angle. Swapping which player owns
 which side flips the result exactly, so there is no bias tied to identity; across seeds the mirror lands
 3-3, 4-4, 4-4, 5-1 and 4-4, which is seed variance. The artifact is real, small, and visible.
@@ -126,10 +126,10 @@ manoeuvre, take C.
 
 **Status:** OPEN — parked as the opening case of the backlog's routing work.
 
-Greedy routing has no memory. Under Manhattan distance and four-way movement every legal step changes
-distance by exactly one, so an actor approaching an obstacle **off-axis** still slides along its face
+Greedy routing has no memory. With four-way movement every legal step changes the distance to the goal, by
+one across or two up or down, so an actor approaching an obstacle **off-axis** still slides along its face
 until it clears (`obstacle-routing.map.json`), but an actor approaching **on-axis** has exactly one
-improving direction and, if a wall takes it, no fallback: a hard stop, reported correctly by the
+improving direction and, if a wall blocks it, no fallback: a hard stop, reported correctly by the
 `move.blocked` streak warning but never recovering. The older two-tile pacing case is
 `hauler-two-tile-gap`. The owner hit the on-axis case in a playtest ("Two units on the top of the screen
 around tick 200 got stuck"); `scenarios/on-axis-deadlock.map.json` isolates it and `tests/report.test.ts`

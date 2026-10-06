@@ -267,7 +267,7 @@ function drawCardBody(
  * its shape (`CardStat.shape`) beside the value where the row has room for both ("ATTACK  7, touching"), else on
  * a row of its own under it, right-aligned like a value, with no label of its own ("ATTACK  6", then "6 across, 3
  * up/down"). A number with no value says its shape alone, beside its label or under it ("BUILD RANGE", then the
- * shape). Every other number is one row, as it was.
+ * shape). Every other number is one row.
  */
 function statRows(stat: CardStat, limit: number): readonly CardStat[] {
   if (stat.shape === undefined) return [stat]
@@ -291,8 +291,8 @@ const NO_SKILL: SkillLines = { name: "", lines: [] }
  * units take 25% less damage within 4 across, 2 up/down.") — at the strength the Experiment sets now, which is
  * the strength the battle will run on (`auraRegistry`, `src/match/commander.ts`). Nothing for anything else, nor
  * while the Experiment has turned it off. The name opens the sentence rather than standing on a line of its own,
- * and its reach is said in the sentence, so it takes no more rows than its words did before the shape was said:
- * at 80 x 24 Vasse's card has none to spare.
+ * and its reach is said in the sentence, so it takes no more rows than it needs: at 80 x 24 Vasse's card has none to
+ * spare.
  */
 export function skillLines(input: Pick<BuildCompositionInput, "context" | "state">, card: Card, limit: number): SkillLines {
   if (card.icon.kind !== "entity") return NO_SKILL

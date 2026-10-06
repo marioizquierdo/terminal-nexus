@@ -24,7 +24,7 @@ export type AttackDef = Readonly<{
   kind: AttackKind
   /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): to the nearest occupied tile
    *  of the target, a row counting two columns, so a range of 6 reaches 6 columns either side and 3 rows up and
-   *  down. Melee reaches what touches it along a side (`inAttackRange`, src/pulse/shared.ts). */
+   *  down. A melee range is 1: melee reaches what touches it along a side (`inAttackRange`, src/pulse/shared.ts). */
   range: number
   /** For `kind: "heal"`, this is the amount restored, not damage dealt. */
   damage: number

@@ -29,7 +29,7 @@ import type { Actor, TickContext } from "./shared.ts"
 import { stepsBetween } from "./shared.ts"
 
 /**
- * How near an enemy must come before a unit heading for its side's target turns to fight it, in tiles,
+ * How near an enemy must come before a unit heading for its side's target turns to fight it,
  * measured as range is (`within`): 6 columns either side, 3 rows up and down. One value for every unit, and never
  * less than a unit's own attack range, so nothing walks past an enemy it could have shot. Six, a marksman's range:
  * a squad turns on what comes at it from the next few tiles, not on what stands half the map away.

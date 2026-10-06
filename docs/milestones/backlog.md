@@ -11,8 +11,8 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
   rather than to an occupied tile, temporary danger cost for fleeing workers, deterministic
   tie-breaking, and bounded recalculation when a contested destination changes. The spike's greedy
   step will strand units on rock; this is where that stops being acceptable. **Sharper since four-way
-  movement** (Mario's own choice after watching the first battles): under Manhattan distance every legal step changes
-  distance by exactly ±1, so an actor whose approach is exactly on-axis with its goal and meets an
+  movement** (Mario's own choice after watching the first battles): every legal step changes the distance to the
+  goal, by one across or two up or down, so an actor whose approach is exactly on-axis with its goal and meets an
   obstacle has no fallback direction at all, a hard dead end rather than a stall to route around.
   [`open-questions.md`](open-questions.md) Q15 has the measurement; whichever level first needs real
   routing is where it gets an actual fix.

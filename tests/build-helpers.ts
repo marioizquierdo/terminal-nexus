@@ -52,7 +52,7 @@ export const CTRL_C = String.fromCharCode(3)
 export const MINIMUM = { columns: 80, rows: 24 }
 /** Where the viewport reaches its largest, 72 x 24 tiles. */
 export const MAXIMUM = { columns: 104, rows: 32 }
-/** A wide terminal: still a tile to a column, the widest view (72 tiles) and the rest spent on centring. */
+/** A wide terminal: a tile to a column, the widest view (72 tiles) and the rest spent on centring. */
 export const WIDE = { columns: 128, rows: 24 }
 /** A tall panel with room to spare, for what must not depend on the floor's height. */
 export const ROOMY = { columns: 120, rows: 40 }

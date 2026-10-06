@@ -16,7 +16,7 @@
 //   production recipe trains its content id, or whose `spawn` makes it), else
 //   the side's Grid Nexus (the "orphan" rule), else nothing: a side with neither has nowhere to go and
 //   its survivors stay where they stand. Nearest by the Grid's own distance (`footprintDistance`: a row counts
-//   two columns), so the home it walks to is the one nearest it on screen;
+//   two columns), so the home it walks to is the one it can reach soonest;
 // - it is set down on the free tile nearest that building, on the side it is nearest to, under its own
 //   collision mask, one survivor at a time in ordinal order — so the answer never depends on anything
 //   but the state, the registry and the order of the entities;
