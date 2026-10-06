@@ -52,6 +52,11 @@ Small, none blocking.
   Real pathfinding, not the greedy step, is what closes it.
 - Moving the view still counts tiles both ways: a tap moves one row or one column, and the fast move jumps ten
   tiles either way, which is twice as far on screen up or down as across. Worth his eye before anything changes.
+- A big unit's death shockwave and the debris round a small one are drawn square: decoration that claims no area,
+  but a raider's shockwave reaches two rows up and down as its blast of 1 goes off. Its rows could be weighted by
+  the rule if it reads as the blast.
+- A deposit inside the build range carries no mark at 16 colours and in monochrome (the range's wash does not
+  render there and a deposit takes no dot), though a building may be placed on it. Older than the rule.
 
 **From step 6B** ([the round-loop report](../history/reports/2026-09-30-round-loop-and-missions.md) has the reasons):
 
