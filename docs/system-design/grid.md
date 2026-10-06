@@ -427,7 +427,9 @@ only a column at each end of each row.
 ```
 
 An even reach ends on a single tile at its top and bottom, so its last point is a whole row. Every reach the content
-and the Experiments offer is even, except 1, which means touching.
+and the Experiments offer is even, except 1, which means touching, and a reach the rules work out from them — the
+reach a unit turns to fight within, a worker's flight from its attacker (the attacker's range and two more) — is
+rounded up to whole rows (`wholeRows`): a worker runs from a melee attacker within 4.
 
 **A diamond, not a circle.** Units walk the four ways and a step takes as long as the distance it covers (7.3), so
 the tiles a unit can reach in a given time form exactly this diamond: every tile on its edge is the same walk away,
@@ -440,9 +442,10 @@ the same time. With a diamond, "in range" and "can get there in that time" are o
 left or right, so a viewer can always say where a unit goes next.
 
 **A step takes as long as the distance it covers** (RULE — `stepLength`, and `stepCost` in
-`src/pulse/movement.ts`; `tests/rows.test.ts`): one across a column, two up or down a row. The integer movement
-credit that spaces the steps in time is in [`pulse.md`](pulse.md). So walking time is distance, and on screen every
-unit crosses the same ground per second whichever way it walks. Two troopers set off on the same tick, one eight
+`src/pulse/movement.ts`; `tests/rows.test.ts`): a unit's **beat** is the whole number of ticks its step across
+takes, and a step up or down takes exactly two beats. The integer movement credit that spaces the steps in time is
+in [`pulse.md`](pulse.md). So walking time is distance for every unit, and on screen every unit crosses the same
+ground per second whichever way it walks. Two troopers set off on the same tick, one eight
 columns across and one four rows down:
 
 <!-- grid-picture: walking -->

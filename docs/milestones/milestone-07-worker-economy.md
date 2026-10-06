@@ -58,8 +58,8 @@ economy is what makes a battle feel like Terminal Nexus, not what makes it playa
 - A second resource.
 - Storage or warehouse structures.
 - Target scoring for combat (a separate backlog item with its own design guidance).
-- Worker flight or danger behaviour beyond what Milestone 1 shipped (fleeing when a hostile is within
-  `range + 2`).
+- Worker flight or danger behaviour beyond what Milestone 1 shipped (fleeing when a hostile is within its range
+  and two more, rounded up to whole rows).
 - Salvage economy. That is Mission 2's job, RIGHT OF SALVAGE, in Milestone 10.
 
 ## How it is judged

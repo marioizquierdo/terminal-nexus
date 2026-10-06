@@ -42,8 +42,12 @@ Small, none blocking.
 [`grid.md`](../system-design/grid.md), distance, reach and movement):
 
 - Ranges and raids are not tuned for balance: every reach became a whole number of rows and nothing more, since
-  ranges get adjusted as units are made (his words). As played, PERIMETER is won in all three rounds with nothing
-  built, and with two Turrets and one more each round.
+  ranges get adjusted as units are made (his words). As played, at the default settings, PERIMETER is won in all
+  three rounds with nothing built, and with two Turrets and one more each round; with nothing built and Vasse at 60
+  health with a 10% aura, the Nexus falls in round 3.
+- The Commander's cadence level does not always show the cadence: at 100 health and a 40% aura she lives through
+  round 1, and at 20 health and a 10% aura without the Barracks's wave the mission is lost in round 2, before her
+  return. Both were so before this round.
 - Two melee units of one speed set down diagonally from each other step round each other without ever touching.
   Real pathfinding, not the greedy step, is what closes it.
 - Moving the view still counts tiles both ways: a tap moves one row or one column, and the fast move jumps ten

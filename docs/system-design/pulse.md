@@ -39,25 +39,32 @@ at the cost of arithmetic at every use site; it was considered and rejected as t
 rate stays cheap to change only while little content exists, and once real rosters are authored it
 is expensive.
 
-### 1.2 Movement credit — RULE — `tests/rules.test.ts`
+### 1.2 Movement credit — RULE — `tests/rules.test.ts`, `tests/rows.test.ts`
 
 An integer accumulator, no floating point:
 
+- a unit's **beat** is the whole number of ticks a step across takes: `ceil(12 × rate.denominator /
+  rate.numerator)`
 - each tick, `credit += rate.numerator`
-- a step costs `rate.denominator × 12` for each column of distance it covers (`stepCost`, `stepLength`): a step
-  across costs `rate.denominator × 12`, and a step up or down twice that, since a row counts two columns
-  ([`grid.md`](grid.md), distance, reach and movement)
+- a step costs a beat's worth of credit, `rate.numerator × beat`, for each column of distance it covers
+  (`stepCost`, `stepLength`): a step across costs one beat's worth, and a step up or down twice that, since a
+  row counts two columns ([`grid.md`](grid.md), distance, reach and movement)
 - when `credit >= cost` of the step it wants, the actor attempts that step and `credit -= cost`
 
-Check it against the table: `1/1` accrues 1 per tick against a cost of 12 — one step every 12 ticks.
-`3/2` accrues 3 against a cost of 24 — every 8 ticks. It reproduces the table exactly.
+So a step across takes exactly one beat and a step up or down exactly two, at every rate: walking time is
+distance. Check it against the table: `1/1` has a beat of 12 and accrues 1 against a cost of 12 — one step every
+12 ticks; `3/2` a beat of 8, accruing 3 against 24 — every 8 ticks. It reproduces the table exactly. A rate whose
+numerator does not divide `12 × denominator` keeps its pace across, rounded up to whole ticks: a raider's `8/3`
+steps across every 5 ticks (40 credit) and down every 10 (80).
 
 Two rules govern what happens when an actor cannot step:
 
 - **Credit is capped at one step's cost** — the dearest step's, when steps differ. An actor that could not
   move cannot bank a sprint: it waits for the step it wants rather than taking a cheaper one it likes less, and
   once it can pay, its credit is capped at that step's own cost, so saving up for a step down never buys two
-  quick steps across. A loser of a contested tile is offered only steps it can pay for.
+  quick steps across. A loser of a contested tile is offered only steps it can pay for, and the step it is
+  granted spends that step's cost from credit capped at it, so losing a claim on a step down never buys two
+  quick steps across either.
 - **A blocked step keeps its credit.** An actor jostled out of a claim steps the moment the tile
   frees, rather than restarting its timer. This stops traffic jams from silently halving an army's
   speed.
@@ -88,7 +95,8 @@ over entities can never decide an outcome:
    broken by one draw from the seeded stream. Entity id orders iteration and event emission, never
    outcomes. Losers hold or recalculate, under a bounded number of passes with a strictly decreasing
    progress measure.
-6. **Settle.** Apply winning moves. Occupancy is now fixed for this tick.
+6. **Settle.** Apply winning moves: each mover's credit is capped at the cost of the step it was granted, then
+   that cost is spent. Occupancy is now fixed for this tick.
 7. **Attacks** (`src/pulse/attacks.ts`). By speed tier, **tier 1 first**. Within one tier, every
    valid attack is computed against the state at tier start and applied **simultaneously**, so no
    entity survives merely by being iterated first.
@@ -131,7 +139,7 @@ tick, always. The attack event additionally carries a **flight window**, measure
 derived deterministically from the distance to the target as
 `max(1, ceil(distance / projectileTilesPerTick))`, the distance counted as range is, where the tiles-per-tick
 figure is a property of the attack: a shot two rows up takes as long as one four columns across. It is part of the event and its hash, and it is read by **no rule**
-(RULE — `tests/rules.test.ts`): it exists so that presentation knows how long the shot should appear
+(RULE — `tests/rules.test.ts`, `tests/rows.test.ts`): it exists so that presentation knows how long the shot should appear
 to take. A renderer drawing a tracer holds the impact, the damage flash, and the visible health change
 until the end of that window, so what the player sees lands when the tracer does; a renderer that
 draws no tracer (reduced motion, monochrome) still presents damage at the impact beat.

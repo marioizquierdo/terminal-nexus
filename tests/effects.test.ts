@@ -662,9 +662,9 @@ test("a same-tick ranged kill holds its death and blast until the tracer lands, 
   // the shot is launched - attack.launched, damage.applied, entity.died and any entity.detonated it
   // triggers all carry the same tick - but the impact burst already waits for the flight window
   // (docs/system-design/pulse.md, events) to end before it plays. The death collapse and any resulting blast did not, so a
-  // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces this
-  // exactly: tick 169, A:marksman#5's shot (flightWindowTicks 2) kills B:runner#6, whose volatile
-  // munitions then catch A:trooper#8.
+  // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces it: a
+  // marksman's shot with a flight window kills a runner whose volatile munitions then go off, and every
+  // such kill in the battle is checked below.
   const resolved = await resolveScenario("citizens-versus-ravels.map.json")
   const derived = deriveEffects({
     states: [],
