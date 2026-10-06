@@ -314,6 +314,33 @@ than any one feature:
 7. **A scratch copy of the repository inside a worktree is read as the repository**: the validator and Bun's
    runner both walk `tmp/`. Keep such copies outside the worktree.
 
+## Rows x2, the rule (2026-10-06)
+
+1. **Pin the kept path's hash before removing the others.** Taking out the Ground's four choices reproduced, event
+   for event, the hash the rows x2 choice had pinned: the proof that one rule replaced four without changing the
+   one that was kept.
+2. **A promise like "walking time is distance" needs a test over every rate, not the table's.** Credit capped at a
+   step's cost threw away a different remainder across than down, so eight of the twenty-eight rates walked down
+   faster than across; the cadence test only held rates that divide evenly. A step now takes whole beats, and a test
+   walks every unit both ways.
+3. **Cap where the step is taken, not only where it is chosen.** A unit that lost its claim on a step down took two
+   quick steps across: the "no banked sprint" promise held on the intents path and not in arbitration.
+4. **A reach the rules work out can break a rule the content keeps.** A worker's flight, its attacker's range and two
+   more, was 3 against melee: the one odd reach left, and it missed a threat straight above. Test derived reaches
+   beside declared ones.
+5. **Mutation-test what a design document claims.** Deleting the placement preference, the touching clause for
+   contact triggers, or the forecast's stop condition passed the whole suite; each now has a test that states it.
+6. **Say the length of a walk, not of a line.** The distance map first read as the distance on screen "whichever way
+   it lies"; off the axes a walk is longer than the straight line. A sentence about geometry needs the same check as
+   a number.
+7. **A lazy pattern over an empty block reaches into the next one.** The pictures' first redraw matched from an
+   empty code block to the next fence and swallowed the text between; read a block line by line up to its own fence.
+8. **Draw a design document's pictures with the game's own code.** The grid design's six pictures are drawn by the
+   rules' functions, the kernel's walks and the opening's own search, and a test fails if one drifts, so the
+   explanation cannot quietly stop being the game.
+9. **Setting a group down round changes when its blow lands.** Round groups spread along their way in, so a raid's
+   first blow came later and a test's "the Nexus falls with no defenders" needed a heavier raid of its own.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

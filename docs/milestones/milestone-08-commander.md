@@ -161,27 +161,27 @@ words](../history/feedback/2026-10-06-rows-x2.md)): rows x2 becomes the rule, an
 choices goes. Then, confirming it: the focus is clean math and the grid design explained, with pictures, as the
 design it is. Built on a new pull request.
 
-- [ ] A row counts two columns in every distance and every step, in every battle and on every screen: the kernel
+- [x] A row counts two columns in every distance and every step, in every battle and on every screen: the kernel
       has one way to measure, and the Ground Experiment, its other three choices, the Ground test level and its
       demos are gone.
-- [ ] A tile is one column wide at every terminal size, in the game, the engine tool and the playable page.
-- [ ] Every reach is a whole number of rows: an odd reach rounds up (Vasse's shot and her aura 4, the marksman 6),
+- [x] A tile is one column wide at every terminal size, in the game, the engine tool and the playable page.
+- [x] Every reach is a whole number of rows: an odd reach rounds up (Vasse's shot and her aura 4, the marksman 6),
       a reach of 1 is touching, and the build range is a plain number counted like any reach (4, 6 or 8; 6 to begin
       with).
-- [ ] A group set down on the Grid comes out round on screen: the raid's groups, the opening's musters and Recall
+- [x] A group set down on the Grid comes out round on screen: the raid's groups, the opening's musters and Recall
       search the same rings, counted the way the rule counts.
-- [ ] A card says a reach's shape ("6 across, 3 up/down"), and a reach of 1 says touching.
-- [ ] One line where players read how to play says units stand tall, so more fit side by side than one behind
+- [x] A card says a reach's shape ("6 across, 3 up/down"), and a reach of 1 says touching.
+- [x] One line where players read how to play says units stand tall, so more fit side by side than one behind
       another.
-- [ ] The math is clean: every distance, reach, ring and step is computed by a few named functions of the grid, and
+- [x] The math is clean: every distance, reach, ring and step is computed by a few named functions of the grid, and
       every comment on them says the rule as it is.
-- [ ] The grid design explains the rule from its own point of view, with pictures the code draws, and a test holds
+- [x] The grid design explains the rule from its own point of view, with pictures the code draws, and a test holds
       the pictures.
-- [ ] An adversarial review checks the code, the math and the explanation against each other.
-- [ ] Neither PERIMETER's raid nor the content's ranges are tuned beyond whole rows: ranges are adjusted as units are
+- [x] An adversarial review checks the code, the math and the explanation against each other.
+- [x] Neither PERIMETER's raid nor the content's ranges are tuned beyond whole rows: ranges are adjusted as units are
       made. PERIMETER's outcomes under the rule are measured and written down.
-- [ ] Square bodies, every unit two columns wide, are written down in reserve, not built.
-- [ ] Mario's sparse formation, a column kept between units, is written down for the next pull request, not built.
+- [x] Square bodies, every unit two columns wide, are written down in reserve, not built.
+- [x] Mario's sparse formation, a column kept between units, is written down for the next pull request, not built.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 
