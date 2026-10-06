@@ -141,7 +141,7 @@ test("a building's card says the wave it spawns â€” how many of what, and when â
 // --- A reach's shape --------------------------------------------------------------------------------
 
 test("a reach is said by its shape: R across and half as many rows up and down, rounded down; a reach of 1 is touching", () => {
-  // A row counts two columns in every distance, so a reach looks round on screen (the owner's "rows x2").
+  // A row counts two columns in every distance, so a reach looks round on screen.
   assert.equal(reachShape(1), "touching")
   assert.equal(reachShape(2), "2 across, 1 up/down")
   assert.equal(reachShape(4), "4 across, 2 up/down")

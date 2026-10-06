@@ -279,7 +279,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       ],
     },
     {
-      // No keys: how the ground is counted (rows x2), which every reach is drawn and said by.
+      // No keys: how the ground is counted, a row as two columns, which every reach is drawn and said by.
       heading: "THE GROUND",
       lines: [
         { keys: "", text: "units stand tall, so more" },
