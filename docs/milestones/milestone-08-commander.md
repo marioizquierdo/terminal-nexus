@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8A, round 7 — rows x2, the rule: a row counts two columns in every distance and step, one tile width, even reaches, groups set down round, cards that say a reach's shape, and PERIMETER retuned for it.
+**Current step:** 8A, round 7 — rows x2, the rule: a row counts two columns in every distance and step, computed in one place and explained in the grid design with pictures; one tile width, whole-row reaches, groups set down round, and cards that say a reach's shape.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -158,7 +158,8 @@ pull request.
 
 Mario's choice after playing the Ground Experiment, and his word to settle it once the exploration merged ([his
 words](../history/feedback/2026-10-06-rows-x2.md)): rows x2 becomes the rule, and what was built only to compare the
-choices goes. Built on a new pull request.
+choices goes. Then, confirming it: the focus is clean math and the grid design explained, with pictures, as the
+design it is. Built on a new pull request.
 
 - [ ] A row counts two columns in every distance and every step, in every battle and on every screen: the kernel
       has one way to measure, and the Ground Experiment, its other three choices, the Ground test level and its
@@ -172,9 +173,15 @@ choices goes. Built on a new pull request.
 - [ ] A card says a reach's shape ("6 across, 3 up and down"), and a reach of 1 says touching.
 - [ ] One line where players read how to play says units stand tall, so more fit side by side than one behind
       another.
-- [ ] PERIMETER's raid is retuned under the rule: the first round a probe the squads meet, the second needs
-      something built, the third most of what the level's credits buy.
+- [ ] The math is clean: every distance, reach, ring and step is computed by a few named functions of the grid, and
+      every comment on them says the rule as it is.
+- [ ] The grid design explains the rule from its own point of view, with pictures the code draws, and a test holds
+      the pictures.
+- [ ] An adversarial review checks the code, the math and the explanation against each other.
+- [ ] Neither PERIMETER's raid nor the content's ranges are tuned beyond whole rows: ranges are adjusted as units are
+      made. PERIMETER's outcomes under the rule are measured and written down.
 - [ ] Square bodies, every unit two columns wide, are written down in reserve, not built.
+- [ ] Mario's sparse formation, a column kept between units, is written down for the next pull request, not built.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

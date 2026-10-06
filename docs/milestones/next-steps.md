@@ -13,15 +13,10 @@ it is done.*
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
   MISSION in Settings (`d`), **Barracks room** (1 or 2 tiles) is new beside **Build range** and **By the
   Book**; paste the settings export.
-- **Say go on rows x2** (his choice, 2026-10-06, once he has seen its math): the next update makes it the rule and
-  retunes for it. Until then, the Ground Experiment as it was offered:
-- **Play the Ground Experiment** (his notes on tall tiles): every option is drawn in [the
-  comparison](../history/reports/2026-10-05-tall-tiles-options.md), and four are built as the Ground Experiment,
-  last under THE MISSION in Settings (`d`, `End`, `Up`, then Left or Right): as now, rows x2, sideways x2, square
-  tiles. It applies at once. The Ground test (`--at 'campaign?level=ground-test'`, or a button on the playable
-  page) puts two raids the same distance from the Nexus on screen, one from the north, one from the east: press
-  `3` to see a Turret's reach, `s` twice to watch how fast each comes. Then PERIMETER under the one that feels
-  best, and paste the settings export.
+- **The pull request after this one: a sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)):
+  units prefer a free column beside them and not to stand straight above or below another, so a group spreads into
+  a staggered grid; a preference that never blocks a move. It explores the pathfinding it needs, runs simulations,
+  and brings units and scenarios made to test formations facing up and down against formations facing sideways.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -31,7 +26,7 @@ it is done.*
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
   means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): the tall tiles (Q24, above), an order primitive as its own step (Q69, which
+- **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
   letter hotkeys for buildings (Q67), and the exploring click, the wheel step and the light theme's light (Q63;
   Q62 and Q64 are answered).
