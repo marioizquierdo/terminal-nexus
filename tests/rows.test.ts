@@ -54,6 +54,8 @@ const TROOPER = "unit.citizen.trooper"
 const RAIDER = "unit.ravel.raider"
 const FLAK = "unit.bench.flaktrooper"
 const HOG = "unit.bench.hogrider"
+const RUNNER = "unit.ravel.runner"
+const SPITTER = "unit.bench.spitter"
 const NEXUS = "structure.citizen.nexus"
 
 /** Every tile within `span` columns and `span` rows of `centre`, in reading order. */
@@ -413,6 +415,45 @@ test("a range of 4 reaches four columns across and two rows up, never three; two
   assert.deepEqual([firesAt(FLAK, 2, -1), firesAt(FLAK, 3, -1)], [true, false])
 })
 
+test("a shot two rows up flies as long as one four columns across: its flight is the distance over its speed, rounded up", () => {
+  /** The flight window of the shot `shooter` fires on the first tick at an enemy trooper `dx` across and `dy` down. */
+  const flight = (shooter: string, dx: number, dy: number): number | undefined => {
+    const shot = play(field({ A: [[10, 10, shooter]], B: [[10 + dx, 10 + dy, TROOPER]] }), 1).events.find(
+      (event) => event.kind === "attack.launched" && event.attacker.startsWith("A:"),
+    )
+    return shot?.kind === "attack.launched" ? shot.flightWindowTicks : undefined
+  }
+  // A flak trooper's shell flies three columns a tick: four away, two rows up or four columns across, is two ticks.
+  assert.equal(FIXTURE_REGISTRY.get(FLAK).attack?.projectileTilesPerTick, 3)
+  assert.deepEqual([flight(FLAK, 0, -2), flight(FLAK, 0, 2), flight(FLAK, 4, 0), flight(FLAK, -4, 0)], [2, 2, 2, 2])
+  // And one row up is as far as two columns across: one tick.
+  assert.deepEqual([flight(FLAK, 0, -1), flight(FLAK, 2, 0)], [1, 1])
+})
+
+test("a contact trigger of 1 is touching: a spitter straight below or above a trooper goes off on the first tick, as beside it", () => {
+  assert.equal(FIXTURE_REGISTRY.get(SPITTER).detonation?.triggerRange, 1)
+  /** The tick a spitter goes off, alone with an enemy trooper `dx` columns across and `dy` rows down from it. */
+  const goesOff = (dx: number, dy: number): number | undefined =>
+    play(field({ A: [[10, 10, SPITTER]], B: [[10 + dx, 10 + dy, TROOPER]] }), 12).events.find((event) => event.kind === "entity.detonated")?.tick
+  // The trooper straight above it is two away and touches it, as the one beside it does: it never needs to move.
+  assert.deepEqual([goesOff(0, -1), goesOff(0, 1), goesOff(1, 0), goesOff(-1, 0)], [1, 1, 1, 1])
+})
+
+test("a blast of 1 catches what touches it, straight above as beside, and nothing two columns off", () => {
+  // A raid runner, its munitions volatile, down to its last point of health between three troopers: one beside it,
+  // who kills it on the first tick, one straight above it, and one two columns off on its other side.
+  assert.equal(FIXTURE_REGISTRY.get(RUNNER).detonation?.radius, 1)
+  const start = field({ A: [[9, 10, TROOPER], [10, 9, TROOPER], [12, 10, TROOPER]], B: [[10, 10, RUNNER]] })
+  const state: MatchState = { ...start, entities: start.entities.map((entity) => (entity.contentId === RUNNER ? { ...entity, hp: 1 } : entity)) }
+  const blast = play(state, 1).events.find((event) => event.kind === "entity.detonated")
+  assert.ok(blast?.kind === "entity.detonated" && blast.tick === 1, "the runner did not go off on the first tick")
+  const at = (id: string): string => {
+    const entity = state.entities.find((each) => each.id === id)
+    return entity === undefined ? id : `${entity.anchor.x},${entity.anchor.y}`
+  }
+  assert.deepEqual(blast.caught.map(at).sort(), ["10,9", "9,10"], "the blast is not exactly what touches the runner")
+})
+
 test("waiting never banks a sprint across: credit saved for a step down buys one step across, at a step across's pace", () => {
   // A trooper that stood long enough to save up for a step down, a row's worth of credit, then walks across.
   const rate = FIXTURE_REGISTRY.get(TROOPER).movementRate
@@ -540,11 +581,54 @@ test("the forecast's way is the Pulse's own walk: down the screen's diagonal fro
   ])
 })
 
+test("the forecast's way ends touching what it goes for, straight above or below it, never on it", () => {
+  // An open field, the player's Grid Nexus far to the south-west, a trooper of the player's out on it, and one trooper
+  // of the raid's straight above or below it: the raid's goes for the nearer, the player's trooper. Units never block
+  // a forecast's way, so a way that ran on to the target's own tile would stand on it.
+  const grid: GridTerrain = { width: 40, height: 24, tiles: Array.from({ length: 40 * 24 }, () => "terrain.plain" as const) }
+  const endOfWay = (raidAt: Coord, postAt: Coord): Coord | undefined => {
+    const mission: MissionDefinition = {
+      id: "rows-touch",
+      name: "rows touch",
+      pulses: 1,
+      pulseTicks: 360,
+      seed: 7,
+      regions: [
+        { id: "raid", x: raidAt.x, y: raidAt.y, width: 1, height: 1 },
+        { id: "post", x: postAt.x, y: postAt.y, width: 1, height: 1 },
+      ],
+      triggers: [
+        { id: "squad", when: { pulse: 1, tick: 0 }, do: [{ spawn: { side: "A", units: [{ unit: TROOPER, count: 1 }], at: "post" } }] },
+        { id: "raid", when: { pulse: 1, tick: 0 }, do: [{ spawn: { side: "B", units: [{ unit: TROOPER, count: 1 }], at: "raid", group: "walker" } }] },
+        { id: "end", when: { event: "pulse.end", pulse: 1 }, do: [{ win: true }] },
+      ],
+    }
+    validateMission(mission, grid, FIXTURE_REGISTRY)
+    const input: MissionPulseInput = { mission, grid, registry: FIXTURE_REGISTRY, pulse: 1, carried: null, structures: [{ contentId: NEXUS, anchor: { x: 5, y: 17 } }] }
+    const [group] = foreseeIntents(input)
+    assert.equal(group?.target?.contentId, TROOPER, "the raid's trooper does not go for the player's")
+    assert.deepEqual(group?.target?.anchor, postAt)
+    return group?.path.at(-1)
+  }
+  // From the north, the way ends on the tile straight above the player's trooper; from the south, straight below.
+  assert.deepEqual(endOfWay({ x: 20, y: 2 }, { x: 20, y: 12 }), { x: 20, y: 11 })
+  assert.deepEqual(endOfWay({ x: 20, y: 22 }, { x: 20, y: 12 }), { x: 20, y: 13 })
+})
+
 test("Recall sends a survivor to the home nearest by the rule: a Nexus four columns beside it, not one three rows above", () => {
   // Two Grid Nexuses of the player's: one whose nearest tile is three rows above the trooper (six away), one whose
   // nearest is four columns beside it (four away). A placement block puts a building by its centre tile.
   const home = recall(field({ A: [[20, 6, NEXUS], [25, 10, NEXUS], [20, 10, TROOPER]] }), FIXTURE_REGISTRY).moves[0]?.to
   assert.deepEqual(home, { x: 23, y: 10 }, "beside the Nexus four columns across")
+})
+
+test("Recall sets a survivor down on the side of its home it came from: below the Nexus when it stood below it", () => {
+  // A placement block puts a building by its centre tile, so the Nexus covers columns 19 to 21 of rows 10 and 11. Its
+  // tile nearest a trooper below it is 20,11, and the free tiles nearest that, two away, are 18,11 and 22,11 beside
+  // the Nexus and 20,12 below it: the one on the trooper's own side. From above, it is 20,9.
+  const homeFrom = (at: Coord): Coord | undefined => recall(field({ A: [[20, 10, NEXUS], [at.x, at.y, TROOPER]] }), FIXTURE_REGISTRY).moves[0]?.to
+  assert.deepEqual(homeFrom({ x: 20, y: 16 }), { x: 20, y: 12 }, "it came home beside the Nexus, not below it")
+  assert.deepEqual(homeFrom({ x: 20, y: 4 }), { x: 20, y: 9 })
 })
 
 test("the battle with the most rules in it resolves the same way on every run, and on Node and Bun alike", async () => {
