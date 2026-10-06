@@ -5,8 +5,13 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
+import { rectFootprint } from "../src/content/types.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
+import { footprintCentre, tilesOf } from "../src/grid/coords.ts"
+import { tilesWithin } from "../src/grid/reach.ts"
+import type { Coord } from "../src/grid/types.ts"
 import { loadScenario } from "../src/scenario/index.ts"
+import { outlineWithin } from "../src/view/reach-outline.ts"
 import {
   CAPABILITY_MODES,
   DEFAULT_PRESENTATION,
@@ -15,6 +20,7 @@ import {
   EFFECT_RECIPES,
   EffectTimeline,
   STYLE_ROLES,
+  blastReach,
   createView,
   deathExtraTicks,
   deathRingOutset,
@@ -35,6 +41,9 @@ import type {
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 
 const GRID = { width: 24, height: 12 }
+
+/** The footprint of a single tile. */
+const ONE_TILE_FOOTPRINT: readonly Coord[] = [{ x: 0, y: 0 }]
 
 function context(overrides: Partial<EffectContext> = {}): EffectContext {
   return {
@@ -1041,63 +1050,103 @@ test("easeOut is a front-loaded curve: ahead of linear pace throughout, flat onl
   assert.equal(easeOut(1.5), 1)
 })
 
-test("blastDetonation's ring reach follows the ease-out curve: fast early growth, then it saturates", () => {
-  const blast = EFFECT_RECIPES["fx.blast.detonation"]
-  assert.ok(blast !== undefined)
-  const origin = { x: 10, y: 6 }
-  const radius = 10 // large enough that integer rounding does not wash out the curve's shape
-  const instance: EffectInstance = {
+/** A blast of `radius` from a body of `width` × `height` tiles anchored at `origin`, over a second. */
+function blastInstance(origin: Coord, radius: number, width = 1, height = 1): EffectInstance {
+  return {
     recipe: "fx.blast.detonation",
     band: "effects",
     startMs: 0,
     durationMs: 1000,
     origin,
     family: "ravel",
-    params: { radius },
+    params: { radius, width, height },
   }
+}
 
-  // The main ring draws at Chebyshev distance `reach` from the origin - not an accumulating disk.
-  // Sub-bursts (below) can now contribute cells of their own at other distances, hash-seeded and
-  // timing-gated independently, so this checks the main ring's own expected distance is *present*
-  // among the drawn cells, rather than requiring it to be the only distance drawn.
-  const distancesAt = (progress: number): number[] =>
-    blast(instance, context({ timeMs: progress * 1000, reducedMotion: false }))
-      .filter((cell) => cell.role === "fx.blast" && (cell.tile.x !== origin.x || cell.tile.y !== origin.y))
-      .map((cell) => Math.max(Math.abs(cell.tile.x - origin.x), Math.abs(cell.tile.y - origin.y)))
+const tileKey = (tile: Coord): string => `${tile.x},${tile.y}`
 
-  const expectedMainReach = (progress: number): number =>
-    Math.min(radius, Math.max(1, Math.round(easeOut(progress) * radius * 1.35)))
-
-  const reachAt = (progress: number): number => {
-    const expected = expectedMainReach(progress)
-    const distances = distancesAt(progress)
-    assert.ok(
-      distances.includes(expected),
-      `no ring cell at the expected main reach ${expected} at progress ${progress}; got ${[...new Set(distances)].join(",")}`,
-    )
-    return expected
-  }
-
-  const early = reachAt(0.05)
-  const mid = reachAt(0.25)
-  const late = reachAt(0.45)
-
-  // Ahead of the old linear formula (reach = round(progress * radius * 1.35)) at the same progress -
-  // the whole point of the owner's ask, not just a curve that happens to look different.
-  const oldLinearAtMid = Math.round(0.25 * radius * 1.35)
-  assert.ok(
-    mid > oldLinearAtMid,
-    `reach ${mid} at progress 0.25 is no faster than the old linear curve would have given (${oldLinearAtMid})`,
-  )
-
+test("a blast spreads along the ease-out curve, fast and then slowing, from what touches it to its whole radius", () => {
+  const radius = 10 // large enough that integer rounding does not wash out the curve's shape
+  const early = blastReach(0.05, radius)
+  const mid = blastReach(0.25, radius)
+  const late = blastReach(0.45, radius)
+  // Ahead of a linear spread (round(progress * radius * 1.35)) at the same progress - the owner's ask: "expanding
+  // faster at first, and then slowing down towards the end".
+  const linearAtMid = Math.round(0.25 * radius * 1.35)
+  assert.ok(mid > linearAtMid, `reach ${mid} at progress 0.25 is no faster than a linear spread (${linearAtMid})`)
   // Decelerating: the same 0.2 span of progress buys less reach later than it does earlier.
   assert.ok(late - mid < mid - early, `growth did not slow down (+${mid - early} early vs. +${late - mid} late)`)
+  // It starts at the tiles touching the body and ends at the whole radius, which it holds.
+  assert.equal(blastReach(0, radius), 1)
+  assert.equal(blastReach(0.8, radius), radius)
+  assert.equal(blastReach(1, radius), radius)
+  assert.equal(blastReach(0.3, 1), 1)
 
-  // The endpoint is unchanged by the easing: the ring still reaches the entity's full declared radius.
-  assert.ok(distancesAt(1.0).includes(radius), `the main ring should still reach the full radius ${radius} by the end`)
+  // Before any sub-burst can go off (they start from 0.3 of the way), every mark but the centre's is on the outline
+  // of the ground reached so far - the ring, never a disk, and never past the reach.
+  const blast = EFFECT_RECIPES["fx.blast.detonation"]
+  assert.ok(blast !== undefined)
+  const origin = { x: 30, y: 15 }
+  const instance = blastInstance(origin, radius)
+  for (const progress of [0, 0.05, 0.1, 0.15, 0.25, 0.29]) {
+    const ring = new Set(outlineWithin(origin, ONE_TILE_FOOTPRINT, blastReach(progress, radius)).map(tileKey))
+    const drawn = blast(instance, context({ timeMs: progress * 1000 })).filter((cell) => tileKey(cell.tile) !== tileKey(origin))
+    assert.ok(drawn.length > 0, `nothing of the ring at ${progress}`)
+    for (const cell of drawn) assert.ok(ring.has(tileKey(cell.tile)), `${tileKey(cell.tile)} at ${progress} is off the ring of reach ${blastReach(progress, radius)}`)
+  }
 })
 
-test("blastDetonation spawns radius-scaled sub-explosions inside its own reach (sub-effects, cheap path)", () => {
+test("what flashes is what was hit: a blast draws only the ground its rule reaches, round the whole body, in every form", () => {
+  // The blast's rule (`detonate`, src/pulse/death.ts): everything within its radius of any tile of the body, a row
+  // counting two columns. A blast of 2 from one tile reaches two columns either side and one row up and down - so it
+  // never flashes two rows up or down, which a square ring of 2 would.
+  const blast = EFFECT_RECIPES["fx.blast.detonation"]
+  assert.ok(blast !== undefined)
+  const origin = { x: 30, y: 15 }
+  for (const [width, height] of [[1, 1], [3, 1], [2, 1], [5, 2]] as const) {
+    for (const radius of [1, 2, 4]) {
+      const instance = blastInstance(origin, radius, width, height)
+      const reached = new Set(tilesWithin(origin, rectFootprint(width, height), radius).map(tileKey))
+      for (const reducedMotion of [false, true]) {
+        for (const capability of CAPABILITY_MODES) {
+          for (let step = 0; step <= 100; step += 1) {
+            for (const cell of blast(instance, context({ timeMs: step * 10, reducedMotion, capability }))) {
+              assert.ok(
+                reached.has(tileKey(cell.tile)),
+                `a ${width}x${height} body's blast of ${radius} drew ${tileKey(cell.tile)}, which it does not reach (${reducedMotion ? "reduced motion" : "full"}, ${capability})`,
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+  // One tile, a blast of 2: nothing two rows away, and the tiles two columns either side are reached and drawn.
+  const drawnAt = (progress: number): Set<string> =>
+    new Set(blast(blastInstance(origin, 2), context({ timeMs: progress * 1000, reducedMotion: true })).map((cell) => tileKey(cell.tile)))
+  const held = drawnAt(0.5)
+  assert.ok(![...held].some((key) => Math.abs(Number(key.split(",")[1]) - origin.y) > 1), `drew two rows away: ${[...held].join(" ")}`)
+  assert.ok(held.has(tileKey({ x: origin.x - 2, y: origin.y })) && held.has(tileKey({ x: origin.x + 2, y: origin.y })))
+})
+
+test("under reduced motion a blast holds its whole reach's outline and its centre, and nothing else: no spread, no sub-bursts", () => {
+  // Sub-bursts are travel and decorative movement - exactly what reduced motion drops (the three-forms rule) - and the
+  // held outline already carries this beat's causality: how far it reached.
+  const blast = EFFECT_RECIPES["fx.blast.detonation"]
+  assert.ok(blast !== undefined)
+  const origin = { x: 30, y: 15 }
+  for (const [width, height, radius] of [[1, 1, 1], [1, 1, 2], [3, 1, 1], [5, 2, 2]] as const) {
+    const footprint = rectFootprint(width, height)
+    const centre = footprintCentre(footprint)
+    const expected = [tileKey({ x: origin.x + centre.x, y: origin.y + centre.y }), ...outlineWithin(origin, footprint, radius).map(tileKey)].sort()
+    for (let step = 0; step <= 20; step += 1) {
+      const drawn: readonly PositionedCell[] = blast(blastInstance(origin, radius, width, height), context({ timeMs: step * 50, reducedMotion: true }))
+      assert.deepEqual(drawn.map((cell) => tileKey(cell.tile)).sort(), expected, `${width}x${height}, a blast of ${radius}, at ${step * 50} ms`)
+    }
+  }
+})
+
+test("a blast sets off radius-scaled sub-explosions on its own ground, round the body, never on it (sub-effects, cheap path)", () => {
   // Owner, 2026-08-24: "the explosions should also spawn smaller sub-explosions... the effects module
   // should support sub-effects." Built the cheap way docs/system-design/effects.md ("Adding an effect to the vocabulary") asks for first: no new
   // effect id, no child instance, a secondary burst computed inside this recipe's own closed-form hash
@@ -1106,25 +1155,16 @@ test("blastDetonation spawns radius-scaled sub-explosions inside its own reach (
   assert.ok(blast !== undefined)
   const origin = { x: 20, y: 20 }
 
-  // Each sub-burst's own impact mark is the only bold, glyph-bearing cell away from the origin (the
+  // Each sub-burst's own impact mark is the only bold, glyph-bearing cell off the body's centre (the
   // main ring never sets bold) - sampling across the whole window and collecting distinct tiles where
   // one appeared counts how many separate sub-bursts actually fired.
-  const subBurstImpactTiles = (radius: number): Set<string> => {
-    const instance: EffectInstance = {
-      recipe: "fx.blast.detonation",
-      band: "effects",
-      startMs: 0,
-      durationMs: 1000,
-      origin,
-      family: "ravel",
-      params: { radius },
-    }
+  const subBurstImpactTiles = (radius: number, width = 1, height = 1): Set<string> => {
+    const centre = footprintCentre(rectFootprint(width, height))
     const tiles = new Set<string>()
     for (let step = 0; step <= 200; step += 1) {
-      const progress = step / 200
-      for (const cell of blast(instance, context({ timeMs: progress * 1000, reducedMotion: false }))) {
-        if (cell.tile.x === origin.x && cell.tile.y === origin.y) continue
-        if (cell.bold === true && cell.glyph !== "") tiles.add(`${cell.tile.x},${cell.tile.y}`)
+      for (const cell of blast(blastInstance(origin, radius, width, height), context({ timeMs: step * 5 }))) {
+        if (cell.tile.x === origin.x + centre.x && cell.tile.y === origin.y + centre.y) continue
+        if (cell.bold === true && cell.glyph !== "") tiles.add(tileKey(cell.tile))
       }
     }
     return tiles
@@ -1136,46 +1176,45 @@ test("blastDetonation spawns radius-scaled sub-explosions inside its own reach (
   const radius1Tiles = subBurstImpactTiles(1)
   const radius2Tiles = subBurstImpactTiles(2)
   assert.ok(radius1Tiles.size >= 1, `radius-1 blast produced no distinct sub-burst impact tile: ${[...radius1Tiles]}`)
-  assert.ok(
-    radius2Tiles.size >= 2,
-    `radius-2 blast produced fewer sub-burst impact tiles than its own scale expects: ${[...radius2Tiles]}`,
-  )
+  assert.ok(radius2Tiles.size >= 2, `radius-2 blast produced fewer sub-burst impact tiles than its own scale expects: ${[...radius2Tiles]}`)
 
-  // Every sub-burst lands near the main blast, not scattered arbitrarily far - it must read as part
-  // of this explosion, not an unrelated second one landing nearby.
-  for (const key of radius2Tiles) {
-    const [x, y] = key.split(",").map(Number)
-    const distance = Math.max(Math.abs((x ?? 0) - origin.x), Math.abs((y ?? 0) - origin.y))
-    assert.ok(distance <= 4, `a sub-burst landed at distance ${distance} from a radius-2 blast's own origin - too far to read as part of it`)
+  // Every sub-burst goes off on the ground the blast reaches, off the body itself: part of this explosion, and
+  // nowhere it did not reach.
+  for (const [width, height, radius] of [[1, 1, 1], [1, 1, 2], [3, 1, 1], [5, 2, 2]] as const) {
+    const footprint = rectFootprint(width, height)
+    const ground = new Set(tilesWithin(origin, footprint, radius).map(tileKey))
+    const body = new Set(tilesOf(origin, footprint).map(tileKey))
+    for (const key of subBurstImpactTiles(radius, width, height)) {
+      assert.ok(ground.has(key) && !body.has(key), `a ${width}x${height} body's blast of ${radius} set off a sub-burst at ${key}`)
+    }
   }
 })
 
-test("blastDetonation drops sub-explosions under reduced motion, same as the main ring's own expansion", () => {
-  // Sub-bursts are travel and decorative movement - exactly what reduced motion drops
-  // (the three-forms rule) - and the held full-radius ring already carries this beat's causality.
+test("every blast in a battle flashes only what the battle's own blast reached", async () => {
+  // From the kernel's own events: each detonation's ring and sub-bursts, at every instant of their window, stay on
+  // the ground within its radius of the whole body that blew up - the same footprint the rule measured from.
   const blast = EFFECT_RECIPES["fx.blast.detonation"]
   assert.ok(blast !== undefined)
-  const origin = { x: 20, y: 20 }
-  const radius = 2
-  const instance: EffectInstance = {
-    recipe: "fx.blast.detonation",
-    band: "effects",
-    startMs: 0,
-    durationMs: 1000,
-    origin,
-    family: "ravel",
-    params: { radius },
-  }
-  for (let step = 0; step <= 20; step += 1) {
-    const progress = step / 20
-    for (const cell of blast(instance, context({ timeMs: progress * 1000, reducedMotion: true }))) {
-      const distance = Math.max(Math.abs(cell.tile.x - origin.x), Math.abs(cell.tile.y - origin.y))
-      assert.ok(
-        distance <= radius,
-        `reduced motion drew a cell at distance ${distance}, beyond the held radius ${radius} - a sub-burst leaked through`,
-      )
+  let blasts = 0
+  for (const name of ["ravel-cascade.map.json", "citizens-versus-ravels.map.json", "heavies-clash.map.json"]) {
+    const { run, registry } = await resolveScenario(name)
+    const derived = deriveEffects({ states: [], events: run.events, registry, ticksPerSecond: 12 })
+    for (const event of run.events) {
+      if (event.kind !== "entity.detonated") continue
+      // The first blast drawn there from the tick it went off (held back by a tracer or staggered in a chain, never
+      // drawn sooner), a millisecond allowed for the arithmetic of a tick's time.
+      const instance = derived.find((each) => each.recipe === "fx.blast.detonation" && each.origin.x === event.at.x && each.origin.y === event.at.y && each.startMs >= (event.tick * 1000) / 12 - 1)
+      assert.ok(instance !== undefined, `${name}: no blast drawn for ${event.entity}`)
+      const reached = new Set(tilesWithin(event.at, registry.get(event.contentId).footprint, event.radius).map(tileKey))
+      for (let at = instance.startMs; at < instance.startMs + instance.durationMs; at += 10) {
+        for (const cell of blast(instance, context({ timeMs: at }))) {
+          assert.ok(reached.has(tileKey(cell.tile)), `${name}: ${event.entity}'s blast of ${event.radius} drew ${tileKey(cell.tile)}`)
+        }
+      }
+      blasts += 1
     }
   }
+  assert.ok(blasts > 10, `only ${blasts} blasts were checked`)
 })
 
 test("bigDeathScatter's shockwave eases too: it reaches its full radius before its own window ends", () => {

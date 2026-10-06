@@ -34,6 +34,7 @@
 import { footprintBox, tilesOf } from "../grid/coords.ts"
 import { tilesWithin } from "../grid/reach.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
+import { outlineWithin } from "./reach-outline.ts"
 import { setting } from "../build/all-settings.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
@@ -182,31 +183,22 @@ export type RingStroke = "level" | "upright" | "rise" | "fall"
 export type RingTile = Readonly<{ tile: Coord; stroke: RingStroke }>
 
 /**
- * The outline of a reach: the last tiles it reaches — every tile within `radius` of the footprint anchored at
- * `anchor`, by the kernel's own test (`tilesWithin`, `footprintWithin`), with a four-way neighbour that is not,
- * never a tile of the footprint itself — each with its stroke: `level` straight above or below the footprint,
- * `upright` straight beside it, and across the corners `rise` (`/`, north-west and south-east) or `fall` (`\`,
- * north-east and south-west). In reading order. A row counts two columns, so a slant of the outline runs two tiles
- * across for each row, two strokes a row with no gap between rows: from one tile a reach of 6 is drawn 13 tiles
- * wide and 7 tall, as wide as it is tall on screen. Pure, and in tiles: the view lays it on cells.
+ * The outline of a reach (`outlineWithin`: the last tiles it reaches, as the kernel measures range), each with its
+ * stroke: `level` straight above or below the footprint, `upright` straight beside it, and across the corners
+ * `rise` (`/`, north-west and south-east) or `fall` (`\`, north-east and south-west). In reading order. A row
+ * counts two columns, so a slant of the outline runs two tiles across for each row, two strokes a row with no gap
+ * between rows: from one tile a reach of 6 is drawn 13 tiles wide and 7 tall, as wide as it is tall on screen.
+ * Pure, and in tiles: the view lays it on cells.
  */
 export function reachOutline(anchor: Coord, footprint: Footprint, radius: number): RingTile[] {
   const { left, right, top, bottom } = footprintBox(anchor, footprint)
-  const own = new Set(tilesOf(anchor, footprint).map(keyOf))
-  const reached = tilesWithin(anchor, footprint, radius)
-  const inside = new Set(reached.map(keyOf))
-  const isInside = (x: number, y: number): boolean => inside.has(`${x},${y}`)
-  const ring: RingTile[] = []
-  for (const tile of reached) {
+  return outlineWithin(anchor, footprint, radius).map((tile) => {
     const { x, y } = tile
-    if (own.has(keyOf(tile))) continue
-    if (isInside(x - 1, y) && isInside(x + 1, y) && isInside(x, y - 1) && isInside(x, y + 1)) continue
     const across = x >= left && x <= right
     const along = y >= top && y <= bottom
     const stroke: RingStroke = across ? "level" : along ? "upright" : (x < left) === (y < top) ? "rise" : "fall"
-    ring.push({ tile, stroke })
-  }
-  return ring
+    return { tile, stroke }
+  })
 }
 
 /** A reach's strokes in each glyph pack. */

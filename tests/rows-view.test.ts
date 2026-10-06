@@ -22,6 +22,7 @@ import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
 import { reachOutline, roomApron } from "../src/view/build-areas.ts"
+import { outlineWithin } from "../src/view/reach-outline.ts"
 import { LOOK_AHEAD, trailGlyph, trailMarks } from "../src/view/build-grid.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -145,6 +146,35 @@ test("the live screen at 128 columns draws a tile one column wide too", async ()
 })
 
 // --- A reach, the build range and the room a Barracks keeps -------------------------------------------------
+
+test("a reach's outline is its last tiles: from one tile a reach of 6 is a ring two tiles thick on its slants, a reach of 1 what touches", () => {
+  // The picture `src/view/reach-outline.ts` draws, `@` the tile reached from: every tile within the reach with a
+  // four-way neighbour outside it, the rule's own (`tilesWithin`).
+  const picture = [
+    "      .      ",
+    "    .. ..    ",
+    "  ..     ..  ",
+    "..    @    ..",
+    "  ..     ..  ",
+    "    .. ..    ",
+    "      .      ",
+  ]
+  const origin = { x: 20, y: 10 }
+  const key = (tile: Coord): string => `${tile.x},${tile.y}`
+  const outline = new Set(outlineWithin(origin, ONE, 6).map(key))
+  const drawn = picture.map((line, row) =>
+    [...line].map((_mark, column) => (outline.has(key({ x: origin.x - 6 + column, y: origin.y - 3 + row })) ? "." : " ")).join(""),
+  )
+  assert.deepEqual(drawn, picture.map((line) => line.replace("@", " ")))
+  assert.equal(outline.size, picture.join("").split(".").length - 1, "the outline reaches past the picture")
+  // A reach of 1 is touching along a side, the tile straight above as much as the one beside; a reach of 0 has none.
+  assert.deepEqual(outlineWithin(origin, ONE, 1), [{ x: 20, y: 9 }, { x: 19, y: 10 }, { x: 21, y: 10 }, { x: 20, y: 11 }])
+  assert.deepEqual(outlineWithin(origin, ONE, 0), [])
+  // Round a body, never on it: a Barracks's reach of 1 is the ten tiles touching its sides.
+  const barracks = FIXTURE_REGISTRY.get(BARRACKS).footprint
+  assert.equal(outlineWithin(origin, barracks, 1).length, 10)
+  assert.ok(outlineWithin(origin, barracks, 4).every((tile) => !barracks.some((offset) => origin.x + offset.x === tile.x && origin.y + offset.y === tile.y)))
+})
 
 test("a Turret's reach round its ghost is 13 tiles wide and 7 tall: its range of 6 is six columns either side and three rows up and down", () => {
   assert.equal(FIXTURE_REGISTRY.get(TURRET).attack?.range, 6)
