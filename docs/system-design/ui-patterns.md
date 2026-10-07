@@ -81,7 +81,8 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   works the menu it is hidden, and the next menu key only shows it again (`BuildState.highlightHidden`).
   (RULE — `tests/build-focus.test.ts`)
 - **A key means one thing per screen.** Arrows and Enter/Space follow focus; digits always address their
-  row; letters always name commands. Tab toggles focus; Left and Right on the menu only flicker the row.
+  row; letters always name commands, except `h` `j` `k` `l`, which are the arrows everywhere (the right
+  hand's keys may be navigation, the left hand's are hotkeys). Tab toggles focus; Left and Right on the menu only flicker the row.
   (RULE — `tests/build-focus.test.ts`, `tests/build-menu.test.ts`)
 - **The map has three modes, each with its own hint**: **placing** (a building armed, its ghost at the
   cursor, its card in the panel), **Explore Map** (the panel describes what is under the cursor) and

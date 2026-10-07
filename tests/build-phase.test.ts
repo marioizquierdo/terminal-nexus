@@ -12,6 +12,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildLayout, cellForTile, constructLines } from "../src/build/layout.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
+import type { KeyboardContext } from "../src/build/keyboard.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import { defaultValue } from "../src/build/all-settings.ts"
 import {
@@ -292,10 +293,39 @@ test("keyboard: Esc is cancel and x is back in every focus, and q opens the game
 test("keyboard: a letter this screen does not bind means nothing at all", () => {
   // `t` was the click-mode toggle until it was retired. A retired binding that quietly still does
   // something is worse than one that never existed, so it is asserted dead rather than forgotten.
-  const context = { itemCount: 3, armed: true }
-  for (const key of ["t", "h", "j", "k", "l"]) {
-    assert.equal(buildKeyboardCommand(key, context), null, `"${key}" should mean nothing here`)
+  assert.equal(buildKeyboardCommand("t", { itemCount: 3, armed: true }), null, `"t" should mean nothing here`)
+})
+
+test("keyboard: h j k l are the arrows everywhere, and H J K L the fast move", () => {
+  // The right hand's keys may be navigation, the left hand's are hotkeys (input.md): vim's four are
+  // the arrows on the map, in the menu and in every popup, so no row may ever take one as its hotkey.
+  const pairs: ReadonlyArray<readonly [string, string]> = [
+    ["h", LEFT],
+    ["j", DOWN],
+    ["k", UP],
+    ["l", RIGHT],
+    ["H", SHIFT_LEFT],
+    ["J", `${ESC}[1;2B`],
+    ["K", `${ESC}[1;2A`],
+    ["L", SHIFT_RIGHT],
+  ]
+  const context = starterContext()
+  const menu = applyBuildCommand(context, createBuildState(context, { x: 18, y: 13 }, { width: 48, height: 16 }), { kind: "open-game-menu" })
+  const contexts: readonly KeyboardContext[] = [
+    { itemCount: 3, armed: false, focus: "grid" },
+    { itemCount: 3, armed: true, focus: "grid" },
+    { itemCount: 3, armed: false, focus: "menu" },
+    { itemCount: 3, armed: false, focus: "grid", pulse: true },
+    { itemCount: 3, armed: false, popup: "game-menu", popupSpec: popupSpec(context, menu) },
+  ]
+  for (const keyContext of contexts) {
+    for (const [vim, arrow] of pairs) {
+      assert.deepEqual(buildKeyboardCommand(vim, keyContext), buildKeyboardCommand(arrow, keyContext), `${vim} in ${JSON.stringify(keyContext.focus ?? keyContext.popup)}`)
+    }
   }
+  // On the map they really move the cursor, and Shift really jumps.
+  assert.deepEqual(buildKeyboardCommand("l", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 1, dy: 0 })
+  assert.deepEqual(buildKeyboardCommand("J", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 0, dy: defaultValue("jumpStep") })
 })
 
 test("mouse: the wheel moves the cursor five tiles and drags the camera with it", () => {
