@@ -3,9 +3,8 @@
 // What a card says is data built elsewhere (`src/build/card.ts`, from `src/content/cards.ts`); this file
 // only draws it.
 
-import type { Card, CardIcon, CardStat } from "../build/card.ts"
+import type { Card, CardIcon } from "../build/card.ts"
 import { currentCard } from "../build/card.ts"
-import { reachShape } from "../build/reach.ts"
 import type { BuildLayout } from "../build/layout.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, menuEntryRow, menuFloor } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
@@ -182,8 +181,8 @@ function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
  * One card, drawn one way (Mario: "title, subtitle, description, stats"): its icon — a building's
  * own glyphs, or a bare tile's — with its title beside it and its subtitle under the title, wrapped
  * there should it ever be wider than the room beside the icon; then its description, wrapped between
- * words and never cut; then a Commander's skill; then its numbers as label/value rows, each reach's shape
- * beside its number or under it, as many as the panel has room for. The same for every card: a building
+ * words and never cut; then a Commander's skill; then its numbers as label/value rows, as many as the panel
+ * has room for. The same for every card: a building
  * being placed, a planned or standing one, open ground, rock, a deposit, a unit of either side.
  *
  * **The one place a card's look would change with where it shows** — placing a building (whose title
@@ -231,11 +230,11 @@ function drawCardBody(
     row += 1
   }
 
-  // What follows the description: a Commander's skill, then the numbers, each reach's shape where it goes
-  // (`statRows`). A blank line comes before each while there is room for it and every line after it — the one
-  // before the skill first — so at 80 x 24 the tallest card, Vasse's, closes them up rather than lose a number.
+  // What follows the description: a Commander's skill, then the numbers, a row each. A blank line comes before
+  // each while there is room for it and every line after it — the one before the skill first — so at 80 x 24 the
+  // tallest card, Vasse's, closes them up rather than lose a number.
   const skill = skillLines(input, card, limit)
-  const numberRows = card.stats.flatMap((stat) => statRows(stat, limit))
+  const numberRows = card.stats
   if (description.length > 0 && row + skill.lines.length + numberRows.length <= floor) row += 1
 
   // A Commander's skill that works on its own, the way a Nexus power is written: its name, bold, opening one
@@ -262,23 +261,6 @@ function drawCardBody(
   fadeFrom(cells, numbers, look.hidden, look.capability)
 }
 
-/**
- * The rows one of a card's numbers takes on a panel `limit` glyphs wide: its label and value — and, for a reach,
- * its shape (`CardStat.shape`) beside the value where the row has room for both ("ATTACK  7, touching"), else on
- * a row of its own under it, right-aligned like a value, with no label of its own ("ATTACK  6", then "6 across, 3
- * up/down"). A number with no value says its shape alone, beside its label or under it ("BUILD RANGE", then the
- * shape). Every other number is one row.
- */
-function statRows(stat: CardStat, limit: number): readonly CardStat[] {
-  if (stat.shape === undefined) return [stat]
-  const beside = stat.value === "" ? stat.shape : `${stat.value}, ${stat.shape}`
-  if (stat.label.length + 1 + beside.length <= limit) return [{ label: stat.label, value: beside }]
-  return [
-    { label: stat.label, value: stat.value },
-    { label: "", value: stat.shape },
-  ]
-}
-
 /** What a card says of the skill its unit has on its own: the lines it is drawn in, and the name that opens the
  *  first of them, drawn bold — the name, then a colon, then the sentence. Nothing for anything else. */
 export type SkillLines = Readonly<{ name: string; lines: readonly string[] }>
@@ -287,12 +269,12 @@ const NO_SKILL: SkillLines = { name: "", lines: [] }
 
 /**
  * What a card says of the skill its unit has on its own — a Commander's aura, Vasse's By the Book: its name, then
- * one plain sentence of what it does and how far it reaches, wrapped to the panel ("By the Book: she and her
- * units take 25% less damage within 4 across, 2 up/down.") — at the strength the Experiment sets now, which is
- * the strength the battle will run on (`auraRegistry`, `src/match/commander.ts`). Nothing for anything else, nor
- * while the Experiment has turned it off. The name opens the sentence rather than standing on a line of its own,
- * and its reach is said in the sentence, so it takes no more rows than it needs: at 80 x 24 Vasse's card has none to
- * spare.
+ * one plain sentence of what it does and how far it reaches, its range said as a card says any range, one number,
+ * wrapped to the panel ("By the Book: she and her units within range 4 take 25% less damage.") — at the strength
+ * the Experiment sets now, which is the strength the battle will run on (`auraRegistry`, `src/match/commander.ts`).
+ * Nothing for anything else, nor while the Experiment has turned it off. The name opens the sentence rather than
+ * standing on a line of its own, and its range is said in the sentence, so it takes no more rows than it needs: at
+ * 80 x 24 Vasse's card has none to spare.
  */
 export function skillLines(input: Pick<BuildCompositionInput, "context" | "state">, card: Card, limit: number): SkillLines {
   if (card.icon.kind !== "entity") return NO_SKILL
@@ -301,9 +283,9 @@ export function skillLines(input: Pick<BuildCompositionInput, "context" | "state
   const less = setting(input.state, "commanderAura")
   if (less === 0) return NO_SKILL
   const name = `${aura.name ?? "Aura"}:`
-  // A reach of 1 is touching, which reads "beside her" in a sentence about who is near her.
-  const where = aura.radius === 1 ? "beside her" : `within ${reachShape(aura.radius)}`
-  return { name, lines: wrapWords(`${name} she and her units take ${less}% less damage ${where}.`, limit) }
+  // A range of 1 is what is next to her.
+  const who = aura.radius === 1 ? "she and the units next to her" : `she and her units within range ${aura.radius}`
+  return { name, lines: wrapWords(`${name} ${who} take ${less}% less damage.`, limit) }
 }
 
 /** A card's icon at `top`: a thing's own glyphs as its side draws them — or, while the card is

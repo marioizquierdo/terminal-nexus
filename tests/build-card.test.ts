@@ -14,7 +14,6 @@ import { setting } from "../src/build/all-settings.ts"
 import { defaultExperiments } from "../src/build/experiments.ts"
 import { hint } from "../src/build/help.ts"
 import { currentCard, wavesStat } from "../src/build/card.ts"
-import { reachShape } from "../src/build/reach.ts"
 import { STARTER_CATALOG, STARTER_STANDING } from "../src/build/catalog.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, EXPLORE_ROW, NEXUS_ROW, menuEntryRow, menuFloor, startRow } from "../src/build/layout.ts"
@@ -138,21 +137,9 @@ test("a building's card says the wave it spawns — how many of what, and when �
   assert.ok("WAVES 4 at 5s, 15s, 25s".length <= side.layout.panelLimit, "three waves do not fit the narrowest card")
 })
 
-// --- A reach's shape --------------------------------------------------------------------------------
+// --- A range ----------------------------------------------------------------------------------------
 
-test("a reach is said by its shape: R across and half as many rows up and down, rounded down; a reach of 1 is touching", () => {
-  // A row counts two columns in every distance, so a reach looks round on screen.
-  assert.equal(reachShape(1), "touching")
-  assert.equal(reachShape(2), "2 across, 1 up/down")
-  assert.equal(reachShape(4), "4 across, 2 up/down")
-  assert.equal(reachShape(6), "6 across, 3 up/down")
-  assert.equal(reachShape(8), "8 across, 4 up/down")
-  // An odd reach's last column reaches no further row.
-  assert.equal(reachShape(3), "3 across, 1 up/down")
-  assert.equal(reachShape(5), "5 across, 2 up/down")
-})
-
-test("a turret's card shows its attack: how hard it hits, and its reach's shape on the line under it", () => {
+test("a turret's card shows its attack: how hard it hits, then its range as one number, the range across", () => {
   const side = buildSide()
   keys(side, "3")
   assert.equal(side.build.state.armed, 2)
@@ -160,13 +147,15 @@ test("a turret's card shows its attack: how hard it hits, and its reach's shape 
   assert.match(card, /\[3\] Turret +>/)
   const attack = side.context.registry.get("structure.bench.beamturret").attack
   assert.ok(attack !== undefined && attack.range > 1)
-  assert.match(card, new RegExp(`^ATTACK +${attack.damage}\\n +${reachShape(attack.range)}$`, "m"))
-  assert.doesNotMatch(card, /at range/, "the card still counts its reach as a bare number")
+  assert.match(card, new RegExp(`^ATTACK +${attack.damage}\\nRANGE +${attack.range}$`, "m"))
+  // A row counts two columns, so a range of 6 also reaches 3 rows up and down; the map draws that, the card does
+  // not say it.
+  assert.doesNotMatch(card, /across|up\/down|touching/, "the card still says a range's shape")
   assert.doesNotMatch(card, /Barracks/)
 })
 
-test("a unit that fights hand to hand says touching beside its attack; one that shoots says its reach's shape under it", () => {
-  for (const [contentId, beside] of [
+test("a unit that fights hand to hand says melee for its range; one that shoots says its range as one number", () => {
+  for (const [contentId, melee] of [
     ["unit.citizen.trooper", true],
     ["unit.ravel.raider", true],
     ["unit.citizen.marksman", false],
@@ -176,11 +165,10 @@ test("a unit that fights hand to hand says touching beside its attack; one that 
     exploreIncoming(side, contentId)
     const attack = side.context.registry.get(contentId).attack
     assert.ok(attack !== undefined)
+    assert.equal(attack.kind === "melee", melee, `${contentId}: a ${attack.kind} attack`)
     const card = panelLines(side, compose(side)).join("\n")
-    const shape = reachShape(attack.range)
-    assert.equal(shape === "touching", beside, `${contentId}: a reach of ${attack.range}`)
-    const said = beside ? `^ATTACK +${attack.damage}, touching$` : `^ATTACK +${attack.damage}\\n +${shape}$`
-    assert.match(card, new RegExp(said, "m"), contentId)
+    const range = melee ? "melee" : String(attack.range)
+    assert.match(card, new RegExp(`^ATTACK +${attack.damage}\\nRANGE +${range}$`, "m"), contentId)
   }
 })
 
@@ -205,24 +193,24 @@ test("Explore Map's card says what is under the cursor as it moves: open ground,
   assert.match(screenText(planned), /Open ground/)
 })
 
-test("a building's build range is a reach's shape: now for one standing, from next round for one being placed or planned, none for one cut off", () => {
-  // Only what stands gives build range; a building planned this round gives its own once it stands. The shape is
-  // the "Build range" Experiment's value as any reach is said, whatever the value is.
+test("a building's build range is one number: now for one standing, for next round for one being placed or planned, none for one cut off", () => {
+  // Only what stands gives build range; a building planned this round gives its own once it stands. The number is
+  // the "Build range" Experiment's value, said as any range is, whatever the value is.
   const range = (side: Side) => currentCard(side.context, side.build.state)?.stats.find((stat) => stat.label === "BUILD RANGE")
   const side = buildSide()
-  const shape = reachShape(setting(side.build.state, "buildRange"))
+  const radius = setting(side.build.state, "buildRange")
   keys(side, "3")
-  assert.deepEqual(range(side), { label: "BUILD RANGE", value: "from next round", shape }, "the card of a building being placed")
-  assert.match(panelLines(side, compose(side)).join("\n"), new RegExp(`^BUILD RANGE +from next round\\n +${shape}$`, "m"), "the words do not fit the panel")
+  assert.deepEqual(range(side), { label: "BUILD RANGE", value: `${radius} (next round)` }, "the card of a building being placed")
+  assert.match(panelLines(side, compose(side)).join("\n"), new RegExp(`^BUILD RANGE +${radius} \\(next round\\)$`, "m"), "the words do not fit the panel")
   keys(side, ENTER, "e")
   moveTo(side, OPEN_GROUND)
   assert.equal(currentCard(side.context, side.build.state)?.title, "Turret")
-  assert.deepEqual(range(side), { label: "BUILD RANGE", value: "from next round", shape }, "the card of a planned building")
+  assert.deepEqual(range(side), { label: "BUILD RANGE", value: `${radius} (next round)` }, "the card of a planned building")
   moveTo(side, { x: 26, y: 10 })
-  assert.deepEqual(range(side), { label: "BUILD RANGE", value: "", shape }, "the card of the standing Barracks")
-  assert.match(panelLines(side, compose(side)).join("\n"), new RegExp(`^BUILD RANGE *\\n +${shape}$`, "m"), "the standing Barracks's shape is not under its label")
-  // A Barracks standing beyond the reach of every building linked to the Nexus is cut off, and gives none: no
-  // shape to say, at every build range offered.
+  assert.deepEqual(range(side), { label: "BUILD RANGE", value: String(radius) }, "the card of the standing Barracks")
+  assert.match(panelLines(side, compose(side)).join("\n"), new RegExp(`^BUILD RANGE +${radius}$`, "m"), "the standing Barracks's build range is not on its row")
+  // A Barracks standing beyond the reach of every building linked to the Nexus is cut off, and gives none, at
+  // every build range offered.
   const far = { x: 34, y: 18 }
   const apart = buildSide({
     context: starterContext(undefined, { standing: [...STARTER_STANDING, { contentId: "structure.citizen.barracks", anchor: far }] }),
@@ -317,13 +305,12 @@ test("every card fits the panel whole — its subtitle on one line beside the ic
         // The description, read back off the panel, is all there, word for word.
         const body = lines.slice(CARD_FIRST_ROW + 2).map((line) => line.trim()).filter((line) => line !== "")
         assert.ok(body.join(" ").startsWith(card.description), `${where}: the description is cut`)
-        // Every number, and every reach's shape: beside its value, or on the line under it.
+        // Every number, its label and its value on one row.
         for (const stat of card.stats) {
-          const beside = stat.shape === undefined ? stat.value : stat.value === "" ? stat.shape : `${stat.value}, ${stat.shape}`
-          if (body.some((line) => line.startsWith(stat.label) && line.endsWith(beside))) continue
-          const at = body.findIndex((line) => line.startsWith(stat.label) && line.endsWith(stat.value))
-          assert.ok(at >= 0, `${where}: ${stat.label} is missing`)
-          assert.equal(body[at + 1], stat.shape, `${where}: ${stat.label}'s reach is not said under it`)
+          assert.ok(
+            body.some((line) => line.startsWith(stat.label) && line.endsWith(stat.value)),
+            `${where}: ${stat.label} is missing`,
+          )
         }
         // Nothing runs past the last row the card may use, into the Start Battle Round row or the bottom bar.
         for (let row = menuFloor(side.layout) + 1; row <= side.layout.panelLastRow; row += 1) {

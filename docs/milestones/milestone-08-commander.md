@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8A, round 7 — rows x2, the rule: a row counts two columns in every distance and step, computed in one place and explained in the grid design with pictures; one tile width, whole-row reaches, groups set down round, and cards that say a reach's shape.
+**Current step:** 8A, round 8 — genre words: a card says a range as one number, "melee" for a unit that fights hand to hand, and the game's own phrasing gives way to the genre's standard words where it has them.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -182,6 +182,19 @@ design it is. Built on a new pull request.
       made. PERIMETER's outcomes under the rule are measured and written down.
 - [x] Square bodies, every unit two columns wide, are written down in reserve, not built.
 - [x] Mario's sparse formation, a column kept between units, is written down for the next pull request, not built.
+
+### Step 8A, round 8 — Genre words
+
+Mario's note after the rows x2 pull request merged ([his words](../history/feedback/2026-10-07-genre-words.md)):
+a card says only the range across, and "melee" in place of "touching"; and wherever the game's text invents its own
+way of saying something the genre already names, it uses the genre's word. Built on a new pull request.
+
+- [ ] A card says a range as one number, the range across, and a unit that fights hand to hand says melee; the
+      build range and Vasse's aura are said the same way.
+- [ ] Every text a player reads is reviewed for words the game invented where the genre has its own: the clear ones
+      use the genre's word, and the ones only Mario can settle are put to him with a recommendation.
+- [ ] Setting names change only where a player reads them; the names an export carries stay, so an export he pasted
+      before still loads.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

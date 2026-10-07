@@ -238,28 +238,26 @@ title screen's menu.
 - **A card is four parts, as data: a title, a subtitle, a description and its numbers.** The icon is the
   thing's own glyphs, or a bare tile's; the title sits beside it with the subtitle under it — one short line
   on what the thing is for; the description is two or three plain sentences with a little more detail, wrapped
-  under the icon; then the numbers as label/value rows — cost where the menu sells it, health, size and
-  attack, the wave a building spawns (`WAVE 4 troopers at 5s`, or `WAVES 4 at 5s, 15s, 25s` for several), the
-  building's build range (its shape, see *A reach's shape*; `from next round` for one being placed or planned,
-  which gives none until it stands; `cut off` in Explore Map for a standing one cut off from the Nexus), or a bare
-  tile's position. **No status
+  under the icon; then the numbers as label/value rows, one row each — cost where the menu sells it, health,
+  size, attack and range, the wave a building spawns (`WAVE 4 troopers at 5s`, or `WAVES 4 at 5s, 15s, 25s` for
+  several), the building's build range (one number, see *A range on a card*; `6 (next round)` for one being
+  placed or planned, which gives none until it stands; `cut off` in Explore Map for a standing one cut off from
+  the Nexus), or a bare tile's position. **No status
   line**: planned, standing or about to be placed is plain from the rest of the screen. The words are written
   with the content (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text
   never cuts a word**; if the words are too long, shorten them. One function draws every card
   (`drawCardBody`): that is where a later round would change the look for placing a building (where the title
   repeats the header), for exploring in the Build Phase, or for exploring during a Pulse. (RULE for the four
   parts and the fit — `tests/build-card.test.ts`)
-- ***A reach's shape*** (a named pattern; a row counts two columns in every distance, [`grid.md`](grid.md)):
-  **every reach a card states is said by its shape, never as a bare number** — an attack's, the build range, a
-  Commander's aura. A reach of R is "R across, M up/down", M being R ÷ 2 rounded down (`6 across, 3 up/down`), and a
-  reach of 1 is `touching`; one helper says it (`reachShape`, `src/build/reach.ts`). An attack keeps its damage on
-  its row; `touching` goes beside it (`ATTACK  7, touching`), any other shape on the row under it, right-aligned
-  like a value, with no label of its own. The build range's shape goes under its label, or under `from next
-  round`. "up/down" rather than "up and down" so the tallest card, Vasse's, keeps her skill to three lines at
-  80 × 24. (RULE — `tests/build-card.test.ts`)
+- ***A range on a card*** (a named pattern; a row counts two columns in every distance, [`grid.md`](grid.md)):
+  **every range a card states is one number, the range across**, as strategy games say a range — an attack's,
+  the build range, a Commander's aura. The rest of the shape is the map's to show: a range of 6 also reaches 3 rows
+  up and down, and the map draws it wherever it shows a range. An attack is two rows, its damage and then its range
+  (`ATTACK  6`, `RANGE  6`), and a melee attack's range says `melee` (the owner: "Cards should only say horizontal
+  reach ... And "touching" should be "melee"."). (RULE — `tests/build-card.test.ts`)
 - **A Commander's skill is on her card**: its name, bold, opening one plain sentence at the strength the battle
-  will run on, its reach said as every reach is ("By the Book: she and her units take 25% less damage within 4
-  across, 2 up/down."); nothing while the Experiment has it off. Hers is the tallest card: at 80 × 24 the blank
+  will run on, its range said as every range is, one number ("By the Book: she and her units within range 4 take
+  25% less damage."); nothing while the Experiment has it off. Hers is the tallest card: at 80 × 24 the blank
   lines before her skill and before her numbers close up rather than lose a number. (RULE —
   `tests/commander-screen.test.ts`, `tests/build-card.test.ts`)
 - It appears with the **card reveal** (see *Motion and transitions*).
