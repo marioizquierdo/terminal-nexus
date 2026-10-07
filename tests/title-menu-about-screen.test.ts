@@ -225,7 +225,7 @@ test("Back's hotkey, Enter on Back, a click on Back and Esc each return to the t
     const text = menu.screen()
     const frame = menu.frames.at(-1) as ReadonlyCellFrame
     await menu.quit()
-    assert.ok(text.includes("top-level menu"), `${way} did not return to the top-level menu`)
+    assert.ok(text.includes("main menu"), `${way} did not return to the top-level menu`)
     assert.ok(text.includes(menuItemLabel(EXIT)), `${way}: the top-level rows are not back`)
     assert.ok(!text.includes("Contributions"), `${way}: the About screen's words are still on screen`)
     // Finishing goes back to where it began: the highlight waits on About, not on the first row.

@@ -381,6 +381,7 @@ export const ALL_SETTINGS = {
     label: "Next round",
     question: "After a round's result: wait for Enter, or begin the next Build Phase on its own a few seconds later.",
     values: NEXT_ROUND,
+    names: { key: "manual", auto: "auto" },
     default: "key",
   },
   /** How long a round's result stays before the next Build Phase begins on its own, when Next round is
@@ -421,7 +422,7 @@ export const ALL_SETTINGS = {
     tier: "experiment",
     section: "mission",
     label: "Build range",
-    question: "How far you may build from the Nexus and linked buildings: 6 is 6 across, 3 up/down. Buildings link where ranges meet.",
+    question: "How far from the Nexus and linked buildings you may build. Buildings link where their build ranges meet.",
     values: [4, 6, 8],
     unit: "tiles",
     default: 6,
@@ -458,9 +459,9 @@ export const ALL_SETTINGS = {
    *  battle starts (`src/cli/pulse-run.ts`), in the kernel's ticks. */
   firstWave: { tier: "tuned", unit: "seconds", default: 5 },
 
-  // --- Room around a Barracks (the Commander round 5) ------------------------------------------------
+  // --- Spawn space around a Barracks (the Commander round 5) -----------------------------------------
   // The owner: "barraks and other spawning buildings should require minimum distance from other buildings so
-  // they leave space for units spawning". It asks how much room a Barracks needs: enough that its troops always
+  // they leave space for units spawning". It asks how much space a Barracks needs: enough that its troops always
   // have somewhere to appear, and never so much that there is nowhere left to build one.
 
   /** How many free tiles a building that makes units (a Barracks, a Hatchery) keeps round it, measured as range
@@ -472,8 +473,8 @@ export const ALL_SETTINGS = {
   spawnClearance: {
     tier: "experiment",
     section: "mission",
-    label: "Barracks room",
-    question: "The room a Barracks or Hatchery keeps for its troops, where nothing may be built: 1 is what touches it, 2 two across too.",
+    label: "Spawn space",
+    question: "Kept free around a Barracks or Hatchery so its troops can spawn: 1 is the tiles next to it, 2 adds a column each side.",
     values: [1, 2],
     unit: "tiles",
     default: 1,

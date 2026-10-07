@@ -476,7 +476,7 @@ function nextLine(context: BuildContext, state: BuildState): BuildState {
  * "(1)" and the Battle Round screen say it is waiting, and nothing refuses for it.
  */
 function editLock(state: BuildState): StatusMessage | null {
-  if (state.committed) return status("The Build Phase is committed.", "warning")
+  if (state.committed) return status("The plan is locked in.", "warning")
   if (state.popup === "battle-round") return status("Start or go back first: [s] start, [esc] back.", "warning")
   if (state.popup !== null) return status("Close the popup first: [esc].", "warning")
   return null
@@ -695,7 +695,7 @@ function crowdingReason(context: BuildContext, crowded: Crowding): string {
  * (`src/build/territory.ts`); when none is, the first of its tiles on the Grid is named. Then each tile's own
  * problem — off the Grid, rock, a building already there — and last **the room a building that makes units
  * keeps** (`crowding`), which names the building it is too near. `radius` and `clearance` are the "Build
- * range" and "Barracks room" Experiments' values — their defaults when the caller has no state to read them
+ * range" and "Spawn space" Experiments' values — their defaults when the caller has no state to read them
  * from.
  */
 export function legalityAt(
@@ -730,7 +730,7 @@ export function legalityAt(
     }
     const occupant = claimed.get(`${tile.x},${tile.y}`)
     if (occupant !== undefined) {
-      return { ok: false, reason: `the ${shortName(context, occupant)} is here`, tile }
+      return { ok: false, reason: `the ${displayName(context, occupant)} is here`, tile }
     }
   }
   const crowded = crowding(context.registry, buildingsOn(context, planned), contentId, anchor, clearance)
@@ -780,7 +780,7 @@ export type ArmingSpot = Readonly<{ tile: Coord; found: boolean }>
 
 /**
  * The rules a spot is held to beyond fitting on open ground: a tile inside the build range (`territory`), and
- * the room of a building that makes units (`room`: the building being armed, and the "Barracks room"
+ * the room of a building that makes units (`room`: the building being armed, and the "Spawn space"
  * Experiment's value). Neither, for Explore Map's tile.
  */
 export type ArmingRules = Readonly<{
@@ -1229,7 +1229,7 @@ function place(context: BuildContext, state: BuildState): BuildState {
   if (lock !== null) return { ...state, status: lock }
   const preview = armedPreview(context, state)
   if (preview === null) {
-    return { ...state, status: status("Nothing armed - pick something to build from the menu first.", "warning") }
+    return { ...state, status: status("Nothing selected - pick a building from the menu first.", "warning") }
   }
   if (preview.refusal !== null) {
     // Refused, and nothing moved. Silently sliding a structure to the nearest legal tile is the one
@@ -1616,7 +1616,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return {
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
-        status: status(`${displayName(context, target.contentId)} removed, ${costOf(context, target.contentId)} back.`),
+        status: status(`${displayName(context, target.contentId)} removed, ${costOf(context, target.contentId)} refunded.`),
       }
     }
 
@@ -1628,7 +1628,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return {
         ...state,
         planned: state.planned.slice(0, -1),
-        status: status(`${displayName(context, last.contentId)} undone, ${costOf(context, last.contentId)} back.`),
+        status: status(`${displayName(context, last.contentId)} undone, ${costOf(context, last.contentId)} refunded.`),
       }
     }
 

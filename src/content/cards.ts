@@ -45,7 +45,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "unit.citizen.trooper": {
     title: "Trooper",
     subtitle: "Your foot soldier",
-    description: "Fights at close range and holds the line. You start with a squad; a Barracks trains more.",
+    description: "Fights in melee and holds the line. You start with a squad; a Barracks trains more.",
   },
   "unit.citizen.vasse": {
     title: "Vasse",
@@ -65,12 +65,12 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "unit.ravel.runner": {
     title: "Runner",
     subtitle: "Fast raid biter",
-    description: "Quick and light. It runs at the nearest thing of yours and bites, and bursts when it dies.",
+    description: "Quick and light. It runs at the nearest thing of yours and bites, and explodes when it dies.",
   },
   "unit.ravel.raider": {
     title: "Raider",
     subtitle: "Heavy raid brawler",
-    description: "Long and tough. It crashes into whatever of yours is nearest and hits hard up close.",
+    description: "Long and tough. It crashes into whatever of yours is nearest and hits hard in melee.",
   },
   "unit.ravel.slinger": {
     title: "Slinger",
@@ -80,7 +80,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.ravel.den": {
     title: "Den",
     subtitle: "Raid's forward camp",
-    description: "Scrap welded into a shelter. Cheaper to knock down than a barracks.",
+    description: "Scrap welded into a shelter. Easier to destroy than a Barracks.",
   },
 
   // --- Bare ground ----------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "terrain.deposit": {
     title: "Deposit",
     subtitle: "Resources lie here",
-    description: "A seam of what your credits are counted in, under the same mark. For now you can build and walk on it.",
+    description: "A seam of the resources you spend, under the same mark. For now you can build and walk on it.",
   },
 }
 

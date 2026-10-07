@@ -37,13 +37,13 @@
     {
       "id": "reserve-fund",
       "name": "Reserve Fund",
-      "description": "Adds 30 resource to spend.",
+      "description": "Adds 30 resources to spend.",
       "effect": { "credits": 30 }
     },
     {
       "id": "war-chest",
       "name": "War Chest",
-      "description": "Adds 2000 resource to spend.",
+      "description": "Adds 2000 resources to spend.",
       "effect": { "credits": 2000 },
       "notes": "2000, not a balanced number (the owner's choice): enough to place buildings freely while playtesting placement. Placeholder content, like the whole pool."
     }

@@ -209,7 +209,7 @@ title screen's menu.
 - ***The raid in the panel*** (a named pattern: the owner's "reading the enemy intent is very important
   for basic ui/ux interaction"): the free rows between the buildings and Start Battle Round say what the coming
   round brings, under when it comes (`AS THE ROUND STARTS`, `7 SECONDS IN`): each group's count and where
-  from (a compass point from the Nexus, as the map is drawn: a row weighs as two columns, `inColumns`), its kinds, and what it goes for first (`goes for your
+  from (a compass point from the Nexus, as the map is drawn: a row weighs as two columns, `inColumns`), its kinds, and what it targets first (`targets your
   Barracks`). They are information, not rows: nothing to highlight or click. Short of room they drop the
   kinds, then whole groups (`+2 more`), and a count is never split from its kind. Drawn with the menu,
   so it fades when a card covers it. (RULE — `tests/raid-view.test.ts`)
@@ -435,7 +435,7 @@ uses it rather than a new blend.
 - **The Controls and hotkeys page** (`[c]` in the game menu, or `?`): every key and click grouped by where
   the player is, from one table (`controlsPage` in `src/build/help.ts`), so a new key is one line there.
   One group has no keys: **THE GROUND**, after THE MAP, the page's one passage on how the ground is counted —
-  "units stand tall, so more fit side by side than one behind another; a row up or down counts two steps across"
+  "rows count double: a row up or down is 2 tiles of range or movement, so range 6 reaches 3 rows up and down"
   — in the text's column, wrapped by hand to the 28 columns it has at 80 × 24. (RULE — `tests/build-help.test.ts`)
 - **The Activity logs window** (`[a]` in the game menu; `a` closes it again) shows what the game
   recorded, newest first: a Filter row whose value Left and Right step through the filters (it comes
@@ -548,9 +548,9 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   without the plan, and a building planned where an arrival would stand moves it when the Pulse starts.
   (RULE — `tests/mission-loop.test.ts`, `tests/raid-view.test.ts`)
 - ***The raid's intent*** (a named pattern): in the Build Phase, never during a Pulse, each coming group has a
-  **trail** to what it goes for first, and **that target is marked**. The target is the kernel's own choice on
+  **trail** to what it targets first, and **that target is marked**. The target is the kernel's own choice on
   the Pulse's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
-  removing a building changes it at once: a building nearer the raid becomes what it goes for. The trail is
+  removing a building changes it at once: a building nearer the raid becomes its target. The trail is
   the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand four
   apart along the way by the Grid's own distance, four columns or two rows (the owner's "1 arrow every 3 tiles",
   made whole rows), in the glyph pack's arrowheads and strokes, dim and faded, on open ground only and never over
@@ -631,9 +631,10 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   Nexus, the arrows look around, and the Pulse never waits for the player.
   (RULE — `tests/pulse-screen.test.ts`)
 - **The panel, in order**: `BATTLE ROUND 1` with the time left until the last shot; what the timer counts and
-  its speed; a line per side (units, a health bar, the number); the last five events in plain words, coloured
-  by side; under them, while she is saying something out of view, her glyph and name and her line; then
-  `[space] Pause` and `[r] Watch again`. Speed (`[`, `]`) and stepping (`.`, `,`) are keys, on the Controls
+  its speed; a line per side (units, a health bar, the number); the last five events in plain words, each thing
+  named as its card names it (`turret > runner`, `swarmer trained`; a Commander by name), coloured by side; under
+  them, while she is saying something out of view, her glyph and name and her line; then `[space] Pause` and
+  `[r] Replay`. Speed (`[`, `]`) and stepping (`.`, `,`) are keys, on the Controls
   page. (RULE — `tests/pulse-screen.test.ts`)
 - **The ending is four beats, in order**: the **last seconds** — only the title's timer flashes, slowly,
   and a soft light sweeps the border like a lighthouse (colour, never a glyph; in monochrome the timer
@@ -642,7 +643,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   the panel and again on the bottom line, colour second. Reduced motion holds the timer lit and the light
   steady, and puts everyone home at once. (RULE — `tests/ending.test.ts`, `tests/pulse-screen.test.ts`)
 - **Nothing the player does changes what the Pulse did**: it was resolved before the first frame, so
-  Watch again only restarts the clock; centring on the Nexus is the same named command a key sends.
+  Replay only restarts the clock; centring on the Nexus is the same named command a key sends.
   (RULE — `tests/pulse-screen.test.ts`)
 - ***The loop***: in a mission, the result says the fight first — `VICTORY`, `DEFEAT`, `DRAW` or
   `TIME'S UP`, and why — then where the mission stands ("Round 1 of 3 is over. The Nexus stands."), and

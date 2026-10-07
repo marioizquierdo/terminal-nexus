@@ -245,7 +245,7 @@ test("s is still Settings inside the game menu, and pressing Start during a Puls
   assert.ok(playing.build.pulse !== null)
   playing.build.handleData("s", playing.layout)
   assert.equal(playing.build.state.popup, null)
-  assert.match(playing.build.state.status.text, /committed/)
+  assert.match(playing.build.state.status.text, /locked in/)
 })
 
 test("at the floor the menu and Start Battle Round fit with no help text between them, and the armed building's card has room", () => {

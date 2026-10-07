@@ -138,7 +138,7 @@ const keyOf = (tile: Coord): string => `${tile.x},${tile.y}`
 /**
  * ***A Barracks's room***, while a building is armed: round every building on the map that keeps room —
  * standing, planned or the raid's — and round the armed one's ghost, moving with it (`shift`), every open tile of
- * the room shows a dim tick, at the "Barracks room" Experiment's size, measured as the room rule measures it
+ * the room shows a dim tick, at the "Spawn space" Experiment's size, measured as the room rule measures it
  * (`roomApron`). In the `territory` band, over the build range's dot and under everything that
  * stands; never on a tile in `avoid` (anything standing, planned or arriving, and the raid's trail), under the
  * ghost, on rock or on a deposit. A building's reach, drawn above it, keeps its strokes where the two cross.

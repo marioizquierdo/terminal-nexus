@@ -390,7 +390,7 @@ test("the build range's dots give way along the raid's trail's whole way, as a r
   assert.deepEqual(glyphsOnTheWay(), unarmed)
 })
 
-test("the room never covers the raid's trail, reads by its tick alone in monochrome, and grows with the Barracks room Experiment", () => {
+test("the room never covers the raid's trail, reads by its tick alone in monochrome, and grows with the Spawn space Experiment", () => {
   const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
   const raid = side.build.raid() ?? []
   const trail = new Set(raid.flatMap((group) => (group.target === null ? [] : trailMarks(group.path, group.target.tiles))).map((mark) => `${mark.tile.x},${mark.tile.y}`))

@@ -155,11 +155,11 @@ test("the panel says the coming raid in every round, inside the panel's free row
   // kinds for them, as it would for a group more.
   const troops = [/^YOUR TROOPS$/, /^\d+ head for the line$/]
   const expected: readonly (readonly RegExp[])[] = [
-    [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}goes for your Barracks$/, ...troops],
-    [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}goes for your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}goes for your /, ...troops],
+    [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}targets your Barracks$/, ...troops],
+    [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}targets your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}targets your /, ...troops],
     // What a group goes for first is the kernel's choice (tests/intent.test.ts): one of the player's buildings, or
     // Vasse, who is named.
-    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}goes for your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}goes for (your |Vasse$)/, ...troops],
+    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}targets your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}targets (your |Vasse$)/, ...troops],
   ]
   everyRound().forEach((side, index) => {
     const { layout } = side
@@ -210,7 +210,7 @@ test("with fewer free rows the panel drops the kinds first, then whole groups, a
   const seven = text(7)
   assert.equal(seven.length, 6)
   for (const line of ["AS THE ROUND STARTS", "13 from the north-east", "8 SECONDS IN", "6 from the east"]) assert.ok(seven.includes(line), line)
-  assert.equal(seven.filter((line) => line.startsWith("goes for ")).length, 2)
+  assert.equal(seven.filter((line) => line.startsWith("targets ")).length, 2)
   assert.ok(!seven.some((line) => /runners|raiders|slingers/.test(line)))
   // Four: the first group whole, and a line for the one left out.
   const four = text(4)
@@ -571,10 +571,10 @@ test("under the raid, the panel says where the player's troops head, in the raid
   // them; never a whole group of the raid, so then the troops' lines are left out.
   const forecast = side.build.raid() ?? []
   const lines = (room: number): string[] => text(raidLines(side.build.round, forecast, { x: 18, y: 10 }, 27, room))
-  assert.deepEqual(lines(7), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks", "", "YOUR TROOPS", "10 head for the line"])
-  assert.deepEqual(lines(6), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "", "YOUR TROOPS", "10 head for the line"])
-  assert.deepEqual(lines(5), ["AS THE ROUND STARTS", "5 from the north-east", "  goes for your Barracks", "YOUR TROOPS", "10 head for the line"])
-  assert.deepEqual(lines(4), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  goes for your Barracks"])
+  assert.deepEqual(lines(7), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  targets your Barracks", "", "YOUR TROOPS", "10 head for the line"])
+  assert.deepEqual(lines(6), ["AS THE ROUND STARTS", "5 from the north-east", "  targets your Barracks", "", "YOUR TROOPS", "10 head for the line"])
+  assert.deepEqual(lines(5), ["AS THE ROUND STARTS", "5 from the north-east", "  targets your Barracks", "YOUR TROOPS", "10 head for the line"])
+  assert.deepEqual(lines(4), ["AS THE ROUND STARTS", "5 from the north-east", "  3 runners, 2 raiders", "  targets your Barracks"])
 })
 
 test("the line the player's troops head for is marked by its corners: the glyph pack's own, in their colour, quiet, in the Build Phase only and never over a glyph", () => {

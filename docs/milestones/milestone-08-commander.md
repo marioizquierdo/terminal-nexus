@@ -189,12 +189,13 @@ Mario's note after the rows x2 pull request merged ([his words](../history/feedb
 a card says only the range across, and "melee" in place of "touching"; and wherever the game's text invents its own
 way of saying something the genre already names, it uses the genre's word. Built on a new pull request.
 
-- [ ] A card says a range as one number, the range across, and a unit that fights hand to hand says melee; the
+- [x] A card says a range as one number, the range across, and a unit that fights hand to hand says melee; the
       build range and Vasse's aura are said the same way.
-- [ ] Every text a player reads is reviewed for words the game invented where the genre has its own: the clear ones
+- [x] Every text a player reads is reviewed for words the game invented where the genre has its own: the clear ones
       use the genre's word, and the ones only Mario can settle are put to him with a recommendation.
-- [ ] Setting names change only where a player reads them; the names an export carries stay, so an export he pasted
+- [x] Setting names change only where a player reads them; the names an export carries stay, so an export he pasted
       before still loads.
+- [x] The battle feed and the bottom line name a thing as its card does, never by the name its content id carries.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

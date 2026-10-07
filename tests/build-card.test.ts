@@ -340,7 +340,7 @@ test("Explore Map's header key, Esc, x and a click on its header go back to wher
     closeIt(fromMap)
     assert.equal(fromMap.build.state.exploreMap, false)
     assert.equal(fromMap.build.state.focus, "grid", `${close[0]} from the map left the map`)
-    assert.equal(hint(fromMap.context, fromMap.build.state).text, "Arrows move the cursor, [enter] explores here, a number arms a building.")
+    assert.equal(hint(fromMap.context, fromMap.build.state).text, "Arrows move the cursor, [enter] explores here, a number selects a building.")
   }
   // Enter or Space with Explore Map already open does nothing more.
   const side = buildSide()

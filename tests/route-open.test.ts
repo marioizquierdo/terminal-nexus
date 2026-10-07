@@ -86,9 +86,9 @@ async function buildAt(at: LevelDestination | undefined): Promise<ReadonlyCellFr
 
 /** What a title menu place's screen shows, and must: its subtitle and words only it has. */
 const TITLE_SCREENS: Readonly<Record<TitleDestination["place"], readonly RegExp[]>> = {
-  menu: [/top-level menu/u, /\[5\] Exit/u],
+  menu: [/main menu/u, /\[5\] Exit/u],
   campaign: [/campaign/u, /Campaign is not built yet/u, /\[1\] Back/u],
-  challenge: [/top-level menu/u, /Challenge is not built yet/u],
+  challenge: [/main menu/u, /Challenge is not built yet/u],
   settings: [/settings/u, /Colour depth/u, /\[5\] Back/u],
   about: [/about/u, /Contributions/u, /\[1\] Back/u],
 }

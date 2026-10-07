@@ -14,7 +14,7 @@ duration, and Challenge (the runs) carries replay value. The two are meant to be
 simultaneously: *campaign (tutorial) and challenge (run).*
 
 **RULE: there are two single-player modes, Campaign and Challenge, and they are designed together**
-(`src/cli/menu.ts` makes them the top-level menu's first two rows; `tests/lifecycle-title-menu.test.ts`
+(`src/cli/menu.ts` makes them the main menu's first two rows; `tests/lifecycle-title-menu.test.ts`
 holds the menu). This document gives them names, a shared vocabulary, and a structure precise enough
 that the game's experience and interface can be built against it — without first deciding how long a
 campaign is, what every mission teaches, or what a run's exact numbers are. Those are decisions for

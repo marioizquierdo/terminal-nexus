@@ -11,7 +11,7 @@ it is done.*
   each Barracks and Hatchery are the room it keeps, where nothing may stand. Explore Map (`e`) over a marksman
   draws its range; the raid's trail is a slow line of arrows. Start the battle without picking a Nexus power:
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
-  MISSION in Settings (`d`), **Barracks room** (1 or 2) is new beside **Build range** and **By the
+  MISSION in Settings (`d`), **Spawn space** (1 or 2) is new beside **Build range** and **By the
   Book**; paste the settings export.
 - **The pull request after this one: a sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)):
   units prefer a free column beside them and not to stand straight above or below another, so a group spreads into
@@ -66,7 +66,7 @@ Small, none blocking.
   credits carried over. Real Nexus powers are Milestone 8's.
 - The incoming raid is a forecast placed against the map without the plan; a building on an arrival's
   tile moves it when the round starts.
-- The walk home is a straight glide over whole tiles, with no routing. Watch again replays a Pulse
+- The walk home is a straight glide over whole tiles, with no routing. Replay plays back a Pulse
   already resolved; it must never resolve a new one.
 
 **From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):

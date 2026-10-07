@@ -84,7 +84,7 @@ has one, the kernel never reads it, and while the "Build range" Experiment is fe
 each ([`pulse.md`](pulse.md), construction territory).
 
 Beside it, `clearance`: the room a building that makes units keeps free round it (the Barracks and the
-Hatchery have one, of one tile); the kernel never reads it either, and while the "Barracks room" Experiment is
+Hatchery have one, of one tile); the kernel never reads it either, and while the "Spawn space" Experiment is
 felt its value stands in for each ([`pulse.md`](pulse.md), room round a building that makes units).
 
 The recipe the Pulse runs today (`ProductionRecipe` in `src/content/types.ts`) is the free part of this one,

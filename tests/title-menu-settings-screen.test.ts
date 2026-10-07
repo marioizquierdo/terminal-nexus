@@ -19,6 +19,7 @@ import { frameToText } from "../src/view/index.ts"
 import { createSettingsStore } from "../src/settings/store.ts"
 import { DEFAULT_SETTINGS, nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../src/settings/types.ts"
 import type { Settings, SettingsStore } from "../src/settings/index.ts"
+import { shownSetting } from "../src/build/all-settings.ts"
 
 const ESC = String.fromCharCode(27)
 const ARROW_DOWN = `${ESC}[B`
@@ -132,7 +133,7 @@ test("every Settings row displays its own hotkey — a hotkey that is not displa
 /** Which row index each cyclable settings id sits at, and what its next value should read as —
  *  reused by both the equivalence test and the live-effect test below. */
 const CYCLABLE_ROWS: readonly { id: string; index: number; nextLabel: (s: Settings) => string }[] = [
-  { id: "capability", index: 0, nextLabel: (s) => `Colour depth: ${nextCapability(s.capability)}` },
+  { id: "capability", index: 0, nextLabel: (s) => `Colour depth: ${shownSetting("capability").format(nextCapability(s.capability))}` },
   { id: "theme", index: 1, nextLabel: (s) => `Background: ${nextTheme(s.theme)}` },
   { id: "glyphPack", index: 2, nextLabel: (s) => `Symbols: ${nextGlyphPack(s.glyphPack)}` },
   {
@@ -178,7 +179,7 @@ test("the Back row returns to the top-level menu", async () => {
     "no item named back exists on the settings screen",
   )
   const text = await settingsFrameAfter((stdin) => stdin.emit("data", Buffer.from(backHotkey)))
-  assert.ok(text.includes("top-level menu"), "Back did not return to the top-level menu")
+  assert.ok(text.includes("main menu"), "Back did not return to the top-level menu")
   assert.ok(!text.includes("Colour depth"), "the settings rows are still on screen after Back")
 })
 
@@ -223,7 +224,7 @@ test(
 
 test("Esc also returns to the top-level menu — the redundant, standard way back", async () => {
   const text = await settingsFrameAfter((stdin) => stdin.emit("data", Buffer.from(ESC)))
-  assert.ok(text.includes("top-level menu"), "Esc did not return to the top-level menu")
+  assert.ok(text.includes("main menu"), "Esc did not return to the top-level menu")
 })
 
 test("Esc does nothing on the top-level menu itself — there is nowhere to back out to", async () => {
@@ -240,7 +241,7 @@ test("Esc does nothing on the top-level menu itself — there is nowhere to back
   await wait(30)
   stdin.emit("data", Buffer.from(ESC))
   await wait(30)
-  assert.ok(stdout.written.includes("top-level menu"), "Esc changed the top-level screen")
+  assert.ok(stdout.written.includes("main menu"), "Esc changed the top-level screen")
   assert.doesNotMatch(stdout.written, /\[\?1049l/, "Esc on the top level quit the application")
   stdin.emit("data", Buffer.from("q"))
   await wait(30)
@@ -398,7 +399,7 @@ test("a setting changed on the Settings screen survives a full stop-and-restart"
     secondStdin.emit("data", Buffer.from(SETTINGS_HOTKEY))
     await wait(30)
     assert.ok(
-      secondStdout.written.includes("Colour depth: color256"),
+      secondStdout.written.includes("Colour depth: 256"),
       "the relaunched session did not show the previously saved colour depth",
     )
     secondStdin.emit("data", Buffer.from("q"))

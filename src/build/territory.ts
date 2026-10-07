@@ -28,7 +28,7 @@
 //   space for units spawning"): no tile of another building may stand within that many tiles of it, measured as
 //   range is (`crowding`, `footprintWithin`): at 1, nothing touches it along a side. Every building on the map
 //   counts — standing or planned, the player's or the raid's, the Grid Nexus too — and it holds both ways: for a
-//   building placed near one, and for one placed near any building. While the "Barracks room" Experiment is being
+//   building placed near one, and for one placed near any building. While the "Spawn space" Experiment is being
 //   felt, its value is every such building's room.
 //
 // What it is not: a path. A range passes over rock, which is refused on its own, and nothing the raid stands
@@ -159,7 +159,7 @@ export function anyInside(territory: Territory, anchor: Coord, footprint: Footpr
 export type Footing = Readonly<{ contentId: string; anchor: Coord }>
 
 /**
- * How many tiles a structure keeps free round it — `override` (the "Barracks room" Experiment's value) for every
+ * How many tiles a structure keeps free round it — `override` (the "Spawn space" Experiment's value) for every
  * structure that keeps room at all, its own `clearance` without one — or `null` for one that keeps none.
  */
 export function clearanceOf(definition: ContentDef, override?: number): number | null {
