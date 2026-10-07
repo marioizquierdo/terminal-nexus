@@ -77,6 +77,26 @@ test("quit passes through the reducer untouched — leaving is not a list concer
 
 const ESC = String.fromCharCode(27)
 
+test("list keys: vim's h j k l are the arrows, and with Shift the fast move", () => {
+  const pairs: ReadonlyArray<readonly [string, string]> = [
+    ["h", `${ESC}[D`],
+    ["j", `${ESC}[B`],
+    ["k", `${ESC}[A`],
+    ["l", `${ESC}[C`],
+    ["H", `${ESC}[1;2D`],
+    ["J", `${ESC}[1;2B`],
+    ["K", `${ESC}[1;2A`],
+    ["L", `${ESC}[1;2C`],
+  ]
+  for (const [vim, arrow] of pairs) {
+    assert.deepEqual(cursorKeyOf(vim), cursorKeyOf(arrow), vim)
+    assert.deepEqual(listKeyOf(vim), listKeyOf(arrow), vim)
+  }
+  // Left and right are no list keys, whichever spelling.
+  assert.equal(listKeyOf("h"), null)
+  assert.equal(listKeyOf("l"), null)
+})
+
 test("list keys: plain arrows step, every fast form the map knows jumps the same way, left and right are not list keys", () => {
   assert.deepEqual(listKeyOf(`${ESC}[A`), { direction: -1, jump: false })
   assert.deepEqual(listKeyOf(`${ESC}OB`), { direction: 1, jump: false })
