@@ -63,7 +63,7 @@ export type BuildCommand =
    * landed on was not drawn, so it chooses nothing.
    */
   | Readonly<{ kind: "click-menu"; entry: number }>
-  /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid; the cursor
+  /** Arm item *n* of the build menu — its digit, from anywhere. Moves focus to the Grid; the cursor
    *  stays where it is when the building can go there, and otherwise moves to the nearest spot that
    *  can take it. A placement or Esc goes back to whichever half had the keyboard.
    *  **While a building is armed the menu stays on it**: its own
@@ -107,7 +107,7 @@ export type BuildCommand =
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
    *  while a building is armed. */
   | Readonly<{ kind: "open-battle-round" }>
-  /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Nexus Pulse starts.
+  /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Battle Round starts.
    *  Going back is the cancel every popup has. */
   | Readonly<{ kind: "start-pulse" }>
   /** Tab: move keyboard focus. To the Grid it arrives in plain navigation; to the menu
@@ -191,7 +191,7 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "export-activity" }>
   /**
-   * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
+   * A Battle Round playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
    * click on the panel's control rows: the same vocabulary `grid watch` has, one keymap across
    * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
    * state's — so it passes through like `quit`, and the session hands it to the Pulse it belongs to.
@@ -370,7 +370,7 @@ export type CommanderAbsence = Readonly<{
 }>
 
 /**
- * One option in the Nexus draft: a Nexus power as the popup offers it, "a name and one plain line of
+ * One option of the Nexus Pulse: a Nexus power as the popup offers it, "a name and one plain line of
  * description" (docs/game-design/commander-armies.md), its key, and the card it came from — what it does once
  * kept, which the reducer never reads beyond its credits.
  */

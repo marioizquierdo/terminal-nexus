@@ -1,4 +1,4 @@
-// Starting a Nexus Pulse from a committed Build Phase, the shell's half: the plan becomes the
+// Starting a Battle Round from a committed Build Phase, the shell's half: the plan becomes the
 // kernel's opening state, the *unmodified* kernel resolves it, and Recall is worked out from where it
 // ended. What these check is the connection — that every ending the kernel has is reachable from the
 // starter map's own data, that the same plan is the same Pulse on every run, and that nothing about how it is

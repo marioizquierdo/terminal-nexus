@@ -1,4 +1,4 @@
-// A mission as data — campaigns.md: "a sequence of Build Phase / Nexus Pulse cycles driven
+// A mission as data — campaigns.md: "a sequence of Build Phase / Battle Round cycles driven
 // by triggers", a trigger being "a condition, and the actions taken when it holds".
 //
 // This file is the **simulation band**, built at the size PERIMETER needs — `spawn`, `target`, `commitPlan`,

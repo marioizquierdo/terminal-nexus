@@ -66,7 +66,7 @@ export type BuildSessionOptions = Readonly<{
   /** The player changed a setting in the Settings popup: the live loop redraws with it and saves it. */
   onSettingsChange?: (settings: Settings) => void
   /**
-   * Resolves the Nexus Pulse the player has just committed to, or `null` when there is none to
+   * Resolves the Battle Round the player has just committed to, or `null` when there is none to
    * start. **Injected, because `src/build` may never reach the kernel** (`tests/architecture.test.ts`):
    * the application shell owns that connection (`src/cli/pulse-run.ts`), and the session only hands it the
    * plan and plays what comes back. Absent — a hand-built session in a test — committing freezes the plan
@@ -149,7 +149,7 @@ export class BuildSession {
   private lastPlacingClick: Readonly<{ column: number; row: number; at: number }> | null = null
   private readonly startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
   private readonly nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
-  /** The Nexus Pulse on screen, from the moment the plan is committed until the Build Phase starts over. */
+  /** The Battle Round on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
    *  zero when that key arrived. `undefined` for a driver that never says. */
@@ -214,7 +214,7 @@ export class BuildSession {
     return this.context
   }
 
-  /** The Nexus Pulse on screen, or `null` — before the plan is committed, and after a restart. */
+  /** The Battle Round on screen, or `null` — before the plan is committed, and after a restart. */
   get pulse(): PulsePresenter | null {
     return this.presenter
   }
@@ -287,7 +287,7 @@ export class BuildSession {
     }
     // Before the Pulse starts, so the log reads in the order it happened: the command, then the Pulse.
     this.record(before, command)
-    // The plan was just committed: the Nexus Pulse starts. Or the Build Phase started over: it is gone.
+    // The plan was just committed: the Battle Round starts. Or the Build Phase started over: it is gone.
     if (!before.committed && this.buildState.committed) this.beginPulse()
     else if (before.committed && !this.buildState.committed) this.presenter = null
   }

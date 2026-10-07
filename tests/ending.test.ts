@@ -1,4 +1,4 @@
-// The Nexus Pulse's ending — the owner's sketch of it and his answer to its
+// The Battle Round's ending — the owner's sketch of it and his answer to its
 // first build. Every moment of it is a pure function of presentation time, so the tests
 // are arithmetic: the moments, their order at every timing they could be given, the timer and its flash,
 // the light that sweeps the border, the red that means the Nexus is hurt, the walk home, and the words of

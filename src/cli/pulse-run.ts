@@ -143,7 +143,7 @@ function mapOf(registry: ContentRegistry, carried: MatchState): Readonly<{ stand
 }
 
 /** What each building the level offers spawns in its battles, by its content id: its army's word for it,
- *  carried on its row of the construct menu (`spawns`). A building the level does not offer spawns nothing. */
+ *  carried on its row of the build menu (`spawns`). A building the level does not offer spawns nothing. */
 function spawnsOf(context: Pick<BuildContext, "catalog">): Readonly<Record<string, BuildingSpawns>> {
   const spawns: Record<string, BuildingSpawns> = {}
   for (const item of context.catalog) if (item.spawns !== undefined) spawns[item.contentId] ??= item.spawns
@@ -310,7 +310,7 @@ function withRoundScene(context: BuildContext, scene: readonly DialogLine[]): Bu
  *   foresees the round again so they show as arriving.
  * - `modifyCommander` multiplies every Commander's aura reach (`auraReachRegistry`): her card and the battle.
  * - `modifyContent` gives every row of the building it names more waves a round: its card and the battle.
- * - `addBuilding` adds the building it names to the construct menu, after the rows already there.
+ * - `addBuilding` adds the building it names to the build menu, after the rows already there.
  * - `credits` changes nothing here: the reducer adds them to what is left to spend when the pick is made.
  */
 export function keepPower(context: BuildContext, card: PowerCard): BuildContext {
@@ -343,7 +343,20 @@ export function keepPower(context: BuildContext, card: PowerCard): BuildContext 
  *  for a context with no pool to deal from. */
 function dealtDraft(mission: MissionDefinition, context: BuildContext, round: number): BuildContext["nexusDraft"] {
   if (context.powerPool === undefined) return context.nexusDraft
-  return nexusDraftOf({ powers: dealHand(context.powerPool, context.kept ?? [], mission.seed, round) })
+  // The buildings standing for the player as the round opens, by card: what a power that requires one reads.
+  const standing = new Set(
+    (context.buildingCards ?? []).filter((card) => context.standing.some((structure) => structure.contentId === card.structure)).map((card) => card.id),
+  )
+  return nexusDraftOf({
+    powers: dealHand({
+      pool: context.powerPool,
+      kept: context.kept ?? [],
+      seed: mission.seed,
+      round,
+      standing,
+      ...(context.powerSchedule === undefined ? {} : { schedule: context.powerSchedule }),
+    }),
+  })
 }
 
 export function missionPlay(mission: MissionDefinition): MissionPlay {
@@ -441,7 +454,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       const { standing, field } = mapOf(context.registry, carried)
       const last = `Round ${number - 1}: ${resultOf(outcomeOf(resolved.timeline)).headline.toLowerCase()}.`
       const news = commanderNews(back.restored, back.absent, number, mission.pulses)
-      const next: BuildContext = {
+      const opened: BuildContext = {
         ...context,
         standing,
         field,
@@ -452,9 +465,11 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         allotment: remaining(context, state),
         // What was kept stays kept (it is in this context already); what was called up has arrived.
         callups: [],
-        nexusDraft: dealtDraft(mission, context, number),
-        openingStatus: status(news === null ? `${last} Build Phase ${number} - the Nexus stands.` : `${last} ${news}`, "hint"),
       }
+      // The round opens on its Nexus Pulse: a hand dealt for the buildings standing now, not last round's.
+      const nexusDraft = dealtDraft(mission, opened, number)
+      const opening = nexusDraft.length > 0 ? `${last} The Nexus Pulse deals a new hand: [n].` : `${last} Build Phase ${number} - the Nexus stands.`
+      const next: BuildContext = { ...opened, nexusDraft, openingStatus: status(news === null ? opening : `${last} ${news}`, "hint") }
       // Its own scene, never the last round's: a Commander back, then the mission's lines for the round.
       return withRoundScene({ ...next, incoming: forecast(next, number) }, roundScene(mission, next, number, back.restored, back.absent))
     },

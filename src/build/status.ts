@@ -1,5 +1,5 @@
 // A status line's own semantic vocabulary — shared by every screen that has one (the Build Phase
-// today, the Nexus Pulse view later), so "what just happened, or why it did not" stays one small,
+// today, the Battle Round view later), so "what just happened, or why it did not" stays one small,
 // consistent type rather than each screen inventing its own plain string. Deliberately view-agnostic:
 // nothing here imports a style role or a colour. `src/view/status.ts` is the one place a tone
 // resolves onto how it actually looks.

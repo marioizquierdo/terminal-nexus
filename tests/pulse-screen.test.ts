@@ -1,4 +1,4 @@
-// The Nexus Pulse on the Build Phase's screen. What a player sees and can do once the plan is
+// The Battle Round on the Build Phase's screen. What a player sees and can do once the plan is
 // committed: the screen it becomes, the ending's words at each moment of it, the playback keys and the
 // panel rows a click reaches, where the view looks, and the way back to a fresh Build Phase. Driven through
 // the real session (the keyboard and mouse adapters, the reducer and the presenter), with the screen's clock
@@ -59,7 +59,7 @@ const lightCells = (frame: ReadonlyCellFrame, layout: BuildLayout) => {
   )
 }
 
-test("answering yes turns the screen into the Nexus Pulse, with the keyboard on the map", () => {
+test("answering yes turns the screen into the Battle Round, with the keyboard on the map", () => {
   const played = victorious()
   const { state } = played.build
   assert.equal(state.committed, true)

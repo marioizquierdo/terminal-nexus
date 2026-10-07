@@ -168,7 +168,7 @@ function centredAxis(tile: number, span: number): number {
 
 /**
  * **Recentring**: the camera moved so `tile` sits in the middle of the view,
- * clamped to the Grid like every other camera — how a Nexus Pulse looks at the player's Nexus. (The
+ * clamped to the Grid like every other camera — how a Battle Round looks at the player's Nexus. (The
  * fast move re-centred along the axis it moved, and an exploring click could re-centre too, until the
  * owner settled both Experiments the other way.)
  */

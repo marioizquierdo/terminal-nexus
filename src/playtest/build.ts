@@ -174,7 +174,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   // Drawn with the settings the script has reached: a step that changes the colour depth or the
   // symbols in Settings shows the change, as the live screen does.
   const compose = (): ReadonlyCellFrame => {
-    // Two things are drawn at the script's clock. A Nexus Pulse on screen: the frame after a step shows the
+    // Two things are drawn at the script's clock. A Battle Round on screen: the frame after a step shows the
     // Pulse as it is that long after it began. And the raid's trail, which moves from the first frame that drew
     // it moving, as the live loop moves it (`TrailClock`): the same keys draw it in the same place, and
     // `wait~MS` steps show it moving. Nothing else on this screen depends on time in a scripted playtest.
@@ -205,7 +205,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     clock += step.afterMs ?? UNTIMED_GAP_MS
     const moveBefore = build.lastMove
     const bytes = deliverStep(build, layout, step, clock)
-    // What the live loop's next render would do first: let a Nexus Pulse on screen catch up with the clock
+    // What the live loop's next render would do first: let a Battle Round on screen catch up with the clock
     // (and, the moment it starts, look at the player's Nexus), so the frame is the one a player sees.
     build.advance(clock)
     frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: moveLabel(build.lastMove, moveBefore) })

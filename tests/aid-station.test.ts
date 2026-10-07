@@ -372,7 +372,7 @@ test("a heal's mark goes on the first open tile beside the mended unit: above, r
 
 // --- Its card --------------------------------------------------------------------------------------------
 
-/** PERIMETER's Build Phase with the Aid Station on its construct menu, as Aid Station Permit puts it: the fourth
+/** PERIMETER's Build Phase with the Aid Station on its build menu, as Aid Station Permit puts it: the fourth
  *  row, after the buildings already there. */
 function withAidStation(): BuildContext {
   const context = starterContext()

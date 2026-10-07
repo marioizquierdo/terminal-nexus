@@ -36,7 +36,7 @@ import { fitViewport, marginForView } from "../src/build/camera.ts"
 import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SHIFT_LEFT, SHIFT_RIGHT, UP, screenText } from "./build-helpers.ts"
 
 /**
- * Every test here is about placement, scrolling, or the adapters — not about the Nexus draft that
+ * Every test here is about placement, scrolling, or the adapters — not about the Nexus Pulse that
  * stands in front of all of it. Rather than repeat "pick a placeholder power" at every call site,
  * every `BuildSession` in this file starts past that draft already, on the first option, the same
  * way a real player would be past it within one keypress. The handful of tests that check the
@@ -45,7 +45,7 @@ import { DOWN, ENTER, ESC, LEFT, MAXIMUM, MINIMUM, PAGE_DOWN, PAGE_UP, RIGHT, SH
 /** A picked power that adds nothing to the budget, so every test that is not about the Nexus
  *  draft itself sees exactly the allotment its own numbers already assume. */
 const NEUTRAL_NEXUS_DRAFT = [
-  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0, card: { id: "test-pick", name: "Test Pick", description: "No effect.", effect: { credits: 0 } } },
+  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0, card: { id: "test-pick", name: "Test Pick", description: "No effect.", effect: { credits: 0 }, rarity: "common", role: "economy" } },
 ] as const
 
 function readyBuildSession(options: BuildSessionOptions): BuildSession {

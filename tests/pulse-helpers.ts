@@ -1,4 +1,4 @@
-// Shared scaffolding for the Nexus Pulse tests — not a test file itself: the runners only pick up
+// Shared scaffolding for the Battle Round tests — not a test file itself: the runners only pick up
 // `*.test.ts`. A Build Phase played through the driver's commands, into a Pulse — on the Build Phase's own
 // scaffolding (`tests/build-helpers.ts`).
 
@@ -18,7 +18,7 @@ import { MINIMUM, buildSide, clickCell, compose, screenText } from "./build-help
 
 export { MINIMUM }
 
-/** The construct menu's rows, by index. */
+/** The build menu's rows, by index. */
 export const BARRACKS = 0
 export const HATCHERY = 1
 export const TURRET = 2
@@ -119,7 +119,7 @@ export type Played = Readonly<{
 /**
  * The starter map's context with buildings that spawn nothing — what the placeholder Pulse was played on before
  * buildings made units: a campaign's buildings spawn their waves because its level offers them so (`spawns` on
- * each row of the construct menu), and the test mission is no level's, so its first round is still the very
+ * each row of the build menu), and the test mission is no level's, so its first round is still the very
  * Pulse it was.
  */
 export function placeholderContext(): BuildContext {

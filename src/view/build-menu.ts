@@ -253,7 +253,7 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
       const active = nexusPowers(context, state).active.length
       return {
         hotkey: "n",
-        label: "Nexus",
+        label: "Nexus Pulse",
         ...(pending > 0 ? { badge: ` (${pending})` } : {}),
         ...(active > 0 ? { value: `${active} active` } : {}),
         ...look,

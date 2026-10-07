@@ -21,7 +21,7 @@ export const UNTIMED_GAP_MS = 1000
  *  bytes it sent. */
 export function deliverStep(build: BuildSession, layout: BuildLayout, step: PlaytestStep, now: number): string {
   if (step.kind === "wait") {
-    // Time passes and nothing is pressed: a Nexus Pulse on screen plays on to this moment.
+    // Time passes and nothing is pressed: a Battle Round on screen plays on to this moment.
     build.advance(now)
     return ""
   }

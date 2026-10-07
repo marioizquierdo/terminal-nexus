@@ -27,6 +27,7 @@ import type {
   Armies,
   Campaign,
   CampaignEntry,
+  ChanceModifier,
   Commander,
   CommanderEntry,
   Level,
@@ -34,9 +35,13 @@ import type {
   LevelMap,
   PowerCard,
   PowerEffect,
+  PowerRequirements,
+  Schedule,
+  ScheduleEntry,
+  ScheduleSlot,
   Unlocks,
 } from "./types.ts"
-import { ArmyError } from "./types.ts"
+import { ArmyError, RARITIES, ROLES } from "./types.ts"
 
 // --- The shapes of a manifest's parts ----------------------------------------------------------------------
 //
@@ -57,10 +62,32 @@ const powerEffect: Shape<PowerEffect> = keyed("a Nexus power's effect", {
   addBuilding: record<Readonly<{ building: string }>>({ building: text }, {}),
   credits: wholeNumber,
 })
+const rarity = literal(...RARITIES)
+/** A power's chance raised for some rounds: from a round, to a later one or the end, so many times as likely. */
+const chanceModifier = record<ChanceModifier>({ from: positiveWholeNumber, times: positiveWholeNumber }, { to: positiveWholeNumber })
+const powerRequirements = record<PowerRequirements>({}, { powers: list(text), buildings: list(text), round: positiveWholeNumber })
 const powerCard = record<PowerCard>(
-  { id: text, name: text, description: text, effect: powerEffect },
-  { repeatable: literal(true, false), always: literal(true, false), notes: text },
+  { id: text, name: text, description: text, effect: powerEffect, rarity, role: literal(...ROLES) },
+  {
+    repeatable: literal(true, false),
+    always: literal(true, false),
+    chance: list(chanceModifier),
+    requires: powerRequirements,
+    upgrades: text,
+    notes: text,
+  },
 )
+/** One card of a scheduled hand: a rarity's name, or `{ "power": id }` for a power the level makes sure of. */
+const pinnedPower = record<Readonly<{ power: string }>>({ power: text }, {})
+const scheduleSlot: Shape<ScheduleSlot> = {
+  check(value: unknown, at: string, say: Say): value is ScheduleSlot {
+    if (typeof value === "string") return rarity.check(value, at, say)
+    if (isObject(value)) return pinnedPower.check(value, at, say)
+    say(`${at} should be a rarity (${RARITIES.map((name) => `"${name}"`).join(", ")}) or { "power": its id }, not ${shown(value)}`)
+    return false
+  },
+}
+const schedule: Shape<Schedule> = list(record<ScheduleEntry>({ round: positiveWholeNumber, deal: list(scheduleSlot) }, {}))
 /** A Commander's own fields. Her lines' moments and their fit are checked after, with the rest of what she names. */
 const commanderEntry = record<CommanderEntry>(
   { id: text, name: text, unit: text },
@@ -70,7 +97,7 @@ const unlocks = record<Unlocks>({}, { buildings: list(text), powers: list(text) 
 /** A level's own fields. Its mission is checked by its own shape, after. */
 const levelEntry = record<LevelEntry>(
   { id: text, map: text, credits: wholeNumber, mission: anything as Shape<MissionDefinition> },
-  { unlocks, notes: text },
+  { unlocks, schedule, notes: text },
 )
 /** A campaign's own fields. Its levels are checked one by one, after. */
 const campaignEntry = record<CampaignEntry>(
@@ -363,6 +390,57 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
     return said
   }
 
+  /** What is wrong with how a Nexus power is dealt, each said after its name: a chance that changes nothing or
+   *  ends before it starts; a requirement naming a power or a building the army does not see, or the power itself;
+   *  an upgrade of a power the army does not see, of itself, or of one offered beside every hand. */
+  const dealProblems = (army: string, card: PowerCard): string[] => {
+    const said: string[] = []
+    for (const modifier of card.chance ?? []) {
+      if (modifier.times === 1) said.push(`has a chance ${modifier.times} times as likely, which changes nothing`)
+      if (modifier.to !== undefined && modifier.to < modifier.from) said.push(`has a chance from round ${modifier.from} to round ${modifier.to}, which ends before it starts`)
+    }
+    for (const id of card.requires?.powers ?? []) {
+      if (id === card.id) said.push(`requires itself, so it is never dealt`)
+      else {
+        const unseen = unseenCard(army, "Nexus power", id)
+        if (unseen !== null) said.push(`requires ${unseen}`)
+      }
+    }
+    for (const id of card.requires?.buildings ?? []) {
+      const unseen = unseenCard(army, "building", id)
+      if (unseen !== null) said.push(`requires ${unseen}`)
+    }
+    if (card.upgrades !== undefined) {
+      if (card.upgrades === card.id) said.push(`upgrades itself`)
+      else {
+        const unseen = unseenCard(army, "Nexus power", card.upgrades)
+        if (unseen !== null) said.push(`upgrades ${unseen}`)
+        else if (powersBy.get(card.upgrades)?.card.always === true) said.push(`upgrades "${card.upgrades}", which is offered beside every hand and never kept`)
+      }
+      if (card.always === true) said.push(`is offered beside every hand, so it cannot be an upgrade`)
+    }
+    return said
+  }
+
+  /** What is wrong with a level's own schedule: one that does not start at round 1, an entry that does not come
+   *  after the one before it, and a power it makes sure of that the level does not offer, or that is offered
+   *  beside every hand anyway. `offered` is every Nexus power the level offers, by id. */
+  const scheduleProblems = (given: Schedule, offered: ReadonlySet<string>): string[] => {
+    const said: string[] = []
+    if (given.length === 0) said.push(`has a schedule with no entries: leave it out for the default`)
+    else if (given[0]?.round !== 1) said.push(`has a schedule whose first entry is for round ${given[0]?.round}: it starts at round 1`)
+    given.forEach((entry, index) => {
+      const before = given[index - 1]
+      if (before !== undefined && entry.round <= before.round) said.push(`has a schedule entry for round ${entry.round} after one for round ${before.round}: entries go in order`)
+      for (const slot of entry.deal) {
+        if (typeof slot === "string") continue
+        if (!offered.has(slot.power)) said.push(`makes sure of the Nexus power "${slot.power}" in round ${entry.round}, which the level does not offer`)
+        else if (powersBy.get(slot.power)?.card.always === true) said.push(`makes sure of "${slot.power}" in round ${entry.round}, which is offered beside every hand anyway`)
+      }
+    })
+    return said
+  }
+
   // Content: what each army brings exists, and what it puts on the Grid in turn is content the army sees.
   for (const army of read.values()) {
     const say = (problem: string): void => {
@@ -396,6 +474,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
     for (const card of army.powers) {
       if (card.name.trim() === "" || card.description.trim() === "") say(`the Nexus power "${card.id}" needs a name and a description`)
       for (const problem of effectProblems(army.id, card)) say(`the Nexus power "${card.id}" ${problem}`)
+      for (const problem of dealProblems(army.id, card)) say(`the Nexus power "${card.id}" ${problem}`)
     }
 
     // Commanders: her unit is a Commander the army sees, and her lines are for moments she can speak at, each
@@ -441,6 +520,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
           }
           for (const id of own) if (!seen.has(id)) seen.set(id, level.id)
         }
+        if (level.schedule !== undefined) for (const problem of scheduleProblems(level.schedule, new Set(unlocked.powers.keys()))) say(`${where} ${problem}`)
 
         // A building spawns one way in a battle: two cards the level offers for one structure may not say two
         // different things about what it spawns. Said at the level that unlocks the second, once.
@@ -522,7 +602,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
           number: index + 1,
           map: entry.map,
           mission: mission as MissionDefinition,
-          offer: { credits: entry.credits, buildings, powers, addable },
+          offer: { credits: entry.credits, buildings, powers, addable, ...(entry.schedule === undefined ? {} : { schedule: entry.schedule }) },
           unlocked: { buildings: newBuildings, powers: newPowers },
         })
       })

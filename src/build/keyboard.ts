@@ -20,7 +20,7 @@ const ESC = String.fromCharCode(27)
 const PLACE_KEYS = new Set(["\r", "\n", " "])
 const REMOVE_KEYS = new Set([String.fromCharCode(127), String.fromCharCode(8), `${ESC}[3~`])
 
-/** `grid watch`'s keymap, kept for the Nexus Pulse (one keymap across `grid` and
+/** `grid watch`'s keymap, kept for the Battle Round (one keymap across `grid` and
  *  `terminal-nexus`, in docs/system-design/input.md) — Space pauses, `[` and `]` change the speed, `.` and `,` step a frame and a tick,
  *  `r` watches it again. Only while a Pulse is on screen, and never inside a popup. */
 const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {
@@ -74,7 +74,7 @@ export type KeyboardContext = Readonly<{
    *  click on it sends, each setting its `decrease` and `increase`. The keyboard sends those same
    *  commands, so a key and a click on a popup's row cannot disagree. */
   popupSpec?: PopupSpec | null
-  /** A Nexus Pulse is on screen: its playback keys are the screen's, ahead of the Grid's. */
+  /** A Battle Round is on screen: its playback keys are the screen's, ahead of the Grid's. */
   pulse?: boolean
   /** The Pulse on screen has ended and its result stands: Enter, Space and `n` go on. */
   pulseOver?: boolean
@@ -226,7 +226,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   }
   const focus = context.focus ?? "grid"
 
-  // A Nexus Pulse on screen takes its own playback keys first: Space pauses it rather than opening
+  // A Battle Round on screen takes its own playback keys first: Space pauses it rather than opening
   // Explore Map, and `r` watches it again. Everything else — the arrows that look around the map, Esc,
   // `q`, `d` — is still the screen's.
   if (context.pulse === true) {

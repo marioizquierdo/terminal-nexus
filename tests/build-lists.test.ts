@@ -71,8 +71,8 @@ test("the Build Phase menu stops at both ends, with no flicker, and the fast mov
 test("every popup's list stops at both ends and jumps with the fast move", () => {
   const cases: readonly (readonly [string, readonly string[], number, number])[] = [
     // name, how to open it, its first highlight, its last
-    // Two dealt, War Chest beside them.
-    ["the Nexus powers", ["n"], 0, 2],
+    // Three dealt, War Chest beside them.
+    ["the Nexus Pulse", ["n"], 0, 3],
     ["the game menu", [ESC], 0, GAME_MENU_ROWS.length - 1],
     ["the Controls page", ["?"], 0, controlsLineCount() - 1],
   ]

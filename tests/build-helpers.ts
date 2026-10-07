@@ -1,7 +1,7 @@
 // Shared scaffolding for the Build Phase tests — not a test file itself: the runners only pick up
 // `*.test.ts`. A Build Phase on the starter map, driven the way a player drives it: raw key bytes and
 // mouse reports into the real adapters (`BuildSession.handleData`), and the frame the screen would draw
-// read back as cells or text. `tests/pulse-helpers.ts` builds a Nexus Pulse on top of it.
+// read back as cells or text. `tests/pulse-helpers.ts` builds a Battle Round on top of it.
 
 import { strict as assert } from "node:assert"
 import type { ExperimentField } from "../src/build/experiments.ts"
@@ -184,7 +184,7 @@ export function goToGameMenuRow(side: Side, row: GameMenuRow): void {
 // --- Reading the screen ----------------------------------------------------------------------------
 
 /** The frame the screen draws for the session as it is — in its own glyph pack and reduced motion, the
- *  Nexus Pulse included while one plays — with `extra` for what the live loop adds at an instant (a
+ *  Battle Round included while one plays — with `extra` for what the live loop adds at an instant (a
  *  flash, a flight, a reveal) or overrides. */
 export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
   const { build, layout } = side

@@ -1,4 +1,4 @@
-// The match layer's data — what a Nexus Pulse starts from and what is true after Recall.
+// The match layer's data — what a Battle Round starts from and what is true after Recall.
 //
 // `src/match/` is the rules layer *around* the tick kernel (the "scenario runtime" of grid-engine.md):
 // it builds the state a Pulse starts from out of what the Build Phase committed, and it does what

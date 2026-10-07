@@ -18,6 +18,8 @@
       "name": "Standing Order",
       "description": "By the Book reaches twice as far.",
       "effect": { "modifyCommander": { "auraReachTimes": 2 } },
+      "rarity": "uncommon",
+      "role": "commander",
       "notes": "Her skill, wider: By the Book's reach doubles for the rest of the mission, on her card, on the map and in the battle."
     },
     {
@@ -25,6 +27,8 @@
       "name": "Aid Station Permit",
       "description": "Adds building: Aid Station.",
       "effect": { "addBuilding": { "building": "aid-station" } },
+      "rarity": "uncommon",
+      "role": "support",
       "notes": "Repair, placed where the line will stand: the Aid Station joins the construct menu for the rest of the mission, after the buildings already there, so no hotkey moves."
     }
   ],
@@ -56,13 +60,18 @@
       "levels": [
         {
           "id": "vasse-test-1",
-          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building all has, one by one, so that when all grows this level keeps what it teaches, and four real Nexus powers, two shared and two hers, with War Chest beside every hand; the Aid Station comes only with its permit. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
+          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building all has, one by one, so that when all grows this level keeps what it teaches, and five real Nexus powers, three shared and two hers, with War Chest beside every hand; the Aid Station comes only with its permit, and Drill Schedule II only once Drill Schedule is kept. Its Nexus Pulse deals three cards a round by a schedule of its own, the game's default for these rounds with one change: round 2 makes sure of Aid Station Permit (when it was not kept in round 1), so the Aid Station can stand in the line before the third raid, the hardest. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
           "map": "starter",
           "credits": 100,
           "unlocks": {
             "buildings": ["barracks", "hatchery", "turret"],
-            "powers": ["reserve-callup", "drill-schedule", "standing-order", "aid-station-permit", "war-chest"]
+            "powers": ["reserve-callup", "drill-schedule", "drill-schedule-ii", "standing-order", "aid-station-permit", "war-chest"]
           },
+          "schedule": [
+            { "round": 1, "deal": ["common", "common", "uncommon"] },
+            { "round": 2, "deal": [{ "power": "aid-station-permit" }, "common", "uncommon"] },
+            { "round": 3, "deal": ["common", "uncommon", "uncommon"] }
+          ],
           "mission": {
             "id": "mission.citizen.perimeter",
             "name": "Perimeter",

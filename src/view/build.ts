@@ -115,7 +115,7 @@ export type BuildCompositionInput = Readonly<{
    */
   dialogLight?: Readonly<{ elapsedMs: number }>
   /**
-   * A Nexus Pulse is on screen: what it is showing at this instant, worked out by the presenter
+   * A Battle Round is on screen: what it is showing at this instant, worked out by the presenter
    * (`pulse-live.ts`). Present, the Grid shows the fight and the panel the forces and the ending, in this
    * same frame and under the same popups; absent — every Build Phase frame, and every test that never
    * starts a Pulse — the frame is the Build Phase's, exactly as it always was.
@@ -138,7 +138,7 @@ export type BuildCompositionInput = Readonly<{
  *  number — which row, and whether it was **pressed** or **refused**. */
 export type RowAck = Readonly<Pick<Ack, "kind" | "entry">>
 
-/** The panel once the plan is committed with no Nexus Pulse to show (the session was given no way to
+/** The panel once the plan is committed with no Battle Round to show (the session was given no way to
  *  start one, as in a test): what was committed. */
 function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, state, layout } = input
@@ -168,7 +168,7 @@ export function composeBuildFrame(
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
 
-  // A Nexus Pulse on screen replaces what the Build Phase drew on the Grid and in the panel with the fight
+  // A Battle Round on screen replaces what the Build Phase drew on the Grid and in the panel with the fight
   // and its forces; the frame, the top and bottom bars, the cursor and every popup are the same code.
   if (input.pulse !== undefined) {
     const view = { camera: input.state.camera, viewport: input.state.viewport, layout: input.layout, grid: input.context.grid }

@@ -229,8 +229,11 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
         if (bar !== null) drawHighlightBar(cells, textColumn, row, textLimit)
         const part = rowParts(cells, row, bar)
         const hotkey = `[${entry.hotkey}]`
+        const tag = entry.tag ?? ""
+        const labelLimit = textLimit - hotkey.length - 1 - (tag === "" ? 0 : tag.length + 1)
         part(textColumn, hotkey, "chrome.hotkey", { bold: true, limit: textLimit })
-        part(textColumn + hotkey.length + 1, entry.label, "chrome.value", { limit: textLimit - hotkey.length - 1 })
+        part(textColumn + hotkey.length + 1, entry.label, "chrome.value", { limit: labelLimit })
+        if (tag !== "") part(textColumn + textLimit - tag.length, tag, "chrome.muted", { limit: tag.length })
         break
       }
       case "setting": {

@@ -20,7 +20,7 @@
 //     move and no longer re-centres it;
 //   - a building as it finishes is lit by a flash that settles and throws a few sparks —
 //     the rainbow and "many" stay as the effect recipes' own palettes, but nothing in the game picks them;
-//   - when a Nexus Pulse's last seconds begin, the view slides to centre on the player's Nexus; and the
+//   - when a Battle Round's last seconds begin, the view slides to centre on the player's Nexus; and the
 //     map's border flashes a faint red when that Nexus is hurt.
 //
 // And settled later, each on its own: the incoming raid is always shown (below), and Vasse speaks in battle

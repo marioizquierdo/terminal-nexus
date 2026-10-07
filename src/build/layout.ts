@@ -72,7 +72,7 @@ export type BuildLayout = Readonly<{
    *  Grid's top, so the panel and the Grid start together. */
   panelRow: number
   /** Frame row of the panel's last usable line: the Start Battle Round row is pinned there (`startRow`), and
-   *  the Nexus Pulse panel's last control row. (Named for the key help that used to overflow into the
+   *  the Battle Round panel's last control row. (Named for the key help that used to overflow into the
    *  panel's bottom lines; the panel carries no help text now. Renaming it is a pure rename for a
    *  change of its own.) */
   panelLastRow: number
@@ -104,7 +104,7 @@ export const CARD_SEPARATOR_ROW = CARD_HEADER_ROW + 1
 export const CARD_FIRST_ROW = CARD_HEADER_ROW + 2
 
 /**
- * The Nexus Pulse panel's clickable rows: the playback controls with their hotkeys, pinned to
+ * The Battle Round panel's clickable rows: the playback controls with their hotkeys, pinned to
  * the bottom of the panel, where the Build Phase's Start Battle Round row sits. The composer draws them and
  * the mouse adapter hit-tests them from this one place, as it does every other row. `[` and `]` (speed)
  * and `.` and `,` (step) are keys only: the panel has room for two rows and these are the two a player

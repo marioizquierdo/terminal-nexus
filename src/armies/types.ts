@@ -61,8 +61,8 @@ export type BuildingCard = Readonly<{
  *   (Standing Order).
  * - `modifyContent`: a building that spawns sends so many more waves a round, for the rest of the mission
  *   (Drill Schedule). `building` is a building card's id.
- * - `addBuilding`: a building joins the construct menu, for the rest of the mission (Aid Station Permit). A
- *   power adds; only the tech tree unlocks. `building` is a building card's id; no level unlocks it.
+ * - `addBuilding`: a building joins the build menu, for the rest of the mission (Aid Station Permit). A power
+ *   adds; only the tech tree unlocks. `building` is a building card's id; no level unlocks it.
  * - `credits`: so many credits to spend this Build Phase (War Chest).
  */
 export type PowerEffect =
@@ -72,18 +72,67 @@ export type PowerEffect =
   | Readonly<{ addBuilding: Readonly<{ building: string }> }>
   | Readonly<{ credits: number }>
 
-/** A Nexus power: a name and one plain line of description — all a player reads of it — and what it does. */
+/**
+ * How rare a Nexus power is, least to most: what each card of a hand is dealt from, round by round, by the
+ * Nexus Pulse's schedule (`Schedule`). A common does one readable thing, an uncommon combines with something or
+ * leans into a plan, a rare changes the plan; a legendary is dealt only by a slot that asks for one.
+ */
+export const RARITIES = ["common", "uncommon", "rare", "legendary"] as const
+export type Rarity = (typeof RARITIES)[number]
+
+/** What a Nexus power is for. A hand deals powers of different roles while the rarity it deals from has them. */
+export const ROLES = ["troops", "production", "offense", "defense", "support", "economy", "commander", "information", "movement"] as const
+export type Role = (typeof ROLES)[number]
+
+/** A power's chance raised for some rounds: `times` as likely as an ordinary power of its rarity, from round
+ *  `from` to round `to` (absent: to the end). "Twice as likely in rounds 1 to 3" is `{ from: 1, to: 3, times: 2 }`. */
+export type ChanceModifier = Readonly<{ from: number; to?: number; times: number }>
+
+/** What must be true before a power can be dealt; every part given must hold. */
+export type PowerRequirements = Readonly<{
+  /** Nexus powers kept this mission, by id. */
+  powers?: readonly string[]
+  /** Buildings standing for the player when the round opens, by building card id (Drill Schedule: a Barracks). */
+  buildings?: readonly string[]
+  /** The first round it may be dealt in, counted from 1. */
+  round?: number
+}>
+
+/** A Nexus power: a name and one plain line of description — all a player reads of it — and what it does, with
+ *  what the Nexus Pulse deals it by: its rarity and role, and the modifiers below. */
 export type PowerCard = Readonly<{
   id: string
   name: string
   description: string
   effect: PowerEffect
+  rarity: Rarity
+  role: Role
   /** May be dealt again once kept (Reserve Callup: two more troopers each time). Absent: kept once a mission. */
   repeatable?: boolean
   /** Offered beside every hand rather than dealt into one (War Chest, the owner's testing tool). */
   always?: boolean
+  /** Its chance raised for some rounds. Absent: as likely as any power of its rarity. */
+  chance?: readonly ChanceModifier[]
+  /** What must be true before it can be dealt. Absent: nothing. */
+  requires?: PowerRequirements
+  /** The power it upgrades, by id: it is dealt only once that one is kept, and once kept itself it is listed
+   *  in that one's place. What both do adds up (Drill Schedule II's third wave on Drill Schedule's second). */
+  upgrades?: string
   notes?: string
 }>
+
+/** One card of a scheduled hand: dealt from a rarity, or a named power a level makes sure of (`{ power }`). */
+export type ScheduleSlot = Rarity | Readonly<{ power: string }>
+
+/** From round `round` on, until the next entry, each hand deals one card for each of `deal`'s slots. */
+export type ScheduleEntry = Readonly<{ round: number; deal: readonly ScheduleSlot[] }>
+
+/**
+ * The Nexus Pulse's schedule: what each round's hand deals, its first entry from round 1 and each later entry from
+ * a later round. The game has a default (`DEFAULT_SCHEDULE`, `deal.ts`); a campaign level may give its own, to make
+ * sure of a power in the round it teaches.
+ */
+export type Schedule = readonly ScheduleEntry[]
 
 /** A Commander: her name, and her unit — the persistent `@`, a content definition flagged `commander`. */
 export type CommanderEntry = Readonly<{
@@ -108,6 +157,8 @@ export type LevelEntry = Readonly<{
   credits: number
   /** What it adds to what its campaign offers. Absent: nothing new. */
   unlocks?: Unlocks
+  /** What its Nexus Pulse deals, round by round, in place of the game's default. Absent: the default. */
+  schedule?: Schedule
   mission: MissionDefinition
   notes?: string
 }>
@@ -154,14 +205,17 @@ export type LevelMap = Readonly<{
 export type Commander = Readonly<{ id: string; army: string; name: string; unit: string; barks: Barks }>
 
 /** What a level offers: every card its campaign has unlocked by then, in the order first unlocked (so a hotkey
- *  never moves when a later level adds a card), its credits, and the buildings its Nexus powers can add. */
+ *  never moves when a later level adds a card), its credits, the buildings its Nexus powers can add, and its own
+ *  schedule for the Nexus Pulse when it has one. */
 export type Offer = Readonly<{
   credits: number
   buildings: readonly BuildingCard[]
   powers: readonly PowerCard[]
   /** The building cards its powers name (`addBuilding`), which no level unlocks: what such a power adds to the
-   *  construct menu once kept. */
+   *  build menu once kept. */
   addable: readonly BuildingCard[]
+  /** What its Nexus Pulse deals, round by round. Absent: the game's default (`DEFAULT_SCHEDULE`). */
+  schedule?: Schedule
 }>
 
 /** A level, resolved: where it stands in its campaign, what it offers, and what is new in it. */

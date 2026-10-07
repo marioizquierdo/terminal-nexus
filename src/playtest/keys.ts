@@ -23,7 +23,7 @@
 //                               takes one; a script with one plays such a terminal, so its plain
 //                               presses are known presses too. `Right/repeat~30*10` times them
 //   wait  wait~4000             nothing is pressed and time passes: a second by default, or the given
-//                               milliseconds — how a scripted playtest of a Nexus Pulse lets it play on
+//                               milliseconds — how a scripted playtest of a Battle Round lets it play on
 //   click:20,13                 left click on Grid tile x=20, y=13, wherever it is drawn right now
 //   click@40,7                  left click on frame cell column 40, row 7 (0-based)
 //   rclick:… rclick@…           the same, with the right button
@@ -88,7 +88,7 @@ const MOUSE_BUTTONS: Readonly<Record<string, number>> = {
  *  what a terminal reporting key events would mark the key as; `bytes` already say it. */
 export type PlaytestStep =
   | Readonly<{ kind: "key"; label: string; bytes: string; afterMs?: number; phase?: KeyPhase }>
-  /** Nothing is pressed: the script's clock moves on, and with it a Nexus Pulse playing on screen. */
+  /** Nothing is pressed: the script's clock moves on, and with it a Battle Round playing on screen. */
   | Readonly<{ kind: "wait"; label: string; afterMs?: number }>
   | Readonly<{ kind: "mouse"; label: string; button: number; target: MouseTarget; afterMs?: number }>
 

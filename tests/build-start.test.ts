@@ -94,7 +94,7 @@ test("Start Battle Round is ready whether or not a Nexus power waits to be picke
   const { layout } = waiting
   const label = (session: Session) => cellAt(frameOf(session), layout.panelColumn + 4, startRow(layout)).style
   assert.notEqual(label(waiting).dim, true, "the row looks refused with a pick waiting")
-  assert.match(screenText(waiting), /\[n\] Nexus \(1\)/)
+  assert.match(screenText(waiting), /\[n\] Nexus Pulse \(1\)/)
   waiting.build.dispatch({ kind: "pick-nexus", index: 1 })
   assert.notEqual(label(waiting).dim, true)
 })

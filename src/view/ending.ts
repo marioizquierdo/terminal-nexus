@@ -1,4 +1,4 @@
-// How a Nexus Pulse ends on screen — Mario's sketch (`docs/history/milestones/milestone-06-pulse-phase.md`), built
+// How a Battle Round ends on screen — Mario's sketch (`docs/history/milestones/milestone-06-pulse-phase.md`), built
 // to be watched and retuned, and every moment of it a pure function of presentation time:
 //
 //   the fight is shown as it happened ............................ "fighting"

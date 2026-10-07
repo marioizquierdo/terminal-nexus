@@ -1,4 +1,4 @@
-// The state a Nexus Pulse starts from — the start-of-Pulse rule in pulse.md: "At Pulse start plans reveal together and
+// The state a Battle Round starts from — the start-of-Pulse rule in pulse.md: "At Pulse start plans reveal together and
 // valid construction becomes operational." The Build Phase's plan is a list of placements on a screen;
 // this is where it becomes entities the kernel can resolve.
 //

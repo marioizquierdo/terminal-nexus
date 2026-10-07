@@ -1,12 +1,12 @@
-// The Nexus draft (commander-armies.md, what a Nexus power does): a small hand dealt from the army's Nexus power
-// pool at each Build Phase, War Chest beside it, one kept — and what each of PERIMETER's four powers does once
-// kept, from the moment it is picked to the end of the mission. The dealer is seeded and repeatable, and draws
-// from a stream of its own, so dealing never moves a battle.
+// The Nexus Pulse (commander-armies.md, how the Nexus Pulse deals): the hand the Grid Nexus deals as each round
+// opens, from the army's Nexus power pool by a schedule of rarities, War Chest beside it, one kept — and what each
+// of PERIMETER's powers does once kept, from the moment it is picked to the end of the mission. The dealer is
+// seeded and repeatable, and draws from a stream of its own, so dealing never moves a battle.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import type { PowerCard } from "../src/armies/index.ts"
-import { dealable, dealHand, HAND_SIZE, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
+import type { PowerCard, Rarity, Role, ScheduleSlot } from "../src/armies/index.ts"
+import { DEFAULT_SCHEDULE, dealable, dealHand, PERIMETER, PERIMETER_LEVEL, rarityOrder, slotsFor, weightOf } from "../src/armies/index.ts"
 import { nexusDraftOf, STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { wavesStat } from "../src/build/card.ts"
 import { hint } from "../src/build/help.ts"
@@ -50,52 +50,185 @@ function opened(context: BuildContext) {
 
 // --- The dealer ----------------------------------------------------------------------------------------------
 
-test("a hand deals two of the pool, then War Chest beside them; the same seed and round deal the same hand", () => {
-  const hand = dealHand(POOL, [], PERIMETER.seed, 1)
-  assert.equal(hand.length, HAND_SIZE + 1)
-  assert.equal(hand.at(-1)?.id, "war-chest", "War Chest is not beside the hand")
-  assert.ok(hand.slice(0, HAND_SIZE).every((card) => card.always !== true), "War Chest was dealt into the hand")
-  assert.deepEqual(dealHand(POOL, [], PERIMETER.seed, 1), hand, "the same deal came out different")
-  // Over many seeds and rounds every power the pool deals turns up, and no hand holds a power twice.
+/** PERIMETER's own schedule: the hands its Nexus Pulse deals, round by round. */
+const SCHEDULE = PERIMETER_LEVEL.offer.schedule
+/** The Barracks standing on the starter map as round 1 opens, by card. */
+const BARRACKS_STANDS: ReadonlySet<string> = new Set(["barracks"])
+
+/** The hand PERIMETER deals in `round`, with `kept` kept, as the mission deals it. */
+function perimeterHand(round: number, kept: readonly PowerCard[] = [], seed = PERIMETER.seed, standing = BARRACKS_STANDS): PowerCard[] {
+  return dealHand({ pool: POOL, kept, seed, round, standing, ...(SCHEDULE === undefined ? {} : { schedule: SCHEDULE }) })
+}
+
+/** A power for the dealer's own tests: it adds nothing, and its id is its name. */
+function card(id: string, rarity: Rarity, role: Role, extra: Partial<PowerCard> = {}): PowerCard {
+  return { id, name: id, description: `${id}.`, effect: { credits: 0 }, rarity, role, ...extra }
+}
+
+/** The ids of the hand `pool` deals in round 1 by a one-entry schedule of `deal`. */
+function handOf(pool: readonly PowerCard[], deal: readonly ScheduleSlot[], seed = 1, round = 1): string[] {
+  return dealHand({ pool, kept: [], seed, round, schedule: [{ round: 1, deal }] }).map((each) => each.id)
+}
+
+test("a hand deals one card for each slot of its round's schedule, War Chest beside them; the same deal is the same hand", () => {
+  const hand = perimeterHand(1)
+  // PERIMETER's round 1: two commons and an uncommon, then War Chest.
+  assert.deepEqual(
+    hand.map((each) => `${each.id} ${each.rarity}`),
+    ["reserve-callup common", "drill-schedule common", "standing-order uncommon", "war-chest common"],
+  )
+  assert.deepEqual(perimeterHand(1), hand, "the same deal came out different")
+  // The game's own schedule deals three a round, its rarities rising: an uncommon in round 1, two from round 2,
+  // a rare from round 4.
+  assert.deepEqual(
+    [1, 2, 3, 4, 5, 6, 9].map((round) => slotsFor(DEFAULT_SCHEDULE, round).join(" ")),
+    [
+      "common common uncommon",
+      "common uncommon uncommon",
+      "common uncommon uncommon",
+      "common uncommon rare",
+      "common uncommon rare",
+      "uncommon uncommon rare",
+      "uncommon uncommon rare",
+    ],
+  )
+  // Over many seeds no hand holds a power twice, and every power the pool deals turns up, Drill Schedule II
+  // once Drill Schedule is kept.
   const seen = new Set<string>()
   for (let seed = 0; seed < 200; seed += 1) {
     for (const round of [1, 2, 3]) {
-      const each = dealHand(POOL, [], seed, round)
-      assert.equal(new Set(each.map((card) => card.id)).size, each.length, `seed ${seed}, round ${round}: a power dealt twice`)
-      for (const card of each) seen.add(card.id)
+      for (const kept of [[], [power("drill-schedule")]]) {
+        const each = perimeterHand(round, kept, seed)
+        assert.equal(new Set(each.map((dealt) => dealt.id)).size, each.length, `seed ${seed}, round ${round}: a power dealt twice`)
+        for (const dealt of each) seen.add(dealt.id)
+      }
     }
   }
-  assert.deepEqual([...seen].sort(), POOL.map((card) => card.id).sort())
+  assert.deepEqual([...seen].sort(), POOL.map((each) => each.id).sort())
   // The round the game opens deals exactly this.
   assert.deepEqual(
     starterContext().nexusDraft.map((option) => [option.hotkey, option.card.id]),
-    hand.map((card, index) => [String(index + 1), card.id]),
+    hand.map((each, index) => [String(index + 1), each.id]),
   )
 })
 
+test("each card comes from its slot's rarity; with none left, the nearest lower one, then a higher one, never a legendary unless asked", () => {
+  const pool = [
+    card("c1", "common", "troops"),
+    card("c2", "common", "production"),
+    card("u1", "uncommon", "support"),
+    card("r1", "rare", "offense"),
+    card("l1", "legendary", "commander"),
+  ]
+  assert.deepEqual(handOf(pool, ["rare", "uncommon", "legendary"]), ["r1", "u1", "l1"])
+  const [c1, c2, u1, r1, l1] = pool as [PowerCard, PowerCard, PowerCard, PowerCard, PowerCard]
+  // No rare left: a rare slot deals the nearest lower rarity, never the legendary above it.
+  assert.deepEqual(handOf([c1, u1, l1], ["rare"]), ["u1"])
+  // No common left: a common slot deals upward, but stops short of a legendary, so the hand is short.
+  assert.deepEqual(handOf([u1, l1], ["common", "common"]), ["u1"])
+  // A slot that asks for a legendary deals one; with none, the nearest lower.
+  assert.deepEqual(handOf([c1, l1], ["legendary"]), ["l1"])
+  assert.deepEqual(handOf([c1, c2, r1], ["legendary"]), ["r1"])
+  assert.deepEqual(rarityOrder("common"), ["common", "uncommon", "rare"])
+  assert.deepEqual(rarityOrder("rare"), ["rare", "uncommon", "common"])
+  assert.deepEqual(rarityOrder("legendary"), ["legendary", "rare", "uncommon", "common"])
+})
+
+test("a hand deals different roles while its rarity has them, and repeats a role only when it has no other", () => {
+  const twin = card("twin", "common", "troops")
+  const other = card("other", "common", "troops")
+  const builder = card("builder", "common", "production")
+  for (let seed = 0; seed < 100; seed += 1) {
+    const hand = handOf([twin, other, builder], ["common", "common"], seed)
+    assert.ok(hand.includes("builder"), `seed ${seed}: two troops cards dealt beside a production one`)
+  }
+  assert.deepEqual(handOf([twin, other], ["common", "common"]).sort(), ["other", "twin"])
+})
+
+test("a power's chance raises its odds in the rounds it names: Reserve Callup is twice as likely in rounds 1 to 3", () => {
+  const callup = power("reserve-callup")
+  assert.deepEqual([1, 2, 3, 4].map((round) => weightOf(callup, round)), [2, 2, 2, 1])
+  const lucky = card("lucky", "common", "troops", { chance: [{ from: 1, to: 3, times: 3 }] })
+  const plain = card("plain", "common", "production")
+  const count = (round: number): number => {
+    let dealt = 0
+    for (let seed = 0; seed < 600; seed += 1) if (handOf([lucky, plain], ["common"], seed, round)[0] === "lucky") dealt += 1
+    return dealt
+  }
+  // Three in four while the chance holds; one in two after.
+  const early = count(2)
+  const late = count(5)
+  assert.ok(early >= 410 && early <= 490, `round 2 dealt the lucky power ${early} times in 600`)
+  assert.ok(late >= 260 && late <= 340, `round 5 dealt the lucky power ${late} times in 600`)
+})
+
+test("a power is dealt only while its requirements hold: a power kept, a building standing, a round reached", () => {
+  const first = card("first", "common", "troops")
+  const after = card("after", "common", "support", { requires: { powers: ["first"] } })
+  const built = card("built", "common", "production", { requires: { buildings: ["barracks"] } })
+  const late = card("late", "common", "offense", { requires: { round: 3 } })
+  const pool = [first, after, built, late]
+  assert.deepEqual(dealable(pool, [], 1).map((each) => each.id), ["first"])
+  assert.deepEqual(dealable(pool, [first], 3, BARRACKS_STANDS).map((each) => each.id), ["after", "built", "late"])
+  // PERIMETER's Drill Schedule needs a Barracks standing as the round opens: without one it is never dealt.
+  for (let seed = 0; seed < 100; seed += 1) {
+    assert.ok(!perimeterHand(1, [], seed, new Set()).some((each) => each.id === "drill-schedule"), `seed ${seed}: dealt with no Barracks`)
+  }
+})
+
+test("an upgrade waits for its power, joins the hand once it is kept, and is listed in its place once kept itself", () => {
+  const drill = power("drill-schedule")
+  const second = power("drill-schedule-ii")
+  assert.ok(!dealable(POOL, [], 1, BARRACKS_STANDS).includes(second), "Drill Schedule II was dealable before Drill Schedule was kept")
+  assert.ok(dealable(POOL, [drill], 2, BARRACKS_STANDS).includes(second))
+  assert.deepEqual(
+    perimeterHand(2, [drill]).map((each) => each.id),
+    ["aid-station-permit", "reserve-callup", "drill-schedule-ii", "war-chest"],
+  )
+  // Kept, it takes its power's place under ACTIVE; what both do adds up: three waves.
+  const context = play.keep(play.keep(starterContext(), drill), second)
+  assert.deepEqual(
+    nexusPowers(context, opened(context)).active.map((each) => each.name),
+    ["Drill Schedule II"],
+  )
+  const barracks = context.catalog.find((item) => item.contentId === BARRACKS)
+  assert.equal(barracks?.spawns?.waves, 3)
+})
+
+test("a level's schedule makes sure of a power: PERIMETER's round 2 deals Aid Station Permit first, unless it was kept", () => {
+  for (let seed = 0; seed < 50; seed += 1) {
+    for (const kept of [[power("drill-schedule")], [power("standing-order")], [power("reserve-callup")]]) {
+      assert.equal(perimeterHand(2, kept, seed)[0]?.id, "aid-station-permit", `seed ${seed}: round 2 did not deal Aid Station Permit first`)
+    }
+    // Kept already: the slot deals from its rarity instead.
+    const after = perimeterHand(2, [power("aid-station-permit")], seed)
+    assert.ok(!after.some((each) => each.id === "aid-station-permit"))
+    assert.equal(after[0]?.rarity, "uncommon")
+  }
+})
+
 test("a power kept once is never dealt again; one that may be kept again, Reserve Callup, is", () => {
-  const once = [power("standing-order"), power("aid-station-permit"), power("drill-schedule")]
+  const once = [power("standing-order"), power("aid-station-permit"), power("drill-schedule"), power("drill-schedule-ii")]
   for (let seed = 0; seed < 50; seed += 1) {
     assert.deepEqual(
-      dealHand(POOL, once, seed, 2).map((card) => card.id),
+      perimeterHand(3, once, seed).map((each) => each.id),
       ["reserve-callup", "war-chest"],
       `seed ${seed}: with only Reserve Callup left, the hand holds it and War Chest`,
     )
   }
   assert.deepEqual(
-    dealable(POOL, [power("reserve-callup")]).map((card) => card.id),
+    dealable(POOL, [power("reserve-callup")], 1, BARRACKS_STANDS).map((each) => each.id),
     ["reserve-callup", "drill-schedule", "standing-order", "aid-station-permit"],
   )
 })
 
 test("dealing draws from a stream of its own: whatever the hand, a round with no power kept plays the same battle", () => {
   const context = starterContext()
-  const other: BuildContext = { ...context, nexusDraft: nexusDraftOf({ powers: dealHand(POOL, [], PERIMETER.seed + 7, 1) }) }
-  assert.notDeepEqual(
-    other.nexusDraft.map((option) => option.card.id),
-    context.nexusDraft.map((option) => option.card.id),
-    "pick a seed that deals another hand",
-  )
+  const ids = (hand: readonly PowerCard[]): string => hand.map((each) => each.id).join(" ")
+  // The first seed after the mission's that deals round 1 another hand.
+  const seed = Array.from({ length: 50 }, (_, offset) => PERIMETER.seed + offset + 1).find((each) => ids(perimeterHand(1, [], each)) !== ids(perimeterHand(1)))
+  assert.ok(seed !== undefined, "no seed near the mission's deals round 1 another hand")
+  const other: BuildContext = { ...context, nexusDraft: nexusDraftOf({ powers: perimeterHand(1, [], seed) }) }
   const first = play.startPulse(context, opened(context))
   const second = play.startPulse(other, opened(other))
   assert.ok(first !== null && second !== null)
