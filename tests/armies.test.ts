@@ -93,8 +93,8 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
     "turret structure.bench.beamturret 15",
   ])
   assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, card.effect.credits]), [
-    ["Reserve Fund", "Adds 30 resource to spend.", 30],
-    ["War Chest", "Adds 2000 resource to spend.", 2000],
+    ["Reserve Fund", "Adds 30 resources to spend.", 30],
+    ["War Chest", "Adds 2000 resources to spend.", 2000],
   ])
 })
 
@@ -184,7 +184,8 @@ test("PERIMETER and the cadence level are pinned as data: a change to either mis
   // both lost the raid's inert `order`, PERIMETER gained the line its troops head for (the owner: "the campaign
   // levels should have a target well defined"), and the cadence level's ambush two runners, so Vasse still falls
   // in round 1 now that By the Book guards her; then PERIMETER lost `trains`, since what a building spawns is the
-  // building's own, on its card (the owner, 2026-10-05).
+  // building's own, on its card (the owner, 2026-10-05); then its flanking group's intent says "flank", the genre's
+  // word (the owner, 2026-10-07: "use standard rpg/strategy-game language").
   const withoutNotes = (value: unknown): unknown => {
     if (Array.isArray(value)) return value.map(withoutNotes)
     if (value === null || typeof value !== "object") return value
@@ -192,7 +193,7 @@ test("PERIMETER and the cadence level are pinned as data: a change to either mis
   }
   const [perimeter, cadence] = ARMIES.levels
   assert.equal(perimeter?.mission, PERIMETER)
-  assert.equal(hashOf(withoutNotes(PERIMETER)), "fb6dfe988fe5e60764bc8bb0a977dca30a07c8facec20863139585ae7ad5d73d")
+  assert.equal(hashOf(withoutNotes(PERIMETER)), "5ebd2f43cc262b333a14caabe934a1783cf45e3df95ab016f2b55302ad254a48")
   assert.equal(hashOf(withoutNotes(cadence?.mission)), "e9cc454f6dcc82db9bea5454f6999d387f70ec675db9aadc9aabd31bd26dfa0b")
   // Its notes say why, where the comments did.
   assert.match(PERIMETER.notes ?? "", /PULS/)

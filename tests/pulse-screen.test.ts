@@ -22,6 +22,7 @@ import type { CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { CAPABILITY_MODES } from "../src/view/index.ts"
 import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
+import { feedNames } from "../src/view/pulse-scene.ts"
 import { ESC } from "./build-helpers.ts"
 import { isColourCode, sgrCodes } from "./helpers.ts"
 import { DEFENCE, MINIMUM, at, atHome, click, frameOf, newSession, play, prepare, screenText } from "./pulse-helpers.ts"
@@ -71,12 +72,36 @@ test("answering yes turns the screen into the Nexus Pulse, with the keyboard on 
   assert.match(text, /YOU {3}5 \[#+\]/)
   assert.match(text, /RAID {2}7 \[#+\]/)
   assert.match(text, /\[space\] Pause/)
-  assert.match(text, /\[r\] Watch again/)
+  assert.match(text, /\[r\] Replay/)
   // The bottom bar's one line is the Pulse's own; its keys are on the Controls page.
   assert.match(text, /\| Battle Round - 5 of yours against 7 of the raid\. +\|/)
   assert.match(text, /menu \[esc\]/)
   // The Build Phase's menu is gone: nothing left to build, nothing to pick, no credits.
   assert.doesNotMatch(text, /\[1\] Barracks|\* \d|\[e\] Explore Map/)
+})
+
+test("the feed calls a thing what its card calls it: a turret, a swarmer, never the name its content id carries", () => {
+  // Ids carry a content's short name — "beam", "hatch", "spawnling" — which no card says.
+  const played = victorious()
+  const names = feedNames(played.context.registry)
+  assert.equal(names.get("beam"), "turret")
+  assert.equal(names.get("hatch"), "hatchery")
+  assert.equal(names.get("spawnling"), "swarmer")
+  assert.equal(names.get("trooper"), "trooper")
+  assert.equal(names.get("nexus"), "nexus", "a title of two words gives its last, to fit the panel")
+  assert.equal(names.get("vasse"), "Vasse", "a Commander is named")
+  // On the screen, through the battle: the plan's Turrets fire as turrets.
+  const seen = new Set<string>()
+  for (let ms = 0; ms <= times(played).stopMs; ms += 20) {
+    at(played, ms)
+    for (const line of screenText(played).split("\n")) {
+      const entry = /^\| (\d+\.\ds [^|]*?) *[|+]/u.exec(line)?.[1]
+      if (entry !== undefined) seen.add(entry)
+    }
+  }
+  const feed = [...seen]
+  assert.ok(feed.some((entry) => / turret > /u.test(entry)), `no turret fired in the feed: ${feed.join("; ")}`)
+  assert.deepEqual(feed.filter((entry) => /\b(beam|hatch|spawnling)\b/u.test(entry)), [], "the feed still says a content id's name")
 })
 
 test("the view is centred on the player's Nexus when the Pulse starts, wherever they had scrolled", () => {
@@ -144,7 +169,7 @@ test("the ending says what is happening in words at every moment: the last secon
   assert.match(home, /\[enter\] Next round/)
   assert.doesNotMatch(home, /\[space\] Pause/)
   assert.doesNotMatch(home, /Esc, then Restart/)
-  assert.match(home, /\[r\] Watch again/)
+  assert.match(home, /\[r\] Replay/)
 })
 
 test("the timer counts down the seconds left to the last shot, and its last second reads 0:01", () => {
@@ -210,7 +235,7 @@ test("at 80x24 the result's words are never cut off, whichever way the Pulse end
     assert.equal(statusRows.length, 1, `${name}: the status line is missing`)
     assert.match(statusRows[0]!, /(Build Phase \d|fell|held)\. +\|$/, `${name}: the status line is cut off: ${statusRows[0]}`)
     const first = lines.findIndex((line) => /^\| (VICTORY|DEFEAT|DRAW|TIME'S UP|MISSION COMPLETE|MISSION FAILED) +[|+]/.test(line))
-    const last = lines.findIndex((line) => line.includes("[r] Watch again"))
+    const last = lines.findIndex((line) => line.includes("[r] Replay"))
     assert.ok(first >= 0 && last > first, `${name}: the result panel is not on screen`)
     for (const row of lines.slice(first, last + 1)) {
       assert.equal(row[28], " ", `${name}: the panel's text runs into the divider: ${row}`)
@@ -441,7 +466,7 @@ test("nothing that edits the plan works once the Pulse is on screen, and q still
   assert.equal(played.build.state.popup, "game-menu", "q did not open the game menu")
 })
 
-test("the panel's rows are clickable: Pause and Resume, Watch again — and nothing else on the panel is", () => {
+test("the panel's rows are clickable: Pause and Resume, Replay — and nothing else on the panel is", () => {
   const played = victorious()
   const pulse = played.build.pulse!
   const [pause, again] = pulseControlRows(played.layout)
@@ -454,7 +479,7 @@ test("the panel's rows are clickable: Pause and Resume, Watch again — and noth
   click(played, column, pause.row)
   assert.equal(pulse.paused, false, "a second click did not resume")
   click(played, column, again.row)
-  assert.equal(pulse.timeMs, 0, "a click on Watch again did not start over")
+  assert.equal(pulse.timeMs, 0, "a click on Replay did not start over")
 
   // A click on the feed, the forces or the title does nothing at all.
   const state = played.build.state
@@ -483,7 +508,7 @@ test("once the result stands there is nothing to pause: Space and a click on the
   click(clicked, clicked.layout.panelColumn + 3, pause!.row)
   assert.equal(clicked.build.pulse, null, "a click on the row where Pause was did not go on")
 
-  // Watch again still works from there.
+  // Replay still works from there.
   const again = victorious()
   const pulse = again.build.pulse!
   atHome(again)
@@ -536,7 +561,7 @@ test("the view looks at the Nexus again when the last seconds start", () => {
   assert.deepEqual(played.build.state.cursor, nexusTile(played.context), "the last seconds did not bring the view back to the Nexus")
 })
 
-test("Watch again replays from the top and frames the view again", () => {
+test("Replay plays it from the top and frames the view again", () => {
   const played = victorious()
   const moments = times(played)
   at(played, moments.homeMs + 500)
@@ -559,7 +584,7 @@ test("the last three seconds warn, and `d` over a Pulse opens Settings at the mi
   played.build.handleData("d", played.layout)
   assert.equal(played.build.state.popup, "settings")
   assert.equal(played.build.state.popupHighlight, settingRow("nextRound"), "d did not open at the mission's Experiments")
-  assert.match(screenText(played), /Next round\s+<\s+key\s+>/)
+  assert.match(screenText(played), /Next round\s+<\s+manual\s+>/)
   // Before a Pulse it is still the first Experiment.
   const before = newSession()
   before.build.handleData("d", before.layout)
@@ -644,7 +669,7 @@ test("nobody draws the Pulse in the Build Phase, and the Build Phase's frame is 
   const session = newSession()
   const plain = frameToText(composeBuildFrame({ context: session.context, state: session.build.state, layout: session.layout }, "monochrome"))
   assert.match(plain, /TERMINAL NEXUS build phase/)
-  assert.doesNotMatch(plain, /BATTLE ROUND|Watch again/)
+  assert.doesNotMatch(plain, /BATTLE ROUND|Replay/)
   assert.equal(session.build.pulse, null)
   assert.equal(session.build.pulseFrame(), undefined)
 })

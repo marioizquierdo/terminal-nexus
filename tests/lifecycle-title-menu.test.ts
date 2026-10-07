@@ -145,7 +145,7 @@ test("activating Challenge, a dimmed stub, shows a notice and does not quit or c
   })
   assert.deepEqual(exits, [], "a stub option should not exit the application")
   assert.ok(stdout.written.includes("not built yet"), "no honest stub notice was ever drawn")
-  assert.ok(stdout.written.includes("top-level menu"), "activating a dimmed stub left the top-level menu")
+  assert.ok(stdout.written.includes("main menu"), "activating a dimmed stub left the main menu")
 })
 
 test("activating Campaign leaves the top-level menu for its own placeholder screen", async () => {

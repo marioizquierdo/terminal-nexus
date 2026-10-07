@@ -491,7 +491,7 @@ test("at 80 x 24, her line in the panel stops above the controls, and beside her
       // The controls are where they always are, whole.
       const controls = text.slice(side.layout.panelLastRow - 1, side.layout.panelLastRow + 1).map((row) => row.slice(side.layout.panelColumn, side.layout.dividerColumn).trim())
       assert.match(controls[0] ?? "", /^\[(space|enter)\] (Pause|Resume|Next round)$/, `at ${ms} ms the controls read "${controls[0]}"`)
-      assert.match(controls[1] ?? "", /^\[r\] Watch again$/)
+      assert.match(controls[1] ?? "", /^\[r\] Replay$/)
       // The frame's own lines are untouched: the map's border and the panel's divider.
       for (let row = side.layout.gridBox.top; row <= side.layout.gridBox.bottom; row += 1) {
         assert.match(text[row]?.[side.layout.gridBox.right] ?? "", /[|+]/, `at ${ms} ms something covers the map's east side`)

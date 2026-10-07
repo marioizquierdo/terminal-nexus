@@ -13,7 +13,6 @@ import {
   STARTER_START_CURSOR,
   starterGrid,
 } from "../src/build/catalog.ts"
-import { reachShape } from "../src/build/reach.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
@@ -100,7 +99,7 @@ test("PERIMETER's first round: Vasse is an @ among the squads, and her card name
   assert.match(panelText(side), /HEALTH +20/)
 })
 
-test("her card says what By the Book does in one plain sentence with its reach's shape, at the strength the battle will run on, and nothing while it is off", () => {
+test("her card says what By the Book does in one plain sentence with its range, at the strength the battle will run on, and nothing while it is off", () => {
   const side = perimeter()
   const vasse = (side.build.round.incoming ?? []).find((entity) => entity.contentId === VASSE)
   assert.ok(vasse !== undefined, "she is not with the squads")
@@ -108,15 +107,14 @@ test("her card says what By the Book does in one plain sentence with its reach's
   side.build.dispatch({ kind: "explore" })
   const { aura, attack } = side.build.round.registry.get(VASSE)
   assert.ok(aura !== undefined && attack !== undefined)
-  // Its name opening one sentence, under the description, saying how far it reaches as every reach is said; and
-  // at 80 x 24 every number still shows beneath it, down to her own reach's shape under her attack.
-  const reach = (radius: number): string => reachShape(radius).replace("/", "\\/")
-  assert.match(panelText(side), new RegExp(`Nexus restores her\\. By the Book: she and her units take 25% less damage within ${reach(aura.radius)}\\.`))
-  assert.match(panelText(side), new RegExp(`HEALTH +80 ATTACK +5 ${reach(attack.range)} `))
+  // Its name opening one sentence, under the description, saying how far it reaches as every range is said, one
+  // number; and at 80 x 24 every number still shows beneath it, down to her own range under her attack.
+  assert.match(panelText(side), new RegExp(`Nexus restores her\\. By the Book: she and her units within range ${aura.radius} take 25% less damage\\.`))
+  assert.match(panelText(side), new RegExp(`HEALTH +80 ATTACK +5 RANGE +${attack.range} `))
   // The Experiment is what the battle will run on, so it is what the card says.
   side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: 1 })
   assert.equal(side.build.state.experiments.commanderAura, 40)
-  assert.match(panelText(side), /take 40% less damage within /)
+  assert.match(panelText(side), /within range \d+ take 40% less damage/)
   for (let step = 0; step < 3; step += 1) side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: -1 })
   assert.equal(side.build.state.experiments.commanderAura, 0)
   // (The bottom line names the Experiment just changed; the card says nothing of the aura.)

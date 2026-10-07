@@ -145,7 +145,7 @@
                       "units": [{ "unit": "unit.ravel.raider", "count": 2 }],
                       "at": "east-flats",
                       "group": "flank",
-                      "intent": "Come round from the east."
+                      "intent": "Flank from the east."
                     }
                   }
                 ]

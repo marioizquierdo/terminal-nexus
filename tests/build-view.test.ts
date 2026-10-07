@@ -355,7 +355,7 @@ test("the status line says why a placement would be refused, and which tile it m
     build.handleData("1", layout)
     build.run([{ kind: "move-cursor", dx: 0, dy: -3 }])
   })
-  assert.match(statusRow(onNexus), /^Cannot build here: the nexus is here at \d+,\d+\.$/)
+  assert.match(statusRow(onNexus), /^Cannot build here: the Citizen Nexus is here at \d+,\d+\.$/)
 
   // Beyond the build range, the first of the ghost's tiles outside it.
   const beyond = screenAt(MINIMUM, (build, layout) => {
@@ -504,7 +504,7 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   // screenshot showed it, so each one is now asserted whole at the narrowest size that must work.
   const { text } = screenAt(MINIMUM)
   assert.match(text, /TERMINAL NEXUS build phase/)
-  assert.match(text, /\| Arrows move the cursor, \[enter\] explores here, a number arms a building\. +\|/)
+  assert.match(text, /\| Arrows move the cursor, \[enter\] explores here, a number selects a building\. +\|/)
   const exploring = screenAt(MINIMUM, (build) => build.dispatch({ kind: "explore" }))
   const exploreLine = bottomLine(exploring.context, exploring.build.state, null).text
   assert.ok(exploring.text.split("\n")[exploring.layout.footerRow]?.includes(exploreLine), `"${exploreLine}" is cut`)
@@ -755,7 +755,7 @@ test("the commit confirmation is a screen over the Grid: Battle Round 1, what it
   assert.match(built.text, /close \[esc\]/)
   // The bottom line answers the key that opened it; once that lapses, the hint says the same keys.
   assert.match(built.text, /Battle Round 1: Enter starts it, Esc goes back\./)
-  assert.equal(hint(built.context, built.build.state).text, "Battle round 1: [enter] or [s] starts it, [esc] goes back to the plan.")
+  assert.equal(hint(built.context, built.build.state).text, "Battle Round 1: [enter] or [s] starts it, [esc] goes back to the plan.")
 })
 
 test("the committed screen names the pick and the count, and the footer carries the full sentence", () => {

@@ -457,7 +457,7 @@ test("legality: an illegal placement is refused with a reason and nothing is mov
   moveTo(build, { x: 18, y: 10 })
   build.handleData(ENTER, layout)
   assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.status.text, /the nexus is here/)
+  assert.match(build.state.status.text, /the Citizen Nexus is here/)
 
   // Beyond the build range: the open ground east of the base.
   moveTo(build, { x: 34, y: 14 })
@@ -498,7 +498,7 @@ test("legality: a second structure may not overlap the first one planned", () =>
   moveTo(build, { x: 27, y: 13 }) // one tile east of the first one's centre
   build.run([{ kind: "place" }])
   assert.equal(build.state.planned.length, 1)
-  assert.match(build.state.status.text, /the barracks is here/)
+  assert.match(build.state.status.text, /the Barracks is here/)
 })
 
 test("a plan is revisable: remove under the cursor, and undo the last one", () => {

@@ -419,7 +419,7 @@ of another building may stand within it, measured as range is. At one, nothing m
 below, though another building may stand at a corner, which is three away as range is measured, and the sides of
 the ring its units appear on stay open. It holds both ways — a building placed near one, and one placed near any
 building — and against every building on the map: standing or planned, the player's or the raid's, the Grid
-Nexus included. Units take no room. While the "Barracks room" Experiment is felt, its value (1 or 2; 1 to begin
+Nexus included. Units take no room. While the "Spawn space" Experiment is felt, its value (1 or 2; 1 to begin
 with) is every such building's room. Every Build range offered leaves a place for a room of two: a spawner must
 then stand more than two away from every building and still have a tile in range. The Build Phase enforces this
 and the kernel never reads it.

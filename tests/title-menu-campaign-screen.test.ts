@@ -107,13 +107,13 @@ test("Campaign's placeholder screen shows its own message and a way back, not th
 
 test("the Back row's hotkey returns to the top-level menu", async () => {
   const text = await campaignFrameAfter((stdin) => stdin.emit("data", Buffer.from("1")))
-  assert.ok(text.includes("top-level menu"), "Back did not return to the top-level menu")
+  assert.ok(text.includes("main menu"), "Back did not return to the top-level menu")
   assert.ok(!text.includes("Campaign is not built yet"), "the placeholder screen is still on screen after Back")
 })
 
 test("Esc also returns to the top-level menu — the same redundant path Settings already has", async () => {
   const text = await campaignFrameAfter((stdin) => stdin.emit("data", Buffer.from(ESC)))
-  assert.ok(text.includes("top-level menu"), "Esc did not return to the top-level menu")
+  assert.ok(text.includes("main menu"), "Esc did not return to the top-level menu")
 })
 
 test("a hotkey crossing into Campaign and a second key right behind it, in one chunk, both land correctly", async () => {
@@ -134,7 +134,7 @@ test("a hotkey crossing into Campaign and a second key right behind it, in one c
   await wait(30)
 
   assert.ok(
-    stdout.lastWrite.includes("top-level menu"),
+    stdout.lastWrite.includes("main menu"),
     "the second key was not routed to Campaign's own Back row at all",
   )
   assert.ok(

@@ -34,6 +34,7 @@ import type { Host } from "./lifecycle.ts"
 import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
 import { formatRoute, parseRoute } from "./route.ts"
+import { shownSetting } from "../build/all-settings.ts"
 import type { TitleDestination, TitlePlace } from "./route.ts"
 
 /** Five rows; a sixth, choosing a Commander upfront, was considered and rejected: a new player starts the
@@ -43,7 +44,7 @@ export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
   { id: "campaign", hotkey: "1", label: "Campaign", route: "campaign" },
   // Dimmed and already saying why: the run screen hasn't landed, and a disabled item shows its
   // reason in the label a player sees before ever pressing anything, not only after.
-  { id: "challenge", hotkey: "2", label: "Challenge (Milestone 11)", disabled: true, route: "challenge" },
+  { id: "challenge", hotkey: "2", label: "Challenge (coming soon)", disabled: true, route: "challenge" },
   { id: "settings", hotkey: "3", label: "Settings", route: "settings" },
   { id: "about", hotkey: "4", label: "About", route: "about" },
   { id: "exit", hotkey: "5", label: "Exit" },
@@ -61,7 +62,7 @@ const BACK_ONLY_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: 
  */
 export function settingsItems(settings: Settings): readonly MenuItem[] {
   return [
-    { id: "capability", hotkey: "1", label: `Colour depth: ${settings.capability}` },
+    { id: "capability", hotkey: "1", label: `Colour depth: ${shownSetting("capability").format(settings.capability)}` },
     { id: "theme", hotkey: "2", label: `Background: ${settings.theme}` },
     { id: "glyphPack", hotkey: "3", label: `Symbols: ${settings.glyphPack}` },
     {
@@ -124,7 +125,7 @@ type Screen = "top" | "settings" | "campaign" | "about"
 /** What each screen's frame says about itself — the one place that grows when a screen is added,
  *  instead of a `screen === "x" ? ... : screen === "y" ? ...` chain repeated at every call site. */
 const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack: boolean }>>> = {
-  top: { subtitle: "top-level menu", showBack: false },
+  top: { subtitle: "main menu", showBack: false },
   settings: { subtitle: "settings", showBack: true },
   campaign: { subtitle: "campaign", showBack: true },
   about: { subtitle: "about", showBack: true },
@@ -138,8 +139,8 @@ const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack
  */
 const PLACE_SCREENS: Readonly<Record<TitlePlace, Readonly<{ screen: Screen; notice?: string }>>> = {
   menu: { screen: "top" },
-  campaign: { screen: "campaign", notice: "Campaign is not built yet - Milestone 4 adds the campaign menu." },
-  challenge: { screen: "top", notice: "Challenge is not built yet - Milestone 11 adds the run screen." },
+  campaign: { screen: "campaign", notice: "Campaign is not built yet - its menu is coming soon." },
+  challenge: { screen: "top", notice: "Challenge is not built yet - it is coming soon." },
   settings: { screen: "settings" },
   about: { screen: "about" },
 }

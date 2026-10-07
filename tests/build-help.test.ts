@@ -91,8 +91,8 @@ test("the answers players rely on still show right after their command, and laps
   const cases: ReadonlyArray<readonly [name: string, drive: (side: Side) => void, text: RegExp, tone?: string]> = [
     ["a placement", (side) => keys(side, "1", ENTER), /^Barracks placed \(resources: 60\) - \[u\] undo$/, "success"],
     ["a pick", (side) => keys(side, "n", "1"), /^Reserve Fund picked\.$/, "success"],
-    ["undo", (side) => keys(side, "1", ENTER, "u"), /^Barracks undone, 40 back\.$/],
-    ["remove", (side) => keys(side, TAB, "1", ENTER, BACKSPACE), /^Barracks removed, 40 back\.$/],
+    ["undo", (side) => keys(side, "1", ENTER, "u"), /^Barracks undone, 40 refunded\.$/],
+    ["remove", (side) => keys(side, TAB, "1", ENTER, BACKSPACE), /^Barracks removed, 40 refunded\.$/],
     ["cancel", (side) => keys(side, "1", ESC), /^Cancelled\.$/],
     ["restart", (side) => keys(side, ESC, "r"), /^Build Phase restarted with these settings\.$/],
     // A Nexus power left unpicked holds nothing back: the Battle Round screen opens.
@@ -117,10 +117,10 @@ test("a refused placement is said in red with its tile, then — lapsed — quie
   side.build.dispatch({ kind: "look-at", x: STARTER_START_CURSOR.x, y: STARTER_START_CURSOR.y }) // onto the Grid Nexus
   keys(side, ENTER)
   const tried = line(side)
-  assert.match(tried.text, /^Cannot build here: the nexus is here at \d+,\d+\.$/)
+  assert.match(tried.text, /^Cannot build here: the Citizen Nexus is here at \d+,\d+\.$/)
   assert.equal(tried.tone, "danger")
   assert.deepEqual(side.build.state.status.tile, side.build.state.cursor)
-  assert.match(bottomLineText(side), /^Cannot build here: the nexus is here/)
+  assert.match(bottomLineText(side), /^Cannot build here: the Citizen Nexus is here/)
   silence(side)
   const looking = line(side)
   assert.equal(looking.text, tried.text, "the ghost still sits on a refused tile, so the line still says why")
@@ -138,7 +138,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => keys(side, "n"), /^Pick one: up\/down and \[enter\], or its number\. \[esc\] closes without a pick\.$/],
     [(side) => keys(side, "n", "1", "n"), /^The Nexus powers you have\. \[esc\] closes\.$/],
   ],
-  "battle-round": [[(side) => keys(side, "n", "1", "s"), /^Battle round 1: \[enter\] or \[s\] starts it, \[esc\] goes back to the plan\.$/]],
+  "battle-round": [[(side) => keys(side, "n", "1", "s"), /^Battle Round 1: \[enter\] or \[s\] starts it, \[esc\] goes back to the plan\.$/]],
   "game-menu": [[(side) => keys(side, ESC), /^Up\/down and \[enter\] choose, or press a row's key\. \[esc\] back to the game\.$/]],
   settings: [
     [(side) => keys(side, "d"), /^Left\/right change a value, \[e\] exports them all\. \[esc\] closes\.$/],
@@ -189,7 +189,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   placing: [[(side) => keys(side, "2"), /^Place the Hatchery: arrows move, \[enter\] places, \[2\] or \[esc\] cancels\.$/]],
   explore: [[(side) => keys(side, "e"), /^Explore Map: arrows move, the panel shows what is here\. \[esc\] goes back\.$/]],
   "explore-planned": [[(side) => keys(side, TAB, "1", ENTER, "e"), /^Planned Barracks: \[bksp\] removes it, \[u\] undoes the last\. \[esc\] goes back\.$/]],
-  map: [[(side) => keys(side, TAB), /^Arrows move the cursor, \[enter\] explores here, a number arms a building\.$/]],
+  map: [[(side) => keys(side, TAB), /^Arrows move the cursor, \[enter\] explores here, a number selects a building\.$/]],
 }
 
 test("a hint for every situation the hint list names, each one line that fits the 80-column floor", () => {
@@ -403,7 +403,7 @@ test("the page names only keys the adapters bind, and every command key they bin
   }
 })
 
-test("one group has no keys: THE GROUND says units stand tall, and how a row counts, in the text's column", () => {
+test("one group has no keys: THE GROUND says rows count double, for range and movement, in the text's column", () => {
   const page = controlsPage()
   // Every other line is a key and what it does; only THE GROUND's lines have no key.
   for (const section of page) {
@@ -411,12 +411,12 @@ test("one group has no keys: THE GROUND says units stand tall, and how a row cou
       assert.equal(entry.keys === "", section.heading === "THE GROUND", `${section.heading}: "${entry.text}"`)
     }
   }
-  // Right after the map's keys, its lines read as one passage: units stand tall, so more fit side by side than
-  // one behind another, and a row up or down counts two steps across — the rule every reach is drawn by.
+  // Right after the map's keys, its lines read as one passage: a row up or down counts as two tiles of range or
+  // movement — the rule every range is drawn by, which a card's one number leaves to the map.
   const headings = page.map((section) => section.heading)
   assert.equal(headings.indexOf("THE GROUND"), headings.indexOf("THE MAP") + 1)
   const passage = page.find((section) => section.heading === "THE GROUND")?.lines.map((entry) => entry.text).join(" ") ?? ""
-  assert.match(passage, /^units stand tall, so more fit side by side than one behind another; a row up or down counts two steps across$/)
+  assert.match(passage, /^rows count double: a row up or down is 2 tiles of range or movement, so range 6 reaches 3 rows up and down$/)
   // On the page at 80 x 24, scrolled to it: each line whole, in the column the keys' words are in.
   const side = buildSide()
   keys(side, "?", ...Array.from({ length: 20 }, () => DOWN))
@@ -433,7 +433,11 @@ test("the Controls page says what Esc and x do on the menu, how placing is cance
   assert.deepEqual(section("THE MENU").find((line) => line.keys === "esc"), { keys: "esc", text: "the game menu" })
   assert.match(section("THE MENU").find((line) => line.keys === "x")?.text ?? "", /^nothing/)
   assert.ok(section("PLACING A BUILDING").some((line) => line.keys === "its own key"))
-  assert.ok(section("PLACING A BUILDING").some((line) => /place it or stop first/.test(line.text)))
+  assert.ok(section("PLACING A BUILDING").some((line) => /place or cancel first/.test(line.text)))
+  assert.deepEqual(
+    section("PLACING A BUILDING").filter((line) => line.keys === "its own key" || line.keys === "esc/x").map((line) => line.text),
+    ["cancel", "cancel"],
+  )
   assert.deepEqual(
     section("ANY LIST").map((line) => line.keys),
     ["up/down", "hold up/down", "shift+up/down", "pgup/home", "pgdn/end"],

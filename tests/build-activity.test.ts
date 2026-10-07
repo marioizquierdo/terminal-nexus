@@ -456,7 +456,7 @@ test("a refusal records why, and its tile; every command records the bottom line
   const refused = side.activity.entries().filter((entry) => entry.event === "build.refused")
   assert.equal(refused.length, 1)
   assert.equal(refused[0]?.props["command"], "place")
-  assert.match(String(refused[0]?.props["reason"]), /^Cannot build here: the nexus is here at \d+,\d+\.$/)
+  assert.match(String(refused[0]?.props["reason"]), /^Cannot build here: the Citizen Nexus is here at \d+,\d+\.$/)
   assert.deepEqual({ x: refused[0]?.props["x"], y: refused[0]?.props["y"] }, side.build.state.cursor)
   const command = side.activity.entries().filter((entry) => entry.event === "build.command").at(-1)
   assert.equal(command?.props["command"], "place")

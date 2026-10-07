@@ -13,7 +13,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import { commanderName } from "../content/cards.ts"
+import { CARD_TEXT, commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { inBounds, tileIndex } from "../grid/coords.ts"
 import { tilesWithin } from "../grid/reach.ts"
@@ -329,19 +329,36 @@ function whoIs(id: string): Readonly<{ player: PlayerId | null; name: string }> 
   return { player: side === "A" || side === "B" ? side : null, name }
 }
 
-/** The Commanders' names, by the short name their ids carry (`A:vasse#7` is "Vasse"), for each registry. */
-const COMMANDER_NAMES = new WeakMap<ContentRegistry, ReadonlyMap<string, string>>()
+/** What the feed calls each kind of thing, by the short name its ids carry (`A:beam#3` is a turret), for each
+ *  registry. */
+const FEED_NAMES = new WeakMap<ContentRegistry, ReadonlyMap<string, string>>()
 
-/** A unit's name in the feed: its short name, or a Commander's own. */
-function feedName(pulse: PulseFrame, id: string): string {
-  let names = COMMANDER_NAMES.get(pulse.registry)
-  if (names === undefined) {
-    const { registry } = pulse
-    names = new Map(registry.ids().filter((contentId) => registry.get(contentId).commander === true).map((contentId) => [registry.get(contentId).short, commanderName(contentId)]))
-    COMMANDER_NAMES.set(registry, names)
+/**
+ * What the feed calls each kind of thing in `registry`, by the short name its ids carry: what its card calls it,
+ * so the feed, the menu and the cards give a thing one name — lowercased, as the feed writes a kind of thing
+ * ("turret > runner", "swarmer trained"), and a Commander by her own name ("Vasse falls"). A title of more than one
+ * word gives its last ("Citizen Nexus" is "nexus"), so a line stays short enough for the panel at the floor.
+ * Content no card describes keeps the short name its id carries.
+ */
+export function feedNames(registry: ContentRegistry): ReadonlyMap<string, string> {
+  const known = FEED_NAMES.get(registry)
+  if (known !== undefined) return known
+  const names = new Map<string, string>()
+  for (const contentId of registry.ids()) {
+    const definition = registry.get(contentId)
+    const title = CARD_TEXT[contentId]?.title
+    const name =
+      definition.commander === true ? commanderName(contentId) : title === undefined ? definition.short : (title.split(" ").at(-1) ?? title).toLowerCase()
+    if (!names.has(definition.short)) names.set(definition.short, name)
   }
+  FEED_NAMES.set(registry, names)
+  return names
+}
+
+/** A thing's name in the feed, from its id (`feedNames`). */
+function feedName(pulse: PulseFrame, id: string): string {
   const { name } = whoIs(id)
-  return names.get(name) ?? name
+  return feedNames(pulse.registry).get(name) ?? name
 }
 
 /**
@@ -361,12 +378,12 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
     case "entity.died":
       return pulse.registry.get(event.contentId).commander === true
         ? { text: `${at} ${commanderName(event.contentId)} falls`, role: sideRole(event.player) }
-        : { text: `${at} ${whoIs(event.entity).name} dies`, role: sideRole(event.player) }
+        : { text: `${at} ${feedName(pulse, event.entity)} dies`, role: sideRole(event.player) }
     // Only what a building trained: an arrival or a spawner's brood is not news the feed has room for.
     case "entity.spawned":
-      return event.trainedBy === undefined ? null : { text: `${at} ${whoIs(event.entity).name} trained`, role: sideRole(event.player) }
+      return event.trainedBy === undefined ? null : { text: `${at} ${feedName(pulse, event.entity)} trained`, role: sideRole(event.player) }
     case "structure.destroyed":
-      return { text: `${at} ${whoIs(event.entity).name} falls`, role: sideRole(whoIs(event.entity).player) }
+      return { text: `${at} ${feedName(pulse, event.entity)} falls`, role: sideRole(whoIs(event.entity).player) }
     case "pulse.ended":
       return { text: `${at} the battle ends`, role: "chrome.title" }
     default:
@@ -493,7 +510,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   }
   for (const control of pulseControlRows(layout)) {
     if (control.control === "toggle" && pulse.phase === "home") continue
-    const label = control.control === "toggle" ? (pulse.paused ? "Resume" : "Pause") : "Watch again"
+    const label = control.control === "toggle" ? (pulse.paused ? "Resume" : "Pause") : "Replay"
     text(cells, band, column, control.row, `[${control.hotkey}]`, "chrome.hotkey", { bold: true, limit })
     text(cells, band, column + control.hotkey.length + 3, control.row, label, "chrome.value", {
       limit: limit - control.hotkey.length - 3,

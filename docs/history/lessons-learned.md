@@ -341,6 +341,19 @@ than any one feature:
 9. **Setting a group down round changes when its blow lands.** Round groups spread along their way in, so a raid's
    first blow came later and a test's "the Nexus falls with no defenders" needed a heavier raid of its own.
 
+## Genre words (2026-10-07)
+
+1. **A name a player reads comes from one place: the card.** The battle feed built names from content ids and the
+   bottom line from the content's short name, so a Turret fired as "beam" and a Swarmer was trained as
+   "spawnling"; no test read a feed line naming a bench building. A view that names a thing asks the card for it.
+2. **Read the game's words the way a player of the genre would.** "Touching", "arms", "stop and go back", "40
+   back" and "goes for" each read plainly to the person who wrote them and as invented to a player who knows
+   "melee", "select", "cancel", "refunded" and "targets". A review of every string, by someone who did not write
+   them, found about thirty to weigh.
+3. **Bun stops a test at five seconds; Node never does.** One dialog test plays PERIMETER twice and takes 5.4 to 6.5
+   seconds under Bun in a cloud container, on `main` as well, while CI's runners pass it. Measure a slow test on
+   `main` before blaming the change, and never loosen it to make a slow machine pass.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

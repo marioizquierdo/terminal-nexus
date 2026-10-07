@@ -405,7 +405,8 @@ In tiles, a reach is a diamond twice as wide as it is tall. Every row is two squ
 diamond is as tall as it is wide: a square standing on one corner, and for an even reach exactly R squares from its
 middle to each of its four points. Every reach the game draws is made of it (a Turret's drawn round it as it is
 placed, a marksman's when the cursor explores it, Vasse's aura, the build range's dotted ground), and a card says it
-in words: "6 across, 3 up/down" (`reachShape`; the cards in [`ui-patterns.md`](ui-patterns.md)). A reach of 1 is
+as strategy games say a range, one number, the reach across: `RANGE 6`, or `melee` for a melee attack's reach of 1
+(the cards in [`ui-patterns.md`](ui-patterns.md)); the map draws the rest of the diamond. A reach of 1 is
 the one reach that is not every tile within its distance: it takes the tiles straight above and below, two away,
 and not the tiles two columns across, also two away.
 

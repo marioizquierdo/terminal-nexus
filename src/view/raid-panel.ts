@@ -1,18 +1,18 @@
 // ***The raid in the panel***: the coming raid, said in the side panel's free rows between the buildings
 // and Start Battle Round, so a player reads it without looking for it (the owner: "reading the enemy intent is
 // very important for basic ui/ux interaction"). Under when it comes — as the round starts, or so many
-// seconds in — each group says how many and from where, of what, and what it goes for first:
+// seconds in — each group says how many and from where, of what, and what it targets first:
 //
 //   AS THE ROUND STARTS
 //   13 from the north-east
 //     6 runners, 4 raiders,
 //     3 slingers
-//     goes for your Turret
+//     targets your Turret
 //
 // Information, not a menu row: nothing here is a choice, so the keyboard never lands on it and a click on it
 // does nothing (`menuEntryAt` knows no such row). Plain words sized to the panel at 80 x 24, never a cut
 // word; where the panel has fewer free rows (a longer menu), the kinds go first, then whole groups, and the
-// last line says how many groups the panel had no room for. What a group goes for is the kernel's own first
+// last line says how many groups the panel had no room for. What a group targets is the kernel's own first
 // choice on the plan as it stands (`BuildSession.raid`), so the words change with the plan, as the trail
 // and the mark on the map do (`drawRaidIntent`).
 
@@ -43,8 +43,8 @@ export type RaidLine = Readonly<{ indent: number; parts: readonly RaidPart[] }>
 /** How far under a group's first line its kinds and its target are set. */
 const INDENT = 2
 
-/** What a group's last line says before what it goes for first. */
-const GOES_FOR = "goes for "
+/** What a group's last line says before what it targets first. */
+const TARGETS = "targets "
 
 /** The panel rows the raid may use: from the second row under the last building (a blank row between) to
  *  the second row above Start Battle Round (a blank row before it) — or `null` when the menu leaves none. */
@@ -74,7 +74,7 @@ export function bearing(from: Coord, to: Coord): string {
   return BEARINGS[sector] ?? "east"
 }
 
-/** What a group goes for, as the panel names it: a building as the menu does ("your Barracks", "your
+/** What a group targets, as the panel names it: a building as the menu does ("your Barracks", "your
  *  Nexus"), a unit as the kinds are counted ("your trooper"), a Commander by her name ("Vasse"). */
 export function targetName(context: Pick<BuildContext, "registry">, target: RaidTarget): string {
   const definition = context.registry.get(target.contentId)
@@ -105,7 +105,7 @@ export function whenHeading(tick: number): string {
 }
 
 /** One group's lines: how many and from where (as the map is seen, `bearing`), of what (when `kinds`), and what
- *  it goes for first. */
+ *  it targets first. */
 function groupLines(
   context: Pick<BuildContext, "registry">,
   group: RaidGroup,
@@ -123,11 +123,11 @@ function groupLines(
   }
   if (group.target !== null) {
     const name: RaidPart = { text: targetName(context, group.target), role: playerRole(group.target.player), bold: true }
-    // A name too long to follow "goes for" on one line goes under it, so no word is cut.
-    if (INDENT + GOES_FOR.length + name.text.length <= width) {
-      lines.push({ indent: INDENT, parts: [{ text: GOES_FOR, role: "chrome.label" }, name] })
+    // A name too long to follow "targets" on one line goes under it, so no word is cut.
+    if (INDENT + TARGETS.length + name.text.length <= width) {
+      lines.push({ indent: INDENT, parts: [{ text: TARGETS, role: "chrome.label" }, name] })
     } else {
-      lines.push({ indent: INDENT, parts: [{ text: GOES_FOR.trimEnd(), role: "chrome.label" }] }, { indent: INDENT * 2, parts: [name] })
+      lines.push({ indent: INDENT, parts: [{ text: TARGETS.trimEnd(), role: "chrome.label" }] }, { indent: INDENT * 2, parts: [name] })
     }
   }
   return lines

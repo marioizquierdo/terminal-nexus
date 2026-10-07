@@ -357,7 +357,7 @@ The first real draft needs only two or three kinds for one mission; the pool ear
 
 ### 4.6 The three starting Commanders
 
-Three Commanders open the game, and a player may keep more than one campaign in progress. The shape is **two Citizens who are almost the same, plus one Ravel who is not.** Only Vasse is offered at first: **RULE — there is no upfront Commander-choice screen.** A new player starts Vasse's mission 1 directly, and completing it unlocks Averno and Dob Hunter as two more campaign rows (see the opening campaigns in [`campaigns.md`](campaigns.md)). The holder is the top-level menu, which has no Commander choice (`src/cli/menu.ts`, `TOP_LEVEL_ITEMS`; `tests/title-menu-campaign-screen.test.ts`).
+Three Commanders open the game, and a player may keep more than one campaign in progress. The shape is **two Citizens who are almost the same, plus one Ravel who is not.** Only Vasse is offered at first: **RULE — there is no upfront Commander-choice screen.** A new player starts Vasse's mission 1 directly, and completing it unlocks Averno and Dob Hunter as two more campaign rows (see the opening campaigns in [`campaigns.md`](campaigns.md)). The holder is the main menu, which has no Commander choice (`src/cli/menu.ts`, `TOP_LEVEL_ITEMS`; `tests/title-menu-campaign-screen.test.ts`).
 
 #### Edda Vasse — Citizen Nexus — Native — *the protector*
 

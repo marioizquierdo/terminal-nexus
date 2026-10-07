@@ -130,7 +130,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       ? "Pick one: up/down and [enter], or its number. [esc] closes without a pick."
       : "The Nexus powers you have. [esc] closes.",
   "battle-round": (_context, state) =>
-    `Battle round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
+    `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
   "game-menu": () => "Up/down and [enter] choose, or press a row's key. [esc] back to the game.",
   settings: (_context, state) => `Left/right change a value, [e] exports them all. ${escBack(state)}`,
   export: (_context, state) => `Paste this into the pull request. Up/down scroll. ${escBack(state)}`,
@@ -184,7 +184,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     `Planned ${plannedLabel(context, state)}: [bksp] removes it, [u] undoes the last. [esc] goes back.`,
   // Opened from the map, Explore Map leaves the cursor where it is — it only looks for clear ground on
   // the hand-off from the menu — so Enter reads what is here.
-  map: () => "Arrows move the cursor, [enter] explores here, a number arms a building.",
+  map: () => "Arrows move the cursor, [enter] explores here, a number selects a building.",
 }
 
 /** What can be done where the keyboard is, in the quiet `hint` tone — never about a tile, so it never
@@ -245,7 +245,7 @@ export const CONTROLS_KEYS_WIDTH = 14
  *
  * One group has no keys: THE GROUND, after THE MAP, the one thing on the page that is not a key — that units
  * stand tall, so more fit side by side than one behind another, and a row up or down counts two steps across
- * (the rule every reach on the map and on a card is drawn by, `src/build/reach.ts`). It is the page that
+ * (the rule every range on the map is drawn by, `src/grid/reach.ts`). It is the page that
  * teaches how to play, so how the ground is counted is said here once.
  */
 export function controlsPage(jumpStep: number = defaultValue("jumpStep")): readonly ControlsSection[] {
@@ -255,7 +255,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       lines: [
         { keys: "up/down", text: "choose a row" },
         { keys: "enter/space", text: "press the chosen row" },
-        { keys: "1 2 3 ...", text: "arm a building, anywhere" },
+        { keys: "1 2 3 ...", text: "select a building, anywhere" },
         { keys: "e", text: "Explore Map" },
         { keys: "n", text: "the Nexus powers" },
         { keys: "s", text: "Start Battle Round (or p)" },
@@ -279,13 +279,13 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       ],
     },
     {
-      // No keys: how the ground is counted, a row as two columns, which every reach is drawn and said by.
+      // No keys: how the ground is counted, a row as two columns, which every range is drawn by.
       heading: "THE GROUND",
       lines: [
-        { keys: "", text: "units stand tall, so more" },
-        { keys: "", text: "fit side by side than one" },
-        { keys: "", text: "behind another; a row up or" },
-        { keys: "", text: "down counts two steps across" },
+        { keys: "", text: "rows count double: a row up" },
+        { keys: "", text: "or down is 2 tiles of range" },
+        { keys: "", text: "or movement, so range 6" },
+        { keys: "", text: "reaches 3 rows up and down" },
       ],
     },
     {
@@ -293,9 +293,9 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       lines: [
         { keys: "arrows", text: "move the building" },
         { keys: "enter/space", text: "place it" },
-        { keys: "its own key", text: "stop and go back" },
-        { keys: "esc/x", text: "stop and go back" },
-        { keys: "1 2 3 ... e s", text: "wait: place it or stop first" },
+        { keys: "its own key", text: "cancel" },
+        { keys: "esc/x", text: "cancel" },
+        { keys: "1 2 3 ... e s", text: "wait: place or cancel first" },
       ],
     },
     {
@@ -355,7 +355,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
         { keys: "space", text: "pause or resume" },
         { keys: "[ and ]", text: "slower, faster" },
         { keys: ". and ,", text: "step a frame, a tick" },
-        { keys: "r", text: "watch it again" },
+        { keys: "r", text: "replay" },
         { keys: "arrows", text: "look around the map" },
       ],
     },
