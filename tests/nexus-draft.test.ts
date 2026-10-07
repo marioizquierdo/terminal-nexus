@@ -236,6 +236,19 @@ test("dealing draws from a stream of its own: whatever the hand, a round with no
   assert.equal(second.timeline.eventsHash, first.timeline.eventsHash)
 })
 
+test("the Nexus Pulse popup says how rare each dealt power is at the end of its row, and nothing for War Chest", () => {
+  const context = starterContext()
+  const state = { ...opened(context), popup: "nexus-powers" as const }
+  const spec = popupSpec(context, state)
+  assert.equal(spec?.title, "NEXUS PULSE")
+  const options = (spec?.rows ?? []).flatMap((row) => (row.kind === "option" ? [`${row.label} ${row.tag ?? "-"}`] : []))
+  assert.deepEqual(options, ["Reserve Callup common", "Drill Schedule common", "Standing Order uncommon", "War Chest -"])
+  const shown = side(context)
+  keys(shown, "n")
+  assert.match(screenText(shown), /\[3\] Standing Order +uncommon/)
+  assert.match(screenText(shown), /\[4\] War Chest +[:|]/)
+})
+
 // --- What each power does once kept ----------------------------------------------------------------------------
 
 test("Aid Station Permit puts the Aid Station on the menu at once, under the next digit, for the rest of the mission", () => {
