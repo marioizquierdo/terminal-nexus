@@ -12,7 +12,7 @@ import { wavesStat } from "../src/build/card.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { createBuildState, nexusTile } from "../src/build/state.ts"
+import { createBuildState, nexusPowers, nexusTile } from "../src/build/state.ts"
 import { missionPlay } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { gridDistance } from "../src/grid/coords.ts"
@@ -179,10 +179,13 @@ test("Reserve Callup: two troopers join at the Nexus — shown arriving the mome
       "a trooper shown arriving is not where the battle sets it down",
     )
   }
-  // The round after calls nobody up again by itself; the power may be dealt again.
+  // The round after calls nobody up again by itself, and lists nothing as active: the call-up was spent as the
+  // round started, and the troopers it brought are units like any other. The power may be dealt again.
   const next = play.nextRound(after, callup.build.state, resolved)
   assert.ok(next !== null)
   assert.deepEqual(next.callups, [])
+  assert.deepEqual(nexusPowers(after, callup.build.state).active.map((power) => power.name), ["Reserve Callup"])
+  assert.deepEqual(nexusPowers(next, opened(next)).active, [])
 })
 
 test("a power kept lasts: the next round lists it as active, and the round's hand is dealt without it", () => {

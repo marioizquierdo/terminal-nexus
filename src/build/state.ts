@@ -574,24 +574,26 @@ export function startEntry(catalogSize: number): number {
 }
 
 /** The Nexus powers as the popup shows them: the hand still waiting for a pick (a few dealt, one to keep), and
- *  what is active — every power kept this mission that lasts, and this Build Phase's War Chest once picked. */
+ *  what is active — every power kept this mission that lasts, and this Build Phase's pick once made. */
 export type NexusPowers = Readonly<{
   pending: readonly Readonly<{ index: number; option: NexusPowerOption }>[]
   active: readonly Readonly<{ name: string; description: string }>[]
 }>
 
-/** Whether what a power does lasts once kept — everything but credits, which are spent where they are given. */
-export const lasts = (card: PowerCard): boolean => !("credits" in card.effect)
+/** Whether what a power does lasts once kept — everything but credits and called-up units, spent where they are
+ *  given: the credits on the plan, the units set down as the round starts, to stay as units like any other. */
+export const lasts = (card: PowerCard): boolean => !("credits" in card.effect) && !("spawnUnits" in card.effect)
 
 export function nexusPowers(context: BuildContext, state: BuildState): NexusPowers {
-  // What the shell has kept this mission (this Build Phase's pick among it, once made), lasting: a War Chest kept
-  // in an earlier round is spent, not active.
+  // What the shell has kept this mission (this Build Phase's pick among it, once made), lasting: a War Chest or a
+  // Reserve Callup kept in an earlier round is spent, not active.
   const kept = (context.kept ?? []).filter(lasts)
   if (state.nexusPick === null) {
     return { pending: context.nexusDraft.map((option, index) => ({ index, option })), active: kept }
   }
   const picked = context.nexusDraft[state.nexusPick]
-  // A pick the shell has not kept (a context with no mission), or this round's War Chest, shows as well.
+  // A pick the shell has not kept (a context with no mission), or this round's War Chest or Reserve Callup, shows
+  // as well.
   const shown = picked === undefined || (lasts(picked.card) && kept.some((card) => card === picked.card)) ? [] : [picked]
   return { pending: [], active: [...kept, ...shown] }
 }
