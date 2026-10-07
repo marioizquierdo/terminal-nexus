@@ -155,7 +155,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     clearance: 1,
   },
   {
-    // What Aid Station Permit, one of Vasse's Nexus powers, unlocks (armies/vasse): repair, placed where the
+    // What Aid Station Permit, one of Vasse's Nexus powers, adds (armies/vasse): repair, placed where the
     // line will stand. A building that heals — the kernel's healer (`behavior: "support"`, `attack.kind: "heal"`)
     // on a building, which never moves — so through a Battle Round it mends the nearest of its side's wounded
     // units within its reach, one patch at a time, and never an enemy or a building (`perception.ts`). The

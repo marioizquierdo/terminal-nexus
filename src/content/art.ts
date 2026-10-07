@@ -47,7 +47,7 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * agreement test in tests/content.test.ts caught it the first time it ran.
    */
   "structure.citizen.barracks": ["[b]", "|_|"],
-  /** One tile, the aid post's cross: what Aid Station Permit unlocks. The cross its patches leave rising beside
+  /** One tile, the aid post's cross: what Aid Station Permit adds. The cross its patches leave rising beside
    *  the unit they mend is the same one (`MEND_GLYPH`, src/view/effects/recipes.ts). */
   "structure.citizen.aidstation": ["+"],
   /**

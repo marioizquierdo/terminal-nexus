@@ -100,11 +100,11 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
     ["Drill Schedule", "Barracks send a second wave.", "modifyContent"],
     ["War Chest", "Adds 2000 resources to spend.", "+2000"],
   ])
-  // Hers: her skill wider, and the building that only its permit unlocks.
+  // Hers: her skill wider, and the building that only its permit adds.
   const [, hers] = ARMIES.armies
   assert.deepEqual(hers?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
     ["Standing Order", "By the Book reaches twice as far.", "modifyCommander"],
-    ["Aid Station Permit", "Unlocks building: Aid Station.", "unlockStructure"],
+    ["Aid Station Permit", "Adds building: Aid Station.", "addBuilding"],
   ])
   assert.deepEqual(hers?.buildings?.map((card) => `${card.id} ${card.structure} ${card.cost}`), ["aid-station structure.citizen.aidstation 25"])
 })
@@ -114,7 +114,7 @@ test("a level offers what its campaign has unlocked by then: PERIMETER unlocks a
   assert.ok(perimeter !== undefined && cadence !== undefined)
   const everything = {
     buildings: ["barracks 40", "hatchery 30", "turret 15"],
-    powers: ["Reserve Callup spawnUnits", "Drill Schedule modifyContent", "Standing Order modifyCommander", "Aid Station Permit unlockStructure", "War Chest +2000"],
+    powers: ["Reserve Callup spawnUnits", "Drill Schedule modifyContent", "Standing Order modifyCommander", "Aid Station Permit addBuilding", "War Chest +2000"],
     credits: 100,
   }
   assert.deepEqual(offered(perimeter.offer), everything)
@@ -435,7 +435,7 @@ test("a level's mission is checked against its map, its content against what its
       { id: "nest-call", name: "Nest Call", description: "A nest walks in.", effect: { spawnUnits: { unit: "structure.test.nest", count: 1 } } },
       { id: "same-reach", name: "Same Reach", description: "As far as ever.", effect: { modifyCommander: { auraReachTimes: 1 } } },
       { id: "nest-drill", name: "Nest Drill", description: "More of nothing.", effect: { modifyContent: { building: "nest", addWaves: 1 } } },
-      { id: "lost-permit", name: "Lost Permit", description: "Unlocks nothing.", effect: { unlockStructure: { building: "missing" } } },
+      { id: "lost-permit", name: "Lost Permit", description: "Adds nothing.", effect: { addBuilding: { building: "missing" } } },
     ],
     commanders: [
       { id: "hero", name: "Hero", unit: "unit.test.hero" },

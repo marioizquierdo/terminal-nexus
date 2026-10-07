@@ -61,15 +61,15 @@ export type BuildingCard = Readonly<{
  *   (Standing Order).
  * - `modifyContent`: a building that spawns sends so many more waves a round, for the rest of the mission
  *   (Drill Schedule). `building` is a building card's id.
- * - `unlockStructure`: a building joins the construct menu, for the rest of the mission (Aid Station Permit).
- *   `building` is a building card's id; no level unlocks it.
+ * - `addBuilding`: a building joins the construct menu, for the rest of the mission (Aid Station Permit). A
+ *   power adds; only the tech tree unlocks. `building` is a building card's id; no level unlocks it.
  * - `credits`: so many credits to spend this Build Phase (War Chest).
  */
 export type PowerEffect =
   | Readonly<{ spawnUnits: Readonly<{ unit: string; count: number }> }>
   | Readonly<{ modifyCommander: Readonly<{ auraReachTimes: number }> }>
   | Readonly<{ modifyContent: Readonly<{ building: string; addWaves: number }> }>
-  | Readonly<{ unlockStructure: Readonly<{ building: string }> }>
+  | Readonly<{ addBuilding: Readonly<{ building: string }> }>
   | Readonly<{ credits: number }>
 
 /** A Nexus power: a name and one plain line of description — all a player reads of it — and what it does. */
@@ -154,14 +154,14 @@ export type LevelMap = Readonly<{
 export type Commander = Readonly<{ id: string; army: string; name: string; unit: string; barks: Barks }>
 
 /** What a level offers: every card its campaign has unlocked by then, in the order first unlocked (so a hotkey
- *  never moves when a later level adds a card), its credits, and the buildings its Nexus powers can unlock. */
+ *  never moves when a later level adds a card), its credits, and the buildings its Nexus powers can add. */
 export type Offer = Readonly<{
   credits: number
   buildings: readonly BuildingCard[]
   powers: readonly PowerCard[]
-  /** The building cards its powers name (`unlockStructure`), which no level unlocks: what such a power adds to
-   *  the construct menu once kept. */
-  unlockable: readonly BuildingCard[]
+  /** The building cards its powers name (`addBuilding`), which no level unlocks: what such a power adds to the
+   *  construct menu once kept. */
+  addable: readonly BuildingCard[]
 }>
 
 /** A level, resolved: where it stands in its campaign, what it offers, and what is new in it. */

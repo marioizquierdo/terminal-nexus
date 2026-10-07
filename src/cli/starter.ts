@@ -34,7 +34,7 @@ export function levelContext(level: Level, scrollMargin?: number, extra: Partial
     allotment: level.offer.credits,
     nexusDraft: nexusDraftOf(level.offer),
     powerPool: level.offer.powers,
-    buildingCards: [...level.offer.buildings, ...level.offer.unlockable],
+    buildingCards: [...level.offer.buildings, ...level.offer.addable],
     edgeStyle: map.edgeStyle,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
     ...extra,

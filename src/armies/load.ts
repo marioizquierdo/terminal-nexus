@@ -54,7 +54,7 @@ const powerEffect: Shape<PowerEffect> = keyed("a Nexus power's effect", {
   spawnUnits: record<Readonly<{ unit: string; count: number }>>({ unit: text, count: positiveWholeNumber }, {}),
   modifyCommander: record<Readonly<{ auraReachTimes: number }>>({ auraReachTimes: positiveWholeNumber }, {}),
   modifyContent: record<Readonly<{ building: string; addWaves: number }>>({ building: text, addWaves: positiveWholeNumber }, {}),
-  unlockStructure: record<Readonly<{ building: string }>>({ building: text }, {}),
+  addBuilding: record<Readonly<{ building: string }>>({ building: text }, {}),
   credits: wholeNumber,
 })
 const powerCard = record<PowerCard>(
@@ -352,7 +352,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
     if ("modifyCommander" in effect && effect.modifyCommander.auraReachTimes < 2) {
       said.push(`multiplies the aura's reach by ${effect.modifyCommander.auraReachTimes}, which changes nothing`)
     }
-    const named = "unlockStructure" in effect ? effect.unlockStructure.building : "modifyContent" in effect ? effect.modifyContent.building : null
+    const named = "addBuilding" in effect ? effect.addBuilding.building : "modifyContent" in effect ? effect.modifyContent.building : null
     if (named !== null) {
       const unseen = unseenCard(army, "building", named)
       if (unseen !== null) said.push(`names ${unseen}`)
@@ -511,9 +511,9 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
         const newPowers = (entry.unlocks?.powers ?? []).map((id) => (powersBy.get(id) as Readonly<{ card: PowerCard }>).card)
         buildings = [...buildings, ...newBuildings]
         powers = [...powers, ...newPowers]
-        // The buildings the offered powers can unlock, once each, in the order the powers name them.
-        const unlockable = [
-          ...new Set(powers.flatMap((card) => ("unlockStructure" in card.effect ? [card.effect.unlockStructure.building] : []))),
+        // The buildings the offered powers can add, once each, in the order the powers name them.
+        const addable = [
+          ...new Set(powers.flatMap((card) => ("addBuilding" in card.effect ? [card.effect.addBuilding.building] : []))),
         ].map((id) => (buildingsBy.get(id) as Readonly<{ card: BuildingCard }>).card)
         levels.push({
           id: entry.id,
@@ -522,7 +522,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
           number: index + 1,
           map: entry.map,
           mission: mission as MissionDefinition,
-          offer: { credits: entry.credits, buildings, powers, unlockable },
+          offer: { credits: entry.credits, buildings, powers, addable },
           unlocked: { buildings: newBuildings, powers: newPowers },
         })
       })
