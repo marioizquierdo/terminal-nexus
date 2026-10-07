@@ -30,5 +30,5 @@ And how War Chest, his tool for testing placement, stays once a hand is dealt at
 **Built.** PERIMETER deals from the four: Reserve Callup shows two troopers arriving beside the Grid Nexus the
 moment it is kept, set down there as the round starts, and may be dealt again; Standing Order doubles By the Book's
 reach, 4 to 8, on her card and in the battle; Drill Schedule gives every Barracks a second wave; Aid Station Permit
-puts the Aid Station on the menu under the next digit, a small building that repairs the units near it. War Chest is
+puts the Aid Station on the menu under the next digit, a small building that heals the units near it. War Chest is
 offered beside every hand under the last digit, and Reserve Fund, the other placeholder, is gone.

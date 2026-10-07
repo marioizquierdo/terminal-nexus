@@ -208,7 +208,7 @@ Built on a new pull request.
       kept.
 - [x] PERIMETER deals four real, mechanically distinct powers: Reserve Callup (two troopers join at the Nexus),
       Standing Order (By the Book reaches twice as far), Drill Schedule (Barracks send a second wave) and Aid
-      Station Permit (unlocks the Aid Station, a building that repairs the units near it). War Chest, his tool
+      Station Permit (unlocks the Aid Station, a building that heals the units near it). War Chest, his tool
       for testing placement, is offered beside every hand; Reserve Fund, the other placeholder, retires.
 - [x] The pick is optional for now (Mario's fifth round: easier to test), reversing the earlier answer that it
       may never be declined (Q45); an Experiment lets him feel it required, which is how this step decides with

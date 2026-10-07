@@ -153,6 +153,17 @@ is, the bearer included. A covered unit takes the aura's share of every hit that
 down and never below 1. Several auras never stack: the strongest applies. Buildings are not covered. A bearer who
 falls still covers that tick. The hit's `damage.applied` names the bearer (`guardedBy`); no rule reads it.
 
+**A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
+`src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
+`behavior: "support"` with a heal `attack` — chooses the nearest wounded ally rather than the nearest enemy, ties
+broken by entity id, and one that names `targetLayers` chooses only among what stands on them, as an attacker's
+layers narrow its enemies. A building never moves, so a building that heals reaches that ally only once it stands
+within its reach, measured as range is: one heal each time its cooldown allows, never past full health
+(`heal.applied`, never a negative `damage.applied`). A heal lands in its tier of the attacks step, after the blows
+of earlier tiers, so at tier 9 a unit a blow kills that tick is not saved. The Aid Station, what Aid Station Permit
+unlocks, names the units' layers: it heals units, never a building, itself included, and never the enemy. The
+bench medic names none and heals every wounded ally, as it always did.
+
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
 
 ```text

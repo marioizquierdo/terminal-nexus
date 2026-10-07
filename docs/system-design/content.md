@@ -87,6 +87,10 @@ Beside it, `clearance`: the room a building that makes units keeps free round it
 Hatchery have one, of one tile); the kernel never reads it either, and while the "Spawn space" Experiment is
 felt its value stands in for each ([`pulse.md`](pulse.md), room round a building that makes units).
 
+A building that heals is the kernel's healer on a structure: `behavior: "support"` with a heal `attack`, and
+`targetLayers` naming what it heals, which narrows a healer's wounded allies as it narrows an attacker's enemies.
+The Aid Station names the units' layers, so it never heals a building ([`pulse.md`](pulse.md), a healer).
+
 The recipe the Pulse runs today (`ProductionRecipe` in `src/content/types.ts`) is the free part of this one,
 in waves: `output`, `perWave`, `waves` (a cap that stands in for the supply a recipe will one day need),
 `firstTicks` and `intervalTicks`, the gap between waves. `cost` and `spawnRule` arrive with the worker
