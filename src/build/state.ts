@@ -9,6 +9,7 @@ import { stepListIndex } from "../terminal/list-keys.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import type { MatchState } from "../state/types.ts"
+import type { BuildingCard, PowerCard } from "../armies/types.ts"
 import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
@@ -91,9 +92,26 @@ export type BuildContext = Readonly<{
    * (`TUNING.scrollMargin`, `src/build/tuning.ts`).
    */
   scrollMargin?: number
-  /** The Nexus draft this Build Phase offers — placeholder options, not the Commander milestone's real one
-   *  (`types.ts`'s own doc comment on `NexusPowerOption` has the reasoning). */
+  /**
+   * The Nexus draft this Build Phase offers: the hand dealt from the army's Nexus power pool as the round opened,
+   * War Chest beside it (`dealHand`, `src/armies/deal.ts`), each under its digit. One is kept, or — for now — none.
+   * A context with no mission (most that the tests build by hand) offers what it is given, undealt.
+   */
   nexusDraft: readonly NexusPowerOption[]
+  /** What the hands are dealt from: every Nexus power the level offers. Absent: the draft is never dealt again. */
+  powerPool?: readonly PowerCard[]
+  /**
+   * The Nexus powers kept so far this mission, in the order kept — this Build Phase's pick among them once it is
+   * made. What each does lasts the rest of the mission: it is already in this context (the menu, the content, what
+   * arrives), applied by the shell when the pick was made (`MissionPlay.keep`, `src/cli/pulse-run.ts`). Absent: none.
+   */
+  kept?: readonly PowerCard[]
+  /** The building cards a Nexus power can unlock, and those the level offers: what keeping a power that names a
+   *  building reads (Aid Station Permit, Drill Schedule). Absent: none. */
+  buildingCards?: readonly BuildingCard[]
+  /** The units a power kept this Build Phase calls up (Reserve Callup): set down beside the Grid Nexus as this
+   *  round's Battle Round starts, with its squads, and gone from the next round's context. Absent: none. */
+  callups?: readonly Readonly<{ unit: string; count: number }>[]
   /**
    * The map's own border style — a "map-defined border" ("defining custom borders
    * could accentuate the location"), drawn wherever the Grid rectangle reaches the map's edge; the
@@ -555,20 +573,27 @@ export function startEntry(catalogSize: number): number {
   return entryOfConstruct(catalogSize)
 }
 
-/** The Nexus powers as the popup shows them: those still waiting to be picked (a draft of several,
- *  one to take), and those already active. One deal per Build Phase today; the Commander milestone decides
- *  whether there are ever more. */
+/** The Nexus powers as the popup shows them: the hand still waiting for a pick (a few dealt, one to keep), and
+ *  what is active — every power kept this mission that lasts, and this Build Phase's War Chest once picked. */
 export type NexusPowers = Readonly<{
   pending: readonly Readonly<{ index: number; option: NexusPowerOption }>[]
-  active: readonly NexusPowerOption[]
+  active: readonly Readonly<{ name: string; description: string }>[]
 }>
 
+/** Whether what a power does lasts once kept — everything but credits, which are spent where they are given. */
+export const lasts = (card: PowerCard): boolean => !("credits" in card.effect)
+
 export function nexusPowers(context: BuildContext, state: BuildState): NexusPowers {
+  // What the shell has kept this mission (this Build Phase's pick among it, once made), lasting: a War Chest kept
+  // in an earlier round is spent, not active.
+  const kept = (context.kept ?? []).filter(lasts)
   if (state.nexusPick === null) {
-    return { pending: context.nexusDraft.map((option, index) => ({ index, option })), active: [] }
+    return { pending: context.nexusDraft.map((option, index) => ({ index, option })), active: kept }
   }
   const picked = context.nexusDraft[state.nexusPick]
-  return { pending: [], active: picked === undefined ? [] : [picked] }
+  // A pick the shell has not kept (a context with no mission), or this round's War Chest, shows as well.
+  const shown = picked === undefined || (lasts(picked.card) && kept.some((card) => card === picked.card)) ? [] : [picked]
+  return { pending: [], active: [...kept, ...shown] }
 }
 
 /** How many picks are waiting — the "(1)" on the menu entry. A draft is one pick however many
@@ -1092,8 +1117,9 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
 
 /** `s`, or the Start Battle Round entry: open the Battle Round confirmation over the Grid, the menu lit behind
  *  it. Its row flashes "pressed" however it was reached — or, refused (a popup or a committed plan holds
- *  it), a flicker beside the bottom line's reason. A Nexus power still waiting is no reason: the screen
- *  says it is waiting, and the round can start without it. With a building armed, the building comes first
+ *  it), a flicker beside the bottom line's reason. A Nexus power still waiting is no reason while the pick is
+ *  optional (the "Nexus pick" Experiment): the screen says it is waiting, and the round can start without it;
+ *  required, it is refused until one is kept. With a building armed, the building comes first
  *  (`refuseWhileArmed`). */
 function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
@@ -1101,6 +1127,9 @@ function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   if (refused !== null) return refused
   const lock = editLock(state)
   if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
+  if (setting(state, "powerPick") === "required" && pendingPicks(context, state) > 0) {
+    return { ...state, status: status("Pick a Nexus power first: [n].", "warning"), ack: acknowledge(state, "refused", entry) }
+  }
   return {
     ...pushPopup(toMenu(state), "battle-round", 0),
     menuHighlight: entry,

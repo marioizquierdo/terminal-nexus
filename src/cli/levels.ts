@@ -10,7 +10,7 @@
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
-import { applyBuildCommand, createBuildState, withoutScene } from "../build/state.ts"
+import { createBuildState, withoutScene } from "../build/state.ts"
 import type { Level } from "../armies/index.ts"
 import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
 import type { MissionPlay } from "./pulse-run.ts"
@@ -62,9 +62,9 @@ function defaultLevel(): PlayableLevel {
 
 /**
  * The Build Phase of `round` (counted from 1, as the screen counts it). Round 1 opens as the level does; a later
- * round is reached by playing the ones before it as a player who picks the first Nexus power and builds nothing,
- * so a route to round 3 opens the same round 3 every time. Throws for a round the level does not have, or one the
- * mission ends before reaching.
+ * round is reached by playing the ones before it as a player who builds nothing and keeps no Nexus power (the pick
+ * is optional), so a route to round 3 opens the same round 3 every time, its battles the mission's own. Throws for
+ * a round the level does not have, or one the mission ends before reaching.
  */
 export function openRound(level: PlayableLevel, round: number, scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
   if (!Number.isInteger(round) || round < 1 || round > level.rounds) {
@@ -74,7 +74,7 @@ export function openRound(level: PlayableLevel, round: number, scrollMargin?: nu
   for (let played = 1; played < round; played += 1) {
     // The scene a round opens on is the player's to read, not this walk's: it plays from the state without it.
     const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
-    const state = applyBuildCommand(context, createBuildState(withoutScene(context), STARTER_START_CURSOR, viewport), { kind: "pick-nexus", index: 0 })
+    const state = createBuildState(withoutScene(context), STARTER_START_CURSOR, viewport)
     const resolved = level.play.startPulse(context, state)
     if (resolved === null) throw new Error(`level "${level.id}": round ${played} could not start, so round ${round} cannot be reached`)
     const next = level.play.nextRound(context, state, resolved)

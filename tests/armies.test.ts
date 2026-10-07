@@ -11,7 +11,7 @@ import vasse from "../armies/vasse/army.json" with { type: "json" }
 import { constructMenu, nexusDraftOf, STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT } from "../src/build/catalog.ts"
 import { MAPS } from "../src/build/maps.ts"
 import type { Armies, LoadWorld, Offer, PowerCard } from "../src/armies/index.ts"
-import { ARMIES, ArmyError, loadArmies, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
+import { ARMIES, ArmyError, dealHand, loadArmies, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import { levelContext, starterContext } from "../src/cli/starter.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY } from "../src/content/index.ts"
@@ -184,7 +184,9 @@ test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus
   // And the round the game opens is built from it.
   const context = starterContext()
   assert.deepEqual(context.catalog, STARTER_CATALOG)
-  assert.deepEqual(context.nexusDraft, STARTER_NEXUS_DRAFT)
+  // Its Nexus draft is a hand dealt from that pool for round 1, War Chest beside it.
+  assert.deepEqual(context.powerPool, PERIMETER_LEVEL.offer.powers)
+  assert.deepEqual(context.nexusDraft, nexusDraftOf({ powers: dealHand(PERIMETER_LEVEL.offer.powers, [], PERIMETER.seed, 1) }))
   assert.equal(context.allotment, STARTER_ALLOTMENT)
   assert.deepEqual(levelContext(PERIMETER_LEVEL).catalog, context.catalog)
 })

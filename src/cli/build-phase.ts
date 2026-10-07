@@ -230,6 +230,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     activity: log,
     nextRound: play.nextRound,
     foresee: play.foresee,
+    keep: play.keep,
     scenes: options.scenes ?? true,
   })
 

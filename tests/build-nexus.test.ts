@@ -97,19 +97,19 @@ test("the popup holds the keyboard until a pick or Esc: arrows work its list, an
 })
 
 test("the popup picks by Up/Down and Enter too, closes, and lists the pick as active when reopened", () => {
-  const context = starterContext()
   const { build, layout } = session()
   build.handleData("n", layout)
   build.handleData(`${ESC}[B`, layout)
   build.handleData(" ", layout)
   assert.equal(build.state.nexusPick, 1)
   assert.equal(build.state.popup, null)
+  const picked = build.round.nexusDraft[1]!.name
   build.handleData("n", layout)
-  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
+  const text = frameToText(composeBuildFrame({ context: build.round, state: build.state, layout }, "monochrome"))
   assert.match(text, /NEXUS POWERS/)
   assert.match(text, /Nothing waiting\./)
   assert.match(text, /ACTIVE/)
-  assert.match(text, /War Chest/)
+  assert.match(text, new RegExp(picked))
   assert.match(text, /\[esc\]/)
   // Enter with nothing left to pick says so, rather than doing something else.
   build.handleData("\r", layout)
@@ -133,9 +133,10 @@ test("an open popup draws no placement ghost behind it, and refuses edits sent b
 test("picking applies its own effect exactly once, and cannot be changed afterward", () => {
   const { build, layout } = session()
   const context = starterContext()
-  build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest, +2000
-  assert.equal(build.state.nexusPick, 1)
-  assert.equal(build.state.bonusAllotment, context.nexusDraft[1]!.bonusAllotment)
+  const chest = context.nexusDraft.findIndex((option) => option.name === "War Chest") // beside the dealt hand
+  build.dispatch({ kind: "pick-nexus", index: chest }) // War Chest, +2000
+  assert.equal(build.state.nexusPick, chest)
+  assert.equal(build.state.bonusAllotment, context.nexusDraft[chest]!.bonusAllotment)
   // The owner's number (2026-09-28): enough to place buildings freely in a playtest.
   assert.equal(build.state.bonusAllotment, 2000)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
@@ -143,22 +144,27 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
   assert.match(build.state.status.text, /War Chest picked/)
 
   const after = build.state
-  build.dispatch({ kind: "pick-nexus", index: 0 })
+  build.dispatch({ kind: "pick-nexus", index: chest === 0 ? 1 : 0 })
   assert.equal(build.state.nexusPick, after.nexusPick, "a second pick changed the first")
   assert.equal(build.state.bonusAllotment, after.bonusAllotment)
   assert.match(build.state.status.text, /Already picked/)
 })
 
-test("the budget on screen counts the picked power's share in what is left", () => {
-  // Reserve Fund adds 30 to a 100-point allotment. The panel once read "130 of 100" — more left than
-  // there ever was; it now shows no maximum at all, only what is left, with
-  // the map's resource symbol: `* 130`.
+test("the budget on screen counts the picked power's share in what is left, and a power that gives none leaves it", () => {
+  // The panel once read "130 of 100" — more left than there ever was; it now shows no maximum at all, only what is
+  // left, with the map's resource symbol. War Chest adds 2000 to a 100-point allotment; a power that does
+  // something else adds nothing.
   const context = starterContext()
+  const chest = context.nexusDraft.findIndex((option) => option.name === "War Chest")
   const { build, layout } = session()
-  build.dispatch({ kind: "pick-nexus", index: 0 })
-  const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /\* 130[|+]/)
-  assert.doesNotMatch(text, / of 1[03]0/)
+  build.dispatch({ kind: "pick-nexus", index: chest })
+  const text = frameToText(composeBuildFrame({ context: build.round, state: build.state, layout }, "monochrome"))
+  assert.match(text, /\* 2100[|+]/)
+  assert.doesNotMatch(text, / of 2?1[03]0/)
+  const other = session()
+  other.build.dispatch({ kind: "pick-nexus", index: chest === 0 ? 1 : 0 })
+  const plain = frameToText(composeBuildFrame({ context: other.build.round, state: other.build.state, layout: other.layout }, "monochrome"))
+  assert.match(plain, /\* 100[|+]/)
 })
 
 test("an out-of-range pick is ignored, not a crash and not a partial pick", () => {
@@ -278,7 +284,9 @@ test("keyboard: a digit picks from the Nexus popup while it is open, and arms th
   const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(starterContext(), side.build.state) }
   assert.deepEqual(buildKeyboardCommand("1", popupContext), { kind: "pick-nexus", index: 0 })
   assert.deepEqual(buildKeyboardCommand("2", popupContext), { kind: "pick-nexus", index: 1 })
-  assert.equal(buildKeyboardCommand("3", popupContext), null, "a third popup digit picks nothing")
+  // Two dealt, War Chest beside them: a fourth digit picks nothing.
+  assert.deepEqual(buildKeyboardCommand("3", popupContext), { kind: "pick-nexus", index: 2 })
+  assert.equal(buildKeyboardCommand("4", popupContext), null, "a fourth popup digit picks nothing")
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "open-nexus-powers" })
   assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(starterContext(), side.build.state) }), null)

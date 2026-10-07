@@ -87,6 +87,7 @@ type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
   (Readonly<{ tier: "tuned" } & Partial<Description>> | (Readonly<{ tier: "player" | "experiment" }> & Description))
 
 const NEXT_ROUND = ["key", "auto"] as const
+const POWER_PICK = ["optional", "required"] as const
 
 export const ALL_SETTINGS = {
   // --- Display: the player's own, saved with the title menu's Settings -----------------------------
@@ -478,6 +479,23 @@ export const ALL_SETTINGS = {
     values: [1, 2],
     unit: "tiles",
     default: 1,
+  },
+
+  // --- The Nexus draft (the Commander step 8B) -------------------------------------------------------
+  // The owner made the pick optional for testing (round 5: "Nexus Powers should be optional for now, it's easier
+  // for testing if I can just start a round"), and the Nexus draft step was to settle with him whether it stays so
+  // once the powers are real. It asks him to feel both.
+
+  /** Whether a round may start with its Nexus power still unpicked: optional, or required — Start Battle Round
+   *  refused until one is kept, as the draft was first designed (a power dealt is a power gained). First guess:
+   *  optional, as it is. */
+  powerPick: {
+    tier: "experiment",
+    section: "mission",
+    label: "Nexus pick",
+    question: "Optional: a round may start with its Nexus power unpicked. Required: one is kept before every round.",
+    values: POWER_PICK,
+    default: "optional",
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

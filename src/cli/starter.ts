@@ -20,8 +20,8 @@ export function starterContext(scrollMargin?: number, extra: Partial<BuildContex
   return levelContext(PERIMETER_LEVEL, scrollMargin, extra)
 }
 
-/** Round 1 of a level: its mission on its map, its construct menu and Nexus draft what its campaign has unlocked
- *  by then, and its credits. */
+/** Round 1 of a level: its mission on its map, its construct menu and Nexus power pool what its campaign has
+ *  unlocked by then (the mission deals round 1's hand from the pool), and its credits. */
 export function levelContext(level: Level, scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
   const map = MAPS[level.map]
   // The loader refused any level whose map the table does not have, so this is a level from elsewhere.
@@ -33,6 +33,8 @@ export function levelContext(level: Level, scrollMargin?: number, extra: Partial
     standing: map.standing,
     allotment: level.offer.credits,
     nexusDraft: nexusDraftOf(level.offer),
+    powerPool: level.offer.powers,
+    buildingCards: [...level.offer.buildings, ...level.offer.unlockable],
     edgeStyle: map.edgeStyle,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
     ...extra,

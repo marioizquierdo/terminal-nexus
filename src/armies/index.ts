@@ -17,6 +17,7 @@ import type { Armies, Level } from "./types.ts"
 export * from "./types.ts"
 export { loadArmies } from "./load.ts"
 export type { LoadWorld } from "./load.ts"
+export { dealable, dealHand, HAND_SIZE } from "./deal.ts"
 
 /** Every army the game ships, checked and resolved. */
 export const ARMIES: Armies = loadArmies([all, vasse], { registry: FIXTURE_REGISTRY, maps: MAPS })

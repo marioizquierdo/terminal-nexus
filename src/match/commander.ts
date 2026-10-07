@@ -140,6 +140,25 @@ export function auraRegistry(registry: ContentRegistry, less: number): ContentRe
   )
 }
 
+/**
+ * `registry` with every Commander's aura reaching `times` as far — what Standing Order, a Nexus power, does for the
+ * rest of a mission once kept ("By the Book reaches twice as far"). Its reach stays a whole number of rows, as every
+ * reach is (`wholeRows`, `src/grid/reach.ts`): an even reach doubled is even. The same registry, untouched, when no
+ * Commander has an aura.
+ */
+export function auraReachRegistry(registry: ContentRegistry, times: number): ContentRegistry {
+  if (!Number.isInteger(times) || times < 1) throw new Error(`an aura's reach is multiplied by a whole number from 1, received ${times}`)
+  const ids = registry.ids()
+  if (!ids.some((id) => registry.get(id).commander === true && registry.get(id).aura !== undefined)) return registry
+  return createRegistry(
+    ids.map((id) => {
+      const definition = registry.get(id)
+      if (definition.commander !== true || definition.aura === undefined) return definition
+      return { ...definition, aura: { ...definition.aura, radius: definition.aura.radius * times } }
+    }),
+  )
+}
+
 /** `registry` with every Commander's health set to `health` — what the Pulse reads while the Experiment
  *  "Vasse's health" is tuned. The same registry, untouched, when nothing in it is a Commander. */
 export function commanderRegistry(registry: ContentRegistry, health: number): ContentRegistry {

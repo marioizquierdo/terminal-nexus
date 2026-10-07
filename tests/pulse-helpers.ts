@@ -42,7 +42,14 @@ export const DEFENCE: readonly Spot[] = [
 
 /** The same plan as a key script: the War Chest, then each spot's building armed by its digit and placed by two
  *  clicks on its tile — for the tests, screenshots and playtests that press keys rather than drive commands. */
-export const DEFENCE_KEYS = ["n 2", ...DEFENCE.map(([index, x, y]) => `${index + 1} click:${x},${y} click:${x},${y}`)].join(" ")
+/** Where War Chest sits in a round's hand: beside the powers dealt, after them (`dealHand`). */
+export function warChest(context: Pick<BuildContext, "nexusDraft">): number {
+  const index = context.nexusDraft.findIndex((option) => option.card.always === true && "credits" in option.card.effect)
+  assert.ok(index >= 0, "War Chest is not in the hand")
+  return index
+}
+
+export const DEFENCE_KEYS = [`n ${warChest(starterContext()) + 1}`, ...DEFENCE.map(([index, x, y]) => `${index + 1} click:${x},${y} click:${x},${y}`)].join(" ")
 
 export type RaidSize = "none" | "probe" | "heavy"
 export type CrewSize = "some" | "none"
@@ -134,6 +141,7 @@ export function newSession(
     terminal: size,
     startPulse: mission.startPulse,
     nextRound: mission.nextRound,
+    keep: mission.keep,
     ...(onQuit === undefined ? {} : { onQuit }),
   })
   return { build, context, layout, mission }
@@ -142,7 +150,7 @@ export function newSession(
 /** The Build Phase's commands up to (not including) the commit: a Nexus power, and the plan, each
  *  building placed by two clicks on its tile. */
 export function prepare(build: BuildSession, scenario: Scenario = {}): void {
-  build.dispatch({ kind: "pick-nexus", index: 1 }) // War Chest: 2000 to spend
+  build.dispatch({ kind: "pick-nexus", index: warChest(build.round) }) // War Chest: 2000 to spend
   for (const [index, x, y] of scenario.plan ?? []) {
     build.run([{ kind: "arm", index }, { kind: "click-tile", x, y }, { kind: "click-tile", x, y }])
   }

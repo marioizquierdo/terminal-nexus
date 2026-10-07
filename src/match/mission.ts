@@ -65,6 +65,9 @@ export type MissionPulseInput = Readonly<{
   /** The player's buildings newly standing this Pulse: for the first, the map's own and the plan's; for
    *  a later one, only what the plan added (the rest is in `carried`). */
   structures: readonly StructurePlacement[]
+  /** Units a Nexus power called up for this Pulse (Reserve Callup): set down at tick 0 round their muster, after
+   *  the mission's own arrivals, and arriving by no trigger of the mission's. Absent: none. */
+  callups?: readonly Force[]
 }>
 
 /** A unit that arrived by a mission's `spawn`, and what it came with — the group and its line of intention.
@@ -189,6 +192,21 @@ const arrivalOf = (scheduled: Scheduled, entity: EntityState, tick: number): Arr
   intent: scheduled.spawn.intent ?? null,
 })
 
+/** A unit a Nexus power called up, as an arrival: at tick 0, by the power rather than a trigger, in no group. */
+const calledUp = (entity: EntityState): Arrival => ({
+  ordinal: entity.ordinal,
+  player: entity.player,
+  contentId: entity.contentId,
+  anchor: entity.anchor,
+  tick: 0,
+  trigger: CALLED_UP,
+  group: null,
+  intent: null,
+})
+
+/** What an arrival a Nexus power called up says it came by, where a mission's arrival names its trigger. */
+export const CALLED_UP = "nexus-power"
+
 /**
  * The opening state of a mission's Pulse — the carried state, the player's new structures, the scripted
  * side's plan and the tick-0 arrivals — and who arrived. Also what the Build Phase before the Pulse shows
@@ -211,7 +229,10 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
     }
   }
   const scheduled = spawnsAt(mission, pulse, 0)
-  const forces: Force[] = scheduled.map(({ spawn }) => ({ player: spawn.side, muster: musterOf(mission, spawn), units: unitsOf(spawn) }))
+  const forces: Force[] = [
+    ...scheduled.map(({ spawn }) => ({ player: spawn.side, muster: musterOf(mission, spawn), units: unitsOf(spawn) })),
+    ...(input.callups ?? []),
+  ]
   const result = opening({
     grid,
     registry,
@@ -222,7 +243,9 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
   const arrivals: Arrival[] = []
   for (const entity of result.state.entities) {
     const force = result.forceOf.get(entity.ordinal)
-    if (force !== undefined) arrivals.push(arrivalOf(scheduled[force] as Scheduled, entity, 0))
+    if (force === undefined) continue
+    const entry = scheduled[force]
+    arrivals.push(entry === undefined ? calledUp(entity) : arrivalOf(entry, entity, 0))
   }
   // Where each side's troops head as the Pulse starts: the targets set by now, this round's tick 0 included.
   return { state: withTargets(result.state, targetsAt(mission, pulse, 0)), arrivals, fired }

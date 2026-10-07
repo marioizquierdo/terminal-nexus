@@ -14,6 +14,7 @@
 // logger never throws.
 
 import type { ActivityLog } from "../log/activity.ts"
+import type { PowerCard } from "../armies/types.ts"
 import { activity as globalActivity } from "../log/activity.ts"
 import { resultOf } from "./ending.ts"
 import { decodeKeyEvent } from "../terminal/key-events.ts"
@@ -85,6 +86,13 @@ export type BuildSessionOptions = Readonly<{
    */
   foresee?: (context: BuildContext, state: BuildState) => RaidForecast
   /**
+   * The round's context once a Nexus power is kept (`MissionPlay.keep`, `src/cli/pulse-run.ts`): asked the moment a
+   * pick is made, so what the power does is on screen at once — the building it unlocks on the menu, the card it
+   * changes, the units it calls up arriving — and lasts the rest of the mission. Injected for the same reason as
+   * `startPulse`. Absent: the power is only recorded as kept.
+   */
+  keep?: (context: BuildContext, card: PowerCard) => BuildContext
+  /**
    * Whether a round that opens with a scene (`BuildContext.scene`: the mission's lines, a Commander's
    * return) plays it in the dialog before the player has the keyboard: on in the game, the browser page and
    * the scripted playtest. Off unless asked — a session a test builds directly — so every test that starts
@@ -147,6 +155,7 @@ export class BuildSession {
    *  zero when that key arrived. `undefined` for a driver that never says. */
   private now: number | undefined
   private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
+  private readonly keep: (context: BuildContext, card: PowerCard) => BuildContext
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
@@ -169,6 +178,7 @@ export class BuildSession {
       return next === null ? null : staged(next)
     }
     this.foresee = options.foresee ?? null
+    this.keep = options.keep ?? ((context, card) => ({ ...context, kept: [...(context.kept ?? []), card] }))
     this.barksOf = options.barksOf
     this.recordDialog(null)
   }
@@ -262,6 +272,11 @@ export class BuildSession {
     if (command.kind === "restart") this.context = this.firstContext
     const before = this.buildState
     this.buildState = applyBuildCommand(this.context, before, command)
+    // A Nexus power was just picked: it is kept, and what it does is in the round's context from now on.
+    if (before.nexusPick === null && this.buildState.nexusPick !== null) {
+      const picked = this.context.nexusDraft[this.buildState.nexusPick]
+      if (picked !== undefined) this.context = this.keep(this.context, picked.card)
+    }
     // Side effects the reducer only records, handed to the adapter that owns them.
     if (this.buildState.settings !== before.settings) this.onSettingsChange(this.buildState.settings)
     if (this.buildState.popup === "export" && before.popup !== "export") {

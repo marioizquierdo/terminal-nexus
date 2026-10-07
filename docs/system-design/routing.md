@@ -66,8 +66,8 @@ the word (2026-10-04, "let's settle in Battle Rounds"). A route that says anythi
 query name the place does not read, naming `level` and `round` as what `campaign` reads.
 
 **A later round is reached as a player who builds nothing reaches it**: the rounds before it are played
-out, the first Nexus power picked each time, with the run's own settings and Experiments (`openRound`,
-`src/cli/levels.ts`). A route to round 2 therefore opens exactly the screen the keys `Esc n 1 s s`, a
+out with no Nexus power kept (a power would change the battle), with the run's own settings and Experiments
+(`openRound`, `src/cli/levels.ts`). A route to round 2 therefore opens exactly the screen the keys `Esc s s`, a
 wait and `Enter` reach, every time (RULE — `tests/route-open.test.ts`).
 
 ## 3. How a route reaches its screen
