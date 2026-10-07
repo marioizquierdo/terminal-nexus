@@ -26,8 +26,8 @@ node scripts/playtest.mjs --help
 
 `--at <route>` opens a campaign level at a round, in the game's own route grammar (`src/cli/route.ts`,
 the same as `terminal-nexus --at`): `campaign?level=vasse-test-1` is PERIMETER's first round (what runs
-without `--at`), and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who picks the first Nexus power and builds nothing
-reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc n 1 s s wait~1000*26
+without `--at`), and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who builds nothing and keeps no Nexus power
+reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc s s wait~1000*26
 Enter` reach for round 2, without them (the battle lasts about 21 seconds, then the walk home, then the
 result Enter goes on from). Quote the route: the shell reads `?` and `&`. A title menu route
 (`settings`) is refused, since only a campaign level's Build Phase is wired up here; with `--at`, `--keys`
@@ -65,11 +65,13 @@ another); what the screens are and every key on them is in
 dialog at the bottom, which holds the keyboard: every opening below starts after `Esc`, which skips it
 (`Enter` reads the next line; `--keys "Enter Enter Enter" --png all` shows each line).
 
-- `n 1`: pick the first Nexus power; the popup closes and the highlight stays on the Nexus row.
+- `n 1`: pick the first Nexus power dealt; the popup closes and the highlight stays on the Nexus row. The hand
+  is two powers dealt from the pool, then War Chest (`n 3`, 2000 to spend), dealt the same way every run.
 - `n 1 Down Down Space`: arm the Hatchery from the menu; the panel becomes its card.
 - `n 1 PgDn Enter`: the Battle Round screen (`PgDn` goes to the last row, Start Battle Round; without a power
   picked first, the bottom line says so instead).
-- `n 2 s s wait~1000*20`: a whole Pulse with nothing built, twenty seconds in; the second `s` starts it.
+- `s s wait~1000*20`: a whole Pulse with nothing built and no power kept, twenty seconds in; the second `s`
+  starts it.
 - `--at 'campaign?level=vasse-test-1&round=2'` with no keys: round 2 as it opens, round 1 played with
   nothing built. A round that opens with a scene (PERIMETER's first, a Commander's return) plays it first,
   as the game does; `Esc` skips it.

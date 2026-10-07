@@ -336,9 +336,9 @@ const FEED_NAMES = new WeakMap<ContentRegistry, ReadonlyMap<string, string>>()
 /**
  * What the feed calls each kind of thing in `registry`, by the short name its ids carry: what its card calls it,
  * so the feed, the menu and the cards give a thing one name — lowercased, as the feed writes a kind of thing
- * ("turret > runner", "swarmer trained"), and a Commander by her own name ("Vasse falls"). A title of more than one
- * word gives its last ("Citizen Nexus" is "nexus"), so a line stays short enough for the panel at the floor.
- * Content no card describes keeps the short name its id carries.
+ * ("turret > runner", "swarmer trained", "aid station falls"), and a Commander by her own name ("Vasse falls"). A
+ * Grid Nexus is "nexus", as the raid panel says "your Nexus", so a line about it stays short enough for the panel
+ * at the floor. Content no card describes keeps the short name its id carries.
  */
 export function feedNames(registry: ContentRegistry): ReadonlyMap<string, string> {
   const known = FEED_NAMES.get(registry)
@@ -348,7 +348,13 @@ export function feedNames(registry: ContentRegistry): ReadonlyMap<string, string
     const definition = registry.get(contentId)
     const title = CARD_TEXT[contentId]?.title
     const name =
-      definition.commander === true ? commanderName(contentId) : title === undefined ? definition.short : (title.split(" ").at(-1) ?? title).toLowerCase()
+      definition.commander === true
+        ? commanderName(contentId)
+        : definition.nexus === true
+          ? "nexus"
+          : title === undefined
+            ? definition.short
+            : title.toLowerCase()
     if (!names.has(definition.short)) names.set(definition.short, name)
   }
   FEED_NAMES.set(registry, names)
@@ -372,7 +378,10 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
   const at = `${secondsOf(pulse, event.tick)}s`
   const sideRole = (player: PlayerId | null): StyleRole => (player === null ? "chrome.value" : playerRole(player))
   switch (event.kind) {
+    // A fight, not a heal: a heal (an Aid Station's) is not news the feed has room for — the cross that rises
+    // beside the unit it mends says it on the map.
     case "attack.launched":
+      if (event.attackKind === "heal") return null
       return { text: `${at} ${feedName(pulse, event.attacker)} > ${feedName(pulse, event.target)}`, role: sideRole(whoIs(event.attacker).player) }
     // A Commander falls rather than dies, by name: her absence is news the result spells out.
     case "entity.died":

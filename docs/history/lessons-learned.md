@@ -354,6 +354,19 @@ than any one feature:
    seconds under Bun in a cloud container, on `main` as well, while CI's runners pass it. Measure a slow test on
    `main` before blaming the change, and never loosen it to make a slow machine pass.
 
+## The Nexus draft (2026-10-07)
+
+1. **A walk to a later round makes no choice a player would see.** The route that opens round 2 or 3 kept the first
+   power dealt so the round could start; while every power was credits that changed nothing, and once powers were
+   real "the first" was Drill Schedule, so the route reached a battle no player who builds nothing sees. A walk now
+   keeps nothing, which the optional pick allows.
+2. **Give a new kind of randomness a stream of its own.** The dealer draws from its own seeded stream, so adding it
+   moved no battle and no pinned hash; the test that holds it plays two different hands with nothing kept and
+   compares the battles.
+3. **"Active" means still in force.** A Reserve Callup kept in round 1 stayed on the active list in rounds 2 and 3,
+   as if two more troopers came every round; a power spent when it is used (credits, units called up) is active
+   only in the round it is kept. Playing three rounds found it, not the tests.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

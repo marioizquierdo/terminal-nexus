@@ -60,7 +60,7 @@ export type BuildPlaytestOptions = Readonly<{
   /** The mission the rounds are played on, when it is not the level's own: another mission's or a test
    *  map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`), with
    *  `context` its first round. */
-  play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee">>
+  play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee" | "keep">>
   cursor?: Coord
   /**
    * Play a terminal that reports key presses, repeats and releases (the kitty keyboard protocol, which
@@ -162,6 +162,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     startPulse: play.startPulse,
     activity,
     nextRound: play.nextRound,
+    ...(play.keep === undefined ? {} : { keep: play.keep }),
     // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
     ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
     scenes: options.scenes ?? true,

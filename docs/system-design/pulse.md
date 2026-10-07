@@ -153,6 +153,17 @@ is, the bearer included. A covered unit takes the aura's share of every hit that
 down and never below 1. Several auras never stack: the strongest applies. Buildings are not covered. A bearer who
 falls still covers that tick. The hit's `damage.applied` names the bearer (`guardedBy`); no rule reads it.
 
+**A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
+`src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
+`behavior: "support"` with a heal `attack` — chooses the nearest wounded ally rather than the nearest enemy, ties
+broken by entity id, and one that names `targetLayers` chooses only among what stands on them, as an attacker's
+layers narrow its enemies. A building never moves, so a building that heals reaches that ally only once it stands
+within its reach, measured as range is: one heal each time its cooldown allows, never past full health
+(`heal.applied`, never a negative `damage.applied`). A heal lands in its tier of the attacks step, after the blows
+of earlier tiers, so at tier 9 a unit a blow kills that tick is not saved. The Aid Station, what Aid Station Permit
+unlocks, names the units' layers: it heals units, never a building, itself included, and never the enemy. The
+bench medic names none and heals every wounded ally, as it always did.
+
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
 
 ```text
@@ -352,12 +363,18 @@ The Grid Nexus also offers a small draft of upgrades; research facilities modify
 breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
 content-defined legal actions or passive rules that execute through validated kernel commands.
 
-What the draft is dealt from is settled even though the draft itself is not designed: the Commander
-Army's own Nexus power pool — a subset of the faction's — dealt as a small hand at the start of every
-Build Phase, from which the player keeps one. The pool is built as what a level offers (`src/armies/`;
-PERIMETER offers `armies/all`'s two placeholder powers); the dealing is still the whole pool, every Build
-Phase. The draft's tier, size, and redraw rules are still
-undesigned; they are recorded here so the shape of the draft is not accidentally foreclosed.
+**The Nexus draft** (RULE — `src/armies/deal.ts`, `src/cli/pulse-run.ts`, `tests/nexus-draft.test.ts`): the
+Commander Army's own Nexus power pool — a subset of the faction's, built as what a level offers (`src/armies/`) —
+dealt as a small hand at the start of every Build Phase: two powers, War Chest (the owner's testing tool) beside
+them, of which the player keeps one, or for now none. The hand is gameplay randomness, seeded by the mission's seed
+and the round on a PCG32 stream of the draft's own (`STREAM_DRAFT`), never the kernel's: the same round deals the
+same hand every time, and dealing never moves a battle's draws. A power kept lasts the rest of the mission and is
+not dealt again unless it may be kept again. What it does reaches the battle through the round's own inputs, never a
+rule the kernel reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the construct
+menu (a building unlocked), and the units set down at its opening — a power's **called-up units** muster on the
+player's Grid Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
+ends. The draft's tiers, size and redraw rules beyond this are undesigned; they are recorded here so the shape of
+the draft is not accidentally foreclosed.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
 classification to learn — and in code the effect is one of a small bounded union: `unlockStructure`,

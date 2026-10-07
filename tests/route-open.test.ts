@@ -178,9 +178,10 @@ test("the default level is the Build Phase as it opens when told nothing: PERIME
   assert.equal(formatRoute({ kind: "level", level, round: 1 }), "campaign?level=vasse-test-1")
 })
 
-test("a route to round 2 opens exactly the screen a player reaches by playing round 1 with nothing built", () => {
-  // The demos used to walk there with keys: pick the first power, start the Pulse, let it play, then Enter.
-  const walked = runBuildPlaytest({ steps: parseKeyScript("Esc n 1 s s wait~1000*26 Enter") })
+test("a route to round 2 opens exactly the screen a player reaches by playing round 1 with nothing built and no power kept", () => {
+  // The demos used to walk there with keys: start the Pulse, let it play, then Enter. A power kept would change the
+  // battle, so the walk keeps none (the pick is optional).
+  const walked = runBuildPlaytest({ steps: parseKeyScript("Esc s s wait~1000*26 Enter") })
   const routed = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "campaign?level=vasse-test-1&round=2" }).at })
   const reached = walked.frames[walked.frames.length - 1]!
   const opened = routed.frames[0]!

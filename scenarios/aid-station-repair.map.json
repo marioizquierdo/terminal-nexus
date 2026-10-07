@@ -1,0 +1,89 @@
+{
+  "id": "aid-station-repair",
+  "name": "Aid Station: it mends the units beside it",
+  "notes": "The Aid Station, what Vasse's Aid Station Permit unlocks: a building that heals. Two troopers each meet a raid trooper at the same moment, in two identical duels. The one beside the Aid Station is patched for 4 health every second and a half, wins its duel, and stands in its side's line (a target, as PERIMETER's troops have) while the station mends it back to full, the last patch only what was missing. The one five rows below, beyond its reach, trades blow for blow and falls with its enemy. The station never moves, never mends the wounded raid trooper inside its reach, and never mends the wounded Barracks beside it: it mends units, never a building. The raid's Nexus in the far corner, beyond the line's reach, keeps the round going to its end.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 40992,
+  "pulseTicks": 240,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 4,
+        "y": 3
+      },
+      "rows": [
+        " b at",
+        "",
+        "",
+        "",
+        "",
+        "    t"
+      ],
+      "legend": {
+        "a": {
+          "content": "structure.citizen.aidstation"
+        },
+        "b": {
+          "content": "structure.citizen.barracks",
+          "hp": 60
+        },
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 9,
+        "y": 3
+      },
+      "rows": [
+        "t",
+        "",
+        "",
+        "",
+        "",
+        "t",
+        "",
+        "            n"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "n": {
+          "content": "structure.ravel.nexus"
+        }
+      }
+    }
+  },
+  "targets": {
+    "A": {
+      "x": 8,
+      "y": 3,
+      "width": 3,
+      "height": 1
+    }
+  }
+}

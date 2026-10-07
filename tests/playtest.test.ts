@@ -53,11 +53,12 @@ test("the owner's menu flow — Down three times, then Space four times — plan
 
 test("a click on a tile goes through the mouse adapter at wherever that tile is drawn", () => {
   // Pick a Nexus power (which closes its popup), arm Barracks by its digit, then click the same tile twice: the first click moves the cursor
-  // there, the second places — south of the standing Barracks, inside the build range.
+  // there, the second places — south of the standing Barracks, inside the build range. The first power dealt gives
+  // no credits (only War Chest does): 100 less the Barracks's 40.
   const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("n 1 1 click:26,13 click:26,13") })
   const last = run.frames[run.frames.length - 1]!
   assert.equal(last.state.planned.length, 1)
-  assert.match(frameToText(last.frame), /Barracks placed \(resources: 90\)/)
+  assert.match(frameToText(last.frame), /Barracks placed \(resources: 60\)/)
   assert.match(last.bytes, /^\u001b\[<0;\d+;\d+M\u001b\[<0;\d+;\d+m$/u, "a press and then a release")
 })
 

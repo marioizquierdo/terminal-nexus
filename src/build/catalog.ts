@@ -6,7 +6,7 @@
 // screens keep reading it where they always have.
 
 import { PERIMETER_LEVEL } from "../armies/index.ts"
-import type { Offer } from "../armies/types.ts"
+import type { BuildingCard, Offer } from "../armies/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ConstructItem, NexusPowerOption } from "./types.ts"
 
@@ -19,22 +19,29 @@ export { STARTER_EDGE_STYLE, STARTER_GRID_SIZE, STARTER_STANDING, STARTER_START_
  * (`src/content/cards.ts`). A building that makes units carries what it spawns, as its army's card says.
  */
 export function constructMenu(offer: Pick<Offer, "buildings">): ConstructItem[] {
-  return offer.buildings.map((card, index) => ({
+  return offer.buildings.map((card, index) => constructItem(card, index))
+}
+
+/** A building card as the construct menu's row number `index` (from 0): its digit, its structure, its card
+ *  title, its cost and what it spawns. */
+export function constructItem(card: BuildingCard, index: number): ConstructItem {
+  return {
     hotkey: String(index + 1),
     contentId: card.structure,
     label: CARD_TEXT[card.structure]?.title ?? card.structure,
     cost: card.cost,
     ...(card.spawns === undefined ? {} : { spawns: card.spawns }),
-  }))
+  }
 }
 
-/** An offer's Nexus powers as the Build Phase deals them: every power, in the order unlocked, by digit. */
+/** Nexus powers as the popup offers them, by digit in the order given: a dealt hand, or an offer's every power. */
 export function nexusDraftOf(offer: Pick<Offer, "powers">): NexusPowerOption[] {
   return offer.powers.map((card, index) => ({
     hotkey: String(index + 1),
     name: card.name,
     description: card.description,
-    bonusAllotment: card.effect.credits,
+    bonusAllotment: "credits" in card.effect ? card.effect.credits : 0,
+    card,
   }))
 }
 

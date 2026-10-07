@@ -10,8 +10,8 @@ import all from "../armies/all/army.json" with { type: "json" }
 import vasse from "../armies/vasse/army.json" with { type: "json" }
 import { constructMenu, nexusDraftOf, STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT } from "../src/build/catalog.ts"
 import { MAPS } from "../src/build/maps.ts"
-import type { Armies, LoadWorld, Offer } from "../src/armies/index.ts"
-import { ARMIES, ArmyError, loadArmies, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
+import type { Armies, LoadWorld, Offer, PowerCard } from "../src/armies/index.ts"
+import { ARMIES, ArmyError, dealHand, loadArmies, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import { levelContext, starterContext } from "../src/cli/starter.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY } from "../src/content/index.ts"
@@ -47,10 +47,13 @@ const campaignBundle = (levels: readonly object[], extra: object = {}): object =
 /** The game's armies and `more`, loaded. */
 const withGame = (...more: readonly object[]): Armies => loadArmies([all, vasse, ...more], WORLD)
 
-/** An offer as a player reads it: each building and its cost, each power and its credits, the credits. */
+/** What a power does, in a word: its credits (War Chest's), or its effect's kind. */
+const effectOf = (card: PowerCard): string => ("credits" in card.effect ? `+${card.effect.credits}` : (Object.keys(card.effect)[0] ?? "?"))
+
+/** An offer as a player reads it: each building and its cost, each power and what it does, the credits. */
 const offered = (offer: Offer) => ({
   buildings: offer.buildings.map((card) => `${card.id} ${card.cost}`),
-  powers: offer.powers.map((card) => `${card.name} +${card.effect.credits}`),
+  powers: offer.powers.map((card) => `${card.name} ${effectOf(card)}`),
   credits: offer.credits,
 })
 
@@ -92,10 +95,18 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
     "hatchery structure.bench.hatchery 30",
     "turret structure.bench.beamturret 15",
   ])
-  assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, card.effect.credits]), [
-    ["Reserve Fund", "Adds 30 resources to spend.", 30],
-    ["War Chest", "Adds 2000 resources to spend.", 2000],
+  assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
+    ["Reserve Callup", "Two troopers join at your Nexus.", "spawnUnits"],
+    ["Drill Schedule", "Barracks send a second wave.", "modifyContent"],
+    ["War Chest", "Adds 2000 resources to spend.", "+2000"],
   ])
+  // Hers: her skill wider, and the building that only its permit unlocks.
+  const [, hers] = ARMIES.armies
+  assert.deepEqual(hers?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
+    ["Standing Order", "By the Book reaches twice as far.", "modifyCommander"],
+    ["Aid Station Permit", "Unlocks building: Aid Station.", "unlockStructure"],
+  ])
+  assert.deepEqual(hers?.buildings?.map((card) => `${card.id} ${card.structure} ${card.cost}`), ["aid-station structure.citizen.aidstation 25"])
 })
 
 test("a level offers what its campaign has unlocked by then: PERIMETER unlocks all of it, the cadence level nothing new", () => {
@@ -103,7 +114,7 @@ test("a level offers what its campaign has unlocked by then: PERIMETER unlocks a
   assert.ok(perimeter !== undefined && cadence !== undefined)
   const everything = {
     buildings: ["barracks 40", "hatchery 30", "turret 15"],
-    powers: ["Reserve Fund +30", "War Chest +2000"],
+    powers: ["Reserve Callup spawnUnits", "Drill Schedule modifyContent", "Standing Order modifyCommander", "Aid Station Permit unlockStructure", "War Chest +2000"],
     credits: 100,
   }
   assert.deepEqual(offered(perimeter.offer), everything)
@@ -115,7 +126,7 @@ test("a level offers what its campaign has unlocked by then: PERIMETER unlocks a
 test("unlocks add up level by level, in the order unlocked, so no hotkey moves; each level sets its own credits", () => {
   const loaded = withGame(
     campaignBundle([
-      level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["reserve-fund"] } }),
+      level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["reserve-callup"] } }),
       level("test-2", { credits: 60, unlocks: { buildings: ["barracks"] } }),
       level("test-3", { unlocks: { buildings: ["hatchery"], powers: ["war-chest"] } }),
     ]),
@@ -124,15 +135,15 @@ test("unlocks add up level by level, in the order unlocked, so no hotkey moves; 
   assert.deepEqual(
     levels.map((entry) => offered(entry.offer)),
     [
-      { buildings: ["turret 15"], powers: ["Reserve Fund +30"], credits: 45 },
-      { buildings: ["turret 15", "barracks 40"], powers: ["Reserve Fund +30"], credits: 60 },
-      { buildings: ["turret 15", "barracks 40", "hatchery 30"], powers: ["Reserve Fund +30", "War Chest +2000"], credits: 100 },
+      { buildings: ["turret 15"], powers: ["Reserve Callup spawnUnits"], credits: 45 },
+      { buildings: ["turret 15", "barracks 40"], powers: ["Reserve Callup spawnUnits"], credits: 60 },
+      { buildings: ["turret 15", "barracks 40", "hatchery 30"], powers: ["Reserve Callup spawnUnits", "War Chest +2000"], credits: 100 },
     ],
   )
   // What is new in each: what the screen between levels shows.
   assert.deepEqual(
     levels.map((entry) => [...entry.unlocked.buildings.map((card) => card.id), ...entry.unlocked.powers.map((card) => card.id)]),
-    [["turret", "reserve-fund"], ["barracks"], ["hatchery", "war-chest"]],
+    [["turret", "reserve-callup"], ["barracks"], ["hatchery", "war-chest"]],
   )
   // The last level's menu keeps the first level's digit for the Turret.
   assert.deepEqual(
@@ -142,13 +153,13 @@ test("unlocks add up level by level, in the order unlocked, so no hotkey moves; 
 })
 
 test("a level's offer is what its Build Phase offers: the menu, the credits and the Nexus draft", () => {
-  const loaded = withGame(campaignBundle([level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["reserve-fund"] } })]))
+  const loaded = withGame(campaignBundle([level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["war-chest"] } })]))
   const turretsOnly = loaded.levels.find((entry) => entry.id === "test-1")
   assert.ok(turretsOnly !== undefined)
   const context = levelContext(turretsOnly)
   assert.deepEqual(context.catalog.map((item) => `${item.hotkey} ${item.label} ${item.cost}`), ["1 Turret 15"])
   assert.equal(context.allotment, 45)
-  assert.deepEqual(context.nexusDraft.map((power) => `${power.hotkey} ${power.name} +${power.bonusAllotment}`), ["1 Reserve Fund +30"])
+  assert.deepEqual(context.nexusDraft.map((power) => `${power.hotkey} ${power.name} +${power.bonusAllotment}`), ["1 War Chest +2000"])
 
   // And the panel says so: one building, under digit 1, and the credits.
   const side = buildSide({ context })
@@ -165,7 +176,7 @@ test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus
   )
   assert.deepEqual(
     STARTER_NEXUS_DRAFT.map((power) => `${power.hotkey} ${power.name} +${power.bonusAllotment}`),
-    ["1 Reserve Fund +30", "2 War Chest +2000"],
+    ["1 Reserve Callup +0", "2 Drill Schedule +0", "3 Standing Order +0", "4 Aid Station Permit +0", "5 War Chest +2000"],
   )
   assert.equal(STARTER_ALLOTMENT, 100)
   assert.deepEqual(STARTER_CATALOG, constructMenu(PERIMETER_LEVEL.offer))
@@ -173,7 +184,9 @@ test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus
   // And the round the game opens is built from it.
   const context = starterContext()
   assert.deepEqual(context.catalog, STARTER_CATALOG)
-  assert.deepEqual(context.nexusDraft, STARTER_NEXUS_DRAFT)
+  // Its Nexus draft is a hand dealt from that pool for round 1, War Chest beside it.
+  assert.deepEqual(context.powerPool, PERIMETER_LEVEL.offer.powers)
+  assert.deepEqual(context.nexusDraft, nexusDraftOf({ powers: dealHand(PERIMETER_LEVEL.offer.powers, [], PERIMETER.seed, 1) }))
   assert.equal(context.allotment, STARTER_ALLOTMENT)
   assert.deepEqual(levelContext(PERIMETER_LEVEL).catalog, context.catalog)
 })
@@ -414,7 +427,16 @@ test("a level's mission is checked against its map, its content against what its
     requires: [],
     content: ["unit.test.hero", "structure.test.nest", "unit.test.ghost", "unit.citizen.trooper"],
     buildings: [{ id: "nest", structure: "structure.test.nest", cost: 5 }],
-    powers: [{ id: "blank", name: " ", description: "", effect: { credits: 1 } }],
+    powers: [
+      { id: "blank", name: " ", description: "", effect: { credits: 1 } },
+      // What a power does names what its army sees: a unit that is a unit, a building card, a building that
+      // spawns when it adds waves, a reach that changes.
+      { id: "ghost-call", name: "Ghost Call", description: "Nobody comes.", effect: { spawnUnits: { unit: "unit.test.nobody", count: 2 } } },
+      { id: "nest-call", name: "Nest Call", description: "A nest walks in.", effect: { spawnUnits: { unit: "structure.test.nest", count: 1 } } },
+      { id: "same-reach", name: "Same Reach", description: "As far as ever.", effect: { modifyCommander: { auraReachTimes: 1 } } },
+      { id: "nest-drill", name: "Nest Drill", description: "More of nothing.", effect: { modifyContent: { building: "nest", addWaves: 1 } } },
+      { id: "lost-permit", name: "Lost Permit", description: "Unlocks nothing.", effect: { unlockStructure: { building: "missing" } } },
+    ],
     commanders: [
       { id: "hero", name: "Hero", unit: "unit.test.hero" },
       { id: "trooper", name: "Not one", unit: "unit.citizen.trooper" },
@@ -429,7 +451,7 @@ test("a level's mission is checked against its map, its content against what its
             id: "solo-1",
             map: "nowhere",
             credits: 10,
-            unlocks: { buildings: ["nest", "nest", "reserve-fund"] },
+            unlocks: { buildings: ["nest", "nest", "war-chest"] },
             mission: mission("mission.solo-1", {
               regions: [{ id: "here", x: 20, y: 9, width: 2, height: 2 }],
               triggers: [
@@ -460,10 +482,15 @@ test("a level's mission is checked against its map, its content against what its
     'army "solo": "structure.test.nest" puts on the Grid "unit.test.grub", which no army brings',
     'army "solo": content names "unit.test.ghost", which is not content the game has',
     'army "solo": the Nexus power "blank" needs a name and a description',
+    'army "solo": the Nexus power "ghost-call" calls up "unit.test.nobody", which is not content the game has',
+    'army "solo": the Nexus power "nest-call" calls up "structure.test.nest", which is a building, not a unit',
+    'army "solo": the Nexus power "same-reach" multiplies the aura\'s reach by 1, which changes nothing',
+    'army "solo": the Nexus power "nest-drill" adds waves to the building "nest", which spawns nothing',
+    'army "solo": the Nexus power "lost-permit" names the building "missing", which no army has',
     'army "solo": the Commander "trooper" is "unit.citizen.trooper", which "all" brings and "solo" does not require',
     'army "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter")',
     'army "solo": level "solo-1" unlocks the building "nest" twice',
-    'army "solo": level "solo-1" unlocks the building "reserve-fund", which no army has (it is a Nexus power)',
+    'army "solo": level "solo-1" unlocks the building "war-chest", which no army has (it is a Nexus power)',
     'army "solo": level "solo-1", mission "mission.solo-1" uses "unit.citizen.vasse", which "vasse" brings and "solo" does not require',
     'army "solo": level "solo-1", mission "mission.solo-1" uses "unit.ravel.runner", which "all" brings and "solo" does not require',
     'army "solo": level "solo-1", mission "mission.solo-1": trigger "start", action 1 (spawn) brings the Commander "unit.citizen.vasse" for the player, whose campaign\'s Commander is "unit.test.hero"',

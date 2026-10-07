@@ -5,6 +5,7 @@
 // where the reducer is.
 
 import { test } from "node:test"
+import { starterContext } from "../src/cli/starter.ts"
 import assert from "node:assert/strict"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { isGated } from "../src/build/camera.ts"
@@ -90,7 +91,7 @@ test("the bottom line shows a command's answer, and after a command that says no
 test("the answers players rely on still show right after their command, and lapse at the next silent one", () => {
   const cases: ReadonlyArray<readonly [name: string, drive: (side: Side) => void, text: RegExp, tone?: string]> = [
     ["a placement", (side) => keys(side, "1", ENTER), /^Barracks placed \(resources: 60\) - \[u\] undo$/, "success"],
-    ["a pick", (side) => keys(side, "n", "1"), /^Reserve Fund picked\.$/, "success"],
+    ["a pick", (side) => keys(side, "n", "1"), new RegExp(`^${starterContext().nexusDraft[0]!.name} picked\\.$`), "success"],
     ["undo", (side) => keys(side, "1", ENTER, "u"), /^Barracks undone, 40 refunded\.$/],
     ["remove", (side) => keys(side, TAB, "1", ENTER, BACKSPACE), /^Barracks removed, 40 refunded\.$/],
     ["cancel", (side) => keys(side, "1", ESC), /^Cancelled\.$/],
@@ -188,7 +189,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   ],
   placing: [[(side) => keys(side, "2"), /^Place the Hatchery: arrows move, \[enter\] places, \[2\] or \[esc\] cancels\.$/]],
   explore: [[(side) => keys(side, "e"), /^Explore Map: arrows move, the panel shows what is here\. \[esc\] goes back\.$/]],
-  "explore-planned": [[(side) => keys(side, TAB, "1", ENTER, "e"), /^Planned Barracks: \[bksp\] removes it, \[u\] undoes the last\. \[esc\] goes back\.$/]],
+  "explore-planned": [[(side) => keys(side, TAB, "1", ENTER, "e"), /^Planned Barracks: \[bksp\] removes it, \[u\] undoes the last, \[esc\] back\.$/]],
   map: [[(side) => keys(side, TAB), /^Arrows move the cursor, \[enter\] explores here, a number selects a building\.$/]],
 }
 

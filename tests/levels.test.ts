@@ -40,8 +40,10 @@ test("a later round is reached by playing the ones before it with nothing built,
     assert.deepEqual(first.incoming, again.incoming, `round ${round}'s raid differs between two openings`)
     assert.deepEqual(first.field, again.field)
     assert.equal(first.allotment, again.allotment)
-    // The credits the walk did not spend carry over, the first Nexus power's included.
-    assert.ok(first.allotment > level.firstRound().allotment)
+    // The walk builds nothing and keeps no power (the pick is optional), so its battles are the mission's own and
+    // the credits it did not spend carry over untouched.
+    assert.equal(first.allotment, level.firstRound().allotment)
+    assert.deepEqual(first.kept, [])
   }
 })
 
@@ -72,7 +74,9 @@ test("the cadence level opens by id, and her return is played: she falls in roun
   // Round 1: she arrives out in front, and the level offers what the campaign has unlocked by then — all PERIMETER did.
   const first = openRound(level, 1)
   assert.deepEqual(first.catalog, starterContext().catalog)
-  assert.deepEqual(first.nexusDraft, starterContext().nexusDraft)
+  // Its own hand, dealt by its own seed from the same pool.
+  assert.deepEqual(first.powerPool, starterContext().powerPool)
+  assert.ok(first.nexusDraft.every((option) => first.powerPool?.includes(option.card)), "a power in the hand is not in the pool")
   assert.equal(first.allotment, 100)
   assert.ok(first.incoming?.some((entity) => entity.contentId === VASSE && entity.player === "A"), "round 1 does not bring her")
 

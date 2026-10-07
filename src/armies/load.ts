@@ -19,7 +19,7 @@ import { missionShape } from "./mission-shape.ts"
 import type { BarkMoment, Barks } from "./barks.ts"
 import { BARK_MOMENTS, barkProblem } from "./barks.ts"
 import type { Say, Shape } from "./shape.ts"
-import { anything, dictionary, fieldAt, isObject, itemAt, list, positiveWholeNumber, record, shown, text, wholeNumber } from "./shape.ts"
+import { anything, dictionary, fieldAt, isObject, itemAt, keyed, list, literal, positiveWholeNumber, record, shown, text, wholeNumber } from "./shape.ts"
 import type {
   BuildingCard,
   BuildingSpawns,
@@ -49,9 +49,17 @@ const buildingSpawns = record<BuildingSpawns>(
   {},
 )
 const buildingCard = record<BuildingCard>({ id: text, structure: text, cost: wholeNumber }, { spawns: buildingSpawns, notes: text })
+/** What a Nexus power does: one key, its kind, and what that kind needs (`PowerEffect`). */
+const powerEffect: Shape<PowerEffect> = keyed("a Nexus power's effect", {
+  spawnUnits: record<Readonly<{ unit: string; count: number }>>({ unit: text, count: positiveWholeNumber }, {}),
+  modifyCommander: record<Readonly<{ auraReachTimes: number }>>({ auraReachTimes: positiveWholeNumber }, {}),
+  modifyContent: record<Readonly<{ building: string; addWaves: number }>>({ building: text, addWaves: positiveWholeNumber }, {}),
+  unlockStructure: record<Readonly<{ building: string }>>({ building: text }, {}),
+  credits: wholeNumber,
+})
 const powerCard = record<PowerCard>(
-  { id: text, name: text, description: text, effect: record<PowerEffect>({ credits: wholeNumber }, {}) },
-  { notes: text },
+  { id: text, name: text, description: text, effect: powerEffect },
+  { repeatable: literal(true, false), always: literal(true, false), notes: text },
 )
 /** A Commander's own fields. Her lines' moments and their fit are checked after, with the rest of what she names. */
 const commanderEntry = record<CommanderEntry>(
@@ -330,6 +338,31 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
     return sees.get(army)?.has(owner) === true ? null : `the ${kind} "${id}", which "${owner}" has and "${army}" does not require`
   }
 
+  /** What is wrong with what a Nexus power does, each said after its name: a unit it calls up that the army sees
+   *  and that is a unit; a building it names that the army can offer — one that spawns, for a power that adds
+   *  waves; a reach multiplied, never left as it is. */
+  const effectProblems = (army: string, card: PowerCard): string[] => {
+    const { effect } = card
+    const said: string[] = []
+    if ("spawnUnits" in effect) {
+      const unseen = unseenContent(army, effect.spawnUnits.unit)
+      if (unseen !== null) said.push(`calls up ${unseen}`)
+      else if (registry.get(effect.spawnUnits.unit).layer === "obstacles") said.push(`calls up "${effect.spawnUnits.unit}", which is a building, not a unit`)
+    }
+    if ("modifyCommander" in effect && effect.modifyCommander.auraReachTimes < 2) {
+      said.push(`multiplies the aura's reach by ${effect.modifyCommander.auraReachTimes}, which changes nothing`)
+    }
+    const named = "unlockStructure" in effect ? effect.unlockStructure.building : "modifyContent" in effect ? effect.modifyContent.building : null
+    if (named !== null) {
+      const unseen = unseenCard(army, "building", named)
+      if (unseen !== null) said.push(`names ${unseen}`)
+      else if ("modifyContent" in effect && buildingsBy.get(named)?.card.spawns === undefined) {
+        said.push(`adds waves to the building "${named}", which spawns nothing`)
+      }
+    }
+    return said
+  }
+
   // Content: what each army brings exists, and what it puts on the Grid in turn is content the army sees.
   for (const army of read.values()) {
     const say = (problem: string): void => {
@@ -362,6 +395,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
     }
     for (const card of army.powers) {
       if (card.name.trim() === "" || card.description.trim() === "") say(`the Nexus power "${card.id}" needs a name and a description`)
+      for (const problem of effectProblems(army.id, card)) say(`the Nexus power "${card.id}" ${problem}`)
     }
 
     // Commanders: her unit is a Commander the army sees, and her lines are for moments she can speak at, each
@@ -477,6 +511,10 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
         const newPowers = (entry.unlocks?.powers ?? []).map((id) => (powersBy.get(id) as Readonly<{ card: PowerCard }>).card)
         buildings = [...buildings, ...newBuildings]
         powers = [...powers, ...newPowers]
+        // The buildings the offered powers can unlock, once each, in the order the powers name them.
+        const unlockable = [
+          ...new Set(powers.flatMap((card) => ("unlockStructure" in card.effect ? [card.effect.unlockStructure.building] : []))),
+        ].map((id) => (buildingsBy.get(id) as Readonly<{ card: BuildingCard }>).card)
         levels.push({
           id: entry.id,
           campaign: campaign.entry.id,
@@ -484,7 +522,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
           number: index + 1,
           map: entry.map,
           mission: mission as MissionDefinition,
-          offer: { credits: entry.credits, buildings, powers },
+          offer: { credits: entry.credits, buildings, powers, unlockable },
           unlocked: { buildings: newBuildings, powers: newPowers },
         })
       })

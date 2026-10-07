@@ -154,4 +154,38 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     // The ring its troopers appear on, kept free of other buildings (the "Spawn space" Experiment).
     clearance: 1,
   },
+  {
+    // What Aid Station Permit, one of Vasse's Nexus powers, unlocks (armies/vasse): repair, placed where the
+    // line will stand. A building that heals — the kernel's healer (`behavior: "support"`, `attack.kind: "heal"`)
+    // on a building, which never moves — so through a Battle Round it mends the nearest of its side's wounded
+    // units within its reach, one patch at a time, and never an enemy or a building (`perception.ts`). The
+    // `aid-station-repair` scenario shows it. First guesses, and no balance claim; each number's reason is beside it.
+    id: "structure.citizen.aidstation",
+    short: "aid",
+    layer: "obstacles",
+    // One tile, as the Turret is: a field post small enough to stand in the line beside the troops it mends.
+    footprint: rectFootprint(1, 1),
+    // The Turret's, the other one-tile building: it stands in the line, where the raid's blows land first.
+    maxHp: 60,
+    // The buildings' tier, last in the tick: a patch lands after the tick's blows, so it never saves a unit one kills.
+    speedTier: 9,
+    attack: {
+      kind: "heal",
+      // Beside it: the four tiles touching it and two columns either side, a row counting two (grid.md); its
+      // corners are three away, out of reach.
+      range: 2,
+      // One patch, a tenth of a trooper's 40 health; a patch never raises a unit past full (`applyHeal`).
+      damage: 4,
+      // A patch every second and a half: under 3 health a second, less than one runner (7.5) or raider (9.4)
+      // deals, so it slows a fight's losses and never makes a unit unkillable.
+      cooldownTicks: 18,
+    },
+    // Units only, never a building: buildings mending each other is another power's (Mutual Support Standard).
+    targetLayers: ["workers", "units", "air"],
+    collidesWith: STRUCTURE_COLLISIONS,
+    behavior: "support",
+    salvage: 20,
+    // A build range, as every building the player places projects (the "Build range" Experiment's while it is felt).
+    constructionRadius: 6,
+  },
 ]

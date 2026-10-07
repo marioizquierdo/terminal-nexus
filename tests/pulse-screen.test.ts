@@ -88,7 +88,8 @@ test("the feed calls a thing what its card calls it: a turret, a swarmer, never 
   assert.equal(names.get("hatch"), "hatchery")
   assert.equal(names.get("spawnling"), "swarmer")
   assert.equal(names.get("trooper"), "trooper")
-  assert.equal(names.get("nexus"), "nexus", "a title of two words gives its last, to fit the panel")
+  assert.equal(names.get("nexus"), "nexus", "a Nexus is the nexus, as the raid panel names it, to fit the panel")
+  assert.equal(names.get("aid"), "aid station", "a title of two words is said whole")
   assert.equal(names.get("vasse"), "Vasse", "a Commander is named")
   // On the screen, through the battle: the plan's Turrets fire as turrets.
   const seen = new Set<string>()

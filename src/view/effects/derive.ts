@@ -10,8 +10,8 @@
 
 import type { ContentRegistry } from "../../content/index.ts"
 import type { DomainEvent } from "../../events/types.ts"
-import { footprintExtent } from "../../grid/coords.ts"
-import type { Coord } from "../../grid/types.ts"
+import { footprintExtent, inBounds, tilesOf } from "../../grid/coords.ts"
+import type { Coord, Footprint } from "../../grid/types.ts"
 import type { MatchState } from "../../state/types.ts"
 import { deathExtraTicks } from "./recipes.ts"
 import type { EffectFamily, EffectInstance } from "./types.ts"
@@ -22,6 +22,8 @@ const MELEE_WIND_MS = 100
 const MELEE_CLASH_MS = 140
 const TELEGRAPH_MS = 80
 const BURST_MS = 180
+/** A heal's mark: an impact beat beside the mended unit, then a decay beat risen a tile — two of a burst's beats. */
+const MEND_MS = 360
 const FLASH_MS = 66
 const DEATH_MS = 320
 const STRUCTURE_MS = 600
@@ -50,6 +52,31 @@ function familyFor(contentId: string): EffectFamily {
   if (contentId.includes(".citizen.")) return "citizen"
   if (contentId.includes(".ravel.")) return "ravel"
   return "neutral"
+}
+
+/**
+ * Where a heal's mark goes: the first open tile beside the mended unit, as the tick it was mended in left the
+ * Grid — above the middle of its top row, then beside its middle row to the right and to the left, then below
+ * the middle of its bottom row. Open is plain ground on the Grid that nothing stands on: a glyph on a unit would
+ * be dropped (the corruption law), and rock and a deposit are information too. `null` when every side is taken.
+ */
+export function mendTile(state: MatchState, registry: ContentRegistry, anchor: Coord, footprint: Footprint): Coord | null {
+  const { width, height } = footprintExtent(footprint)
+  const middleX = anchor.x + Math.floor((width - 1) / 2)
+  const middleY = anchor.y + Math.floor((height - 1) / 2)
+  const sides: readonly Coord[] = [
+    { x: middleX, y: anchor.y - 1 },
+    { x: anchor.x + width, y: middleY },
+    { x: anchor.x - 1, y: middleY },
+    { x: middleX, y: anchor.y + height },
+  ]
+  const taken = new Set<string>()
+  for (const entity of state.entities) {
+    for (const tile of tilesOf(entity.anchor, registry.get(entity.contentId).footprint)) taken.add(`${tile.x},${tile.y}`)
+  }
+  const open = (tile: Coord): boolean =>
+    inBounds(state.grid, tile) && state.grid.tiles[tile.y * state.grid.width + tile.x] === "terrain.plain" && !taken.has(`${tile.x},${tile.y}`)
+  return sides.find(open) ?? null
 }
 
 /**
@@ -91,6 +118,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
   // Where everything stood, per tick, so a cue can be given coordinates.
   const anchors = new Map<number, Map<number, Coord>>()
   const contentOf = new Map<number, string>()
+  const stateAt = new Map<number, MatchState>()
   source.states.forEach((state) => {
     const byOrdinal = new Map<number, Coord>()
     for (const entity of state.entities) {
@@ -98,6 +126,7 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
       contentOf.set(entity.ordinal, entity.contentId)
     }
     anchors.set(state.tick, byOrdinal)
+    stateAt.set(state.tick, state)
   })
   const anchorAt = (tick: number, ordinal: number): Coord | undefined => {
     for (let look = tick; look >= 0 && look >= tick - 2; look -= 1) {
@@ -229,18 +258,24 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
 
       case "heal.applied": {
         // Reuses the existing `fx.impact.burst` recipe rather than authoring a new one (most designs
-        // need content only, not new effects) - the same small spark damage already gets, so a heal
-        // reads as an event happening rather than a silent number change.
-        const hit = anchorAt(event.tick, event.ordinal)
-        if (hit === undefined) break
+        // need content only, not new effects), in its heal form (`heal: 1`): a cross of light that rises from
+        // beside the mended unit, so a heal reads as an event happening rather than a silent number change, and
+        // never as a hit. Beside it, not on it: the corruption law drops any glyph on a unit, which is how a heal
+        // used to show nothing at all.
+        const mended = anchorAt(event.tick, event.ordinal)
+        const contentId = contentOf.get(event.ordinal)
+        const state = stateAt.get(event.tick) ?? stateAt.get(event.tick - 1)
+        if (mended === undefined || contentId === undefined || state === undefined || event.amount <= 0) break
+        const origin = mendTile(state, source.registry, mended, source.registry.get(contentId).footprint)
+        if (origin === null) break
         instances.push({
           recipe: "fx.impact.burst",
           band: "effects",
           startMs: at(event.tick),
-          durationMs: BURST_MS,
-          origin: hit,
+          durationMs: MEND_MS,
+          origin,
           family: familyFor(contentOf.get(event.sourceOrdinal) ?? ""),
-          params: { amount: event.amount },
+          params: { amount: event.amount, heal: 1 },
         })
         break
       }

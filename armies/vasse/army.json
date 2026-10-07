@@ -1,9 +1,33 @@
 {
   "id": "vasse",
   "title": "Edda Vasse",
-  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol, and her campaign. It requires all for the buildings, the Nexus powers and the bench units her levels use, and brings only her own unit. Building her and her campaign is not choosing the Citizens' roster: every building and power she is offered is still the disposable bench.",
+  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol, and her campaign. It requires all for the buildings, the shared Nexus powers and the bench units her levels use, and brings her own unit, her own two powers (Standing Order and Aid Station Permit) and the Aid Station that permit unlocks. Building her and her campaign is not choosing the Citizens' roster: every building she is offered is still the disposable bench, and her powers are first versions with no balance claim.",
   "requires": ["all"],
-  "content": ["unit.citizen.vasse"],
+  "content": ["unit.citizen.vasse", "structure.citizen.aidstation"],
+  "buildings": [
+    {
+      "id": "aid-station",
+      "structure": "structure.citizen.aidstation",
+      "cost": 25,
+      "notes": "Hers: what Aid Station Permit unlocks, and no level does. A first guess of a cost, between the Turret's and the Hatchery's, with no balance claim."
+    }
+  ],
+  "powers": [
+    {
+      "id": "standing-order",
+      "name": "Standing Order",
+      "description": "By the Book reaches twice as far.",
+      "effect": { "modifyCommander": { "auraReachTimes": 2 } },
+      "notes": "Her skill, wider: By the Book's reach doubles for the rest of the mission, on her card, on the map and in the battle."
+    },
+    {
+      "id": "aid-station-permit",
+      "name": "Aid Station Permit",
+      "description": "Unlocks building: Aid Station.",
+      "effect": { "unlockStructure": { "building": "aid-station" } },
+      "notes": "Repair, placed where the line will stand: the Aid Station joins the construct menu for the rest of the mission, after the buildings already there, so no hotkey moves."
+    }
+  ],
   "commanders": [
     {
       "id": "vasse",
@@ -32,12 +56,12 @@
       "levels": [
         {
           "id": "vasse-test-1",
-          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building and both placeholder Nexus powers all has, one by one, so that when all grows this level keeps what it teaches. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
+          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building all has, one by one, so that when all grows this level keeps what it teaches, and four real Nexus powers, two shared and two hers, with War Chest beside every hand; the Aid Station comes only with its permit. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
           "map": "starter",
           "credits": 100,
           "unlocks": {
             "buildings": ["barracks", "hatchery", "turret"],
-            "powers": ["reserve-fund", "war-chest"]
+            "powers": ["reserve-callup", "drill-schedule", "standing-order", "aid-station-permit", "war-chest"]
           },
           "mission": {
             "id": "mission.citizen.perimeter",

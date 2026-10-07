@@ -50,11 +50,27 @@ export type BuildingCard = Readonly<{
 }>
 
 /**
- * What a Nexus power does when it is picked. A plain number of credits for now — the placeholder draft the
- * Build Phase has always dealt — until the Nexus draft step gives powers their real effect kinds
- * (commander-armies.md, what a Nexus power does), each one more key here.
+ * What a Nexus power does once it is kept: one key, which names its kind — the effect kinds of
+ * commander-armies.md ("what a Nexus power does"), named for the code and never shown to a player — and what it
+ * does. Four of the six kinds are built, the four PERIMETER's powers need; `credits` is not one of them but War
+ * Chest's, the owner's tool for testing placement, kept beside the real draft.
+ *
+ * - `spawnUnits`: so many of a unit join the player's troops at the Grid Nexus as the round's Battle Round
+ *   starts, and stay with the army after (Reserve Callup).
+ * - `modifyCommander`: the Commander's aura reaches so many times as far, for the rest of the mission
+ *   (Standing Order).
+ * - `modifyContent`: a building that spawns sends so many more waves a round, for the rest of the mission
+ *   (Drill Schedule). `building` is a building card's id.
+ * - `unlockStructure`: a building joins the construct menu, for the rest of the mission (Aid Station Permit).
+ *   `building` is a building card's id; no level unlocks it.
+ * - `credits`: so many credits to spend this Build Phase (War Chest).
  */
-export type PowerEffect = Readonly<{ credits: number }>
+export type PowerEffect =
+  | Readonly<{ spawnUnits: Readonly<{ unit: string; count: number }> }>
+  | Readonly<{ modifyCommander: Readonly<{ auraReachTimes: number }> }>
+  | Readonly<{ modifyContent: Readonly<{ building: string; addWaves: number }> }>
+  | Readonly<{ unlockStructure: Readonly<{ building: string }> }>
+  | Readonly<{ credits: number }>
 
 /** A Nexus power: a name and one plain line of description — all a player reads of it — and what it does. */
 export type PowerCard = Readonly<{
@@ -62,6 +78,10 @@ export type PowerCard = Readonly<{
   name: string
   description: string
   effect: PowerEffect
+  /** May be dealt again once kept (Reserve Callup: two more troopers each time). Absent: kept once a mission. */
+  repeatable?: boolean
+  /** Offered beside every hand rather than dealt into one (War Chest, the owner's testing tool). */
+  always?: boolean
   notes?: string
 }>
 
@@ -134,11 +154,14 @@ export type LevelMap = Readonly<{
 export type Commander = Readonly<{ id: string; army: string; name: string; unit: string; barks: Barks }>
 
 /** What a level offers: every card its campaign has unlocked by then, in the order first unlocked (so a hotkey
- *  never moves when a later level adds a card), and its credits. */
+ *  never moves when a later level adds a card), its credits, and the buildings its Nexus powers can unlock. */
 export type Offer = Readonly<{
   credits: number
   buildings: readonly BuildingCard[]
   powers: readonly PowerCard[]
+  /** The building cards its powers name (`unlockStructure`), which no level unlocks: what such a power adds to
+   *  the construct menu once kept. */
+  unlockable: readonly BuildingCard[]
 }>
 
 /** A level, resolved: where it stands in its campaign, what it offers, and what is new in it. */

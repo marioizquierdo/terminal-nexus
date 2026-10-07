@@ -257,8 +257,10 @@ const rangedTracer: EffectRecipe = (instance, context) => {
 // Damage
 // ---------------------------------------------------------------------------
 
-/** A small asymmetric scatter biased *away* from the shooter. Asymmetry sells direction of force. */
+/** A small asymmetric scatter biased *away* from the shooter. Asymmetry sells direction of force. A heal is
+ *  the same cue's other form (`heal: 1`, `mendMark`). */
 const impactBurst: EffectRecipe = (instance, context) => {
+  if (paramNumber(instance, "heal") === 1) return mendMark(instance, context)
   const family = familyOf(instance)
   const from = instance.target ?? instance.origin
   const away = step(from, instance.origin)
@@ -295,6 +297,26 @@ const impactBurst: EffectRecipe = (instance, context) => {
     })
   }
   return cells
+}
+
+/** The mark a heal leaves: the healer's cross, the one glyph a heal draws whatever the family (`art.ts`). */
+export const MEND_GLYPH = "+"
+
+/**
+ * A heal, the impact burst's other form: where a blow throws debris off a unit, a mend rises from beside it. The
+ * instance's origin is a free tile beside the mended unit (`mendTile`, derive.ts), never the unit itself, which
+ * the corruption law would drop; the cross lands there and for the second half rises a tile, dim — fewer, dimmer
+ * and drifting, the decay of craft rule 7. It is drawn as light (`fx.flash`, the theme's strongest ink) and never
+ * bold: a building is drawn bold in its side's colour, so the cross a patch throws never reads as the Aid Station
+ * it came from, standing beside it, nor as anyone's. No damage flash and no debris, so it never reads as a hit.
+ * Reduced motion: the cross held where it landed for the whole window, no rise. Monochrome: the cross and its
+ * weight carry it — plain, then dim — with no colour at all.
+ */
+function mendMark(instance: EffectInstance, context: EffectContext): PositionedCell[] {
+  if (context.reducedMotion || progressOf(instance, context) < 0.5) {
+    return [{ tile: instance.origin, glyph: MEND_GLYPH, role: "fx.flash" }]
+  }
+  return [{ tile: { x: instance.origin.x, y: instance.origin.y - 1 }, glyph: MEND_GLYPH, role: "fx.flash", dim: true }]
 }
 
 /**

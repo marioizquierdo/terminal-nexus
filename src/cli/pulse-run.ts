@@ -26,6 +26,7 @@ import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 import {
+  auraReachRegistry,
   auraRegistry,
   commanderRegistry,
   fallen,
@@ -36,8 +37,10 @@ import {
   restoreCommanders,
   spawningRegistry,
 } from "../match/index.ts"
-import type { Arrival, MissionPulseInput, Restoration } from "../match/index.ts"
-import type { BuildingSpawns } from "../armies/index.ts"
+import type { Arrival, Force, MissionPulseInput, Restoration } from "../match/index.ts"
+import type { BuildingSpawns, PowerCard } from "../armies/index.ts"
+import { dealHand } from "../armies/index.ts"
+import { constructItem, nexusDraftOf } from "../build/catalog.ts"
 import { foreseeRound } from "../match/index.ts"
 import type { GroupIntent, TroopsIntent } from "../match/index.ts"
 import type { TroopsGroup } from "../view/troops-post.ts"
@@ -57,6 +60,9 @@ import { timelineOf } from "./timeline.ts"
 /** Starting a round's Pulse and opening the round after it: what `BuildSession` is handed. */
 export type MissionPlay = Readonly<{
   mission: MissionDefinition
+  /** The round's context once `card`, the Nexus power just picked, is kept: what it does, applied for the rest of
+   *  the mission (`keepPower`), and what the round brings foreseen again with it. */
+  keep: (context: BuildContext, card: PowerCard) => BuildContext
   /** Round 1's Build Phase, from the map's own (a context with the grid, the registry, the catalog, what
    *  stands on the map and the opening allotment). Validates the mission against that map first. */
   firstRound: (base: BuildContext) => BuildContext
@@ -161,11 +167,27 @@ function commanderNews(restored: readonly Restoration[], absent: readonly Comman
 
 // --- A round's scene: the dialog's lines, resolved on the round's own map ---------------------------
 
+/** The units the Nexus powers kept this round call up, mustered on the player's Grid Nexus — none on a map
+ *  without one. */
+function callupsOf(context: BuildContext): Force[] {
+  const nexus = nexusTile(context)
+  if (nexus === null) return []
+  return (context.callups ?? []).map((callup) => ({ player: "A", muster: nexus, units: Array.from({ length: callup.count }, () => callup.unit) }))
+}
+
 /** The round's arrivals set down against its opening without a plan, with the group each came in: the
  *  forecast the Build Phase draws (`incomingOf` drops the groups) and what a dialog line can look at. */
 function arrivalsFor(mission: MissionDefinition, context: BuildContext, pulse: number): Arrival[] {
   const structures = context.carried == null ? context.standing.map((s) => ({ contentId: s.contentId, anchor: s.anchor })) : []
-  const input: MissionPulseInput = { mission, grid: context.grid, registry: context.registry, pulse, carried: context.carried ?? null, structures }
+  const input: MissionPulseInput = {
+    mission,
+    grid: context.grid,
+    registry: context.registry,
+    pulse,
+    carried: context.carried ?? null,
+    structures,
+    callups: callupsOf(context),
+  }
   const opening = missionOpening(input)
   return [...opening.arrivals, ...laterArrivals(input, opening.state)]
 }
@@ -279,6 +301,51 @@ function withRoundScene(context: BuildContext, scene: readonly DialogLine[]): Bu
   return scene.length === 0 ? bare : { ...bare, scene }
 }
 
+/**
+ * What keeping a Nexus power does to the round's context, for the rest of the mission (commander-armies.md, what
+ * a Nexus power does): `kept` gains it, and its effect is applied where the Build Phase and the Pulse both read
+ * it — so what it changes is on screen the moment it is picked, and is what the battle runs on.
+ *
+ * - `spawnUnits` calls its units up for this round's Pulse (`callups`), mustered on the Grid Nexus; the caller
+ *   foresees the round again so they show as arriving.
+ * - `modifyCommander` multiplies every Commander's aura reach (`auraReachRegistry`): her card and the battle.
+ * - `modifyContent` gives every row of the building it names more waves a round: its card and the battle.
+ * - `unlockStructure` adds the building it names to the construct menu, after the rows already there.
+ * - `credits` changes nothing here: the reducer adds them to what is left to spend when the pick is made.
+ */
+export function keepPower(context: BuildContext, card: PowerCard): BuildContext {
+  const kept: BuildContext = { ...context, kept: [...(context.kept ?? []), card] }
+  const { effect } = card
+  const building = (id: string) => (context.buildingCards ?? []).find((candidate) => candidate.id === id)
+  if ("spawnUnits" in effect) {
+    return { ...kept, callups: [...(context.callups ?? []), { unit: effect.spawnUnits.unit, count: effect.spawnUnits.count }] }
+  }
+  if ("modifyCommander" in effect) return { ...kept, registry: auraReachRegistry(context.registry, effect.modifyCommander.auraReachTimes) }
+  if ("modifyContent" in effect) {
+    const structure = building(effect.modifyContent.building)?.structure
+    const addWaves = effect.modifyContent.addWaves
+    return {
+      ...kept,
+      catalog: context.catalog.map((item) =>
+        item.contentId === structure && item.spawns !== undefined ? { ...item, spawns: { ...item.spawns, waves: item.spawns.waves + addWaves } } : item,
+      ),
+    }
+  }
+  if ("unlockStructure" in effect) {
+    const card = building(effect.unlockStructure.building)
+    if (card === undefined || context.catalog.some((item) => item.contentId === card.structure)) return kept
+    return { ...kept, catalog: [...context.catalog, constructItem(card, context.catalog.length)] }
+  }
+  return kept
+}
+
+/** The hand round `round` deals from the context's Nexus power pool, under its digits — or the draft as it is,
+ *  for a context with no pool to deal from. */
+function dealtDraft(mission: MissionDefinition, context: BuildContext, round: number): BuildContext["nexusDraft"] {
+  if (context.powerPool === undefined) return context.nexusDraft
+  return nexusDraftOf({ powers: dealHand(context.powerPool, context.kept ?? [], mission.seed, round) })
+}
+
 export function missionPlay(mission: MissionDefinition): MissionPlay {
   const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"]): MissionPulseInput => ({
     mission,
@@ -287,6 +354,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
     pulse,
     carried: context.carried ?? null,
     structures,
+    callups: callupsOf(context),
   })
 
   /** What the round's triggers bring, set down against the round's opening without a plan — a forecast:
@@ -307,6 +375,12 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
   return {
     mission,
 
+    keep(context, card) {
+      const next = keepPower(context, card)
+      // What arrives changed only with units called up; the rest of the round's forecast is as it was.
+      return "spawnUnits" in card.effect ? { ...next, incoming: forecast(next, next.round?.number ?? 1) } : next
+    },
+
     foresee(context, state) {
       // The Pulse's own opening and content, so what is foreseen is what its first tick will do — and, after
       // the raid's groups, where the player's troops head.
@@ -317,14 +391,18 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 
     firstRound(base) {
       validateMission(mission, base.grid, base.registry)
-      const context: BuildContext = {
+      const opened: BuildContext = {
         ...base,
         round: round(1),
         carried: null,
         field: [],
         // The mission's own words for its rounds, or none — so every round says the default.
         roundText: mission.roundText ?? {},
+        // Nothing kept yet, nothing called up: a mission starts with a fresh hand.
+        kept: [],
+        callups: [],
       }
+      const context: BuildContext = { ...opened, nexusDraft: dealtDraft(mission, opened, 1) }
       // The round opens on its scene, when the mission has one for it: PERIMETER's intro.
       return withRoundScene({ ...context, incoming: forecast(context, 1) }, roundScene(mission, context, 1, []))
     },
@@ -372,6 +450,9 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         round: round(number),
         // Credits carry over: what the last Build Phase did not spend, the Nexus power it picked included.
         allotment: remaining(context, state),
+        // What was kept stays kept (it is in this context already); what was called up has arrived.
+        callups: [],
+        nexusDraft: dealtDraft(mission, context, number),
         openingStatus: status(news === null ? `${last} Build Phase ${number} - the Nexus stands.` : `${last} ${news}`, "hint"),
       }
       // Its own scene, never the last round's: a Commander back, then the mission's lines for the round.

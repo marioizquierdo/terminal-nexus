@@ -224,8 +224,17 @@ title screen's menu.
 - **The action that ends the phase is the last row** (`startRow`); it opens the Battle Round screen. A Nexus
   power still waiting holds nothing back — for now the pick is optional (the owner: "it's easier for testing
   if I can just start a round") — so the row is never dim; its hint asks whether to start without one, and the
-  Battle Round screen says in one quiet line that a power is still waiting. (RULE —
-  `tests/build-start.test.ts`, `tests/build-nexus.test.ts`)
+  Battle Round screen says in one quiet line that a power is still waiting. With the Nexus pick Experiment on
+  required, the row is refused until a power is kept: "Pick a Nexus power first: [n]." (RULE —
+  `tests/build-start.test.ts`, `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`)
+- ***The Nexus draft in its popup*** (`[n]`): `PICK ONE - or start without`, then the hand dealt this round — two
+  powers, each its name under its digit and its one line under that, then War Chest under the next digit — and
+  `ACTIVE`, every power kept this mission still in force, this round's pick among them once made (War Chest's
+  credits and Reserve Callup's troopers are spent in the round they are kept), or "None yet." A pick closes the
+  popup and takes effect at once: the menu gains the building a permit unlocks under the next digit, a card says
+  what changed (a Barracks's `WAVES 4 at 5s, 15s`, her aura "within range 8"), units called up show arriving
+  beside the Nexus, and `[n] Nexus` says how many are active. (RULE — `tests/build-nexus.test.ts`,
+  `tests/nexus-draft.test.ts`)
 
 ### 6.2 Cards
 
@@ -255,7 +264,8 @@ title screen's menu.
   the build range, a Commander's aura. The rest of the shape is the map's to show: a range of 6 also reaches 3 rows
   up and down, and the map draws it wherever it shows a range. An attack is two rows, its damage and then its range
   (`ATTACK  6`, `RANGE  6`), and a melee attack's range says `melee` (the owner: "Cards should only say horizontal
-  reach ... And "touching" should be "melee"."). (RULE — `tests/build-card.test.ts`)
+  reach ... And "touching" should be "melee"."). A healer's first row is what one heal mends (`HEAL  4`, the Aid
+  Station's). (RULE — `tests/build-card.test.ts`, `tests/nexus-draft.test.ts`)
 - **A Commander's skill is on her card**: its name, bold, opening one plain sentence at the strength the battle
   will run on, its range said as every range is, one number ("By the Book: she and her units within range 4 take
   25% less damage."); nothing while the Experiment has it off. Hers is the tallest card: at 80 × 24 the blank
@@ -618,6 +628,9 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 - **The speaker's light**: as Vasse begins a line during a Pulse, her own tile is lit a moment with the
   placement's light (`fx.light.flash`, glyphless, its own three forms); none for her last words, when she is
   gone from it. (RULE — `tests/voice.test.ts`)
+- **A heal is a cross of light beside the unit it heals**: on the first open tile beside it, rising a row and
+  dimming, never bold, so it is never mistaken for a hit or for the Aid Station that made it; held still under
+  reduced motion. (RULE — `tests/aid-station.test.ts`)
 - **A placement is felt, then settles**: a few frames going up, a moment lit with sparks, then the still
   picture. A removal throws the same sparks. Reduced motion shows the finished building at once, unlit,
   with a still mark for the sparks. (RULE — `tests/build-placement.test.ts`)

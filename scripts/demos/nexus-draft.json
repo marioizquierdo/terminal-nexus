@@ -1,0 +1,18 @@
+[
+  {
+    "label": "The draft",
+    "try": "Round 1's Nexus powers: two dealt from Vasse's pool, Drill Schedule and Reserve Callup, and War Chest under 3, beside every hand. Press 2: two troopers appear beside your Nexus, and the menu says 1 active. Then s s plays the round with them.",
+    "keys": "Esc n"
+  },
+  {
+    "label": "Round 3",
+    "try": "Round 3, after keeping Drill Schedule in round 1 and Standing Order in round 2: both are listed under ACTIVE, and this round deals Aid Station Permit. Press 2, then 4 to arm the Aid Station, tap a tile beside your troopers in the line and tap it again to place it, then s s: a white cross rises beside each unit it heals.",
+    "keys": "Esc n 1 s s wait~1000*26 Enter n 1 s s wait~1000*26 Enter n"
+  },
+  {
+    "label": "Pick required",
+    "try": "The Nexus pick Experiment on required: Start Battle Round is refused until a power is kept, and the bottom line says so. Press n and a digit, then s. Settings (Esc, s, then d) flips it back to optional.",
+    "settings": "powerPick=required",
+    "keys": "Esc s"
+  }
+]
