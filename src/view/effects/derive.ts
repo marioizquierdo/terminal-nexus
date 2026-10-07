@@ -294,7 +294,9 @@ export function deriveEffects(source: EffectSource): EffectInstance[] {
           durationMs: BLAST_MS,
           origin: event.at,
           family: familyFor(event.contentId),
-          params: { radius: event.radius, damage: event.damage },
+          // The whole body that blew up, not only its anchor: a blast reaches from every tile of it, as the rule
+          // measures (`detonate`, src/pulse/death.ts), and the ring is drawn round all of it.
+          params: { radius: event.radius, damage: event.damage, ...footprintExtent(source.registry.get(event.contentId).footprint) },
         })
         break
       }

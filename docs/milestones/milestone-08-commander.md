@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8A, round 6 — tall tiles, felt: the ways to make a reach and a walk look as they play, drawn in ASCII, and the simple ones built as an Experiment Mario can play, with a test level that shows the difference.
+**Current step:** 8A, round 7 — rows x2, the rule: a row counts two columns in every distance and step, computed in one place and explained in the grid design with pictures; one tile width, whole-row reaches, groups set down round, and cards that say a reach's shape.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -153,6 +153,35 @@ pull request.
 - [x] A test level, reachable by route, shows a reach to place, a raid from above and one from the side at the
       same distance on screen, and a melee line; the playable page opens it under each choice.
 - [x] Nothing is settled before Mario plays it: the hex grid and a tilted camera are drawn, not built.
+
+### Step 8A, round 7 — Rows x2, the rule
+
+Mario's choice after playing the Ground Experiment, and his word to settle it once the exploration merged ([his
+words](../history/feedback/2026-10-06-rows-x2.md)): rows x2 becomes the rule, and what was built only to compare the
+choices goes. Then, confirming it: the focus is clean math and the grid design explained, with pictures, as the
+design it is. Built on a new pull request.
+
+- [x] A row counts two columns in every distance and every step, in every battle and on every screen: the kernel
+      has one way to measure, and the Ground Experiment, its other three choices, the Ground test level and its
+      demos are gone.
+- [x] A tile is one column wide at every terminal size, in the game, the engine tool and the playable page.
+- [x] Every reach is a whole number of rows: an odd reach rounds up (Vasse's shot and her aura 4, the marksman 6),
+      a reach of 1 is touching, and the build range is a plain number counted like any reach (4, 6 or 8; 6 to begin
+      with).
+- [x] A group set down on the Grid comes out round on screen: the raid's groups, the opening's musters and Recall
+      search the same rings, counted the way the rule counts.
+- [x] A card says a reach's shape ("6 across, 3 up/down"), and a reach of 1 says touching.
+- [x] One line where players read how to play says units stand tall, so more fit side by side than one behind
+      another.
+- [x] The math is clean: every distance, reach, ring and step is computed by a few named functions of the grid, and
+      every comment on them says the rule as it is.
+- [x] The grid design explains the rule from its own point of view, with pictures the code draws, and a test holds
+      the pictures.
+- [x] An adversarial review checks the code, the math and the explanation against each other.
+- [x] Neither PERIMETER's raid nor the content's ranges are tuned beyond whole rows: ranges are adjusted as units are
+      made. PERIMETER's outcomes under the rule are measured and written down.
+- [x] Square bodies, every unit two columns wide, are written down in reserve, not built.
+- [x] Mario's sparse formation, a column kept between units, is written down for the next pull request, not built.
 
 ### Step 8B — The Nexus draft, dealt from a pool
 

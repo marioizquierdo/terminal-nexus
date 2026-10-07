@@ -40,7 +40,7 @@ function block(
 }
 
 test("the default preset is 48 x 16, which the 80-column composition is derived from", () => {
-  // RULE: change this and the 80- and 128-column layouts stop falling out of one number.
+  // RULE: change this and the 80-column floor stops falling out of it: 1 + 48 + 1 + 30, a column a tile.
   assert.equal(DEFAULT_PRESET, "medium-extra-wide")
   assert.deepEqual(presetDimensions(DEFAULT_PRESET), { width: 48, height: 16 })
 })
@@ -293,18 +293,12 @@ test("melee-kill: a defender dies to melee and the attackers survive", async () 
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
-test("ranged-kill: the fixture's own arithmetic, after two 2026-08-22 speed passes", async () => {
-  // Before any speed pass this fixture was a clean demonstration: two marksmen land six shots
-  // during the trooper's approach and it dies at range, never landing a hit. The first speed pass
-  // (1.5x, "units still move too slow... it takes a while to reach initial engagement") already
-  // broke that cleanly - the trooper started reaching marksman#1 and killing it in melee. This is
-  // the second pass (2x the ORIGINAL rate, not another factor on the first - "still too slow... 2
-  // or 2.5 times faster"), and it goes further still: the trooper now also reaches marksman#3 after
-  // killing marksman#1, wounding it in melee before finally dying to its ranged fire. A still wins,
-  // now having lost one marksman and wounded the other, rather than losing nobody. Left as a
-  // disclosed side effect of the speed changes rather than re-tuned back, same reasoning as the
-  // first pass: fixing it would mean touching combat numbers nobody asked to change, and this is
-  // exactly the kind of retune the first milestone says fixture content is for.
+test("ranged-kill: the fixture's own arithmetic", async () => {
+  // Two marksmen, one above the other, fire on a trooper walking at them across the row: seven shots land during
+  // its approach, and it still reaches marksman#1 and kills it in melee, then reaches marksman#3 and wounds it
+  // before dying to its fire. A wins, having lost one marksman and wounded the other. The units are as fast as
+  // the owner's speed passes made them (2026-08-22), and the numbers are left as the fixture's content plays,
+  // not retuned to the trooper dying at range, which it did when units moved slower.
   const resolved = await resolveScenario("ranged-kill.map.json")
   const shots = resolved.run.events.filter(
     (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
@@ -488,7 +482,7 @@ test("aura-by-the-book: the units near Vasse take three quarters of every hit, s
   for (const hit of near) assert.equal(hit.guardedBy, vasse.id, `a hit on the trooper beside her at tick ${hit.tick} was not guarded`)
   assert.ok(near.some((hit) => hit.amount === 8 && hit.hpBefore >= 8), "no raider's hit came to eight")
   assert.ok(near.some((hit) => hit.amount === 7 && hit.source === "B:raider#3" && hit.tick === run.events.find((event) => event.kind === "entity.detonated" && event.entity === "B:raider#3")?.tick), "the blast was not guarded")
-  // Five tiles from her: never guarded, the whole eleven.
+  // Four rows below her, beyond her reach: never guarded, the whole eleven.
   const far = hits("A:trooper#4")
   assert.ok(far.length > 0)
   for (const hit of far) assert.equal(hit.guardedBy, undefined, `the trooper beyond her reach was guarded at tick ${hit.tick}`)

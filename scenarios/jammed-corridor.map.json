@@ -1,7 +1,7 @@
 {
   "id": "jammed-corridor",
   "name": "Jammed corridor - arbitration under contention",
-  "notes": "Three approach lines - west, north, south - converge on one tile at a T-junction, three deep on each line so the contest recurs rather than resolving once. Revised after Milestone 1 playtesting: removing diagonal movement means a mover can no longer cut a corner past a wall's corner, so the previous single-gap geometry stopped producing genuine three-way ties - the approach that used to jam now files through in single steps. The bait is a lone worker rather than a multi-row structure, so every approach line's nearest-tile target is the same single point and the tie is unambiguous.",
+  "notes": "Three approach lines - west, north, south - converge on one tile at a T-junction, each line's front the same distance from it: two columns to the west, a row to the north and to the south (a row counts two columns, and takes as long to walk), so all three claim the junction on the same tick. Three deep on each line, so the contest recurs rather than resolving once. Movement is four-way, so a mover cannot cut past a wall's corner and every line files through the one gap. The bait is a lone worker rather than a multi-row structure, so every approach line's nearest-tile target is the same single point and the tie is unambiguous.",
   "grid": {
     "preset": "small-wide"
   },
@@ -29,17 +29,17 @@
   "placements": {
     "A": {
       "at": {
-        "x": 7,
+        "x": 6,
         "y": 2
       },
       "rows": [
-        "   t",
-        "   t",
-        "   t",
+        "    t",
+        "    t",
+        "    t",
         "ttt",
-        "   t",
-        "   t",
-        "   t"
+        "    t",
+        "    t",
+        "    t"
       ],
       "legend": {
         "t": {

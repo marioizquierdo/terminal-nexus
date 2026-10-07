@@ -1,7 +1,7 @@
 {
   "id": "aura-by-the-book",
   "name": "By the Book: the units near Vasse take less damage",
-  "notes": "A Commander's aura, Vasse's By the Book. Two troopers each meet a raider at the same moment: the one beside Vasse is within its reach and takes three quarters of every hit (eight of a raider's eleven, seven of its blast's ten), and so does she; the one five tiles from her takes all of it and falls first. Her own shots land on the near raider too; the rest of the difference between the two fights is the aura.",
+  "notes": "A Commander's aura, Vasse's By the Book. Two troopers each meet a raider at the same moment: the one beside Vasse is within its reach and takes three quarters of every hit (eight of a raider's eleven, seven of its blast's ten), and so does she; the one four rows below her, beyond her reach, takes all of it and falls first. Her own shots land on the near raider too; the rest of the difference between the two fights is the aura.",
   "grid": {
     "preset": "small-wide"
   },

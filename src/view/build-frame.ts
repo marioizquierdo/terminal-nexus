@@ -151,7 +151,7 @@ export function drawChrome(cells: BandCell[], input: BuildCompositionInput, pack
       // Along the map, in map columns or rows from its own corner — the drawn camera's position plus
       // the distance into the view — so a patterned edge scrolls with the map.
       const phase = horizontalEdge
-        ? state.camera.x * layout.tileWidth + (x - layout.origin.column)
+        ? state.camera.x + (x - layout.origin.column)
         : state.camera.y + (y - layout.origin.row)
       const drawn = edgeCell(pack, style, arms, place, phase)
       put(cells, BANDS.chrome, x, y, drawn.glyph, drawn.role, drawn.extra)

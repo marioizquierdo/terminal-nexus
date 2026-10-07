@@ -15,29 +15,31 @@
 //   leaving them pressing on each other.
 //
 // Read from the state the tick began with, like every phase before the moves settle; the kernel never
-// changes a target (`MatchState.targets`). Distances are the battle's measure (Manhattan under `SQUARE`), and
-// "beside" is a step along a side whatever the measure; integers, reading and ordinal order: nothing here can
-// make two runs differ.
+// changes a target (`MatchState.targets`). The nearest tile is nearest by the Grid's own distance (`gridDistance`:
+// a row counts two columns), and "beside" is touching along a side (`stepsBetween`); integers, reading and
+// ordinal order: nothing here can make two runs differ.
 
 import type { ContentDef } from "../content/types.ts"
-import { SQUARE, footprintSteps, gridDistance, tilesOf } from "../grid/coords.ts"
+import { footprintSteps, gridDistance, tilesOf } from "../grid/coords.ts"
+import { wholeRows } from "../grid/reach.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
-import type { Coord, Footprint, GridMeasure } from "../grid/types.ts"
+import type { Coord } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { stepsBetween } from "./shared.ts"
 
 /**
- * How near an enemy must come before a unit heading for its side's target turns to fight it, in tiles,
- * measured as range is. One value for every unit, and never less than a unit's own attack range, so nothing
- * walks past an enemy it could have shot. Six: a little over a marksman's range, so a squad turns on what
- * comes at it from the next few tiles, not on what stands half the map away.
+ * How near an enemy must come before a unit heading for its side's target turns to fight it,
+ * measured as range is (`within`): 6 columns either side, 3 rows up and down. One value for every unit, and never
+ * less than a unit's own attack range, so nothing walks past an enemy it could have shot. Six, a marksman's range:
+ * a squad turns on what comes at it from the next few tiles, not on what stands half the map away.
  */
 export const ENGAGE_RANGE = 6
 
-/** How near an enemy must come before `definition` turns from its side's target to fight it. */
+/** How near an enemy must come before `definition` turns from its side's target to fight it: `ENGAGE_RANGE`, or its
+ *  own attack's range when that is longer, in whole rows (`wholeRows`) whatever the content says. */
 export function engageRange(definition: ContentDef): number {
-  return Math.max(ENGAGE_RANGE, definition.attack?.range ?? 0)
+  return wholeRows(Math.max(ENGAGE_RANGE, definition.attack?.range ?? 0))
 }
 
 /** Whether a unit of this content follows its side's target: one that moves and fights (`advance`), not a
@@ -52,21 +54,11 @@ export function targetFor(context: TickContext, actor: Actor): TargetArea | null
   return context.targets[actor.player] ?? null
 }
 
-/** How far a footprint anchored at `anchor` is from an area: 0 inside it, else the distance to its nearest tile,
- *  as `measure` counts it (the steps to it under `SQUARE`). */
-export function distanceToArea(anchor: Coord, footprint: Footprint, area: TargetArea, measure: GridMeasure = SQUARE): number {
-  let best = Number.POSITIVE_INFINITY
-  for (const tile of tilesOf(anchor, footprint)) {
-    const dx = Math.max(area.x - tile.x, 0, tile.x - (area.x + area.width - 1))
-    const dy = Math.max(area.y - tile.y, 0, tile.y - (area.y + area.height - 1))
-    best = Math.min(best, dx + measure.row * dy)
-  }
-  return best
-}
-
 /** Whether an actor stands inside an area: any tile of its footprint on it. */
 export function insideArea(actor: Actor, area: TargetArea): boolean {
-  return distanceToArea(actor.anchor, actor.definition.footprint, area) === 0
+  return tilesOf(actor.anchor, actor.definition.footprint).some(
+    (tile) => tile.x >= area.x && tile.x < area.x + area.width && tile.y >= area.y && tile.y < area.y + area.height,
+  )
 }
 
 /** Every tile of an area, in reading order. */
@@ -81,16 +73,16 @@ export function areaTiles(area: TargetArea): Coord[] {
 /**
  * The tile of the area a mover walks toward: the nearest one its own mask leaves clear — no building, no
  * unit it would bump, no rock — the first in reading order on a tie; and when none is clear, the nearest of
- * all. Nearest as the battle's measure counts it. A mover aims at it as it aims at the nearest tile of an
- * enemy's footprint (`movementGoal`).
+ * all, nearest by the Grid's own distance (`gridDistance`). A mover aims at it as it aims at the nearest tile of
+ * an enemy's footprint (`movementGoal`).
  */
-export function areaGoal(from: Coord, area: TargetArea, mask: CollisionMask, measure: GridMeasure): Coord {
+export function areaGoal(from: Coord, area: TargetArea, mask: CollisionMask): Coord {
   let clear: Coord | null = null
   let clearDistance = Number.POSITIVE_INFINITY
   let nearest: Coord = { x: area.x, y: area.y }
   let nearestDistance = Number.POSITIVE_INFINITY
   for (const tile of areaTiles(area)) {
-    const distance = gridDistance(from, tile, measure)
+    const distance = gridDistance(from, tile)
     if (distance < nearestDistance) {
       nearest = tile
       nearestDistance = distance
@@ -106,8 +98,8 @@ export function areaGoal(from: Coord, area: TargetArea, mask: CollisionMask, mea
 /**
  * The fighting units of `player` gathered at its target this tick, by ordinal: every one inside it or beside
  * a building of its own side that stands in it, and — outward from them — every one beside one already
- * gathered. Beside is one step away along a side, footprint to footprint, whatever the measure counts a row
- * (`stepsBetween`). Worked out as a whole from where everyone stood as the tick began, so the answer is the
+ * gathered. Beside is touching along a side, footprint to footprint (`stepsBetween`), a row above as much as a
+ * column across. Worked out as a whole from where everyone stood as the tick began, so the answer is the
  * same whichever unit asks first. A unit in it that nothing brings closer stands, rather than pressing on its
  * own.
  */

@@ -42,19 +42,11 @@ export function parseState(text: string): MatchState {
     throw new Error("serialized grid tile count does not match its dimensions")
   }
   if (record["targets"] !== undefined) checkTargets(record["targets"], terrain)
-  if (record["measure"] !== undefined) checkMeasure(record["measure"])
+  // A state from a build that measured the Grid another way names its measure: refused, never played by this rule.
+  if (record["measure"] !== undefined) {
+    throw new Error("state carries a measure, but every state measures the Grid by the one rule, a row counting two columns, and carries none")
+  }
   return { ...(parsed as MatchState), grid: terrain }
-}
-
-/** How a state measures the Grid (`MatchState.measure`): a row counting one or two columns and a content tile
- *  one or two of them — and the field absent rather than square when it measures as the rules always did. */
-function checkMeasure(measure: unknown): void {
-  if (typeof measure !== "object" || measure === null || Array.isArray(measure)) throw new Error("state measure is not an object")
-  const record = measure as Record<string, unknown>
-  for (const key of Object.keys(record)) if (key !== "row" && key !== "tile") throw new Error(`state measure has the unknown field ${key}`)
-  const { row, tile } = record
-  if ((row !== 1 && row !== 2) || (tile !== 1 && tile !== 2)) throw new Error("state measure counts a row and a tile as 1 or 2 columns")
-  if (row === 1 && tile === 1) throw new Error("state measure is square: a state measured as the rules always were has none")
 }
 
 /** A side's target as a state holds it: a rectangle of whole tiles on the Grid, for side A or B — and the

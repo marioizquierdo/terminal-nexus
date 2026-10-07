@@ -11,6 +11,7 @@ import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { cellForTile, menuEntryAt, startRow } from "../src/build/layout.ts"
 import type { RaidForecast, RaidGroup } from "../src/build/types.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
+import { gridDistance } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
@@ -83,7 +84,7 @@ function mapCells(side: BuildSide, frame: ReadonlyCellFrame): { x: number; y: nu
   const { layout } = side
   const cells: { x: number; y: number; cell: Cell }[] = []
   for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
-    for (let x = layout.origin.column; x < layout.origin.column + layout.viewport.width * layout.tileWidth; x += 1) cells.push({ x, y, cell: cellAt(frame, x, y) })
+    for (let x = layout.origin.column; x < layout.origin.column + layout.viewport.width; x += 1) cells.push({ x, y, cell: cellAt(frame, x, y) })
   }
   return cells
 }
@@ -138,9 +139,9 @@ test("a trail never replaces a glyph: only bare open ground under it changes, an
         if (isTrail(cell)) marks += 1
         else corners += 1
       } else if (JSON.stringify(cell.style) !== JSON.stringify(was.style)) {
-        // The same glyph, restyled: the target's mark, or a trail mark's blank second column on wide tiles.
-        assert.ok(isTarget(cell) || isTrail(cell) || isCorner(cell), `round ${number}: ${x},${y} restyled as neither a target nor a trail nor a corner`)
-        if (isTarget(cell)) targets += 1
+        // The same glyph, restyled: only ever the target's mark, a glyphless write over what it goes for.
+        assert.ok(isTarget(cell), `round ${number}: ${x},${y} restyled as something other than the target's mark`)
+        targets += 1
       }
     }
     assert.ok(marks > 0, `round ${number} draws no trail`)
@@ -156,7 +157,9 @@ test("the panel says the coming raid in every round, inside the panel's free row
   const expected: readonly (readonly RegExp[])[] = [
     [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}goes for your Barracks$/, ...troops],
     [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}goes for your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}goes for your /, ...troops],
-    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}goes for your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}goes for your /, ...troops],
+    // What a group goes for first is the kernel's choice (tests/intent.test.ts): one of the player's buildings, or
+    // Vasse, who is named.
+    [/^AS THE ROUND STARTS$/, /^13 from the north-east$/, /^ {2}goes for your /, /^8 SECONDS IN$/, /^6 from the east$/, /^ {2}goes for (your |Vasse$)/, ...troops],
   ]
   everyRound().forEach((side, index) => {
     const { layout } = side
@@ -280,33 +283,62 @@ function probeOf(side: BuildSide): RaidGroup & Readonly<{ target: NonNullable<Ra
 /** Where along the probe's way a tile is. */
 const wayIndex = (probe: RaidGroup, tile: Coord): number => probe.path.findIndex((step) => step.x === tile.x && step.y === tile.y)
 
-test("the trail moves: an arrow every three tiles, each a tile further on every step, the one beside the target going in as a new one comes out", () => {
-  const probe = probeOf(perimeter())
+/** How far along a way each of its tiles is, by the Grid's own distance: what the trail's arrows are spaced and
+ *  timed by. */
+function alongWay(path: readonly Coord[]): number[] {
+  const along = [0]
+  for (let index = 1; index < path.length; index += 1) along.push((along[index - 1] as number) + gridDistance(path[index - 1] as Coord, path[index] as Coord))
+  return along
+}
+
+/** A straight way of `tiles` tiles from 0,0, across or down, and the tile past its end it goes for. */
+function straightWay(tiles: number, down: boolean): Readonly<{ path: Coord[]; target: Coord[] }> {
+  const at = (index: number): Coord => (down ? { x: 0, y: index } : { x: index, y: 0 })
+  return { path: Array.from({ length: tiles }, (_, index) => at(index)), target: [at(tiles)] }
+}
+
+test("the trail moves by the Grid's own distance: an arrow every four columns or two rows, a column's distance on every step and a row on every second, the one beside the target going in as a new one comes out", () => {
   const { spacing, stepMs } = TRAIL_MOTION
-  assert.equal(spacing, 3, "the owner's one arrow every three tiles")
-  const last = probe.path.length - 1
-  const arrows = (elapsedMs: number | null): number[] =>
-    trailMarks(probe.path, probe.target.tiles, elapsedMs)
-      .filter((mark) => mark.ghost === undefined)
-      .map((mark) => wayIndex(probe, mark.tile))
-  // Still: every third tile, counted back from the last, so the arrow beside the target is drawn.
-  const still = arrows(null)
-  assert.equal(still.at(-1), last)
-  assert.ok((still[0] ?? spacing) < spacing, "the trail does not start at the group")
-  // Moving, it starts from the still trail and holds still until the step is over.
-  assert.deepEqual(arrows(0), still)
-  assert.deepEqual(arrows(stepMs - 1), still)
-  for (let step = 1; step <= 2 * spacing; step += 1) {
-    const before = arrows((step - 1) * stepMs)
-    const now = arrows(step * stepMs)
-    for (const index of now) assert.ok(before.includes(index - 1) || index === 0, `step ${step}: an arrow at ${index} came from nowhere`)
-    for (const index of before) assert.ok(now.includes(index + 1) || index === last, `step ${step}: the arrow at ${index} did not step on`)
-    for (let at = 1; at < now.length; at += 1) assert.equal((now[at] as number) - (now[at - 1] as number), spacing, `step ${step}: not three tiles apart`)
-    assert.deepEqual(arrows(step * stepMs + stepMs - 1), now, `step ${step}: an arrow moved mid-step`)
+  assert.equal(spacing, 4, "the owner's one arrow every three tiles, made whole rows: four columns or two rows")
+  const arrowsOf = (way: Readonly<{ path: readonly Coord[]; target: readonly Coord[] }>, step: number | null): Coord[] =>
+    trailMarks(way.path, way.target, step === null ? null : step * stepMs).filter((mark) => mark.ghost === undefined).map((mark) => mark.tile)
+  // Across the screen: still, every fourth column, counted back from the last; each step every arrow a column on.
+  const across = straightWay(13, false)
+  assert.deepEqual(arrowsOf(across, null).map((tile) => tile.x), [0, 4, 8, 12])
+  for (let step = 0; step <= 2 * spacing; step += 1) {
+    const columns = arrowsOf(across, step).map((tile) => tile.x)
+    assert.deepEqual(columns, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter((x) => x % spacing === step % spacing), `step ${step}`)
   }
-  // Every three steps the line is where it began.
-  assert.deepEqual(arrows(spacing * stepMs), still)
-  // An arrow points the same way from a tile wherever the motion is: two steps on along the way, or at the target.
+  // Down the screen: still, every second row; a row on every second step, as a unit walks it.
+  const down = straightWay(7, true)
+  assert.deepEqual(arrowsOf(down, null).map((tile) => tile.y), [0, 2, 4, 6])
+  assert.deepEqual(
+    [0, 1, 2, 3, 4].map((step) => arrowsOf(down, step).map((tile) => tile.y)),
+    [[0, 2, 4, 6], [0, 2, 4], [1, 3, 5], [1, 3, 5], [0, 2, 4, 6]],
+  )
+  // On the probe's own way, which runs down the screen's diagonal and straight: the still trail ends beside the
+  // target and starts within a spacing of the group; moving, it holds still until a step is over, an arrow only ever
+  // stays or reaches the next tile of the way, and every four steps the line is where it began.
+  const probe = probeOf(perimeter())
+  const last = probe.path.length - 1
+  const along = alongWay(probe.path)
+  const indices = (step: number | null): number[] => arrowsOf({ path: probe.path, target: probe.target.tiles }, step).map((tile) => wayIndex(probe, tile))
+  const still = indices(null)
+  assert.equal(still.at(-1), last)
+  assert.ok((along[still[0] as number] as number) < spacing, "the trail does not start at the group")
+  assert.deepEqual(indices(0), still)
+  assert.deepEqual(trailMarks(probe.path, probe.target.tiles, stepMs - 1).filter((mark) => mark.ghost === undefined).map((mark) => wayIndex(probe, mark.tile)), still)
+  for (let step = 1; step <= 2 * spacing; step += 1) {
+    const before = indices(step - 1)
+    const now = indices(step)
+    for (const index of now) assert.ok(before.includes(index) || before.includes(index - 1) || index === 0, `step ${step}: an arrow at ${index} came from nowhere`)
+    for (let at = 1; at < now.length; at += 1) {
+      const gap = (along[now[at] as number] as number) - (along[now[at - 1] as number] as number)
+      assert.ok(Math.abs(gap - spacing) <= 1, `step ${step}: arrows ${gap} apart along the way, not about ${spacing}`)
+    }
+  }
+  assert.deepEqual(indices(spacing), still)
+  // An arrow points the same way from a tile wherever the motion is: a whole stair on along the way, or at the target.
   const ways = new Map<number, string>()
   for (let at = 0; at < spacing * stepMs; at += stepMs / 4) {
     for (const mark of trailMarks(probe.path, probe.target.tiles, at)) {
@@ -318,7 +350,7 @@ test("the trail moves: an arrow every three tiles, each a tile further on every 
   }
 })
 
-test("each arrow leaves a fading copy on the tile it just left — fainter at once, fainter again a quarter step on, gone at the half — the one that went into the target too", () => {
+test("an arrow that moves on leaves a fading copy on the tile it left — fainter at once, fainter again a quarter step on, gone at the half — the one that went into the target too", () => {
   const probe = probeOf(perimeter())
   const { stepMs } = TRAIL_MOTION
   const last = probe.path.length - 1
@@ -329,15 +361,16 @@ test("each arrow leaves a fading copy on the tile it just left — fainter at on
   assert.deepEqual(copiesAt(0), [])
   assert.deepEqual(copiesAt(stepMs - 1), [])
   let wentIn = 0
-  for (let step = 1; step <= 6; step += 1) {
+  for (let step = 1; step <= 8; step += 1) {
     const start = step * stepMs
-    const left = arrowsAt(start - 1)
-    // A copy on every tile an arrow stood on a moment ago, in its own glyph: the way it pointed from there.
+    const before = arrowsAt(start - 1)
+    const now = arrowsAt(start)
+    // A copy on every tile an arrow left this step, and on no other: in its own glyph, the way it pointed from there.
     const copies = copiesAt(start)
-    assert.deepEqual(copies.map((mark) => wayIndex(probe, mark.tile)), left, `step ${step}: the copies are not where the arrows were`)
-    const before = new Map(marks(start - 1).map((mark) => [wayIndex(probe, mark.tile), `${mark.dx},${mark.dy}`]))
-    for (const copy of copies) assert.equal(`${copy.dx},${copy.dy}`, before.get(wayIndex(probe, copy.tile)))
-    if (left.includes(last)) wentIn += 1
+    assert.deepEqual(copies.map((mark) => wayIndex(probe, mark.tile)), before.filter((index) => !now.includes(index)), `step ${step}: the copies are not where arrows left`)
+    const pointed = new Map(marks(start - 1).map((mark) => [wayIndex(probe, mark.tile), `${mark.dx},${mark.dy}`]))
+    for (const copy of copies) assert.equal(`${copy.dx},${copy.dy}`, pointed.get(wayIndex(probe, copy.tile)))
+    if (before.includes(last) && !now.includes(last)) wentIn += 1
     // Its first look, then its second a quarter step on, then gone at the half, until the next step.
     assert.ok(copies.every((mark) => mark.ghost === 0))
     assert.ok(copiesAt(start + stepMs / 4).every((mark) => mark.ghost === 1))
@@ -480,17 +513,17 @@ test("a building's reach yields to every tile of the trail's way, wherever its a
 })
 
 test("the scripted playtest moves the trail on the script's own clock: the same keys draw the same frames, and waiting shows it move", () => {
-  // Esc, then a quarter of a step at a time for three and a half steps.
-  const steps = parseKeyScript(`Esc wait~${TRAIL_MOTION.stepMs / 4}*14`)
+  // Esc, then a quarter of a step at a time for four and a half steps.
+  const steps = parseKeyScript(`Esc wait~${TRAIL_MOTION.stepMs / 4}*18`)
   const once = runBuildPlaytest({ steps }).frames.map((each) => frameToText(each.frame))
   const again = runBuildPlaytest({ steps }).frames.map((each) => frameToText(each.frame))
   assert.deepEqual(again, once)
-  // Esc closes the intro and the trail starts from its still form; a step on, every arrow has moved; and three
-  // steps on, once the copies are gone, it is the still trail again.
+  // Esc closes the intro and the trail starts from its still form; a step on, it has moved; and four steps on, a
+  // spacing of the Grid's own distance, once the copies are gone, it is the still trail again.
   const closed = once[1]
   assert.notEqual(once[5], closed, "the trail did not move")
   assert.notEqual(once[9], closed)
-  assert.equal(once[15], closed, "three steps on, the line is not where it began")
+  assert.equal(once[19], closed, "four steps on, the line is not where it began")
 })
 
 test("the panel's words: where from is a point of the compass from the Nexus, as the map is seen; what is hit, by its plain name", () => {

@@ -40,7 +40,6 @@ import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { buildFlightHoldTicks, flightHoldTicks } from "./effects/derive.ts"
 import { cosmeticHash } from "./effects/random.ts"
 import type { EffectInstance } from "./effects/types.ts"
-import { battleMeasure } from "./snapshot.ts"
 
 /**
  * Her voice's numbers: first guesses, watched on PERIMETER's rounds rather than measured, kept here beside the
@@ -70,8 +69,9 @@ export const VOICE = {
   perRound: 3,
   /** Badly hurt: down to this share of her health, and still standing. */
   hurtFraction: 0.35,
-  /** Near her, for a Commander with no aura to measure it by: this many tiles. */
-  nearTiles: 3,
+  /** Near her, for a Commander with no aura to measure it by: this many tiles, measured as range is — as far as
+   *  Vasse's aura reaches. */
+  nearTiles: 4,
   /** How long the light on her lasts as she starts to speak (`fx.light.flash`, a placement's own length). */
   lightMs: 400,
 } as const
@@ -171,7 +171,7 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
  * - **first-contact**: the first shot either side fires at the other;
  * - **raid-arrives**: the other side's units arriving after the round began (a building's training excluded);
  * - **unit-lost**: one of her side's units falls within `near` tiles of her (structures and Commanders aside),
- *   measured as her aura reaches, under the battle's own measure (`battleMeasure`, `footprintWithin`);
+ *   measured as her aura reaches (`footprintWithin`);
  * - **building-lost**: one of her side's buildings falls, the Grid Nexus aside (its fall ends the round);
  * - **badly-hurt**: a hit leaves her standing on `VOICE.hurtFraction` of her health or less;
  * - **nexus-hit**: her side's Grid Nexus is first hit;
@@ -192,8 +192,7 @@ export function voiceMoments(timeline: VoiceTimeline, speaker: Speaker, end: Rou
   for (const entity of timeline.states[0]?.entities ?? []) cast.set(entity.ordinal, entity)
   for (const event of timeline.events) if (event.kind === "entity.spawned") cast.set(event.ordinal, event)
   const herAt = (tick: number): Coord | undefined => timeline.states[tick]?.entities.find((entity) => entity.ordinal === speaker.ordinal)?.anchor
-  const measure = battleMeasure(timeline.states[0])
-  const near = (her: Coord, at: Coord): boolean => footprintWithin(her, ONE_TILE, at, ONE_TILE, speaker.near, measure)
+  const near = (her: Coord, at: Coord): boolean => footprintWithin(her, ONE_TILE, at, ONE_TILE, speaker.near)
 
   if (timeline.states[0]?.entities.some((entity) => entity.ordinal === speaker.ordinal) === true) {
     add("round-start", VOICE.startDelayMs)
@@ -402,7 +401,7 @@ const LABEL_SLIDE = { most: 16, step: 2 } as const
  * while it is read** — text that hops a row each time she steps cannot be read — so it is chosen once a line,
  * from everything the line will be shown over, which the resolved round already knows: of the rows near her
  * (`LABEL_ROWS`), centred on her or slid a little to either side (`LABEL_SLIDE`), the place whose span — the
- * quoted line and a blank either side, at one column a tile, its widest — covers least of what stands there
+ * quoted line and a blank either side, a tile for each letter — covers least of what stands there
  * while the line shows, hides least rock, and is nearest her, above before below (`LABEL_COST`). Kept on the
  * map. A letter that would still cover a unit or a building is left out when it is drawn (the corruption law,
  * `pulse-scene.ts`).

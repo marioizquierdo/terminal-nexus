@@ -54,8 +54,6 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `campaign?level=vasse-test-2` | the Commander's cadence, the campaign's second test level: Vasse falls in round 1 |
 | `campaign?level=vasse-test-2&round=2` | its round 2, which opens on a line saying she is out |
 | `campaign?level=vasse-test-2&round=3` | its round 3, which opens on her return |
-| `campaign?level=ground-test` | the Ground test, the campaign's third level: two raids the same distance from the Nexus on screen, one from the north and one from the east |
-| `campaign?level=ground-test&round=2` | its round 2: slingers, the same two ways |
 
 Every level the game can open is a route the same way, `campaign?level=<id>` with each of its rounds: the
 levels are every shipped campaign's, from its army ([`content.md`](content.md)). `terminal-nexus --help`

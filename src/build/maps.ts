@@ -1,7 +1,6 @@
 // The maps a level can name, by id — the small map table a campaign's levels point into (`map: "starter"` in
-// `armies/vasse/army.json`) — and the two maps there are: the Build Phase's starter map, a Grid big enough that
-// scrolling is unavoidable, with two structures already standing on it; and open ground, the Ground test's
-// plain field, where two raids start the same distance from the Nexus on screen.
+// `armies/vasse/army.json`) — and the one map there is: the Build Phase's starter map, a Grid big enough that
+// scrolling is unavoidable, with two structures already standing on it.
 //
 // Still code, not data: a map in an army is a later step. It lives here rather than beside the menu it is
 // shown with (`./catalog.ts`, which re-exports it) because the armies name it and that menu is built from the
@@ -131,73 +130,5 @@ export const STARTER_MAP: MapDefinition = {
   startCursor: STARTER_START_CURSOR,
 }
 
-// --- Open ground: the Ground test's map ------------------------------------------------------------
-//
-// The Ground Experiment (the Commander round 6) asks how a reach and a walk should look when a terminal cell is
-// about twice as tall as it is wide. Its test level (`ground-test`, `armies/vasse/army.json`) puts two raids the
-// same distance from the Nexus on screen — one 9 rows above its top edge, one 18 columns past its right edge —
-// and asks how fast each one comes. So this ground is open: plain, a few rocks as landmarks well off both ways in,
-// and nothing between either raid and the base. The owner: "the map is not important, we will make new maps
-// later. What matters is how intuitive it feels."
-//
-// **60 x 18 tiles**: wider than the view at 80 x 24 (49 x 18 tiles), so it scrolls a little across, and exactly
-// as tall, so at the floor every row of it is on screen at once. That is on purpose. A battle's camera centres on
-// the Nexus, and a view 18 rows tall shows only 8 of them above it: on a taller map the northern raid would start
-// off the screen and walk into it, and the race would be watched from its middle. Here the camera has no room to
-// move up or down, so both raids, the Nexus and the ground between them are in view from the Build Phase's first
-// frame to the battle's last — under every Ground choice that draws a tile one column wide. (Square tiles draw it
-// two: the eastern raid then really is twice as far on screen, and walks in from the right.) The Nexus stands in
-// the middle rows, not low, so a Turret placed beside it has the six rows its reach needs below it as well as
-// above: a reach cut off by the map's edge would hide the very shape the level is for.
-
-/** The open ground's size, in tiles: 60 across, and the 18 rows the view has at 80 x 24. */
-export const OPEN_GROUND_SIZE = { width: 60, height: 18 } as const
-
-/**
- * The Grid Nexus's anchor on open ground: its three columns 17 to 19, its two rows 10 and 11. The 9 rows above it
- * hold the northern raid, its front on row 1; the 6 below hold a Turret's whole reach; and it stands far enough
- * west that the eastern raid, 18 columns past its right edge, is well inside the view at 80 x 24.
- */
-const OPEN_GROUND_NEXUS: Coord = { x: 17, y: 10 }
-
-/** Landmarks, not obstacles: none stands on the ground straight north of the Nexus or straight east of it, nor
- *  where the player can build, so a rock never decides which raid arrives first. */
-const OPEN_GROUND_ROCKS: readonly Rect[] = [
-  { x: 4, y: 4, width: 5, height: 1 }, // a low wall in the north-west
-  { x: 5, y: 15, width: 2, height: 2 }, // a pillar in the south-west, clear of the base
-  { x: 29, y: 5, width: 2, height: 2 }, // a pillar between the two ways in, out of both
-  { x: 51, y: 3, width: 3, height: 2 }, // the far north-east, past where the eastern raid starts
-  { x: 55, y: 12, width: 2, height: 3 }, // far behind the eastern raid
-  { x: 2, y: 13, width: 2, height: 2 }, // the far west, beyond the Barracks
-]
-
-/** Open ground's tiles: plain, and its few rocks. Built fresh each time, deterministically, like the starter
- *  map's — no randomness, no clock. */
-export function openGroundGrid(): GridTerrain {
-  const { width, height } = OPEN_GROUND_SIZE
-  const tiles: TerrainId[] = new Array<TerrainId>(width * height).fill("terrain.plain")
-  for (const rect of OPEN_GROUND_ROCKS) {
-    for (let y = rect.y; y < rect.y + rect.height; y += 1) {
-      for (let x = rect.x; x < rect.x + rect.width; x += 1) tiles[y * width + x] = "terrain.rock"
-    }
-  }
-  return { width, height, tiles }
-}
-
-/** Standing when the level opens: the Grid Nexus, and a Barracks well west of it — away from both ways in, so
- *  neither raid is nearer to it than to the Nexus, and its troopers come out five seconds into every round. */
-export const OPEN_GROUND_STANDING: readonly StandingStructure[] = [
-  { contentId: "structure.citizen.nexus", anchor: OPEN_GROUND_NEXUS },
-  { contentId: "structure.citizen.barracks", anchor: { x: 9, y: 10 } },
-]
-
-/** Open ground, whole: a plain solid edge, and the cursor on the Nexus's centre tile, as on the starter map. */
-export const OPEN_GROUND_MAP: MapDefinition = {
-  grid: openGroundGrid,
-  standing: OPEN_GROUND_STANDING,
-  edgeStyle: "solid",
-  startCursor: { x: OPEN_GROUND_NEXUS.x + 1, y: OPEN_GROUND_NEXUS.y },
-}
-
 /** Every map a level can name, by the name it uses. */
-export const MAPS: Readonly<Record<string, MapDefinition>> = { starter: STARTER_MAP, "open-ground": OPEN_GROUND_MAP }
+export const MAPS: Readonly<Record<string, MapDefinition>> = { starter: STARTER_MAP }

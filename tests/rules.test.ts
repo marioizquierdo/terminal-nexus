@@ -5,6 +5,7 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { MovementRate } from "../src/content/index.ts"
 import { footprintExtent, TERRAIN } from "../src/grid/index.ts"
+import type { Direction } from "../src/grid/index.ts"
 import {
   accrueCredit,
   canStep,
@@ -16,7 +17,8 @@ import {
 import { loadScenario } from "../src/scenario/index.ts"
 import { loadScenarioFile, resolveAllScenarios, resolveScenario } from "./helpers.ts"
 
-/** The cadence table of docs/system-design/pulse.md (logical time), reproduced exactly at every rate it lists. */
+/** The cadence table of docs/system-design/pulse.md (logical time), reproduced exactly at every rate it lists: a
+ *  step across every so many ticks, and a step up or down every twice as many (a row counts two columns). */
 const CADENCE: ReadonlyArray<readonly [MovementRate, number]> = [
   [{ numerator: 1, denominator: 2 }, 24],
   [{ numerator: 2, denominator: 3 }, 18],
@@ -44,8 +46,8 @@ test("movement credit reproduces the cadence table at every rate", () => {
       `rate ${rate.numerator}/${rate.denominator} stepped every ${ticks} ticks, not ${expected}`,
     )
 
-    // And it keeps that cadence: the second step costs the same as the first.
-    credit -= stepCost(rate)
+    // And it keeps that cadence: the second step across costs the same as the first.
+    credit -= stepCost(rate, "e")
     let more = 0
     for (;;) {
       more += 1
@@ -53,6 +55,18 @@ test("movement credit reproduces the cadence table at every rate", () => {
       if (canStep(credit, rate)) break
     }
     assert.equal(more, expected, "the cadence drifted after the first step")
+
+    // A step up or down goes twice as far as a step across, and takes twice as long.
+    assert.equal(stepCost(rate, "s"), 2 * stepCost(rate, "e"))
+    assert.equal(stepCost(rate, "n"), stepCost(rate, "s"))
+    assert.equal(stepCost(rate, "w"), stepCost(rate, "e"))
+    let down = 0
+    credit = 0
+    while (credit < stepCost(rate, "s")) {
+      down += 1
+      credit = accrueCredit(credit, rate)
+    }
+    assert.equal(down, 2 * expected, `rate ${rate.numerator}/${rate.denominator} stepped down every ${down} ticks, not ${2 * expected}`)
   }
 })
 
@@ -293,9 +307,9 @@ test("an actor that settled a move this tick does not also attack on it", async 
   assert.ok(checked > 0, "no fixture ever launched an attack, so the rule was never exercised")
 })
 
-/** Ticks between steps at a given rate - the same formula ravel.test.ts's own `cadence` uses. */
-function cadence(rate: MovementRate): number {
-  return Math.ceil(stepCost(rate) / rate.numerator)
+/** Ticks between steps in `direction` at a given rate - the same formula ravel.test.ts's own `cadence` uses. */
+function cadence(rate: MovementRate, direction: Direction): number {
+  return Math.ceil(stepCost(rate, direction) / rate.numerator)
 }
 
 test("a killer holds for one full movement cadence before its next step", async () => {
@@ -323,7 +337,6 @@ test("a killer holds for one full movement cadence before its next step", async 
     if (killerContentId === undefined) continue
     const rate = resolved.registry.get(killerContentId).movementRate
     if (rate === undefined) continue // a static killer has nothing to hold
-    const holdTicks = cadence(rate)
 
     const nextMove = resolved.run.events.find(
       (event) =>
@@ -331,6 +344,8 @@ test("a killer holds for one full movement cadence before its next step", async 
     )
     if (nextMove === undefined) continue // the killer never moved again in this Pulse - nothing to check
     if (nextMove.kind !== "entity.moved") continue
+    // The full cadence of the step it takes next: a step across, or a longer one up or down.
+    const holdTicks = cadence(rate, nextMove.facing)
     assert.ok(
       nextMove.tick - death.tick >= holdTicks,
       `${death.killer}'s next step landed ${nextMove.tick - death.tick} ticks after its kill at ` +

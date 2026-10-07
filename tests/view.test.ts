@@ -7,8 +7,12 @@ import { tilesOf } from "../src/grid/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import {
+  COMPOSITION_SIZE,
+  PANEL_COLUMNS,
   STYLE_ROLES,
-  compositionSize,
+  VIEWPORT_TILES,
+  cellAt,
+  chromeGlyph,
   createView,
   entityGlyph,
   frameToAnsi,
@@ -17,7 +21,7 @@ import {
   gridOrigin,
   offendingGlyph,
 } from "../src/view/index.ts"
-import type { CapabilityMode, PulseTimeline, TileWidth } from "../src/view/index.ts"
+import type { PulseTimeline } from "../src/view/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
 import { isColourCode, loadScenarioFile, scenarioFiles, sgrCodes } from "./helpers.ts"
 
@@ -27,17 +31,16 @@ async function timelineFor(name: string): Promise<PulseTimeline> {
   return buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
 }
 
-test("frames are exactly the composition size, at both tile widths", async () => {
+test("frames are exactly the composition size: the 80 x 24 floor, a column for each tile of the pane", async () => {
   const timeline = await timelineFor("citizen-mirror-skirmish.map.json")
   const view = createView(timeline)
-  for (const tileWidth of [1, 2] as const) {
-    const size = compositionSize(tileWidth)
-    assert.deepEqual(size, { width: tileWidth === 1 ? 80 : 128, height: 24 })
-    const frame = view.snapshotAt(1000, "color16", tileWidth)
-    assert.equal(frame.width, size.width)
-    assert.equal(frame.height, size.height)
-    assert.equal(frame.cells.length, size.width * size.height)
-  }
+  assert.deepEqual(COMPOSITION_SIZE, { width: 80, height: 24 })
+  // 1 border, the 48 tiles of the minimum viewport a column each, 1 border, the 30-column panel.
+  assert.equal(COMPOSITION_SIZE.width, 1 + VIEWPORT_TILES.width + 1 + PANEL_COLUMNS)
+  const frame = view.snapshotAt(1000, "color16")
+  assert.equal(frame.width, COMPOSITION_SIZE.width)
+  assert.equal(frame.height, COMPOSITION_SIZE.height)
+  assert.equal(frame.cells.length, COMPOSITION_SIZE.width * COMPOSITION_SIZE.height)
 })
 
 test("every glyph in every scenario is one printable ASCII cell", async () => {
@@ -46,7 +49,7 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
     for (const fraction of [0, 0.25, 0.5, 0.9]) {
       const timeMs = view.durationMs * fraction
       for (const capability of ["monochrome", "color16"] as const) {
-        const frame = view.snapshotAt(timeMs, capability, 1)
+        const frame = view.snapshotAt(timeMs, capability)
         assert.equal(offendingGlyph(frame), null, `${name}: a cell was not one ASCII character`)
       }
     }
@@ -56,15 +59,15 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
 test("identical arguments produce identical frames, and skipping frames changes nothing", async () => {
   const view = createView(await timelineFor("citizen-mirror-skirmish.map.json"))
   const times = [0, 137.5, 1000, 4321.9, 9999]
-  const once = times.map((time) => frameToText(view.snapshotAt(time, "color16", 1)))
+  const once = times.map((time) => frameToText(view.snapshotAt(time, "color16")))
 
   // Sample every frame up to the same moments; the frames at those moments must be unchanged.
-  for (let step = 0; step < 400; step += 1) view.snapshotAt(step * (1000 / 30), "color16", 1)
-  const again = times.map((time) => frameToText(view.snapshotAt(time, "color16", 1)))
+  for (let step = 0; step < 400; step += 1) view.snapshotAt(step * (1000 / 30), "color16")
+  const again = times.map((time) => frameToText(view.snapshotAt(time, "color16")))
   assert.deepEqual(again, once)
 
   // And in the other direction: sampling backwards produces the same frames too.
-  const backwards = [...times].reverse().map((time) => frameToText(view.snapshotAt(time, "color16", 1)))
+  const backwards = [...times].reverse().map((time) => frameToText(view.snapshotAt(time, "color16")))
   assert.deepEqual(backwards, [...once].reverse())
 })
 
@@ -85,7 +88,7 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
       }
     }
 
-    const origin = gridOrigin(timeline.grid, 1)
+    const origin = gridOrigin(timeline.grid)
     for (let tick = 0; tick <= view.lastTick; tick += 1) {
       // Replay this tick's events onto the shadow model the assertion trusts.
       for (const event of timeline.events) {
@@ -97,7 +100,7 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
       }
       if (tick % 7 !== 0 && tick !== view.lastTick) continue
 
-      const frame = view.snapshotAt(tick * view.tickDurationMs, "monochrome", 1)
+      const frame = view.snapshotAt(tick * view.tickDurationMs, "monochrome")
       for (const [ordinal, { contentId, player }] of alive) {
         const anchor = positions.get(ordinal)
         if (anchor === undefined) continue
@@ -128,8 +131,8 @@ test("monochrome renders every scenario, and no cell depends on colour to exist"
   for (const name of scenarioFiles()) {
     const view = createView(await timelineFor(name))
     const timeMs = view.durationMs / 2
-    const mono = view.snapshotAt(timeMs, "monochrome", 1)
-    const colour = view.snapshotAt(timeMs, "color16", 1)
+    const mono = view.snapshotAt(timeMs, "monochrome")
+    const colour = view.snapshotAt(timeMs, "color16")
     assert.equal(
       frameToText(mono),
       frameToText(colour),
@@ -171,7 +174,7 @@ test("frameToAnsi resolves CellStyle.fade only at color256/truecolor, never at c
 })
 
 test("the resize gate is drawn below the composition size", () => {
-  const required = compositionSize(1)
+  const required = COMPOSITION_SIZE
   const frame = gateFrame(40, 12, required)
   assert.equal(frame.width, 40)
   assert.equal(frame.height, 12)
@@ -184,7 +187,7 @@ test("the resize gate is drawn below the composition size", () => {
 
 test("the compositor only ever emits roles from the committed vocabulary", async () => {
   const view = createView(await timelineFor("structure-destruction.map.json"))
-  const frame = view.snapshotAt(view.durationMs * 0.9, "color16", 1)
+  const frame = view.snapshotAt(view.durationMs * 0.9, "color16")
   const roles = new Set<string>()
   for (const cell of frame.cells) {
     if (cell.style.fgRole !== undefined) roles.add(cell.style.fgRole)
@@ -214,28 +217,30 @@ test("interpolation is presentation only: a mid-tick frame never changes the tim
   const view = createView(timeline)
   const before = timeline.states.map((state) => state.tick).join(",")
   const tick = 100
-  const onBoundary = frameToText(view.snapshotAt(tick * view.tickDurationMs, "monochrome", 1))
-  const midTick = frameToText(view.snapshotAt((tick + 0.75) * view.tickDurationMs, "monochrome", 1))
+  const onBoundary = frameToText(view.snapshotAt(tick * view.tickDurationMs, "monochrome"))
+  const midTick = frameToText(view.snapshotAt((tick + 0.75) * view.tickDurationMs, "monochrome"))
   assert.notEqual(midTick, onBoundary, "nothing moved between ticks, so nothing was interpolated")
   assert.equal(timeline.states.map((state) => state.tick).join(","), before)
   assert.equal(
-    frameToText(view.snapshotAt(tick * view.tickDurationMs, "monochrome", 1)),
+    frameToText(view.snapshotAt(tick * view.tickDurationMs, "monochrome")),
     onBoundary,
     "sampling mid-tick changed a later frame",
   )
 })
 
-test("tile width two draws the same tiles, twice as wide", async () => {
-  const view = createView(await timelineFor("melee-kill.map.json"))
-  const capability: CapabilityMode = "monochrome"
-  const narrow = view.snapshotAt(2000, capability, 1 as TileWidth)
-  const wide = view.snapshotAt(2000, capability, 2 as TileWidth)
-  const narrowOrigin = gridOrigin({ width: 24, height: 12, tiles: [] }, 1)
-  const wideOrigin = gridOrigin({ width: 24, height: 12, tiles: [] }, 2)
-  for (let x = 0; x < 24; x += 1) {
-    const narrowCell = narrow.cells[narrowOrigin.row * narrow.width + narrowOrigin.column + x]
-    const wideCell = wide.cells[wideOrigin.row * wide.width + wideOrigin.column + x * 2]
-    assert.equal(narrowCell?.glyph, wideCell?.glyph, `column ${x} differs between tile widths`)
+test("a Grid smaller than the pane is centred in it, a column for each of its tiles, inside a quiet rule", async () => {
+  const timeline = await timelineFor("melee-kill.map.json")
+  const { grid } = timeline
+  assert.deepEqual([grid.width, grid.height], [24, 12])
+  const frame = createView(timeline).snapshotAt(2000, "monochrome")
+  // Twelve tiles of pane to spare either side of its 24, and two rows above and below its 12.
+  const origin = gridOrigin(grid)
+  assert.deepEqual(origin, { column: 1 + 12, row: 4 + 2 })
+  // The rule stands in the column just before the Grid's first and just after its last: 24 tiles, 24 columns.
+  const edge = chromeGlyph("ascii", "edgeVertical")
+  for (let y = 0; y < grid.height; y += 1) {
+    assert.equal(cellAt(frame, origin.column - 1, origin.row + y).glyph, edge, `the west rule, row ${y}`)
+    assert.equal(cellAt(frame, origin.column + grid.width, origin.row + y).glyph, edge, `the east rule, row ${y}`)
   }
 })
 
@@ -254,7 +259,7 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
   const timeline = await timelineFor("citizens-versus-ravels.map.json")
   const view = createView(timeline)
   const tickMs = view.tickDurationMs
-  const origin = gridOrigin(timeline.grid, 1)
+  const origin = gridOrigin(timeline.grid)
 
   const launches = resolved.run.events.filter(
     (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
@@ -277,7 +282,7 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
     const definition = resolved.registry.get(death.contentId)
     const expectedGlyph = entityGlyph(death.contentId, death.player, { x: 0, y: 0 })
     const cellAt = (timeMs: number): string => {
-      const frame = view.snapshotAt(timeMs, "monochrome", 1)
+      const frame = view.snapshotAt(timeMs, "monochrome")
       const row = origin.row + death.at.y
       const column = origin.column + death.at.x
       return frame.cells[row * frame.width + column]?.glyph ?? ""
@@ -285,6 +290,13 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
 
     const deathAtMs = death.tick * tickMs
     const impactAtMs = (death.tick + launch.flightWindowTicks) * tickMs
+    // Two shots that kill it on one tick can fly for different times: it is held until the last of them lands.
+    const lastFlight = Math.max(
+      ...launches.flatMap((other) =>
+        other.kind === "attack.launched" && other.tick === launch.tick && other.targetOrdinal === launch.targetOrdinal ? [other.flightWindowTicks] : [],
+      ),
+    )
+    const lastImpactAtMs = (death.tick + lastFlight) * tickMs
     assert.equal(
       cellAt(deathAtMs + 1),
       expectedGlyph,
@@ -296,7 +308,7 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
       `${death.entity} disappeared before its own tracer landed`,
     )
     assert.notEqual(
-      cellAt(impactAtMs + 1),
+      cellAt(lastImpactAtMs + 1),
       expectedGlyph,
       `${death.entity} was still drawn after the impact beat it should have vanished at`,
     )

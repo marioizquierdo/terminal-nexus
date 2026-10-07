@@ -55,11 +55,13 @@ save, it is meant to continue the saved game from beside the settings in `~/.ter
 stays the way to go anywhere else. An argument the game does not read is refused, and the removed
 `--build-phase` says that `--at 'campaign?level=vasse-test-1'` replaced it.
 
-`watch` options on either program: `--capability monochrome|color16|color256|truecolor`,
-`--theme dark|light`, `--glyphs ascii|unicode`, `--tile-width 1|2` (2 needs 128 columns),
-`--no-effects`, `--reduced-motion`, `--speed`, `--seed`, `--cosmetic-seed`, `--backend auto|ansi|opentui`,
-`--save-log <file>`. ASCII and monochrome are the floor; everything above them is fidelity, never
-information. `--capability` defaults to the best tier the terminal advertises; `--theme` to `dark`.
+`grid`'s view takes `--capability monochrome|color16|color256|truecolor`, `--theme dark|light`,
+`--glyphs ascii|unicode`, `--no-effects`, `--reduced-motion`, `--speed`, `--seed`, `--cosmetic-seed`,
+`--backend auto|ansi|opentui` and `--save-log <file>`; the game's display options are `--capability`,
+`--theme`, `--glyphs`, `--reduced-motion` and `--backend`. Each program refuses an argument it does not read,
+and a retired one says what changed (`--tile-width`: a tile is one column at every size). ASCII and
+monochrome are the floor; everything above them is fidelity, never information. `--capability` defaults to the
+best tier the terminal advertises; `--theme` to `dark`.
 
 Pinned versions, re-checked rather than remembered:
 
@@ -102,8 +104,8 @@ Things that bite:
 - **A red assertion in the live-loop test looks like a hang.** `tests/lifecycle-build-phase.test.ts` leaves
   the terminal loop running when an assertion throws, so Node never exits. Run it alone with
   `node --test --test-timeout=30000`.
-- **Silent parsers.** An unknown command-line option is treated as a flag. Register every
-  value-taking option in `src/cli/args.ts` and test that it arrives.
+- **Silent parsers.** The shared parser takes an unknown option for a flag; both command lines refuse what they
+  do not read, but register every value-taking option in `src/cli/args.ts` and test that it arrives.
 
 The validator, `./scripts/check-repository.sh`, is the cheapest reviewer and runs in CI. It checks
 the required files, that exactly one milestone is current and names its step, that every question
@@ -148,7 +150,7 @@ with a dated name and a row in its README, one or two per era.
 skill) drive `grid` inside a tmux pseudo-terminal, so the ANSI backend takes the path a person gets,
 pause at an exact tick and render the pane to a PNG through the Chromium already present for
 Playwright. `scripts/capture-build-phase-screenshots.mjs` covers the Build Phase at the sizes that matter
-(80 × 24, 104 × 30, 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
+(80 × 24, 104 × 30, a wide 128 × 24, and 79 × 24 for the resize gate); most of its shots are composed
 in-process through the scripted playtest, a few stay on tmux because the terminal path is what they
 prove. An unchanged shot is not rewritten: every image records a hash of the page it came from, so a
 regeneration touches only the pictures a change shows up in. Set an Experiment by name with

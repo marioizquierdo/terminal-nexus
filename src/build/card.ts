@@ -8,6 +8,7 @@
 // rest of the UI", so a card says only what the thing is.
 
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
+import type { AttackDef } from "../content/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"
@@ -18,14 +19,19 @@ import type { CardText } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { buildRange, structureAtTile } from "./state.ts"
 import { constructionRadiusOf } from "./territory.ts"
+import { reachShape } from "./reach.ts"
 
 /** What a card's icon is: a thing's own glyphs, or a bare tile's. The view resolves either to glyphs. */
 export type CardIcon =
   | Readonly<{ kind: "entity"; contentId: string; player?: "A" | "B" }>
   | Readonly<{ kind: "terrain"; terrainId: TerrainId }>
 
-/** One of a card's numbers, as a label/value row. */
-export type CardStat = Readonly<{ label: string; value: string }>
+/**
+ * One of a card's numbers, as a label/value row — and, for a number that is a reach (an attack's, the build
+ * range), `shape`: the reach in words (`reachShape`), "6 across, 3 up/down" or "touching", which the card says
+ * beside the value where the row has room for both and on a line of its own under it where it has not.
+ */
+export type CardStat = Readonly<{ label: string; value: string; shape?: string }>
 
 export type Card = Readonly<{
   icon: CardIcon
@@ -35,7 +41,7 @@ export type Card = Readonly<{
   subtitle: string
   /** A few plain sentences more, wrapped under the icon. */
   description: string
-  /** Its numbers: cost, health, size, attack — or a bare tile's position. */
+  /** Its numbers: cost, health, size, attack and its reach — or a bare tile's position. */
   stats: readonly CardStat[]
 }>
 
@@ -62,7 +68,7 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
   if (structure !== null) {
     const card = entityCard(context, structure.contentId, state)
     if (structure.planned) return rangeSays(card, nextRound)
-    return linkedHere(context, state, structure) ? card : rangeSays(card, () => "cut off")
+    return linkedHere(context, state, structure) ? card : rangeSays(card, cutOff)
   }
   const field = (context.field ?? []).find((entity) => covers(context, entity, state.cursor))
   if (field !== undefined) return fieldCard(context, field, state)
@@ -81,14 +87,18 @@ function maxHpOf(context: Pick<BuildContext, "registry">, contentId: string, sta
   return definition.commander === true && state !== undefined ? setting(state, "commanderHealth") : definition.maxHp
 }
 
+/** How hard a thing hits, and how far: its damage, and its reach's shape — "touching" for one that fights hand
+ *  to hand. */
+function attackStat(attack: AttackDef): CardStat {
+  return { label: "ATTACK", value: String(attack.damage), shape: reachShape(attack.range) }
+}
+
 /** A thing's health and attack, the numbers a unit's card shows. */
 function fightStats(context: Pick<BuildContext, "registry">, contentId: string, hp?: number, state?: SettingSource): CardStat[] {
   const definition = context.registry.get(contentId)
   const max = maxHpOf(context, contentId, state)
   const stats: CardStat[] = [{ label: "HEALTH", value: hp === undefined ? String(max) : `${Math.min(hp, max)}/${max}` }]
-  if (definition.attack !== undefined) {
-    stats.push({ label: "ATTACK", value: `${definition.attack.damage} at range ${definition.attack.range}` })
-  }
+  if (definition.attack !== undefined) stats.push(attackStat(definition.attack))
   return stats
 }
 
@@ -143,20 +153,24 @@ export function wavesStat(context: Pick<BuildContext, "registry" | "catalog">, c
 const BUILD_RANGE = "BUILD RANGE"
 
 /** How far a building lets its player build from it — the "Build range" Experiment's value while it is felt —
- *  or `null` for one that projects none (the raid's, today). */
+ *  as a reach's shape, with no value: a standing building gives it now. `null` for one that projects none (the
+ *  raid's, today). */
 function buildRangeStat(context: Pick<BuildContext, "registry">, contentId: string, state?: SettingSource): CardStat | null {
   const radius = constructionRadiusOf(context.registry.get(contentId), state === undefined ? undefined : setting(state, "buildRange"))
-  return radius === null ? null : { label: BUILD_RANGE, value: String(radius) }
+  return radius === null ? null : { label: BUILD_RANGE, value: "", shape: reachShape(radius) }
 }
 
 /** `card` with its build range said another way: from next round, or cut off. A card with none is as it was. */
-function rangeSays(card: Card, say: (value: string) => string): Card {
-  return { ...card, stats: card.stats.map((stat) => (stat.label === BUILD_RANGE ? { ...stat, value: say(stat.value) } : stat)) }
+function rangeSays(card: Card, say: (stat: CardStat) => CardStat): Card {
+  return { ...card, stats: card.stats.map((stat) => (stat.label === BUILD_RANGE ? say(stat) : stat)) }
 }
 
 /** The build range of a building not standing yet: it gives it from the round after it is planned, when it
- *  stands (`src/build/territory.ts`). */
-const nextRound = (value: string): string => `${value}, next round`
+ *  stands (`src/build/territory.ts`), and its shape is the one it will give then. */
+const nextRound = (stat: CardStat): CardStat => ({ ...stat, value: "from next round" })
+
+/** The build range of a standing building cut off from the Nexus: it gives none, so it has no shape. */
+const cutOff = (stat: CardStat): CardStat => ({ label: stat.label, value: "cut off" })
 
 /** Whether the standing structure under the cursor is linked to the Nexus, so its build range counts — or,
  *  cut off from it, gives none (`src/build/territory.ts`). */
@@ -168,9 +182,9 @@ function linkedHere(context: BuildContext, state: BuildState, structure: Readonl
 }
 
 /** A building's card — the same whether it is being placed, planned or standing: its words,
- *  then its cost where the menu sells it, its health and size, its attack where it has one, the wave it
- *  spawns where it makes units, and its build range where it projects one ("cut off" in Explore
- *  Map for one cut off from the Nexus). */
+ *  then its cost where the menu sells it, its health and size, its attack and its reach where it has one, the
+ *  wave it spawns where it makes units, and its build range's shape where it projects one ("from next round"
+ *  for one not standing yet, "cut off" in Explore Map for one cut off from the Nexus). */
 export function entityCard(
   context: Pick<BuildContext, "registry" | "catalog">,
   contentId: string,
@@ -182,9 +196,7 @@ export function entityCard(
   const stats: CardStat[] = []
   if (item !== undefined) stats.push({ label: "COST", value: String(item.cost) })
   stats.push({ label: "HEALTH", value: String(definition.maxHp) }, { label: "SIZE", value: `${size.width}x${size.height}` })
-  if (definition.attack !== undefined) {
-    stats.push({ label: "ATTACK", value: `${definition.attack.damage} at range ${definition.attack.range}` })
-  }
+  if (definition.attack !== undefined) stats.push(attackStat(definition.attack))
   const waves = state === undefined ? null : wavesStat(context, contentId, state)
   if (waves !== null) stats.push(waves)
   const range = buildRangeStat(context, contentId, state)

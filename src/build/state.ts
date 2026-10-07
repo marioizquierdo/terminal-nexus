@@ -6,14 +6,12 @@ import type { LogEntry } from "../log/logger.ts"
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { stepListIndex } from "../terminal/list-keys.ts"
-import type { Coord, GridMeasure, GridTerrain } from "../grid/types.ts"
+import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
-import { SQUARE } from "../grid/coords.ts"
 import type { MatchState } from "../state/types.ts"
 import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
-import { measureOf, tileWidthOf } from "./ground.ts"
-import type { Camera, Margin, TileWidth, Viewport } from "./camera.ts"
+import type { Camera, Margin, Viewport } from "./camera.ts"
 import { centreOn, clampToGrid, edgeClickCamera, followCursor, marginForView } from "./camera.ts"
 import type { SettingSource, ShownName } from "./all-settings.ts"
 import { defaultValue, setting, shownSetting } from "./all-settings.ts"
@@ -361,42 +359,14 @@ function marginOf(context: BuildContext, viewport: Viewport): Margin {
 }
 
 /**
- * What a fresh Build Phase on `context` reads its settings from before anyone changes one: this build's
- * Experiments under whatever the context imports, and the player's settings it opens with — exactly what
- * `createBuildState` opens with. For whoever needs a setting before there is a state: the live loop and the
- * scripted playtest lay their first frame out by the Ground it opens on (`groundTileWidth`).
- */
-export function openingSettings(context: Pick<BuildContext, "experiments" | "settings">): SettingSource {
-  return { experiments: { ...defaultExperiments(), ...context.experiments }, settings: context.settings ?? DEFAULT_SETTINGS }
-}
-
-/**
- * How the rules measure the Grid under the Ground Experiment (`measureOf`, `src/build/ground.ts`): the Build
- * Phase measures as the battle it plans will — the build range, the room a Barracks keeps, and every reach the
- * map draws. `SQUARE` as now and with square tiles.
- */
-export function groundMeasure(source: SettingSource): GridMeasure {
-  return measureOf(setting(source, "ground"))
-}
-
-/**
- * How many columns the Ground Experiment draws a tile at every terminal size (`tileWidthOf`): two with square
- * tiles, one where a row counts two columns — or `null` as now, where the terminal's width decides
- * (`tileWidthFor`).
- */
-export function groundTileWidth(source: SettingSource): TileWidth | null {
-  return tileWidthOf(setting(source, "ground"))
-}
-
-/**
  * A fresh Build Phase. `experiments` carries a restart's over; otherwise they are this build's
- * defaults, under whatever the context imports (`openingSettings`, `BuildContext.experiments`).
+ * defaults, under whatever the context imports (`defaultExperiments`, `BuildContext.experiments`).
  */
 export function createBuildState(
   context: BuildContext,
   cursor: Coord,
   viewport: Viewport,
-  experiments: Experiments = openingSettings(context).experiments,
+  experiments: Experiments = { ...defaultExperiments(), ...context.experiments },
   settings: Settings = context.settings ?? DEFAULT_SETTINGS,
 ): BuildState {
   const start = clampToGrid(cursor, context.grid)
@@ -686,13 +656,12 @@ export function costOf(context: BuildContext, contentId: string): number {
 
 /**
  * **The build range** in force: the construction territory the standing buildings give the player at the
- * "Build range" Experiment's radius (`src/build/territory.ts`), counted in rows under the battle's measure (the
- * Ground Experiment, `groundMeasure`) — what a new building must have a tile inside, and what the map shows while
- * one is armed. Nothing planned adds to it: a building gives its range from the round after it is planned, so the
- * range is the same all phase long.
+ * "Build range" Experiment's radius (`src/build/territory.ts`) — what a new building must have a tile inside,
+ * and what the map shows while one is armed. Nothing planned adds to it: a building gives its range from the
+ * round after it is planned, so the range is the same all phase long.
  */
 export function buildRange(context: BuildContext, state: SettingSource): Territory {
-  return territoryOf(context, setting(state, "buildRange"), groundMeasure(state))
+  return territoryOf(context, setting(state, "buildRange"))
 }
 
 /** Every building on the map — the player's standing and planned ones, and the raid's — as the room rule
@@ -726,8 +695,8 @@ function crowdingReason(context: BuildContext, crowded: Crowding): string {
  * (`src/build/territory.ts`); when none is, the first of its tiles on the Grid is named. Then each tile's own
  * problem — off the Grid, rock, a building already there — and last **the room a building that makes units
  * keeps** (`crowding`), which names the building it is too near. `radius` and `clearance` are the "Build
- * range" and "Barracks room" Experiments' values, and `measure` the Ground Experiment's (`groundMeasure`) — their
- * defaults when the caller has no state to read them from.
+ * range" and "Barracks room" Experiments' values — their defaults when the caller has no state to read them
+ * from.
  */
 export function legalityAt(
   context: BuildContext,
@@ -737,14 +706,13 @@ export function legalityAt(
   remaining?: number,
   radius: number = defaultValue("buildRange"),
   clearance: number = defaultValue("spawnClearance"),
-  measure: GridMeasure = SQUARE,
 ): Legality {
   const item = catalogItem(context, contentId)
   if (item !== undefined && remaining !== undefined && item.cost > remaining) {
     return { ok: false, reason: `costs ${item.cost}, ${remaining} left` }
   }
   const footprint = context.registry.get(contentId).footprint
-  const territory = territoryOf(context, radius, measure)
+  const territory = territoryOf(context, radius)
   if (!territory.rooted) return { ok: false, reason: "there is no Nexus to build from" }
   const tiles = tilesOf(anchor, footprint)
   if (!anyInside(territory, anchor, footprint)) {
@@ -765,7 +733,7 @@ export function legalityAt(
       return { ok: false, reason: `the ${shortName(context, occupant)} is here`, tile }
     }
   }
-  const crowded = crowding(context.registry, buildingsOn(context, planned), contentId, anchor, clearance, measure)
+  const crowded = crowding(context.registry, buildingsOn(context, planned), contentId, anchor, clearance)
   if (crowded !== null) return { ok: false, reason: crowdingReason(context, crowded) }
   return { ok: true }
 }
@@ -782,8 +750,8 @@ export function legalityAt(
  * 2. then, when no such spot is in reach, among spots that merely fit, touching or not.
  *
  * "Nearest" is the cheapest cursor move, where a tile sideways costs 1 and a tile up or down costs
- * `rowCost` — `TUNING.armVerticalCost` where a tile is drawn one column wide and a row looks twice as tall,
- * one with square tiles (`armRowCost`) — the owner expects the cursor to move "only a few tiles to the right" in
+ * `TUNING.armVerticalCost` — a cost of the cursor's, tuned by feel so a run of the same building grows into a row,
+ * not a distance: the owner expects the cursor to move "only a few tiles to the right" in
  * most cases; ties go to the more horizontal move, then east before west, then south before north — a
  * total order, so there is exactly one answer, and a pure function of the plan and the cursor, so the
  * reducer owns it and a driver can assert it. **Never chosen from the last building placed**: the
@@ -812,27 +780,16 @@ export type ArmingSpot = Readonly<{ tile: Coord; found: boolean }>
 
 /**
  * The rules a spot is held to beyond fitting on open ground: a tile inside the build range (`territory`), and
- * the room of a building that makes units (`room`: the building being armed, the "Barracks room" Experiment's
- * value, and the battle's measure, `groundMeasure`, `SQUARE` when absent). Neither, for Explore Map's tile.
+ * the room of a building that makes units (`room`: the building being armed, and the "Barracks room"
+ * Experiment's value). Neither, for Explore Map's tile.
  */
 export type ArmingRules = Readonly<{
   territory?: Territory
-  room?: Readonly<{ contentId: string; clearance: number; measure?: GridMeasure }>
+  room?: Readonly<{ contentId: string; clearance: number }>
 }>
 
 /** The footprint Explore Map's cursor is placed by, opened from the menu: one tile. */
 export const ONE_TILE: readonly Coord[] = [{ x: 0, y: 0 }]
-
-/**
- * What a step up or down costs against a step sideways when arming looks for the nearest spot (`armingSpot`): a
- * row looks twice as tall as a tile one column wide, so it costs the tuned `armVerticalCost`; with square tiles
- * (the Ground Experiment, two columns a tile) a row is as tall as a tile is wide, and costs one. As now the
- * terminal's width decides the tile's, which the reducer never knows, so it costs the tuned one at every size,
- * as it always has.
- */
-export function armRowCost(source: SettingSource): number {
-  return groundTileWidth(source) === 2 ? 1 : TUNING.armVerticalCost
-}
 
 export function armingSpot(
   context: BuildContext,
@@ -840,7 +797,6 @@ export function armingSpot(
   footprint: readonly Coord[],
   cursor: Coord,
   rules: ArmingRules = {},
-  rowCost: number = TUNING.armVerticalCost,
 ): ArmingSpot {
   const size = footprintExtent(footprint)
   const offset = footprintCentre(footprint)
@@ -860,7 +816,7 @@ export function armingSpot(
       if (!inRange && territory?.has(tile) === true) inRange = true
     }
     if (!inRange) return false
-    return room === undefined || crowding(context.registry, buildings, room.contentId, anchor, room.clearance, room.measure) === null
+    return room === undefined || crowding(context.registry, buildings, room.contentId, anchor, room.clearance) === null
   }
   // One free tile between structures: nothing claimed on the ring around the footprint's box.
   const spaced = (anchor: Coord): boolean => {
@@ -874,10 +830,10 @@ export function armingSpot(
 
   if (fits(anchorOf(cursor))) return { tile: cursor, found: true }
 
-  // The order candidates are ranked in: cost (sideways tiles plus the vertical ones at `rowCost` each), then
+  // The order candidates are ranked in: cost (sideways tiles plus `armVerticalCost` for each vertical one), then
   // the more horizontal move, then east, then south. Written as a comparison of the move (dx, dy) alone,
   // so the answer cannot depend on the order the square is scanned in.
-  const cost = (move: Coord): number => Math.abs(move.x) + rowCost * Math.abs(move.y)
+  const cost = (move: Coord): number => Math.abs(move.x) + TUNING.armVerticalCost * Math.abs(move.y)
   const better = (a: Coord, b: Coord): boolean => {
     const da = cost(a)
     const db = cost(b)
@@ -925,7 +881,7 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
   if (item === undefined) return null
   const footprint = context.registry.get(item.contentId).footprint
   const anchor = anchorForCursor(state.cursor, footprint)
-  // The same call, budget, build range, room and all, measured as the battle will be, whichever side is asking.
+  // The same call, budget, build range, room and all, whichever side is asking.
   const legality = legalityAt(
     context,
     state.planned,
@@ -934,7 +890,6 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
     remaining(context, state),
     setting(state, "buildRange"),
     setting(state, "spawnClearance"),
-    groundMeasure(state),
   )
   const refusal: Refusal | null =
     legality.ok
@@ -1087,14 +1042,13 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     handoff: handOff(state, from, entry),
   }
   const footprint = context.registry.get(item.contentId).footprint
-  const room = { contentId: item.contentId, clearance: setting(state, "spawnClearance"), measure: groundMeasure(state) }
-  const rowCost = armRowCost(state)
-  const spot = armingSpot(context, state.planned, footprint, state.cursor, { territory: buildRange(context, state), room }, rowCost)
+  const room = { contentId: item.contentId, clearance: setting(state, "spawnClearance") }
+  const spot = armingSpot(context, state.planned, footprint, state.cursor, { territory: buildRange(context, state), room })
   const moved = withCursor(context, armed, spot.tile)
   if (!spot.found) {
     // Room nearby, none of it in the build range — or no room at all: said apart, since only the first is
     // answered by moving toward the range the map now shows.
-    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor, { room }, rowCost).found
+    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor, { room }).found
     const why = roomNearby ? "no room in your build range nearby" : `no room within ${TUNING.armSearchTiles} tiles`
     return { ...moved, noSpotFound: true, status: status(`${item.label} selected - ${why}, move to find one.`, "warning") }
   }
@@ -1199,7 +1153,7 @@ function openExplore(context: BuildContext, state: BuildState, from: Focus): Bui
     status: NO_STATUS,
   }
   if (from !== "menu") return opened
-  const spot = armingSpot(context, state.planned, ONE_TILE, state.cursor, {}, armRowCost(state))
+  const spot = armingSpot(context, state.planned, ONE_TILE, state.cursor)
   return spot.found ? withCursor(context, opened, spot.tile) : opened
 }
 

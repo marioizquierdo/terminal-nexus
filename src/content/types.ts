@@ -1,6 +1,7 @@
 import type { Coord, EntityLayer, Footprint } from "../grid/types.ts"
 
-/** A rational tiles-per-second rate. Never a float (pulse.md). */
+/** A rational rate: steps across a column per second, a step up or down taking `ROW_DISTANCE` times as long
+ *  (`stepCost`, src/pulse/movement.ts). Never a float (pulse.md). */
 export type MovementRate = Readonly<{ numerator: number; denominator: number }>
 
 export type AttackKind = "melee" | "ranged" | "heal"
@@ -12,25 +13,26 @@ export type AttackKind = "melee" | "ranged" | "heal"
  * at two different trigger moments, not two mechanisms that happen to share a shape.
  */
 export type AreaDamage = Readonly<{
-  /** Tiles, measured as range is: from the impact point to the nearest occupied tile of each victim, in the
-   *  battle's measure (Manhattan as now; `GridMeasure`), and a victim touching it along a side always. */
+  /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): from the impact point to the
+   *  nearest occupied tile of each victim, a row counting two columns. 1 is what touches it along a side; 2 is two
+   *  columns either side and one row up and down. */
   radius: number
   damage: number
 }>
 
 export type AttackDef = Readonly<{
   kind: AttackKind
-  /** Tiles, measured to the nearest occupied tile of the target in the battle's measure (Manhattan as now;
-   *  `GridMeasure`, grid/coords.ts) — save that melee reaches what touches it along a side, however rows are
-   *  counted (`inAttackRange`, src/pulse/shared.ts). */
+  /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): to the nearest occupied tile
+   *  of the target, a row counting two columns, so a range of 6 reaches 6 columns either side and 3 rows up and
+   *  down. A melee range is 1: melee reaches what touches it along a side (`inAttackRange`, src/pulse/shared.ts). */
   range: number
   /** For `kind: "heal"`, this is the amount restored, not damage dealt. */
   damage: number
   cooldownTicks: number
   /**
    * Presentation metadata only. The flight window on a ranged attack event is
-   * `ceil(distance / projectileTilesPerTick)` ticks — the distance in the battle's measure, each of these tiles
-   * worth `measure.tile` of it — and **no rule reads it** (pulse.md).
+   * `ceil(distance / projectileTilesPerTick)` ticks, the distance counted as range is (a row two columns), and
+   * **no rule reads it** (pulse.md).
    */
   projectileTilesPerTick?: number
   /**
@@ -118,9 +120,9 @@ export type ContentDef = Readonly<{
   /**
    * A Commander's passive aura, a skill that works on its own (the owner, 2026-10-04: Commanders "should be like
    * heroes on warcraft3 ... Vasse should provide boost to nearby units"). While its bearer is on the Grid, the
-   * units of its side within `radius` tiles of it — measured as range is, to the nearest tile of each footprint in
-   * the battle's measure (Manhattan as now) — take `damageTakenPercent` percent of the damage a hit would deal
-   * them. Vasse's is *By the Book*.
+   * units of its side within `radius` tiles of it — measured as range is (`footprintWithin`), to the nearest tile
+   * of each footprint, a row counting two columns — take `damageTakenPercent` percent of the damage a hit would
+   * deal them. Vasse's is *By the Book*.
    * The kernel's damage rule reads it (`src/pulse/aura.ts`: rounded down, never below 1, the bearer covered
    * too, the strongest aura alone when several reach a unit); presentation draws its reach. `name` is what a
    * card calls it, the way a Nexus power has a name; no rule reads it.
@@ -170,8 +172,8 @@ export type ContentDef = Readonly<{
   production?: ProductionRecipe
   /**
    * Construction territory (pulse.md): a structure with this projects a build range — its player may build
-   * within this many tiles of it, measured as range is, Manhattan to the nearest tile of its footprint — while
-   * it is linked to its side's Grid Nexus. Absent: it projects none. Only the Build Phase reads it
+   * within this many tiles of it, measured as range is (`footprintWithin`), to the nearest tile of its footprint, a
+   * row counting two columns — while it is linked to its side's Grid Nexus. Absent: it projects none. Only the Build Phase reads it
    * (`src/build/territory.ts`); the kernel never does. While the "Build range" Experiment is being felt, its
    * value replaces this number on every structure that has one.
    */
@@ -179,8 +181,9 @@ export type ContentDef = Readonly<{
   /**
    * Room around a building that makes units (the owner, round 5: "barraks and other spawning buildings should
    * require minimum distance from other buildings so they leave space for units spawning"): no tile of another
-   * building may stand within this many tiles of it, measured as range is, Manhattan to the nearest tile of each
-   * footprint — so at least this many free tiles lie between them, and the ring its units appear on stays open.
+   * building may stand within this many tiles of it, measured as range is (`footprintWithin`), to the nearest tile
+   * of each footprint, a row counting two columns. At 1 nothing touches it along a side, so the ring its units
+   * appear on stays open.
    * It holds both ways, for a building placed near it and for it placed near a building. Absent: it keeps no
    * room. Only the Build Phase reads it (`src/build/territory.ts`); the kernel never does. While the "Barracks
    * room" Experiment is being felt, its value replaces this number on every structure that has one.

@@ -22,7 +22,7 @@ import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
 import { detectCapability } from "./grid-main.ts"
-import { parseArgs, parseInteger } from "./args.ts"
+import { parseArgs, parseInteger, retiredOption } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { runBuildPhase } from "./build-phase.ts"
 import type { Exporter } from "./build-phase.ts"
@@ -111,12 +111,15 @@ const BUILD_PHASE_FLAGS = ["keys", "scroll-margin"] as const
 const GAME_FLAGS: ReadonlySet<string> = new Set(["help", "reduced-motion"])
 const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "settings", "keys", "capability", "theme", "glyphs", "backend", "scroll-margin"])
 
-/** What the game says for what it does not read: a removed flag names what replaced it; anything else, --help. */
+/** What the game says for what it does not read: a removed flag names what replaced it, a retired option what
+ *  changed (`RETIRED_OPTIONS`); anything else, --help. */
 function unknownArgument(argument: string): string {
   if (argument === "--build-phase" || argument === "--spike") {
     return `terminal-nexus: ${argument} is gone: --at '${DEFAULT_LEVEL_ROUTE}' opens its Build Phase.
 `
   }
+  const retired = retiredOption(argument)
+  if (retired !== undefined) return `terminal-nexus: ${retired}\n`
   return `terminal-nexus: ${argument.startsWith("--") ? `unknown option ${argument}` : `unexpected "${argument}"`}.
 `
 }

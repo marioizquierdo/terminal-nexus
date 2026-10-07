@@ -72,8 +72,8 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
   what Esc does. The **side panel**, on the left because building comes first: the menu, a card, or the
   Nexus Pulse's panel. The **map**, a closed rectangle whose west side is the panel's divider. The
   **bottom line** (whole width): one line of contextual help. Popups open over the map. At 80 × 24 the
-  map shows 49 × 18 tiles, or 24 × 18 with square tiles (the Ground Experiment). (RULE —
-  `tests/build-focus.test.ts`, `tests/build-help.test.ts`, `tests/ground-view.test.ts`)
+  map shows 49 × 18 tiles, one column a tile. (RULE — `tests/build-focus.test.ts`, `tests/build-help.test.ts`,
+  `tests/rows-view.test.ts`)
 - **One place has the keyboard**, shown by exactly one "you are here": the menu's highlight bar or the
   map cursor, never both. Focus is state (`BuildState.focus`), so a script sets it and a test reads it.
   (RULE — `tests/build-focus.test.ts`)
@@ -209,8 +209,7 @@ title screen's menu.
 - ***The raid in the panel*** (a named pattern: the owner's "reading the enemy intent is very important
   for basic ui/ux interaction"): the free rows between the buildings and Start Battle Round say what the coming
   round brings, under when it comes (`AS THE ROUND STARTS`, `7 SECONDS IN`): each group's count and where
-  from (a compass point from the Nexus, as the map is drawn: a row weighs as two tiles across at one column a
-  tile, as one at two), its kinds, and what it goes for first (`goes for your
+  from (a compass point from the Nexus, as the map is drawn: a row weighs as two columns, `inColumns`), its kinds, and what it goes for first (`goes for your
   Barracks`). They are information, not rows: nothing to highlight or click. Short of room they drop the
   kinds, then whole groups (`+2 more`), and a count is never split from its kind. Drawn with the menu,
   so it fades when a card covers it. (RULE — `tests/raid-view.test.ts`)
@@ -241,17 +240,28 @@ title screen's menu.
   on what the thing is for; the description is two or three plain sentences with a little more detail, wrapped
   under the icon; then the numbers as label/value rows — cost where the menu sells it, health, size and
   attack, the wave a building spawns (`WAVE 4 troopers at 5s`, or `WAVES 4 at 5s, 15s, 25s` for several), the
-  building's build range ("3, next round" for one being placed or planned, which gives none until it stands;
-  "cut off" in Explore Map for a standing one cut off from the Nexus), or a bare tile's position. **No status
+  building's build range (its shape, see *A reach's shape*; `from next round` for one being placed or planned,
+  which gives none until it stands; `cut off` in Explore Map for a standing one cut off from the Nexus), or a bare
+  tile's position. **No status
   line**: planned, standing or about to be placed is plain from the rest of the screen. The words are written
   with the content (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text
   never cuts a word**; if the words are too long, shorten them. One function draws every card
   (`drawCardBody`): that is where a later round would change the look for placing a building (where the title
   repeats the header), for exploring in the Build Phase, or for exploring during a Pulse. (RULE for the four
   parts and the fit — `tests/build-card.test.ts`)
-- **A Commander's skill is on her card**: its name, bold, then one plain line at the strength the battle
-  will run on ("She and her units within 3 tiles take 25% less damage."); nothing while the Experiment has
-  it off. (RULE — `tests/commander-screen.test.ts`)
+- ***A reach's shape*** (a named pattern; a row counts two columns in every distance, [`grid.md`](grid.md)):
+  **every reach a card states is said by its shape, never as a bare number** — an attack's, the build range, a
+  Commander's aura. A reach of R is "R across, M up/down", M being R ÷ 2 rounded down (`6 across, 3 up/down`), and a
+  reach of 1 is `touching`; one helper says it (`reachShape`, `src/build/reach.ts`). An attack keeps its damage on
+  its row; `touching` goes beside it (`ATTACK  7, touching`), any other shape on the row under it, right-aligned
+  like a value, with no label of its own. The build range's shape goes under its label, or under `from next
+  round`. "up/down" rather than "up and down" so the tallest card, Vasse's, keeps her skill to three lines at
+  80 × 24. (RULE — `tests/build-card.test.ts`)
+- **A Commander's skill is on her card**: its name, bold, opening one plain sentence at the strength the battle
+  will run on, its reach said as every reach is ("By the Book: she and her units take 25% less damage within 4
+  across, 2 up/down."); nothing while the Experiment has it off. Hers is the tallest card: at 80 × 24 the blank
+  lines before her skill and before her numbers close up rather than lose a number. (RULE —
+  `tests/commander-screen.test.ts`, `tests/build-card.test.ts`)
 - It appears with the **card reveal** (see *Motion and transitions*).
 
 ### 6.3 A selection holds the menu
@@ -284,8 +294,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
 - **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if Enter would take it there
   — a tile of it inside the build range, and the room a Barracks keeps left free; else the nearest such spot
   within reach leaving a free tile around it, else the nearest such spot touching — nearest by the cursor's
-  move, a step up or down costing more than a step sideways where a tile is one column wide, and the same as one
-  sideways with square tiles, so a run grows to the right (the reach and the
+  move, a step up or down costing more than a step sideways, so a run grows to the right (the reach and the
   cost are tuned values, `armSearchTiles` and `armVerticalCost`). With none in reach, arming steps one right
   and one down and draws the building as itself rather than as a refusal, until the player moves or tries, and
   the bottom line says whether nothing fits nearby or nothing in the build range does. **Explore Map opened
@@ -427,7 +436,9 @@ uses it rather than a new blend.
   (RULE — `tests/build-settings.test.ts`, `tests/build-experiments.test.ts`)
 - **The Controls and hotkeys page** (`[c]` in the game menu, or `?`): every key and click grouped by where
   the player is, from one table (`controlsPage` in `src/build/help.ts`), so a new key is one line there.
-  (RULE — `tests/build-help.test.ts`)
+  One group has no keys: **THE GROUND**, after THE MAP, the page's one passage on how the ground is counted —
+  "units stand tall, so more fit side by side than one behind another; a row up or down counts two steps across"
+  — in the text's column, wrapped by hand to the 28 columns it has at 80 × 24. (RULE — `tests/build-help.test.ts`)
 - **The Activity logs window** (`[a]` in the game menu; `a` closes it again) shows what the game
   recorded, newest first: a Filter row whose value Left and Right step through the filters (it comes
   round), `[e] Export logs`, then the list — one line per entry exactly as an export writes it, detail
@@ -542,16 +553,16 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   **trail** to what it goes for first, and **that target is marked**. The target is the kernel's own choice on
   the Pulse's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
   removing a building changes it at once: a building nearer the raid becomes what it goes for. The trail is
-  the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand every
-  three tiles (the owner's "1 arrow every 3 tiles"), in the glyph pack's arrowheads and strokes, dim and
-  faded, on open ground only and never over a glyph, and **they move** (the owner: "a slow-moving line of
-  arrows ... leaving a transparent arrow behind then moving that fades"): every step, a tuned value slower
-  than the raid itself walks, each arrow moves a tile on toward the target — the one beside it going in as a
-  new one comes out of the group — and leaves a copy of itself on the tile it left, fainter at once and gone
-  within half a step: blended away where colours blend, the arrow's own dim look and then gone at 16 colours
-  and in monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold
-  it still, as the still trail: an arrow every three tiles, the one beside the target drawn; it moves again
-  from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
+  the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand four
+  apart along the way by the Grid's own distance, four columns or two rows (the owner's "1 arrow every 3 tiles",
+  made whole rows), in the glyph pack's arrowheads and strokes, dim and faded, on open ground only and never over
+  a glyph, and **they move** (the owner: "a slow-moving line of arrows ... leaving a transparent arrow behind then
+  moving that fades"): every step, a tuned value about a raider's pace, each arrow goes a column's distance on
+  toward the target, a row taking two steps as it does a unit — the one beside the target going in as a new one
+  comes out of the group — and leaves a copy of itself on each tile it leaves, fainter at once and gone within
+  half a step: blended away where colours blend, the arrow's own dim look and then gone at 16 colours and in
+  monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold it still,
+  as the still trail, the one beside the target drawn; it moves again from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
   against the round's opening. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
 - ***The build range, a Barracks's room and a reach*** (named patterns; the owner's "a cool and unobstrussive
   way to show where the turrets will reach ... they also can only be built within the build-range of the other
@@ -574,18 +585,17 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   strokes, dim in that colour. A reach is an attack's range today; another kind of range joins it in one place
   (`reachOf`, `unitReachOf`, `src/view/build-areas.ts`). All three are carried by glyphs, so monochrome and 16
   colours show them. All are drawn on open ground only, never over anything standing, planned or arriving, nor
-  over the raid's trail — a reach gives way along the trail's whole way, wherever its moving arrows are, so
-  the outline never flickers as they pass — and nothing claims what a range would catch on the raid's way.
+  over the raid's trail — all three give way along the trail's whole way, wherever its moving arrows are, so
+  nothing flickers as they pass and no tile of a room on the way reads as open ground — and nothing claims what a range would catch on the raid's way.
   Where a reach crosses a room, the reach's strokes are drawn. None shows under a popup, on a committed plan,
   or during a Pulse. (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
-  **Measured as the battle will be.** All three are the rules' own under the Ground Experiment's measure. The
-  build range is counted in rows, so it keeps its height: where a row counts two columns, Build range 3 reaches 3
-  rows up and down and 6 columns across, and what the dots allow is what Enter takes. A Barracks's room and a
-  reach are measured as range is under that measure: a Turret's reach of 6 is drawn 13 wide by 7 tall with rows
-  x2, and 25 wide by 13 tall sideways x2. An outline is the last tiles reached — every tile in reach with a
-  four-way neighbour out of it, never the footprint's own — which as now and with square tiles is exactly the
-  diamond's ring, and where a row counts two columns is two tiles thick on its slants, so it has no gaps. (RULE —
-  `tests/ground-view.test.ts`)
+  **Measured as the battle will be.** All three are the rules' own, drawn from the same functions the battle
+  counts with (`tilesWithin`, [`grid.md`](grid.md), distance, reach and movement). Build range 6 reaches 6
+  columns across and 3 rows up and down, and what the dots allow is what Enter takes; a Turret's reach of 6 is
+  drawn 13 wide by 7 tall, as tall as it is wide on screen. An outline is the last tiles reached — every tile in
+  reach with a four-way neighbour out of it, never the footprint's own (`outlineWithin`) — so it is two tiles
+  thick on its slants, where each row steps in by two columns, and has no gaps; a blast's ring during a Pulse is
+  the same outline. (RULE — `tests/rows-view.test.ts`, `tests/build-areas.test.ts`)
 
 ## 13. Effects
 
@@ -683,8 +693,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   Every line is in the Activity Logs, with where it showed. Nothing she says can change what resolves. (RULE —
   `tests/voice.test.ts`)
 - ***Her aura's reach*** (a named pattern; the owner: "Vasse should provide boost to nearby units"): while the
-  fight is on, the ground within By the Book's radius — measured as range is, under the battle's own measure, so a
-  diamond, twice as wide as tall in tiles where a row counts two columns — is
+  fight is on, the ground within By the Book's radius — measured as range is, a diamond twice as wide as tall in
+  tiles and round on screen — is
   washed in her side's colour, moving with her, the radius read from her content. A see-through style on the
   ground's own band, under everything that stands: a unit she guards stands in the glow with every colour of
   its own (a wash over a glyph would change its hue at 256 colours), and effects draw over it. Gone at cease

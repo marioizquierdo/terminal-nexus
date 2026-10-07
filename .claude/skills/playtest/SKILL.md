@@ -20,15 +20,16 @@ node scripts/playtest.mjs --file flow.keys --size 104x30 --capability monochrome
 node scripts/playtest.mjs --settings "popupPulseMs=3000 nextRound=auto" --keys "Esc 1 Enter"  # start from an export
 node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what the run recorded
 node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=3' --png final   # round 3, no keys at all
-node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=2' --keys "n 1 s s wait~1000*20"
+node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=2' --keys "n 1 s s wait~1000*26"
 node scripts/playtest.mjs --help
 ```
 
 `--at <route>` opens a campaign level at a round, in the game's own route grammar (`src/cli/route.ts`,
 the same as `terminal-nexus --at`): `campaign?level=vasse-test-1` is PERIMETER's first round (what runs
 without `--at`), and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who picks the first Nexus power and builds nothing
-reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc n 1 s s wait~1000*16
-Enter` reach for round 2, without them. Quote the route: the shell reads `?` and `&`. A title menu route
+reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc n 1 s s wait~1000*26
+Enter` reach for round 2, without them (the battle lasts about 21 seconds, then the walk home, then the
+result Enter goes on from). Quote the route: the shell reads `?` and `&`. A title menu route
 (`settings`) is refused, since only a campaign level's Build Phase is wired up here; with `--at`, `--keys`
 may be left out to see the round as it opens.
 

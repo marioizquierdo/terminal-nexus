@@ -66,26 +66,23 @@ test("the frame is exactly the terminal's size, at the minimum and at the maximu
   assert.equal(screenAt(MINIMUM).frame.height, 24)
   assert.equal(screenAt(MAXIMUM).frame.width, 104)
   assert.equal(screenAt(MAXIMUM).frame.height, 32)
-  // 1 border + 48 tiles + 1 border + 30 panel = 80, and the same arithmetic at two columns per tile
-  // is 128 — the Grid page's "the two compositions fall out of one number" — is where the floor and
-  // the switch to wide tiles still are. Since the menu's divider became the Grid's west side
-  // (2026-09-29) the panel takes 29 of those columns: 49 tiles at 80, and at 128 the 48 wide tiles
-  // fill 127 of them, centred.
+  // 1 border + 48 tiles + 1 border + 30 panel = 80: the floor. The panel's divider is the Grid's west side, so the
+  // panel takes 29 of those columns and the Grid 49, a column a tile. A wider terminal is a tile a column more, up
+  // to the widest view: at 128 columns, 72 tiles fill 103 of them, centred.
   assert.equal(screenAt(MINIMUM).layout.viewport.width, 49)
   assert.equal(screenAt(MINIMUM).layout.composition.width, 80)
   const wide = screenAt(WIDE)
-  assert.equal(wide.layout.tileWidth, 2)
-  assert.equal(wide.layout.viewport.width, 48)
-  assert.equal(wide.layout.composition.width, 127)
+  assert.equal(wide.layout.viewport.width, 72)
+  assert.equal(wide.layout.composition.width, 2 + 29 + 72)
   assert.equal(wide.frame.width, 128)
 })
 
 test("a terminal larger than the maximum viewport spends the difference on centring", () => {
-  // 200 columns at two per tile has room for 84 tiles; the viewport still stops at 72, and the
-  // 24 columns left over become margin on both sides rather than more Grid.
+  // 200 columns have room for 169 tiles; the viewport still stops at 72, and the 97 columns left over become
+  // margin on both sides rather than more Grid or wider tiles.
   const huge = screenAt({ columns: 200, rows: 44 })
   assert.deepEqual(huge.layout.viewport, { width: 72, height: 24 })
-  assert.equal(huge.layout.tileWidth, 2)
+  assert.equal(huge.layout.composition.width, 2 + 29 + 72)
   assert.ok(huge.layout.offset.column > 0 && huge.layout.offset.row > 0, "the composition is centred")
   assert.equal(huge.frame.width, 200)
 })
@@ -608,9 +605,9 @@ test("on a small Grid the panel's rows are drawn whole, however few fit: the Nex
   }
 })
 
-test("the Grid's sides: the soft border runs the whole Grid-pane segment, at both tile widths", () => {
+test("the Grid's sides: the soft border runs the whole Grid-pane segment, at the floor and on a wide terminal", () => {
   // A signal that only reaches some of a wide border is a signal a player can miss. The whole
-  // segment beside the Grid pane goes soft together, at one column per tile and at two.
+  // segment beside the Grid pane goes soft together, at 80 columns and at 160.
   const wholeSegmentIsSoft = (terminal: { columns: number; rows: number }): void => {
     const { frame, layout } = screenAt(terminal, (build) => {
       build.run([{ kind: "move-cursor", dx: 20, dy: 20 }])

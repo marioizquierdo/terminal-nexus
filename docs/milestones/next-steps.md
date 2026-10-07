@@ -11,17 +11,12 @@ it is done.*
   each Barracks and Hatchery are the room it keeps, where nothing may stand. Explore Map (`e`) over a marksman
   draws its range; the raid's trail is a slow line of arrows. Start the battle without picking a Nexus power:
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
-  MISSION in Settings (`d`), **Barracks room** (1 or 2 tiles) is new beside **Build range** and **By the
+  MISSION in Settings (`d`), **Barracks room** (1 or 2) is new beside **Build range** and **By the
   Book**; paste the settings export.
-- **Say go on rows x2** (his choice, 2026-10-06, once he has seen its math): the next update makes it the rule and
-  retunes for it. Until then, the Ground Experiment as it was offered:
-- **Play the Ground Experiment** (his notes on tall tiles): every option is drawn in [the
-  comparison](../history/reports/2026-10-05-tall-tiles-options.md), and four are built as the Ground Experiment,
-  last under THE MISSION in Settings (`d`, `End`, `Up`, then Left or Right): as now, rows x2, sideways x2, square
-  tiles. It applies at once. The Ground test (`--at 'campaign?level=ground-test'`, or a button on the playable
-  page) puts two raids the same distance from the Nexus on screen, one from the north, one from the east: press
-  `3` to see a Turret's reach, `s` twice to watch how fast each comes. Then PERIMETER under the one that feels
-  best, and paste the settings export.
+- **The pull request after this one: a sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)):
+  units prefer a free column beside them and not to stand straight above or below another, so a group spreads into
+  a staggered grid; a preference that never blocks a move. It explores the pathfinding it needs, runs simulations,
+  and brings units and scenarios made to test formations facing up and down against formations facing sideways.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -31,7 +26,7 @@ it is done.*
 - **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
   tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
   means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): the tall tiles (Q24, above), an order primitive as its own step (Q69, which
+- **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
   letter hotkeys for buildings (Q67), and the exploring click, the wheel step and the light theme's light (Q63;
   Q62 and Q64 are answered).
@@ -43,15 +38,25 @@ it is done.*
 
 Small, none blocking.
 
-**From the tall tiles** ([the options, drawn](../history/reports/2026-10-05-tall-tiles-options.md)):
+**From rows x2** ([his words](../history/feedback/2026-10-06-rows-x2.md); the rule is in
+[`grid.md`](../system-design/grid.md), distance, reach and movement):
 
-- Under rows x2 and sideways x2 the content's numbers are today's: Vasse's aura of 3 reaches one row, a blast of 2
-  one row, and a card's "within 3 tiles" counts in the battle's measure. The retune comes with the choice.
-- A rate that does not divide its step evenly drops the remainder each step, as it always has, so under sideways
-  x2 not every unit walks across exactly twice as fast (the flak trooper steps every 3 ticks, not 2.5).
-- Found while testing melee, under every measure and as now too: two melee units of one speed set down
-  diagonally from each other step round each other without ever touching. Real pathfinding, not the greedy
-  step, is what closes it.
+- Ranges and raids are not tuned for balance: every reach became a whole number of rows and nothing more, since
+  ranges get adjusted as units are made (his words). As played, at the default settings, PERIMETER is won in all
+  three rounds with nothing built, and with two Turrets and one more each round; with nothing built and Vasse at 60
+  health with a 10% aura, the Nexus falls in round 3.
+- The Commander's cadence level does not always show the cadence: at 100 health and a 40% aura she lives through
+  round 1, and at 20 health and a 10% aura without the Barracks's wave the mission is lost in round 2, before her
+  return. Both were so before this round.
+- Two melee units of one speed set down diagonally from each other step round each other without ever touching.
+  Real pathfinding, not the greedy step, is what closes it.
+- Moving the view still counts tiles both ways: a tap moves one row or one column, and the fast move jumps ten
+  tiles either way, which is twice as far on screen up or down as across. Worth his eye before anything changes.
+- A big unit's death shockwave and the debris round a small one are drawn square: decoration that claims no area,
+  but a raider's shockwave reaches two rows up and down as its blast of 1 goes off. Its rows could be weighted by
+  the rule if it reads as the blast.
+- A deposit inside the build range carries no mark at 16 colours and in monochrome (the range's wash does not
+  render there and a deposit takes no dot), though a building may be placed on it. Older than the rule.
 
 **From step 6B** ([the round-loop report](../history/reports/2026-09-30-round-loop-and-missions.md) has the reasons):
 
@@ -115,17 +120,16 @@ Small, none blocking.
 
 **From step 8A's fifth round** ([Mario's notes](../history/feedback/2026-10-05-commander-round-5.md)):
 
-- PERIMETER is easier: a Barracks's four troopers at five seconds hold its last round even with nothing built
-  (narrowly, the Nexus at 77 of 400), and Vasse now lives through it in most plans, so her health Experiment
-  matters only in round 3. The raid is not retuned until the tall-tiles question settles movement and range.
+- PERIMETER is easier: a Barracks's four troopers at five seconds hold its last round even with nothing built,
+  and Vasse now lives through it in most plans, so her health Experiment matters only in round 3.
 - The battle feed gives each unit of a wave its own line ("5.0s trooper trained" four times), and a swarmer
   reads "spawnling" there (the feed's short ids); one line a wave would read better.
 - Without chaining, round 1's build range is the Nexus's and the Barracks's alone, and reaching further takes a
-  round a step. A room of one tile leaves a Barracks's corners open, corner to corner; Barracks room 2 with
-  Build range 2 leaves nowhere for a Barracks. The room shows only while a building is armed.
+  round a step. A room of 1 leaves a Barracks's corners open, corner to corner. The room shows only while a
+  building is armed.
 - Her round-opening line rarely fits now that first contact comes sooner: the moments that matter more come first.
-- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts its Hatchery outside the build range;
-  the tests skip the placement check, so the plan could not be placed in the game as written.
+- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts a Turret (22,7) outside the build
+  range at every value; the tests skip the placement check, so the plan could not be placed in the game as written.
 - At 16 colours each moving arrow is a pair for a moment (its copy looks like itself). The trail is the second
   animation that never settles, beside a popup's breath: the screen redraws five to seven times a second while
   it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.

@@ -119,23 +119,24 @@ test("a guarded hit deals the aura's share, rounded down, and never less than 1"
 test("auras never stack — a unit two reach takes the strongest one's share — a structure is never guarded, and the raid is not guarded by the player's bearer", () => {
   const events = run(
     {
+      // A row counts two columns: a reach of 3 is three columns either side and one row up and down.
       A: [
         [1, 1, "unit.test.steady"], // lets 75% through
-        [5, 1, "unit.test.stout"], // lets 50% through
-        [3, 2, "unit.test.standing"], // three from each: both reach it
-        [1, 4, "unit.test.standing"], // three from the steady one, seven from the stout one
-        [7, 3, "structure.citizen.barracks"], // its nearest tile three from the stout one
+        [7, 1, "unit.test.stout"], // lets 50% through
+        [4, 1, "unit.test.standing"], // three columns from each: both reach it
+        [1, 2, "unit.test.standing"], // a row below the steady one, two away; eight from the stout one
+        [9, 2, "structure.citizen.barracks"], // its nearest tile a row down and a column across from the stout one, three
       ],
       B: [
-        [3, 3, "unit.test.striker"],
-        [1, 5, "unit.test.striker"],
-        [9, 4, "unit.test.striker"],
+        [4, 2, "unit.test.striker"],
+        [1, 3, "unit.test.striker"],
+        [11, 2, "unit.test.striker"],
       ],
     },
     2,
   )
   const byEntity = new Map(hitsOn(events, "A:").map((hit) => [hit.entity, hit]))
-  const both = [...byEntity.values()].find((hit) => hit.entity.startsWith("A:standing") && hit.guardedBy === "A:stout#2")
+  const both = [...byEntity.values()].find((hit) => hit.entity.startsWith("A:standing") && hit.guardedBy === "A:stout#3")
   assert.ok(both !== undefined, `the stronger aura did not guard the trooper both reach: ${JSON.stringify([...byEntity.values()])}`)
   assert.equal(both.amount, 5)
   const steady = [...byEntity.values()].find((hit) => hit.entity.startsWith("A:standing") && hit !== both)
@@ -161,7 +162,7 @@ test("a bearer who falls guards to the end of the tick she falls in, and from th
 test("By the Book's strength is the Experiment's: off takes the aura away, and every other value sets the share a hit lets through", () => {
   const off = auraRegistry(FIXTURE_REGISTRY, 0)
   assert.equal(off.get(VASSE).aura, undefined)
-  assert.deepEqual(auraRegistry(FIXTURE_REGISTRY, 25).get(VASSE).aura, { radius: 3, damageTakenPercent: 75, name: "By the Book" })
+  assert.deepEqual(auraRegistry(FIXTURE_REGISTRY, 25).get(VASSE).aura, { radius: 4, damageTakenPercent: 75, name: "By the Book" })
   assert.equal(auraRegistry(FIXTURE_REGISTRY, 40).get(VASSE).aura?.damageTakenPercent, 60)
   assert.equal(auraRegistry(FIXTURE_REGISTRY, 10).get(VASSE).aura?.damageTakenPercent, 90)
   // Nothing else is touched, and a registry with no aura in it comes back as it was.

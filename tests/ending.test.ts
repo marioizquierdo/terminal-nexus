@@ -197,8 +197,9 @@ test("red means one thing: the player's Nexus is hurt — its first hit, very lo
 })
 
 test("the strain on a Nexus is read from the Pulse: its first hit, when it was nearly gone, when it fell", () => {
-  // No units of your own: the raid goes for the Nexus, and it falls (a kernel ending) — so all three happen.
-  const lost = play({ crew: "none" }).pulse.timeline
+  // No units of your own and a heavy raid: it goes for the Nexus, and the Nexus falls (a kernel ending) — so all
+  // three happen.
+  const lost = play({ crew: "none", raid: "heavy" }).pulse.timeline
   const strain = nexusStrain(lost)
   assert.ok(strain.hitMs !== null && strain.lowMs !== null && strain.fallMs !== null, JSON.stringify(strain))
   assert.ok(strain.hitMs <= strain.lowMs && strain.lowMs <= strain.fallMs, "a Nexus fell before it was hurt")

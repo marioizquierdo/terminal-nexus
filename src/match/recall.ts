@@ -15,8 +15,8 @@
 // - its **home** is the nearest structure of its own side that makes units like it (a building whose
 //   production recipe trains its content id, or whose `spawn` makes it), else
 //   the side's Grid Nexus (the "orphan" rule), else nothing: a side with neither has nowhere to go and
-//   its survivors stay where they stand. Nearest as the battle it fought measured the Grid (the state's
-//   `measure`, Manhattan under `SQUARE`), so the home it walks to is the one nearest it on the screen;
+//   its survivors stay where they stand. Nearest by the Grid's own distance (`footprintDistance`: a row counts
+//   two columns), so the home it walks to is the one it can reach soonest;
 // - it is set down on the free tile nearest that building, on the side it is nearest to, under its own
 //   collision mask, one survivor at a time in ordinal order — so the answer never depends on anything
 //   but the state, the registry and the order of the entities;
@@ -24,44 +24,33 @@
 //   is what starts a producer's waves afresh (its first one its recipe's delay away, none come, nothing
 //   owed) and clears a shot in progress; and
 // - the Pulse's own bookkeeping is cleared: the clock is zero, there is no outcome, no tile is still
-//   cooling from a death. The gameplay stream carries on where it stopped, and so does the measure: the
-//   state Recall leaves keeps the one the battle had.
+//   cooling from a death. The gameplay stream carries on where it stopped.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { SQUARE, footprintDistance, nearestFootprintTile } from "../grid/coords.ts"
+import { footprintDistance, nearestFootprintTile } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord, GridMeasure } from "../grid/types.ts"
+import type { Coord } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { EntityState, MatchState } from "../state/types.ts"
 import { centreTile, nearestFit } from "./placement.ts"
 import type { RecallMove, RecallResult } from "./types.ts"
 
-/** How far from its home a survivor may be set down before Recall gives the search up and widens it. */
-const HOME_RADIUS = 8
+/** How far from its home a survivor may be set down before Recall gives the search up and widens it, by the
+ *  Grid's own distance (`nearestFit`): 8 rows up and down, 16 columns across. */
+const HOME_RADIUS = 16
 /** The wider search a survivor whose own tile was taken falls back on, around where it stands. */
-const FALLBACK_RADIUS = 40
+const FALLBACK_RADIUS = 80
 
 type Home = Readonly<{ entity: EntityState; definition: ContentDef; kind: "producer" | "nexus" }>
 
-/** The nearest of `candidates` to `survivor`, by the distance range is measured in, in the battle's measure; ties
+/** The nearest of `candidates` to `survivor`, by the distance range is measured in (`footprintDistance`); ties
  *  to the lower ordinal. `null` when there are none. */
-function nearest(
-  survivor: EntityState,
-  survivorDefinition: ContentDef,
-  candidates: readonly Home[],
-  measure: GridMeasure,
-): Home | null {
+function nearest(survivor: EntityState, survivorDefinition: ContentDef, candidates: readonly Home[]): Home | null {
   let best: Home | null = null
   let bestDistance = Number.POSITIVE_INFINITY
   for (const candidate of candidates) {
-    const distance = footprintDistance(
-      survivor.anchor,
-      survivorDefinition.footprint,
-      candidate.entity.anchor,
-      candidate.definition.footprint,
-      measure,
-    )
+    const distance = footprintDistance(survivor.anchor, survivorDefinition.footprint, candidate.entity.anchor, candidate.definition.footprint)
     // Candidates arrive in ordinal order, so a strict comparison keeps the lower ordinal on a tie.
     if (distance < bestDistance) {
       best = candidate
@@ -72,8 +61,6 @@ function nearest(
 }
 
 export function recall(state: MatchState, registry: ContentRegistry): RecallResult {
-  // How the battle that ended measured the Grid: "nearest" means what it meant in it.
-  const measure = state.measure ?? SQUARE
   const definitions = new Map<number, ContentDef>()
   for (const entity of state.entities) definitions.set(entity.ordinal, registry.get(entity.contentId))
   const definitionOf = (entity: EntityState): ContentDef => definitions.get(entity.ordinal) as ContentDef
@@ -102,7 +89,7 @@ export function recall(state: MatchState, registry: ContentRegistry): RecallResu
     const nexuses: Home[] = mates
       .filter((structure) => definitionOf(structure).nexus === true)
       .map((entity) => ({ entity, definition: definitionOf(entity), kind: "nexus" as const }))
-    return nearest(survivor, definition, producers, measure) ?? nearest(survivor, definition, nexuses, measure)
+    return nearest(survivor, definition, producers) ?? nearest(survivor, definition, nexuses)
   }
   const homes = new Map<number, Home | null>(survivors.map((survivor) => [survivor.ordinal, homeOf(survivor)]))
 
@@ -129,7 +116,7 @@ export function recall(state: MatchState, registry: ContentRegistry): RecallResu
     const here = centreTile(survivor.anchor, definition.footprint)
     // The tile of the home building nearest the survivor is what it comes back *to*: it arrives on the
     // side it was already on, not on the far side of the building.
-    const target = nearestFootprintTile(here, home.entity.anchor, home.definition.footprint, measure)
+    const target = nearestFootprintTile(here, home.entity.anchor, home.definition.footprint)
     // Nowhere free near home: take the nearest free tile to where it stands rather than overlap anyone.
     const to =
       nearestFit(mask, definition.footprint, target, HOME_RADIUS, here) ??

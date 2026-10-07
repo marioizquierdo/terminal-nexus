@@ -74,8 +74,8 @@ test("a unit turns from its side's target on what comes within its reach, and ne
   const trooper = FIXTURE_REGISTRY.get(TROOPER)
   assert.equal(engageRange(trooper), ENGAGE_RANGE)
   assert.equal(ENGAGE_RANGE, 6)
-  const longGun: ContentDef = { ...trooper, attack: { kind: "ranged", range: 9, damage: 5, cooldownTicks: 12 } }
-  assert.equal(engageRange(longGun), 9, "a unit would walk past an enemy it could have shot")
+  const longGun: ContentDef = { ...trooper, attack: { kind: "ranged", range: 10, damage: 5, cooldownTicks: 12 } }
+  assert.equal(engageRange(longGun), 10, "a unit would walk past an enemy it could have shot")
   // Only a unit that moves and fights follows a target: not a worker that flees, a healer, or a building.
   assert.ok(followsTarget(trooper))
   assert.ok(followsTarget(FIXTURE_REGISTRY.get("unit.citizen.vasse")))

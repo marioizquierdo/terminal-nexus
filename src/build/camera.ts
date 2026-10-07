@@ -3,6 +3,11 @@
 // Pure arithmetic over tiles: a camera is a position in tiles, a viewport is a size in tiles, and
 // what either looks like is `src/view`'s problem. That split is what lets the whole scrolling rule
 // be tested without a TTY.
+//
+// **A tile is one terminal column, at every terminal size.** A cell is about twice as tall as it is wide, and a row
+// counts two columns in every distance (`ROW_DISTANCE`, src/grid/coords.ts), so a tile one column wide draws every
+// reach as wide as it is tall on screen. A viewport's width in tiles is its width in columns, and a terminal wider
+// than the largest viewport buys centring, never a wider tile.
 
 import type { Coord, GridTerrain } from "../grid/types.ts"
 
@@ -13,8 +18,7 @@ export const MIN_VIEWPORT = { width: 48, height: 16 } as const
 export const MAX_VIEWPORT = { width: 72, height: 24 } as const
 /**
  * The side panel's share of the terminal floor: the 80-column arithmetic in docs/system-design/grid.md
- * (1 + 30 + 48 + 1), which the resize gate and the choice of tile width still measure against — so
- * 80 × 24 stays the floor and 128 columns stays where tiles go two columns wide.
+ * (1 + 30 + 48 + 1), which the resize gate measures against, so 80 × 24 is the floor.
  */
 export const FLOOR_PANEL_COLUMNS = 30
 /**
@@ -48,73 +52,49 @@ export const CHROME_ROWS = BORDER_COLUMNS + HEADER_ROWS + FOOTER_ROWS
  */
 export const FLOOR_CHROME_ROWS = 8
 
-export type TileWidth = 1 | 2
 export type Viewport = Readonly<{ width: number; height: number }>
 /** The north-west tile of the viewport, in Grid tiles. */
 export type Camera = Readonly<{ x: number; y: number }>
 export type TerminalSize = Readonly<{ columns: number; rows: number }>
 
 /**
- * How many tiles a terminal of this size has room for, once chrome is taken out. The first step of
- * the fitting order in docs/system-design/grid.md, and deliberately allowed to come back negative-ish small: the caller
- * decides whether that means "gate" (below the minimum) or "centre the leftover" (above the maximum).
+ * How many tiles a terminal of this size has room for once chrome is taken out, a tile to a column: the first
+ * step of the fitting order in docs/system-design/grid.md. It may come back smaller than any viewport, zero at
+ * the least: the caller decides whether that means "gate" (below the minimum) or "centre the leftover" (above
+ * the maximum).
  */
 export function availableTiles(
   terminal: TerminalSize,
-  tileWidth: TileWidth,
   panelColumns: number = PANEL_COLUMNS,
   chromeRows: number = CHROME_ROWS,
 ): Viewport {
   return {
-    width: Math.max(0, Math.floor((terminal.columns - BORDER_COLUMNS - panelColumns) / tileWidth)),
+    width: Math.max(0, terminal.columns - BORDER_COLUMNS - panelColumns),
     height: Math.max(0, terminal.rows - chromeRows),
   }
 }
 
-/**
- * Step 2: two columns per tile if the terminal can show the viewport that way, otherwise one. This
- * and the tile-width rule in docs/system-design/presentation.md ("one column at 80, two at 128 or
- * wider") agree by construction — 128 is exactly
- * the width at which two columns per tile still leaves room for the 48-tile minimum viewport.
- *
- * `fixed`, when given, is the width at every size instead: the Ground Experiment's (`tileWidthOf`,
- * `src/build/ground.ts`) — square tiles draw two columns a tile even at 80 x 24, where the view is then 24 tiles
- * across, and a choice that counts a row as two columns draws one at every size, so no reach comes out twice as
- * wide as it is tall. `null` is the adaptive width, as it always was.
- */
-export function tileWidthFor(terminal: TerminalSize, grid: GridTerrain, fixed: TileWidth | null = null): TileWidth {
-  if (fixed !== null) return fixed
-  const wanted = Math.min(MIN_VIEWPORT.width, grid.width)
-  return availableTiles(terminal, 2, FLOOR_PANEL_COLUMNS).width >= wanted ? 2 : 1
-}
-
-/**
- * Step 4, asked as a question rather than acted on: is this terminal below the floor? A Grid smaller
- * than the minimum viewport needs only its own size, so a small tutorial Grid is never gated on a
- * terminal that could show all of it. Always asked at one column per tile — the narrow composition
- * is the acceptance target, and a terminal too small for the wide one simply uses the narrow one —
- * and against the floor's own chrome (`FLOOR_PANEL_COLUMNS`, `FLOOR_CHROME_ROWS`), so the gate stays
- * at 80 × 24 while the columns and rows the frame has since saved go to the Grid.
- */
-export function isGated(terminal: TerminalSize, grid: GridTerrain): boolean {
-  const available = availableTiles(terminal, 1, FLOOR_PANEL_COLUMNS, FLOOR_CHROME_ROWS)
-  return (
-    available.width < Math.min(MIN_VIEWPORT.width, grid.width) ||
-    available.height < Math.min(MIN_VIEWPORT.height, grid.height)
-  )
-}
-
-/** Step 3: `viewport = min(availableTiles, maximumViewport, gridSize)`, verbatim. */
-export function fitViewport(
-  terminal: TerminalSize,
-  grid: GridTerrain,
-  tileWidth: TileWidth,
-): Viewport {
-  const available = availableTiles(terminal, tileWidth)
+/** Step 2: `viewport = min(availableTiles, maximumViewport, gridSize)`, verbatim. */
+export function fitViewport(terminal: TerminalSize, grid: GridTerrain): Viewport {
+  const available = availableTiles(terminal)
   return {
     width: Math.min(available.width, MAX_VIEWPORT.width, grid.width),
     height: Math.min(available.height, MAX_VIEWPORT.height, grid.height),
   }
+}
+
+/**
+ * Step 3, asked as a question rather than acted on: is this terminal below the floor? Measured against the
+ * floor's own chrome (`FLOOR_PANEL_COLUMNS`, `FLOOR_CHROME_ROWS`), so the gate stays at 80 × 24 while the column
+ * and the rows the frame saves go to the Grid. A Grid smaller than the minimum viewport needs only its own size,
+ * so a small tutorial Grid is never gated on a terminal that could show all of it.
+ */
+export function isGated(terminal: TerminalSize, grid: GridTerrain): boolean {
+  const available = availableTiles(terminal, FLOOR_PANEL_COLUMNS, FLOOR_CHROME_ROWS)
+  return (
+    available.width < Math.min(MIN_VIEWPORT.width, grid.width) ||
+    available.height < Math.min(MIN_VIEWPORT.height, grid.height)
+  )
 }
 
 /** The camera is clamped so the viewport never leaves the Grid — the first bullet of the scrolling rule in docs/system-design/grid.md. */

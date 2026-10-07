@@ -35,7 +35,7 @@ export type DomainEvent =
         ordinal: number
         target: string
         targetOrdinal: number
-        /** Nearest tile to nearest tile, as the battle measures the Grid (`MatchState.measure`; Manhattan as now). */
+        /** Nearest tile to nearest tile, a row counting two columns (`footprintDistance`, src/grid/coords.ts). */
         distance: number
         /** The whole scoring function is "nearest enemy", so the score is the distance. */
         score: number
@@ -55,7 +55,7 @@ export type DomainEvent =
         ordinal: number
         threat: string
         threatOrdinal: number
-        /** Nearest tile to nearest tile, as the battle measures the Grid (`MatchState.measure`; Manhattan as now). */
+        /** Nearest tile to nearest tile, a row counting two columns (`footprintDistance`, src/grid/coords.ts). */
         distance: number
       }>)
   | (Base &
@@ -114,7 +114,7 @@ export type DomainEvent =
         targetOrdinal: number
         attackKind: AttackKind
         damage: number
-        /** Nearest tile to nearest tile, as the battle measures the Grid (`MatchState.measure`; Manhattan as now). */
+        /** Nearest tile to nearest tile, a row counting two columns (`footprintDistance`, src/grid/coords.ts). */
         distance: number
         /**
          * Presentation metadata, part of the event and its hash, read by **no rule**

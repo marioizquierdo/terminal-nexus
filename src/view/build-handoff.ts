@@ -2,6 +2,7 @@
 // place to the cursor — the focus arrow from a building's row, the see-through cursor from Explore
 // Map's. One flight, two travellers.
 
+import { inColumns } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile, menuEntryRow, tileAtCell } from "../build/layout.ts"
@@ -27,14 +28,13 @@ const AXIS_SLOPE = 0.4142
 
 /**
  * The focus arrow's head and trail glyphs for a line running `dx` columns and `dy` rows. A terminal
- * cell is about twice as tall as it is wide, so a row counts as two columns when the slope is read:
- * within 22.5 degrees of level the head points left or right and the trail is level; within 22.5
+ * cell is about twice as tall as it is wide, so a row counts as two columns when the slope is read
+ * (`inColumns`): within 22.5 degrees of level the head points left or right and the trail is level; within 22.5
  * degrees of upright it points up or down and the trail is upright; between them the trail is a
  * diagonal and the head points along whichever way the line runs further on screen.
  */
 function arrowGlyphs(pack: GlyphPack, dx: number, dy: number): Readonly<{ head: string; trail: string }> {
-  const across = dx
-  const down = 2 * dy
+  const { across, down } = inColumns(dx, dy)
   const horizontal = chromeGlyph(pack, across >= 0 ? "arrowRight" : "arrowLeft")
   const vertical = chromeGlyph(pack, down >= 0 ? "arrowDown" : "arrowUp")
   if (Math.abs(down) <= Math.abs(across) * AXIS_SLOPE) return { head: horizontal, trail: chromeGlyph(pack, "trailLevel") }
@@ -107,15 +107,16 @@ export function drawHandoff(cells: BandCell[], input: BuildCompositionInput, pac
 function drawFocusArrow(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, preview: ArmedPreview | null, flight: Flight): void {
   const { context, state, layout } = input
   const { from, to: target } = flight
-  // Aimed at the middle of the cursor's tile: its one cell, or between its two when tiles are two wide.
-  const dx = target.x + (layout.tileWidth - 1) / 2 - from.x
+  // Aimed at the cursor's cell, one cell at a time along the longer of the two runs: the cells a straight line
+  // crosses on screen. A path, not a distance.
+  const dx = target.x - from.x
   const dy = target.y - from.y
-  const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))))
+  const steps = Math.max(1, Math.abs(dx), Math.abs(dy))
   const path: Coord[] = []
   for (let step = 0; step <= steps; step += 1) {
     const x = Math.round(from.x + (dx * step) / steps)
     const y = Math.round(from.y + (dy * step) / steps)
-    if (y === target.y && x >= target.x && x < target.x + layout.tileWidth) break
+    if (x === target.x && y === target.y) break
     const last = path[path.length - 1]
     if (last === undefined || last.x !== x || last.y !== y) path.push({ x, y })
   }
@@ -179,7 +180,7 @@ const SEE_THROUGH_ROLE: StyleRole = CURSOR_ROLE
  * it covers is a **glyphless** write carrying `CellStyle.seeThrough` — the cursor's role at an opacity —
  * so whatever is beneath, the menu's words, the divider, the ground, a building, keeps its glyph (the
  * corruption law) and the renderer mixes the colour (`SeeThrough`, `src/view/roles.ts`). Drawn over the
- * panel, the divider and the map, under every popup, and never on the real cursor's own cells, into
+ * panel, the divider and the map, under every popup, and never on the real cursor's own cell, into
  * which it settles.
  */
 function drawSeeThroughCursor(cells: BandCell[], input: BuildCompositionInput, flight: Flight): void {
@@ -187,21 +188,18 @@ function drawSeeThroughCursor(cells: BandCell[], input: BuildCompositionInput, f
   const { from, to: target } = flight
   const dx = target.x - from.x
   const dy = target.y - from.y
-  // One step of the flight is a tile across or a row down, whichever the flight has more of.
-  const steps = Math.max(1, Math.abs(dx) / layout.tileWidth, Math.abs(dy))
+  // One step of the flight is a cell across or a row down, whichever the flight has more of.
+  const steps = Math.max(1, Math.abs(dx), Math.abs(dy))
   const alphas = new Map<number, Readonly<{ x: number; y: number; alpha: number }>>()
   for (const copy of SEE_THROUGH_TRAIL) {
     const along = flight.along - copy.back / steps
     if (along < 0) continue
     const x = Math.round(from.x + dx * along)
     const y = Math.round(from.y + dy * along)
-    for (let extra = 0; extra < layout.tileWidth; extra += 1) {
-      const column = x + extra
-      if (y === target.y && column >= target.x && column < target.x + layout.tileWidth) continue
-      const key = y * layout.frame.width + column
-      const seen = alphas.get(key)
-      if (seen === undefined || seen.alpha < copy.alpha) alphas.set(key, { x: column, y, alpha: copy.alpha })
-    }
+    if (x === target.x && y === target.y) continue
+    const key = y * layout.frame.width + x
+    const seen = alphas.get(key)
+    if (seen === undefined || seen.alpha < copy.alpha) alphas.set(key, { x, y, alpha: copy.alpha })
   }
   for (const { x, y, alpha } of alphas.values()) {
     cells.push({ band: BANDS.chrome, x, y, style: { seeThrough: { role: SEE_THROUGH_ROLE, alpha } } })

@@ -14,6 +14,7 @@ import { MOUSE_RIGHT } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { nexusTile } from "../src/build/state.ts"
 import { starterContext } from "../src/cli/starter.ts"
+import { gridDistance } from "../src/grid/coords.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
@@ -172,7 +173,7 @@ test("a lost Pulse and a timed-out one say so plainly, and a force wiped out wit
   assert.doesNotMatch(screenText(fallen), /\b0 of yours came home/)
 
   // A Nexus that falls ends the mission: the mission's verdict leads, and the fight's reason stays under it.
-  const nexusFell = play({ crew: "none" })
+  const nexusFell = play({ crew: "none", raid: "heavy" })
   atHome(nexusFell)
   assert.match(screenText(nexusFell), /^\| MISSION FAILED /m)
   assert.match(screenText(nexusFell), /The Nexus fell\./)
@@ -224,11 +225,12 @@ test("the survivors are drawn walking home, and home when the walk ends", () => 
   assert.ok(moves.length > 0, "nobody survived to walk")
   const drawn = (ms: number) => {
     at(played, ms)
-    const frame = played.build.pulseFrame(played.layout)
+    const frame = played.build.pulseFrame()
     assert.ok(frame !== undefined)
     return frame.positions
   }
-  const far = moves.find((move) => Math.abs(move.from.x - move.to.x) + Math.abs(move.from.y - move.to.y) > 6)
+  // A walk long on screen, by the Grid's own distance.
+  const far = moves.find((move) => gridDistance(move.from, move.to) > 6)
   assert.ok(far !== undefined, "every survivor was already home; the test proves nothing")
   assert.deepEqual(drawn(moments.walkMs - 50).get(far.ordinal) ?? far.from, far.from, "it walked before the walk began")
   const middle = drawn((moments.walkMs + moments.homeMs) / 2).get(far.ordinal)
@@ -255,13 +257,13 @@ test("reduced motion holds the timer and the light steady and puts the survivors
     assert.equal(shown(ms), first, `the timer or the light moved at ${ms} ms`)
   }
   at(played, moments.walkMs + 5)
-  const positions = played.build.pulseFrame(played.layout)!.positions
+  const positions = played.build.pulseFrame()!.positions
   for (const move of played.pulse.recall.moves) assert.deepEqual(positions.get(move.ordinal), move.to)
   // With motion, the same instant is mid-walk.
   const moving = victorious()
   at(moving, moments.walkMs + 5)
   assert.ok(moving.pulse.recall.moves.some((move) => {
-    const drawnAt = moving.build.pulseFrame(moving.layout)!.positions.get(move.ordinal)
+    const drawnAt = moving.build.pulseFrame()!.positions.get(move.ordinal)
     return drawnAt !== undefined && (drawnAt.x !== move.to.x || drawnAt.y !== move.to.y)
   }), "nothing was still walking with motion on")
 })
@@ -353,11 +355,11 @@ test("red is for the player's Nexus being hurt: faint, brief, and never under re
     const levels: number[] = []
     for (let ms = 0; ms < times(played).homeMs + 400; ms += 25) {
       at(played, ms)
-      levels.push(played.build.pulseFrame(played.layout)!.redAlert)
+      levels.push(played.build.pulseFrame()!.redAlert)
     }
     return levels
   }
-  const fell = redLevels(play({ crew: "none" }))
+  const fell = redLevels(play({ crew: "none", raid: "heavy" }))
   assert.equal(fell[0], 0, "the border was red before anything was hit")
   assert.ok(Math.max(...fell) > 0, "a Nexus that fell never flashed red")
   assert.ok(Math.max(...fell) <= 0.6, `the red reached ${Math.max(...fell)}: it should stay a faint tint`)
@@ -370,7 +372,7 @@ test("red is for the player's Nexus being hurt: faint, brief, and never under re
 
   // Under reduced motion it is gone, every flash of it being said again in words. (It was an Experiment
   // that could switch it off until the owner kept it, 2026-09-30.)
-  const still = redLevels(play({ crew: "none" }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
+  const still = redLevels(play({ crew: "none", raid: "heavy" }), (played) => played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 }))
   assert.equal(Math.max(...still), 0, "red under reduced motion")
 })
 
@@ -644,5 +646,5 @@ test("nobody draws the Pulse in the Build Phase, and the Build Phase's frame is 
   assert.match(plain, /TERMINAL NEXUS build phase/)
   assert.doesNotMatch(plain, /BATTLE ROUND|Watch again/)
   assert.equal(session.build.pulse, null)
-  assert.equal(session.build.pulseFrame(session.layout), undefined)
+  assert.equal(session.build.pulseFrame(), undefined)
 })

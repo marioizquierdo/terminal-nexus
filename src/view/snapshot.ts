@@ -7,15 +7,14 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
-import { SQUARE } from "../grid/coords.ts"
-import type { Coord, GridMeasure, GridTerrain } from "../grid/types.ts"
+import type { Coord, GridTerrain } from "../grid/types.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import type { ActiveEffect } from "./effects/index.ts"
 import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { ReadonlyCellFrame } from "./frame.ts"
 import type { CapabilityMode } from "./roles.ts"
-import type { HeldCorpse, TileWidth } from "./compose.ts"
+import type { HeldCorpse } from "./compose.ts"
 import { FEED_KINDS, composeFrame } from "./compose.ts"
 
 export type PulseTimeline = Readonly<{
@@ -32,16 +31,6 @@ export type PulseTimeline = Readonly<{
   stateHash: string
   eventsHash: string
 }>
-
-/**
- * How a battle measured the Grid (`GridMeasure`, the Ground Experiment): its state's own measure, which travels
- * with the Battle Round, or `SQUARE` — the rules as they always were — when it carries none (and for a hand-built
- * timeline with no state at all). Whatever the screen draws as a reach in a battle, it draws under this, so the
- * picture is the kernel's own.
- */
-export function battleMeasure(state: MatchState | undefined): GridMeasure {
-  return state?.measure ?? SQUARE
-}
 
 export type ViewControls = Readonly<{ paused: boolean; speed: number }>
 
@@ -103,15 +92,10 @@ export type PulseView = Readonly<{
   effectsEndMs: number
   /** The drawable data at a presentation time. `reducedMotion` overrides the view's own — a player who
    *  turns it on mid-Pulse — without rebuilding the view. */
-  sampleAt(timeMs: number, capability: CapabilityMode, tileWidth: TileWidth, reducedMotion?: boolean): PulseSample
-  snapshotAt(timeMs: number, capability: CapabilityMode, tileWidth: TileWidth): ReadonlyCellFrame
+  sampleAt(timeMs: number, capability: CapabilityMode, reducedMotion?: boolean): PulseSample
+  snapshotAt(timeMs: number, capability: CapabilityMode): ReadonlyCellFrame
   /** The same composition with live playback controls filled in — what `watch` presents. */
-  composeAt(
-    timeMs: number,
-    capability: CapabilityMode,
-    tileWidth: TileWidth,
-    controls: ViewControls,
-  ): ReadonlyCellFrame
+  composeAt(timeMs: number, capability: CapabilityMode, controls: ViewControls): ReadonlyCellFrame
 }>
 
 export function createView(
@@ -185,7 +169,6 @@ export function createView(
   const sampleAt = (
     timeMs: number,
     capability: CapabilityMode,
-    tileWidth: TileWidth,
     reducedMotion: boolean = presentation.reducedMotion,
   ): PulseSample => {
     const exact = (Math.max(0, timeMs) * timeline.ticksPerSecond) / 1000
@@ -228,7 +211,6 @@ export function createView(
       effects: effects.cellsAt({
         timeMs: Math.max(0, timeMs),
         cosmeticSeed: presentation.cosmeticSeed,
-        tileWidth,
         reducedMotion,
         capability,
       }),
@@ -236,13 +218,8 @@ export function createView(
     }
   }
 
-  const composeAt = (
-    timeMs: number,
-    capability: CapabilityMode,
-    tileWidth: TileWidth,
-    controls: ViewControls,
-  ): ReadonlyCellFrame => {
-    const sample = sampleAt(timeMs, capability, tileWidth)
+  const composeAt = (timeMs: number, capability: CapabilityMode, controls: ViewControls): ReadonlyCellFrame => {
+    const sample = sampleAt(timeMs, capability)
     return composeFrame(
       {
         scenarioId: timeline.scenarioId,
@@ -265,7 +242,6 @@ export function createView(
         effects: sample.effects,
       },
       capability,
-      tileWidth,
     )
   }
 
@@ -281,8 +257,7 @@ export function createView(
     sampleAt,
     // `snapshotAt` deliberately takes no controls, so a snapshot test never depends on what the
     // player happened to be doing when it was taken.
-    snapshotAt: (timeMs, capability, tileWidth) =>
-      composeAt(timeMs, capability, tileWidth, { paused: false, speed: 1 }),
+    snapshotAt: (timeMs, capability) => composeAt(timeMs, capability, { paused: false, speed: 1 }),
     composeAt,
   }
 }

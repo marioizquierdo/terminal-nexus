@@ -1,7 +1,7 @@
 {
   "id": "ravel-cascade",
   "name": "Ravel cascade - everything is fuel",
-  "notes": "The Ravel signature moment, isolated: one chain of detonating fuel wagons deletes a line - or their own. A Citizen line kills the nearest wagon, its blast reaches the next, and the cascade runs until it runs out of fuel. Chains are bounded because an entity can only die once, so the whole cascade resolves inside the tick that started it.",
+  "notes": "The Ravel signature moment, isolated: one chain of detonating fuel wagons deletes a line - or their own. A Citizen line kills the nearest wagon, its blast reaches the next, and the cascade runs until it runs out of fuel. The wagons stand two columns apart and a row apart, each within the next one's blast (a radius of 2 is two columns either side and one row up and down, a row counting two columns), with a runner tucked in beside them. Chains are bounded because an entity can only die once, so the whole cascade resolves inside the tick that started it.",
   "grid": {
     "preset": "small-wide"
   },
@@ -53,11 +53,8 @@
       },
       "rows": [
         " v v",
-        "",
         " v v",
-        "x",
-        " v v",
-        "",
+        "xv v",
         " v v"
       ],
       "legend": {

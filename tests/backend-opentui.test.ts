@@ -23,7 +23,7 @@ async function mirrorFrame() {
     scenario.seed,
   )
   const view = createView(timeline)
-  return view.snapshotAt(view.durationMs * 0.66, "monochrome", 1)
+  return view.snapshotAt(view.durationMs * 0.66, "monochrome")
 }
 
 if (RUNTIME_IS_BUN) {

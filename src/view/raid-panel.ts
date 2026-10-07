@@ -18,11 +18,11 @@
 
 import { CREDITS_ROW, constructLines, startRow } from "../build/layout.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import type { TileWidth } from "../build/camera.ts"
 import type { BuildContext } from "../build/state.ts"
 import { nexusTile } from "../build/state.ts"
 import { cardText, counted } from "../build/card.ts"
 import type { RaidForecast, RaidGroup, RaidTarget } from "../build/types.ts"
+import { inColumns } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { BandCell } from "./frame.ts"
@@ -62,21 +62,16 @@ export function raidRows(layout: BuildLayout, catalog: BuildContext["catalog"]):
 const BEARINGS = ["east", "north-east", "north", "north-west", "west", "south-west", "south", "south-east"] as const
 
 /**
- * Where `to` lies from `from`, as one of the eight points of the compass, **as the map is seen**: a terminal
- * cell is about twice as tall as it is wide, so where a tile is one column (`tileWidth`, as at 80 x 24) a row
- * weighs as two tiles across, and where a tile is two columns wide (square tiles, or 128 columns and wider) a
- * row is as tall as a tile is wide and weighs one. So at one column a tile the ridge at the top right of
- * PERIMETER's map is to the north-east of the Nexus, and the flats level with it to the east.
+ * Where `to` lies from `from`, as one of the eight points of the compass, **as the map is seen**: a tile is one
+ * column wide and a row is `ROW_DISTANCE` columns tall (`inColumns`), as a terminal cell is about twice as tall as
+ * it is wide. So the ridge at the top right of PERIMETER's map is to the north-east of the Nexus, and the flats
+ * level with it to the east.
  */
-export function bearing(from: Coord, to: Coord, tileWidth: TileWidth = 1): string {
-  const angle = Math.atan2(-(to.y - from.y) * rowWeight(tileWidth), to.x - from.x)
+export function bearing(from: Coord, to: Coord): string {
+  const { across, down } = inColumns(to.x - from.x, to.y - from.y)
+  const angle = Math.atan2(-down, across)
   const sector = (Math.round(angle / (Math.PI / 4)) + 8) % 8
   return BEARINGS[sector] ?? "east"
-}
-
-/** How many tiles across a row is as tall as, on screen: two where a tile is one column, one where it is two. */
-function rowWeight(tileWidth: TileWidth): number {
-  return 2 / tileWidth
 }
 
 /** What a group goes for, as the panel names it: a building as the menu does ("your Barracks", "your
@@ -109,20 +104,19 @@ export function whenHeading(tick: number): string {
   return seconds === 1 ? "1 SECOND IN" : `${seconds} SECONDS IN`
 }
 
-/** One group's lines: how many and from where (as the map is seen at `tileWidth`), of what (when `kinds`), and
- *  what it goes for first. */
+/** One group's lines: how many and from where (as the map is seen, `bearing`), of what (when `kinds`), and what
+ *  it goes for first. */
 function groupLines(
   context: Pick<BuildContext, "registry">,
   group: RaidGroup,
   from: Coord,
   width: number,
   kinds: boolean,
-  tileWidth: TileWidth,
 ): RaidLine[] {
   const side = playerRole(group.player)
   const count = group.units.reduce((sum, entry) => sum + entry.count, 0)
   const lines: RaidLine[] = [
-    { indent: 0, parts: [{ text: String(count), role: side, bold: true }, { text: ` from the ${bearing(from, group.centre, tileWidth)}`, role: side }] },
+    { indent: 0, parts: [{ text: String(count), role: side, bold: true }, { text: ` from the ${bearing(from, group.centre)}`, role: side }] },
   ]
   if (kinds) {
     for (const words of kindLines(context, group.units, width - INDENT)) lines.push({ indent: INDENT, parts: [{ text: words, role: "chrome.value" }] })
@@ -146,7 +140,6 @@ function linesAt(
   from: Coord,
   width: number,
   kinds: boolean,
-  tileWidth: TileWidth,
 ): RaidLine[][] {
   // One block a group, its moment's heading leading the first group to come at that moment.
   const blocks: RaidLine[][] = []
@@ -157,7 +150,7 @@ function linesAt(
       heading = group.tick
       block.push({ indent: 0, parts: [{ text: whenHeading(group.tick), role: "chrome.label" }] })
     }
-    block.push(...groupLines(context, group, from, width, kinds, tileWidth))
+    block.push(...groupLines(context, group, from, width, kinds))
     blocks.push(block)
   }
   return blocks
@@ -201,7 +194,7 @@ export function troopsLines(troops: TroopsGroup, width: number): RaidLine[] {
  * there is room for it — but never at the cost of a whole group of the raid: when the raid would have to leave
  * one out to make room for them, the troops' lines are left out instead, and the raid shows the groups that fit
  * whole and a last line saying how many more there are. Measured from `from`, the player's Nexus, as the map is
- * seen with tiles `tileWidth` columns wide (`bearing`).
+ * seen (`bearing`).
  */
 export function raidLines(
   context: Pick<BuildContext, "registry">,
@@ -209,29 +202,28 @@ export function raidLines(
   from: Coord,
   width: number,
   room: number,
-  tileWidth: TileWidth = 1,
 ): RaidLine[] {
   const troops = troopsIn(forecast)
   const raid = forecast.filter((group) => !isTroops(group))
   const own = troops === null ? [] : troopsLines(troops, width)
   if (raid.length === 0) return own.length <= room ? own : []
   // The fewest rows the raid takes with every group whole: without its kinds.
-  const least = linesAt(context, raid, from, width, false, tileWidth).flat().length
+  const least = linesAt(context, raid, from, width, false).flat().length
   for (const gap of own.length === 0 ? [] : [1, 0]) {
     const left = room - own.length - gap
     if (least > left) continue
-    return [...raidOnly(context, raid, from, width, left, tileWidth), ...Array.from({ length: gap }, () => ({ indent: 0, parts: [] })), ...own]
+    return [...raidOnly(context, raid, from, width, left), ...Array.from({ length: gap }, () => ({ indent: 0, parts: [] })), ...own]
   }
-  return raidOnly(context, raid, from, width, room, tileWidth)
+  return raidOnly(context, raid, from, width, room)
 }
 
 /** The raid's own lines, as `raidLines` lays them out. */
-function raidOnly(context: Pick<BuildContext, "registry">, raid: RaidForecast, from: Coord, width: number, room: number, tileWidth: TileWidth): RaidLine[] {
+function raidOnly(context: Pick<BuildContext, "registry">, raid: RaidForecast, from: Coord, width: number, room: number): RaidLine[] {
   for (const kinds of [true, false]) {
-    const lines = linesAt(context, raid, from, width, kinds, tileWidth).flat()
+    const lines = linesAt(context, raid, from, width, kinds).flat()
     if (lines.length <= room) return lines
   }
-  const blocks = linesAt(context, raid, from, width, false, tileWidth)
+  const blocks = linesAt(context, raid, from, width, false)
   const shown: RaidLine[] = []
   let left = blocks.length
   for (const block of blocks) {
@@ -252,7 +244,7 @@ export function drawRaidPanel(cells: BandCell[], input: BuildCompositionInput): 
   if (rows === null) return
   const from = nexusTile(context) ?? { x: Math.floor(context.grid.width / 2), y: Math.floor(context.grid.height / 2) }
   const width = layout.panelLimit - 1
-  raidLines(context, raid, from, width, rows.last - rows.first + 1, layout.tileWidth).forEach((line, index) => {
+  raidLines(context, raid, from, width, rows.last - rows.first + 1).forEach((line, index) => {
     let at = layout.panelColumn + line.indent
     for (const part of line.parts) {
       const limit = layout.panelColumn + width - at

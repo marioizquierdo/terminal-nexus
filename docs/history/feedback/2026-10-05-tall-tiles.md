@@ -78,10 +78,9 @@ x2. The hex grid and a tilted camera are drawn, not built.
 > the things that actually don't matter that much, and maybe when exploring this, we find out different ways to
 > mitigate that. Otherwise, we just can assume units are two tiles tall and they only move in blocks of two.
 
-**Open** — answered in the conversation, the math drawn: his picture is the rule as built (a unit fills a cell,
-which is two half-rows of ground; a step up or down moves both halves at once, in twice the time). Melee's "double
-reach" is two tall bodies touching. Counting halves would put two units in one cell or hide which half a unit is
-in. Fronts differ by direction because a cell holds one unit and cells are tall, which was already so on screen;
-area, chokepoints and diagonals do not change. Mitigations offered: even reaches, groups set down round, the shape
-said on cards, a retune, and square bodies held in reserve. Rows x2 becomes the rule in the next update when he
-says go.
+**Built**, in the pull request after the exploration ([the round](2026-10-06-rows-x2.md)). Rows x2 is the rule as
+he pictured it: a unit stands two squares tall, and a step up or down moves both halves at once, in two beats. Melee's
+"double reach" is two tall bodies touching end to end. The softeners are built: every reach is a whole number of
+rows, groups are set down round, cards say a reach's shape, and the Controls page says units stand tall; square
+bodies wait in reserve, an idea in the grid design. Counting halves and round reaches stay set aside: a unit stands
+on a whole tile, both its squares at once, and a circle would promise reach that no walk delivers in its time.

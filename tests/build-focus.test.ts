@@ -74,8 +74,8 @@ test("the side panel is on the left of the Grid at every size in the supported r
     assert.equal(layout.gridBox.right, layout.offset.column + layout.composition.width - 1)
     assert.equal(layout.panelRow, layout.origin.row)
     // The Grid page's floor arithmetic, 1 + 30 + 48 + 1 = 80, with the shared west side's column
-    // given to the Grid: 1 + 29 + 49 + 1 at 80 columns.
-    assert.equal(layout.composition.width, 31 + layout.viewport.width * layout.tileWidth)
+    // given to the Grid: 1 + 29 + 49 + 1 at 80 columns, a column a tile.
+    assert.equal(layout.composition.width, 31 + layout.viewport.width)
   }
 })
 
@@ -109,7 +109,7 @@ test("a Grid shorter than the panel still closes directly under its last row", (
   // The bottom bar is as narrow as this small Grid's composition: its line keeps whole words and
   // leaves off the ones that do not fit.
   assert.ok(layout.footerLimit < hint(side.context, side.build.state).text.length, "the bar is not narrower than the hint here")
-  assert.match(screenText(side).split("\n")[layout.footerRow] as string, /\| Explore Map: look around and read what is on each tile\. \[enter\] +\|/)
+  assert.match(screenText(side).split("\n")[layout.footerRow] as string, /\| Explore Map: look around and read what is on +\|/)
 })
 
 // --- Focus: three plain modes ---------------------------------------------------------------------
@@ -306,11 +306,11 @@ test("the owner's flow — highlight, then space, space, space, space — lays t
   const side = buildSide()
   keys(side, DOWN, DOWN, DOWN) // Nexus -> Explore -> Barracks -> Hatchery
   keys(side, SPACE, SPACE, SPACE, SPACE) // arm, place, arm again, place
-  // The first where the cursor is; the second, with the cursor on the first, one free tile from it — west,
-  // since east of it is past the range the standing buildings give, and the first gives none until it stands.
+  // The first where the cursor is; the second, with the cursor on the first, one free tile from it — east, inside
+  // the range the standing buildings give (the first gives none until it stands).
   assert.deepEqual(
     side.build.state.planned.map((placement) => placement.anchor),
-    [OPEN_GROUND, { x: OPEN_GROUND.x - 3, y: OPEN_GROUND.y }],
+    [OPEN_GROUND, { x: OPEN_GROUND.x + 3, y: OPEN_GROUND.y }],
   )
   assert.equal(side.build.state.focus, "menu")
 })
@@ -400,10 +400,9 @@ test("where it does not fit, the nearest spot within reach that leaves a free ti
   for (const t of tilesOf(anchor, footprint)) {
     for (const u of others) assert.ok(Math.max(Math.abs(t.x - u.x), Math.abs(t.y - u.y)) >= 2, "it touches a structure")
   }
-  // Nearest inside the build range: a free column east of the first, where one of its tiles is on ground the
-  // standing Barracks's range reaches — the first gives none until it stands, so the open field below it is
-  // past the range.
-  assert.deepEqual(spot, { x: 23, y: 13 })
+  // Nearest inside the build range: a free column east of the first, on ground the Nexus's range reaches (the
+  // first gives none until it stands).
+  assert.deepEqual(spot, { x: 22, y: 13 })
 
   // Touching is the fallback when nothing gapped is in reach: a corridor one Turret wide.
   const width = 8

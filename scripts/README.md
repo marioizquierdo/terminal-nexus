@@ -7,6 +7,7 @@ Tools for checking the repository and for seeing a change. Anything they write l
 - `check-repository.sh` - validates the repository, prints the current milestone and step; `./scripts/check-repository.sh`.
 - `check-markdown-links.mjs` - fails on a broken local Markdown link; the validator runs it.
 - `run-tests.sh` - the test suite on one runtime; `./scripts/run-tests.sh` (Node) or `./scripts/run-tests.sh bun`.
+- `grid-pictures.ts` - the grid design's pictures of distance, reach and walking, drawn by the rules' own code; `node scripts/grid-pictures.ts` prints them, `--write` redraws them in `docs/system-design/grid.md`, and `tests/grid-pictures.test.ts` fails when one drifts.
 
 **Seeing a change**
 - `playtest.mjs` - press keys on the Build Phase without a terminal; text, PNGs and a GIF in `.playtest/`; `--keys "Down Space"`.

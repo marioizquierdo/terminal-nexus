@@ -15,7 +15,6 @@ import { BuildSession } from "../src/view/build-session.ts"
 import type { GameMenuRow } from "../src/build/settings.ts"
 import { GAME_MENU_ROWS, settingRow } from "../src/build/settings.ts"
 import type { BuildContext } from "../src/build/state.ts"
-import { groundTileWidth, openingSettings } from "../src/build/state.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
@@ -53,7 +52,7 @@ export const CTRL_C = String.fromCharCode(3)
 export const MINIMUM = { columns: 80, rows: 24 }
 /** Where the viewport reaches its largest, 72 x 24 tiles. */
 export const MAXIMUM = { columns: 104, rows: 32 }
-/** Wide enough for two columns per tile. */
+/** A wide terminal: a tile to a column, the widest view (72 tiles) and the rest spent on centring. */
 export const WIDE = { columns: 128, rows: 24 }
 /** A tall panel with room to spare, for what must not depend on the floor's height. */
 export const ROOMY = { columns: 120, rows: 40 }
@@ -88,12 +87,11 @@ export function activityLog(now: () => number = () => 0): ActivityLog {
 /** A Build Phase session laid out for `terminal` (the 80 x 24 floor), on the starter map unless told
  *  otherwise, with the keyboard on the menu as the real screen opens. `quits()` counts the times it
  *  asked to leave. It records into an Activity Logs of its own (`activity`), which its Activity logs
- *  window shows, as the live screen's shows the log it records into. Laid out, as the live screen is, by
- *  the Ground Experiment the context opens on (`groundTileWidth`); as now, the terminal's width decides. */
+ *  window shows, as the live screen's shows the log it records into. Laid out as the live screen is. */
 export function buildSide(options: SideOptions = {}): BuildSide {
   const { context: given = starterContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
   const context: BuildContext = given.activity === undefined ? { ...given, activity } : given
-  const layout = buildLayout(terminal, context.grid, groundTileWidth(openingSettings(context)))
+  const layout = buildLayout(terminal, context.grid)
   let quits = 0
   const build = new BuildSession({
     ...rest,
@@ -190,7 +188,7 @@ export function goToGameMenuRow(side: Side, row: GameMenuRow): void {
  *  flash, a flight, a reveal) or overrides. */
 export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
   const { build, layout } = side
-  const pulse = build.pulseFrame(layout)
+  const pulse = build.pulseFrame()
   const raid = build.raid()
   return composeBuildFrame(
     {

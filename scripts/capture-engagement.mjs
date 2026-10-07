@@ -12,7 +12,7 @@
 //
 //   node scripts/capture-engagement.mjs --scenario citizens-versus-ravels
 //   node scripts/capture-engagement.mjs --scenario grand-battle --lead-ticks 2 --frames 12
-//   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 48 --frames 20
+//   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 25 --frames 20
 //
 // Output lands in .playtest/screenshots/engagement-<scenario>/frame-NN.png (git ignores it; --out <dir>
 // replaces .playtest/screenshots), oldest first, plus an index.md naming the presentation-ms each one landed on.
@@ -45,14 +45,13 @@ function arg(name, fallback) {
 const scenario = arg("scenario", null)
 if (scenario === null) {
   console.error("usage: capture-engagement.mjs --scenario <name> [--around-tick N] [--frames N] " +
-    "[--lead-ticks N] [--capability c] [--glyphs g] [--tile-width n] [--out dir]")
+    "[--lead-ticks N] [--capability c] [--glyphs g] [--out dir]")
   process.exit(1)
 }
 const framesWanted = Number(arg("frames", "10"))
 const leadTicks = Number(arg("lead-ticks", "1"))
 const capability = arg("capability", "truecolor")
 const glyphs = arg("glyphs", "unicode")
-const tileWidth = arg("tile-width", "1")
 const cols = Number(arg("cols", "80"))
 const rows = Number(arg("rows", "24"))
 
@@ -99,7 +98,6 @@ async function main() {
 
   const extraArgs = [
     "--capability", capability,
-    "--tile-width", tileWidth,
     "--glyphs", glyphs,
   ]
 

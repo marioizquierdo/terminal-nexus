@@ -1,6 +1,6 @@
 # Terminal Nexus — presentation
 
-_How state becomes what is on screen: the cell frame, composition by phase, tile width, bands, the effects hook-up and accessibility._
+_How state becomes what is on screen: the cell frame, composition by phase, the tile, bands, the effects hook-up and accessibility._
 
 ## 1. The cell frame — RULE
 
@@ -267,44 +267,41 @@ below).
 round a building or ranged unit the cursor rests on; the build range is the dotted ground while a building is
 armed, and a Barracks's room a ring of ticks on it (the interface patterns, the build range, a Barracks's room
 and a reach). During a Pulse Vasse's aura is the first radius on the Grid: its reach is a see-through style of
-her side's colour on the ground's band, under every unit, a diamond because range is Manhattan (measured as the
-battle measured it, so twice as wide as it is tall in tiles where a row counts two columns), shown where colours
-blend and said in words on her card where they do not (the interface patterns, her aura's reach).
+her side's colour on the ground's band, under every unit: a diamond twice as wide as it is tall in tiles and as
+tall as it is wide on screen, since a row counts two columns ([`grid.md`](grid.md), distance, reach and movement),
+shown where colours blend and said in words on her card where they do not (the interface patterns, her aura's
+reach).
 
 **The Pulse view shows everything by default.** Selection is an addition the player reaches for, never a
 prerequisite for following the fight. If a Pulse can only be understood by clicking things, the
 presentation has failed and no panel will rescue it.
 
-## 3. Tile width — RULE
+## 3. A tile is one column — RULE
 
-**RULE** — `tests/build-camera.test.ts`, `tests/view.test.ts`, `tests/ground-view.test.ts`.
+**RULE** — `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/view.test.ts`.
 
-Tile width is presentation, and the Ground Experiment chooses it (`tileWidthOf`, `src/build/ground.ts`). **As
-now**, one Grid tile occupies **one terminal column** at 80 columns and **two** at 128 or wider, as it always
-has. **Square tiles** draw every tile two columns wide at every size, so a tile is about as wide as it is tall:
-at 80 × 24 the map shows 24 × 18 tiles instead of 49 × 18, and the screen still works there. **Rows x2 and
-sideways x2** draw one column a tile at every size, 128 columns included: their rules already count a row as two
-columns, and two columns a tile would draw every reach twice as wide as it is tall. Flipping Ground in Settings
-lays the screen out again at once, as a resize does, and a battle plays on the same layout. Same tiles, same
-actors, same revealed information; only the composition changes. **80 × 24 is the acceptance target**: anything
-authored for the wide composition must degrade to the narrow one.
+**One Grid tile is one terminal cell, one column wide, at every terminal size**: the Build Phase, the Nexus Pulse,
+the engine tool's own view and the browser page alike. A cell is about twice as tall as it is wide, and the rules
+count a row as two columns in every distance ([`grid.md`](grid.md), distance, reach and movement), so a reach is
+twice as wide as it is tall in tiles and, drawn a column a tile, as wide as it is tall on screen; a unit walking
+down the screen crosses it at the pace of one walking across. A larger terminal never widens a tile: past the
+largest view it buys centring, never another shape. At 80 × 24 the map shows 49 × 18 tiles, and **80 × 24 is the
+acceptance target**; a larger terminal shows more of the same Grid, up to 72 × 24 tiles, and the same information.
 
-One honest consequence: a terminal cell is about twice as tall as it is wide, so at one column a tile, under the
-rules as they always were, a reach that is square in tiles is drawn twice as tall as it is wide. Rows x2 and
-sideways x2 count a row as two columns, so the same reach is twice as wide in tiles as it is tall and looks
-round; square tiles look round by drawing each tile twice as wide. Range previews and area effects are authored
-in tiles, drawn from the kernel's own measure, and checked at both widths.
+**A picture of an area the rules decide draws the rules' own tiles**: a building's or a unit's reach, the build
+range, a Barracks's room, Vasse's aura and a blast are each drawn from the Grid's own sets of tiles (`tilesWithin`,
+`src/grid/reach.ts`; a reach's outline, the last tiles it covers, is `outlineWithin`), so what the screen shows
+as a reach is what the rules count. A picture that claims no area — death debris and its shockwave, the tracer's
+line, the intro highlight's ring — may take a shape of its own.
 
-**What reads a slope as the screen shows it knows how wide a tile is drawn.** The raid panel's compass point
-weighs a row as two tiles across at one column a tile, and as one at two. Arming looks for the nearest spot with
-a row costing the tuned `armVerticalCost`, and one with square tiles; as now it costs the tuned number at every
-size, because the reducer never knows the terminal's width. The focus arrow counts screen cells, a row as two
-columns, at every width. The trail's arrows look two steps along the way, or a whole stair of two across and one
-down where a row counts two columns, and read the slope as the battle measures it, so a way along the screen's
-diagonal is one steady stroke.
+**What reads a slope off the map weighs a row as two columns** (`inColumns`, `src/grid/coords.ts`): the raid
+panel's compass point, the focus arrow, and the raid trail's arrows, each the glyph nearest its way on screen and
+looking a whole stair on (two across, one down) along the way, so a way down the screen's diagonal is one steady
+stroke. Arming looks for the nearest free spot with a row costing the tuned `armVerticalCost`, a cost of the
+cursor's rather than a distance.
 
-Effects are authored against **tile coordinates**, never column counts, so one effect written once works
-at both widths.
+Effects are authored in **tile coordinates**, never column counts: a tile is one cell, and the compositor places
+it through the camera.
 
 ## 4. Bands — RULE
 

@@ -29,11 +29,12 @@ const BARRACKS = "structure.citizen.barracks"
 const turrets = (...anchors: readonly Coord[]): StructurePlacement[] => anchors.map((anchor) => ({ contentId: TURRET, anchor }))
 
 /** Two plans, a round each: none, and a few Turrets toward the ridge and the flats each round — the second
- *  makes the raid's choice move. */
+ *  makes the raid's choice move, and its first round stands a Turret just beyond the ridge, straight below its
+ *  north face, where the probe's way presses on the rock. */
 const PLANS: readonly (readonly (readonly StructurePlacement[])[])[] = [
   [[], [], []],
   [
-    turrets({ x: 29, y: 6 }, { x: 33, y: 7 }, { x: 36, y: 12 }),
+    turrets({ x: 29, y: 6 }, { x: 32, y: 5 }, { x: 36, y: 12 }),
     turrets({ x: 31, y: 8 }, { x: 35, y: 9 }, { x: 38, y: 13 }),
     turrets({ x: 27, y: 7 }, { x: 40, y: 8 }, { x: 44, y: 12 }),
   ],

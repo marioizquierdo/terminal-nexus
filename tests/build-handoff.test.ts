@@ -407,8 +407,9 @@ test("the focus arrow's glyphs follow the glyph pack and the way it flies", () =
   assert.ok(glyphs.has(">") && glyphs.has("-"), `level flight drew ${[...glyphs].join(" ")}`)
   const unicode = new Set(flight(level, 0.6, { glyphPack: "unicode" }).map((cell) => cell.cell.glyph))
   assert.ok(unicode.has("▶") && unicode.has("━"), `the Unicode pack drew ${[...unicode].join(" ")}`)
-  // Steeply down, near the divider: an upright trail, the head pointing down.
-  const steep = buildSide({ cursor: { x: 1, y: 14 } })
+  // Steeply down, near the divider: an upright trail, the head pointing down. Far below the base, where no build
+  // range is within arming's reach, so the cursor stays by the divider (a step on, to show something happened).
+  const steep = buildSide({ cursor: { x: 1, y: 26 } })
   keys(steep, TURRET)
   const down = new Set(flight(steep, 0.6).map((cell) => cell.cell.glyph))
   assert.ok(down.has("v") && down.has("|"), `steep flight drew ${[...down].join(" ")}`)
@@ -452,13 +453,12 @@ test("over a building or the ghost being placed the focus arrow changes only the
   assert.ok(ghost > 0, "the arrow never crossed the ghost")
 })
 
-test("Explore Map's see-through cursor is glyphless see-through writes in the cursor's role, a head at the owner's 80% over a fainter trail, never on the cursor's own cells", () => {
+test("Explore Map's see-through cursor is glyphless see-through writes in the cursor's role, a head at the owner's 80% over a fainter trail, never on the cursor's own cell", () => {
   const alphas = new Set(SEE_THROUGH_TRAIL.map((copy) => copy.alpha))
   for (const terminal of [MINIMUM, ROOMY]) {
     const side = buildSide({ terminal })
     keys(side, "e")
-    const { layout } = side
-    const cursor = cellForTile(layout, side.build.state.camera, side.build.state.cursor)
+    const cursor = cellForTile(side.layout, side.build.state.camera, side.build.state.cursor)
     for (const progress of [0, 0.1, 0.3, 0.6, 0.9]) {
       const cells = flight(side, progress, {}, "truecolor")
       assert.ok(cells.length > 0, `nothing drawn at ${progress}`)
@@ -468,7 +468,7 @@ test("Explore Map's see-through cursor is glyphless see-through writes in the cu
         assert.deepEqual(rest, was.style, `the style beneath changed at ${x},${y}`)
         assert.equal(seeThrough?.role, "chrome.title")
         assert.ok(alphas.has(seeThrough?.alpha as number), `alpha ${seeThrough?.alpha}`)
-        assert.ok(!(y === cursor.y && x >= cursor.x && x < cursor.x + layout.tileWidth), `drawn on the cursor at ${x},${y}`)
+        assert.ok(!(y === cursor.y && x === cursor.x), `drawn on the cursor at ${x},${y}`)
       }
     }
     // The head leaves at full strength; later a fainter trail follows it.

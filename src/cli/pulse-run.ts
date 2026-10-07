@@ -16,9 +16,6 @@
 //   structures, every surviving unit and the raid's structures as the field — with the credits the last
 //   one did not spend, and the next round's arrivals as incoming. A Commander who fell is carried as an
 //   absence and set down beside the Nexus again when her round out is over (`src/match/commander.ts`).
-//
-// A round's Pulse, and the forecast of it, measure the Grid as the Ground Experiment says when the battle
-// starts (`measureOf`, `src/build/ground.ts`): the same measure the Build Phase drew the round's reaches by.
 
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { nexusTile, remaining, withoutScene } from "../build/state.ts"
@@ -51,7 +48,6 @@ import { regionCentre, regionOf, regionTiles, sceneOf, validateMission } from ".
 import type { MatchState } from "../state/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import { setting } from "../build/all-settings.ts"
-import { measureOf } from "../build/ground.ts"
 import { status } from "../build/status.ts"
 import { resultOf } from "../view/ending.ts"
 import type { ResolvedPulse } from "../view/pulse-live.ts"
@@ -315,8 +311,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The Pulse's own opening and content, so what is foreseen is what its first tick will do — and, after
       // the raid's groups, where the player's troops head.
       const registry = pulseRegistry(context, state)
-      const measure = measureOf(setting(state, "ground"))
-      const round = foreseeRound({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state)), registry, measure })
+      const round = foreseeRound({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state)), registry })
       return [...raidOf(round.groups), ...troopsGroupOf(round.troops)]
     },
 
@@ -339,9 +334,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The Pulse runs on the content with the level's buildings spawning their waves; the Build Phase's own
       // registry never carries a recipe, so nothing it draws or refuses depends on one.
       const registry = pulseRegistry(context, state)
-      // Measured as the Ground Experiment says as the battle starts, the way the Build Phase drew it.
-      const measure = measureOf(setting(state, "ground"))
-      const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry, measure })
+      const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
       const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)
       // A Commander who fell is out for the rest of this Pulse and the whole of the next round.
       const fell = fallen(run.events, registry, pulse)

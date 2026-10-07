@@ -15,18 +15,12 @@
 // ordinals from where the last Pulse stopped (in Grid reading order among themselves). A building the
 // player planned on a tile a carried unit stands on moves the unit to the nearest free tile, the same
 // rule a muster point already follows: the plan is the player's, and a unit steps aside for it.
-//
-// **How the Pulse measures the Grid travels in its state** (`MatchState.measure`, the Ground Experiment): the
-// measure the input names, else the carried state's own, so a later Pulse keeps the measure of the one before
-// it unless it is given another; absent, as it always was, when it is `SQUARE`. Where something is set down
-// here is not a distance a player judges, so the placement search stays square under any measure
-// (`placement.ts`).
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields, productionFields } from "../content/index.ts"
-import { inBounds, isSquare, tileIndex, tilesOf } from "../grid/coords.ts"
+import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord, GridMeasure, GridTerrain } from "../grid/types.ts"
+import type { Coord, GridTerrain } from "../grid/types.ts"
 import { ENTITY_LAYERS, TERRAIN } from "../grid/types.ts"
 import { gameplayRng } from "../rng/pcg32.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
@@ -36,8 +30,9 @@ import { centreTile, nearestFit } from "./placement.ts"
 import type { PulseSetup, StructurePlacement } from "./types.ts"
 import { PulseSetupError } from "./types.ts"
 
-/** How far from its muster point a unit may be set down before the Pulse is refused for lack of room. */
-const MUSTER_RADIUS = 12
+/** How far from its muster point a unit may be set down before the Pulse is refused for lack of room, by the
+ *  Grid's own distance (`nearestFit`): 12 rows up and down, 24 columns across. */
+const MUSTER_RADIUS = 24
 
 export type OpeningInput = Readonly<{
   grid: GridTerrain
@@ -48,9 +43,6 @@ export type OpeningInput = Readonly<{
   /** The state the last Pulse of a mission left, after Recall — absent for a first Pulse. Its seed,
    *  clock and ground items carry on; `setup.seed` is then not read. */
   carried?: MatchState
-  /** How the Pulse measures the Grid (`GridMeasure`): absent to keep the carried state's own, or — for a first
-   *  Pulse, or a carried state that has none — to measure as the rules always did (`SQUARE`). */
-  measure?: GridMeasure
 }>
 
 type Placed = Readonly<{
@@ -217,13 +209,6 @@ export function opening(input: OpeningInput): Opening {
     outcome: null,
     rng: carried?.rng ?? gameplayRng(setup.seed).snapshot(),
     nextOrdinal: firstOrdinal + born.length,
-    ...measured(input.measure ?? carried?.measure),
   }
   return { state, forceOf }
-}
-
-/** A state's `measure` field: the measure, as a row and a tile and nothing else — or no field at all when it is
- *  `SQUARE` or absent, so such a state hashes as every state did before the measure existed. */
-function measured(measure: GridMeasure | undefined): Readonly<{ measure?: GridMeasure }> {
-  return measure === undefined || isSquare(measure) ? {} : { measure: { row: measure.row, tile: measure.tile } }
 }

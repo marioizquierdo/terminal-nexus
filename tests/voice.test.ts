@@ -24,10 +24,12 @@ import {
   starterGrid,
 } from "../src/build/catalog.ts"
 import type { BuildContext } from "../src/build/state.ts"
+import { cellForTile } from "../src/build/layout.ts"
 import { missionPlay, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
+import { footprintWithin } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { ACTIVITY_FILTERS, filteredEntries } from "../src/log/activity.ts"
@@ -347,7 +349,7 @@ test("beside her, out of view: the words go to the panel under the feed, so a li
 function openingQuote(side: BuildSide, frame: ReadonlyCellFrame): ReturnType<typeof cellAt> {
   const { layout } = side
   for (let y = layout.origin.row; y < layout.origin.row + layout.viewport.height; y += 1) {
-    for (let x = layout.origin.column; x < layout.origin.column + layout.viewport.width * layout.tileWidth; x += 1) {
+    for (let x = layout.origin.column; x < layout.origin.column + layout.viewport.width; x += 1) {
       if (cellAt(frame, x, y).glyph === '"') return cellAt(frame, x, y)
     }
   }
@@ -383,7 +385,7 @@ test("she types her line in beside her, holds it, and it thins out before it goe
 
 /** The Pulse frame the session hands the composer right now. */
 const pulseFrameOf = (side: BuildSide): PulseFrame => {
-  const frame = side.build.pulseFrame(side.layout)
+  const frame = side.build.pulseFrame()
   assert.ok(frame !== undefined)
   return frame
 }
@@ -458,9 +460,9 @@ test("the Activity Logs record what she said and when, once a line, and where it
 test("at 80 x 24: the room the armies' lines are checked against is the screen's, and every line she has fits it", () => {
   const side = perimeter()
   assert.deepEqual([side.layout.frame.width, side.layout.frame.height], [MINIMUM.columns, MINIMUM.rows])
-  // The panel's prose width, one column in from the divider; the map's width at one column a tile.
+  // The panel's prose width, one column in from the divider; the map's width, a column a tile.
   assert.equal(side.layout.panelLimit - 1, BARK_ROOM.panelColumns)
-  assert.equal(side.layout.viewport.width * side.layout.tileWidth, BARK_ROOM.mapColumns)
+  assert.equal(side.layout.viewport.width, BARK_ROOM.mapColumns)
   // Her lines: a few for every moment, each fitting both places, none saying a word the game no longer uses.
   const barks = ARMIES.commanders.find((commander) => commander.unit === VASSE)?.barks ?? {}
   assert.deepEqual(Object.keys(barks).sort(), [...BARK_MOMENTS].sort())
@@ -518,7 +520,7 @@ test("her aura's reach: a diamond of the content's radius around her, washed on 
     return style.seeThrough?.role === "player.a" && style.seeThrough.alpha === AURA_WASH
   }
   const camera = side.build.state.camera
-  const cellOf = (tile: Coord): Coord => ({ x: side.layout.origin.column + (tile.x - camera.x) * side.layout.tileWidth, y: side.layout.origin.row + (tile.y - camera.y) })
+  const cellOf = (tile: Coord): Coord => cellForTile(side.layout, camera, tile)
   const key = (tile: Coord): string => `${tile.x},${tile.y}`
   // What stands, and what an effect is drawing a glyph on: both are drawn over the ground, wash and all.
   const covered = new Set([
@@ -534,7 +536,8 @@ test("her aura's reach: a diamond of the content's radius around her, washed on 
   for (let dy = -radius - 1; dy <= radius + 1; dy += 1) {
     for (let dx = -radius - 1; dx <= radius + 1; dx += 1) {
       const tile: Coord = { x: centre.x + dx, y: centre.y + dy }
-      const inside = Math.abs(dx) + Math.abs(dy) <= radius
+      // In reach as range is measured: a row counts two columns, so the diamond is twice as wide as it is tall.
+      const inside = footprintWithin(centre, [{ x: 0, y: 0 }], tile, [{ x: 0, y: 0 }], radius)
       if (covered.has(key(tile))) {
         // A unit in her reach keeps every colour of its own: it stands in the glow, untinted.
         if (pulse.sample.state.entities.some((each) => key(pulse.positions.get(each.ordinal) ?? each.anchor) === key(tile))) {

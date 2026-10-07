@@ -149,13 +149,13 @@ are not repeated here.
 | `(0,0)` is the north-west tile, `x` grows east, `y` grows south, scenario rows read north to south: one convention in every module | `tests/scenario.test.ts` | [`grid.md`](grid.md) |
 | The Grid has five layers; layers define render order only, and collision is a mask composed from a chosen set of layers | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | Every entity has an anchor, a footprint and a facing; units as well as structures may span tiles, a mover tests its whole footprint, range measures to the nearest occupied tile | `tests/grid.test.ts` | [`grid.md`](grid.md) |
-| A battle measures the Grid one way from its first tick to its last and carries that measure in its state: as now a row counts as a column (Manhattan); while the Ground Experiment counts a row as two columns, every distance, reach and step counts it so, and touching is still one step along a side | `tests/ground-rules.test.ts`, `tests/grid-measure.test.ts` | [`grid.md`](grid.md), [`pulse.md`](pulse.md) |
+| A unit stands two squares tall: every distance, range, reach and radius counts a row up or down as two columns (`ROW_DISTANCE`), a step takes as long as the distance it covers, a reach is a diamond as wide as it is tall on screen, and touching is a side shared, which melee reaches with its range of 1 | `tests/rows.test.ts`, `tests/grid-pictures.test.ts` | [`grid.md`](grid.md), [`pulse.md`](pulse.md) |
 | The viewport is clamped between 48 × 16 and 72 × 24 tiles, the cursor drives scrolling, there is no minimap, and 80 × 24 is the floor and the acceptance target | `tests/build-camera.test.ts` | [`grid.md`](grid.md) |
 | Orientation is a rendering choice; portrait and landscape change no coordinate | (RULE — settled; no code holds it yet) | [`grid.md`](grid.md) |
 | Speed tier is initiative and lower acts first, for movement claims and attacks alike; it is not a movement rate | `tests/rules.test.ts` | [`pulse.md`](pulse.md) |
 | A Grid Nexus is a flag on a content definition, never a content id the kernel recognises | `src/content/types.ts` | [`grid.md`](grid.md), [`content.md`](content.md) |
 | Composition produces an engine-owned cell frame; cells carry style roles, never literal colours; monochrome seven-bit ASCII is the floor | `tests/roles.test.ts`, `tests/view.test.ts` | [`presentation.md`](presentation.md) |
-| Tile width is adaptive presentation: one column per tile at 80 columns, two at 128 or wider, the same tiles and information | `tests/build-camera.test.ts` | [`presentation.md`](presentation.md) |
+| A tile is one terminal column at every size, so a reach is as wide as it is tall on screen, and a picture of an area the rules decide (a reach, the build range, a room, an aura, a blast) draws the rules' own tiles | `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/effects.test.ts` | [`presentation.md`](presentation.md) |
 | Effects are pure functions of absolute presentation time; presentation has four families (animations, particles, shading, tweens) and an animation's completion is scheduled data, never a callback | `tests/effects.test.ts`, `tests/animation.test.ts`, `tests/tween.test.ts` | [`effects.md`](effects.md) |
 | The corruption law: effects live in the `effects` band or above and never remove the only carrier of a semantic cue; the compositor drops any effect cell that would replace an entity's glyph | `tests/effects.test.ts` | [`effects.md`](effects.md) |
 | Faction identity lives in the glyph family and the effect language; ownership keeps the colour, so a mirror match stays legible and monochrome stays whole | (RULE — settled; no code holds it yet) | [`presentation.md`](presentation.md) |
@@ -198,9 +198,9 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
 - **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds the cards any Commander may use, `armies/vasse` her Commander and her campaign ([`content.md`](content.md)).
 - **target** — the place a level sends a side's troops: they head for it, engage what comes within reach on the way, and stand there ([`pulse.md`](pulse.md)). PERIMETER's is the line.
-- **build range** — the ground a new building needs a tile on: within the construction radius of the player's Grid Nexus and of every standing building linked to it; a building planned this round gives its range from the next ([`pulse.md`](pulse.md)).
+- **build range** — the ground a new building needs a tile on: within the construction radius of the player's Grid Nexus and of every standing building linked to it, counted as any reach is; a building planned this round gives its range from the next ([`pulse.md`](pulse.md)).
 - **room** — the tiles a building that makes units keeps free round it, so its waves have somewhere to appear: no other building may stand there ([`pulse.md`](pulse.md)).
-- **measure** — how a battle counts the Grid: what a row counts against a column, and what a tile of content is worth in that count. As now a row counts as a column; the Ground Experiment lets it count two ([`grid.md`](grid.md)).
+- **distance** — columns across plus two for each row up or down, between the nearest tiles of two footprints: every range, reach and radius counts in it, a reach is every tile within it, and a reach of 1 is touching, a side shared ([`grid.md`](grid.md)).
 - **route** — a place in the game written like a web address without its site (`settings`, `campaign?level=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
 - **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
 - **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.
@@ -222,7 +222,7 @@ This document is the overview. The design is in its parts, one document each:
 - [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
 - [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, match structure, economy, events.
 - [`content.md`](content.md) — content interfaces.
-- [`presentation.md`](presentation.md) — the cell frame, composition, tile width, bands, effects, accessibility.
+- [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.
 - [`input.md`](input.md) — the command vocabulary, the three adapters, hotkeys and bindings.
 - [`runtime.md`](runtime.md) — terminal lifecycle, delivery, tools and modding, scaling.
 - [`effects.md`](effects.md) — animations, particles, shading and tweens.

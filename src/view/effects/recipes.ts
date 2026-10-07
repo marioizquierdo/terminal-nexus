@@ -10,10 +10,13 @@
 // kinetic, orthogonal and tight; a Ravel charge is explosive, diagonal and entitled to more of the
 // screen. Craft rule 2 — different weapons need different physical languages — with one code path.
 
-import type { Coord } from "../../grid/types.ts"
-import { footprintRing } from "../../grid/coords.ts"
+import type { Coord, Footprint } from "../../grid/types.ts"
+import { footprintCentre, footprintRing, inColumns, tilesOf } from "../../grid/coords.ts"
+import { tilesWithin } from "../../grid/reach.ts"
 import { deathFramesFor } from "../../content/art.ts"
 import type { UnitArt } from "../../content/art.ts"
+import { rectFootprint } from "../../content/types.ts"
+import { outlineWithin } from "../reach-outline.ts"
 import type {
   EffectContext,
   EffectFamily,
@@ -631,11 +634,18 @@ const structureCollapse: EffectRecipe = (instance, context) => {
   return cells
 }
 
+/** How far past its radius a blast's eased spread aims, so it arrives early and holds. */
+const BLAST_OVERSHOOT = 1.35
+
 /**
- * The Ravel rule made visible: a ring that reaches its radius and thins. The one effect allowed
- * real visual weight besides a Nexus going critical, because it is the one event that can end an
- * army in a single tick.
+ * How far a blast's ring has spread `progress` of the way through its window, in the rules' own distance: fast at
+ * first and slowing toward the end (`easeOut`), overshooting by a third so the whole reach holds for the last part
+ * of the window, and never less than 1 — the tiles touching what blew up, which every blast reaches.
  */
+export function blastReach(progress: number, radius: number): number {
+  return Math.min(radius, Math.max(1, Math.round(easeOut(progress) * radius * BLAST_OVERSHOOT)))
+}
+
 /**
  * How many secondary bursts a detonation earns, scaled by radius the same way `bigDeathPieceCount`
  * scales debris - capped so a hypothetical huge radius cannot fill the screen with sub-explosions.
@@ -655,25 +665,60 @@ const SUB_BURST_SPAN_RANGE = 0.15
  * (craft rule 3: similar things must look similar). */
 const SUB_BURST_RADIUS = 1
 
+/** The footprint of a single tile: what a sub-burst goes off from. */
+const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
+
+/** A tile as a key for a set of tiles. */
+const keyOf = (tile: Coord): string => `${tile.x},${tile.y}`
+
+/**
+ * The ground a blast reaches: every tile within its radius of the body that blew up, by the rules' own test — the
+ * tiles whose occupants the blast catches (`tilesWithin`, `footprintWithin`; `detonate`, src/pulse/death.ts) —
+ * as a set, and listed in reading order without the body's own tiles. Every cell the blast draws is on it.
+ */
+type BlastGround = Readonly<{ reached: ReadonlySet<string>; around: readonly Coord[]; own: ReadonlySet<string> }>
+
+function blastGround(origin: Coord, footprint: Footprint, radius: number): BlastGround {
+  const own = new Set(tilesOf(origin, footprint).map(keyOf))
+  const tiles = tilesWithin(origin, footprint, radius)
+  return { reached: new Set(tiles.map(keyOf)), around: tiles.filter((tile) => !own.has(keyOf(tile))), own }
+}
+
+/**
+ * Where a tile lies from a point, as the map is seen (`inColumns`: a row counts two columns), as an angle in
+ * `[0, 2π)`, east first and turning south. What divides a blast's ground into even sectors on screen.
+ */
+function angleFrom(from: Readonly<{ x: number; y: number }>, tile: Coord): number {
+  const { across, down } = inColumns(tile.x - from.x, tile.y - from.y)
+  const angle = Math.atan2(down, across)
+  return angle < 0 ? angle + Math.PI * 2 : angle
+}
+
 /**
  * The owner's own words, 2026-08-24: "the explosions should also spawn smaller sub-explosions, or in
  * other words, the effects module should support sub-effects." The cheap path first, and
  * `effects.md`'s own departure bar: a secondary burst drawn inside this
  * recipe's own closed-form, hash-seeded function - the same shape `bigDeathScatter`'s landing "pop"
  * already uses, not a new effect id, not a runtime-registered child instance. Each sub-burst is a
- * smaller, offset, delayed copy of the main ring's own eased expansion - same formula, same glyph
- * language, at a hash-seeded point inside the main blast's own radius, so it always reads as *part of*
- * this explosion rather than an unrelated second one landing nearby.
+ * smaller, delayed copy of the main ring's own eased spread (`blastReach`) — a blast of
+ * `SUB_BURST_RADIUS`, the tiles touching its own tile — going off on a hash-chosen tile of the main blast's
+ * ground, and drawn only on that ground: it reads as *part of* this explosion, and flashes nothing the blast
+ * did not reach.
  */
 function subBurstsAt(
-  instance: EffectInstance,
   family: Family,
+  ground: BlastGround,
+  middle: Readonly<{ x: number; y: number }>,
   radius: number,
   progress: number,
   hash: number,
 ): PositionedCell[] {
   const cells: PositionedCell[] = []
+  if (ground.around.length === 0) return cells
   const bursts = subBurstCount(radius)
+  // Evenly spaced sectors of the ground round the body, as the map is seen, one sub-burst in each at a tile chosen
+  // by the instance's hash: several never land on the body or on one another, and keep their variety.
+  const sector = (Math.PI * 2) / bursts
   for (let index = 0; index < bursts; index += 1) {
     const salt = 40 + index * 10
     const start = SUB_BURST_START_MIN + cosmeticUnit(draw(hash, salt)) * SUB_BURST_START_SPAN
@@ -681,17 +726,8 @@ function subBurstsAt(
     if (progress < start || progress >= start + span) continue
     const local = (progress - start) / span
 
-    // Evenly spaced sectors, jittered within each - keeps several sub-bursts from landing on the
-    // origin itself or on top of one another, without giving up hash-seeded variety. At least one
-    // tile out, and scaled with the main radius, so a sub-explosion reads as something the main blast
-    // set off nearby, not a second point of origin sitting on the same tile.
-    const sector = (Math.PI * 2) / bursts
-    const angle = index * sector + cosmeticUnit(draw(hash, salt + 2)) * sector
-    const distance = 1 + cosmeticUnit(draw(hash, salt + 3)) * Math.max(1, radius)
-    const centre = {
-      x: instance.origin.x + Math.round(Math.cos(angle) * distance),
-      y: instance.origin.y + Math.round(Math.sin(angle) * distance),
-    }
+    const inSector = ground.around.filter((tile) => Math.min(bursts - 1, Math.floor(angleFrom(middle, tile) / sector)) === index)
+    const centre = cosmeticPick(draw(hash, salt + 2), inSector.length > 0 ? inSector : ground.around)
 
     if (local < 0.5) {
       cells.push({
@@ -701,8 +737,8 @@ function subBurstsAt(
         bold: true,
       })
     }
-    const reach = Math.max(1, Math.round(easeOut(local) * SUB_BURST_RADIUS * 1.35))
-    for (const tile of ringTiles(centre, Math.min(SUB_BURST_RADIUS, reach))) {
+    for (const tile of outlineWithin(centre, ONE_TILE, blastReach(local, SUB_BURST_RADIUS))) {
+      if (!ground.reached.has(keyOf(tile)) || ground.own.has(keyOf(tile))) continue
       const spin = draw(hash, salt + 5 + tile.x * 17 + tile.y * 23)
       if (cosmeticUnit(spin) > 0.6) continue
       cells.push({ tile, glyph: cosmeticPick(spin, family.debris), role: "fx.blast", dim: local > 0.5 })
@@ -711,32 +747,52 @@ function subBurstsAt(
   return cells
 }
 
+/**
+ * The Ravel rule made visible: a ring that spreads to the blast's radius and thins. The one effect allowed real
+ * visual weight besides a Nexus going critical, because it is the one event that can end an army in a single
+ * tick.
+ *
+ * **What flashes is what was hit.** The ring is the outline of the ground the blast has reached so far
+ * (`outlineWithin`, the rules' own `tilesWithin`), round the whole body that blew up — `width` × `height` tiles
+ * from `origin`, its anchor. A row counts two columns, so a blast of 2 spreads two columns either side and one row
+ * up and down: as wide as it is tall on screen. It never draws a tile the blast does not reach. A bright mark
+ * goes off on the body's centre tile first (`footprintCentre`).
+ *
+ * Params: `radius` (default 1), `width` and `height` (the body's footprint from `origin`, default 1 × 1),
+ * `damage` (carried for whoever reads the instance; the picture does not use it).
+ *
+ * The three forms: **full** spreads, thins and sets off its sub-bursts; **reduced motion** draws the whole
+ * reach's outline at once and holds it, no spread and no sub-bursts; **monochrome** is the same glyphs.
+ */
 const blastDetonation: EffectRecipe = (instance, context) => {
   const radius = Math.max(1, paramNumber(instance, "radius", 1))
+  const width = Math.max(1, paramNumber(instance, "width", 1))
+  const height = Math.max(1, paramNumber(instance, "height", 1))
+  const footprint = rectFootprint(width, height)
   const progress = progressOf(instance, context)
   const family = familyOf(instance)
   const hash = instanceHash(instance, context, 11)
   const cells: PositionedCell[] = []
+  const centre = footprintCentre(footprint)
 
   cells.push({
-    tile: instance.origin,
+    tile: { x: instance.origin.x + centre.x, y: instance.origin.y + centre.y },
     glyph: progress < 0.4 ? (family.impact[0] ?? "X") : "*",
     role: "fx.blast",
     bold: progress < 0.5,
   })
 
   if (context.reducedMotion) {
-    // No expansion: the full radius, drawn once and held, so the reach is still legible. Sub-bursts
+    // No spread: the whole reach's outline, drawn once and held, so the reach is still legible. Sub-bursts
     // are travel and decorative movement - exactly what reduced motion drops (`effects.md`) -
-    // and the held full ring already carries the causality this beat owes.
-    for (const tile of ringTiles(instance.origin, radius)) {
+    // and the held outline already carries the causality this beat owes.
+    for (const tile of outlineWithin(instance.origin, footprint, radius)) {
       cells.push({ tile, glyph: "*", role: "fx.blast", dim: true })
     }
     return cells
   }
 
-  const reach = Math.max(1, Math.round(easeOut(progress) * radius * 1.35))
-  for (const tile of ringTiles(instance.origin, Math.min(radius, reach))) {
+  for (const tile of outlineWithin(instance.origin, footprint, blastReach(progress, radius))) {
     const spin = draw(hash, tile.x * 31 + tile.y)
     // Negative space is material (craft rule 5). A ring that paints every tile it reaches is what
     // makes ASCII explosions look like static, so a third of it is missing from the first frame and
@@ -750,19 +806,10 @@ const blastDetonation: EffectRecipe = (instance, context) => {
       dim: progress > 0.55,
     })
   }
-  cells.push(...subBurstsAt(instance, family, radius, progress, hash))
+  // The body's middle, between tiles where it is an even number wide or tall: what the sectors turn round.
+  const middle = { x: instance.origin.x + (width - 1) / 2, y: instance.origin.y + (height - 1) / 2 }
+  cells.push(...subBurstsAt(family, blastGround(instance.origin, footprint, radius), middle, radius, progress, hash))
   return cells
-}
-
-function ringTiles(centre: Coord, radius: number): Coord[] {
-  const tiles: Coord[] = []
-  for (let y = -radius; y <= radius; y += 1) {
-    for (let x = -radius; x <= radius; x += 1) {
-      if (Math.max(Math.abs(x), Math.abs(y)) !== radius) continue
-      tiles.push({ x: centre.x + x, y: centre.y + y })
-    }
-  }
-  return tiles
 }
 
 /**

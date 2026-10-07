@@ -137,9 +137,9 @@ test("Explore Map holds nothing: a digit arms from the map, and n opens the Nexu
 })
 
 test("the lock's refusal is what the bottom line says, even with the ghost on rock; the ghost's reason comes back at the next move", () => {
-  // At a build range of 4 the Nexus's own range reaches the row under the north-west wall: a Barracks there has
-  // a tile in range and one on the rock.
-  const side = buildSide({ context: { ...starterContext(), experiments: { buildRange: 4 } } })
+  // At a build range of 8 the Nexus's own range reaches the row under the north-west wall, four rows up: a
+  // Barracks there has a tile in range and one on the rock.
+  const side = buildSide({ context: { ...starterContext(), experiments: { buildRange: 8 } } })
   keys(side, "1")
   const cursor = side.build.state.cursor
   // Onto the north-west wall, where the Barracks cannot go.

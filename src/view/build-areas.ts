@@ -7,7 +7,7 @@
 //   every open tile inside it shows the ground's own dot, so the ground the player may build on is the densely
 //   dotted ground (outside it the map keeps its sparse lattice), and where colours blend it is lit by a faint
 //   grey wash. The dots carry it at every depth, monochrome included; the wash is fidelity. It is the reducer's
-//   own answer (`buildRange`): where a row counts two columns, counted in rows, so it keeps its height.
+//   own answer (`buildRange`).
 // - ***A Barracks's room*** is an **apron**: the ground a building that makes units keeps free round it (the
 //   owner, round 5: "so they leave space for units spawning"), where nothing may stand — unlike the build
 //   range's edge, which a building may hang over. While a building is armed, every open tile of it shows a mark
@@ -16,10 +16,9 @@
 //   would read as ground outside the range, where a building may still hang. Inside the range it keeps the
 //   range's light, so it reads as drawn on that floor.
 // - ***A building's reach*** is an **outline**: the last tiles a building with a range reaches, as the kernel
-//   measures range (Manhattan, to the nearest tile of its footprint, under the battle's measure — the Ground
-//   Experiment, so where a row counts two columns a reach is drawn twice as wide as it is tall, as it plays),
-//   drawn as a ring of strokes round it — `-`
-//   and `|` where the ring runs straight along the footprint, `/` and `\` where it runs diagonally. It follows
+//   measures range (`footprintWithin`: to the nearest tile of its footprint, a row counting two columns, so a
+//   reach of 6 is 13 tiles wide and 7 tall, as wide as it is tall on screen), drawn as a ring of strokes round it —
+//   `-` and `|` where the ring runs straight along the footprint, `/` and `\` where it runs diagonally. It follows
 //   the ghost while the building is armed, in the ghost's own look (its colour when Enter would place it, grey
 //   when not), and is drawn for a building already placed while the cursor rests on it — and, in Explore Map
 //   and plain navigation, for a unit of either side that shoots past the tiles touching it (the owner, round 5:
@@ -32,13 +31,15 @@
 // All are presentation alone: nothing here decides a placement (`src/build/territory.ts` does), and none is
 // drawn while a popup holds the keyboard, once the plan is committed, or while a Pulse plays.
 
-import { SQUARE, footprintDistance, footprintWithin, reachOf as measuredReach, tilesOf } from "../grid/coords.ts"
-import type { Coord, Footprint, GridMeasure } from "../grid/types.ts"
+import { footprintBox, tilesOf } from "../grid/coords.ts"
+import { tilesWithin } from "../grid/reach.ts"
+import type { Coord, Footprint } from "../grid/types.ts"
+import { outlineWithin } from "./reach-outline.ts"
 import { setting } from "../build/all-settings.ts"
 import { visibleRange } from "../build/camera.ts"
 import { cellForTile } from "../build/layout.ts"
 import type { ArmedPreview, BuildContext } from "../build/state.ts"
-import { buildRange, buildingsOn, groundMeasure, mapMode, structureAtTile } from "../build/state.ts"
+import { buildRange, buildingsOn, mapMode, structureAtTile } from "../build/state.ts"
 import type { Territory } from "../build/territory.ts"
 import { clearanceOf } from "../build/territory.ts"
 import type { ContentDef } from "../content/types.ts"
@@ -69,10 +70,10 @@ export function shownBuildRange(input: BuildCompositionInput): Territory | null 
 
 /**
  * ***The build range***, while a building is armed: every open tile inside it — plain ground, nothing standing,
- * planned or arriving on it — shows the ground's dot, dim in the ground's own role, so the range is the densely
- * dotted ground; and where colours blend, every tile inside it is lit by a faint grey wash, glyphless, so
- * whatever stands there keeps its look. Drawn in the `territory` band before the raid's trail, whose marks win
- * on their tiles.
+ * planned or arriving on it, and off the raid's trail — shows the ground's dot, dim in the ground's own role, so
+ * the range is the densely dotted ground; and where colours blend, every tile inside it is lit by a faint grey
+ * wash, glyphless, so whatever stands there keeps its look. `taken` is every tile the dots give way to: what stands
+ * or is planned, and the raid's trail's whole way, as a reach and a room give way to it.
  */
 export function drawBuildRange(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, taken: ReadonlySet<string>): void {
   const { context, state, layout } = input
@@ -87,7 +88,7 @@ export function drawBuildRange(cells: BandCell[], input: BuildCompositionInput, 
       const cell = cellForTile(layout, state.camera, { x, y })
       const open = context.grid.tiles[y * context.grid.width + x] === "terrain.plain" && !taken.has(`${x},${y}`)
       if (open) cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: dot.glyph, style: { fgRole: dot.role, dim: true } } })
-      for (let extra = 0; extra < layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, style: wash })
+      cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, style: wash })
     }
   }
 }
@@ -123,45 +124,22 @@ const ROOM_ON_FLOOR: CellStyle = { ...ROOM_STYLE, ...BUILD_RANGE_LIGHT }
 
 /**
  * The room a building that makes units keeps: every tile within `clearance` of the footprint anchored at
- * `anchor`, measured as range is (Manhattan, to its nearest tile, under the battle's `measure`: the room rule's
- * own test, `footprintWithin`), and not on it — in reading order. Counted in the tiles' own coordinates, never as
- * offsets that could be `-0`. Pure, and in tiles: the view lays it on cells.
+ * `anchor`, measured as range is — the room rule's own test (`tilesWithin`, `footprintWithin`) — and not on it, in
+ * reading order. Pure, and in tiles: the view lays it on cells.
  */
-export function roomApron(anchor: Coord, footprint: Footprint, clearance: number, measure: GridMeasure = SQUARE): Coord[] {
-  const box = boxOf(anchor, footprint)
-  // Never more rows than the room, and across as far as its reach in the measure's count.
-  const span = Math.max(clearance, measuredReach(clearance, measure))
-  const apron: Coord[] = []
-  for (let y = box.top - clearance; y <= box.bottom + clearance; y += 1) {
-    for (let x = box.left - span; x <= box.right + span; x += 1) {
-      const tile = { x, y }
-      if (footprintDistance(anchor, footprint, tile, ONE_TILE) === 0) continue
-      if (footprintWithin(anchor, footprint, tile, ONE_TILE, clearance, measure)) apron.push(tile)
-    }
-  }
-  return apron
+export function roomApron(anchor: Coord, footprint: Footprint, clearance: number): Coord[] {
+  const own = new Set(tilesOf(anchor, footprint).map(keyOf))
+  return tilesWithin(anchor, footprint, clearance).filter((tile) => !own.has(keyOf(tile)))
 }
 
-/** A footprint's bounding box on the map, anchored at `anchor`. */
-function boxOf(anchor: Coord, footprint: Footprint): Readonly<{ left: number; right: number; top: number; bottom: number }> {
-  let left = Number.POSITIVE_INFINITY
-  let right = Number.NEGATIVE_INFINITY
-  let top = Number.POSITIVE_INFINITY
-  let bottom = Number.NEGATIVE_INFINITY
-  for (const offset of footprint) {
-    left = Math.min(left, anchor.x + offset.x)
-    right = Math.max(right, anchor.x + offset.x)
-    top = Math.min(top, anchor.y + offset.y)
-    bottom = Math.max(bottom, anchor.y + offset.y)
-  }
-  return { left, right, top, bottom }
-}
+/** A tile as a key for a set of tiles. */
+const keyOf = (tile: Coord): string => `${tile.x},${tile.y}`
 
 /**
  * ***A Barracks's room***, while a building is armed: round every building on the map that keeps room —
  * standing, planned or the raid's — and round the armed one's ghost, moving with it (`shift`), every open tile of
- * the room shows a dim tick, at the "Barracks room" Experiment's size, measured as the room rule measures it (the
- * Ground Experiment's measure). In the `territory` band, over the build range's dot and under everything that
+ * the room shows a dim tick, at the "Barracks room" Experiment's size, measured as the room rule measures it
+ * (`roomApron`). In the `territory` band, over the build range's dot and under everything that
  * stands; never on a tile in `avoid` (anything standing, planned or arriving, and the raid's trail), under the
  * ghost, on rock or on a deposit. A building's reach, drawn above it, keeps its strokes where the two cross.
  */
@@ -170,7 +148,6 @@ export function drawRoom(cells: BandCell[], input: BuildCompositionInput, previe
   const floor = shownBuildRange(input)
   if (floor === null) return
   const override = setting(state, "spawnClearance")
-  const measure = groundMeasure(state)
   const keepers: Readonly<{ anchor: Coord; footprint: Footprint; room: number }>[] = []
   for (const building of buildingsOn(context, state.planned)) {
     const definition = context.registry.get(building.contentId)
@@ -186,7 +163,7 @@ export function drawRoom(cells: BandCell[], input: BuildCompositionInput, previe
   const range = visibleRange(state.camera, state.viewport)
   const marked = new Set<string>()
   for (const keeper of keepers) {
-    for (const tile of roomApron(keeper.anchor, keeper.footprint, keeper.room, measure)) {
+    for (const tile of roomApron(keeper.anchor, keeper.footprint, keeper.room)) {
       if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
       const key = `${tile.x},${tile.y}`
       if (marked.has(key) || avoid.has(key) || under.has(key)) continue
@@ -206,47 +183,23 @@ export type RingStroke = "level" | "upright" | "rise" | "fall"
 export type RingTile = Readonly<{ tile: Coord; stroke: RingStroke }>
 
 /**
- * The outline of a reach: the last tiles it reaches — every tile the kernel's own test puts within `radius` of the
- * footprint anchored at `anchor` (`footprintWithin`: Manhattan, to its nearest tile, under the battle's
- * `measure`) with a four-way neighbour it does not, never a tile of the footprint itself — each with its stroke:
- * `level` straight above or below the footprint, `upright` straight beside it, and across the corners `rise`
- * (`/`, north-west and south-east) or `fall` (`\`, north-east and south-west). In reading order. Under `SQUARE`
- * these are exactly the tiles `radius` away, the diamond's own ring; where a row counts two columns the ring is
- * twice as wide as it is tall, and two tiles thick where it runs at a shallow slant, so it has no gaps. Pure, and
- * in tiles: the view lays it on cells.
+ * The outline of a reach (`outlineWithin`: the last tiles it reaches, as the kernel measures range), each with its
+ * stroke: `level` straight above or below the footprint, `upright` straight beside it, and across the corners
+ * `rise` (`/`, north-west and south-east) or `fall` (`\`, north-east and south-west). In reading order. A row
+ * counts two columns, so a slant of the outline runs two tiles across for each row, two strokes a row with no gap
+ * between rows: from one tile a reach of 6 is drawn 13 tiles wide and 7 tall, as wide as it is tall on screen.
+ * Pure, and in tiles: the view lays it on cells.
  */
-export function reachOutline(anchor: Coord, footprint: Footprint, radius: number, measure: GridMeasure = SQUARE): RingTile[] {
-  const { left, right, top, bottom } = boxOf(anchor, footprint)
-  // Never more rows than the radius, and across as far as its reach in the measure's count.
-  const span = Math.max(radius, measuredReach(radius, measure))
-  // Whether each tile of the box, and the ring of tiles just outside it, is in reach: asked once a tile.
-  const firstX = left - span - 1
-  const firstY = top - radius - 1
-  const width = right + span + 2 - firstX
-  const height = bottom + radius + 2 - firstY
-  const reached = new Uint8Array(width * height)
-  for (let y = firstY; y < firstY + height; y += 1) {
-    for (let x = firstX; x < firstX + width; x += 1) {
-      if (footprintWithin(anchor, footprint, { x, y }, ONE_TILE, radius, measure)) reached[(y - firstY) * width + (x - firstX)] = 1
-    }
-  }
-  const inside = (x: number, y: number): boolean => reached[(y - firstY) * width + (x - firstX)] === 1
-  const ring: RingTile[] = []
-  for (let y = top - radius; y <= bottom + radius; y += 1) {
-    for (let x = left - span; x <= right + span; x += 1) {
-      if (!inside(x, y) || (inside(x - 1, y) && inside(x + 1, y) && inside(x, y - 1) && inside(x, y + 1))) continue
-      const tile = { x, y }
-      if (footprintDistance(anchor, footprint, tile, ONE_TILE) === 0) continue
-      const across = x >= left && x <= right
-      const along = y >= top && y <= bottom
-      const stroke: RingStroke = across ? "level" : along ? "upright" : (x < left) === (y < top) ? "rise" : "fall"
-      ring.push({ tile, stroke })
-    }
-  }
-  return ring
+export function reachOutline(anchor: Coord, footprint: Footprint, radius: number): RingTile[] {
+  const { left, right, top, bottom } = footprintBox(anchor, footprint)
+  return outlineWithin(anchor, footprint, radius).map((tile) => {
+    const { x, y } = tile
+    const across = x >= left && x <= right
+    const along = y >= top && y <= bottom
+    const stroke: RingStroke = across ? "level" : along ? "upright" : (x < left) === (y < top) ? "rise" : "fall"
+    return { tile, stroke }
+  })
 }
-
-const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 /** A reach's strokes in each glyph pack. */
 const RING_GLYPHS: Readonly<Record<GlyphPack, Readonly<Record<RingStroke, string>>>> = {
@@ -263,8 +216,8 @@ type Reaching = Readonly<{ anchor: Coord; footprint: Footprint; radius: number; 
  * (`shift`), in the ghost's look: the hotkey's colour when Enter would place it, grey when not — or, with nothing
  * armed and the map looked at (Explore Map, plain navigation), round what is under the cursor, in the hotkey's
  * colour (`EXPLORED_REACH`): a building, standing or planned, or a unit of either side that shoots past the
- * tiles touching it (`unitReachOf`). Measured as the battle will be (the Ground Experiment's measure,
- * `reachOutline`). Dim, in the `highlights` band, on open ground only: a tile with anything on it, rock and
+ * tiles touching it (`unitReachOf`). Measured as the kernel measures range (`reachOutline`). Dim, in the
+ * `highlights` band, on open ground only: a tile with anything on it, rock and
  * deposits included, or one of the raid's trail marks (`avoid`), keeps its own look. A stroke on the build
  * range's ground keeps its light, so the outline reads as drawn on that floor.
  */
@@ -285,7 +238,7 @@ export function drawReach(
   const floor = shownBuildRange(input)
   const style: CellStyle = { fgRole: reaching.role, dim: true }
   const lit: CellStyle = { ...style, ...BUILD_RANGE_LIGHT }
-  for (const { tile, stroke } of reachOutline(reaching.anchor, reaching.footprint, reaching.radius, groundMeasure(state))) {
+  for (const { tile, stroke } of reachOutline(reaching.anchor, reaching.footprint, reaching.radius)) {
     if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
     if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain" || avoid.has(`${tile.x},${tile.y}`)) continue
     const cell = cellForTile(layout, state.camera, tile)

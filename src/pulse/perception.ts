@@ -1,6 +1,8 @@
 // 3. Perception (phase order in pulse.md). Who each actor sees, and who it decides to fight or flee.
 
+import type { ContentDef } from "../content/types.ts"
 import { directionOf } from "../grid/coords.ts"
+import { wholeRows } from "../grid/reach.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { distanceBetween, isMobile, setTarget, within } from "./shared.ts"
 import { engageRange, targetFor } from "./target.ts"
@@ -39,12 +41,9 @@ function eligibleHostiles(actor: Actor, hostiles: readonly Actor[]): readonly Ac
 }
 
 /**
- * The whole scoring function is "nearest enemy by Manhattan distance across every hostile layer,
- * ties broken by entity id". The metric was Chebyshev (eight-way) when this was first written and moved
- * to Manhattan (four-way) after the first playtests (grid/coords.ts, `gridDistance`); it is the battle's
- * measure now, which is Manhattan under `SQUARE` and counts a row as two columns when the Ground
- * Experiment says so, so "nearest" is nearest on the screen. The scoring function itself is kept this
- * plain on purpose: a smarter one would be a design change, not a fix.
+ * The whole scoring function is "nearest enemy across every hostile layer, ties broken by entity id", nearest by
+ * the Grid's own distance (`distanceBetween`: a row counts two columns), the shortest walk on screen.
+ * It is kept this plain on purpose: a smarter one would be a design change, not a fix.
  */
 export function selectTarget(
   context: TickContext,
@@ -53,7 +52,7 @@ export function selectTarget(
 ): { target: Actor; distance: number } | null {
   let best: { target: Actor; distance: number } | null = null
   for (const candidate of candidates) {
-    const distance = distanceBetween(context, actor, candidate)
+    const distance = distanceBetween(actor, candidate)
     if (best === null || distance < best.distance) {
       best = { target: candidate, distance }
     }
@@ -95,7 +94,7 @@ export function perception(context: TickContext): void {
       // A unit whose side has a target fights only what has come within its reach, measured as range is;
       // with nothing there it heads for the target instead (`target.ts`, `intents.ts`).
       const reach = engageRange(actor.definition)
-      candidates = eligibleHostiles(actor, hostilesOf(context, actor).filter((other) => within(context, actor, other, reach)))
+      candidates = eligibleHostiles(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
     } else {
       candidates = eligibleHostiles(actor, hostilesOf(context, actor))
     }
@@ -114,7 +113,7 @@ export function perception(context: TickContext): void {
     setTarget(context, actor, selection.target.ordinal)
     // Facing is derived from the current target when stationary, and from the last step when
     // moving. Nothing in the rules reads it; facing is presentation-only, a settled decision (Q9, answered).
-    actor.facing = directionOf(actor.anchor, selection.target.anchor, actor.facing, context.measure)
+    actor.facing = directionOf(actor.anchor, selection.target.anchor, actor.facing)
     if (changed) {
       context.events.push({
         kind: "target.selected",
@@ -130,7 +129,11 @@ export function perception(context: TickContext): void {
   }
 }
 
-/** "when a hostile attacker is within range + 2": a unit flees a threat that can already reach it or nearly can. */
-export function fleeTrigger(threat: Actor): number {
-  return (threat.definition.attack?.range ?? 0) + 2
+/**
+ * How near a threat must come before a unit that flees runs from it, measured as range is: "when a hostile attacker
+ * is within range + 2", a threat that can already reach it or nearly can, rounded up to whole rows (`wholeRows`).
+ * Against a trooper's melee that is 4: four columns across, or two rows straight up or down, as far on screen.
+ */
+export function fleeTrigger(threat: ContentDef): number {
+  return wholeRows((threat.attack?.range ?? 0) + 2)
 }

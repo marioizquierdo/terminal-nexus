@@ -10,10 +10,9 @@ import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../title-menu/mouse.ts"
 import { BuildSession } from "../view/build-session.ts"
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { isGated, visibleRange } from "../build/camera.ts"
-import type { TerminalSize, TileWidth } from "../build/camera.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
-import { groundTileWidth, nexusTile, openingSettings } from "../build/state.ts"
+import { nexusTile } from "../build/state.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { hasTrail } from "../view/build-grid.ts"
 import { BuildAnimation, livePresentation, nextFrameDelay } from "../view/build-live.ts"
@@ -150,11 +149,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     at: formatRoute(at),
   })
 
-  // Laid out by the terminal's size and the Ground Experiment the screen opens on: square tiles draw two columns a
-  // tile at every size, rows x2 and sideways x2 one, and as now the terminal's width decides (`tileWidthOf`).
-  // `laidFor` is the Ground's width the layout was made for, so a change of it is seen (`followGround`).
-  let laidFor: TileWidth | null = groundTileWidth(openingSettings(context))
-  let layout = buildLayout(terminalSize(), context.grid, laidFor)
+  // Laid out by the terminal's size, a tile to a column.
+  let layout = buildLayout(terminalSize(), context.grid)
   const backend = await selectBackend(options.backend, {
     stdout,
     stdin,
@@ -237,22 +233,6 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     scenes: options.scenes ?? true,
   })
 
-  /**
-   * The frame laid out again for `size` and the Ground the state is on now — as a resize does, the view fitted to
-   * the new viewport. Whoever moves the animations (`animation.snap`) does so after.
-   */
-  function relayout(size: TerminalSize): void {
-    laidFor = groundTileWidth(build.state)
-    layout = buildLayout(size, context.grid, laidFor)
-    build.resize(layout.viewport)
-  }
-
-  /** Whether the Ground Experiment now draws a tile another width than the layout was made for: flipped in
-   *  Settings, it applies at once, so the next frame is laid out again (`relayout`). */
-  function groundMoved(): boolean {
-    return groundTileWidth(build.state) !== laidFor
-  }
-
   // Start in a state: the script's own clock, a second between untimed steps as in a scripted
   // playtest, so each key is its own press; the live clock that follows is far past it.
   let startKeysError: string | null = null
@@ -268,8 +248,6 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
         break
       }
       if (leaving) break
-      // A script that flips Ground goes on, a click included, on the frame the player would see.
-      if (groundMoved() && !isGated(terminalSize(), context.grid)) relayout(terminalSize())
     }
   }
 
@@ -302,14 +280,6 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     }, delay)
   }
 
-  /** Flipping Ground in Settings is seen at once: the frame is laid out again for the new tile width, as a resize
-   *  lays it out, and nothing slides from a view of the other width. */
-  function followGround(now: number): void {
-    if (gated || !groundMoved()) return
-    relayout(terminalSize())
-    animation.snap(build.state, now)
-  }
-
   function render(): void {
     if (leaving) return
     const size = terminalSize()
@@ -318,7 +288,6 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     // resizing back resumes from the same instant. Before the animations are read: the Pulse may have just
     // asked the view to look at the player's Nexus.
     build.advance(now, gated)
-    followGround(now)
     // The player's settings as the Settings popup last left them — changed live, mid-screen.
     const settings = build.state.settings
     // The raid the round brings, first: its trail moves, and asks for frames, only while some of it is in view.
@@ -331,7 +300,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
           raidTrail: hasTrail(raid, visibleRange(build.state.camera, build.state.viewport)),
         })
-    const pulse = gated ? undefined : build.pulseFrame(layout)
+    const pulse = gated ? undefined : build.pulseFrame()
     const frame =
       gated || live === null
         ? gateFrame(size.columns, size.rows, FLOOR)
@@ -382,7 +351,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     // time had passed: the moment the gate closes or opens, the clock is moved on without the Pulse.
     if (wasGated || gated) build.advance(clock(), true)
     if (!gated) {
-      relayout(size)
+      layout = buildLayout(size, context.grid)
+      build.resize(layout.viewport)
       animation.snap(build.state, clock())
     }
     render()
@@ -422,8 +392,6 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       if (gated) continue
       const camera = animation.cameraAt(build.state, now, { reducedMotion: build.state.settings.reducedMotion })
       build.handleKey(key, layout, { now, camera })
-      // A key may have flipped Ground: the next one, a click included, lands on the frame laid out for it.
-      followGround(now)
     }
     // A key may have changed the Key releases Experiment.
     syncKeyProtocol()

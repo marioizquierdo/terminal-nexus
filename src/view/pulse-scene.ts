@@ -10,12 +10,13 @@ import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { cellForTile, nextRoundRow, pulseControlRows } from "../build/layout.ts"
+import { cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
-import { footprintWithin, inBounds, reachOf, tileIndex } from "../grid/coords.ts"
+import { inBounds, tileIndex } from "../grid/coords.ts"
+import { tilesWithin } from "../grid/reach.ts"
 import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 import { PLAYERS } from "../state/types.ts"
@@ -33,7 +34,6 @@ import type { DrawExtra } from "./draw.ts"
 import { put, text } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
 import type { PulseSample } from "./snapshot.ts"
-import { battleMeasure } from "./snapshot.ts"
 import { entityGlyph, playerRole } from "./theme.ts"
 
 /** What the Pulse's scene needs for one presentation instant. Built by `PulsePresenter.frame`. */
@@ -69,8 +69,8 @@ export type PulseFrame = Readonly<{
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
- *  as range is, Manhattan under the battle's measure, so a diamond, twice as wide as tall where a row counts two
- *  columns — and whose side it guards. */
+ *  as range is, a row counting two columns, so a diamond twice as wide as it is tall in tiles — and whose side it
+ *  guards. */
 export type AuraFrame = Readonly<{ at: Coord; radius: number; player: PlayerId }>
 
 /** A line she is saying, as the scene draws it (`pulse-voice.ts` plans them, `pulse-live.ts` times them). */
@@ -119,9 +119,6 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
       put(cells, band, cell.x, cell.y, entityGlyph(entity.contentId, entity.player, offset), playerRole(entity.player), {
         bold: drawnBold(definition),
       })
-      for (let extra = 1; extra < view.layout.tileWidth; extra += 1) {
-        put(cells, band, cell.x + extra, cell.y, " ", playerRole(entity.player))
-      }
     }
   }
   pulse.sample.state.entities.forEach(draw)
@@ -175,32 +172,22 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 /**
  * ***Her aura's reach*** (By the Book: her side's units near her take less damage): every tile within its radius
- * of her — measured as range is, Manhattan, so a diamond, and under the battle's own measure (`battleMeasure`:
- * where a row counts two columns, the kernel's own test, `footprintWithin`, so a diamond twice as wide as it is
- * tall) — washed in her side's colour on the ground, moving with her while the fight is on. A glyphless write on
- * the ground's own band, under everything that stands: a unit or a building in her reach keeps its glyph and every
- * colour of its own, standing in the glow rather than tinted by it (at 256 colours a washed glyph would change
- * hue), and an effect draws over it. Read from the content's aura (`ContentDef.aura`), so a Commander with a wider
- * one is drawn wider.
+ * of her, by the kernel's own test (`tilesWithin`, `footprintWithin`: a row counts two columns, so a diamond twice
+ * as wide as it is tall in tiles, as wide as it is tall on screen) — washed in her side's colour on the ground,
+ * moving with her while the fight is on. A glyphless write on the ground's own band, under everything that stands:
+ * a unit or a building in her reach keeps its glyph and every colour of its own, standing in the glow rather than
+ * tinted by it (at 256 colours a washed glyph would change hue), and an effect draws over it. Read from the
+ * content's aura (`ContentDef.aura`), so a Commander with a wider one is drawn wider.
  */
 export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame): void {
   const aura = pulse.aura
   if (aura === undefined) return
   const range = visibleRange(view.camera, view.viewport)
   const style: CellStyle = { seeThrough: { role: playerRole(aura.player), alpha: AURA_WASH } }
-  const measure = battleMeasure(pulse.sample.state)
-  // Never more rows than its radius, and across as far as its reach in the measure's count.
-  const span = Math.max(aura.radius, reachOf(aura.radius, measure))
-  // In the tiles' own coordinates, never offsets from her: an offset `-reach` is `-0` at the diamond's tips, and a
-  // `-0` in a coordinate slows every frame (docs/history/lessons-learned.md, "A negative zero in a coordinate").
-  for (let y = aura.at.y - aura.radius; y <= aura.at.y + aura.radius; y += 1) {
-    for (let x = aura.at.x - span; x <= aura.at.x + span; x += 1) {
-      const tile = { x, y }
-      if (!inBounds(view.grid, tile) || !inView(range, tile)) continue
-      if (!footprintWithin(aura.at, ONE_TILE, tile, ONE_TILE, aura.radius, measure)) continue
-      const cell = cellForTile(view.layout, view.camera, tile)
-      for (let extra = 0; extra < view.layout.tileWidth; extra += 1) cells.push({ band: BANDS.territory, x: cell.x + extra, y: cell.y, style })
-    }
+  for (const tile of tilesWithin(aura.at, ONE_TILE, aura.radius)) {
+    if (!inBounds(view.grid, tile) || !inView(range, tile)) continue
+    const cell = cellForTile(view.layout, view.camera, tile)
+    cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, style })
   }
 }
 
@@ -223,9 +210,8 @@ export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseF
   const width = ` ${words} `.length
   const place = cellForTile(layout, camera, voice.place)
   const mapLeft = layout.origin.column
-  const mapRight = mapLeft + viewport.width * layout.tileWidth - 1
-  const centre = place.x + Math.floor(layout.tileWidth / 2)
-  const left = Math.max(mapLeft, Math.min(centre - Math.floor(width / 2), mapRight - width + 1))
+  const mapRight = mapLeft + viewport.width - 1
+  const left = Math.max(mapLeft, Math.min(place.x - Math.floor(width / 2), mapRight - width + 1))
   const y = place.y
   const top = layout.origin.row
   if (y < top || y >= top + viewport.height) return
@@ -235,8 +221,9 @@ export function drawVoiceOnMap(cells: BandCell[], view: SceneView, pulse: PulseF
   for (let index = 0; index < glyphs.length; index += 1) {
     const x = left + index
     if (x > mapRight) break
-    const tile = { x: camera.x + Math.floor((x - mapLeft) / layout.tileWidth), y: camera.y + (y - top) }
-    if (!inBounds(grid, tile) || occupied.has(tileIndex(grid, tile))) continue
+    // A letter is a tile's cell: the one it would cover.
+    const tile = tileAtCell(layout, camera, x, y)
+    if (tile === null || !inBounds(grid, tile) || occupied.has(tileIndex(grid, tile))) continue
     put(cells, BANDS.effects, x, y, glyphs[index] as string, role, extra)
   }
 }

@@ -418,10 +418,10 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   // Placing handed the keyboard back to the menu, where the arming came from. The cursor is on the
   // new Barracks, so arming another moves it to the nearest spot in the build range with a free tile
-  // around it — 21,13, by the Nexus, since the first one gives no range until it stands — and Enter places
-  // it there.
+  // around it — 30,13, east of it, on ground the standing Barracks's range reaches (the first one gives no
+  // range until it stands) — and Enter places it there.
   byKeyboard.build.handleData("1", byKeyboard.layout)
-  assert.deepEqual(byKeyboard.build.state.cursor, { x: 21, y: 13 })
+  assert.deepEqual(byKeyboard.build.state.cursor, { x: 30, y: 13 })
   byKeyboard.build.handleData("\r", byKeyboard.layout)
   byKeyboard.build.handleData("p", byKeyboard.layout)
   byKeyboard.build.handleData("y", byKeyboard.layout)
@@ -440,8 +440,8 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   clickTile({ x: 26, y: 13 })
   clickTile({ x: 26, y: 13 })
   byMouse.build.handleData("1", byMouse.layout)
-  // Arming already put the cursor on 21,13, so one click there is the confirming second click.
-  clickTile({ x: 21, y: 13 })
+  // Arming already put the cursor on 30,13, so one click there is the confirming second click.
+  clickTile({ x: 30, y: 13 })
   byMouse.build.handleData("p", byMouse.layout)
   byMouse.build.handleData(clickPopupBytes(byMouse, (c) => c.kind === "start-pulse"), byMouse.layout)
 
@@ -484,6 +484,6 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
     assert.equal(pulseOf(other).timeline.stateHash, pulseOf(byKeyboard).timeline.stateHash)
     assert.equal(pulseOf(other).timeline.eventsHash, pulseOf(byKeyboard).timeline.eventsHash)
     assert.deepEqual(pulseOf(other).recall.moves, pulseOf(byKeyboard).recall.moves)
-    assert.deepEqual(other.build.pulseFrame(other.layout)?.sample.state, byKeyboard.build.pulseFrame(byKeyboard.layout)?.sample.state)
+    assert.deepEqual(other.build.pulseFrame()?.sample.state, byKeyboard.build.pulseFrame()?.sample.state)
   }
 })

@@ -59,11 +59,13 @@ export type Scenario = Readonly<{
 
 const many = (unit: string, count: number): Readonly<{ unit: string; count: number }> => ({ unit, count })
 
-/** The raids the first placeholder Pulse offered, which these tests were written against. */
+/** The raids these tests play against: none, the probe the first placeholder Pulse offered, and a heavy raid that
+ *  takes the Nexus when nothing is built, whether the player has units of their own or none — ten runners and five
+ *  raiders, so it falls well before the round's end. */
 const RAIDS: Readonly<Record<RaidSize, readonly Readonly<{ unit: string; count: number }>[]>> = {
   none: [],
   probe: [many("unit.ravel.runner", 4), many("unit.ravel.raider", 3)],
-  heavy: [many("unit.ravel.runner", 6), many("unit.ravel.raider", 4)],
+  heavy: [many("unit.ravel.runner", 10), many("unit.ravel.raider", 5)],
 }
 
 /**

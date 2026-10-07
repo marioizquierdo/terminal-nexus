@@ -35,9 +35,6 @@ export function drawTerrain(
       put(cells, BANDS.terrain, cell.x, cell.y, featureless && !onLattice ? " " : glyph, role, {
         dim: true,
       })
-      for (let extra = 1; extra < layout.tileWidth; extra += 1) {
-        put(cells, BANDS.terrain, cell.x + extra, cell.y, " ", role)
-      }
     }
   }
 }

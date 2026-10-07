@@ -60,7 +60,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     // 10/3 rather than 2/1 - same speed pass as the trooper above.
     movementRate: { numerator: 10, denominator: 3 },
     speedTier: 1,
-    attack: { kind: "ranged", range: 5, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
+    attack: { kind: "ranged", range: 6, damage: 6, cooldownTicks: 24, projectileTilesPerTick: 3 },
     collidesWith: GROUND_UNIT_COLLISIONS,
     behavior: "advance",
     salvage: 6,
@@ -138,7 +138,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     collidesWith: STRUCTURE_COLLISIONS,
     behavior: "static",
     salvage: 100,
-    constructionRadius: 3,
+    constructionRadius: 6,
   },
   {
     id: "structure.citizen.barracks",
@@ -150,7 +150,7 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     collidesWith: STRUCTURE_COLLISIONS,
     behavior: "static",
     salvage: 30,
-    constructionRadius: 3,
+    constructionRadius: 6,
     // The ring its troopers appear on, kept free of other buildings (the "Barracks room" Experiment).
     clearance: 1,
   },

@@ -10,7 +10,7 @@ import assert from "node:assert/strict"
 import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { artFor } from "../src/content/art.ts"
-import { footprintDistance } from "../src/grid/coords.ts"
+import { footprintSteps } from "../src/grid/coords.ts"
 import {
   commanderRegistry,
   fallen,
@@ -148,7 +148,7 @@ test("round 2 is played without her from its Build Phase to its end, and the Nex
   assert.equal(back.hp, registry.get(VASSE).maxHp)
   const nexus = (round3.pulse.states[0] as MatchState).entities.find((entity) => entity.contentId === NEXUS)
   assert.ok(nexus !== undefined)
-  assert.equal(footprintDistance(back.anchor, registry.get(VASSE).footprint, nexus.anchor, registry.get(NEXUS).footprint), 1)
+  assert.equal(footprintSteps(back.anchor, registry.get(VASSE).footprint, nexus.anchor, registry.get(NEXUS).footprint), 1, "she was not set down touching the Nexus")
   assert.deepEqual(round3.absent, [])
   // And the mission went on to be held: nothing about her decides it.
   assert.deepEqual(round3.pulse.verdict, { kind: "won", trigger: "hold" })
@@ -162,12 +162,13 @@ test("the named scenario is the same every run, and on both runtimes", () => {
   assert.deepEqual(first.map(([hash]) => hash), PINNED_ROUNDS)
 })
 
-// Moved on purpose with By the Book, which guards her and the troopers beside her, and the ambush that grew two
-// runners so she still falls in round 1.
+// The three rounds as the rules play them: By the Book guarding her and the troopers beside her, the ambush's two
+// runners making sure she falls in round 1, a row counting two columns in every distance and step, and every step
+// taking whole beats, one across and two up or down.
 const PINNED_ROUNDS = [
-  "ed055a2c4655f1d26a21997a5d2df3ca6def98f9fc02b1a0af64538eb661e663",
-  "70a986cbeaf43652f3fb71688046e16e1f5710f06425ab4dfb3ec38c97676bd5",
-  "f829a7afc2bcc61b43c992f8dccad3275bc1101f37b37a0ef91ce2703bba9ce6",
+  "9b9606aa2e68a83d65d0485301702c87c266773e3afabcb9a0e32e11c1f84764",
+  "92a62feefdba826ea643475f030a01b8a5637c3de4e468e7767abf533aa29c35",
+  "4db4c46d8cd5c03dc1a848d8c34e0e5672a51ef6e1d00ab3fe99dab79fa115cf",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------
