@@ -364,6 +364,8 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
       lines: [
         { keys: "esc", text: "go back one step" },
         { keys: "x", text: "go back; stops at the menu" },
+        { keys: "h j k l", text: "the arrows, as in vim" },
+        { keys: "H J K L", text: "shift+arrow, the jump" },
         { keys: "q", text: "the game menu" },
         { keys: "d", text: "the Experiments (playtests)" },
         { keys: "?", text: "this page" },

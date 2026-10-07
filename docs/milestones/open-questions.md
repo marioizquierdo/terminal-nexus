@@ -472,7 +472,10 @@ larger wheel step may overshoot.
 
 Buildings are picked by the digit of their menu row (`[1] Barracks`), one digit sequence for the whole menu
 so no hotkey moves when content arrives ([`input.md`](../system-design/input.md), RULE). Letters are already
-spoken for: `e`, `n`, `p`, `q`, `u`, `x`, `s`, `r`, `d`. The owner's example used a letter.
+spoken for: `e`, `n`, `p`, `q`, `u`, `x`, `s`, `r`, `d`, and `h` `j` `k` `l` are the arrows. Since
+2026-10-07 the owner's rule is that the left hand's keys are hotkeys and the right hand's may be
+navigation, which leaves option C fewer letters: a mnemonic under the right hand would be out. The
+owner's example used a letter.
 
 | Option | Cost |
 | --- | --- |

@@ -1,5 +1,5 @@
 // The keys that move a cursor — the Build Phase's map cursor, and a list's highlight — in every byte
-// spelling a terminal sends, in one table, and the one rule every list follows with them: Up and
+// spelling a terminal sends, and vim's `h` `j` `k` `l` beside them, in one table, and the one rule every list follows with them: Up and
 // Down stop at the ends instead of wrapping around, so holding Down quickly reaches the bottom and
 // stays there, and Shift+Up (or PageUp, and so on) goes all the way to the top, the same convention as
 // moving on the map. Shared by the title screen's menu and every list in the Build Phase — its menu, the Nexus
@@ -76,6 +76,20 @@ const CURSOR_KEY_BYTES: Readonly<Record<string, NamedKey>> = {
   [`${ESC}OF`]: { name: "end", modified: PLAIN },
   [`${ESC}[4~`]: { name: "end", modified: PLAIN },
   [`${ESC}[8~`]: { name: "end", modified: PLAIN },
+  // vim's keys, the arrows' aliases: `h` `j` `k` `l` are Left, Down, Up and Right, and with Shift they
+  // are the fast move, as Shift+Arrow is. They may alias the arrows because they sit under the right
+  // hand, and **the right hand's keys may be navigation, the left hand's are hotkeys** (the owner: "keys
+  // that are usually on the right side of the keyboard can be used as aliases, while keys on the left
+  // side should be reserved for hotkeys (just like Starcraft or Diablo)"; `docs/system-design/input.md`).
+  // So none of the four can ever be a row's hotkey. Caps Lock makes them the fast move, as Shift does.
+  h: { name: "left", modified: PLAIN },
+  j: { name: "down", modified: PLAIN },
+  k: { name: "up", modified: PLAIN },
+  l: { name: "right", modified: PLAIN },
+  H: { name: "left", modified: MODIFIED },
+  J: { name: "down", modified: MODIFIED },
+  K: { name: "up", modified: MODIFIED },
+  L: { name: "right", modified: MODIFIED },
 }
 
 /**
