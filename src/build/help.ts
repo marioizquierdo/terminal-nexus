@@ -183,7 +183,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   },
   explore: () => "Explore Map: arrows move, the panel shows what is here. [esc] goes back.",
   "explore-planned": (context, state) =>
-    `Planned ${plannedLabel(context, state)}: [bksp] removes it, [u] undoes the last. [esc] goes back.`,
+    `Planned ${plannedLabel(context, state)}: [bksp] removes it, [u] undoes the last, [esc] back.`,
   // Opened from the map, Explore Map leaves the cursor where it is — it only looks for clear ground on
   // the hand-off from the menu — so Enter reads what is here.
   map: () => "Arrows move the cursor, [enter] explores here, a number selects a building.",

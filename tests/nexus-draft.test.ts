@@ -9,6 +9,7 @@ import type { PowerCard } from "../src/armies/index.ts"
 import { dealable, dealHand, HAND_SIZE, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import { nexusDraftOf, STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { wavesStat } from "../src/build/card.ts"
+import { hint } from "../src/build/help.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import type { BuildContext } from "../src/build/state.ts"
@@ -16,7 +17,7 @@ import { createBuildState, nexusPowers, nexusTile } from "../src/build/state.ts"
 import { missionPlay } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { gridDistance } from "../src/grid/coords.ts"
-import { buildSide, compose, keys, panelLines, screenText } from "./build-helpers.ts"
+import { buildSide, compose, ENTER, keys, panelLines, screenText, TAB } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
 const POOL = PERIMETER_LEVEL.offer.powers
@@ -122,6 +123,21 @@ test("Aid Station Permit puts the Aid Station on the menu at once, under the nex
   assert.equal(next.catalog.at(-1)?.label, "Aid Station")
   assert.deepEqual(next.kept?.map((card) => card.id), ["aid-station-permit"])
   assert.ok(!next.nexusDraft.some((option) => option.card.id === "aid-station-permit"), "a permit kept was dealt again")
+})
+
+test("the Aid Station's card says what one heal mends and how far it reaches, and its hints fit the bottom line at 80 columns", () => {
+  const permit = side(dealt("aid-station-permit"))
+  keys(permit, "n", "1", TAB, "4")
+  assert.match(panelLines(permit, compose(permit)).join("\n"), /^HEAL +4\nRANGE +2$/m)
+  // The longest building name yet: placing it, and exploring it once planned, each hint is one whole line.
+  const fits = (): string => {
+    const text = hint(permit.build.round, permit.build.state).text
+    assert.ok(text.length <= permit.layout.footerLimit, `"${text}" is ${text.length} long`)
+    return text
+  }
+  assert.match(fits(), /^Place the Aid Station: /)
+  keys(permit, ENTER, "e")
+  assert.match(fits(), /^Planned Aid Station: /)
 })
 
 test("Drill Schedule sends every Barracks a second wave: its card says so, and the battle trains twice as many", () => {

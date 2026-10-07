@@ -378,8 +378,8 @@ function feedLine(pulse: PulseFrame, event: DomainEvent): Readonly<{ text: strin
   const at = `${secondsOf(pulse, event.tick)}s`
   const sideRole = (player: PlayerId | null): StyleRole => (player === null ? "chrome.value" : playerRole(player))
   switch (event.kind) {
-    // A fight, not a repair: a heal (an Aid Station's) is not news the feed has room for — the healed unit's own
-    // cue on the map says it.
+    // A fight, not a heal: a heal (an Aid Station's) is not news the feed has room for — the cross that rises
+    // beside the unit it mends says it on the map.
     case "attack.launched":
       if (event.attackKind === "heal") return null
       return { text: `${at} ${feedName(pulse, event.attacker)} > ${feedName(pulse, event.target)}`, role: sideRole(whoIs(event.attacker).player) }

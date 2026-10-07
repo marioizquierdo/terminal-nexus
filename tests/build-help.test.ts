@@ -189,7 +189,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   ],
   placing: [[(side) => keys(side, "2"), /^Place the Hatchery: arrows move, \[enter\] places, \[2\] or \[esc\] cancels\.$/]],
   explore: [[(side) => keys(side, "e"), /^Explore Map: arrows move, the panel shows what is here\. \[esc\] goes back\.$/]],
-  "explore-planned": [[(side) => keys(side, TAB, "1", ENTER, "e"), /^Planned Barracks: \[bksp\] removes it, \[u\] undoes the last\. \[esc\] goes back\.$/]],
+  "explore-planned": [[(side) => keys(side, TAB, "1", ENTER, "e"), /^Planned Barracks: \[bksp\] removes it, \[u\] undoes the last, \[esc\] back\.$/]],
   map: [[(side) => keys(side, TAB), /^Arrows move the cursor, \[enter\] explores here, a number selects a building\.$/]],
 }
 

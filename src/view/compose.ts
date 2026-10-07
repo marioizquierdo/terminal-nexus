@@ -424,7 +424,7 @@ export function feedLine(event: DomainEvent): string {
   switch (event.kind) {
     case "attack.launched":
       return `${String(event.tick).padStart(3)} ${shortId(event.attacker)}>${shortId(event.target)} ${
-        event.attackKind === "ranged" ? "shot" : "hit"
+        event.attackKind === "ranged" ? "shot" : event.attackKind === "heal" ? "heal" : "hit"
       } ${event.damage}`
     case "entity.died":
       return `${String(event.tick).padStart(3)} ${shortId(event.entity)} dies`

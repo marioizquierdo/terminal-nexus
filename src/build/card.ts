@@ -87,10 +87,10 @@ function maxHpOf(context: Pick<BuildContext, "registry">, contentId: string, sta
 }
 
 /** How hard a thing hits, and how far: its damage, then its range — one number, or "melee" for one that fights
- *  hand to hand (its range is 1: what is next to it). */
+ *  hand to hand (its range is 1: what is next to it). A healer's is how much one heal mends (the Aid Station's). */
 function attackStats(attack: AttackDef): CardStat[] {
   return [
-    { label: "ATTACK", value: String(attack.damage) },
+    { label: attack.kind === "heal" ? "HEAL" : "ATTACK", value: String(attack.damage) },
     { label: "RANGE", value: attack.kind === "melee" ? "melee" : String(attack.range) },
   ]
 }
