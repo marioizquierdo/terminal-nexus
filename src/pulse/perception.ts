@@ -25,16 +25,18 @@ export function woundedAlliesOf(context: TickContext, actor: Actor): Actor[] {
 }
 
 /**
- * `hostiles`, narrowed by `targetLayers` (hard: never a viable target outside it) and then, if
+ * `candidates`, narrowed by `targetLayers` (hard: never a viable target outside it) and then, if
  * nothing in the narrowed set sits on a `targetPreference` layer, left alone — if something does,
- * narrowed further to just those. Shared by every non-flee, non-support behavior so an `attack` and a
+ * narrowed further to just those. Shared by every behavior but flee: an attacker's hostiles, so an `attack` and a
  * contact `detonation.triggerRange` alike resolve against whatever this decided (the unit-architecture
- * spike's ground-air asymmetry and siege-giant rule shapes).
+ * spike's ground-air asymmetry and siege-giant rule shapes), and a healer's wounded allies, so a healer that
+ * names its layers mends only what stands on them — the Aid Station mends units, never a building. A healer that
+ * names none, the bench medic, mends every wounded ally as it always did.
  */
-function eligibleHostiles(actor: Actor, hostiles: readonly Actor[]): readonly Actor[] {
+function eligibleTargets(actor: Actor, candidates: readonly Actor[]): readonly Actor[] {
   const { targetLayers, targetPreference } = actor.definition
   const eligible =
-    targetLayers === undefined ? hostiles : hostiles.filter((other) => targetLayers.includes(other.definition.layer))
+    targetLayers === undefined ? candidates : candidates.filter((other) => targetLayers.includes(other.definition.layer))
   if (targetPreference === undefined) return eligible
   const preferred = eligible.filter((other) => targetPreference.includes(other.definition.layer))
   return preferred.length > 0 ? preferred : eligible
@@ -87,16 +89,18 @@ export function perception(context: TickContext): void {
 
     let candidates: readonly Actor[]
     if (actor.definition.behavior === "support") {
-      candidates = woundedAlliesOf(context, actor)
+      // A healer's wounded allies, narrowed by its layers as an attacker's hostiles are (`eligibleTargets`). A
+      // building that heals never moves (`intents.ts`), so it mends the nearest of them once one is within reach.
+      candidates = eligibleTargets(actor, woundedAlliesOf(context, actor))
     } else if (actor.definition.behavior === "flee") {
       candidates = hostilesOf(context, actor).filter((other) => other.definition.attack !== undefined)
     } else if (targetFor(context, actor) !== null) {
       // A unit whose side has a target fights only what has come within its reach, measured as range is;
       // with nothing there it heads for the target instead (`target.ts`, `intents.ts`).
       const reach = engageRange(actor.definition)
-      candidates = eligibleHostiles(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
+      candidates = eligibleTargets(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
     } else {
-      candidates = eligibleHostiles(actor, hostilesOf(context, actor))
+      candidates = eligibleTargets(actor, hostilesOf(context, actor))
     }
     const selection = selectTarget(context, actor, candidates)
     if (selection === null) {

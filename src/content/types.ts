@@ -131,7 +131,9 @@ export type ContentDef = Readonly<{
   /**
    * Hard restriction: this entity may only perceive hostiles on these layers as viable targets — for
    * a normal `attack` and for a contact `detonation.triggerRange` alike, since both are resolved from
-   * whatever perception already decided. Undefined means every layer, which preserves every existing
+   * whatever perception already decided — or, for a healer (`behavior: "support"`), only the wounded allies
+   * on these layers: the Aid Station names the units' layers, so it never mends a building. Undefined means
+   * every layer, which preserves every existing
    * definition's behaviour and every hash exactly. This is a *targeting* mask, never a *collision*
    * one — grid.md's point that collision and targeting are separate questions applies here
    * too: touching this never touches `collidesWith`, and vice versa. The ground-air asymmetry rule

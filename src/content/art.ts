@@ -47,7 +47,8 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * agreement test in tests/content.test.ts caught it the first time it ran.
    */
   "structure.citizen.barracks": ["[b]", "|_|"],
-  /** One tile, the aid post's cross: what Aid Station Permit unlocks. */
+  /** One tile, the aid post's cross: what Aid Station Permit unlocks. The cross its patches leave rising beside
+   *  the unit they mend is the same one (`MEND_GLYPH`, src/view/effects/recipes.ts). */
   "structure.citizen.aidstation": ["+"],
   /**
    * Two by two, between the trooper and the hauler in scale as well as in the roster. A sealed
@@ -252,6 +253,9 @@ export const PLACEMENT_ART: Readonly<Record<string, readonly UnitArt[]>> = {
   ],
   /** One tile, so the frames are a mark rising in place: a dot, a stack, a mast, then the alarm. */
   "structure.bench.beamturret": [["."], [":"], ["|"]],
+  /** One tile, so the frames are its cross put together in place: a peg, the crossbar laid on the ground, the
+   *  crossbar raised, then the upright through it — the finished `+`. */
+  "structure.citizen.aidstation": [["."], ["_"], ["-"]],
 }
 
 /** The placement frames authored for a content id, or `undefined` (the view derives a generic run). */
