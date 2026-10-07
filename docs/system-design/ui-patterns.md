@@ -224,8 +224,16 @@ title screen's menu.
 - **The action that ends the phase is the last row** (`startRow`); it opens the Battle Round screen. A Nexus
   power still waiting holds nothing back — for now the pick is optional (the owner: "it's easier for testing
   if I can just start a round") — so the row is never dim; its hint asks whether to start without one, and the
-  Battle Round screen says in one quiet line that a power is still waiting. (RULE —
-  `tests/build-start.test.ts`, `tests/build-nexus.test.ts`)
+  Battle Round screen says in one quiet line that a power is still waiting. With the Nexus pick Experiment on
+  required, the row is refused until a power is kept: "Pick a Nexus power first: [n]." (RULE —
+  `tests/build-start.test.ts`, `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`)
+- ***The Nexus draft in its popup*** (`[n]`): `PICK ONE - or start without`, then the hand dealt this round —
+  two powers, each its name under its digit and its one line under that, then War Chest under the next digit —
+  and `ACTIVE`, every power kept this mission that lasts (this round's War Chest too, once picked), or "None
+  yet." A pick closes the popup and takes effect at once: the menu gains the building a permit unlocks under the
+  next digit, a card says what changed (a Barracks's `WAVES 4 at 5s, 15s`, her aura "within range 8"), units
+  called up show arriving beside the Nexus, and `[n] Nexus` says how many are active. (RULE —
+  `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`)
 
 ### 6.2 Cards
 

@@ -45,6 +45,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q67](#q67--do-buildings-get-letter-hotkeys-or-stay-on-digits) | Do buildings get letter hotkeys, or stay on digits? | OPEN | Mario, now |
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN (heading for a place built) | Posts, in the backlog |
 | [Q73](#q73--how-strong-should-by-the-book-vasses-aura-be) | How strong should By the Book, Vasse's aura, be? | OBSERVABLE | The By the Book Experiment |
+| [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 
 ## Open
 
@@ -530,3 +531,20 @@ Measured on PERIMETER's last round, beside the level's target for the player's t
 | D. 40% less | Nearly every plan holds; nothing built still loses, by a second |
 
 **Recommendation: C**, and play D and A once each to feel the difference.
+
+### Q74 — Should picking a Nexus power stay optional?
+
+**Status:** OBSERVABLE — registered 2026-10-07; the "Nexus pick" Experiment shows each answer.
+
+The owner made the pick optional while the powers were placeholders: "Nexus Powers should be optional for now, it's
+easier for testing if I can just start a round." The powers are real now, and War Chest is offered beside every
+hand, so a pick is one key away whatever is dealt.
+
+| Option | What it means |
+| --- | --- |
+| A. **Optional** (as it is) | A round may start with the pick unmade; the Battle Round screen says one is waiting |
+| B. Required | Start Battle Round is refused until a power is kept: "Pick a Nexus power first: [n]." |
+
+**Recommendation: B.** A power dealt is a power gained — none of PERIMETER's four has a cost — so nothing is lost
+by keeping one, and a round that starts without one is a power forgotten rather than declined. War Chest beside
+every hand keeps testing one key away. Play a mission with the Experiment on required and say if it nags.

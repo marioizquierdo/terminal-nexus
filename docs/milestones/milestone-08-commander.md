@@ -201,20 +201,21 @@ way of saying something the genre already names, it uses the genre's word. Built
 
 Mario's word after the genre words merged, "Let's move into the next milestone", and his answers in the session
 ([his words](../history/feedback/2026-10-07-nexus-draft.md)): the four powers below, and War Chest in every hand.
+Built on a new pull request.
 
-- [ ] A hand is dealt at each Build Phase from the army's Nexus power pool, one is kept, and it fills
+- [x] A hand is dealt at each Build Phase from the army's Nexus power pool, one is kept, and it fills
       Milestone 5's slot. A power kept lasts the rest of the mission, and the Nexus powers popup lists what is
       kept.
-- [ ] PERIMETER deals four real, mechanically distinct powers: Reserve Callup (two troopers join at the Nexus),
+- [x] PERIMETER deals four real, mechanically distinct powers: Reserve Callup (two troopers join at the Nexus),
       Standing Order (By the Book reaches twice as far), Drill Schedule (Barracks send a second wave) and Aid
       Station Permit (unlocks the Aid Station, a building that repairs the units near it). War Chest, his tool
       for testing placement, is offered beside every hand; Reserve Fund, the other placeholder, retires.
-- [ ] The pick is optional for now (Mario's fifth round: easier to test), reversing the earlier answer that it
+- [x] The pick is optional for now (Mario's fifth round: easier to test), reversing the earlier answer that it
       may never be declined (Q45); an Experiment lets him feel it required, which is how this step decides with
       him whether it stays optional once the powers are real.
-- [ ] A power is a name and one plain line of description. The effect kinds behind it are code names the
+- [x] A power is a name and one plain line of description. The effect kinds behind it are code names the
       player never sees (Q42, answered); the four powers need four of the six kinds, and no more is built.
-- [ ] The dealer built here is the one Milestone 11's run draft reuses at the next scale: pure, seeded by the
+- [x] The dealer built here is the one Milestone 11's run draft reuses at the next scale: pure, seeded by the
       mission's seed and the round, and never touching the battle's own random stream.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build

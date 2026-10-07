@@ -5,6 +5,14 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Play the Nexus draft** (the Commander milestone's last step), from `./bin/terminal-nexus.ts --at
+  'campaign?level=vasse-test-1'`: press `n`. Two powers are dealt from Vasse's pool, War Chest beside them; a
+  digit keeps one. What it does shows at once and lasts the mission: Aid Station Permit puts the Aid Station on
+  the menu as `[4]`, Reserve Callup shows two troopers arriving at the Nexus, Drill Schedule's Barracks card says
+  two waves, Standing Order's Vasse card says range 8. The next round's popup lists what is kept under ACTIVE
+  and deals two others. Under THE MISSION in Settings (`d`), **Nexus pick** lets him feel the pick required
+  instead of optional; paste the settings export. Once he has played it, the Commander milestone is ready for
+  his acceptance.
 - **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
   given only by what stood when the round opened, and a building needs one tile on it; the dim ticks round
@@ -13,10 +21,11 @@ it is done.*
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
   MISSION in Settings (`d`), **Spawn space** (1 or 2) is new beside **Build range** and **By the
   Book**; paste the settings export.
-- **The pull request after this one: a sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)):
-  units prefer a free column beside them and not to stand straight above or below another, so a group spreads into
-  a staggered grid; a preference that never blocks a move. It explores the pathfinding it needs, runs simulations,
-  and brings units and scenarios made to test formations facing up and down against formations facing sideways.
+- **A sparse formation, when he says** ([his idea](../history/feedback/2026-10-06-rows-x2.md); he took the
+  Nexus draft first): units prefer a free column beside them and not to stand straight above or below another, so
+  a group spreads into a staggered grid; a preference that never blocks a move. It explores the pathfinding it
+  needs, runs simulations, and brings units and scenarios made to test formations facing up and down against
+  formations facing sideways.
 - **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
   Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
   About screen (Menu, then `4`).
@@ -62,8 +71,6 @@ Small, none blocking.
 
 - PERIMETER is played on the Build Phase's starter map, with regions named for its landmarks; its own map is Q38's.
 - Every unit engages the nearest enemy: `order` has one verb, `advance` (Q69).
-- A new Nexus power is dealt every round (the placeholder draft adds 30 or 2000 credits) on top of the
-  credits carried over. Real Nexus powers are Milestone 8's.
 - The incoming raid is a forecast placed against the map without the plan; a building on an arrival's
   tile moves it when the round starts.
 - The walk home is a straight glide over whole tiles, with no routing. Replay plays back a Pulse

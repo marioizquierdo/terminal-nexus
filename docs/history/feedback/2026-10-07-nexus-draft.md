@@ -10,9 +10,12 @@ Status values: **Built**, **Scheduled**, **Open**, **Contested**.
 
 > perfect. Let's move into the next milestone
 
-**Open.** Read as: finish the Commander milestone with its last step, the Nexus draft, since the next milestone,
+**Built.** Read as: finish the Commander milestone with its last step, the Nexus draft, since the next milestone,
 Challenge runs, is built on its dealer. Said so in the session, with the other reading offered: closing the
-Commander milestone now and building the dealer inside Challenge runs.
+Commander milestone now and building the dealer inside Challenge runs. Each Build Phase now deals two powers from
+the level's pool, seeded by the mission and the round on a random stream of their own, and War Chest beside them;
+one kept lasts the rest of the mission and is listed under ACTIVE in the Nexus powers popup. Whether the pick stays
+optional is an Experiment, Nexus pick, with a recommendation in the register.
 
 ### F143 — Four real powers, and War Chest in every hand
 
@@ -24,4 +27,8 @@ And how War Chest, his tool for testing placement, stays once a hand is dealt at
 
 > Always in the hand
 
-**Open.**
+**Built.** PERIMETER deals from the four: Reserve Callup shows two troopers arriving beside the Grid Nexus the
+moment it is kept, set down there as the round starts, and may be dealt again; Standing Order doubles By the Book's
+reach, 4 to 8, on her card and in the battle; Drill Schedule gives every Barracks a second wave; Aid Station Permit
+puts the Aid Station on the menu under the next digit, a small building that repairs the units near it. War Chest is
+offered beside every hand under the last digit, and Reserve Fund, the other placeholder, is gone.

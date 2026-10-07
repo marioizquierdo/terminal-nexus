@@ -143,7 +143,7 @@ are not repeated here.
 | Invariant | Held by | Detail |
 | --- | --- | --- |
 | The kernel is pure: no terminal, clock, network or renderer; no `Math.random`; the same scenario, seed and tick count hash identically on Node and Bun | `tests/architecture.test.ts`, `tests/determinism.test.ts` | [`pulse.md`](pulse.md) |
-| Gameplay randomness is one seeded PCG32 stream; cosmetic randomness is a hash of an effect instance's identity, never a stream | `tests/rng.test.ts`, `tests/effects.test.ts` | [`pulse.md`](pulse.md), [`effects.md`](effects.md) |
+| Gameplay randomness is one seeded PCG32 stream; cosmetic randomness is a hash of an effect instance's identity, never a stream; the Nexus draft, a rule outside the kernel, deals from a seeded stream of its own, so a hand never moves a battle | `tests/rng.test.ts`, `tests/effects.test.ts`, `tests/nexus-draft.test.ts` | [`pulse.md`](pulse.md), [`effects.md`](effects.md) |
 | The simulation emits canonical state and ordered semantic events: events carry meaning, not appearance, and no renderer reads cells back into mechanics | `tests/architecture.test.ts` | [`pulse.md`](pulse.md) |
 | The simulation never knows a glyph; it knows semantic ids such as `unit.worker` | `tests/architecture.test.ts` | [`presentation.md`](presentation.md) |
 | `(0,0)` is the north-west tile, `x` grows east, `y` grows south, scenario rows read north to south: one convention in every module | `tests/scenario.test.ts` | [`grid.md`](grid.md) |

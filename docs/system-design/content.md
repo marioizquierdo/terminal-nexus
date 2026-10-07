@@ -104,23 +104,27 @@ renderer see an army; none of them ever sees a faction. What is built of one is 
 data in an army folder: the buildings and Nexus powers a player may be offered, a Commander, and a campaign
 whose levels each offer what it has unlocked by then.
 
-**An army is data, not code** (RULE — `armies/`, `src/armies/`, `tests/armies.test.ts`). An army is a folder
-under `armies/` holding an `army.json`: its id and title, the armies it `requires`, `notes`, and any of five
-sections — `content` (the content ids it brings to the Grid), `buildings` (a structure, its cost and, for one
-that makes units, what it spawns in each battle: `spawns`, the unit, how many a wave, how many waves a round
-and the seconds between waves, each a whole number above zero), `powers` (a Nexus power's name, its one line
-and its effect), `commanders` (a name, her unit, and her `barks`: a few lines for each moment of a Battle
-Round she answers, refused by name for a moment no Commander speaks at, a moment with no lines, or a line that
-says nothing or does not fit the panel's feed or one row of the map at 80 × 24) and `campaigns` (a Commander
-and her levels in the order they are played, each with a map by name, its credits, what it unlocks and its
-mission). **An army sees what it and the armies it requires bring, directly or through another, and nothing
-else**, so content forms a tree with a campaign at the top: its levels, then the cards and units they use,
-from its own army or one beneath it. `armies/all` holds the buildings and Nexus powers any Commander may use;
-`armies/vasse` requires it and holds her Commander and her campaign (the owner's names, 2026-10-04: "call the
-folder armies/vasse and armies/all"). The loader (`src/armies/load.ts`, pure: the content registry and the map
-table are its arguments) refuses a broken army with every problem at once, each naming where by ids
-(`campaigns[vasse].levels[vasse-test-2].mission.pulses`), and freezes what it hands the game. The kernel never
-reads an army; the Build Phase's assembly reads what a level offers.
+**An army is data, not code** (RULE — `armies/`, `src/armies/`, `tests/armies.test.ts`). An army is a folder under
+`armies/` holding an `army.json`: its id and title, the armies it `requires`, `notes`, and any of five sections —
+`content` (the content ids it brings to the Grid), `buildings` (a structure, its cost and, for one that makes
+units, what it spawns in each battle: `spawns`, the unit, how many a wave, how many waves a round and the seconds
+between waves, each a whole number above zero), `powers` (a Nexus power's name, its one line and its effect: one
+key naming its kind — `spawnUnits` (a unit and how many), `modifyCommander` (how many times as far her aura
+reaches), `modifyContent` (a building card and how many waves it adds), `unlockStructure` (a building card, which
+no level need unlock) — or `credits`, War Chest's; `repeatable` when it may be kept again, `always` when it is
+offered beside every hand rather than dealt into one), `commanders` (a name, her unit, and her `barks`: a few
+lines for each moment of a Battle Round she answers, refused by name for a moment no Commander speaks at, a moment
+with no lines, or a line that says nothing or does not fit the panel's feed or one row of the map at 80 × 24) and
+`campaigns` (a Commander and her levels in the order they are played, each with a map by name, its credits, what
+it unlocks and its mission). **An army sees what it and the armies it requires bring, directly or through another,
+and nothing else**, so content forms a tree with a campaign at the top: its levels, then the cards and units they
+use, from its own army or one beneath it. `armies/all` holds the buildings and Nexus powers any Commander may use;
+`armies/vasse` requires it and holds her Commander, her own powers, the Aid Station her permit unlocks, and her
+campaign (the owner's names, 2026-10-04: "call the folder armies/vasse and armies/all"). The loader
+(`src/armies/load.ts`, pure: the content registry and the map table are its arguments) refuses a broken army with
+every problem at once, each naming where by ids (`campaigns[vasse].levels[vasse-test-2].mission.pulses`), and
+freezes what it hands the game. The kernel never reads an army; the Build Phase's assembly reads what a level
+offers.
 
 Still code, each named by id from an army: the content definitions themselves (stats and footprints, in
 `src/content`; moving them into the armies is the next step), what a Nexus power's effect kinds do, the

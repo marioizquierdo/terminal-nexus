@@ -352,12 +352,18 @@ The Grid Nexus also offers a small draft of upgrades; research facilities modify
 breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
 content-defined legal actions or passive rules that execute through validated kernel commands.
 
-What the draft is dealt from is settled even though the draft itself is not designed: the Commander
-Army's own Nexus power pool — a subset of the faction's — dealt as a small hand at the start of every
-Build Phase, from which the player keeps one. The pool is built as what a level offers (`src/armies/`;
-PERIMETER offers `armies/all`'s two placeholder powers); the dealing is still the whole pool, every Build
-Phase. The draft's tier, size, and redraw rules are still
-undesigned; they are recorded here so the shape of the draft is not accidentally foreclosed.
+**The Nexus draft** (RULE — `src/armies/deal.ts`, `src/cli/pulse-run.ts`, `tests/nexus-draft.test.ts`): the
+Commander Army's own Nexus power pool — a subset of the faction's, built as what a level offers (`src/armies/`) —
+dealt as a small hand at the start of every Build Phase: two powers, War Chest (the owner's testing tool) beside
+them, of which the player keeps one, or for now none. The hand is gameplay randomness, seeded by the mission's seed
+and the round on a PCG32 stream of the draft's own (`STREAM_DRAFT`), never the kernel's: the same round deals the
+same hand every time, and dealing never moves a battle's draws. A power kept lasts the rest of the mission and is
+not dealt again unless it may be kept again. What it does reaches the battle through the round's own inputs, never a
+rule the kernel reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the construct
+menu (a building unlocked), and the units set down at its opening — a power's **called-up units** muster on the
+player's Grid Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
+ends. The draft's tiers, size and redraw rules beyond this are undesigned; they are recorded here so the shape of
+the draft is not accidentally foreclosed.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
 classification to learn — and in code the effect is one of a small bounded union: `unlockStructure`,
