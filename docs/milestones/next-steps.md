@@ -13,6 +13,12 @@ it is done.*
   and deals two others. Under THE MISSION in Settings (`d`), **Nexus pick** lets him feel the pick required
   instead of optional; paste the settings export. Once he has played it, the Commander milestone is ready for
   his acceptance.
+- **Read the draft's design** (his design conversation after the Nexus draft merged; [his
+  words](../history/feedback/2026-10-07-draft-design.md)), in [`commander-armies.md`](../game-design/commander-armies.md):
+  how the Nexus draft deals, and why hard counters are the tech tree's. Two things are his to say: whether the ramp he
+  asked for stays a schedule (which rarity each card of a hand is in which round, so a player can count on it) or
+  becomes a chance that rises each round; and how long a match is (Q75), which the number of picks waits on. The one
+  change a player sees: Aid Station Permit reads "Adds building: Aid Station."
 - **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
   given only by what stood when the round opened, and a building needs one tile on it; the dim ticks round
@@ -37,8 +43,8 @@ it is done.*
   means `auto` and `off` feel the same.
 - **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
-  letter hotkeys for buildings (Q67), and the exploring click, the wheel step and the light theme's light (Q63;
-  Q62 and Q64 are answered).
+  letter hotkeys for buildings (Q67), the exploring click, the wheel step and the light theme's light (Q63;
+  Q62 and Q64 are answered), and how long a match is (Q75).
 - **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
   spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
   loop's under THE MISSION (Next round).

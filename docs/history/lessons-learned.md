@@ -367,6 +367,17 @@ than any one feature:
    as if two more troopers came every round; a power spent when it is used (credits, units called up) is active
    only in the round it is kept. Playing three rounds found it, not the tests.
 
+## The draft's design (2026-10-07)
+
+1. **Quote voice notes as they arrived, and bracket the meaning.** His notes come through voice transcription: "sub
+   counters" was soft counters, "a texture" the tech tree. A first draft of the design quoted him with the words
+   fixed, which put words in his mouth; the documents now keep his words and say in brackets what a misheard one
+   meant.
+2. **Draw examples before writing rules.** Drafting four Commanders' hands round by round, kept out of the
+   repository at his request, showed that what the Commanders needed was a short list of things they may bend
+   (hand size, the schedule, redraws, a second pool, what shows), not a feature each. The rules came out shorter for
+   it.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

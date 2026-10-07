@@ -218,6 +218,25 @@ Built on a new pull request.
 - [x] The dealer built here is the one Milestone 11's run draft reuses at the next scale: pure, seeded by the
       mission's seed and the round, and never touching the battle's own random stream.
 
+### Step 8B, round 2 — The draft's design
+
+Mario's design conversation after the Nexus draft merged ([his words](../history/feedback/2026-10-07-draft-design.md)):
+whether tech is drafted or bought, then a structure for the draft predictable enough for Commanders to play with,
+examples drawn for four Commanders and kept in the session, and the decisions written down. Design, on a new pull
+request; the one change a player sees is a power's wording.
+
+- [x] Only the tech tree unlocks, and a Nexus power adds: Aid Station Permit says "Adds building: Aid Station.", and
+      the code names the effect for what it does.
+- [x] Hard counters are tree buildings and the draft's powers lean a plan. The tree's own rules (buildings and
+      building upgrades, a building's unlocks arriving once it stands) and the rules for two players are written down.
+- [x] How the Nexus draft deals is designed: rarity by a schedule that ramps by round, upgrades one rarity up, roles,
+      free picks, and the short list of what a Commander may bend. The rare hand is written down for later, and
+      nothing of the schedule is built.
+- [x] Vasse's powers carry a first-guess rarity, and the campaign says which part of the draft each mission brings.
+- [x] Examples for four Commanders were drawn in the session and are not committed.
+- [x] How long a match is goes to the register with a recommendation, since how many picks a match deals depends
+      on it.
+
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).
 

@@ -114,8 +114,8 @@ whose levels each offer what it has unlocked by then.
 units, what it spawns in each battle: `spawns`, the unit, how many a wave, how many waves a round and the seconds
 between waves, each a whole number above zero), `powers` (a Nexus power's name, its one line and its effect: one
 key naming its kind — `spawnUnits` (a unit and how many), `modifyCommander` (how many times as far her aura
-reaches), `modifyContent` (a building card and how many waves it adds), `unlockStructure` (a building card, which
-no level need unlock) — or `credits`, War Chest's; `repeatable` when it may be kept again, `always` when it is
+reaches), `modifyContent` (a building card and how many waves it adds), `addBuilding` (a building card, which no
+level need unlock: a power adds, only the tech tree unlocks) — or `credits`, War Chest's; `repeatable` when it may be kept again, `always` when it is
 offered beside every hand rather than dealt into one), `commanders` (a name, her unit, and her `barks`: a few
 lines for each moment of a Battle Round she answers, refused by name for a moment no Commander speaks at, a moment
 with no lines, or a line that says nothing or does not fit the panel's feed or one row of the map at 80 × 24) and
@@ -123,7 +123,7 @@ with no lines, or a line that says nothing or does not fit the panel's feed or o
 it unlocks and its mission). **An army sees what it and the armies it requires bring, directly or through another,
 and nothing else**, so content forms a tree with a campaign at the top: its levels, then the cards and units they
 use, from its own army or one beneath it. `armies/all` holds the buildings and Nexus powers any Commander may use;
-`armies/vasse` requires it and holds her Commander, her own powers, the Aid Station her permit unlocks, and her
+`armies/vasse` requires it and holds her Commander, her own powers, the Aid Station her permit adds, and her
 campaign (the owner's names, 2026-10-04: "call the folder armies/vasse and armies/all"). The loader
 (`src/armies/load.ts`, pure: the content registry and the map table are its arguments) refuses a broken army with
 every problem at once, each naming where by ids (`campaigns[vasse].levels[vasse-test-2].mission.pulses`), and

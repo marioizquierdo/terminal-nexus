@@ -46,6 +46,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order) | Should units be able to hold, withdraw or head for a place? | OPEN (heading for a place built) | Posts, in the backlog |
 | [Q73](#q73--how-strong-should-by-the-book-vasses-aura-be) | How strong should By the Book, Vasse's aura, be? | OBSERVABLE | The By the Book Experiment |
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
+| [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 
 ## Open
 
@@ -548,3 +549,24 @@ hand, so a pick is one key away whatever is dealt.
 **Recommendation: B.** A power dealt is a power gained — none of PERIMETER's four has a cost — so nothing is lost
 by keeping one, and a round that starts without one is a power forgotten rather than declined. War Chest beside
 every hand keeps testing one key away. Play a mission with the Experiment on required and say if it nags.
+
+### Q75 — How long is a match?
+
+**Status:** OPEN — registered 2026-10-07. Blocks nothing built; it decides how many picks a match deals and how
+often the rare hand comes, and the worker economy is the first step that can measure it.
+
+The concept sets a match at 5 to 12 minutes, and a run at 6 to 9 of them in one sitting. Asking whether tech should
+be drafted, the owner said that with resource management "the gameplay could last longer, like maybe 40 minutes,
+maybe one hour", that "the general long-term play for this game is going to be the run and possibly in the future
+multiplayer", and then, of the draft: "I can see how limiting the amount of important decisions, depending on how
+many rounds the game will have, is important, so we can tune that later." A pick each round, kept for the mission,
+is a handful of powers in a short match and twenty or more in a long one.
+
+| Option | What it costs |
+| --- | --- |
+| A. **A match stays short** — 5 to 12 minutes, a little longer once the worker economy lands — and a run carries the hour | The economy has to stay light enough to fit; a pick each round and a rare hand every few rounds stay as designed |
+| B. **A match grows to 40 to 60 minutes** | Reverses the concept's rule; twenty or more rounds means picks move to fewer, bigger moments (the rare hand, a pick at each age-up as Age of Mythology does), and a multiplayer match takes an hour |
+
+**Recommendation: A.** The concept's promise is a game that finishes quickly and makes you want one more; the run is
+where an hour of play already lives (Slay the Spire's runs are as long), and an hour of multiplayer holds several
+matches rather than one. Time a match once workers gather, and tune the draft's numbers to it.
