@@ -27,7 +27,7 @@ reports), and launch the current mission from it?
 - **Enemy intel panel.** Discovered enemy units, buildings, Nexus powers, generals and mission reports.
   This is new ground: no design document yet describes a persistent, cross-mission record of what the
   player has seen of the enemy. The player's view in the grid engine is a live visibility filter for
-  one Pulse, not a remembered log. The discovery rule is an open question (below) and is settled before
+  one Battle Round, not a remembered log. The discovery rule is an open question (below) and is settled before
   this panel is built.
 - **Mission reports.** The existing headless report already produces a per-mission outcome (ticks,
   losses, victory reason, hashes; see `docs/history/milestones/milestone-01-grid-battles.md`). Reuse
@@ -69,8 +69,8 @@ and whichever is built second reuses it rather than drawing a second one.
 ## Decision it waits on
 
 **What counts as "discovered" enemy intel, and when is it recorded?** (Q35) The candidates are: (a) any
-enemy entity the player's view has ever rendered during any Pulse, logged the instant it is first seen;
-(b) only entities that survive to the end of a Pulse; (c) only reveals a mission's own script declares.
+enemy entity the player's view has ever rendered during any Battle Round, logged the instant it is first seen;
+(b) only entities that survive to the end of a Battle Round; (c) only reveals a mission's own script declares.
 The recommendation is (a): it is the simplest rule, needs no new authoring per mission, and is derived
 from the event stream the way the report module already works. The question is registered in
 [`open-questions.md`](open-questions.md) with that recommendation.

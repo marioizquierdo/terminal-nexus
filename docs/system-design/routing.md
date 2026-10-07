@@ -107,7 +107,7 @@ the type checker name every place that must learn it — the game's dispatch, th
 scripted playtest. A new campaign level needs no entry here at all: `campaign?level=<id>` reads the levels
 the game can open (`src/cli/levels.ts`).
 
-IDEA — places a later step could name, none built: a level's round straight into its Pulse; the run
+IDEA — places a later step could name, none built: a level's round straight into its Battle Round; the run
 screen, once Challenge exists; a saved replay, once the replay file exists.
 
 ## 5. The bare command and the saved game

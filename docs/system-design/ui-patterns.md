@@ -70,7 +70,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 
 - **Four regions.** The **top bar** (whole width): the title, where the player is, and at its right end
   what Esc does. The **side panel**, on the left because building comes first: the menu, a card, or the
-  Nexus Pulse's panel. The **map**, a closed rectangle whose west side is the panel's divider. The
+  Battle Round's panel. The **map**, a closed rectangle whose west side is the panel's divider. The
   **bottom line** (whole width): one line of contextual help. Popups open over the map. At 80 × 24 the
   map shows 49 × 18 tiles, one column a tile. (RULE — `tests/build-focus.test.ts`, `tests/build-help.test.ts`,
   `tests/rows-view.test.ts`)
@@ -100,7 +100,7 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
 - **Every action is a named command**; keyboard, mouse and a script are adapters onto one vocabulary
   ([`input.md`](input.md)), and tests drive the real adapters with raw keys and clicks. A hotkey that is
   not displayed does not exist. (RULE — `tests/build-phase.test.ts`, `tests/title-menu-adapters.test.ts`)
-- **A click activates what it lands on**, from any focus: a building's row arms it, `[n] Nexus` opens its
+- **A click activates what it lands on**, from any focus: a building's row arms it, `[n] Nexus Pulse` opens its
   popup, `[e] Explore Map` opens it. What a row click starts comes back to the menu.
   (RULE — `tests/build-focus.test.ts`)
 - **A click can only choose what it could see**: while a card covers the menu, a click on the panel goes
@@ -123,14 +123,14 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   where it began; plain navigation goes to the menu. (RULE — `tests/build-cancel.test.ts`)
 - **Only Esc opens the game menu.** On the menu nothing is left to cancel: Esc opens the game menu, and
   `x` and a right click do nothing there — no message, no flicker — so `x x x` always lands on the menu
-  with the keyboard on it; the same on a committed plan and during a Pulse. `q` opens the game menu from
+  with the keyboard on it; the same on a committed plan and during a Battle Round. `q` opens the game menu from
   anywhere. Two commands carry this: `cancel` (Esc, the top bar's label) and `back` (`x`, a right click).
   (RULE — `tests/build-cancel.test.ts`, `tests/pulse-screen.test.ts`)
 - **The key that opened something closes it**: `e`, `n`, `d`, and a building's own digit while it is
   being placed. (On the Battle Round screen `s` confirms instead: starting takes two deliberate presses.)
   (RULE — `tests/build-holds-menu.test.ts`, `tests/build-card.test.ts`, `tests/build-start.test.ts`)
 - **No popup carries its own way back** — no `[esc] Back` row, no `[esc]` in its border. **The top bar's
-  right end says what Esc does now**: `menu [esc]` on the menu and while a Pulse plays, `back [esc]` on
+  right end says what Esc does now**: `menu [esc]` on the menu and while a Battle Round plays, `back [esc]` on
   the map, `close [esc]` over a popup — the action quiet, the key in the hotkey colour. A click on it is
   exactly Esc (`escLabel` in `src/build/layout.ts`). (RULE — `tests/build-popups.test.ts`, `tests/build-cancel.test.ts`)
 - **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart` (the
@@ -158,7 +158,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   - **highlighted** — an inverse bar across the row, in one colour, only while the menu has the keyboard;
   - **active** — its action is under way: it keeps its own hotkey, turns the hotkey colour, and a single
     **`>`** replaces its value at the right end, pointing at the map — `[1] Barracks  >`. No bar, no
-    underline. A building being placed, Explore Map open, the Nexus popup or the Battle Round screen
+    underline. A building being placed, Explore Map open, the Nexus Pulse popup or the Battle Round screen
     open: every row either opens a popup or gives the map something to do, and all share the look
     (`menuRowActive`, `menuRowSpec`, `drawMenuRow` in `src/view/build-menu.ts`).
   (RULE — `tests/build-menu.test.ts`)
@@ -176,7 +176,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
 ## 5. Moving in lists
 
 **List movement** is the map cursor's movement applied to rows, in every list — the Build Phase menu,
-the Nexus powers, the game menu, Settings, the export, the Controls page, the Activity logs window, the
+the Nexus Pulse popup, the game menu, Settings, the export, the Controls page, the Activity logs window, the
 title screen's menu.
 
 - **No wrapping**: a list stops at its first and last row; holding Down arrives at the bottom and stays.
@@ -196,7 +196,7 @@ title screen's menu.
 
 ### 6.1 The Build Phase menu
 
-- **One list**: `[e] Explore Map`, `[n] Nexus` (picks waiting as `(1)` in the hotkey colour), then **the
+- **One list**: `[e] Explore Map`, `[n] Nexus Pulse` (picks waiting as `(1)` in the hotkey colour), then **the
   credits line** — the blank line before the buildings, what is left to spend right-aligned in the cost
   column after the map's own resource symbol in the deposit's colour (`◆ 130`; `* 130` in ASCII) — every
   building in catalog order with its cost, and `[s] Start Battle Round` on the panel's last line.
@@ -227,13 +227,13 @@ title screen's menu.
   Battle Round screen says in one quiet line that a power is still waiting. With the Nexus pick Experiment on
   required, the row is refused until a power is kept: "Pick a Nexus power first: [n]." (RULE —
   `tests/build-start.test.ts`, `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`)
-- ***The Nexus draft in its popup*** (`[n]`): `PICK ONE - or start without`, then the hand dealt this round — two
+- ***The Nexus Pulse in its popup*** (`[n]`): titled `NEXUS PULSE`, it reads `PICK ONE - or start without`, then the hand dealt this round — two
   powers, each its name under its digit and its one line under that, then War Chest under the next digit — and
   `ACTIVE`, every power kept this mission still in force, this round's pick among them once made (War Chest's
   credits and Reserve Callup's troopers are spent in the round they are kept), or "None yet." A pick closes the
   popup and takes effect at once: the menu gains the building a permit adds under the next digit, a card says
   what changed (a Barracks's `WAVES 4 at 5s, 15s`, her aura "within range 8"), units called up show arriving
-  beside the Nexus, and `[n] Nexus` says how many are active. (RULE — `tests/build-nexus.test.ts`,
+  beside the Nexus, and `[n] Nexus Pulse` says how many are active. (RULE — `tests/build-nexus.test.ts`,
   `tests/nexus-draft.test.ts`)
 
 ### 6.2 Cards
@@ -257,7 +257,7 @@ title screen's menu.
   with the content (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text
   never cuts a word**; if the words are too long, shorten them. One function draws every card
   (`drawCardBody`): that is where a later round would change the look for placing a building (where the title
-  repeats the header), for exploring in the Build Phase, or for exploring during a Pulse. (RULE for the four
+  repeats the header), for exploring in the Build Phase, or for exploring during a Battle Round. (RULE for the four
   parts and the fit — `tests/build-card.test.ts`)
 - ***A range on a card*** (a named pattern; a row counts two columns in every distance, [`grid.md`](grid.md)):
   **every range a card states is one number, the range across**, as strategy games say a range — an attack's,
@@ -277,11 +277,11 @@ title screen's menu.
 
 While a building is being placed it stays the selection until placed or cancelled: another building's
 digit, `e` and `s` (and `p`) are refused — the header flickers and the bottom line says to place it or
-cancel it first, naming the keys. Its own digit, Esc and `x` cancel it. Popups (the Nexus powers, the
+cancel it first, naming the keys. Its own digit, Esc and `x` cancel it. Popups (the Nexus Pulse, the
 game menu, Settings, Controls) still open over it and hand it back, still armed, and a popup over a card
 never moves the menu's highlight. So the menu is never workable with a ghost on the map, and never loses
 track of what is armed (`refuseWhileArmed` in `src/build/state.ts`). Explore Map holds nothing: a digit
-while exploring arms from the map, and `n` opens the Nexus powers.
+while exploring arms from the map, and `n` opens the Nexus Pulse popup.
 (RULE — `tests/build-holds-menu.test.ts`)
 
 ## 7. Hand-offs to the map
@@ -378,7 +378,7 @@ uses it rather than a new blend.
   10.4). (RULE — `tests/build-popups.test.ts`, `tests/build-holds-menu.test.ts`, `tests/dialog.test.ts`)
 - **A choice closes its popup**: a Nexus pick returns the player to where they were; the bottom line
   and the menu say what it did. (RULE — `tests/build-nexus.test.ts`)
-- **A popup that belongs to a menu row keeps that row active behind it** (Nexus, Battle Round); one that
+- **A popup that belongs to a menu row keeps that row active behind it** (Nexus Pulse, Battle Round); one that
   belongs to none (game menu, Settings, export, Controls, Activity logs) leaves the menu unlit.
   (RULE — `tests/build-menu.test.ts`)
 - **A confirmation is a screen, not a question**: its title says what is about to happen (`Battle
@@ -477,7 +477,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   back to the same line. The bottom line names its keys: `Line 1 of 4. [enter] next line, [esc] skips
   the rest.`
 - **The camera on whoever is talking**: each line slides the view to its focus (a unit, a group or a
-  region), with the Pulse's own look-at, and lights it (`fx.focus.light`, section 13); the map cursor is
+  region), with the Battle Round's own look-at, and lights it (`fx.focus.light`, section 13); the map cursor is
   hidden and the menu unlit while it is open. After the last line, the round is exactly as it opened:
   the cursor where the round put it, the bottom line the round's own.
 - **Recorded**: every line shown and every skip is an Activity Logs event (the **Intro** filter), so a
@@ -503,7 +503,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
   **A command's own answer comes first**, a refusal included; the ghost's reason is what the line says
   when the last command said nothing. (RULE — `tests/build-help.test.ts`, `tests/build-holds-menu.test.ts`)
-- **During a Pulse** it says what the Pulse is doing, unless a popup holds the keyboard. **It fits 80
+- **During a Battle Round** it says what the battle is doing, unless a popup holds the keyboard. **It fits 80
   columns**; a narrower bar drops whole words, never half of one. (RULE — `tests/build-help.test.ts`)
 
 ## 12. The map
@@ -539,13 +539,13 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   nearer the edge, armed or not, so clicking with the ghost keeps scrolling.
   (RULE — `tests/build-focus.test.ts`, `tests/build-motion.test.ts`, `tests/build-phase.test.ts`)
 - **Placing**: a planned building is drawn at full strength; undo and remove keep the plan revisable until the
-  Pulse — nothing planned gives build range, so no building ever needs another. A refused try flashes the
+  Battle Round — nothing planned gives build range, so no building ever needs another. A refused try flashes the
   footprint in the danger colour as the bottom line says why. (RULE for the flash —
   `tests/build-motion.test.ts`)
 - **What else is on the map**: after a round, every survivor stands where Recall put it — the
   player's own and the raid's — and the raid's own structures stand where its plan put them, each in its
   side's colour. A structure of the raid's refuses a placement like the player's own; a unit does not,
-  because **a unit steps aside for a building when the Pulse starts**, so a unit is never drawn over a
+  because **a unit steps aside for a building when the Battle Round starts**, so a unit is never drawn over a
   planned building either. Explore Map's card reads any of them: its words, whose it is, its health now.
   (RULE — `tests/mission-loop.test.ts`)
 - ***The incoming raid*** (a named pattern: the owner's "explore the map and see what is coming", and
@@ -556,11 +556,11 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   arrives ("as the round starts", or seconds in), and **its intention**, one plain line the mission writes
   for the group, in place of a description. A Commander arriving is bold and never washed. It yields to
   buildings like any unit, and the cursor sets its wash aside. A forecast: it is placed against the map
-  without the plan, and a building planned where an arrival would stand moves it when the Pulse starts.
+  without the plan, and a building planned where an arrival would stand moves it when the Battle Round starts.
   (RULE — `tests/mission-loop.test.ts`, `tests/raid-view.test.ts`)
-- ***The raid's intent*** (a named pattern): in the Build Phase, never during a Pulse, each coming group has a
+- ***The raid's intent*** (a named pattern): in the Build Phase, never during a Battle Round, each coming group has a
   **trail** to what it targets first, and **that target is marked**. The target is the kernel's own choice on
-  the Pulse's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
+  the Battle Round's first tick, worked out on the plan as it stands (`src/match/intent.ts`), so placing, undoing or
   removing a building changes it at once: a building nearer the raid becomes its target. The trail is
   the kernel's own steps, round a ridge, or pressing on it when nothing gets through. Its arrows stand four
   apart along the way by the Grid's own distance, four columns or two rows (the owner's "1 arrow every 3 tiles",
@@ -597,13 +597,13 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   over the raid's trail — all three give way along the trail's whole way, wherever its moving arrows are, so
   nothing flickers as they pass and no tile of a room on the way reads as open ground — and nothing claims what a range would catch on the raid's way.
   Where a reach crosses a room, the reach's strokes are drawn. None shows under a popup, on a committed plan,
-  or during a Pulse. (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
+  or during a Battle Round. (RULE — `tests/build-areas.test.ts`, `tests/build-territory.test.ts`)
   **Measured as the battle will be.** All three are the rules' own, drawn from the same functions the battle
   counts with (`tilesWithin`, [`grid.md`](grid.md), distance, reach and movement). Build range 6 reaches 6
   columns across and 3 rows up and down, and what the dots allow is what Enter takes; a Turret's reach of 6 is
   drawn 13 wide by 7 tall, as tall as it is wide on screen. An outline is the last tiles reached — every tile in
   reach with a four-way neighbour out of it, never the footprint's own (`outlineWithin`) — so it is two tiles
-  thick on its slants, where each row steps in by two columns, and has no gaps; a blast's ring during a Pulse is
+  thick on its slants, where each row steps in by two columns, and has no gaps; a blast's ring during a Battle Round is
   the same outline. (RULE — `tests/rows-view.test.ts`, `tests/build-areas.test.ts`)
 
 ## 13. Effects
@@ -625,7 +625,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   it on the ground around it, never on it, breathing at the Popup pulse's pace; steady under reduced
   motion, and in monochrome and at 16 colours the focus's own cells invert instead.
   (RULE — `tests/dialog.test.ts`)
-- **The speaker's light**: as Vasse begins a line during a Pulse, her own tile is lit a moment with the
+- **The speaker's light**: as Vasse begins a line during a Battle Round, her own tile is lit a moment with the
   placement's light (`fx.light.flash`, glyphless, its own three forms); none for her last words, when she is
   gone from it. (RULE — `tests/voice.test.ts`)
 - **A heal is a cross of light beside the unit it heals**: on the first open tile beside it, rising a row and
@@ -639,10 +639,10 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   absent under reduced motion. A new warning goes to the timer or the light, never to more red.
   (RULE — `tests/pulse-screen.test.ts`, `tests/ending.test.ts`)
 
-## 14. The Nexus Pulse on screen
+## 14. The Battle Round on screen
 
-- **The Pulse plays on the Build Phase's screen**; only the panel changes. It opens on the player's
-  Nexus, the arrows look around, and the Pulse never waits for the player.
+- **The Battle Round plays on the Build Phase's screen**; only the panel changes. It opens on the player's
+  Nexus, the arrows look around, and the battle never waits for the player.
   (RULE — `tests/pulse-screen.test.ts`)
 - **The panel, in order**: `BATTLE ROUND 1` with the time left until the last shot; what the timer counts and
   its speed; a line per side (units, a health bar, the number); the last five events in plain words, each thing
@@ -656,7 +656,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   **result** (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`, why, and how many came home) — words first, on
   the panel and again on the bottom line, colour second. Reduced motion holds the timer lit and the light
   steady, and puts everyone home at once. (RULE — `tests/ending.test.ts`, `tests/pulse-screen.test.ts`)
-- **Nothing the player does changes what the Pulse did**: it was resolved before the first frame, so
+- **Nothing the player does changes what the battle did**: it was resolved before the first frame, so
   Replay only restarts the clock; centring on the Nexus is the same named command a key sends.
   (RULE — `tests/pulse-screen.test.ts`)
 - ***The loop***: in a mission, the result says the fight first — `VICTORY`, `DEFEAT`, `DRAW` or
@@ -679,7 +679,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   Vasse is out this round, back for round 3.`), and so does the Battle Round screen, under the round's own
   words (`Vasse is out this round.`). The round she comes back, the bottom line says `Vasse is back beside
   the Nexus.` and she stands there on the map, and the round opens on the dialog saying it, looking at
-  her. Wherever she stands she is drawn **bold at full strength**, arriving included and while a Pulse
+  her. Wherever she stands she is drawn **bold at full strength**, arriving included and while a Battle Round
   plays, so she is never mistaken for the squad around her; a mission introduces her through the dialog,
   her ring lit (PERIMETER's round 1). (RULE — `tests/commander-screen.test.ts`, `tests/dialog.test.ts`,
   `tests/raid-view.test.ts`)
@@ -798,10 +798,12 @@ the build stamped on every export — is what makes a pasted export reproducible
   plain words. For a way back, the action first, then the key (`back [esc]`).
 - **Names**: the menu's acknowledgement is *pressed* in code (`ack`, `PRESSED_LOOK`) and a *blink* on screen; the
   building hand-off's traveller is the *focus arrow*; Explore Map's is the *see-through cursor*.
-- **Battle Round, never Pulse, on screen** (the owner, 2026-10-04: "Battle Round is better for the player and
-  UI"): the menu row, the start screen, the running screen's lines, the popups and the cards say Battle Round
-  (or the battle); Nexus Pulse is the lore's and the design's word, and the code's. A mission's cycles are
-  **rounds** to the player — "round 2 of 3", "Next round". The words are defined in
+- **The battle is the Battle Round, never Pulse, on screen** (the owner, 2026-10-04: "Battle Round is better for the player and
+  UI"): the menu's start row, the start screen, the running screen's lines, the popups and the cards say Battle Round
+  (or the battle), and so do the design and the lore. **The Nexus Pulse** is the moment a round opens and the
+  Nexus deals its hand (the owner, 2026-10-07): on screen, the menu row `[n] Nexus Pulse` and the popup it
+  opens, titled `NEXUS PULSE`. The code still calls the battle step `pulse`, the engine's word, which a player
+  never reads. A mission's cycles are **rounds** to the player — "round 2 of 3", "Next round". The words are defined in
   [`grid-engine.md`](grid-engine.md); the "Popup pulse" Experiment is a breath of light on a popup's
   border and has nothing to do with the Nexus Pulse.
 

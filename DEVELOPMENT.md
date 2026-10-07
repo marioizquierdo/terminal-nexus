@@ -133,7 +133,7 @@ run recorded in the Activity Logs, as the game's window would export it; `--size
 ```bash
 node scripts/playtest.mjs --keys "Esc Down Down Space*4"                   # every step's status, then the final screen
 node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --png final --name hatchery-run
-node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a Pulse, twenty seconds in
+node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a Battle Round, twenty seconds in
 node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=3' --png final   # round 3 as it opens
 ```
 
@@ -157,7 +157,7 @@ regeneration touches only the pictures a change shows up in. Set an Experiment b
 `--settings`, never by counting rows.
 
 **The browser playtest page** (`bun scripts/build-web.mjs`, one self-contained HTML file) runs the
-real menu, Build Phase and Pulse through a stand-in terminal, painted on a canvas, with an on-screen
+real menu, Build Phase and Battle Round through a stand-in terminal, painted on a canvas, with an on-screen
 key bar for the keys a phone lacks. It is a development tool, never a platform: the build fails if
 anything the page reaches imports a Node-only module, and a terminal at 80 × 24 stays the acceptance
 target. It cannot show raw keyboard mode, terminal cleanup, signals, a real terminal's own key
@@ -186,7 +186,7 @@ terminal before trusting a remembered escape sequence.
 ## 4. Planning: milestones and steps
 
 Work is planned in **milestones**, tracked in `docs/milestones/`. A milestone answers one question
-about the game ("can a player start the Pulse, watch it resolve, and land in the next Build Phase?")
+about the game ("can a player start the Battle Round, watch it resolve, and land in the next Build Phase?")
 and is small enough to be played and judged as a whole. Its file holds:
 
 - the question, and what it depends on (named milestones, accepted);
@@ -318,7 +318,7 @@ Everything a person reads — pull requests, commit messages, chat replies, any 
 Mario rather than for the next agent — says **what the thing is**, not where it is filed.
 
 - Bad: "per the engine document's section on match structure, proceeding under the recommendation
-  for the open question about Nexus drafts."
+  for the open question about the Nexus Pulse."
 - Good: "the Nexus offers the player a small choice of upgrades each round; nobody has designed what
   those are yet."
 

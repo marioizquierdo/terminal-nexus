@@ -6,8 +6,9 @@ documents that hold the detail. They change only when a rule of working changes.
 
 ## What this is
 
-Terminal Nexus is a terminal strategy game: players build a base during a hidden Build Phase, then
-watch persistent armies resolve the plan in a deterministic ASCII battle called a Nexus Pulse. The
+Terminal Nexus is a terminal strategy game: each round opens with a Nexus Pulse, when the Grid Nexus
+deals a hand of Nexus powers; players then build a base during a hidden Build Phase, and watch
+persistent armies resolve the plan in a deterministic ASCII battle called a Battle Round. The
 project is at version 0.1 until it is public. The design documents under `docs/` describe the current
 design; a merged pull request is the change. Nothing is versioned beyond git.
 

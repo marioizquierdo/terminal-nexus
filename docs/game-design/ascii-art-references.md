@@ -25,12 +25,12 @@ by category, and a "disable floor textures" option — are the fix, and both are
 character choice.
 
 Terminal Nexus has a sharper version of this problem than a roguelike does. A roguelike player
-studies a still frame at their own pace. A Nexus Pulse viewer watches a moving frame at ours,
+studies a still frame at their own pace. A Battle Round viewer watches a moving frame at ours,
 already knowing they cannot intervene. If they cannot read it in motion, the whole product promise —
 *watch symbols turn your plan into a legible story* — fails, and no amount of lore rescues it.
 
 Practical consequence: **the busiest frame is the design target, not the prettiest one.** Author the
-late-Pulse scrum first and the calm opening second.
+late-battle scrum first and the calm opening second.
 
 ## 2. Cogmind — the closest relative, and the best documentation
 
@@ -135,7 +135,7 @@ The ASCII and visual language in the lore names four precedents. Concretely:
 
 Distilled into things a session can actually do:
 
-1. **Author the worst frame first.** Late Pulse, both armies engaged, three effects overlapping. If
+1. **Author the worst frame first.** Late in a battle, both armies engaged, three effects overlapping. If
    that reads, the calm frames will. [`effects.md`](../system-design/effects.md) carries this and the rest
    of the craft rules as the effect system's own contract.
 2. **Test in monochrome before colour.** Not after. Colour added to a legible monochrome frame is an

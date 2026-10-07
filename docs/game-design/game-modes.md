@@ -21,28 +21,28 @@ campaign is, what every mission teaches, or what a run's exact numbers are. Thos
 playtesting once the interface exists, and the point of writing this down is that nothing built
 before then forecloses either mode.
 
-**RULE: a mode is data over one match loop and one army shape.** The match loop is Build Phase,
-Nexus Pulse, repeat, until a result ([`pulse.md`](../system-design/pulse.md), match structure). The army
+**RULE: a mode is data over one match loop and one army shape.** The match loop is a round —
+Nexus Pulse, Build Phase, Battle Round — repeated until a result ([`pulse.md`](../system-design/pulse.md), match structure). The army
 shape is the Commander Army, a bounded composition drawn from a faction's pool
 ([`commander-armies.md`](commander-armies.md)); what is built of it is cards in army files, which each mode
 offers its own way: the Campaign through its levels' unlocks (`src/armies/`, `tests/armies.test.ts`). A
 mode decides which matches are played, in what
 order, against whom, and what happens to the army between them. Nothing below the mode — the kernel,
-the Pulse, the Build Phase screen, the renderer — knows which mode it is serving.
+the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
 
 ## 2. Vocabulary — RULE for the names, so every document and screen uses the same ones
 
 | Term | Means |
 | --- | --- |
-| **Match** | One Grid, one or more rounds (each a Build Phase and the Nexus Pulse that follows), one result. The unit of play; 5–12 minutes ([`concept.md`](concept.md)). Nothing above a match is visible to the kernel |
+| **Match** | One Grid, one or more rounds (each a Nexus Pulse, a Build Phase and the Battle Round that follows), one result. The unit of play; 5–12 minutes ([`concept.md`](concept.md)). Nothing above a match is visible to the kernel |
 | **Battle** | A match played inside a mode. "Battle" is the player-facing word; "match" is the engine's |
 | **Mission** | A battle with authored triggers, text, and a teaching goal — the Campaign's unit ([`campaigns.md`](campaigns.md)) |
 | **Run** | An ordered series of battles in which the army changes between them — the Challenge mode's unit. One attempt, start to finish, win or lose |
 | **Act** | A segment of a run ending in a harder, named battle. A run is a small number of acts |
 | **Card** | Working shorthand for any content item an army can hold or be offered: a structure, a Nexus power, an upgrade, a Commander variant. A unit is not a card — units come from the structures that produce them. **Not a claim that an army behaves like a trading-card deck** — see the note below. **Still ambiguous** (see the terminology glossary in [`commander-armies.md`](commander-armies.md)): whether this stays an internal shorthand or narrows to mean "Nexus power" specifically, the game's actual card-equivalent noun, is not yet decided |
 | **Pool / Army** | The faction's whole catalogue / the army's chosen subset ([`commander-armies.md`](commander-armies.md)). The owner calls one Commander's army her **deck**: the package she brings, not deck behaviour — see below. The code has cards in army files, and what a mode offers of them. **"Pool" alone is ambiguous** (a faction's pool versus one army's own slice of it) — always qualify it |
-| **Draft** | Choosing from an offered hand. **The Nexus draft** happens inside a match, at each Build Phase, from the army's Nexus power pool, each card's rarity set by a schedule that ramps by round ([`commander-armies.md`](commander-armies.md)). **The run draft** happens between battles, from the faction pool, and changes the army |
-| **Rarity** | How rare a card is: `common`, `uncommon`, `rare`. The run draft weighs it, how often a card is offered; the Nexus draft deals it by a schedule, which rarity a hand holds in which round |
+| **Draft** | Choosing from an offered hand. **The Nexus Pulse** deals one inside a match, as each round opens, from the army's Nexus power pool, each card's rarity set by a schedule that ramps by round, and the player keeps one during the Build Phase ([`commander-armies.md`](commander-armies.md)). **The run draft** happens between battles, from the faction pool, and changes the army |
+| **Rarity** | How rare a card is: `common`, `uncommon`, `rare`. The run draft weighs it, how often a card is offered; the Nexus Pulse deals it by a schedule, which rarity a hand holds in which round |
 | **Tier** | The earliest depth at which a card may be offered: `1`, `2`, `3`. Tier gates *when*; rarity weights *how often* |
 | **Unlock** | A card added to the player's available pool, granted by the Campaign or by Challenge's own play, between battles. What the unlock record stores is an open question (Q31). Inside a match, only the tech tree unlocks; a Nexus power *adds* ([`commander-armies.md`](commander-armies.md)) |
 | **Seed** | A run is deterministic from its seed: the same seed deals the same offers and the same opponents in the same order, exactly as a match is deterministic from its seed |
@@ -124,8 +124,8 @@ autobattlers (see the references below), taken at the size Terminal Nexus's 5–
 
 **Design consequences a session should hold onto:**
 
-- **The run draft is the Nexus draft's sibling, not its replacement.** Inside a battle, the Nexus
-  still deals a hand from the army's power pool at every Build Phase. Between battles, the run draft
+- **The run draft is the Nexus Pulse's sibling, not its replacement.** Inside a battle, the Nexus
+  still deals a hand from the army's power pool at every Nexus Pulse. Between battles, the run draft
   changes what that pool — and the structure list — contains. One dealing mechanism, two scales.
 - **Removal is a first-class offer.** Every run draft screen offers removal alongside adding, at the
   same cost of "this is your one choice." A build that cannot shed its early common structures cannot
@@ -159,7 +159,7 @@ exists, so it comes later. Nothing here is designed; multiplayer comes later, on
 **RULE: every card carries `rarity`, `tier` and `role` from the day it is authored**, so that both
 modes can deal it; the authoring template in [`commander-armies.md`](commander-armies.md) asks for
 them. No code holds it yet: the cards in the army files carry none, and the step that first deals cards by
-rarity adds the tags (the Nexus draft's schedule, in [`commander-armies.md`](commander-armies.md), where
+rarity adds the tags (the Nexus Pulse's schedule, in [`commander-armies.md`](commander-armies.md), where
 Vasse's powers carry a first guess). The three rules of thumb after the schema are GUIDANCE.
 
 ```ts

@@ -51,7 +51,7 @@ that reports key events does (the kitty keyboard protocol), with the same `~MS` 
 line prints each step's cursor and the kind and size of the last timed cursor key's move (`tap 1`,
 `tap 2`, `hold 1`, `hold 0`, `jump 10`, `release 0`).
 `wait` is a step where no key is pressed and time passes — a second, or `wait~MS`; `wait~250*40` is
-ten seconds in quarter-second frames. It is how a script watches a Nexus Pulse. Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
+ten seconds in quarter-second frames. It is how a script watches a Battle Round. Mouse: `click:X,Y` clicks Grid tile X,Y wherever the camera has it drawn right now (fails if
 it is off screen), `click@COL,ROW` clicks a 0-based screen cell; `rclick`, `wheelup`, `wheeldown` take
 the same targets. `#` starts a comment in a `--file`. The table with bytes is at the top of
 `src/playtest/keys.ts`. An unknown name is an error, never a guess.
@@ -65,12 +65,12 @@ another); what the screens are and every key on them is in
 dialog at the bottom, which holds the keyboard: every opening below starts after `Esc`, which skips it
 (`Enter` reads the next line; `--keys "Enter Enter Enter" --png all` shows each line).
 
-- `n 1`: pick the first Nexus power dealt; the popup closes and the highlight stays on the Nexus row. The hand
+- `n 1`: pick the first Nexus power dealt; the popup closes and the highlight stays on the Nexus Pulse row. The hand
   is two powers dealt from the pool, then War Chest (`n 3`, 2000 to spend), dealt the same way every run.
 - `n 1 Down Down Space`: arm the Hatchery from the menu; the panel becomes its card.
 - `n 1 PgDn Enter`: the Battle Round screen (`PgDn` goes to the last row, Start Battle Round; without a power
   picked first, the bottom line says so instead).
-- `s s wait~1000*20`: a whole Pulse with nothing built and no power kept, twenty seconds in; the second `s`
+- `s s wait~1000*20`: a whole Battle Round with nothing built and no power kept, twenty seconds in; the second `s`
   starts it.
 - `--at 'campaign?level=vasse-test-1&round=2'` with no keys: round 2 as it opens, round 1 played with
   nothing built. A round that opens with a scene (PERIMETER's first, a Commander's return) plays it first,
@@ -91,7 +91,7 @@ dialog at the bottom, which holds the keyboard: every opening below starts after
 
 What a script cannot show is time between keys on the live screen: the view sliding, a flash, a
 building going up (script frames always draw buildings finished). Two things are the exception, since a
-`wait` moves their clock: a Pulse, and the raid's intent trail, whose arrows step on toward what the raid
+`wait` moves their clock: a Battle Round, and the raid's intent trail, whose arrows step on toward what the raid
 goes for from the first frame that drew them moving (after `Esc` closes PERIMETER's intro, or as a round
 opened by `--at` starts). `--at 'campaign?level=vasse-test-1&round=2' --keys "wait~100*23" --gif --delay 100
 --hold 100 --scale 1` makes a GIF of it moving, a frame every 100 ms, as fast as it plays. For those, compose a frame with `camera` / `refusedTry` / `ack` /

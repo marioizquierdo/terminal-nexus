@@ -1,7 +1,7 @@
 # Milestone 7 — Worker Economy
 
 **Status:** PLANNED
-**Depends on:** Milestone 6 (the Pulse loop that workers act inside)
+**Depends on:** Milestone 6 (the Battle Round loop that workers act inside)
 
 This milestone was pulled forward from the backlog on purpose. [`backlog.md`](backlog.md) deferred a
 full economy until some level needed one, and this is that level. The scope stays narrow: enough worker
@@ -10,14 +10,14 @@ warehouses, a second resource, target scoring for combat).
 
 ## Question
 
-Can a player produce workers, have them pick and work a deposit automatically during the Pulse, and
+Can a player produce workers, have them pick and work a deposit automatically during the Battle Round, and
 see the resource they gather feed the same pool the Build Phase spends, deterministically and on real
 content, for the first time?
 
 ## What it builds
 
-- **Worker production.** `unit.citizen.worker` becomes something the player can add from the construct
-  menu Milestone 5 built. The construct-menu list in
+- **Worker production.** `unit.citizen.worker` becomes something the player can add from the build
+  menu Milestone 5 built. The build menu's list in
   `docs/history/milestones/milestone-02-campaign-design.md` is amended to include it.
 - **Job assignment.** Workers pick the closest available job by deterministic path distance (the
   worker rules in [`docs/system-design/grid-engine.md`](../system-design/grid-engine.md), still
@@ -33,8 +33,8 @@ content, for the first time?
 
 ### Step 7A — Worker production
 
-- [ ] `unit.citizen.worker` is on the construct menu.
-- [ ] Workers are produced by their recipe during the Pulse. Milestone 6's production step is the
+- [ ] `unit.citizen.worker` is on the build menu.
+- [ ] Workers are produced by their recipe during the Battle Round. Milestone 6's production step is the
       mechanism; this is its first real use.
 
 ### Step 7B — Job assignment and harvesting
@@ -73,7 +73,7 @@ tell the resource total is moving because of that worker, not by coincidence.
 
 ## Done when
 
-- [ ] Worker production is a real construct-menu option.
+- [ ] Worker production is a real build-menu option.
 - [ ] Job assignment and harvesting work on PERIMETER's own deposit.
 - [ ] Q7 is updated to say it is partly adopted (produce in place) and still open for the storage cap.
 - [ ] `./scripts/check-repository.sh` passes.

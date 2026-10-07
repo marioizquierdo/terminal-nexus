@@ -120,7 +120,7 @@ width: at the 80-column floor the Grid pane is 49 columns, and the bottom bar's 
 The top bar carries the game's title and where the player is (the phase today; the mission and the round
 number once there are some), the bottom bar is **one line of contextual help**, and the side panel
 carries actions and their status. Both phases support the cursor, selection, inspection and scrolling: a
-player watching a Pulse can hover a unit to read its state in real time, and can scroll the Grid, exactly
+player watching a Battle Round can hover a unit to read its state in real time, and can scroll the Grid, exactly
 as they can while building. One composition means one cursor, one scroll rule and one set of muscle
 memory.
 
@@ -133,8 +133,8 @@ What differs between the phases is what the side panel holds:
 
 | | Side panel carries |
 | --- | --- |
-| **Build Phase** | what is left to spend on its credits line, then `[e] Explore Map` and `[n] Nexus` (see [`input.md`](input.md)), the buildings with each row's cost, and `[s] Start Battle Round` on its last line — or, while Explore Map is open or a building is being placed, a card in the menu's place (below) |
-| **Nexus Pulse** | round number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
+| **Build Phase** | what is left to spend on its credits line, then `[e] Explore Map` and `[n] Nexus Pulse` (see [`input.md`](input.md)), the buildings with each row's cost, and `[s] Start Battle Round` on its last line — or, while Explore Map is open or a building is being placed, a card in the menu's place (below) |
+| **Battle Round** | round number, both Nexus states, force totals, playback controls, and — when something is selected — that entity's live state |
 
 **A refused placement is answered on the status line, and names its tile** (RULE —
 `tests/build-view.test.ts`, `tests/build-help.test.ts`). The panel carries no refusal of its own; the
@@ -157,7 +157,7 @@ highlighted menu row's description and cost, how to place, how to leave Explore 
 popup's keys do. The hints come from **one list of situations in the code**, a line each (`HINTS` in
 `src/build/help.ts`), so a new situation is one line in one place. **An answer lapses at the next
 command that says nothing**, so the hint comes back on its own; a message about a tile also lapses the
-moment the cursor leaves that tile. During a Nexus Pulse the line says what the Pulse is doing, unless a
+moment the cursor leaves that tile. During a Battle Round the line says what the battle is doing, unless a
 popup over it holds the keyboard. There is no position readout and no key help on it: the map's sides
 say there is more map (see [`grid.md`](grid.md)), and every key is on the Controls and hotkeys page (see
 [`input.md`](input.md)).
@@ -176,16 +176,16 @@ with the mode's name in capitals. A test holds that a hint never names a key the
 not bind (RULE — `tests/build-view.test.ts`, `tests/build-help.test.ts`).
 
 **Planned buildings are drawn at full strength.** A planned structure uses the same glyphs, role and
-weight as a standing one. What keeps a plan revisable is undo and remove, which work until the Nexus
-Pulse starts, and the status line after a placement says so with what is left to spend and the way back
+weight as a standing one. What keeps a plan revisable is undo and remove, which work until the
+Battle Round starts, and the status line after a placement says so with what is left to spend and the way back
 (`Hatchery placed (resources: 70) - [u] undo`; RULE — `tests/build-view.test.ts`).
 
-**The Build Phase menu is one list.** `[e] Explore Map` is the panel's first line and `[n] Nexus` sits
+**The Build Phase menu is one list.** `[e] Explore Map` is the panel's first line and `[n] Nexus Pulse` sits
 straight under it, with the number of picks waiting and how many powers are active. Then the **credits
 line**: blank on the left and, in the column the building costs are in, the map's own resource-deposit
 symbol and what is left to spend (`* 130`, `◆ 130` in the Unicode pack), the symbol from the same table
 the map draws deposits with, in the deposit's colour, the amount bold, with no label and no maximum. The
-credits are on the menu alone (not on a card, the committed summary or a Nexus Pulse) and list movement
+credits are on the menu alone (not on a card, the committed summary or a Battle Round) and list movement
 skips their line. Then **every building as one list** in catalog order, one row each, numbered in that
 order, and `[s] Start Battle Round` pinned to the panel's last line (RULE — `tests/build-menu.test.ts`). There
 are no group headings and no Special row; headings come back if a real game shows a list too long to
@@ -207,19 +207,19 @@ its **numbers** as label/value rows (cost where the menu sells it, health, size,
 one, or a bare tile's position). The same four parts describe a building being placed, a planned or
 standing building, the Grid Nexus, and bare ground. A card carries no status line, and its words are
 written with the content, not in the view. How it looks may later differ between placing a building,
-exploring in the Build Phase and exploring during a Pulse; that stays a drawing choice over the same
+exploring in the Build Phase and exploring during a Battle Round; that stays a drawing choice over the same
 card. Start Battle Round hides with the rest of the menu.
 
 **The header's own hotkey cancels**: `e` closes Explore Map and a building's digit cancels it, as `x`, Esc
 or a click anywhere on the panel do, back to where the card was opened from (RULE —
 `tests/build-card.test.ts`, `tests/build-holds-menu.test.ts`). **A building being placed holds the menu**:
 until it is placed or cancelled, another building's digit, `e` and `s` are refused (the header flickers
-and the bottom line names the way on), while popups that belong to no row choice (the Nexus powers, the
+and the bottom line names the way on), while popups that belong to no row choice (the Nexus Pulse, the
 game menu, Controls, Settings) open over it and give it back, and never move the menu's highlight (RULE
 — `tests/build-holds-menu.test.ts`). Explore Map holds nothing: a digit while exploring arms from the map.
 Arming and opening Explore Map put nothing on the bottom line but its hint. Tab and a click on the map
 arrive in plain navigation instead, the menu left beside the map, so the next click can arm from it. A
-larger ASCII-art card waits for content that has one, and live numbers wait for the Nexus Pulse view.
+larger ASCII-art card waits for content that has one, and live numbers wait for the Battle Round's view.
 
 **The card opens with a short transition.** Whenever the panel turns into a card (Explore Map opened, or
 a building armed from the menu or by a digit on the map) it plays over the card reveal's length (400 ms,
@@ -233,7 +233,7 @@ the state become a card (`cardRevealAt` in `src/view/build-live.ts`); the reduce
 
 **A menu row has two states** (RULE — `tests/build-menu.test.ts`): **highlighted**, the keyboard's
 inverse bar, drawn only while the menu has focus; and **active**, while its action is under way (a
-building armed, Explore Map open, the Nexus popup open, the Battle Round screen open). An active row
+building armed, Explore Map open, the Nexus Pulse popup open, the Battle Round screen open). An active row
 reads **`[1] Barracks  >`**: its own hotkey, which ends what it started (with Esc and `x`), and one `>`
 in place of its value, pointing at the map; the whole row in the hotkey colour and bold, no underline,
 no bar, legible in monochrome by the `>` and the bold. A pressed flash still wins, drawn as the bar,
@@ -244,7 +244,7 @@ row either opens a popup or gives the map something to do, and both kinds share 
 function decides and draws it for every row, so a change of style reaches them all.
 
 **Popups have one shape** (RULE for the shape as data — `tests/build-popups.test.ts`; GUIDANCE for its
-look). Every popup (the Nexus powers, the start-the-Pulse question, the game menu, Settings, the export,
+look). Every popup (the Nexus Pulse, the Battle Round screen, the game menu, Settings, the export,
 and a message) is a title and a list of rows, some of them options that name the command a click on them
 sends, and **at most one run of rows that scrolls** (`src/build/popup.ts`). The frame draws a popup from
 the same placed shape the mouse adapter hit-tests, so a click can never land on anything the frame drew
@@ -266,21 +266,21 @@ below).
 **A reach is drawn where it is felt.** In the Build Phase a building's reach is an outline round its ghost, or
 round a building or ranged unit the cursor rests on; the build range is the dotted ground while a building is
 armed, and a Barracks's room a ring of ticks on it (the interface patterns, the build range, a Barracks's room
-and a reach). During a Pulse Vasse's aura is the first radius on the Grid: its reach is a see-through style of
+and a reach). During a Battle Round Vasse's aura is the first radius on the Grid: its reach is a see-through style of
 her side's colour on the ground's band, under every unit: a diamond twice as wide as it is tall in tiles and as
 tall as it is wide on screen, since a row counts two columns ([`grid.md`](grid.md), distance, reach and movement),
 shown where colours blend and said in words on her card where they do not (the interface patterns, her aura's
 reach).
 
-**The Pulse view shows everything by default.** Selection is an addition the player reaches for, never a
-prerequisite for following the fight. If a Pulse can only be understood by clicking things, the
+**The Battle Round's view shows everything by default.** Selection is an addition the player reaches for, never a
+prerequisite for following the fight. If a battle can only be understood by clicking things, the
 presentation has failed and no panel will rescue it.
 
 ## 3. A tile is one column — RULE
 
 **RULE** — `tests/rows-view.test.ts`, `tests/build-camera.test.ts`, `tests/view.test.ts`.
 
-**One Grid tile is one terminal cell, one column wide, at every terminal size**: the Build Phase, the Nexus Pulse,
+**One Grid tile is one terminal cell, one column wide, at every terminal size**: the Build Phase, the Battle Round,
 the engine tool's own view and the browser page alike. A cell is about twice as tall as it is wide, and the rules
 count a row as two columns in every distance ([`grid.md`](grid.md), distance, reach and movement), so a reach is
 twice as wide as it is tall in tiles and, drawn a column a tile, as wide as it is tall on screen; a unit walking
@@ -313,7 +313,7 @@ point:
 | Band | Fed by |
 | --- | --- |
 | 1 `terrain` | `terrain` layer |
-| 2 `territory` | construction coverage: the build range and a Barracks's room while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Pulse |
+| 2 `territory` | construction coverage: the build range and a Barracks's room while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Battle Round |
 | 3 `ground-items` | salvage, rubble, deposits |
 | 4 `structures` | `obstacles` layer |
 | 5 `units` | `workers` and `units` layers |

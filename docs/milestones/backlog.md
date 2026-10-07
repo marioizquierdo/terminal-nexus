@@ -83,14 +83,14 @@ then measures an orbit rather than a route.
   corridor.
 - Answers to Q5 and Q7 in [`open-questions.md`](open-questions.md), earned rather than assumed.
 
-## The Pulse screen (Mario, 2026-10-01)
+## The battle screen (Mario, 2026-10-01)
 
-After playing PERIMETER across three rounds Mario named what the Pulse screen lacks, and said it can wait for
+After playing PERIMETER across three rounds Mario named what the battle screen lacks, and said it can wait for
 the right time ([his words](../history/feedback/2026-10-01-multi-pulse.md)). It is interface work, which he
 puts before any level's balance:
 
-- **Look at units during a Pulse.** "I should be able to hover over units and see their details, same as with
-  the Explore feature": pointing at a unit while a Pulse plays (the mouse, or a cursor the keyboard moves)
+- **Look at units during a Battle Round.** "I should be able to hover over units and see their details, same as with
+  the Explore feature": pointing at a unit while a Battle Round plays (the mouse, or a cursor the keyboard moves)
   shows the card Explore Map shows in the Build Phase. Playback stays read-only.
 - **Fewer numbers.** "The pulse doesn't need to track that many stats": today the panel shows, for each side,
   a count of units, a health bar and a health total, and a feed line for every shot and death. Keep what a
@@ -131,13 +131,13 @@ genuinely fine to leave unanswered until the project reaches them.
 
 - exact Citizen and Ravel commanders and Commander Armies;
 - whether a Commander Army is a deck of cards at all, or a composite of separate systems that share a legality check: left for building and playing to settle;
-- whether Specials earn a third Build Phase decision channel beside placement and the Nexus draft: Milestone 5 builds the slot, Milestone 6 plays the first whole loop, and only then is it defended or retired ([`commander-armies.md`](../game-design/commander-armies.md));
+- whether Specials earn a third Build Phase decision channel beside placement and the Nexus Pulse's pick: Milestone 5 builds the slot, Milestone 6 plays the first whole loop, and only then is it defended or retired ([`commander-armies.md`](../game-design/commander-armies.md));
 - drafting modes and player-defined Commanders: designed only when a milestone wants them;
-- the army-breadth caps (structures and tech tree depth, Nexus powers, Specials) and the size of the hand each Build Phase deals;
+- the army-breadth caps (structures and tech tree depth, Nexus powers, Specials) and the size of the hand each Nexus Pulse deals;
 - the run's exact numbers (battles, acts, offer size, tier schedule), difficulty ladders, daily seeds and leaderboards ([`game-modes.md`](../game-design/game-modes.md)), retuned by Milestone 11 on runs actually played;
 - hidden reveal conflicts, and building inside enemy coverage;
 - equal-tick mutual Nexus destruction;
-- exact Nexus draft timing and research stacking;
+- exact Nexus Pulse timing and research stacking;
 - scoring and long-term skirmish progression;
 - campaign cast, sequence, and ending;
 - final title availability and trademark clearance;

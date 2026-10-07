@@ -45,8 +45,8 @@ level, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its round
 
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
-- A menu on the left that runs the screen: Explore Map, the Nexus powers, a budget, a list of
-  buildings with their costs, and Start Battle Round. A card replaces the menu while you explore a tile or
+- A menu on the left that runs the screen: Explore Map, the Nexus Pulse (the hand of Nexus powers
+  dealt as the round opens), a budget, a list of buildings with their costs, and Start Battle Round. A card replaces the menu while you explore a tile or
   place a building. Keyboard, mouse and a scripted driver all send the same commands.
 - Buildings are placed at the cursor with a short build animation and sparks. A refused placement
   says why and names its tile on the bottom line.
@@ -55,7 +55,7 @@ level, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its round
   open design questions you can flip while playing. Export settings copies them as text to paste into
   a pull request, and `--settings` reads them back.
 
-Start Battle Round runs the **Nexus Pulse**: the unmodified rules kernel resolves the plan you built. You
+Start Battle Round runs the battle, the **Battle Round**: the unmodified rules kernel resolves the plan you built. You
 watch it with a countdown, a score and a feed of events, and you can pause, change speed, step and
 watch again. The first mission, **PERIMETER**, is three Battle Rounds, with the raid arriving in each.
 After each round there is a result, and Next round opens the next Build Phase on what survived.
@@ -124,7 +124,7 @@ tick 90 instead of playing from the start, in watch, headless and verify alike.
 
 ```bash
 npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, About, Exit
-npm run terminal-nexus -- --at 'campaign?level=vasse-test-1'           # PERIMETER: the Build Phase and the Nexus Pulse
+npm run terminal-nexus -- --at 'campaign?level=vasse-test-1'           # PERIMETER: the Build Phase and the Battle Round
 npm run terminal-nexus -- --at 'campaign?level=vasse-test-1&round=3'   # its last round
 npm run terminal-nexus -- --at settings                                # any screen of the title menu
 ```

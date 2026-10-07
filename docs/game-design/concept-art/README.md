@@ -26,7 +26,7 @@ here, which age the moment the tool's presentation changes again.
 | File | What it is |
 | --- | --- |
 | `2026-08-19 - ascii factions.png` | Early faction-identity ASCII exploration |
-| `2026-08-19 - ascii pulse.png` | Early Nexus Pulse composition exploration |
+| `2026-08-19 - ascii pulse.png` | Early Battle Round composition exploration |
 | `2026-08-19 - campaign intro concept 2.png` | Campaign-intro / cutscene concept |
 | `2026-08-19 - concept art.png` | General early visual exploration |
 | `2026-08-19 - gameplay concept 1.png` | Gameplay composition concept |
