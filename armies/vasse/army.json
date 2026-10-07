@@ -1,7 +1,7 @@
 {
   "id": "vasse",
   "title": "Edda Vasse",
-  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol, and her campaign. It requires all for the buildings, the shared Nexus powers and the bench units her levels use, and brings her own unit, her own two powers (Standing Order and Aid Station Permit) and the Aid Station that permit unlocks. Building her and her campaign is not choosing the Citizens' roster: every building she is offered is still the disposable bench, and her powers are first versions with no balance claim.",
+  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol, and her campaign. It requires all for the buildings, the shared Nexus powers and the bench units her levels use, and brings her own unit, her own two powers (Standing Order and Aid Station Permit) and the Aid Station that permit adds. Building her and her campaign is not choosing the Citizens' roster: every building she is offered is still the disposable bench, and her powers are first versions with no balance claim.",
   "requires": ["all"],
   "content": ["unit.citizen.vasse", "structure.citizen.aidstation"],
   "buildings": [
@@ -9,7 +9,7 @@
       "id": "aid-station",
       "structure": "structure.citizen.aidstation",
       "cost": 25,
-      "notes": "Hers: what Aid Station Permit unlocks, and no level does. A first guess of a cost, between the Turret's and the Hatchery's, with no balance claim."
+      "notes": "Hers: what Aid Station Permit adds, and no level unlocks. A first guess of a cost, between the Turret's and the Hatchery's, with no balance claim."
     }
   ],
   "powers": [
@@ -23,8 +23,8 @@
     {
       "id": "aid-station-permit",
       "name": "Aid Station Permit",
-      "description": "Unlocks building: Aid Station.",
-      "effect": { "unlockStructure": { "building": "aid-station" } },
+      "description": "Adds building: Aid Station.",
+      "effect": { "addBuilding": { "building": "aid-station" } },
       "notes": "Repair, placed where the line will stand: the Aid Station joins the construct menu for the rest of the mission, after the buildings already there, so no hotkey moves."
     }
   ],

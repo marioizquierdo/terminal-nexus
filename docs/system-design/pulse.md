@@ -161,7 +161,7 @@ layers narrow its enemies. A building never moves, so a building that heals reac
 within its reach, measured as range is: one heal each time its cooldown allows, never past full health
 (`heal.applied`, never a negative `damage.applied`). A heal lands in its tier of the attacks step, after the blows
 of earlier tiers, so at tier 9 a unit a blow kills that tick is not saved. The Aid Station, what Aid Station Permit
-unlocks, names the units' layers: it heals units, never a building, itself included, and never the enemy. The
+adds, names the units' layers: it heals units, never a building, itself included, and never the enemy. The
 bench medic names none and heals every wounded ally, as it always did.
 
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
@@ -353,11 +353,12 @@ Players shape composition by building, protecting, upgrading, pausing, or losing
 
 A Commander Army's buildable structures form a real, inspectable tech tree (see
 [`commander-armies.md`](../game-design/commander-armies.md)), mostly shared across a faction's
-Commanders with a few Commander-specific branches. Research facilities are not an alternative to a
-"linear tech menu"; they are tree nodes like any other structure, and completing one can unlock its
-dependents the same way a Nexus power's `unlockStructure` effect does — one mechanism, two triggers.
-The tree is limited entirely by which structures exist, never by a second resource (the one-resource
-rule in the economy below is untouched).
+Commanders with a few Commander-specific branches. It holds buildings and building upgrades, and the
+answers to a threat, the hard counters, are its buildings: always reachable by building, never by a deal.
+Research facilities are not an alternative to a "linear tech menu"; they are tree nodes like any other
+structure, and completing one unlocks its dependents. Only the tree unlocks: a Nexus power adds, never
+unlocks, and what it adds the tree does not hold. The tree is limited entirely by which structures exist,
+never by a second resource (the one-resource rule in the economy below is untouched).
 
 The Grid Nexus also offers a small draft of upgrades; research facilities modify that draft's tier,
 breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
@@ -371,13 +372,14 @@ and the round on a PCG32 stream of the draft's own (`STREAM_DRAFT`), never the k
 same hand every time, and dealing never moves a battle's draws. A power kept lasts the rest of the mission and is
 not dealt again unless it may be kept again. What it does reaches the battle through the round's own inputs, never a
 rule the kernel reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the construct
-menu (a building unlocked), and the units set down at its opening — a power's **called-up units** muster on the
+menu (a building added), and the units set down at its opening — a power's **called-up units** muster on the
 player's Grid Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
-ends. The draft's tiers, size and redraw rules beyond this are undesigned; they are recorded here so the shape of
-the draft is not accidentally foreclosed.
+ends. How the draft deals beyond this — rarities set by a schedule that ramps by round, upgrades, roles, a rare
+hand every few rounds, and what a Commander may bend — is designed in
+[`commander-armies.md`](../game-design/commander-armies.md) and not built.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
-classification to learn — and in code the effect is one of a small bounded union: `unlockStructure`,
+classification to learn — and in code the effect is one of a small bounded union: `addBuilding`,
 `spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` (see
 [`commander-armies.md`](../game-design/commander-armies.md)). That union is what a Build Phase panel
 actually renders, so it is worth reading before building one.

@@ -106,7 +106,7 @@ export type BuildContext = Readonly<{
    * arrives), applied by the shell when the pick was made (`MissionPlay.keep`, `src/cli/pulse-run.ts`). Absent: none.
    */
   kept?: readonly PowerCard[]
-  /** The building cards a Nexus power can unlock, and those the level offers: what keeping a power that names a
+  /** The building cards a Nexus power can add, and those the level offers: what keeping a power that names a
    *  building reads (Aid Station Permit, Drill Schedule). Absent: none. */
   buildingCards?: readonly BuildingCard[]
   /** The units a power kept this Build Phase calls up (Reserve Callup): set down beside the Grid Nexus as this

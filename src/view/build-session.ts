@@ -87,7 +87,7 @@ export type BuildSessionOptions = Readonly<{
   foresee?: (context: BuildContext, state: BuildState) => RaidForecast
   /**
    * The round's context once a Nexus power is kept (`MissionPlay.keep`, `src/cli/pulse-run.ts`): asked the moment a
-   * pick is made, so what the power does is on screen at once — the building it unlocks on the menu, the card it
+   * pick is made, so what the power does is on screen at once — the building it adds to the menu, the card it
    * changes, the units it calls up arriving — and lasts the rest of the mission. Injected for the same reason as
    * `startPulse`. Absent: the power is only recorded as kept.
    */
