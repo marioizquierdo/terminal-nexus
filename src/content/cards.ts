@@ -28,6 +28,11 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Spawns swarmers",
     description: "Breeds a wave of small biting swarmers a few seconds into each Battle Round, all at once. They rush the enemy.",
   },
+  "structure.citizen.aidstation": {
+    title: "Aid Station",
+    subtitle: "Repairs units near it",
+    description: "A field post that patches up your units near it during each Battle Round. Place it where the line will stand.",
+  },
   "structure.bench.beamturret": {
     title: "Turret",
     subtitle: "Shoots what comes close",

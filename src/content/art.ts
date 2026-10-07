@@ -47,6 +47,8 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * agreement test in tests/content.test.ts caught it the first time it ran.
    */
   "structure.citizen.barracks": ["[b]", "|_|"],
+  /** One tile, the aid post's cross: what Aid Station Permit unlocks. */
+  "structure.citizen.aidstation": ["+"],
   /**
    * Two by two, between the trooper and the hauler in scale as well as in the roster. A sealed
    * turret over two struts - the bracket vocabulary at its smallest multi-tile size, still reading

@@ -34,7 +34,8 @@ export function nexusDraftOf(offer: Pick<Offer, "powers">): NexusPowerOption[] {
     hotkey: String(index + 1),
     name: card.name,
     description: card.description,
-    bonusAllotment: card.effect.credits,
+    bonusAllotment: "credits" in card.effect ? card.effect.credits : 0,
+    card,
   }))
 }
 

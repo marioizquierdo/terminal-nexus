@@ -5,7 +5,7 @@
 // terminal cell. That is what makes "the same plan, entered by hotkeys or by clicks, is the same
 // plan" assertable.
 
-import type { BuildingSpawns } from "../armies/types.ts"
+import type { BuildingSpawns, PowerCard } from "../armies/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { ShownName } from "./all-settings.ts"
@@ -370,18 +370,17 @@ export type CommanderAbsence = Readonly<{
 }>
 
 /**
- * One option in the Nexus draft. **Placeholder content, not the real draft** — a Nexus
- * power there is "a name and one plain line of description" applying one of six effect kinds
- * (docs/game-design/commander-armies.md); these two are plain numbers instead, on purpose, so nothing
- * here reads as an attempt at real design. What is built here is the *mechanism* — offer a
- * choice, accept a pick, apply its effect — against whatever option happens to be in the slot.
+ * One option in the Nexus draft: a Nexus power as the popup offers it, "a name and one plain line of
+ * description" (docs/game-design/commander-armies.md), its key, and the card it came from — what it does once
+ * kept, which the reducer never reads beyond its credits.
  */
 export type NexusPowerOption = Readonly<{
   hotkey: string
   name: string
   description: string
-  /** Added to the starting allotment the moment this option is picked. */
+  /** Added to the starting allotment the moment this option is picked: War Chest's credits, 0 for the rest. */
   bonusAllotment: number
+  card: PowerCard
 }>
 
 /**

@@ -27,7 +27,7 @@ import { MAXIMUM, MINIMUM, WIDE } from "./build-helpers.ts"
 /** A picked power that adds nothing to the budget, so every test that is not about the Nexus
  *  draft itself sees exactly the allotment its own numbers already assume. */
 const NEUTRAL_NEXUS_DRAFT = [
-  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0 },
+  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0, card: { id: "test-pick", name: "Test Pick", description: "No effect.", effect: { credits: 0 } } },
 ] as const
 
 /** Every caller passes a context whose `nexusDraft` is already `NEUTRAL_NEXUS_DRAFT` — this only

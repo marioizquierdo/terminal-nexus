@@ -154,4 +154,20 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     // The ring its troopers appear on, kept free of other buildings (the "Spawn space" Experiment).
     clearance: 1,
   },
+  {
+    // What Aid Station Permit, one of Vasse's Nexus powers, unlocks (armies/vasse): repair, placed where the
+    // line will stand. A first version, and no balance claim: one tile, and a heal that reaches the units near
+    // it each Battle Round, the heal the kernel's healer already makes (`attack.kind: "heal"`).
+    id: "structure.citizen.aidstation",
+    short: "aid",
+    layer: "obstacles",
+    footprint: rectFootprint(1, 1),
+    maxHp: 60,
+    speedTier: 9,
+    attack: { kind: "heal", range: 2, damage: 4, cooldownTicks: 18 },
+    collidesWith: STRUCTURE_COLLISIONS,
+    behavior: "static",
+    salvage: 20,
+    constructionRadius: 6,
+  },
 ]
