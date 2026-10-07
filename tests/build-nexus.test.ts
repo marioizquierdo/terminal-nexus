@@ -58,7 +58,7 @@ test("moving the cursor is never refused while a pick is waiting", () => {
   assert.doesNotMatch(build.state.status.text, /Pick a Nexus power first/)
 })
 
-test("nothing opens the Nexus popup but the player", () => {
+test("nothing opens the Nexus Pulse popup but the player", () => {
   // Owner, 2026-09-26: never forced open the instant the Build Phase begins. Not at the start, not
   // after building, and not when the commit refuses for want of a pick — the refusal names the key.
   const { build, layout } = session()
@@ -174,7 +174,7 @@ test("an out-of-range pick is ignored, not a crash and not a partial pick", () =
   assert.deepEqual(build.state, before)
 })
 
-test("once picked, the construct menu and every other command work exactly as they did before the draft existed", () => {
+test("once picked, the build menu and every other command work exactly as they did before the draft existed", () => {
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
@@ -278,7 +278,7 @@ test("starting the Pulse outside the Battle Round screen — a stray y — chang
   assert.deepEqual(build.state, before)
 })
 
-test("keyboard: a digit picks from the Nexus popup while it is open, and arms the construct menu otherwise", () => {
+test("keyboard: a digit picks from the Nexus Pulse popup while it is open, and arms the build menu otherwise", () => {
   const side = session()
   side.build.dispatch({ kind: "open-nexus-powers" })
   const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(starterContext(), side.build.state) }
@@ -297,7 +297,7 @@ test("keyboard: a digit picks from the Nexus popup while it is open, and arms th
   assert.deepEqual(buildKeyboardCommand("1", { ...builtContext, focus: "menu" as const }), { kind: "arm", index: 0 })
 })
 
-test("keyboard: n opens the Nexus popup, and means nothing on the Battle Round confirmation", () => {
+test("keyboard: n opens the Nexus Pulse popup, and means nothing on the Battle Round confirmation", () => {
   const idle = { itemCount: 3, armed: false }
   assert.equal(buildKeyboardCommand("y", idle), null)
   assert.deepEqual(buildKeyboardCommand("n", idle), { kind: "open-nexus-powers" })

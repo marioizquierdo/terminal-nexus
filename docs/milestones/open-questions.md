@@ -47,6 +47,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q73](#q73--how-strong-should-by-the-book-vasses-aura-be) | How strong should By the Book, Vasse's aura, be? | OBSERVABLE | The By the Book Experiment |
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
+| [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
 
 ## Open
 
@@ -570,3 +571,24 @@ is a handful of powers in a short match and twenty or more in a long one.
 **Recommendation: A.** The concept's promise is a game that finishes quickly and makes you want one more; the run is
 where an hour of play already lives (Slay the Spire's runs are as long), and an hour of multiplayer holds several
 matches rather than one. Time a match once workers gather, and tune the draft's numbers to it.
+
+### Q76 — Should the engine's "pulse" be renamed in code and in a mission's data?
+
+**Status:** OPEN — registered 2026-10-07. Blocks nothing: every word a player reads is already the new one.
+
+The owner named the moment that opens each round the Nexus Pulse, and the battle that ends it is the Battle Round in
+every document and on every screen. The engine kept its own word: the code calls the battle step "the Pulse"
+(`src/pulse/`, `startPulse`, `pulse-run.ts`, the three worlds in `AGENTS.md`), and so does a mission's data, which a
+modder writes: `pulses` (how many Battle Rounds), `pulseTicks` (how long each), a trigger's `when: { "pulse": 2 }`
+and the event `pulse.end`, with the loader's messages saying "Pulse 2". Since "Nexus Pulse" now means something else,
+a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one for the other.
+
+| Option | What it costs |
+| --- | --- |
+| A. **Keep the engine's word, documented** (as now): "the Pulse" in code and data is the engine's name for the Battle Round, never the Nexus Pulse | Nothing now; one more line in the vocabulary, and a trap for a reader who skips it |
+| B. **Rename a mission's data and messages** (`pulses` → `rounds`, `pulseTicks` → `roundTicks`, `when.pulse` → `when.round`, `pulse.end` → `round.end`), reading the old names for a while | A format change across the army files, the scenario maps, the loader and the trigger runner, and every test that writes a mission |
+| C. **Rename the engine too** (`src/pulse/` → `src/battle/`, `startPulse` → `startBattle`, the three worlds' "Pulse") | About two thousand names; a long, mechanical pull request with nothing for a player to see |
+
+**Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
+and that is a contained change best made with the next change to the mission format; the engine's internal names
+cost nothing as long as the vocabulary says what they mean.

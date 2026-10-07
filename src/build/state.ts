@@ -263,7 +263,7 @@ export type BuildState = Readonly<{
    *  (`dialog`). */
   popup: Popup | null
   /** The open popup's highlight, an index into its list (`popupRowCount`), set whenever one opens: the
-   *  Nexus popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
+   *  Nexus Pulse popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
    *  lines, the Controls page's key lines, the Activity logs window's filter, export and entries. */
   popupHighlight: number
   /** The popups under the open one, nearest last, each with the row to come back to — the row that
@@ -503,7 +503,7 @@ function editLock(state: BuildState): StatusMessage | null {
 }
 
 /**
- * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Powers entry, every construct row, and Start Battle Round last.
+ * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Pulse row, every building row, and Start Battle Round last.
  * Derived from the catalog rather than stored, so the highlight and the rows drawn can
  * never disagree about how many there are.
  */
@@ -516,7 +516,7 @@ export function menuEntries(context: BuildContext): readonly MenuEntry[] {
   ]
 }
 
-/** Where the two entries above the construct rows sit in `menuEntries`. */
+/** Where the two entries above the building rows sit in `menuEntries`. */
 export const EXPLORE_ENTRY = 0
 export const NEXUS_ENTRY = 1
 
@@ -561,16 +561,16 @@ export function cardEntry(state: BuildState): number | null {
   return mode === "explore" ? EXPLORE_ENTRY : null
 }
 
-/** How many entries sit above the construct rows. */
+/** How many entries sit above the building rows. */
 const ENTRIES_BEFORE_CONSTRUCT = 2
 
-/** The menu entry a construct row is — so arming by digit moves the highlight onto its row, and focus
+/** The menu entry a building row is — so arming by digit moves the highlight onto its row, and focus
  *  back on the menu lands where the player's attention already is. */
 export function entryOfConstruct(index: number): number {
   return index + ENTRIES_BEFORE_CONSTRUCT
 }
 
-/** The menu's last entry, Start Battle Round: the one after the last construct row of a catalog this long. */
+/** The menu's last entry, Start Battle Round: the one after the last building row of a catalog this long. */
 export function startEntry(catalogSize: number): number {
   return entryOfConstruct(catalogSize)
 }
@@ -1241,7 +1241,7 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
 function pickNexus(context: BuildContext, state: BuildState, index: number): BuildState {
   // Defensively guarded like every other command: a driver script is free to send one anywhere, and
   // the answer must be the same refusal a player pressing an unavailable key gets. A pick is made in
-  // the Nexus popup, or by a driver with no popup open; any other popup holds the keyboard, and a
+  // the Nexus Pulse popup, or by a driver with no popup open; any other popup holds the keyboard, and a
   // committed plan is past picking.
   if (state.committed || (state.popup !== null && state.popup !== "nexus-powers")) {
     return { ...state, status: editLock(state) ?? state.status }

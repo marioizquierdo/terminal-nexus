@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // Builds the browser playtest page: one self-contained HTML file with the game's own menu, Build
-// Phase and Pulse playback in it, painted onto a canvas (docs/system-design/runtime.md — a development tool; the
+// Phase and Battle Round playback in it, painted onto a canvas (docs/system-design/runtime.md — a development tool; the
 // terminal stays the real game). The commit it was built from is printed at the top of the page.
 //
 //   bun scripts/build-web.mjs                    # dist/terminal-nexus-playtest.html

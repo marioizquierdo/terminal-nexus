@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8B — the Nexus Pulse, dealing from a pool: a hand dealt from Vasse's Nexus power pool as each round opens, one kept for the rest of the mission; four real powers (Reserve Callup, Standing Order, Drill Schedule, Aid Station Permit) and War Chest beside every hand.
+**Current step:** 8C — the Nexus Pulse deals by schedule: three cards a round by rarity and role, with chance, requirements and upgrades; a level may give its own schedule and make sure of a power; the in-match draft is named the Nexus Pulse, and the battle the Battle Round.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Battle Round is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -236,6 +236,27 @@ request; the one change a player sees is a power's wording.
 - [x] Examples for four Commanders were drawn in the session and are not committed.
 - [x] How long a match is goes to the register with a recommendation, since how many picks a match deals depends
       on it.
+
+### Step 8C — The Nexus Pulse deals by schedule
+
+Mario's word after the draft's design merged ([his words](../history/feedback/2026-10-07-nexus-pulse.md)): build
+some of it, name the in-match draft the Nexus Pulse, write down the tech tree's new claims, and review the game's
+words. Built on a new pull request.
+
+- [x] Every Nexus power carries a rarity (common, uncommon, rare, legendary) and a role, checked by the loader.
+- [x] The Nexus Pulse deals three cards a round by a schedule that ramps by round; a legendary only where a slot asks
+      for one.
+- [x] Modifiers and dependencies: a chance raised for some rounds, requirements (a power kept, a building standing,
+      a round reached), and upgrades listed in their power's place.
+- [x] A campaign level may give its own schedule and make sure of a power: PERIMETER's round 2 deals Aid Station
+      Permit first.
+- [x] The popup is titled NEXUS PULSE and each dealt card says its rarity; the menu row reads Nexus Pulse; a round
+      opens on "The Nexus Pulse deals a new hand". The pick stays optional.
+- [x] The design and lore documents call the battle a Battle Round, and the round's words, the Nexus Pulse's and
+      the tech tree's are one list.
+- [x] The tech tree's state is always in sight on the Grid and the build menu, and an upgrade shows in its details
+      and sometimes on the map: written down.
+- [x] A milestone of its own for the Nexus Pulse's screen and more powers is planned, waiting for Mario's word.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).

@@ -50,7 +50,8 @@ level, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its round
   place a building. Keyboard, mouse and a scripted driver all send the same commands.
 - Buildings are placed at the cursor with a short build animation and sparks. A refused placement
   says why and names its tile on the bottom line.
-- A Nexus power pick that may not be skipped, then **Start Battle Round**.
+- A Nexus power to keep from the hand, three a round, each saying how rare it is (for now a round may start
+  without one), then **Start Battle Round**.
 - **Settings** (Esc, then `s`) holds the player's own saved settings and, below them, **Experiments**:
   open design questions you can flip while playing. Export settings copies them as text to paste into
   a pull request, and `--settings` reads them back.

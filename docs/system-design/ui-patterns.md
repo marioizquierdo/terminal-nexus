@@ -227,14 +227,17 @@ title screen's menu.
   Battle Round screen says in one quiet line that a power is still waiting. With the Nexus pick Experiment on
   required, the row is refused until a power is kept: "Pick a Nexus power first: [n]." (RULE —
   `tests/build-start.test.ts`, `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`)
-- ***The Nexus Pulse in its popup*** (`[n]`): titled `NEXUS PULSE`, it reads `PICK ONE - or start without`, then the hand dealt this round — two
-  powers, each its name under its digit and its one line under that, then War Chest under the next digit — and
-  `ACTIVE`, every power kept this mission still in force, this round's pick among them once made (War Chest's
-  credits and Reserve Callup's troopers are spent in the round they are kept), or "None yet." A pick closes the
-  popup and takes effect at once: the menu gains the building a permit adds under the next digit, a card says
-  what changed (a Barracks's `WAVES 4 at 5s, 15s`, her aura "within range 8"), units called up show arriving
-  beside the Nexus, and `[n] Nexus Pulse` says how many are active. (RULE — `tests/build-nexus.test.ts`,
-  `tests/nexus-draft.test.ts`)
+- ***The Nexus Pulse in its popup*** (`[n]`): titled `NEXUS PULSE`, it reads `PICK ONE - or start without`, then the hand dealt this round — three
+  powers, each its name under its digit with its rarity in a quiet word at the end of the row (`common`,
+  `uncommon`, `rare`, `legendary`), and its one line under that; then War Chest under the next digit, with no
+  rarity — and `ACTIVE`, every power kept this mission still in force, this round's pick among them once made (War
+  Chest's credits and Reserve Callup's troopers are spent in the round they are kept; an upgrade kept is listed in
+  its power's place, `Drill Schedule II` and not `Drill Schedule` beside it), or "None yet." A pick closes the popup
+  and takes effect at once: the menu gains the building a permit adds under the next digit, a card says what
+  changed (a Barracks's `WAVES 4 at 5s, 15s`, her aura "within range 8"), units called up show arriving beside the
+  Nexus, and `[n] Nexus Pulse` says how many are active. A round after the first opens on the bottom line's "The
+  Nexus Pulse deals a new hand: [n]." (RULE — `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`,
+  `tests/mission-loop.test.ts`)
 
 ### 6.2 Cards
 

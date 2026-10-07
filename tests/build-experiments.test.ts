@@ -165,7 +165,7 @@ test("Esc, x, d, a right click and a click outside all close it, and it holds th
   assert.equal(outside.build.state.popup, null)
   assert.equal(outside.build.state.armed, null, "the click outside chose something as well")
 
-  // Keys the popup has no use for do nothing underneath it: no arm, no undo, no Nexus popup.
+  // Keys the popup has no use for do nothing underneath it: no arm, no undo, no Nexus Pulse popup.
   const held = buildSide()
   keys(held, "d", "1", "u", "n", "p", TAB)
   assert.equal(held.build.state.popup, "settings")

@@ -471,7 +471,7 @@ test("the top bar's right end says what Esc does: menu, back, close", () => {
     ["Explore Map", ["e"], "back [esc]"],
     ["placing", ["1"], "back [esc]"],
     ["the map a click opened", ["click-map"], "back [esc]"],
-    ["the Nexus popup", ["n"], "close [esc]"],
+    ["the Nexus Pulse popup", ["n"], "close [esc]"],
     ["the game menu", [ESC], "close [esc]"],
     ["Settings", ["d"], "close [esc]"],
     ["the start-the-Pulse question", ["n", "1", "p"], "close [esc]"],

@@ -139,7 +139,7 @@ The page reads its address as a launch (`src/cli/launch.ts`): its parts are the 
 there is one the address reads.
 
 The mode buttons that are game screens open their routes (Menu is `menu`, Build Phase is
-`campaign?level=vasse-test-1`); the two Pulse replays are the engine tool's battles, not places in the
+`campaign?level=vasse-test-1`); the two battle replays are the engine tool's battles, not places in the
 game.
 
 **A link on claude.ai cannot carry a `#` part with `=` in it**; a copy of the page opened from disk can.

@@ -33,7 +33,7 @@ The player does not micromanage units during a Battle Round. Their agency comes 
 
 The emotional loop is:
 
-> **Build. Commit. Pulse. Understand. Adapt.**
+> **Build. Commit. Battle. Understand. Adapt.**
 
 ## How the game is played
 

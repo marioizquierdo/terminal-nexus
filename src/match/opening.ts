@@ -156,7 +156,7 @@ export function opening(input: OpeningInput): Opening {
     })
   })
 
-  if (placed.length === 0) throw new PulseSetupError("the Pulse places no entities")
+  if (placed.length === 0) throw new PulseSetupError("the battle would start with nothing on the Grid")
 
   // Grid reading order: north to south, then west to east, ties by side and then content id — the
   // loader's own order, so an editorial change (which list came first) can never move an id. Only what

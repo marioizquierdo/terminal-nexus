@@ -91,12 +91,12 @@ function clickTileBytes(
   return formatMouseEvent(MOUSE_LEFT, cell.x + 1, cell.y + 1)
 }
 
-/** Likewise for a construct row, from `constructLines` — the same function the panel draws with,
+/** Likewise for a building row, from `constructLines` — the same function the panel draws with,
  *  which is what makes a click that lands on a row nobody drew impossible to mistake for a click on
  *  an item. */
 function clickRowBytes(layout: ReturnType<typeof buildLayout>, index: number): string {
   const line = constructLines(layout, STARTER_CATALOG).find((candidate) => candidate.index === index)
-  assert.ok(line !== undefined, `no construct row is drawn for item ${index}`)
+  assert.ok(line !== undefined, `no building row is drawn for item ${index}`)
   const item = STARTER_CATALOG[index]!
   // Anywhere inside the row's own drawn text; the middle proves the whole row is live, not just its
   // first cell.
@@ -352,7 +352,7 @@ test("mouse: a click on a menu row arms it at once, and a right click goes back,
 test("mouse: a click on the side panel is not a click on the Grid", () => {
   const { build, layout } = session()
   const cursorBefore = { ...build.state.cursor }
-  // Well below the construct rows, inside the panel: neither a row nor a tile.
+  // Well below the building rows, inside the panel: neither a row nor a tile.
   build.handleData(
     formatMouseEvent(MOUSE_LEFT, layout.panelColumn + 3, layout.footerRow - 1),
     layout,
@@ -527,7 +527,7 @@ test("the cursor points at a structure's centre tile, the way the scenario forma
   assert.deepEqual(anchorForCursor({ x: 30, y: 14 }, turret.footprint), { x: 30, y: 14 })
 })
 
-test("every construct row names content that exists, costs something, and says what it does", () => {
+test("every building row names content that exists, costs something, and says what it does", () => {
   const context = starterContext()
   for (const item of STARTER_CATALOG) {
     assert.ok(context.registry.has(item.contentId), `${item.contentId} is not real content`)

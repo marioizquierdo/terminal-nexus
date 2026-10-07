@@ -51,7 +51,7 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "error",
     description: "Something failed that the player may have seen, or that stopped something working.",
     props: {
-      where: { type: "string", description: "What was being done: render, save, export, start-keys (a --keys script), pulse (starting one), page (the browser playtest page)." },
+      where: { type: "string", description: "What was being done: render, save, export, start-keys (a --keys script), pulse (starting a Battle Round), page (the browser playtest page)." },
       message: { type: "string", description: "The error's own message." },
     },
   },

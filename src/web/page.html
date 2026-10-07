@@ -1,5 +1,5 @@
 <title>Terminal Nexus Playtest</title>
-<meta name="description" content="The game's own menu, Build Phase and Pulse playback, painted cell by cell in a browser.">
+<meta name="description" content="The game's own menu, Build Phase and Battle Round playback, painted cell by cell in a browser.">
 <style>
   /* One look on purpose: the game's own dark terminal. The screen inside the canvas follows the
      game's Settings (dark or light); the page around it stays the terminal it imitates. */
@@ -91,8 +91,8 @@
   <!-- A game screen's button opens its route, as --at does in a terminal; the replays are the engine tool's battles. -->
   <button type="button" data-at="menu">Menu</button>
   <button type="button" data-at="campaign?level=vasse-test-1">Build Phase</button>
-  <button type="button" data-pulse="pulse-grand">Pulse: grand battle</button>
-  <button type="button" data-pulse="pulse-mirror">Pulse: Citizens v Ravels</button>
+  <button type="button" data-pulse="pulse-grand">Battle: grand battle</button>
+  <button type="button" data-pulse="pulse-mirror">Battle: Citizens v Ravels</button>
   <span class="spacer"></span>
   <label class="stamp" for="size">terminal</label>
   <select id="size" aria-label="Terminal size in columns by rows">
@@ -123,6 +123,6 @@
     <button type="button" id="activity-copy">Copy</button>
   </div>
 </details>
-<p class="hint">This is the game's own code: the same menu, Build Phase and Pulse playback the terminal runs, painted cell by cell. Tap a tile or a menu row to click it; tap the same tile twice to place. Shift makes the next arrow a fast move. "abc" opens the phone's keyboard for letters. A development tool; the terminal is still the real game.</p>
+<p class="hint">This is the game's own code: the same menu, Build Phase and Battle Round playback the terminal runs, painted cell by cell. Tap a tile or a menu row to click it; tap the same tile twice to place. Shift makes the next arrow a fast move. "abc" opens the phone's keyboard for letters. A development tool; the terminal is still the real game.</p>
 <input id="typing" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Type keys">
 <!--BUNDLE-->

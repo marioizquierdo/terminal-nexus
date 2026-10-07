@@ -59,7 +59,7 @@ function listCommand(key: string, context: KeyboardContext): BuildCommand | null
 }
 
 export type KeyboardContext = Readonly<{
-  /** How many construct-menu rows there are, so a digit past the end of the list means nothing
+  /** How many build-menu rows there are, so a digit past the end of the list means nothing
    *  rather than arming something that is not on screen. */
   itemCount: number
   /** Whether a structure is armed: on the Grid, Enter/Space then places rather than opening Explore Map. */
@@ -129,7 +129,7 @@ function popupOwnKey(key: string, popup: Popup): BuildCommand | null {
     case "nexus-powers":
       return key === "n" ? close : null
     case "settings":
-      // `d` closes what `d` opened, the way `n` closes the Nexus popup.
+      // `d` closes what `d` opened, the way `n` closes the Nexus Pulse popup.
       return key === "d" ? close : null
     case "export":
       // `e` closes what `e` opened, and so do Enter and Space: the text has nothing to press.

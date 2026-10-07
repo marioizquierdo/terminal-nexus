@@ -280,7 +280,7 @@ test("a setup the loader would refuse is refused, by name", () => {
     /occupancy conflict/,
     "two buildings on one tile",
   )
-  refuses(() => open([], []), /places no entities/, "an empty Pulse")
+  refuses(() => open([], []), /nothing on the Grid/, "an empty battle")
   refuses(
     () => openingState({ grid: OPEN, registry: FIXTURE_REGISTRY, structures: [], setup: { seed: 1.5, pulseTicks: 10, forces: [] } }),
     /seed must be an integer/,

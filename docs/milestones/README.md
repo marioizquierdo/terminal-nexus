@@ -25,6 +25,7 @@ remains.
 | [9 — Mission Cutscenes](milestone-09-mission-cutscenes.md) | PLANNED | 9 | Can a mission declare and play its own briefing, exchanges, barks, and debrief? |
 | [10 — First and Second Missions](milestone-10-first-and-second-missions.md) | PLANNED | 10 | Do PERIMETER (polished) and RIGHT OF SALVAGE (new) together read as a real campaign opening? |
 | [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 11, repeating | Does each new card make a run more interesting and let a mission teach it — measured, not asserted? |
+| [13 — The Nexus Pulse](milestone-13-nexus-pulse.md) | PLANNED | not placed: Mario's call | Does each round open on a Nexus Pulse that feels like the Nexus speaking to its Commander — its own moment on screen, a hand worth reading, a schedule to plan around — without making a round slower? |
 
 The order is for a played loop as early as possible. The match experience comes first (menu, Build Phase,
 Battle Round), then the two mode shells (the Commander and draft, the run, the campaign), then depth (the worker

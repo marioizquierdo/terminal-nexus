@@ -276,7 +276,7 @@ test("a refused flicker on a plain row leaves it plain and greys its words; on a
 
 test("a pressed flash on an active row is the bar, over the same words", () => {
   const side = buildSide()
-  keys(side, "n") // the Nexus popup: its row active behind it
+  keys(side, "n") // the Nexus Pulse popup: its row active behind it
   const row = panelRow(side, NEXUS_ROW)
   const flash: RowAck = { kind: "pressed", entry: NEXUS_ENTRY }
   assert.equal(panelLine(side, compose(side, { ack: flash }), row), panelLine(side, compose(side), row))

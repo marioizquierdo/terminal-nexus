@@ -369,17 +369,21 @@ content-defined legal actions or passive rules that execute through validated ke
 
 **The Nexus Pulse** (RULE — `src/armies/deal.ts`, `src/cli/pulse-run.ts`, `tests/nexus-draft.test.ts`): the
 Commander Army's own Nexus power pool — a subset of the faction's, built as what a level offers (`src/armies/`) —
-dealt as a small hand as every round opens, before its Build Phase: two powers, War Chest (the owner's testing
-tool) beside them, of which the player keeps one, or for now none. The hand is gameplay randomness, seeded by the
-mission's seed and the round on a PCG32 stream of its own (`STREAM_DRAFT`), never the kernel's: the same round deals the
-same hand every time, and dealing never moves a battle's draws. A power kept lasts the rest of the mission and is
+dealt as a small hand as every round opens, before its Build Phase: three powers by a schedule of rarities, War
+Chest (the owner's testing tool) beside them, of which the player keeps one, or for now none. Which rarity each card
+is comes from the round's schedule (the game's `DEFAULT_SCHEDULE`, or a level's own, which may name a power to make
+sure of); a card is drawn from the powers of its rarity whose requirements hold — a power kept, a building standing
+for the player as the round opens, a round reached — preferring a role the hand does not hold yet, each as likely as
+its chance this round, and an upgrade only once the power it upgrades is kept. The hand is gameplay randomness,
+seeded by the mission's seed and the round on a PCG32 stream of its own (`STREAM_DRAFT`), never the kernel's: the same
+round deals the same hand every time, and dealing never moves a battle's draws. A power kept lasts the rest of the mission and is
 not dealt again unless it may be kept again. What it does reaches the battle through the round's own inputs, never a
 rule the kernel reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the build
 menu (a building added), and the units set down at its opening — a power's **called-up units** muster on the
 player's Grid Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
-ends. How the Nexus Pulse deals beyond this — rarities set by a schedule that ramps by round, upgrades, roles, a rare
-hand every few rounds, and what a Commander may bend — is designed in
-[`commander-armies.md`](../game-design/commander-armies.md) and not built.
+ends. The whole of how the Nexus Pulse deals — rarities, roles, the schedule and a level's own, chance,
+requirements, upgrades — is in [`commander-armies.md`](../game-design/commander-armies.md); the legendary hand every
+few rounds and what a Commander may bend are designed there and not built.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
 classification to learn — and in code the effect is one of a small bounded union: `addBuilding`,

@@ -57,7 +57,7 @@ declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: 
  */
 declare const __TN_DEMOS__: readonly Demo[]
 
-/** The engine tool's two Pulse replays a mode button opens: battles, not places in the game. */
+/** The engine tool's two battle replays a mode button opens: battles, not places in the game. */
 type PulseName = "pulse-grand" | "pulse-mirror"
 
 /** Which screen loop runs: the title menu's, a campaign level's Build Phase, or a Pulse replay. */
@@ -269,7 +269,7 @@ function track(loop: Promise<number>): void {
   )
 }
 
-/** One of the engine tool's two Pulse replays, in the saved settings. */
+/** One of the engine tool's two battle replays, in the saved settings. */
 async function startPulse(pulse: PulseName): Promise<void> {
   await switchTo(pulse, null, [])
   const settings = await savedSettings()
