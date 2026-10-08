@@ -258,6 +258,22 @@ words. Built on a new pull request.
       and sometimes on the map: written down.
 - [x] A milestone of its own for the Nexus Pulse's screen and more powers is planned, waiting for Mario's word.
 
+### Step 8C, round 2 — Arrow keys without acceleration
+
+Mario's request, between steps ([his words](../history/feedback/2026-10-08-keyboard-without-acceleration.md)): a build
+with no acceleration, where only Shift changes the speed, and settings to try other ways of moving. Built on a new
+pull request, for him to play before anything is settled.
+
+- [x] The build opens with no acceleration: an arrow moves its step whether tapped slowly, tapped quickly or held,
+      and a held arrow still repeats at the game's own pace.
+- [x] An Acceleration Experiment puts the older speed-ups back, taps and holds separately or together.
+- [x] The arrow's step and Shift's step are Experiments, so Shift can be the slow, exact move as well as the fast
+      one; a list always moves one row for an arrow and goes to an end for Shift.
+- [x] Shift's pace and a held arrow's pace are Experiments, the hold's with an "off" that lets every repeat of the
+      keyboard move.
+- [x] The Controls page says what the arrows and Shift do in the build being played.
+- [x] A playable page opens the game with each combination from a button.
+
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).
 

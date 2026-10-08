@@ -88,6 +88,7 @@ type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
 
 const NEXT_ROUND = ["key", "auto"] as const
 const POWER_PICK = ["optional", "required"] as const
+const ACCELERATION = ["off", "taps", "holds", "both"] as const
 
 export const ALL_SETTINGS = {
   // --- Display: the player's own, saved with the title menu's Settings -----------------------------
@@ -127,10 +128,130 @@ export const ALL_SETTINGS = {
   },
 
   // --- Keyboard navigation -------------------------------------------------------------------------
-  // Taps speed up by counting and a hold runs at the game's own cadence (the rules are
-  // `src/build/motion.ts`). They are Experiments again so keyboard navigation can be tuned by feel, each
-  // at the value it was tuned to.
+  // How an arrow becomes a move (the rules are `src/build/motion.ts`). The owner asked for a build with no
+  // acceleration, where only Shift changes the speed ("a build that does not have acceleration and only
+  // relies on pressing shift to go faster or slower"), and for settings to try other combinations. So the
+  // first rows are the combination itself: whether anything accelerates, how far an arrow goes, how far
+  // Shift goes (further, or less far, for a slow and exact move), how often a held key moves; the rows after
+  // them are the numbers acceleration uses when it is on.
 
+  /** Whether an arrow ever moves further than its step because of how it is pressed: quick taps in a run,
+   *  a long hold, both, or neither — the owner's "does not have acceleration". First guess: off, as he
+   *  asked; the way it was is `both`. */
+  acceleration: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Acceleration",
+    question: "Off: every arrow move is the same size, and only Shift goes faster. Or speed up with quick taps, long holds, or both.",
+    values: ACCELERATION,
+    default: "off",
+  },
+  /** How far a tap of an arrow moves on the map, and each move of a held arrow, before any acceleration.
+   *  A list always moves one row. Tuned at 1 until the owner asked to try Shift as the slow move. */
+  tapStep: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Arrow step",
+    question: "How many tiles an arrow moves the cursor on the map, a tap or each move of a held arrow. A list moves one row.",
+    values: [1, 2, 3, 4, 5, 8, 10],
+    unit: "tiles",
+    default: 1,
+  },
+  /** How far the fast move moves — Shift or Option with an arrow, PageUp/PageDown, Home/End; the owner's
+   *  settings export (12 before). Below the arrow step it is the slow move instead. */
+  jumpStep: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Shift step",
+    question: "How far Shift (or Option, PageUp/PageDown, Home/End) moves. Less than the arrow step: Shift is the slow move.",
+    values: [1, 2, 3, 4, 5, 8, 10, 12, 15, 20],
+    unit: "tiles",
+    default: 10,
+  },
+  /** A held Shift-arrow moves again at most this often, so each move is seen to land; the owner's settings
+   *  export (100), tuned until he asked to try Shift on its own. */
+  jumpRepeatMs: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Shift pace",
+    question: "A held Shift-arrow moves again at most this often, so each move is seen to land. Smaller is faster.",
+    values: [30, 60, 100, 150, 200, 300],
+    default: 100,
+  },
+  /** A held arrow moves the cursor at most once this often, whatever the keyboard's repeat rate — about
+   *  16 moves a second, close enough to the cursor's glide that the drawn cursor keeps up. First guess,
+   *  from the owner's playtest notes ("limit the scroll speed"); off lets every repeat of the keyboard move. */
+  holdMoveMs: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Hold pace",
+    question: "A held arrow moves at most this often, whatever your keyboard repeats. Smaller is faster. Off: every repeat moves.",
+    values: [0, 30, 40, 50, 60, 80, 100, 120],
+    default: 60,
+  },
+  /** Taps of one arrow at most this far apart are a run, which keeps its speed; a longer gap starts over
+   *  at one. First guess, from the owner's playtest notes — his own number, "a double-tap (400ms)". */
+  doubleTapMs: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Tap run window",
+    question: "Acceleration, taps: taps of one arrow closer than this are a run and keep its speed; a longer gap starts over.",
+    values: [250, 300, 350, 400, 500, 600],
+    default: 400,
+  },
+  /** A tap at most this soon after the one before is a quick one, which may double the run's speed. First
+   *  guess, from the owner's playtest notes — his own number, "a fast-double-tap (300ms)". */
+  fastTapMs: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Quick tap",
+    question: "Acceleration, taps: a tap this soon after the one before is quick; only a quick tap can double a run's speed.",
+    values: [150, 200, 250, 300, 350, 400],
+    default: 300,
+  },
+  /** Every this many taps since the speed last changed, the last one quick, doubles it. First guess,
+   *  from the owner's playtest notes — his own "tap 3 times at least before activating speed". */
+  tapsToSpeedUp: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Taps to speed up",
+    question: "Acceleration, taps: taps in a run, the last one quick, before its speed doubles - and again after as many more.",
+    values: [2, 3, 4, 5],
+    unit: "taps",
+    default: 3,
+  },
+  /** The fastest a run of taps goes. First guess, from the owner's playtest notes — his
+   *  "4-tiles speed (fast)". */
+  tapTopStep: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Fastest tap",
+    question: "Acceleration, taps: the most tiles one tap moves once a run has sped up. Never less than the arrow step.",
+    values: [1, 2, 4, 8],
+    unit: "tiles",
+    default: 4,
+  },
+  /** How long an arrow repeats before its moves go `holdLongStep` — about ten tiles at the first step,
+   *  more than "a position a few tiles away". First guess, from the owner's playtest notes. */
+  holdLongMs: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Hold goes faster",
+    question: "Acceleration, holds: how long an arrow is held before each of its moves goes the faster hold step.",
+    values: [300, 400, 600, 800, 1000, 1500],
+    default: 600,
+  },
+  /** How far each of a held arrow's moves goes once it has been repeating for `holdLongMs`. First guess,
+   *  from the owner's playtest notes. */
+  holdLongStep: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Faster hold step",
+    question: "Acceleration, holds: how many tiles each move of a held arrow goes once the hold has gone faster.",
+    values: [1, 2, 3, 4],
+    unit: "tiles",
+    default: 2,
+  },
   /** Where the terminal does not say which key events are repeats: a press of the same arrow at most
    *  this long after the one before is a held key's repeat, and anything slower a tap. It depends on each
    *  keyboard's own repeat delay, so it stays live to retune on another machine; 200 is the owner's
@@ -154,99 +275,6 @@ export const ALL_SETTINGS = {
     values: ["auto", "off"],
     default: "auto",
   },
-  /** How far a tap of an arrow moves, and every run of taps starts from; the owner's playtest. */
-  tapStep: { tier: "tuned", unit: "tiles", default: 1 },
-  /** Taps of one arrow at most this far apart are a run, which keeps its speed; a longer gap starts over
-   *  at one. First guess, from the owner's playtest notes — his own number, "a double-tap (400ms)". */
-  doubleTapMs: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Tap run window",
-    question: "Taps of one arrow closer than this are a run and keep its speed; a longer gap starts over at one tile.",
-    values: [250, 300, 350, 400, 500, 600],
-    default: 400,
-  },
-  /** A tap at most this soon after the one before is a quick one, which may double the run's speed. First
-   *  guess, from the owner's playtest notes — his own number, "a fast-double-tap (300ms)". */
-  fastTapMs: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Quick tap",
-    question: "A tap this soon after the one before counts as quick; only a quick tap can double a run's speed.",
-    values: [150, 200, 250, 300, 350, 400],
-    default: 300,
-  },
-  /** Every this many taps since the speed last changed, the last one quick, doubles it. First guess,
-   *  from the owner's playtest notes — his own "tap 3 times at least before activating speed". */
-  tapsToSpeedUp: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Taps to speed up",
-    question: "How many taps in a run, the last one quick, before its speed doubles - and again after as many more.",
-    values: [2, 3, 4, 5],
-    unit: "taps",
-    default: 3,
-  },
-  /** The fastest a run of taps goes. First guess, from the owner's playtest notes — his
-   *  "4-tiles speed (fast)". */
-  tapTopStep: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Fastest tap",
-    question: "The most tiles one tap moves once a run has sped up. 1 tile: taps never speed up.",
-    values: [1, 2, 4, 8],
-    unit: "tiles",
-    default: 4,
-  },
-  /** A held arrow moves the cursor at most once this often, whatever the keyboard's repeat rate — about
-   *  16 moves a second, close enough to the cursor's glide that the drawn cursor keeps up. First guess,
-   *  from the owner's playtest notes ("limit the scroll speed"). */
-  holdMoveMs: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Hold pace",
-    question: "A held arrow moves at most once this often, however fast your keyboard repeats. Smaller is faster.",
-    values: [30, 40, 50, 60, 80, 100, 120],
-    default: 60,
-  },
-  /** How far each of a held arrow's moves goes at first. First guess, from the owner's playtest
-   *  notes (the retired `holdStep` moved 2 at every repeat). */
-  holdFirstStep: { tier: "tuned", unit: "tiles", default: 1 },
-  /** How long an arrow repeats before its moves go `holdLongStep` — about ten tiles at the first step,
-   *  more than "a position a few tiles away". First guess, from the owner's playtest notes. */
-  holdLongMs: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Hold goes faster",
-    question: "How long an arrow is held before each of its moves goes the faster hold step.",
-    values: [300, 400, 600, 800, 1000, 1500],
-    default: 600,
-  },
-  /** How far each of a held arrow's moves goes once it has been repeating for `holdLongMs`. First guess,
-   *  from the owner's playtest notes. */
-  holdLongStep: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Faster hold step",
-    question: "How many tiles each move of a held arrow goes once the hold has gone faster. 1 tile: it never does.",
-    values: [1, 2, 3, 4],
-    unit: "tiles",
-    default: 2,
-  },
-  /** How far the fast move jumps — Shift or Option with an arrow, PageUp/PageDown, Home/End; the owner's
-   *  settings export (12 before). */
-  jumpStep: {
-    tier: "experiment",
-    section: "keyboard",
-    label: "Jump distance",
-    question: "How far Shift or Option with an arrow, PageUp/PageDown and Home/End jump.",
-    values: [5, 8, 10, 12, 15, 20],
-    unit: "tiles",
-    default: 10,
-  },
-  /** A held fast move jumps again at most this often, so each jump is seen to land; the owner's settings
-   *  export. */
-  jumpRepeatMs: { tier: "tuned", default: 100 },
   /** How long a lone Esc at the end of a read waits for the rest of a key sequence before it counts as
    *  Esc; the owner's settings export. */
   escTimeoutMs: { tier: "tuned", default: 50 },

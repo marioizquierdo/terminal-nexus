@@ -3,30 +3,40 @@
 // try to move to a position a few tiles away and then the cursor starts jumping ahead ... Instead of
 // accelerating on fast taps based only on time, try based on number of taps within two different time
 // windows: a double-tap (400ms) and a fast-double-tap (300ms) ... The keyboard press events should be
-// handled in a way that limit the scroll speed more than strictly activating the fast movement."
+// handled in a way that limit the scroll speed more than strictly activating the fast movement." And then,
+// having felt it: "I actually want to try a build that does not have acceleration and only relies on
+// pressing shift to go faster or slower."
 //
-// **Taps and holds are two things.** A *tap* is a key pressed and let go; a *hold* is a key kept down,
-// which the operating system repeats at its own delay and rate. Each has its own rule:
+// **The plain rule has no acceleration.** An arrow moves `tapStep` tiles on the map (one row in a list) —
+// a tap, and each move of a held arrow alike — and Shift (Option, PageUp/PageDown, Home/End) moves
+// `jumpStep` tiles: further than the arrow by default, and less far when the player sets it so, which
+// makes Shift the slow, exact move. The *Acceleration* Experiment (`off`, `taps`, `holds`, `both`) puts the
+// older speed-ups back, each separately:
 //
-//   - **Taps speed up by counting, never by time alone.** A tap moves `tapStep`. Taps of the same arrow
-//     each within `doubleTapMs` of the one before are a run, and the run keeps its speed. Every
+//   - **Taps speed up by counting, never by time alone** (`taps`, `both`). Taps of the same arrow each
+//     within `doubleTapMs` of the one before are a run, and the run keeps its speed. Every
 //     `tapsToSpeedUp`-th tap since the speed last changed, if it came within `fastTapMs` of the tap
-//     before it, doubles the speed, up to `tapTopStep`: so the third tap of a run — the last one a
-//     little quicker — moves 2 ("the user tap 3 times at least before activating speed, and the last one
-//     needs to be a bit faster"), and three more at 2, the last quick again, reach 4 ("after another 3
-//     taps it doubles again"). A slower gap, another arrow, or any other key starts over at one.
-//   - **A hold runs at the game's own cadence**, whatever the operating system's repeat rate: its
-//     repeats move the cursor at most once every `holdMoveMs` (on average exactly that often, when the
-//     keyboard repeats faster), `holdFirstStep` tiles a move at first and `holdLongStep` once the key has
-//     been repeating for `holdLongMs`. A hold breaks a run of taps: the tap after it is one tile, so
-//     "keep-pressing, releasing, and tapping to adjust" (the owner) stays precise.
-//   - **The fast move** (Shift, Option, PageUp/PageDown, Home/End) is not a speed at all but a **jump**
-//     of `jumpStep` tiles. Held, it jumps again at most once every `jumpRepeatMs`, so each jump is seen
-//     to land.
+//     before it, doubles the speed, up to `tapTopStep` (never less than the arrow's own step): so the
+//     third tap of a run — the last one a little quicker — moves 2 ("the user tap 3 times at least before
+//     activating speed, and the last one needs to be a bit faster"), and three more at 2, the last quick
+//     again, reach 4 ("after another 3 taps it doubles again"). A slower gap, another arrow, or any other
+//     key starts over at the arrow's step.
+//   - **A long hold goes further** (`holds`, `both`): once a key has been repeating for `holdLongMs`, each
+//     of its moves goes `holdLongStep` tiles (never less than the arrow's step).
 //
-// Every one of those numbers is a setting (`src/build/all-settings.ts`) — most of them Experiments in
-// Settings' Keyboard navigation section, the rest tuned constants — and
-// `moveTuning` reads each as it is now, so a change in Settings changes the next key.
+// **A hold runs at the game's own cadence, accelerating or not**, whatever the operating system's repeat
+// rate: its repeats move the cursor at most once every `holdMoveMs` (on average exactly that often, when
+// the keyboard repeats faster; every repeat when it is off), `tapStep` tiles a move. A hold breaks a run
+// of taps: the tap after it is one step, so "keep-pressing, releasing, and tapping to adjust" (the owner)
+// stays precise.
+//
+// **The fast move** (Shift, Option, PageUp/PageDown, Home/End) is a **jump** of `jumpStep` tiles and no
+// speed at all. Held, it jumps again at most once every `jumpRepeatMs`, so each jump is seen to land.
+// In a list it goes to the first or last row instead, whatever `jumpStep` is.
+//
+// Every one of those numbers is a setting (`src/build/all-settings.ts`) — Experiments in Settings'
+// Keyboard navigation section, the rest tuned constants — and `moveTuning` reads each as it is now, so a
+// change in Settings changes the next key.
 //
 // **How a repeat is told from a tap.** Where the terminal reports key events (the kitty keyboard
 // protocol, `src/terminal/key-events.ts`, behind the Key releases Experiment), it says so: a press is a
@@ -55,13 +65,17 @@ export type MoveKind = "tap" | "hold" | "jump" | "release"
 
 /** The numbers, handed in so the rules stay pure functions a test can drive with any of them. */
 export type MoveTuning = Readonly<{
+  /** How far an arrow goes: a tap, and each move of a held arrow. */
   tapStep: number
+  /** Whether a run of quick taps speeds up, and whether a long hold goes further (the *Acceleration*
+   *  Experiment's `taps` and `holds`). */
+  tapAcceleration: boolean
+  holdAcceleration: boolean
   doubleTapMs: number
   fastTapMs: number
   tapsToSpeedUp: number
   tapTopStep: number
   holdMoveMs: number
-  holdFirstStep: number
   holdLongStep: number
   holdLongMs: number
   jumpStep: number
@@ -73,20 +87,29 @@ export type MoveTuning = Readonly<{
  *  constant — read without caring which (`setting`), so a change in Settings changes the feel at once
  *  and a number can move between tiers without this changing. */
 export function moveTuning(from: SettingSource): MoveTuning {
+  const acceleration = setting(from, "acceleration")
   return {
     tapStep: setting(from, "tapStep"),
+    tapAcceleration: acceleration === "taps" || acceleration === "both",
+    holdAcceleration: acceleration === "holds" || acceleration === "both",
     doubleTapMs: setting(from, "doubleTapMs"),
     fastTapMs: setting(from, "fastTapMs"),
     tapsToSpeedUp: setting(from, "tapsToSpeedUp"),
     tapTopStep: setting(from, "tapTopStep"),
     holdMoveMs: setting(from, "holdMoveMs"),
-    holdFirstStep: setting(from, "holdFirstStep"),
     holdLongStep: setting(from, "holdLongStep"),
     holdLongMs: setting(from, "holdLongMs"),
     jumpStep: setting(from, "jumpStep"),
     jumpRepeatMs: setting(from, "jumpRepeatMs"),
     holdWindowMs: setting(from, "holdWindowMs"),
   }
+}
+
+/** The rules for a list's highlight: the arrow moves one row, whatever the map's step is, and
+ *  everything else — acceleration, the hold's pace — is the map cursor's own ("use the same timings,
+ *  consistency here will be very useful"). */
+export function listTuning(tuning: MoveTuning): MoveTuning {
+  return { ...tuning, tapStep: 1 }
 }
 
 /** The rules at this build's defaults: what a key is without a session to say otherwise (a test driving
@@ -162,7 +185,8 @@ export function moveStep(previous: MoveMemory | null, key: CursorKey, now: numbe
     const holdDue = holding ? previous.holdDue : now
     const base: MoveMemory = { ...fresh, holdStart, holdDue }
     if (now < holdDue) return { kind: "hold", tiles: 0, memory: base }
-    const tiles = now - holdStart >= tuning.holdLongMs ? tuning.holdLongStep : tuning.holdFirstStep
+    const long = tuning.holdAcceleration && now - holdStart >= tuning.holdLongMs
+    const tiles = long ? Math.max(tuning.holdLongStep, tuning.tapStep) : tuning.tapStep
     const due = Math.max(holdDue + tuning.holdMoveMs, now + tuning.holdMoveMs / 2)
     return { kind: "hold", tiles, memory: { ...base, holdDue: due } }
   }
@@ -174,8 +198,9 @@ export function moveStep(previous: MoveMemory | null, key: CursorKey, now: numbe
     return { kind: "tap", tiles: tuning.tapStep, memory: { ...fresh, tapAt: now, taps: 1 } }
   }
   const taps = previous.taps + 1
-  const speedUp = taps >= tuning.tapsToSpeedUp && now - lastTap <= tuning.fastTapMs && previous.step < tuning.tapTopStep
-  const step = speedUp ? Math.min(tuning.tapTopStep, previous.step * 2) : previous.step
+  const top = Math.max(tuning.tapTopStep, tuning.tapStep)
+  const speedUp = tuning.tapAcceleration && taps >= tuning.tapsToSpeedUp && now - lastTap <= tuning.fastTapMs && previous.step < top
+  const step = speedUp ? Math.min(top, previous.step * 2) : previous.step
   return { kind: "tap", tiles: step, memory: { ...fresh, tapAt: now, step, taps: speedUp ? 0 : taps } }
 }
 

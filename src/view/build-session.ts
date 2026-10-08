@@ -32,8 +32,8 @@ import { visibleRange } from "../build/camera.ts"
 import type { CursorKey } from "../terminal/list-keys.ts"
 import { cursorKeyOf } from "../terminal/list-keys.ts"
 import { buildKeyboardCommand } from "../build/keyboard.ts"
-import type { Move } from "../build/motion.ts"
-import { KeyMotion, moveTuning, pressTiles } from "../build/motion.ts"
+import type { Move, MoveTuning } from "../build/motion.ts"
+import { KeyMotion, listTuning, moveTuning, pressTiles } from "../build/motion.ts"
 import type { MouseEvent } from "../build/mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "../build/mouse.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
@@ -544,9 +544,11 @@ export class BuildSession {
     const state = this.buildState
     const tuning = moveTuning(state)
     let moved = false
-    const move = (cursor: CursorKey): number => {
+    // The map cursor and a list's highlight share one memory and every number but the step: an arrow
+    // moves the map cursor `tapStep` tiles, and a list's highlight one row.
+    const move = (cursor: CursorKey, rules: MoveTuning = tuning): number => {
       moved = true
-      const tiles = this.motion.step(cursor, now as number, phase, tuning)
+      const tiles = this.motion.step(cursor, now as number, phase, rules)
       this.logMove(cursor)
       return tiles
     }
@@ -563,8 +565,8 @@ export class BuildSession {
       ...(now === undefined
         ? { moveTiles: (cursor: CursorKey) => pressTiles(cursor, tuning) }
         : {
-            moveTiles: move,
-            listRows: (direction: -1 | 1) => move({ dx: 0, dy: direction, jump: false }),
+            moveTiles: (cursor: CursorKey) => move(cursor),
+            listRows: (direction: -1 | 1) => move({ dx: 0, dy: direction, jump: false }, listTuning(tuning)),
           }),
     })
     if (command !== null && !moved) this.motion.reset()

@@ -5,6 +5,12 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Play the keyboard without acceleration** ([his request](../history/feedback/2026-10-08-keyboard-without-acceleration.md)),
+  from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'`: press Esc, then Tab to put the keyboard on the
+  map. An arrow moves one tile however it is tapped, and a held arrow repeats at the game's pace; Shift with an arrow
+  jumps ten. Press `d`: Keyboard navigation opens on Acceleration (off, taps, holds, both - the way it was), Arrow
+  step, Shift step (below the arrow step, Shift is the slow move), Shift pace and Hold pace; paste the settings export
+  of what felt right. The ones he settles become the defaults and the rest are deleted.
 - **Play the Nexus Pulse** (the Commander milestone's last step, now dealt by schedule), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `n`. Three powers are dealt each round, each saying how rare it is,
   War Chest beside them; a digit keeps one, and what it does shows at once and lasts the mission. Round 2 deals

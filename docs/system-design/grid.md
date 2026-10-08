@@ -127,7 +127,7 @@ There is no minimap.**
   view's width for the sides and of its height for the top and bottom, **30%** (GUIDANCE, a tuned value
   in `src/build/tuning.ts`; `--scroll-margin <percent>` sets it), rounded, and capped so an axis's two
   margins never meet (`tests/build-motion.test.ts`). That a margin exists, and that the cursor drives
-  it, is the rule; the number is not. The exact speed tiers and timings were settled by tap counting and a hold pace (Q54, answered).
+  it, is the rule; the number is not. The exact speed tiers and timings were settled by tap counting and a hold pace (Q54, answered), and are being tried again without acceleration.
 - **The margin is a follow rule, not an invariant** (RULE — `tests/build-camera.test.ts`). It says
   where the camera must be relative to the cursor *when it can be*. At the Grid's own edge the camera
   has nowhere left to go, so the cursor legitimately reaches the edge of the screen, which is correct
@@ -166,23 +166,24 @@ There is no minimap.**
   has them, because the side panel is designed at that height (see [`presentation.md`](presentation.md)),
   and a shorter Grid sits at the top of it with its own bottom edge drawn across the Grid pane alone:
   the rectangle stays closed at the Grid's real edge, never at the pane's.
-- **Taps are counted, a hold keeps its own pace, and the fast move jumps** (GUIDANCE; the timing is
-  held by `tests/build-motion.test.ts`, the numbers are tuned values in `src/build/tuning.ts`). A tap
-  moves one tile. Taps of the same arrow each within 400 ms of the one before are a run that keeps its
-  speed; the third tap since the speed last changed, or since the run began, doubles it if it came
-  within 300 ms of the tap before. So a run goes 1, 1, 2, then 2, 2, 4, and four is the top. A longer
-  gap, another arrow or any other key starts over at one. A held key moves at the game's own pace
+- **An arrow moves the same distance however it is pressed, a hold keeps its own pace, and the fast move
+  jumps** (GUIDANCE; the timing is held by `tests/build-motion.test.ts`, the numbers are Experiments
+  in Settings' Keyboard navigation section, from `src/build/all-settings.ts`). A tap moves one tile (the arrow's
+  step), and there is no acceleration unless the Acceleration Experiment puts it back: with it, taps of the
+  same arrow each within 400 ms of the one before are a run that keeps its speed, the third tap since the
+  speed last changed doubles it if it came within 300 ms of the tap before (so a run goes 1, 1, 2, then 2, 2,
+  4, and four is the top), and a long hold goes two tiles a move. A longer gap, another arrow or any other key
+  starts a run over at one. A held key moves at the game's own pace
   rather than the operating system's repeat rate: at most one move every 60 ms (on average exactly that
-  when the keyboard repeats faster), one tile a move, two once the key has repeated for 600 ms (first
-  guesses). A hold ends a run of taps. Where the terminal reports key events (the kitty keyboard
+  when the keyboard repeats faster), one tile a move (first guesses). A hold ends a run of taps. Where the terminal reports key events (the kitty keyboard
   protocol, behind the Key releases Experiment, on by default), it says which presses are repeats and
   when a key is let go; where it does not, a press of the same arrow within the hold window (an
   Experiment, 200 ms) of the one before is a repeat, and anything slower a tap. The fast move (Shift
-  and its fallbacks) is not a speed but a **jump of ten tiles**, the view following by the ordinary
+  and its fallbacks) is not a speed but a **jump of ten tiles** (below the arrow's step, the slow move instead), the view following by the ordinary
   margin rather than re-centring; held, it jumps again at most every 100 ms, so each jump is seen to
   land. **RULE — `tests/build-motion.test.ts`: timing lives in the input path (`src/build/motion.ts`);
   the reducer receives an ordinary `move-cursor` of the chosen size and stays a pure function of
-  commands.** Every list moves the same way: no wrapping, a first tap one row, taps counted and holds
+  commands.** Every list moves the same way: no wrapping, a first tap one row, taps and holds
   at the same pace, clamped at the ends, and the fast move going to the first or last row
   (`tests/build-lists.test.ts`).
 - **A click scrolls the view the same way, armed or not** (RULE — `tests/build-motion.test.ts`). A

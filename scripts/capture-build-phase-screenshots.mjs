@@ -108,9 +108,9 @@ function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capabilit
 }
 
 /** A whole key script as an animated GIF, one frame per key. */
-function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", delayMs = 900, holdMs = 2500 }) {
+function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", delayMs = 900, holdMs = 2500, experiments = {} }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, capability })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, capability, experiments })
   const lastIndex = run.frames.length - 1
   if (!frameToText(run.frames[lastIndex].frame).includes(expect)) {
     throw new Error(`${name}: expected "${expect}" on screen after "${keys}"`)
@@ -779,11 +779,13 @@ scriptedGif("build-held-arrow", {
 })
 
 scriptedGif("build-tap-count", {
-  // Taps speed up only by counting: two slow taps, one tile each; a third within 300 ms moves two;
-  // taps within 400 ms keep it; three more, the last quick, move four. A pause starts over at one.
+  // With Acceleration on (it is off by default: arrows always move the same, only Shift goes faster), taps
+  // speed up only by counting: two slow taps, one tile each; a third within 300 ms moves two; taps within
+  // 400 ms keep it; three more, the last quick, move four. A pause starts over at one.
   keys: "e Right~500 Right~350 Right~250 Right~350 Right~250 Right~250 Right~250 Right~900",
   expect: "Explore Map",
   delayMs: 450,
+  experiments: { acceleration: "taps" },
 })
 
 scriptedGif("build-explore-edge-click", {

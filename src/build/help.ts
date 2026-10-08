@@ -33,6 +33,7 @@ import {
   structureAtTile,
 } from "./state.ts"
 import { WHEEL_TILES } from "./mouse.ts"
+import type { SettingValue } from "./all-settings.ts"
 import { defaultValue, setting } from "./all-settings.ts"
 import type { ConstructItem } from "./types.ts"
 
@@ -238,11 +239,43 @@ export type ControlsSection = Readonly<{ heading: string; lines: readonly Contro
  *  line's text fits the 28 columns left beside it at the 80-column floor, a test holds it to it. */
 export const CONTROLS_KEYS_WIDTH = 14
 
+/** The Experiments the Controls page's map lines are written from. */
+export type MoveNumbers = Readonly<{ arrowStep: number; shiftStep: number; acceleration: SettingValue<"acceleration"> }>
+
+/** The defaults, for a page asked for without a Build Phase to read. */
+export function defaultMoveNumbers(): MoveNumbers {
+  return { arrowStep: defaultValue("tapStep"), shiftStep: defaultValue("jumpStep"), acceleration: defaultValue("acceleration") }
+}
+
+const tiles = (count: number): string => (count === 1 ? "1 tile" : `${count} tiles`)
+
+/** What the arrows do on the map, in the 28 columns the page leaves. */
+function arrowsText({ arrowStep, acceleration }: MoveNumbers): string {
+  switch (acceleration) {
+    case "taps":
+      return "move; quick taps speed up"
+    case "holds":
+      return "move; long holds speed up"
+    case "both":
+      return "move; taps, holds speed up"
+    default:
+      return `move ${tiles(arrowStep)}; hold repeats`
+  }
+}
+
+/** What Shift does, set against the arrows: further, or less far — the slow, exact move. */
+function shiftText({ arrowStep, shiftStep }: MoveNumbers): string {
+  if (shiftStep > arrowStep) return `jump ${tiles(shiftStep)}`
+  if (shiftStep < arrowStep) return `slow: ${tiles(shiftStep)} a move`
+  return "the same as the arrows"
+}
+
 /**
  * **The Controls and hotkeys page, as one table** — every key and click the Build Phase and its Nexus
  * Pulse answer, grouped by where the player is, in the words the rows and the top bar use. Accurate to
- * the adapters (`src/build/keyboard.ts`, `src/build/mouse.ts`); the Shift jump is the "Jump distance"
- * setting as it is now (`jumpStep`; its default without one), so the page says what Shift does. `?` opens it from the game
+ * the adapters (`src/build/keyboard.ts`, `src/build/mouse.ts`); what the arrows and
+ * Shift do is the keyboard navigation Experiments as they are now (`MoveNumbers`; their defaults without
+ * a state), so the page says what each key does in the build being played. `?` opens it from the game
  * — a shortcut named only here, under ANYWHERE.
  *
  * One group has no keys: THE GROUND, after THE MAP, the one thing on the page that is not a key — that units
@@ -250,7 +283,7 @@ export const CONTROLS_KEYS_WIDTH = 14
  * (the rule every range on the map is drawn by, `src/grid/reach.ts`). It is the page that
  * teaches how to play, so how the ground is counted is said here once.
  */
-export function controlsPage(jumpStep: number = defaultValue("jumpStep")): readonly ControlsSection[] {
+export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): readonly ControlsSection[] {
   return [
     {
       heading: "THE MENU",
@@ -270,11 +303,11 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
     {
       heading: "THE MAP",
       lines: [
-        { keys: "arrows", text: "move; hold one to go faster" },
-        { keys: "shift+arrow", text: `jump ${jumpStep} tiles` },
-        { keys: "option+arrow", text: "the same jump" },
-        { keys: "pgup/pgdn", text: "jump up or down" },
-        { keys: "home/end", text: "jump left or right" },
+        { keys: "arrows", text: arrowsText(numbers) },
+        { keys: "shift+arrow", text: shiftText(numbers) },
+        { keys: "option+arrow", text: "the same as shift+arrow" },
+        { keys: "pgup/pgdn", text: "as shift, up or down" },
+        { keys: "home/end", text: "as shift, left or right" },
         { keys: "enter/space", text: "Explore Map here" },
         { keys: "bksp/delete", text: "remove what is planned here" },
         { keys: "tab/esc/x", text: "back to the menu" },
