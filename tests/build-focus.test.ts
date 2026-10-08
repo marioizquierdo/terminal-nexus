@@ -621,7 +621,7 @@ test("clicks as a terminal sends them and the driver's click commands are the sa
   clickPanelRow(byMouse, panelRow(byMouse, EXPLORE_ROW)) // Explore Map
   clickTile(byMouse, { x: 18, y: 11 }) // the card shows the Grid Nexus
   clickCell(byMouse, byMouse.layout.panelColumn + 2, panelRow(byMouse, 2)) // the panel: closes it
-  clickPanelRow(byMouse, panelRow(byMouse, NEXUS_ROW)) // the Nexus popup
+  clickPanelRow(byMouse, panelRow(byMouse, NEXUS_ROW)) // the Nexus Pulse popup
 
   const byDriver = buildSide()
   byDriver.build.run([

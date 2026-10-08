@@ -1,7 +1,7 @@
 # Milestone 11 — Challenge Mode: Runs
 
 **Status:** PLANNED
-**Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Pulse loop and a result), Milestone 8 (a Commander exists and the Nexus draft deals from an army's pool); Milestone 3's mode select hands off here
+**Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Battle Round loop and a result), Milestone 8 (a Commander exists and the Nexus Pulse deals from an army's pool); Milestone 3's mode select hands off here
 
 This is the replayable mode, and the one that needs no writing. Mario's brief: "implementing 'runs',
 where each battle ends on a new draft upgrade or removals that further polish the build for the next

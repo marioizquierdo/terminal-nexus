@@ -1,5 +1,5 @@
 // The Grid's ground, drawn through the camera and clipped to the viewport — shared by the Build Phase
-// and the Nexus Pulse, so the map looks like the same map on both sides of a commit. Nothing
+// and the Battle Round, so the map looks like the same map on both sides of a commit. Nothing
 // stands on it here; structures, units and effects are each screen's own.
 
 import type { Camera, Viewport } from "../build/camera.ts"

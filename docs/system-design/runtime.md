@@ -60,7 +60,7 @@ code or test holds it).
 **The browser playtest page is a development tool, never a platform or a rung.** RULE —
 `tests/web.test.ts`, `src/web/`. It exists so the game can be played from a phone during review
 (`bun scripts/build-web.mjs`), and it must run the terminal's own screen loops (the menu, the Build
-Phase, Pulse playback) handed a stand-in terminal: it converts frames to pixels, taps and keys to
+Phase, Battle Round playback) handed a stand-in terminal: it converts frames to pixels, taps and keys to
 terminal bytes, and settings to browser storage, and decides nothing about what the game shows or
 does. A terminal at 80 × 24 stays the acceptance target; the page never is one. Tools **around** the
 screen are the page's to add because they serve the feedback loop (see [`ui-patterns.md`](ui-patterns.md)):
@@ -82,7 +82,7 @@ One structured shape serves every log (`src/log/`). RULE — `tests/log.test.ts`
   `tests/architecture.test.ts`. The kernel has no clock; its record is its ordered events
   ([`pulse.md`](pulse.md)), from which `grid`'s battle report is derived afterwards, at the same levels.
 - **The Activity Logs** record what a player did and what the game answered — commands, refusals,
-  placements, settings, the Pulse's start and result, errors — from the shells and the Build Phase's
+  placements, settings, a Battle Round's start and result, errors — from the shells and the Build Phase's
   session, never from inside a reducer. The Build Phase's state reads them only to show them in the
   Activity logs window. Which events exist is GUIDANCE: an agent adds one for the interaction a pull
   request asks about and removes it once answered ([`ui-patterns.md`](ui-patterns.md), Feedback loops).

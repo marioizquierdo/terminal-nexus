@@ -60,7 +60,8 @@ export type PopupRow =
       select?: BuildCommand
     }>
   /** A choice: its hotkey and label, what clicking it sends, and whether the keyboard is on it. An
-   *  option with a description takes a second row for it, and either row is its click target. */
+   *  option with a description takes a second row for it, and either row is its click target; a `tag` is a
+   *  quiet word at the end of its first row (a Nexus power's rarity). */
   | Readonly<{
       kind: "option"
       hotkey: string
@@ -68,6 +69,7 @@ export type PopupRow =
       command: BuildCommand
       highlighted?: boolean
       description?: string
+      tag?: string
     }>
   /**
    * A setting: its name and its value between `<` and `>` (no "now"/"restart" column —
@@ -469,6 +471,8 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
             command: { kind: "pick-nexus", index },
             highlighted: position === state.popupHighlight,
             description: option.description,
+            // How rare each dealt power is, so the schedule's ramp shows; War Chest, beside every hand, says nothing.
+            ...(option.card.always === true ? {} : { tag: option.card.rarity }),
           })
         })
       } else {
@@ -480,7 +484,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
         rows.push({ kind: "text", text: option.name, strong: true })
         rows.push({ kind: "text", text: `    ${option.description}`, muted: true })
       }
-      return { title: "NEXUS POWERS", rows }
+      return { title: "NEXUS PULSE", rows }
     }
     case "battle-round":
       // A confirmation screen, not a question: the round's title,

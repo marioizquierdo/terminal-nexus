@@ -20,7 +20,7 @@ export type MouseUiState = Readonly<{
   popup?: PlacedPopup
   card?: number | null
   escLabel?: string
-  /** A Nexus Pulse is on screen: its panel's control rows are click targets, and nothing else
+  /** A Battle Round is on screen: its panel's control rows are click targets, and nothing else
    *  on the panel is. */
   pulse?: boolean
   /** The Pulse on screen has ended and its result stands: its "go on" row answers a click. */

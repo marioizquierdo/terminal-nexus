@@ -9,7 +9,7 @@ import { stepListIndex } from "../terminal/list-keys.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import type { MatchState } from "../state/types.ts"
-import type { BuildingCard, PowerCard } from "../armies/types.ts"
+import type { BuildingCard, PowerCard, Schedule } from "../armies/types.ts"
 import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
@@ -93,13 +93,15 @@ export type BuildContext = Readonly<{
    */
   scrollMargin?: number
   /**
-   * The Nexus draft this Build Phase offers: the hand dealt from the army's Nexus power pool as the round opened,
-   * War Chest beside it (`dealHand`, `src/armies/deal.ts`), each under its digit. One is kept, or — for now — none.
-   * A context with no mission (most that the tests build by hand) offers what it is given, undealt.
+   * What this round's Nexus Pulse offers: the hand dealt from the army's Nexus power pool as the round opened, War
+   * Chest beside it (`dealHand`, `src/armies/deal.ts`), each under its digit. One is kept, or — for now — none. A
+   * context with no mission (most that the tests build by hand) offers what it is given, undealt.
    */
   nexusDraft: readonly NexusPowerOption[]
-  /** What the hands are dealt from: every Nexus power the level offers. Absent: the draft is never dealt again. */
+  /** What the hands are dealt from: every Nexus power the level offers. Absent: no hand is ever dealt again. */
   powerPool?: readonly PowerCard[]
+  /** What each round's hand deals: the level's own schedule. Absent: the game's default (`DEFAULT_SCHEDULE`). */
+  powerSchedule?: Schedule
   /**
    * The Nexus powers kept so far this mission, in the order kept — this Build Phase's pick among them once it is
    * made. What each does lasts the rest of the mission: it is already in this context (the menu, the content, what
@@ -261,7 +263,7 @@ export type BuildState = Readonly<{
    *  (`dialog`). */
   popup: Popup | null
   /** The open popup's highlight, an index into its list (`popupRowCount`), set whenever one opens: the
-   *  Nexus popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
+   *  Nexus Pulse popup's pending powers, the game menu's rows, Settings' rows (`SETTINGS_ROWS`), the export's
    *  lines, the Controls page's key lines, the Activity logs window's filter, export and entries. */
   popupHighlight: number
   /** The popups under the open one, nearest last, each with the row to come back to — the row that
@@ -296,7 +298,7 @@ export type BuildState = Readonly<{
    *  stored total is one number that can drift from what actually produced it. */
   bonusAllotment: number
   /** The Build Phase is done: the plan is frozen and every state-changing command is refused from here
-   *  on. With a Pulse to start (`BuildSession`'s `startPulse`) the Nexus Pulse plays from this moment. */
+   *  on. With a Pulse to start (`BuildSession`'s `startPulse`) the Battle Round plays from this moment. */
   committed: boolean
   /** Which Pulse of the mission this Build Phase is planning — "Battle Round 1" — from the context's
    *  round (the mission's loop counts it up), 1 without one. */
@@ -501,7 +503,7 @@ function editLock(state: BuildState): StatusMessage | null {
 }
 
 /**
- * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Powers entry, every construct row, and Start Battle Round last.
+ * The side panel's menu, in the order Up/Down walk it — Explore Map first, then the Nexus Pulse row, every building row, and Start Battle Round last.
  * Derived from the catalog rather than stored, so the highlight and the rows drawn can
  * never disagree about how many there are.
  */
@@ -514,7 +516,7 @@ export function menuEntries(context: BuildContext): readonly MenuEntry[] {
   ]
 }
 
-/** Where the two entries above the construct rows sit in `menuEntries`. */
+/** Where the two entries above the building rows sit in `menuEntries`. */
 export const EXPLORE_ENTRY = 0
 export const NEXUS_ENTRY = 1
 
@@ -559,16 +561,16 @@ export function cardEntry(state: BuildState): number | null {
   return mode === "explore" ? EXPLORE_ENTRY : null
 }
 
-/** How many entries sit above the construct rows. */
+/** How many entries sit above the building rows. */
 const ENTRIES_BEFORE_CONSTRUCT = 2
 
-/** The menu entry a construct row is — so arming by digit moves the highlight onto its row, and focus
+/** The menu entry a building row is — so arming by digit moves the highlight onto its row, and focus
  *  back on the menu lands where the player's attention already is. */
 export function entryOfConstruct(index: number): number {
   return index + ENTRIES_BEFORE_CONSTRUCT
 }
 
-/** The menu's last entry, Start Battle Round: the one after the last construct row of a catalog this long. */
+/** The menu's last entry, Start Battle Round: the one after the last building row of a catalog this long. */
 export function startEntry(catalogSize: number): number {
   return entryOfConstruct(catalogSize)
 }
@@ -586,8 +588,10 @@ export const lasts = (card: PowerCard): boolean => !("credits" in card.effect) &
 
 export function nexusPowers(context: BuildContext, state: BuildState): NexusPowers {
   // What the shell has kept this mission (this Build Phase's pick among it, once made), lasting: a War Chest or a
-  // Reserve Callup kept in an earlier round is spent, not active.
-  const kept = (context.kept ?? []).filter(lasts)
+  // Reserve Callup kept in an earlier round is spent, not active. An upgrade kept is listed in its power's place
+  // (Drill Schedule II, not Drill Schedule beside it): what both do still adds up.
+  const all = context.kept ?? []
+  const kept = all.filter(lasts).filter((card) => !all.some((other) => other.upgrades === card.id))
   if (state.nexusPick === null) {
     return { pending: context.nexusDraft.map((option, index) => ({ index, option })), active: kept }
   }
@@ -1237,7 +1241,7 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
 function pickNexus(context: BuildContext, state: BuildState, index: number): BuildState {
   // Defensively guarded like every other command: a driver script is free to send one anywhere, and
   // the answer must be the same refusal a player pressing an unavailable key gets. A pick is made in
-  // the Nexus popup, or by a driver with no popup open; any other popup holds the keyboard, and a
+  // the Nexus Pulse popup, or by a driver with no popup open; any other popup holds the keyboard, and a
   // committed plan is past picking.
   if (state.committed || (state.popup !== null && state.popup !== "nexus-powers")) {
     return { ...state, status: editLock(state) ?? state.status }
@@ -1331,7 +1335,7 @@ function goBack(state: BuildState): BuildState {
  * committed Build Phase, since starting over from there is exactly what a playtest wants.
  */
 function openSettings(state: BuildState, section: "settings" | "experiments"): BuildState {
-  // While the Nexus Pulse is on screen, `d` opens the Experiments already at the placeholder Pulse's —
+  // While the Battle Round is on screen, `d` opens the Experiments already at the placeholder Pulse's —
   // the raid and the crew, which someone watching it wants to change — rather than at the
   // Build Phase's first.
   const experiments = state.committed ? FIRST_PULSE_EXPERIMENT_ROW : FIRST_EXPERIMENT_ROW
@@ -1682,7 +1686,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // Meaningless outside the one moment it answers — a stray "y" is not a command here any more
       // than a stray "3" is one before anything is armed.
       if (state.popup !== "battle-round") return state
-      // The Nexus Pulse starts. The keyboard goes to the Grid, where the arrows look around it
+      // The Battle Round starts. The keyboard goes to the Grid, where the arrows look around it
       // — a committed plan locks every edit but not the cursor — and nothing is armed or being explored.
       return {
         ...closePopups(toMap(state)),

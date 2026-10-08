@@ -63,7 +63,7 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
       // Explore Map and Nexus on the first two lines, with no blank line between them.
       assert.deepEqual([EXPLORE_ROW, NEXUS_ROW, CREDITS_ROW], [0, 1, 2])
       assert.match(line(panelRow(side, EXPLORE_ROW)), /^\[e\] Explore Map +$/)
-      assert.match(line(panelRow(side, NEXUS_ROW)), /^\[n\] Nexus \(1\) +$/)
+      assert.match(line(panelRow(side, NEXUS_ROW)), /^\[n\] Nexus Pulse \(1\) +$/)
       // The credits: the map's own deposit glyph and what is left to spend, right-aligned where the costs
       // end, the symbol in the deposit's colour and the amount in the title's.
       const deposit = terrainGlyph("terrain.deposit", pack)
@@ -167,7 +167,7 @@ test("an active row keeps its own hotkey and ends in one >, all in the hotkey co
     ["a building by its digit", ["1"], (side) => panelRow(side, CARD_HEADER_ROW), /^\[1\] Barracks +>$/],
     ["a building from its row", [DOWN, DOWN, DOWN, ENTER], (side) => panelRow(side, CARD_HEADER_ROW), /^\[2\] Hatchery +>$/],
     ["Explore Map", ["e"], (side) => panelRow(side, CARD_HEADER_ROW), /^\[e\] Explore Map +>$/],
-    ["Nexus", ["n"], (side) => panelRow(side, NEXUS_ROW), /^\[n\] Nexus \(1\) +>$/],
+    ["Nexus", ["n"], (side) => panelRow(side, NEXUS_ROW), /^\[n\] Nexus Pulse \(1\) +>$/],
     ["Start Battle Round", ["n", "1", "s"], (side) => startRow(side.layout), /^\[s\] Start Battle Round +>$/],
   ]
   for (const [name, open, rowOf, reads] of cases) {
@@ -190,7 +190,7 @@ test("an active row keeps its own hotkey and ends in one >, all in the hotkey co
   const side = buildSide()
   assert.ok(!panelLines(side, compose(side)).some((line) => />$/.test(line)), "a row with nothing under way is drawn active")
   keys(side, "n", "x")
-  assert.match(panelLine(side, compose(side), panelRow(side, NEXUS_ROW)), /^\[n\] Nexus \(1\) +$/)
+  assert.match(panelLine(side, compose(side), panelRow(side, NEXUS_ROW)), /^\[n\] Nexus Pulse \(1\) +$/)
 })
 
 test("a popup that belongs to no row — the game menu, Settings, the Controls page — leaves the menu unlit", () => {
@@ -276,7 +276,7 @@ test("a refused flicker on a plain row leaves it plain and greys its words; on a
 
 test("a pressed flash on an active row is the bar, over the same words", () => {
   const side = buildSide()
-  keys(side, "n") // the Nexus popup: its row active behind it
+  keys(side, "n") // the Nexus Pulse popup: its row active behind it
   const row = panelRow(side, NEXUS_ROW)
   const flash: RowAck = { kind: "pressed", entry: NEXUS_ENTRY }
   assert.equal(panelLine(side, compose(side, { ack: flash }), row), panelLine(side, compose(side), row))

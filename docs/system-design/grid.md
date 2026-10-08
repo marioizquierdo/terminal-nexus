@@ -123,7 +123,7 @@ There is no minimap.**
 - The camera position is in tiles and is clamped so the viewport never leaves the Grid.
 - **The cursor drives it.** Move the cursor within the **scroll margin** of a viewport edge and the
   camera follows. That is the whole interaction: no separate pan mode, no modifier keys, no second
-  cursor. It works identically in the Build Phase and during a Pulse. The margin is a share of the
+  cursor. It works identically in the Build Phase and during a Battle Round. The margin is a share of the
   view's width for the sides and of its height for the top and bottom, **30%** (GUIDANCE, a tuned value
   in `src/build/tuning.ts`; `--scroll-margin <percent>` sets it), rounded, and capped so an axis's two
   margins never meet (`tests/build-motion.test.ts`). That a margin exists, and that the cursor drives

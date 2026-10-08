@@ -1,4 +1,4 @@
-// Screenshots of the Build Phase and the Nexus Pulse that ends it.
+// Screenshots of the Build Phase and the Battle Round that ends it.
 //
 //   node scripts/capture-build-phase-screenshots.mjs
 //   node scripts/capture-build-phase-screenshots.mjs --only build-idle
@@ -74,7 +74,7 @@ const PICK_FIRST_POWER = "n 1"
 /** `present`: what the live screen adds between keys — a refused-placement flash, say —
  *  composed onto the last frame, since a key script alone never shows a moment in time.
  *  `experiments`: Experiments to open with instead of the defaults.
- *  A `wait~MS` step in `keys` lets a Nexus Pulse on screen run that long on the script's own clock.
+ *  A `wait~MS` step in `keys` lets a Battle Round on screen run that long on the script's own clock.
  *  `capability` and `theme` are the player's settings in the playtest as well as the picture's, so a
  *  screen that shows them (Settings) says what the picture is. */
 function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", present, experiments }) {
@@ -129,8 +129,8 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
 }
 
 /**
- * The Nexus Pulse's ending as the live screen draws it: `plan` commits a build and starts
- * the Pulse, then the GIF is the screen every `stepMs` from `fromMs` to `toMs` on the Pulse's own
+ * The Battle Round's ending as the live screen draws it: `plan` commits a build and starts
+ * the Battle Round, then the GIF is the screen every `stepMs` from `fromMs` to `toMs` on the battle's own
  * clock, shown for as long as it lasted — the timer's flashing and the light round the border, the
  * cease-fire, the walk home and the result, in real time. A Pulse's screen is a pure function of that clock, so a script that waits
  * gets exactly what a player who watched gets.
@@ -149,13 +149,13 @@ function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments,
   const frames = run.frames.slice(planSteps + 1)
   const lastIndex = frames.length - 1
   if (!frameToText(frames[lastIndex].frame).includes(expect)) {
-    throw new Error(`${name}: expected "${expect}" ${toMs} ms into the Pulse, got:\n${frameToText(frames[lastIndex].frame)}`)
+    throw new Error(`${name}: expected "${expect}" ${toMs} ms into the Battle Round, got:\n${frameToText(frames[lastIndex].frame)}`)
   }
   report(
     renderFramesGif({
       shots: frames.map((frame, index) => ({
         frame: frame.frame,
-        caption: `${((fromMs + index * stepMs) / 1000).toFixed(2)} s into the Pulse`,
+        caption: `${((fromMs + index * stepMs) / 1000).toFixed(2)} s into the Battle Round`,
         delayMs: index === lastIndex ? 3000 : stepMs,
       })),
       capability,
@@ -519,7 +519,7 @@ scripted(
 
 scripted(
   "build-nexus-popup",
-  "[n] opens the Nexus popup: a solid border with its title in it, and a shadow, so it cannot be missed. The top bar's right end now says close [esc] - the one place Esc is named - and a click outside the popup closes it and brings the keyboard to wherever the click landed",
+  "[n] opens the Nexus Pulse popup: a solid border with its title in it, and a shadow, so it cannot be missed. The top bar's right end now says close [esc] - the one place Esc is named - and a click outside the popup closes it and brings the keyboard to wherever the click landed",
   { keys: "n Down", expect: "PICK ONE" },
 )
 
@@ -601,7 +601,7 @@ scripted(
 
 scripted(
   "build-controls",
-  "Esc, then [c]: Controls and hotkeys, every key and click by where you are - the menu, the map, placing, Explore Map, popups, the mouse, the Pulse. Up and Down scroll it; ? opens it from anywhere",
+  "Esc, then [c]: Controls and hotkeys, every key and click by where you are - the menu, the map, placing, Explore Map, popups, the mouse, the Battle Round. Up and Down scroll it; ? opens it from anywhere",
   { keys: `${PICK_FIRST_POWER} Esc c`, expect: "CONTROLS AND HOTKEYS" },
 )
 
@@ -638,7 +638,7 @@ scripted(
 
 popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
-// The early Nexus Pulse shots (`pulse-start`, `pulse-fight` and the rest) were taken against a placeholder Pulse that
+// The early Battle Round shots (`pulse-start`, `pulse-fight` and the rest) were taken against a placeholder Pulse that
 // PERIMETER's raid replaced; they are no longer made. The shots that follow are on PERIMETER.
 
 // A round, keys only: the Reserve Fund (30 more credits), buildings by digit and two clicks on their
@@ -696,7 +696,7 @@ scripted(
 
 scripted(
   "mission-experiments",
-  "d over a Pulse opens Settings at the mission's Experiments, Next round first",
+  "d over a Battle Round opens Settings at the mission's Experiments, Next round first",
   { keys: `${ROUND_1_STRONG} wait~3000 d`, expect: "Next round" },
 )
 

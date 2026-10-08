@@ -5,20 +5,23 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Play the Nexus draft** (the Commander milestone's last step), from `./bin/terminal-nexus.ts --at
-  'campaign?level=vasse-test-1'`: press `n`. Two powers are dealt from Vasse's pool, War Chest beside them; a
-  digit keeps one. What it does shows at once and lasts the mission: Aid Station Permit puts the Aid Station on
-  the menu as `[4]`, Reserve Callup shows two troopers arriving at the Nexus, Drill Schedule's Barracks card says
-  two waves, Standing Order's Vasse card says range 8. The next round's popup lists what is kept under ACTIVE
-  and deals two others. Under THE MISSION in Settings (`d`), **Nexus pick** lets him feel the pick required
-  instead of optional; paste the settings export. Once he has played it, the Commander milestone is ready for
-  his acceptance.
-- **Read the draft's design** (his design conversation after the Nexus draft merged; [his
-  words](../history/feedback/2026-10-07-draft-design.md)), in [`commander-armies.md`](../game-design/commander-armies.md):
-  how the Nexus draft deals, and why hard counters are the tech tree's. Two things are his to say: whether the ramp he
-  asked for stays a schedule (which rarity each card of a hand is in which round, so a player can count on it) or
-  becomes a chance that rises each round; and how long a match is (Q75), which the number of picks waits on. The one
-  change a player sees: Aid Station Permit reads "Adds building: Aid Station."
+- **Play the Nexus Pulse** (the Commander milestone's last step, now dealt by schedule), from `./bin/terminal-nexus.ts
+  --at 'campaign?level=vasse-test-1'`: press `n`. Three powers are dealt each round, each saying how rare it is,
+  War Chest beside them; a digit keeps one, and what it does shows at once and lasts the mission. Round 2 deals
+  Aid Station Permit first, made sure of by PERIMETER's own schedule (unless it is already kept). Keep Drill
+  Schedule and a later hand may deal Drill Schedule II, the first upgrade: it takes Drill Schedule's place under
+  ACTIVE, and every Barracks sends three waves. Under THE MISSION in Settings (`d`), **Nexus pick** lets him feel
+  the pick required instead of optional; paste the settings export. Once he has played it, the Commander milestone
+  is ready for his acceptance.
+- **Read the round's words** ([his words](../history/feedback/2026-10-07-nexus-pulse.md)): the one list of the
+  round's, the Nexus Pulse's and the tech tree's words in [`commander-armies.md`](../game-design/commander-armies.md),
+  and the tech tree's two new rules there (its state is always in sight on the Grid and the build menu; an upgrade
+  shows in its details, sometimes on the map). The title screen's motto now reads "Build. Commit. Battle.
+  Understand. Adapt.", since Pulse names the round's opening. One question is his: whether a mission's data keeps
+  the engine's word "pulse" for the battle (Q76; recommended: rename it before modding opens).
+- **The Nexus Pulse's own milestone, when he says** ([the plan](milestone-13-nexus-pulse.md)): its own moment on
+  screen, the Nexus speaking to its Commander, more powers, and whether the pick becomes required. Not placed in
+  the order; his call where it goes.
 - **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
   given only by what stood when the round opened, and a building needs one tile on it; the dim ticks round
@@ -28,7 +31,7 @@ it is done.*
   MISSION in Settings (`d`), **Spawn space** (1 or 2) is new beside **Build range** and **By the
   Book**; paste the settings export.
 - **A sparse formation, when he says** ([his idea](../history/feedback/2026-10-06-rows-x2.md); he took the
-  Nexus draft first): units prefer a free column beside them and not to stand straight above or below another, so
+  Nexus Pulse first): units prefer a free column beside them and not to stand straight above or below another, so
   a group spreads into a staggered grid; a preference that never blocks a move. It explores the pathfinding it
   needs, runs simulations, and brings units and scenarios made to test formations facing up and down against
   formations facing sideways.
@@ -44,7 +47,7 @@ it is done.*
 - **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
   letter hotkeys for buildings (Q67), the exploring click, the wheel step and the light theme's light (Q63;
-  Q62 and Q64 are answered), and how long a match is (Q75).
+  Q62 and Q64 are answered), how long a match is (Q75), and whether a mission's data keeps the engine's "pulse" (Q76).
 - **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
   spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
   loop's under THE MISSION (Next round).
@@ -79,7 +82,7 @@ Small, none blocking.
 - Every unit engages the nearest enemy: `order` has one verb, `advance` (Q69).
 - The incoming raid is a forecast placed against the map without the plan; a building on an arrival's
   tile moves it when the round starts.
-- The walk home is a straight glide over whole tiles, with no routing. Replay plays back a Pulse
+- The walk home is a straight glide over whole tiles, with no routing. Replay plays back a Battle Round
   already resolved; it must never resolve a new one.
 
 **From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):
@@ -102,15 +105,14 @@ Small, none blocking.
   "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
 - Both of her campaign's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
   nothing new), so what a level offers changes nothing on screen yet; it shows when a level unlocks a card of
-  its own (the Nexus draft step).
+  its own (the Nexus Pulse step).
 - PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
   `Esc` (the documented examples do).
 
 **From step 8A's third round** ([Mario's notes](../history/feedback/2026-10-04-commander-round-3.md)):
 
-- No card carries rarity, tier and role yet, though the game modes design says every card does from the day
-  it is authored: the army files' cards are the bench placeholders, and the first step that deals cards from a
-  pool adds the tags.
+- Only Nexus powers carry rarity and role, though the game modes design says every card does from the day it is
+  authored: `tier` waits for the run draft, which gates by it, and buildings carry no tags until a draft deals them.
 - The army loader does not check that a Nexus power's line fits a panel row (28 columns at 80 × 24).
 - The units' and buildings' definitions (stats, footprints) are still TypeScript in `src/content`; an army
   names them by id. Moving them into the army files is the next step for content.
@@ -129,7 +131,6 @@ Small, none blocking.
 - `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests; the game no longer uses
   it.
 - Building inside a raid's public coverage waits for a raid that stands buildings at the start of a Build Phase.
-- The title screen's motto keeps the lore's word ("Build. Commit. Pulse. Understand. Adapt.").
 
 **From step 8A's fifth round** ([Mario's notes](../history/feedback/2026-10-05-commander-round-5.md)):
 
@@ -167,7 +168,7 @@ Small, none blocking.
 - Three same-state tests click tiles chosen outside the click's edge zones (build-phase, build-nexus,
   build-experiments); if the edge zone changes, move those tiles.
 - The committed plan's fallback panel still prints `[esc] menu` beside the top bar's own `menu [esc]`;
-  it only shows when no Pulse can start. Removing the line is one edit.
+  it only shows when no Battle Round can start. Removing the line is one edit.
 - **Polish navigation in a session of its own** (his request, third round of menu spike feedback): tune
   the hold cadence to his feel and play Key releases `auto` against `off` in iTerm2, then take the rest of
   the list in [`input.md`](../system-design/input.md) (a learned hold window, a hold that starts without

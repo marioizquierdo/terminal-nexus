@@ -18,6 +18,8 @@
       "name": "Standing Order",
       "description": "By the Book reaches twice as far.",
       "effect": { "modifyCommander": { "auraReachTimes": 2 } },
+      "rarity": "uncommon",
+      "role": "commander",
       "notes": "Her skill, wider: By the Book's reach doubles for the rest of the mission, on her card, on the map and in the battle."
     },
     {
@@ -25,7 +27,9 @@
       "name": "Aid Station Permit",
       "description": "Adds building: Aid Station.",
       "effect": { "addBuilding": { "building": "aid-station" } },
-      "notes": "Repair, placed where the line will stand: the Aid Station joins the construct menu for the rest of the mission, after the buildings already there, so no hotkey moves."
+      "rarity": "uncommon",
+      "role": "support",
+      "notes": "Repair, placed where the line will stand: the Aid Station joins the build menu for the rest of the mission, after the buildings already there, so no hotkey moves."
     }
   ],
   "commanders": [
@@ -56,17 +60,22 @@
       "levels": [
         {
           "id": "vasse-test-1",
-          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building all has, one by one, so that when all grows this level keeps what it teaches, and four real Nexus powers, two shared and two hers, with War Chest beside every hand; the Aid Station comes only with its permit. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
+          "notes": "PERIMETER, the campaign's first level, on the Build Phase's starter map (named in the map table, src/build/maps.ts, until maps are data too). It unlocks every building all has, one by one, so that when all grows this level keeps what it teaches, and five real Nexus powers, three shared and two hers, with War Chest beside every hand; the Aid Station comes only with its permit, and Drill Schedule II only once Drill Schedule is kept. Its Nexus Pulse deals three cards a round by a schedule of its own, the game's default for these rounds with one change: round 2 makes sure of Aid Station Permit (when it was not kept in round 1), so the Aid Station can stand in the line before the third raid, the hardest. Credits: a few things and not everything; the three buildings cost 85, and a second Barracks takes a plan past 100.",
           "map": "starter",
           "credits": 100,
           "unlocks": {
             "buildings": ["barracks", "hatchery", "turret"],
-            "powers": ["reserve-callup", "drill-schedule", "standing-order", "aid-station-permit", "war-chest"]
+            "powers": ["reserve-callup", "drill-schedule", "drill-schedule-ii", "standing-order", "aid-station-permit", "war-chest"]
           },
+          "schedule": [
+            { "round": 1, "deal": ["common", "common", "uncommon"] },
+            { "round": 2, "deal": [{ "power": "aid-station-permit" }, "common", "uncommon"] },
+            { "round": 3, "deal": ["common", "uncommon", "uncommon"] }
+          ],
           "mission": {
             "id": "mission.citizen.perimeter",
             "name": "Perimeter",
-            "notes": "PERIMETER, mission 1, as the trigger list the runner plays: three Battle Rounds, the raid arriving in each, and the hold (campaigns.md sketches it). Played on the Build Phase's starter map, not PERIMETER's own: whether that map needs real scrolling is still an open question, and it exists only as a sketch. The regions are named for this map's landmarks, the gap in the northern ridge and the open flats to the east; a real map would carry its own. The units are the disposable fixture rosters from the first battles (Citizen troopers and marksmen, 'two squads'; Ravel runners and raiders): the campaign design decided on no new content. The raid's sizes are a first tuning, not balance: chosen against this map and the starter construct menu so that the first Pulse is a probe the starting squads can meet, the second needs something built, and the third needs most of what the level's credits buy (docs/history/reports/2026-09-30-round-loop-and-missions.md has the outcomes measured against scripted plans). Since buildings came to send their units in waves (the Commander round 5), the Barracks standing on the map sends four troopers five seconds into every round, and a plan that builds nothing holds the third round; the raid was not retuned for it. pulseTicks: thirty seconds a Pulse, as the placeholder Pulse was, time enough for a group to cross the map. seed: 0x50554c53, 'PULS', the placeholder Pulse's seed, so the first round's randomness is the one 6A was tuned on. What the Barracks and the Hatchery spawn is theirs, on their cards in all (spawns), not the mission's: the Barracks standing on the map sends its wave of troopers every round, which is what makes a second round show something the first did not. The round texts are placeholder writing in PERIMETER's register ('plain, military, correct'), inside the lore budget; the briefing and debrief written in campaigns.md are the designed ones, and the mission-cutscenes milestone is where they are shown. endText's won line is the debrief's own first sentence (campaigns.md).",
+            "notes": "PERIMETER, mission 1, as the trigger list the runner plays: three Battle Rounds, the raid arriving in each, and the hold (campaigns.md sketches it). Played on the Build Phase's starter map, not PERIMETER's own: whether that map needs real scrolling is still an open question, and it exists only as a sketch. The regions are named for this map's landmarks, the gap in the northern ridge and the open flats to the east; a real map would carry its own. The units are the disposable fixture rosters from the first battles (Citizen troopers and marksmen, 'two squads'; Ravel runners and raiders): the campaign design decided on no new content. The raid's sizes are a first tuning, not balance: chosen against this map and the starter build menu so that the first Battle Round is a probe the starting squads can meet, the second needs something built, and the third needs most of what the level's credits buy (docs/history/reports/2026-09-30-round-loop-and-missions.md has the outcomes measured against scripted plans). Since buildings came to send their units in waves (the Commander round 5), the Barracks standing on the map sends four troopers five seconds into every round, and a plan that builds nothing holds the third round; the raid was not retuned for it. pulseTicks: thirty seconds a Battle Round, as the placeholder Pulse was, time enough for a group to cross the map. seed: 0x50554c53, 'PULS', the placeholder Pulse's seed, so the first round's randomness is the one 6A was tuned on. What the Barracks and the Hatchery spawn is theirs, on their cards in all (spawns), not the mission's: the Barracks standing on the map sends its wave of troopers every round, which is what makes a second round show something the first did not. The round texts are placeholder writing in PERIMETER's register ('plain, military, correct'), inside the lore budget; the briefing and debrief written in campaigns.md are the designed ones, and the mission-cutscenes milestone is where they are shown. endText's won line is the debrief's own first sentence (campaigns.md).",
             "pulses": 3,
             "pulseTicks": 360,
             "seed": 1347767379,
@@ -215,7 +224,7 @@
               },
               {
                 "id": "fallen",
-                "notes": "Listed before the hold on purpose: at the last Pulse's end both could hold, and the first win or lose in list order decides.",
+                "notes": "Listed before the hold on purpose: at the last Battle Round's end both could hold, and the first win or lose in list order decides.",
                 "when": { "event": "nexus.destroyed", "side": "A" },
                 "do": [{ "lose": true }]
               },

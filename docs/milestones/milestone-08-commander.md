@@ -1,8 +1,8 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8B — the Nexus draft, dealt from a pool: a hand dealt from Vasse's Nexus power pool at each Build Phase, one kept for the rest of the mission; four real powers (Reserve Callup, Standing Order, Drill Schedule, Aid Station Permit) and War Chest beside every hand.
-**Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Pulse is where the Commander acts; complete)
+**Current step:** 8C — the Nexus Pulse deals by schedule: three cards a round by rarity and role, with chance, requirements and upgrades; a level may give its own schedule and make sure of a power; the in-match draft is named the Nexus Pulse, and the battle the Battle Round.
+**Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Battle Round is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
 the next milestone stage!"
@@ -23,8 +23,8 @@ this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 ## What it builds
 
 - **The Commander mechanic.** A persistent `@`-class unit on the `units` layer that competes for
-  investment like any other build choice. When it dies it is absent for the rest of that Pulse and for
-  one full Build Phase and Pulse, after which the Prime Nexus may replicate it again. Commander death
+  investment like any other build choice. When it dies it is absent for the rest of that Battle Round and for
+  one full round, after which the Prime Nexus may replicate it again. Commander death
   is not the victory condition: PERIMETER's victory and defeat (settled while building the mission runner) never depend on Vasse.
 - **Vasse, named.** Her doctrine in [`docs/game-design/commander-armies.md`](../game-design/commander-armies.md),
   "fortify, verify, then advance", becomes her behaviour profile and stat shape, scoped to what
@@ -33,9 +33,9 @@ this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 - **A small, real Nexus upgrade draft.** The engine design says the Grid Nexus offers a small draft of
   upgrades and admits none of it is designed. This milestone designs and builds the smallest real
   version: one or two options, scoped to the mission, filling the upgrade-pick slot Milestone 5
-  already built. The draft comes from the Commander Army's own Nexus power pool, dealt as a hand at the
-  start of each Build Phase, one kept. Vasse's PERIMETER army is that shape at its smallest: a pool of
-  two, a hand of two, one kept per Build Phase across the mission's three Pulses. That is enough to
+  already built. The draft comes from the Commander Army's own Nexus power pool, dealt as a hand by the
+  Nexus Pulse that opens each round, one kept. Vasse's PERIMETER army is that shape at its smallest: a pool of
+  two, a hand of two, one kept per Build Phase across the mission's three rounds. That is enough to
   build the dealing mechanism once, not as a placeholder.
 
 ## Steps
@@ -47,7 +47,7 @@ Built; waiting for Mario's playtest.
 - [x] Vasse is a persistent `@` on the `units` layer. She walks out of the annex with PERIMETER's squads,
       fights from just behind the line, comes home to the Nexus after each round, and her health is an
       Experiment.
-- [x] Death, absence for the rest of that Pulse and one full cycle, and restoration work on a named
+- [x] Death, absence for the rest of that Battle Round and one full cycle, and restoration work on a named
       scenario that hashes the same every run (`tests/commander-fixture.ts`, on Node and Bun). The feed, the
       result, the next Build Phase and its Battle Round say she is out, and then that she is back.
 - [x] Built first, because Vasse made it urgent: Mario's answer that only the Nexus falling loses a round.
@@ -64,7 +64,7 @@ waiting for Mario's playtest.
       level by level. PERIMETER names Vasse's and says what it unlocks; the Build Phase is built from the
       result; validation refuses a deck or an override that names what does not exist.
 - [x] Vasse is drawn bold at full strength wherever she stands, arriving included, in the Build Phase and in
-      the Pulse.
+      the Battle Round.
 - [x] A dialog box at the bottom of the screen: a speaker and a line, Enter or a click for the next, Esc to
       skip, the camera on whoever is talking. A mission writes its lines as data; PERIMETER opens with its
       pre-battle exchange.
@@ -105,9 +105,9 @@ the same pull request, by subagents.
 - [x] Each campaign level names the target the player's troops head for; they engage what comes within reach
       on the way, and the Build Phase says where they are going. Posts wait.
 - [x] Vasse has a passive aura: the player's units near her take less damage.
-- [x] Vasse speaks during the Nexus Pulse, behind an Experiment, with a light touch of the effect library.
-- [x] A pool of Nexus powers for Vasse is designed for the Nexus draft step to build.
-- [x] "Wave" is gone: Battle Round in the interface, Nexus Pulse in lore and design; a route counts rounds only.
+- [x] Vasse speaks during the Battle Round, behind an Experiment, with a light touch of the effect library.
+- [x] A pool of Nexus powers for Vasse is designed for the Nexus Pulse step to build.
+- [x] "Wave" is gone: the battle is the Battle Round on screen; a route counts rounds only.
 - [x] Content bundles are armies: `armies/all` and `armies/vasse`.
 - [x] A cleanup pass over what this milestone added leaves the code simpler, with behaviour unchanged: `--build-phase`
       and `--spike` gone (an argument the game does not read is refused, naming what replaced them), one
@@ -197,14 +197,14 @@ way of saying something the genre already names, it uses the genre's word. Built
       before still loads.
 - [x] The battle feed and the bottom line name a thing as its card does, never by the name its content id carries.
 
-### Step 8B — The Nexus draft, dealt from a pool
+### Step 8B — The Nexus Pulse, dealing from a pool
 
 Mario's word after the genre words merged, "Let's move into the next milestone", and his answers in the session
 ([his words](../history/feedback/2026-10-07-nexus-draft.md)): the four powers below, and War Chest in every hand.
 Built on a new pull request.
 
-- [x] A hand is dealt at each Build Phase from the army's Nexus power pool, one is kept, and it fills
-      Milestone 5's slot. A power kept lasts the rest of the mission, and the Nexus powers popup lists what is
+- [x] A hand is dealt at each Nexus Pulse from the army's Nexus power pool, one is kept, and it fills
+      Milestone 5's slot. A power kept lasts the rest of the mission, and the Nexus Pulse popup lists what is
       kept.
 - [x] PERIMETER deals four real, mechanically distinct powers: Reserve Callup (two troopers join at the Nexus),
       Standing Order (By the Book reaches twice as far), Drill Schedule (Barracks send a second wave) and Aid
@@ -220,7 +220,7 @@ Built on a new pull request.
 
 ### Step 8B, round 2 — The draft's design
 
-Mario's design conversation after the Nexus draft merged ([his words](../history/feedback/2026-10-07-draft-design.md)):
+Mario's design conversation after the Nexus Pulse merged ([his words](../history/feedback/2026-10-07-draft-design.md)):
 whether tech is drafted or bought, then a structure for the draft predictable enough for Commanders to play with,
 examples drawn for four Commanders and kept in the session, and the decisions written down. Design, on a new pull
 request; the one change a player sees is a power's wording.
@@ -229,13 +229,34 @@ request; the one change a player sees is a power's wording.
       the code names the effect for what it does.
 - [x] Hard counters are tree buildings and the draft's powers lean a plan. The tree's own rules (buildings and
       building upgrades, a building's unlocks arriving once it stands) and the rules for two players are written down.
-- [x] How the Nexus draft deals is designed: rarity by a schedule that ramps by round, upgrades one rarity up, roles,
+- [x] How the Nexus Pulse deals is designed: rarity by a schedule that ramps by round, upgrades one rarity up, roles,
       free picks, and the short list of what a Commander may bend. The rare hand is written down for later, and
       nothing of the schedule is built.
 - [x] Vasse's powers carry a first-guess rarity, and the campaign says which part of the draft each mission brings.
 - [x] Examples for four Commanders were drawn in the session and are not committed.
 - [x] How long a match is goes to the register with a recommendation, since how many picks a match deals depends
       on it.
+
+### Step 8C — The Nexus Pulse deals by schedule
+
+Mario's word after the draft's design merged ([his words](../history/feedback/2026-10-07-nexus-pulse.md)): build
+some of it, name the in-match draft the Nexus Pulse, write down the tech tree's new claims, and review the game's
+words. Built on a new pull request.
+
+- [x] Every Nexus power carries a rarity (common, uncommon, rare, legendary) and a role, checked by the loader.
+- [x] The Nexus Pulse deals three cards a round by a schedule that ramps by round; a legendary only where a slot asks
+      for one.
+- [x] Modifiers and dependencies: a chance raised for some rounds, requirements (a power kept, a building standing,
+      a round reached), and upgrades listed in their power's place.
+- [x] A campaign level may give its own schedule and make sure of a power: PERIMETER's round 2 deals Aid Station
+      Permit first.
+- [x] The popup is titled NEXUS PULSE and each dealt card says its rarity; the menu row reads Nexus Pulse; a round
+      opens on "The Nexus Pulse deals a new hand". The pick stays optional.
+- [x] The design and lore documents call the battle a Battle Round, and the round's words, the Nexus Pulse's and
+      the tech tree's are one list.
+- [x] The tech tree's state is always in sight on the Grid and the build menu, and an upgrade shows in its details
+      and sometimes on the map: written down.
+- [x] A milestone of its own for the Nexus Pulse's screen and more powers is planned, waiting for Mario's word.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).

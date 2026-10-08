@@ -1,4 +1,4 @@
-// The Nexus Pulse as the live screen plays it — the one place a resolved Pulse meets a clock.
+// The Battle Round as the live screen plays it — the one place a resolved Pulse meets a clock.
 //
 // The kernel resolved the whole Pulse before the first frame (`src/cli/pulse-run.ts`); what is left is
 // **when to show what**, and that is presentation: a playback clock the player can pause, slow, step and

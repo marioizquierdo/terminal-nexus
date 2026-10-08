@@ -74,7 +74,7 @@ test("the rule: every entry of the menu is reached by Down and done by Enter alo
         assert.equal(state.popup, "nexus-powers", "Enter on Nexus did not open its popup")
         break
       case "construct":
-        assert.equal(state.armed, entry.index, `Enter on construct row ${entry.index} did not arm it`)
+        assert.equal(state.armed, entry.index, `Enter on building row ${entry.index} did not arm it`)
         break
       case "start":
         assert.equal(state.popup, "battle-round", "Enter on Start Battle Round did not open its screen")
@@ -94,7 +94,7 @@ test("Start Battle Round is ready whether or not a Nexus power waits to be picke
   const { layout } = waiting
   const label = (session: Session) => cellAt(frameOf(session), layout.panelColumn + 4, startRow(layout)).style
   assert.notEqual(label(waiting).dim, true, "the row looks refused with a pick waiting")
-  assert.match(screenText(waiting), /\[n\] Nexus \(1\)/)
+  assert.match(screenText(waiting), /\[n\] Nexus Pulse \(1\)/)
   waiting.build.dispatch({ kind: "pick-nexus", index: 1 })
   assert.notEqual(label(waiting).dim, true)
 })
@@ -211,7 +211,7 @@ test("Enter, Space, s and y start the Pulse; Esc and x go back; n does nothing t
   const stays = ready()
   stays.build.handleData("s", stays.layout)
   stays.build.handleData("n", stays.layout)
-  assert.equal(stays.build.state.popup, "battle-round", "n closed the screen, or opened the Nexus popup over it")
+  assert.equal(stays.build.state.popup, "battle-round", "n closed the screen, or opened the Nexus Pulse popup over it")
   assert.equal(stays.build.state.committed, false)
 })
 

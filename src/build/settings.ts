@@ -132,6 +132,6 @@ export const FIRST_EXPERIMENT_ROW = SETTINGS_ROWS.findIndex(
 /** "Export settings", the list's last row. */
 export const SETTINGS_EXPORT_ROW = SETTINGS_ROWS.length - 1
 
-/** Where `d` opens Settings while a Nexus Pulse is on screen: the mission's section, which is what
+/** Where `d` opens Settings while a Battle Round is on screen: the mission's section, which is what
  *  someone watching a round wants to change, rather than the Build Phase's first Experiment. */
 export const FIRST_PULSE_EXPERIMENT_ROW = SETTINGS_ROWS.findIndex((_, row) => sectionOfRow(row) === "mission")

@@ -231,12 +231,15 @@ A match alternates (RULE — `tests/pulse-run.test.ts`, `tests/mission.test.ts`)
 
 - **Build Phase** — hidden, simultaneous, turn-based, untimed planning from the same public resolved
   state;
-- **Nexus Pulse** — simultaneous reveal, then a fixed number of deterministic ticks.
+- **Battle Round** — simultaneous reveal, then a fixed number of deterministic ticks: the Pulse this
+  document describes.
 
-One Build Phase and the Pulse that follows it is a **round**, the unit the player counts. A match
-runs **as many rounds as it needs** — a campaign mission is a sequence of rounds, not one, and a
-mission's triggers decide how many and what happens between them (see
-[`campaigns.md`](../game-design/campaigns.md)). A Pulse may be scripted (no player plan; the player
+Each round opens with the **Nexus Pulse**, when the Grid Nexus deals its Commander a hand of Nexus powers,
+one of which the player may keep during the Build Phase (a rule outside the kernel, section 2.4). One
+Nexus Pulse, one Build Phase and one Battle Round, in that order, are a **round**, the unit the player
+counts. A match runs **as many rounds as it needs** — a campaign mission is a sequence of rounds, not
+one, and a mission's triggers decide how many and what happens between them (see
+[`campaigns.md`](../game-design/campaigns.md)). A Battle Round may be scripted (no player plan; the player
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
 **The kernel's victory condition never learns about a mission's goal.** A mission's objective is
@@ -332,7 +335,7 @@ slips. A building short of room never spawns fewer: what fits comes out on the w
 the first tick there is room. A recipe costs nothing yet, because a Pulse has no resource, so no two attempts
 can compete and the contention process has nothing to decide; it is not built, and arrives with cost and
 supply in the worker economy. A unit a building spawned says so on its `entity.spawned` event (`trainedBy`),
-which is how the Pulse's feed and the Activity Logs tell it from an arrival.
+which is how the battle feed and the Activity Logs tell it from an arrival.
 
 **What a building spawns is its own** (RULE — `src/armies/load.ts`, `src/match/training.ts`,
 `tests/armies.test.ts`, `tests/production.test.ts`). Its card in its army carries `spawns`: the unit, how many
@@ -364,19 +367,23 @@ The Grid Nexus also offers a small draft of upgrades; research facilities modify
 breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
 content-defined legal actions or passive rules that execute through validated kernel commands.
 
-**The Nexus draft** (RULE — `src/armies/deal.ts`, `src/cli/pulse-run.ts`, `tests/nexus-draft.test.ts`): the
+**The Nexus Pulse** (RULE — `src/armies/deal.ts`, `src/cli/pulse-run.ts`, `tests/nexus-draft.test.ts`): the
 Commander Army's own Nexus power pool — a subset of the faction's, built as what a level offers (`src/armies/`) —
-dealt as a small hand at the start of every Build Phase: two powers, War Chest (the owner's testing tool) beside
-them, of which the player keeps one, or for now none. The hand is gameplay randomness, seeded by the mission's seed
-and the round on a PCG32 stream of the draft's own (`STREAM_DRAFT`), never the kernel's: the same round deals the
-same hand every time, and dealing never moves a battle's draws. A power kept lasts the rest of the mission and is
+dealt as a small hand as every round opens, before its Build Phase: three powers by a schedule of rarities, War
+Chest (the owner's testing tool) beside them, of which the player keeps one, or for now none. Which rarity each card
+is comes from the round's schedule (the game's `DEFAULT_SCHEDULE`, or a level's own, which may name a power to make
+sure of); a card is drawn from the powers of its rarity whose requirements hold — a power kept, a building standing
+for the player as the round opens, a round reached — preferring a role the hand does not hold yet, each as likely as
+its chance this round, and an upgrade only once the power it upgrades is kept. The hand is gameplay randomness,
+seeded by the mission's seed and the round on a PCG32 stream of its own (`STREAM_DRAFT`), never the kernel's: the same
+round deals the same hand every time, and dealing never moves a battle's draws. A power kept lasts the rest of the mission and is
 not dealt again unless it may be kept again. What it does reaches the battle through the round's own inputs, never a
-rule the kernel reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the construct
+rule the kernel reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the build
 menu (a building added), and the units set down at its opening — a power's **called-up units** muster on the
 player's Grid Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
-ends. How the draft deals beyond this — rarities set by a schedule that ramps by round, upgrades, roles, a rare
-hand every few rounds, and what a Commander may bend — is designed in
-[`commander-armies.md`](../game-design/commander-armies.md) and not built.
+ends. The whole of how the Nexus Pulse deals — rarities, roles, the schedule and a level's own, chance,
+requirements, upgrades — is in [`commander-armies.md`](../game-design/commander-armies.md); the legendary hand every
+few rounds and what a Commander may bend are designed there and not built.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
 classification to learn — and in code the effect is one of a small bounded union: `addBuilding`,

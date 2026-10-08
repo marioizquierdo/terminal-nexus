@@ -2,7 +2,7 @@
 // unlocked by then, with its credits — and the default level's, PERIMETER's, which most tests start from.
 //
 // The level is its campaign's army's (`src/armies`); its map is the map table's (`src/build/maps.ts`); what it
-// offers becomes the construct menu and the Nexus draft in `src/build/catalog.ts`. Assembling them into round 1
+// offers becomes the build menu and the Nexus Pulse's hand in `src/build/catalog.ts`. Assembling them into round 1
 // needs the mission (`./pulse-run.ts`), which reaches the kernel, and `src/build` may never do that
 // (`tests/architecture.test.ts`) — so the assembly lives here, in the application shell, beside the other half of
 // the mission's connection. The levels the game opens by id are `./levels.ts`.
@@ -20,7 +20,7 @@ export function starterContext(scrollMargin?: number, extra: Partial<BuildContex
   return levelContext(PERIMETER_LEVEL, scrollMargin, extra)
 }
 
-/** Round 1 of a level: its mission on its map, its construct menu and Nexus power pool what its campaign has
+/** Round 1 of a level: its mission on its map, its build menu and Nexus power pool what its campaign has
  *  unlocked by then (the mission deals round 1's hand from the pool), and its credits. */
 export function levelContext(level: Level, scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
   const map = MAPS[level.map]
@@ -34,6 +34,7 @@ export function levelContext(level: Level, scrollMargin?: number, extra: Partial
     allotment: level.offer.credits,
     nexusDraft: nexusDraftOf(level.offer),
     powerPool: level.offer.powers,
+    ...(level.offer.schedule === undefined ? {} : { powerSchedule: level.offer.schedule }),
     buildingCards: [...level.offer.buildings, ...level.offer.addable],
     edgeStyle: map.edgeStyle,
     ...(scrollMargin === undefined ? {} : { scrollMargin }),

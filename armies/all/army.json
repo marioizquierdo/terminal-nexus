@@ -1,7 +1,7 @@
 {
   "id": "all",
   "title": "All armies",
-  "notes": "The buildings and Nexus powers any Commander may use, and the content the first campaign's levels put on the Grid. At the size of what exists: the disposable bench rosters (Citizen and Ravel) and the bench buildings PERIMETER has always offered, with no balance claim, and the shared Citizen Nexus powers any Commander may draw, with War Chest, the owner's testing tool. Choosing the Citizens' real roster and its balance is still to come. The content definitions themselves (stats, footprints) are still TypeScript in src/content: this army names the ids it brings, and the loader checks that each exists. The Ravel units are here, not in a Ravel army, because they are the raid's bench units and no Ravel Commander exists yet. The three buildings have three footprints (3x2, 2x2, 1x1), so placement exercises three anchor calculations and three ways to straddle a rock; their costs are round numbers, not balance, and real costs wait for the content-iteration milestone. A building that makes units says what it spawns in each battle under spawns, in waves (the units it sets down at once, side by side): the unit, how many a wave, how many waves a round and the seconds between waves; when the first wave comes is the same for every building (firstWave, src/build/all-settings.ts). A building with no spawns makes nothing. Each Nexus power's description fits a row of the Nexus popup at 80 x 24.",
+  "notes": "The buildings and Nexus powers any Commander may use, and the content the first campaign's levels put on the Grid. At the size of what exists: the disposable bench rosters (Citizen and Ravel) and the bench buildings PERIMETER has always offered, with no balance claim, and the shared Citizen Nexus powers any Commander may draw, with War Chest, the owner's testing tool. Choosing the Citizens' real roster and its balance is still to come. The content definitions themselves (stats, footprints) are still TypeScript in src/content: this army names the ids it brings, and the loader checks that each exists. The Ravel units are here, not in a Ravel army, because they are the raid's bench units and no Ravel Commander exists yet. The three buildings have three footprints (3x2, 2x2, 1x1), so placement exercises three anchor calculations and three ways to straddle a rock; their costs are round numbers, not balance, and real costs wait for the content-iteration milestone. A building that makes units says what it spawns in each battle under spawns, in waves (the units it sets down at once, side by side): the unit, how many a wave, how many waves a round and the seconds between waves; when the first wave comes is the same for every building (firstWave, src/build/all-settings.ts). A building with no spawns makes nothing. Each Nexus power's description fits a row of the Nexus Pulse popup at 80 x 24.",
   "requires": [],
   "content": [
     "structure.citizen.nexus",
@@ -39,21 +39,39 @@
       "name": "Reserve Callup",
       "description": "Two troopers join at your Nexus.",
       "effect": { "spawnUnits": { "unit": "unit.citizen.trooper", "count": 2 } },
+      "rarity": "common",
+      "role": "troops",
       "repeatable": true,
-      "notes": "Units arrive: the two troopers are set down beside the Grid Nexus as the round's Battle Round starts, with the round's squads, and stay with the army after, coming home with Recall like any survivor. Repeatable: kept again, two more come."
+      "chance": [{ "from": 1, "to": 3, "times": 2 }],
+      "notes": "Units arrive: the two troopers are set down beside the Grid Nexus as the round's Battle Round starts, with the round's squads, and stay with the army after, coming home with Recall like any survivor. Repeatable: kept again, two more come. Twice as likely as another common in rounds 1 to 3 (the owner's example of a chance modifier, 2026-10-07: 'double chance during first 3 rounds'): troops matter most while the army is small."
     },
     {
       "id": "drill-schedule",
       "name": "Drill Schedule",
       "description": "Barracks send a second wave.",
       "effect": { "modifyContent": { "building": "barracks", "addWaves": 1 } },
-      "notes": "A building's waves, as the owner put it (2026-10-05): 'Nexus Powers could upgrade the Barracks to spawn a second and third wave.' Every Barracks spawns one more wave a round for the rest of the mission, its secondsBetween after the first. Kept once: its line says a second wave."
+      "rarity": "common",
+      "role": "production",
+      "requires": { "buildings": ["barracks"] },
+      "notes": "A building's waves, as the owner put it (2026-10-05): 'Nexus Powers could upgrade the Barracks to spawn a second and third wave.' Every Barracks spawns one more wave a round for the rest of the mission, its secondsBetween after the first. Kept once: its line says a second wave. Dealt only while a Barracks stands when the round opens: without one it would do nothing."
+    },
+    {
+      "id": "drill-schedule-ii",
+      "name": "Drill Schedule II",
+      "description": "Barracks send a third wave.",
+      "effect": { "modifyContent": { "building": "barracks", "addWaves": 1 } },
+      "rarity": "uncommon",
+      "role": "production",
+      "upgrades": "drill-schedule",
+      "notes": "Drill Schedule's upgrade, the third wave of the owner's 'second and third wave': dealt only once Drill Schedule is kept, one rarity up, and listed in its place once kept. One more wave on top of Drill Schedule's, so every Barracks sends three."
     },
     {
       "id": "war-chest",
       "name": "War Chest",
       "description": "Adds 2000 resources to spend.",
       "effect": { "credits": 2000 },
+      "rarity": "common",
+      "role": "economy",
       "always": true,
       "notes": "The owner's tool for testing placement, not a real power: 2000, enough to place buildings freely. Offered beside every hand rather than dealt into one (his answer, 2026-10-07: 'Always in the hand')."
     }

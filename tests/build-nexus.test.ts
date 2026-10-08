@@ -1,4 +1,4 @@
-// The Nexus draft slot and commit, and the draft as a popup the player opens. For now a dealt Nexus power may
+// The Nexus Pulse's slot and commit, and its hand as a popup the player opens. For now a dealt Nexus power may
 // be left unpicked (the owner, round 5: "Nexus Powers should be optional for now, it's easier for testing if I
 // can just start a round"): nothing refuses for want of a pick, the commit included, and an optional popup must
 // not nag like a forced screen. Committing asks once — docs/system-design/input.md: "the one action that must not
@@ -58,7 +58,7 @@ test("moving the cursor is never refused while a pick is waiting", () => {
   assert.doesNotMatch(build.state.status.text, /Pick a Nexus power first/)
 })
 
-test("nothing opens the Nexus popup but the player", () => {
+test("nothing opens the Nexus Pulse popup but the player", () => {
   // Owner, 2026-09-26: never forced open the instant the Build Phase begins. Not at the start, not
   // after building, and not when the commit refuses for want of a pick — the refusal names the key.
   const { build, layout } = session()
@@ -106,7 +106,7 @@ test("the popup picks by Up/Down and Enter too, closes, and lists the pick as ac
   const picked = build.round.nexusDraft[1]!.name
   build.handleData("n", layout)
   const text = frameToText(composeBuildFrame({ context: build.round, state: build.state, layout }, "monochrome"))
-  assert.match(text, /NEXUS POWERS/)
+  assert.match(text, /NEXUS PULSE/)
   assert.match(text, /Nothing waiting\./)
   assert.match(text, /ACTIVE/)
   assert.match(text, new RegExp(picked))
@@ -174,7 +174,7 @@ test("an out-of-range pick is ignored, not a crash and not a partial pick", () =
   assert.deepEqual(build.state, before)
 })
 
-test("once picked, the construct menu and every other command work exactly as they did before the draft existed", () => {
+test("once picked, the build menu and every other command work exactly as they did before the draft existed", () => {
   const { build } = session()
   build.dispatch({ kind: "pick-nexus", index: 0 })
   build.dispatch({ kind: "arm", index: 0 })
@@ -278,15 +278,16 @@ test("starting the Pulse outside the Battle Round screen — a stray y — chang
   assert.deepEqual(build.state, before)
 })
 
-test("keyboard: a digit picks from the Nexus popup while it is open, and arms the construct menu otherwise", () => {
+test("keyboard: a digit picks from the Nexus Pulse popup while it is open, and arms the build menu otherwise", () => {
   const side = session()
   side.build.dispatch({ kind: "open-nexus-powers" })
   const popupContext = { itemCount: 3, armed: false, popup: "nexus-powers" as const, popupSpec: popupSpec(starterContext(), side.build.state) }
   assert.deepEqual(buildKeyboardCommand("1", popupContext), { kind: "pick-nexus", index: 0 })
   assert.deepEqual(buildKeyboardCommand("2", popupContext), { kind: "pick-nexus", index: 1 })
-  // Two dealt, War Chest beside them: a fourth digit picks nothing.
+  // Three dealt, War Chest beside them: a fifth digit picks nothing.
   assert.deepEqual(buildKeyboardCommand("3", popupContext), { kind: "pick-nexus", index: 2 })
-  assert.equal(buildKeyboardCommand("4", popupContext), null, "a fourth popup digit picks nothing")
+  assert.deepEqual(buildKeyboardCommand("4", popupContext), { kind: "pick-nexus", index: 3 })
+  assert.equal(buildKeyboardCommand("5", popupContext), null, "a fifth popup digit picks nothing")
   side.build.dispatch({ kind: "pick-nexus", index: 0 })
   side.build.dispatch({ kind: "open-nexus-powers" })
   assert.equal(buildKeyboardCommand("1", { ...popupContext, popupSpec: popupSpec(starterContext(), side.build.state) }), null)
@@ -296,7 +297,7 @@ test("keyboard: a digit picks from the Nexus popup while it is open, and arms th
   assert.deepEqual(buildKeyboardCommand("1", { ...builtContext, focus: "menu" as const }), { kind: "arm", index: 0 })
 })
 
-test("keyboard: n opens the Nexus popup, and means nothing on the Battle Round confirmation", () => {
+test("keyboard: n opens the Nexus Pulse popup, and means nothing on the Battle Round confirmation", () => {
   const idle = { itemCount: 3, armed: false }
   assert.equal(buildKeyboardCommand("y", idle), null)
   assert.deepEqual(buildKeyboardCommand("n", idle), { kind: "open-nexus-powers" })
@@ -481,7 +482,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.equal(frame(byMouse), frame(byKeyboard))
   assert.equal(frame(byDriver), frame(byKeyboard))
 
-  // The commit starts a Nexus Pulse, and whichever adapter started it, it is the same Pulse —
+  // The commit starts a Battle Round, and whichever adapter started it, it is the same Pulse —
   // the kernel's own two hashes, the ending's Recall, and what each of them shows at the same instant.
   const pulseOf = (side: BuildSide) => {
     assert.ok(side.build.pulse !== null, "the commit did not start a Pulse")

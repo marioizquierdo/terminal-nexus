@@ -358,7 +358,7 @@ export const ALL_SETTINGS = {
   /** How many sparks a finished (or removed) building throws — "few"; a first guess the owner kept. */
   placeSparks: { tier: "tuned", unit: "taps", default: 6 },
 
-  // --- The end of a Nexus Pulse --------------------------------------------------------------------
+  // --- The end of a Battle Round --------------------------------------------------------------------
 
   /** How long before the fight is seen to stop its timer flashes and a light sweeps the border; the
    *  owner's "the last 3 seconds". */
@@ -481,9 +481,9 @@ export const ALL_SETTINGS = {
     default: 1,
   },
 
-  // --- The Nexus draft (the Commander step 8B) -------------------------------------------------------
+  // --- The Nexus Pulse (the Commander step 8B) -------------------------------------------------------
   // The owner made the pick optional for testing (round 5: "Nexus Powers should be optional for now, it's easier
-  // for testing if I can just start a round"), and the Nexus draft step was to settle with him whether it stays so
+  // for testing if I can just start a round"), and the Nexus Pulse's step was to settle with him whether it stays so
   // once the powers are real. It asks him to feel both.
 
   /** Whether a round may start with its Nexus power still unpicked: optional, or required — Start Battle Round

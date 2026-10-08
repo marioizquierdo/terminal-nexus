@@ -6,7 +6,7 @@ _Licence: creative direction CC BY-SA 4.0; technical requirements Apache-2.0._
 
 ## The game in one sentence
 
-**Terminal Nexus is a fast, terminal-native strategy game in which players build compact bases during hidden, simultaneous planning, then watch persistent armies resolve those decisions through vivid deterministic ASCII battles called Nexus Pulses.**
+**Terminal Nexus is a fast, terminal-native strategy game in which players build compact bases during hidden, simultaneous planning, then watch persistent armies resolve those decisions through vivid deterministic ASCII battles called Battle Rounds.**
 
 **RULE.** The title is **Terminal Nexus**. The product is a deterministic terminal strategy game; a
 language model is not required to play it, to run a match, or to build a campaign.
@@ -21,18 +21,19 @@ The terminal is not a novelty wrapper. Fixed cells, symbols, ANSI color, keyboar
 
 ## How a match works
 
-**RULE.** A match alternates between two phases, and these are their names everywhere — in the interface, the code and the writing:
+**RULE.** A match is a sequence of rounds, each in three parts in this order, and these are their names everywhere — in the interface and the writing:
 
-1. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice. Planning is hidden, simultaneous, turn-based and untimed.
-2. **Nexus Pulse.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the Pulse plays on screen is presentation only and is independent of that logical time.
+1. **Nexus Pulse.** The round opens: each player's Grid Nexus speaks to its Commander and deals a hand of Nexus powers.
+2. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice: a power kept from that hand, which for now may be left unpicked. Planning is hidden, simultaneous, turn-based and untimed.
+3. **Battle Round.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the battle plays on screen is presentation only and is independent of that logical time. The code still calls this step `pulse`, the engine's word (the vocabulary in [`grid-engine.md`](../system-design/grid-engine.md)).
 
-After a Pulse, surviving units regroup near their home producers. Casualties and destroyed buildings remain consequential. The next Build Phase begins from the new public state. The match ends when one Grid Nexus is destroyed. One Build Phase and the Pulse that follows it make a **round**, the unit the player counts.
+After a Battle Round, surviving units regroup near their home producers. Casualties and destroyed buildings remain consequential. The next round begins from the new public state. The match ends when one Grid Nexus is destroyed. One Nexus Pulse, one Build Phase and one Battle Round make a **round**, the unit the player counts.
 
-The player does not micromanage units during a Pulse. Their agency comes from base geometry, expansion, resource capacity, supply, production mix, defenses, research drafts, commander development, and prediction of the opponent's hidden plan.
+The player does not micromanage units during a Battle Round. Their agency comes from base geometry, expansion, resource capacity, supply, production mix, defenses, research drafts, commander development, and prediction of the opponent's hidden plan.
 
 The emotional loop is:
 
-> **Build. Commit. Pulse. Understand. Adapt.**
+> **Build. Commit. Battle. Understand. Adapt.**
 
 ## How the game is played
 

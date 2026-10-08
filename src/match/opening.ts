@@ -1,4 +1,4 @@
-// The state a Nexus Pulse starts from — the start-of-Pulse rule in pulse.md: "At Pulse start plans reveal together and
+// The state a Battle Round starts from — the start-of-Pulse rule in pulse.md: "At Pulse start plans reveal together and
 // valid construction becomes operational." The Build Phase's plan is a list of placements on a screen;
 // this is where it becomes entities the kernel can resolve.
 //
@@ -156,7 +156,7 @@ export function opening(input: OpeningInput): Opening {
     })
   })
 
-  if (placed.length === 0) throw new PulseSetupError("the Pulse places no entities")
+  if (placed.length === 0) throw new PulseSetupError("the battle would start with nothing on the Grid")
 
   // Grid reading order: north to south, then west to east, ties by side and then content id — the
   // loader's own order, so an editorial change (which list came first) can never move an id. Only what

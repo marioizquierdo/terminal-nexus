@@ -89,7 +89,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
   )
   assert.deepEqual(ARMIES.levels, campaign.levels)
   // What the levels stand on is all's: the buildings and powers any Commander may use.
-  const [shared] = ARMIES.armies
+  const [shared, hers] = ARMIES.armies
   assert.deepEqual(shared?.buildings?.map((card) => `${card.id} ${card.structure} ${card.cost}`), [
     "barracks structure.citizen.barracks 40",
     "hatchery structure.bench.hatchery 30",
@@ -98,10 +98,22 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
   assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
     ["Reserve Callup", "Two troopers join at your Nexus.", "spawnUnits"],
     ["Drill Schedule", "Barracks send a second wave.", "modifyContent"],
+    ["Drill Schedule II", "Barracks send a third wave.", "modifyContent"],
     ["War Chest", "Adds 2000 resources to spend.", "+2000"],
   ])
+  // Each says what the Nexus Pulse deals it by: how rare it is and what it is for.
+  assert.deepEqual(
+    [...(shared?.powers ?? []), ...(hers?.powers ?? [])].map((card) => `${card.id} ${card.rarity} ${card.role}`),
+    [
+      "reserve-callup common troops",
+      "drill-schedule common production",
+      "drill-schedule-ii uncommon production",
+      "war-chest common economy",
+      "standing-order uncommon commander",
+      "aid-station-permit uncommon support",
+    ],
+  )
   // Hers: her skill wider, and the building that only its permit adds.
-  const [, hers] = ARMIES.armies
   assert.deepEqual(hers?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
     ["Standing Order", "By the Book reaches twice as far.", "modifyCommander"],
     ["Aid Station Permit", "Adds building: Aid Station.", "addBuilding"],
@@ -114,7 +126,14 @@ test("a level offers what its campaign has unlocked by then: PERIMETER unlocks a
   assert.ok(perimeter !== undefined && cadence !== undefined)
   const everything = {
     buildings: ["barracks 40", "hatchery 30", "turret 15"],
-    powers: ["Reserve Callup spawnUnits", "Drill Schedule modifyContent", "Standing Order modifyCommander", "Aid Station Permit addBuilding", "War Chest +2000"],
+    powers: [
+      "Reserve Callup spawnUnits",
+      "Drill Schedule modifyContent",
+      "Drill Schedule II modifyContent",
+      "Standing Order modifyCommander",
+      "Aid Station Permit addBuilding",
+      "War Chest +2000",
+    ],
     credits: 100,
   }
   assert.deepEqual(offered(perimeter.offer), everything)
@@ -152,7 +171,7 @@ test("unlocks add up level by level, in the order unlocked, so no hotkey moves; 
   )
 })
 
-test("a level's offer is what its Build Phase offers: the menu, the credits and the Nexus draft", () => {
+test("a level's offer is what its Build Phase offers: the menu, the credits and the Nexus Pulse's hand", () => {
   const loaded = withGame(campaignBundle([level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["war-chest"] } })]))
   const turretsOnly = loaded.levels.find((entry) => entry.id === "test-1")
   assert.ok(turretsOnly !== undefined)
@@ -169,14 +188,14 @@ test("a level's offer is what its Build Phase offers: the menu, the credits and 
   assert.match(panel, /\b45\b/)
 })
 
-test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus draft are its first level's", () => {
+test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus Pulse are its first level's", () => {
   assert.deepEqual(
     STARTER_CATALOG.map((item) => `${item.hotkey} ${item.label} ${item.cost}`),
     ["1 Barracks 40", "2 Hatchery 30", "3 Turret 15"],
   )
   assert.deepEqual(
     STARTER_NEXUS_DRAFT.map((power) => `${power.hotkey} ${power.name} +${power.bonusAllotment}`),
-    ["1 Reserve Callup +0", "2 Drill Schedule +0", "3 Standing Order +0", "4 Aid Station Permit +0", "5 War Chest +2000"],
+    ["1 Reserve Callup +0", "2 Drill Schedule +0", "3 Drill Schedule II +0", "4 Standing Order +0", "5 Aid Station Permit +0", "6 War Chest +2000"],
   )
   assert.equal(STARTER_ALLOTMENT, 100)
   assert.deepEqual(STARTER_CATALOG, constructMenu(PERIMETER_LEVEL.offer))
@@ -184,9 +203,12 @@ test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus
   // And the round the game opens is built from it.
   const context = starterContext()
   assert.deepEqual(context.catalog, STARTER_CATALOG)
-  // Its Nexus draft is a hand dealt from that pool for round 1, War Chest beside it.
+  // Its Nexus Pulse is a hand dealt from that pool for round 1 by the level's own schedule, for the Barracks
+  // standing on the starter map, War Chest beside it.
   assert.deepEqual(context.powerPool, PERIMETER_LEVEL.offer.powers)
-  assert.deepEqual(context.nexusDraft, nexusDraftOf({ powers: dealHand(PERIMETER_LEVEL.offer.powers, [], PERIMETER.seed, 1) }))
+  assert.deepEqual(context.powerSchedule, PERIMETER_LEVEL.offer.schedule)
+  const hand = dealHand({ pool: PERIMETER_LEVEL.offer.powers, kept: [], seed: PERIMETER.seed, round: 1, standing: new Set(["barracks"]), ...(PERIMETER_LEVEL.offer.schedule === undefined ? {} : { schedule: PERIMETER_LEVEL.offer.schedule }) })
+  assert.deepEqual(context.nexusDraft, nexusDraftOf({ powers: hand }))
   assert.equal(context.allotment, STARTER_ALLOTMENT)
   assert.deepEqual(levelContext(PERIMETER_LEVEL).catalog, context.catalog)
 })
@@ -384,7 +406,7 @@ test("a manifest's shape is checked field by field, by path: the wrong kind of v
       requires: ["vasse"],
       unlock: [],
       buildings: [{ id: "cheap", structure: "structure.citizen.barracks", cost: -5 }],
-      powers: [{ id: "lots", name: "Lots", description: "Adds lots.", effect: { credits: "lots" } }, "not a power"],
+      powers: [{ id: "lots", name: "Lots", description: "Adds lots.", effect: { credits: "lots" }, rarity: "common", role: "economy" }, "not a power"],
       campaigns: [{ id: "c", title: "C", commander: "vasse", levels: [{ id: "l", map: "starter", credits: 1.5, mission: PERIMETER }] }],
     },
     { title: "No id", requires: [] },
@@ -428,14 +450,14 @@ test("a level's mission is checked against its map, its content against what its
     content: ["unit.test.hero", "structure.test.nest", "unit.test.ghost", "unit.citizen.trooper"],
     buildings: [{ id: "nest", structure: "structure.test.nest", cost: 5 }],
     powers: [
-      { id: "blank", name: " ", description: "", effect: { credits: 1 } },
+      { id: "blank", name: " ", description: "", effect: { credits: 1 }, rarity: "common", role: "economy" },
       // What a power does names what its army sees: a unit that is a unit, a building card, a building that
       // spawns when it adds waves, a reach that changes.
-      { id: "ghost-call", name: "Ghost Call", description: "Nobody comes.", effect: { spawnUnits: { unit: "unit.test.nobody", count: 2 } } },
-      { id: "nest-call", name: "Nest Call", description: "A nest walks in.", effect: { spawnUnits: { unit: "structure.test.nest", count: 1 } } },
-      { id: "same-reach", name: "Same Reach", description: "As far as ever.", effect: { modifyCommander: { auraReachTimes: 1 } } },
-      { id: "nest-drill", name: "Nest Drill", description: "More of nothing.", effect: { modifyContent: { building: "nest", addWaves: 1 } } },
-      { id: "lost-permit", name: "Lost Permit", description: "Adds nothing.", effect: { addBuilding: { building: "missing" } } },
+      { id: "ghost-call", name: "Ghost Call", description: "Nobody comes.", effect: { spawnUnits: { unit: "unit.test.nobody", count: 2 } }, rarity: "common", role: "economy" },
+      { id: "nest-call", name: "Nest Call", description: "A nest walks in.", effect: { spawnUnits: { unit: "structure.test.nest", count: 1 } }, rarity: "common", role: "economy" },
+      { id: "same-reach", name: "Same Reach", description: "As far as ever.", effect: { modifyCommander: { auraReachTimes: 1 } }, rarity: "common", role: "economy" },
+      { id: "nest-drill", name: "Nest Drill", description: "More of nothing.", effect: { modifyContent: { building: "nest", addWaves: 1 } }, rarity: "common", role: "economy" },
+      { id: "lost-permit", name: "Lost Permit", description: "Adds nothing.", effect: { addBuilding: { building: "missing" } }, rarity: "common", role: "economy" },
     ],
     commanders: [
       { id: "hero", name: "Hero", unit: "unit.test.hero" },
@@ -574,4 +596,88 @@ test("her lines in battle are refused by name: a moment she cannot speak at, one
   assert.deepEqual(problemsOf([all, vasseSaying({ falls: ["Back soon."] })]), [])
   const silent = loadArmies([all, { ...vasse, commanders: vasse.commanders.map(({ barks: _barks, ...commander }) => commander) }], WORLD)
   assert.deepEqual(silent.commanders[0]?.barks, {})
+})
+
+test("how the Nexus Pulse deals a power is data the loader checks by name: a chance, what it requires, what it upgrades, a level's schedule", () => {
+  const credits = { credits: 1 }
+  const tags = { rarity: "common", role: "economy" }
+  const deck = {
+    id: "deck",
+    title: "Deck",
+    requires: ["vasse"],
+    powers: [
+      { id: "flat-chance", name: "Flat", description: "Nothing.", effect: credits, ...tags, chance: [{ from: 1, times: 1 }, { from: 3, to: 2, times: 2 }] },
+      { id: "needy", name: "Needy", description: "Nothing.", effect: credits, ...tags, requires: { powers: ["needy", "nowhere"], buildings: ["castle"], round: 2 } },
+      { id: "self-upgrade", name: "Self", description: "Nothing.", effect: credits, ...tags, upgrades: "self-upgrade" },
+      { id: "chest-upgrade", name: "Chest", description: "Nothing.", effect: credits, ...tags, upgrades: "war-chest" },
+      { id: "lost-upgrade", name: "Lost", description: "Nothing.", effect: credits, ...tags, upgrades: "missing" },
+      { id: "always-upgrade", name: "Always", description: "Nothing.", effect: credits, ...tags, always: true, upgrades: "needy" },
+    ],
+    campaigns: [
+      {
+        id: "deck",
+        title: "Deck",
+        commander: "vasse",
+        levels: [
+          {
+            id: "deck-1",
+            map: "starter",
+            credits: 10,
+            unlocks: { powers: ["needy", "war-chest"] },
+            schedule: [
+              { round: 2, deal: ["common"] },
+              { round: 1, deal: ["rare", { power: "drill-schedule" }, { power: "war-chest" }] },
+            ],
+            mission: PERIMETER_LEVEL.mission,
+          },
+          { id: "deck-2", map: "starter", credits: 10, schedule: [], mission: PERIMETER_LEVEL.mission },
+        ],
+      },
+    ],
+  }
+  assert.deepEqual(problemsOf([all, vasse, deck]), [
+    'army "deck": the Nexus power "flat-chance" has a chance 1 times as likely, which changes nothing',
+    'army "deck": the Nexus power "flat-chance" has a chance from round 3 to round 2, which ends before it starts',
+    'army "deck": the Nexus power "needy" requires itself, so it is never dealt',
+    'army "deck": the Nexus power "needy" requires the Nexus power "nowhere", which no army has',
+    'army "deck": the Nexus power "needy" requires the building "castle", which no army has',
+    'army "deck": the Nexus power "self-upgrade" upgrades itself',
+    'army "deck": the Nexus power "chest-upgrade" upgrades "war-chest", which is offered beside every hand and never kept',
+    'army "deck": the Nexus power "lost-upgrade" upgrades the Nexus power "missing", which no army has',
+    'army "deck": the Nexus power "always-upgrade" is offered beside every hand, so it cannot be an upgrade',
+    'army "deck": level "deck-1" has a schedule whose first entry is for round 2: it starts at round 1',
+    'army "deck": level "deck-1" has a schedule entry for round 1 after one for round 2: entries go in order',
+    'army "deck": level "deck-1" makes sure of the Nexus power "drill-schedule" in round 1, which the level does not offer',
+    'army "deck": level "deck-1" makes sure of "war-chest" in round 1, which is offered beside every hand anyway',
+    'army "deck": level "deck-2" has a schedule with no entries: leave it out for the default',
+  ])
+})
+
+test("a Nexus power's rarity and role, and each card of a schedule, are words from short lists, refused by path", () => {
+  const deck = {
+    id: "deck",
+    title: "Deck",
+    requires: ["vasse"],
+    powers: [
+      { id: "no-tags", name: "No Tags", description: "Nothing.", effect: { credits: 1 } },
+      { id: "odd", name: "Odd", description: "Nothing.", effect: { credits: 1 }, rarity: "epic", role: "magic" },
+    ],
+    campaigns: [
+      {
+        id: "deck",
+        title: "Deck",
+        commander: "vasse",
+        levels: [{ id: "deck-1", map: "starter", credits: 10, schedule: [{ round: 1, deal: ["epic", 3] }], mission: PERIMETER_LEVEL.mission }],
+      },
+    ],
+  }
+  const rarities = '"common", "uncommon", "rare", "legendary"'
+  assert.deepEqual(problemsOf([all, vasse, deck]), [
+    'army "deck": powers[no-tags] needs "rarity"',
+    'army "deck": powers[no-tags] needs "role"',
+    `army "deck": powers[odd].rarity should be one of ${rarities}, not "epic"`,
+    'army "deck": powers[odd].role should be one of "troops", "production", "offense", "defense", "support", "economy", "commander", "information", "movement", not "magic"',
+    `army "deck": campaigns[deck].levels[deck-1].schedule[0].deal[0] should be one of ${rarities}, not "epic"`,
+    `army "deck": campaigns[deck].levels[deck-1].schedule[0].deal[1] should be a rarity (${rarities}) or { "power": its id }, not 3`,
+  ])
 })

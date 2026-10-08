@@ -53,8 +53,8 @@ export type BuildCommand =
   | Readonly<{ kind: "click-tile"; x: number; y: number }>
   /**
    * A click on menu entry *n* (an index into `menuEntries`). **A click activates what it lands on**
-   * (a first click does not merely highlight): a construct row arms at once and hands the mouse to the Grid with the ghost at the
-   * cursor, or the nearest spot that takes it; the Nexus entry opens its popup; Explore Map opens the
+   * (a first click does not merely highlight): a building row arms at once and hands the mouse to the Grid with the ghost at the
+   * cursor, or the nearest spot that takes it; the Nexus Pulse row opens its popup; Explore Map opens the
    * map; Start Battle Round opens its confirmation. All four are the menu's, so finishing them comes back to
    * the menu. Only the keyboard has a "highlighted, not yet chosen" state. Two exceptions, both about
    * what the click could see: with a popup open it only closes the popup (and brings focus to the menu,
@@ -63,7 +63,7 @@ export type BuildCommand =
    * landed on was not drawn, so it chooses nothing.
    */
   | Readonly<{ kind: "click-menu"; entry: number }>
-  /** Arm item *n* of the construct menu — its digit, from anywhere. Moves focus to the Grid; the cursor
+  /** Arm item *n* of the build menu — its digit, from anywhere. Moves focus to the Grid; the cursor
    *  stays where it is when the building can go there, and otherwise moves to the nearest spot that
    *  can take it. A placement or Esc goes back to whichever half had the keyboard.
    *  **While a building is armed the menu stays on it**: its own
@@ -101,13 +101,13 @@ export type BuildCommand =
   /** `q` anywhere but the game menu: open the game menu — Settings, Controls, Activity logs, Restart and
    *  Quit — rather than quit outright and lose a plan. */
   | Readonly<{ kind: "open-game-menu" }>
-  /** Pick Nexus power *n* — a digit or a click while the Nexus popup is open. */
+  /** Pick Nexus power *n* — a digit or a click while the Nexus Pulse popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
   /** `s` (or `p`), or the menu's last row, `[s] Start Battle Round` — open the Battle Round confirmation.
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
    *  while a building is armed. */
   | Readonly<{ kind: "open-battle-round" }>
-  /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Nexus Pulse starts.
+  /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Battle Round starts.
    *  Going back is the cancel every popup has. */
   | Readonly<{ kind: "start-pulse" }>
   /** Tab: move keyboard focus. To the Grid it arrives in plain navigation; to the menu
@@ -128,7 +128,7 @@ export type BuildCommand =
   /** Left or Right on the menu, where they have nothing to do: the highlighted row flickers "refused"
    *  to say the key arrived, and the keyboard stays on the menu. */
   | Readonly<{ kind: "refuse-row" }>
-  /** `n`, or activating the Nexus entry: open the Nexus popup. */
+  /** `n`, or activating the Nexus Pulse row: open its popup. */
   | Readonly<{ kind: "open-nexus-powers" }>
   /** `e`: Explore Map, a toggle — focus to the Grid with nothing armed, the side panel showing what is
    *  under the cursor as it moves; with it open, back one level exactly as Esc.
@@ -191,7 +191,7 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "export-activity" }>
   /**
-   * A Nexus Pulse playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
+   * A Battle Round playback control — Space, `[`, `]`, `.`, `,` and `r` while a Pulse is on screen, or a
    * click on the panel's control rows: the same vocabulary `grid watch` has, one keymap across
    * both. The reducer has nothing to change for it — the Pulse's clock is the presenter's, never the
    * state's — so it passes through like `quit`, and the session hands it to the Pulse it belongs to.
@@ -245,8 +245,8 @@ export const MAP_EDGE_STYLES: readonly MapEdgeStyle[] = ["solid", "half", "heavy
 export type Focus = "menu" | "grid"
 
 /**
- * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map first, Nexus, the construct rows in hotkey order, and Start Battle Round last. The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
- * construct row keeps its digit.
+ * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map first, Nexus, the building rows in hotkey order, and Start Battle Round last. The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
+ * building row keeps its digit.
  */
 export type MenuEntry =
   | Readonly<{ kind: "nexus" }>
@@ -370,7 +370,7 @@ export type CommanderAbsence = Readonly<{
 }>
 
 /**
- * One option in the Nexus draft: a Nexus power as the popup offers it, "a name and one plain line of
+ * One option of the Nexus Pulse: a Nexus power as the popup offers it, "a name and one plain line of
  * description" (docs/game-design/commander-armies.md), its key, and the card it came from — what it does once
  * kept, which the reducer never reads beyond its credits.
  */

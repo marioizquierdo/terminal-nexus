@@ -378,6 +378,16 @@ than any one feature:
    (hand size, the schedule, redraws, a second pool, what shows), not a feature each. The rules came out shorter for
    it.
 
+## The Nexus Pulse (2026-10-07)
+
+1. **A word that changes meaning cannot be renamed by a script.** "Pulse" meant the battle and now names the round's
+   opening, the Nexus Pulse. A bulk replace of the battle's "Pulse" with "Battle Round" in comments also rewrote six
+   new lines that meant the Nexus Pulse. Exclude the new compound from the pattern, then read every hit by hand.
+2. **Two seeds often deal the same hand from a small pool.** A test that the dealer draws from a stream of its own
+   assumed a nearby seed would deal another hand, but PERIMETER's first round has two commons for its two common
+   cards, so only the uncommon can change, and that seed dealt the same one. The test now looks for the first nearby
+   seed that deals a different hand, and says why.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

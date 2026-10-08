@@ -20,7 +20,7 @@
 //   Everything is fuel  volatile munitions, below — the rule that makes them Ravel;
 //   Scrap doctrine      higher salvage, since even their losses pay forward.
 //
-// Jackpot drafts are the fourth shape and are **not** here: they need a Nexus draft and an economy,
+// Jackpot drafts are the fourth shape and are **not** here: they need a Nexus Pulse of their own and an economy,
 // neither of which exists yet.
 //
 // The feel this is aiming at: Ravels lose every fair fight and win every unfair one. A runner cannot

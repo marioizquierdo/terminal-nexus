@@ -66,7 +66,7 @@ function drawBorder(cells: BandCell[], size: { width: number; height: number }, 
 
 /** The row the tagline lives on (`grid.md`) — the concept doc's own emotional loop, quoted rather than
  *  invented, since a stub screen still owes the player something true about the game. */
-const TAGLINE = "Build. Commit. Pulse. Understand. Adapt."
+const TAGLINE = "Build. Commit. Battle. Understand. Adapt."
 
 const BASE_CONTROLS = "arrows + enter, or a digit, or click a row"
 

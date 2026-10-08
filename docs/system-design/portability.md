@@ -138,7 +138,7 @@ Nothing here is built, and nothing depends on it.
 | Windows Terminal | win32-input-mode for releases | unmeasured; the timing fallback works meanwhile |
 | SSH / tmux | nothing | key releases will probably not pass through; the timing tier applies |
 | Screen readers | a text adapter | the status line and the Explore Map card are already plain sentences; `scripts/playtest.mjs` prints a frame as text, which is most of one |
-| Chat-bot turns (Discord and the like) | render a frame to PNG; commands from messages | the Build Phase is turn-shaped (plan, then Pulse), so asynchronous play fits |
+| Chat-bot turns (Discord and the like) | render a frame to PNG; commands from messages | the Build Phase is turn-shaped (plan, then Battle Round), so asynchronous play fits |
 | A native graphical renderer | a `TerminalBackend` that draws sprites | already an adapter by design |
 
 ## 7. What not to do

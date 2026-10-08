@@ -155,8 +155,8 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   // round"): the hints say one is waiting, never that it must be picked.
   "menu-nexus": (context, state) =>
     pendingPicks(context, state) > 0
-      ? "Nexus powers: one is waiting to be picked. [enter] opens them."
-      : "Nexus powers: read the powers you have. [enter] opens them.",
+      ? "Nexus Pulse: a power is waiting to be picked. [enter] opens it."
+      : "Nexus Pulse: read the powers you have. [enter] opens it.",
   "menu-building": (context, state) => {
     const item = highlightedItem(context, state)
     if (item === undefined) return "Pick a building to place."
@@ -212,7 +212,7 @@ export function commandAnswer(state: BuildState, preview: ArmedPreview | null): 
 /**
  * **The bottom bar's one line**: the last command's answer while it has one, otherwise
  * the hint for where the keyboard is. An answer lapses at the next command that says nothing
- * (`applyBuildCommand`), so the hint comes back on its own. A Nexus Pulse on screen says its own line
+ * (`applyBuildCommand`), so the hint comes back on its own. A Battle Round on screen says its own line
  * instead (`pulseStatus`), unless a popup over it holds the keyboard.
  */
 export function bottomLine(context: BuildContext, state: BuildState, preview: ArmedPreview | null): StatusMessage {
@@ -259,7 +259,7 @@ export function controlsPage(jumpStep: number = defaultValue("jumpStep")): reado
         { keys: "enter/space", text: "press the chosen row" },
         { keys: "1 2 3 ...", text: "select a building, anywhere" },
         { keys: "e", text: "Explore Map" },
-        { keys: "n", text: "the Nexus powers" },
+        { keys: "n", text: "the Nexus Pulse" },
         { keys: "s", text: "Start Battle Round (or p)" },
         { keys: "u", text: "undo the last building" },
         { keys: "tab", text: "go to the map" },

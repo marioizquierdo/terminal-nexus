@@ -1,13 +1,13 @@
 [
   {
-    "label": "The draft",
-    "try": "Round 1's Nexus powers: two dealt from Vasse's pool, Drill Schedule and Reserve Callup, and War Chest under 3, beside every hand. Press 2: two troopers appear beside your Nexus, and the menu says 1 active. Then s s plays the round with them.",
+    "label": "The Nexus Pulse",
+    "try": "Round 1's Nexus Pulse: three powers dealt by PERIMETER's schedule, two commons and an uncommon, each saying how rare it is, and War Chest under 4. Press 2 (Drill Schedule): the Barracks card says two waves, and its upgrade can come next round. Then s s plays the round.",
     "keys": "Esc n"
   },
   {
-    "label": "Round 3",
-    "try": "Round 3, after keeping Drill Schedule in round 1 and Standing Order in round 2: both are listed under ACTIVE, and this round deals Aid Station Permit. Press 2, then 4 to arm the Aid Station, tap a tile beside your troopers in the line and tap it again to place it, then s s: a white cross rises beside each unit it heals.",
-    "keys": "Esc n 1 s s wait~1000*26 Enter n 1 s s wait~1000*26 Enter n"
+    "label": "An upgrade",
+    "try": "Round 3, after keeping Drill Schedule in round 1 and its upgrade, Drill Schedule II, in round 2 (round 2 always deals Aid Station Permit first, the level makes sure of it): ACTIVE lists Drill Schedule II alone, in its power's place, and every Barracks sends three waves. Press s s to watch them.",
+    "keys": "Esc n 2 s s wait~1000*34 Enter n 3 s s wait~1000*34 Enter n"
   },
   {
     "label": "Pick required",

@@ -262,7 +262,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   // has. The same clock times how far a cursor key moves — taps counted, holds on the game's cadence —
   // (passed with each key) and the lone-Esc timeout (`KeyReader`).
   const clock = options.now ?? ((): number => Date.now())
-  // A Nexus Pulse the start keys began was timed on the script's clock, a few seconds from nothing; from
+  // A Battle Round the start keys began was timed on the script's clock, a few seconds from nothing; from
   // here it runs on the live one. Rebase without letting any time pass: it opens at zero.
   build.advance(clock(), true)
   const animation = new BuildAnimation()
@@ -285,7 +285,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     if (leaving) return
     const size = terminalSize()
     const now = clock()
-    // Time passes for a Nexus Pulse on screen — and holds while the terminal is too small to draw it, so
+    // Time passes for a Battle Round on screen — and holds while the terminal is too small to draw it, so
     // resizing back resumes from the same instant. Before the animations are read: the Pulse may have just
     // asked the view to look at the player's Nexus.
     build.advance(now, gated)
@@ -347,7 +347,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     }
     const wasGated = gated
     gated = isGated(size, context.grid)
-    // A Nexus Pulse holds still while the terminal is too small to draw it, and resumes from the same
+    // A Battle Round holds still while the terminal is too small to draw it, and resumes from the same
     // instant (see `runtime.md`). No frame timer runs behind the gate, so nothing would tell the Pulse the
     // time had passed: the moment the gate closes or opens, the clock is moved on without the Pulse.
     if (wasGated || gated) build.advance(clock(), true)

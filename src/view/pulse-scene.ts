@@ -1,4 +1,4 @@
-// The Nexus Pulse on the Build Phase's own screen — the fight drawn through the same
+// The Battle Round on the Build Phase's own screen — the fight drawn through the same
 // cursor-driven camera, in the same frame, under the same popups. The map is 96 x 40; the old Pulse view
 // (`compose.ts`) draws a fixed 48 x 16 pane with its own chrome, and so could not have shown it.
 //

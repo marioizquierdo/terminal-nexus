@@ -192,7 +192,7 @@ test("the Build Phase reducer and its Experiments name no clock and never reach 
   }
 })
 
-test("the Build Phase's animation and key timing, and the Nexus Pulse's ending, take the time as a number, and name no clock", () => {
+test("the Build Phase's animation and key timing, and the Battle Round's ending, take the time as a number, and name no clock", () => {
   // The screen's clock is read in one place, the live loop (src/cli/build-phase.ts), and handed to
   // these as a number — which is what lets a test drive the ease, the flashes, the held-key ramp and the
   // Esc timeout without waiting.

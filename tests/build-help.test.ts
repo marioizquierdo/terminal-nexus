@@ -176,8 +176,8 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   ],
   "menu-explore": [[() => {}, /^Explore Map: look around and read what is on each tile\. \[enter\] opens it\.$/]],
   "menu-nexus": [
-    [(side) => keys(side, DOWN), /^Nexus powers: one is waiting to be picked\. \[enter\] opens them\.$/],
-    [(side) => keys(side, "n", "1", DOWN, UP), /^Nexus powers: read the powers you have\. \[enter\] opens them\.$/],
+    [(side) => keys(side, DOWN), /^Nexus Pulse: a power is waiting to be picked\. \[enter\] opens it\.$/],
+    [(side) => keys(side, "n", "1", DOWN, UP), /^Nexus Pulse: read the powers you have\. \[enter\] opens it\.$/],
   ],
   "menu-building": [
     [(side) => keys(side, DOWN, DOWN), /^Barracks - Trains troopers\. Costs 40\. \[enter\] to place one\.$/],
@@ -447,9 +447,9 @@ test("the Controls page says what Esc and x do on the menu, how placing is cance
   assert.match(section("THE MOUSE").find((line) => line.keys === "right click")?.text ?? "", /like x/)
 })
 
-// --- The Nexus Pulse ----------------------------------------------------------------------------------
+// --- The Battle Round ----------------------------------------------------------------------------------
 
-test("during a Nexus Pulse the one row is the Pulse's own line, and a popup over it says its own", () => {
+test("during a Battle Round the one row is the Pulse's own line, and a popup over it says its own", () => {
   const played = play({ plan: DEFENCE })
   at(played, 0)
   assert.equal(bottomLineText(played), "Battle Round - 5 of yours against 7 of the raid.")

@@ -30,7 +30,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q19](#q19--where-should-a-sandbox-placement-mode-rewind-and-fast-forward-and-a-feedback-replay-engine-live) | Where do a sandbox, rewind and a feedback replay live? | OPEN | Backlog: replay format |
 | [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
-| [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-Pulse regrouping via outposts |
+| [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-round regrouping via outposts |
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
@@ -47,6 +47,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q73](#q73--how-strong-should-by-the-book-vasses-aura-be) | How strong should By the Book, Vasse's aura, be? | OBSERVABLE | The By the Book Experiment |
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
+| [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
 
 ## Open
 
@@ -86,7 +87,7 @@ contradiction. Decide it with the first level that adds a storage cap.
 **Status:** OPEN — option A is what is built; parked under the backlog's routing and economy work.
 
 A threatened worker flees "away from it toward the friendly Nexus", but the mirror skirmish places no
-structures at all, and "one side annihilated" ends a Pulse only if workers count. Neither half was stated.
+structures at all, and "one side annihilated" ends a Battle Round only if workers count. Neither half was stated.
 
 | Option | Cost |
 | --- | --- |
@@ -229,16 +230,16 @@ visible variety once someone is watching, B is the next step. C is not recommend
 
 ### Q23 — How does an army reach its first engagement faster, beyond raw movement speed?
 
-**Status:** OPEN — parked under the backlog (multi-Pulse regrouping via outposts); registered so the ask is not lost.
+**Status:** OPEN — parked under the backlog (multi-round regrouping via outposts); registered so the ask is not lost.
 
 Owner playtest, 2026-08-22: "we should probably think about how to reach the initial conflict faster. Maybe
 outposts regroup units next to them so next pulses resolve faster." The idea: an **outpost** reassembles
-retreating or newly-produced units near itself between Pulses, so the *next* Pulse's armies start closer
-together. Raw speed helps every Pulse; regrouping would specifically help the second and later ones.
+retreating or newly-produced units near itself between Battle Rounds, so the *next* Battle Round's armies start
+closer together. Raw speed helps every Battle Round; regrouping would specifically help the second and later ones.
 
-Missions are now multi-Pulse ([`campaigns.md`](../game-design/campaigns.md)) and PERIMETER plays three
-rounds, so "regroup between Pulses" is no longer hypothetical. What is still unowned is the outpost
-itself: no structure does it, and Recall already walks units home to their buildings at the end of a Pulse.
+Missions are now several rounds long ([`campaigns.md`](../game-design/campaigns.md)) and PERIMETER plays three
+rounds, so "regroup between Battle Rounds" is no longer hypothetical. What is still unowned is the outpost
+itself: no structure does it, and Recall already walks units home to their buildings at the end of a Battle Round.
 
 | Option | Cost |
 | --- | --- |
@@ -343,13 +344,13 @@ designed rather than discovered.
 
 Mario's campaign-menu description asks for "enemy intel (discovered enemy units, buildings, nexus powers,
 enemy generals, and mission reports)." `PlayerView` ([`pulse.md`](../system-design/pulse.md), visibility) is a
-**live, per-Pulse filter**: it decides what a player may be shown this instant and remembers nothing between
-missions. So "discovered" needs a definition before the panel can be built.
+**live filter, one Battle Round at a time**: it decides what a player may be shown this instant and remembers
+nothing between missions. So "discovered" needs a definition before the panel can be built.
 
 | Option | Cost |
 | --- | --- |
 | A. **Anything the player's own `PlayerView` has ever rendered, logged the instant it is first seen** | Simplest rule, no per-mission authoring, derived from existing machinery the way the report module already derives from the event stream |
-| B. **Only entities that survive to a Pulse's end** | More conservative, but hard to explain ("I saw it and it isn't in my intel?") and needs an extra pass |
+| B. **Only entities that survive to a Battle Round's end** | More conservative, but hard to explain ("I saw it and it isn't in my intel?") and needs an extra pass |
 | C. **Explicit, mission-authored reveals only** | Precise control over the belief ramp's information pacing (Mission 2's whole itch is the Nexus knowing something nobody entered). Per-mission authoring for every enemy type, forever |
 
 **Recommendation: A**, with C available later as an *addition*: a mission that wants to reveal something the
@@ -361,7 +362,7 @@ before any contact"). Do not build C's authoring surface before a mission uses i
 **Status:** OPEN — decision-ready. Scrolling is built; PERIMETER is still played on the Build Phase's placeholder map ([`next-steps.md`](next-steps.md)), so its real map is the open part. The recommendation is already assumed by [`docs/history/milestones/milestone-02-campaign-design.md`](../history/milestones/milestone-02-campaign-design.md).
 
 The belief ramp in [`campaigns.md`](../game-design/campaigns.md) describes PERIMETER's teaching goal as the
-"Build Phase / Nexus Pulse loop on **a small Grid that never scrolls**", written as GUIDANCE before the
+"Build Phase / Battle Round loop on **a small Grid that never scrolls**", written as GUIDANCE before the
 campaign-first pivot. Milestone 5's charter says real scrolling is built "against a Grid sized to actually
 need it". If PERIMETER's real map stays small by design, scrolling has no mission of its own to be proved
 against.
@@ -384,7 +385,7 @@ the game's most-scrutinised interaction proved on a fixture the campaign never p
 A run is a series of battles with the army changing between them. The army composition (structures and Nexus
 power pool) obviously persists. What is not obvious is whether anything *on the Grid* does. The concept's
 promise that "persistence creates short stories — survivors matter" ([`concept.md`](../game-design/concept.md))
-is stated for the Pulses of one match; carrying it across battles would be a new claim.
+is stated for the Battle Rounds of one match; carrying it across battles would be a new claim.
 
 | Option | Cost |
 | --- | --- |
@@ -448,7 +449,7 @@ in a fraction of the cells.
 | B. Build it inside the Build Phase work | No mission map needs it yet; the representation would be answered against a test Grid, not a real one |
 
 **Recommendation: A.** `m` is reserved for it ([`grid.md`](../system-design/grid.md)) so nothing else takes the
-key. The natural moment is the first mission map that does not fit the maximum viewport, or the first Pulse
+key. The natural moment is the first mission map that does not fit the maximum viewport, or the first Battle Round
 large enough that watching it needs an overview.
 
 ### Q63 — Should the mouse wheel move the jump distance rather than 5?
@@ -570,3 +571,24 @@ is a handful of powers in a short match and twenty or more in a long one.
 **Recommendation: A.** The concept's promise is a game that finishes quickly and makes you want one more; the run is
 where an hour of play already lives (Slay the Spire's runs are as long), and an hour of multiplayer holds several
 matches rather than one. Time a match once workers gather, and tune the draft's numbers to it.
+
+### Q76 — Should the engine's "pulse" be renamed in code and in a mission's data?
+
+**Status:** OPEN — registered 2026-10-07. Blocks nothing: every word a player reads is already the new one.
+
+The owner named the moment that opens each round the Nexus Pulse, and the battle that ends it is the Battle Round in
+every document and on every screen. The engine kept its own word: the code calls the battle step "the Pulse"
+(`src/pulse/`, `startPulse`, `pulse-run.ts`, the three worlds in `AGENTS.md`), and so does a mission's data, which a
+modder writes: `pulses` (how many Battle Rounds), `pulseTicks` (how long each), a trigger's `when: { "pulse": 2 }`
+and the event `pulse.end`, with the loader's messages saying "Pulse 2". Since "Nexus Pulse" now means something else,
+a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one for the other.
+
+| Option | What it costs |
+| --- | --- |
+| A. **Keep the engine's word, documented** (as now): "the Pulse" in code and data is the engine's name for the Battle Round, never the Nexus Pulse | Nothing now; one more line in the vocabulary, and a trap for a reader who skips it |
+| B. **Rename a mission's data and messages** (`pulses` → `rounds`, `pulseTicks` → `roundTicks`, `when.pulse` → `when.round`, `pulse.end` → `round.end`), reading the old names for a while | A format change across the army files, the scenario maps, the loader and the trigger runner, and every test that writes a mission |
+| C. **Rename the engine too** (`src/pulse/` → `src/battle/`, `startPulse` → `startBattle`, the three worlds' "Pulse") | About two thousand names; a long, mechanical pull request with nothing for a player to see |
+
+**Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
+and that is a contained change best made with the next change to the mission format; the engine's internal names
+cost nothing as long as the vocabulary says what they mean.

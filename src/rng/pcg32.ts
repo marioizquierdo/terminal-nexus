@@ -111,7 +111,7 @@ export class Pcg32 {
  */
 export const STREAM_GAMEPLAY = 0n
 export const STREAM_COSMETIC = 1n
-/** The Nexus draft's own seeded stream (`src/armies/deal.ts`): gameplay, deterministic, and never the kernel's, so
+/** The Nexus Pulse's own seeded stream (`src/armies/deal.ts`): gameplay, deterministic, and never the kernel's, so
  *  dealing a hand never moves a battle's draws. */
 export const STREAM_DRAFT = 2n
 

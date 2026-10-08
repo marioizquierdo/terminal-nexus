@@ -107,7 +107,7 @@ the type checker name every place that must learn it — the game's dispatch, th
 scripted playtest. A new campaign level needs no entry here at all: `campaign?level=<id>` reads the levels
 the game can open (`src/cli/levels.ts`).
 
-IDEA — places a later step could name, none built: a level's round straight into its Pulse; the run
+IDEA — places a later step could name, none built: a level's round straight into its Battle Round; the run
 screen, once Challenge exists; a saved replay, once the replay file exists.
 
 ## 5. The bare command and the saved game
@@ -139,7 +139,7 @@ The page reads its address as a launch (`src/cli/launch.ts`): its parts are the 
 there is one the address reads.
 
 The mode buttons that are game screens open their routes (Menu is `menu`, Build Phase is
-`campaign?level=vasse-test-1`); the two Pulse replays are the engine tool's battles, not places in the
+`campaign?level=vasse-test-1`); the two battle replays are the engine tool's battles, not places in the
 game.
 
 **A link on claude.ai cannot carry a `#` part with `=` in it**; a copy of the page opened from disk can.

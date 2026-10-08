@@ -264,7 +264,7 @@ test("--keys that cannot be delivered stops there and says why when the screen c
 })
 
 // ---------------------------------------------------------------------------------------------
-// The Nexus Pulse in the live loop
+// The Battle Round in the live loop
 // ---------------------------------------------------------------------------------------------
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
@@ -273,7 +273,7 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
  *  yes. */
 const WINNING_PLAN = `${DEFENCE_KEYS} s s`
 
-test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
+test("the live loop plays a Battle Round on its own clock: timer, last seconds, result, then idle — and starts over on Restart", async () => {
   let t = 5_000
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
@@ -332,7 +332,7 @@ test("the live loop plays a Nexus Pulse on its own clock: timer, last seconds, r
   assert.equal(stdin.raw, false)
 })
 
-test("a Nexus Pulse holds still behind the resize gate and resumes from the same instant", async () => {
+test("a Battle Round holds still behind the resize gate and resumes from the same instant", async () => {
   let t = 5_000
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()

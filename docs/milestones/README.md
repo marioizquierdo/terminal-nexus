@@ -17,24 +17,25 @@ remains.
 | [2 — Design and Orientation](../history/milestones/milestone-02-campaign-design.md) | COMPLETE | done | What vocabulary and structure do the single-player modes need, and what few PERIMETER decisions does the UX build need, before milestones 3-6 build the game's experience? |
 | [3 — Game Menu](../history/milestones/milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
 | [5 — Build Phase](../history/milestones/milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
-| [6 — Nexus Pulse Phase](../history/milestones/milestone-06-pulse-phase.md) | COMPLETE | done | Can a player start the Pulse, watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
-| [8 — Commander](milestone-08-commander.md) | CURRENT | 5 | Can Commander Vasse and a Nexus draft dealt from an army's pool exist without becoming a full Commander Army? |
+| [6 — Nexus Pulse Phase](../history/milestones/milestone-06-pulse-phase.md) | COMPLETE | done | Can a player start the Battle Round (then called the Nexus Pulse), watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
+| [8 — Commander](milestone-08-commander.md) | CURRENT | 5 | Can Commander Vasse and a Nexus Pulse that deals from an army's pool exist without becoming a full Commander Army? |
 | [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | PLANNED | 6 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
 | [4 — Campaign Menu](milestone-04-campaign-menu.md) | PLANNED | 7 | Can a player start or load a campaign and see progress, army, and enemy intel? |
-| [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 8 | Can workers be built and gather resources deterministically during the Pulse? |
+| [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 8 | Can workers be built and gather resources deterministically during the Battle Round? |
 | [9 — Mission Cutscenes](milestone-09-mission-cutscenes.md) | PLANNED | 9 | Can a mission declare and play its own briefing, exchanges, barks, and debrief? |
 | [10 — First and Second Missions](milestone-10-first-and-second-missions.md) | PLANNED | 10 | Do PERIMETER (polished) and RIGHT OF SALVAGE (new) together read as a real campaign opening? |
 | [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 11, repeating | Does each new card make a run more interesting and let a mission teach it — measured, not asserted? |
+| [13 — The Nexus Pulse](milestone-13-nexus-pulse.md) | PLANNED | not placed: Mario's call | Does each round open on a Nexus Pulse that feels like the Nexus speaking to its Commander — its own moment on screen, a hand worth reading, a schedule to plan around — without making a round slower? |
 
 The order is for a played loop as early as possible. The match experience comes first (menu, Build Phase,
-Pulse), then the two mode shells (the Commander and draft, the run, the campaign), then depth (the worker
+Battle Round), then the two mode shells (the Commander and draft, the run, the campaign), then depth (the worker
 economy, cutscenes), then proof and content (the first two missions, repeated content passes). Prefer the
 honest, connected, ugly step over the beautiful one that dead-ends: the biggest improvements to the Grid
-all came after the Pulse ran end to end, because playing it is what says which part needed the quality.
+all came after the Battle Round ran end to end, because playing it is what says which part needed the quality.
 
 **The owner's priority, 2026-10-01**, after playing the loop across rounds: the interface and the quality of
 the mechanics come before any level's balance. A first mission that is too easy is fine while the basics are
-being built; levels are designed and balanced later, inside what the mechanics allow. His notes on the Pulse
+being built; levels are designed and balanced later, inside what the mechanics allow. His notes on the battle
 screen wait in [`backlog.md`](backlog.md) for the step that takes them.
 
 Two orderings are choices Mario may swap: 11 before 4, because a run exercises Commander Army composition

@@ -87,7 +87,7 @@ test("wait is a step where nothing is pressed and time passes: a second by defau
   )
 })
 
-test("a scripted playtest plays a Nexus Pulse on the script's own clock and shows every phase of its ending", () => {
+test("a scripted playtest plays a Battle Round on the script's own clock and shows every phase of its ending", () => {
   // A Nexus power, two Turrets and a Hatchery, the commit and its confirmation; then the script lets it play.
   const plan = `${DEFENCE_KEYS} s s`
   // Quarter-second frames, so the half-second cease fire is never stepped over.

@@ -20,14 +20,14 @@ import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MAXIMUM, MINIMUM, WIDE } from "./build-helpers.ts"
 
 /**
- * Every test here is about rendering — not about the Nexus draft that stands in front of
+ * Every test here is about rendering — not about the Nexus Pulse that stands in front of
  * everything else. Every `BuildSession` starts past that draft already, on the first placeholder
  * option, so the screens under test look exactly as they did before the draft existed.
  */
 /** A picked power that adds nothing to the budget, so every test that is not about the Nexus
  *  draft itself sees exactly the allotment its own numbers already assume. */
 const NEUTRAL_NEXUS_DRAFT = [
-  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0, card: { id: "test-pick", name: "Test Pick", description: "No effect.", effect: { credits: 0 } } },
+  { hotkey: "1", name: "Test Pick", description: "No effect.", bonusAllotment: 0, card: { id: "test-pick", name: "Test Pick", description: "No effect.", effect: { credits: 0 }, rarity: "common", role: "economy" } },
 ] as const
 
 /** Every caller passes a context whose `nexusDraft` is already `NEUTRAL_NEXUS_DRAFT` — this only
@@ -593,7 +593,7 @@ test("on a small Grid the panel's rows are drawn whole, however few fit: the Nex
     build.dispatch({ kind: "focus", target: "menu" })
     const rows = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome")).split("\n")
     // Against the divider — or, where this small Grid is the solid bar of a map edge, against nothing.
-    assert.match(rows.join("\n"), /\[n\] Nexus {2,}1 active(?:[|+ ]|$)/m, `${width}x${height}`)
+    assert.match(rows.join("\n"), /\[n\] Nexus Pulse {2,}1 active(?:[|+ ]|$)/m, `${width}x${height}`)
     const lines = constructLines(layout, context.catalog)
     assert.ok(lines.length > 0, `${width}x${height}: no building has room`)
     for (const line of lines) {
@@ -740,7 +740,7 @@ test("the Grid's sides: a map that names no edge style ends in a solid bar, on a
 
 test("after the pick, the Nexus row says how many powers are active", () => {
   const built = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" }))
-  assert.match(built.text, /\[n\] Nexus {2,}1 active/)
+  assert.match(built.text, /\[n\] Nexus Pulse {2,}1 active/)
 })
 
 test("the commit confirmation is a screen over the Grid: Battle Round 1, what it announces, and [s] Start", () => {

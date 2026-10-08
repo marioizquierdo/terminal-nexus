@@ -79,7 +79,7 @@ test("after a round's result, Enter opens the next round's Build Phase on what t
   // It says where it is and how the last round went.
   const text = screenText(side)
   assert.match(text, /build phase - round 2 of 3/)
-  assert.match(text, /Round 1: victory\. Build Phase 2 - the Nexus stands\./)
+  assert.match(text, /Round 1: victory\. The Nexus Pulse deals a new hand: \[n\]\./)
   assert.deepEqual(state.cursor, { x: 18, y: 10 }, "the next round does not open on the Nexus")
 })
 

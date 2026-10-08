@@ -1,7 +1,7 @@
 # Milestone 9 — Mission Cutscenes
 
 **Status:** PLANNED
-**Depends on:** Milestone 6 (events fire during the Pulse), Milestone 4 (the campaign menu is a plausible home for artifact entries)
+**Depends on:** Milestone 6 (events fire during the Battle Round), Milestone 4 (the campaign menu is a plausible home for artifact entries)
 
 This is the real mechanism, not a placeholder. An earlier plan deferred cutscenes to plain printed
 text, reasoning that a full system built for one mission's briefing would be a framework built for one
@@ -33,21 +33,21 @@ displaying.
   faction glyph role), drawn in the side panel or the `chrome` band; it is the same card inspection
   shows for that character on the Grid. `say` is the attributed line beneath it. In Mario's words:
   "focusing on a character, showing their face/card and displaying some text while they talk."
-  PERIMETER's intro is the first use: cards and lines, then a scripted Pulse in which the raid arrives
+  PERIMETER's intro is the first use: cards and lines, then a scripted Battle Round in which the raid arrives
   and takes position (already built by Milestone 6), then `startBuild`.
 - **Playback controls.** Advance by Enter, click or the driver; skip; replay; and the same
   accessibility modes (reduced motion, monochrome) as every other piece of presentation, not a second
   accessibility story. Skip leaves the same Grid: it jumps past the presentation actions and the
-  scripted Pulse still resolves, so a skipped intro and a watched one hand the player an identical
+  scripted Battle Round still resolves, so a skipped intro and a watched one hand the player an identical
   first Build Phase. This is asserted in a test.
 - **PERIMETER's six pieces, played at the right moments.**
   - The briefing before the Build Phase.
-  - The pre-battle exchange at the start of the Pulse.
+  - The pre-battle exchange at the start of the Battle Round.
   - At least one bark during the fight, triggered by a real event (an engagement, a death) rather
     than a scripted timer.
-  - The mid-mission interruption at the Pulse's first tick ("whatever that rhythm is, we build between
+  - The mid-mission interruption at the Battle Round's first tick ("whatever that rhythm is, we build between
     its beats now").
-  - The debrief once the Pulse resolves.
+  - The debrief once the Battle Round resolves.
   - The artifact entry, shown wherever Milestone 4's campaign menu can reasonably hold a collectible
     (a small addition to that screen, not a new one).
 
