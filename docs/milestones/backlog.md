@@ -123,6 +123,20 @@ place" is built; "hold" is the half of that open question still waiting). Two sh
 Experiment: a post as a building (a flag placed in territory that the nearest squad holds), or a post as an
 order given to a group from the Build Phase.
 
+## Jump-to-thing keys (Mario, 2026-10-09)
+
+`g` goes to the player's Nexus. Mario: "We can add some ideas of how to add new hotkeys later, but for now no need
+for it because we don't know the gameplay yet." The ideas, from how roguelikes cross a big map
+([the survey](../history/reports/2026-10-09-roguelike-navigation.md)):
+
+- `g` again goes on to the enemy Nexus, once a map has one (his own idea), and round again.
+- A forward and backward pair that cycles the cursor through things of interest: the player's buildings, the
+  raid's arrival groups, deposits, what was planned this round (Brogue's Tab, NetHack's `m` `o` `d` `a`).
+- A Shift step that moves "to the next different tile" instead of a fixed number (NetHack's `*` mode).
+- Arming a building where the last one of its kind went (Crawl and Cogmind start on the last target).
+
+Which keys is the open part: Tab is focus, and the left hand's letters are hotkeys.
+
 ## Decisions fine to leave open for now
 
 Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with

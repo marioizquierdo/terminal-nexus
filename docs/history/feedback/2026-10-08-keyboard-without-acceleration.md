@@ -49,3 +49,14 @@ Shift step, Shift pace, Hold pace, and the terminal's two. The recommendations w
 **Built.** Shift (and Option, Home/End) jumps 9 tiles left or right; Shift (and Option, PageUp/PageDown) jumps 6 up
 or down, since a row is about twice as tall on screen as a column is wide. They are two Experiments in Settings,
 Shift step across and Shift step up/down; an old export's single jump distance reads as the one across.
+
+### F162 — A key to jump to the Nexus
+
+> type "n" to jump to nexus sounds good. There should be one to jump to enemy nexus, perhaps iterating through "n".
+> Let's not complicate for now. We can add some ideas of how to add new hotkeys later, but for now no need for it
+> because we don't know the gameplay yet
+
+**Built**, on `g` rather than `n`, his pick when asked, because `n` opens the Nexus Pulse. From the menu or the map,
+`g` puts the cursor on the player's Nexus, the view following, and the keyboard on the map; the Controls page lists
+it under ANYWHERE. The enemy Nexus and the other jump ideas are parked in the backlog for when the gameplay says
+which are worth a key.

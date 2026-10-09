@@ -101,6 +101,7 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 | `u` | undo the last planned placement | plans are revisable until commit |
 | `s`, `p` | Start the Battle Round — the menu's last row, `[s] Start Battle Round`; `p`, its first key, still works | moves focus to the menu and opens the Battle Round screen, where Enter, Space or `s` again start it and Esc goes back; the one action that must not fire by accident. A Nexus power still waiting does not hold it back; the screen says so in one quiet line |
 | `n` | open the Nexus Pulse popup — the menu's `[n] Nexus Pulse` entry | pressed again inside the popup, closes it |
+| `g` | go to the player's Nexus: the cursor stands on it and the view follows, from the menu or the map, and the keyboard goes to the map | the owner's "jump to nexus" (2026-10-09), on `g` because `n` is the Nexus Pulse. Pressing it again could later go on to the enemy Nexus, once a map has one. The roguelikes' jump-to-thing keys are the precedent ([the survey](../history/reports/2026-10-09-roguelike-navigation.md)) |
 | `e` | Explore Map — the menu's first entry, `[e] Explore Map`: focus to the Grid with nothing armed, the side panel describing what is under the cursor as it moves. Opened from the menu, the cursor first moves to clear ground by the arming rule for a one-tile footprint; opened from the map it stays | a toggle, its row drawn active while open. Tab arrives in plain navigation instead |
 | `q` | open the game menu | never quits outright, so a stray press cannot lose a plan; only the game menu's own `[q]` (or Enter or a click on its Quit row) quits. The top bar's `menu [esc]` is Esc, which on the menu opens it |
 | Ctrl+C | quit at once | the one immediate way out, from anywhere |
@@ -118,7 +119,7 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 inside their own popups `s` is Settings (the game menu) and `e` is Export (Settings), while outside them
 `e` is still Explore Map. The entries above the building rows get **letters**, never digits — a digit
 would renumber every building row beneath it, which is exactly what one digit sequence per menu exists
-to prevent: `[e] Explore Map` and `[n] Nexus Pulse`. Inside the game menu `c` is Controls and hotkeys and `a` is Activity logs. `p`,
+to prevent: `[e] Explore Map` and `[n] Nexus Pulse`. Inside the game menu `c` is Controls and hotkeys and `a` is Activity logs. `g`, `p`,
 `q`, `s`, `u` and `x` are taken, and `h`, `j`, `k` and `l` are the arrows.
 
 **The left hand's keys are hotkeys; the right hand's may be navigation**, as in StarCraft or Diablo:

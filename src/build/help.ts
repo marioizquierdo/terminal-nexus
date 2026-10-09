@@ -393,6 +393,7 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "x", text: "go back; stops at the menu" },
         { keys: "h j k l", text: "the arrows, as in vim" },
         { keys: "H J K L", text: "shift+arrow, the jump" },
+        { keys: "g", text: "go to your Nexus" },
         { keys: "q", text: "the game menu" },
         { keys: "d", text: "the Experiments (playtests)" },
         { keys: "?", text: "this page" },

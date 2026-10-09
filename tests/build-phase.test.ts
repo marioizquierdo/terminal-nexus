@@ -26,7 +26,7 @@ import {
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import type { BuildSessionOptions } from "../src/view/build-session.ts"
-import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, nexusTile, remaining, spent } from "../src/build/state.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { cardText } from "../src/build/card.ts"
 import { bottomLine } from "../src/build/help.ts"
@@ -829,4 +829,25 @@ test("a move clamped back to the same tile keeps the refusal on screen, read qui
   const line = bottomLine(context, build.state, armedPreview(context, build.state))
   assert.match(line.text, /Cannot build here/, "the cursor never left the tile the refusal named")
   assert.equal(line.tone, undefined, "the lapsed attempt still reads as an attempt")
+})
+
+test("keyboard: g goes to the player's Nexus from the menu or the map, and the keyboard goes to the map", () => {
+  const context = starterContext()
+  const nexus = nexusTile(context)
+  assert.ok(nexus !== null)
+  assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "menu" }), { kind: "go-nexus" })
+  assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "grid" }), { kind: "go-nexus" })
+  const layout = buildLayout(MINIMUM, context.grid)
+  // From the menu, the cursor far away: one key, and the cursor stands on the Nexus with the view on it.
+  const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
+  build.dispatch({ kind: "focus", target: "menu" })
+  build.handleData("g", layout)
+  assert.deepEqual(build.state.cursor, nexus)
+  assert.equal(build.state.focus, "grid")
+  const { camera, viewport } = build.state
+  assert.ok(nexus.x >= camera.x && nexus.x < camera.x + viewport.width && nexus.y >= camera.y && nexus.y < camera.y + viewport.height, "the Nexus is not in view")
+  // Inside a popup it means nothing.
+  build.handleData("?", layout)
+  build.handleData("g", layout)
+  assert.equal(build.state.popup, "controls")
 })

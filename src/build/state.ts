@@ -1565,6 +1565,13 @@ function dismissPopup(state: BuildState): BuildState {
 
 function applyCommand(context: BuildContext, state: BuildState, command: BuildCommand): BuildState {
   switch (command.kind) {
+    case "go-nexus": {
+      // Nothing to go to on a map without a Nexus of the player's; a popup holds the keyboard.
+      const nexus = nexusTile(context)
+      if (nexus === null || state.popup !== null) return state
+      return withCursor(context, { ...state, focus: "grid" }, nexus)
+    }
+
     case "move-cursor":
       // Every key move, the fast move's jump included, drags the view at the margin: a jump does not
       // re-centre it (the owner turned "Shift centres" off).
