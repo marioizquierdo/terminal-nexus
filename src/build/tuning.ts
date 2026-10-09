@@ -61,15 +61,29 @@ const SETTLED_CHOICES = [
 
 /** Tuned values since retired, because the rule they tuned is gone: the held-key ramp's hold step,
  *  fast step and ramp time (2 tiles a repeat, then 4), replaced by counting taps and a hold cadence (the
- *  owner reported the old ramp felt wrong). An old export still names them (they were
- *  Experiments once). */
-const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs"] as const
+ *  owner reported the old ramp felt wrong); and `holdFirstStep`, a held arrow's step, which is the arrow's
+ *  own step now (`tapStep`). An old export may still name them (the first three were Experiments once). */
+const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs", "holdFirstStep"] as const
 
-/** Experiments retired because what they chose became data: the placeholder Pulse's Raid and Your units,
+/** Experiments retired because what they chose became data, or because the rule they tuned is gone: the placeholder Pulse's Raid and Your units,
  *  replaced by PERIMETER's raid and starting squads (`armies/vasse/army.json`); and the Barracks's pace — how
  *  often it trained and how many a round — replaced by the owner's numbers on the Barracks itself, a wave of
  *  troopers a round (`spawns`, `armies/all/army.json`). */
-const RETIRED_EXPERIMENTS = ["raid", "crew", "trainEvery", "trainPerRound"] as const
+const RETIRED_EXPERIMENTS = [
+  "raid",
+  "crew",
+  "trainEvery",
+  "trainPerRound",
+  // Acceleration, and the numbers it used: counted taps that sped up and a long hold that went further,
+  // removed when the owner played the build without them (2026-10-09: "that was a bad idea").
+  "acceleration",
+  "doubleTapMs",
+  "fastTapMs",
+  "tapsToSpeedUp",
+  "tapTopStep",
+  "holdLongMs",
+  "holdLongStep",
+] as const
 
 /**
  * The names the settled Experiments had in a settings export: every tuned setting's — derived from the

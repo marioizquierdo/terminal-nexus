@@ -86,24 +86,20 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   const text = screenText(side)
   assert.match(text, /SETTINGS/)
   assert.match(text, /KEYBOARD NAVIGATION - experiments/)
-  // In order, group by group: keyboard navigation — the hold window and key releases
-  // from the third round, and the tap, hold and jump numbers back for the navigation polish round — the
-  // popup pulse (every popup's) and the Battle Round flash, and the mission's next round, Vasse's health,
+  // In order, group by group: keyboard navigation — how far an arrow and Shift go, how often a held key
+  // moves, then the terminal's own two (the hold window and key releases) — the popup pulse (every popup's) and the Battle Round flash, and the mission's next round, Vasse's health,
   // the build range, her aura, the space a Barracks keeps and whether a Nexus power must be picked. (Her voice in
   // battle was settled beside her.)
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
     [
+      "tapStep",
+      "jumpStep",
+      "jumpStepDown",
+      "jumpRepeatMs",
+      "holdMoveMs",
       "holdWindowMs",
       "keyReleases",
-      "doubleTapMs",
-      "fastTapMs",
-      "tapsToSpeedUp",
-      "tapTopStep",
-      "holdMoveMs",
-      "holdLongMs",
-      "holdLongStep",
-      "jumpStep",
       "popupPulseMs",
       "popupFlashMs",
       "popupFlashPeak",
@@ -117,12 +113,12 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   )
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.section),
-    [...Array.from({ length: 10 }, () => "keyboard"), "effects", "effects", "effects", ...Array.from({ length: 6 }, () => "mission")],
+    [...Array.from({ length: 7 }, () => "keyboard"), "effects", "effects", "effects", ...Array.from({ length: 6 }, () => "mission")],
   )
   // The bottom line says what the keys do there, and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
   assert.match(text, /Left\/right change a value, \[e\] exports them all\. \[esc\] closes\./)
-  assert.ok(text.includes("Arrow presses closer than this"), "the hold window's question is not shown")
+  assert.ok(text.includes("How many tiles an arrow moves the cursor"), "the first row's question is not shown")
   // The owner reads the questions on screen: no feedback or question numbers to look up.
   for (const spec of EXPERIMENT_FIELDS) assert.doesNotMatch(spec.question, /\((F|Q)\d+\)/, spec.field)
   const hold = buildSide()

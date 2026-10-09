@@ -471,7 +471,7 @@ test("a refusal records why, and its tile; every command records the bottom line
 
 test("popups opening and settings changing are recorded — not a popup coming back into view", () => {
   const side = session()
-  keys(side, ESC, "s", RIGHT, ESC, ESC, "d", LEFT)
+  keys(side, ESC, "s", RIGHT, ESC, ESC, "d", RIGHT)
   const opens = side.activity.entries().filter((entry) => entry.event === "popup.open").map((entry) => entry.props["popup"])
   assert.deepEqual(opens, ["game-menu", "settings", "settings"])
   const changes = side.activity.entries().filter((entry) => entry.event === "setting.change").map((entry) => entry.props)

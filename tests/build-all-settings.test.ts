@@ -72,7 +72,7 @@ test("a value reads the same wherever it is: the live Experiment, the saved sett
   assert.equal(formatValue("popupPulseMs", 2000), "2000 ms")
   assert.equal(formatValue("jumpStep", 1), "1 tile")
   assert.equal(formatValue("jumpStep", 10), "10 tiles")
-  assert.equal(formatValue("tapsToSpeedUp", 3), "3 taps")
+  assert.equal(formatValue("cursorBlinks", 3), "3 taps")
   assert.equal(formatValue("reducedMotion", true), "on")
   assert.equal(formatValue("capability", "color16"), "16")
   assert.equal(formatValue("nextRound", "auto"), "auto")

@@ -1,8 +1,9 @@
 // Movement feel, reworked after the owner's 2026-09-28 playtest, settled by his settings export
 // of 2026-09-30, and reworked again by his third round the same day (taps speed up by counting, a
-// hold runs at the game's own cadence, and key events are read where the terminal reports them; the
-// numbers are tuned values, `src/build/tuning.ts`, and only the hold window and key releases are
-// Experiments). Taps, holds and the Shift jump, the cursor glide, the share-of-view scroll
+// hold runs at the game's own cadence, and key events are read where the terminal reports them), then
+// once more when he asked for no acceleration, where only Shift changes the speed: an arrow moves its step
+// however it is pressed, and the arrow's step and Shift's step and pace are Experiments.
+// Taps, holds and the Shift jump, the cursor glide, the share-of-view scroll
 // margin, clicks that scroll armed or not, the sliding view, the refused-placement flash, the lone-Esc
 // timeout and the frame timer. Every timing claim is made against an injected clock — a number — so
 // nothing here waits, except the one lifecycle test of the frame timer itself, which has to.
@@ -64,8 +65,11 @@ function exploring(context: BuildContext = starterContext(), cursor: Coord = OPE
 }
 
 
-/** The rules the game runs: the tuned values, and the hold window's default. */
+/** The rules the game runs at this build's defaults: an arrow one tile, Shift ten. */
 const TUNED: MoveTuning = DEFAULT_MOVE_TUNING
+
+/** Taps a player makes as fast as they can, inside the old "quick tap" window: still one step each. */
+const QUICK = 150
 
 /** A key event as the rules see it: when it came, and what the terminal said it was (`null`: nothing). */
 type At = readonly [number, KeyPhase | null]
@@ -116,24 +120,27 @@ const hold = (tiles: number): string => `hold ${tiles}`
 
 // --- Taps and holds (the owner's third round) --------------------------------------------------
 
-test("the motion rules run on each number as it is now: the navigation Experiments, and the tuned rest", () => {
+test("the motion rules run on each number as it is now: the navigation Experiments, and nothing accelerates", () => {
   // Every number is its setting's value, whichever tier it stands on — at this build's defaults here.
   for (const [name, value] of Object.entries(TUNED)) assert.equal(value, defaultValue(name as SettingName), `${name} is not its setting's value`)
-  // The navigation polish round's Experiments and the third round's two; the rest tuned.
+  // The keyboard navigation Experiments, in the order Settings lists them: how far an arrow and Shift go,
+  // how often a held key moves, then the terminal's own two.
   const movement = [...Object.keys(TUNED), "keyReleases", "cursorGlideMs"]
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => movement.includes(field)),
-    ["holdWindowMs", "keyReleases", "doubleTapMs", "fastTapMs", "tapsToSpeedUp", "tapTopStep", "holdMoveMs", "holdLongMs", "holdLongStep", "jumpStep"],
+    ["tapStep", "jumpStep", "jumpStepDown", "jumpRepeatMs", "holdMoveMs", "holdWindowMs", "keyReleases"],
   )
-  for (const name of ["tapStep", "holdFirstStep", "jumpRepeatMs"] as const) assert.equal(TUNED[name], TUNING[name], `${name} is not the tuned value`)
-  // The owner's own numbers, unchanged by coming back as Experiments: a double tap, a quick one, three
-  // taps, and four tiles at the top.
-  assert.deepEqual([TUNED.doubleTapMs, TUNED.fastTapMs, TUNED.tapsToSpeedUp, TUNED.tapStep, TUNED.tapTopStep], [400, 300, 3, 1, 4])
-  // The held-key ramp's fast step and ramp time are gone — and an old export naming them is still read quietly.
-  for (const gone of ["holdStep", "fastStep", "rampMs", "slowStep", "normalStep", "fasterStep", "slowAfterTurn"]) {
-    assert.ok(!(gone in TUNING), `${gone} is still a tuned value`)
+  for (const name of ["tapStep", "jumpRepeatMs"] as const) assert.ok(!(name in TUNING), `${name} is still a tuned value`)
+  // The owner's Shift jump: 9 across, 6 up or down, since a row is about twice as tall as a column is wide.
+  assert.deepEqual([TUNED.jumpStep, TUNED.jumpStepDown], [9, 6])
+  assert.deepEqual([moves(JUMP_EAST, presses([0])), moves({ dx: 0, dy: 1, jump: true }, presses([0]))], [["jump 9"], ["jump 6"]])
+  // Acceleration is gone (the owner: "that was a bad idea"), and so are the held-key ramp's numbers — an old
+  // export naming any of them is still read quietly.
+  const gone = ["acceleration", "doubleTapMs", "fastTapMs", "tapsToSpeedUp", "tapTopStep", "holdLongMs", "holdLongStep", "holdStep", "fastStep", "rampMs", "holdFirstStep"]
+  for (const name of gone) {
+    assert.ok(!(name in TUNING) && !EXPERIMENT_FIELDS.some((spec) => spec.field === name), `${name} is still a setting`)
+    assert.ok(SETTLED_EXPERIMENTS.has(name), `an old export's ${name} would be reported as unknown`)
   }
-  assert.ok(["holdStep", "fastStep", "rampMs"].every((name) => SETTLED_EXPERIMENTS.has(name)), "an old export's ramp names would be reported as unknown")
 })
 
 test("a navigation number changed in Settings changes the very next key", () => {
@@ -147,83 +154,23 @@ test("a navigation number changed in Settings changes the very next key", () => 
   assert.equal(jump.build.state.cursor.x, start.x + far)
   jump.build.handleData(SHIFT_RIGHT, jump.layout)
   assert.equal(jump.build.state.cursor.x, start.x + 2 * far)
-  // Taps to speed up, one step down: the second quick tap already doubles the speed — 1, 2.
-  const quick = TUNED.fastTapMs - 50
-  const eager = exploring(starterContext(), start)
-  eager.build.dispatch({ kind: "setting-adjust", field: "tapsToSpeedUp", step: -1 })
-  assert.equal(eager.build.state.experiments.tapsToSpeedUp, 2)
-  timed(eager, taps(0, 2, quick).map((at) => [RIGHT, at] as const))
-  assert.equal(eager.build.state.cursor.x, start.x + 1 + 2)
-  // The fastest tap at one tile: however quick the taps, they never speed up.
-  const steady = exploring(starterContext(), start)
-  for (let step = 0; step < 4; step += 1) steady.build.dispatch({ kind: "setting-adjust", field: "tapTopStep", step: -1 })
-  assert.equal(steady.build.state.experiments.tapTopStep, 1)
-  timed(steady, taps(0, 6, quick).map((at) => [RIGHT, at] as const))
-  assert.equal(steady.build.state.cursor.x, start.x + 6)
-  // The hold pace and the tap run window reach the rules as the session reads them.
+  // The hold pace reaches the rules as the session reads it.
   const paced = exploring(starterContext(), start)
   paced.build.dispatch({ kind: "setting-adjust", field: "holdMoveMs", step: 1 })
-  paced.build.dispatch({ kind: "setting-adjust", field: "doubleTapMs", step: -1 })
   const live = moveTuning(paced.build.state)
-  assert.ok(live.holdMoveMs > TUNED.holdMoveMs && live.doubleTapMs < TUNED.doubleTapMs)
+  assert.ok(live.holdMoveMs > TUNED.holdMoveMs)
   const holding = held(0, 60, 180, 25)
   const movesAt = (tuning: MoveTuning): number => moves(EAST, presses(holding), tuning).filter((move) => move.startsWith("hold") && !move.endsWith(" 0")).length
   assert.ok(movesAt(live) < movesAt(TUNED), "a slower hold pace did not move less often")
 })
 
-test("a tap moves one tile, and taps further apart than a double tap stay one tile each", () => {
-  const slow = TUNED.doubleTapMs + 100
+test("a tap moves one tile, slow taps and quick ones alike", () => {
+  const slow = 500
   assert.deepEqual(moves(EAST, presses(taps(0, 4, slow))), [tap(1), tap(1), tap(1), tap(1)])
   const side = exploring()
   timed(side, taps(0, 4, slow).map((at) => [RIGHT, at] as const))
   assert.equal(side.build.state.cursor.x, OPEN_GROUND.x + 4)
   assert.deepEqual(side.build.lastMove, { kind: "tap", tiles: 1 })
-})
-
-test("taps speed up by counting: the third tap moves 2 only if it came quickly — 1, 1, 2", () => {
-  const double = TUNED.doubleTapMs - 50 // a double tap, not a quick one
-  const quick = TUNED.fastTapMs - 50
-  // The owner's "succession of double-tap and then fast-tap": 1, 1, 2.
-  assert.deepEqual(moves(EAST, presses([0, double, double + quick])), [tap(1), tap(1), tap(2)])
-  // Three quick taps: the same.
-  assert.deepEqual(moves(EAST, presses(taps(0, 3, quick))), [tap(1), tap(1), tap(2)])
-  // Double taps that are never quick keep the speed they have: one tile, however many.
-  assert.deepEqual(moves(EAST, presses(taps(0, 5, double))), [tap(1), tap(1), tap(1), tap(1), tap(1)])
-  // "At least three, the last one a bit faster": the fourth tap, quick, speeds up.
-  assert.deepEqual(moves(EAST, presses([0, double, 2 * double, 2 * double + quick])), [tap(1), tap(1), tap(1), tap(2)])
-  // Two quick taps alone never do.
-  assert.deepEqual(moves(EAST, presses(taps(0, 2, quick))), [tap(1), tap(1)])
-})
-
-test("at 2 a run keeps its speed on double taps; three more taps, the last quick, double it to 4, and 4 is the top", () => {
-  const double = TUNED.doubleTapMs - 50
-  const quick = TUNED.fastTapMs - 50
-  const start = [0, double, double + quick]
-  // Six more at a quick pace: three taps at 2 (the one that sped up, and two more), then 4 on the third.
-  const fast = moves(EAST, presses([...start, ...taps(double + 2 * quick, 6, quick)]))
-  assert.deepEqual(fast, [tap(1), tap(1), tap(2), tap(2), tap(2), tap(4), tap(4), tap(4), tap(4)])
-  // Six more at double-tap pace, never quick: the speed is kept, and never doubles.
-  const steady = moves(EAST, presses([...start, ...taps(double + quick + double, 6, double)]))
-  assert.deepEqual(steady, [tap(1), tap(1), tap(2), tap(2), tap(2), tap(2), tap(2), tap(2), tap(2)])
-  // Through the session, the same taps land on the sum of their steps.
-  const side = exploring(starterContext(), { x: 0, y: 13 })
-  timed(side, [...start, ...taps(double + 2 * quick, 6, quick)].map((at) => [RIGHT, at] as const))
-  assert.equal(side.build.state.cursor.x, 1 + 1 + 2 + 2 + 2 + 4 * 4)
-})
-
-test("a slower gap, another arrow, or any other key starts the run over at one", () => {
-  const quick = TUNED.fastTapMs - 50
-  const fast = presses(taps(0, 3, quick)) // at 2 now
-  const at2 = after(EAST, fast)
-  const next = 2 * quick
-  assert.deepEqual(moves(EAST, presses([next + TUNED.doubleTapMs + 1]), TUNED, at2), [tap(1)], "a slow gap kept the speed")
-  assert.deepEqual(moves(WEST, presses([next + quick]), TUNED, at2), [tap(1)], "another arrow kept the speed")
-  // Tab and back between two quick taps: one tile.
-  const side = exploring(starterContext(), { x: 0, y: 13 })
-  timed(side, taps(0, 3, quick).map((at) => [RIGHT, at] as const))
-  const x = side.build.state.cursor.x
-  timed(side, [[TAB, next + 50], [TAB, next + 100], [RIGHT, next + 150]])
-  assert.equal(side.build.state.cursor.x, x + 1)
 })
 
 test("a held arrow moves at the game's own cadence, the same average speed whatever the keyboard's repeat rate", () => {
@@ -232,7 +179,7 @@ test("a held arrow moves at the game's own cadence, the same average speed whate
     const times = held(0, Math.floor(window / every), 180, every)
     const got = moves(EAST, presses(times))
     assert.equal(got[0], tap(1))
-    assert.equal(got[1], hold(TUNED.holdFirstStep), `${every} ms: the first repeat did not move at once`)
+    assert.equal(got[1], hold(TUNED.tapStep), `${every} ms: the first repeat did not move at once`)
     // Moves come at most as often as the cadence allows, on average exactly that often.
     const moveTimes = times.filter((_, index) => index > 0 && !(got[index] ?? "").endsWith(" 0"))
     const span = (moveTimes.at(-1) ?? 0) - (moveTimes[0] ?? 0)
@@ -247,52 +194,38 @@ test("a held arrow moves at the game's own cadence, the same average speed whate
   }
   // A keyboard that repeats slower than the cadence moves once a repeat — "at most", never catching up.
   const slow = moves(EAST, presses(held(0, 5, 180, TUNED.holdMoveMs + 30)))
-  assert.deepEqual(slow.slice(1), Array.from({ length: 5 }, () => hold(TUNED.holdFirstStep)))
-})
-
-test("a held arrow moves its first step until it has repeated for a while, then its long step", () => {
-  const times = held(0, 60, 180, 30)
-  const got = moves(EAST, presses(times))
-  const holdStart = times[1] as number
-  times.forEach((at, index) => {
-    const move = got[index] as string
-    if (index === 0 || move === hold(0)) return
-    assert.equal(move, hold(at - holdStart >= TUNED.holdLongMs ? TUNED.holdLongStep : TUNED.holdFirstStep), `repeat at ${at} ms`)
-  })
-  assert.ok(got.includes(hold(TUNED.holdLongStep)), "the hold never reached its long step")
-  // A short hold — "a position a few tiles away" — never does.
-  const short = moves(EAST, presses(held(0, Math.floor(TUNED.holdLongMs / 30) - 1, 180, 30)))
-  assert.ok(!short.includes(hold(TUNED.holdLongStep)))
+  assert.deepEqual(slow.slice(1), Array.from({ length: 5 }, () => hold(TUNED.tapStep)))
 })
 
 test("without key events, a press within the hold window is a held key's repeat and a slower one a tap; the window is live", () => {
   const gap = 180
   assert.ok(gap < TUNED.holdWindowMs)
   // Presses 180 ms apart are a hold in the default window: a tap, then the hold's moves on its cadence.
-  assert.deepEqual(moves(EAST, presses(taps(0, 3, gap))), [tap(1), hold(TUNED.holdFirstStep), hold(TUNED.holdFirstStep)])
-  // The same presses, the window narrowed below the gap: taps — quick ones, so the third speeds up.
+  assert.deepEqual(moves(EAST, presses(taps(0, 3, gap))), [tap(1), hold(TUNED.tapStep), hold(TUNED.tapStep)])
+  // The same presses, the window narrowed below the gap: taps, one tile each.
   const narrow = { ...TUNED, holdWindowMs: gap - 10 }
-  assert.deepEqual(moves(EAST, presses(taps(0, 3, gap)), narrow), [tap(1), tap(1), tap(2)])
-  // The Experiment is what the session reads.
+  assert.deepEqual(moves(EAST, presses(taps(0, 3, gap)), narrow), [tap(1), tap(1), tap(1)])
+  // The Experiment is what the session reads: a tap is never held back by the cadence.
   const tuned = exploring()
   for (let step = 0; step < 10 && tuned.build.state.experiments.holdWindowMs >= gap; step += 1) {
     tuned.build.dispatch({ kind: "experiment-adjust", field: "holdWindowMs", step: -1 })
   }
   assert.ok(tuned.build.state.experiments.holdWindowMs < gap, "the hold window does not go below the gap")
   timed(tuned, taps(0, 3, gap).map((at) => [RIGHT, at] as const))
-  assert.equal(tuned.build.state.cursor.x, OPEN_GROUND.x + 1 + 1 + 2)
+  assert.deepEqual(tuned.build.lastMove, { kind: "tap", tiles: 1 })
+  assert.equal(tuned.build.state.cursor.x, OPEN_GROUND.x + 3)
   // A keyboard whose repeat delay is longer than the window loses only its first repeat to a tap.
-  assert.deepEqual(moves(EAST, presses(held(0, 2, TUNED.holdWindowMs + 50))), [tap(1), tap(1), hold(TUNED.holdFirstStep)])
+  assert.deepEqual(moves(EAST, presses(held(0, 2, TUNED.holdWindowMs + 50))), [tap(1), tap(1), hold(TUNED.tapStep)])
 })
 
 test("with key events the terminal says which is which: quick taps are taps, and a release ends a hold at once", () => {
   const gap = 150 // inside the hold window, where a classic terminal's presses would read as a hold
-  assert.deepEqual(moves(EAST, taps(0, 3, gap).map((at) => [at, "press"] as const)), [tap(1), tap(1), tap(2)])
+  assert.deepEqual(moves(EAST, taps(0, 3, gap).map((at) => [at, "press"] as const)), [tap(1), tap(1), tap(1)])
   // A hold: its press, its repeats on the cadence, its release — and the tap after it is one tile.
   const events = heldEvents(0, 20)
   const got = moves(EAST, [...events, [1_000, "press"]])
   assert.equal(got[0], tap(1))
-  assert.equal(got[1], hold(TUNED.holdFirstStep))
+  assert.equal(got[1], hold(TUNED.tapStep))
   assert.equal(got.at(-2), "release 0")
   assert.equal(got.at(-1), tap(1))
   // A repeat after the release starts a new hold, moving at once; another key's release changes nothing.
@@ -302,13 +235,56 @@ test("with key events the terminal says which is which: quick taps are taps, and
   assert.notEqual(moveStep(stillHeld, WEST, 900, "release", TUNED).memory.holdStart, null, "another key's release ended the hold")
 })
 
-test("a hold breaks a run of taps: the tap after it is one tile, with or without key events", () => {
-  const quick = TUNED.fastTapMs - 50
-  // Two quick taps, a hold, and a quick tap after it: without the hold the third would be 2.
-  const legacy = moves(EAST, presses([0, quick, ...held(2 * quick, 5).map((at) => at + 400), 2 * quick + 400 + 180 + 5 * 30 + 250]))
-  assert.equal(legacy.at(-1), tap(1))
-  const reported = moves(EAST, [[0, "press"], [quick, "press"], ...heldEvents(2 * quick + 400, 5), [2 * quick + 400 + 180 + 5 * 30 + 250, "press"]])
-  assert.equal(reported.at(-1), tap(1))
+// --- No acceleration: Shift is the only change of speed (the owner: "that was a bad idea") -----------
+
+test("an arrow always moves its step: quick taps and long holds never go further", () => {
+  // Twelve taps as fast as a player makes them: one tile each.
+  assert.deepEqual(moves(EAST, presses(taps(0, 12, QUICK)).map(([at]) => [at, "press"] as const)), Array.from({ length: 12 }, () => tap(1)))
+  // A hold of three seconds, the keyboard repeating every 30 ms: every move is one tile, to the end.
+  const got = moves(EAST, presses(held(0, 100, 180, 30)))
+  assert.deepEqual([...new Set(got.filter((move) => move !== hold(0)))].sort(), [hold(1), tap(1)])
+  // Through the session, with a clock: eight quick taps, eight tiles.
+  const side = exploring(starterContext(), { x: 0, y: 13 })
+  side.build.setKeyReleases(true)
+  timed(side, taps(0, 8, QUICK).map((at) => [RIGHT, at] as const))
+  assert.equal(side.build.state.cursor.x, 8)
+})
+
+test("the arrow's step is how far a tap and each move of a held arrow go, and Shift can be the slow move", () => {
+  const five = { ...TUNED, tapStep: 5, jumpStep: 1 }
+  assert.deepEqual(moves(EAST, presses(taps(0, 4, 500)), five), [tap(5), tap(5), tap(5), tap(5)])
+  assert.deepEqual(moves(EAST, presses(held(0, 3, 180, five.holdMoveMs + 30)), five), [tap(5), hold(5), hold(5), hold(5)])
+  assert.deepEqual(moves(JUMP_EAST, presses([0, 500]), five), ["jump 1", "jump 1"])
+  // And through the session: the map cursor goes five, Shift one — and a list still goes one row.
+  const side = exploring(starterContext(), { x: 0, y: 13 })
+  for (const [field, steps] of [["tapStep", 4], ["jumpStep", -9]] as const) {
+    for (let step = 0; step < Math.abs(steps); step += 1) side.build.dispatch({ kind: "setting-adjust", field, step: steps > 0 ? 1 : -1 })
+  }
+  assert.deepEqual([side.build.state.experiments.tapStep, side.build.state.experiments.jumpStep], [5, 1])
+  timed(side, [[RIGHT, 0], [RIGHT, 500], [SHIFT_RIGHT, 1_000]])
+  assert.equal(side.build.state.cursor.x, 0 + 5 + 5 + 1)
+  assert.deepEqual(side.build.lastMove, { kind: "jump", tiles: 1 })
+  const list = buildSide()
+  for (let step = 0; step < 4; step += 1) list.build.dispatch({ kind: "setting-adjust", field: "tapStep", step: 1 })
+  const first = list.build.state.menuHighlight
+  timed(list, [[DOWN, 0], [DOWN, 500], [DOWN, 1_000]])
+  assert.equal(list.build.state.menuHighlight, first + 3, "a list moved by the map's step")
+})
+
+test("a held arrow's pace can be taken off: every repeat the keyboard sends then moves; Shift's pace is its own setting", () => {
+  const unpaced = { ...TUNED, holdMoveMs: 0 }
+  const got = moves(EAST, presses(held(0, 10, 180, 25)), unpaced)
+  assert.deepEqual(got, [tap(1), ...Array.from({ length: 10 }, () => hold(1))])
+  // The same keyboard on the default pace drops some.
+  assert.ok(moves(EAST, presses(held(0, 10, 180, 25)), TUNED).includes(hold(0)))
+  // Shift's pace: a held Shift-arrow, repeating every 30 ms, moves again at most that often.
+  const slow = { ...TUNED, jumpRepeatMs: 300 }
+  const repeats = presses(held(0, 10, 400, 30))
+  const jumps = (tuning: MoveTuning): number => moves(JUMP_EAST, repeats, tuning).filter((move) => move !== "jump 0").length
+  assert.ok(jumps(slow) < jumps(TUNED), "a slower Shift pace did not move less often")
+  const side = exploring(starterContext(), { x: 0, y: 13 })
+  for (let step = 0; step < 2; step += 1) side.build.dispatch({ kind: "setting-adjust", field: "jumpRepeatMs", step: 1 })
+  assert.ok(moveTuning(side.build.state).jumpRepeatMs > TUNED.jumpRepeatMs, "the session did not read the Shift pace")
 })
 
 /**
@@ -317,8 +293,8 @@ test("a hold breaks a run of taps: the tap after it is one tile, with or without
  * marked, with a release), through the session's raw-bytes path.
  */
 function parityIntent(key: string): Readonly<{ timed: (readonly [string, number])[]; marked: (readonly [string, number])[] }> {
-  const quick = TUNED.fastTapMs - 50
-  const double = TUNED.doubleTapMs - 50
+  const quick = 250
+  const double = 350
   const repeat = encodeKeyEvent(key, "repeat")
   const release = encodeKeyEvent(key, "release")
   const timedKeys: [string, number][] = []
@@ -358,7 +334,7 @@ test("the same intent as timed presses and as press, repeat and release events l
   // The release moves nothing, so the marked sequence's positions are the timed one's with it repeated.
   const markedPositions = positions(byEvents, intent.marked).filter((_, index) => intent.marked[index]?.[0] !== encodeKeyEvent(RIGHT, "release"))
   assert.deepEqual(markedPositions, timedPositions)
-  assert.ok((timedPositions.at(-1) ?? 0) > 40, "the intent hardly moved")
+  assert.ok((timedPositions.at(-1) ?? 0) > 25, "the intent hardly moved")
   // A list moves by the same rule: the Controls page's lines, walked with Down both ways.
   const rows = (reported: boolean): number[] => {
     const list = buildSide()
@@ -433,9 +409,9 @@ test("without a clock every arrow is a tap and every Shift+Arrow one jump: drive
   const start = untimed.frames[1]?.state.cursor.x ?? 0
   assert.equal(untimed.frames.at(-1)?.state.cursor.x, start + 10)
   assert.deepEqual(untimed.frames.slice(2).map((frame) => frame.moveKind), Array.from({ length: 10 }, () => "tap 1"))
-  // `~ms` times them: quick taps speed up, and a hold runs on the cadence (the summary says which).
-  const tapping = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right Right~350 Right~250") })
-  assert.deepEqual(tapping.frames.slice(2).map((frame) => frame.moveKind), ["tap 1", "tap 1", "tap 2"])
+  // `~ms` times them: taps stay one tile however quick, and a hold runs on the cadence (the summary says which).
+  const steady = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right Right~350 Right~250") })
+  assert.deepEqual(steady.frames.slice(2).map((frame) => frame.moveKind), ["tap 1", "tap 1", "tap 1"])
   const holding = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right Right~180 Right~30*10") })
   const kinds = holding.frames.slice(3).map((frame) => frame.moveKind)
   assert.ok(kinds.includes("hold 1") && kinds.includes("hold 0"), `a held key in a script: ${kinds.join(", ")}`)
@@ -881,7 +857,7 @@ test("with only the raid's trail moving, the live screen redraws at the trail's 
   // Three jumps, each its own press: a held jump repeats no faster than it can be seen to land.
   for (let jump = 0; jump < 3; jump += 1) {
     stdin.emit("data", Buffer.from(SHIFT_DOWN))
-    await wait(TUNING.jumpRepeatMs + 100)
+    await wait(TUNED.jumpRepeatMs + 100)
   }
   await wait(TUNING.easeMs + TUNING.cursorGlideMs + 200)
   const away = stdout.frames

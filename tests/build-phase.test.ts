@@ -26,7 +26,7 @@ import {
 } from "../src/build/mouse.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import type { BuildSessionOptions } from "../src/view/build-session.ts"
-import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, remaining, spent } from "../src/build/state.ts"
+import { anchorForCursor, applyBuildCommand, armedPreview, createBuildState, entryOfConstruct, legalityAt, nexusTile, remaining, spent } from "../src/build/state.ts"
 import { popupSpec } from "../src/build/popup.ts"
 import { cardText } from "../src/build/card.ts"
 import { bottomLine } from "../src/build/help.ts"
@@ -231,13 +231,14 @@ test("a second Enter after a placement never places a second building", () => {
 test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
   // shifted arrow and none at all on several terminals, which is why all of these are bound. How far
-  // it jumps is the "Jump distance" setting (`jumpStep`), at its default here.
+  // it jumps is the Shift step settings, across (`jumpStep`) and up or down (`jumpStepDown`), at their defaults.
   const context = { itemCount: 3, armed: false }
   const fast = defaultValue("jumpStep")
+  const fastDown = defaultValue("jumpStepDown")
   assert.deepEqual(buildKeyboardCommand(RIGHT, context), { kind: "move-cursor", dx: 1, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fast })
+  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fastDown })
   // Home and End have three live spellings between xterm, screen/tmux/linux and rxvt; all of them
   // mean the same move.
   for (const home of [`${ESC}OH`, `${ESC}[1~`, `${ESC}[7~`, `${ESC}[H`]) {
@@ -254,9 +255,10 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   // arrived as a bare Escape plus a stray "b" - which, with nothing armed, left the screen.
   const context = { itemCount: 3, armed: false }
   const fast = defaultValue("jumpStep")
+  const fastDown = defaultValue("jumpStepDown")
   assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fast })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fastDown })
   // End to end, through the real splitter: nothing is armed, and the screen is not left.
   const context2 = starterContext()
   const layout = buildLayout(MINIMUM, context2.grid)
@@ -325,7 +327,7 @@ test("keyboard: h j k l are the arrows everywhere, and H J K L the fast move", (
   }
   // On the map they really move the cursor, and Shift really jumps.
   assert.deepEqual(buildKeyboardCommand("l", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 1, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand("J", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 0, dy: defaultValue("jumpStep") })
+  assert.deepEqual(buildKeyboardCommand("J", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 0, dy: defaultValue("jumpStepDown") })
 })
 
 test("mouse: the wheel moves the cursor five tiles and drags the camera with it", () => {
@@ -827,4 +829,25 @@ test("a move clamped back to the same tile keeps the refusal on screen, read qui
   const line = bottomLine(context, build.state, armedPreview(context, build.state))
   assert.match(line.text, /Cannot build here/, "the cursor never left the tile the refusal named")
   assert.equal(line.tone, undefined, "the lapsed attempt still reads as an attempt")
+})
+
+test("keyboard: g goes to the player's Nexus from the menu or the map, and the keyboard goes to the map", () => {
+  const context = starterContext()
+  const nexus = nexusTile(context)
+  assert.ok(nexus !== null)
+  assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "menu" }), { kind: "go-nexus" })
+  assert.deepEqual(buildKeyboardCommand("g", { itemCount: 3, armed: false, focus: "grid" }), { kind: "go-nexus" })
+  const layout = buildLayout(MINIMUM, context.grid)
+  // From the menu, the cursor far away: one key, and the cursor stands on the Nexus with the view on it.
+  const build = readyBuildSession({ context, cursor: { x: 0, y: 0 }, viewport: layout.viewport })
+  build.dispatch({ kind: "focus", target: "menu" })
+  build.handleData("g", layout)
+  assert.deepEqual(build.state.cursor, nexus)
+  assert.equal(build.state.focus, "grid")
+  const { camera, viewport } = build.state
+  assert.ok(nexus.x >= camera.x && nexus.x < camera.x + viewport.width && nexus.y >= camera.y && nexus.y < camera.y + viewport.height, "the Nexus is not in view")
+  // Inside a popup it means nothing.
+  build.handleData("?", layout)
+  build.handleData("g", layout)
+  assert.equal(build.state.popup, "controls")
 })

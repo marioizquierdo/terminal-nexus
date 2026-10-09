@@ -359,8 +359,8 @@ test("the page is one table: every situation, every line fits at the floor, and 
       }
     }
   }
-  // The Shift jump is the "Jump distance" setting, read rather than copied...
-  const jump = `jump ${defaultValue("jumpStep")} tiles`
+  // The Shift jump is the Shift step settings, read rather than copied...
+  const jump = `jump ${defaultValue("jumpStep")} across, ${defaultValue("jumpStepDown")} up/down`
   assert.ok(sections.some((section) => section.lines.some((entry) => entry.text === jump)))
   const side = buildSide()
   keys(side, "?", ...Array.from({ length: 10 }, () => DOWN))
@@ -371,7 +371,29 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const now = moved.build.state.experiments.jumpStep
   assert.notEqual(now, defaultValue("jumpStep"))
   keys(moved, "?", ...Array.from({ length: 10 }, () => DOWN))
-  assert.ok(screenText(moved).includes(`jump ${now} tiles`), "the page still says the default jump")
+  assert.ok(screenText(moved).includes(`jump ${now} across`), "the page still says the default jump")
+})
+
+test("the page says what the arrows and Shift do in the build being played: the arrow's step, and Shift as the slow move", () => {
+  const mapLines = (numbers: Parameters<typeof controlsPage>[0]): Record<string, string> =>
+    Object.fromEntries((controlsPage(numbers).find((section) => section.heading === "THE MAP")?.lines ?? []).map((entry) => [entry.keys, entry.text]))
+  const base = { arrowStep: 1, shiftStep: 9, shiftStepDown: 6 } as const
+  // The default: an arrow one tile, held or not, and Shift ten.
+  assert.deepEqual([mapLines(base)["arrows"], mapLines(base)["shift+arrow"]], ["move 1 tile; hold repeats", "jump 9 across, 6 up/down"])
+  assert.equal(mapLines(undefined)["arrows"], "move 1 tile; hold repeats", "the page without numbers is the build's defaults")
+  // The arrow's step and Shift's, whichever is further: Shift can be the slow, exact move.
+  assert.equal(mapLines({ ...base, arrowStep: 5 })["arrows"], "move 5 tiles; hold repeats")
+  assert.equal(mapLines({ ...base, arrowStep: 5, shiftStep: 1, shiftStepDown: 1 })["shift+arrow"], "slow: 1 tile")
+  assert.equal(mapLines({ ...base, arrowStep: 3, shiftStep: 3, shiftStepDown: 3 })["shift+arrow"], "3 tiles")
+  // Every wording fits the 28 columns the page leaves at the 80-column floor.
+  for (const [arrowStep, shiftStep, shiftStepDown] of [[1, 20, 12], [10, 1, 1], [10, 10, 12], [4, 4, 6], [1, 20, 10]] as const) {
+    for (const text of Object.values(mapLines({ arrowStep, shiftStep, shiftStepDown }))) assert.ok(text.length <= 28, `"${text}" is cut`)
+  }
+  // And the open page follows Settings.
+  const side = buildSide()
+  side.build.dispatch({ kind: "setting-adjust", field: "tapStep", step: 1 })
+  keys(side, "?", ...Array.from({ length: 10 }, () => DOWN))
+  assert.ok(screenText(side).includes("move 2 tiles; hold repeats"), "the page still says one tile")
 })
 
 test("the page names only keys the adapters bind, and every command key they bind is on it", () => {

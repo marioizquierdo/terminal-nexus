@@ -1,0 +1,22 @@
+[
+  {
+    "label": "Arrows and Shift",
+    "try": "The map, the keyboard on it. Every tap of an arrow is one tile, and a held arrow keeps a steady pace. Shift with an arrow jumps 9 across and 6 up or down. Press g from anywhere to go back to your Nexus. Press d to change the steps and paces under KEYBOARD NAVIGATION.",
+    "at": "campaign?level=vasse-test-1",
+    "keys": "Esc Tab"
+  },
+  {
+    "label": "Shift is slow",
+    "try": "Arrows move five tiles, Shift with an arrow moves one: Shift is the precise move, the arrow the quick one. Tap, hold, and nudge with Shift. In a menu or a list the arrows still move one row.",
+    "at": "campaign?level=vasse-test-1",
+    "keys": "Esc Tab",
+    "settings": "tapStep=5&jumpStep=1"
+  },
+  {
+    "label": "Fast hold",
+    "try": "A held arrow moves at every repeat your keyboard sends instead of the game's steady pace. Hold an arrow and compare. Hold pace, under KEYBOARD NAVIGATION, brings the game's pace back.",
+    "at": "campaign?level=vasse-test-1",
+    "keys": "Esc Tab",
+    "settings": "holdMoveMs=0"
+  }
+]

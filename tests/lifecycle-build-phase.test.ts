@@ -10,7 +10,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EventEmitter } from "node:events"
-import { defaultExperiments } from "../src/build/experiments.ts"
+import { EXPERIMENT_FIELDS, defaultExperiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import { PROCESS_HOST } from "../src/cli/lifecycle.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
@@ -431,7 +431,8 @@ async function keyboardRun(answers: Answers, options: { keyReleases?: "auto" | "
       },
       reportError: () => {},
     },
-    ...(options.keyReleases === undefined ? {} : { experiments: { keyReleases: options.keyReleases } }),
+    // The hold pace off: a test that walks Settings with a dozen Downs in one millisecond wants each to move a row.
+    ...(options.keyReleases === undefined ? {} : { experiments: { keyReleases: options.keyReleases, holdMoveMs: 0 } }),
   })
   await sleep(30)
   return { stdout, stdin, exits, session, failure }
@@ -501,9 +502,10 @@ test("a terminal that answers only Device Attributes, or nothing at all, is neve
 test("with Key releases off nothing is asked; switched in Settings, the flags are pushed and popped at once", async () => {
   const off = await keyboardRun("kitty", { keyReleases: "off" })
   assert.ok(!off.stdout.written.includes(KEYBOARD_QUERY), "asked with the Experiment off")
-  // `d` opens the Experiments at the hold window; Key releases is the row below. Right steps it to auto.
+  // `d` opens the Experiments at their first row; walk down to Key releases, and Right steps it to auto.
   off.stdin.emit("data", Buffer.from("d"))
-  off.stdin.emit("data", Buffer.from(`${ESC}[B`))
+  const keyReleases = EXPERIMENT_FIELDS.findIndex((spec) => spec.field === "keyReleases")
+  for (let row = 0; row < keyReleases; row += 1) off.stdin.emit("data", Buffer.from(`${ESC}[B`))
   off.stdin.emit("data", Buffer.from(`${ESC}[C`))
   await sleep(10)
   assert.ok(off.stdout.written.includes(KEYBOARD_PUSH), "switching to auto did not ask and push")

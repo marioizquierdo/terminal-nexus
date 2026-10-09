@@ -457,8 +457,8 @@ large enough that watching it needs an overview.
 **Status:** OPEN — blocks nothing; registered when Shift's jump was retuned.
 
 One wheel notch moves the cursor **5 tiles** (`WHEEL_TILES`, `src/build/mouse.ts`), the same as the keyboard
-jump once did. The jump (Shift or Option with an arrow, PageUp/PageDown, Home/End) is now **10 tiles** by
-default, the owner's settled value, and is itself an Experiment ("Jump distance", 5 to 20, in Settings, `d`;
+jump once did. The jump (Shift or Option with an arrow, PageUp/PageDown, Home/End) is now **9 tiles across and 6 up or down** by
+default, the owner's settled value, and is itself an Experiment ("Shift step", 1 to 20, in Settings, `d`;
 `src/build/all-settings.ts`). So the wheel and the jump differ. Trackpads send wheel events in bursts, so a
 larger wheel step may overshoot.
 

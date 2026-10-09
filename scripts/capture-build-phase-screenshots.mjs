@@ -778,14 +778,6 @@ scriptedGif("build-held-arrow", {
   delayMs: 450,
 })
 
-scriptedGif("build-tap-count", {
-  // Taps speed up only by counting: two slow taps, one tile each; a third within 300 ms moves two;
-  // taps within 400 ms keep it; three more, the last quick, move four. A pause starts over at one.
-  keys: "e Right~500 Right~350 Right~250 Right~350 Right~250 Right~250 Right~250 Right~900",
-  expect: "Explore Map",
-  delayMs: 450,
-})
-
 scriptedGif("build-explore-edge-click", {
   // Exploring, a click near an edge scrolls the view, further the nearer the edge: two columns in, a
   // long way; eight columns in, a little; in the middle, not at all.

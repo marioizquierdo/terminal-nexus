@@ -423,20 +423,22 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
   // Every line is known: nothing is reported as a name the game does not know.
   assert.deepEqual(result.ignored, [])
   // His jump distance reads as an Experiment again: it came back for the navigation polish round,
-  // at his value.
-  assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "theme", "capability", "glyphPack", "reducedMotion"])
-  // The rest were settled: the twenty-eight of that export — less the jump distance, above — and the
-  // focus arrow he settled again later that day, each skipped quietly; each number of the twenty-eight is
+  // at his value; so do the jump repeat and the tap step, with the build that tries Shift as the only
+  // change of speed.
+  assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "jumpRepeatMs", "theme", "capability", "glyphPack", "reducedMotion", "tapStep"])
+  // The rest were settled: the twenty-eight of that export — less the jump distance, jump repeat and tap
+  // step, above — and the focus arrow he settled again later that day, each skipped quietly; each number of the twenty-eight is
   // this build's value, read not copied, whichever tier it stands on now — except the held-key ramp's
   // three (`holdStep`, `fastStep`, `rampMs`), which his third round the same day retired along with the
   // rule they tuned (taps counted, a hold on a cadence), still skipped quietly. (The settled names
   // are derived from the list, so they also hold tuned numbers his export never named.)
   // (Plus the placeholder Pulse's raid and crew, retired when missions arrived.)
-  assert.equal(result.settled.length, 30)
+  assert.equal(result.settled.length, 28)
   assert.ok(result.settled.every((name) => SETTLED_EXPERIMENTS.has(name)))
   // Not settled by that export: the hold window, an Experiment then and now (his third round retuned it),
   // and the two he settled again later that day.
-  const notSettledThere = new Set(["holdWindowMs", "focusArrowMs", "cardRevealMs"])
+  // (The Shift jump too: 10 then, 9 across and 6 up or down since his word of 2026-10-09.)
+  const notSettledThere = new Set(["holdWindowMs", "focusArrowMs", "cardRevealMs", "jumpStep"])
   const numbers = [...OWNER_EXPORT_2026_09_30.matchAll(/^(\w+) = (\d+) /gmu)]
   let checked = 0
   for (const [, name, value] of numbers) {
@@ -444,7 +446,7 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
     assert.equal(defaultValue(name), Number(value), `${name} is not his ${value}`)
     checked += 1
   }
-  assert.equal(checked, 18, "every number of his that is still a setting was compared")
+  assert.equal(checked, 17, "every number of his that is still a setting was compared")
   for (const retired of ["holdStep", "fastStep", "rampMs"]) assert.ok(!(retired in TUNING) && SETTLED_EXPERIMENTS.has(retired), retired)
   // And each default is a value its Experiment's list holds, so Left/Right step from it exactly.
   for (const spec of EXPERIMENT_FIELDS) {

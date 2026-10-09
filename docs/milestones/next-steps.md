@@ -5,6 +5,11 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Settle the keyboard's steps** ([his request](../history/feedback/2026-10-08-keyboard-without-acceleration.md);
+  acceleration is gone on his word): press `d`, try Arrow step, Shift step (below the arrow step, Shift is the slow
+  move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
+  become tuned values. The next navigation ideas, from [the roguelike survey](../history/reports/2026-10-09-roguelike-navigation.md),
+  wait for his pick.
 - **Play the Nexus Pulse** (the Commander milestone's last step, now dealt by schedule), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `n`. Three powers are dealt each round, each saying how rare it is,
   War Chest beside them; a digit keeps one, and what it does shows at once and lasts the mission. Round 2 deals
@@ -68,8 +73,6 @@ Small, none blocking.
   return. Both were so before this round.
 - Two melee units of one speed set down diagonally from each other step round each other without ever touching.
   Real pathfinding, not the greedy step, is what closes it.
-- Moving the view still counts tiles both ways: a tap moves one row or one column, and the fast move jumps ten
-  tiles either way, which is twice as far on screen up or down as across. Worth his eye before anything changes.
 - A big unit's death shockwave and the debris round a small one are drawn square: decoration that claims no area,
   but a raider's shockwave reaches two rows up and down as its blast of 1 goes off. Its rows could be weighted by
   the rule if it reads as the blast.

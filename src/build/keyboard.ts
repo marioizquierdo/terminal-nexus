@@ -245,6 +245,8 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "u") return { kind: "undo" }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
+  // `g`: go to the player's Nexus, from either focus.
+  if (key === "g") return { kind: "go-nexus" }
   // `d`: Settings, opened at its Experiments.
   if (key === "d") return { kind: "open-settings", section: "experiments" }
   // `?` opens the Controls and hotkeys page from the game — a shortcut the page itself names.

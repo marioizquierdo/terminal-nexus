@@ -40,6 +40,12 @@ export type BuildCommand =
    */
   | Readonly<{ kind: "move-cursor"; dx: number; dy: number }>
   /**
+   * `g`: the cursor goes to the player's Nexus, from the menu or the map, and the keyboard goes to the map
+   * (the owner: "type 'n' to jump to nexus sounds good"; `n` is the Nexus Pulse, so it is `g`, go). The
+   * enemy Nexus, by pressing it again, is for when a map has one.
+   */
+  | Readonly<{ kind: "go-nexus" }>
+  /**
    * A click on a Grid tile. What it does is the reducer's to decide, from what is on screen — so the
    * driver reproduces a click exactly (docs/system-design/input.md):
    *
