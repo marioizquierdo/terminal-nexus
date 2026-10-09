@@ -1,7 +1,7 @@
 [
   {
     "label": "Arrows and Shift",
-    "try": "The map, the keyboard on it. Tap an arrow slowly, then as fast as you can: every tap is one tile. Hold an arrow: it keeps going at a steady pace and never speeds up. Shift with an arrow jumps ten tiles; hold Shift and an arrow to keep jumping. Press d to change the steps and paces under KEYBOARD NAVIGATION.",
+    "try": "The map, the keyboard on it. Every tap of an arrow is one tile, and a held arrow keeps a steady pace. Shift with an arrow jumps 9 across and 6 up or down. Press g from anywhere to go back to your Nexus. Press d to change the steps and paces under KEYBOARD NAVIGATION.",
     "at": "campaign?level=vasse-test-1",
     "keys": "Esc Tab"
   },
