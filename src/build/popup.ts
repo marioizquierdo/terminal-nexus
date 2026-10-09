@@ -297,7 +297,7 @@ function controlsSpec(state: BuildState): PopupSpec {
   const rows: PopupRow[] = []
   /** Where each key line sits in `rows` — what `popupHighlight` indexes. */
   const lineRows: number[] = []
-  controlsPage({ arrowStep: setting(state, "tapStep"), shiftStep: setting(state, "jumpStep") }).forEach((section, index) => {
+  controlsPage({ arrowStep: setting(state, "tapStep"), shiftStep: setting(state, "jumpStep"), shiftStepDown: setting(state, "jumpStepDown") }).forEach((section, index) => {
     if (index > 0) rows.push({ kind: "blank" })
     rows.push({ kind: "heading", text: section.heading })
     for (const line of section.lines) {

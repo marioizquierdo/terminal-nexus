@@ -73,8 +73,6 @@ Small, none blocking.
   return. Both were so before this round.
 - Two melee units of one speed set down diagonally from each other step round each other without ever touching.
   Real pathfinding, not the greedy step, is what closes it.
-- Moving the view still counts tiles both ways: a tap moves one row or one column, and the fast move jumps ten
-  tiles either way, which is twice as far on screen up or down as across. Worth his eye before anything changes.
 - A big unit's death shockwave and the debris round a small one are drawn square: decoration that claims no area,
   but a raider's shockwave reaches two rows up and down as its blast of 1 goes off. Its rows could be weighted by
   the rule if it reads as the blast.

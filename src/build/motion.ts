@@ -13,7 +13,8 @@
 //     repeats move the cursor at most once every `holdMoveMs` (on average exactly that often, when the
 //     keyboard repeats faster; every repeat when it is off), `tapStep` tiles a move.
 //   - **The fast move** is a jump of `jumpStep` tiles: further than an arrow by default, less far when
-//     the player sets it so, which makes Shift the slow, exact move. Held, it jumps again at most once
+//     the player sets it so, which makes Shift the slow, exact move. It goes `jumpStepDown` up or down,
+//     fewer than across, since a row is about twice as tall on screen as a column is wide. Held, it jumps again at most once
 //     every `jumpRepeatMs`, so each jump is seen to land. In a list it goes to the first or last row.
 //
 // Every one of those numbers is a setting (`src/build/all-settings.ts`), and `moveTuning` reads each as
@@ -47,7 +48,9 @@ export type MoveTuning = Readonly<{
   /** How far an arrow goes: a tap, and each move of a held arrow. */
   tapStep: number
   holdMoveMs: number
+  /** The fast move's jump left or right, and up or down. */
   jumpStep: number
+  jumpStepDown: number
   jumpRepeatMs: number
   holdWindowMs: number
 }>
@@ -59,6 +62,7 @@ export function moveTuning(from: SettingSource): MoveTuning {
     tapStep: setting(from, "tapStep"),
     holdMoveMs: setting(from, "holdMoveMs"),
     jumpStep: setting(from, "jumpStep"),
+    jumpStepDown: setting(from, "jumpStepDown"),
     jumpRepeatMs: setting(from, "jumpRepeatMs"),
     holdWindowMs: setting(from, "holdWindowMs"),
   }
@@ -94,8 +98,9 @@ export type MoveStep = Readonly<{ kind: MoveKind; tiles: number; memory: MoveMem
 
 /** How far a press on its own moves: a tap, or the fast move's jump. What every key is without a clock
  *  (a driver, a test). */
-export function pressTiles(key: CursorKey, tuning: Pick<MoveTuning, "tapStep" | "jumpStep">): number {
-  return key.jump ? tuning.jumpStep : tuning.tapStep
+export function pressTiles(key: CursorKey, tuning: Pick<MoveTuning, "tapStep" | "jumpStep" | "jumpStepDown">): number {
+  if (!key.jump) return tuning.tapStep
+  return key.dy !== 0 ? tuning.jumpStepDown : tuning.jumpStep
 }
 
 /** Whether this is a repeat of a held key: the terminal says so, or — when it says nothing — the same

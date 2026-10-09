@@ -239,11 +239,11 @@ export type ControlsSection = Readonly<{ heading: string; lines: readonly Contro
 export const CONTROLS_KEYS_WIDTH = 14
 
 /** The Experiments the Controls page's map lines are written from. */
-export type MoveNumbers = Readonly<{ arrowStep: number; shiftStep: number }>
+export type MoveNumbers = Readonly<{ arrowStep: number; shiftStep: number; shiftStepDown: number }>
 
 /** The defaults, for a page asked for without a Build Phase to read. */
 export function defaultMoveNumbers(): MoveNumbers {
-  return { arrowStep: defaultValue("tapStep"), shiftStep: defaultValue("jumpStep") }
+  return { arrowStep: defaultValue("tapStep"), shiftStep: defaultValue("jumpStep"), shiftStepDown: defaultValue("jumpStepDown") }
 }
 
 const tiles = (count: number): string => (count === 1 ? "1 tile" : `${count} tiles`)
@@ -253,11 +253,13 @@ function arrowsText({ arrowStep }: MoveNumbers): string {
   return `move ${tiles(arrowStep)}; hold repeats`
 }
 
-/** What Shift does, set against the arrows: further, or less far — the slow, exact move. */
-function shiftText({ arrowStep, shiftStep }: MoveNumbers): string {
-  if (shiftStep > arrowStep) return `jump ${tiles(shiftStep)}`
-  if (shiftStep < arrowStep) return `slow: ${tiles(shiftStep)} a move`
-  return "the same as the arrows"
+/** What Shift does, set against the arrows: further, or less far — the slow, exact move — across, and up
+ *  or down. */
+function shiftText({ arrowStep, shiftStep, shiftStepDown }: MoveNumbers): string {
+  const steps = shiftStep === shiftStepDown ? tiles(shiftStep) : `${shiftStep} across, ${shiftStepDown} up/down`
+  if (shiftStep > arrowStep && shiftStepDown > arrowStep) return `jump ${steps}`
+  if (shiftStep < arrowStep && shiftStepDown < arrowStep) return `slow: ${steps}`
+  return steps
 }
 
 /**

@@ -175,7 +175,7 @@ There is no minimap.**
   protocol, behind the Key releases Experiment, on by default), it says which presses are repeats and
   when a key is let go; where it does not, a press of the same arrow within the hold window (an
   Experiment, 200 ms) of the one before is a repeat, and anything slower a tap. The fast move (Shift
-  and its fallbacks) is not a speed but a **jump of ten tiles** (below the arrow's step, the slow move instead), the view following by the ordinary
+  and its fallbacks) is not a speed but a **jump of nine tiles across and six up or down** (a row is about twice as tall on screen as a column is wide; below the arrow's step, the slow move instead), the view following by the ordinary
   margin rather than re-centring; held, it jumps again at most every 100 ms, so each jump is seen to
   land. **RULE — `tests/build-motion.test.ts`: timing lives in the input path (`src/build/motion.ts`);
   the reducer receives an ordinary `move-cursor` of the chosen size and stays a pure function of

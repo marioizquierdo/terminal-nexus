@@ -144,16 +144,29 @@ export const ALL_SETTINGS = {
     unit: "tiles",
     default: 1,
   },
-  /** How far the fast move moves — Shift or Option with an arrow, PageUp/PageDown, Home/End; the owner's
-   *  settings export (12 before). Below the arrow step it is the slow move instead. */
+  /** How far the fast move goes left or right — Shift or Option with Left or Right, Home/End. The owner's
+   *  9 (2026-10-09: "shift jump can be updated to 9 horizontally and 6 vertically"); 10 before, one number
+   *  for both ways, and 12 before that. Below the arrow step it is the slow move instead. An old export's
+   *  `jumpStep` is this one. */
   jumpStep: {
     tier: "experiment",
     section: "keyboard",
-    label: "Shift step",
-    question: "How far Shift (or Option, PageUp/PageDown, Home/End) moves. Less than the arrow step: Shift is the slow move.",
-    values: [1, 2, 3, 4, 5, 8, 10, 12, 15, 20],
+    label: "Shift step across",
+    question: "How far Shift (or Option, Home/End) moves left or right. Less than the arrow step: Shift is the slow move.",
+    values: [1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 20],
     unit: "tiles",
-    default: 10,
+    default: 9,
+  },
+  /** How far the fast move goes up or down — Shift or Option with Up or Down, PageUp/PageDown. Fewer than
+   *  across because a row is about twice as tall as a column is wide on screen; the owner's 6. */
+  jumpStepDown: {
+    tier: "experiment",
+    section: "keyboard",
+    label: "Shift step up/down",
+    question: "How far Shift (or Option, PageUp/PageDown) moves up or down. Rows are tall, so fewer than across.",
+    values: [1, 2, 3, 4, 5, 6, 8, 9, 10, 12],
+    unit: "tiles",
+    default: 6,
   },
   /** A held Shift-arrow moves again at most this often, so each move is seen to land; the owner's settings
    *  export (100), tuned until he asked to try Shift on its own. */

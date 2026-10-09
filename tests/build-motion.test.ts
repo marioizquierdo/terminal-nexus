@@ -128,9 +128,12 @@ test("the motion rules run on each number as it is now: the navigation Experimen
   const movement = [...Object.keys(TUNED), "keyReleases", "cursorGlideMs"]
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field).filter((field) => movement.includes(field)),
-    ["tapStep", "jumpStep", "jumpRepeatMs", "holdMoveMs", "holdWindowMs", "keyReleases"],
+    ["tapStep", "jumpStep", "jumpStepDown", "jumpRepeatMs", "holdMoveMs", "holdWindowMs", "keyReleases"],
   )
   for (const name of ["tapStep", "jumpRepeatMs"] as const) assert.ok(!(name in TUNING), `${name} is still a tuned value`)
+  // The owner's Shift jump: 9 across, 6 up or down, since a row is about twice as tall as a column is wide.
+  assert.deepEqual([TUNED.jumpStep, TUNED.jumpStepDown], [9, 6])
+  assert.deepEqual([moves(JUMP_EAST, presses([0])), moves({ dx: 0, dy: 1, jump: true }, presses([0]))], [["jump 9"], ["jump 6"]])
   // Acceleration is gone (the owner: "that was a bad idea"), and so are the held-key ramp's numbers — an old
   // export naming any of them is still read quietly.
   const gone = ["acceleration", "doubleTapMs", "fastTapMs", "tapsToSpeedUp", "tapTopStep", "holdLongMs", "holdLongStep", "holdStep", "fastStep", "rampMs", "holdFirstStep"]

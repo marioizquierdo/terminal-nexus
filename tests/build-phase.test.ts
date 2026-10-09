@@ -231,13 +231,14 @@ test("a second Enter after a placement never places a second building", () => {
 test("keyboard: Shift+Arrow and its modifier-free fallback are both the fast move, a jump of the Shift jump", () => {
   // Measured, not assumed — scripts/probe-modified-keys.mjs found three live encodings for a
   // shifted arrow and none at all on several terminals, which is why all of these are bound. How far
-  // it jumps is the "Jump distance" setting (`jumpStep`), at its default here.
+  // it jumps is the Shift step settings, across (`jumpStep`) and up or down (`jumpStepDown`), at their defaults.
   const context = { itemCount: 3, armed: false }
   const fast = defaultValue("jumpStep")
+  const fastDown = defaultValue("jumpStepDown")
   assert.deepEqual(buildKeyboardCommand(RIGHT, context), { kind: "move-cursor", dx: 1, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(RXVT_SHIFT_RIGHT, context), { kind: "move-cursor", dx: fast, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fast })
+  assert.deepEqual(buildKeyboardCommand(PAGE_DOWN, context), { kind: "move-cursor", dx: 0, dy: fastDown })
   // Home and End have three live spellings between xterm, screen/tmux/linux and rxvt; all of them
   // mean the same move.
   for (const home of [`${ESC}OH`, `${ESC}[1~`, `${ESC}[7~`, `${ESC}[H`]) {
@@ -254,9 +255,10 @@ test("keyboard: Option+Arrow as macOS terminals send it is the fast move, never 
   // arrived as a bare Escape plus a stray "b" - which, with nothing armed, left the screen.
   const context = { itemCount: 3, armed: false }
   const fast = defaultValue("jumpStep")
+  const fastDown = defaultValue("jumpStepDown")
   assert.deepEqual(buildKeyboardCommand(`${ESC}b`, context), { kind: "move-cursor", dx: -fast, dy: 0 })
   assert.deepEqual(buildKeyboardCommand(`${ESC}f`, context), { kind: "move-cursor", dx: fast, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fast })
+  assert.deepEqual(buildKeyboardCommand(`${ESC}${ESC}[A`, context), { kind: "move-cursor", dx: 0, dy: -fastDown })
   // End to end, through the real splitter: nothing is armed, and the screen is not left.
   const context2 = starterContext()
   const layout = buildLayout(MINIMUM, context2.grid)
@@ -325,7 +327,7 @@ test("keyboard: h j k l are the arrows everywhere, and H J K L the fast move", (
   }
   // On the map they really move the cursor, and Shift really jumps.
   assert.deepEqual(buildKeyboardCommand("l", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 1, dy: 0 })
-  assert.deepEqual(buildKeyboardCommand("J", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 0, dy: defaultValue("jumpStep") })
+  assert.deepEqual(buildKeyboardCommand("J", contexts[0] as KeyboardContext), { kind: "move-cursor", dx: 0, dy: defaultValue("jumpStepDown") })
 })
 
 test("mouse: the wheel moves the cursor five tiles and drags the camera with it", () => {

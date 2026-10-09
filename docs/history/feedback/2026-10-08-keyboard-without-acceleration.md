@@ -41,3 +41,11 @@ old settings export that names them still loads quietly. An arrow moves its step
 quickly or held, and Shift is the only change of speed, as in every roguelike the survey could read
 ([the report](../reports/2026-10-09-roguelike-navigation.md)). Keyboard navigation in Settings is now Arrow step,
 Shift step, Shift pace, Hold pace, and the terminal's two. The recommendations went back to him in the session.
+
+### F161 — Shift jumps 9 across and 6 up or down
+
+> shift jump can be uodated to 9 horizontally and 6 vertically.
+
+**Built.** Shift (and Option, Home/End) jumps 9 tiles left or right; Shift (and Option, PageUp/PageDown) jumps 6 up
+or down, since a row is about twice as tall on screen as a column is wide. They are two Experiments in Settings,
+Shift step across and Shift step up/down; an old export's single jump distance reads as the one across.
