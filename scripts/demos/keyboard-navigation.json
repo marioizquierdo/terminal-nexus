@@ -1,7 +1,7 @@
 [
   {
-    "label": "No acceleration",
-    "try": "The map, the keyboard on it. Tap an arrow slowly, then as fast as you can: every tap is one tile. Hold an arrow: it keeps going at a steady pace and never speeds up. Shift with an arrow jumps ten tiles; hold Shift and an arrow to keep jumping. Press d to change anything under KEYBOARD NAVIGATION.",
+    "label": "Arrows and Shift",
+    "try": "The map, the keyboard on it. Tap an arrow slowly, then as fast as you can: every tap is one tile. Hold an arrow: it keeps going at a steady pace and never speeds up. Shift with an arrow jumps ten tiles; hold Shift and an arrow to keep jumping. Press d to change the steps and paces under KEYBOARD NAVIGATION.",
     "at": "campaign?level=vasse-test-1",
     "keys": "Esc Tab"
   },
@@ -13,29 +13,8 @@
     "settings": "tapStep=5&jumpStep=1"
   },
   {
-    "label": "The way it was",
-    "try": "Both accelerations back on. Tap three times, the last one quick: the third moves two. Three more and it moves four. Hold an arrow for a second: it goes two tiles a move.",
-    "at": "campaign?level=vasse-test-1",
-    "keys": "Esc Tab",
-    "settings": "acceleration=both"
-  },
-  {
-    "label": "Taps speed up",
-    "try": "Quick runs of taps speed up as they did (1, 1, 2, then 2, 2, 4), but a held arrow stays at one steady pace.",
-    "at": "campaign?level=vasse-test-1",
-    "keys": "Esc Tab",
-    "settings": "acceleration=taps"
-  },
-  {
-    "label": "Holds go further",
-    "try": "Taps are always one tile. Hold an arrow for a second and each move goes two tiles.",
-    "at": "campaign?level=vasse-test-1",
-    "keys": "Esc Tab",
-    "settings": "acceleration=holds"
-  },
-  {
     "label": "Fast hold",
-    "try": "No acceleration, and a held arrow moves at every repeat your keyboard sends instead of the game's steady pace. Hold an arrow and compare. Hold pace, under KEYBOARD NAVIGATION, brings the game's pace back.",
+    "try": "A held arrow moves at every repeat your keyboard sends instead of the game's steady pace. Hold an arrow and compare. Hold pace, under KEYBOARD NAVIGATION, brings the game's pace back.",
     "at": "campaign?level=vasse-test-1",
     "keys": "Esc Tab",
     "settings": "holdMoveMs=0"

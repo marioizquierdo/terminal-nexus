@@ -374,32 +374,26 @@ test("the page is one table: every situation, every line fits at the floor, and 
   assert.ok(screenText(moved).includes(`jump ${now} tiles`), "the page still says the default jump")
 })
 
-test("the page says what the arrows and Shift do in the build being played: acceleration, the arrow's step, and Shift as the slow move", () => {
+test("the page says what the arrows and Shift do in the build being played: the arrow's step, and Shift as the slow move", () => {
   const mapLines = (numbers: Parameters<typeof controlsPage>[0]): Record<string, string> =>
     Object.fromEntries((controlsPage(numbers).find((section) => section.heading === "THE MAP")?.lines ?? []).map((entry) => [entry.keys, entry.text]))
-  const base = { arrowStep: 1, shiftStep: 10, acceleration: "off" } as const
-  // The default: no acceleration, an arrow one tile, Shift ten.
+  const base = { arrowStep: 1, shiftStep: 10 } as const
+  // The default: an arrow one tile, held or not, and Shift ten.
   assert.deepEqual([mapLines(base)["arrows"], mapLines(base)["shift+arrow"]], ["move 1 tile; hold repeats", "jump 10 tiles"])
   assert.equal(mapLines(undefined)["arrows"], "move 1 tile; hold repeats", "the page without numbers is the build's defaults")
-  // Each acceleration says what speeds up; none claims a speed-up that is off.
-  assert.equal(mapLines({ ...base, acceleration: "taps" })["arrows"], "move; quick taps speed up")
-  assert.equal(mapLines({ ...base, acceleration: "holds" })["arrows"], "move; long holds speed up")
-  assert.equal(mapLines({ ...base, acceleration: "both" })["arrows"], "move; taps, holds speed up")
   // The arrow's step and Shift's, whichever is further: Shift can be the slow, exact move.
   assert.equal(mapLines({ ...base, arrowStep: 5 })["arrows"], "move 5 tiles; hold repeats")
   assert.equal(mapLines({ ...base, arrowStep: 5, shiftStep: 1 })["shift+arrow"], "slow: 1 tile a move")
   assert.equal(mapLines({ ...base, arrowStep: 3, shiftStep: 3 })["shift+arrow"], "the same as the arrows")
   // Every wording fits the 28 columns the page leaves at the 80-column floor.
-  for (const acceleration of ["off", "taps", "holds", "both"] as const) {
-    for (const [arrowStep, shiftStep] of [[1, 20], [10, 1], [10, 10], [4, 4]] as const) {
-      for (const text of Object.values(mapLines({ arrowStep, shiftStep, acceleration }))) assert.ok(text.length <= 28, `"${text}" is cut`)
-    }
+  for (const [arrowStep, shiftStep] of [[1, 20], [10, 1], [10, 10], [4, 4]] as const) {
+    for (const text of Object.values(mapLines({ arrowStep, shiftStep }))) assert.ok(text.length <= 28, `"${text}" is cut`)
   }
   // And the open page follows Settings.
   const side = buildSide()
-  for (let step = 0; step < 3; step += 1) side.build.dispatch({ kind: "setting-adjust", field: "acceleration", step: 1 })
+  side.build.dispatch({ kind: "setting-adjust", field: "tapStep", step: 1 })
   keys(side, "?", ...Array.from({ length: 10 }, () => DOWN))
-  assert.ok(screenText(side).includes("move; taps, holds speed up"), "the page still says there is no acceleration")
+  assert.ok(screenText(side).includes("move 2 tiles; hold repeats"), "the page still says one tile")
 })
 
 test("the page names only keys the adapters bind, and every command key they bind is on it", () => {

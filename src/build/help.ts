@@ -33,7 +33,6 @@ import {
   structureAtTile,
 } from "./state.ts"
 import { WHEEL_TILES } from "./mouse.ts"
-import type { SettingValue } from "./all-settings.ts"
 import { defaultValue, setting } from "./all-settings.ts"
 import type { ConstructItem } from "./types.ts"
 
@@ -240,27 +239,18 @@ export type ControlsSection = Readonly<{ heading: string; lines: readonly Contro
 export const CONTROLS_KEYS_WIDTH = 14
 
 /** The Experiments the Controls page's map lines are written from. */
-export type MoveNumbers = Readonly<{ arrowStep: number; shiftStep: number; acceleration: SettingValue<"acceleration"> }>
+export type MoveNumbers = Readonly<{ arrowStep: number; shiftStep: number }>
 
 /** The defaults, for a page asked for without a Build Phase to read. */
 export function defaultMoveNumbers(): MoveNumbers {
-  return { arrowStep: defaultValue("tapStep"), shiftStep: defaultValue("jumpStep"), acceleration: defaultValue("acceleration") }
+  return { arrowStep: defaultValue("tapStep"), shiftStep: defaultValue("jumpStep") }
 }
 
 const tiles = (count: number): string => (count === 1 ? "1 tile" : `${count} tiles`)
 
-/** What the arrows do on the map, in the 28 columns the page leaves. */
-function arrowsText({ arrowStep, acceleration }: MoveNumbers): string {
-  switch (acceleration) {
-    case "taps":
-      return "move; quick taps speed up"
-    case "holds":
-      return "move; long holds speed up"
-    case "both":
-      return "move; taps, holds speed up"
-    default:
-      return `move ${tiles(arrowStep)}; hold repeats`
-  }
+/** What the arrows do on the map, in the 28 columns the page leaves: always their step, held or not. */
+function arrowsText({ arrowStep }: MoveNumbers): string {
+  return `move ${tiles(arrowStep)}; hold repeats`
 }
 
 /** What Shift does, set against the arrows: further, or less far — the slow, exact move. */

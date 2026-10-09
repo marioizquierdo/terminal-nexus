@@ -29,3 +29,15 @@ keyboard sends). The numbers the old acceleration uses follow, labelled as accel
 terminal's own key reports come last. A list always moves one row for an arrow and goes to its first or last row for
 Shift, whatever the map's steps are. The Controls page (`?`) says what the arrows and Shift do in the build being
 played.
+
+### F160 — Acceleration removed
+
+> What are some conventions that we can implement? Lets start by removing the acceleration, that was a bad idea.
+> Tell me more recommendations
+
+**Built.** Acceleration is gone, not just off: the Acceleration Experiment and the six numbers it used (the tap run
+window, the quick tap, taps to speed up, the fastest tap, when a hold goes faster and how far) are deleted, and an
+old settings export that names them still loads quietly. An arrow moves its step whether tapped slowly, tapped
+quickly or held, and Shift is the only change of speed, as in every roguelike the survey could read
+([the report](../reports/2026-10-09-roguelike-navigation.md)). Keyboard navigation in Settings is now Arrow step,
+Shift step, Shift pace, Hold pace, and the terminal's two. The recommendations went back to him in the session.

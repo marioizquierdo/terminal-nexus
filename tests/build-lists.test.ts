@@ -23,7 +23,6 @@ import {
   SHIFT_UP,
   TAB,
   UP,
-  accelerating,
   buildSide,
   keys,
   placed,
@@ -114,7 +113,7 @@ test("every popup's list stops at both ends and jumps with the fast move", () =>
   assert.equal(exported.build.state.popupHighlight, lines.to - lines.from - 1)
 })
 
-/** Up or Down the way a player moves: three taps, the last quick (the run speeds up to 2), then a
+/** Up or Down the way a player moves: three taps, the last quick (still one row), then a
  *  pause, and a key held a moment — a press, the keyboard's repeat delay, and repeats 30 ms apart, which
  *  move on the game's cadence. Fewer rows than any list here has to spare. */
 const moving = (key: string): (readonly [string, number])[] => [
@@ -125,23 +124,23 @@ const moving = (key: string): (readonly [string, number])[] => [
   ...Array.from({ length: 5 }, (_, index) => [key, 12_180 + index * 30] as const),
 ]
 
-for (const [mode, expected] of [["both", 1 + 1 + 2 + 1 + 3], ["off", 1 + 1 + 1 + 1 + 3]] as const) test(`Up or Down in a list moves exactly as the map cursor does — taps counted, a hold on the cadence — and a tap is one row (acceleration ${mode})`, () => {
+test("Up or Down in a list moves exactly as the map cursor does — a tap one row, a hold on the cadence", () => {
   // The owner: "Use the same timings." and "The same is happening with the menu now."
   // The same presses at the same times move a list as many rows as they move the map cursor tiles, as long
   // as neither reaches an end.
   const tiles = (key: string): number => {
-    const map = accelerating(buildSide({ cursor: { x: 30, y: 15 } }), mode)
+    const map = buildSide({ cursor: { x: 30, y: 15 } })
     keys(map, TAB)
     timed(map, moving(key))
     return Math.abs(map.build.state.cursor.y - 15)
   }
-  // With acceleration: taps 1, 1, 2; without, 1, 1, 1. Then a fresh press 1, and its hold's repeats one row
-  // each on the cadence (every other repeat).
-  assert.equal(tiles(DOWN), expected, "the taps or the hold moved by other rules than counting and the cadence")
+  // Taps 1, 1, 1 — a quick one too — then a fresh press 1, and its hold's repeats one row each on the
+  // cadence (every other repeat).
+  assert.equal(tiles(DOWN), 1 + 1 + 1 + 1 + 3, "the taps or the hold moved by other rules than counting and the cadence")
   assert.equal(tiles(UP), tiles(DOWN))
   for (const [name, open] of [["Settings", [ESC, "s"]], ["the Controls page", ["?"]]] as const) {
     for (const [key, from, word] of [[DOWN, HOME, "Down"], [UP, END, "Up"]] as const) {
-      const list = accelerating(buildSide(), mode)
+      const list = buildSide()
       keys(list, ...open, from)
       const start = list.build.state.popupHighlight
       timed(list, moving(key))

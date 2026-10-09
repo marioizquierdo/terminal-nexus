@@ -1,51 +1,30 @@
 // How far one cursor key moves the cursor — or a list's highlight — decided from when and how the key
-// arrives. Built from the owner's report: "I often
-// try to move to a position a few tiles away and then the cursor starts jumping ahead ... Instead of
-// accelerating on fast taps based only on time, try based on number of taps within two different time
-// windows: a double-tap (400ms) and a fast-double-tap (300ms) ... The keyboard press events should be
-// handled in a way that limit the scroll speed more than strictly activating the fast movement." And then,
-// having felt it: "I actually want to try a build that does not have acceleration and only relies on
-// pressing shift to go faster or slower."
+// arrives.
 //
-// **The plain rule has no acceleration.** An arrow moves `tapStep` tiles on the map (one row in a list) —
-// a tap, and each move of a held arrow alike — and Shift (Option, PageUp/PageDown, Home/End) moves
-// `jumpStep` tiles: further than the arrow by default, and less far when the player sets it so, which
-// makes Shift the slow, exact move. The *Acceleration* Experiment (`off`, `taps`, `holds`, `both`) puts the
-// older speed-ups back, each separately:
+// **No acceleration.** An arrow moves `tapStep` tiles on the map (one row in a list), whether it is
+// tapped slowly, tapped quickly or held; Shift (Option, PageUp/PageDown, Home/End) moves `jumpStep`.
+// Speed comes from Shift, never from how fast or how long a key is pressed — the convention of every
+// roguelike surveyed (`docs/history/reports/2026-10-09-roguelike-navigation.md`), and the owner's call
+// after playing both: "Lets start by removing the acceleration, that was a bad idea." (The counted taps
+// and the long hold that went further were built from his earlier playtest and are gone.)
 //
-//   - **Taps speed up by counting, never by time alone** (`taps`, `both`). Taps of the same arrow each
-//     within `doubleTapMs` of the one before are a run, and the run keeps its speed. Every
-//     `tapsToSpeedUp`-th tap since the speed last changed, if it came within `fastTapMs` of the tap
-//     before it, doubles the speed, up to `tapTopStep` (never less than the arrow's own step): so the
-//     third tap of a run — the last one a little quicker — moves 2 ("the user tap 3 times at least before
-//     activating speed, and the last one needs to be a bit faster"), and three more at 2, the last quick
-//     again, reach 4 ("after another 3 taps it doubles again"). A slower gap, another arrow, or any other
-//     key starts over at the arrow's step.
-//   - **A long hold goes further** (`holds`, `both`): once a key has been repeating for `holdLongMs`, each
-//     of its moves goes `holdLongStep` tiles (never less than the arrow's step).
+//   - **A tap** moves `tapStep`.
+//   - **A hold runs at the game's own cadence**, whatever the operating system's repeat rate: its
+//     repeats move the cursor at most once every `holdMoveMs` (on average exactly that often, when the
+//     keyboard repeats faster; every repeat when it is off), `tapStep` tiles a move.
+//   - **The fast move** is a jump of `jumpStep` tiles: further than an arrow by default, less far when
+//     the player sets it so, which makes Shift the slow, exact move. Held, it jumps again at most once
+//     every `jumpRepeatMs`, so each jump is seen to land. In a list it goes to the first or last row.
 //
-// **A hold runs at the game's own cadence, accelerating or not**, whatever the operating system's repeat
-// rate: its repeats move the cursor at most once every `holdMoveMs` (on average exactly that often, when
-// the keyboard repeats faster; every repeat when it is off), `tapStep` tiles a move. A hold breaks a run
-// of taps: the tap after it is one step, so "keep-pressing, releasing, and tapping to adjust" (the owner)
-// stays precise.
-//
-// **The fast move** (Shift, Option, PageUp/PageDown, Home/End) is a **jump** of `jumpStep` tiles and no
-// speed at all. Held, it jumps again at most once every `jumpRepeatMs`, so each jump is seen to land.
-// In a list it goes to the first or last row instead, whatever `jumpStep` is.
-//
-// Every one of those numbers is a setting (`src/build/all-settings.ts`) — Experiments in Settings'
-// Keyboard navigation section, the rest tuned constants — and `moveTuning` reads each as it is now, so a
-// change in Settings changes the next key.
+// Every one of those numbers is a setting (`src/build/all-settings.ts`), and `moveTuning` reads each as
+// it is now, so a change in Settings changes the next key.
 //
 // **How a repeat is told from a tap.** Where the terminal reports key events (the kitty keyboard
 // protocol, `src/terminal/key-events.ts`, behind the Key releases Experiment), it says so: a press is a
 // tap, a repeat is a hold's, and a release ends the hold at once. Where it does not — a classic
 // terminal, or the Experiment off — a press of the same arrow within the **hold window** (the
-// `holdWindowMs` Experiment) of the one before is taken for a held key's repeat, and anything slower
-// is a tap for the counting rule. The same intent lands on the same tile either way, as long as the
-// taps are slower than the hold window and the keyboard's repeat delay is shorter than it (a test
-// holds that parity).
+// `holdWindowMs` Experiment) of the one before is taken for a held key's repeat. The same intent lands
+// on the same tile either way (a test holds that parity).
 //
 // Pure: time comes in as a number, and nothing here names a clock (the architecture test holds
 // `src/build` to that). The session keeps one of these beside the reducer, never inside it — the
@@ -58,56 +37,35 @@ import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"
 import { defaultExperiments } from "./experiments.ts"
 
-/** What a cursor key did: a tap (at whatever speed its run has reached), a hold's move (0 tiles for a
- *  repeat that came before the cadence allowed one), a jump (0 for a held jump's repeat that came too
- *  soon), or a release that ended a hold. The playtest summary prints it with its tiles. */
+/** What a cursor key did: a tap, a hold's move (0 tiles for a repeat that came before the cadence
+ *  allowed one), a jump (0 for a held jump's repeat that came too soon), or a release that ended a
+ *  hold. The playtest summary prints it with its tiles. */
 export type MoveKind = "tap" | "hold" | "jump" | "release"
 
 /** The numbers, handed in so the rules stay pure functions a test can drive with any of them. */
 export type MoveTuning = Readonly<{
   /** How far an arrow goes: a tap, and each move of a held arrow. */
   tapStep: number
-  /** Whether a run of quick taps speeds up, and whether a long hold goes further (the *Acceleration*
-   *  Experiment's `taps` and `holds`). */
-  tapAcceleration: boolean
-  holdAcceleration: boolean
-  doubleTapMs: number
-  fastTapMs: number
-  tapsToSpeedUp: number
-  tapTopStep: number
   holdMoveMs: number
-  holdLongStep: number
-  holdLongMs: number
   jumpStep: number
   jumpRepeatMs: number
   holdWindowMs: number
 }>
 
 /** The rules as the game runs them: each number as it is now — a live Experiment's value, or the tuned
- *  constant — read without caring which (`setting`), so a change in Settings changes the feel at once
- *  and a number can move between tiers without this changing. */
+ *  constant — read without caring which (`setting`). */
 export function moveTuning(from: SettingSource): MoveTuning {
-  const acceleration = setting(from, "acceleration")
   return {
     tapStep: setting(from, "tapStep"),
-    tapAcceleration: acceleration === "taps" || acceleration === "both",
-    holdAcceleration: acceleration === "holds" || acceleration === "both",
-    doubleTapMs: setting(from, "doubleTapMs"),
-    fastTapMs: setting(from, "fastTapMs"),
-    tapsToSpeedUp: setting(from, "tapsToSpeedUp"),
-    tapTopStep: setting(from, "tapTopStep"),
     holdMoveMs: setting(from, "holdMoveMs"),
-    holdLongStep: setting(from, "holdLongStep"),
-    holdLongMs: setting(from, "holdLongMs"),
     jumpStep: setting(from, "jumpStep"),
     jumpRepeatMs: setting(from, "jumpRepeatMs"),
     holdWindowMs: setting(from, "holdWindowMs"),
   }
 }
 
-/** The rules for a list's highlight: the arrow moves one row, whatever the map's step is, and
- *  everything else — acceleration, the hold's pace — is the map cursor's own ("use the same timings,
- *  consistency here will be very useful"). */
+/** The rules for a list's highlight: the arrow moves one row, whatever the map's step is, and the hold's
+ *  pace is the map cursor's own ("use the same timings, consistency here will be very useful"). */
 export function listTuning(tuning: MoveTuning): MoveTuning {
   return { ...tuning, tapStep: 1 }
 }
@@ -116,19 +74,14 @@ export function listTuning(tuning: MoveTuning): MoveTuning {
  *  the keyboard adapter on its own). */
 export const DEFAULT_MOVE_TUNING: MoveTuning = moveTuning({ experiments: defaultExperiments(), settings: DEFAULT_SETTINGS })
 
-/** What the rules remember about the last cursor key: which it was, when its last event came, the run
- *  of taps it is part of, and the hold it is part of, if any. */
+/** What the rules remember about the last cursor key: which it was, when its last event came, and the
+ *  hold it is part of, if any. */
 export type MoveMemory = Readonly<{
   dx: number
   dy: number
   jump: boolean
   /** When this key's last event (a press or a repeat) arrived. */
   at: number
-  /** The run of taps: when its last tap came (`null` once a hold broke it), its step, and how many taps
-   *  have come since the step last changed. */
-  tapAt: number | null
-  step: number
-  taps: number
   /** The hold: when its first repeat came (`null` when the key is not being held), and when its next
    *  move is due. */
   holdStart: number | null
@@ -140,7 +93,7 @@ export type MoveMemory = Readonly<{
 export type MoveStep = Readonly<{ kind: MoveKind; tiles: number; memory: MoveMemory }>
 
 /** How far a press on its own moves: a tap, or the fast move's jump. What every key is without a clock
- *  (a driver, a test), and what a run of taps starts from. */
+ *  (a driver, a test). */
 export function pressTiles(key: CursorKey, tuning: Pick<MoveTuning, "tapStep" | "jumpStep">): number {
   return key.jump ? tuning.jumpStep : tuning.tapStep
 }
@@ -159,7 +112,7 @@ function isRepeat(same: boolean, gap: number, phase: KeyPhase | null, tuning: Mo
 export function moveStep(previous: MoveMemory | null, key: CursorKey, now: number, phase: KeyPhase | null, tuning: MoveTuning): MoveStep {
   const same = previous !== null && previous.dx === key.dx && previous.dy === key.dy && previous.jump === key.jump
   const gap = previous === null ? Number.POSITIVE_INFINITY : now - previous.at
-  const fresh: MoveMemory = { dx: key.dx, dy: key.dy, jump: key.jump, at: now, tapAt: null, step: tuning.tapStep, taps: 0, holdStart: null, holdDue: now }
+  const fresh: MoveMemory = { dx: key.dx, dy: key.dy, jump: key.jump, at: now, holdStart: null, holdDue: now }
 
   // A release ends the hold of the key it names, at once; any other key's release changes nothing.
   if (phase === "release") {
@@ -176,32 +129,21 @@ export function moveStep(previous: MoveMemory | null, key: CursorKey, now: numbe
   }
 
   if (isRepeat(same, gap, phase, tuning)) {
-    // A hold. Its first repeat moves at once and breaks any run of taps; after that, a move is due every
-    // `holdMoveMs`. A repeat a little late keeps the cadence (the next move is due on time, not a whole
-    // interval after the late one), so a keyboard repeating every 40 ms still averages one move per
-    // cadence rather than one per two repeats; one very late never makes up for the moves it missed.
+    // A hold. Its first repeat moves at once; after that, a move is due every `holdMoveMs`. A repeat a
+    // little late keeps the cadence (the next move is due on time, not a whole interval after the late
+    // one), so a keyboard repeating every 40 ms still averages one move per cadence rather than one per
+    // two repeats; one very late never makes up for the moves it missed.
     const holding = same && previous !== null && previous.holdStart !== null
     const holdStart = holding ? (previous.holdStart as number) : now
     const holdDue = holding ? previous.holdDue : now
     const base: MoveMemory = { ...fresh, holdStart, holdDue }
     if (now < holdDue) return { kind: "hold", tiles: 0, memory: base }
-    const long = tuning.holdAcceleration && now - holdStart >= tuning.holdLongMs
-    const tiles = long ? Math.max(tuning.holdLongStep, tuning.tapStep) : tuning.tapStep
     const due = Math.max(holdDue + tuning.holdMoveMs, now + tuning.holdMoveMs / 2)
-    return { kind: "hold", tiles, memory: { ...base, holdDue: due } }
+    return { kind: "hold", tiles: tuning.tapStep, memory: { ...base, holdDue: due } }
   }
 
-  // A tap. It continues the run when it is the same arrow, the last thing that arrow did was a tap (a
-  // hold breaks a run), and it came within the double-tap window; otherwise it starts over at one.
-  const lastTap = same && previous !== null ? previous.tapAt : null
-  if (previous === null || lastTap === null || now - lastTap > tuning.doubleTapMs) {
-    return { kind: "tap", tiles: tuning.tapStep, memory: { ...fresh, tapAt: now, taps: 1 } }
-  }
-  const taps = previous.taps + 1
-  const top = Math.max(tuning.tapTopStep, tuning.tapStep)
-  const speedUp = tuning.tapAcceleration && taps >= tuning.tapsToSpeedUp && now - lastTap <= tuning.fastTapMs && previous.step < top
-  const step = speedUp ? Math.min(top, previous.step * 2) : previous.step
-  return { kind: "tap", tiles: step, memory: { ...fresh, tapAt: now, step, taps: speedUp ? 0 : taps } }
+  // A tap: one step, however quickly it follows the last.
+  return { kind: "tap", tiles: tuning.tapStep, memory: fresh }
 }
 
 /** The last cursor key's move, for the playtest summary and the tests. */

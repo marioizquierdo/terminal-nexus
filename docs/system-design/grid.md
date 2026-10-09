@@ -127,7 +127,7 @@ There is no minimap.**
   view's width for the sides and of its height for the top and bottom, **30%** (GUIDANCE, a tuned value
   in `src/build/tuning.ts`; `--scroll-margin <percent>` sets it), rounded, and capped so an axis's two
   margins never meet (`tests/build-motion.test.ts`). That a margin exists, and that the cursor drives
-  it, is the rule; the number is not. The exact speed tiers and timings were settled by tap counting and a hold pace (Q54, answered), and are being tried again without acceleration.
+  it, is the rule; the number is not. The exact speed tiers and timings were settled by tap counting and a hold pace (Q54, answered); the tap counting was later removed: an arrow never accelerates.
 - **The margin is a follow rule, not an invariant** (RULE — `tests/build-camera.test.ts`). It says
   where the camera must be relative to the cursor *when it can be*. At the Grid's own edge the camera
   has nowhere left to go, so the cursor legitimately reaches the edge of the screen, which is correct
@@ -169,13 +169,9 @@ There is no minimap.**
 - **An arrow moves the same distance however it is pressed, a hold keeps its own pace, and the fast move
   jumps** (GUIDANCE; the timing is held by `tests/build-motion.test.ts`, the numbers are Experiments
   in Settings' Keyboard navigation section, from `src/build/all-settings.ts`). A tap moves one tile (the arrow's
-  step), and there is no acceleration unless the Acceleration Experiment puts it back: with it, taps of the
-  same arrow each within 400 ms of the one before are a run that keeps its speed, the third tap since the
-  speed last changed doubles it if it came within 300 ms of the tap before (so a run goes 1, 1, 2, then 2, 2,
-  4, and four is the top), and a long hold goes two tiles a move. A longer gap, another arrow or any other key
-  starts a run over at one. A held key moves at the game's own pace
+  step), and nothing accelerates: quick taps and long holds go no further. A held key moves at the game's own pace
   rather than the operating system's repeat rate: at most one move every 60 ms (on average exactly that
-  when the keyboard repeats faster), one tile a move (first guesses). A hold ends a run of taps. Where the terminal reports key events (the kitty keyboard
+  when the keyboard repeats faster), one tile a move (first guesses). Where the terminal reports key events (the kitty keyboard
   protocol, behind the Key releases Experiment, on by default), it says which presses are repeats and
   when a key is let go; where it does not, a press of the same arrow within the hold window (an
   Experiment, 200 ms) of the one before is a repeat, and anything slower a tap. The fast move (Shift

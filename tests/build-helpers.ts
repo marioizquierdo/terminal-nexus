@@ -107,14 +107,6 @@ export function buildSide(options: SideOptions = {}): BuildSide {
   return { build, layout, context, quits: () => quits, activity }
 }
 
-/** The Acceleration Experiment set to `mode` on a Build Phase, stepped there with Right as Settings does. */
-export function accelerating<T extends Side>(side: T, mode: "off" | "taps" | "holds" | "both"): T {
-  const order = ["off", "taps", "holds", "both"]
-  for (let step = 0; step < order.indexOf(mode); step += 1) side.build.dispatch({ kind: "setting-adjust", field: "acceleration", step: 1 })
-  assert.equal(side.build.state.experiments.acceleration, mode)
-  return side
-}
-
 // --- Driving it ------------------------------------------------------------------------------------
 
 /** Keys pressed one after another, with no clock: every arrow a tap. */

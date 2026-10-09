@@ -53,9 +53,8 @@ The rules are the letter; these are the spirit, read out of the owner's playtest
    for one before a jump cut. Done well, motion makes the game "look a LOT more legit, while also
    helping with usability".
 8. **Taps are precise, Shift is fast.** One press is one step, however it is pressed — a held arrow
-   repeats at the game's own pace and never accelerates (the owner's "a build that does not have
-   acceleration and only relies on pressing shift to go faster or slower"; the Acceleration Experiment
-   puts the older speed-ups back) — and a long move is one key, so speed is never required — on the map
+   repeats at the game's own pace and never accelerates (the owner, having tried both: acceleration
+   "was a bad idea") — and a long move is one key, so speed is never required — on the map
    and in every list alike.
 9. **The world may style its own frame.** A map names its own edge ("even in ascii mode"); the chrome
    stays legible in monochrome and ASCII first.
@@ -186,8 +185,7 @@ title screen's menu.
   Up on the first row and Down on the last do nothing, without a flicker — a held key would otherwise
   flicker at every repeat. (RULE — `tests/build-lists.test.ts`)
 - **A first tap is one row; taps and holds move a list exactly as they move the map cursor** (see *The
-  map*): every tap one row, a held arrow keeping the game's pace, clamped at the ends, and whatever the
-  Acceleration Experiment adds to the map cursor it adds to a list; the map's arrow step never applies. The
+  map*): every tap one row, a held arrow keeping the game's pace, clamped at the ends; the map's arrow step never applies. The
   title screen's menu stops and jumps but does not count or keep a pace: its loop reads no clock. One
   key classifier serves every list (`src/terminal/list-keys.ts`).
   (RULE — `tests/build-lists.test.ts`, `tests/title-menu-list.test.ts`)

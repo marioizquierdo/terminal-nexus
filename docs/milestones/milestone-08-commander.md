@@ -266,7 +266,8 @@ pull request, for him to play before anything is settled.
 
 - [x] The build opens with no acceleration: an arrow moves its step whether tapped slowly, tapped quickly or held,
       and a held arrow still repeats at the game's own pace.
-- [x] An Acceleration Experiment puts the older speed-ups back, taps and holds separately or together.
+- [x] Acceleration is removed, its Experiment and its numbers with it, once Mario had played without it ("that was
+      a bad idea"); an old settings export naming them still loads.
 - [x] The arrow's step and Shift's step are Experiments, so Shift can be the slow, exact move as well as the fast
       one; a list always moves one row for an arrow and goes to an end for Shift.
 - [x] Shift's pace and a held arrow's pace are Experiments, the hold's with an "off" that lets every repeat of the
