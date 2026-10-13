@@ -5,6 +5,8 @@
 // the one flash on the way back to the menu. No row or height is hardcoded: every place is read from
 // the layout.
 
+import { COMMANDER_ROWS } from "../src/view/commander-panel.ts"
+import { sidePanelPlan } from "../src/view/raid-panel.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { STARTER_CATALOG } from "../src/build/catalog.ts"
@@ -81,8 +83,14 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
         assert.equal(lines[index]?.row, panelRow(side, CREDITS_ROW) + 1 + index, "the buildings are not one row apart under the credits")
         assert.equal(line(lines[index]?.row as number), `[${item.hotkey}] ${item.label}`.padEnd(layout.panelLimit - String(item.cost).length) + String(item.cost))
       })
-      // Nothing between the last building and Start Battle Round: no headings, no help text.
+      // Nothing between the last building and Start Battle Round but the Commander panel just above it: no headings,
+      // no help text.
+      const place = sidePanelPlan({ context: side.context, state: side.build.state, layout })
+      assert.equal(place.commander?.form, "full", "the Commander panel is not whole over Start Battle Round")
+      const top = place.commander?.form === "full" ? place.commander.top : -1
+      assert.match(line(top), /VASSE +\d+\/\d+ *$/, "the Commander panel is not over Start Battle Round")
       for (let row = (lines.at(-1)?.row as number) + 1; row < startRow(layout); row += 1) {
+        if (row >= top && row < top + COMMANDER_ROWS) continue
         assert.equal(line(row).trim(), "", `row ${row} is not empty: "${line(row)}"`)
       }
       assert.equal(startRow(layout), layout.panelLastRow)

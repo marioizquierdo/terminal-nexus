@@ -72,7 +72,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
   )
   assert.deepEqual(
     ARMIES.commanders.map(({ barks: _barks, ...commander }) => commander),
-    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse" }],
+    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", portrait: [" _=_ ", "(-_-)", "/|#|\\"] }],
   )
   // Her lines in battle come with her (tests/voice.test.ts has what is said when).
   assert.ok(Object.keys(ARMIES.commanders[0]?.barks ?? {}).length > 0, "Vasse has nothing to say")

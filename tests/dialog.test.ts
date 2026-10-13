@@ -640,14 +640,14 @@ test("round 2 of the Commander's named scenario opens on her absence, round 3 on
   const vasse = (side.build.round.field ?? []).find((entity) => entity.contentId === VASSE)
   assert.ok(vasse !== undefined, "she is not on round 3's map")
   assert.deepEqual(side.build.round.scene, [
-    { speaker: null, side: null, unit: null, text: "Vasse is back beside the Nexus.", focus: { tile: vasse.anchor, own: [vasse.anchor] } },
+    { speaker: null, side: null, unit: null, text: "The Nexus Pulse restores Vasse beside the Nexus.", focus: { tile: vasse.anchor, own: [vasse.anchor] } },
   ])
   assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, grid))
   assert.equal(bottomLineText(side), "[enter] or [esc] closes it.")
   // The game's own voice has no name: the border runs unbroken where a speaker's would be.
   const frame = compose(side, {}, "truecolor")
   const { box } = dialogBox(side)
-  assert.match(frameToText(frame), /Vasse is back beside the Nexus\./)
+  assert.match(frameToText(frame), /The Nexus Pulse restores Vasse beside the/)
   for (const x of [box.left + 2, box.left + 3]) {
     const cell = cellAt(frame, x, box.top)
     assert.deepEqual([cell.glyph, cell.style.fgRole, cell.style.inverse], [" ", "chrome.frame", true])
@@ -657,7 +657,7 @@ test("round 2 of the Commander's named scenario opens on her absence, round 3 on
   assert.equal(cellAt(frame, beside.x, beside.y).style.seeThrough?.role, "fx.flash")
   keys(side, ENTER)
   assert.equal(side.build.state.popup, null)
-  assert.equal(bottomLineText(side), "Round 2: victory. Vasse is back beside the Nexus.")
+  assert.equal(bottomLineText(side), "Round 2: victory. The Nexus Pulse restores Vasse and deals: [n].")
   // Without scenes, the same round opens straight on the menu.
   const plain = fixtureSide(false)
   playRound(plain)

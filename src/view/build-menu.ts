@@ -26,7 +26,8 @@ import type { CapabilityMode, StyleRole } from "./roles.ts"
 import { terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { BuildCompositionInput, RowAck } from "./build.ts"
-import { drawRaidPanel } from "./raid-panel.ts"
+import { drawRaidPanel, sidePanelPlan } from "./raid-panel.ts"
+import { drawCommanderPanel } from "./commander-panel.ts"
 
 /** A bar under a row: the role every part on it takes, and the weight it adds to them. */
 type Bar = Readonly<{ role: StyleRole; bold: boolean; underline: boolean }>
@@ -314,4 +315,5 @@ export function drawPanel(cells: BandCell[], input: BuildCompositionInput, pack:
     drawMenuRow(cells, layout, row, spec, capability)
   })
   drawRaidPanel(cells, input)
+  drawCommanderPanel(cells, input, sidePanelPlan(input).commander)
 }

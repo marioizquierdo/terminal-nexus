@@ -145,6 +145,15 @@ export type BuildContext = Readonly<{
   /** The Commanders sitting this round out, and when each is back — handed on to the next round by the
    *  shell, and read by the Battle Round screen to say so. Absent: nobody is missing. */
   absent?: readonly CommanderAbsence[]
+  /** The Commanders the Nexus Pulse brought back as this round opened, beside their side's Nexus: what the
+   *  Commander panel says of the round she is restored. Absent: nobody came back. */
+  restored?: readonly Readonly<{ player: "A" | "B"; contentId: string }>[]
+  /**
+   * The player's Commander as the Commander panel shows her (`src/view/commander-panel.ts`): her unit, her name and
+   * her portrait, from the campaign the level belongs to. What she has and where she is, the panel reads from the
+   * rest of the context (the field, the absences, the round's arrivals). Absent: a level with no Commander.
+   */
+  commander?: Readonly<{ contentId: string; name: string; portrait: readonly string[] }>
   /** What the next round's triggers will bring, and where: always drawn, see-through, where it arrives
    *  (the incoming raid). */
   incoming?: readonly IncomingEntity[]

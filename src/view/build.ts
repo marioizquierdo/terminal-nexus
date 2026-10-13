@@ -11,6 +11,7 @@
 // (`build-menu.ts`), cards and the card reveal (`build-card.ts`), hand-offs to the map
 // (`build-handoff.ts`) and popups (`build-popup.ts`).
 
+import { drawAbsentCommander, pulseCommander, takenOnMap } from "./commander-panel.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Camera } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
@@ -179,7 +180,7 @@ export function composeBuildFrame(
     drawFrameLight(cells, input.layout, input.pulse)
     drawTopBarAndBottomLine(cells, input, null)
     const panel: BandCell[] = []
-    drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber)
+    drawPulsePanel(panel, input.layout, input.pulse, input.state.pulseNumber, pulseCommander(input.context, input.pulse, input.state.pulseNumber))
     for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
     drawPopup(cells, input, pack)
     return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
@@ -190,6 +191,7 @@ export function composeBuildFrame(
   const preview = armedPreview(input.context, input.state)
   const animating = animatingPlacements(input)
   drawGrid(cells, input, pack, animating)
+  drawAbsentCommander(cells, input, takenOnMap(input.context, input.state))
   drawRaidIntent(cells, input, pack)
   drawEffects(cells, input, animating, capability)
   drawPreview(cells, input, preview)

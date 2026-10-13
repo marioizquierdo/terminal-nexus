@@ -159,7 +159,7 @@ test("round 3 opens with her back beside the Nexus, at full health, and her card
   assert.doesNotMatch(panelText(side), /Vasse/)
   keys(side, ENTER)
   assert.equal(side.build.state.pulseNumber, 3)
-  assert.equal(statusLine(side), "Round 2: victory. Vasse is back beside the Nexus.")
+  assert.equal(statusLine(side), "Round 2: victory. The Nexus Pulse restores Vasse and deals: [n].")
   assert.match(mapText(side), /@/, "she is not on round 3's map")
   const vasse = (side.build.round.field ?? []).find((entity) => entity.contentId === VASSE)
   assert.ok(vasse !== undefined)

@@ -37,6 +37,7 @@
       "id": "vasse",
       "name": "Edda Vasse",
       "unit": "unit.citizen.vasse",
+      "portrait": [" _=_ ", "(-_-)", "/|#|\\"],
       "barks": {
         "round-start": ["Positions. Nobody improvises.", "Stations. Look like a perimeter.", "On my mark. That was it."],
         "first-contact": ["By the book. The new book.", "Contact. Hold your spacing.", "Weapons free. Paperwork after."],

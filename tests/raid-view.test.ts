@@ -19,7 +19,7 @@ import { CAPABILITY_MODES, SEE_THROUGH_STEP, resolveCell, seeThroughColours } fr
 import type { CapabilityMode } from "../src/view/roles.ts"
 import { CHROME_GLYPHS, terrainGlyph } from "../src/view/theme.ts"
 import type { GlyphPack } from "../src/view/theme.ts"
-import { bearing, raidLines, raidRows, targetName, troopsLines } from "../src/view/raid-panel.ts"
+import { bearing, raidLines, raidRows, sidePanelPlan, targetName, troopsLines } from "../src/view/raid-panel.ts"
 import { isTroops } from "../src/view/troops-post.ts"
 import type { TroopsGroup } from "../src/view/troops-post.ts"
 import { GHOST_FADES, TRAIL_MOTION, hasTrail, trailGlyph, trailMarks, trailTiles } from "../src/view/build-grid.ts"
@@ -151,11 +151,12 @@ test("a trail never replaces a glyph: only bare open ground under it changes, an
 })
 
 test("the panel says the coming raid in every round, inside the panel's free rows at 80 x 24, no word cut", () => {
-  // Under the raid, where the player's troops head: at 80 x 24 the second and third rounds' raid gives up its
-  // kinds for them, as it would for a group more.
+  // Under the raid, where the player's troops head: at 80 x 24 the raid gives up its kinds for them, as it would for a
+  // group more. In the first round it gives them up for Vasse's panel too, which takes its three rows only while every
+  // group and the troops still fit; in the second and third she takes one line over Start Battle Round instead.
   const troops = [/^YOUR TROOPS$/, /^\d+ head for the line$/]
   const expected: readonly (readonly RegExp[])[] = [
-    [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}3 runners, 2 raiders$/, /^ {2}targets your Barracks$/, ...troops],
+    [/^AS THE ROUND STARTS$/, /^5 from the north-east$/, /^ {2}targets your Barracks$/, ...troops],
     [/^AS THE ROUND STARTS$/, /^7 from the north-east$/, /^ {2}targets your /, /^7 SECONDS IN$/, /^2 from the east$/, /^ {2}targets your /, ...troops],
     // What a group goes for first is the kernel's choice (tests/intent.test.ts): one of the player's buildings, or
     // Vasse, who is named.
@@ -165,8 +166,10 @@ test("the panel says the coming raid in every round, inside the panel's free row
     const { layout } = side
     const context = side.build.round
     const frame = compose(side)
-    const rows = raidRows(layout, context.catalog)
+    const plan = sidePanelPlan({ context, state: side.build.state, layout, raid: side.build.raid() ?? [] })
+    const rows = plan.raid
     assert.ok(rows !== null, `round ${index + 1}: no room for the raid`)
+    assert.equal(plan.commander?.form, index === 0 ? "full" : "line", `round ${index + 1}: Vasse's panel`)
     const drawn: string[] = []
     for (let row = rows.first; row <= rows.last; row += 1) drawn.push(panelLine(side, frame, row).trimEnd())
     const lines = drawn.filter((line) => line !== "")
@@ -176,9 +179,10 @@ test("the panel says the coming raid in every round, inside the panel's free row
     const asked = raidLines(context, side.build.raid() ?? [], { x: 18, y: 10 }, layout.panelLimit - 1, rows.last - rows.first + 1)
     assert.deepEqual(lines, asked.filter((line) => line.parts.length > 0).map((line) => `${" ".repeat(line.indent)}${line.parts.map((part) => part.text).join("")}`))
     for (const line of lines) assert.ok(line.length <= layout.panelLimit - 1, `"${line}" runs to the divider`)
-    // A blank row after the buildings, and before Start Battle Round, which keeps its row.
+    // A blank row after the buildings, and before Start Battle Round — or her one line there — which keeps its row.
     assert.equal(panelLine(side, frame, rows.first - 1).trim(), "")
-    assert.equal(panelLine(side, frame, startRow(layout) - 1).trim(), "")
+    if (plan.commander?.form === "line") assert.match(panelLine(side, frame, startRow(layout) - 1), /^@ VASSE /)
+    else assert.equal(panelLine(side, frame, startRow(layout) - 1).trim(), "")
     assert.match(panelLine(side, frame, startRow(layout)), /\[s\] Start Battle Round/)
   })
 })

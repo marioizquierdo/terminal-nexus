@@ -32,7 +32,12 @@ import type { StyleRole } from "./roles.ts"
 import { playerRole } from "./theme.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { isTroops, troopsIn } from "./troops-post.ts"
+import type { CommanderPlace } from "./commander-panel.ts"
+import { COMMANDER_ROWS, buildPhaseCommander } from "./commander-panel.ts"
 import type { TroopsGroup } from "./troops-post.ts"
+
+/** A run of the panel's rows, first to last. */
+type Rows = Readonly<{ first: number; last: number }>
 
 /** One run of a line's words, in its own role and weight. */
 export type RaidPart = Readonly<{ text: string; role: StyleRole; bold?: boolean }>
@@ -47,14 +52,19 @@ const INDENT = 2
 const TARGETS = "targets "
 
 /** The panel rows the raid may use: from the second row under the last building (a blank row between) to
- *  the second row above Start Battle Round (a blank row before it) — or `null` when the menu leaves none. */
-export function raidRows(layout: BuildLayout, catalog: BuildContext["catalog"]): Readonly<{ first: number; last: number }> | null {
+ *  the second row above `below` — Start Battle Round, or the Commander panel over it (`commander-panel.ts`) — with a
+ *  blank row before it; or `null` when the menu leaves none. */
+export function raidRows(
+  layout: BuildLayout,
+  catalog: BuildContext["catalog"],
+  below: number = startRow(layout),
+): Rows | null {
   const lines = constructLines(layout, catalog)
   // A menu cut short by the panel's height has no room under it.
   if (lines.length < catalog.length) return null
   const lastBuilding = lines.at(-1)?.row ?? layout.panelRow + CREDITS_ROW
   const first = lastBuilding + 2
-  const last = startRow(layout) - 2
+  const last = below - 2
   return last >= first ? { first, last } : null
 }
 
@@ -240,7 +250,7 @@ function raidOnly(context: Pick<BuildContext, "registry">, raid: RaidForecast, f
 export function drawRaidPanel(cells: BandCell[], input: BuildCompositionInput): void {
   const { context, layout, raid } = input
   if (raid === undefined || raid.length === 0) return
-  const rows = raidRows(layout, context.catalog)
+  const rows = sidePanelPlan(input).raid
   if (rows === null) return
   const from = nexusTile(context) ?? { x: Math.floor(context.grid.width / 2), y: Math.floor(context.grid.height / 2) }
   const width = layout.panelLimit - 1
@@ -252,4 +262,33 @@ export function drawRaidPanel(cells: BandCell[], input: BuildCompositionInput): 
       at += part.text.length
     }
   })
+}
+
+/**
+ * How the free rows under the menu are shared between the coming raid's words and the Commander panel
+ * (`commander-panel.ts`). The raid comes first: the full panel, three rows over Start Battle Round with a blank row
+ * above it, only while the raid still shows every group whole and the troops' line in what is left (its kinds may
+ * go, as they would for a group more); else her one line, in the blank row over Start Battle Round. Nothing for her
+ * on a level with no Commander, or a menu the panel cuts short.
+ */
+export function sidePanelPlan(input: Pick<BuildCompositionInput, "context" | "state" | "layout" | "raid">): Readonly<{ raid: Rows | null; commander: CommanderPlace | null }> {
+  const { context, layout } = input
+  const rows = raidRows(layout, context.catalog)
+  if (rows === null || buildPhaseCommander(context, input.state) === null) return { raid: rows, commander: null }
+  const top = startRow(layout) - 1 - COMMANDER_ROWS
+  const room = top - 2 - rows.first + 1
+  const from = nexusTile(context) ?? { x: Math.floor(context.grid.width / 2), y: Math.floor(context.grid.height / 2) }
+  if (room >= 0 && fitsWhole(context, input.raid ?? [], from, layout.panelLimit - 1, room)) {
+    return { raid: room > 0 ? { first: rows.first, last: top - 2 } : null, commander: { form: "full", top } }
+  }
+  return { raid: rows, commander: { form: "line", row: startRow(layout) - 1 } }
+}
+
+/** Whether `room` rows hold every group of the raid whole, without its kinds, and the troops' lines under them. */
+function fitsWhole(context: Pick<BuildContext, "registry">, forecast: RaidForecast, from: Coord, width: number, room: number): boolean {
+  const troops = troopsIn(forecast)
+  const raid = forecast.filter((group) => !isTroops(group))
+  const own = troops === null ? 0 : troopsLines(troops, width).length
+  const least = raid.length === 0 ? 0 : linesAt(context, raid, from, width, false).flat().length
+  return least + own <= room
 }

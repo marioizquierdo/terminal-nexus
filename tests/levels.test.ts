@@ -91,7 +91,7 @@ test("the cadence level opens by id, and her return is played: she falls in roun
   assert.deepEqual(third.absent, [])
   const back = (third.field ?? []).filter((entity) => entity.contentId === VASSE)
   assert.deepEqual(back.map((entity) => [entity.player, entity.hp]), [["A", 80]])
-  assert.match(third.scene?.[0]?.text ?? "", /Vasse is back beside the Nexus/)
+  assert.match(third.scene?.[0]?.text ?? "", /The Nexus Pulse restores Vasse beside the Nexus/)
   // And it is the same round 3 every time.
   assert.deepEqual(openRound(level, 3).field, third.field)
 })

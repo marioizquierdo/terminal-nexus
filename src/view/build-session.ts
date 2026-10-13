@@ -13,6 +13,7 @@
 // before and after a command, never fed back in, so a log can never change what the reducer does; and a
 // logger never throws.
 
+import { commanderName } from "../content/cards.ts"
 import type { ActivityLog } from "../log/activity.ts"
 import type { PowerCard } from "../armies/types.ts"
 import { activity as globalActivity } from "../log/activity.ts"
@@ -409,6 +410,11 @@ export class BuildSession {
     try {
       const result = resultOf(outcomeOf(presenter.resolved.timeline))
       this.log.log("pulse.end", { result: RESULT_WORDS[result.headline] ?? result.headline.toLowerCase(), reason: result.reason })
+      const of = this.context.round?.of
+      for (const fell of presenter.resolved.mission?.fell ?? []) {
+        if (fell.player !== "A") continue
+        this.log.log("commander.fell", { name: commanderName(fell.contentId), round: fell.fellInRound, back: of === undefined || fell.returnsInRound <= of ? fell.returnsInRound : 0 })
+      }
       const trained = trainedIn(presenter.resolved)
       if (trained.buildings > 0) this.log.log("pulse.trained", { round: this.buildState.pulseNumber, ...trained })
     } catch {
@@ -434,7 +440,26 @@ export class BuildSession {
     // The sequences keep counting up, so the live loop never mistakes a new one for one it has shown.
     this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
     this.presenter = null
+    this.noteCommander()
     this.recordDialog(null)
+  }
+
+  /** A round has opened: whether the player's Commander sits it out (`commander.out`) or the Nexus Pulse that opened
+   *  it brought her back (`commander.restored`). */
+  private noteCommander(): void {
+    try {
+      const round = this.context.round
+      if (round === undefined) return
+      for (const absence of this.context.absent ?? []) {
+        if (absence.player !== "A") continue
+        this.log.log("commander.out", { name: commanderName(absence.contentId), round: round.number, back: absence.returnsInRound <= round.of ? absence.returnsInRound : 0 })
+      }
+      for (const back of this.context.restored ?? []) {
+        if (back.player === "A") this.log.log("commander.restored", { name: commanderName(back.contentId), round: round.number })
+      }
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
   }
 
   /** Resolve the committed plan and put its Pulse on screen. A Pulse that cannot start — a plan that
