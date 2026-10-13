@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8C — the Nexus Pulse deals by schedule: three cards a round by rarity and role, with chance, requirements and upgrades; a level may give its own schedule and make sure of a power; the in-match draft is named the Nexus Pulse, and the battle the Battle Round.
+**Current step:** 8D — the Commander on screen and her return: a Commander panel with her portrait, health, skill and state; her absence drawn at the Nexus with a countdown; the Nexus Pulse that brings her back shows it; and an Activity Logs filter for her life.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Battle Round is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -274,6 +274,23 @@ pull request, for him to play before anything is settled.
       keyboard move.
 - [x] The Controls page says what the arrows and Shift do in the build being played.
 - [x] A playable page opens the game with each combination from a button.
+
+### Step 8D — The Commander on screen, and her return
+
+Mario's word after re-evaluating the milestone ([his words](../history/feedback/2026-10-13-commander-armies.md)):
+"finish this milestone." The one claim it had not proved is that a player understands what the Commander's death
+did; this step makes her state something a player reads at a glance, and her return the Nexus Pulse's own moment.
+Built on a new pull request.
+
+- [ ] A Commander panel, in the Build Phase and the Battle Round at 80 × 24: her name, a small portrait, her health,
+      her skill in a line, and her state: fielded, out (back in round N), or restoring.
+- [ ] While she is out, a dim `@` stands at the Nexus with the rounds until she is back, so the empty place reads as
+      "she is coming back" rather than "she is gone".
+- [ ] The Nexus Pulse that opens the round she is restored brings her back on screen: the Pulse says so, the camera
+      goes to her, and her line follows.
+- [ ] An Activity Logs filter, Commander, records when she fell, how long she is out and when she is back.
+- [ ] Played on the level made for her return; the pull request says whether her death and her return read without
+      explanation.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).
