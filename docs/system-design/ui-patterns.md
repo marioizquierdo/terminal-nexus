@@ -223,6 +223,14 @@ title screen's menu.
   ground only, under the raid's trail. Never at the cost of a whole raid group: short of room the raid's
   groups drop their kinds first, then the troops' lines go. Not during a battle, not on a committed plan.
   (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
+- ***The Commander panel*** (a named pattern; the owner: "giving them character and presence in the UI"): the
+  player's Commander at a glance, three rows over Start Battle Round with a blank row above them — her portrait
+  (three rows of plain ASCII, army data) on the left, and beside it her name and health, her skill, and her state:
+  `ready`, `out, back round 3` (her name and portrait dim, her health a dash), or `restored this round`. Information,
+  not rows. The raid's words come first: the full panel only while the raid still shows every group whole and the
+  troops' line (its kinds may go); else she takes one line in the blank row over Start Battle Round (`@ VASSE out,
+  back round 3`). Nothing on a level with no Commander. (RULE — `tests/commander-panel.test.ts`,
+  `tests/raid-view.test.ts`)
 - **The action that ends the phase is the last row** (`startRow`); it opens the Battle Round screen. A Nexus
   power still waiting holds nothing back — for now the pick is optional (the owner: "it's easier for testing
   if I can just start a round") — so the row is never dim; its hint asks whether to start without one, and the
@@ -238,7 +246,8 @@ title screen's menu.
   and takes effect at once: the menu gains the building a permit adds under the next digit, a card says what
   changed (a Barracks's `WAVES 4 at 5s, 15s`, her aura "within range 8"), units called up show arriving beside the
   Nexus, and `[n] Nexus Pulse` says how many are active. A round after the first opens on the bottom line's "The
-  Nexus Pulse deals a new hand: [n]." (RULE — `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`,
+  Nexus Pulse deals a new hand: [n]." When the Pulse brought the Commander back, or could not yet, its popup opens
+  on `COMMANDER` and says so first (`Vasse restored beside the Nexus.`, or `Vasse is out; back for round 3.`). (RULE — `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`,
   `tests/mission-loop.test.ts`)
 
 ### 6.2 Cards
@@ -650,7 +659,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   Nexus, the arrows look around, and the battle never waits for the player.
   (RULE — `tests/pulse-screen.test.ts`)
 - **The panel, in order**: `BATTLE ROUND 1` with the time left until the last shot; what the timer counts and
-  its speed; a line per side (units, a health bar, the number); the last five events in plain words, each thing
+  its speed; a line per side (units, a health bar, the number); the Commander panel, her health as the fight
+  takes it and, the moment she falls, `fell, back round 3`; the last events in plain words (five, or as many as fit above the controls), each thing
   named as its card names it (`turret > runner`, `swarmer trained`; a Commander by name), coloured by side; under
   them, while she is saying something out of view, her glyph and name and her line; then `[space] Pause` and
   `[r] Replay`. Speed (`[`, `]`) and stepping (`.`, `,`) are keys, on the Controls
@@ -682,12 +692,15 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   out for). The next Build Phase opens on the dialog saying it, in the game's own voice, looking at the Nexus that
   will restore her, and its bottom line says it in place of "the Nexus stands" (`Round 1: victory.
   Vasse is out this round, back for round 3.`), and so does the Battle Round screen, under the round's own
-  words (`Vasse is out this round.`). The round she comes back, the bottom line says `Vasse is back beside
-  the Nexus.` and she stands there on the map, and the round opens on the dialog saying it, looking at
-  her. Wherever she stands she is drawn **bold at full strength**, arriving included and while a Battle Round
+  words (`Vasse is out this round.`). While she is out, the map keeps her place: a dim `@` on the free tile
+  nearest the Nexus, east first, and beside it the rounds until she is back. **Her return is the Nexus Pulse's
+  act**: the round she comes back, the dialog opens on `The Nexus Pulse restores Vasse beside the Nexus.`, looking
+  at her where she stands, the bottom line says `The Nexus Pulse restores Vasse and deals: [n].`, the Pulse's popup
+  says it first, and the Commander panel reads `restored this round`. Wherever she stands she is drawn **bold at full strength**, arriving included and while a Battle Round
   plays, so she is never mistaken for the squad around her; a mission introduces her through the dialog,
-  her ring lit (PERIMETER's round 1). (RULE — `tests/commander-screen.test.ts`, `tests/dialog.test.ts`,
-  `tests/raid-view.test.ts`)
+  her ring lit (PERIMETER's round 1). The Activity Logs record her life (`commander.fell`, `commander.out`,
+  `commander.restored`), under the Commander filter. (RULE — `tests/commander-screen.test.ts`, `tests/dialog.test.ts`,
+  `tests/raid-view.test.ts`, `tests/commander-panel.test.ts`)
 - **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
   is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
   is that round's number, in the mission's words for it.

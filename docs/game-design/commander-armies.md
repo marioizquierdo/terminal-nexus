@@ -468,6 +468,8 @@ PERIMETER deals four of these, the owner's choice when the Nexus Pulse was built
 
 **What is built of her** (the Commander milestone's first step): the `@` that walks out of the annex with PERIMETER's two squads, eighty health (an Experiment while it is tuned), a short-range shot from just behind the line, and the death, absence and restoration every Commander has ([`pulse.md`](../system-design/pulse.md)). Her skill, By the Book, is built (above), and so is where she goes: with the player's troops, toward the target her level names (PERIMETER's line), fighting what comes within reach ([`pulse.md`](../system-design/pulse.md), a side's target); holding a post waits. Her **voice in battle** is built, behind an Experiment: her barks are data in her army (`barks` on her Commander entry; `src/armies/barks.ts` names the moments), said at the moments of a Battle Round that matter, a few a round at most (the interface patterns, her voice in battle). They are the officer reading the regulation aloud — dry, tired, decent, inside the lore's three-to-eight-word budget — and her fall is scheduling ("Back the round after next."). By the Book's reach shows around her during a battle. Two of her Nexus powers are built, Standing Order and Aid Station Permit, with the Aid Station it adds (`structure.citizen.aidstation`, the `aid-station-repair` scenario): a one-tile building that through every Battle Round heals the nearest wounded unit of her side within a range of 2 — the tiles beside it and two columns either side — 4 health every second and a half, never past full, never a building and never the raid; first guesses with no balance claim. In PERIMETER it heals mostly what comes home wounded and stands in the line, since her troops step out of the line to meet the raid. Her army is built (`armies/vasse/army.json`): her Commander, her two powers and her campaign, whose first level, PERIMETER, unlocks the three bench buildings from `armies/all`, the two shared powers from there (Reserve Callup, Drill Schedule), her two, and War Chest. Building her and her campaign is not choosing the Citizens' roster: every building she is offered is still the disposable bench, her powers are first versions with no balance claim, and the roster and its balance come later.
 
+**Her presence on screen** (RULE — `src/view/commander-panel.ts`, `tests/commander-panel.test.ts`; the Commander milestone's last step). The Commander panel in the Build Phase and the Battle Round shows her portrait, `_=_` over `(-_-)` over `/|#|\`, her name and health, By the Book, and where she is in her life: ready, fighting, out and the round she is back for, or restored this round. While she is out a dim `@` beside the Nexus keeps her place, with the rounds until she is back, and her return is the Nexus Pulse's act: the Pulse that opens the round restores her and says so. Every Commander gets the same panel; what fills it is her army's data.
+
 #### Marshal Averno — Citizen Nexus — Native, with a leak — *the mirror*
 
 **Who.** Human, he/him. Same doctrine, opposite temperament: where Vasse protects, Averno *presses*. Correct, clipped, and a shade too comfortable with what the machine keeps offering him.
@@ -558,7 +560,8 @@ Upgrade pool:
 
 Visual language:
 - Grid glyphs
-- portrait motif
+- portrait motif, and the portrait the Commander panel draws: three rows of plain ASCII, at most five glyphs wide
+  (`portrait` on the Commander in the army file, checked by the loader)
 - movement, projectile, impact, restoration
 
 Balance hypotheses:

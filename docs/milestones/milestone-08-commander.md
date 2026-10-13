@@ -280,16 +280,18 @@ pull request, for him to play before anything is settled.
 Mario's word after re-evaluating the milestone ([his words](../history/feedback/2026-10-13-commander-armies.md)):
 "finish this milestone." The one claim it had not proved is that a player understands what the Commander's death
 did; this step makes her state something a player reads at a glance, and her return the Nexus Pulse's own moment.
-Built on a new pull request.
+Built on a new pull request; waiting for Mario's playtest.
 
-- [ ] A Commander panel, in the Build Phase and the Battle Round at 80 × 24: her name, a small portrait, her health,
-      her skill in a line, and her state: fielded, out (back in round N), or restoring.
-- [ ] While she is out, a dim `@` stands at the Nexus with the rounds until she is back, so the empty place reads as
+- [x] A Commander panel, in the Build Phase and the Battle Round at 80 × 24: her name, a small portrait, her health,
+      her skill in a line, and her state: ready (fighting, in a battle), out (back in round N), or restored this round.
+      In the Build Phase the raid's words come first, and where the full panel would cost them a group she takes one
+      line over Start Battle Round.
+- [x] While she is out, a dim `@` stands at the Nexus with the rounds until she is back, so the empty place reads as
       "she is coming back" rather than "she is gone".
-- [ ] The Nexus Pulse that opens the round she is restored brings her back on screen: the Pulse says so, the camera
-      goes to her, and her line follows.
-- [ ] An Activity Logs filter, Commander, records when she fell, how long she is out and when she is back.
-- [ ] Played on the level made for her return; the pull request says whether her death and her return read without
+- [x] The Nexus Pulse that opens the round she is restored brings her back on screen: the dialog, the bottom line and
+      the Pulse's popup say the Nexus Pulse restores her, and the camera goes to her.
+- [x] An Activity Logs filter, Commander, records when she fell, how long she is out and when she is back.
+- [x] Played on the level made for her return; the pull request says whether her death and her return read without
       explanation.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
@@ -336,8 +338,10 @@ when it happens, and can explain what the upgrade they picked changed.
 
 ## Done when
 
-- [ ] The Commander mechanic (persistent unit, death, absence, restoration) is built and tested against
+- [x] The Commander mechanic (persistent unit, death, absence, restoration) is built and tested against
       the engine design's cadence.
-- [ ] The upgrade draft offers a real, mechanically distinct choice, not a cosmetic one.
-- [ ] The pull request says plainly that the Citizens Commander Army is still not locked.
-- [ ] `./scripts/check-repository.sh` passes.
+- [x] The upgrade draft offers a real, mechanically distinct choice, not a cosmetic one.
+- [x] The pull request says plainly that the Citizens Commander Army is still not locked.
+- [x] `./scripts/check-repository.sh` passes.
+
+What is left is Mario's: playing the last step, and accepting the milestone.

@@ -388,6 +388,17 @@ than any one feature:
    cards, so only the uncommon can change, and that seed dealt the same one. The test now looks for the first nearby
    seed that deals a different hand, and says why.
 
+## The Commander on screen (2026-10-13)
+
+1. **A playtest that fails leaves the last run's screens behind.** With its output thrown away, a broken run of
+   `scripts/playtest.mjs` looked like a working one: `.playtest/<name>.txt` still held the run before the change. The
+   change had made an import cycle (a new view module importing the map's module, which imports the menu's, which
+   imported the new one), and a constant was read before it was set. Read the command's own last line before the
+   file, or give each run a new `--name`.
+2. **A new block in a full panel takes its rows from something.** The Commander panel's three rows cost the raid's
+   words their kinds, then a group, at 80 × 24. Say which comes first, and fall back to a smaller form (her one line)
+   instead of cutting what is more important.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

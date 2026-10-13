@@ -10,14 +10,16 @@ it is done.*
   move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
   become tuned values. The next navigation ideas, from [the roguelike survey](../history/reports/2026-10-09-roguelike-navigation.md),
   wait for his pick.
-- **Play the Nexus Pulse** (the Commander milestone's last step, now dealt by schedule), from `./bin/terminal-nexus.ts
-  --at 'campaign?level=vasse-test-1'`: press `n`. Three powers are dealt each round, each saying how rare it is,
-  War Chest beside them; a digit keeps one, and what it does shows at once and lasts the mission. Round 2 deals
-  Aid Station Permit first, made sure of by PERIMETER's own schedule (unless it is already kept). Keep Drill
-  Schedule and a later hand may deal Drill Schedule II, the first upgrade: it takes Drill Schedule's place under
-  ACTIVE, and every Barracks sends three waves. Under THE MISSION in Settings (`d`), **Nexus pick** lets him feel
-  the pick required instead of optional; paste the settings export. Once he has played it, the Commander milestone
-  is ready for his acceptance.
+- **Play the Commander's last step, then accept the milestone** ([his words](../history/feedback/2026-10-13-commander-armies.md)),
+  from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`, the level made for her return: start the
+  round without building (`s`, `s`). Her panel over Start Battle Round shows her portrait, health, By the Book and
+  `ready`; in the battle it follows her health and says `fell, back round 3` the moment she falls. Round 2 opens
+  with her `out, back round 3`, and a dim `@1` beside the Nexus keeps her place. Round 3 opens on "The Nexus Pulse
+  restores Vasse beside the Nexus."; press `n` and the Pulse's popup says it first. Then in the menu (Esc), Activity
+  logs, step Left to the Commander filter and press `e`; paste the export. PERIMETER
+  (`campaign?level=vasse-test-1`) plays the Nexus Pulse as before: three powers a round, each with its rarity, and
+  **Nexus pick** under THE MISSION in Settings to feel the pick required. Once he has played them, the Commander
+  milestone is ready for his acceptance, and [Commander Armies](milestone-14-commander-armies.md) is next.
 - **Read the round's words** ([his words](../history/feedback/2026-10-07-nexus-pulse.md)): the one list of the
   round's, the Nexus Pulse's and the tech tree's words in [`commander-armies.md`](../game-design/commander-armies.md),
   and the tech tree's two new rules there (its state is always in sight on the Grid and the build menu; an upgrade
@@ -26,7 +28,7 @@ it is done.*
   the engine's word "pulse" for the battle (Q76; recommended: rename it before modding opens).
 - **The Nexus Pulse's own milestone, when he says** ([the plan](milestone-13-nexus-pulse.md)): its own moment on
   screen, the Nexus speaking to its Commander, more powers, and whether the pick becomes required. Not placed in
-  the order; his call where it goes.
+  the order; his call where it goes. An army bending the schedule moved to Commander Armies, as Averno's quirk.
 - **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
   given only by what stood when the round opened, and a building needs one tile on it; the dim ticks round

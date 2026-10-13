@@ -1,0 +1,19 @@
+[
+  {
+    "label": "Her fall",
+    "try": "The level made for her return, round 1 started with nothing built. Her panel, under the forces, follows her health as she fights out in front alone; the moment she falls it says fell, back round 3. Watch again with r.",
+    "at": "campaign?level=vasse-test-2",
+    "keys": "s s"
+  },
+  {
+    "label": "Out a round",
+    "try": "Round 2 opens without her. Her panel over Start Battle Round says out, back round 3, her portrait dim, and a dim @ beside the Nexus keeps her place with the 1 round to wait. Press n: the Nexus Pulse's popup says it first, under COMMANDER.",
+    "at": "campaign?level=vasse-test-2&round=2",
+    "keys": "Esc"
+  },
+  {
+    "label": "Restored by the Pulse",
+    "try": "Round 3 opens on The Nexus Pulse restores Vasse beside the Nexus, the camera on her. Press Enter: her panel says restored this round, and n opens the Pulse with her return at its top. Then Esc, a, Left to the Commander filter, and e exports her life across the mission.",
+    "at": "campaign?level=vasse-test-2&round=3"
+  }
+]

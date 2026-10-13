@@ -50,7 +50,10 @@ decide.
 
 **Scheduled**, each into the plan:
 
-- The Commander milestone finishes with its last step, the Commander on screen and her return.
+- The Commander milestone finishes with its last step, the Commander on screen and her return: **Built**. A
+  Commander panel in the Build Phase and the Battle Round (her portrait, health, skill and where she is in her life),
+  her place kept at the Nexus while she is out, her return said as the Nexus Pulse's act, and an Activity Logs filter
+  for her life.
 - The second Commander is Marshal Averno.
 - Catch-up is design and guidelines for authoring a Commander Army, not a mechanic built: no catch-up Experiment
   yet.
