@@ -15,6 +15,8 @@
 // when (`pulse-voice.ts`, planned once from the resolved Pulse, shown beside her, or in the panel while she is out
 // of view), and the reach of her aura while the fight is on — both read off the Pulse, neither able to touch it.
 
+import type { FallFrame } from "./commander-moments.ts"
+import { commanderArt, vignetteLengthMs } from "./commander-moments.ts"
 import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
 import type { Camera, Viewport, VisibleRange } from "../build/camera.ts"
@@ -123,6 +125,9 @@ export class PulsePresenter {
   private readonly bearer: Bearer | null
   /** What she says in this Pulse and when, or `null` when she says nothing in it (`pulse-voice.ts`). */
   private readonly voice: VoicePlan | null
+  /** Where and when she fell in this Pulse, or `null` when she did not: her vignette and her dim glyph beside the
+   *  Nexus are drawn from it (`commander-moments.ts`). */
+  private readonly fall: FallFrame | null
 
   constructor(
     resolved: ResolvedPulse,
@@ -144,6 +149,16 @@ export class PulsePresenter {
     })
     this.bearer = bearerOf(resolved.timeline)
     this.voice = this.planLines(options.barksOf ?? shippedBarks, presentation.cosmeticSeed)
+    this.fall = this.fallOf()
+  }
+
+  /** Where and when the player's Commander fell, in presentation time: her death's tick, at the Pulse's own pace. */
+  private fallOf(): FallFrame | null {
+    const bearer = this.bearer
+    if (bearer === null) return null
+    const died = this.resolved.timeline.events.find((event) => event.kind === "entity.died" && event.ordinal === bearer.ordinal)
+    if (died?.kind !== "entity.died") return null
+    return { at: died.at, atMs: died.tick * this.view.tickDurationMs, contentId: bearer.contentId, player: bearer.player }
   }
 
   /** Her voice in this Pulse, planned once from the resolved fight: its moments, and the lines she says at the
@@ -263,6 +278,8 @@ export class PulsePresenter {
     if (this.phase() !== "home") return now + FRAME_MS
     // A line of hers still typing, being read or thinning out over the result: every frame until it is gone.
     if (this.voice !== null && this.voice.lines.some((line) => this.timeMs < line.endMs)) return now + FRAME_MS
+    // Her vignette still open over the result.
+    if (this.fall !== null && this.timeMs < this.fall.atMs + vignetteLengthMs(commanderArt(this.fall.contentId)?.falls.length ?? 0)) return now + FRAME_MS
     // The result stands still; the timer runs on only to begin the next round on its own, when it will.
     if (this.autoNextMs === null || this.fired.has("next")) return null
     return now + Math.max(FRAME_MS, this.times.homeMs + this.autoNextMs - this.timeMs)
@@ -293,6 +310,7 @@ export class PulsePresenter {
     return {
       ...(aura === null ? {} : { aura }),
       ...(voice === null ? {} : { voice: voice.frame }),
+      ...(this.fall === null ? {} : { fall: this.fall }),
       sample,
       registry: this.resolved.timeline.registry,
       openingHealth: this.view.openingHealth,

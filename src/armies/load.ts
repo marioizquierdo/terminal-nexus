@@ -91,7 +91,7 @@ const schedule: Shape<Schedule> = list(record<ScheduleEntry>({ round: positiveWh
 /** A Commander's own fields. Her lines' moments and their fit are checked after, with the rest of what she names. */
 const commanderEntry = record<CommanderEntry>(
   { id: text, name: text, unit: text },
-  { notes: text, barks: dictionary(list(text)) as Shape<Barks>, portrait: list(text) },
+  { notes: text, barks: dictionary(list(text)) as Shape<Barks>, portrait: list(text), portraitFalls: list(list(text)) },
 )
 const unlocks = record<Unlocks>({}, { buildings: list(text), powers: list(text) })
 /** A level's own fields. Its mission is checked by its own shape, after. */
@@ -270,7 +270,7 @@ function barkProblems(entry: CommanderEntry): string[] {
 /** What is wrong with a Commander's portrait: not three rows, rows of different widths, a row wider than the panel
  *  gives it, or a glyph outside plain ASCII (the monochrome floor draws every one). */
 function portraitProblems(entry: CommanderEntry): string[] {
-  if (entry.portrait === undefined) return []
+  if (entry.portrait === undefined) return (entry.portraitFalls ?? []).length > 0 ? [`the Commander "${entry.id}" has frames for her fall and no portrait for them to follow`] : []
   const whose = `the Commander "${entry.id}"'s portrait`
   const rows = entry.portrait
   if (rows.length !== PORTRAIT_ROWS) return [`${whose} has ${rows.length} rows; it takes ${PORTRAIT_ROWS}`]
@@ -280,6 +280,12 @@ function portraitProblems(entry: CommanderEntry): string[] {
     if (row.length !== width) problems.push(`${whose} row ${index + 1} is ${row.length} glyphs wide and row 1 is ${width}: every row is as wide as the first`)
     if (row.length === 0 || row.length > PORTRAIT_WIDTH) problems.push(`${whose} row ${index + 1} is ${row.length} glyphs wide; a row is 1 to ${PORTRAIT_WIDTH}`)
     if (!/^[\x20-\x7e]*$/.test(row)) problems.push(`${whose} row ${index + 1} has a glyph outside plain ASCII`)
+  })
+  const frames = entry.portraitFalls ?? []
+  frames.forEach((frame, index) => {
+    const same = frame.length === rows.length && frame.every((row, at) => row.length === rows[at]?.length)
+    if (!same) problems.push(`the Commander "${entry.id}"'s fall frame ${index + 1} is not shaped like her portrait: ${rows.length} rows, each as wide as hers`)
+    if (frame.some((row) => !/^[\x20-\x7e]*$/.test(row))) problems.push(`the Commander "${entry.id}"'s fall frame ${index + 1} has a glyph outside plain ASCII`)
   })
   return problems
 }
@@ -594,7 +600,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
   const commanders = new Map<string, Commander>()
   for (const army of ordered) {
     for (const entry of army.commanders) {
-      commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit, barks: entry.barks ?? {}, portrait: entry.portrait ?? [] })
+      commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit, barks: entry.barks ?? {}, portrait: entry.portrait ?? [], portraitFalls: entry.portraitFalls ?? [] })
     }
   }
   const campaigns: Campaign[] = []

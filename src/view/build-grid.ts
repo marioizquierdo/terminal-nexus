@@ -115,6 +115,8 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   }
   const drawEntity = (entity: Readonly<{ contentId: string; anchor: Coord; player: PlayerId }>, incoming: boolean): void => {
     const definition = context.registry.get(entity.contentId)
+    // The Commander still to appear as her round opens is not on the map yet (`commander-moments.ts`).
+    if (input.commanderHidden === true && definition.commander === true && entity.player === "A") return
     const band = definition.layer === "obstacles" ? BANDS.structures : definition.layer === "air" ? BANDS.air : BANDS.units
     for (const offset of definition.footprint) {
       const tile = { x: entity.anchor.x + offset.x, y: entity.anchor.y + offset.y }

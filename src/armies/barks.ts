@@ -17,10 +17,14 @@
 import { wrapWords } from "../terminal/wrap-words.ts"
 
 /**
- * The moments a Commander speaks at, in the order a Battle Round tends to meet them. Each is worked out by the
- * view from what the round's events say happened (`src/view/pulse-voice.ts`); nothing in the rules reads them.
+ * The moments a Commander speaks at: the two of a Build Phase — she appears as a level begins, or the Nexus Pulse
+ * restores her (`src/view/commander-moments.ts`) — then a Battle Round's, in the order a round tends to meet them,
+ * each worked out by the view from what the round's events say happened (`src/view/pulse-voice.ts`). Nothing in the
+ * rules reads them.
  */
 export const BARK_MOMENTS = [
+  "appears",
+  "restored",
   "round-start",
   "first-contact",
   "raid-arrives",
@@ -36,6 +40,8 @@ export type BarkMoment = (typeof BARK_MOMENTS)[number]
 
 /** What each moment is, in plain words: for whoever writes an army, and for a refusal that names one. */
 export const BARK_MOMENT_MEANING: Readonly<Record<BarkMoment, string>> = {
+  appears: "she appears beside the Nexus as a level begins, in its first Build Phase",
+  restored: "the Nexus Pulse restores her beside the Nexus, as a round's Build Phase opens",
   "round-start": "the Battle Round starts",
   "first-contact": "the first shot of the round, either side's",
   "raid-arrives": "a group of the raid arrives while the round is on",
@@ -43,7 +49,7 @@ export const BARK_MOMENT_MEANING: Readonly<Record<BarkMoment, string>> = {
   "building-lost": "one of her side's buildings falls (not the Grid Nexus)",
   "badly-hurt": "she is badly hurt",
   "nexus-hit": "her side's Grid Nexus is hit for the first time",
-  "falls": "she falls: her last words before the Nexus restores her a round later",
+  "falls": "she falls: her last words before the Nexus restores her",
   "round-won": "the raid breaks, or the Battle Round is won",
 }
 

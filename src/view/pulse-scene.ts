@@ -6,8 +6,7 @@
 // worked out for one presentation instant — and paints cells. It reads no clock and asks nothing of the
 // kernel, and the frame it draws is a pure function of the resolved Pulse and the time.
 
-import type { CommanderStatus } from "./commander-panel.ts"
-import { COMMANDER_ROWS, drawCommanderRows } from "./commander-panel.ts"
+import type { FallFrame } from "./commander-moments.ts"
 import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
@@ -68,6 +67,9 @@ export type PulseFrame = Readonly<{
   /** What she is saying at this instant, and where: beside her, or in the panel while she is out of view.
    *  Absent: nothing. */
   voice?: VoiceFrame
+  /** Where and when the player's Commander fell in this Pulse, for her vignette and her dim glyph beside the Nexus
+   *  (`commander-moments.ts`). Absent: she did not fall. */
+  fall?: FallFrame
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured
@@ -421,13 +423,7 @@ function recentLines(pulse: PulseFrame): Array<NonNullable<ReturnType<typeof fee
  * Phase's menu has nothing to offer once the plan is committed. Laid out down a running row, so the
  * phases that say more (the result, and what Recall did) push what follows them down together.
  */
-export function drawPulsePanel(
-  cells: BandCell[],
-  layout: BuildLayout,
-  pulse: PulseFrame,
-  pulseNumber: number,
-  commander: CommanderStatus | null = null,
-): void {
+export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: PulseFrame, pulseNumber: number): void {
   const band = BANDS.chrome
   const column = layout.panelColumn
   const limit = layout.panelLimit
@@ -491,18 +487,8 @@ export function drawPulsePanel(
       for (const hint of wrapWords("For a new Build Phase: Esc, then Restart.", limit - 1)) line(hint, "chrome.muted")
     }
   } else {
-    // Her panel, under the forces: her health as the fight takes it, and the moment she falls, the round she is
-    // back for (`commander-panel.ts`).
-    if (commander !== null) {
-      drawCommanderRows(cells, layout, layout.panelRow + at, commander, limit - 1)
-      at += COMMANDER_ROWS
-      gap()
-    }
     line("RECENT", "chrome.label")
-    // As many of the newest as fit above the controls, with a row between.
-    const room = Math.min(...pulseControlRows(layout).map((control) => control.row)) - layout.panelRow - at - 1
-    const recent = recentLines(pulse)
-    for (const entry of room > 0 ? recent.slice(-room) : []) line(entry.text, entry.role)
+    for (const entry of recentLines(pulse)) line(entry.text, entry.role)
   }
 
   // Her line, while she (or the row it sits on beside her) is out of view: under the feed — or under what Recall
