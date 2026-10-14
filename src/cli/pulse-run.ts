@@ -15,7 +15,7 @@
 // - **the next round**: a Build Phase whose map is what Recall left — the player's buildings as standing
 //   structures, every surviving unit and the raid's structures as the field — with the credits the last
 //   one did not spend, and the next round's arrivals as incoming. A Commander who fell is carried as an
-//   absence and set down beside the Nexus again when her round out is over (`src/match/commander.ts`).
+//   absence and set down beside the Nexus again when her absence is over (`src/match/commander.ts`).
 
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { nexusTile, remaining, withoutScene } from "../build/state.ts"
@@ -427,7 +427,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       const registry = pulseRegistry(context, state)
       const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
       const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)
-      // A Commander who fell is out for the rest of this Pulse and the whole of the next round.
+      // A Commander who fell is out for the rest of this Pulse, and for the rounds after it her definition says.
       const fell = fallen(run.events, registry, pulse)
       return {
         timeline,

@@ -68,7 +68,7 @@ test("the levels are her campaign's, in its order: PERIMETER, then the Commander
   assert.equal(DEFAULT_LEVEL.play.mission, PERIMETER)
 })
 
-test("the cadence level opens by id, and her return is played: she falls in round 1, sits round 2 out, and is back for round 3", () => {
+test("the cadence level opens by id, and her return is played: she falls in round 1 and is back as round 2 opens", () => {
   const level = levelById("vasse-test-2")
   assert.ok(level !== undefined)
   // Round 1: she arrives out in front, and the level offers what the campaign has unlocked by then — all PERIMETER did.
@@ -80,18 +80,14 @@ test("the cadence level opens by id, and her return is played: she falls in roun
   assert.equal(first.allotment, 100)
   assert.ok(first.incoming?.some((entity) => entity.contentId === VASSE && entity.player === "A"), "round 1 does not bring her")
 
-  // Round 2: she fell in round 1, so she is out, and the round says when she is back.
+  // Round 2: she fell in round 1, and the Nexus has restored her, at full health beside it; the round opens on her.
   const second = openRound(level, 2)
-  assert.deepEqual(second.absent, [{ player: "A", contentId: VASSE, fellInRound: 1, returnsInRound: 3 }])
-  assert.ok(!(second.field ?? []).some((entity) => entity.contentId === VASSE), "she is on the map in the round she is out")
-  assert.match(second.openingStatus?.text ?? "", /Vasse is out this round, back for round 3/)
-
-  // Round 3: the Nexus has restored her, at full health beside it, and the round opens on her.
-  const third = openRound(level, 3)
-  assert.deepEqual(third.absent, [])
-  const back = (third.field ?? []).filter((entity) => entity.contentId === VASSE)
+  assert.deepEqual(second.absent, [])
+  assert.deepEqual(second.restored, [{ player: "A", contentId: VASSE }])
+  const back = (second.field ?? []).filter((entity) => entity.contentId === VASSE)
   assert.deepEqual(back.map((entity) => [entity.player, entity.hp]), [["A", 80]])
-  assert.match(third.scene?.[0]?.text ?? "", /The Nexus Pulse restores Vasse beside the Nexus/)
-  // And it is the same round 3 every time.
-  assert.deepEqual(openRound(level, 3).field, third.field)
+  assert.match(second.scene?.[0]?.text ?? "", /The Nexus Pulse restores Vasse beside the Nexus/)
+  assert.match(second.openingStatus?.text ?? "", /The Nexus Pulse restores Vasse and deals/)
+  // And it is the same round 2 every time.
+  assert.deepEqual(openRound(level, 2).field, second.field)
 })

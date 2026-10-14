@@ -112,11 +112,18 @@ export type ContentDef = Readonly<{
   nexus?: boolean
   /**
    * This unit is its side's Commander (pulse.md): a persistent frontline unit that, when it falls, is
-   * absent for the rest of that round's Pulse and the whole of the next round, and is then restored
+   * absent for the rest of that round's Pulse and the `roundsOut` whole rounds after it, and is then restored
    * beside its side's Grid Nexus. Only the rules between rounds read it (`src/match/commander.ts`); the
    * kernel sees a unit like any other, so a Commander's death is never the victory condition.
    */
   commander?: true
+  /**
+   * How many whole rounds this Commander sits out after the Battle Round she falls in: a whole number from 0, and
+   * only on a Commander (`createRegistry` refuses it anywhere else). Absent means 0: she falls in round R and the
+   * Nexus restores her as round R+1 opens; 1 keeps her out of round R+1 and back for R+2. A Commander's
+   * disadvantage to give her, or not (the owner: "not Base"); only the rules between rounds read it.
+   */
+  roundsOut?: number
   /**
    * A Commander's passive aura, a skill that works on its own (the owner, 2026-10-04: Commanders "should be like
    * heroes on warcraft3 ... Vasse should provide boost to nearby units"). While its bearer is on the Grid, the

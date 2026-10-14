@@ -6,9 +6,9 @@
 // (docs/history/reports/2026-10-01-commander-vasse.md), not balance.
 //
 // What makes her a Commander is the `commander` flag, and only the rules between rounds read it
-// (`src/match/commander.ts`): when she falls she is absent for the rest of that round's Pulse and the
-// whole of the next round, and then the Nexus restores her beside it. The kernel sees a unit like any
-// other, so her death is never the victory condition (pulse.md).
+// (`src/match/commander.ts`): when she falls she is absent for the rest of that round's Pulse, and the
+// Nexus restores her beside it as the next round opens — she sits no round out (`roundsOut`). The kernel
+// sees a unit like any other, so her death is never the victory condition (pulse.md).
 
 import type { ContentDef } from "./types.ts"
 import { rectFootprint } from "./types.ts"
@@ -18,6 +18,10 @@ export const COMMANDER_CONTENT: readonly ContentDef[] = [
     id: "unit.citizen.vasse",
     short: "vasse",
     commander: true,
+    // Back as soon as the next round opens: the base Commander pays nothing more for falling than the rest of the
+    // round she fell in (the owner, 2026-10-13: "Base will just come back immediately after"). Sitting rounds out is
+    // a disadvantage some other Commander may carry.
+    roundsOut: 0,
     layer: "units",
     footprint: rectFootprint(1, 1),
     // Twice a trooper: she came out of PERIMETER's first two rounds in every plan measured, and a plan

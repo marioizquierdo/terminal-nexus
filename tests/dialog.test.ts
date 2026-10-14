@@ -80,7 +80,7 @@ import {
   screenText,
 } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
-import { COMMANDER_FALLS, VASSE } from "./commander-fixture.ts"
+import { COMMANDER_FALLS, VASSE, sittingOut } from "./commander-fixture.ts"
 
 const grid = starterGrid()
 const registry = FIXTURE_REGISTRY
@@ -128,12 +128,13 @@ function playRound(side: BuildSide): void {
   assert.equal(pulse.phase(), "home")
 }
 
-/** The named scenario's first round on the starter map: Vasse falls in round 1 and is back for round 3. */
-function fixtureSide(scenes = true): BuildSide {
+/** The named scenario's first round on the starter map: Vasse falls in round 1 and is back as round 2 opens — or,
+ *  with a Vasse who sits a round out (`out`), back for round 3. */
+function fixtureSide(scenes = true, out = 0): BuildSide {
   const play = missionPlay(COMMANDER_FALLS)
   const context = play.firstRound({
     grid,
-    registry,
+    registry: out === 0 ? registry : sittingOut(out, registry),
     catalog: STARTER_CATALOG,
     standing: STARTER_STANDING,
     allotment: STARTER_ALLOTMENT,
@@ -614,8 +615,26 @@ test("the live loop breathes the light from the frame that first showed each lin
 
 // --- A Commander back: the game's own line ----------------------------------------------------------
 
-test("round 2 of the Commander's named scenario opens on her absence, round 3 on her return, each one line in the game's own voice", () => {
+test("round 2 of the Commander's named scenario opens on her return, one line in the game's own voice", () => {
   const side = fixtureSide()
+  playRound(side)
+  keys(side, ENTER)
+  const { state } = side.build
+  assert.equal(state.pulseNumber, 2)
+  assert.equal(state.popup, "dialog")
+  const vasse = (side.build.round.field ?? []).find((entity) => entity.contentId === VASSE)
+  assert.ok(vasse !== undefined, "she is not on round 2's map")
+  assert.deepEqual(side.build.round.scene, [
+    { speaker: null, side: null, unit: null, text: "The Nexus Pulse restores Vasse beside the Nexus.", focus: { tile: vasse.anchor, own: [vasse.anchor] } },
+  ])
+  assert.deepEqual(state.camera, centreOn(vasse.anchor, side.layout.viewport, grid))
+  keys(side, ENTER)
+  assert.equal(side.build.state.popup, null)
+  assert.equal(bottomLineText(side), "Round 1: victory. The Nexus Pulse restores Vasse and deals: [n].")
+})
+
+test("a Commander who sits a round out: round 2 opens on her absence, round 3 on her return, each one line in the game's own voice", () => {
+  const side = fixtureSide(true, 1)
   assert.equal(side.build.state.popup, null, "the named scenario has no intro")
   playRound(side)
   keys(side, ENTER)
@@ -659,7 +678,7 @@ test("round 2 of the Commander's named scenario opens on her absence, round 3 on
   assert.equal(side.build.state.popup, null)
   assert.equal(bottomLineText(side), "Round 2: victory. The Nexus Pulse restores Vasse and deals: [n].")
   // Without scenes, the same round opens straight on the menu.
-  const plain = fixtureSide(false)
+  const plain = fixtureSide(false, 1)
   playRound(plain)
   keys(plain, ENTER)
   playRound(plain)

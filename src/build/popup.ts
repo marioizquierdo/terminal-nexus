@@ -454,15 +454,19 @@ function commanderRows(context: BuildContext): PopupRow[] {
   const back = (context.restored ?? []).filter((entry) => entry.player === "A")
   const out = (context.absent ?? []).filter((absence) => absence.player === "A")
   const of = context.round?.of
+  const now = context.round?.number ?? 1
   const rows: PopupRow[] = [
     ...back.map((entry): PopupRow => ({ kind: "text", text: `${commanderName(entry.contentId)} restored beside the Nexus.`, strong: true })),
     ...out.map(
       (absence): PopupRow => ({
         kind: "text",
+        // Due back already and still out: the Nexus had nowhere to set her down (no Grid Nexus, or no room by it).
         text:
-          of === undefined || absence.returnsInRound <= of
-            ? `${commanderName(absence.contentId)} is out; back for round ${absence.returnsInRound}.`
-            : `${commanderName(absence.contentId)} is out for the mission.`,
+          absence.returnsInRound <= now
+            ? `${commanderName(absence.contentId)} is out; nowhere to return to.`
+            : of === undefined || absence.returnsInRound <= of
+              ? `${commanderName(absence.contentId)} is out; back for round ${absence.returnsInRound}.`
+              : `${commanderName(absence.contentId)} is out for the mission.`,
         muted: true,
       }),
     ),

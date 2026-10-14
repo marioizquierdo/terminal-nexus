@@ -247,7 +247,7 @@
         },
         {
           "id": "vasse-test-2",
-          "notes": "The Commander's cadence as a level: Vasse stands alone out in front, falls in round 1, sits round 2 out, and the Nexus restores her for round 3. It was built as the named scenario that proves the rule (tests/commander.test.ts pins the hash each of its rounds ends on), and is a level so the game can open it by route and her return can be played: in PERIMETER she cannot fall before round 2, so her return would come in a round 4 that does not exist. It unlocks nothing new.",
+          "notes": "The Commander's cadence as a level: Vasse stands alone out in front, falls in round 1, and the Nexus restores her beside it as round 2 opens (she sits no round out). It was built as the named scenario that proves the rule (tests/commander.test.ts pins the hash each of its rounds ends on, and plays it again with a test-only Vasse who sits one round out and one who sits two), and is a level so the game can open it by route and her return can be played. It unlocks nothing new.",
           "map": "starter",
           "credits": 100,
           "mission": {
