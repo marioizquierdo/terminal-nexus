@@ -102,7 +102,10 @@ words have their rows back.
 > build phase. When the level begins, the commander should appear next to the Nexus. It could just wait half
 > second or something and then do the commander apparition.
 
-**Built** (below).
+**Built.** As a level begins, and the round the Nexus Pulse restores her, she is not on the map for half a second;
+then a ring of her side's colour closes on her tile, she flashes in, and she says a line of her own beside her
+(new lines for the two moments, in her army's data). PERIMETER's first round already opens on her own words in the
+dialog, so there she says nothing more. She already arrives beside the Nexus in PERIMETER.
 
 ### F170 — A vignette when she dies
 
@@ -117,7 +120,9 @@ words have their rows back.
 > also don't want to overdo it. So the player can actually see what's going on in the battle. Let's just try those
 > two.
 
-**Built** (below).
+**Built.** A window of 9 by 5 opens beside where she fell, where it covers least of the fight, her name in its
+border: her portrait, then her face falling (`(>_<)`, `(x_x)`, frames in her army's data), then the window
+evaporating glyph by glyph, about three seconds in all. Only for the Commander, as he asked.
 
 ### F171 — Her card and portrait when explored
 
@@ -125,7 +130,8 @@ words have their rows back.
 > the exploring map selects the commander. When it's on top of the commander, it should have like a bigger
 > highlight. Uh, that's basically it. I don't think we need to show the commander all the time.
 
-**Built** (below).
+**Built.** Explore Map on her shows her portrait as her card's icon, every number kept at 80 × 24, and lights a ring
+of light round her, the dialog focus's own.
 
 ### F172 — Her symbol is her identity
 
@@ -140,7 +146,9 @@ words have their rows back.
 > little better. It feels like something more like fluid than coming from the space.
 
 "Base" is Vasse, "ad" is `@`, "elder" the Alder, as transcribed. **Built** as a rule for designing a Commander, and
-her portrait built on her `@`; which symbol she keeps is a question (below).
+her portrait built on her `@` (`_@_` over `(-_-)` over `/|@|\`); which symbol she keeps is a question with a
+recommendation in the register: `#` is rock on every map, so a ruled glyph that is free (`&`) is the one to try,
+with her art, in the ASCII art milestone.
 
 ### F173 — Fewer rounds, and Vasse back the next round
 
@@ -161,4 +169,10 @@ her portrait built on her `@`; which symbol she keeps is a question (below).
 > ahead and implement this.
 
 "Don't really want to have most commanders who die and come back in the very next round" reads, with the rest, as
-wanting most to come back the very next round. **Built** (below).
+wanting most to come back the very next round. **Built.** How many rounds a Commander sits out after the Battle
+Round she falls in is hers to have, as data; Vasse sits none, so the Nexus Pulse that opens the next round restores
+her and the result says "Vasse fell: back next round." Sitting rounds out is kept, proven on a test-only Commander. Her
+dim `@` beside the Nexus has no count now, and shows in the battle from the moment she falls. A restoration bonus is
+designed, not built: *Restoration Order* replaces *Expedited Restoration* in her pool. The six to nine rounds go to the
+register's question on how long a match is; mission 3, RESTORATION, planned around her round of absence, is a new
+question.

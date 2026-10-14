@@ -105,16 +105,17 @@ export function commanderHidden(context: BuildContext, elapsedMs: number | undef
   return elapsedMs !== undefined && !reducedMotion && elapsedMs < APPEAR.delayMs && appearing(context) !== null
 }
 
-/** The ring that closes on her as she appears: the tiles round her at a distance that shrinks from 3 to 1, a few
- *  of them lit at a time (cosmetic randomness on her tile), in her side's colour — then, as she lands, the ring
- *  at 1 bold. Under reduced motion, the ring at 1 for the whole of it. */
+/** The ring that closes on her as she appears: sparks on the tiles round her at a distance that shrinks from 3 to 1,
+ *  most of them lit at a time (cosmetic randomness on her tile), bold in her side's colour — then, as she lands, a
+ *  ring of `+` round her. Under reduced motion, that ring for the whole of it. */
 export function appearanceRing(at: Coord, sinceMs: number, reducedMotion: boolean): readonly Readonly<{ tile: Coord; glyph: string; bold: boolean }>[] {
   const ring = (radius: number): Coord[] => {
     const tiles: Coord[] = []
     for (let dy = -radius; dy <= radius; dy += 1) {
-      for (let dx = -2 * radius; dx <= 2 * radius; dx += 1) {
+      for (let dx = -2 * radius - 1; dx <= 2 * radius + 1; dx += 1) {
         const tile = { x: at.x + dx, y: at.y + dy }
-        if (gridDistance(at, tile) === 2 * radius) tiles.push(tile)
+        const distance = gridDistance(at, tile)
+        if (distance === 2 * radius || distance === 2 * radius + 1) tiles.push(tile)
       }
     }
     return tiles
@@ -125,10 +126,10 @@ export function appearanceRing(at: Coord, sinceMs: number, reducedMotion: boolea
   if (sinceMs >= APPEAR.ringMs) return ring(1).map((tile) => ({ tile, glyph: "+", bold: true }))
   const progress = sinceMs / APPEAR.ringMs
   const radius = Math.max(1, 3 - Math.floor(progress * 3))
-  const glyph = radius === 3 ? "." : radius === 2 ? ":" : "*"
+  const glyph = radius === 1 ? "+" : "*"
   return ring(radius)
-    .filter((tile) => cosmeticUnit(cosmeticHash(0, "commander.appear", radius, tile.x - at.x, tile.y - at.y, Math.floor(sinceMs / 120))) < 0.6)
-    .map((tile) => ({ tile, glyph, bold: radius === 1 }))
+    .filter((tile) => cosmeticUnit(cosmeticHash(0, "commander.appear", radius, tile.x - at.x, tile.y - at.y, Math.floor(sinceMs / 120))) < 0.75)
+    .map((tile) => ({ tile, glyph, bold: true }))
 }
 
 /** Her appearance on the Build Phase's map, at `elapsedMs` into the round: the ring closing on her, her flash in,

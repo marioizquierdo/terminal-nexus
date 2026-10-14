@@ -8,6 +8,7 @@
 // straight to another only its last beat plays. No row or length is hardcoded: each is read from the
 // layout or the Experiment's default.
 
+import { portraitOf } from "../src/view/commander-moments.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { setting } from "../src/build/all-settings.ts"
@@ -303,7 +304,9 @@ test("every card fits the panel whole — its subtitle on one line beside the ic
         const top = side.layout.panelRow
         assert.equal(lines[CARD_FIRST_ROW + 1]?.trim().endsWith(card.subtitle), true, `${where}: the subtitle is not on one line under the title`)
         // The description, read back off the panel, is all there, word for word.
-        const body = lines.slice(CARD_FIRST_ROW + 2).map((line) => line.trim()).filter((line) => line !== "")
+        // Under the icon: two rows (title and subtitle), or a Commander's portrait, three.
+        const portrait = card.icon.kind === "entity" && side.context.registry.get(card.icon.contentId).commander === true ? (portraitOf(card.icon.contentId) ?? []) : []
+        const body = lines.slice(CARD_FIRST_ROW + Math.max(2, portrait.length)).map((line) => line.trim()).filter((line) => line !== "")
         assert.ok(body.join(" ").startsWith(card.description), `${where}: the description is cut`)
         // Every number, its label and its value on one row.
         for (const stat of card.stats) {

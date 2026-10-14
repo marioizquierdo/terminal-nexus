@@ -281,9 +281,12 @@ Nexus untouched and count as held.
 
 A persistent frontline unit, normally `@` — fictionally a Nexus Symbol — on the `units` layer. It may
 take Nexus-specific upgrades and competes for investment with army, economy, research, and
-fortification. **On death it is absent for the rest of that round's Pulse and for one full round
-after it, then the Prime Nexus may replicate it again** (RULE — `src/match/commander.ts`,
-`tests/commander.test.ts`). **Commander death is not the victory condition** (RULE —
+fortification. **On death it is absent for the rest of that round's Pulse and for as many whole rounds after it as
+its definition says (`roundsOut`, none when it says nothing), then the Prime Nexus replicates it again**
+(RULE — `src/match/commander.ts`, `tests/commander.test.ts`): it falls in round R and is back as round
+R + 1 + roundsOut opens. Vasse sits none out, so the Nexus restores her as the round after she falls opens
+(the owner, 2026-10-14: "Base will just come back immediately after"); sitting rounds out is a disadvantage
+a Commander may be given, proven on a test-only Commander who sits one round out, and one who sits two. **Commander death is not the victory condition** (RULE —
 `src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
 
 What is built is that cadence, for one Commander, Vasse (`src/content/commanders.ts`). A unit is a

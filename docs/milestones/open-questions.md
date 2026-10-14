@@ -48,6 +48,8 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
+| [Q77](#q77--which-symbol-does-vasse-keep) | Which symbol does Vasse keep? | OPEN | Milestone 15 (ASCII art), or Mario now |
+| [Q78](#q78--what-does-restoration-play-now-that-vasse-is-back-at-once) | What does RESTORATION play, now that Vasse is back at once? | OPEN | Milestone 10 or later, when mission 3 is designed |
 
 ## Open
 
@@ -553,8 +555,14 @@ every hand keeps testing one key away. Play a mission with the Experiment on req
 
 ### Q75 — How long is a match?
 
-**Status:** OPEN — registered 2026-10-07. Blocks nothing built; it decides how many picks a match deals and how
-often the rare hand comes, and the worker economy is the first step that can measure it.
+**Status:** OPEN — registered 2026-10-07; the owner's direction in rounds, 2026-10-14: six to nine, twelve for a long
+game ("we really want to keep the game between six and nine pulses and again we'll test this later"). Blocks nothing
+built; it decides how many picks a match deals and how often the rare hand comes, and the worker economy is the first
+step that can measure it in minutes.
+
+The owner, 2026-10-14: "we want to make like six to nine 12 maybe for a long game where the players have an ability to
+defend and make the game longer leaning into their power curve later or they want to try to be aggro and finish it
+faster". Commander Armies' power curve is built against that count.
 
 The concept sets a match at 5 to 12 minutes, and a run at 6 to 9 of them in one sitting. Asking whether tech should
 be drafted, the owner said that with resource management "the gameplay could last longer, like maybe 40 minutes,
@@ -592,3 +600,39 @@ a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one 
 **Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
 and that is a contained change best made with the next change to the mission format; the engine's internal names
 cost nothing as long as the vocabulary says what they mean.
+
+### Q77 — Which symbol does Vasse keep?
+
+**Status:** OPEN — registered 2026-10-14. Blocks nothing: her art builds on whichever she keeps.
+
+A Commander's symbol is her identity, and her art builds on it (the owner, 2026-10-14). Vasse is `@`, and her portrait
+now wears it. The owner: "Maybe even think about [Vasse] may benefit from having a different, maybe a pound symbol, I
+think, is like more correct, or something that is like more strict ... Uh, lines or something like that. Uh, the at
+may work better for ... our [Alder] commander ... It feels like something more like fluid".
+
+| Option | What it costs |
+| --- | --- |
+| A. **Keep `@` for Vasse** for now, and choose in the ASCII art milestone, with the art beside each choice | Nothing now; the Alder's claim on `@` waits |
+| B. **`#`, as he first thought** | `#` is rock on every map in the ASCII pack: a Commander drawn as the walls around her would be lost in them. Rock would need another glyph first |
+| C. **Another ruled glyph: `&`, `$`, `%` or `=`** | `%` is the salvage item in the ASCII pack and `=` reads as a wall segment; `&` and `$` are free, and `$` reads as money |
+
+**Recommendation: A**, with `&` as the strongest ruled candidate to try then: it is free in both packs, and reads as a
+figure with a stance. Moving her off `@` touches every place that says "the one `@`" (the screen rules, her lines'
+tests), so it is best done once, with her art.
+
+### Q78 — What does RESTORATION play, now that Vasse is back at once?
+
+**Status:** OPEN — registered 2026-10-14. Blocks nothing built: mission 3 is an idea.
+
+The campaign plans mission 3, RESTORATION, around the round the Commander is absent: "hold the round your Commander
+is absent without losing a structure", `SYMBOL ABSENT — CYCLE 1 OF 1 — HOLD`. Since the owner's word that Vasse comes
+back the round after she falls, she has no round of absence to hold.
+
+| Option | What it costs |
+| --- | --- |
+| A. **The mission delays her**: the Nexus files her late this once, and the round without her is the mission's story | Keeps the mission as designed; the delay is mission data (a level may change her rounds out), and the lore gains a reason |
+| B. **The mission is about what comes back**: a restoration bonus, or something of her that does not | Keeps the subject, drops the round without her; the bonus goal changes |
+| C. **The mission belongs to a Commander who does sit rounds out** (Averno, say) | Moves the mission to another campaign |
+
+**Recommendation: A.** It keeps what the mission was for — restoration read closely — and makes the delay itself the
+thing the player notices the Nexus doing.

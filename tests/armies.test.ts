@@ -72,7 +72,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
   )
   assert.deepEqual(
     ARMIES.commanders.map(({ barks: _barks, ...commander }) => commander),
-    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", portrait: [" _=_ ", "(-_-)", "/|#|\\"] }],
+    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", portrait: [" _@_ ", "(-_-)", "/|@|\\"], portraitFalls: [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]] }],
   )
   // Her lines in battle come with her (tests/voice.test.ts has what is said when).
   assert.ok(Object.keys(ARMIES.commanders[0]?.barks ?? {}).length > 0, "Vasse has nothing to say")
@@ -571,7 +571,7 @@ test("her lines in battle are refused by name: a moment she cannot speak at, one
       }),
     ]),
     [
-      'army "vasse": the Commander "vasse" has lines for "victory", which is not a moment a Commander speaks at ("round-start", "first-contact", "raid-arrives", "unit-lost", "building-lost", "badly-hurt", "nexus-hit", "falls", "round-won")',
+      'army "vasse": the Commander "vasse" has lines for "victory", which is not a moment a Commander speaks at ("appears", "restored", "round-start", "first-contact", "raid-arrives", "unit-lost", "building-lost", "badly-hurt", "nexus-hit", "falls", "round-won")',
       'army "vasse": the Commander "vasse" has no lines for "first-contact": leave the moment out for her to stay quiet there',
       'army "vasse": the Commander "vasse"\'s line 1 for "raid-arrives" is empty',
       'army "vasse": the Commander "vasse"\'s line 2 for "raid-arrives" starts or ends with a space',

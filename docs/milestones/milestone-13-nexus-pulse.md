@@ -29,8 +29,8 @@ Not started. Each waits for Mario's word, and the order is a first guess.
 ### Step 13B — More powers, and the legendary hand
 
 - [ ] More of Vasse's designed powers are built, each with its rarity, role and modifiers: Countersigned as Standing
-      Order's upgrade, Mutual Support Standard, Field Triage, Plating Revision, Emergency Procedure, Expedited
-      Restoration, Early Warning — the effect kinds they need (`modifyRule`, `reveal`) with them.
+      Order's upgrade, Mutual Support Standard, Field Triage, Plating Revision, Emergency Procedure, Restoration Order (once
+      Expedited Restoration), Early Warning — the effect kinds they need (`modifyRule`, `reveal`) with them.
 - [ ] The hand every few rounds that deals legendaries: how often, and what a legendary may do.
 - [ ] Every new power is proved in tests and played in a mission.
 

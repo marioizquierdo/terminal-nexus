@@ -299,21 +299,21 @@ Built on a new pull request; waiting for Mario's playtest.
 Mario's notes on the step's pull request ([his words](../history/feedback/2026-10-13-commander-armies.md)): the
 Commander is another unit, so the side panel keeps its room; she is highlighted by her moments instead, and the
 rhythm of matches of six to nine rounds wants most Commanders back the round after they fall. Built on the same pull
-request.
+request; waiting for Mario's playtest.
 
-- [ ] The Commander panel leaves the side panel, in the Build Phase and the Battle Round; the raid's words have their
+- [x] The Commander panel leaves the side panel, in the Build Phase and the Battle Round; the raid's words have their
       rows back.
-- [ ] She appears: as a level begins, and the round the Nexus Pulse restores her, she is set down beside the Nexus
+- [x] She appears: as a level begins, and the round the Nexus Pulse restores her, she is set down beside the Nexus
       a moment after the round opens, with an effect that is hers and a line of her own.
-- [ ] She falls: a vignette opens beside where she fell, over the battle, her face changing and then evaporating,
+- [x] She falls: a vignette opens beside where she fell, over the battle, her face changing and then evaporating,
       small enough that the battle stays in sight.
-- [ ] Her card and portrait are Explore Map's: on her, the card shows her portrait, and the map gives her a stronger
+- [x] Her card and portrait are Explore Map's: on her, the card shows her portrait, and the map gives her a stronger
       highlight.
-- [ ] While she is out, a dim `@` beside the Nexus, her own symbol and nothing else.
-- [ ] How many rounds a Commander sits out is hers to have: Vasse none, back the round after she falls.
-- [ ] A Commander's symbol is her identity, and her art builds on it: a rule for designing one; which symbol Vasse
+- [x] While she is out, a dim `@` beside the Nexus, her own symbol and nothing else.
+- [x] How many rounds a Commander sits out is hers to have: Vasse none, back the round after she falls.
+- [x] A Commander's symbol is her identity, and her art builds on it: a rule for designing one; which symbol Vasse
       keeps goes to the register.
-- [ ] A milestone of its own for ASCII art is planned.
+- [x] A milestone of its own for ASCII art is planned.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).

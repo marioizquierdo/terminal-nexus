@@ -187,7 +187,7 @@ export const ACTIVITY_EVENTS = {
   },
   "commander.fell": {
     defaultLevel: "info",
-    description: "The player's Commander fell in a Battle Round: she is out for the rest of it and the whole of the next round.",
+    description: "The player's Commander fell in a Battle Round: she is out for the rest of it, and for the rounds after it her Commander sits out (none for Vasse).",
     props: {
       name: { type: "string", description: "Who, by the name the screen gives her: Vasse." },
       round: { type: "number", description: "The Battle Round she fell in." },
@@ -196,7 +196,7 @@ export const ACTIVITY_EVENTS = {
   },
   "commander.out": {
     defaultLevel: "info",
-    description: "A round opened without the player's Commander: she fell in the round before and sits this one out.",
+    description: "A round opened without the player's Commander: she fell in an earlier round and sits this one out.",
     props: {
       name: { type: "string", description: "Who, by the name the screen gives her." },
       round: { type: "number", description: "The round that opened without her." },

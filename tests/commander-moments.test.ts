@@ -37,7 +37,7 @@ import {
 } from "../src/view/commander-moments.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
 import { lineLength } from "../src/view/pulse-voice.ts"
-import { buildSide, compose, panelLines } from "./build-helpers.ts"
+import { buildSide, compose, keys, panelLines } from "./build-helpers.ts"
 
 const VASSE = "unit.citizen.vasse"
 
@@ -59,7 +59,7 @@ function cadence(keys: string): BuildPlaytest {
 }
 
 /** Two rounds of the cadence level played through, nothing built and no power picked: the Battle Round's result
- *  stands at the end of each, and Enter goes on; a round that opens on a line has it closed with Esc. */
+ *  stands at the end of each, and Enter goes on; round 2 opens on the Nexus Pulse restoring her, which Esc closes. */
 const TWO_ROUNDS = "s s wait~1000*24 Enter Esc s s wait~1000*24 Enter"
 
 /** Her tile as PERIMETER's first round opens: she arrives beside the Nexus with the squads. */
@@ -173,7 +173,7 @@ test("played: her vignette opens over the battle as she falls and is gone after,
 test("Explore Map on her shows her portrait on her card, every number kept at 80 x 24, and a ring of light round her", () => {
   const context = starterContext()
   const side = buildSide({ context, cursor: herTile(context) })
-  side.build.handleData("e")
+  keys(side, "e")
   const frame = compose(side, {}, "truecolor")
   const lines = panelLines(side, frame)
   assert.match(lines[2] ?? "", /^ _@_ +Vasse/)
@@ -203,9 +203,8 @@ test("the Activity Logs record her life across the mission, under the Commander 
   assert.deepEqual(
     story.filter(([event]) => String(event).startsWith("commander.")),
     [
-      ["commander.fell", { name: "Vasse", round: 1, back: 3 }],
-      ["commander.out", { name: "Vasse", round: 2, back: 3 }],
-      ["commander.restored", { name: "Vasse", round: 3 }],
+      ["commander.fell", { name: "Vasse", round: 1, back: 2 }],
+      ["commander.restored", { name: "Vasse", round: 2 }],
     ],
   )
   assert.deepEqual(

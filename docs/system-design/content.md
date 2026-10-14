@@ -99,7 +99,7 @@ spawns (see "Automatic production" in [`pulse.md`](pulse.md)).
 
 Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
 [`commander-armies.md`](../game-design/commander-armies.md). A Commander today is a unit whose content says so
-(`commander: true`, Vasse in `src/content/commanders.ts`), which only the rules between rounds read (see
+(`commander: true`, Vasse in `src/content/commanders.ts`), and how many whole rounds it sits out after it falls (`roundsOut`, none when absent; checked by `createRegistry`), which only the rules between rounds read (see
 "Commander" in [`pulse.md`](pulse.md)). A **Commander Army** is the playable content boundary:
 the complete set of choices legally available to one player in one match — a Nexus and faction, a
 Commander, starting units and structures, blueprints and a tech tree, upgrades, Nexus powers, and

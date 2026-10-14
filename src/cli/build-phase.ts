@@ -108,7 +108,8 @@ export type BuildPhaseOptions = Readonly<{
   /** Where the screen runs, as `session.start` records it: `terminal` unless the playtest page says `web`. */
   hostName?: HostName
   /** Whether a round that opens with a scene plays it in the dialog first — PERIMETER's intro, a
-   *  Commander's return. On unless a test turns it off to start on the menu. */
+   *  Commander's return — and the Commander's appearance with it (`commander-moments.ts`). On unless a test turns
+   *  it off to start on the menu. */
   scenes?: boolean
 }>
 
@@ -301,7 +302,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           capability: settings.capability,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
           raidTrail: hasTrail(raid, visibleRange(build.state.camera, build.state.viewport)),
-          ...appearsFor(build.round),
+          ...(options.scenes === false ? {} : appearsFor(build.round)),
         })
     const pulse = gated ? undefined : build.pulseFrame()
     const frame =

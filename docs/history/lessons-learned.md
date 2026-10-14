@@ -399,6 +399,14 @@ than any one feature:
    words their kinds, then a group, at 80 × 24. Say which comes first, and fall back to a smaller form (her one line)
    instead of cutting what is more important.
 
+3. **An animation at a round's opening is real time the live screen spends.** Her appearance asks for frames for its
+   first few seconds, and two tests that wait for an idle screen in real time failed, and ran long, until it was
+   tied to the switch that turns a round's opening scene off. A new moving thing needs a way to be off, and every
+   test that waits for stillness needs to know it exists.
+4. **Remove a feature the owner reverses whole, by restoring its files.** The Commander panel touched the raid's
+   words, the menu and the battle panel; restoring those files to the commit before it took one command and left no
+   half-removed branches. Keep a feature's changes in its own files where you can, so it can leave as cleanly.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".
