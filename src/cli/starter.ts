@@ -11,7 +11,7 @@ import { constructMenu, nexusDraftOf } from "../build/catalog.ts"
 import { MAPS } from "../build/maps.ts"
 import type { BuildContext } from "../build/state.ts"
 import type { Level } from "../armies/index.ts"
-import { PERIMETER_LEVEL } from "../armies/index.ts"
+import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { missionPlay } from "./pulse-run.ts"
 
@@ -37,7 +37,14 @@ export function levelContext(level: Level, scrollMargin?: number, extra: Partial
     ...(level.offer.schedule === undefined ? {} : { powerSchedule: level.offer.schedule }),
     buildingCards: [...level.offer.buildings, ...level.offer.addable],
     edgeStyle: map.edgeStyle,
+    ...commanderOf(level),
     ...(scrollMargin === undefined ? {} : { scrollMargin }),
     ...extra,
   })
+}
+
+/** The level's Commander as the Commander panel shows her: its campaign's. */
+function commanderOf(level: Level): Pick<BuildContext, "commander"> {
+  const commander = ARMIES.campaigns.find((campaign) => campaign.id === level.campaign)?.commander
+  return commander === undefined ? {} : { commander: { contentId: commander.unit, name: commander.name, portrait: commander.portrait } }
 }

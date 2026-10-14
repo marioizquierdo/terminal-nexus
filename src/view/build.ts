@@ -11,6 +11,8 @@
 // (`build-menu.ts`), cards and the card reveal (`build-card.ts`), hand-offs to the map
 // (`build-handoff.ts`) and popups (`build-popup.ts`).
 
+import { commanderHidden, drawAppearance, drawExploredCommander, drawOutInBattle, drawOutInBuild, drawVignette } from "./commander-moments.ts"
+import { footprintCentre } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Camera } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
@@ -132,6 +134,14 @@ export type BuildCompositionInput = Readonly<{
    * every still frame, a popup open, reduced motion — the trail is drawn still.
    */
   raidTrail?: Readonly<{ elapsedMs: number }>
+  /**
+   * **The round's clock**: how long ago this round's Build Phase first drew — what the Commander's appearance is
+   * timed from (`commander-moments.ts`: she is set down a moment after the round opens, a ring closing on her, and
+   * says her line). The live loop supplies it; absent — every still frame — she stands where she is, her line said.
+   */
+  roundElapsed?: Readonly<{ elapsedMs: number }>
+  /** Draw no Commander on the map this frame: she is still to appear (`commanderHidden`). Set by the composer. */
+  commanderHidden?: boolean
 }>
 
 /** A menu row's acknowledgement as the live loop shows it: the state's `ack` without its sequence
@@ -173,7 +183,11 @@ export function composeBuildFrame(
   if (input.pulse !== undefined) {
     const view = { camera: input.state.camera, viewport: input.state.viewport, layout: input.layout, grid: input.context.grid }
     drawTerrain(cells, view, pack)
-    drawPulseEffects(cells, view, input.pulse, drawPulseEntities(cells, view, input.pulse))
+    const occupied = drawPulseEntities(cells, view, input.pulse)
+    drawPulseEffects(cells, view, input.pulse, occupied)
+    // When she falls: her dim glyph beside the Nexus, and the vignette over the battle.
+    drawOutInBattle(cells, view, input.pulse.fall, input.pulse.timeMs, nexusIn(input.pulse), occupied)
+    drawVignette(cells, view, input.pulse.fall, input.pulse.timeMs, input.pulse.reducedMotion, pack, occupied, input.pulse.voice)
     drawCursor(cells, input)
     drawChrome(cells, input, pack)
     drawFrameLight(cells, input.layout, input.pulse)
@@ -189,7 +203,10 @@ export function composeBuildFrame(
   // panel alike — the reducer's `place()` acts on the very same derivation.
   const preview = armedPreview(input.context, input.state)
   const animating = animatingPlacements(input)
-  drawGrid(cells, input, pack, animating)
+  const hidden = commanderHidden(input.context, input.roundElapsed?.elapsedMs, input.reducedMotion === true)
+  drawGrid(cells, hidden ? { ...input, commanderHidden: true } : input, pack, animating)
+  drawOutInBuild(cells, input)
+  drawExploredCommander(cells, input, capability)
   drawRaidIntent(cells, input, pack)
   drawEffects(cells, input, animating, capability)
   drawPreview(cells, input, preview)
@@ -211,6 +228,17 @@ export function composeBuildFrame(
   drawPopup(cells, input, pack)
   // The dialog's speaker on its border, and its light on the map.
   drawDialog(cells, input, capability)
+  // Her appearance as the round opens: over the map, under nothing but the frame.
+  if (input.state.popup === null || input.state.popup === "dialog") drawAppearance(cells, input)
 
   return composeBands(input.layout.frame.width, input.layout.frame.height, cells)
 }
+
+/** The tile in the middle of the player's Grid Nexus in a Battle Round's frame, or `null` without one standing. */
+function nexusIn(pulse: PulseFrame): Coord | null {
+  const nexus = pulse.sample.state.entities.find((entity) => entity.player === "A" && pulse.registry.get(entity.contentId).nexus === true)
+  if (nexus === undefined) return null
+  const centre = footprintCentre(pulse.registry.get(nexus.contentId).footprint)
+  return { x: nexus.anchor.x + centre.x, y: nexus.anchor.y + centre.y }
+}
+

@@ -556,3 +556,16 @@ test("no popup carries [esc] in its border, and its corner is no click target", 
   assert.doesNotMatch((drawn[popup.box.top] ?? "").slice(popup.box.left, popup.box.right + 1), /\[esc\]/)
   assert.match(drawn[layout.escLabelEnd.row] ?? "", /close \[esc\] /)
 })
+
+test("the Nexus Pulse popup says when a Commander who sits rounds out is back, and never a round already past", () => {
+  const context = starterContext()
+  const state = { ...createBuildState(context, { x: 0, y: 0 }, { width: 49, height: 18 }), popup: "nexus-powers" as const }
+  const out = (number: number, returnsInRound: number) =>
+    (popupSpec({ ...context, round: { number, of: 3 }, absent: [{ player: "A", contentId: "unit.citizen.vasse", fellInRound: 1, returnsInRound }] }, state)?.rows ?? [])
+      .filter((row) => row.kind === "text")
+      .map((row) => ("text" in row ? row.text : ""))[0]
+  assert.equal(out(2, 3), "Vasse is out; back for round 3.")
+  assert.equal(out(2, 4), "Vasse is out for the mission.")
+  // Due back and still out: the Nexus had nowhere to set her down.
+  assert.equal(out(3, 2), "Vasse is out; nowhere to return to.")
+})

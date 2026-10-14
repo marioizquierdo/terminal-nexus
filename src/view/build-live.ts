@@ -114,6 +114,7 @@ export type LivePresentation = Pick<
   | "popupBorder"
   | "dialogLight"
   | "raidTrail"
+  | "roundElapsed"
 >
 
 /** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
@@ -235,6 +236,10 @@ export type LiveOptions = Readonly<{
    *  handed and the part of the map on screen): only then does it move and ask for frames. Absent (a test of
    *  something else), no trail. */
   raidTrail?: boolean
+  /** How long the Commander's appearance runs as this round's Build Phase opens, her line included
+   *  (`appearanceLengthMs`, `commander-moments.ts`), or absent when she does not appear this round: only then is the
+   *  round's clock handed to the view, and frames asked for until it has run. */
+  appearsForMs?: number
 }>
 
 /**
@@ -314,6 +319,9 @@ export class BuildAnimation {
    *  highlight breathes from — or `null` with no line showing, so the next line, or the next round's
    *  scene, starts its light afresh. Watched, not recorded, like the popup's border. */
   private seenLine: Readonly<{ line: number; at: number }> | null = null
+  /** The round whose Build Phase the last frame showed, and the first frame that showed it: what the Commander's
+   *  appearance is timed from. Watched, not recorded. */
+  private seenRound: Readonly<{ round: number; at: number }> | null = null
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
@@ -532,6 +540,16 @@ export class BuildAnimation {
       if (options.reducedMotion !== true && blends(options.capability) && state.experiments.popupPulseMs > 0) breathing = true
     } else this.seenLine = null
 
+    // The Commander's appearance: timed from the first frame of the round's Build Phase, and drawn every frame until
+    // it — her line included — has run.
+    if (this.seenRound?.round !== state.pulseNumber) this.seenRound = { round: state.pulseNumber, at: now }
+    const roundMs = now - this.seenRound.at
+    let roundElapsed: Readonly<{ elapsedMs: number }> | undefined
+    if (options.appearsForMs !== undefined && roundMs < options.appearsForMs) {
+      roundElapsed = { elapsedMs: roundMs }
+      ends.push(this.seenRound.at + options.appearsForMs)
+    }
+
     // The raid's trail, timed from the first frame that drew it moving. It never settles either, so it asks for
     // a frame only when it next looks different — never every frame — and none at all while it holds still.
     const raidTrail = this.trail.at(state, now, options)
@@ -558,6 +576,7 @@ export class BuildAnimation {
       ...(popupBorder === undefined ? {} : { popupBorder }),
       ...(dialogLight === undefined ? {} : { dialogLight }),
       ...(raidTrail === null ? {} : { raidTrail }),
+      ...(roundElapsed === undefined ? {} : { roundElapsed }),
       busyUntil: slowOnly ? slowUntil : ends.length === 0 ? null : Math.max(...ends),
       ...(slowOnly && slowUntil !== null ? { frameMs: slowUntil - now } : {}),
     }

@@ -16,10 +16,17 @@ export type ContentRegistry = Readonly<{
   ids(): readonly string[]
 }>
 
+/** A registry of `definitions`. Throws for a duplicate id, or a `roundsOut` that is not a whole number from 0 or is
+ *  on something that is not a Commander. */
 export function createRegistry(definitions: readonly ContentDef[]): ContentRegistry {
   const byId = new Map<string, ContentDef>()
   for (const definition of definitions) {
     if (byId.has(definition.id)) throw new Error(`duplicate content id: ${definition.id}`)
+    if (definition.roundsOut !== undefined) {
+      if (definition.commander !== true) throw new Error(`${definition.id}: only a Commander sits rounds out, and it is not one`)
+      if (!Number.isInteger(definition.roundsOut) || definition.roundsOut < 0)
+        throw new Error(`${definition.id}: roundsOut must be a whole number from 0, received ${definition.roundsOut}`)
+    }
     byId.set(definition.id, definition)
   }
   return {

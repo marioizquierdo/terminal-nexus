@@ -185,6 +185,32 @@ export const ACTIVITY_EVENTS = {
       shown: { type: "string", description: "Where it was shown: beside (beside her on the map) or panel (under the side panel's feed, because she was out of view as it began)." },
     },
   },
+  "commander.fell": {
+    defaultLevel: "info",
+    description: "The player's Commander fell in a Battle Round: she is out for the rest of it, and for the rounds after it her Commander sits out (none for Vasse).",
+    props: {
+      name: { type: "string", description: "Who, by the name the screen gives her: Vasse." },
+      round: { type: "number", description: "The Battle Round she fell in." },
+      back: { type: "number", description: "The round the Nexus Pulse restores her at the start of; 0 when that is past the mission's last round." },
+    },
+  },
+  "commander.out": {
+    defaultLevel: "info",
+    description: "A round opened without the player's Commander: she fell in an earlier round and sits this one out.",
+    props: {
+      name: { type: "string", description: "Who, by the name the screen gives her." },
+      round: { type: "number", description: "The round that opened without her." },
+      back: { type: "number", description: "The round she is back for; 0 when that is past the mission's last round." },
+    },
+  },
+  "commander.restored": {
+    defaultLevel: "info",
+    description: "The Nexus Pulse that opened a round restored the player's Commander beside the Nexus, at full health.",
+    props: {
+      name: { type: "string", description: "Who, by the name the screen gives her." },
+      round: { type: "number", description: "The round she is back for." },
+    },
+  },
   "move.step": {
     defaultLevel: "debug",
     description: "How far one cursor key moved the map cursor or a list's highlight, and why.",
@@ -235,6 +261,14 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
     question: "Whether the lines a round opens with were read: each line the dialog showed, and where the rest was skipped.",
     level: "info",
     events: ["dialog.line", "dialog.skip", "pulse.start"],
+  },
+  // The Commander step's question — does her death and her return read? — last, beside the Intro's: Left from the window's
+  // first filter reaches it. Remove it once answered.
+  {
+    name: "Commander",
+    question: "The Commander's life across the mission: each Battle Round, when she fell, the rounds she sat out and when the Nexus Pulse restored her.",
+    level: "info",
+    events: ["pulse.start", "pulse.end", "commander.fell", "commander.out", "commander.restored"],
   },
 ]
 

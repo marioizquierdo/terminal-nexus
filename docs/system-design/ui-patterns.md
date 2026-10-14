@@ -238,7 +238,8 @@ title screen's menu.
   and takes effect at once: the menu gains the building a permit adds under the next digit, a card says what
   changed (a Barracks's `WAVES 4 at 5s, 15s`, her aura "within range 8"), units called up show arriving beside the
   Nexus, and `[n] Nexus Pulse` says how many are active. A round after the first opens on the bottom line's "The
-  Nexus Pulse deals a new hand: [n]." (RULE — `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`,
+  Nexus Pulse deals a new hand: [n]." When the Pulse brought the Commander back, or could not yet, its popup opens
+  on `COMMANDER` and says so first (`Vasse restored beside the Nexus.`, or `Vasse is out; back for round 3.`). (RULE — `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`,
   `tests/mission-loop.test.ts`)
 
 ### 6.2 Cards
@@ -677,17 +678,30 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   (RULE — `tests/mission-loop.test.ts`)
 - ***A Commander's absence is said where the player is looking.*** On the map she is the one `@`, never a
   letter, in her side's colour. The feed names her and says she **falls** (`5.9s Vasse falls`), not that a
-  unit dies. The result says it under Recall, with the round she is out for and the round she is back for
-  (`Vasse fell: out for round 2, back for round 3.`; only that she fell, once there is no next round to be
-  out for). The next Build Phase opens on the dialog saying it, in the game's own voice, looking at the Nexus that
-  will restore her, and its bottom line says it in place of "the Nexus stands" (`Round 1: victory.
-  Vasse is out this round, back for round 3.`), and so does the Battle Round screen, under the round's own
-  words (`Vasse is out this round.`). The round she comes back, the bottom line says `Vasse is back beside
-  the Nexus.` and she stands there on the map, and the round opens on the dialog saying it, looking at
-  her. Wherever she stands she is drawn **bold at full strength**, arriving included and while a Battle Round
-  plays, so she is never mistaken for the squad around her; a mission introduces her through the dialog,
-  her ring lit (PERIMETER's round 1). (RULE — `tests/commander-screen.test.ts`, `tests/dialog.test.ts`,
-  `tests/raid-view.test.ts`)
+  unit dies. The result says it under Recall: `Vasse fell: back next round.` for a Commander who sits no round
+  out, the round she is out for and the round she is back for for one who does (`Vasse fell: out for round 2,
+  back for round 3.`), only that she fell once there is no next round. **Her return is the Nexus Pulse's act**:
+  the round she comes back, the dialog opens on `The Nexus Pulse restores Vasse beside the Nexus.`, looking at
+  her where she stands, the bottom line says `The Nexus Pulse restores Vasse and deals: [n].`, and the Pulse's
+  popup says it first. A round a Commander sits out opens on a line saying so, looking at the Nexus. While she is
+  out, a Build Phase she sits out and a Battle Round from the moment she falls show her own glyph, dim, on the
+  free tile nearest the Nexus: nothing else, no count. Wherever she stands she is drawn **bold at full strength**,
+  arriving included and while a Battle Round plays, so she is never mistaken for the squad around her; a mission
+  introduces her through the dialog, her ring lit (PERIMETER's round 1). The Activity Logs record her life
+  (`commander.fell`, `commander.out`, `commander.restored`), under the Commander filter. (RULE — `tests/commander-screen.test.ts`, `tests/dialog.test.ts`,
+  `tests/raid-view.test.ts`, `tests/commander-moments.test.ts`)
+- ***The Commander's moments*** (a named pattern; the owner: "the commander is just another unit ... So I suggest
+  highlighting the commander in different ways"): she has no panel of her own, and stands out by what happens to
+  her. **She appears**: as a level begins, and the round the Nexus Pulse restores her, she is not on the map for
+  the first half second; then a ring in her side's colour closes on her tile, she flashes in, inverse, and says a
+  line of her own beside her (her army's `appears` or `restored` lines), unless the round's scene opens on her
+  speaking already. **She falls**: a small window opens beside where she fell, over the battle, like a comic's
+  panel — her name in its border, her portrait, her face going through her army's fall frames, then the whole
+  window evaporating, glyph by glyph. A window, like a popup, not an effect: it may cover the map, so it is 9 by 5,
+  about three seconds, and placed where it covers least of the fight. **She is explored**: Explore Map on her lights
+  a ring round her, as the dialog's focus does, and her card's icon is her portrait. Under reduced motion she is
+  there from the start with a still ring, and her window shows her last face, still, without evaporating. Still
+  frames show each finished. (RULE — `tests/commander-moments.test.ts`)
 - **A mission's round is counted in the top bar** — `build phase - round 2 of 3` — because PERIMETER's goal
   is about rounds (a round counter shows only when the goal is about rounds), and the Battle Round screen
   is that round's number, in the mission's words for it.

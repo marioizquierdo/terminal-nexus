@@ -1,0 +1,24 @@
+[
+  {
+    "label": "She appears",
+    "try": "PERIMETER as the level begins: half a second in, Vasse appears beside the Nexus, a ring closing on her, while the dialog opens on her own words. Press Esc to close it.",
+    "at": "campaign?level=vasse-test-1"
+  },
+  {
+    "label": "Her fall",
+    "try": "The level made for her return, round 1 started with nothing built. When she falls, a small window opens beside her: her face falls, then the window evaporates, and her dim @ waits beside the Nexus. Watch again with r.",
+    "at": "campaign?level=vasse-test-2",
+    "keys": "s s"
+  },
+  {
+    "label": "Back next round",
+    "try": "Round 2 opens on The Nexus Pulse restores Vasse beside the Nexus. Press Esc: half a second later she appears beside the Nexus, a ring closing on her, and says a line of her own. Press n: the Pulse says it first, under COMMANDER.",
+    "at": "campaign?level=vasse-test-2&round=2"
+  },
+  {
+    "label": "Explore her",
+    "try": "Explore Map on Vasse: her card shows her portrait, built on her @, and a ring of light marks her on the map. Arrow away and back.",
+    "at": "campaign?level=vasse-test-1",
+    "keys": "Esc e click@52,13"
+  }
+]

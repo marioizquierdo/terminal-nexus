@@ -3,6 +3,7 @@
 // What a card says is data built elsewhere (`src/build/card.ts`, from `src/content/cards.ts`); this file
 // only draws it.
 
+import { portraitOf } from "./commander-moments.ts"
 import type { Card, CardIcon } from "../build/card.ts"
 import { currentCard } from "../build/card.ts"
 import type { BuildLayout } from "../build/layout.ts"
@@ -217,7 +218,9 @@ function drawCardBody(
   subtitle.forEach((line, index) => {
     text(cells, band, textColumn, top + 1 + index, look.typed(line), "chrome.muted", { limit: textLimit })
   })
-  let row = top + Math.max(icon.height, 1 + subtitle.length) + 1
+  // A blank row under the icon — none under a portrait, three rows tall already: at 80 x 24 a Commander's card,
+  // the tallest, has no row to spare.
+  let row = top + Math.max(icon.height, 1 + subtitle.length) + (icon.height > 2 ? 0 : 1)
 
   // Wrapped at word boundaries: the panel is 27 glyphs wide at the floor, and a description cut
   // mid-sentence was the first thing the screenshots of this panel showed (2026-09-27). The words are
@@ -311,6 +314,15 @@ function drawCardIcon(
   // Whose it is: the player's own, or the raid's — a unit on the map after a round.
   const player = icon.player ?? "A"
   const definition = input.context.registry.get(contentId)
+  // A Commander's card shows her portrait, which grows out of her glyph (her army's art, `commander-moments.ts`):
+  // where her art is reserved for, Explore Map on her.
+  const portrait = definition.commander === true ? portraitOf(contentId) : null
+  if (portrait !== null) {
+    const from = cells.length
+    portrait.forEach((line, index) => text(cells, band, column, top + index, line, playerRole(player), { bold: true }))
+    fadeFrom(cells, from, look.hidden, look.capability)
+    return { width: Math.max(...portrait.map((line) => line.length)), height: portrait.length }
+  }
   const art = CONTENT_ART[contentId] ?? [definition.short.charAt(0)]
   // Only a building rises through placement frames as its card opens; a unit's icon is simply itself.
   const rising =

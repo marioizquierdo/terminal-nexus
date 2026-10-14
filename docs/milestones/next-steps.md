@@ -10,14 +10,21 @@ it is done.*
   move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
   become tuned values. The next navigation ideas, from [the roguelike survey](../history/reports/2026-10-09-roguelike-navigation.md),
   wait for his pick.
-- **Play the Nexus Pulse** (the Commander milestone's last step, now dealt by schedule), from `./bin/terminal-nexus.ts
-  --at 'campaign?level=vasse-test-1'`: press `n`. Three powers are dealt each round, each saying how rare it is,
-  War Chest beside them; a digit keeps one, and what it does shows at once and lasts the mission. Round 2 deals
-  Aid Station Permit first, made sure of by PERIMETER's own schedule (unless it is already kept). Keep Drill
-  Schedule and a later hand may deal Drill Schedule II, the first upgrade: it takes Drill Schedule's place under
-  ACTIVE, and every Barracks sends three waves. Under THE MISSION in Settings (`d`), **Nexus pick** lets him feel
-  the pick required instead of optional; paste the settings export. Once he has played it, the Commander milestone
-  is ready for his acceptance.
+- **Play the Commander's last step, then accept the milestone** ([his words](../history/feedback/2026-10-13-commander-armies.md)),
+  from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`, the level made for her return: start the
+  round without building (`s`, `s`). When she falls, a small window opens beside her, her face falls and the window
+  evaporates; her dim `@` waits beside the Nexus. Enter: round 2 opens on the Nexus Pulse restoring her, and once
+  the line is closed she appears beside the Nexus half a second in, a ring closing on her, with a line of her own.
+  Explore Map (`e`) on her: her portrait on her card and a ring of light round her. In PERIMETER
+  (`campaign?level=vasse-test-1`) she appears the same way as the level begins. Then in the menu (Esc), Activity
+  logs, step Left to the Commander filter, press `e`, and paste the export. Once he has played it, the Commander
+  milestone is ready for his acceptance, and [Commander Armies](milestone-14-commander-armies.md) is next.
+- **Two questions from the Commander's round**: which symbol Vasse keeps (Q77; recommended: keep `@` until the ASCII
+  art milestone, and try `&` there), and what RESTORATION plays now that she is back at once (Q78; recommended: the
+  mission delays her, once).
+- **The ASCII art milestone, when he says** ([the plan](milestone-15-ascii-art.md)): research, a tool and an image
+  model's help for art that looks good, then the Commander's portrait and vignette redrawn with it. Not placed in
+  the order.
 - **Read the round's words** ([his words](../history/feedback/2026-10-07-nexus-pulse.md)): the one list of the
   round's, the Nexus Pulse's and the tech tree's words in [`commander-armies.md`](../game-design/commander-armies.md),
   and the tech tree's two new rules there (its state is always in sight on the Grid and the build menu; an upgrade
@@ -26,7 +33,7 @@ it is done.*
   the engine's word "pulse" for the battle (Q76; recommended: rename it before modding opens).
 - **The Nexus Pulse's own milestone, when he says** ([the plan](milestone-13-nexus-pulse.md)): its own moment on
   screen, the Nexus speaking to its Commander, more powers, and whether the pick becomes required. Not placed in
-  the order; his call where it goes.
+  the order; his call where it goes. An army bending the schedule moved to Commander Armies, as Averno's quirk.
 - **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
   given only by what stood when the round opened, and a building needs one tile on it; the dim ticks round
@@ -52,7 +59,7 @@ it is done.*
 - **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
   would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
   letter hotkeys for buildings (Q67), the exploring click, the wheel step and the light theme's light (Q63;
-  Q62 and Q64 are answered), how long a match is (Q75), and whether a mission's data keeps the engine's "pulse" (Q76).
+  Q62 and Q64 are answered), how long a match is (Q75, now six to nine rounds by his word, the minutes still to measure), and whether a mission's data keeps the engine's "pulse" (Q76).
 - **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
   spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
   loop's under THE MISSION (Next round).

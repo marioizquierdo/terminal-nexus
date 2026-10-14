@@ -83,21 +83,28 @@ const lightOn = (tile: Coord, periodMs: number): EffectInstance => ({
 function drawFocusLight(cells: BandCell[], input: BuildCompositionInput, line: DialogLine, capability: CapabilityMode): void {
   const focus = line.focus
   if (focus === null) return
+  drawLightAround(cells, input, focus.own, capability, input.dialogLight?.elapsedMs ?? 0)
+}
+
+/** The focus light around `own`, the tiles of what it lights — the ring round each, never on one of them, each tile
+ *  lit once, on the map and in the view — at `elapsedMs` into its breath: the dialog's focus, and Explore Map on the
+ *  Commander (`commander-moments.ts`). */
+export function drawLightAround(cells: BandCell[], input: BuildCompositionInput, ownTiles: readonly Coord[], capability: CapabilityMode, elapsedMs: number): void {
   const { context, state, layout } = input
   const range = visibleRange(state.camera, state.viewport)
   const recipe = EFFECT_RECIPES["fx.focus.light"]
   if (recipe === undefined) return
   const effect: EffectContext = {
-    timeMs: input.dialogLight?.elapsedMs ?? 0,
+    timeMs: elapsedMs,
     cosmeticSeed: 0,
     reducedMotion: input.reducedMotion === true,
     capability,
   }
   const periodMs = state.experiments.popupPulseMs
   const key = (tile: Coord): string => `${tile.x},${tile.y}`
-  const own = new Set(focus.own.map(key))
+  const own = new Set(ownTiles.map(key))
   const lit = new Set<string>()
-  for (const tile of focus.own) {
+  for (const tile of ownTiles) {
     for (const cell of recipe(lightOn(tile, periodMs), effect)) {
       const at = key(cell.tile)
       // The ring of one of a group's units falls on another of them: the focus is never lit, only its ground.

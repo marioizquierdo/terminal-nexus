@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8C — the Nexus Pulse deals by schedule: three cards a round by rarity and role, with chance, requirements and upgrades; a level may give its own schedule and make sure of a power; the in-match draft is named the Nexus Pulse, and the battle the Battle Round.
+**Current step:** 8D, round 2 — the Commander highlighted by her moments, not a panel: she appears at the Nexus with a line and an effect, a vignette shows her fall, her card and portrait are Explore Map's, and Vasse is back the round after she falls.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Battle Round is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -275,6 +275,46 @@ pull request, for him to play before anything is settled.
 - [x] The Controls page says what the arrows and Shift do in the build being played.
 - [x] A playable page opens the game with each combination from a button.
 
+### Step 8D — The Commander on screen, and her return
+
+Mario's word after re-evaluating the milestone ([his words](../history/feedback/2026-10-13-commander-armies.md)):
+"finish this milestone." The one claim it had not proved is that a player understands what the Commander's death
+did; this step makes her state something a player reads at a glance, and her return the Nexus Pulse's own moment.
+Built on a new pull request; waiting for Mario's playtest.
+
+- [x] A Commander panel, in the Build Phase and the Battle Round at 80 × 24: her name, a small portrait, her health,
+      her skill in a line, and her state: ready (fighting, in a battle), out (back in round N), or restored this round.
+      In the Build Phase the raid's words come first, and where the full panel would cost them a group she takes one
+      line over Start Battle Round.
+- [x] While she is out, a dim `@` stands at the Nexus with the rounds until she is back, so the empty place reads as
+      "she is coming back" rather than "she is gone".
+- [x] The Nexus Pulse that opens the round she is restored brings her back on screen: the dialog, the bottom line and
+      the Pulse's popup say the Nexus Pulse restores her, and the camera goes to her.
+- [x] An Activity Logs filter, Commander, records when she fell, how long she is out and when she is back.
+- [x] Played on the level made for her return; the pull request says whether her death and her return read without
+      explanation.
+
+### Step 8D, round 2 — Her moments, not a panel
+
+Mario's notes on the step's pull request ([his words](../history/feedback/2026-10-13-commander-armies.md)): the
+Commander is another unit, so the side panel keeps its room; she is highlighted by her moments instead, and the
+rhythm of matches of six to nine rounds wants most Commanders back the round after they fall. Built on the same pull
+request; waiting for Mario's playtest.
+
+- [x] The Commander panel leaves the side panel, in the Build Phase and the Battle Round; the raid's words have their
+      rows back.
+- [x] She appears: as a level begins, and the round the Nexus Pulse restores her, she is set down beside the Nexus
+      a moment after the round opens, with an effect that is hers and a line of her own.
+- [x] She falls: a vignette opens beside where she fell, over the battle, her face changing and then evaporating,
+      small enough that the battle stays in sight.
+- [x] Her card and portrait are Explore Map's: on her, the card shows her portrait, and the map gives her a stronger
+      highlight.
+- [x] While she is out, a dim `@` beside the Nexus, her own symbol and nothing else.
+- [x] How many rounds a Commander sits out is hers to have: Vasse none, back the round after she falls.
+- [x] A Commander's symbol is her identity, and her art builds on it: a rule for designing one; which symbol Vasse
+      keeps goes to the register.
+- [x] A milestone of its own for ASCII art is planned.
+
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).
 
@@ -319,8 +359,10 @@ when it happens, and can explain what the upgrade they picked changed.
 
 ## Done when
 
-- [ ] The Commander mechanic (persistent unit, death, absence, restoration) is built and tested against
+- [x] The Commander mechanic (persistent unit, death, absence, restoration) is built and tested against
       the engine design's cadence.
-- [ ] The upgrade draft offers a real, mechanically distinct choice, not a cosmetic one.
-- [ ] The pull request says plainly that the Citizens Commander Army is still not locked.
-- [ ] `./scripts/check-repository.sh` passes.
+- [x] The upgrade draft offers a real, mechanically distinct choice, not a cosmetic one.
+- [x] The pull request says plainly that the Citizens Commander Army is still not locked.
+- [x] `./scripts/check-repository.sh` passes.
+
+What is left is Mario's: playing the last step, and accepting the milestone.

@@ -6,6 +6,7 @@
 // worked out for one presentation instant — and paints cells. It reads no clock and asks nothing of the
 // kernel, and the frame it draws is a pure function of the resolved Pulse and the time.
 
+import type { FallFrame } from "./commander-moments.ts"
 import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
@@ -66,6 +67,9 @@ export type PulseFrame = Readonly<{
   /** What she is saying at this instant, and where: beside her, or in the panel while she is out of view.
    *  Absent: nothing. */
   voice?: VoiceFrame
+  /** Where and when the player's Commander fell in this Pulse, for her vignette and her dim glyph beside the Nexus
+   *  (`commander-moments.ts`). Absent: she did not fall. */
+  fall?: FallFrame
 }>
 
 /** A Commander's aura as the scene draws it: the tile she is drawn on, how far it reaches in tiles — measured

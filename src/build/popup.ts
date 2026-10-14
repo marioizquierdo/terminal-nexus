@@ -448,6 +448,32 @@ function absentCommanders(context: BuildContext): string[] {
     .map((absence) => `${commanderName(absence.contentId)} is out this round.`)
 }
 
+/** What this Nexus Pulse did for the player's Commander, at the top of its popup: restored her beside the Nexus, or
+ *  could not yet — she is out, and the round she is back for. Nothing when she stands. */
+function commanderRows(context: BuildContext): PopupRow[] {
+  const back = (context.restored ?? []).filter((entry) => entry.player === "A")
+  const out = (context.absent ?? []).filter((absence) => absence.player === "A")
+  const of = context.round?.of
+  const now = context.round?.number ?? 1
+  const rows: PopupRow[] = [
+    ...back.map((entry): PopupRow => ({ kind: "text", text: `${commanderName(entry.contentId)} restored beside the Nexus.`, strong: true })),
+    ...out.map(
+      (absence): PopupRow => ({
+        kind: "text",
+        // Due back already and still out: the Nexus had nowhere to set her down (no Grid Nexus, or no room by it).
+        text:
+          absence.returnsInRound <= now
+            ? `${commanderName(absence.contentId)} is out; nowhere to return to.`
+            : of === undefined || absence.returnsInRound <= of
+              ? `${commanderName(absence.contentId)} is out; back for round ${absence.returnsInRound}.`
+              : `${commanderName(absence.contentId)} is out for the mission.`,
+        muted: true,
+      }),
+    ),
+  ]
+  return rows.length === 0 ? [] : [{ kind: "heading", text: "COMMANDER" }, ...rows, { kind: "blank" }]
+}
+
 /** An announcement's sentences, each its own line on the screen: short orders read as a list, and the
  *  popup is only 40 glyphs wide at the floor, where a sentence that wrapped would leave one word alone. */
 function sentences(text: string): readonly string[] {
@@ -459,7 +485,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
   switch (state.popup) {
     case "nexus-powers": {
       const powers = nexusPowers(context, state)
-      const rows: PopupRow[] = [{ kind: "blank" }]
+      const rows: PopupRow[] = [{ kind: "blank" }, ...commanderRows(context)]
       if (powers.pending.length > 0) {
         // Optional for now (the owner, round 5): a round can start with the pick still waiting.
         rows.push({ kind: "heading", text: "PICK ONE - or start without" })

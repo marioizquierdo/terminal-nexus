@@ -6,6 +6,7 @@
 // What differs is that the frame's size follows the terminal's, because a bigger terminal shows more
 // Grid — up to the 72 x 24 ceiling and not one tile past it.
 
+import { appearanceLengthMs, appearanceLine, appearing } from "../view/commander-moments.ts"
 import { MOUSE_REPORTING_OFF, MOUSE_REPORTING_ON } from "../title-menu/mouse.ts"
 import { BuildSession } from "../view/build-session.ts"
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
@@ -107,7 +108,8 @@ export type BuildPhaseOptions = Readonly<{
   /** Where the screen runs, as `session.start` records it: `terminal` unless the playtest page says `web`. */
   hostName?: HostName
   /** Whether a round that opens with a scene plays it in the dialog first — PERIMETER's intro, a
-   *  Commander's return. On unless a test turns it off to start on the menu. */
+   *  Commander's return — and the Commander's appearance with it (`commander-moments.ts`). On unless a test turns
+   *  it off to start on the menu. */
   scenes?: boolean
 }>
 
@@ -300,6 +302,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           capability: settings.capability,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
           raidTrail: hasTrail(raid, visibleRange(build.state.camera, build.state.viewport)),
+          ...(options.scenes === false ? {} : appearsFor(build.round)),
         })
     const pulse = gated ? undefined : build.pulseFrame()
     const frame =
@@ -468,4 +471,10 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     return 1
   }
   return 0
+}
+
+/** How long the Commander's appearance runs as this round opens, for the live loop — nothing when she does not
+ *  appear this round (`commander-moments.ts`). */
+function appearsFor(round: BuildContext): Readonly<{ appearsForMs?: number }> {
+  return appearing(round) === null ? {} : { appearsForMs: appearanceLengthMs(appearanceLine(round)) }
 }

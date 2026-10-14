@@ -1,5 +1,6 @@
-// The Commander between rounds — pulse.md: "On death it is absent for the rest of that round's Pulse and
-// for one full round after it, then the Prime Nexus may replicate it again."
+// The Commander between rounds — on death she is absent for the rest of that round's Pulse and for as many
+// whole rounds after it as her definition says (`roundsOut`: none for Vasse), then the Prime Nexus replicates
+// her again.
 //
 // **Beside the kernel's tick and never inside it**, like Recall. The kernel sees a Commander as a unit like
 // any other: she fights, she dies, and a dead entity is gone from the state, so nothing in a Pulse brings
@@ -9,8 +10,8 @@
 // same). Two pure functions read and write it:
 //
 // - `fallen` reads a round's events for the Commanders that died in it: each is absent for the rest of
-//   that Pulse (she is dead) and for the whole of the round after, and is due back at the start of the one
-//   after that;
+//   that Pulse (she is dead) and for the `roundsOut` whole rounds after it, and is due back at the start of
+//   the round after those (with none to sit out, the very next one);
 // - `restoreCommanders` runs where one round hands over to the next, after Recall: every Commander due back
 //   by then is set down on the free tile nearest her side's Grid Nexus, a new entity at full health (the
 //   Prime Nexus replicating its Symbol onto the Grid again), and stands there through the round's Build
@@ -29,8 +30,11 @@ import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { centreTile, nearestFit } from "./placement.ts"
 
-/** How many whole rounds a fallen Commander sits out after the one she fell in (pulse.md: one). */
-export const ROUNDS_ABSENT = 1
+/** How many whole rounds the Commander `contentId` sits out after the Battle Round she falls in: her
+ *  definition's `roundsOut`, and 0 when it says nothing. */
+export function roundsOutOf(registry: ContentRegistry, contentId: string): number {
+  return registry.get(contentId).roundsOut ?? 0
+}
 
 /** How far from her Grid Nexus a restored Commander may be set down, by the Grid's own distance (`nearestFit`): 8
  *  rows up and down, 16 columns across. */
@@ -49,12 +53,12 @@ export type Absence = Readonly<{
 export type Restoration = Readonly<{ player: PlayerId; contentId: string; ordinal: number; anchor: Coord }>
 
 /** The Commanders that died in a round, from its events, in the order they fell: each due back at the start
- *  of the round after the one she sits out. */
+ *  of round `round + 1 + roundsOut` — the very next round for a Commander who sits none out. */
 export function fallen(events: readonly DomainEvent[], registry: ContentRegistry, round: number): Absence[] {
   const fell: Absence[] = []
   for (const event of events) {
     if (event.kind !== "entity.died" || registry.get(event.contentId).commander !== true) continue
-    fell.push({ player: event.player, contentId: event.contentId, fellInRound: round, returnsInRound: round + 1 + ROUNDS_ABSENT })
+    fell.push({ player: event.player, contentId: event.contentId, fellInRound: round, returnsInRound: round + 1 + roundsOutOf(registry, event.contentId) })
   }
   return fell
 }

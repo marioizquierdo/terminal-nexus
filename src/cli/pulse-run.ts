@@ -15,7 +15,7 @@
 // - **the next round**: a Build Phase whose map is what Recall left — the player's buildings as standing
 //   structures, every surviving unit and the raid's structures as the field — with the credits the last
 //   one did not spend, and the next round's arrivals as incoming. A Commander who fell is carried as an
-//   absence and set down beside the Nexus again when her round out is over (`src/match/commander.ts`).
+//   absence and set down beside the Nexus again when her absence is over (`src/match/commander.ts`).
 
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { nexusTile, remaining, withoutScene } from "../build/state.ts"
@@ -153,12 +153,12 @@ function spawnsOf(context: Pick<BuildContext, "catalog">): Readonly<Record<strin
 /** How far into a round every building's first wave comes, in the kernel's ticks: the owner's tuned number. */
 const firstWaveTicks = (state: BuildState): number => setting(state, "firstWave") * TICKS_PER_SECOND
 
-/** What the next Build Phase's first line says of the player's Commander — back beside the Nexus, or out
- *  this round and, when the mission lasts that long, the round she is back for — or `null` when there is
+/** What the next Build Phase's first line says of the player's Commander — restored beside the Nexus by the Nexus
+ *  Pulse that opens the round, or out this round and, when the mission lasts that long, the round she is back for — or `null` when there is
  *  nothing to say. */
 function commanderNews(restored: readonly Restoration[], absent: readonly CommanderAbsence[], round: number, of: number): string | null {
   const back = restored.find((restoration) => restoration.player === "A")
-  if (back !== undefined) return `${commanderName(back.contentId)} is back beside the Nexus.`
+  if (back !== undefined) return `The Nexus Pulse restores ${commanderName(back.contentId)} beside the Nexus.`
   const out = absent.find((absence) => absence.player === "A")
   if (out === undefined) return null
   const name = commanderName(out.contentId)
@@ -427,7 +427,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       const registry = pulseRegistry(context, state)
       const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
       const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)
-      // A Commander who fell is out for the rest of this Pulse and the whole of the next round.
+      // A Commander who fell is out for the rest of this Pulse, and for the rounds after it her definition says.
       const fell = fallen(run.events, registry, pulse)
       return {
         timeline,
@@ -460,6 +460,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         field,
         carried,
         absent: back.absent,
+        restored: back.restored.map((restoration) => ({ player: restoration.player, contentId: restoration.contentId })),
         round: round(number),
         // Credits carry over: what the last Build Phase did not spend, the Nexus power it picked included.
         allotment: remaining(context, state),
@@ -469,7 +470,15 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The round opens on its Nexus Pulse: a hand dealt for the buildings standing now, not last round's.
       const nexusDraft = dealtDraft(mission, opened, number)
       const opening = nexusDraft.length > 0 ? `${last} The Nexus Pulse deals a new hand: [n].` : `${last} Build Phase ${number} - the Nexus stands.`
-      const next: BuildContext = { ...opened, nexusDraft, openingStatus: status(news === null ? opening : `${last} ${news}`, "hint") }
+      // Her return is the Nexus Pulse's own act: said first, with the hand it deals beside it.
+      const home = back.restored.find((restoration) => restoration.player === "A")
+      const said =
+        news === null
+          ? opening
+          : home !== undefined && nexusDraft.length > 0
+            ? `${last} The Nexus Pulse restores ${commanderName(home.contentId)} and deals: [n].`
+            : `${last} ${news}`
+      const next: BuildContext = { ...opened, nexusDraft, openingStatus: status(said, "hint") }
       // Its own scene, never the last round's: a Commander back, then the mission's lines for the round.
       return withRoundScene({ ...next, incoming: forecast(next, number) }, roundScene(mission, next, number, back.restored, back.absent))
     },

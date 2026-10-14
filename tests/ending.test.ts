@@ -25,6 +25,7 @@ import {
   RED_PEAK,
   TIMER_HALF_PERIOD_MS,
   beamAt,
+  commanderLine,
   endingTimes,
   formatTimer,
   nexusStrain,
@@ -290,4 +291,21 @@ test("the mission's Experiments need no restart, and each names the question it 
     assert.equal(spec.applies, "now", `${spec.field} needs a restart`)
     assert.ok(spec.question.length > 30, `${spec.field} does not say what it is for`)
   }
+})
+
+test("the result's line for a Commander who fell says when she is back: next round, or the rounds she is out for", () => {
+  const vasse = (returnsInRound: number, fellInRound = 1, player: "A" | "B" = "A") => [{ player, contentId: "unit.citizen.vasse", fellInRound, returnsInRound }]
+  const going = { verdict: { kind: "continue" as const }, round: 1, of: 3 }
+  // She sits no round out: the Nexus restores her as the next round opens.
+  assert.equal(commanderLine({ ...going, fell: vasse(2) }), "Vasse fell: back next round.")
+  // A Commander who sits rounds out: which, and when she is back, or that the mission ends first.
+  assert.equal(commanderLine({ ...going, fell: vasse(3) }), "Vasse fell: out for round 2, back for round 3.")
+  assert.equal(commanderLine({ ...going, fell: vasse(4) }), "Vasse fell: out for rounds 2 to 3, the last.")
+  assert.equal(commanderLine({ ...going, of: 2, fell: vasse(3) }), "Vasse fell: out for round 2, the last.")
+  // In the mission's last round, or once it is over, only that she fell.
+  assert.equal(commanderLine({ ...going, round: 3, fell: vasse(4, 3) }), "Vasse fell.")
+  assert.equal(commanderLine({ ...going, verdict: { kind: "lost" }, fell: vasse(2) }), "Vasse fell.")
+  // Nobody of the player's: nothing to say.
+  assert.equal(commanderLine({ ...going, fell: vasse(2, 1, "B") }), undefined)
+  assert.equal(commanderLine(going), undefined)
 })

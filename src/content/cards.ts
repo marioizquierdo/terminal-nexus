@@ -55,7 +55,7 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   "unit.citizen.vasse": {
     title: "Vasse",
     subtitle: "Your Commander",
-    description: "Commander Edda Vasse leads from just behind the line. If she falls, she misses the next round; then the Nexus restores her.",
+    description: "Commander Edda Vasse leads from just behind the line. If she falls, the Nexus restores her as the next round opens.",
   },
   "unit.citizen.marksman": {
     title: "Marksman",

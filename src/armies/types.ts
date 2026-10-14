@@ -141,8 +141,18 @@ export type CommanderEntry = Readonly<{
   unit: string
   /** What she says during a Battle Round, by moment (`barks.ts`). Absent: she says nothing. */
   barks?: Barks
+  /** Her face in the Commander panel: three rows of the same width, at most `PORTRAIT_WIDTH` glyphs of plain
+   *  ASCII (`src/view/commander-panel.ts`). Absent: the panel shows her name without one. */
+  portrait?: readonly string[]
+  /** The frames her face goes through as she falls, after the portrait, each shaped like it: the vignette that opens
+   *  beside where she fell (`src/view/commander-moments.ts`). Absent: the portrait alone. */
+  portraitFalls?: readonly (readonly string[])[]
   notes?: string
 }>
+
+/** How many rows a Commander's portrait has, and how many glyphs wide it may be. */
+export const PORTRAIT_ROWS = 3
+export const PORTRAIT_WIDTH = 5
 
 /** The cards a level adds to what its campaign offers, by id: from its own army or one it requires. */
 export type Unlocks = Readonly<{ buildings?: readonly string[]; powers?: readonly string[] }>
@@ -202,7 +212,15 @@ export type LevelMap = Readonly<{
 // --- What the loader hands the game ----------------------------------------------------------------------
 
 /** A Commander, and the army that defines her: with her lines by moment, none when her army wrote none. */
-export type Commander = Readonly<{ id: string; army: string; name: string; unit: string; barks: Barks }>
+export type Commander = Readonly<{
+  id: string
+  army: string
+  name: string
+  unit: string
+  barks: Barks
+  portrait: readonly string[]
+  portraitFalls: readonly (readonly string[])[]
+}>
 
 /** What a level offers: every card its campaign has unlocked by then, in the order first unlocked (so a hotkey
  *  never moves when a later level adds a card), its credits, the buildings its Nexus powers can add, and its own

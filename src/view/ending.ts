@@ -271,7 +271,7 @@ export type PulseResult = Readonly<{
   /** The one line under the map once the result stands. */
   line?: string
   /** What happened to the player's Commander, when she fell this round: that she fell, and while the
-   *  mission goes on, which round she is out for and which she is back for. */
+   *  mission goes on, that she is back next round, or which rounds she is out for and which she is back for. */
   commander?: string
 }>
 
@@ -286,9 +286,10 @@ type Round = Readonly<{
 }>
 
 /**
- * The result's line for the player's Commanders who fell this round — "Vasse fell: out for round 2, back
- * for round 3." — or `undefined` when none did. Once the mission is over, or in its last round, only that
- * she fell: there is no next round to be out for.
+ * The result's line for the player's Commanders who fell this round — "Vasse fell: back next round." for one
+ * who sits no round out, "Vasse fell: out for round 2, back for round 3." for one who does — or `undefined`
+ * when none did. Once the mission is over, or in its last round, only that she fell: there is no next round
+ * to be out for.
  */
 export function commanderLine(round: Round): string | undefined {
   const fell = (round.fell ?? []).filter((absence) => absence.player === "A")
@@ -297,6 +298,7 @@ export function commanderLine(round: Round): string | undefined {
     .map((absence) => {
       const name = commanderName(absence.contentId)
       if (round.verdict.kind !== "continue" || round.round >= round.of) return `${name} fell.`
+      if (absence.returnsInRound <= round.round + 1) return `${name} fell: back next round.`
       const first = round.round + 1
       const last = Math.min(absence.returnsInRound - 1, round.of)
       const out = first === last ? `round ${first}` : `rounds ${first} to ${last}`

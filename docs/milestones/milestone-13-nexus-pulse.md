@@ -29,17 +29,13 @@ Not started. Each waits for Mario's word, and the order is a first guess.
 ### Step 13B — More powers, and the legendary hand
 
 - [ ] More of Vasse's designed powers are built, each with its rarity, role and modifiers: Countersigned as Standing
-      Order's upgrade, Mutual Support Standard, Field Triage, Plating Revision, Emergency Procedure, Expedited
-      Restoration, Early Warning — the effect kinds they need (`modifyRule`, `reveal`) with them.
+      Order's upgrade, Mutual Support Standard, Field Triage, Plating Revision, Emergency Procedure, Restoration Order (once
+      Expedited Restoration), Early Warning — the effect kinds they need (`modifyRule`, `reveal`) with them.
 - [ ] The hand every few rounds that deals legendaries: how often, and what a legendary may do.
 - [ ] Every new power is proved in tests and played in a mission.
-
-### Step 13C — A Commander bends the schedule
-
-- [ ] An army may carry its own schedule, hand size or redraws (the short list in the design); one Commander uses
-      one of them, played against the default.
 
 ## Out of scope
 
 The run draft between battles (Milestone 11), new rosters (Milestone 12), and a required pick, which stays
-Mario's call through the Nexus pick Experiment.
+Mario's call through the Nexus pick Experiment. An army bending the schedule, planned here at first, is Marshal
+Averno's quirk in [Milestone 14](milestone-14-commander-armies.md).
