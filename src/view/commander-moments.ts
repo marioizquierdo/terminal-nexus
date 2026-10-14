@@ -60,6 +60,10 @@ export function commanderArt(contentId: string): CommanderArt | null {
   return { contentId, name: commander.name, portrait: commander.portrait, falls: commander.portraitFalls, lines: commander.barks }
 }
 
+/** The moments a Commander speaks at in a Build Phase, which this module finds — the rest are a Battle Round's
+ *  (`PRIORITY`, `pulse-voice.ts`). */
+export const BUILD_MOMENTS: readonly BarkMoment[] = ["appears", "restored"]
+
 // --- She appears --------------------------------------------------------------------------------------
 
 /**
@@ -229,8 +233,15 @@ export function vignetteGlyphs(art: CommanderArt, rows: readonly string[], pack:
 }
 
 /** Where the window opens beside her: above or below her row, to her right or her left, inside the view — the place
- *  that covers fewest of the tiles something stands on, above-right first among equals. Its top-left tile. */
-export function vignettePlace(at: Coord, size: Readonly<{ width: number; height: number }>, range: Readonly<{ firstX: number; lastX: number; firstY: number; lastY: number }>, occupied: (tile: Coord) => boolean): Coord {
+ *  that keeps clear of her last words (`keepClear`) and covers fewest of the tiles something stands on, above-right
+ *  first among equals. Its top-left tile. */
+export function vignettePlace(
+  at: Coord,
+  size: Readonly<{ width: number; height: number }>,
+  range: Readonly<{ firstX: number; lastX: number; firstY: number; lastY: number }>,
+  occupied: (tile: Coord) => boolean,
+  keepClear: (tile: Coord) => boolean = () => false,
+): Coord {
   const candidates: Coord[] = [
     { x: at.x + 2, y: at.y - size.height },
     { x: at.x - 1 - size.width, y: at.y - size.height },
@@ -248,6 +259,7 @@ export function vignettePlace(at: Coord, size: Readonly<{ width: number; height:
       for (let dx = 0; dx < size.width; dx += 1) {
         const tile = { x: corner.x + dx, y: corner.y + dy }
         if (tile.x === at.x && tile.y === at.y) cost += 1000
+        else if (keepClear(tile)) cost += 100
         else if (occupied(tile)) cost += 1
       }
     }
@@ -267,7 +279,16 @@ type SceneView = Readonly<{ camera: Camera; viewport: Viewport; layout: BuildLay
  * its frames, then every glyph of it evaporating — a few at a time, in an order that is cosmetic randomness on the
  * glyph's place, each first thinning to `.` and then gone. Drawn over everything on the map, under the popups.
  */
-export function drawVignette(cells: BandCell[], view: SceneView, fall: FallFrame | undefined, timeMs: number, reducedMotion: boolean, pack: GlyphPack, occupied: ReadonlySet<number>): void {
+export function drawVignette(
+  cells: BandCell[],
+  view: SceneView,
+  fall: FallFrame | undefined,
+  timeMs: number,
+  reducedMotion: boolean,
+  pack: GlyphPack,
+  occupied: ReadonlySet<number>,
+  voice?: Readonly<{ text: string; place: Coord; where: "map" | "panel" }>,
+): void {
   if (fall === undefined) return
   const art = commanderArt(fall.contentId)
   if (art === null || art.portrait.length === 0) return
@@ -277,7 +298,10 @@ export function drawVignette(cells: BandCell[], view: SceneView, fall: FallFrame
   const glyphs = vignetteGlyphs(art, rows, pack)
   const size = { width: Math.max(...glyphs.map((row) => row.length)), height: glyphs.length }
   const range = visibleRange(view.camera, view.viewport)
-  const corner = vignettePlace(fall.at, size, range, (tile) => inBounds(view.grid, tile) && occupied.has(tile.y * view.grid.width + tile.x))
+  // Her last words beside her stay readable: the window keeps off their row's span.
+  const said = voice === undefined || voice.where !== "map" ? null : { y: voice.place.y, half: Math.ceil((voice.text.length + 4) / 2), x: voice.place.x }
+  const keepClear = (tile: Coord): boolean => said !== null && tile.y === said.y && Math.abs(tile.x - said.x) <= said.half
+  const corner = vignettePlace(fall.at, size, range, (tile) => inBounds(view.grid, tile) && occupied.has(tile.y * view.grid.width + tile.x), keepClear)
   const side = playerRole(fall.player)
   glyphs.forEach((line, dy) => {
     ;[...line].forEach((glyph, dx) => {

@@ -126,7 +126,7 @@ test("her card says what By the Book does in one plain sentence with its range, 
   assert.ok(aura !== undefined && attack !== undefined)
   // Its name opening one sentence, under the description, saying how far it reaches as every range is said, one
   // number; and at 80 x 24 every number still shows beneath it, down to her own range under her attack.
-  assert.match(panelText(side), new RegExp(`Nexus restores her\\. By the Book: she and her units within range ${aura.radius} take 25% less damage\\.`))
+  assert.match(panelText(side), new RegExp(`Nexus restores her as the next round opens\\. By the Book: she and her units within range ${aura.radius} take 25% less damage\\.`))
   assert.match(panelText(side), new RegExp(`HEALTH +80 ATTACK +5 RANGE +${attack.range} `))
   // The Experiment is what the battle will run on, so it is what the card says.
   side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: 1 })
@@ -136,7 +136,7 @@ test("her card says what By the Book does in one plain sentence with its range, 
   assert.equal(side.build.state.experiments.commanderAura, 0)
   // (The bottom line names the Experiment just changed; the card says nothing of the aura.)
   assert.doesNotMatch(panelText(side), /By the Book: she|less damage/)
-  assert.match(panelText(side), /Nexus restores her\. ARRIVES as the round starts/)
+  assert.match(panelText(side), /Nexus restores her as the next round opens\. ARRIVES as the round starts/)
 })
 
 test("she falls: the feed says so, the result says she is back next round, and round 2 opens with her beside the Nexus", () => {

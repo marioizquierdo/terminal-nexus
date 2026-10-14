@@ -187,7 +187,7 @@ export function composeBuildFrame(
     drawPulseEffects(cells, view, input.pulse, occupied)
     // When she falls: her dim glyph beside the Nexus, and the vignette over the battle.
     drawOutInBattle(cells, view, input.pulse.fall, input.pulse.timeMs, nexusIn(input.pulse), occupied)
-    drawVignette(cells, view, input.pulse.fall, input.pulse.timeMs, input.pulse.reducedMotion, pack, occupied)
+    drawVignette(cells, view, input.pulse.fall, input.pulse.timeMs, input.pulse.reducedMotion, pack, occupied, input.pulse.voice)
     drawCursor(cells, input)
     drawChrome(cells, input, pack)
     drawFrameLight(cells, input.layout, input.pulse)

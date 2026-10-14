@@ -10,6 +10,7 @@
 // can change what resolves. Played through the real session on PERIMETER, the screen's clock handed in as a
 // number.
 
+import { BUILD_MOMENTS } from "../src/view/commander-moments.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { BARK_MOMENTS, BARK_ROOM, barkProblem, quoted } from "../src/armies/barks.ts"
@@ -175,7 +176,8 @@ test("the moments she answers are read off the round's events, the first of each
     ],
   )
   // Every moment the armies can name is one the view can find.
-  assert.deepEqual([...PRIORITY].sort(), [...BARK_MOMENTS].sort())
+  // (The two of a Build Phase, her appearance and her restoration, are found by `commander-moments.ts`.)
+  assert.deepEqual([...PRIORITY, ...BUILD_MOMENTS].sort(), [...BARK_MOMENTS].sort())
   // A round lost, or one she is not in, has no round-won and nothing at all.
   assert.ok(!voiceMoments(timeline, speaker, { resultMs: 90 * TICK_MS, won: false }).some((moment) => moment.moment === "round-won"))
   const without = { ...timeline, states: timeline.states.map((state) => ({ ...state, entities: state.entities.filter((each) => each.ordinal !== HER.ordinal) })) }
