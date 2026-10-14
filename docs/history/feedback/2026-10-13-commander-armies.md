@@ -62,3 +62,103 @@ decide.
 - Commanders have whatever abilities suit them; what sets an army apart is what its build leans on (the Commander,
   the units, the economy, and so on). Asymmetric by design.
 - An active skill is still automatic: the player gives no input during a Battle Round.
+
+## The Commander on screen, round 2 (2026-10-14)
+
+Mario's notes on pull request 70, the Commander milestone's last step. Built on the same pull request.
+
+### F167 — A milestone for ASCII art
+
+> Thing number one, I think we need a milestone specific to improve our ability to create ASCII art. Up to this
+> point, we're relying on the LLM model capability to make some ASCII art, but consistently they come not very
+> pretty. So I think we're going to need a better approach, and I'm pretty sure we can do some research online to
+> find out what makes good ASCII art. Perhaps we install a tool that we can run to generate ASCII art. Perhaps we
+> make a workflow collaboration between an image model that can probably generate the art with good sensitivity.
+> And then the LLM can take that image and turn it into actual ASCII art uh, and try to take advantage of ANSI. So
+> that's one. Uh, let's just prepare the milestone for later, because I think we are going to benefit from that to
+> create art for basically all of the units. And having a good workflow here is going to be useful.
+
+**Scheduled**: [Milestone 15 — ASCII Art](../../milestones/milestone-15-ascii-art.md), planned, not placed in the
+order.
+
+### F168 — Not a panel on the menu
+
+> Second, I don't think having the commander on the menu at all times helps that much, basically because it uses a
+> lot of important real estate. Later in the game, we're going to have more units, more options, more powers, more
+> things to do on the left, and it's, it's better to keep that space for other things. I like the sentiment of
+> giving it more visibility about how much life it has and when it's dying, but at the end of the day, the
+> commander is just another unit. It's an important one because it's the main primary unit, but it is another
+> unit.
+
+**Built.** The Commander panel is gone from the side panel, in the Build Phase and the Battle Round; the raid's
+words have their rows back.
+
+### F169 — A dramatic appearance
+
+> So I suggest highlighting the commander in different ways. One way would be to dramatize the appearance and the
+> death animations. When a commander appears, it should basically say something. It has like a few lines, and
+> commanders have their own lines, and there should be a more dramatic animation, uh, effect, highlight, something
+> that kind of brings the, the user visual identity there. It may not appear right away, even if the user is on
+> build phase. When the level begins, the commander should appear next to the Nexus. It could just wait half
+> second or something and then do the commander apparition.
+
+**Built** (below).
+
+### F170 — A vignette when she dies
+
+> Um, when the commander dies, Something that would be really, really cool is to have an overlay next to where the
+> commander died that basically has a death animation in ASCII art. So I don't know how possible it is to this,
+> but imagine something like a comic that um, when it dies, it will kind of open a screen right there on top of
+> the battle, and you'll see the commander changing the face to something like a... is dying, and then the whole
+> thing will evaporate with some more dramatic animation. We don't need to make bigger explosion or anything, just
+> kind of bring like a vignette on top of the, the commander. And that's something probably cool to do with other
+> parts of the battle, because I like the commander text so much that I want to build on that a little more and
+> see if we can bring some more visuals in there. That would probably be nice with other units as well, but we
+> also don't want to overdo it. So the player can actually see what's going on in the battle. Let's just try those
+> two.
+
+**Built** (below).
+
+### F171 — Her card and portrait when explored
+
+> Then, three, the commander, the commander car and the commander art are good, but they should be reserved to when
+> the exploring map selects the commander. When it's on top of the commander, it should have like a bigger
+> highlight. Uh, that's basically it. I don't think we need to show the commander all the time.
+
+**Built** (below).
+
+### F172 — Her symbol is her identity
+
+> Four, specifically for base, the art, and don't worry about this too much because we're going to improve the way
+> we do ASCII art, but the base commander should have ads, right? If his main icon is an ad, then the art should
+> build on top of that kind of a spiral looking thing and be consistent. Maybe this could just be a rule on how to
+> design commanders, uh, just maybe add something that the The symbology and the icon used to represent the
+> commander is important in the identity, and it should be kind of related, not just arbitrary. Maybe even think
+> about base may benefit from having a different, maybe a pound symbol, I think, is like more correct, or
+> something that is like more strict will probably make more sense. Uh, lines or something like that. Uh, the at
+> may work better for, I'm thinking, on the future, our elder, main elder commander may actually fit the ad a
+> little better. It feels like something more like fluid than coming from the space.
+
+"Base" is Vasse, "ad" is `@`, "elder" the Alder, as transcribed. **Built** as a rule for designing a Commander, and
+her portrait built on her `@`; which symbol she keeps is a question (below).
+
+### F173 — Fewer rounds, and Vasse back the next round
+
+> Okay, and last, the rhythm probably doesn't need to emphasize so much about the commander dying and spending a
+> whole round to come back or two rounds because we honestly want to make the game less rounds we want to make
+> like six to nine 12 maybe for a long game where the players have an ability to defend and make the game longer
+> leaning into their power curve later or they want to try to be aggro and finish it faster that's some different
+> strategies we'll use that but we really want to keep the game between six and nine pulses and again we'll test
+> this later and have more clarity on it but That means we don't really want to have the most commanders who die
+> and come back in the very next round. Uh, now, when they come back, they could come back with some restoration
+> effect. Uh, they could come back and have some bonus. Different commanders will take different advantages of
+> that. Most commanders, though, especially Base, will probably not die often. They're designed to just stay
+> alive, and that's it. If they die, kind of they lose a little bit of the... Of the battle, but staying alive
+> forever is basically their advantage versus all other units. So yeah, no need to do that. Maybe some commander
+> will have this disadvantage that they stay out for a full round or maybe two rounds, but no, not Base. Base will
+> just come back immediately after. Having the dim down symbol next to the Nexus seems a good idea, but just keep
+> the exactly same symbol. No need to no need to have the number one. and counting all of that. Good. Please go
+> ahead and implement this.
+
+"Don't really want to have most commanders who die and come back in the very next round" reads, with the rest, as
+wanting most to come back the very next round. **Built** (below).

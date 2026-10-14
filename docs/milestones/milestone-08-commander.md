@@ -1,7 +1,7 @@
 # Milestone 8 — Commander
 
 **Status:** CURRENT
-**Current step:** 8D — the Commander on screen and her return: a Commander panel with her portrait, health, skill and state; her absence drawn at the Nexus with a countdown; the Nexus Pulse that brings her back shows it; and an Activity Logs filter for her life.
+**Current step:** 8D, round 2 — the Commander highlighted by her moments, not a panel: she appears at the Nexus with a line and an effect, a vignette shows her fall, her card and portrait are Explore Map's, and Vasse is back the round after she falls.
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Battle Round is where the Commander acts; complete)
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
@@ -293,6 +293,27 @@ Built on a new pull request; waiting for Mario's playtest.
 - [x] An Activity Logs filter, Commander, records when she fell, how long she is out and when she is back.
 - [x] Played on the level made for her return; the pull request says whether her death and her return read without
       explanation.
+
+### Step 8D, round 2 — Her moments, not a panel
+
+Mario's notes on the step's pull request ([his words](../history/feedback/2026-10-13-commander-armies.md)): the
+Commander is another unit, so the side panel keeps its room; she is highlighted by her moments instead, and the
+rhythm of matches of six to nine rounds wants most Commanders back the round after they fall. Built on the same pull
+request.
+
+- [ ] The Commander panel leaves the side panel, in the Build Phase and the Battle Round; the raid's words have their
+      rows back.
+- [ ] She appears: as a level begins, and the round the Nexus Pulse restores her, she is set down beside the Nexus
+      a moment after the round opens, with an effect that is hers and a line of her own.
+- [ ] She falls: a vignette opens beside where she fell, over the battle, her face changing and then evaporating,
+      small enough that the battle stays in sight.
+- [ ] Her card and portrait are Explore Map's: on her, the card shows her portrait, and the map gives her a stronger
+      highlight.
+- [ ] While she is out, a dim `@` beside the Nexus, her own symbol and nothing else.
+- [ ] How many rounds a Commander sits out is hers to have: Vasse none, back the round after she falls.
+- [ ] A Commander's symbol is her identity, and her art builds on it: a rule for designing one; which symbol Vasse
+      keeps goes to the register.
+- [ ] A milestone of its own for ASCII art is planned.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
 order ([`README.md`](README.md)).
