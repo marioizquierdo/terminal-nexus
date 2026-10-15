@@ -55,13 +55,16 @@ save, it is meant to continue the saved game from beside the settings in `~/.ter
 stays the way to go anywhere else. An argument the game does not read is refused, and the removed
 `--build-phase` says that `--at 'campaign?level=vasse-test-1'` replaced it.
 
-`grid`'s view takes `--capability monochrome|color16|color256|truecolor`, `--theme dark|light`,
+`grid`'s view takes `--capability monochrome|color256|truecolor`, `--theme dark|light`,
 `--glyphs ascii|unicode`, `--no-effects`, `--reduced-motion`, `--speed`, `--seed`, `--cosmetic-seed`,
 `--backend auto|ansi|opentui` and `--save-log <file>`; the game's display options are `--capability`,
 `--theme`, `--glyphs`, `--reduced-motion` and `--backend`. Each program refuses an argument it does not read,
 and a retired one says what changed (`--tile-width`: a tile is one column at every size). ASCII and
 monochrome are the floor; everything above them is fidelity, never information. `--capability` defaults to the
-best tier the terminal advertises; `--theme` to `dark`.
+best tier the terminal advertises and to monochrome when it advertises none; `--theme` to `dark`. There are
+three colour depths (monochrome, 256 colours, truecolor) and no sixteen-colour one, so a change is looked at in
+truecolor, and in 256 colours and monochrome now and then: 256 is derived from the same palette, and nothing
+is authored for it (see [`presentation.md`](docs/system-design/presentation.md)).
 
 Pinned versions, re-checked rather than remembered:
 

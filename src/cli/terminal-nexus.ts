@@ -48,7 +48,7 @@ function usage(): string {
   return `terminal-nexus — the Terminal Nexus game
 
   terminal-nexus [--at <route>] [--settings "<text>"]
-                 [--capability monochrome|color16|color256|truecolor]
+                 [--capability monochrome|color256|truecolor]
                  [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
                  [--backend auto|ansi|opentui]
       With no --at, opens the title menu: Campaign, Challenge, Settings, About, Exit.

@@ -166,8 +166,8 @@ export function drawPulseEffects(
 /**
  * How strongly her side's colour washes the ground her aura reaches, where colours blend (256 and up): a
  * see-through style a little quieter than the incoming raid's, so it reads as a glow under the fight rather than
- * a shape on top of it. At 16 colours and in monochrome a wash this light shows nothing, and her card's words
- * carry what the aura does.
+ * a shape on top of it. In monochrome a wash this light shows nothing, and her card's words carry what the aura
+ * does.
  */
 export const AURA_WASH = 0.16
 

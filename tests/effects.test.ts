@@ -50,7 +50,7 @@ function context(overrides: Partial<EffectContext> = {}): EffectContext {
     timeMs: 1000,
     cosmeticSeed: 0x0c05e7,
     reducedMotion: false,
-    capability: "color16",
+    capability: "color256",
     ...overrides,
   }
 }
@@ -376,7 +376,7 @@ test("the damage flash actually fades across its own window now, not a flat puls
   assert.ok(early !== undefined && late !== undefined)
   assert.ok((early.fade ?? 0) < (late.fade ?? 0), "fade did not increase across the flash's own window")
   assert.ok((late.fade ?? 0) > 0.5, `the flash should be mostly faded by the end of its window, got ${late.fade}`)
-  assert.equal(early.bold, true, "bold must stay unconditional for 16-colour/monochrome")
+  assert.equal(early.bold, true, "bold must stay unconditional for monochrome")
 
   // Reduced motion is unaffected: no time axis for a two-frame blip to fade across, so the cell is
   // exactly the fixed shape this recipe has always returned there, before fade existed.
@@ -501,7 +501,7 @@ test("the cosmetic seed cannot reach the kernel", async () => {
     hashes.add(`${view.timeline.stateHash}:${view.timeline.eventsHash}`)
     framesPerSeed.set(
       cosmeticSeed,
-      sampleTimes.map((timeMs) => frameToText(view.snapshotAt(timeMs, "color16"))),
+      sampleTimes.map((timeMs) => frameToText(view.snapshotAt(timeMs, "color256"))),
     )
   }
   assert.equal(hashes.size, 1, "a cosmetic seed changed a gameplay hash")

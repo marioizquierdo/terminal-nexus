@@ -112,7 +112,7 @@ npm run grid -- scenarios/citizen-mirror-skirmish                          # the
 
 ```bash
 npm run grid -- <map> \
-  --capability monochrome|color16|color256|truecolor \
+  --capability monochrome|color256|truecolor \
   --glyphs ascii|unicode \
   --speed 2 --no-effects --reduced-motion --seed 0x1234 --turn 90
 ```

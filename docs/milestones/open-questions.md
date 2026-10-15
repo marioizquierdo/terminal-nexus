@@ -17,7 +17,7 @@ when it is genuinely his call, state the assumption you proceed under, then keep
 
 ## Index
 
-Two are ready for Mario to decide now ("Mario, now"); every other question is parked until the
+Three are ready for Mario to decide now ("Mario, now"); every other question is parked until the
 milestone or backlog entry named, and nothing in the current milestone is blocked by any of them.
 
 | Id | Question | Status | Waits on |
@@ -50,6 +50,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
 | [Q77](#q77--which-symbol-does-vasse-keep) | Which symbol does Vasse keep? | OPEN | Milestone 15 (ASCII art), or Mario now |
 | [Q78](#q78--what-does-restoration-play-now-that-vasse-is-back-at-once) | What does RESTORATION play, now that Vasse is back at once? | OPEN | Milestone 10 or later, when mission 3 is designed |
+| [Q79](#q79--does-the-game-paint-its-own-background-or-leave-the-terminals) | Does the game paint its own background, or leave the terminal's? | OPEN | Mario, now |
 
 ## Open
 
@@ -416,6 +417,15 @@ effect language; ownership keeps the colour", the rule Q18 settled).
 **Recommendation: B.** A palette's whole job is to make faction A read differently from faction B at a glance;
 revisit when a second faction's structures or units are drawn — Milestone 8 at the latest.
 
+**The shape to design it in (from the 2026-10-15 colour review, once there is something to design against).** With the
+16-colour depth gone, a palette is RGB per theme plus the monochrome form, and ASCII art needs more than the 26 roles
+there are: shades of one hue. Do not add roles one at a time. Author **families with steps** (ink, rust, verdant, gold,
+signal, cyan; four or five lightness steps each, per theme), make today's roles aliases into that table (`player.a` is
+a family and a step), and let 256 colours derive from it as it does now. Author the art so the **glyph carries the
+luminance and the colour carries the hue** (a density ramp, not a colour ramp): monochrome then loses mood and keeps
+the picture, and no art is drawn twice. This is a proposal, not a decision; Milestone 15's art workflow is where it
+would be tried first.
+
 ### Q53 — Does the game want a "jump to my next structure" key, and which one?
 
 **Status:** OPEN — parked under the backlog's keyboard play; a real trade, not a blocker.
@@ -636,3 +646,27 @@ back the round after she falls, she has no round of absence to hold.
 
 **Recommendation: A.** It keeps what the mission was for — restoration read closely — and makes the delay itself the
 thing the player notices the Nexus doing.
+
+### Q79 — Does the game paint its own background, or leave the terminal's?
+
+**Status:** OPEN — registered 2026-10-15, from Mario's remark that the game leans on backgrounds and cannot
+"support" a terminal theme such as Solarized. Blocks nothing.
+
+At 256 colours and in millions the ANSI writer sets no background on a plain cell, so the terminal's own background
+shows through (OpenTUI and the browser page already paint the game's). Every fade and every see-through mix is worked
+out against the game's *assumed* ground instead: near-black for the dark theme, pale paper for the light one. On a
+terminal whose background is something else (Solarized's blue-green, a purple theme, a picture), a glyph faded all
+the way goes to the game's near-black, darker than the ground round it rather than gone, and the travelling
+cursor's mix is a different tone from the cells beside it. The 16-colour depth never helped here (those colours are
+the terminal theme's too), and it is gone; monochrome sends no colour at all, so it is the one depth that wears the
+terminal's theme exactly.
+
+| Option | What it costs |
+| --- | --- |
+| A. **Leave it**: the terminal's background shows, the Background setting is "match your terminal" | Nothing to build; blends are exact only on a terminal near the assumed ground, and "dark" and "light" are an approximation of every theme |
+| B. **Paint the ground at 256 colours and millions**: every cell carries the game's ground as its background; monochrome still leaves the terminal alone | The game looks the same on every terminal (what he playtests is what anyone sees) and blends are exact; a few more bytes a frame, the frame's edge shows against a terminal of another colour when the terminal is larger than the frame, and Background becomes a choice of look rather than a match |
+| C. **Ask the terminal** for its background (OSC 11) and blend toward that | Exact on terminals that answer; unreliable across emulators, the reason the theme is a setting at all, and more code |
+
+**Recommendation: B**, built behind an Experiment he can flip, since the frame's edge against his own terminal's
+background is what to judge. The game's look depends on backgrounds and blends too much to let the terminal choose
+what they blend toward.

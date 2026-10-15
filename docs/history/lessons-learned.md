@@ -407,6 +407,30 @@ than any one feature:
    words, the menu and the battle panel; restoring those files to the commit before it took one command and left no
    half-removed branches. Keep a feature's changes in its own files where you can, so it can leave as cleanly.
 
+## Dropping the 16-colour depth (2026-10-15)
+
+1. **A depth whose colours the terminal defines cannot be derived, mixed or checked.** The sixteen ANSI colours are
+   the player's terminal theme's, so there was nothing to match against and nothing to blend toward. Matching them
+   against xterm's defaults had already been measured and rejected (it sent muted text to bright black and gave both
+   sides the same grey), so the table stayed hand-authored: twenty-six roles on eleven codes in the dark theme and
+   eight in the light one, where the player's colour, the danger colour and the blast were one red. A depth that
+   needs its own table needs its own playtest, and the owner had the bandwidth for one look, truecolor.
+2. **Pin the rule, not the incident.** The 16-colour tests were "never ANSI 90 for the frame", "never cyan for
+   orange": each a past bug, none the reason it was a bug, and nothing that said two roles must differ. The 256
+   tier's reason to be safe is one sentence, held for every role in both themes, tinted and faded: it never draws
+   index 0 to 15, because those are the terminal's (`tests/roles.test.ts`).
+3. **Fail toward the floor.** A terminal that advertises nothing gets monochrome, which sends no colour code and so
+   cannot print garbage or fight the terminal's theme; the other error, colour codes sent to a terminal that cannot
+   read them, can. A saved setting that names a depth that is gone reads as the default (also monochrome), field by
+   field, and keeps the file's other settings.
+4. **A tier that "degrades" still has a floor to author.** Truecolor to 256 is free, and monochrome is free as a
+   depth, but every blend (fade, tint, see-through) still needs its monochrome form (a glyph, a weight, inverse video)
+   wherever it carries information. Dropping the middle tier removed the third form to write, not the second.
+5. **The terminal's background is not the game's.** The ANSI writer sets no background on a plain cell, so the
+   terminal's own shows through while fades and mixes blend toward the game's assumed ground. It does not show on a
+   near-black terminal, which is what the screenshot tool simulates (`#0c0c0c`), and it is the real answer to "what
+   about Solarized" (Q79), not the sixteen colours.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

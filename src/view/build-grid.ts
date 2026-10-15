@@ -147,7 +147,7 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
  * ***The incoming raid***: what the next round brings, drawn where it will arrive in its side's colour and
  * see-through — "not here yet", yet read at a glance (the owner: "the enemy units should be visible").
  * It is the see-through style at a low alpha in its own colour: where colours blend (256 and up) a wash
- * lies under its glyphs, which stay near full strength; at 16 colours and in monochrome, where a wash
+ * lies under its glyphs, which stay near full strength; in monochrome, where a wash
  * that light shows nothing, it is the style's plain look — the glyphs at full strength. It once was dim
  * and faded, and played as a player it was easy to miss; "not here yet" is said in words where colour
  * cannot: the panel's heading for when it comes, and Explore Map's card ("Incoming").
@@ -178,10 +178,10 @@ const INCOMING_WASH = 0.2
  * - On open ground only: never over anything standing, planned or arriving (the corruption law), nor over
  *   rock or a deposit, which are information too. In the raid's colour and quieter than the raid itself: dim,
  *   and faded where colours blend. The copy left behind is the same glyph, further faded where colours blend —
- *   at 16 colours and in monochrome, which have no blend, it is dim, then gone — so every depth draws the same
+ *   in monochrome, which has no blend, it is dim, then gone — so every depth draws the same
  *   glyphs at every instant.
  * - The target is a glyphless write over its tiles, so its own glyphs stay: a wash of the raid's colour
- *   where colours blend, and underlined at every depth — the form that carries it at 16 colours and in
+ *   where colours blend, and underlined at every depth — the form that carries it in
  *   monochrome. Never red, which is kept for the player's own Nexus being hurt.
  */
 export function drawRaidIntent(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
@@ -255,7 +255,7 @@ function trailBeat(elapsedMs: number, motion: TrailMotion): Readonly<{ step: num
 /**
  * When the trail next looks different, on the clock `elapsedMs` is read on: the next quarter whose start changes
  * what is drawn. An arrow steps on at a step's start, its copy takes its second look a quarter in and is gone at
- * the half — so three changes a step where colours blend, and where they do not (16 colours, monochrome) two: the
+ * the half — so three changes a step where colours blend, and where they do not (monochrome) two: the
  * step, and the copy going, its two looks being one there. Before the first step nothing has been left behind, so
  * the first step is the first change.
  */

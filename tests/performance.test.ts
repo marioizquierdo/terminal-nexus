@@ -67,8 +67,8 @@ test("thirty frames a second for sixty seconds stays inside the budget", async (
   for (let frame = 0; frame < FRAMES_PER_SECOND * SECONDS; frame += 1) {
     const timeMs = (frame * 1000) / FRAMES_PER_SECOND
     const started = performance.now()
-    const composed = view.composeAt(timeMs, "color16", { paused: false, speed: 1 })
-    const text = frameToAnsi(composed, "color16")
+    const composed = view.composeAt(timeMs, "color256", { paused: false, speed: 1 })
+    const text = frameToAnsi(composed, "color256")
     samples.push(performance.now() - started)
     bytes += text.length
   }

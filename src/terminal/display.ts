@@ -4,14 +4,16 @@
 // settings, the Build Phase's settings list and the command line, and below the view: the view reads
 // these, they read nothing of the view.
 
-export type CapabilityMode = "monochrome" | "color16" | "color256" | "truecolor"
+/**
+ * How much colour the screen is drawn with. Three depths, and no sixteen-colour one: the sixteen
+ * ANSI colours are whatever the player's terminal theme says they are, which the game cannot know and
+ * cannot mix, so a tier built on them would be a second hand-authored palette to playtest. Monochrome
+ * is the floor (no colour code at all, so the terminal's own colours show); 256 colours and truecolor
+ * come from one palette.
+ */
+export type CapabilityMode = "monochrome" | "color256" | "truecolor"
 
-export const CAPABILITY_MODES: readonly CapabilityMode[] = [
-  "monochrome",
-  "color16",
-  "color256",
-  "truecolor",
-]
+export const CAPABILITY_MODES: readonly CapabilityMode[] = ["monochrome", "color256", "truecolor"]
 
 export function parseCapability(value: string): CapabilityMode {
   const found = CAPABILITY_MODES.find((mode) => mode === value)

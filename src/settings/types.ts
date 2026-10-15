@@ -15,13 +15,15 @@ export type Settings = Readonly<{
 
 /**
  * What a brand-new player (or a corrupt/missing settings file — see `store.ts`) starts with.
- * `color16` rather than `grid`'s own `detectCapability()` guess: a saved file is an explicit choice
+ * Monochrome rather than `grid`'s own `detectCapability()` guess: a saved file is an explicit choice
  * once made, but *before* any choice exists, a fixed, honest baseline is simpler to reason about and
- * to test than probing `COLORTERM`/`TERM` from inside a settings default. `terminal-nexus.ts` still
- * applies that same detection when nothing has been saved yet — see its own comment.
+ * to test than probing `COLORTERM`/`TERM` from inside a settings default, and monochrome is the floor
+ * that draws right on any terminal. `terminal-nexus.ts` still applies that same detection when nothing
+ * has been saved yet — see its own comment. A file saved while a sixteen-colour depth existed names a
+ * value that no longer is one, so it reads as this default.
  */
 export const DEFAULT_SETTINGS: Settings = {
-  capability: "color16",
+  capability: "monochrome",
   theme: "dark",
   glyphPack: "ascii",
   reducedMotion: false,

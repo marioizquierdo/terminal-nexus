@@ -108,7 +108,7 @@ test("the backend enters and leaves the alternate screen and raw mode", async ()
   const backend = new AnsiBackend({
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "color16",
+    capability: "color256",
   })
 
   await backend.start()
@@ -130,7 +130,7 @@ test("the disposer is idempotent, whichever path reaches it", async () => {
   const backend = new AnsiBackend({
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "color16",
+    capability: "color256",
   })
   await backend.start()
   await backend.stop()
@@ -152,7 +152,7 @@ test("a non-TTY session writes no escape sequences at all", async () => {
   const backend = new AnsiBackend({
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "color16",
+    capability: "color256",
   })
   await backend.start()
   await backend.stop()

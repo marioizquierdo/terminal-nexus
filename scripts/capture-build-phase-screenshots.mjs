@@ -411,15 +411,6 @@ placementSheet("build-place-sheet-light", {
   caption: "The light theme: the flash pulls toward its darkest ink, then settles",
 })
 
-placementSheet("build-place-sheet-16", {
-  before: `${PICK_FIRST_POWER} Down Space`,
-  place: "Space",
-  expect: "Barracks placed",
-  timesMs: SHEET_TIMES,
-  capability: "color16",
-  caption: "16 colours: no blend, so the light is a step - bright white, then its own colour",
-})
-
 placementSheet("build-place-sheet-monochrome", {
   before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
@@ -452,13 +443,6 @@ placementGif("build-place-barracks-light", {
   place: "Space",
   expect: "Barracks placed",
   theme: "light",
-})
-
-placementGif("build-place-barracks-16", {
-  before: `${PICK_FIRST_POWER} Down Space`,
-  place: "Space",
-  expect: "Barracks placed",
-  capability: "color16",
 })
 
 placementGif("build-place-barracks-monochrome", {

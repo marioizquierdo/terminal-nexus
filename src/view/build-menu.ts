@@ -152,18 +152,16 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
 
 /**
  * How a refused row's words are drawn, by tier — the only thing the flicker changes. On a plain
- * row: the grey muted role, dim, which greys them at every tier (monochrome and 16 colours, where the
- * muted grey is the value's own, by the dim alone). On the highlight bar: still the bar — inverse, in
- * the bar's role — with the words' colour, which inverse video takes from the background role, made
- * the grey: `chrome.muted` where colours blend, `chrome.edge` at 16 colours (the light theme draws the
- * bar and the muted role in the same ANSI black, so muted words would vanish into it rather than grey);
- * and in monochrome, which has no grey, the bar with its words dim. Never bold, never underlined, never
+ * row: the grey muted role, dim, which greys them at every tier (in monochrome, where the muted grey is
+ * the value's own, by the dim alone). On the highlight bar: still the bar — inverse, in the bar's role —
+ * with the words' colour, which inverse video takes from the background role, made the grey:
+ * `chrome.muted`; and in monochrome, which has no grey, the bar with its words dim. Never bold, never underlined, never
  * the hotkey's colour: always weaker than the pressed flash, which is all three.
  */
 function refusedWords(bar: boolean, capability: CapabilityMode): CellStyle {
   if (!bar) return { fgRole: "chrome.muted", dim: true }
   if (capability === "monochrome") return { fgRole: HIGHLIGHT_BAR.role, inverse: true, dim: true }
-  return { fgRole: HIGHLIGHT_BAR.role, bgRole: capability === "color16" ? "chrome.edge" : "chrome.muted", inverse: true }
+  return { fgRole: HIGHLIGHT_BAR.role, bgRole: "chrome.muted", inverse: true }
 }
 
 /**

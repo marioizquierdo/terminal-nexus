@@ -33,7 +33,7 @@ import { watchPulse } from "./watch.ts"
 const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
 
   grid <map.map.json>          [--seed 0xABCD] [--ticks 120] [--turn 90] [--speed 1]
-                                [--capability monochrome|color16|color256|truecolor]
+                                [--capability monochrome|color256|truecolor]
                                 [--theme dark|light] [--glyphs ascii|unicode]
                                 [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
                                 [--backend auto|ansi|opentui] [--save-log <file>] [--log-level info]
@@ -51,25 +51,24 @@ const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay
 Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
 carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.
 
---capability defaults to the best tier COLORTERM/TERM advertise, color16 if neither says more.
+--capability defaults to the best tier COLORTERM/TERM advertise, monochrome if neither says more.
 --theme defaults to dark; pass --theme light on a light terminal background.`
 
 /**
  * A default `--capability`, when none is given, that is not simply the least common denominator.
- * The owner's low-contrast finding traced back partly to `color16` — the ANSI-16 tier where each
- * terminal theme defines its own version of every code, "bright black" least consistently of all —
- * being the hardcoded default regardless of what the terminal could actually do. `COLORTERM` and
- * `TERM` are the same two environment variables most terminal-aware CLI tools check for this; it is
- * not perfect (a terminal that supports more and advertises neither still gets `color16`), but it
- * is the simple, standard method, and `--capability` is still one flag away for anyone it guesses
- * wrong for.
+ * `COLORTERM` and `TERM` are the two environment variables most terminal-aware CLI tools check for
+ * this. It errs toward monochrome, the floor that draws right on any terminal and leaves the
+ * terminal's own colours alone: a terminal that supports more and advertises neither gets black and
+ * white until its player picks a colour depth in Settings (or passes `--capability`), where the other
+ * error, colour codes sent to a terminal that cannot read them, would print garbage. There is no
+ * sixteen-colour depth to land on in between: those colours are the terminal theme's, not the game's.
  */
 export function detectCapability(env: NodeJS.ProcessEnv = process.env): CapabilityMode {
   const colorterm = env["COLORTERM"]
   if (colorterm === "truecolor" || colorterm === "24bit") return "truecolor"
   const term = env["TERM"] ?? ""
   if (term.includes("256color")) return "color256"
-  return "color16"
+  return "monochrome"
 }
 
 type RunOptions = Readonly<{ seed?: number; ticks?: number }>
