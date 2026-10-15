@@ -28,6 +28,7 @@ test("a file saved before the setting was named colors keeps the player's choice
   const old = parseSettings({ capability: "truecolor", theme: "light", glyphPack: "unicode", reducedMotion: true })
   assert.equal(old.colors, "truecolor")
   assert.equal(parseSettings({ colors: "color256", capability: "truecolor" }).colors, "color256", "the new name wins")
+  assert.equal(parseSettings({ colors: "color16", capability: "truecolor" }).colors, "truecolor", "a depth that is gone does not hide one that is not")
 })
 
 test("nextTheme toggles between dark and light", () => {

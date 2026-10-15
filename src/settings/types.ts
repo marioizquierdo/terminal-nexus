@@ -81,8 +81,9 @@ function isOneOf<T extends string>(all: readonly T[], value: unknown): value is 
  */
 export function parseSettings(value: unknown): Settings {
   const record = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {}
-  // A file saved before the setting was named for what it does calls it `capability`; the choice is kept.
-  const saved = record["colors"] ?? record["capability"]
+  // A file saved before the setting was named for what it does calls it `capability`; the choice is kept,
+  // and the first of the two names that holds a depth this version knows is the one read.
+  const saved = [record["colors"], record["capability"]].find((value) => isOneOf(COLOR_DEPTHS, value))
   const colors: ColorDepth = isOneOf(COLOR_DEPTHS, saved) ? saved : DEFAULT_SETTINGS.colors
   const theme: Theme = isOneOf(THEMES, record["theme"]) ? record["theme"] : DEFAULT_SETTINGS.theme
   const glyphPack: GlyphPack = isOneOf(GLYPH_PACKS, record["glyphPack"])

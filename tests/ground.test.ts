@@ -14,6 +14,8 @@ import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
 import { CanvasBackend } from "../src/view/backends/canvas.ts"
 import type { Canvas2D } from "../src/view/backends/canvas.ts"
+import type { CellSink } from "../src/view/backends/opentui.ts"
+import { drawFrameInto } from "../src/view/backends/opentui.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -193,4 +195,57 @@ test("the canvas paints the ground once, in the colour the depth shows, and only
     // Only the one inverse bar is painted over it, at every depth; the plain cells and the dim dot are not.
     assert.equal(fills.length, 2, `${colors}: ${JSON.stringify(fills)}`)
   }
+})
+
+test("switching from colours to monochrome in a live session starts the screen over, so no ground is left behind", () => {
+  const stdout = new FakeStdout()
+  const backend = new AnsiBackend({ stdout, stdin: new EventEmitter() as never, colors: "truecolor" })
+  const [menu] = screens("truecolor")
+  assert.ok(menu !== undefined)
+  const clears = (): number => stdout.written.split("\u001b[2J").length - 1
+  backend.present(menu)
+  backend.present(menu)
+  assert.equal(clears(), 0, "a frame drawn again with the same look needs no clear")
+  backend.setPresentation("monochrome", "dark")
+  backend.present(menu)
+  assert.equal(clears(), 1, "the new look was not drawn on a cleared screen")
+  backend.present(menu)
+  assert.equal(clears(), 1, "and only once")
+  backend.setPresentation("monochrome", "light")
+  backend.present(menu)
+  assert.equal(clears(), 2, "a new theme starts over too")
+})
+
+test("OpenTUI grows a small frame with ground when it has colours, and draws monochrome as it is", async () => {
+  const core = await import("@opentui/core")
+  const [menu] = screens("truecolor")
+  assert.ok(menu !== undefined)
+  for (const [colors, cells] of [["truecolor", 100 * 30], ["color256", 100 * 30], ["monochrome", 80 * 24]] as const) {
+    let drawn = 0
+    const sink: CellSink = { width: 100, height: 30, setCell: () => void (drawn += 1) }
+    drawFrameInto(core, sink, menu, colors, "dark")
+    assert.equal(drawn, cells, colors)
+  }
+})
+
+test("dim on an inverse cell fades its glyph toward the cell it sits on, and leaves the cell as it was", () => {
+  // The highlighted bar's words, drawn dim: the cell stays the bar's colour and its glyph, the ground,
+  // moves toward the bar — what a terminal's faint does to the glyph it draws, and what the browser
+  // canvas and the screenshots have always shown.
+  const bar: Cell = { glyph: "B", style: { fgRole: "chrome.title", inverse: true } }
+  const faint: Cell = { glyph: "B", style: { fgRole: "chrome.title", inverse: true, dim: true } }
+  for (const theme of THEMES) {
+    const own = resolveCell(bar, "truecolor", theme)
+    const dimmed = resolveCell(faint, "truecolor", theme)
+    assert.deepEqual(dimmed.background, own.background, `${theme}: the bar itself changed`)
+    assert.deepEqual(own.foreground, BACKGROUND_RGB[theme], `${theme}: the glyph is the ground at full strength`)
+    assert.notDeepEqual(dimmed.foreground, own.foreground, `${theme}: the glyph did not fade`)
+  }
+})
+
+test("a size a host reports as no number is no size at all", () => {
+  const [menu] = screens("truecolor")
+  assert.ok(menu !== undefined)
+  assert.equal(padFrame(menu, Number.NaN, Number.NaN), menu)
+  assert.equal(padFrame(menu, Number.POSITIVE_INFINITY, 10), menu)
 })

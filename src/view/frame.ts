@@ -16,7 +16,7 @@ export type CellStyle = Readonly<{
   /**
    * A continuous decay/stacking scalar for `fgRole`, `0` (the role's own colour) to `1` (the theme's
    * background) — the transparency half of the style model. Resolved only
-   * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect in
+   * at `color256` and `truecolor` (`roles.ts`'s `resolveCell`); has no representable effect in
    * `monochrome`, which stays exactly as bold/dim/inverse already describe it. Set by
    * `fx.damage.flash`, and in chrome by the card reveal and a popup's breathing border —
    * the craft rule in `effects.md` against fading glyphs has narrow, deliberate exceptions, not a
@@ -137,8 +137,9 @@ export function frameToText(frame: ReadonlyCellFrame): string {
  * terminal's own colour does not show beside it.
  */
 export function padFrame(frame: ReadonlyCellFrame, width: number, height: number): ReadonlyCellFrame {
-  const wide = Math.max(frame.width, Math.floor(width))
-  const tall = Math.max(frame.height, Math.floor(height))
+  // A size a host reports as something other than a number counts as no size at all.
+  const wide = Math.max(frame.width, Number.isFinite(width) ? Math.floor(width) : 0)
+  const tall = Math.max(frame.height, Number.isFinite(height) ? Math.floor(height) : 0)
   if (wide === frame.width && tall === frame.height) return frame
   const cells: Cell[] = new Array<Cell>(wide * tall).fill(BLANK)
   for (let y = 0; y < frame.height; y += 1) {

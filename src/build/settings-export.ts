@@ -85,8 +85,6 @@ const PLAYER_ALIASES: Readonly<Record<string, PlayerField>> = {
   colours: "colors",
   colourdepth: "colors",
   colordepth: "colors",
-  // What the setting was called before it was named for what it does; an export saved then still reads.
-  capability: "colors",
   background: "theme",
   glyphs: "glyphPack",
   symbols: "glyphPack",

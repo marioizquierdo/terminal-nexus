@@ -38,6 +38,8 @@ export class AnsiBackend implements TerminalBackend {
   private theme: Theme
   private started = false
   private stopped = false
+  // What the last frame was drawn with: a change of depth or theme starts the screen over (below).
+  private drawnWith: string | null = null
 
   constructor(options: AnsiBackendOptions) {
     this.options = options
@@ -62,7 +64,12 @@ export class AnsiBackend implements TerminalBackend {
     // ground. Monochrome leaves the terminal's own colours alone, beside the frame as in it.
     const drawn =
       this.colors === "monochrome" ? frame : padFrame(frame, stdout.columns ?? frame.width, stdout.rows ?? frame.height)
-    stdout.write(CURSOR_HOME + frameToAnsi(drawn, this.colors, this.theme) + RESET)
+    // A new depth or theme starts the screen over: leaving colours for monochrome must not leave the ground
+    // painted where the frame no longer reaches, and monochrome leaves the terminal's colours alone.
+    const look = `${this.colors}/${this.theme}`
+    const restart = this.drawnWith !== null && this.drawnWith !== look
+    this.drawnWith = look
+    stdout.write((restart ? RESET + CLEAR : "") + CURSOR_HOME + frameToAnsi(drawn, this.colors, this.theme) + RESET)
   }
 
   setPresentation(colors: ColorDepth, theme: Theme): void {

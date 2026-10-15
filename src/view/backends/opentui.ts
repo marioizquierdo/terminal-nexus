@@ -52,10 +52,10 @@ export function drawFrameInto(
 ): void {
   const colour = ([red, green, blue]: Rgb) => core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1)
   // Monochrome's cells have no fill of their own, so what shows behind them is the ground; the colour
-  // depths always give one (`resolveCell`). A frame smaller than the screen is grown with blank ground,
-  // the way the direct-ANSI backend does.
+  // depths always give one (`resolveCell`). With colours a frame smaller than the screen is grown with
+  // blank ground, the way the direct-ANSI backend does; monochrome is drawn as it is.
   const ground = colour(BACKGROUND_RGB[theme])
-  const screen = padFrame(frame, buffer.width ?? frame.width, buffer.height ?? frame.height)
+  const screen = colors === "monochrome" ? frame : padFrame(frame, buffer.width ?? frame.width, buffer.height ?? frame.height)
   for (let y = 0; y < screen.height; y += 1) {
     for (let x = 0; x < screen.width; x += 1) {
       const cell = screen.cells[y * screen.width + x]
