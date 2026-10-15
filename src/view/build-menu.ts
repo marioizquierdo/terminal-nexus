@@ -12,6 +12,7 @@ import {
   entryOfConstruct,
   exploring,
   menuEntries,
+  missingFor,
   nexusPowers,
   pendingPicks,
   remaining,
@@ -269,7 +270,7 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
         label: item.label,
         value: String(item.cost),
         ...look,
-        disabled: item.cost > remaining(context, state),
+        disabled: item.cost > remaining(context, state) || missingFor(context, item).length > 0,
       }
     }
   }

@@ -47,6 +47,12 @@ export type BuildingCard = Readonly<{
   cost: number
   /** What it spawns in each battle of a campaign that offers it. Absent: it spawns nothing. */
   spawns?: BuildingSpawns
+  /** Its tier in the army's tech tree, 1 to `MAX_TIER` (`curve.ts`). Absent: 1, open from the start. */
+  tier?: number
+  /** The buildings, by card id, that must stand for the player as a Build Phase opens before this one can be built:
+   *  the tech tree. Each is of a lower tier, and a building above tier 1 requires one of the tier below it. Absent:
+   *  none. The same in every mode; a mode decides only which cards it offers. */
+  requires?: readonly string[]
   notes?: string
 }>
 

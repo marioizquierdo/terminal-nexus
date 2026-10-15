@@ -26,6 +26,8 @@ import {
   displayName,
   mapMode,
   menuEntries,
+  missingFor,
+  needsText,
   nexusPowers,
   pendingPicks,
   refusalText,
@@ -162,6 +164,8 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     if (item === undefined) return "Pick a building to place."
     const left = remaining(context, state)
     const effect = cardText(context, item.contentId).subtitle.replace(/\.$/u, "")
+    const missing = missingFor(context, item)
+    if (missing.length > 0) return `${item.label} - ${effect}. Needs ${needsText(context, missing)}: it unlocks the round after.`
     return item.cost > left
       ? `${item.label} - ${effect}. Costs ${item.cost}, only ${left} left.`
       : `${item.label} - ${effect}. Costs ${item.cost}. [enter] to place one.`

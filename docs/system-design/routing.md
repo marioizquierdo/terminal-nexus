@@ -54,6 +54,8 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `campaign?level=vasse-test-2` | the Commander's cadence, the campaign's second test level: Vasse falls in round 1 |
 | `campaign?level=vasse-test-2&round=2` | its round 2, which opens on the Nexus Pulse restoring her |
 | `campaign?level=vasse-test-2&round=3` | its round 3, its last |
+| `campaign?level=vasse-test-3` | the power curve's test level: six rounds, the Garrison locked until a Barracks stands |
+| `campaign?level=vasse-test-3&round=6` | its round 6, its last (`&round=2` to `&round=5` the ones between) |
 
 Every level the game can open is a route the same way, `campaign?level=<id>` with each of its rounds: the
 levels are every shipped campaign's, from its army ([`content.md`](content.md)). `terminal-nexus --help`

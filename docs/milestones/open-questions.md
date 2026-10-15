@@ -49,6 +49,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
 | [Q79](#q79--does-the-game-paint-its-own-background-or-leave-the-terminals) | Does the game paint its own background, or leave the terminal's? | OPEN | Mario, now |
+| [Q80](#q80--what-keeps-an-early-lead-from-compounding) | What keeps an early lead from compounding? | OPEN | Mario; Commander Armies' catch-up step measures the answer |
 
 ## Open
 
@@ -632,3 +633,25 @@ terminal's theme exactly.
 **Recommendation: B**, built behind an Experiment he can flip, since the frame's edge against his own terminal's
 background is what to judge. The game's look depends on backgrounds and blends too much to let the terminal choose
 what they blend toward.
+
+### Q80 — What keeps an early lead from compounding?
+
+**Status:** OPEN — registered 2026-10-15, from the curve measured on the Grid. Blocks nothing built; it decides what
+the power curve's "survivors are outgrown" rests on.
+
+The power curve expects what the first three rounds bought to be at most about a fifth of the army that fights the
+last round (the owner: early moves "exploratory and opportunistic", the last ones "decisive"). Measured on the
+curve's six-round test level, it is close to half, whether a player climbs the tree or not: units that survive stack,
+and a building bought in round 1 sends its wave every round after. Credits that grow, and a second tier worth a
+fifth more per credit, do not change that much: a Garrison at 40 credits instead of 100 moved it from 0.47 to 0.42.
+
+| Option | What it costs |
+| --- | --- |
+| A. **A supply cap**: an army may field so many units at once, and a building waits while it is full, so stronger units take the places of weaker ones rather than piling on them | The genre's answer, and already in the design (the economy: "supply is a shared population cap"); a number to tune, a new thing on the menu's credits line, and a building's waiting shown |
+| B. **A building sends its wave for a price each round**: its credits pay for the wave, not only for the building | Early buildings stop being free forever; every round becomes a spending decision, which is more to read in a Build Phase |
+| C. **A unit's strength fades with the rounds it has fought**, or survivors go home and do not come back | Contradicts "I like being able to keep fighting with the previous units if they survive" |
+| D. **Accept it**: the opening is the foundation, about half; what decides late is the Nexus Pulse's rares and the higher tiers | The curve's numbers change to match; an early lead weighs more than the design wanted |
+
+**Recommendation: A**, measured on the curve level before it is built for good: it keeps survivors (they still
+fight, and a place is worth keeping), it makes "new units much stronger" matter, since a place is the scarce thing,
+and it is the cap the economy was always going to need. Try a cap that a plan reaches by about round 4.

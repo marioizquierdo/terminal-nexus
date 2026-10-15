@@ -38,6 +38,10 @@ export const PICK_WORTH: Readonly<Record<Rarity, Readonly<{ of: number; per: num
 /** RULE: the first round each rarity may be dealt in — a rare from the middle act, a legendary from the closing. */
 export const EARLIEST_ROUND: Readonly<Record<Rarity, number>> = { common: 1, uncommon: 1, rare: 4, legendary: 7 }
 
+/** The tiers of an army's tech tree: a tier's units can first fight about the act its number names (the first
+ *  from round 1, the second from round 4, the third from round 7). */
+export const MAX_TIER = 3
+
 /** What an army may name as what its build leans on: one or two of these (`lean` on a Commander). */
 export const LEANS = ["units", "nexus", "structures", "commander", "economy"] as const
 export type Lean = (typeof LEANS)[number]

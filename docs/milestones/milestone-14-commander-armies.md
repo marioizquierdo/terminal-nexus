@@ -1,7 +1,7 @@
 # Milestone 14 — Commander Armies
 
 **Status:** CURRENT
-**Current step:** 14A — what a Commander Army is, the expected power curve, and the guidelines for catch-up, written as the authoring template and checked by the army loader where it can be.
+**Current step:** 14B — the curve on the Grid: a tech tree in tiers that is one rule for the campaign, runs and two players, credits every round, and a six-round level where survivors stack.
 **Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing; complete)
 
 Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
@@ -51,10 +51,20 @@ Design, with what the loader can check. Built; the numbers are first guesses for
 
 ### Step 14B — The curve on the Grid
 
-- [ ] The tree has tiers whose units are much stronger than the first, and the credits a round brings grow, along
-      the curve 14A writes.
-- [ ] A test level of about six rounds, reachable by route, where survivors stack and the curve can be played.
-- [ ] Measured and written down: how much of the last round's army came from the first rounds.
+Mario, 2026-10-15: "Let's define a tech tree and keep working to simplify and streamline thinking this will work for
+both the campaign, runs and pvp"; and yes to credits carried over with each round's added, and to locked buildings
+shown in the build menu with what they need ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+Built; the measurement found the opening is close to half of the last army, not a fifth, and the question of what
+keeps an early lead from compounding is registered with a recommendation (a supply cap).
+
+- [x] The tech tree is the army's data, one rule in every mode: a building card has a tier and the buildings it
+      requires, the loader checks them, and a mode only decides which cards are offered.
+- [x] A building whose requirements do not stand as the Build Phase opens is in the build menu, dim, and its card
+      and the bottom line say what it needs; arming it is refused with the reason.
+- [x] Credits every round: what was not spent carries over, and each round adds the curve's credits for it.
+- [x] A second tier: a building that needs a Barracks standing and sends units much stronger than troopers.
+- [x] A test level of six rounds, reachable by route, where survivors stack and the curve can be played.
+- [x] Measured and written down: how much of the last round's army came from the first rounds.
 
 ### Step 14C — Marshal Averno
 

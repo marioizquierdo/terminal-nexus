@@ -431,6 +431,22 @@ than any one feature:
    near-black terminal, which is what the screenshot tool simulates (`#0c0c0c`), and it is the real answer to "what
    about Solarized" (Q79), not the sixteen colours.
 
+## The curve on the Grid (2026-10-15)
+
+1. **A trigger id names one trigger in one mission, not in the file.** A script that tuned the new level's raids
+   found `raid-1` by searching the army file and edited PERIMETER's, which comes first; fifteen tests failed at once,
+   none of them about the new level. Scope a data edit to the level it is for (find the level, then the trigger
+   inside it), and diff the file against the last commit before measuring anything with it.
+2. **A level's later rounds must be reachable by a player who builds nothing.** Routes open a round by playing the
+   ones before it with nothing built, so a level whose Nexus falls in round 4 to an empty plan has no round 5 to
+   open. The curve level keeps it with a rule a player can read (the Nexus sends two troopers each round), not by
+   tuning raids until an empty plan scrapes through.
+3. **Measure what was bought, not what walked out.** Counting a unit for the round it first stood made the opening
+   look small; counting it for the round its building was bought (the spawn event's `trainedBy`) showed the opening
+   paying for the whole match. The question a design asks decides the attribution.
+4. **A multi-tile unit can jam its own building.** Survivors come home round their buildings, so a wave of 2x2
+   sentinels found room for one or two of three. A building's unit should fit the ring it comes out on.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

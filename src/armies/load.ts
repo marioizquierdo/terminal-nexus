@@ -42,7 +42,7 @@ import type {
   Unlocks,
 } from "./types.ts"
 import { ArmyError, PORTRAIT_ROWS, PORTRAIT_WIDTH, RARITIES, ROLES } from "./types.ts"
-import { EARLIEST_ROUND, LEANS, MAX_LEANS } from "./curve.ts"
+import { EARLIEST_ROUND, LEANS, MAX_LEANS, MAX_TIER } from "./curve.ts"
 
 // --- The shapes of a manifest's parts ----------------------------------------------------------------------
 //
@@ -54,7 +54,7 @@ const buildingSpawns = record<BuildingSpawns>(
   { unit: text, perWave: positiveWholeNumber, waves: positiveWholeNumber, secondsBetween: positiveWholeNumber },
   {},
 )
-const buildingCard = record<BuildingCard>({ id: text, structure: text, cost: wholeNumber }, { spawns: buildingSpawns, notes: text })
+const buildingCard = record<BuildingCard>({ id: text, structure: text, cost: wholeNumber }, { spawns: buildingSpawns, tier: positiveWholeNumber, requires: list(text), notes: text })
 /** What a Nexus power does: one key, its kind, and what that kind needs (`PowerEffect`). */
 const powerEffect: Shape<PowerEffect> = keyed("a Nexus power's effect", {
   spawnUnits: record<Readonly<{ unit: string; count: number }>>({ unit: text, count: positiveWholeNumber }, {}),
@@ -399,6 +399,35 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
     return sees.get(army)?.has(owner) === true ? null : `the ${kind} "${id}", which "${owner}" has and "${army}" does not require`
   }
 
+  /** What is wrong with a building's place in the tech tree, each said after its name: a tier past `MAX_TIER`; a
+   *  building it requires that the army cannot offer, itself, or one not of a lower tier; and a building above tier 1
+   *  that requires none of the tier below it, which nothing would ever unlock in order. */
+  const treeProblems = (army: string, card: BuildingCard): string[] => {
+    const said: string[] = []
+    const tier = card.tier ?? 1
+    if (tier > MAX_TIER) said.push(`is of tier ${tier}: the tree has tiers 1 to ${MAX_TIER}`)
+    const tiers: number[] = []
+    for (const id of card.requires ?? []) {
+      if (id === card.id) {
+        said.push(`requires itself, so it is never unlocked`)
+        continue
+      }
+      const unseen = unseenCard(army, "building", id)
+      if (unseen !== null) {
+        said.push(`requires ${unseen}`)
+        continue
+      }
+      const required = buildingsBy.get(id)?.card.tier ?? 1
+      tiers.push(required)
+      if (required >= tier) said.push(`of tier ${tier} requires "${id}", of tier ${required}: a building requires only lower tiers`)
+    }
+    if (tier > 1 && tier <= MAX_TIER && (card.requires ?? []).length > 0 && !tiers.includes(tier - 1) && said.length === 0) {
+      said.push(`of tier ${tier} requires no building of tier ${tier - 1}`)
+    }
+    if (tier > 1 && (card.requires ?? []).length === 0) said.push(`of tier ${tier} requires nothing: name the building of tier ${tier - 1} that unlocks it`)
+    return said
+  }
+
   /** What is wrong with what a Nexus power does, each said after its name: a unit it calls up that the army sees
    *  and that is a unit; a building it names that the army can offer — one that spawns, for a power that adds
    *  waves; a reach multiplied, never left as it is. */
@@ -505,6 +534,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
       const unseen = unseenContent(army.id, card.structure)
       if (unseen !== null) say(`the building "${card.id}" names ${unseen}`)
       else if (registry.get(card.structure).layer !== "obstacles") say(`the building "${card.id}" names "${card.structure}", which is not a building`)
+      for (const problem of treeProblems(army.id, card)) say(`the building "${card.id}" ${problem}`)
       if (card.spawns === undefined) continue
       const unit = card.spawns.unit
       const unseenUnit = unseenContent(army.id, unit)
@@ -559,6 +589,17 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
             if (unseen !== null) say(`${where} unlocks ${unseen}`)
           }
           for (const id of own) if (!seen.has(id)) seen.set(id, level.id)
+        }
+        // The tree: every building the level offers can be reached — what it requires is offered too, or stands on
+        // the level's map from the start.
+        const onMap = new Set((map?.standing ?? []).map((structure) => structure.contentId))
+        for (const id of unlocked.buildings.keys()) {
+          for (const needed of buildingsBy.get(id)?.card.requires ?? []) {
+            const structure = buildingsBy.get(needed)?.card.structure
+            if (!unlocked.buildings.has(needed) && (structure === undefined || !onMap.has(structure)) && unlocked.buildings.get(id) === level.id) {
+              say(`${where} offers the building "${id}", which requires "${needed}", which the level neither offers nor has standing`)
+            }
+          }
         }
         if (level.schedule !== undefined) for (const problem of scheduleProblems(level.schedule, new Set(unlocked.powers.keys()))) say(`${where} ${problem}`)
 

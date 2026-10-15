@@ -197,3 +197,19 @@ portrait already wears it); RESTORATION keeps its round without her, the mission
 its own data (the question on what the mission plays is answered, and the campaign says so); and the first step of
 Commander Armies is written, in [`commander-armies.md`](../../game-design/commander-armies.md), with what the army
 loader can check of it.
+
+## The curve on the Grid (2026-10-15)
+
+After pull request 72 merged, with the plan for the next step in front of him (credits every round, carried over;
+locked buildings shown in the build menu with what they need).
+
+### F176 — A tech tree for every mode
+
+> ok thanks. Let's pick and plan the next milestone
+
+> go ahead, yes to both. Let's define a tech tree and keep working to simplify and streamline thinking this will
+> work for both the campaign, runs and pvp
+
+**Built** (see the step). Unspent credits carry over and each round adds the curve's; a building the tree has not
+reached yet shows in the build menu, dim, with what it needs. The tech tree is the army's, one rule in every mode:
+a mode decides only which cards are offered, never how they unlock.

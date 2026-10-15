@@ -689,6 +689,23 @@ export function displayName(context: BuildContext, contentId: string): string {
   return catalogItem(context, contentId)?.label ?? CARD_TEXT[contentId]?.title ?? shortName(context, contentId)
 }
 
+/**
+ * **The tech tree's lock**: the structures a menu row still needs standing for the player before it can be built,
+ * none when it can. What stands is what stood as the Build Phase opened — a building planned this round unlocks
+ * what it leads to next round, once it stands — so a row is locked or open for the whole phase.
+ */
+export function missingFor(context: Pick<BuildContext, "standing">, item: ConstructItem): string[] {
+  const standing = new Set(context.standing.map((structure) => structure.contentId))
+  return (item.needs ?? []).filter((contentId) => !standing.has(contentId))
+}
+
+/** What a locked row needs, in words: "a Barracks standing", "a Barracks and a Hatchery standing". */
+export function needsText(context: BuildContext, missing: readonly string[]): string {
+  const names = missing.map((contentId) => `a ${displayName(context, contentId)}`)
+  const listed = names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
+  return `${listed} standing`
+}
+
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
 export function costOf(context: BuildContext, contentId: string): number {
   return catalogItem(context, contentId)?.cost ?? 0
@@ -1061,6 +1078,16 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
   if (refused !== null) return refused
   const entry = entryOfConstruct(index)
   const left = remaining(context, state)
+  const missing = missingFor(context, item)
+  if (missing.length > 0) {
+    // Locked by the tech tree: refused the way an unaffordable row is, saying what it needs.
+    return {
+      ...state,
+      menuHighlight: entry,
+      ack: acknowledge(state, "refused", entry),
+      status: status(`${item.label} is locked: it needs ${needsText(context, missing)}.`, "warning"),
+    }
+  }
   if (item.cost > left) {
     // A disabled row: the key was understood, and nothing happens — the row flickers and the status
     // line says why, affordability first (docs/system-design/presentation.md).

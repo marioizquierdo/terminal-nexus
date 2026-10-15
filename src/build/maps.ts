@@ -130,5 +130,12 @@ export const STARTER_MAP: MapDefinition = {
   startCursor: STARTER_START_CURSOR,
 }
 
+/** The starter map with its Grid Nexus alone: no Barracks standing, so the tech tree is climbed from its first
+ *  building (the power curve's test level, Commander Armies). */
+export const STARTER_OPEN_MAP: MapDefinition = {
+  ...STARTER_MAP,
+  standing: STARTER_STANDING.filter((structure) => structure.contentId === "structure.citizen.nexus"),
+}
+
 /** Every map a level can name, by the name it uses. */
-export const MAPS: Readonly<Record<string, MapDefinition>> = { starter: STARTER_MAP }
+export const MAPS: Readonly<Record<string, MapDefinition>> = { starter: STARTER_MAP, "starter-open": STARTER_OPEN_MAP }

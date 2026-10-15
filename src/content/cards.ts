@@ -23,6 +23,11 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Trains troopers",
     description: "Trains a wave of troopers, all at once, a few seconds into each Battle Round. They join the fight, and come home to it after.",
   },
+  "structure.citizen.garrison": {
+    title: "Garrison",
+    subtitle: "Trains pikemen",
+    description: "A heavier barracks. Trains a wave of pikemen, each worth about three troopers, a few seconds into each Battle Round.",
+  },
   "structure.bench.hatchery": {
     title: "Hatchery",
     subtitle: "Spawns swarmers",
@@ -61,6 +66,11 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     title: "Marksman",
     subtitle: "Shoots from far back",
     description: "Hits from further away than a trooper, but falls quickly if the raid reaches it.",
+  },
+  "unit.citizen.pikeman": {
+    title: "Pikeman",
+    subtitle: "From your Garrison",
+    description: "Heavy infantry. Fights in melee like a trooper, and is worth about three of them.",
   },
   "unit.bench.spawnling": {
     title: "Swarmer",

@@ -112,7 +112,10 @@ whose levels each offer what it has unlocked by then.
 `armies/` holding an `army.json`: its id and title, the armies it `requires`, `notes`, and any of five sections —
 `content` (the content ids it brings to the Grid), `buildings` (a structure, its cost and, for one that makes
 units, what it spawns in each battle: `spawns`, the unit, how many a wave, how many waves a round and the seconds
-between waves, each a whole number above zero), `powers` (a Nexus power's name, its one line and its effect: one
+between waves, each a whole number above zero; and its place in the tech tree: `tier`, 1 to 3, and `requires`, the
+buildings that must stand for the player as a Build Phase opens before it can be built — each of a lower tier, one
+of them of the tier just below, and every one a level offers reachable from what it offers or has standing on its
+map), `powers` (a Nexus power's name, its one line and its effect: one
 key naming its kind — `spawnUnits` (a unit and how many), `modifyCommander` (how many times as far her aura
 reaches), `modifyContent` (a building card and how many waves it adds), `addBuilding` (a building card, which no
 level need unlock: a power adds, only the tech tree unlocks) — or `credits`, War Chest's; its `rarity` (`common`,

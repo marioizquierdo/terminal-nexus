@@ -398,7 +398,13 @@ actually renders, so it is worth reading before building one.
 
 ## 3. Economy
 
-**A match uses one resource** (RULE). Deposits and salvage both yield it. Supply is a separate shared
+**A match uses one resource** (RULE). Deposits and salvage both yield it.
+
+**Credits every round** (RULE — `src/cli/pulse-run.ts`, `src/armies/curve.ts`, `tests/mission-loop.test.ts`; the
+owner, 2026-10-15). What a Build Phase did not spend carries over, and each round after the first adds the power
+curve's credits for it — 120 in round 2, 140 in round 3, up to 430 from round 9 ([`commander-armies.md`](../game-design/commander-armies.md),
+the expected power curve); a level gives round 1's. The same in every mode: until workers gather, this is how a
+round's resources arrive, and the worker economy will earn on top of it or replace it. Supply is a separate shared
 population cap, not a second currency. Nexus energy is a state readout, not something a player
 spends.
 

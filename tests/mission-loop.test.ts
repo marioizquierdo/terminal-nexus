@@ -4,6 +4,7 @@
 // `nextRound`, by keyboard, mouse and driver alike.
 
 import { test } from "node:test"
+import { roundCredits } from "../src/armies/curve.ts"
 import assert from "node:assert/strict"
 import { STARTER_START_CURSOR, STARTER_STANDING } from "../src/build/catalog.ts"
 import { nextRoundRow } from "../src/build/layout.ts"
@@ -66,11 +67,11 @@ test("after a round's result, Enter opens the next round's Build Phase on what t
   assert.equal(state.pulseNumber, 2)
   assert.equal(state.committed, false)
   assert.deepEqual(state.planned, [], "the new Build Phase starts with nothing planned")
-  // What was built stands now; the credits not spent carry over, and a new Nexus power is dealt.
+  // What was built stands now; the credits not spent carry over with round 2's added, and a new Nexus power is dealt.
   for (const [, x, y] of DEFENCE) {
     assert.ok(round.standing.some((structure) => structure.anchor.x === x && structure.anchor.y === y), `the Turret at ${x},${y} is not standing`)
   }
-  assert.equal(round.allotment, credits)
+  assert.equal(round.allotment, credits + roundCredits(2))
   assert.equal(state.nexusPick, null)
   // The survivors are on the map; the next round's raid is shown as incoming, with what it means to do.
   assert.ok((round.field ?? []).some((entity) => entity.player === "A"), "no survivor of yours on the map")

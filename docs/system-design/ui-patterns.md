@@ -171,6 +171,11 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   here" rather than a press (dim in monochrome). (RULE — `tests/build-menu.test.ts`, `tests/build-card.test.ts`)
 - **Disabled** rows (unaffordable, or Start Battle Round before the Nexus pick) are dimmed, and pressing one is
   refused with its reason on the bottom line. (RULE — `tests/build-start.test.ts`)
+- **A building the tech tree has not reached is in the build menu, dimmed**, under its own digit like any other,
+  so no hotkey moves when it opens and the tree's state is always in sight (the owner, 2026-10-15: locked buildings
+  shown "with what they need"). Pressing it is refused — "Garrison is locked: it needs a Barracks standing." — and
+  its row's hint says what it is and what it needs: "Needs a Barracks standing: it unlocks the round after." A
+  building opens the round after what it needs is placed, once it stands. (RULE — `tests/curve-level.test.ts`)
 - **Timing lives in the live loop, never the reducer**: the reducer records an acknowledgement with a
   sequence number (`BuildState.ack`) and `src/view/build-live.ts` shows it from the frame that first
   sees it. Still frames carry none. (RULE — `tests/build-menu.test.ts`, `tests/build-card.test.ts`)
