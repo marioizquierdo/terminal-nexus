@@ -40,9 +40,7 @@ export type PopupBreath = Readonly<{ elapsedMs: number; lengthMs: number }>
  * How far one breath goes each way. The lighter half pulls the border's colour toward the title's
  * (`chrome.title`, the brightest chrome role on a dark background and the darkest on a light one — so
  * "lighter" is "stronger against the ground" on either theme); the darker half fades it toward the
- * background. Both stay under one half on purpose: at 16 colours a tint steps onto the other role only
- * from one half up, and a fade is ignored, so there the border simply stays still rather than blinking
- * once a breath; monochrome has no colour to move at all.
+ * background. Monochrome has no colour to move, so there the border simply stays still.
  */
 export const BREATH_DEPTH = { lighter: 0.4, darker: 0.25 } as const
 

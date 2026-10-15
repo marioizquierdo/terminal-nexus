@@ -67,7 +67,7 @@ displaying.
 
 ### Step 9C — The three-forms bar
 
-- [ ] Every scene works at all four capability tiers, in monochrome, and with reduced motion.
+- [ ] Every scene works at every colour depth (monochrome, 256 colours, truecolor) and with reduced motion.
 
 ## Out of scope
 
@@ -78,7 +78,7 @@ displaying.
 
 ## How it is judged
 
-Automated: every cutscene renders without error at all four capability tiers and in monochrome. Skip
+Automated: every cutscene renders without error at every colour depth. Skip
 and replay leave the game in a consistent state. A bark fires exactly once per triggering event, not
 once per frame that happens to render while the event is still recent.
 

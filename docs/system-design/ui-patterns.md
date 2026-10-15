@@ -338,7 +338,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
 - **An ambient effect moves slowly and draws less often.** Two never settle: a popup's border breath, and the
   raid's intent trail while no popup is open. While the breath is the only thing moving the screen redraws 20
   times a second instead of 60, and stops the moment the last popup closes; while the trail is, the screen
-  redraws only when the trail next changes — three times a step where colours blend, twice at 16 colours and
+  redraws only when the trail next changes — three times a step where colours blend, twice
   in monochrome — and not at all under reduced motion, under a popup, or with the trail out of view. The
   breath starts at rest on the first frame that shows the popup, and every still frame draws it at rest; the
   trail starts again from the still trail whenever it starts to move. (RULE — `tests/build-breath.test.ts`,
@@ -347,7 +347,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
   that overrides its ambient one: the **popup opening**, today the Battle Round screen's **double
   flash**. It is drawn at the full frame rate, ends at rest, and hands over to the breath from rest, so
   there is no jump. A highlight, not an alarm: brief, twice, toward the title's colour. Reduced motion
-  drops it; 16 colours keeps it as two steps. (RULE — `tests/build-breath.test.ts`)
+  drops it, and so does monochrome, which has no colour to move. (RULE — `tests/build-breath.test.ts`)
 - **Reduced motion snaps** — camera, cursor, card, flight — keeping only what is not movement, such as a
   blink. (RULE — `tests/build-motion.test.ts`, `tests/build-card.test.ts`, `tests/build-handoff.test.ts`)
 
@@ -363,7 +363,7 @@ cell**, as the owner defined it:
 - **the glyph stays**, drawn alpha of the way toward the colour the real element draws glyphs in (the
   theme's background, for the inverse-video cursor), so it stays readable as the style passes over it;
 - **a role and a number, never a colour** (`CellStyle.seeThrough`, `SeeThrough` in `src/view/roles.ts`):
-  exact at millions of colours, the nearest at 256, the element's plain look at 16 and in monochrome;
+  exact at millions of colours, the nearest at 256, the element's plain look in monochrome;
 - **a glyphless write**, so the corruption law holds.
 
 (RULE — `tests/see-through.test.ts`.) Any future see-through element — a travelling highlight, a ghost —
@@ -398,8 +398,7 @@ uses it rather than a new blend.
   Which popup has which is a table in the view (`POPUP_OPENINGS`), not code in the drawing. Today only the
   Battle Round screen has one, a **double flash**: two quick flashes well past the breath's range (the
   "Battle Round flash" and "Flash strength" Experiments), then the breath from rest. Everything is still
-  under reduced motion and in monochrome; at 16 colours the flash shows as two steps and the breath does
-  not; the Popup pulse at 0 stops the breath only. (RULE — `tests/build-breath.test.ts`)
+  under reduced motion and in monochrome; the Popup pulse at 0 stops the breath only. (RULE — `tests/build-breath.test.ts`)
 - **A message is a popup with nothing to choose**: a title and wrapped text, closed only by Esc, `x`, a
   right click or a click outside, over whatever was open. For a warning to read once and act on later
   (`BuildState.message`, `messageSpec`). (RULE — `tests/build-popups.test.ts`)
@@ -557,7 +556,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 - ***The incoming raid*** (a named pattern: the owner's "explore the map and see what is coming", and
   "the enemy units should be visible without nexus powers"): what the next round's triggers bring is
   **always** drawn where it will arrive, in the see-through style at a low alpha in its side's colour: a
-  wash under near-full glyphs where colours blend, full strength at 16 colours and in monochrome, so it
+  wash under near-full glyphs where colours blend, full strength in monochrome, so it
   is never faint. "Not here yet" is said in words — the panel's heading and the card's "Incoming", when it
   arrives ("as the round starts", or seconds in), and **its intention**, one plain line the mission writes
   for the group, in place of a description. A Commander arriving is bold and never washed. It yields to
@@ -575,7 +574,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   moving that fades"): every step, a tuned value about a raider's pace, each arrow goes a column's distance on
   toward the target, a row taking two steps as it does a unit — the one beside the target going in as a new one
   comes out of the group — and leaves a copy of itself on each tile it leaves, fainter at once and gone within
-  half a step: blended away where colours blend, the arrow's own dim look and then gone at 16 colours and in
+  half a step: blended away where colours blend, the arrow's own dim look and then gone in
   monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold it still,
   as the still trail, the one beside the target drawn; it moves again from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
   against the round's opening. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
@@ -629,7 +628,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   step at 16, nothing in monochrome, where a change of weight carries it. (RULE — `tests/effects.test.ts`, `tests/roles.test.ts`)
 - **The intro highlight** (`fx.focus.light`): while a dialog line looks at something, a soft light rings
   it on the ground around it, never on it, breathing at the Popup pulse's pace; steady under reduced
-  motion, and in monochrome and at 16 colours the focus's own cells invert instead.
+  motion, and in monochrome the focus's own cells invert instead.
   (RULE — `tests/dialog.test.ts`)
 - **The speaker's light**: as Vasse begins a line during a Battle Round, her own tile is lit a moment with the
   placement's light (`fx.light.flash`, glyphless, its own three forms); none for her last words, when she is
@@ -730,7 +729,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   washed in her side's colour, moving with her, the radius read from her content. A see-through style on the
   ground's own band, under everything that stands: a unit she guards stands in the glow with every colour of
   its own (a wash over a glyph would change its hue at 256 colours), and effects draw over it. Gone at cease
-  fire and when she falls. It shows where colours blend; at 16 colours and in monochrome it does not, and her
+  fire and when she falls. It shows where colours blend; in monochrome it does not, and her
   card says what the aura does. (RULE — `tests/voice.test.ts`)
 
 ## 15. Feedback loops

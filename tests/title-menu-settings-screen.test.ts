@@ -24,7 +24,7 @@ import { shownSetting } from "../src/build/all-settings.ts"
 const ESC = String.fromCharCode(27)
 const ARROW_DOWN = `${ESC}[B`
 
-const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "color16" }
+const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
 
 class FakeStdout extends EventEmitter {
   isTTY = true
@@ -122,7 +122,7 @@ test("every Settings row displays its own hotkey — a hotkey that is not displa
   const text = frameToText(
     composeMenuFrame(
       { state: createMenuList(settingsItems(TEST_SETTINGS)), notice: null, showBack: true },
-      "color16",
+      "color256",
     ),
   )
   for (const item of settingsItems(TEST_SETTINGS)) {
@@ -262,11 +262,11 @@ test("a colour-depth change is visible on the very next frame, without restartin
   await wait(30)
   stdin.emit("data", Buffer.from(SETTINGS_HOTKEY))
   await wait(10)
-  stdin.emit("data", Buffer.from("1")) // cycle colour depth: color16 -> color256
+  stdin.emit("data", Buffer.from("1")) // cycle colour depth: monochrome -> color256
   await wait(30)
 
-  // color16 resolves a role's SGR as a bare number; color256 resolves it as "38;5;NNN". Cycling from
-  // color16 lands on color256 (CAPABILITY_MODES' own order), so this substring in the *newest* frame
+  // monochrome sends no colour code at all; color256 resolves a role's SGR as "38;5;NNN". Cycling from
+  // monochrome lands on color256 (CAPABILITY_MODES' own order), so this substring in the *newest* frame
   // is the observable proof that setPresentation actually changed what the same backend draws with.
   assert.ok(
     stdout.lastWrite.includes(`${ESC}[38;5;`),
@@ -325,7 +325,7 @@ test("two changes picked in quick succession save in order, one write at a time"
   await wait(30)
   stdin.emit("data", Buffer.from(SETTINGS_HOTKEY))
   await wait(10)
-  stdin.emit("data", Buffer.from("1")) // first change: color16 -> color256; its own save now hangs
+  stdin.emit("data", Buffer.from("1")) // first change: monochrome -> color256; its own save now hangs
   await wait(10)
   assert.equal(saveCalls.length, 1, "the first change's save never started")
 
@@ -372,7 +372,7 @@ test("a setting changed on the Settings screen survives a full stop-and-restart"
     await wait(30)
     firstStdin.emit("data", Buffer.from(SETTINGS_HOTKEY))
     await wait(10)
-    firstStdin.emit("data", Buffer.from("1")) // cycle colour depth once: color16 -> color256
+    firstStdin.emit("data", Buffer.from("1")) // cycle colour depth once: monochrome -> color256
     await wait(10)
     firstStdin.emit("data", Buffer.from("q"))
     await wait(50)

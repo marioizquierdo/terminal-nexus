@@ -213,7 +213,6 @@ test("a menu row's looks: highlighted is the bar; pressed, a stronger bar in the
   const row = panelRow(side, EXPLORE_ROW)
   const grey: Readonly<Record<CapabilityMode, Readonly<{ bgRole?: string; dim?: boolean }>>> = {
     monochrome: { dim: true },
-    color16: { bgRole: "chrome.edge" },
     color256: { bgRole: "chrome.muted" },
     truecolor: { bgRole: "chrome.muted" },
   }

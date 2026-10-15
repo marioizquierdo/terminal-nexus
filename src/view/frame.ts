@@ -16,8 +16,8 @@ export type CellStyle = Readonly<{
   /**
    * A continuous decay/stacking scalar for `fgRole`, `0` (the role's own colour) to `1` (the theme's
    * background) — the transparency half of the style model. Resolved only
-   * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect at `color16` or
-   * `monochrome`, which stay exactly as bold/dim/inverse already describe them. Set by
+   * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect in
+   * `monochrome`, which stays exactly as bold/dim/inverse already describe it. Set by
    * `fx.damage.flash`, and in chrome by the card reveal and a popup's breathing border —
    * the craft rule in `effects.md` against fading glyphs has narrow, deliberate exceptions, not a
    * general fade-out license for glyph-bearing effects.
@@ -26,8 +26,7 @@ export type CellStyle = Readonly<{
   /**
    * `fgRole` pulled part of the way toward another role: light on a placed building's
    * characters, and its rainbow. A role and a number, never a colour — `roles.ts`'s `RoleTint` says
-   * how each tier resolves it (a real blend at 256 colours and truecolor, a step onto the other role's
-   * hue at 16, nothing in monochrome). Set only by shading — a glyphless effect cell's `tint`
+   * how each tier resolves it (a real blend at 256 colours and truecolor, nothing in monochrome). Set only by shading — a glyphless effect cell's `tint`
    * (`src/view/effects/shading.ts`), a placed building's light today.
    */
   tint?: RoleTint

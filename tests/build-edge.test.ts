@@ -177,7 +177,7 @@ test("a quiet edge is a role of its own, resolved in both themes at every colour
   const s = screen(contextFor(wholeMap(), "solid"), "unicode")
   assert.equal(cellAt(s.frame, s.layout.gridBox.left + 3, s.layout.gridBox.top).style.fgRole, "chrome.edge")
   for (const theme of ["dark", "light"] as const) {
-    for (const tier of ["color16", "color256", "truecolor"] as const) {
+    for (const tier of ["color256", "truecolor"] as const) {
       assert.ok(sgrFor("chrome.edge", tier, theme).length > 0, `${theme} ${tier}`)
       assert.notDeepEqual(sgrFor("chrome.edge", tier, theme), sgrFor("chrome.frame", tier, theme), `${theme} ${tier}: quieter, not the same`)
     }

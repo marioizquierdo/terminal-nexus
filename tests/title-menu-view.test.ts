@@ -34,12 +34,12 @@ test("monochrome emits no colour code at all; a colour tier emits at least one",
   const frame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "monochrome")
   assert.ok(!sgrCodes(frameToAnsi(frame, "monochrome")).some(isColourCode), "monochrome emitted a colour code")
 
-  const colourFrame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color16")
-  assert.ok(sgrCodes(frameToAnsi(colourFrame, "color16")).some(isColourCode), "color16 emitted no colour at all")
+  const colourFrame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color256")
+  assert.ok(sgrCodes(frameToAnsi(colourFrame, "color256")).some(isColourCode), "color256 emitted no colour at all")
 })
 
 test("every item's hotkey and label are literally on screen — a hotkey that is not displayed does not exist", () => {
-  const text = frameToText(composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color16"))
+  const text = frameToText(composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color256"))
   for (const item of ITEMS) {
     assert.ok(text.includes(menuItemLabel(item)), `"${menuItemLabel(item)}" is not on screen`)
   }
@@ -63,12 +63,12 @@ test("the highlighted row, and only it, renders inverse — the carrier monochro
 
 test("a notice, when set, is on screen; when null, nothing is printed in its place", () => {
   const withNotice = frameToText(
-    composeMenuFrame({ state: createMenuList(ITEMS), notice: "Campaign is not built yet." }, "color16"),
+    composeMenuFrame({ state: createMenuList(ITEMS), notice: "Campaign is not built yet." }, "color256"),
   )
   assert.ok(withNotice.includes("Campaign is not built yet."))
 
   const withoutNotice = frameToText(
-    composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color16"),
+    composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color256"),
   )
   assert.ok(!withoutNotice.includes("Campaign is not built yet."))
 })
@@ -83,7 +83,7 @@ test("a disabled item renders dimmed when not highlighted, and exactly like any 
   // live one - in its own normal, unhighlighted state.
   const withDisabledHighlighted = composeMenuFrame(
     { state: { items, highlighted: 1 }, notice: null },
-    "color16",
+    "color256",
   )
   const liveCell = cellAt(withDisabledHighlighted, MENU_LAYOUT.column, menuItemRow(MENU_LAYOUT, 0))
   assert.equal(liveCell.style.fgRole, "chrome.hotkey", "a live row's own hotkey lost its usual role")
@@ -91,7 +91,7 @@ test("a disabled item renders dimmed when not highlighted, and exactly like any 
   assert.equal(highlightedDisabledCell.style.inverse, true, "a highlighted disabled row was not inverse")
 
   // And the reverse: highlight `0` (the default) to see the disabled item, index 1, at rest.
-  const atRest = composeMenuFrame({ state: createMenuList(items), notice: null }, "color16")
+  const atRest = composeMenuFrame({ state: createMenuList(items), notice: null }, "color256")
   const disabledCell = cellAt(atRest, MENU_LAYOUT.column, menuItemRow(MENU_LAYOUT, 1))
   assert.equal(disabledCell.style.fgRole, "chrome.muted", "a disabled row did not use the muted role")
   assert.equal(disabledCell.style.dim, true, "a disabled row was not dimmed")
@@ -111,7 +111,7 @@ test("a body starts a row below the last row, wraps at words, and stops before t
   const long = Array.from({ length: 60 }, (_unused, index) => `word${index}`).join(" ")
   const frame = composeMenuFrame(
     { state: createMenuList(items), notice: null, showBack: true, body: [{ heading: "Heading", text: [long, long] }] },
-    "color16",
+    "color256",
   )
   const lines = frameToText(frame).split("\n")
   const headingRow = menuItemRow(MENU_LAYOUT, items.length)

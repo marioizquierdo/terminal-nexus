@@ -341,7 +341,7 @@ const damageFlash: EffectRecipe = (instance, context) => {
   // flash now actually decays across its own short window instead of being a flat pulse for the
   // whole of FLASH_MS - "then dim slowly," the owner's own words for what stacking should do,
   // finally also true of a single flash's own lifetime. `bold` stays unconditional and unchanged
-  // above this comment's own fix, for 16-colour/monochrome, which have no fade tier to fall back to.
+  // above this comment's own fix, for monochrome, which has no fade tier to fall back to.
   //
   // Reduced motion holds the pre-fade shape exactly: a two-frame blip has no anticipation/travel/
   // settle sub-phases for `effects.md`'s reduced-motion rule to keep or drop, so the fade axis simply does not

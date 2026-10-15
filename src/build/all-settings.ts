@@ -77,7 +77,7 @@ type Description = Readonly<{
   question: string
   values: readonly Value[]
   applies?: Applies
-  /** A choice's value as its row shows it, where that is not its own name ("16" for `color16`). */
+  /** A choice's value as its row shows it, where that is not its own name ("256" for `color256`). */
   names?: Readonly<Record<string, string>>
 }>
 
@@ -104,10 +104,10 @@ export const ALL_SETTINGS = {
     tier: "player",
     section: "display",
     label: "Colour depth",
-    question: "How many colours the screen uses. Pick fewer if colours look wrong in your terminal; none is black and white.",
+    question: "How many colours the screen uses: pick millions or 256 if your terminal has them. None is black and white.",
     values: CAPABILITY_MODES,
-    names: { monochrome: "none", color16: "16", color256: "256", truecolor: "millions" },
-    default: "color16",
+    names: { monochrome: "none", color256: "256", truecolor: "millions" },
+    default: "monochrome",
   },
   glyphPack: {
     tier: "player",

@@ -5,6 +5,11 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Look at 256 colours and monochrome once, and settle the background** ([his words](../history/feedback/2026-10-15-drop-16-colours.md);
+  the 16-colour depth is gone): `./bin/terminal-nexus.ts --capability color256`, and again with `--capability
+  monochrome`. A terminal that advertises nothing more than that now opens in monochrome; Settings (`d`), Colour
+  depth, or `--capability`, is one step to more. The question that is his: whether the game paints its own background
+  at 256 colours and millions instead of leaving the terminal's (Q79; recommended: yes, behind an Experiment).
 - **Settle the keyboard's steps** ([his request](../history/feedback/2026-10-08-keyboard-without-acceleration.md);
   acceleration is gone on his word): press `d`, try Arrow step, Shift step (below the arrow step, Shift is the slow
   move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
@@ -83,7 +88,7 @@ Small, none blocking.
 - A big unit's death shockwave and the debris round a small one are drawn square: decoration that claims no area,
   but a raider's shockwave reaches two rows up and down as its blast of 1 goes off. Its rows could be weighted by
   the rule if it reads as the blast.
-- A deposit inside the build range carries no mark at 16 colours and in monochrome (the range's wash does not
+- A deposit inside the build range carries no mark in monochrome (the range's wash does not
   render there and a deposit takes no dot), though a building may be placed on it. Older than the rule.
 
 **From step 6B** ([the round-loop report](../history/reports/2026-09-30-round-loop-and-missions.md) has the reasons):
@@ -110,7 +115,7 @@ Small, none blocking.
 - The raid's intent is its first target only: after first contact the raid retargets, nearest enemy each
   tick, and where the fight then goes is not shown. A group arriving seconds in is foreseen against the
   round's opening.
-- At 16 colours and in monochrome an arriving unit is drawn at full strength (the wash shows only where
+- In monochrome an arriving unit is drawn at full strength (the wash shows only where
   colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
   "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
 - Both of her campaign's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
@@ -134,7 +139,7 @@ Small, none blocking.
   reach, and the round runs to time (still survived): units step greedily and have no pathfinding.
 - Round 2 with nothing built is still won, so "the second round needs something built" holds neither before
   this round nor after it; the level was not tuned for it.
-- By the Book's reach is drawn only where colours blend: at 16 colours and in monochrome her card says what it
+- By the Book's reach is drawn only where colours blend: in monochrome her card says what it
   does.
 - The forecast carries the player's troops as one more forecast group (`TroopsGroup`); a `post` field on the
   raid's group would be one shape fewer.
@@ -154,9 +159,24 @@ Small, none blocking.
 - Her round-opening line rarely fits now that first contact comes sooner: the moments that matter more come first.
 - The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts a Turret (22,7) outside the build
   range at every value; the tests skip the placement check, so the plan could not be placed in the game as written.
-- At 16 colours each moving arrow is a pair for a moment (its copy looks like itself). The trail is the second
-  animation that never settles, beside a popup's breath: the screen redraws five to seven times a second while
-  it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.
+- The raid's trail is the second animation that never settles, beside a popup's breath: the screen redraws five
+  to seven times a second while it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.
+
+**From dropping the 16-colour depth** ([his words](../history/feedback/2026-10-15-drop-16-colours.md); the
+lessons file has the reasons):
+
+- The browser page and OpenTUI draw 256 colours as the palette's exact colour, not the nearest entry of the xterm
+  palette that the direct-ANSI writer sends (`rgbFor` in `src/view/roles.ts`; only a see-through mix is rounded
+  there). Looking at 256 colours means looking at a real terminal, not the page. Quantising it in `rgbFor` is three
+  lines and makes the page a faithful 256; it changes no test's meaning.
+- At 256 colours a faded or tinted orange lands on grey or pink, because the xterm cube is coarse at its dark end
+  (a half-faded `player.a` is index 238, a grey). Known since the Commander's second round; it is why the washes there
+  look different, and nothing is tuned for it.
+- The light theme's `player.b` is `15, 56, 32`, nearly black at every depth, and at 256 colours the nearest entry
+  is a grey beside the title text: its contrast against the other side was bought by giving up its hue. A palette
+  question, for Q51.
+- `tests/web.test.ts`'s browser-bundle test fails under Bun 1.4.2 in the cloud session on `main` as well (its
+  hashes differ from Node's); not caused by, or looked at in, this change.
 
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 

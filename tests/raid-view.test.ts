@@ -219,7 +219,7 @@ test("with fewer free rows the panel drops the kinds first, then whole groups, a
   assert.ok(four.length <= 4)
 })
 
-test("the coming raid is see-through in its own colour where colours blend, full strength at 16 colours and in monochrome; Vasse is bold and never faint", () => {
+test("the coming raid is see-through in its own colour where colours blend, full strength in monochrome; Vasse is bold and never faint", () => {
   const [first, second] = everyRound()
   for (const side of [first, second] as BuildSide[]) {
     const frame = compose(side, {}, "truecolor")
@@ -231,7 +231,7 @@ test("the coming raid is see-through in its own colour where colours blend, full
     assert.notEqual(cell.style.dim, true, "the raid is drawn faint")
     assert.equal(cell.style.fade, undefined, "the raid is drawn faded")
     assert.ok(seeThroughColours(cell, "truecolor") !== null && seeThroughColours(cell, "color256") !== null)
-    for (const capability of ["color16", "monochrome"] as const satisfies readonly CapabilityMode[]) {
+    for (const capability of ["monochrome"] as const satisfies readonly CapabilityMode[]) {
       assert.equal(seeThroughColours(cell, capability), null, `at ${capability} the raid is not at full strength`)
     }
   }
@@ -383,7 +383,7 @@ test("an arrow that moves on leaves a fading copy on the tile it left — fainte
   assert.ok((GHOST_FADES[0] as number) > 0.3 && (GHOST_FADES[1] as number) > (GHOST_FADES[0] as number) && (GHOST_FADES[1] as number) < 1)
 })
 
-test("drawn, a copy is the arrow's glyph further faded where colours blend, and dim, then gone, at 16 colours and in monochrome: every depth draws the same glyphs", () => {
+test("drawn, a copy is the arrow's glyph further faded where colours blend, and dim, then gone, in monochrome: every depth draws the same glyphs", () => {
   const side = perimeter()
   const probe = probeOf(side)
   const { stepMs } = TRAIL_MOTION
@@ -408,15 +408,13 @@ test("drawn, a copy is the arrow's glyph further faded where colours blend, and 
     const at = compose(side, { raidTrail: { elapsedMs: stepMs } }, capability)
     assert.deepEqual(tileCell(side, at, (copies[0] as (typeof marks)[number]).tile), copy, capability)
   }
-  // Where colours blend the copy is a fainter colour than the arrow; at 16 colours and in monochrome, which
-  // cannot blend, it is the arrow's own dim look — until it is gone.
+  // Where colours blend the copy is a fainter colour than the arrow; in monochrome, which cannot blend,
+  // it is the arrow's own dim look — until it is gone.
   for (const capability of ["truecolor", "color256"] as const) {
     assert.notDeepEqual(resolveCell(copy, capability).sgr, resolveCell(arrow, capability).sgr, capability)
   }
-  for (const capability of ["color16", "monochrome"] as const) {
-    assert.deepEqual(resolveCell(copy, capability).sgr, resolveCell(arrow, capability).sgr, capability)
-    assert.ok(resolveCell(copy, capability).dim, capability)
-  }
+  assert.deepEqual(resolveCell(copy, "monochrome").sgr, resolveCell(arrow, "monochrome").sgr)
+  assert.ok(resolveCell(copy, "monochrome").dim)
 })
 
 test("still under reduced motion, under a popup and in every still frame: an arrow every three tiles, nothing left behind", () => {
@@ -459,8 +457,8 @@ test("the live loop moves it from the first frame that drew it moving, asks for 
   const between = blended.frame(side.build.state, 1000 + 6 * quarter + 7, options)
   assert.equal(between.busyUntil, 1000 + 8 * quarter)
   assert.ok((between.frameMs ?? 0) > FRAME_MS, "the trail asks for every frame")
-  // At 16 colours and in monochrome, two: an arrow steps on, its copy goes.
-  for (const capability of ["color16", "monochrome"] as const) {
+  // In monochrome, two: an arrow steps on, its copy goes.
+  for (const capability of ["monochrome"] as const) {
     const plain = new BuildAnimation()
     const opts = { raidTrail: true, capability }
     assert.equal(plain.frame(side.build.state, 0, opts).busyUntil, 4 * quarter)

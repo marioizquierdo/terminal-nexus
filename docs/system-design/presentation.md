@@ -49,11 +49,27 @@ only roles from the committed vocabulary.
 Unicode** (RULE — `tests/view.test.ts`, `tests/effects.test.ts`). ASCII is the baseline and the
 acceptance target; colour and Unicode packs add to it and are never required to read a screen.
 
-**Capability modes are four, and they buy fidelity rather than facts**: monochrome, 16-colour,
-256-colour and truecolor, resolving one role table. Every tier puts identical glyphs on screen, so
-nothing a player needs is available only to a colour terminal. Monochrome is the floor, not the
-degraded mode (RULE — `tests/view.test.ts`, `tests/build-view.test.ts`, `tests/effects.test.ts`: each
-asserts that every tier shows the same glyphs).
+**Capability modes are three, and they buy fidelity rather than facts**: monochrome, 256-colour and
+truecolor, resolving one role table. Every tier puts identical glyphs on screen, so nothing a player
+needs is available only to a colour terminal. Monochrome is the floor, not the degraded mode (RULE —
+`tests/view.test.ts`, `tests/build-view.test.ts`, `tests/effects.test.ts`: each asserts that every tier
+shows the same glyphs).
+
+**There is no sixteen-colour mode: the game has one colour look, and the monochrome floor** (RULE —
+`tests/roles.test.ts`). What is authored is the colour look and, wherever it relies on a blend, the form
+monochrome takes instead (a glyph, a weight, inverse video); 256 colours and truecolor are the same code.
+The palette is one table of RGB per theme. Truecolor draws it exactly; 256 colours
+is *derived* from it by nearest match against the xterm cube and greys, indices 16 to 255 only, so no
+colour the game draws is one of the terminal's own sixteen; monochrome sends no colour code at all. The
+sixteen ANSI colours are whatever the player's terminal theme says they are (Solarized's yellow is not
+xterm's), so the game can neither know how a code looks nor blend toward it, and the effects the game
+reads by (backgrounds, fades, see-through mixes) all need real RGB; a sixteen-colour tier would have been
+a second hand-authored palette to playtest, with at most eleven distinct colours doing the work of
+twenty-six roles. A terminal that advertises nothing more than that gets monochrome, which sends it no
+colour to interpret and so leaves its own foreground, background and theme alone; the player picks a colour
+depth in Settings (`--capability` on the command line) if the guess was low. The result is that truecolor
+is the one look to playtest, 256 colours and monochrome are looked at now and then, and nothing else needs
+checking.
 
 **A glyph pack is optional, and it changes the field and the frame, never the actors** (RULE —
 `tests/effects.test.ts`). Units stay letters in every pack, because letter case carries ownership and
@@ -68,18 +84,17 @@ flip its case, and `tests/effects.test.ts`). A mirror match stays legible, and m
 true. Each resolves in one place for every renderer.
 
 - **`fade`** is a continuous scalar the resolver blends toward the active theme's background before quantizing
-  to the capability tier. It resolves at `color256` and `truecolor` only; `color16` and `monochrome` have no
-  continuum to express it on and ignore it. It is `fgRole`-only: a background is never faded. RULE —
+  to the capability tier. It resolves at `color256` and `truecolor` only; `monochrome` has no continuum to
+  express it on and ignores it. It is `fgRole`-only: a background is never faded. RULE —
   `tests/roles.test.ts`, `tests/view.test.ts`. Its scope is deliberately narrow, a recorded departure from the
   "decay is not fade-out" craft rule in [`effects.md`](effects.md): no effect recipe sets `fade` except
   `fx.damage.flash` (RULE — `tests/effects.test.ts`). Two interface marks use it too, neither an effect's
   glyph: the card reveal fades the Build Phase panel's own text, and the raid's intent trail is drawn faded,
-  the copy each moving arrow leaves behind fading further until it is gone (at 16 colours and in monochrome,
-  which ignore `fade`, that copy is the arrow's own dim look until it goes).
+  the copy each moving arrow leaves behind fading further until it is gone (in monochrome,
+  which ignores `fade`, that copy is the arrow's own dim look until it goes).
 - **`tint`** pulls the cell's `fgRole` part of the way (`amount` 0 to 1) toward another role. `truecolor`
   interpolates the two roles' colours; `color256` interpolates, then takes the nearest palette colour;
-  `color16` has no continuum and steps onto the other role's own colour from 0.5 up; `monochrome`
-  ignores it. It is applied before `fade`. RULE — `tests/build-placement.test.ts`. Its scope is a placed
+  `monochrome` ignores it. It is applied before `fade`. RULE — `tests/build-placement.test.ts`. Its scope is a placed
   building's light in the Build Phase. The rainbow's six hue roles (`fx.hue.red` to `fx.hue.magenta`) are
   ordinary roles with a colour per theme.
 - **`seeThrough`** is a see-through cursor over the cell: `{ role, alpha }`, "the cursor, drawn in
@@ -90,8 +105,8 @@ true. Each resolves in one place for every renderer.
   theme's background, the cursor being inverse video). The glyph's colour is its role after tint and
   fade; the background is the cell's `bgRole` or the theme's; an inverse cell is swapped first; a blank
   cell is just its background mixed toward the role. `truecolor` mixes exactly, `color256` takes the
-  nearest palette entry, `color16` shows the plain cursor (inverse in the role's colour) from an alpha
-  of one half and nothing below, `monochrome` the same step as inverse alone. Where it shows it replaces
+  nearest palette entry, `monochrome` shows the plain cursor as inverse alone from an alpha of one half
+  and nothing below. Where it shows it replaces
   the cell's colours, inverse and dim; bold and underline stay. It is written by a glyphless write, so
   the glyph beneath always survives, and a later see-through write on a cell replaces an earlier one.
   One function resolves it (`seeThroughColours` in `src/view/roles.ts`), and every renderer reaches it
@@ -377,7 +392,7 @@ animation track are defined in [`effects.md`](effects.md).
 - Every gameplay glyph occupies exactly one cell. No emoji, combining mark, or ambiguous-width glyph is
   ever required (RULE — `tests/view.test.ts`, `tests/build-view.test.ts`).
 - ASCII-safe is the baseline; Unicode packs map the same semantic roles separately.
-- Monochrome, 16-colour, 256-colour, and truecolor are explicit modes.
+- Monochrome, 256-colour, and truecolor are explicit modes; there is no 16-colour mode.
 - **Colour never carries ownership, target, danger, or health alone** (RULE — `tests/view.test.ts`:
   monochrome renders every scenario and no cell depends on colour to exist).
 - Reduced motion keeps anticipation, impact, and settled state; it removes decorative movement only

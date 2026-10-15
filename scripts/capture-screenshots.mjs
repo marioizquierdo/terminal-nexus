@@ -366,7 +366,7 @@ const shots = [
 function extraArgsFor(shot) {
   return [
     "--capability",
-    shot.capability ?? "color16",
+    shot.capability ?? "truecolor",
     "--theme",
     shot.theme ?? "dark",
     "--glyphs",

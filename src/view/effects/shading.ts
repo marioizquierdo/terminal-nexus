@@ -72,7 +72,7 @@ const lightFlash: EffectRecipe = (instance, context) => {
 /**
  * How much of the light the intro highlight lays over the ground around its focus (a see-through alpha):
  * at the top of a breath, where it starts as the line appears, and at the bottom. Both under the half at
- * which a see-through style would show at 16 colours and in monochrome, which have a form of their own.
+ * which a see-through style would show in monochrome, which has a form of its own.
  */
 export const FOCUS_LIGHT = { peak: 0.34, rest: 0.12 } as const
 
@@ -95,7 +95,7 @@ export const FOCUS_BREATH_MS = 2000
  * `FOCUS_BREATH_MS`; 0 holds it steady).
  *
  * The three forms: **full** breathes; **reduced motion** holds the ring steady, half way between rest and
- * peak, here and never moving; **monochrome** — and 16 colours, which cannot blend a light — draws the
+ * peak, here and never moving; **monochrome**, which cannot blend a light, draws the
  * focus's own cells in inverse video instead: an attribute, never a glyph, steady.
  */
 const focusLight: EffectRecipe = (instance, context) => {
@@ -105,7 +105,7 @@ const focusLight: EffectRecipe = (instance, context) => {
   const width = Math.max(1, paramNumber(instance, "width", 1))
   const height = Math.max(1, paramNumber(instance, "height", 1))
   const { x: left, y: top } = instance.origin
-  if (context.capability === "monochrome" || context.capability === "color16") {
+  if (context.capability === "monochrome") {
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) cells.push({ tile: { x: left + x, y: top + y }, glyph: "", inverse: true })
     }

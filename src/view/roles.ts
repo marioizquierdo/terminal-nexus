@@ -51,8 +51,7 @@ export const STYLE_ROLES = [
   "fx.flash",
   // The rainbow (Mario: "colour interpolation (a rainbow, lighting on the characters)").
   // Six hues the theme owns like any other role, so a rainbow is a walk through roles rather than a
-  // list of colours in a view module — and at 16 colours each one is a real ANSI hue, so the walk
-  // still reads as a rainbow there. Used by the shading and particle recipes' rainbow palettes
+  // list of colours in a view module. Used by the shading and particle recipes' rainbow palettes
   // (`src/view/effects/shading.ts`, `particles.ts`) — a placed building's light and sparks today.
   "fx.hue.red",
   "fx.hue.yellow",
@@ -84,149 +83,116 @@ export const BACKGROUND_RGB: Readonly<Record<Theme, Rgb>> = {
   light: [242, 240, 234],
 }
 
-type Swatch = Readonly<{
-  /** An SGR foreground code from the 16-colour set — hand-authored; see the PALETTE comment below
-   *  for why this tier alone stays a table rather than a computation. */
-  ansi: number
-  /** Exact colour, for truecolor — the single source of truth every other tier derives from
-   *  (`sgrFor`'s `color256` case; `color16` stays independent, see below). */
-  rgb: Rgb
-}>
-
 /**
- * One table per theme, two tiers hand-authored each — `ansi` and `rgb`. The 256-colour tier is no
- * longer a third hand-authored column: it is *derived* from `rgb` (`nearestIndexed`, below), so a palette
- * change is made once. `rgb` is where the factions' own palettes get to show up —
- * Citizen rust and gunmetal against Ravel neon and acid, from the lore document —
- * while the 16-colour tier keeps the two sides as far apart as eight colours allow. This `dark` table
- * is the reference: the one the lore and every screenshot so far were designed against, and the one
- * to extend first when a role needs a stronger identity.
+ * One table per theme: each role's colour as RGB, the single source every tier is made from. Truecolor
+ * draws it exactly and 256 colours takes the nearest entry of the xterm palette (`nearestIndexed`,
+ * below), so a palette change is made once and nothing else is tuned or playtested. This is where the
+ * factions' own palettes get to show up — Citizen rust and gunmetal against Ravel neon and acid, from
+ * the lore document. The `dark` table is the reference: the one the lore and every screenshot so far were
+ * designed against, and the one to extend first when a role needs a stronger identity.
  *
- * **Why 256 derives and 16 does not** (measured on 2026-08-24 by a script since deleted; the
- * quality-and-effects report under docs/history/reports keeps the numbers): nearest-match by squared RGB distance
- * against the real xterm-256 cube reproduces the hand-authored 256 table cleanly — most roles land on
- * the same entry or within a dozen RGB units of it. The same search against the sixteen ANSI colours
- * does not: it sends `chrome.muted` back to ANSI 90, the exact "bright black" value an owner playtest
- * already had removed (see the two-fixes comment below, still true and still why `chrome.muted` sits
- * on 37 rather than 90), and it collapses `player.a` and `player.b` onto the *same* grey — the
- * two-sides contrast complaint made maximally worse, at the one tier with the least room to fix it. A
- * perceptual metric (OKLab) does not rescue it, because the cause is structural rather than a bad
- * formula: the sixteen ANSI colours have no desaturated entries, only eight hues, eight brights, and
- * greys, so nearest-match of any deliberately muted design colour lands on grey — grey genuinely
- * *is* the nearest colour. The sixteen hand-authored `ansi` values below are not approximating `rgb`
- * badly; they are answering a different question — *which of eight hues keeps these things apart* —
- * which is exactly the distinguishability job the two fixes below already tuned them for. Deriving 16
- * would reintroduce both fixed bugs and is not done.
+ * **There is no sixteen-colour table, on purpose** (dropped 2026-10-15; the lessons file has the
+ * reasons). The sixteen ANSI colours are whatever the player's terminal theme says they are, so nothing
+ * here can know what a code looks like or blend toward it, and matching the sixteen against a guessed
+ * palette is no fix: measured, it sent `chrome.muted` to bright black and gave `player.a` and `player.b`
+ * the same grey. The game draws with backgrounds, blends and see-through mixes that need real RGB, so
+ * below 256 colours it is monochrome, which sends no colour code and leaves the terminal's own colours
+ * alone. For the same reason the 256 search starts at index 16: indices 0 to 15 are the terminal's.
  *
- * Two fixes folded in alongside the theme split, both owner playtest findings against this same
- * table:
+ * Playtest findings folded into the values:
  *
- *   - `chrome.muted` and `chrome.label` moved off ANSI 90 ("bright black") onto 37 ("white") at the
- *     16-colour tier. Every `chrome.muted` cell in compose.ts is *also* drawn with the `dim` SGR
- *     attribute (border, footer, panel labels — grep it), so the role's own colour was compounding
- *     with a second darkening on top of it; combined with bright-black being one of the least
- *     consistently themed of the sixteen codes across real terminals, that is what read as "can't
- *     barely see the help text" on the owner's own setup. `chrome.muted` is also brighter now at
- *     every tier, chosen to still read clearly after `dim` softens it.
- *   - `player.a` and `player.b`'s ANSI-16 codes did not match the hue the comment (and the 256/true
- *     colour entries either side of them) already committed to: 96 is bright cyan, not the rust
- *     orange Citizens are everywhere else, and 93 is bright yellow, not Ravel green. Corrected to 33
- *     (the closest base-16 approximation of an amber/rust) and 92 (bright green).
- *
- * A third fix, 2026-08-24 (the two-sides contrast question): `player.a`/`player.b`'s **light-theme**
- * `rgb` retuned by lightness only — hue and saturation unchanged, rust stays rust, green stays green.
- * Measured WCAG contrast against each other was 1.08:1 (dark theme's 2.08:1 is a smaller gap, left
- * alone per the recommendation): both sides clear the 3:1 floor against the background individually,
- * but sit at almost identical brightness next to *each other*, a real problem for red-green colour
- * blindness given the palette's hue choice. A light background structurally limits the fix to mostly
- * one direction: lightening a dark foreground role toward a bright background immediately costs that
- * role its own contrast against the background, while darkening one has no such penalty and buys
- * contrast against *both* the background and the other role at once — which is why `player.b` (Ravel
- * green) moved much further than `player.a` here. New pair: 3.55:1 and 11.47:1 against the light
- * background, 3.23:1 against each other. Dark theme's `player.a`/`player.b` are untouched.
+ *   - `chrome.muted`, `chrome.label` and `chrome.frame` are bright enough to read after the `dim`
+ *     attribute softens them: every `chrome.muted` cell in compose.ts is also drawn dim, so the role's
+ *     own colour compounds with a second darkening ("can't barely see the help text"). The frame and the
+ *     map's edge carry the same `dim` on their soft segments and took the muted role's colour for it
+ *     ("during day time I was not able to tell where the UI is").
+ *   - Light theme `player.a`/`player.b` were retuned by lightness only — hue and saturation unchanged,
+ *     rust stays rust, green stays green. Measured WCAG contrast against each other was 1.08:1 (the dark
+ *     theme's 2.08:1 is a smaller gap, left alone): both sides cleared the 3:1 floor against the
+ *     background individually but sat at almost identical brightness next to *each other*, a real problem
+ *     for red-green colour blindness given the palette's hue choice. A light background structurally
+ *     limits the fix to mostly one direction: lightening a dark foreground role toward a bright
+ *     background immediately costs that role its own contrast against the background, while darkening
+ *     one has no such penalty and buys contrast against *both* the background and the other role at
+ *     once — which is why `player.b` (Ravel green) moved much further than `player.a`. New pair:
+ *     3.55:1 and 11.47:1 against the light background, 3.23:1 against each other.
  */
-const PALETTE: Readonly<Record<Theme, Record<StyleRole, Swatch>>> = {
+const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
   dark: {
-    // Moved off ANSI 90 onto 37 for the same reason `chrome.label`/`chrome.muted` were, above: the
-    // border carries the same `dim` attribute on its own soft (scrolling) segments, so a role that
-    // starts at "bright black" reads as gone entirely on real terminals - exactly the owner finding
-    // this fix already answered once for the other two roles (2026-09-26 playtest: "during day time
-    // I was not able to tell where the UI is"). Same rgb as `chrome.muted`'s own fix - a value
-    // already proven legible dimmed, rather than a new number invented for this role.
-    "chrome.frame": { ansi: 37, rgb: [150, 158, 168] },
-    "chrome.title": { ansi: 97, rgb: [236, 240, 245] },
-    "chrome.label": { ansi: 37, rgb: [148, 156, 166] },
-    "chrome.value": { ansi: 37, rgb: [206, 213, 221] },
-    "chrome.muted": { ansi: 37, rgb: [150, 158, 168] },
+    // The border carries `dim` on its own soft (scrolling) segments, so it takes `chrome.muted`'s
+    // colour: a value already proven legible dimmed, rather than a new number invented for this role.
+    "chrome.frame": [150, 158, 168],
+    "chrome.title": [236, 240, 245],
+    "chrome.label": [148, 156, 166],
+    "chrome.value": [206, 213, 221],
+    "chrome.muted": [150, 158, 168],
     // A cyan distinct from every other role's hue — not the rust/green the two players already own,
     // not terrain.deposit's gold — so a bracketed hotkey reads as "interactive chrome," never as a
     // gameplay colour.
-    "chrome.hotkey": { ansi: 96, rgb: [86, 204, 214] },
-    // Roughly two thirds of the way from the ground to `chrome.frame`: bright black at 16 colours,
-    // which reads as a block or a line but not as dimmed text (why the frame itself left it).
-    "chrome.edge": { ansi: 90, rgb: [100, 106, 116] },
-    "terrain.plain": { ansi: 90, rgb: [72, 78, 86] },
-    "terrain.rock": { ansi: 37, rgb: [128, 132, 138] },
-    "terrain.deposit": { ansi: 33, rgb: [198, 160, 40] },
+    "chrome.hotkey": [86, 204, 214],
+    // Roughly two thirds of the way from the ground to `chrome.frame`: reads as a block or a line, but
+    // not as dimmed text (why the frame itself is brighter).
+    "chrome.edge": [100, 106, 116],
+    "terrain.plain": [72, 78, 86],
+    "terrain.rock": [128, 132, 138],
+    "terrain.deposit": [198, 160, 40],
     // Citizen rust orange against Ravel bioluminescent cyan-green: the two Energy palettes the lore
     // gives the factions, which later content work will pair.
-    "player.a": { ansi: 33, rgb: [201, 118, 68] },
-    "player.b": { ansi: 92, rgb: [104, 226, 132] },
-    "item.salvage": { ansi: 32, rgb: [124, 158, 118] },
-    "notice.gate": { ansi: 91, rgb: [232, 86, 76] },
-    "fx.trail": { ansi: 90, rgb: [110, 116, 124] },
-    "fx.kinetic": { ansi: 37, rgb: [198, 202, 208] },
-    "fx.blast": { ansi: 91, rgb: [242, 132, 44] },
-    "fx.debris": { ansi: 90, rgb: [148, 142, 132] },
-    "fx.critical": { ansi: 93, rgb: [244, 178, 44] },
-    "fx.flash": { ansi: 97, rgb: [255, 255, 255] },
-    "fx.hue.red": { ansi: 91, rgb: [240, 84, 84] },
-    "fx.hue.yellow": { ansi: 93, rgb: [240, 212, 72] },
-    "fx.hue.green": { ansi: 92, rgb: [96, 222, 112] },
-    "fx.hue.cyan": { ansi: 96, rgb: [72, 210, 232] },
-    "fx.hue.blue": { ansi: 94, rgb: [104, 140, 255] },
-    "fx.hue.magenta": { ansi: 95, rgb: [222, 112, 232] },
+    "player.a": [201, 118, 68],
+    "player.b": [104, 226, 132],
+    "item.salvage": [124, 158, 118],
+    "notice.gate": [232, 86, 76],
+    "fx.trail": [110, 116, 124],
+    "fx.kinetic": [198, 202, 208],
+    "fx.blast": [242, 132, 44],
+    "fx.debris": [148, 142, 132],
+    "fx.critical": [244, 178, 44],
+    "fx.flash": [255, 255, 255],
+    "fx.hue.red": [240, 84, 84],
+    "fx.hue.yellow": [240, 212, 72],
+    "fx.hue.green": [96, 222, 112],
+    "fx.hue.cyan": [72, 210, 232],
+    "fx.hue.blue": [104, 140, 255],
+    "fx.hue.magenta": [222, 112, 232],
   },
   // A second, independent table rather than a formula on the dark one (invert-and-clamp reliably
   // ruins exactly the saturated faction colours that matter most) - every entry chosen by hand
   // against BACKGROUND_RGB.light, keeping each role's hue identity but moving its lightness to the
   // other end. Same structure as `dark`, so a future third theme is a table, not a redesign.
   light: {
-    // Same fix as dark's chrome.frame, above - off ANSI 90, rgb matched to this theme's own
-    // chrome.muted (already proven legible dimmed).
-    "chrome.frame": { ansi: 30, rgb: [110, 104, 96] },
-    "chrome.title": { ansi: 30, rgb: [28, 26, 24] },
-    "chrome.label": { ansi: 30, rgb: [90, 86, 80] },
-    "chrome.value": { ansi: 30, rgb: [48, 44, 40] },
-    "chrome.muted": { ansi: 30, rgb: [110, 104, 96] },
+    // Same as dark's chrome.frame, above: this theme's own `chrome.muted` (already proven legible dimmed).
+    "chrome.frame": [110, 104, 96],
+    "chrome.title": [28, 26, 24],
+    "chrome.label": [90, 86, 80],
+    "chrome.value": [48, 44, 40],
+    "chrome.muted": [110, 104, 96],
     // Same hue as dark's, moved dark enough to stay legible on a light background instead of bright.
-    "chrome.hotkey": { ansi: 36, rgb: [8, 110, 120] },
+    "chrome.hotkey": [8, 110, 120],
     // The same step toward the pale ground from this theme's `chrome.frame`.
-    "chrome.edge": { ansi: 90, rgb: [164, 158, 148] },
-    "terrain.plain": { ansi: 90, rgb: [196, 192, 184] },
-    "terrain.rock": { ansi: 30, rgb: [70, 66, 60] },
-    "terrain.deposit": { ansi: 33, rgb: [168, 124, 24] },
-    // Lightness-only retune (hue and saturation unchanged) so the two sides clear a
-    // real mutual-contrast floor rather than only each individually clearing it against the
-    // background - see the PALETTE doc comment above for the measurement and why the two roles moved
-    // by such different amounts.
-    "player.a": { ansi: 31, rgb: [201, 96, 41] },
-    "player.b": { ansi: 32, rgb: [15, 56, 32] },
-    "item.salvage": { ansi: 32, rgb: [80, 120, 72] },
-    "notice.gate": { ansi: 31, rgb: [176, 32, 24] },
-    "fx.trail": { ansi: 90, rgb: [150, 144, 136] },
-    "fx.kinetic": { ansi: 30, rgb: [64, 60, 56] },
-    "fx.blast": { ansi: 31, rgb: [184, 84, 16] },
-    "fx.debris": { ansi: 90, rgb: [120, 110, 96] },
-    "fx.critical": { ansi: 33, rgb: [168, 110, 8] },
-    "fx.flash": { ansi: 30, rgb: [8, 8, 8] },
+    "chrome.edge": [164, 158, 148],
+    "terrain.plain": [196, 192, 184],
+    "terrain.rock": [70, 66, 60],
+    "terrain.deposit": [168, 124, 24],
+    // Lightness-only retune (hue and saturation unchanged) so the two sides clear a real mutual-contrast
+    // floor rather than only each individually clearing it against the background - see the PALETTE doc
+    // comment above for the measurement and why the two roles moved by such different amounts.
+    "player.a": [201, 96, 41],
+    "player.b": [15, 56, 32],
+    "item.salvage": [80, 120, 72],
+    "notice.gate": [176, 32, 24],
+    "fx.trail": [150, 144, 136],
+    "fx.kinetic": [64, 60, 56],
+    "fx.blast": [184, 84, 16],
+    "fx.debris": [120, 110, 96],
+    "fx.critical": [168, 110, 8],
+    "fx.flash": [8, 8, 8],
     // Dark enough to read on the pale ground, each still clearly its own hue.
-    "fx.hue.red": { ansi: 31, rgb: [192, 32, 32] },
-    "fx.hue.yellow": { ansi: 33, rgb: [156, 118, 0] },
-    "fx.hue.green": { ansi: 32, rgb: [20, 132, 52] },
-    "fx.hue.cyan": { ansi: 36, rgb: [0, 122, 142] },
-    "fx.hue.blue": { ansi: 34, rgb: [36, 72, 204] },
-    "fx.hue.magenta": { ansi: 35, rgb: [156, 40, 168] },
+    "fx.hue.red": [192, 32, 32],
+    "fx.hue.yellow": [156, 118, 0],
+    "fx.hue.green": [20, 132, 52],
+    "fx.hue.cyan": [0, 122, 142],
+    "fx.hue.blue": [36, 72, 204],
+    "fx.hue.magenta": [156, 40, 168],
   },
 }
 
@@ -253,9 +219,9 @@ export function xterm256Rgb(index: number): Rgb {
 /**
  * The 256-colour index whose xterm rendering is nearest an RGB value, by squared distance — the
  * "process the colour, then a final pass turns it into the tier" step. Searches only the cube
- * and greyscale range (16-255): the sixteen system colours are the hand-authored `ansi` tier's own
- * job, not this one's. Cheap enough to call once per role per theme at module load (18 x 2 x 240
- * candidates) rather than needing its own cache beyond `DERIVED_256` below.
+ * and greyscale range (16-255): the sixteen system colours are the player's terminal theme's, not
+ * ours, so no colour is ever chosen from them. Cheap enough to call once per role per theme at module
+ * load (26 x 2 x 240 candidates) rather than needing its own cache beyond `DERIVED_256` below.
  */
 function nearestIndexed(rgb: Rgb): number {
   let best = 16
@@ -275,16 +241,16 @@ function nearestIndexed(rgb: Rgb): number {
 }
 
 /**
- * The 256-colour tier, derived once from each role's own `rgb` rather than hand-authored. Computed at module load and read as a plain lookup at render time — the same cost a
- * hand-authored field used to be, and the reason this is precomputed rather than called from
- * `sgrFor` directly on every cell of every frame.
+ * The 256-colour tier, derived once from each role's own colour rather than authored. Computed at
+ * module load and read as a plain lookup at render time, which is why it is precomputed rather than
+ * called from `sgrFor` directly on every cell of every frame.
  */
 const DERIVED_256: Readonly<Record<Theme, Record<StyleRole, number>>> = (() => {
   const result = {} as Record<Theme, Record<StyleRole, number>>
   for (const theme of THEMES) {
     const byRole = {} as Record<StyleRole, number>
     for (const role of STYLE_ROLES) {
-      byRole[role] = nearestIndexed(PALETTE[theme][role].rgb)
+      byRole[role] = nearestIndexed(PALETTE[theme][role])
     }
     result[theme] = byRole
   }
@@ -299,8 +265,6 @@ const DERIVED_256: Readonly<Record<Theme, Record<StyleRole, number>>> = (() => {
  *
  * - `truecolor`: the two roles' RGB, interpolated exactly;
  * - `color256`: the same blend, then the nearest palette entry;
- * - `color16`: no continuum, so a step — the cell's own hue below one half, `role`'s own hand-authored
- *   ANSI hue from one half up (a building lit toward `fx.flash` turns bright white, then settles);
  * - `monochrome`: nothing at all, like every colour. The placement's frames carry it there instead
  *   (a scaffold is drawn plain and the finished building bold).
  *
@@ -315,8 +279,8 @@ export type RoleTint = Readonly<{ role: StyleRole; amount: number }>
  * colour, the glyph being taken to cover about a fifth of the cell — and the glyph, which stays, is
  * drawn `alpha` of the way toward the colour the real cursor draws glyphs in (the theme's background,
  * since the cursor is inverse video). A role and a number, never a colour, like `RoleTint`: an exact mix
- * at truecolor, the nearest colour at 256, and at 16 colours and in monochrome the plain inverse
- * cursor (from an alpha of one half up; below it, nothing). Where it shows, the cell's own `dim` is not
+ * at truecolor, the nearest colour at 256, and in monochrome the plain inverse cursor (from an alpha
+ * of one half up; below it, nothing). Where it shows, the cell's own `dim` is not
  * applied (`resolveCell`). `seeThroughColours`, below, is the one place it becomes colour. Set only by
  * the Explore Map hand-off's travelling cursor so far.
  */
@@ -353,15 +317,10 @@ function nearestIndexedCached(rgb: Rgb): number {
  * way toward the theme's background. `mixRgb` clamps the amount, so a caller that hands in more than 1
  * still lands on the background rather than past it.
  */
-function blendedRgb(swatch: Swatch, theme: Theme, fade: number, tint: RoleTint | undefined): Rgb {
+function blendedRgb(colour: Rgb, theme: Theme, fade: number, tint: RoleTint | undefined): Rgb {
   const target = tint === undefined || tint.amount <= 0 ? undefined : PALETTE[theme][tint.role]
-  const tinted = target === undefined ? swatch.rgb : mixRgb(swatch.rgb, target.rgb, tint?.amount ?? 0)
+  const tinted = target === undefined ? colour : mixRgb(colour, target, tint?.amount ?? 0)
   return fade > 0 ? mixRgb(tinted, BACKGROUND_RGB[theme], fade) : tinted
-}
-
-/** Whether a tint shows at `color16`, where there is no blend: from one half up it is the other role. */
-function tintStepsAt16(tint: RoleTint | undefined): boolean {
-  return tint !== undefined && tint.amount >= 0.5
 }
 
 /**
@@ -370,10 +329,10 @@ function tintStepsAt16(tint: RoleTint | undefined): boolean {
  * so every existing caller that has not been taught about themes yet keeps today's look exactly.
  *
  * `fade` (default `0`, meaning none) is the transparency scalar — see `CellStyle.fade`'s doc
- * comment in `frame.ts` for the full contract. It resolves only at `color256` (a fresh nearest-index
- * search against the faded rgb, rather than the precomputed `DERIVED_256` table) and `truecolor` (a
- * direct blend); `color16` and `monochrome` ignore it entirely; those two tiers have nothing between
- * a role's own eight hues and off; they stay exactly as `bold`/`dim`/`inverse` already describe them.
+ * comment in `frame.ts` for the full contract. It resolves at `color256` (a fresh nearest-index
+ * search against the faded colour, rather than the precomputed `DERIVED_256` table) and `truecolor` (a
+ * direct blend); `monochrome` ignores it entirely, having nothing between a role's own look and off:
+ * it stays exactly as `bold`/`dim`/`inverse` already describe it.
  */
 export function sgrFor(
   role: StyleRole | undefined,
@@ -383,18 +342,16 @@ export function sgrFor(
   tint?: RoleTint,
 ): readonly number[] {
   if (role === undefined || capability === "monochrome") return []
-  const swatch = PALETTE[theme][role]
-  if (swatch === undefined) return []
+  const colour = PALETTE[theme][role]
+  if (colour === undefined) return []
   const tinted = tint !== undefined && tint.amount > 0
   switch (capability) {
-    case "color16":
-      return [tintStepsAt16(tint) ? PALETTE[theme][(tint as RoleTint).role].ansi : swatch.ansi]
     case "color256":
       return fade > 0 || tinted
-        ? [38, 5, nearestIndexedCached(blendedRgb(swatch, theme, fade, tint))]
+        ? [38, 5, nearestIndexedCached(blendedRgb(colour, theme, fade, tint))]
         : [38, 5, DERIVED_256[theme][role]]
     case "truecolor": {
-      const [r, g, b] = blendedRgb(swatch, theme, fade, tint)
+      const [r, g, b] = blendedRgb(colour, theme, fade, tint)
       return [38, 2, r, g, b]
     }
     default:
@@ -402,7 +359,7 @@ export function sgrFor(
   }
 }
 
-/** Background variants of the same swatch, for the rare cell that needs one. `fade` is a `fgRole`
+/** Background variants of the same colour, for the rare cell that needs one. `fade` is a `fgRole`
  *  scalar only (`CellStyle.fade`'s own doc comment) — this never resolves one. */
 export function sgrBackgroundFor(
   role: StyleRole | undefined,
@@ -411,7 +368,6 @@ export function sgrBackgroundFor(
 ): readonly number[] {
   const foreground = sgrFor(role, capability, theme)
   if (foreground.length === 0) return []
-  if (capability === "color16") return [(foreground[0] ?? 37) + 10]
   return [48, ...foreground.slice(1)]
 }
 
@@ -420,10 +376,8 @@ const NEUTRAL_RGB: Rgb = [214, 218, 224]
 
 /**
  * The same roles as RGB, for the renderers that take colours rather than SGR parameters (the canvas
- * and OpenTUI, through `resolveCell`). `fade` mirrors `sgrFor`'s tier gating even though both can
- * show any colour whatever the requested `capability`: ignoring it at `color16` keeps that tier's
- * simulated look the direct-ANSI backend's. `monochrome` is a fixed neutral grey regardless of role,
- * so fade has nothing to add there.
+ * and OpenTUI, through `resolveCell`). `monochrome` is a fixed neutral grey regardless of role, so
+ * fade and tint have nothing to add there.
  */
 export function rgbFor(
   role: StyleRole | undefined,
@@ -433,12 +387,9 @@ export function rgbFor(
   tint?: RoleTint,
 ): Rgb {
   if (capability === "monochrome" || role === undefined) return NEUTRAL_RGB
-  const swatch = PALETTE[theme][role]
-  if (swatch === undefined) return NEUTRAL_RGB
-  // At 16 colours a tint is a step onto the other role's own colour, exactly as `sgrFor` steps onto
-  // its ANSI hue, so the simulated tier matches the direct-ANSI one.
-  if (capability === "color16") return tintStepsAt16(tint) ? PALETTE[theme][(tint as RoleTint).role].rgb : swatch.rgb
-  return blendedRgb(swatch, theme, fade, tint)
+  const colour = PALETTE[theme][role]
+  if (colour === undefined) return NEUTRAL_RGB
+  return blendedRgb(colour, theme, fade, tint)
 }
 
 /**
@@ -448,8 +399,8 @@ export function rgbFor(
 export const GLYPH_COVER = 0.2
 
 /**
- * From this alpha up a see-through style shows at 16 colours and in monochrome, as the plain cursor; below it,
- * it shows nothing there. The same half-way step a tint takes at 16 colours (`tintStepsAt16`).
+ * From this alpha up a see-through style shows in monochrome, as the plain cursor; below it, it shows
+ * nothing there.
  */
 export const SEE_THROUGH_STEP = 0.5
 
@@ -498,7 +449,7 @@ export type SeeThroughColours = Readonly<{
 
 /**
  * The see-through cursor (`SeeThrough`) resolved at a tier, or `null` where it
- * changes nothing — no see-through style, an alpha of 0, or a low alpha at a tier with no blend. The one
+ * changes nothing — no see-through style, an alpha of 0, or a low alpha in monochrome, which has no blend. The one
  * place a see-through style becomes colour; `resolveCell` calls it for every renderer.
  *
  * The cell's own colours are worked out first, as the renderers already draw them: its glyph colour
@@ -511,10 +462,8 @@ export type SeeThroughColours = Readonly<{
  * - `truecolor`: that exact mix;
  * - `color256`: the nearest palette entry to each of the two mixed colours (the RGB returned is that
  *   entry's own, so an RGB backend shows what a 256-colour terminal shows);
- * - `color16`: no continuum, so a step — from `SEE_THROUGH_STEP` up, the plain cursor (inverse video in
- *   the see-through style's role: its hand-authored ANSI hue as the fill, the ground as the glyph), below it
- *   nothing;
- * - `monochrome`: the same step, as inverse video alone. Never a colour code.
+ * - `monochrome`: no continuum, so a step — from `SEE_THROUGH_STEP` up, the plain cursor as inverse
+ *   video alone, below it nothing. Never a colour code.
  *
  * Wherever it shows, the cell's own `dim` goes with it (`resolveCell`).
  */
@@ -532,16 +481,13 @@ export function seeThroughColours(
   if (capability === "monochrome") {
     return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: NEUTRAL_RGB, sgr: [7] }
   }
-  if (capability === "color16") {
-    return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: cursor.rgb, sgr: [cursor.ansi, 7] }
-  }
   const style = cell.style
   const own = style.fgRole === undefined ? undefined : PALETTE[theme][style.fgRole]
   const ink = own === undefined ? NEUTRAL_RGB : blendedRgb(own, theme, style.fade ?? 0, style.tint)
-  const fill = (style.bgRole === undefined ? undefined : PALETTE[theme][style.bgRole]?.rgb) ?? ground
+  const fill = (style.bgRole === undefined ? undefined : PALETTE[theme][style.bgRole]) ?? ground
   const [beneath, glyph] = style.inverse === true ? [ink, fill] : [fill, ink]
   const blank = cell.glyph === " " || cell.glyph === ""
-  const mixed = mixSeeThrough(beneath, blank ? beneath : glyph, cursor.rgb, ground, alpha)
+  const mixed = mixSeeThrough(beneath, blank ? beneath : glyph, cursor, ground, alpha)
   if (capability === "truecolor") {
     return { ...mixed, sgr: [38, 2, ...mixed.foreground, 48, 2, ...mixed.background] }
   }

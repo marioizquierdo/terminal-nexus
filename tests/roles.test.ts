@@ -4,12 +4,14 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
   BACKGROUND_RGB,
+  CAPABILITY_MODES,
   DEFAULT_THEME,
   parseCapability,
   parseTheme,
   rgbFor,
   sgrBackgroundFor,
   sgrFor,
+  STYLE_ROLES,
   THEMES,
 } from "../src/view/roles.ts"
 import { detectCapability } from "../src/cli/grid-main.ts"
@@ -30,7 +32,7 @@ test("monochrome carries no colour code, whichever theme is asked for", () => {
 })
 
 test("dark and light disagree about chrome.value, at every colour tier", () => {
-  for (const capability of ["color16", "color256", "truecolor"] as const) {
+  for (const capability of ["color256", "truecolor"] as const) {
     const dark = sgrFor("chrome.value", capability, "dark")
     const light = sgrFor("chrome.value", capability, "light")
     assert.notDeepEqual(dark, light, `${capability} drew chrome.value the same in both themes`)
@@ -78,27 +80,14 @@ test("chrome.frame survives compose.ts's extra dim attribute in either theme (20
   assert.ok(lightBg - lightFrame > 40, `light chrome.frame, dimmed, is only ${lightFrame} from ~${lightBg}`)
 })
 
-test("chrome.frame's 16-colour tier stays off ANSI 90 too, in both themes", () => {
-  assert.notEqual(sgrFor("chrome.frame", "color16", "dark")[0], 90, "chrome.frame/dark regressed to ANSI 90")
-  assert.notEqual(sgrFor("chrome.frame", "color16", "light")[0], 90, "chrome.frame/light regressed to ANSI 90")
-})
-
-test("player.a and player.b use ANSI-16 codes that actually match their hue elsewhere in the table", () => {
-  // 96 (bright cyan) and 93 (bright yellow) were the codes in place before this fix, for roles the
-  // 256/truecolor entries and the surrounding comment both call rust orange and bioluminescent
-  // green - a mismatch this test pins down so it cannot silently come back.
-  const [ansiA] = sgrFor("player.a", "color16", "dark")
-  const [ansiB] = sgrFor("player.b", "color16", "dark")
-  assert.notEqual(ansiA, 96, "player.a is still using bright cyan for an orange role")
-  assert.notEqual(ansiB, 93, "player.b is still using bright yellow for a green role")
-})
-
 test("detectCapability prefers what COLORTERM and TERM actually advertise", () => {
   assert.equal(detectCapability({ COLORTERM: "truecolor" }), "truecolor")
   assert.equal(detectCapability({ COLORTERM: "24bit" }), "truecolor")
   assert.equal(detectCapability({ TERM: "xterm-256color" }), "color256")
-  assert.equal(detectCapability({}), "color16")
-  assert.equal(detectCapability({ TERM: "xterm" }), "color16")
+  // Anything that says no more than that is monochrome, the floor: there is no sixteen-colour depth in between.
+  assert.equal(detectCapability({}), "monochrome")
+  assert.equal(detectCapability({ TERM: "xterm" }), "monochrome")
+  assert.equal(detectCapability({ TERM: "linux" }), "monochrome")
   // COLORTERM wins when both are present.
   assert.equal(detectCapability({ COLORTERM: "truecolor", TERM: "xterm" }), "truecolor")
 })
@@ -106,6 +95,28 @@ test("detectCapability prefers what COLORTERM and TERM actually advertise", () =
 test("parseCapability still rejects an unknown tier", () => {
   assert.equal(parseCapability("truecolor"), "truecolor")
   assert.throws(() => parseCapability("hd"), /unknown capability/)
+})
+
+test("there is no sixteen-colour depth: it is not a capability", () => {
+  assert.deepEqual([...CAPABILITY_MODES], ["monochrome", "color256", "truecolor"])
+  assert.throws(() => parseCapability("color16"), /unknown capability/)
+})
+
+test("no colour a tier draws is one of the terminal's own sixteen: the 256 search starts at index 16", () => {
+  // The sixteen system colours are whatever the player's terminal theme says. A palette entry that landed
+  // on one would look different on every theme, and the game could not blend toward it; the guarantee is
+  // structural, so it is held for every role in both themes, tinted and faded as well as plain.
+  for (const theme of THEMES) {
+    for (const role of STYLE_ROLES) {
+      const [mode, kind, index] = sgrFor(role, "color256", theme)
+      assert.deepEqual([mode, kind], [38, 5], `${role}/${theme}`)
+      assert.ok((index ?? 0) >= 16, `${role}/${theme} drew system colour ${index}`)
+      for (const fade of [0.25, 0.5, 1]) {
+        const faded = sgrFor(role, "color256", theme, fade)[2] ?? 0
+        assert.ok(faded >= 16, `${role}/${theme} faded ${fade} drew system colour ${faded}`)
+      }
+    }
+  }
 })
 
 test("the 256-colour tier is derived from rgb, not a fourth hand-authored value", () => {
@@ -158,18 +169,6 @@ test("the 256-colour tier is derived from rgb, not a fourth hand-authored value"
   }
 })
 
-test("the 16-colour tier stays hand-authored: chrome.muted keeps its fix, not nearest-match's regression", () => {
-  // the 2026-08-24 measurement's finding: nearest-match derivation would send
-  // chrome.muted back to ANSI 90 ("bright black"), the exact value an owner playtest already had
-  // removed because it compounds with the `dim` attribute every chrome.muted cell also carries. The
-  // 16-colour tier deliberately does NOT derive (see roles.ts's PALETTE comment), so this must still
-  // read 37, in both themes, even after the 256-colour tier started deriving from the same rgb.
-  for (const theme of THEMES) {
-    const [ansi] = sgrFor("chrome.muted", "color16", theme)
-    assert.notEqual(ansi, 90, `chrome.muted/${theme} regressed to ANSI 90 - the 16-colour tier must stay hand-authored`)
-  }
-})
-
 test("player.a and player.b clear a real mutual-contrast floor in the light theme now", () => {
   // The same WCAG relative-luminance contrast ratio the original measurement of
   // that floor used, computed independently here rather than imported, so this test would
@@ -197,9 +196,8 @@ test("player.a and player.b clear a real mutual-contrast floor in the light them
 test("sgrFor's fade resolves only at color256 and truecolor - the transparency scalar", () => {
   const role = "fx.flash"
   const theme = "dark"
-  // color16 and monochrome: identical whether fade is 0, partway, or fully faded - no representable
-  // effect at either tier (CellStyle.fade's own doc comment, frame.ts).
-  assert.deepEqual(sgrFor(role, "color16", theme, 0), sgrFor(role, "color16", theme, 1))
+  // monochrome: nothing at all whether fade is 0, partway, or fully faded - no representable effect
+  // there (CellStyle.fade's own doc comment, frame.ts).
   assert.deepEqual(sgrFor(role, "monochrome", theme, 1), [])
 
   // color256 and truecolor: a full fade actually changes the resolved colour.
@@ -223,10 +221,9 @@ test("sgrFor's fade of 1 lands truecolor exactly on the theme's own background",
   }
 })
 
-test("rgbFor's fade mirrors sgrFor's tier gating: color16 ignores it, truecolor blends, monochrome is untouched", () => {
+test("rgbFor's fade mirrors sgrFor's tier gating: truecolor blends, monochrome is untouched", () => {
   const role = "fx.flash"
   const theme = "dark"
-  assert.deepEqual(rgbFor(role, "color16", theme, 1), rgbFor(role, "color16", theme, 0))
   assert.deepEqual(rgbFor(role, "monochrome", theme, 1), rgbFor(role, "monochrome", theme, 0))
   assert.notDeepEqual(rgbFor(role, "truecolor", theme, 1), rgbFor(role, "truecolor", theme, 0))
   assert.deepEqual(rgbFor(role, "truecolor", theme, 1), [...BACKGROUND_RGB[theme]])

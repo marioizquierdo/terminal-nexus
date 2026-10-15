@@ -4,8 +4,7 @@
 // "an initial double flash pulse, with more contrast range, that works as a highlight, then it stays on
 // the default pulse animation"). An opening, from a table, then the breath: presentation alone, a pure
 // function of the time since the popup opened, drawn at rest in every still frame, still under reduced
-// motion and in monochrome, the flash alone at 16 colours, and the frame timer runs for it only while a
-// popup is open.
+// motion and in monochrome, and the frame timer runs for it only while a popup is open.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -169,21 +168,17 @@ test("lighter and darker are against the ground on both themes, at 256 colours a
   }
 })
 
-test("at 16 colours and in monochrome a breath cannot show, so the border does not flicker at all", () => {
+test("in monochrome a breath cannot show, so the border does not flicker at all", () => {
   const side = battleRound()
-  for (const capability of ["color16", "monochrome"] as const) {
-    for (const theme of ["dark", "light"] as const) {
-      const rest = resolveCell((borderCells(side, compose(side, {}, capability))[3] as { cell: Cell }).cell, capability, theme)
-      for (let elapsed = 0; elapsed <= LENGTH; elapsed += 25) {
-        const frame = compose(side, { popupBorder: breathing(elapsed) }, capability)
-        for (const { cell } of borderCells(side, frame)) {
-          assert.deepEqual(resolveCell(cell, capability, theme), rest, `${capability} ${theme} at ${elapsed} ms`)
-        }
+  for (const theme of ["dark", "light"] as const) {
+    const rest = resolveCell((borderCells(side, compose(side, {}, "monochrome"))[3] as { cell: Cell }).cell, "monochrome", theme)
+    for (let elapsed = 0; elapsed <= LENGTH; elapsed += 25) {
+      const frame = compose(side, { popupBorder: breathing(elapsed) }, "monochrome")
+      for (const { cell } of borderCells(side, frame)) {
+        assert.deepEqual(resolveCell(cell, "monochrome", theme), rest, `monochrome ${theme} at ${elapsed} ms`)
       }
     }
   }
-  // Because the depth stays under the half-way step a tint takes at 16 colours.
-  assert.ok(BREATH_DEPTH.lighter < 0.5 && BREATH_DEPTH.darker < 0.5)
 })
 
 // --- The Battle Round screen's opening: a double flash -------------------------------------------------
@@ -349,31 +344,6 @@ test("reduced motion and monochrome keep every border still and the timer quiet"
       }
     }
   }
-})
-
-test("16 colours shows the flash, as two steps onto the title's colour, and then keeps the border still", () => {
-  const side = battleRound()
-  const options = { capability: "color16" as const }
-  const animation = new BuildAnimation()
-  const first = animation.frame(side.build.state, 0, options)
-  assert.deepEqual(first.popupBorder, { elapsedMs: 0, opening: POPUP_FLASH, breathMs: null })
-  const theme = "dark"
-  const rest = strength(side, undefined, "color16", theme)
-  // Stepped at the frame rate, the border goes up to the title's colour twice and nowhere else.
-  let steps = 0
-  let up = false
-  for (let now = 0; now < OPENING; now += FRAME_MS) {
-    const live = animation.frame(side.build.state, now, options)
-    const lit = strength(side, live.popupBorder, "color16", theme) > rest
-    if (lit && !up) steps += 1
-    up = lit
-  }
-  assert.equal(steps, 2, "the 16-colour flash is not two steps")
-  const after = animation.frame(side.build.state, OPENING + 10, options)
-  assert.equal(after.popupBorder, undefined, "16 colours breathes after the flash")
-  assert.equal(after.busyUntil, null, "the frame timer kept running after the 16-colour flash")
-  // Every other popup has nothing to show there at all.
-  assert.equal(popupBorderEffect(showing(side.build.state, "game-menu"), false, "color16"), null)
 })
 
 test("the breath's Experiment at 0 stops the breath but not the flash; a shorter breath is a shorter breath", () => {

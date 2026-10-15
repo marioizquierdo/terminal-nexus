@@ -4,7 +4,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { CAPABILITY_MODES, THEMES } from "../src/view/roles.ts"
 import { GLYPH_PACKS } from "../src/view/theme.ts"
-import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../src/settings/types.ts"
+import { DEFAULT_SETTINGS, nextCapability, nextGlyphPack, nextTheme, parseSettings, toggleReducedMotion } from "../src/settings/types.ts"
 
 test("nextCapability cycles through every tier and wraps back to the first", () => {
   const seen = new Set<string>()
@@ -15,6 +15,13 @@ test("nextCapability cycles through every tier and wraps back to the first", () 
   }
   assert.equal(seen.size, CAPABILITY_MODES.length, "did not visit every capability tier")
   assert.equal(current, CAPABILITY_MODES[0], "did not wrap back to the first tier")
+})
+
+test("a file saved while a sixteen-colour depth existed reads as the default depth, and keeps its other settings", () => {
+  const parsed = parseSettings({ capability: "color16", theme: "light", glyphPack: "unicode", reducedMotion: true })
+  assert.equal(parsed.capability, DEFAULT_SETTINGS.capability)
+  assert.equal(DEFAULT_SETTINGS.capability, "monochrome", "the baseline is the floor, which draws right on any terminal")
+  assert.deepEqual({ ...parsed, capability: "x" }, { capability: "x", theme: "light", glyphPack: "unicode", reducedMotion: true })
 })
 
 test("nextTheme toggles between dark and light", () => {

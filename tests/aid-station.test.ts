@@ -312,7 +312,7 @@ test("a heal's mark keeps the effect contract: a pure function of time, one ASCI
     family: "citizen",
     params: { amount: 4, heal: 1 },
   }
-  const context = (overrides: Partial<EffectContext> = {}): EffectContext => ({ timeMs: 1000, cosmeticSeed: 0x0c05e7, reducedMotion: false, capability: "color16", ...overrides })
+  const context = (overrides: Partial<EffectContext> = {}): EffectContext => ({ timeMs: 1000, cosmeticSeed: 0x0c05e7, reducedMotion: false, capability: "color256", ...overrides })
   const times = [1000, 1090, 1179, 1180, 1270, 1359]
   const forwards = times.map((timeMs) => JSON.stringify(recipe(instance, context({ timeMs }))))
   const backwards = [...times].reverse().map((timeMs) => JSON.stringify(recipe(instance, context({ timeMs })))).reverse()
