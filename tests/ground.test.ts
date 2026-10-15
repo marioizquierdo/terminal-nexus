@@ -12,6 +12,8 @@ import { starterContext } from "../src/cli/starter.ts"
 import { createMenuList } from "../src/title-menu/list.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { AnsiBackend } from "../src/view/backends/ansi.ts"
+import { CanvasBackend } from "../src/view/backends/canvas.ts"
+import type { Canvas2D } from "../src/view/backends/canvas.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -72,9 +74,10 @@ test("nothing is left to the terminal: no default colour, no faint, no reverse v
 
 test("monochrome is the one depth that leaves the terminal's colours alone: no fill, faint and reverse stay", () => {
   for (const theme of THEMES) {
-    const sent = screens("monochrome").flatMap((frame) => sgrAttributes(frameToAnsi(frame, "monochrome", theme)))
-    assert.ok(!sgrCodes(screens("monochrome").map((frame) => frameToAnsi(frame, "monochrome", theme)).join("")).some((code) => code === 38 || code === 48), "monochrome sent a colour")
-    assert.ok(sent.includes(2) && sent.includes(7), "monochrome lost its faint or reverse video")
+    const ansi = screens("monochrome").map((frame) => frameToAnsi(frame, "monochrome", theme)).join("")
+    assert.ok(!sgrCodes(ansi).some((code) => code === 38 || code === 48), "monochrome sent a colour")
+    const attributes = sgrAttributes(ansi)
+    assert.ok(attributes.includes(2) && attributes.includes(7), "monochrome lost its faint or reverse video")
   }
 })
 
@@ -157,4 +160,37 @@ test("the ground is chosen per theme and never a colour the terminal could have"
   // Dark is a dark ground and light a light one: every role in each table was set against it.
   const mean = (rgb: readonly number[]): number => rgb.reduce((sum, channel) => sum + channel, 0) / 3
   assert.ok(mean(BACKGROUND_RGB.dark) < 40 && mean(BACKGROUND_RGB.light) > 215)
+})
+
+test("the canvas paints the ground once, in the colour the depth shows, and only a cell with a fill of its own over it", () => {
+  const frame: ReadonlyCellFrame = {
+    width: 4,
+    height: 1,
+    cells: [
+      { glyph: "a", style: { fgRole: "player.a" } },
+      { glyph: "B", style: { fgRole: "chrome.title", bgRole: "chrome.muted", inverse: true } },
+      { glyph: " ", style: {} },
+      { glyph: ".", style: { fgRole: "terrain.plain", dim: true } },
+    ],
+  }
+  for (const [colors, ground] of [["truecolor", "rgb(10,10,12)"], ["color256", "rgb(8,8,8)"], ["monochrome", "rgb(10,10,12)"]] as const) {
+    const fills: unknown[] = []
+    const context: Canvas2D = {
+      fillStyle: "",
+      font: "",
+      globalAlpha: 1,
+      textAlign: "",
+      textBaseline: "",
+      setTransform() {},
+      fillRect() {
+        fills.push(context.fillStyle)
+      },
+      fillText() {},
+    }
+    const canvas = { width: 0, height: 0, style: { width: "", height: "" }, getContext: () => context }
+    new CanvasBackend({ canvas, colors, theme: "dark", fit: () => ({ width: 400, height: 100 }) }).present(frame)
+    assert.equal(fills[0], ground, `${colors}: the whole canvas is the ground first`)
+    // Only the one inverse bar is painted over it, at every depth; the plain cells and the dim dot are not.
+    assert.equal(fills.length, 2, `${colors}: ${JSON.stringify(fills)}`)
+  }
 })

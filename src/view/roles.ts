@@ -386,18 +386,6 @@ export function sgrFor(
   return [38, ...shownAt(blendedRgb(PALETTE[theme][role], theme, fade, tint), colors).params]
 }
 
-/** The same colour as a fill. `fade` is a `fgRole` scalar only (`CellStyle.fade`'s own doc comment) —
- *  this never resolves one. A cell with no role is filled with the theme's ground. */
-export function sgrBackgroundFor(
-  role: StyleRole | undefined,
-  colors: ColorDepth,
-  theme: Theme = DEFAULT_THEME,
-): readonly number[] {
-  if (colors === "monochrome") return []
-  const colour = role === undefined ? BACKGROUND_RGB[theme] : PALETTE[theme][role]
-  return [48, ...shownAt(colour, colors).params]
-}
-
 /**
  * The same roles as RGB, for the renderers that take colours rather than SGR parameters (the canvas
  * and OpenTUI, through `resolveCell`), as the depth shows them: a 256-colour terminal's own entry, not

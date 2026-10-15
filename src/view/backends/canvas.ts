@@ -11,6 +11,7 @@
 // module type-checks and runs its pure half under Node like every other backend.
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
+import { BLANK } from "../frame.ts"
 import type { ColorDepth, Theme } from "../roles.ts"
 import { BACKGROUND_RGB, DEFAULT_THEME, DIM_ALPHA, resolveCell } from "../roles.ts"
 
@@ -143,7 +144,10 @@ export class CanvasBackend implements TerminalBackend {
     if (g === null) throw new Error("this browser gave the canvas no 2D context")
     g.setTransform(ratio, 0, 0, ratio, 0, 0)
     g.globalAlpha = 1
-    g.fillStyle = css(BACKGROUND_RGB[this.theme])
+    // The ground as this depth shows it (the nearest entry at 256 colours), painted once; a cell that is
+    // plain ground is then left alone, and only a cell with a fill of its own is painted over it.
+    const ground = css(resolveCell(BLANK, this.colors, this.theme).background ?? BACKGROUND_RGB[this.theme])
+    g.fillStyle = ground
     g.fillRect(0, 0, width, height)
     g.textBaseline = "middle"
     g.textAlign = "center"
@@ -151,7 +155,7 @@ export class CanvasBackend implements TerminalBackend {
     for (const op of paintOps(frame, this.colors, this.theme)) {
       const left = op.x * this.cellWidth
       const top = op.y * this.cellHeight
-      if (op.background !== null) {
+      if (op.background !== null && op.background !== ground) {
         g.globalAlpha = 1
         g.fillStyle = op.background
         // Half a pixel over, so neighbouring solid cells meet without a hairline between them.

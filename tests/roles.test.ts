@@ -10,7 +10,6 @@ import {
   parseColorDepth,
   parseTheme,
   rgbFor,
-  sgrBackgroundFor,
   sgrFor,
   STYLE_ROLES,
   THEMES,
@@ -28,7 +27,6 @@ test("parseTheme accepts dark and light, and rejects everything else", () => {
 test("monochrome carries no colour code, whichever theme is asked for", () => {
   for (const theme of THEMES) {
     assert.deepEqual(sgrFor("chrome.value", "monochrome", theme), [])
-    assert.deepEqual(sgrBackgroundFor("chrome.value", "monochrome", theme), [])
   }
 })
 
