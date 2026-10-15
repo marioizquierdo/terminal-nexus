@@ -47,7 +47,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        a later round is reached as a player who builds nothing reaches it.
                        With --at, the keys may be left out: the screen as it opens
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, and a larger one centres it)
-  --capability <mode>  truecolor (default), color256, color16, monochrome
+  --capability <mode>  truecolor (default), color256, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode
   --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the

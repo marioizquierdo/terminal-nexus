@@ -192,7 +192,7 @@ test("alpha 1 is the plain cursor look: the fill is the cursor's colour, the gly
   assert.deepEqual(resolved?.foreground, GROUND)
   // The canvas paints both the same at every tier but 256 (where the real cursor keeps its exact role
   // colour and the see-through style, like any mix, lands on a palette entry).
-  for (const capability of ["truecolor", "color16", "monochrome"] as const) {
+  for (const capability of ["truecolor", "monochrome"] as const) {
     const [look] = paintOps(frameOf(cursorLook), capability)
     const [over] = paintOps(frameOf(full), capability)
     assert.equal(over?.foreground, look?.foreground, capability)
@@ -225,23 +225,6 @@ test("256 colours: the nearest palette entry to each exact mix", () => {
       assert.deepEqual(indexed.background, xterm256(background))
       assert.deepEqual(ansiParams(target, "color256"), [38, 5, foreground, 48, 5, background])
     }
-  }
-})
-
-test("16 colours: from one half up the plain cursor in the seeThrough's hue, below it nothing", () => {
-  const plain = cell("$", { fgRole: "fx.hue.yellow", bgRole: "player.b" })
-  const hue = sgrFor("chrome.title", "color16")[0]
-  for (const alpha of [SEE_THROUGH_STEP, 0.8, 1]) {
-    const target = cell("$", { ...plain.style, seeThrough: at("chrome.title", alpha) })
-    // The cell's own foreground and background codes give way to the cursor's.
-    assert.deepEqual(ansiParams(target, "color16"), [hue, 7], `alpha ${alpha}`)
-    assert.deepEqual(seeThroughColours(target, "color16")?.background, rgbFor("chrome.title", "color16"))
-    assert.deepEqual(seeThroughColours(target, "color16")?.foreground, GROUND)
-  }
-  for (const alpha of [0.2, 0.45]) {
-    const target = cell("$", { ...plain.style, seeThrough: at("chrome.title", alpha) })
-    assert.equal(seeThroughColours(target, "color16"), null)
-    assert.equal(frameToAnsi(frameOf(target), "color16"), frameToAnsi(frameOf(plain), "color16"), `alpha ${alpha}`)
   }
 })
 
@@ -386,7 +369,7 @@ test("the ANSI writer, the canvas and OpenTUI resolve one mixed cell to the same
           assert.deepEqual(shown.background, resolved.background, label)
           assert.equal(shown.inverse, false, label)
         } else {
-          // At 16 colours and in monochrome the terminal swaps for itself: reversed video, the glyph in
+          // In monochrome the terminal swaps for itself: reversed video, the glyph in
           // its own ground — which the RGB renderers draw as that ground.
           assert.equal(shown.inverse, true, label)
           assert.deepEqual(resolved.foreground, BACKGROUND_RGB[theme], label)
@@ -398,7 +381,7 @@ test("the ANSI writer, the canvas and OpenTUI resolve one mixed cell to the same
 
 test("the three renderers draw a cell's own colours alike: the refused row's grey words under the bar", async () => {
   // `refusedWords` in src/view/build.ts: a refused key greys the highlighted row's words by giving the
-  // inverse bar a background role — chrome.muted (chrome.edge at 16 colours; in monochrome, dim).
+  // inverse bar a background role — chrome.muted (in monochrome, dim).
   // OpenTUI once drew these exactly as the plain bar, dropping the background role.
   const cells = [
     cell("B", { fgRole: "chrome.title", bgRole: "chrome.muted", inverse: true }),

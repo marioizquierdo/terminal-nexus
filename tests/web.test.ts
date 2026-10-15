@@ -137,7 +137,7 @@ test("the canvas paints every glyph the terminal shows, where it shows it", () =
   // The opening screen, a popup over the Grid, and the map scrolled to its west edge.
   for (const script of [[], ["n"], ["n", "1", "Tab", "S-Left", "S-Left", "S-Left", "S-Left"]]) {
     const frame = buildFrame(script)
-    for (const capability of ["truecolor", "color256", "color16", "monochrome"] as const) {
+    for (const capability of ["truecolor", "color256", "monochrome"] as const) {
       const ops = paintOps(frame, capability)
       assert.equal(ops.length, frame.width * frame.height)
       assert.equal(paintedText(frame, ops), frameToText(frame), `${script.join(" ")} at ${capability}`)

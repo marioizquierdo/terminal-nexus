@@ -435,8 +435,8 @@ test("beat 1: the chosen row, active, stays where it is on the menu while every 
     assert.equal(chosen.fade, undefined, "the chosen row fades")
     if (capability === "truecolor" || capability === "color256") assert.ok((other.fade ?? 0) > 0, `${capability}: the other rows do not fade`)
   }
-  // Where colour cannot blend, the fading rows are dim for the half nearer gone.
-  const late = compose(side, { cardReveal: reveal(CARD_BEATS.fade * 0.8) }, "color16")
+  // Where colour cannot blend (monochrome), the fading rows are dim for the half nearer gone.
+  const late = compose(side, { cardReveal: reveal(CARD_BEATS.fade * 0.8) }, "monochrome")
   assert.equal(cellAt(late, side.layout.panelColumn + 1, panelRow(side, EXPLORE_ROW)).style.dim, true)
 })
 

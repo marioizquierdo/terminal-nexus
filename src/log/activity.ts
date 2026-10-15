@@ -35,7 +35,7 @@ export const ACTIVITY_EVENTS = {
       host: { type: "string", description: "Where it runs: terminal or web (the browser playtest page)." },
       columns: { type: "number", description: "The terminal's width in columns." },
       rows: { type: "number", description: "The terminal's height in rows." },
-      colours: { type: "string", description: "The colour depth drawn with, as --capability names it: truecolor, color256, color16 or monochrome." },
+      colours: { type: "string", description: "The colour depth drawn with, as --capability names it: truecolor, color256 or monochrome." },
       at: { type: "string", description: "The route the screen opened at: menu, settings, campaign?level=vasse-test-1&round=2.", optional: true },
     },
   },

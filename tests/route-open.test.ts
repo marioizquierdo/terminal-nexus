@@ -20,7 +20,7 @@ import type { Settings, SettingsStore } from "../src/settings/index.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 
-const SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "color16" }
+const SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "color256" }
 const STORE: SettingsStore = { load: async () => null, save: async () => {} }
 /** No process signals, no exit: the loop ends and its promise settles. */
 const HOST: Host = { onInterrupt: () => () => {}, exit: () => {}, reportError: () => {} }
@@ -117,7 +117,7 @@ test("choosing a title menu row and following its route open the same screen, an
     assert.equal(destination.kind, "title")
     if (destination.kind !== "title") continue
     // Colour and highlight included: the frame as the terminal gets it.
-    const print = (frame: ReadonlyCellFrame): string => frameToAnsi(frame, "color16", "dark")
+    const print = (frame: ReadonlyCellFrame): string => frameToAnsi(frame, "color256", "dark")
     const chosen = await menuAt(undefined, [item.hotkey])
     const followed = await menuAt(destination)
     assert.equal(print(followed), print(chosen), `--at ${item.route} is not the screen its row opens`)
@@ -173,7 +173,7 @@ test("the default level is the Build Phase as it opens when told nothing: PERIME
   const level = DEFAULT_LEVEL
   const told = await buildAt({ kind: "level", level, round: 1 })
   const untold = await buildAt(undefined)
-  assert.equal(frameToAnsi(told, "color16", "dark"), frameToAnsi(untold, "color16", "dark"))
+  assert.equal(frameToAnsi(told, "color256", "dark"), frameToAnsi(untold, "color256", "dark"))
   assert.match(frameToText(untold), /build phase - round 1 of 3/u)
   assert.equal(formatRoute({ kind: "level", level, round: 1 }), "campaign?level=vasse-test-1")
 })

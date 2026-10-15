@@ -37,7 +37,7 @@ test("frames are exactly the composition size: the 80 x 24 floor, a column for e
   assert.deepEqual(COMPOSITION_SIZE, { width: 80, height: 24 })
   // 1 border, the 48 tiles of the minimum viewport a column each, 1 border, the 30-column panel.
   assert.equal(COMPOSITION_SIZE.width, 1 + VIEWPORT_TILES.width + 1 + PANEL_COLUMNS)
-  const frame = view.snapshotAt(1000, "color16")
+  const frame = view.snapshotAt(1000, "color256")
   assert.equal(frame.width, COMPOSITION_SIZE.width)
   assert.equal(frame.height, COMPOSITION_SIZE.height)
   assert.equal(frame.cells.length, COMPOSITION_SIZE.width * COMPOSITION_SIZE.height)
@@ -48,7 +48,7 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
     const view = createView(await timelineFor(name))
     for (const fraction of [0, 0.25, 0.5, 0.9]) {
       const timeMs = view.durationMs * fraction
-      for (const capability of ["monochrome", "color16"] as const) {
+      for (const capability of ["monochrome", "color256"] as const) {
         const frame = view.snapshotAt(timeMs, capability)
         assert.equal(offendingGlyph(frame), null, `${name}: a cell was not one ASCII character`)
       }
@@ -59,15 +59,15 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
 test("identical arguments produce identical frames, and skipping frames changes nothing", async () => {
   const view = createView(await timelineFor("citizen-mirror-skirmish.map.json"))
   const times = [0, 137.5, 1000, 4321.9, 9999]
-  const once = times.map((time) => frameToText(view.snapshotAt(time, "color16")))
+  const once = times.map((time) => frameToText(view.snapshotAt(time, "color256")))
 
   // Sample every frame up to the same moments; the frames at those moments must be unchanged.
-  for (let step = 0; step < 400; step += 1) view.snapshotAt(step * (1000 / 30), "color16")
-  const again = times.map((time) => frameToText(view.snapshotAt(time, "color16")))
+  for (let step = 0; step < 400; step += 1) view.snapshotAt(step * (1000 / 30), "color256")
+  const again = times.map((time) => frameToText(view.snapshotAt(time, "color256")))
   assert.deepEqual(again, once)
 
   // And in the other direction: sampling backwards produces the same frames too.
-  const backwards = [...times].reverse().map((time) => frameToText(view.snapshotAt(time, "color16")))
+  const backwards = [...times].reverse().map((time) => frameToText(view.snapshotAt(time, "color256")))
   assert.deepEqual(backwards, [...once].reverse())
 })
 
@@ -132,7 +132,7 @@ test("monochrome renders every scenario, and no cell depends on colour to exist"
     const view = createView(await timelineFor(name))
     const timeMs = view.durationMs / 2
     const mono = view.snapshotAt(timeMs, "monochrome")
-    const colour = view.snapshotAt(timeMs, "color16")
+    const colour = view.snapshotAt(timeMs, "color256")
     assert.equal(
       frameToText(mono),
       frameToText(colour),
@@ -144,13 +144,13 @@ test("monochrome renders every scenario, and no cell depends on colour to exist"
       `${name}: monochrome emitted a colour code`,
     )
     assert.ok(
-      sgrCodes(frameToAnsi(colour, "color16")).some(isColourCode),
+      sgrCodes(frameToAnsi(colour, "color256")).some(isColourCode),
       `${name}: colour emitted no colour at all`,
     )
   }
 })
 
-test("frameToAnsi resolves CellStyle.fade only at color256/truecolor, never at color16/monochrome", () => {
+test("frameToAnsi resolves CellStyle.fade only at color256/truecolor, never at monochrome", () => {
   // The transparency scalar (docs/system-design/presentation.md, the cell frame), tested at the actual ANSI-conversion
   // boundary rather than only at sgrFor directly (roles.test.ts) - a hand-built one-cell frame, the
   // same way this file's other frame-shaped tests do, so this exercises frame.ts's own sgrOf reading
@@ -164,13 +164,12 @@ test("frameToAnsi resolves CellStyle.fade only at color256/truecolor, never at c
   const faded = frameToAnsi(cellWithFade(1), "truecolor")
   assert.notEqual(unfaded, faded, "truecolor did not change output between fade 0 and fade 1")
 
-  for (const capability of ["color16", "monochrome"] as const) {
-    assert.equal(
-      frameToAnsi(cellWithFade(0), capability),
-      frameToAnsi(cellWithFade(1), capability),
-      `${capability} should render identically at fade 0 and fade 1 - it has no representable effect there`,
-    )
-  }
+  assert.notEqual(frameToAnsi(cellWithFade(0), "color256"), frameToAnsi(cellWithFade(1), "color256"), "color256 did not change output between fade 0 and fade 1")
+  assert.equal(
+    frameToAnsi(cellWithFade(0), "monochrome"),
+    frameToAnsi(cellWithFade(1), "monochrome"),
+    "monochrome should render identically at fade 0 and fade 1 - it has no representable effect there",
+  )
 })
 
 test("the resize gate is drawn below the composition size", () => {
@@ -187,7 +186,7 @@ test("the resize gate is drawn below the composition size", () => {
 
 test("the compositor only ever emits roles from the committed vocabulary", async () => {
   const view = createView(await timelineFor("structure-destruction.map.json"))
-  const frame = view.snapshotAt(view.durationMs * 0.9, "color16")
+  const frame = view.snapshotAt(view.durationMs * 0.9, "color256")
   const roles = new Set<string>()
   for (const cell of frame.cells) {
     if (cell.style.fgRole !== undefined) roles.add(cell.style.fgRole)

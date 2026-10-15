@@ -74,8 +74,7 @@ Small, in order, each finishable on its own.
 ## How it is judged
 
 Automated: step 11A's seed determinism across runs and both runtimes; step 11B's dealer distribution
-within tolerance; step 11C's commons-only run recorded either way; every run screen at all four
-capability tiers and monochrome; the driver plays a whole run with no terminal.
+within tolerance; step 11C's commons-only run recorded either way; every run screen at every colour depth; the driver plays a whole run with no terminal.
 
 Human, and this is the real test: Mario plays a run, can say afterwards why he won or lost from the
 summary alone, and wants to start another. The second half of that sentence is the mode's entire

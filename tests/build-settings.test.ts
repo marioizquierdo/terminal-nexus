@@ -157,13 +157,13 @@ test("a player setting changes at once, is handed to the live loop to save, and 
   keys(side, RIGHT)
   assert.equal(side.build.state.settings.glyphPack, "unicode")
   assert.match(screen(side), /[─│┌]/u, "the frame did not switch to Unicode lines")
-  // Colour depth walks all four and comes round; Left goes the other way.
+  // Colour depth walks all three and comes round; Left goes the other way.
   goToPopupRow(side, settingRow("capability"))
-  for (let step = 0; step < 4; step += 1) keys(side, RIGHT)
+  for (let step = 0; step < 3; step += 1) keys(side, RIGHT)
   assert.equal(side.build.state.settings.capability, DEFAULT_SETTINGS.capability)
   keys(side, LEFT)
-  assert.equal(side.build.state.settings.capability, "monochrome")
-  assert.match(screen(side), /Colour depth\s+<\s+none\s+>/)
+  assert.equal(side.build.state.settings.capability, "truecolor")
+  assert.match(screen(side), /Colour depth\s+<\s+millions\s+>/)
   // Reduced motion flips on Enter.
   goToPopupRow(side, settingRow("reducedMotion"))
   keys(side, ENTER)
@@ -172,7 +172,7 @@ test("a player setting changes at once, is handed to the live loop to save, and 
   keys(side, "q", "r") // the game menu's Restart
   assert.equal(side.build.state.status.text, "Build Phase restarted with these settings.")
   assert.equal(side.build.state.settings, before, "a restart forgot the player's settings")
-  assert.equal(side.saved.length, 8, "every change, and only a change, is handed on to be saved")
+  assert.equal(side.saved.length, 7, "every change, and only a change, is handed on to be saved")
 })
 
 test("every player setting's value box is a click target, the same as Left and Right", () => {

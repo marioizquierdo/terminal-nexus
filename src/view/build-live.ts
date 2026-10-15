@@ -43,19 +43,18 @@
 //     "Popup pulse" Experiment milliseconds, from rest. The breath is the one thing here that
 //     never settles, so while it is the only thing moving the frame timer runs at `BREATH_FRAME_MS`
 //     rather than every frame (`frameMs`), and it stops the frame the last popup closes. Reduced motion
-//     and monochrome keep the border still; 16 colours, whose tint is a step rather than a blend, shows
-//     the flash (two steps onto the title's colour) but not the breath; the Experiment at 0 stops only
-//     the breath;
+//     and monochrome keep the border still, and monochrome has no flash either (no colour to move);
+//     the Experiment at 0 stops only the breath;
 //   - **the intro highlight breathes**: while the dialog shows a line of the round's scene, the ring of
 //     light around what the line looks at breathes from the frame that first showed that line, at the
 //     border's own "Popup pulse" pace and on its slow frames (`src/view/build-dialog.ts`). Reduced
-//     motion, 16 colours, monochrome and the Experiment at 0 hold it still;
+//     motion, monochrome and the Experiment at 0 hold it still;
 //   - **the raid's trail moves**: while the raid's intent is in view and nothing holds it still, its
 //     arrows step a tile on toward what the raid goes for every `trailStepMs`, each leaving a copy behind
 //     that fades (`trailMarks`, `src/view/build-grid.ts`), timed from the first frame that drew it moving
 //     (`TrailClock`). It never settles, like the border's breath, so while it is the only thing moving the
 //     frame timer asks for a frame only when the trail next looks different (`nextTrailChange`) — three
-//     times a step where colours blend, twice at 16 colours and in monochrome — never every frame. A popup
+//     times a step where colours blend, twice in monochrome — never every frame. A popup
 //     open, reduced motion and a committed plan hold it still, and it asks for nothing then; it moves again
 //     from the still trail when they let it go.
 //
@@ -130,16 +129,10 @@ export function livePresentation(live: LiveFrame): LivePresentation {
   return presentation
 }
 
-/** Whether a colour depth blends: tint and fade are continuous only at 256 colours and millions (16 colours
- *  would step, and the breath is kept under the step; monochrome has no colour). A breath shows only there,
- *  and only there does the copy the raid's trail leaves behind fade by more than one look. */
-const blends = (capability: CapabilityMode | undefined): boolean =>
-  capability === undefined || capability === "truecolor" || capability === "color256"
-
-/** Whether a colour depth can show a flash: a blend at 256 colours and millions, and at 16 colours a step
- *  onto the title's colour from half the flash's height up — two short steps, a highlight rather than a
- *  blink, since it plays once. Monochrome has no colour to move. */
-const flashShows = (capability: CapabilityMode | undefined): boolean => capability !== "monochrome"
+/** Whether a colour depth blends: tint and fade are continuous at 256 colours and millions; monochrome has
+ *  no colour to move. A popup border's breath and its opening flash show only there, and only there does
+ *  the copy the raid's trail leaves behind fade by more than one look. */
+const blends = (capability: CapabilityMode | undefined): boolean => capability !== "monochrome"
 
 /** The opening flash as the "Battle Round flash" and "Flash strength" Experiments set it, over the
  *  view's own table for the rest (`POPUP_FLASH`: how many, the gap). */
@@ -162,7 +155,7 @@ export function popupBorderEffect(
   flash: PopupFlash = openingFlash(state),
 ): Pick<PopupBorder, "opening" | "breathMs"> | null {
   if (state.popup === null || reducedMotion) return null
-  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && flashShows(capability) ? flash : null
+  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && blends(capability) ? flash : null
   const lengthMs = state.experiments.popupPulseMs
   const breathMs = lengthMs > 0 && blends(capability) ? lengthMs : null
   const effect = { opening, breathMs }
@@ -223,9 +216,9 @@ export function handoffAt(
  *  structure's footprint. */
 export type LiveOptions = Readonly<{
   reducedMotion?: boolean
-  /** The colour depth the frame is drawn at — the player's setting on the live screen. At 16 colours and
-   *  in monochrome a popup border's breath cannot show, nor in monochrome its opening flash, so what
-   *  cannot show neither ticks the frame timer nor is handed to the view. Absent (a test), a depth that
+  /** The colour depth the frame is drawn at — the player's setting on the live screen. In monochrome a
+   *  popup border's breath and its opening flash cannot show, so what cannot show neither ticks the
+   *  frame timer nor is handed to the view. Absent (a test), a depth that
    *  shows everything. */
   capability?: CapabilityMode
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each

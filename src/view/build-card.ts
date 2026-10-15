@@ -66,11 +66,11 @@ type CardLook = Readonly<{
 const finishedCard = (capability: CapabilityMode): CardLook => ({ typed: (value) => value, hidden: 0, capability, icon: null })
 
 /** Whether a tier can show a continuous fade (`CellStyle.fade` resolves only there). */
-const blends = (capability: CapabilityMode): boolean => capability === "truecolor" || capability === "color256"
+const blends = (capability: CapabilityMode): boolean => capability !== "monochrome"
 
 /**
  * One panel cell, `hidden` of the way to gone (0 as it is, 1 not drawn): the `fade` style where a tier
- * blends, and where it cannot — 16 colours, monochrome — the cell drawn dim for the half nearer gone,
+ * blends, and where it cannot — monochrome — the cell drawn dim for the half nearer gone,
  * so every tier sees the step. `null` when it is not drawn at all.
  */
 function fadedCell(entry: BandCell, hidden: number, capability: CapabilityMode): BandCell | null {

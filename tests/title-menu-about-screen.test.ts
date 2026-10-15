@@ -26,7 +26,7 @@ import { MENU_LAYOUT, MENU_SIZE } from "../src/view/menu.ts"
 const ESC = String.fromCharCode(27)
 const ARROW_DOWN = `${ESC}[B`
 
-const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "color16" }
+const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "color256" }
 
 function itemNamed(id: string): MenuItem {
   const item = TOP_LEVEL_ITEMS.find((candidate) => candidate.id === id)
@@ -259,7 +259,7 @@ test("the title menu logs one session.start and a schema-valid menu.select for e
   }
   const starts = entries.filter((entry) => entry.event === "session.start")
   assert.equal(starts.length, 1, "the title menu did not log exactly one session.start")
-  assert.deepEqual(starts[0]?.props, { screen: "menu", build: "abc1234", host: "web", columns: 80, rows: 24, colours: "color16" })
+  assert.deepEqual(starts[0]?.props, { screen: "menu", build: "abc1234", host: "web", columns: 80, rows: 24, colours: "color256" })
   assert.deepEqual(picks(entries), [
     ["top", "about"],
     ["about", "back"],

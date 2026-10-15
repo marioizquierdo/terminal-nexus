@@ -494,7 +494,7 @@ test("keyboard and mouse placements animate identically", () => {
 
 // --- The light, resolved per tier ----------------------------------------------------------------
 
-test("a tint is a real blend at 256 colours and truecolor, a step at 16, and nothing in monochrome", () => {
+test("a tint is a real blend at 256 colours and truecolor, and nothing in monochrome", () => {
   const half = { role: "fx.flash" as const, amount: 0.5 }
   const own = rgbFor("player.a", "truecolor", "dark")
   const flash = rgbFor("fx.flash", "truecolor", "dark")
@@ -502,11 +502,7 @@ test("a tint is a real blend at 256 colours and truecolor, a step at 16, and not
   for (let i = 0; i < 3; i += 1) assert.equal(blended[i], Math.round(((own[i] ?? 0) + (flash[i] ?? 0)) / 2))
   assert.deepEqual(sgrFor("player.a", "truecolor", "dark", 0, half), [38, 2, ...blended])
   assert.notDeepEqual(sgrFor("player.a", "color256", "dark", 0, half), sgrFor("player.a", "color256", "dark"))
-  assert.deepEqual(sgrFor("player.a", "color16", "dark", 0, { role: "fx.flash", amount: 0.49 }), sgrFor("player.a", "color16", "dark"))
-  assert.deepEqual(sgrFor("player.a", "color16", "dark", 0, half), sgrFor("fx.flash", "color16", "dark"))
   assert.deepEqual(sgrFor("player.a", "monochrome", "dark", 0, half), [])
-  // OpenTUI and the canvas simulate 16 colours the same way the terminal does.
-  assert.deepEqual(rgbFor("player.a", "color16", "dark", 0, half), rgbFor("fx.flash", "color16", "dark"))
   // A zero tint is no tint at all.
   assert.deepEqual(sgrFor("player.a", "truecolor", "dark", 0, { role: "fx.flash", amount: 0 }), sgrFor("player.a", "truecolor", "dark"))
   // The light theme's strongest ink is dark, so "light" there pulls toward it rather than toward white.

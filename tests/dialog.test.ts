@@ -522,7 +522,7 @@ test("the intro highlight's three forms: a breathing ring, a steady one under re
   assert.equal(alphaAt(2000, near), FOCUS_LIGHT.peak)
   assert.ok((alphaAt(500, near) ?? 0) < FOCUS_LIGHT.peak && (alphaAt(500, near) ?? 0) > FOCUS_LIGHT.rest)
   assert.equal(alphaAt(0, { x: 12, y: 10 }), FOCUS_LIGHT.peak / 2)
-  // Under the half at which a see-through style shows at 16 colours and in monochrome.
+  // Under the half at which a see-through style shows in monochrome.
   assert.ok(FOCUS_LIGHT.peak < 0.5)
 
   // Reduced motion: the same ring, steady, between rest and peak.
@@ -535,9 +535,9 @@ test("the intro highlight's three forms: a breathing ring, a steady one under re
     recipe(focusInstance(origin, { periodMs: 0 }), effectAt({ timeMs: 0 }))[0]?.seeThrough?.alpha,
   )
 
-  // Monochrome, and 16 colours, which cannot blend a light: the focus's own cells in inverse video, an
+  // Monochrome, which cannot blend a light: the focus's own cells in inverse video, an
   // attribute and never a glyph, and nothing on the ground around it.
-  for (const capability of ["monochrome", "color16"] as const) {
+  for (const capability of ["monochrome"] as const) {
     for (const reducedMotion of [false, true]) {
       const cells = recipe(focusInstance({ x: 10, y: 10 }, { width: 3, height: 2 }), effectAt({ capability, reducedMotion, timeMs: 900 }))
       assert.deepEqual(
