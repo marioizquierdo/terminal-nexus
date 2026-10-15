@@ -42,6 +42,7 @@ import type {
   Unlocks,
 } from "./types.ts"
 import { ArmyError, PORTRAIT_ROWS, PORTRAIT_WIDTH, RARITIES, ROLES } from "./types.ts"
+import { EARLIEST_ROUND, LEANS, MAX_LEANS } from "./curve.ts"
 
 // --- The shapes of a manifest's parts ----------------------------------------------------------------------
 //
@@ -90,7 +91,7 @@ const scheduleSlot: Shape<ScheduleSlot> = {
 const schedule: Shape<Schedule> = list(record<ScheduleEntry>({ round: positiveWholeNumber, deal: list(scheduleSlot) }, {}))
 /** A Commander's own fields. Her lines' moments and their fit are checked after, with the rest of what she names. */
 const commanderEntry = record<CommanderEntry>(
-  { id: text, name: text, unit: text },
+  { id: text, name: text, unit: text, lean: list(literal(...LEANS)) },
   { notes: text, barks: dictionary(list(text)) as Shape<Barks>, portrait: list(text), portraitFalls: list(list(text)) },
 )
 const unlocks = record<Unlocks>({}, { buildings: list(text), powers: list(text) })
@@ -264,6 +265,16 @@ function barkProblems(entry: CommanderEntry): string[] {
       if (problem !== null) problems.push(`${whose}'s line ${index + 1} for "${moment}" ${problem}`)
     })
   }
+  return problems
+}
+
+/** What is wrong with what a Commander's army leans on: none named, more than `MAX_LEANS`, or one named twice. */
+function leanProblems(entry: CommanderEntry): string[] {
+  const whose = `the Commander "${entry.id}"`
+  if (entry.lean.length === 0) return [`${whose} leans on nothing: name one or two of ${LEANS.map((name) => `"${name}"`).join(", ")}`]
+  const problems: string[] = []
+  if (entry.lean.length > MAX_LEANS) problems.push(`${whose} leans on ${entry.lean.length} things: ${MAX_LEANS} at most, or it leans on nothing`)
+  if (new Set(entry.lean).size !== entry.lean.length) problems.push(`${whose} names a lean twice`)
   return problems
 }
 
@@ -446,7 +457,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
   }
 
   /** What is wrong with a level's own schedule: one that does not start at round 1, an entry that does not come
-   *  after the one before it, and a power it makes sure of that the level does not offer, or that is offered
+   *  after the one before it, a rarity dealt before its act on the power curve, and a power it makes sure of that the level does not offer, or that is offered
    *  beside every hand anyway. `offered` is every Nexus power the level offers, by id. */
   const scheduleProblems = (given: Schedule, offered: ReadonlySet<string>): string[] => {
     const said: string[] = []
@@ -456,6 +467,12 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
       const before = given[index - 1]
       if (before !== undefined && entry.round <= before.round) said.push(`has a schedule entry for round ${entry.round} after one for round ${before.round}: entries go in order`)
       for (const slot of entry.deal) {
+        // A rarity is never dealt before its act on the power curve, whether a slot asks for it or names a power of it.
+        const rarity = typeof slot === "string" ? slot : powersBy.get(slot.power)?.card.rarity
+        if (rarity !== undefined && entry.round < EARLIEST_ROUND[rarity]) {
+          const what = typeof slot === "string" ? `a ${rarity}` : `"${slot.power}", a ${rarity},`
+          said.push(`deals ${what} from round ${entry.round}: the power curve deals a ${rarity} from round ${EARLIEST_ROUND[rarity]}`)
+        }
         if (typeof slot === "string") continue
         if (!offered.has(slot.power)) said.push(`makes sure of the Nexus power "${slot.power}" in round ${entry.round}, which the level does not offer`)
         else if (powersBy.get(slot.power)?.card.always === true) said.push(`makes sure of "${slot.power}" in round ${entry.round}, which is offered beside every hand anyway`)
@@ -507,7 +524,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
       const unseen = unseenContent(army.id, entry.unit)
       if (unseen !== null) say(`the Commander "${entry.id}" is ${unseen}`)
       else if (registry.get(entry.unit).commander !== true) say(`the Commander "${entry.id}" is "${entry.unit}", which is not a Commander`)
-      for (const problem of [...barkProblems(entry), ...portraitProblems(entry)]) say(problem)
+      for (const problem of [...barkProblems(entry), ...portraitProblems(entry), ...leanProblems(entry)]) say(problem)
     }
 
     // Campaigns: a Commander the army sees, levels, and each level's map, unlocks and mission.
@@ -600,7 +617,7 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
   const commanders = new Map<string, Commander>()
   for (const army of ordered) {
     for (const entry of army.commanders) {
-      commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit, barks: entry.barks ?? {}, portrait: entry.portrait ?? [], portraitFalls: entry.portraitFalls ?? [] })
+      commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit, lean: entry.lean, barks: entry.barks ?? {}, portrait: entry.portrait ?? [], portraitFalls: entry.portraitFalls ?? [] })
     }
   }
   const campaigns: Campaign[] = []

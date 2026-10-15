@@ -47,7 +47,7 @@ The differences should be smaller than the differences between factions but larg
 
 **The Commander is a prominent, persistent frontline `@`** (RULE — `src/match/commander.ts`, `tests/commander.test.ts`; Vasse, at the size PERIMETER needs, is the one built), not only a portrait or menu choice. Fictionally it is a Nexus Symbol. When it dies it is out for the rest of that Battle Round, and the Nexus Pulse that opens the next round restores it — unless its Commander is given rounds to sit out, a disadvantage some Commanders may carry (the owner, 2026-10-14: "Base will just come back immediately after"); Vasse sits none. Commander-focused builds should be viable but should compete with army, economy, science, and fortification strategies.
 
-**A Commander's symbol is her identity, and her art builds on it** (GUIDANCE — the owner, 2026-10-14: "the symbology and the icon used to represent the commander is important in the identity, and it should be kind of related, not just arbitrary"). Her glyph on the Grid is chosen for who she is, not taken because it was free; her portrait, her vignette and anything else drawn of her grow out of it, as Vasse's portrait wears her `@` on her cap and her chest. The owner's first reading: `@` feels fluid, closer to the Alder than to an officer of a standard, and a stricter, ruled glyph may suit Vasse better; which she keeps is his (the register: Vasse's symbol). The ASCII art milestone draws on this rule.
+**A Commander's symbol is her identity, and her art builds on it** (GUIDANCE — the owner, 2026-10-14: "the symbology and the icon used to represent the commander is important in the identity, and it should be kind of related, not just arbitrary"). Her glyph on the Grid is chosen for who she is, not taken because it was free; her portrait, her vignette and anything else drawn of her grow out of it, as Vasse's portrait wears her `@` on her cap and her chest. The owner's first reading was that `@` feels fluid, closer to the Alder, and a stricter glyph might suit Vasse; he settled it the next day: **Vasse keeps `@`** (2026-10-15). The ASCII art milestone draws on this rule.
 
 ### 2.1 Commander Army composition
 
@@ -221,6 +221,86 @@ Two constraints keep it from turning to mush:
 
 - **The faction still owns the roster.** A Foreign or Dual-bound Commander does not get a private army — they get an unusual *hand* of pools they are legal for. A player must still learn one faction to play them.
 - **Affinity must be legible in play, not only in the codex.** The alignment test in the faction design law ([`lore.md`](lore.md)) applies to Commanders too: if a Dual-bound Commander does not visibly behave like someone two machines are arguing over, the affinity is decoration.
+
+### 2.3 The expected power curve
+
+The owner, 2026-10-13: "We can focus on the expected power curve, with some rules on expected power per nexus pulse, so armies can build around this curve with different tradeoffs"; and of what a round brings: "I like being able to keep fighting with the previous units if they survive (stacking with the new army), but new unlocked units should be a lot stronger so that makes the initial moves more exploratory and opportunistic and the last few moves more decisive." The curve is the frame every army is designed against: one table of what a round is expected to bring, so that an army's difference is *where* it takes its power, never *how much*. Its numbers are first guesses, in code beside the loader (`src/armies/curve.ts`, `tests/power-curve.test.ts`), for the next step to put on the Grid and measure; the rules around them are GUIDANCE but where marked.
+
+**Power is counted in credits.** Every source of power is priced in the one resource ([`pulse.md`](../system-design/pulse.md)): a building at its cost, a unit at what it costs to field, a Nexus power at what it is expected to be worth over the rest of the match. A number an author cannot price in credits is a number nobody can balance.
+
+**A match is six to nine rounds, twelve for a long one** (the owner, 2026-10-14; the register's question on how long a match is). Length is an outcome, not a setting: an army that presses can end it in six, one that holds can stretch it toward twelve, and the curve is written by round so that both are reading the same table. Its rounds fall into acts:
+
+| Act | Rounds | What it is for |
+| --- | --- | --- |
+| **Opening** | 1–3 | Exploring: the first tier, commons and uncommons, cheap mistakes |
+| **Middle** | 4–6 | The second tier stands; the first rares |
+| **Closing** | 7–9 | The third tier; the decisive rounds |
+| **Long game** | 10–12 | The curve stops growing; whoever planned for it cashes in |
+
+**The credits a round brings grow by about a fifth a round, and stop growing after round 9** (the curve's first rule):
+
+| Round | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10–12 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Credits | 100 | 120 | 140 | 170 | 210 | 250 | 300 | 360 | 430 | 430 |
+| Pick worth | 33 | 40 | 46 | 85 | 105 | 125 | 150 | 180 | 215 | 215 |
+
+Over nine rounds that is 2,080 credits: the opening brings about a sixth of it, the closing about half. That is the owner's shape in numbers — the first moves explore because they are small, the last decide because they are large — and it is what keeps an early lead from running away (section 2.5): a lead taken in the opening is a lead in the smallest third of the match.
+
+**A Nexus Pulse's pick is worth a share of its round's credits, by rarity:** a common about a fifth, an uncommon a third, a rare a half, a legendary a whole round's. The worth is what the power brings over the rest of the match, measured as the round it is dealt opens: a lasting power that does a little each round and a one-time power that does a lot once are both held to it. The table's pick worth is the best card the game's default schedule deals that round (section 4.5a). Over nine rounds the picks bring about 980 credits' worth, so **the Nexus is about a third of an army's power and the build two thirds** — enough that the hand matters every round, too little for one hand to decide a match.
+
+**RULE — a rarity is not dealt before its act** (`EARLIEST_ROUND`, `src/armies/curve.ts`; the loader refuses a level's schedule that breaks it, `tests/power-curve.test.ts`). Commons and uncommons from round 1, a rare from round 4, a legendary from round 7, whether a slot asks for the rarity or names a power of it. The game's default schedule already keeps it. An army that bends the schedule earlier (the Ravels' jackpot draft, section 4.1) will say so as data and pay for it on the curve; until one does, nothing may.
+
+**Each tier is much stronger than the last, and a little better value** (GUIDANCE; the tree's tiers are the next step's). A unit of the second tier is about as strong as three of the first and costs about two and a half times as much; a unit of the third, about eight for six. A tier's units can first fight about the act its number names: the first from round 1, the second from round 4 (its building placed in round 3 unlocks it once it stands, section 2.1), the third from round 7. "Much stronger" is per unit, as the owner asked; "a little better value" is per credit, and it is the second thing that devalues an early lead: what the opening bought is outclassed, not only outnumbered.
+
+**Survivors stack, and are expected to be outgrown** (GUIDANCE; measured by the next step). Units that live come home with Recall and fight again beside the new ones, as they do now. By the closing, what the opening bought should be at most about a fifth of the army that fights the last round: enough that keeping units alive matters every round, never so much that the first round's luck is still fighting the last.
+
+**The Commander is worth about the first round's credits** as she first arrives, and grows only through her army's powers and what her lean gives her (section 2.4). Coming back the round after she falls is part of that worth; a Commander who sits rounds out (`roundsOut`) is worth less, and her army is paid for it elsewhere on the curve.
+
+**An army may trade along the curve, never above it** (GUIDANCE). It may take power earlier than the curve gives it — a strong opening — at a price: **power moved one act earlier costs half again as much** from the act it came from, and moved two acts, more than twice as much. It may wait instead and be paid the same rate the other way. After its trades, an army's total over nine rounds is the curve's within about a tenth. So a forward army is ahead in rounds 1 to 3 and must finish by round 6 or 7 before its debt comes due; a holding army is behind early, and its closing is larger than anyone else's; and every army, whatever it leans on, is reading the same table.
+
+### 2.4 What an army leans on
+
+**Asymmetric by design** (the owner, 2026-10-13: "Commanders can have different abilities, it depends on the commander; what matters is the build's focus on commander or units or economy, etc. They will be asymmetric by design"). A Commander has whatever abilities suit them; what sets an army apart is where its build takes its power from. **Every ability is automatic**: an active skill fires by its own rule, and the player gives no input during a Battle Round (the owner: "Active skills are still automatic, the user has no input during a battle round").
+
+The curve's power comes from four places, and in a standard army, over nine rounds, they split about so:
+
+| Source | Share | What it is |
+| --- | --- | --- |
+| **Units** | about 45% | What the buildings send, and what the Nexus calls up |
+| **Nexus** | about 30% | The picks: the hand's powers, kept for the match |
+| **Structures** | about 20% | What stands and fights or mends: turrets, the Aid Station, walls |
+| **Commander** | about 5% | The Commander and her automatic skills |
+
+**RULE — an army names what its build leans on, one or two of five** (`lean` on a Commander in the army file, checked by the loader against `LEANS`, `src/armies/curve.ts`; `tests/power-curve.test.ts`): `units`, `nexus`, `structures` and `commander` — a source that takes about ten points of the split from the others — and `economy`, which takes none and moves power later instead, credits growing faster than the curve from a smaller start, at the curve's trade rate. A lean is a promise the army's data has to keep: its starting package, its tree's own branch, its powers' roles and its Commander's skills point the same way, so that a player feels it within two rounds (the milestone's question). Two leans are the most an army names; a lean on everything is no lean.
+
+| Commander | Lean | How |
+| --- | --- | --- |
+| Edda Vasse | `structures`, `commander` | Holds: what stands mends and is spared (the Aid Station, *Plating Revision*); her skill makes the line around her last, so survivors stack |
+| Marshal Averno | `units`, `nexus` | Presses: troops early on the trade rate, powers that act on the enemy, and a card from the Ravel Nexus in some hands |
+| Dob Hunter | `nexus` | Variance as a build: wide hands, cheap redraws, his economy run on wreckage |
+| Director Denz (later) | `economy` | Coverage and tempo: outposts and roads now, a larger closing |
+
+### 2.5 Catch-up
+
+The owner, 2026-10-13: "start thinking about catch-up mechanics (specially for multiplayer or player vs ai mode, if one player gets a lucky draw during first rounds, how to counter that without helplessly falling behind)" — and then: "no need to implement the [catch-up] mechanic yet, only update design and documentation guidelines for designing a commander's army." So this is a guideline for whoever designs an army, and nothing here is built as a catch-up mechanic; a duel with no screen will measure it (the milestone's last step).
+
+**What keeps a lucky early hand from running away**, each already part of the design:
+
+- **The curve devalues an early lead.** The opening is about a sixth of a match's power (section 2.3), and the tiers after it are better value: a lead taken there is real and small.
+- **The schedule deals commons first.** No rare before round 4, no legendary before round 7 (the loader holds it), so the luckiest opening hand is still commons and uncommons, and commons must be enough to win with ([`game-modes.md`](game-modes.md)).
+- **The answers are in the tree.** Hard counters are tree buildings every player can reach by building (section 3), so no hand denies the answer to a threat.
+- **What is kept is public.** Each side's kept powers are shown to the other once the Battle Round starts, as its buildings are; and when two players meet they are dealt the same hand (section 3). A lucky hand can be read and answered a round later.
+- **The defender's ground.** A side fighting near its own Grid Nexus walks less, builds in range, mends at its Aid Station and is home for Recall at once; an attack spends a round of travel the defence does not.
+- **The Commander comes back.** A Commander who falls is restored by the Nexus Pulse, the round after for most; an early win does not take her off the board for long.
+
+**What an army must not do:**
+
+- **No hidden rubber-banding.** Nothing a player cannot read on the Grid or in a card changes how the match goes because one side is ahead. If help exists, its rule is on a card.
+- **No rewards for falling behind.** No power, skill or income that grows because a side is losing: it teaches a player to lose on purpose, and it takes the winner's play away from them.
+- **No taking from the leader.** Nothing that removes what the leading side earned because they lead; a power may act on the enemy (Averno's do), by its own rule, never by the score.
+- **No luck the army did not choose.** A side gets variance by choosing an army that runs on it (section 4.2); the curve and the schedule are the same for everyone.
+
+**How it is judged** (the milestone's last step): two scripted sides drafting from the Nexus Pulse on one map, over many seeds; the side dealt the better hands in rounds 1 and 2 should win a mirror match not much more than three times in five. If it wins more, these guidelines change first, and a mechanic is a question for the owner with a recommendation, never built on its own.
 
 ## 3. Strategy-design requirements
 
@@ -409,7 +489,7 @@ The owner, 2026-10-07, with the draft built: "we're going to keep the same idea 
 
 1. **One pick each round, from a hand of three** (RULE — built). The hand is one card for each slot of the round's schedule, three in the game's default and in PERIMETER's own, War Chest beside it under the next digit while the owner tests ("My intuition says 3 because all games use this"). A hand deals fewer only when the pool has run out. For now the pick may be left unmade (Q74).
 2. **Four rarities** (RULE — built: `RARITIES`, `src/armies/types.ts`): **common**, **uncommon**, **rare**, **legendary**. A common does one readable thing; an uncommon combines with something, or leans into a plan; a rare changes the plan; a legendary is the "something more powerful" of a hand every few rounds, dealt only by a slot that asks for one. Commons must be enough to win with (the rarity rules of thumb in [`game-modes.md`](game-modes.md)). Each dealt card says its rarity at the end of its row (RULE — built, `tests/build-nexus.test.ts`).
-3. **A schedule sets each card's rarity, by round** (RULE — built: `DEFAULT_SCHEDULE`, `Schedule`). It is the ramp the owner asked for ("so that will create a little bit of a ramp up"), as a schedule rather than a chance that rises, because a player can count on a schedule and a Commander can bend it. The game's default: round 1 deals two commons and an uncommon; rounds 2 and 3 a common and two uncommons; rounds 4 and 5 a common, an uncommon and a rare; from round 6 two uncommons and a rare. A slot whose rarity has nothing left deals the nearest lower rarity, then a higher one up to rare — never a legendary, which only a slot that asks for one deals. Showing what the next hand will be dealt from is GUIDANCE for the Nexus Pulse's own screen (Milestone 13), not built.
+3. **A schedule sets each card's rarity, by round** (RULE — built: `DEFAULT_SCHEDULE`, `Schedule`). It is the ramp the owner asked for ("so that will create a little bit of a ramp up"), as a schedule rather than a chance that rises, because a player can count on a schedule and a Commander can bend it. The game's default: round 1 deals two commons and an uncommon; rounds 2 and 3 a common and two uncommons; rounds 4 and 5 a common, an uncommon and a rare; from round 6 two uncommons and a rare. A slot whose rarity has nothing left deals the nearest lower rarity, then a higher one up to rare — never a legendary, which only a slot that asks for one deals. A rarity is never dealt before its act on the power curve: a rare from round 4, a legendary from round 7 (section 2.3; the loader refuses a level's schedule that asks earlier). Showing what the next hand will be dealt from is GUIDANCE for the Nexus Pulse's own screen (Milestone 13), not built.
 4. **A level's own schedule** (RULE — built: `schedule` on a level, `src/armies/load.ts`). A campaign level may replace the default, round by round, and make sure of a power in a round by naming it in a slot ("so we can ensure certain powers show up at the right round"). A named power is placed first, so no other slot takes it; when it cannot be dealt (kept already, or a requirement unmet) its slot deals from its rarity instead. PERIMETER's round 2 makes sure of Aid Station Permit, so the Aid Station can stand in the line before the third raid. The loader refuses a schedule that does not start at round 1, entries out of order, and a named power the level does not offer.
 5. **The legendary hand** (IDEA — the owner: "let's leave that for later"). Every few rounds the schedule deals a hand of legendaries instead. The schedule can already say so; how often, and what a legendary may do, wait for the number of rounds a match has (Q75) and for Milestone 13.
 6. **Roles** (RULE — built: `ROLES`). Every power has one of nine: troops, production, offense, defense, support, economy, commander, information, movement. A slot deals a role the hand does not hold yet while its rarity has one, and repeats a role only when its rarity has no other.
@@ -523,56 +603,55 @@ Not starters; recorded so the work is not lost, and so a later unlock has somewh
 
 ## 5. Authoring template
 
-Use this template when a milestone step builds an army definition:
+**The anatomy of a Commander Army** (the owner, 2026-10-12: "the 'structure' of a commander army"). Use this template when a milestone step designs or builds an army; each part says where it lives and what the army loader checks of it (`src/armies/load.ts`, `tests/armies.test.ts`, `tests/power-curve.test.ts`). The loader, not a reviewer, says whether an army is legal (section 2.1); a part it cannot check yet says so.
 
 ```text
 # <Faction> — <Commander>
 
-Identity:
-Nexus Symbol:
-Strategic thesis:
-Internal contradiction:
+Identity:            who they are, the Nexus that signed them, its affinity (section 2.2)
+Strategic thesis:    the plan in one line, and the contradiction inside it
+Lean:                one or two of units, nexus, structures, commander, economy (section 2.4)
+                     — army file: `lean` on the Commander; checked
+Curve:               where it trades along the power curve (section 2.3): ahead early, behind
+                     late, or the reverse, priced at the trade rate; its expected rounds to win
+
+The Commander:
+- unit               a content definition flagged `commander`; checked
+- symbol             her glyph, chosen for who she is; her art builds on it (section 2)
+- automatic skills   passive or self-triggered; the player gives no input in a Battle Round
+- rounds out         how many rounds she sits out after she falls (`roundsOut`, none by default);
+                     checked as a whole number
+- restoration        a bonus the round she is restored, if her powers give one
+- portrait           three rows of plain ASCII at most five wide, and the frames of her fall
+                     shaped like it (`portrait`, `portraitFalls`); checked
+- voice              her lines by moment: as she appears, as she is restored, in a Battle Round
+                     (`barks`); every moment known and every line fits; checked
 
 Starting package:
-- resources
-- workers
-- starting units
-- structures
+- credits, by level  (`credits` on a level); the curve's round 1 is 100
+- starting units and structures   placed by the mission for now
 
-Army rules:
-- shared faction rules
-- Commander exceptions
+Tech tree, in tiers:
+- the faction's common tier, and this army's own branch, within the cap (section 2.1)
+- each building: tier, what it requires, what it sends; tier 2 about three times a tier-1
+  unit for two and a half times the cost, tier 3 about eight for six (section 2.3)
+- the hard counters, which are always tree buildings (section 3)
+- not built yet: the next step's
 
-Units:
-- role, producer, supply, cadence, counters, glyph role
+Nexus power pool:
+- each power: a name, one line, its kind, rarity and role; checked
+- how much each is worth, by rarity, against its round's credits (section 2.3)
+- how the army bends the schedule (section 4.5a, item 12): a level's schedule is checked
+  against the curve, no rarity before its act; an army's own bend is not built
+- the roles its powers lean on, matching its lean
 
-Structures:
-- common (the faction's, always available) versus army (this army's own tech tree branch, within the cap — section 2.1)
-- rarity, tier, role tags (game-modes.md)
-- role, footprint, radius, worker/production behavior, glyph role
-
-Nexus powers:
-- the army's pool, within the cap, from which each Nexus Pulse's hand is dealt
-- rarity, tier, role tags (game-modes.md)
-- timing, cost, target, effect, presentation cue
-
-Upgrade pool:
-- low/mid/high-tier families
-- intended combinations and counterplay
-
-Visual language:
-- Grid glyphs
-- the Commander's symbol, chosen for who she is, and her art built on it (below)
-- her portrait, three rows of plain ASCII at most five glyphs wide, and the frames of her fall shaped like it
-  (`portrait` and `portraitFalls` on the Commander in the army file, checked by the loader)
-- her lines: as she appears, as she is restored, and in a Battle Round
-- movement, projectile, impact, restoration
+Catch-up:
+- what it does that a lucky early hand cannot run away with, and nothing section 2.5
+  forbids
 
 Balance hypotheses:
-- strong against
-- vulnerable to
-- degenerate strategy risks
-- fixtures and metrics
+- strong against, vulnerable to, degenerate strategy risks
+- fixtures and metrics, measured on the Grid
 ```
 
 Every literal glyph is theme data mapped from a semantic role. Every exceptional mechanic executes through a validated engine capability or narrow hook. Flavor text never becomes an implicit rule.

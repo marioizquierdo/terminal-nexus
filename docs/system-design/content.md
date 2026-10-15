@@ -120,13 +120,13 @@ level need unlock: a power adds, only the tech tree unlocks) — or `credits`, W
 `commander`, `information` or `movement`), which every power has; `repeatable` when it may be kept again, `always`
 when it is offered beside every hand rather than dealt into one, `chance` for rounds it is more likely in (`from`,
 `to` and how many `times`, each a whole number), `requires` for what must hold before it is dealt (`powers` kept,
-`buildings` standing, a `round` reached), and `upgrades` naming the power it upgrades), `commanders` (a name, her unit, and her `barks`: a few
+`buildings` standing, a `round` reached), and `upgrades` naming the power it upgrades), `commanders` (a name, her unit, her `lean` — one or two of `units`, `nexus`, `structures`, `commander` and `economy`, what her army's build leans on; her `portrait` and the `portraitFalls` frames shaped like it; and her `barks`: a few
 lines for each moment of a Battle Round she answers, refused by name for a moment no Commander speaks at, a moment
 with no lines, or a line that says nothing or does not fit the panel's feed or one row of the map at 80 × 24) and
 `campaigns` (a Commander and her levels in the order they are played, each with a map by name, its credits, what
 it unlocks, its mission, and — in place of the game's default — its own `schedule` for the Nexus Pulse: entries
 from round 1 on, each a `round` and the cards it `deal`s, every card a rarity or `{ "power": id }` for one the level
-makes sure of). **An army sees what it and the armies it requires bring, directly or through another,
+makes sure of, and no rarity before its act on the power curve: a rare from round 4, a legendary from round 7, `src/armies/curve.ts`). **An army sees what it and the armies it requires bring, directly or through another,
 and nothing else**, so content forms a tree with a campaign at the top: its levels, then the cards and units they
 use, from its own army or one beneath it. `armies/all` holds the buildings and Nexus powers any Commander may use;
 `armies/vasse` requires it and holds her Commander, her own powers, the Aid Station her permit adds, and her
@@ -140,7 +140,7 @@ Still code, each named by id from an army: the content definitions themselves (s
 `src/content`; moving them into the armies is the next step), what a Nexus power's effect kinds do, the
 maps (`src/build/maps.ts`: the starter map) and the mission vocabulary (`src/mission/`). The game reads only the
 armies `src/armies/index.ts` lists, imported with the code: there is no mod loader looking for folders on
-disk. **To add a Commander**: a folder requiring `all`, her unit's id in `content`, her `commanders` entry (with her barks, for her to speak in battle), a
+disk. **To add a Commander**: a folder requiring `all`, her unit's id in `content`, her `commanders` entry (with her lean, and her barks for her to speak in battle), a
 campaign whose levels unlock `all`'s cards or her own, and one line in that list.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,

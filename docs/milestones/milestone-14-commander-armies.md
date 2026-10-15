@@ -1,7 +1,11 @@
 # Milestone 14 — Commander Armies
 
-**Status:** PLANNED
-**Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing)
+**Status:** CURRENT
+**Current step:** 14A — what a Commander Army is, the expected power curve, and the guidelines for catch-up, written as the authoring template and checked by the army loader where it can be.
+**Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing; complete)
+
+Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
+please".
 
 The owner, 2026-10-12, once the Nexus Pulse dealt by schedule: "The part I'm most interested in covering now is the
 'structure' of a commander army, thinking about ways to differentiate commanders from each other, giving them
@@ -30,18 +34,18 @@ rounds exploratory and late rounds decisive, and that a lucky early hand cannot 
 
 ## Steps
 
-Not started. Each waits for the Commander milestone to finish; the order is a first guess.
+One step per pull request; the order is a first guess.
 
 ### Step 14A — What a Commander Army is, and the power curve
 
-Design, with what the loader can check.
+Design, with what the loader can check. Built; the numbers are first guesses for 14B to put on the Grid.
 
-- [ ] The anatomy of a Commander Army, written as the authoring template and checked by the army file's loader where
+- [x] The anatomy of a Commander Army, written as the authoring template and checked by the army file's loader where
       it can be: the Commander (unit, automatic abilities), the starting package, the tech tree in tiers, the Nexus
       power pool and how the army bends the schedule, its voice and its motif, and the build focus it leans on.
-- [ ] The expected power curve: what a round's credits, a tier of the tree and a Nexus Pulse's pick are each expected
+- [x] The expected power curve: what a round's credits, a tier of the tree and a Nexus Pulse's pick are each expected
       to be worth, round by round, as numbers an author designs against, and what an army may trade along it.
-- [ ] Guidelines for catch-up, for whoever designs an army: what keeps a lucky early hand from running away (the
+- [x] Guidelines for catch-up, for whoever designs an army: what keeps a lucky early hand from running away (the
       schedule's commons first, kept powers public, hard counters in the tree, the curve devaluing an early lead,
       the defender's ground), and what an army must not do (hidden rubber-banding, rewards for falling behind).
 
