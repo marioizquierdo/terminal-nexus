@@ -19,6 +19,8 @@ export { loadArmies } from "./load.ts"
 export type { LoadWorld } from "./load.ts"
 export { DEFAULT_SCHEDULE, dealable, dealHand, rarityOrder, slotsFor, weightOf } from "./deal.ts"
 export type { Deal } from "./deal.ts"
+export { ACTS, EARLIEST_ROUND, LEANS, MAX_LEANS, MAX_ROUNDS, PICK_WORTH, ROUND_CREDITS, dealtBy, pickWorth, roundCredits } from "./curve.ts"
+export type { Lean } from "./curve.ts"
 
 /** Every army the game ships, checked and resolved. */
 export const ARMIES: Armies = loadArmies([all, vasse], { registry: FIXTURE_REGISTRY, maps: MAPS })

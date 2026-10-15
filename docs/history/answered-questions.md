@@ -56,6 +56,8 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q54 | 2026-10-01 | **Answered in practice, and superseded.** The owner's four speed tiers were built, then replaced at his word ("the progressive acceleration is working really well") by counting taps: a tap moves 1 and a run of taps doubles its speed every third tap if the last was quick, up to 4; a held arrow runs at the game's own cadence, 1 tile a move and then 2; Shift is a jump, not a speed. The slow step, the held-key ramp (`rampMs`, `holdStep`, `fastStep`) and the percentage margin as a flag were retired. Every number is a tuned value or an Experiment under `d` | [`input.md`](../system-design/input.md) (taps, holds and releases); `../../src/build/all-settings.ts`, `../../src/build/motion.ts` |
 | Q62 | 2026-10-01 | **Answered in practice.** Proportional edge zones: a click inside a zone a quarter of the view deep carries the tile toward the middle in proportion to its depth, and a click in the middle leaves the view alone. "Centres every click" and "margin only" are gone, and so is the Experiment that compared them. The zone depth is the tuned value `clickZone`; an armed click scrolls the same way | [`input.md`](../system-design/input.md) (bindings); `../../src/build/tuning.ts`, `../../src/build/all-settings.ts` |
 | Q64 | 2026-10-01 | **Answered in practice.** Option A: a placed building's light pulls its characters toward the theme's strongest ink, so on the light theme it is the darkest ink and the building darkens as it finishes, like ink setting. A warm glow role of its own (option B) stays one role and a colour per theme away if Mario, having played the light theme, wants it | [`effects.md`](../system-design/effects.md) (`fx.light.flash`); `../../src/view/effects/shading.ts` |
+| Q77 | 2026-10-15 | **A — Vasse keeps `@`.** Mario: "ok vase keeps @". Her portrait, already built on her `@`, stays; the symbol rule for a Commander stands, and the Alder's claim on `@` is for whoever designs them | [`commander-armies.md`](../game-design/commander-armies.md) (a Commander's symbol) |
+| Q78 | 2026-10-15 | **A — the mission delays her return once.** Mario: "the mission delays her return once". RESTORATION keeps the round without her: the Nexus files her late that once, as mission data that changes her rounds out for that level, and the delay is the thing the player notices the Nexus doing. Vasse is otherwise back the round after she falls | [`campaigns.md`](../game-design/campaigns.md) (RESTORATION) |
 
 ### Q50 — answered
 
@@ -773,7 +775,7 @@ the timing as well.
 **Status:** ANSWERED 2026-10-03 — by Mario (the Answered table has the decision); built in the Commander step's second round. The
 original entry follows.
 
-**Status:** OPEN — Milestone 8 started on 2026-10-01 and builds under the recommendation, as [`milestone-08-commander.md`](../milestones/milestone-08-commander.md) assumed; the Commander step's pull request says so for Mario to confirm or overturn.
+**Status:** OPEN — Milestone 8 started on 2026-10-01 and builds under the recommendation, as [`milestone-08-commander.md`](milestones/milestone-08-commander.md) assumed; the Commander step's pull request says so for Mario to confirm or overturn.
 
 Mario's milestone list puts a real Commander in Level 1: "focus on the first Citizen commander. Develop the
 initial draft of Nexus upgrades." Every earlier framing deferred both: `commander-armies.md` ("Do not invent
@@ -914,3 +916,48 @@ he plays, the lean is E, rows x2: it fixes both the shapes and the walk while ke
 is kept, its choice becomes the rule in one pull request with the retune: the Experiment and the other choices go,
 the grid design's distance and the presentation's tile width say the one answer, and the numbers (build range,
 her aura, blasts, the engage reach, PERIMETER's raid) are set by feel.
+
+### Q77 — answered
+
+**Question:** Q77 — Which symbol does Vasse keep?
+
+**Status:** ANSWERED 2026-10-15 — A, by Mario (the Answered table has the decision). The original entry follows.
+
+**Status:** OPEN — registered 2026-10-14. Blocks nothing: her art builds on whichever she keeps.
+
+A Commander's symbol is her identity, and her art builds on it (the owner, 2026-10-14). Vasse is `@`, and her portrait
+now wears it. The owner: "Maybe even think about [Vasse] may benefit from having a different, maybe a pound symbol, I
+think, is like more correct, or something that is like more strict ... Uh, lines or something like that. Uh, the at
+may work better for ... our [Alder] commander ... It feels like something more like fluid".
+
+| Option | What it costs |
+| --- | --- |
+| A. **Keep `@` for Vasse** for now, and choose in the ASCII art milestone, with the art beside each choice | Nothing now; the Alder's claim on `@` waits |
+| B. **`#`, as he first thought** | `#` is rock on every map in the ASCII pack: a Commander drawn as the walls around her would be lost in them. Rock would need another glyph first |
+| C. **Another ruled glyph: `&`, `$`, `%` or `=`** | `%` is the salvage item in the ASCII pack and `=` reads as a wall segment; `&` and `$` are free, and `$` reads as money |
+
+**Recommendation: A**, with `&` as the strongest ruled candidate to try then: it is free in both packs, and reads as a
+figure with a stance. Moving her off `@` touches every place that says "the one `@`" (the screen rules, her lines'
+tests), so it is best done once, with her art.
+
+
+### Q78 — answered
+
+**Question:** Q78 — What does RESTORATION play, now that Vasse is back at once?
+
+**Status:** ANSWERED 2026-10-15 — A, by Mario (the Answered table has the decision). The original entry follows.
+
+**Status:** OPEN — registered 2026-10-14. Blocks nothing built: mission 3 is an idea.
+
+The campaign plans mission 3, RESTORATION, around the round the Commander is absent: "hold the round your Commander
+is absent without losing a structure", `SYMBOL ABSENT — CYCLE 1 OF 1 — HOLD`. Since the owner's word that Vasse comes
+back the round after she falls, she has no round of absence to hold.
+
+| Option | What it costs |
+| --- | --- |
+| A. **The mission delays her**: the Nexus files her late this once, and the round without her is the mission's story | Keeps the mission as designed; the delay is mission data (a level may change her rounds out), and the lore gains a reason |
+| B. **The mission is about what comes back**: a restoration bonus, or something of her that does not | Keeps the subject, drops the round without her; the bonus goal changes |
+| C. **The mission belongs to a Commander who does sit rounds out** (Averno, say) | Moves the mission to another campaign |
+
+**Recommendation: A.** It keeps what the mission was for — restoration read closely — and makes the delay itself the
+thing the player notices the Nexus doing.

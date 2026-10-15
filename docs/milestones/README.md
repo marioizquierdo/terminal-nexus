@@ -18,8 +18,8 @@ remains.
 | [3 — Game Menu](../history/milestones/milestone-03-game-menu.md) | COMPLETE | done | Can a player launch `terminal-nexus` into a menu with displayed hotkeys, mouse parity, and a driver, and pick a mode? |
 | [5 — Build Phase](../history/milestones/milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
 | [6 — Nexus Pulse Phase](../history/milestones/milestone-06-pulse-phase.md) | COMPLETE | done | Can a player start the Battle Round (then called the Nexus Pulse), watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
-| [8 — Commander](milestone-08-commander.md) | CURRENT | 5 | Can Commander Vasse and a Nexus Pulse that deals from an army's pool exist without becoming a full Commander Army? |
-| [14 — Commander Armies](milestone-14-commander-armies.md) | PLANNED | 6 | Can two Commanders on the same buildings feel different, each army leaning its build on something of its own, against one expected power curve a lucky early hand cannot run away with? |
+| [8 — Commander](../history/milestones/milestone-08-commander.md) | COMPLETE | done | Can Commander Vasse and a Nexus Pulse that deals from an army's pool exist without becoming a full Commander Army? |
+| [14 — Commander Armies](milestone-14-commander-armies.md) | CURRENT | 6 | Can two Commanders on the same buildings feel different, each army leaning its build on something of its own, against one expected power curve a lucky early hand cannot run away with? |
 | [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | PLANNED | 7 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
 | [4 — Campaign Menu](milestone-04-campaign-menu.md) | PLANNED | 8 | Can a player start or load a campaign and see progress, army, and enemy intel? |
 | [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 9 | Can workers be built and gather resources deterministically during the Battle Round? |

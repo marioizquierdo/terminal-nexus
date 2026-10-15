@@ -16,6 +16,7 @@
 import type { GridTerrain } from "../grid/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 import type { Barks } from "./barks.ts"
+import type { Lean } from "./curve.ts"
 
 // --- What an army's manifest holds ---------------------------------------------------------------------
 
@@ -139,10 +140,13 @@ export type CommanderEntry = Readonly<{
   id: string
   name: string
   unit: string
+  /** What her army's build leans on, one or two of `LEANS` (`curve.ts`): where it takes its power from on the
+   *  expected power curve. Every army names one. */
+  lean: readonly Lean[]
   /** What she says during a Battle Round, by moment (`barks.ts`). Absent: she says nothing. */
   barks?: Barks
-  /** Her face in the Commander panel: three rows of the same width, at most `PORTRAIT_WIDTH` glyphs of plain
-   *  ASCII (`src/view/commander-panel.ts`). Absent: the panel shows her name without one. */
+  /** Her face on her card in Explore Map and in the vignette of her fall: three rows of the same width, at most
+   *  `PORTRAIT_WIDTH` glyphs of plain ASCII (`src/view/commander-moments.ts`). Absent: none is drawn. */
   portrait?: readonly string[]
   /** The frames her face goes through as she falls, after the portrait, each shaped like it: the vignette that opens
    *  beside where she fell (`src/view/commander-moments.ts`). Absent: the portrait alone. */
@@ -217,6 +221,7 @@ export type Commander = Readonly<{
   army: string
   name: string
   unit: string
+  lean: readonly Lean[]
   barks: Barks
   portrait: readonly string[]
   portraitFalls: readonly (readonly string[])[]

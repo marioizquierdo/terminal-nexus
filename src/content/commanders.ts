@@ -1,7 +1,7 @@
 // The one named Commander: Edda Vasse, the Citizen Nexus's Symbol (commander-armies.md), built at the
 // size PERIMETER needs — a persistent `@` on the units layer — and nothing of the Commander Army she will
 // one day lead. Building one Commander's mechanic is not choosing the Citizens' roster (the Commander
-// milestone draws that line, `docs/milestones/milestone-08-commander.md`), so she sits beside the bench
+// milestone draws that line, `docs/history/milestones/milestone-08-commander.md`), so she sits beside the bench
 // rosters rather than in one, and her numbers are a first fixture measured against PERIMETER's raid
 // (docs/history/reports/2026-10-01-commander-vasse.md), not balance.
 //

@@ -176,3 +176,24 @@ dim `@` beside the Nexus has no count now, and shows in the battle from the mome
 designed, not built: *Restoration Order* replaces *Expedited Restoration* in her pool. The six to nine rounds go to the
 register's question on how long a match is; mission 3, RESTORATION, planned around her round of absence, is a new
 question.
+
+## The next milestone (2026-10-15)
+
+After pull request 70 merged. Built on the pull request that opens Commander Armies.
+
+### F174 — The next milestone
+
+> let's move to next milestone. What should we so next?
+
+**Built.** The Commander milestone is complete and in the history; Commander Armies is current, at its first step:
+what a Commander Army is, the expected power curve, and the guidelines for catch-up.
+
+### F175 — Her symbol, RESTORATION, and go
+
+> ok vase keeps @, and the mission delays her return once. Go ahead please
+
+"vase" is Vasse. **Built**, all three: Vasse keeps `@` (the register's question on her symbol is answered; her
+portrait already wears it); RESTORATION keeps its round without her, the mission delaying her return that once as
+its own data (the question on what the mission plays is answered, and the campaign says so); and the first step of
+Commander Armies is written, in [`commander-armies.md`](../../game-design/commander-armies.md), with what the army
+loader can check of it.

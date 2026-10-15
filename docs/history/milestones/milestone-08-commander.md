@@ -1,8 +1,13 @@
 # Milestone 8 — Commander
 
-**Status:** CURRENT
-**Current step:** 8D, round 2 — the Commander highlighted by her moments, not a panel: she appears at the Nexus with a line and an effect, a vignette shows her fall, her card and portrait are Explore Map's, and Vasse is back the round after she falls.
+**Status:** COMPLETE
+**Current step:** none — steps 8A to 8D are built; accepted by Mario on 2026-10-15
 **Depends on:** Milestone 5 (the Build Phase is where the upgrade pick lives; complete), Milestone 6 (the Battle Round is where the Commander acts; complete)
+
+> **ACCEPTED, 2026-10-15.** Mario moved on to the next milestone ("let's move to next milestone") and, told that
+> starting it closes this one before he had played its last step, answered the two questions it left: Vasse keeps
+> `@`, and RESTORATION delays her return once ([his words](../feedback/2026-10-13-commander-armies.md)). Playing
+> her moments stays on the next steps as a thing to try, not a gate. Commander Armies is current.
 
 Made current by Mario on 2026-10-01, after he played the loop across rounds: "Get ready and start working on
 the next milestone stage!"
@@ -16,7 +21,7 @@ a real Commander in Level 1. What does and does not change because of that is sp
 
 Can Commander Edda Vasse exist as a real, persistent frontline unit, with the death, absence and
 restoration mechanic that the Commander section of
-[`docs/system-design/grid-engine.md`](../system-design/grid-engine.md) describes and nothing has built
+[`docs/system-design/grid-engine.md`](../../system-design/grid-engine.md) describes and nothing has built
 yet? And can the player pick from a small, real Nexus upgrade draft during the Build Phase, without
 this becoming "author the Citizens Commander Army" ahead of Milestone 12?
 
@@ -26,7 +31,7 @@ this becoming "author the Citizens Commander Army" ahead of Milestone 12?
   investment like any other build choice. When it dies it is absent for the rest of that Battle Round and for
   one full round, after which the Prime Nexus may replicate it again. Commander death
   is not the victory condition: PERIMETER's victory and defeat (settled while building the mission runner) never depend on Vasse.
-- **Vasse, named.** Her doctrine in [`docs/game-design/commander-armies.md`](../game-design/commander-armies.md),
+- **Vasse, named.** Her doctrine in [`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md),
   "fortify, verify, then advance", becomes her behaviour profile and stat shape, scoped to what
   PERIMETER needs and not a full roster entry. Her full card, with candidate powers and what she
   deliberately cannot do, is in the same document. She is the Commander that ships first (Q43).
@@ -54,7 +59,7 @@ Built; waiting for Mario's playtest.
 
 ### Step 8A, round 2 — Her deck, her entrance, and the raid's intent
 
-Mario's notes on the Commander's pull request ([his words](../history/feedback/2026-10-03-commander-round-2.md)):
+Mario's notes on the Commander's pull request ([his words](../feedback/2026-10-03-commander-round-2.md)):
 the milestone is the Commander's concept, not PERIMETER's balance or her health. Built on the same pull request;
 waiting for Mario's playtest.
 
@@ -76,7 +81,7 @@ waiting for Mario's playtest.
 
 ### Step 8A, round 3 — Navigation by route, content bundles, and Commanders who die
 
-Mario's notes on the second round ([his words](../history/feedback/2026-10-04-commander-round-3.md)). Built on
+Mario's notes on the second round ([his words](../feedback/2026-10-04-commander-round-3.md)). Built on
 the same pull request.
 
 - [x] `--at <route>` replaces `--build-phase`: the title menu's screens and a campaign level
@@ -95,7 +100,7 @@ the same pull request.
 
 ### Step 8A, round 4 — Range and territory, a target for your troops, Vasse as a hero, and a cleanup
 
-Mario's notes on the third round ([his words](../history/feedback/2026-10-04-commander-round-4.md)). Built on
+Mario's notes on the third round ([his words](../feedback/2026-10-04-commander-round-4.md)). Built on
 the same pull request, by subagents.
 
 - [x] A building with range shows it on the ghost while it is being placed, quietly; any building with a
@@ -116,7 +121,7 @@ the same pull request, by subagents.
 
 ### Step 8A, round 5 — Placement by standing range, troops in waves, and polish
 
-Mario's notes after the Commander's pull request merged ([his words](../history/feedback/2026-10-05-commander-round-5.md)).
+Mario's notes after the Commander's pull request merged ([his words](../feedback/2026-10-05-commander-round-5.md)).
 Built on a new pull request, by subagents.
 
 - [x] Only buildings standing when the Build Phase opens give build range; a building planned this phase gives
@@ -138,7 +143,7 @@ Built on a new pull request, by subagents.
 
 ### Step 8A, round 6 — Tall tiles, felt
 
-Mario's notes after the fifth round merged ([his words](../history/feedback/2026-10-05-tall-tiles.md)): the
+Mario's notes after the fifth round merged ([his words](../feedback/2026-10-05-tall-tiles.md)): the
 next update is the vertical space alone, judged by how it feels to play, not by today's maps. Built on a new
 pull request.
 
@@ -157,7 +162,7 @@ pull request.
 ### Step 8A, round 7 — Rows x2, the rule
 
 Mario's choice after playing the Ground Experiment, and his word to settle it once the exploration merged ([his
-words](../history/feedback/2026-10-06-rows-x2.md)): rows x2 becomes the rule, and what was built only to compare the
+words](../feedback/2026-10-06-rows-x2.md)): rows x2 becomes the rule, and what was built only to compare the
 choices goes. Then, confirming it: the focus is clean math and the grid design explained, with pictures, as the
 design it is. Built on a new pull request.
 
@@ -185,7 +190,7 @@ design it is. Built on a new pull request.
 
 ### Step 8A, round 8 — Genre words
 
-Mario's note after the rows x2 pull request merged ([his words](../history/feedback/2026-10-07-genre-words.md)):
+Mario's note after the rows x2 pull request merged ([his words](../feedback/2026-10-07-genre-words.md)):
 a card says only the range across, and "melee" in place of "touching"; and wherever the game's text invents its own
 way of saying something the genre already names, it uses the genre's word. Built on a new pull request.
 
@@ -200,7 +205,7 @@ way of saying something the genre already names, it uses the genre's word. Built
 ### Step 8B — The Nexus Pulse, dealing from a pool
 
 Mario's word after the genre words merged, "Let's move into the next milestone", and his answers in the session
-([his words](../history/feedback/2026-10-07-nexus-draft.md)): the four powers below, and War Chest in every hand.
+([his words](../feedback/2026-10-07-nexus-draft.md)): the four powers below, and War Chest in every hand.
 Built on a new pull request.
 
 - [x] A hand is dealt at each Nexus Pulse from the army's Nexus power pool, one is kept, and it fills
@@ -220,7 +225,7 @@ Built on a new pull request.
 
 ### Step 8B, round 2 — The draft's design
 
-Mario's design conversation after the Nexus Pulse merged ([his words](../history/feedback/2026-10-07-draft-design.md)):
+Mario's design conversation after the Nexus Pulse merged ([his words](../feedback/2026-10-07-draft-design.md)):
 whether tech is drafted or bought, then a structure for the draft predictable enough for Commanders to play with,
 examples drawn for four Commanders and kept in the session, and the decisions written down. Design, on a new pull
 request; the one change a player sees is a power's wording.
@@ -239,7 +244,7 @@ request; the one change a player sees is a power's wording.
 
 ### Step 8C — The Nexus Pulse deals by schedule
 
-Mario's word after the draft's design merged ([his words](../history/feedback/2026-10-07-nexus-pulse.md)): build
+Mario's word after the draft's design merged ([his words](../feedback/2026-10-07-nexus-pulse.md)): build
 some of it, name the in-match draft the Nexus Pulse, write down the tech tree's new claims, and review the game's
 words. Built on a new pull request.
 
@@ -260,7 +265,7 @@ words. Built on a new pull request.
 
 ### Step 8C, round 2 — Arrow keys without acceleration
 
-Mario's request, between steps ([his words](../history/feedback/2026-10-08-keyboard-without-acceleration.md)): a build
+Mario's request, between steps ([his words](../feedback/2026-10-08-keyboard-without-acceleration.md)): a build
 with no acceleration, where only Shift changes the speed, and settings to try other ways of moving. Built on a new
 pull request, for him to play before anything is settled.
 
@@ -277,7 +282,7 @@ pull request, for him to play before anything is settled.
 
 ### Step 8D — The Commander on screen, and her return
 
-Mario's word after re-evaluating the milestone ([his words](../history/feedback/2026-10-13-commander-armies.md)):
+Mario's word after re-evaluating the milestone ([his words](../feedback/2026-10-13-commander-armies.md)):
 "finish this milestone." The one claim it had not proved is that a player understands what the Commander's death
 did; this step makes her state something a player reads at a glance, and her return the Nexus Pulse's own moment.
 Built on a new pull request; waiting for Mario's playtest.
@@ -296,7 +301,7 @@ Built on a new pull request; waiting for Mario's playtest.
 
 ### Step 8D, round 2 — Her moments, not a panel
 
-Mario's notes on the step's pull request ([his words](../history/feedback/2026-10-13-commander-armies.md)): the
+Mario's notes on the step's pull request ([his words](../feedback/2026-10-13-commander-armies.md)): the
 Commander is another unit, so the side panel keeps its room; she is highlighted by her moments instead, and the
 rhythm of matches of six to nine rounds wants most Commanders back the round after they fall. Built on the same pull
 request; waiting for Mario's playtest.
@@ -316,7 +321,7 @@ request; waiting for Mario's playtest.
 - [x] A milestone of its own for ASCII art is planned.
 
 Both modes need both steps, which is why this milestone sits before either mode shell in the build
-order ([`README.md`](README.md)).
+order ([`README.md`](../../milestones/README.md)).
 
 ## Is this a Commander Army?
 
@@ -365,4 +370,4 @@ when it happens, and can explain what the upgrade they picked changed.
 - [x] The pull request says plainly that the Citizens Commander Army is still not locked.
 - [x] `./scripts/check-repository.sh` passes.
 
-What is left is Mario's: playing the last step, and accepting the milestone.
+Accepted by Mario on 2026-10-15.

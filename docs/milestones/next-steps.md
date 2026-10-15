@@ -15,18 +15,16 @@ it is done.*
   move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
   become tuned values. The next navigation ideas, from [the roguelike survey](../history/reports/2026-10-09-roguelike-navigation.md),
   wait for his pick.
-- **Play the Commander's last step, then accept the milestone** ([his words](../history/feedback/2026-10-13-commander-armies.md)),
-  from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`, the level made for her return: start the
-  round without building (`s`, `s`). When she falls, a small window opens beside her, her face falls and the window
-  evaporates; her dim `@` waits beside the Nexus. Enter: round 2 opens on the Nexus Pulse restoring her, and once
-  the line is closed she appears beside the Nexus half a second in, a ring closing on her, with a line of her own.
-  Explore Map (`e`) on her: her portrait on her card and a ring of light round her. In PERIMETER
-  (`campaign?level=vasse-test-1`) she appears the same way as the level begins. Then in the menu (Esc), Activity
-  logs, step Left to the Commander filter, press `e`, and paste the export. Once he has played it, the Commander
-  milestone is ready for his acceptance, and [Commander Armies](milestone-14-commander-armies.md) is next.
-- **Two questions from the Commander's round**: which symbol Vasse keeps (Q77; recommended: keep `@` until the ASCII
-  art milestone, and try `&` there), and what RESTORATION plays now that she is back at once (Q78; recommended: the
-  mission delays her, once).
+- **Read the power curve and the anatomy of a Commander Army** (Commander Armies' first step): the numbers an army
+  is designed against — what each round's credits, a tier of the tree and each Nexus Pulse's pick are worth — what
+  each army leans its build on, and the guidelines for catch-up, in [`commander-armies.md`](../game-design/commander-armies.md).
+  Every number is a first guess, for the next step to put on the Grid and measure. Then the next step, when he says:
+  the curve on the Grid.
+- **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
+  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When
+  she falls, a small window opens beside her, her face falls and the window evaporates; her dim `@` waits beside the
+  Nexus. Enter: round 2 opens on the Nexus Pulse restoring her, and she appears beside the Nexus half a second in,
+  a ring closing on her, with a line of her own. Explore Map (`e`) on her shows her portrait and a ring of light.
 - **The ASCII art milestone, when he says** ([the plan](milestone-15-ascii-art.md)): research, a tool and an image
   model's help for art that looks good, then the Commander's portrait and vignette redrawn with it. Not placed in
   the order.

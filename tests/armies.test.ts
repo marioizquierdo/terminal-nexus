@@ -72,7 +72,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
   )
   assert.deepEqual(
     ARMIES.commanders.map(({ barks: _barks, ...commander }) => commander),
-    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", portrait: [" _@_ ", "(-_-)", "/|@|\\"], portraitFalls: [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]] }],
+    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", lean: ["structures", "commander"], portrait: [" _@_ ", "(-_-)", "/|@|\\"], portraitFalls: [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]] }],
   )
   // Her lines in battle come with her (tests/voice.test.ts has what is said when).
   assert.ok(Object.keys(ARMIES.commanders[0]?.barks ?? {}).length > 0, "Vasse has nothing to say")
@@ -460,8 +460,8 @@ test("a level's mission is checked against its map, its content against what its
       { id: "lost-permit", name: "Lost Permit", description: "Adds nothing.", effect: { addBuilding: { building: "missing" } }, rarity: "common", role: "economy" },
     ],
     commanders: [
-      { id: "hero", name: "Hero", unit: "unit.test.hero" },
-      { id: "trooper", name: "Not one", unit: "unit.citizen.trooper" },
+      { id: "hero", name: "Hero", unit: "unit.test.hero", lean: ["units"] },
+      { id: "trooper", name: "Not one", unit: "unit.citizen.trooper", lean: ["units"] },
     ],
     campaigns: [
       {
@@ -647,6 +647,7 @@ test("how the Nexus Pulse deals a power is data the loader checks by name: a cha
     'army "deck": the Nexus power "always-upgrade" is offered beside every hand, so it cannot be an upgrade',
     'army "deck": level "deck-1" has a schedule whose first entry is for round 2: it starts at round 1',
     'army "deck": level "deck-1" has a schedule entry for round 1 after one for round 2: entries go in order',
+    'army "deck": level "deck-1" deals a rare from round 1: the power curve deals a rare from round 4',
     'army "deck": level "deck-1" makes sure of the Nexus power "drill-schedule" in round 1, which the level does not offer',
     'army "deck": level "deck-1" makes sure of "war-chest" in round 1, which is offered beside every hand anyway',
     'army "deck": level "deck-2" has a schedule with no entries: leave it out for the default',

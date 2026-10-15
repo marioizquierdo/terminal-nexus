@@ -18,6 +18,7 @@
 import { Pcg32, STREAM_DRAFT } from "../rng/pcg32.ts"
 import type { PowerCard, Rarity, Schedule, ScheduleSlot } from "./types.ts"
 import { RARITIES } from "./types.ts"
+import { dealtBy } from "./curve.ts"
 
 /**
  * What the Nexus Pulse deals when a level gives no schedule of its own: three cards a round, the ramp of the
@@ -111,7 +112,8 @@ function weighted(cards: readonly PowerCard[], round: number, rng: Pcg32): Power
 
 /**
  * The hand round `deal.round` deals: one card for each slot of its schedule, in the slots' order (fewer when the
- * pool has run out), then every card offered beside every hand, in pool order. A power a slot makes sure of is
+ * pool has run out), then every card offered beside every hand, in pool order. A slot with nothing left of its
+ * rarity falls back to a rarer one only once the power curve deals it (a rare from round 4). A power a slot makes sure of is
  * placed first, so no other slot takes it; when it cannot be dealt (kept already, or a requirement unmet), its
  * slot deals from its rarity instead.
  */
@@ -141,6 +143,8 @@ export function dealHand(deal: Deal): PowerCard[] {
     const rarity: Rarity = typeof slot === "string" ? slot : (pool.find((card) => card.id === slot.power)?.rarity ?? "common")
     const roles = new Set(hand.flatMap((card) => (card === null ? [] : [card.role])))
     for (const from of rarityOrder(rarity)) {
+      // Falling back to a rarer card never deals a rarity before its act on the power curve (`curve.ts`).
+      if (RARITIES.indexOf(from) > RARITIES.indexOf(rarity) && !dealtBy(from, round)) continue
       const left = eligible.filter((card) => card.rarity === from && !taken.has(card.id))
       if (left.length === 0) continue
       const fresh = left.filter((card) => !roles.has(card.role))
