@@ -883,7 +883,7 @@ live(
 
 live(
   "spike-monochrome",
-  "Monochrome is the floor, not the degraded mode: the same screen with every colour removed, the light and heavy edges, the highlight bar and the preview included",
+  "Monochrome is the floor, where every fact still reads (not the look the game is made for): the same screen with every colour removed, the light and heavy edges, the highlight bar and the preview included",
   {
     args: "--colors monochrome",
     drive: () => {

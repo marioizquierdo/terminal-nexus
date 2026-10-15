@@ -12,12 +12,13 @@
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
 import type { ColorDepth, Theme } from "../roles.ts"
-import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, DIM_ALPHA, resolveCell } from "../roles.ts"
 
-/** How a dim cell is drawn: the terminal's SGR 2 "faint", approximated as partial opacity. */
-export const DIM_ALPHA = 0.55
+// A dimmed glyph is mixed into its colours at every depth that has colours (`resolveCell`); this is the
+// one place that still draws it as partial opacity — monochrome, where a terminal would send "faint".
+export { DIM_ALPHA }
 
-/** One cell, ready to paint: colours as CSS strings, `background` null where the theme's own shows. */
+/** One cell, ready to paint: colours as CSS strings, `background` null where the ground (monochrome) is all there is. */
 export type PaintOp = Readonly<{
   x: number
   y: number

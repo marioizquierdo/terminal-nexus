@@ -2,6 +2,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { nearest256, xterm256 } from "./color-helpers.ts"
 import {
   BACKGROUND_RGB,
   COLOR_DEPTHS,
@@ -119,76 +120,33 @@ test("no colour a tier draws is one of the terminal's own sixteen: the 256 searc
   }
 })
 
-test("the 256-colour tier is derived from rgb, not a fourth hand-authored value", () => {
-  // Pinned against a measurement taken on 2026-08-24 (the script is since deleted; the report in docs/history/reports keeps the numbers): these are
-  // the *derived* indices, and for chrome.frame and player.b (dark) they differ from what used to be
-  // hand-authored (240 and 84) - proof the switch actually took effect, not just that some number
-  // came back. chrome.frame's own rgb moved again 2026-09-26 (the same low-contrast-border fix
-  // chrome.muted already had), so its derived index moved too - recomputed, not guessed.
+test("the 256-colour tier is derived from rgb, not a second hand-authored palette", () => {
+  // Pinned numbers, for a role that moved when the table was derived (chrome.frame, player.b) and one that
+  // happened to land where it always had (player.a): proof the derivation took effect, not just that
+  // some number came back.
   assert.deepEqual(sgrFor("chrome.frame", "color256", "dark"), [38, 5, 247])
   assert.deepEqual(sgrFor("player.b", "color256", "dark"), [38, 5, 78])
-  // player.a's dark 256 index happened to already match its hand-authored value (173) before this
-  // change - included so the pin set covers a "no visible change" role too, not only ones that moved.
   assert.deepEqual(sgrFor("player.a", "color256", "dark"), [38, 5, 173])
 
-  // Structural claim, not just pinned numbers: every role's 256 index is genuinely nearest to its own
-  // rgb, not merely *some* fixed value - reconstruct each candidate's rgb the same way roles.ts does
-  // (a 6x6x6 cube then a grey ramp) and confirm nothing closer exists in that same space.
-  const cube = [0, 95, 135, 175, 215, 255]
-  const xterm256Rgb = (index: number): readonly [number, number, number] => {
-    if (index < 232) {
-      const offset = index - 16
-      return [
-        cube[Math.floor(offset / 36)] ?? 0,
-        cube[Math.floor((offset % 36) / 6)] ?? 0,
-        cube[offset % 6] ?? 0,
-      ]
-    }
-    const grey = 8 + (index - 232) * 10
-    return [grey, grey, grey]
-  }
-  const squaredDistance = (a: readonly [number, number, number], b: readonly [number, number, number]): number =>
-    (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2
-
+  // Structural claim, not just pinned numbers: every role's 256 index looks more like its own rgb than any
+  // other index does, judged by an independent Lab distance (`color-helpers.ts`), at full strength and part
+  // of the way faded.
   for (const theme of THEMES) {
-    for (const role of ["chrome.frame", "chrome.muted", "player.a", "player.b", "fx.blast"] as const) {
-      const rgb = rgbFor(role, "truecolor", theme)
-      const [, , chosenIndex] = sgrFor(role, "color256", theme)
-      assert.ok(chosenIndex !== undefined)
-      const chosenDistance = squaredDistance(rgb, xterm256Rgb(chosenIndex))
-      // Spot-check every other index in the same 16-255 space - none may be strictly closer.
-      for (let index = 16; index <= 255; index += 1) {
-        if (index === chosenIndex) continue
-        const distance = squaredDistance(rgb, xterm256Rgb(index))
-        assert.ok(
-          distance >= chosenDistance,
-          `${role}/${theme}: 256-index ${index} (distance ${distance}) is closer to ${JSON.stringify(rgb)} than the chosen ${chosenIndex} (distance ${chosenDistance})`,
-        )
+    for (const role of STYLE_ROLES) {
+      for (const fade of [0, 0.3, 0.7]) {
+        const exact = rgbFor(role, "truecolor", theme, fade)
+        const [, , index] = sgrFor(role, "color256", theme, fade)
+        assert.equal(index, nearest256(exact), `${role}/${theme} faded ${fade}: ${JSON.stringify(exact)}`)
+        // The RGB renderers show the entry the terminal shows, not the exact colour it could not.
+        assert.deepEqual(rgbFor(role, "color256", theme, fade), xterm256(index ?? 0), `${role}/${theme} faded ${fade}`)
       }
     }
   }
 })
 
-test("player.a and player.b clear a real mutual-contrast floor in the light theme now", () => {
-  // The same WCAG relative-luminance contrast ratio the original measurement of
-  // that floor used, computed independently here rather than imported, so this test would
-  // actually fail if the retune regressed.
-  const srgbToLinear = (u: number): number => (u / 255 <= 0.04045 ? u / 255 / 12.92 : ((u / 255 + 0.055) / 1.055) ** 2.4)
-  const relLuminance = (rgb: readonly [number, number, number]): number =>
-    0.2126 * srgbToLinear(rgb[0]) + 0.7152 * srgbToLinear(rgb[1]) + 0.0722 * srgbToLinear(rgb[2])
-  const contrast = (a: readonly [number, number, number], b: readonly [number, number, number]): number => {
-    const [hi, lo] = [relLuminance(a), relLuminance(b)].sort((x, y) => y - x)
-    return ((hi ?? 0) + 0.05) / ((lo ?? 0) + 0.05)
-  }
-
-  const lightA = rgbFor("player.a", "truecolor", "light")
-  const lightB = rgbFor("player.b", "truecolor", "light")
-  const lightBg = [242, 240, 234] as const // BACKGROUND_RGB.light
-  assert.ok(contrast(lightA, lightB) >= 3.0, `player.a vs player.b, light theme: ${contrast(lightA, lightB)}, was 1.08 before the retune`)
-  assert.ok(contrast(lightA, lightBg) >= 3.0, "player.a lost its own floor against the light background")
-  assert.ok(contrast(lightB, lightBg) >= 3.0, "player.b lost its own floor against the light background")
-
-  // Scoped to light only, per the recommendation - dark theme's pair is untouched.
+test("the dark theme's two sides are the lore's palette, Citizen rust and Ravel green", () => {
+  // The reference table, set against the first screenshots; the light pair is held to a bar of its own
+  // (`tests/palette.test.ts`) rather than pinned.
   assert.deepEqual(rgbFor("player.a", "truecolor", "dark"), [201, 118, 68])
   assert.deepEqual(rgbFor("player.b", "truecolor", "dark"), [104, 226, 132])
 })

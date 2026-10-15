@@ -7,7 +7,7 @@
 // reject it, so the restore path is the part written first.
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
-import { frameToAnsi } from "../frame.ts"
+import { frameToAnsi, padFrame } from "../frame.ts"
 import type { ColorDepth, Theme } from "../roles.ts"
 import { DEFAULT_THEME } from "../roles.ts"
 import type { TerminalInput, TerminalOutput } from "./ports.ts"
@@ -57,7 +57,12 @@ export class AnsiBackend implements TerminalBackend {
   }
 
   present(frame: ReadonlyCellFrame): void {
-    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.colors, this.theme) + RESET)
+    const { stdout } = this.options
+    // With colours the game paints the whole screen, so a frame smaller than the terminal is grown with
+    // ground. Monochrome leaves the terminal's own colours alone, beside the frame as in it.
+    const drawn =
+      this.colors === "monochrome" ? frame : padFrame(frame, stdout.columns ?? frame.width, stdout.rows ?? frame.height)
+    stdout.write(CURSOR_HOME + frameToAnsi(drawn, this.colors, this.theme) + RESET)
   }
 
   setPresentation(colors: ColorDepth, theme: Theme): void {

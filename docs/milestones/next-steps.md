@@ -5,11 +5,12 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Look at 256 colours and monochrome once, and settle the background** ([his words](../history/feedback/2026-10-15-drop-16-colours.md);
-  the 16-colour depth is gone): `./bin/terminal-nexus.ts --capability color256`, and again with `--colors
-  monochrome`. A terminal that advertises nothing more than that now opens in monochrome; Settings (`d`), Colour
-  depth, or `--colors`, is one step to more. The question that is his: whether the game paints its own background
-  at 256 colours and millions instead of leaving the terminal's (Q79; recommended: yes, behind an Experiment).
+- **Look at the colour work once, on a terminal whose colours are not the game's** ([his words](../history/feedback/2026-10-15-colours-and-ground.md);
+  the game now paints its own ground, so the terminal's theme no longer shows): `./bin/terminal-nexus.ts --colors
+  truecolor --theme light` (the light theme should now read on a dark terminal and on a Solarized one), then
+  `--colors color256`, then `--colors monochrome`. Settings (`d`), Colours and Background, are the same choices.
+  Worth a look for the light theme's Ravel green (now a green that reads as green, not near-black) and for 256 colours'
+  territory washes, which land on the nearest of few pale colours and can read pinker than in millions.
 - **Settle the keyboard's steps** ([his request](../history/feedback/2026-10-08-keyboard-without-acceleration.md);
   acceleration is gone on his word): press `d`, try Arrow step, Shift step (below the arrow step, Shift is the slow
   move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
@@ -160,19 +161,22 @@ Small, none blocking.
 - The raid's trail is the second animation that never settles, beside a popup's breath: the screen redraws five
   to seven times a second while it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.
 
-**From dropping the 16-colour depth** ([his words](../history/feedback/2026-10-15-drop-16-colours.md); the
-lessons file has the reasons):
+**From the colour work of 2026-10-15** ([the colour depths](../history/feedback/2026-10-15-drop-16-colours.md) and
+[the ground](../history/feedback/2026-10-15-colours-and-ground.md); the lessons file has the reasons):
 
-- The browser page and OpenTUI draw 256 colours as the palette's exact colour, not the nearest entry of the xterm
-  palette that the direct-ANSI writer sends (`rgbFor` in `src/view/roles.ts`; only a see-through mix is rounded
-  there). Looking at 256 colours means looking at a real terminal, not the page. Quantising it in `rgbFor` is three
-  lines and makes the page a faithful 256; it changes no test's meaning.
-- At 256 colours a faded or tinted orange lands on grey or pink, because the xterm cube is coarse at its dark end
-  (a half-faded `player.a` is index 238, a grey). Known since the Commander's second round; it is why the washes there
-  look different, and nothing is tuned for it.
-- The light theme's `player.b` is `15, 56, 32`, nearly black at every depth, and at 256 colours the nearest entry
-  is a grey beside the title text: its contrast against the other side was bought by giving up its hue. A palette
-  question, for Q51.
+- The ANSI writer sends the whole frame every time. With the game's ground painted that is about 13 KB for a
+  104 x 30 truecolor frame (8 KB before) and 24 KB at 200 x 60, a few milliseconds to build: nothing locally, but a
+  diff against the last frame (only the cells that changed) would be the first thing to do for play over SSH.
+- At 256 colours a faint wash (a territory's tint, a half-faded `player.a`) lands on the nearest of very few dark or
+  pale colours, so it can read greyer or pinker than in millions. The matching is by how colours look now and the
+  hue is kept down to a faint tint, but the cube is coarse at both ends; nothing more is tuned for it.
+- The light theme's muted text is the palette's quietest readable text, 2.15:1 against the paper after its dim (the
+  dark theme's is 2.9:1); the palette test holds 2:1. Darkening it costs the hierarchy with `chrome.value`.
+- `NO_COLOR` (and `FORCE_COLOR`) are not read: the first-launch guess is `COLORTERM` and `TERM` only.
+- The committed pictures under `docs/` were taken before the game painted its ground (each carries its own page
+  backdrop), and are regenerated, not rewritten, the next time a round touches them.
+- OpenTUI's ground is drawn through the test harness only; its live backend runs under Bun on a real terminal,
+  and nobody has looked at it there since.
 - `tests/web.test.ts`'s browser-bundle test fails under Bun 1.4.2 in the cloud session on `main` as well (its
   hashes differ from Node's); not caused by, or looked at in, this change.
 

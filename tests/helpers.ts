@@ -79,6 +79,22 @@ export function sgrCodes(ansi: string): number[] {
   return [...ansi.matchAll(/\u001b\[([0-9;]*)m/g)].flatMap((match) => (match[1] ?? "").split(";").filter(Boolean).map(Number))
 }
 
+/** The SGR parameters that are not part of a colour: bold, faint, underline, reverse video, the default-colour
+ *  resets. A 256-colour or truecolor setter's own numbers (`38;5;n`, `48;2;r;g;b`) are skipped over whole, since
+ *  a `2` in `38;2;...` is the colour's kind and not the attribute faint. */
+export function sgrAttributes(ansi: string): number[] {
+  const attributes: number[] = []
+  for (const match of ansi.matchAll(/\u001b\[([0-9;]*)m/g)) {
+    const params = (match[1] ?? "").split(";").filter(Boolean).map(Number)
+    for (let at = 0; at < params.length; at += 1) {
+      const code = params[at] ?? 0
+      if (code === 38 || code === 48) at += params[at + 1] === 2 ? 4 : 2
+      else attributes.push(code)
+    }
+  }
+  return attributes
+}
+
 /** Whether an SGR parameter sets a colour (foreground or background, standard or bright) — as opposed to
  *  bold, dim or reversed video, which monochrome keeps. */
 export const isColourCode = (code: number): boolean => (code >= 30 && code <= 49) || (code >= 90 && code <= 107)

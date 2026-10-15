@@ -24,14 +24,14 @@ export function parseColorDepth(value: string): ColorDepth {
 }
 
 /**
- * Which background the palette assumes — an open question in the design, answered minimally
- * (owner playtest: on a light terminal background, the dark theme's chrome text was nearly
- * invisible). Two fixed themes rather than a background probe: querying a terminal's actual
- * background colour (OSC 11) is unreliable across emulators and is real complexity for a first version
- * that was asked to start simple. `dark` is the default — it is the palette the lore and every screenshot so
- * far were designed against — and `light` is one explicit flag away. The door stays open for a real
- * themes/modding system later without anything here needing to change shape, only to grow more
- * entries.
+ * Which look the game paints: its own ground and the palette set against it. The game paints the ground
+ * itself at 256 colours and in millions (`src/view/roles.ts`), so a theme is a choice of look and has
+ * nothing to do with the terminal's own colours: dark on a white terminal and light on a black one both
+ * work. (It once had to match the terminal, when the terminal's background showed through; an owner
+ * playtest found the dark theme's chrome text nearly invisible on a light one.) Monochrome leaves the
+ * terminal's colours alone, so a theme means nothing there. `dark` is the default — it is the palette the
+ * lore and every screenshot so far were designed against. The door stays open for a real themes/modding
+ * system later without anything here needing to change shape, only to grow more entries.
  */
 export type Theme = "dark" | "light"
 

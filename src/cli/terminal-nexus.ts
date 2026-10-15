@@ -92,7 +92,8 @@ A first launch guesses colour depth the way \`grid\` does; every launch after th
 was last chosen on the Settings screen (~/.terminal-nexus/settings.json). Any flag above overrides
 its own setting for this one run without changing what is saved.
 
---theme defaults to dark; pass --theme light on a light terminal background.`
+--theme defaults to dark. The game paints its own background (dark or light) whatever your terminal's colours
+are, except with --colors monochrome, which leaves your terminal's own.`
 }
 
 /** What the game says for a part of its launch it cannot read: a route's every problem, then where to read what

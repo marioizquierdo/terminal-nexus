@@ -16,6 +16,7 @@
 // neither the compositor nor the kernel knows which one presented a frame.
 
 import type { ReadonlyCellFrame } from "../frame.ts"
+import { padFrame } from "../frame.ts"
 import type { ColorDepth, Rgb, Theme } from "../roles.ts"
 import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
 import type { BackendOptions, NamedBackend } from "./index.ts"
@@ -32,6 +33,9 @@ export type CellSink = Readonly<{
     bg: unknown,
     attributes: number,
   ): void
+  /** The buffer's size, where it says: the screen the game's ground is painted across. */
+  readonly width?: number
+  readonly height?: number
 }>
 
 /**
@@ -47,13 +51,14 @@ export function drawFrameInto(
   theme: Theme = DEFAULT_THEME,
 ): void {
   const colour = ([red, green, blue]: Rgb) => core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1)
-  // OpenTUI paints its own background rather than leaving the terminal's ambient colour to show
-  // through (unlike the direct-ANSI backend), so the theme has to reach this fill too or a light
-  // theme would still render on a forced-black background.
+  // Monochrome's cells have no fill of their own, so what shows behind them is the ground; the colour
+  // depths always give one (`resolveCell`). A frame smaller than the screen is grown with blank ground,
+  // the way the direct-ANSI backend does.
   const ground = colour(BACKGROUND_RGB[theme])
-  for (let y = 0; y < frame.height; y += 1) {
-    for (let x = 0; x < frame.width; x += 1) {
-      const cell = frame.cells[y * frame.width + x]
+  const screen = padFrame(frame, buffer.width ?? frame.width, buffer.height ?? frame.height)
+  for (let y = 0; y < screen.height; y += 1) {
+    for (let x = 0; x < screen.width; x += 1) {
+      const cell = screen.cells[y * screen.width + x]
       if (cell === undefined) continue
       // Inverse video is already in the colours `resolveCell` gives, so no reverse attribute is sent.
       const resolved = resolveCell(cell, colors, theme)

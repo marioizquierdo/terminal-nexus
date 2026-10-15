@@ -90,8 +90,9 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
    several effects overlapping — `ravel-cascade` at the tick the chain runs. If that reads, the calm
    frames will. Designing the calm frame first guarantees a beautiful opening and an unreadable
    climax.
-2. **Monochrome.** It is the acceptance floor, not the degraded mode. If you cannot follow who moved,
-   who shot whom, and who died without colour, the frame is not finished.
+2. **Monochrome.** It is the acceptance floor: every fact must read in it, though it is not the look the
+   game is made for. If you cannot follow who moved, who shot whom, and who died without colour, the
+   frame is not finished.
 3. **Round on screen.** A tile is one column, a cell about twice as tall as it is wide, and a row counts
    two columns in every distance, so whatever the rules measure — a blast, an aura, a reach — looks as
    wide as it is tall. A shape that looks twice as tall as it is wide is being drawn by some other

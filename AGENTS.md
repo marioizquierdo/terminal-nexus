@@ -85,7 +85,9 @@ IDEA (a sketch). The ones every session needs:
 - **A log is a record, never an input.** Events are declared before they are logged (`src/log/`); the
   kernel and the match layer never log, and nothing the rules decide reads a log.
 - **Cells carry style roles, never colours.** Monochrome ASCII is the floor; 80 × 24 is the
-  acceptance target.
+  acceptance target. The look the game is designed for is the colour one, and with colours the game
+  paints every colour itself, its background included: never read or lean on the terminal's own theme
+  (`--colors`, `--theme` and where a colour goes are in the manual's "The display options").
 - **Lore is a platform, not a plot.** When clearer ASCII and richer story compete, the Grid wins.
 - Do not build what no milestone step asks for: a second resource, routing, visibility, the replay
   format, multiplayer, sound, packaging, a mod loader, any mission beyond PERIMETER and RIGHT OF SALVAGE,

@@ -96,7 +96,7 @@ export const ALL_SETTINGS = {
     tier: "player",
     section: "display",
     label: "Background",
-    question: "Dark or light: match your terminal's own background.",
+    question: "Dark or light, painted by the game whatever your terminal's colours are. With Colours: none, yours show.",
     values: THEMES,
     default: "dark",
   },

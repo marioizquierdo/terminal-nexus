@@ -52,7 +52,8 @@ Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by 
 carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.
 
 --colors defaults to the best tier COLORTERM/TERM advertise, monochrome if neither says more.
---theme defaults to dark; pass --theme light on a light terminal background.`
+--theme defaults to dark. The game paints its own background (dark or light) whatever your terminal's colours
+are, except with --colors monochrome, which leaves your terminal's own.`
 
 /**
  * A default `--colors`, when none is given, that is not simply the least common denominator.

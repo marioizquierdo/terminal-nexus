@@ -127,7 +127,7 @@ test("[s] opens Settings at the player's settings; Esc goes back to the game men
   const text = screen(side)
   assert.match(text, /DISPLAY - saved/)
   assert.match(text, /Background\s+<\s+dark\s+>/)
-  assert.match(text, /match your terminal's own/, "the highlighted setting does not say what it is for")
+  assert.match(text, /painted by the game/, "the highlighted setting does not say what it is for")
   keys(side, ESC)
   assert.equal(side.build.state.popup, "game-menu")
   assert.equal(GAME_MENU_ROWS[side.build.state.popupHighlight], "settings", "back on the row that opened Settings")

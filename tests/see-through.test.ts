@@ -9,6 +9,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { nearest256, xterm256 } from "./color-helpers.ts"
 import { DIM_ALPHA, paintOps } from "../src/view/backends/canvas.ts"
 import type { CellSink } from "../src/view/backends/opentui.ts"
 import { drawFrameInto } from "../src/view/backends/opentui.ts"
@@ -45,32 +46,6 @@ function ansiParams(target: Cell, colors: ColorDepth, theme: Theme = "dark"): nu
 function withoutSeeThrough(target: Cell): Cell {
   const { seeThrough: _seeThrough, ...style } = target.style
   return cell(target.glyph, style)
-}
-
-/** The xterm 256-colour palette above the system colours, rebuilt here so the test does not trust
- *  the code it checks. */
-function xterm256(index: number): Rgb {
-  const steps = [0, 95, 135, 175, 215, 255]
-  if (index >= 232) {
-    const grey = 8 + (index - 232) * 10
-    return [grey, grey, grey]
-  }
-  const offset = index - 16
-  return [steps[Math.floor(offset / 36)] ?? 0, steps[Math.floor((offset % 36) / 6)] ?? 0, steps[offset % 6] ?? 0]
-}
-
-function nearest256(rgb: Rgb): number {
-  let best = 16
-  let bestDistance = Infinity
-  for (let index = 16; index <= 255; index += 1) {
-    const [r, g, b] = xterm256(index)
-    const distance = (rgb[0] - r) ** 2 + (rgb[1] - g) ** 2 + (rgb[2] - b) ** 2
-    if (distance < bestDistance) {
-      bestDistance = distance
-      best = index
-    }
-  }
-  return best
 }
 
 /** Reads an ANSI parameter list back into the colours a terminal would show, inverse resolved. */
@@ -263,10 +238,11 @@ test("an seeThrough that shows replaces the cell's colours, inverse and dim; bol
     assert.equal(op?.alpha, 1, colors)
     assert.equal(op?.bold, true, colors)
     assert.equal(op?.underline, true, colors)
-    // Where it shows nothing, the dim is the cell's again.
+    // Where it shows nothing, the dim is the cell's again: an attribute in monochrome, and in the colours
+    // themselves where there are colours (a mix toward the cell's fill, the same on every terminal).
     if (seeThroughColours(faint, colors) === null) {
-      assert.ok(ansiParams(faint, colors).includes(2), colors)
-      assert.equal(paintOps(frameOf(faint), colors)[0]?.alpha, DIM_ALPHA, colors)
+      assert.equal(ansiParams(faint, colors).includes(2), colors === "monochrome", colors)
+      assert.equal(paintOps(frameOf(faint), colors)[0]?.alpha, colors === "monochrome" ? DIM_ALPHA : 1, colors)
     }
   }
 })

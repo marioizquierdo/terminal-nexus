@@ -259,7 +259,7 @@ const shots = [
   },
   {
     name: "mirror-light-theme",
-    caption: "Tick 160 on a light terminal background - --theme light",
+    caption: "Tick 160 in the light theme - --theme light",
     scenario: "citizen-mirror-skirmish",
     tick: 160,
     cols: 80,

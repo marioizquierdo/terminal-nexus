@@ -208,8 +208,9 @@ export function stepPastEnd(repoRoot, session, lastResolvedTick, tick) {
 const FAINT_PERCENT = Math.round(DIM_ALPHA * 100)
 
 /** Turn one captured pane into HTML: a span per styled run, nothing else. `theme` is the terminal's
- *  own background: reverse video swaps a cell's colour with it, so on a light terminal a reversed
- *  cell's text is light, not the dark default (it was drawn dark-on-dark before 2026-09-27). */
+ *  own background, which only monochrome shows: the colour depths paint the game's own ground on every
+ *  cell, and reverse video is already in their colours. Monochrome's reverse video swaps a cell's colour
+ *  with it, so on a light terminal a reversed cell's text is light, not the dark default. */
 export function ansiToHtml(text, cols, rows, theme = "dark") {
   const defaultBackground = theme === "light" ? LIGHT_BACKGROUND : BACKGROUND
   const defaultForeground = theme === "light" ? LIGHT_FOREGROUND : FOREGROUND
@@ -325,6 +326,9 @@ function pageFor(html, caption, cols, rows, background) {
     border-radius: 6px;
     white-space: pre;
   }
+  /* A terminal fills a cell's whole height with its background; an inline span would only fill the glyphs' own
+     (a hairline of the pane between rows wherever the two backgrounds differ, as 256 colours' ground does). */
+  pre span { display: inline-block; vertical-align: top; height: 1.25em; }
   .caption {
     margin: 10px 2px 0;
     color: ${captionColor};

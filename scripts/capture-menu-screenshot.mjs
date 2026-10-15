@@ -67,9 +67,8 @@ function shoot(
     scratchDir: scratch,
     targetPath: join(outputDirectory, `${name}.png`),
     // Matches the page wrapper to whichever theme this shot actually demonstrates — the same thing
-    // capture-screenshots.mjs does for grid's own light-theme shots. The light theme's palette is
-    // designed to sit on a light terminal background; without this, its own text renders nearly
-    // invisibly against a page still assuming a dark one.
+    // capture-screenshots.mjs does for grid's own light-theme shots: the page around the game's own
+    // ground, so a light shot does not sit in a dark frame.
     background,
   })
   console.log(`${result.written ? "wrote" : "unchanged"} ${name}.png`)
@@ -80,7 +79,7 @@ shoot("menu-top-level", "terminal-nexus's top-level menu - Campaign highlighted 
 
 shoot(
   "menu-monochrome",
-  "Monochrome is the floor, not the degraded mode - the same screen with --colors monochrome",
+  "Monochrome is the floor, where every fact still reads - the same screen with --colors monochrome",
   {
     args: "--colors monochrome",
     drive: () => sendKey(repoRoot, SESSION, "Down"),

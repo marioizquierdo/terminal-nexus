@@ -130,13 +130,31 @@ export function frameToText(frame: ReadonlyCellFrame): string {
   return rows.join("\n")
 }
 
-/** One cell's SGR sequence, as `resolveCell` resolves it — empty for a plain cell. */
+/**
+ * The frame grown to at least `width` x `height` with blank cells to the right and below, or as it is
+ * when it already is. What a backend draws when the screen is bigger than the frame (the title menu is
+ * one 80 x 24 frame, whatever the terminal), so the ground the game paints fills the whole screen and the
+ * terminal's own colour does not show beside it.
+ */
+export function padFrame(frame: ReadonlyCellFrame, width: number, height: number): ReadonlyCellFrame {
+  const wide = Math.max(frame.width, Math.floor(width))
+  const tall = Math.max(frame.height, Math.floor(height))
+  if (wide === frame.width && tall === frame.height) return frame
+  const cells: Cell[] = new Array<Cell>(wide * tall).fill(BLANK)
+  for (let y = 0; y < frame.height; y += 1) {
+    for (let x = 0; x < frame.width; x += 1) cells[y * wide + x] = cellAt(frame, x, y)
+  }
+  return { width: wide, height: tall, cells }
+}
+
+/** One cell's SGR sequence, as `resolveCell` resolves it — empty for a plain monochrome cell. */
 function sgrOf(cell: Cell, colors: ColorDepth, theme: Theme): string {
   const { sgr } = resolveCell(cell, colors, theme)
   return sgr.length === 0 ? "" : `${ESC}[${sgr.join(";")}m`
 }
 
-/** ANSI text for a whole frame. One reset per styled run, and never a stray escape on a blank. */
+/** ANSI text for a whole frame. One reset per styled run: a run is every neighbouring cell with the same colours
+ *  (the ground, across a blank stretch of the map, is one), and in monochrome a plain blank costs no escape. */
 export function frameToAnsi(
   frame: ReadonlyCellFrame,
   colors: ColorDepth,

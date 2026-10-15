@@ -366,7 +366,8 @@ test("the ending is plain to see at every colour depth: monochrome uses bold and
         assert.ok(!sgrCodes(ansi).some(isColourCode), `${phase}: monochrome emitted a colour code`)
       }
     }
-    assert.ok(sgrCodes(lit).includes(7), `${colors}: the lit timer is not reversed video`)
+    // Reversed video is an attribute only where there are no colours to swap; with them it is in the colours.
+    assert.equal(sgrCodes(lit).includes(7), colors === "monochrome", `${colors}: the lit timer is not reversed video`)
     assert.notEqual(lit, dark, `${colors}: the timer's flash cannot be seen`)
     // The phases are told apart by their words as much as by anything drawn: each screen differs from the last.
     assert.equal(new Set(Object.values(phases)).size, 5, `${colors}: two moments of the ending look the same`)
