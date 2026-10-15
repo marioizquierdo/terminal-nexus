@@ -30,7 +30,7 @@ import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
 import { ACTIVITY_FILTERS, formatActivityExport } from "../src/log/activity.ts"
 import { frameToText } from "../src/view/frame.ts"
-import { parseCapability, parseTheme } from "../src/view/roles.ts"
+import { parseColorDepth, parseTheme } from "../src/view/roles.ts"
 import { parseGlyphPack } from "../src/view/theme.ts"
 import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 
@@ -47,7 +47,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        a later round is reached as a player who builds nothing reaches it.
                        With --at, the keys may be left out: the screen as it opens
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, and a larger one centres it)
-  --capability <mode>  truecolor (default), color256, monochrome
+  --colors <mode>  truecolor (default), color256, monochrome
   --theme <theme>      dark (default) or light
   --glyphs <pack>      ascii (default) or unicode
   --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the
@@ -84,7 +84,7 @@ const { values } = parseArgs({
     file: { type: "string" },
     at: { type: "string" },
     size: { type: "string", default: "80x24" },
-    capability: { type: "string" },
+    colors: { type: "string" },
     theme: { type: "string" },
     glyphs: { type: "string" },
     settings: { type: "string" },
@@ -132,10 +132,10 @@ try {
 const size = /^(\d+)x(\d+)$/u.exec(values.size)
 if (size === null) throw new Error(`--size wants COLSxROWS, like 80x24, not "${values.size}"`)
 // An exported settings text first, then the flags over it; truecolor, dark and ascii otherwise.
-const imported = importSettings(opening.settings, { ...DEFAULT_SETTINGS, capability: "truecolor" })
+const imported = importSettings(opening.settings, { ...DEFAULT_SETTINGS, colors: "truecolor" })
 if (imported.ignored.length > 0) process.stderr.write(`--settings ignored ${imported.ignored.join(", ")}\n`)
 const startSettings = imported.settings
-const capability = parseCapability(values.capability ?? startSettings.capability)
+const colors = parseColorDepth(values.colors ?? startSettings.colors)
 const theme = parseTheme(values.theme ?? startSettings.theme)
 const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
 
@@ -143,7 +143,7 @@ const run = runBuildPlaytest({
   steps: opening.steps,
   columns: Number(size[1]),
   rows: Number(size[2]),
-  settings: { ...startSettings, capability, theme, glyphPack },
+  settings: { ...startSettings, colors, theme, glyphPack },
   experiments: imported.experiments,
   at: opening.at,
 })
@@ -224,7 +224,7 @@ if (values.png !== undefined) {
     report(
       renderFramePng({
         frame: frame.frame,
-        capability: frame.state.settings.capability,
+        colors: frame.state.settings.colors,
         theme: frame.state.settings.theme,
         caption: caption(frame),
         targetPath: join(outDir, name),
@@ -242,7 +242,7 @@ if (values.gif) {
       caption: caption(frame),
       delayMs: index === last ? Number(values.hold) : Number(values.delay),
     })),
-    capability: run.frames[last].state.settings.capability,
+    colors: run.frames[last].state.settings.colors,
     theme: run.frames[last].state.settings.theme,
     targetPath: join(outDir, `${values.name}.gif`),
     scratchDir: scratch,

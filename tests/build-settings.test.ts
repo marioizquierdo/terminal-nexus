@@ -62,7 +62,7 @@ function session(context: BuildContext = starterContext()): SettingsSide {
 
 /** The screen as the player's own settings draw it: their glyph pack, at their colour depth. */
 function screen(side: SettingsSide): string {
-  return screenText(side, side.build.state.settings.capability)
+  return screenText(side, side.build.state.settings.colors)
 }
 
 // --- The game menu -----------------------------------------------------------------------------------
@@ -157,13 +157,13 @@ test("a player setting changes at once, is handed to the live loop to save, and 
   keys(side, RIGHT)
   assert.equal(side.build.state.settings.glyphPack, "unicode")
   assert.match(screen(side), /[─│┌]/u, "the frame did not switch to Unicode lines")
-  // Colour depth walks all three and comes round; Left goes the other way.
-  goToPopupRow(side, settingRow("capability"))
+  // Colours walks all three and comes round; Left goes the other way.
+  goToPopupRow(side, settingRow("colors"))
   for (let step = 0; step < 3; step += 1) keys(side, RIGHT)
-  assert.equal(side.build.state.settings.capability, DEFAULT_SETTINGS.capability)
+  assert.equal(side.build.state.settings.colors, DEFAULT_SETTINGS.colors)
   keys(side, LEFT)
-  assert.equal(side.build.state.settings.capability, "truecolor")
-  assert.match(screen(side), /Colour depth\s+<\s+millions\s+>/)
+  assert.equal(side.build.state.settings.colors, "truecolor")
+  assert.match(screen(side), /Colours\s+<\s+millions\s+>/)
   // Reduced motion flips on Enter.
   goToPopupRow(side, settingRow("reducedMotion"))
   keys(side, ENTER)
@@ -274,7 +274,7 @@ test("an export read back gives exactly the settings and experiments it was made
   }, base.experiments)
   for (const spec of EXPERIMENT_FIELDS) assert.notEqual(moved[spec.field], base.experiments[spec.field], `${spec.field} did not move`)
   const changed: SettingsSnapshot = {
-    settings: { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true },
+    settings: { colors: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true },
     experiments: moved,
   }
   for (const snapshot of [base, changed]) {
@@ -307,7 +307,7 @@ test("reading is forgiving: unknown names and bad values are skipped, one at a t
   assert.equal(experiments.holdWindowMs, 500)
   assert.equal(experiments.popupPulseMs, 1200)
   assert.equal(experiments.nextRound, defaultExperiments().nextRound)
-  assert.deepEqual(settings, { capability: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
+  assert.deepEqual(settings, { colors: "color256", theme: "light", glyphPack: "unicode", reducedMotion: true })
   // "Opens on" and "Smart cursor" were settled and deleted before the list of
   // settled names existed: an older export's lines for them are reported like any retired name.
   assert.deepEqual(result.ignored, ["retiredFlag=3", "battleRoundPulseMs=99999", "nextRound=sideways", "startFocus=map", "smartCursor=off"])
@@ -362,7 +362,7 @@ const OWNER_EXPORT_2026_09_30 = [
   "crew = none  # Your units, default some",
   "# Settings",
   "theme = dark  # Background",
-  "capability = truecolor  # Colour depth",
+  "colors = truecolor  # Colours",
   "glyphPack = unicode  # Symbols",
   "reducedMotion = off  # Reduced motion",
   "# Experiments at their defaults",
@@ -395,7 +395,7 @@ const OWNER_EXPORT_2026_09_30_THIRD = [
   "crew = some  # Your units, default none",
   "# Settings",
   "theme = dark  # Background",
-  "capability = truecolor  # Colour depth",
+  "colors = truecolor  # Colours",
   "glyphPack = unicode  # Symbols",
   "reducedMotion = off  # Reduced motion",
   "# Experiments at their defaults",
@@ -425,7 +425,7 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
   // His jump distance reads as an Experiment again: it came back for the navigation polish round,
   // at his value; so do the jump repeat and the tap step, with the build that tries Shift as the only
   // change of speed.
-  assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "jumpRepeatMs", "theme", "capability", "glyphPack", "reducedMotion", "tapStep"])
+  assert.deepEqual(result.applied, ["holdWindowMs", "jumpStep", "jumpRepeatMs", "theme", "colors", "glyphPack", "reducedMotion", "tapStep"])
   // The rest were settled: the twenty-eight of that export — less the jump distance, jump repeat and tap
   // step, above — and the focus arrow he settled again later that day, each skipped quietly; each number of the twenty-eight is
   // this build's value, read not copied, whichever tier it stands on now — except the held-key ramp's
@@ -487,13 +487,17 @@ test("a route's query form reads too: pairs joined by &, and true or false on ev
   // A number is still a number first: 0 is off, and a number between the listed ones is that number.
   assert.equal(parseSettingsExport("popupPulseMs=0", base).snapshot.experiments.popupPulseMs, 0)
   // The same text through `--settings`, the browser page's `#settings=` and the playtest: one reader.
+  // An export written before the setting was named for what it does still reads, under any of its names.
+  for (const name of ["capability", "colours", "colourdepth", "colordepth", "colors"]) {
+    assert.equal(importSettings(`${name}=256`, DEFAULT_SETTINGS).settings.colors, "color256", name)
+  }
   const imported = importSettings("theme=light&keyReleases=false", DEFAULT_SETTINGS)
   assert.equal(imported.settings.theme, "light")
   assert.equal(imported.experiments.keyReleases, "off")
 })
 
 test("--settings on the command line: settings over what is saved, and every experiment from the text", () => {
-  const saved: Settings = { ...DEFAULT_SETTINGS, capability: "truecolor" }
+  const saved: Settings = { ...DEFAULT_SETTINGS, colors: "truecolor" }
   assert.deepEqual(importSettings(undefined, saved), { settings: saved, experiments: defaultExperiments(), ignored: [] })
   const imported = importSettings("theme=light keyReleases=off", saved)
   assert.deepEqual(imported.settings, { ...saved, theme: "light" })
@@ -606,7 +610,7 @@ test("the live screen saves a changed setting through the store and hands an exp
   const saves: Settings[] = []
   const exported: string[] = []
   const running = runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -623,7 +627,7 @@ test("the live screen saves a changed setting through the store and hands an exp
   await new Promise((resolve) => setTimeout(resolve, 30))
   for (const key of ["q", "s", RIGHT, "e"]) stdin.emit("data", Buffer.from(key))
   await new Promise((resolve) => setTimeout(resolve, 30))
-  assert.deepEqual(saves, [{ ...DEFAULT_SETTINGS, capability: "monochrome", theme: "light" }])
+  assert.deepEqual(saves, [{ ...DEFAULT_SETTINGS, colors: "monochrome", theme: "light" }])
   assert.equal(exported.length, 1)
   assert.match(exported[0] as string, /^Terminal Nexus settings\n# build abc1234\n/)
   assert.match(exported[0] as string, /theme = light/)

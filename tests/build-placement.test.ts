@@ -26,7 +26,7 @@ import { paintOps } from "../src/view/backends/canvas.ts"
 import { placementCell, placementEffectContext, placementRequest, placementRun, placementSchedule, placementTiming, removalSchedule } from "../src/view/placement.ts"
 import type { PlacementClock, RemovalClock } from "../src/view/placement.ts"
 import { EFFECT_RECIPES } from "../src/view/effects/recipes.ts"
-import { CAPABILITY_MODES, RAINBOW_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
+import { COLOR_DEPTHS, RAINBOW_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
 
 /** The placement's numbers as the game plays them. */
 const FLAGS = TUNING
@@ -52,9 +52,9 @@ function compose(
   run: BuildPlaytest,
   state: BuildState,
   extra: Partial<BuildCompositionInput> = {},
-  capability: (typeof CAPABILITY_MODES)[number] = "truecolor",
+  colors: (typeof COLOR_DEPTHS)[number] = "truecolor",
 ): ReadonlyCellFrame {
-  return composeBuildFrame({ context: run.context, state, layout: run.layout, ...extra }, capability)
+  return composeBuildFrame({ context: run.context, state, layout: run.layout, ...extra }, colors)
 }
 
 /** The screen cells a placement's footprint is drawn on. */
@@ -451,12 +451,12 @@ test("the plan is identical with the placement effects played or reduced, the re
   assert.deepEqual(reducedUndone.state.planned, plainUndone.state.planned)
 })
 
-test("every capability tier draws the same glyphs and styles mid-animation; only the resolution differs", () => {
+test("every colour depth draws the same glyphs and styles mid-animation; only the resolution differs", () => {
   const { run, state } = placed()
   const placement = lastPlacement(state)
   for (const t of [0, 200, 460, 600]) {
-    const frames = CAPABILITY_MODES.map((capability) =>
-      compose(run, state, { placing: [{ ordinal: placement.ordinal, elapsedMs: t }] }, capability),
+    const frames = COLOR_DEPTHS.map((colors) =>
+      compose(run, state, { placing: [{ ordinal: placement.ordinal, elapsedMs: t }] }, colors),
     )
     for (const frame of frames.slice(1)) assert.deepEqual(frame, frames[0])
   }

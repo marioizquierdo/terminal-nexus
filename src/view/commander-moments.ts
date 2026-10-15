@@ -35,7 +35,7 @@ import type { PlayerId } from "../state/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put } from "./draw.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { ColorDepth } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { cosmeticHash, cosmeticUnit } from "./effects/random.ts"
@@ -390,13 +390,13 @@ export function drawOutInBattle(cells: BandCell[], view: SceneView, fall: FallFr
 // --- She is explored ----------------------------------------------------------------------------------
 
 /** Explore Map's cursor on her: a ring of light round her, as the dialog's focus has (`drawLightAround`). */
-export function drawExploredCommander(cells: BandCell[], input: BuildCompositionInput, capability: CapabilityMode): void {
+export function drawExploredCommander(cells: BandCell[], input: BuildCompositionInput, colors: ColorDepth): void {
   const { context, state } = input
   const contentId = context.commander?.contentId
   if (contentId === undefined || !cardShowing(state) || state.armed !== null) return
   const her = [...(context.field ?? []), ...(context.incoming ?? [])].find((entity) => entity.player === "A" && entity.contentId === contentId)
   if (her === undefined || her.anchor.x !== state.cursor.x || her.anchor.y !== state.cursor.y) return
-  drawLightAround(cells, input, [her.anchor], capability, input.dialogLight?.elapsedMs ?? 0)
+  drawLightAround(cells, input, [her.anchor], colors, input.dialogLight?.elapsedMs ?? 0)
 }
 
 /** Her portrait as her card's icon: drawn in her side's colour, bold. `null` for a unit no army gives one. */

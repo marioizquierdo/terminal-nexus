@@ -19,7 +19,7 @@ import { buildLayout } from "../src/build/layout.ts"
 import type { BuildLayout } from "../src/build/layout.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
-import { CAPABILITY_MODES } from "../src/view/index.ts"
+import { COLOR_DEPTHS } from "../src/view/index.ts"
 import { BEAM_PERIOD_MS, TIMER_HALF_PERIOD_MS } from "../src/view/ending.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { feedNames } from "../src/view/pulse-scene.ts"
@@ -350,26 +350,26 @@ test("a light sweeps the map's border in the last seconds, and goes out soon aft
 })
 
 test("the ending is plain to see at every colour depth: monochrome uses bold and reversed video, never a colour code", () => {
-  for (const capability of CAPABILITY_MODES) {
+  for (const colors of COLOR_DEPTHS) {
     // A Pulse's time only moves forward, so each depth plays its own from the top.
     const played = victorious()
     const moments = times(played)
     const ansiAt = (ms: number): string => {
       at(played, ms)
-      return frameToAnsi(frameOf(played, capability), capability)
+      return frameToAnsi(frameOf(played, colors), colors)
     }
     const lit = ansiAt(moments.warnMs! + 20)
     const dark = ansiAt(moments.warnMs! + 20 + TIMER_HALF_PERIOD_MS)
     const phases = { lit, dark, ceaseFire: ansiAt(moments.stopMs + 500), recall: ansiAt(moments.walkMs + 20), result: ansiAt(moments.homeMs + 20) }
-    if (capability === "monochrome") {
+    if (colors === "monochrome") {
       for (const [phase, ansi] of Object.entries(phases)) {
         assert.ok(!sgrCodes(ansi).some(isColourCode), `${phase}: monochrome emitted a colour code`)
       }
     }
-    assert.ok(sgrCodes(lit).includes(7), `${capability}: the lit timer is not reversed video`)
-    assert.notEqual(lit, dark, `${capability}: the timer's flash cannot be seen`)
+    assert.ok(sgrCodes(lit).includes(7), `${colors}: the lit timer is not reversed video`)
+    assert.notEqual(lit, dark, `${colors}: the timer's flash cannot be seen`)
     // The phases are told apart by their words as much as by anything drawn: each screen differs from the last.
-    assert.equal(new Set(Object.values(phases)).size, 5, `${capability}: two moments of the ending look the same`)
+    assert.equal(new Set(Object.values(phases)).size, 5, `${colors}: two moments of the ending look the same`)
   }
 })
 

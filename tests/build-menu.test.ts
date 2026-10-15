@@ -26,8 +26,8 @@ import { starterContext } from "../src/cli/starter.ts"
 import type { RowAck } from "../src/view/build.ts"
 import type { Cell } from "../src/view/frame.ts"
 import { cellAt } from "../src/view/frame.ts"
-import type { CapabilityMode } from "../src/view/roles.ts"
-import { CAPABILITY_MODES } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
+import { COLOR_DEPTHS } from "../src/view/roles.ts"
 import { terrainGlyph } from "../src/view/theme.ts"
 import {
   DOWN,
@@ -171,18 +171,18 @@ test("an active row keeps its own hotkey and ends in one >, all in the hotkey co
     ["Start Battle Round", ["n", "1", "s"], (side) => startRow(side.layout), /^\[s\] Start Battle Round +>$/],
   ]
   for (const [name, open, rowOf, reads] of cases) {
-    for (const capability of CAPABILITY_MODES) {
+    for (const colors of COLOR_DEPTHS) {
       const side = buildSide()
       keys(side, ...open)
-      const frame = compose(side, {}, capability)
+      const frame = compose(side, {}, colors)
       const row = rowOf(side)
-      assert.match(panelLine(side, frame, row), reads, `${name} at ${capability}`)
+      assert.match(panelLine(side, frame, row), reads, `${name} at ${colors}`)
       for (const cell of panelCells(side, frame, row)) {
         if (cell.glyph === " ") continue
-        assert.notEqual(cell.style.underline, true, `${name}: "${cell.glyph}" is underlined at ${capability}`)
-        assert.notEqual(cell.style.inverse, true, `${name}: drawn with the keyboard's bar at ${capability}`)
-        assert.equal(cell.style.fgRole, "chrome.hotkey", `${name}: "${cell.glyph}" is not in the hotkey's colour at ${capability}`)
-        assert.equal(cell.style.bold, true, `${name}: "${cell.glyph}" is not bold at ${capability}`)
+        assert.notEqual(cell.style.underline, true, `${name}: "${cell.glyph}" is underlined at ${colors}`)
+        assert.notEqual(cell.style.inverse, true, `${name}: drawn with the keyboard's bar at ${colors}`)
+        assert.equal(cell.style.fgRole, "chrome.hotkey", `${name}: "${cell.glyph}" is not in the hotkey's colour at ${colors}`)
+        assert.equal(cell.style.bold, true, `${name}: "${cell.glyph}" is not bold at ${colors}`)
       }
     }
   }
@@ -211,47 +211,47 @@ test("a popup that belongs to no row — the game menu, Settings, the Controls p
 test("a menu row's looks: highlighted is the bar; pressed, a stronger bar in the hotkey colour; refused keeps the bar and greys only the words — at every colour depth", () => {
   const side = buildSide() // the highlight on Explore Map
   const row = panelRow(side, EXPLORE_ROW)
-  const grey: Readonly<Record<CapabilityMode, Readonly<{ bgRole?: string; dim?: boolean }>>> = {
+  const grey: Readonly<Record<ColorDepth, Readonly<{ bgRole?: string; dim?: boolean }>>> = {
     monochrome: { dim: true },
     color256: { bgRole: "chrome.muted" },
     truecolor: { bgRole: "chrome.muted" },
   }
-  for (const capability of CAPABILITY_MODES) {
-    const cellsOf = (ack?: RowAck): Cell[] => panelCells(side, compose(side, ack === undefined ? {} : { ack }, capability), row)
+  for (const colors of COLOR_DEPTHS) {
+    const cellsOf = (ack?: RowAck): Cell[] => panelCells(side, compose(side, ack === undefined ? {} : { ack }, colors), row)
     const highlighted = cellsOf()
-    assert.ok(highlighted.every((cell) => cell.style.inverse === true), `${capability}: the highlighted row is not the bar`)
+    assert.ok(highlighted.every((cell) => cell.style.inverse === true), `${colors}: the highlighted row is not the bar`)
     // Pressed: the whole bar in the hotkey's colour, bold and underlined.
     const pressed = cellsOf({ kind: "pressed", entry: EXPLORE_ENTRY })
     assert.ok(
       pressed.every((cell) => cell.style.inverse === true && cell.style.fgRole === "chrome.hotkey" && cell.style.bold === true && cell.style.underline === true),
-      `${capability}: the pressed bar is not the stronger one`,
+      `${colors}: the pressed bar is not the stronger one`,
     )
     // Refused: the same words, the bar exactly the bar on every cell, nothing loud added.
     const refused = cellsOf({ kind: "refused", entry: EXPLORE_ENTRY })
     assert.deepEqual(refused.map((cell) => cell.glyph), highlighted.map((cell) => cell.glyph), "the flicker changed the row's words")
     refused.forEach((cell, index) => {
-      assert.equal(cell.style.inverse, true, `${capability}: cell ${index} left the bar`)
-      assert.equal(cell.style.fgRole, "chrome.title", `${capability}: cell ${index} changed the bar's colour`)
+      assert.equal(cell.style.inverse, true, `${colors}: cell ${index} left the bar`)
+      assert.equal(cell.style.fgRole, "chrome.title", `${colors}: cell ${index} changed the bar's colour`)
       assert.notEqual(cell.style.bold, true)
       assert.notEqual(cell.style.underline, true)
-      if (index >= "[e] Explore Map".length) assert.deepEqual(cell.style, (highlighted[index] as Cell).style, `${capability}: the bar beyond the words changed`)
+      if (index >= "[e] Explore Map".length) assert.deepEqual(cell.style, (highlighted[index] as Cell).style, `${colors}: the bar beyond the words changed`)
     })
     // The words: grey, the way this tier can show grey.
     const word = refused[1] as Cell // the "e" of "[e]"
-    const want = grey[capability]
-    if (want.bgRole !== undefined) assert.equal(word.style.bgRole, want.bgRole, `${capability}: the words are not grey`)
-    if (want.dim === true) assert.equal(word.style.dim, true, `${capability}: the words are not dim`)
+    const want = grey[colors]
+    if (want.bgRole !== undefined) assert.equal(word.style.bgRole, want.bgRole, `${colors}: the words are not grey`)
+    if (want.dim === true) assert.equal(word.style.dim, true, `${colors}: the words are not dim`)
   }
   // A plain row: no bar.
   assert.ok(panelCells(side, compose(side), panelRow(side, NEXUS_ROW)).every((cell) => cell.style.inverse !== true))
 })
 
 test("a refused flicker on a plain row leaves it plain and greys its words; on an active header too", () => {
-  for (const capability of CAPABILITY_MODES) {
+  for (const colors of COLOR_DEPTHS) {
     const side = buildSide() // the highlight on Explore Map; Nexus is plain
-    const flicker = panelCells(side, compose(side, { ack: { kind: "refused", entry: NEXUS_ENTRY } }, capability), panelRow(side, NEXUS_ROW))
+    const flicker = panelCells(side, compose(side, { ack: { kind: "refused", entry: NEXUS_ENTRY } }, colors), panelRow(side, NEXUS_ROW))
     for (const cell of flicker) {
-      assert.notEqual(cell.style.inverse, true, `${capability}: a bar appeared`)
+      assert.notEqual(cell.style.inverse, true, `${colors}: a bar appeared`)
       if (cell.glyph === " ") continue
       assert.equal(cell.style.fgRole, "chrome.muted")
       assert.equal(cell.style.dim, true)
@@ -264,7 +264,7 @@ test("a refused flicker on a plain row leaves it plain and greys its words; on a
     assert.equal(armed.build.state.armed, 0)
     const ack = armed.build.state.ack
     assert.deepEqual(ack === null ? null : { kind: ack.kind, entry: ack.entry }, { kind: "refused", entry: entryOfConstruct(0) })
-    const header = panelCells(armed, compose(armed, { ack: { kind: "refused", entry: entryOfConstruct(0) } }, capability), panelRow(armed, CARD_HEADER_ROW))
+    const header = panelCells(armed, compose(armed, { ack: { kind: "refused", entry: entryOfConstruct(0) } }, colors), panelRow(armed, CARD_HEADER_ROW))
     assert.match(header.map((cell) => cell.glyph).join(""), /^\[1\] Barracks +>$/)
     for (const cell of header) {
       assert.notEqual(cell.style.inverse, true)

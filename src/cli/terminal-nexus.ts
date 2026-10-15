@@ -20,8 +20,8 @@ import { execFileSync } from "node:child_process"
 import { mkdir, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
-import { parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
-import { detectCapability } from "./grid-main.ts"
+import { parseColorDepth, parseGlyphPack, parseTheme } from "../view/index.ts"
+import { detectColorDepth } from "./grid-main.ts"
 import { parseArgs, parseInteger, retiredOption } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { runBuildPhase } from "./build-phase.ts"
@@ -48,7 +48,7 @@ function usage(): string {
   return `terminal-nexus — the Terminal Nexus game
 
   terminal-nexus [--at <route>] [--settings "<text>"]
-                 [--capability monochrome|color256|truecolor]
+                 [--colors monochrome|color256|truecolor]
                  [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
                  [--backend auto|ansi|opentui]
       With no --at, opens the title menu: Campaign, Challenge, Settings, About, Exit.
@@ -109,7 +109,7 @@ const BUILD_PHASE_FLAGS = ["keys", "scroll-margin"] as const
 /** Everything the game reads from its command line; anything else is refused rather than ignored, so a command
  *  pasted from an older note never opens somewhere it did not mean. (`grid` shares the parser and reads others.) */
 const GAME_FLAGS: ReadonlySet<string> = new Set(["help", "reduced-motion"])
-const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "settings", "keys", "capability", "theme", "glyphs", "backend", "scroll-margin"])
+const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
 
 /** What the game says for what it does not read: a removed flag names what replaced it, a retired option what
  *  changed (`RETIRED_OPTIONS`); anything else, --help. */
@@ -166,7 +166,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   const saved = await settingsStore.load()
   // Nothing saved yet: guess the way `grid` always has, rather than a fixed baseline nobody chose.
   // Once anything is saved, that choice is what a plain relaunch (no flags) sees from here on.
-  const base: Settings = saved ?? { ...DEFAULT_SETTINGS, capability: detectCapability() }
+  const base: Settings = saved ?? { ...DEFAULT_SETTINGS, colors: detectColorDepth() }
 
   // An exported text (`--settings`) sits between what is saved and a flag of its own: it is how an
   // agent starts from exactly what the owner had, and a flag still overrides one setting of it. What
@@ -176,7 +176,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     process.stderr.write(`terminal-nexus: --settings ignored ${imported.ignored.join(", ")}\n`)
   }
   const settings: Settings = {
-    capability: parseCapability(args.options.get("capability") ?? imported.settings.capability),
+    colors: parseColorDepth(args.options.get("colors") ?? imported.settings.colors),
     theme: parseTheme(args.options.get("theme") ?? imported.settings.theme),
     glyphPack: parseGlyphPack(args.options.get("glyphs") ?? imported.settings.glyphPack),
     reducedMotion: args.flags.has("reduced-motion") ? true : imported.settings.reducedMotion,

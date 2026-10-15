@@ -137,10 +137,10 @@ test("the canvas paints every glyph the terminal shows, where it shows it", () =
   // The opening screen, a popup over the Grid, and the map scrolled to its west edge.
   for (const script of [[], ["n"], ["n", "1", "Tab", "S-Left", "S-Left", "S-Left", "S-Left"]]) {
     const frame = buildFrame(script)
-    for (const capability of ["truecolor", "color256", "monochrome"] as const) {
-      const ops = paintOps(frame, capability)
+    for (const colors of ["truecolor", "color256", "monochrome"] as const) {
+      const ops = paintOps(frame, colors)
       assert.equal(ops.length, frame.width * frame.height)
-      assert.equal(paintedText(frame, ops), frameToText(frame), `${script.join(" ")} at ${capability}`)
+      assert.equal(paintedText(frame, ops), frameToText(frame), `${script.join(" ")} at ${colors}`)
     }
   }
 })
@@ -283,7 +283,7 @@ test("the page plays a terminal that reports key events: it answers, keeps the f
   })
   const keyboard = Object.assign(input, { isTTY: true })
   const running = runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     backend: { name: "page", start: async () => {}, present: () => {}, stop: async () => {} },
     stdout: output,
     stdin: keyboard,

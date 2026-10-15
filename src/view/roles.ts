@@ -1,7 +1,7 @@
 // The style role vocabulary and the render tiers that resolve it (`docs/system-design/presentation.md`).
 //
 // A role is never a colour. `fgRole: "player.a"` is what a cell carries; which colour that becomes
-// is the capability mode's business, and that is what makes monochrome a setting rather than a
+// is the colour depth's business, and that is what makes monochrome a setting rather than a
 // rewrite. Every tier shows the same Pulse with the same information: **monochrome is the floor,
 // not the degraded mode** (the design fixes this), and the higher tiers buy fidelity, not
 // facts. Colour never carries ownership, target, danger, or health alone — sides are told apart by
@@ -10,14 +10,14 @@
 // `resolveCell`, at the bottom, is where a cell's roles become what a renderer draws — for the ANSI
 // writer, the browser page's canvas and OpenTUI alike, so the three cannot disagree about a cell.
 
-import type { CapabilityMode, Theme } from "../terminal/display.ts"
+import type { ColorDepth, Theme } from "../terminal/display.ts"
 import { DEFAULT_THEME, THEMES } from "../terminal/display.ts"
 import type { Cell } from "./frame.ts"
 
-// The capability, theme and glyph-pack vocabulary lives below the view (`src/terminal/display.ts`);
+// The colour depth, theme and glyph-pack vocabulary lives below the view (`src/terminal/display.ts`);
 // the view re-exports it so a consumer of the roles still finds it here.
-export type { CapabilityMode, Theme } from "../terminal/display.ts"
-export { CAPABILITY_MODES, DEFAULT_THEME, THEMES, parseCapability, parseTheme } from "../terminal/display.ts"
+export type { ColorDepth, Theme } from "../terminal/display.ts"
+export { COLOR_DEPTHS, DEFAULT_THEME, THEMES, parseColorDepth, parseTheme } from "../terminal/display.ts"
 
 export const STYLE_ROLES = [
   "chrome.frame",
@@ -336,16 +336,16 @@ function blendedRgb(colour: Rgb, theme: Theme, fade: number, tint: RoleTint | un
  */
 export function sgrFor(
   role: StyleRole | undefined,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
   fade = 0,
   tint?: RoleTint,
 ): readonly number[] {
-  if (role === undefined || capability === "monochrome") return []
+  if (role === undefined || colors === "monochrome") return []
   const colour = PALETTE[theme][role]
   if (colour === undefined) return []
   const tinted = tint !== undefined && tint.amount > 0
-  switch (capability) {
+  switch (colors) {
     case "color256":
       return fade > 0 || tinted
         ? [38, 5, nearestIndexedCached(blendedRgb(colour, theme, fade, tint))]
@@ -363,10 +363,10 @@ export function sgrFor(
  *  scalar only (`CellStyle.fade`'s own doc comment) — this never resolves one. */
 export function sgrBackgroundFor(
   role: StyleRole | undefined,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
 ): readonly number[] {
-  const foreground = sgrFor(role, capability, theme)
+  const foreground = sgrFor(role, colors, theme)
   if (foreground.length === 0) return []
   return [48, ...foreground.slice(1)]
 }
@@ -381,12 +381,12 @@ const NEUTRAL_RGB: Rgb = [214, 218, 224]
  */
 export function rgbFor(
   role: StyleRole | undefined,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
   fade = 0,
   tint?: RoleTint,
 ): Rgb {
-  if (capability === "monochrome" || role === undefined) return NEUTRAL_RGB
+  if (colors === "monochrome" || role === undefined) return NEUTRAL_RGB
   const colour = PALETTE[theme][role]
   if (colour === undefined) return NEUTRAL_RGB
   return blendedRgb(colour, theme, fade, tint)
@@ -469,7 +469,7 @@ export type SeeThroughColours = Readonly<{
  */
 export function seeThroughColours(
   cell: Cell,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
 ): SeeThroughColours | null {
   const seeThrough = cell.style.seeThrough
@@ -478,7 +478,7 @@ export function seeThroughColours(
   if (cursor === undefined) return null
   const ground = BACKGROUND_RGB[theme]
   const alpha = Math.min(1, seeThrough.alpha)
-  if (capability === "monochrome") {
+  if (colors === "monochrome") {
     return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: NEUTRAL_RGB, sgr: [7] }
   }
   const style = cell.style
@@ -488,7 +488,7 @@ export function seeThroughColours(
   const [beneath, glyph] = style.inverse === true ? [ink, fill] : [fill, ink]
   const blank = cell.glyph === " " || cell.glyph === ""
   const mixed = mixSeeThrough(beneath, blank ? beneath : glyph, cursor, ground, alpha)
-  if (capability === "truecolor") {
+  if (colors === "truecolor") {
     return { ...mixed, sgr: [38, 2, ...mixed.foreground, 48, 2, ...mixed.background] }
   }
   const foreground = nearestIndexedCached(mixed.foreground)
@@ -528,18 +528,18 @@ export type ResolvedCell = Readonly<{
 }>
 
 /**
- * What a renderer draws for `cell` at `capability` on `theme`. Its colours are its `fgRole` after tint
+ * What a renderer draws for `cell` at `colors` on `theme`. Its colours are its `fgRole` after tint
  * and fade and its `bgRole` (none in monochrome, which has no colour to paint); inverse video swaps
  * the two in the RGB form, the way a terminal does, with the theme's background standing in for a cell
  * that has no fill of its own (the map's solid edge is exactly that). A see-through style that shows
  * at this tier (`seeThroughColours`) replaces all of that, and the cell's dim with it; bold and
  * underline always stay the cell's own.
  */
-export function resolveCell(cell: Cell, capability: CapabilityMode, theme: Theme = DEFAULT_THEME): ResolvedCell {
+export function resolveCell(cell: Cell, colors: ColorDepth, theme: Theme = DEFAULT_THEME): ResolvedCell {
   const style = cell.style
   const bold = style.bold === true
   const underline = style.underline === true
-  const seen = seeThroughColours(cell, capability, theme)
+  const seen = seeThroughColours(cell, colors, theme)
   if (seen !== null) {
     const sgr = [...seen.sgr]
     if (bold) sgr.push(1)
@@ -549,13 +549,13 @@ export function resolveCell(cell: Cell, capability: CapabilityMode, theme: Theme
   const dim = style.dim === true
   const inverse = style.inverse === true
   const fade = style.fade ?? 0
-  const sgr = [...sgrFor(style.fgRole, capability, theme, fade, style.tint), ...sgrBackgroundFor(style.bgRole, capability, theme)]
+  const sgr = [...sgrFor(style.fgRole, colors, theme, fade, style.tint), ...sgrBackgroundFor(style.bgRole, colors, theme)]
   if (bold) sgr.push(1)
   if (dim) sgr.push(2)
   if (underline) sgr.push(4)
   if (inverse) sgr.push(7)
-  const ink = rgbFor(style.fgRole, capability, theme, fade, style.tint)
-  const fill = style.bgRole === undefined || capability === "monochrome" ? null : rgbFor(style.bgRole, capability, theme)
+  const ink = rgbFor(style.fgRole, colors, theme, fade, style.tint)
+  const fill = style.bgRole === undefined || colors === "monochrome" ? null : rgbFor(style.bgRole, colors, theme)
   return {
     sgr,
     foreground: inverse ? (fill ?? BACKGROUND_RGB[theme]) : ink,

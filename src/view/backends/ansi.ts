@@ -8,7 +8,7 @@
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
 import { frameToAnsi } from "../frame.ts"
-import type { CapabilityMode, Theme } from "../roles.ts"
+import type { ColorDepth, Theme } from "../roles.ts"
 import { DEFAULT_THEME } from "../roles.ts"
 import type { TerminalInput, TerminalOutput } from "./ports.ts"
 
@@ -24,7 +24,7 @@ const RESET = `${ESC}[0m`
 export type AnsiBackendOptions = Readonly<{
   stdout: TerminalOutput
   stdin: TerminalInput
-  capability: CapabilityMode
+  colors: ColorDepth
   theme?: Theme
 }>
 
@@ -34,14 +34,14 @@ export class AnsiBackend implements TerminalBackend {
   // Held separately from `options` (which stays exactly what the caller passed in, unread after
   // construction for these two) so `setPresentation` can change them without needing `options`
   // itself to be mutable.
-  private capability: CapabilityMode
+  private colors: ColorDepth
   private theme: Theme
   private started = false
   private stopped = false
 
   constructor(options: AnsiBackendOptions) {
     this.options = options
-    this.capability = options.capability
+    this.colors = options.colors
     this.theme = options.theme ?? DEFAULT_THEME
   }
 
@@ -57,11 +57,11 @@ export class AnsiBackend implements TerminalBackend {
   }
 
   present(frame: ReadonlyCellFrame): void {
-    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.capability, this.theme) + RESET)
+    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.colors, this.theme) + RESET)
   }
 
-  setPresentation(capability: CapabilityMode, theme: Theme): void {
-    this.capability = capability
+  setPresentation(colors: ColorDepth, theme: Theme): void {
+    this.colors = colors
     this.theme = theme
   }
 

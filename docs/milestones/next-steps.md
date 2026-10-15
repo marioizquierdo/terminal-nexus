@@ -6,9 +6,9 @@ it is done.*
 ## Waiting on Mario
 
 - **Look at 256 colours and monochrome once, and settle the background** ([his words](../history/feedback/2026-10-15-drop-16-colours.md);
-  the 16-colour depth is gone): `./bin/terminal-nexus.ts --capability color256`, and again with `--capability
+  the 16-colour depth is gone): `./bin/terminal-nexus.ts --capability color256`, and again with `--colors
   monochrome`. A terminal that advertises nothing more than that now opens in monochrome; Settings (`d`), Colour
-  depth, or `--capability`, is one step to more. The question that is his: whether the game paints its own background
+  depth, or `--colors`, is one step to more. The question that is his: whether the game paints its own background
   at 256 colours and millions instead of leaving the terminal's (Q79; recommended: yes, behind an Experiment).
 - **Settle the keyboard's steps** ([his request](../history/feedback/2026-10-08-keyboard-without-acceleration.md);
   acceleration is gone on his word): press `d`, try Arrow step, Shift step (below the arrow step, Shift is the slow

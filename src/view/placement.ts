@@ -40,7 +40,7 @@ import type { Animation, FollowUp, PlayRequest, TrackSchedule } from "./animatio
 import { animationOf, frameGlyph, play, scheduleTrack, trackEffectsAt, trackFrameAt } from "./animation.ts"
 import type { EffectContext } from "./effects/types.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
-import type { CapabilityMode, RoleTint } from "./roles.ts"
+import type { ColorDepth, RoleTint } from "./roles.ts"
 import { entityGlyph } from "./theme.ts"
 
 /** One planned placement still animating: which one, and how long ago it was placed. */
@@ -221,9 +221,9 @@ export function placementLook(schedule: TrackSchedule, contentId: string, offset
 export function placementEffectContext(
   elapsedMs: number,
   reducedMotion: boolean,
-  capability: CapabilityMode = "truecolor",
+  colors: ColorDepth = "truecolor",
 ): EffectContext {
-  return { timeMs: elapsedMs, cosmeticSeed: 0, reducedMotion, capability }
+  return { timeMs: elapsedMs, cosmeticSeed: 0, reducedMotion, colors }
 }
 
 /** One tile, with the light it carries. */

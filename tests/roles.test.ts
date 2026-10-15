@@ -4,9 +4,9 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import {
   BACKGROUND_RGB,
-  CAPABILITY_MODES,
+  COLOR_DEPTHS,
   DEFAULT_THEME,
-  parseCapability,
+  parseColorDepth,
   parseTheme,
   rgbFor,
   sgrBackgroundFor,
@@ -14,7 +14,7 @@ import {
   STYLE_ROLES,
   THEMES,
 } from "../src/view/roles.ts"
-import { detectCapability } from "../src/cli/grid-main.ts"
+import { detectColorDepth } from "../src/cli/grid-main.ts"
 
 test("parseTheme accepts dark and light, and rejects everything else", () => {
   assert.equal(parseTheme("dark"), "dark")
@@ -32,10 +32,10 @@ test("monochrome carries no colour code, whichever theme is asked for", () => {
 })
 
 test("dark and light disagree about chrome.value, at every colour tier", () => {
-  for (const capability of ["color256", "truecolor"] as const) {
-    const dark = sgrFor("chrome.value", capability, "dark")
-    const light = sgrFor("chrome.value", capability, "light")
-    assert.notDeepEqual(dark, light, `${capability} drew chrome.value the same in both themes`)
+  for (const colors of ["color256", "truecolor"] as const) {
+    const dark = sgrFor("chrome.value", colors, "dark")
+    const light = sgrFor("chrome.value", colors, "light")
+    assert.notDeepEqual(dark, light, `${colors} drew chrome.value the same in both themes`)
   }
 })
 
@@ -80,26 +80,26 @@ test("chrome.frame survives compose.ts's extra dim attribute in either theme (20
   assert.ok(lightBg - lightFrame > 40, `light chrome.frame, dimmed, is only ${lightFrame} from ~${lightBg}`)
 })
 
-test("detectCapability prefers what COLORTERM and TERM actually advertise", () => {
-  assert.equal(detectCapability({ COLORTERM: "truecolor" }), "truecolor")
-  assert.equal(detectCapability({ COLORTERM: "24bit" }), "truecolor")
-  assert.equal(detectCapability({ TERM: "xterm-256color" }), "color256")
+test("detectColorDepth prefers what COLORTERM and TERM actually advertise", () => {
+  assert.equal(detectColorDepth({ COLORTERM: "truecolor" }), "truecolor")
+  assert.equal(detectColorDepth({ COLORTERM: "24bit" }), "truecolor")
+  assert.equal(detectColorDepth({ TERM: "xterm-256color" }), "color256")
   // Anything that says no more than that is monochrome, the floor: there is no sixteen-colour depth in between.
-  assert.equal(detectCapability({}), "monochrome")
-  assert.equal(detectCapability({ TERM: "xterm" }), "monochrome")
-  assert.equal(detectCapability({ TERM: "linux" }), "monochrome")
+  assert.equal(detectColorDepth({}), "monochrome")
+  assert.equal(detectColorDepth({ TERM: "xterm" }), "monochrome")
+  assert.equal(detectColorDepth({ TERM: "linux" }), "monochrome")
   // COLORTERM wins when both are present.
-  assert.equal(detectCapability({ COLORTERM: "truecolor", TERM: "xterm" }), "truecolor")
+  assert.equal(detectColorDepth({ COLORTERM: "truecolor", TERM: "xterm" }), "truecolor")
 })
 
-test("parseCapability still rejects an unknown tier", () => {
-  assert.equal(parseCapability("truecolor"), "truecolor")
-  assert.throws(() => parseCapability("hd"), /unknown capability/)
+test("parseColorDepth still rejects an unknown tier", () => {
+  assert.equal(parseColorDepth("truecolor"), "truecolor")
+  assert.throws(() => parseColorDepth("hd"), /unknown colour depth/)
 })
 
-test("there is no sixteen-colour depth: it is not a capability", () => {
-  assert.deepEqual([...CAPABILITY_MODES], ["monochrome", "color256", "truecolor"])
-  assert.throws(() => parseCapability("color16"), /unknown capability/)
+test("there is no sixteen-colour depth: it is not a colour depth", () => {
+  assert.deepEqual([...COLOR_DEPTHS], ["monochrome", "color256", "truecolor"])
+  assert.throws(() => parseColorDepth("color16"), /unknown colour depth/)
 })
 
 test("no colour a tier draws is one of the terminal's own sixteen: the 256 search starts at index 16", () => {

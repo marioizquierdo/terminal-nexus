@@ -13,7 +13,7 @@ import type { ActiveEffect } from "./effects/index.ts"
 import { EffectTimeline, buildFlightHoldTicks, deriveEffects, flightHoldTicks } from "./effects/index.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { ReadonlyCellFrame } from "./frame.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { ColorDepth } from "./roles.ts"
 import type { HeldCorpse } from "./compose.ts"
 import { FEED_KINDS, composeFrame } from "./compose.ts"
 
@@ -92,10 +92,10 @@ export type PulseView = Readonly<{
   effectsEndMs: number
   /** The drawable data at a presentation time. `reducedMotion` overrides the view's own — a player who
    *  turns it on mid-Pulse — without rebuilding the view. */
-  sampleAt(timeMs: number, capability: CapabilityMode, reducedMotion?: boolean): PulseSample
-  snapshotAt(timeMs: number, capability: CapabilityMode): ReadonlyCellFrame
+  sampleAt(timeMs: number, colors: ColorDepth, reducedMotion?: boolean): PulseSample
+  snapshotAt(timeMs: number, colors: ColorDepth): ReadonlyCellFrame
   /** The same composition with live playback controls filled in — what `watch` presents. */
-  composeAt(timeMs: number, capability: CapabilityMode, controls: ViewControls): ReadonlyCellFrame
+  composeAt(timeMs: number, colors: ColorDepth, controls: ViewControls): ReadonlyCellFrame
 }>
 
 export function createView(
@@ -168,7 +168,7 @@ export function createView(
 
   const sampleAt = (
     timeMs: number,
-    capability: CapabilityMode,
+    colors: ColorDepth,
     reducedMotion: boolean = presentation.reducedMotion,
   ): PulseSample => {
     const exact = (Math.max(0, timeMs) * timeline.ticksPerSecond) / 1000
@@ -212,14 +212,14 @@ export function createView(
         timeMs: Math.max(0, timeMs),
         cosmeticSeed: presentation.cosmeticSeed,
         reducedMotion,
-        capability,
+        colors,
       }),
       recent: feed.filter((event) => event.tick <= tick),
     }
   }
 
-  const composeAt = (timeMs: number, capability: CapabilityMode, controls: ViewControls): ReadonlyCellFrame => {
-    const sample = sampleAt(timeMs, capability)
+  const composeAt = (timeMs: number, colors: ColorDepth, controls: ViewControls): ReadonlyCellFrame => {
+    const sample = sampleAt(timeMs, colors)
     return composeFrame(
       {
         scenarioId: timeline.scenarioId,
@@ -241,7 +241,7 @@ export function createView(
         glyphPack: presentation.glyphPack,
         effects: sample.effects,
       },
-      capability,
+      colors,
     )
   }
 
@@ -257,7 +257,7 @@ export function createView(
     sampleAt,
     // `snapshotAt` deliberately takes no controls, so a snapshot test never depends on what the
     // player happened to be doing when it was taken.
-    snapshotAt: (timeMs, capability) => composeAt(timeMs, capability, { paused: false, speed: 1 }),
+    snapshotAt: (timeMs, colors) => composeAt(timeMs, colors, { paused: false, speed: 1 }),
     composeAt,
   }
 }

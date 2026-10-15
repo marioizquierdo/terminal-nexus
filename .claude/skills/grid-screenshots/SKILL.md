@@ -50,7 +50,7 @@ pause, because an Esc and the next key in one read become one Option+key) and ph
 `settledPane` after `waitFor` has seen the text the shot is about.
 
 Add a frame worth looking at by editing the `shots` array at the top of the script. Each entry takes
-`name`, `caption`, `scenario`, `tick`, `cols`, `rows`, and optionally `capability`, `glyphs`,
+`name`, `caption`, `scenario`, `tick`, `cols`, `rows`, and optionally `colors`, `glyphs`,
 `theme`, `effects`, `reducedMotion`, and `expectGate` (true for a shot of a terminal too small
 for the composition, where playback freezes behind the too-small notice).
 
@@ -103,7 +103,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 ## Watching it yourself
 
 ```bash
-./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
-./bin/grid.ts scenarios/ravel-cascade --capability monochrome --speed 0.5
+./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --colors truecolor
+./bin/grid.ts scenarios/ravel-cascade --colors monochrome --speed 0.5
 ./bin/grid.ts scenarios/citizens-versus-ravels --reduced-motion
 ```

@@ -26,7 +26,7 @@ import { composeBuildFrame } from "../view/build.ts"
 import { hasTrail } from "../view/build-grid.ts"
 import { TrailClock } from "../view/build-live.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
-import type { CapabilityMode } from "../view/roles.ts"
+import type { ColorDepth } from "../view/roles.ts"
 import type { Experiments } from "../build/experiments.ts"
 import { DEFAULT_SETTINGS } from "../settings/types.ts"
 import type { Settings } from "../settings/types.ts"
@@ -42,9 +42,9 @@ export type BuildPlaytestOptions = Readonly<{
   /** The terminal size. The acceptance floor, 80 x 24, unless said otherwise. */
   columns?: number
   rows?: number
-  capability?: CapabilityMode
+  colors?: ColorDepth
   glyphPack?: GlyphPack
-  /** The player's settings to open with — an imported export's (`--settings`). `capability` and
+  /** The player's settings to open with — an imported export's (`--settings`). `colors` and
    *  `glyphPack`, when given, win over these, as a command-line flag does. */
   settings?: Settings
   /** Experiments to open with instead of this build's defaults — an imported export's. */
@@ -114,10 +114,10 @@ function moveLabel(move: Move | null, before: Move | null): string | null {
 }
 
 export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
-  const base = options.settings ?? { ...DEFAULT_SETTINGS, capability: "truecolor" as const }
+  const base = options.settings ?? { ...DEFAULT_SETTINGS, colors: "truecolor" as const }
   const settings: Settings = {
     ...base,
-    ...(options.capability === undefined ? {} : { capability: options.capability }),
+    ...(options.colors === undefined ? {} : { colors: options.colors }),
     ...(options.glyphPack === undefined ? {} : { glyphPack: options.glyphPack }),
   }
   // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
@@ -194,7 +194,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
         ...(raid === undefined ? {} : { raid }),
         ...(raidTrail === null ? {} : { raidTrail }),
       },
-      build.state.settings.capability,
+      build.state.settings.colors,
     )
   }
 

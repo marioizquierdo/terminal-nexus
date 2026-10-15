@@ -26,7 +26,7 @@ import { CARD_BEATS } from "../src/view/build.ts"
 import { BuildAnimation, livePresentation } from "../src/view/build-live.ts"
 import { cellAt } from "../src/view/frame.ts"
 import { placementLook, placementSchedule } from "../src/view/placement.ts"
-import { CAPABILITY_MODES } from "../src/view/roles.ts"
+import { COLOR_DEPTHS } from "../src/view/roles.ts"
 import { chromeGlyph, terrainGlyph } from "../src/view/theme.ts"
 import {
   DOWN,
@@ -424,8 +424,8 @@ test("beat 1: the chosen row, active, stays where it is on the menu while every 
   const side = turret()
   const home = menuEntryRow(side.layout, side.context.catalog, { kind: "construct", index: 2 }) as number
   const progress = CARD_BEATS.fade * 0.4
-  for (const capability of CAPABILITY_MODES) {
-    const frame = compose(side, { cardReveal: reveal(progress) }, capability)
+  for (const colors of COLOR_DEPTHS) {
+    const frame = compose(side, { cardReveal: reveal(progress) }, colors)
     assert.match(panelLine(side, frame, home), /^\[3\] Turret +>$/)
     assert.match(panelLine(side, frame, panelRow(side, EXPLORE_ROW)), /^\[e\] Explore Map/, "the other rows are already gone")
     assert.match(panelLine(side, frame, startRow(side.layout)), /^\[s\] Start Battle Round/)
@@ -433,7 +433,7 @@ test("beat 1: the chosen row, active, stays where it is on the menu while every 
     const other = cellAt(frame, side.layout.panelColumn + 1, panelRow(side, EXPLORE_ROW)).style
     const chosen = cellAt(frame, side.layout.panelColumn + 1, home).style
     assert.equal(chosen.fade, undefined, "the chosen row fades")
-    if (capability === "truecolor" || capability === "color256") assert.ok((other.fade ?? 0) > 0, `${capability}: the other rows do not fade`)
+    if (colors === "truecolor" || colors === "color256") assert.ok((other.fade ?? 0) > 0, `${colors}: the other rows do not fade`)
   }
   // Where colour cannot blend (monochrome), the fading rows are dim for the half nearer gone.
   const late = compose(side, { cardReveal: reveal(CARD_BEATS.fade * 0.8) }, "monochrome")
@@ -521,15 +521,15 @@ test("the row a reveal from the menu carries up is drawn active all the way, nev
     const live = animation.frame(side.build.state, 1000 + elapsed)
     assert.ok(live.cardReveal !== undefined, `${elapsed} ms: the reveal is over`)
     if (live.ack?.kind === "pressed") pressed += 1
-    for (const capability of CAPABILITY_MODES) {
-      const frame = compose(side, livePresentation(live), capability)
+    for (const colors of COLOR_DEPTHS) {
+      const frame = compose(side, livePresentation(live), colors)
       const row = panelLines(side, frame).findIndex((line) => /^\[2\] Hatchery +>$/.test(line))
-      assert.ok(row >= 0, `${elapsed} ms, ${capability}: the Hatchery's row is not drawn active`)
+      assert.ok(row >= 0, `${elapsed} ms, ${colors}: the Hatchery's row is not drawn active`)
       const y = panelRow(side, row)
       rows.add(y)
       for (const cell of panelCells(side, frame, y).filter((drawn) => drawn.glyph !== " ")) {
-        assert.equal(cell.style.inverse, undefined, `${elapsed} ms, ${capability}: the pressed bar is drawn`)
-        assert.equal(cell.style.underline, undefined, `${elapsed} ms, ${capability}: the pressed underline is drawn`)
+        assert.equal(cell.style.inverse, undefined, `${elapsed} ms, ${colors}: the pressed bar is drawn`)
+        assert.equal(cell.style.underline, undefined, `${elapsed} ms, ${colors}: the pressed underline is drawn`)
         assert.equal(cell.style.fgRole, "chrome.hotkey")
         assert.equal(cell.style.bold, true)
       }

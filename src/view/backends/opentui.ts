@@ -16,7 +16,7 @@
 // neither the compositor nor the kernel knows which one presented a frame.
 
 import type { ReadonlyCellFrame } from "../frame.ts"
-import type { CapabilityMode, Rgb, Theme } from "../roles.ts"
+import type { ColorDepth, Rgb, Theme } from "../roles.ts"
 import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
 import type { BackendOptions, NamedBackend } from "./index.ts"
 
@@ -43,7 +43,7 @@ export function drawFrameInto(
   core: OpenTuiCore,
   buffer: CellSink,
   frame: ReadonlyCellFrame,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
 ): void {
   const colour = ([red, green, blue]: Rgb) => core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1)
@@ -56,7 +56,7 @@ export function drawFrameInto(
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
       // Inverse video is already in the colours `resolveCell` gives, so no reverse attribute is sent.
-      const resolved = resolveCell(cell, capability, theme)
+      const resolved = resolveCell(cell, colors, theme)
       const attributes = core.createTextAttributes({
         bold: resolved.bold,
         dim: resolved.dim,
@@ -79,10 +79,10 @@ export async function createOpenTuiBackend(options: BackendOptions): Promise<Nam
     exitOnCtrlC: false,
   })
 
-  // Mutable, like `AnsiBackend`'s own capability/theme fields — `setPresentation` changes these
+  // Mutable, like `AnsiBackend`'s own colors/theme fields — `setPresentation` changes these
   // without touching the renderer's own lifecycle, so a live Settings change never flashes the
   // alternate screen.
-  let capability = options.capability
+  let colors = options.colors
   let theme = options.theme ?? DEFAULT_THEME
   let stopped = false
   return {
@@ -93,11 +93,11 @@ export async function createOpenTuiBackend(options: BackendOptions): Promise<Nam
     present(frame: ReadonlyCellFrame): void {
       const buffer = renderer.nextRenderBuffer
       if (buffer === undefined) throw new Error("opentui renderer exposed no buffer")
-      drawFrameInto(core, buffer as unknown as CellSink, frame, capability, theme)
+      drawFrameInto(core, buffer as unknown as CellSink, frame, colors, theme)
       renderer.requestRender()
     },
-    setPresentation(nextCapability: CapabilityMode, nextTheme: Theme): void {
-      capability = nextCapability
+    setPresentation(nextColorDepth: ColorDepth, nextTheme: Theme): void {
+      colors = nextColorDepth
       theme = nextTheme
     },
     /** Idempotent, like every other exit path. */

@@ -14,10 +14,10 @@ import type { CellSink } from "../src/view/backends/opentui.ts"
 import { drawFrameInto } from "../src/view/backends/opentui.ts"
 import type { Cell, CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { BANDS, composeBands, frameToAnsi, frameToText } from "../src/view/frame.ts"
-import type { CapabilityMode, SeeThrough, StyleRole, Theme } from "../src/view/roles.ts"
+import type { ColorDepth, SeeThrough, StyleRole, Theme } from "../src/view/roles.ts"
 import {
   BACKGROUND_RGB,
-  CAPABILITY_MODES,
+  COLOR_DEPTHS,
   SEE_THROUGH_STEP,
   mixSeeThrough,
   resolveCell,
@@ -36,8 +36,8 @@ const cell = (glyph: string, style: CellStyle): Cell => ({ glyph, style })
 const frameOf = (...cells: Cell[]): ReadonlyCellFrame => ({ width: cells.length, height: 1, cells })
 
 /** The one SGR parameter list the ANSI writer sends for a lone cell (empty when it sends none). */
-function ansiParams(target: Cell, capability: CapabilityMode, theme: Theme = "dark"): number[] {
-  const first = /\u001b\[([0-9;]*)m/u.exec(frameToAnsi(frameOf(target), capability, theme))
+function ansiParams(target: Cell, colors: ColorDepth, theme: Theme = "dark"): number[] {
+  const first = /\u001b\[([0-9;]*)m/u.exec(frameToAnsi(frameOf(target), colors, theme))
   return first === null ? [] : (first[1] ?? "").split(";").filter(Boolean).map(Number)
 }
 
@@ -175,10 +175,10 @@ test("alpha 0 (or less, or not a number) changes nothing, at every tier and in e
   const plain = cell("$", { fgRole: "fx.hue.yellow", bold: true })
   for (const alpha of [0, -0.3, Number.NaN]) {
     const mixed = cell("$", { ...plain.style, seeThrough: at("chrome.title", alpha) })
-    for (const capability of CAPABILITY_MODES) {
-      assert.equal(seeThroughColours(mixed, capability), null)
-      assert.equal(frameToAnsi(frameOf(mixed), capability), frameToAnsi(frameOf(plain), capability))
-      assert.deepEqual(paintOps(frameOf(mixed), capability), paintOps(frameOf(plain), capability))
+    for (const colors of COLOR_DEPTHS) {
+      assert.equal(seeThroughColours(mixed, colors), null)
+      assert.equal(frameToAnsi(frameOf(mixed), colors), frameToAnsi(frameOf(plain), colors))
+      assert.deepEqual(paintOps(frameOf(mixed), colors), paintOps(frameOf(plain), colors))
     }
   }
 })
@@ -192,11 +192,11 @@ test("alpha 1 is the plain cursor look: the fill is the cursor's colour, the gly
   assert.deepEqual(resolved?.foreground, GROUND)
   // The canvas paints both the same at every tier but 256 (where the real cursor keeps its exact role
   // colour and the see-through style, like any mix, lands on a palette entry).
-  for (const capability of ["truecolor", "monochrome"] as const) {
-    const [look] = paintOps(frameOf(cursorLook), capability)
-    const [over] = paintOps(frameOf(full), capability)
-    assert.equal(over?.foreground, look?.foreground, capability)
-    assert.equal(over?.background, look?.background, capability)
+  for (const colors of ["truecolor", "monochrome"] as const) {
+    const [look] = paintOps(frameOf(cursorLook), colors)
+    const [over] = paintOps(frameOf(full), colors)
+    assert.equal(over?.foreground, look?.foreground, colors)
+    assert.equal(over?.background, look?.background, colors)
   }
   // At 256 colours the fill is the very palette entry the cursor's own role uses.
   const params = ansiParams(full, "color256")
@@ -253,20 +253,20 @@ test("an seeThrough that shows replaces the cell's colours, inverse and dim; bol
   const style: CellStyle = { fgRole: "terrain.plain", bold: true, dim: true, underline: true, inverse: true }
   const target = cell(".", { ...style, seeThrough: at("chrome.title", 0.8) })
   const faint = cell(".", { ...style, seeThrough: at("chrome.title", 0.2) })
-  for (const capability of CAPABILITY_MODES) {
-    const resolved = seeThroughColours(target, capability)
+  for (const colors of COLOR_DEPTHS) {
+    const resolved = seeThroughColours(target, colors)
     assert.ok(resolved !== null)
     // The see-through style's colours (reversed video included, at the two tiers that use it), then the cell's
     // bold and underline — no dim, and no second reversed video for the cell's own inverse.
-    assert.deepEqual(ansiParams(target, capability), [...resolved.sgr, 1, 4], capability)
-    const [op] = paintOps(frameOf(target), capability)
-    assert.equal(op?.alpha, 1, capability)
-    assert.equal(op?.bold, true, capability)
-    assert.equal(op?.underline, true, capability)
+    assert.deepEqual(ansiParams(target, colors), [...resolved.sgr, 1, 4], colors)
+    const [op] = paintOps(frameOf(target), colors)
+    assert.equal(op?.alpha, 1, colors)
+    assert.equal(op?.bold, true, colors)
+    assert.equal(op?.underline, true, colors)
     // Where it shows nothing, the dim is the cell's again.
-    if (seeThroughColours(faint, capability) === null) {
-      assert.ok(ansiParams(faint, capability).includes(2), capability)
-      assert.equal(paintOps(frameOf(faint), capability)[0]?.alpha, DIM_ALPHA, capability)
+    if (seeThroughColours(faint, colors) === null) {
+      assert.ok(ansiParams(faint, colors).includes(2), colors)
+      assert.equal(paintOps(frameOf(faint), colors)[0]?.alpha, DIM_ALPHA, colors)
     }
   }
 })
@@ -304,7 +304,7 @@ test("composeBands lays a glyphless seeThrough write onto the cell beneath, keep
 
 type Drawn = { foreground: Rgb; background: Rgb; reverse: boolean; dim: boolean }
 
-async function drawnByOpenTui(frame: ReadonlyCellFrame, capability: CapabilityMode, theme: Theme = "dark"): Promise<Drawn[]> {
+async function drawnByOpenTui(frame: ReadonlyCellFrame, colors: ColorDepth, theme: Theme = "dark"): Promise<Drawn[]> {
   const core = await import("@opentui/core")
   const drawn: Drawn[] = []
   type Colour = { toInts(): number[] }
@@ -322,7 +322,7 @@ async function drawnByOpenTui(frame: ReadonlyCellFrame, capability: CapabilityMo
       })
     },
   }
-  drawFrameInto(core, sink, frame, capability, theme)
+  drawFrameInto(core, sink, frame, colors, theme)
   return drawn
 }
 
@@ -336,21 +336,21 @@ test("the ANSI writer, the canvas and OpenTUI resolve one mixed cell to the same
     cell(".", { fgRole: "terrain.plain", dim: true, seeThrough: at("chrome.title", 0.3) }),
   ]
   for (const theme of ["dark", "light"] as const) {
-    for (const capability of CAPABILITY_MODES) {
+    for (const colors of COLOR_DEPTHS) {
       const frame = frameOf(...cells)
-      const ops = paintOps(frame, capability, theme)
-      const opentui = await drawnByOpenTui(frame, capability, theme)
+      const ops = paintOps(frame, colors, theme)
+      const opentui = await drawnByOpenTui(frame, colors, theme)
       cells.forEach((target, index) => {
-        const label = `${theme} ${capability} cell ${index}`
-        const resolved = seeThroughColours(target, capability, theme)
+        const label = `${theme} ${colors} cell ${index}`
+        const resolved = seeThroughColours(target, colors, theme)
         const op = ops[index]
         const tui = opentui[index]
         assert.ok(op !== undefined && tui !== undefined)
         if (resolved === null) {
           // Nothing to agree about: every renderer drew the cell as it would without the see-through style.
           const plain = frameOf(withoutSeeThrough(target))
-          assert.deepEqual(op, { ...paintOps(plain, capability, theme)[0], x: index }, label)
-          assert.equal(frameToAnsi(frameOf(target), capability, theme), frameToAnsi(plain, capability, theme), label)
+          assert.deepEqual(op, { ...paintOps(plain, colors, theme)[0], x: index }, label)
+          assert.equal(frameToAnsi(frameOf(target), colors, theme), frameToAnsi(plain, colors, theme), label)
           assert.equal(tui.dim, target.style.dim === true, label)
           return
         }
@@ -361,10 +361,10 @@ test("the ANSI writer, the canvas and OpenTUI resolve one mixed cell to the same
         assert.deepEqual(tui.background, resolved.background, label)
         assert.equal(tui.reverse, false, label)
         assert.equal(tui.dim, false, label)
-        assert.ok(!ansiParams(target, capability, theme).slice(resolved.sgr.length).includes(2), label)
+        assert.ok(!ansiParams(target, colors, theme).slice(resolved.sgr.length).includes(2), label)
         // The terminal: read its parameters back into what it would show.
-        const shown = ansiColours(ansiParams(target, capability, theme))
-        if (capability === "truecolor" || capability === "color256") {
+        const shown = ansiColours(ansiParams(target, colors, theme))
+        if (colors === "truecolor" || colors === "color256") {
           assert.deepEqual(shown.foreground, resolved.foreground, label)
           assert.deepEqual(shown.background, resolved.background, label)
           assert.equal(shown.inverse, false, label)
@@ -395,13 +395,13 @@ test("the three renderers draw a cell's own colours alike: the refused row's gre
   ]
   for (const theme of ["dark", "light"] as const) {
     const ground = BACKGROUND_RGB[theme]
-    for (const capability of CAPABILITY_MODES) {
+    for (const colors of COLOR_DEPTHS) {
       const frame = frameOf(...cells)
-      const ops = paintOps(frame, capability, theme)
-      const opentui = await drawnByOpenTui(frame, capability, theme)
+      const ops = paintOps(frame, colors, theme)
+      const opentui = await drawnByOpenTui(frame, colors, theme)
       cells.forEach((target, index) => {
-        const label = `${theme} ${capability} cell ${index}`
-        const resolved = resolveCell(target, capability, theme)
+        const label = `${theme} ${colors} cell ${index}`
+        const resolved = resolveCell(target, colors, theme)
         const op = ops[index]
         const tui = opentui[index]
         assert.ok(op !== undefined && tui !== undefined)
@@ -412,19 +412,19 @@ test("the three renderers draw a cell's own colours alike: the refused row's gre
         assert.deepEqual(tui.background, resolved.background ?? ground, label)
         assert.equal(tui.reverse, false, label)
         assert.equal(tui.dim, resolved.dim, label)
-        if (capability !== "truecolor") return
+        if (colors !== "truecolor") return
         // At truecolor the terminal shows exact colours: read its parameters back, swapping for its
         // reversed video, and the ANSI writer must show what the two RGB renderers draw.
-        const sent = ansiColours(ansiParams(target, capability, theme))
+        const sent = ansiColours(ansiParams(target, colors, theme))
         const glyph = sent.foreground ?? ground
         const fill = sent.background ?? ground
         assert.deepEqual(sent.inverse ? fill : glyph, resolved.foreground, label)
         assert.deepEqual(sent.inverse ? glyph : fill, resolved.background ?? ground, label)
       })
-      if (capability === "truecolor" || capability === "color256") {
+      if (colors === "truecolor" || colors === "color256") {
         // The refused words are the grey on the title-coloured bar, not the plain bar's ground-coloured words.
-        assert.deepEqual(opentui[0]?.foreground, rgbFor("chrome.muted", capability, theme), `${theme} ${capability}`)
-        assert.deepEqual(opentui[0]?.background, rgbFor("chrome.title", capability, theme), `${theme} ${capability}`)
+        assert.deepEqual(opentui[0]?.foreground, rgbFor("chrome.muted", colors, theme), `${theme} ${colors}`)
+        assert.deepEqual(opentui[0]?.background, rgbFor("chrome.title", colors, theme), `${theme} ${colors}`)
       }
     }
   }

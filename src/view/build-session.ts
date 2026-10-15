@@ -241,7 +241,7 @@ export class BuildSession {
     if (this.presenter === null) return undefined
     const { settings, camera, viewport } = this.buildState
     return this.presenter.frame({
-      capability: settings.capability,
+      colors: settings.colors,
       reducedMotion: settings.reducedMotion,
       view: { camera, viewport },
     })

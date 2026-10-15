@@ -13,7 +13,7 @@ const VALUE_OPTIONS = new Set([
   "save-log",
   "events",
   "runs",
-  "capability",
+  "colors",
   "speed",
   "backend",
   "cosmetic-seed",
@@ -34,6 +34,7 @@ const VALUE_OPTIONS = new Set([
  */
 export const RETIRED_OPTIONS: ReadonlyMap<string, string> = new Map([
   ["tile-width", "a tile is one column wide at every terminal size"],
+  ["capability", "it is called --colors now (monochrome, color256 or truecolor)"],
 ])
 
 /** What a command line says, after its own name, of a retired option (`RETIRED_OPTIONS`), or `undefined` for any

@@ -27,7 +27,7 @@ import type { MissionVerdict } from "../mission/types.ts"
 import type { Outcome, PlayerId } from "../state/types.ts"
 import { endingTimes, missionResultOf, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
 import type { EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { ColorDepth } from "./roles.ts"
 import { FRAME_MS } from "./build-live.ts"
 import type { ActiveEffect } from "./effects/index.ts"
 import { EFFECT_RECIPES } from "./effects/recipes.ts"
@@ -69,7 +69,7 @@ const STEP_FRAMES_PER_SECOND = 30
 /** How a frame is drawn: the player's display settings, and — for her voice — the part of the map in view (her
  *  words go to the panel when she is out of it). */
 export type PulseFrameOptions = Readonly<{
-  capability: CapabilityMode
+  colors: ColorDepth
   reducedMotion: boolean
   /** The part of the map on screen. Absent: all of it. */
   view?: Readonly<{ camera: Camera; viewport: Viewport }>
@@ -289,10 +289,10 @@ export class PulsePresenter {
    *  Nexus is hurt included (the owner kept them, 2026-09-30), and — while she is on the Grid — her aura's
    *  reach and what she is saying. */
   frame(options: PulseFrameOptions): PulseFrame {
-    const { capability, reducedMotion } = options
+    const { colors, reducedMotion } = options
     const timeMs = this.timeMs
     const times = this.times
-    const drawn = this.view.sampleAt(timeMs, capability, reducedMotion)
+    const drawn = this.view.sampleAt(timeMs, colors, reducedMotion)
     const walk = walkPositions(this.resolved.recall.moves, times, timeMs, reducedMotion)
     const positions = walk.size === 0 ? drawn.positions : new Map([...drawn.positions, ...walk])
     const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
@@ -416,7 +416,7 @@ export class PulsePresenter {
       timeMs: this.timeMs,
       cosmeticSeed: this.view.presentation.cosmeticSeed,
       reducedMotion: options.reducedMotion,
-      capability: options.capability,
+      colors: options.colors,
     })
     return { instance, cells }
   }

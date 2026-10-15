@@ -23,7 +23,7 @@ npm run verify-maps # every checked-in map resolves to the same hashes twenty ti
 
 # grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional.
 ./bin/grid.ts scenarios/citizen-mirror-skirmish                       # watch (the default)
-./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
+./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --colors truecolor
 ./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --log-level info --ticks 120
 ./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --events events.jsonl --json
 ./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
@@ -55,12 +55,12 @@ save, it is meant to continue the saved game from beside the settings in `~/.ter
 stays the way to go anywhere else. An argument the game does not read is refused, and the removed
 `--build-phase` says that `--at 'campaign?level=vasse-test-1'` replaced it.
 
-`grid`'s view takes `--capability monochrome|color256|truecolor`, `--theme dark|light`,
+`grid`'s view takes `--colors monochrome|color256|truecolor`, `--theme dark|light`,
 `--glyphs ascii|unicode`, `--no-effects`, `--reduced-motion`, `--speed`, `--seed`, `--cosmetic-seed`,
-`--backend auto|ansi|opentui` and `--save-log <file>`; the game's display options are `--capability`,
+`--backend auto|ansi|opentui` and `--save-log <file>`; the game's display options are `--colors`,
 `--theme`, `--glyphs`, `--reduced-motion` and `--backend`. Each program refuses an argument it does not read,
 and a retired one says what changed (`--tile-width`: a tile is one column at every size). ASCII and
-monochrome are the floor; everything above them is fidelity, never information. `--capability` defaults to the
+monochrome are the floor; everything above them is fidelity, never information. `--colors` defaults to the
 best tier the terminal advertises and to monochrome when it advertises none; `--theme` to `dark`. There are
 three colour depths (monochrome, 256 colours, truecolor) and no sixteen-colour one, so a change is looked at in
 truecolor, and in 256 colours and monochrome now and then: 256 is derived from the same palette, and nothing
@@ -129,7 +129,7 @@ sends, one at a time, and every frame comes from the composer the live screen us
 capture race. `--at <route>` opens a level at a round (PERIMETER's first unless given; a later round as
 a player who builds nothing reaches it, so a picture of round 3 needs no keys at all, and a title menu
 route is refused); `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
-run recorded in the Activity Logs, as the game's window would export it; `--size`, `--capability`,
+run recorded in the Activity Logs, as the game's window would export it; `--size`, `--colors`,
 `--theme` and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
 `click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
 

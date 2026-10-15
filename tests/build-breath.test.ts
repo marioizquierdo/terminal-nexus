@@ -34,7 +34,7 @@ import {
 } from "../src/view/build-live.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt } from "../src/view/frame.ts"
-import type { CapabilityMode, Theme } from "../src/view/roles.ts"
+import type { ColorDepth, Theme } from "../src/view/roles.ts"
 import { resolveCell } from "../src/view/roles.ts"
 import { TUNING } from "../src/build/tuning.ts"
 import { ESC, buildSide, changedCells, compose, keys } from "./build-helpers.ts"
@@ -84,17 +84,17 @@ const breathing = (elapsedMs: number, breathMs = LENGTH): PopupBorder => ({ elap
 const opening = (elapsedMs: number, flash: PopupFlash = POPUP_FLASH): PopupBorder => ({ elapsedMs, opening: flash, breathMs: LENGTH })
 
 /** A resolved colour's brightness, the three channels summed. */
-const brightness = (cell: Cell, capability: CapabilityMode, theme: Theme): number => {
-  const fill = resolveCell(cell, capability, theme).background
+const brightness = (cell: Cell, colors: ColorDepth, theme: Theme): number => {
+  const fill = resolveCell(cell, colors, theme).background
   assert.ok(fill !== null, "an inverse border cell has a fill")
   return fill[0] + fill[1] + fill[2]
 }
 
 /** How strongly the border stands against the ground at this instant: brighter on a dark theme, darker on
  *  a light one. */
-const strength = (side: Side, border: PopupBorder | undefined, capability: CapabilityMode, theme: Theme): number => {
-  const frame = compose(side, border === undefined ? {} : { popupBorder: border }, capability)
-  const value = brightness((borderCells(side, frame)[3] as { cell: Cell }).cell, capability, theme)
+const strength = (side: Side, border: PopupBorder | undefined, colors: ColorDepth, theme: Theme): number => {
+  const frame = compose(side, border === undefined ? {} : { popupBorder: border }, colors)
+  const value = brightness((borderCells(side, frame)[3] as { cell: Cell }).cell, colors, theme)
   return theme === "dark" ? value : -value
 }
 
@@ -157,13 +157,13 @@ test("over one breath the border turns lighter, back to rest, darker, and back t
 
 test("lighter and darker are against the ground on both themes, at 256 colours and millions", () => {
   const side = battleRound()
-  for (const capability of ["truecolor", "color256"] as const) {
+  for (const colors of ["truecolor", "color256"] as const) {
     for (const theme of ["dark", "light"] as const) {
-      const rest = strength(side, undefined, capability, theme)
-      const stronger = strength(side, breathing(LENGTH / 4), capability, theme)
-      const softer = strength(side, breathing((3 * LENGTH) / 4), capability, theme)
-      assert.ok(stronger > rest, `${capability} ${theme}: the stronger half is not stronger (${stronger} vs ${rest})`)
-      assert.ok(softer < rest, `${capability} ${theme}: the softer half is not softer (${softer} vs ${rest})`)
+      const rest = strength(side, undefined, colors, theme)
+      const stronger = strength(side, breathing(LENGTH / 4), colors, theme)
+      const softer = strength(side, breathing((3 * LENGTH) / 4), colors, theme)
+      assert.ok(stronger > rest, `${colors} ${theme}: the stronger half is not stronger (${stronger} vs ${rest})`)
+      assert.ok(softer < rest, `${colors} ${theme}: the softer half is not softer (${softer} vs ${rest})`)
     }
   }
 })
@@ -210,13 +210,13 @@ test("the opening is two flashes, each far stronger than the breath ever gets, w
     }
     return best
   })
-  for (const capability of ["truecolor", "color256"] as const) {
+  for (const colors of ["truecolor", "color256"] as const) {
     for (const theme of ["dark", "light"] as const) {
-      const rest = strength(side, undefined, capability, theme)
-      const breathHeight = strength(side, breathing(LENGTH / 4), capability, theme) - rest
+      const rest = strength(side, undefined, colors, theme)
+      const breathHeight = strength(side, breathing(LENGTH / 4), colors, theme) - rest
       for (const at of heights) {
-        const flashHeight = strength(side, opening(at), capability, theme) - rest
-        assert.ok(flashHeight > 1.5 * breathHeight, `${capability} ${theme} at ${at} ms: the flash (${flashHeight}) is not clearly past the breath (${breathHeight})`)
+        const flashHeight = strength(side, opening(at), colors, theme) - rest
+        assert.ok(flashHeight > 1.5 * breathHeight, `${colors} ${theme} at ${at} ms: the flash (${flashHeight}) is not clearly past the breath (${breathHeight})`)
       }
     }
   }
@@ -331,7 +331,7 @@ test("the frame timer stops the frame the last popup closes; a popup opened agai
 
 test("reduced motion and monochrome keep every border still and the timer quiet", () => {
   const side = battleRound()
-  for (const options of [{ reducedMotion: true }, { capability: "monochrome" as const }]) {
+  for (const options of [{ reducedMotion: true }, { colors: "monochrome" as const }]) {
     for (const popup of EVERY_POPUP) {
       const state = showing(side.build.state, popup)
       const animation = new BuildAnimation()
@@ -356,8 +356,8 @@ test("the breath's Experiment at 0 stops the breath but not the flash; a shorter
   assert.equal(popupBorderEffect(showing(off.build.state, "settings"), false), null, "another popup moves with the breath off")
   const quick = battleRound({ popupPulseMs: 1200 })
   const live = new BuildAnimation()
-  live.frame(quick.build.state, 0, { capability: "color256" })
-  assert.deepEqual(live.frame(quick.build.state, OPENING + 300, { capability: "color256" }).popupBorder, {
+  live.frame(quick.build.state, 0, { colors: "color256" })
+  assert.deepEqual(live.frame(quick.build.state, OPENING + 300, { colors: "color256" }).popupBorder, {
     elapsedMs: OPENING + 300,
     opening: POPUP_FLASH,
     breathMs: 1200,

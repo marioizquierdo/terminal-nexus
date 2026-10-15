@@ -33,7 +33,7 @@ const ROWS = 24
 function shoot(
   name,
   caption,
-  { args = "--capability truecolor --theme dark", drive, waitForText, background = "dark" } = {},
+  { args = "--colors truecolor --theme dark", drive, waitForText, background = "dark" } = {},
 ) {
   killSession(repoRoot, SESSION)
   tmux(repoRoot, [
@@ -80,9 +80,9 @@ shoot("menu-top-level", "terminal-nexus's top-level menu - Campaign highlighted 
 
 shoot(
   "menu-monochrome",
-  "Monochrome is the floor, not the degraded mode - the same screen with --capability monochrome",
+  "Monochrome is the floor, not the degraded mode - the same screen with --colors monochrome",
   {
-    args: "--capability monochrome",
+    args: "--colors monochrome",
     drive: () => sendKey(repoRoot, SESSION, "Down"),
   },
 )
@@ -122,7 +122,7 @@ shoot(
 // The Settings screen.
 shoot("settings-screen", "Settings, reached by its own hotkey - four choices and a way back", {
   drive: () => sendKeys(repoRoot, SESSION, "3"),
-  waitForText: "Colour depth: truecolor",
+  waitForText: "Colours: truecolor",
 })
 
 shoot(
@@ -148,7 +148,7 @@ shoot(
     // `waitForText` below pass immediately without ever having waited on anything.
     drive: () => {
       sendKeys(repoRoot, SESSION, "3") // 3 = Settings
-      waitFor(repoRoot, SESSION, (text) => text.includes("Colour depth"), "the Settings screen")
+      waitFor(repoRoot, SESSION, (text) => text.includes("Colours"), "the Settings screen")
       sendKeys(repoRoot, SESSION, "5") // 5 = Back
     },
     waitForText: "top-level menu",

@@ -11,7 +11,7 @@
 // module type-checks and runs its pure half under Node like every other backend.
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
-import type { CapabilityMode, Theme } from "../roles.ts"
+import type { ColorDepth, Theme } from "../roles.ts"
 import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
 
 /** How a dim cell is drawn: the terminal's SGR 2 "faint", approximated as partial opacity. */
@@ -38,7 +38,7 @@ const css = (rgb: readonly number[]): string => `rgb(${rgb[0]},${rgb[1]},${rgb[2
  */
 export function paintOps(
   frame: ReadonlyCellFrame,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
 ): PaintOp[] {
   const ops: PaintOp[] = []
@@ -46,7 +46,7 @@ export function paintOps(
     for (let x = 0; x < frame.width; x += 1) {
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
-      const resolved = resolveCell(cell, capability, theme)
+      const resolved = resolveCell(cell, colors, theme)
       ops.push({
         x,
         y,
@@ -84,7 +84,7 @@ export type CanvasSurface = {
 
 export type CanvasBackendOptions = Readonly<{
   canvas: CanvasSurface
-  capability: CapabilityMode
+  colors: ColorDepth
   theme?: Theme
   /** The space the screen may fill, in CSS pixels; the cell size follows it. */
   fit: () => Readonly<{ width: number; height: number }>
@@ -101,21 +101,21 @@ export class CanvasBackend implements TerminalBackend {
   /** The size of one cell in CSS pixels at the last frame — what turns a tap into a cell. */
   cellWidth = 10
   cellHeight = 20
-  private capability: CapabilityMode
+  private colors: ColorDepth
   private theme: Theme
   private readonly options: CanvasBackendOptions
 
   constructor(options: CanvasBackendOptions) {
     this.options = options
-    this.capability = options.capability
+    this.colors = options.colors
     this.theme = options.theme ?? DEFAULT_THEME
   }
 
   async start(): Promise<void> {}
   async stop(): Promise<void> {}
 
-  setPresentation(capability: CapabilityMode, theme: Theme): void {
-    this.capability = capability
+  setPresentation(colors: ColorDepth, theme: Theme): void {
+    this.colors = colors
     this.theme = theme
   }
 
@@ -147,7 +147,7 @@ export class CanvasBackend implements TerminalBackend {
     g.textBaseline = "middle"
     g.textAlign = "center"
     const size = Math.floor(this.cellWidth * 1.62)
-    for (const op of paintOps(frame, this.capability, this.theme)) {
+    for (const op of paintOps(frame, this.colors, this.theme)) {
       const left = op.x * this.cellWidth
       const top = op.y * this.cellHeight
       if (op.background !== null) {

@@ -20,7 +20,7 @@ import { paintEffectCells } from "./effects/index.ts"
 import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text, toAscii } from "./draw.ts"
-import type { CapabilityMode, StyleRole } from "./roles.ts"
+import type { ColorDepth, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, salvageGlyph, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
@@ -133,8 +133,8 @@ export function gridOrigin(grid: GridTerrain): { column: number; row: number } {
   return { column: 1 + offsetTilesX, row: 1 + HEADER_ROWS + offsetTilesY }
 }
 
-export function composeFrame(input: CompositionInput, capability: CapabilityMode): ReadonlyCellFrame {
-  void capability
+export function composeFrame(input: CompositionInput, colors: ColorDepth): ReadonlyCellFrame {
+  void colors
   const size = COMPOSITION_SIZE
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []

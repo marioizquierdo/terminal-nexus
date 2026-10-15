@@ -13,7 +13,7 @@ import type { Coord } from "../src/grid/types.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import { outlineWithin } from "../src/view/reach-outline.ts"
 import {
-  CAPABILITY_MODES,
+  COLOR_DEPTHS,
   DEFAULT_PRESENTATION,
   EFFECT_BANDS,
   EFFECT_IDS,
@@ -32,7 +32,7 @@ import {
   offendingGlyph,
 } from "../src/view/index.ts"
 import type {
-  CapabilityMode,
+  ColorDepth,
   EffectCellSource,
   EffectContext,
   EffectInstance,
@@ -50,7 +50,7 @@ function context(overrides: Partial<EffectContext> = {}): EffectContext {
     timeMs: 1000,
     cosmeticSeed: 0x0c05e7,
     reducedMotion: false,
-    capability: "color256",
+    colors: "color256",
     ...overrides,
   }
 }
@@ -248,10 +248,10 @@ test("every glyph an effect emits is one cell wide, and every role is a declared
   for (const instance of sampleInstances()) {
     const recipe = EFFECT_RECIPES[instance.recipe]
     assert.ok(recipe !== undefined)
-    for (const capability of CAPABILITY_MODES) {
+    for (const colors of COLOR_DEPTHS) {
       for (const reducedMotion of [false, true]) {
         for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 11) {
-          for (const cell of recipe(instance, context({ timeMs, capability, reducedMotion }))) {
+          for (const cell of recipe(instance, context({ timeMs, colors, reducedMotion }))) {
             assert.ok(
               cell.glyph === "" || [...cell.glyph].length === 1,
               `${instance.recipe} emitted "${cell.glyph}"`,
@@ -281,9 +281,9 @@ test("all three forms exist and all three emit at the impact beat", () => {
     assert.ok(recipe !== undefined)
     const impact = instance.startMs + instance.durationMs * 0.25
     const forms: Array<[string, EffectContext]> = [
-      ["full", context({ timeMs: impact, capability: "truecolor" })],
+      ["full", context({ timeMs: impact, colors: "truecolor" })],
       ["reduced motion", context({ timeMs: impact, reducedMotion: true })],
-      ["monochrome", context({ timeMs: impact, capability: "monochrome" })],
+      ["monochrome", context({ timeMs: impact, colors: "monochrome" })],
     ]
     for (const [form, ctx] of forms) {
       assert.ok(
@@ -422,10 +422,10 @@ test("fade is never set outside fx.damage.flash - the departure stays narrow", (
     if (instance.recipe === "fx.damage.flash") continue
     const recipe = EFFECT_RECIPES[instance.recipe]
     assert.ok(recipe !== undefined)
-    for (const capability of CAPABILITY_MODES) {
+    for (const colors of COLOR_DEPTHS) {
       for (const reducedMotion of [false, true]) {
         for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 17) {
-          for (const cell of recipe(instance, context({ timeMs, capability, reducedMotion }))) {
+          for (const cell of recipe(instance, context({ timeMs, colors, reducedMotion }))) {
             assert.equal(
               cell.fade,
               undefined,
@@ -439,8 +439,8 @@ test("fade is never set outside fx.damage.flash - the departure stays narrow", (
 })
 
 test("a real fight's damage flash carries fade all the way to the composed frame", async () => {
-  // The engine-owned frame (frame.ts) is capability-agnostic by design - compose.ts's own `void
-  // capability` says so - so `snapshotAt`'s capability argument cannot change which cells carry a
+  // The engine-owned frame (frame.ts) is colors-agnostic by design - compose.ts's own `void
+  // colors` says so - so `snapshotAt`'s colors argument cannot change which cells carry a
   // `fade`; only the later ANSI/RGB resolution (roles.ts's sgrFor/rgbFor, tested directly in
   // roles.test.ts and end-to-end in view.test.ts) gates it by tier. This test's job is narrower and
   // upstream of that: proving the real recipe -> real compositor -> compose.ts wiring actually
@@ -552,12 +552,12 @@ test("composed frames stay inside the Grid, one ASCII cell each, at every render
     )
     for (const reducedMotion of [false, true]) {
       const view = createView(timeline, { ...DEFAULT_PRESENTATION, reducedMotion })
-      for (const capability of CAPABILITY_MODES) {
+      for (const colors of COLOR_DEPTHS) {
         for (const fraction of [0.1, 0.35, 0.5, 0.8]) {
-          const frame = view.snapshotAt(view.durationMs * fraction, capability)
+          const frame = view.snapshotAt(view.durationMs * fraction, colors)
           assert.equal(frame.width, 80)
           assert.equal(frame.height, 24)
-          assert.equal(offendingGlyph(frame), null, `${name} at ${capability}`)
+          assert.equal(offendingGlyph(frame), null, `${name} at ${colors}`)
         }
       }
     }
@@ -581,7 +581,7 @@ test("every render tier shows the same Pulse, and only monochrome shows no colou
   const timeMs = 200 * (1000 / 12)
 
   const glyphs = new Set(
-    CAPABILITY_MODES.map((capability) => frameToText(view.snapshotAt(timeMs, capability))),
+    COLOR_DEPTHS.map((colors) => frameToText(view.snapshotAt(timeMs, colors))),
   )
   assert.equal(glyphs.size, 1, "a render tier changed which glyphs are on screen")
 })
@@ -1108,12 +1108,12 @@ test("what flashes is what was hit: a blast draws only the ground its rule reach
       const instance = blastInstance(origin, radius, width, height)
       const reached = new Set(tilesWithin(origin, rectFootprint(width, height), radius).map(tileKey))
       for (const reducedMotion of [false, true]) {
-        for (const capability of CAPABILITY_MODES) {
+        for (const colors of COLOR_DEPTHS) {
           for (let step = 0; step <= 100; step += 1) {
-            for (const cell of blast(instance, context({ timeMs: step * 10, reducedMotion, capability }))) {
+            for (const cell of blast(instance, context({ timeMs: step * 10, reducedMotion, colors }))) {
               assert.ok(
                 reached.has(tileKey(cell.tile)),
-                `a ${width}x${height} body's blast of ${radius} drew ${tileKey(cell.tile)}, which it does not reach (${reducedMotion ? "reduced motion" : "full"}, ${capability})`,
+                `a ${width}x${height} body's blast of ${radius} drew ${tileKey(cell.tile)}, which it does not reach (${reducedMotion ? "reduced motion" : "full"}, ${colors})`,
               )
             }
           }

@@ -1,5 +1,5 @@
 // The three choices a player makes about how the terminal is drawn on: what colour it can show
-// (the capability mode), whether its background is dark or light (the theme), and which glyph pack
+// (the colour depth), whether its background is dark or light (the theme), and which glyph pack
 // (ASCII or Unicode) the field and frame use. Plain vocabulary and its parsers, shared by the saved
 // settings, the Build Phase's settings list and the command line, and below the view: the view reads
 // these, they read nothing of the view.
@@ -11,14 +11,14 @@
  * is the floor (no colour code at all, so the terminal's own colours show); 256 colours and truecolor
  * come from one palette.
  */
-export type CapabilityMode = "monochrome" | "color256" | "truecolor"
+export type ColorDepth = "monochrome" | "color256" | "truecolor"
 
-export const CAPABILITY_MODES: readonly CapabilityMode[] = ["monochrome", "color256", "truecolor"]
+export const COLOR_DEPTHS: readonly ColorDepth[] = ["monochrome", "color256", "truecolor"]
 
-export function parseCapability(value: string): CapabilityMode {
-  const found = CAPABILITY_MODES.find((mode) => mode === value)
+export function parseColorDepth(value: string): ColorDepth {
+  const found = COLOR_DEPTHS.find((mode) => mode === value)
   if (found === undefined) {
-    throw new Error(`unknown capability "${value}"; expected one of ${CAPABILITY_MODES.join(", ")}`)
+    throw new Error(`unknown colour depth "${value}"; expected one of ${COLOR_DEPTHS.join(", ")}`)
   }
   return found
 }

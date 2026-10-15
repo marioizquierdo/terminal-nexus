@@ -17,14 +17,14 @@ import { createMenuList } from "../src/title-menu/list.ts"
 import { menuItemLabel, menuItemRow } from "../src/title-menu/layout.ts"
 import { frameToText } from "../src/view/index.ts"
 import { createSettingsStore } from "../src/settings/store.ts"
-import { DEFAULT_SETTINGS, nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../src/settings/types.ts"
+import { DEFAULT_SETTINGS, nextColorDepth, nextGlyphPack, nextTheme, toggleReducedMotion } from "../src/settings/types.ts"
 import type { Settings, SettingsStore } from "../src/settings/index.ts"
 import { shownSetting } from "../src/build/all-settings.ts"
 
 const ESC = String.fromCharCode(27)
 const ARROW_DOWN = `${ESC}[B`
 
-const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
+const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, colors: "monochrome" }
 
 class FakeStdout extends EventEmitter {
   isTTY = true
@@ -133,7 +133,7 @@ test("every Settings row displays its own hotkey — a hotkey that is not displa
 /** Which row index each cyclable settings id sits at, and what its next value should read as —
  *  reused by both the equivalence test and the live-effect test below. */
 const CYCLABLE_ROWS: readonly { id: string; index: number; nextLabel: (s: Settings) => string }[] = [
-  { id: "capability", index: 0, nextLabel: (s) => `Colour depth: ${shownSetting("capability").format(nextCapability(s.capability))}` },
+  { id: "colors", index: 0, nextLabel: (s) => `Colours: ${shownSetting("colors").format(nextColorDepth(s.colors))}` },
   { id: "theme", index: 1, nextLabel: (s) => `Background: ${nextTheme(s.theme)}` },
   { id: "glyphPack", index: 2, nextLabel: (s) => `Symbols: ${nextGlyphPack(s.glyphPack)}` },
   {
@@ -180,7 +180,7 @@ test("the Back row returns to the top-level menu", async () => {
   )
   const text = await settingsFrameAfter((stdin) => stdin.emit("data", Buffer.from(backHotkey)))
   assert.ok(text.includes("main menu"), "Back did not return to the top-level menu")
-  assert.ok(!text.includes("Colour depth"), "the settings rows are still on screen after Back")
+  assert.ok(!text.includes("Colours"), "the settings rows are still on screen after Back")
 })
 
 test(
@@ -266,7 +266,7 @@ test("a colour-depth change is visible on the very next frame, without restartin
   await wait(30)
 
   // monochrome sends no colour code at all; color256 resolves a role's SGR as "38;5;NNN". Cycling from
-  // monochrome lands on color256 (CAPABILITY_MODES' own order), so this substring in the *newest* frame
+  // monochrome lands on color256 (COLOR_DEPTHS' own order), so this substring in the *newest* frame
   // is the observable proof that setPresentation actually changed what the same backend draws with.
   assert.ok(
     stdout.lastWrite.includes(`${ESC}[38;5;`),
@@ -341,8 +341,8 @@ test("two changes picked in quick succession save in order, one write at a time"
   await wait(20)
   assert.equal(saveCalls.length, 2, "the second save never started once the first one finished")
   assert.equal(
-    saveCalls[1]?.capability,
-    nextCapability(nextCapability(TEST_SETTINGS.capability)),
+    saveCalls[1]?.colors,
+    nextColorDepth(nextColorDepth(TEST_SETTINGS.colors)),
     "the second, later save did not carry the later value",
   )
 
@@ -385,7 +385,7 @@ test("a setting changed on the Settings screen survives a full stop-and-restart"
     const secondStdin = new FakeStdin()
     const secondStore = createSettingsStore(path)
     const loaded = await secondStore.load()
-    assert.equal(loaded?.capability, "color256", "the change did not survive on disk at all")
+    assert.equal(loaded?.colors, "color256", "the change did not survive on disk at all")
 
     const second = runMenu({
       settings: loaded ?? TEST_SETTINGS,
@@ -399,7 +399,7 @@ test("a setting changed on the Settings screen survives a full stop-and-restart"
     secondStdin.emit("data", Buffer.from(SETTINGS_HOTKEY))
     await wait(30)
     assert.ok(
-      secondStdout.written.includes("Colour depth: 256"),
+      secondStdout.written.includes("Colours: 256"),
       "the relaunched session did not show the previously saved colour depth",
     )
     secondStdin.emit("data", Buffer.from("q"))

@@ -11,7 +11,7 @@
 
 import { Playback, controlForKey, keysFromChunk } from "../terminal/playback.ts"
 import { COMPOSITION_SIZE, createView, gateFrame } from "../view/index.ts"
-import type { CapabilityMode, PresentationOptions, PulseTimeline, Theme } from "../view/index.ts"
+import type { ColorDepth, PresentationOptions, PulseTimeline, Theme } from "../view/index.ts"
 import { AnsiBackend } from "../view/backends/ansi.ts"
 import { selectBackend } from "../view/backends/index.ts"
 import type { NamedBackend } from "../view/backends/index.ts"
@@ -24,7 +24,7 @@ const FRAMES_PER_SECOND = 30
 
 export type WatchOptions = Readonly<{
   timeline: PulseTimeline
-  capability: CapabilityMode
+  colors: ColorDepth
   /** Which background the palette assumes. Defaults to `DEFAULT_THEME` ("dark") when omitted. */
   theme?: Theme
   speed: number
@@ -68,7 +68,7 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
   const backend = await selectBackend(options.backend, {
     stdout,
     stdin,
-    capability: options.capability,
+    colors: options.colors,
     ...(options.theme === undefined ? {} : { theme: options.theme }),
     width: required.width,
     height: required.height,
@@ -154,7 +154,7 @@ export async function watchPulse(options: WatchOptions): Promise<number> {
             return
           }
           backend.present(
-            view.composeAt(playback.presentationTimeMs, options.capability, {
+            view.composeAt(playback.presentationTimeMs, options.colors, {
               paused: playback.paused,
               speed: playback.speed,
             }),

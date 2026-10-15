@@ -42,7 +42,7 @@ it twice is harmless. Every screen loop (the engine tool's watch view, the menu,
 builds on the one implementation in `src/cli/lifecycle.ts`; there must not be a second.
 
 Non-TTY launch prints one readable line and no escape sequences. Diagnostics are buffered and emitted
-**after** cleanup. Backends report their capability mode explicitly.
+**after** cleanup. Backends report their colour depth explicitly.
 
 A renderer that drops frames is a tuning problem. A renderer that leaves the terminal in raw mode is a
 reason to reject it.

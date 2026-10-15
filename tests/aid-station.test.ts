@@ -21,7 +21,7 @@ import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import type { MatchState, PlayerId } from "../src/state/types.ts"
 import { placementRun } from "../src/view/placement.ts"
-import { CAPABILITY_MODES, DEFAULT_PRESENTATION, EFFECT_RECIPES, MEND_GLYPH, STYLE_ROLES, cellAt, createView, gridOrigin, mendTile } from "../src/view/index.ts"
+import { COLOR_DEPTHS, DEFAULT_PRESENTATION, EFFECT_RECIPES, MEND_GLYPH, STYLE_ROLES, cellAt, createView, gridOrigin, mendTile } from "../src/view/index.ts"
 import type { EffectContext, EffectInstance, EffectRecipe } from "../src/view/index.ts"
 import { MAXIMUM, MINIMUM, buildSide, compose, keys, panelLines } from "./build-helpers.ts"
 import { loadScenarioFile, resolveScenario } from "./helpers.ts"
@@ -279,20 +279,20 @@ test("a heal shows on screen: a cross of light beside the mended unit, then rise
   const above = cellOf(mended.anchor.x, mended.anchor.y - 1)
   const higher = cellOf(mended.anchor.x, mended.anchor.y - 2)
   const own = cellOf(mended.anchor.x, mended.anchor.y)
-  for (const capability of ["monochrome", "truecolor"] as const) {
+  for (const colors of ["monochrome", "truecolor"] as const) {
     const view = createView(timeline)
-    const landing = view.snapshotAt((patch.tick + 1) * view.tickDurationMs, capability)
-    assert.equal(cellAt(landing, above.x, above.y).glyph, MEND_GLYPH, `${capability}: no cross above the mended unit`)
+    const landing = view.snapshotAt((patch.tick + 1) * view.tickDurationMs, colors)
+    assert.equal(cellAt(landing, above.x, above.y).glyph, MEND_GLYPH, `${colors}: no cross above the mended unit`)
     assert.deepEqual(cellAt(landing, above.x, above.y).style, { fgRole: "fx.flash" })
     assert.equal(cellAt(landing, own.x, own.y).glyph, "t", "the mended unit's own glyph was replaced")
-    const rising = view.snapshotAt((patch.tick + 3) * view.tickDurationMs, capability)
-    assert.equal(cellAt(rising, higher.x, higher.y).glyph, MEND_GLYPH, `${capability}: the cross did not rise`)
+    const rising = view.snapshotAt((patch.tick + 3) * view.tickDurationMs, colors)
+    assert.equal(cellAt(rising, higher.x, higher.y).glyph, MEND_GLYPH, `${colors}: the cross did not rise`)
     assert.deepEqual(cellAt(rising, higher.x, higher.y).style, { fgRole: "fx.flash", dim: true })
     // Reduced motion: the cross held where it landed, no rise.
     const still = createView(timeline, { ...DEFAULT_PRESENTATION, reducedMotion: true })
-    const held = still.snapshotAt((patch.tick + 3) * still.tickDurationMs, capability)
-    assert.equal(cellAt(held, above.x, above.y).glyph, MEND_GLYPH, `${capability}: reduced motion dropped the cross`)
-    assert.notEqual(cellAt(held, higher.x, higher.y).glyph, MEND_GLYPH, `${capability}: reduced motion still rose`)
+    const held = still.snapshotAt((patch.tick + 3) * still.tickDurationMs, colors)
+    assert.equal(cellAt(held, above.x, above.y).glyph, MEND_GLYPH, `${colors}: reduced motion dropped the cross`)
+    assert.notEqual(cellAt(held, higher.x, higher.y).glyph, MEND_GLYPH, `${colors}: reduced motion still rose`)
   }
   // With effects off, the same moment shows nothing there: the cross is the heal's, and only presentation's.
   const off = createView(timeline, { ...DEFAULT_PRESENTATION, effects: false })
@@ -312,15 +312,15 @@ test("a heal's mark keeps the effect contract: a pure function of time, one ASCI
     family: "citizen",
     params: { amount: 4, heal: 1 },
   }
-  const context = (overrides: Partial<EffectContext> = {}): EffectContext => ({ timeMs: 1000, cosmeticSeed: 0x0c05e7, reducedMotion: false, capability: "color256", ...overrides })
+  const context = (overrides: Partial<EffectContext> = {}): EffectContext => ({ timeMs: 1000, cosmeticSeed: 0x0c05e7, reducedMotion: false, colors: "color256", ...overrides })
   const times = [1000, 1090, 1179, 1180, 1270, 1359]
   const forwards = times.map((timeMs) => JSON.stringify(recipe(instance, context({ timeMs }))))
   const backwards = [...times].reverse().map((timeMs) => JSON.stringify(recipe(instance, context({ timeMs })))).reverse()
   assert.deepEqual(backwards, forwards)
-  for (const capability of CAPABILITY_MODES) {
+  for (const colors of COLOR_DEPTHS) {
     for (const reducedMotion of [false, true]) {
       for (let timeMs = instance.startMs; timeMs < instance.startMs + instance.durationMs; timeMs += 11) {
-        const cells = recipe(instance, context({ timeMs, capability, reducedMotion }))
+        const cells = recipe(instance, context({ timeMs, colors, reducedMotion }))
         assert.equal(cells.length, 1)
         for (const cell of cells) {
           assert.equal(cell.glyph, MEND_GLYPH)
@@ -333,7 +333,7 @@ test("a heal's mark keeps the effect contract: a pure function of time, one ASCI
     }
   }
   const impact = instance.startMs + instance.durationMs * 0.25
-  for (const ctx of [context({ timeMs: impact, capability: "truecolor" }), context({ timeMs: impact, reducedMotion: true }), context({ timeMs: impact, capability: "monochrome" })]) {
+  for (const ctx of [context({ timeMs: impact, colors: "truecolor" }), context({ timeMs: impact, reducedMotion: true }), context({ timeMs: impact, colors: "monochrome" })]) {
     assert.deepEqual(recipe(instance, ctx), [{ tile: { x: 10, y: 5 }, glyph: MEND_GLYPH, role: "fx.flash" }])
   }
   // A hit is still a hit: without the heal form, the burst is the impact it always was.

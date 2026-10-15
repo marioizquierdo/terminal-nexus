@@ -84,7 +84,7 @@ Make your terminal **at least 80 x 24** — bigger is fine — then:
 
 ```bash
 npm install     # only needed once, and only for typechecking and the OpenTUI backend
-npm run grid -- scenarios/citizens-versus-ravels --glyphs unicode --capability truecolor
+npm run grid -- scenarios/citizens-versus-ravels --glyphs unicode --colors truecolor
 ```
 
 `<map>` is a path to a `.map.json` file — the `.map.json` suffix is optional, and there is no
@@ -102,9 +102,9 @@ subcommand: the first argument is always the map, and the default action is `wat
 A few more worth watching, in this order:
 
 ```bash
-npm run grid -- scenarios/ravel-cascade --glyphs unicode --capability truecolor --speed 0.5
-npm run grid -- scenarios/citizens-versus-ravels --no-effects --glyphs unicode --capability truecolor
-npm run grid -- scenarios/citizens-versus-ravels --capability monochrome   # can you still follow it?
+npm run grid -- scenarios/ravel-cascade --glyphs unicode --colors truecolor --speed 0.5
+npm run grid -- scenarios/citizens-versus-ravels --no-effects --glyphs unicode --colors truecolor
+npm run grid -- scenarios/citizens-versus-ravels --colors monochrome   # can you still follow it?
 npm run grid -- scenarios/citizen-mirror-skirmish                          # the baseline mirror match
 ```
 
@@ -112,7 +112,7 @@ npm run grid -- scenarios/citizen-mirror-skirmish                          # the
 
 ```bash
 npm run grid -- <map> \
-  --capability monochrome|color256|truecolor \
+  --colors monochrome|color256|truecolor \
   --glyphs ascii|unicode \
   --speed 2 --no-effects --reduced-motion --seed 0x1234 --turn 90
 ```

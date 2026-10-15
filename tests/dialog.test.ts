@@ -55,8 +55,8 @@ import { FOCUS_LIGHT } from "../src/view/effects/shading.ts"
 import type { EffectContext, EffectInstance } from "../src/view/effects/types.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
-import { CAPABILITY_MODES, resolveCell } from "../src/view/roles.ts"
-import type { CapabilityMode } from "../src/view/roles.ts"
+import { COLOR_DEPTHS, resolveCell } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
 import {
   BACKSPACE,
   CTRL_C,
@@ -493,7 +493,7 @@ const effectAt = (overrides: Partial<EffectContext> = {}): EffectContext => ({
   timeMs: 0,
   cosmeticSeed: 0,
   reducedMotion: false,
-  capability: "truecolor",
+  colors: "truecolor",
   ...overrides,
 })
 
@@ -537,14 +537,14 @@ test("the intro highlight's three forms: a breathing ring, a steady one under re
 
   // Monochrome, which cannot blend a light: the focus's own cells in inverse video, an
   // attribute and never a glyph, and nothing on the ground around it.
-  for (const capability of ["monochrome"] as const) {
+  for (const colors of ["monochrome"] as const) {
     for (const reducedMotion of [false, true]) {
-      const cells = recipe(focusInstance({ x: 10, y: 10 }, { width: 3, height: 2 }), effectAt({ capability, reducedMotion, timeMs: 900 }))
+      const cells = recipe(focusInstance({ x: 10, y: 10 }, { width: 3, height: 2 }), effectAt({ colors, reducedMotion, timeMs: 900 }))
       assert.deepEqual(
         cells.map((cell) => key(cell.tile)).sort(),
         tilesOf({ x: 10, y: 10 }, [0, 1].flatMap((y) => [0, 1, 2].map((x) => ({ x, y })))).map(key).sort(),
       )
-      assert.ok(cells.every((cell) => cell.glyph === "" && cell.inverse === true && cell.seeThrough === undefined), capability)
+      assert.ok(cells.every((cell) => cell.glyph === "" && cell.inverse === true && cell.seeThrough === undefined), colors)
     }
   }
 })
@@ -575,7 +575,7 @@ test("drawn on the map: a ring around the line's focus as drawn, the focus's own
   assert.equal(cellAt(mono, own.x, own.y).style.inverse, true)
   assert.notEqual(cellAt(mono, beside.x, beside.y).style.seeThrough?.role, "fx.flash")
   // The highlight never changes a glyph: every depth draws the same characters.
-  const glyphs = new Set(CAPABILITY_MODES.map((capability: CapabilityMode) => frameToText(compose(side, {}, capability))))
+  const glyphs = new Set(COLOR_DEPTHS.map((colors: ColorDepth) => frameToText(compose(side, {}, colors))))
   assert.equal(glyphs.size, 1)
   // Gone with the dialog.
   keys(side, ESC)
@@ -590,18 +590,18 @@ test("the live loop breathes the light from the frame that first showed each lin
   const viewport = buildLayout(MINIMUM, context.grid).viewport
   const opened = createBuildState(context, STARTER_START_CURSOR, viewport)
   const animation = new BuildAnimation()
-  const first = animation.frame(opened, 1000, { capability: "truecolor" })
+  const first = animation.frame(opened, 1000, { colors: "truecolor" })
   assert.deepEqual(first.dialogLight, { elapsedMs: 0 })
-  const breathing = animation.frame(opened, 1700, { capability: "truecolor" })
+  const breathing = animation.frame(opened, 1700, { colors: "truecolor" })
   assert.deepEqual(breathing.dialogLight, { elapsedMs: 700 })
   assert.equal(breathing.frameMs, BREATH_FRAME_MS, "the light did not ask for the breath's slow frames")
   // The next line starts its light afresh; the camera's slide to it runs at the full rate meanwhile.
   const next = applyBuildCommand(context, opened, { kind: "dialog-next" })
-  const moved = animation.frame(next, 2000, { capability: "truecolor" })
+  const moved = animation.frame(next, 2000, { colors: "truecolor" })
   assert.deepEqual(moved.dialogLight, { elapsedMs: 0 })
   assert.equal(moved.frameMs, undefined)
   // Reduced motion and monochrome: still, and nothing asks for a frame.
-  for (const options of [{ reducedMotion: true, capability: "truecolor" as const }, { capability: "monochrome" as const }]) {
+  for (const options of [{ reducedMotion: true, colors: "truecolor" as const }, { colors: "monochrome" as const }]) {
     const still = new BuildAnimation()
     still.frame(opened, 0, options)
     const later = still.frame(opened, 5000, options)
@@ -610,7 +610,7 @@ test("the live loop breathes the light from the frame that first showed each lin
   }
   // No dialog, no light.
   const closed = applyBuildCommand(context, opened, { kind: "cancel" })
-  assert.equal(animation.frame(closed, 3000, { capability: "truecolor" }).dialogLight, undefined)
+  assert.equal(animation.frame(closed, 3000, { colors: "truecolor" }).dialogLight, undefined)
 })
 
 // --- A Commander back: the game's own line ----------------------------------------------------------
@@ -783,7 +783,7 @@ test("the game opens PERIMETER on its intro, and Enter reads on", async () => {
   const stdin = new FakeStdin()
   const exits: number[] = []
   const session = runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -820,20 +820,20 @@ test("Vasse is drawn bold at full strength in her side's colour while a Pulse pl
         cell: cellAt(frame, layout.origin.column + column, layout.origin.row + row),
       })),
     ).flat()
-  for (const capability of CAPABILITY_MODES) {
-    const frame = compose(side, {}, capability)
+  for (const colors of COLOR_DEPTHS) {
+    const frame = compose(side, {}, colors)
     const cells = map(side.layout, frame).map((entry) => entry.cell)
     const her = cells.filter((cell) => cell.glyph === "@")
-    assert.equal(her.length, 1, `${capability}: ${her.length} of her`)
+    assert.equal(her.length, 1, `${colors}: ${her.length} of her`)
     const [cell] = her
     assert.ok(cell !== undefined)
-    assert.deepEqual([cell.style.fgRole, cell.style.bold, cell.style.dim === true], ["player.a", true, false], capability)
-    const resolved = resolveCell(cell, capability)
-    assert.equal(resolved.bold, true, capability)
-    assert.equal(resolved.dim, false, capability)
-    assert.ok(resolved.sgr.includes(1), `${capability}: no bold in ${JSON.stringify(resolved.sgr)}`)
+    assert.deepEqual([cell.style.fgRole, cell.style.bold, cell.style.dim === true], ["player.a", true, false], colors)
+    const resolved = resolveCell(cell, colors)
+    assert.equal(resolved.bold, true, colors)
+    assert.equal(resolved.dim, false, colors)
+    assert.ok(resolved.sgr.includes(1), `${colors}: no bold in ${JSON.stringify(resolved.sgr)}`)
     // A trooper beside her is not.
     const trooper = cells.find((each) => each.glyph === "t")
-    assert.equal(trooper?.style.bold, undefined, `${capability}: the squads are bold too`)
+    assert.equal(trooper?.style.bold, undefined, `${colors}: the squads are bold too`)
   }
 })

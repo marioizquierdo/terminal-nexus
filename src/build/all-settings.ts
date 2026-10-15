@@ -44,7 +44,7 @@
 // may all read it.
 
 import type { Settings } from "../settings/types.ts"
-import { CAPABILITY_MODES, GLYPH_PACKS, THEMES } from "../terminal/display.ts"
+import { COLOR_DEPTHS, GLYPH_PACKS, THEMES } from "../terminal/display.ts"
 
 /** Where a setting stands: shown and saved, shown for playtests, or a constant in code. */
 export type Tier = "player" | "experiment" | "tuned"
@@ -100,12 +100,12 @@ export const ALL_SETTINGS = {
     values: THEMES,
     default: "dark",
   },
-  capability: {
+  colors: {
     tier: "player",
     section: "display",
-    label: "Colour depth",
+    label: "Colours",
     question: "How many colours the screen uses: pick millions or 256 if your terminal has them. None is black and white.",
-    values: CAPABILITY_MODES,
+    values: COLOR_DEPTHS,
     names: { monochrome: "none", color256: "256", truecolor: "millions" },
     default: "monochrome",
   },

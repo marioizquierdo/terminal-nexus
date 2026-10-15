@@ -23,8 +23,8 @@ import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../
 import type { ReportInput } from "../report/index.ts"
 import { hashState } from "../state/serialize.ts"
 import { loadMapFile, loadScenario } from "../scenario/index.ts"
-import { DEFAULT_PRESENTATION, parseCapability, parseGlyphPack, parseTheme } from "../view/index.ts"
-import type { CapabilityMode, PresentationOptions } from "../view/index.ts"
+import { DEFAULT_PRESENTATION, parseColorDepth, parseGlyphPack, parseTheme } from "../view/index.ts"
+import type { ColorDepth, PresentationOptions } from "../view/index.ts"
 import { parseArgs, parseInteger, retiredOption } from "./args.ts"
 import type { ParsedArgs } from "./args.ts"
 import { buildTimeline } from "./timeline.ts"
@@ -33,7 +33,7 @@ import { watchPulse } from "./watch.ts"
 const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
 
   grid <map.map.json>          [--seed 0xABCD] [--ticks 120] [--turn 90] [--speed 1]
-                                [--capability monochrome|color256|truecolor]
+                                [--colors monochrome|color256|truecolor]
                                 [--theme dark|light] [--glyphs ascii|unicode]
                                 [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
                                 [--backend auto|ansi|opentui] [--save-log <file>] [--log-level info]
@@ -51,19 +51,19 @@ const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay
 Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
 carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.
 
---capability defaults to the best tier COLORTERM/TERM advertise, monochrome if neither says more.
+--colors defaults to the best tier COLORTERM/TERM advertise, monochrome if neither says more.
 --theme defaults to dark; pass --theme light on a light terminal background.`
 
 /**
- * A default `--capability`, when none is given, that is not simply the least common denominator.
+ * A default `--colors`, when none is given, that is not simply the least common denominator.
  * `COLORTERM` and `TERM` are the two environment variables most terminal-aware CLI tools check for
  * this. It errs toward monochrome, the floor that draws right on any terminal and leaves the
  * terminal's own colours alone: a terminal that supports more and advertises neither gets black and
- * white until its player picks a colour depth in Settings (or passes `--capability`), where the other
+ * white until its player picks a colour depth in Settings (or passes `--colors`), where the other
  * error, colour codes sent to a terminal that cannot read them, would print garbage. There is no
  * sixteen-colour depth to land on in between: those colours are the terminal theme's, not the game's.
  */
-export function detectCapability(env: NodeJS.ProcessEnv = process.env): CapabilityMode {
+export function detectColorDepth(env: NodeJS.ProcessEnv = process.env): ColorDepth {
   const colorterm = env["COLORTERM"]
   if (colorterm === "truecolor" || colorterm === "24bit") return "truecolor"
   const term = env["TERM"] ?? ""
@@ -277,7 +277,7 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
   const turn = turnFrom(args)
   return watchPulse({
     timeline,
-    capability: parseCapability(args.options.get("capability") ?? detectCapability()),
+    colors: parseColorDepth(args.options.get("colors") ?? detectColorDepth()),
     theme: parseTheme(args.options.get("theme") ?? "dark"),
     speed: Number(args.options.get("speed") ?? "1"),
     backend: args.options.get("backend") ?? "auto",
@@ -299,7 +299,7 @@ const GRID_OPTIONS: ReadonlySet<string> = new Set([
   "save-log",
   "events",
   "runs",
-  "capability",
+  "colors",
   "theme",
   "glyphs",
   "speed",
