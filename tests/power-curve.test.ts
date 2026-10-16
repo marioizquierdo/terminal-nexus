@@ -83,6 +83,7 @@ test("no rarity is dealt before its act: the game's schedule and every shipped l
   for (const schedule of schedules) {
     for (const entry of schedule) {
       for (const slot of entry.deal) {
+        if (typeof slot !== "string" && "from" in slot) continue
         const rarity = typeof slot === "string" ? slot : powers.get(slot.power)
         assert.ok(rarity !== undefined)
         assert.ok(entry.round >= EARLIEST_ROUND[rarity], `a ${rarity} from round ${entry.round}`)

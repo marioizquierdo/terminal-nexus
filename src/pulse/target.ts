@@ -30,16 +30,18 @@ import { stepsBetween } from "./shared.ts"
 
 /**
  * How near an enemy must come before a unit heading for its side's target turns to fight it,
- * measured as range is (`within`): 6 columns either side, 3 rows up and down. One value for every unit, and never
+ * measured as range is (`within`): 6 columns either side, 3 rows up and down. One value for every unit but a Commander
+ * who charges (`ContentDef.engageRange`), and never
  * less than a unit's own attack range, so nothing walks past an enemy it could have shot. Six, a marksman's range:
  * a squad turns on what comes at it from the next few tiles, not on what stands half the map away.
  */
 export const ENGAGE_RANGE = 6
 
-/** How near an enemy must come before `definition` turns from its side's target to fight it: `ENGAGE_RANGE`, or its
- *  own attack's range when that is longer, in whole rows (`wholeRows`) whatever the content says. */
+/** How near an enemy must come before `definition` turns from its side's target to fight it: `ENGAGE_RANGE` (or the
+ *  content's own `engageRange`, a charging Commander's), or its own attack's range when that is longer, in whole rows
+ *  (`wholeRows`) whatever the content says. */
 export function engageRange(definition: ContentDef): number {
-  return wholeRows(Math.max(ENGAGE_RANGE, definition.attack?.range ?? 0))
+  return wholeRows(Math.max(definition.engageRange ?? ENGAGE_RANGE, definition.attack?.range ?? 0))
 }
 
 /** Whether a unit of this content follows its side's target: one that moves and fights (`advance`), not a

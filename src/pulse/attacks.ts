@@ -10,7 +10,7 @@
 // triggerRange`) — the one of the four with no `attack` at all, bucketed by tier alongside the rest
 // rather than swept into an end-of-function pass that would let it act after every tier already had.
 
-import { guardsOf } from "./aura.ts"
+import { boostsOf, guardsOf } from "./aura.ts"
 import { actorsWithin, applyDamage, applyHeal, distanceBetween, inAttackRange, resolveTarget, speedTier, within } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
@@ -32,6 +32,7 @@ export function attacks(context: TickContext): void {
   // every hit of the tick — this phase's tiers and the blasts the resolution after it sets off — so no hit is
   // guarded or not by the order two hits of one tier are applied in (`aura.ts`).
   context.guards = guardsOf(context)
+  context.boosts = boostsOf(context)
 
   // Bucketed once, in `context.actors` order, so each tier below iterates only its own attackers
   // instead of re-scanning every actor — the same actors in the same relative order either way, so

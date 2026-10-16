@@ -10,7 +10,7 @@ import { createRegistry, FIXTURE_REGISTRY, rectFootprint } from "../src/content/
 import type { DomainEvent } from "../src/events/types.ts"
 import { auraRegistry } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { guardedAmount } from "../src/pulse/aura.ts"
+import { boostedAmount, guardedAmount } from "../src/pulse/aura.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
@@ -52,6 +52,8 @@ const REGISTRY = createRegistry([
   bearer("unit.test.frail", 75, 1),
   striker("unit.test.striker", 11),
   striker("unit.test.pricker", 1),
+  // A bearer of a boost, Averno's kind: his units within 3 deal a quarter more.
+  { ...bearer("unit.test.pressing", 75), aura: { radius: 3, damageDealtPercent: 125 } },
   // A trooper that stands still: guarded or not, it only takes hits.
   { ...FIXTURE_REGISTRY.get("unit.citizen.trooper"), id: "unit.test.standing", short: "standing", behavior: "static" },
 ])
@@ -171,4 +173,20 @@ test("By the Book's strength is the Experiment's: off takes the aura away, and e
   assert.equal(auraRegistry(plain, 25), plain)
   assert.throws(() => auraRegistry(FIXTURE_REGISTRY, 100), /0 to 99 percent/)
   assert.throws(() => auraRegistry(FIXTURE_REGISTRY, 2.5), /0 to 99 percent/)
+})
+
+test("a boost: a unit within a boosting aura deals more with every hit, rounded down, never less than the hit; a guard on the target still takes its share", () => {
+  assert.equal(boostedAmount(11, 125), 13)
+  assert.equal(boostedAmount(1, 125), 1)
+  assert.equal(boostedAmount(4, 125), 5)
+  assert.equal(boostedAmount(0, 125), 0)
+  // The striker stands beside the pressing bearer, so its 11 becomes 13 on the raid's trooper.
+  const boosted = run({ A: [[2, 2, "unit.test.pressing"], [3, 2, "unit.test.striker"]], B: [[4, 2, "unit.test.standing"]] }, 13)
+  assert.equal(hitsOn(boosted, "B:standing")[0]?.amount, 13)
+  // Out of reach, the same striker hits for 11.
+  const plain = run({ A: [[0, 0, "unit.test.pressing"], [9, 6, "unit.test.striker"]], B: [[10, 6, "unit.test.standing"]] }, 13)
+  assert.equal(hitsOn(plain, "B:standing")[0]?.amount, 11)
+  // A boosted hit on a guarded target: 13 through a three-quarter guard is 9.
+  const both = run({ A: [[2, 2, "unit.test.pressing"], [3, 2, "unit.test.striker"]], B: [[4, 2, "unit.test.standing"], [5, 2, "unit.test.steady"]] }, 13)
+  assert.equal(hitsOn(both, "B:standing")[0]?.amount, 9)
 })

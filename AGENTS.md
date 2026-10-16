@@ -98,7 +98,7 @@ IDEA (a sketch). The ones every session needs:
 | Path | What it is |
 | --- | --- |
 | `src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/` | The deterministic kernel. |
-| `armies/`, `src/armies/` | Armies as data: `armies/all` (the cards any Commander may use) and `armies/vasse` (her Commander and her campaign, its levels and what each unlocks), and their loader. |
+| `armies/`, `src/armies/` | Armies as data: `armies/all` (the cards any Commander may use), `armies/vasse` (her Commander and her campaign, its levels and what each unlocks) and `armies/averno` (his), and their loader. |
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format and the checked-in maps. |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, Recall, missions and their trigger runner. |

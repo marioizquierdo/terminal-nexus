@@ -21,6 +21,7 @@ import type { BuildContext, BuildState } from "../build/state.ts"
 import { nexusTile, remaining, withoutScene } from "../build/state.ts"
 import type { CommanderAbsence, DialogFocus, DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { createRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
 import { MAX_ROUNDS, roundCredits } from "../armies/curve.ts"
 import { tilesOf } from "../grid/coords.ts"
@@ -316,6 +317,7 @@ function withRoundScene(context: BuildContext, scene: readonly DialogLine[]): Bu
  *   foresees the round again so they show as arriving.
  * - `modifyCommander` multiplies every Commander's aura reach (`auraReachRegistry`): her card and the battle.
  * - `modifyContent` gives every row of the building it names more waves a round: its card and the battle.
+ * - `modifyUnit` changes the unit it names in the round's registry (Unfiled Ordnance: troopers burst when they die).
  * - `addBuilding` adds the building it names to the build menu, after the rows already there.
  * - `credits` changes nothing here: the reducer adds them to what is left to spend when the pick is made.
  */
@@ -336,6 +338,14 @@ export function keepPower(context: BuildContext, card: PowerCard): BuildContext 
         item.contentId === structure && item.spawns !== undefined ? { ...item, spawns: { ...item.spawns, waves: item.spawns.waves + addWaves } } : item,
       ),
     }
+  }
+  if ("modifyUnit" in effect) {
+    // A kind of unit changed for the rest of the mission (Unfiled Ordnance: it bursts when it dies), in the registry
+    // the Build Phase and every later battle read.
+    const { unit, detonation } = effect.modifyUnit
+    if (!context.registry.has(unit)) return kept
+    const ids = context.registry.ids()
+    return { ...kept, registry: createRegistry(ids.map((id) => (id === unit ? { ...context.registry.get(id), detonation } : context.registry.get(id)))) }
   }
   if ("addBuilding" in effect) {
     const card = building(effect.addBuilding.building)

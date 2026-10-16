@@ -1,7 +1,7 @@
 # Milestone 14 — Commander Armies
 
 **Status:** CURRENT
-**Current step:** 14B, round 2 — supply given by buildings, and a building's actions (Hold production), on the curve's tech tree, credits every round and six-round level.
+**Current step:** 14C — Marshal Averno, the second Commander, on Vasse's buildings: an aura that presses, powers of his own, a card from the Ravel Nexus some rounds, and the curve level played by both.
 **Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing; complete)
 
 Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
@@ -81,11 +81,16 @@ affects the power curve". Built on the same pull request.
 
 ### Step 14C — Marshal Averno
 
-- [ ] Averno is a second Commander on Vasse's buildings, with his own automatic abilities, a build that leans
+Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+
+- [x] Averno is a second Commander on Vasse's buildings, with his own automatic abilities, a build that leans
       forward where hers holds, a few powers that act on the enemy, and his structural quirk: some rounds, one card
       in his hand comes from the Ravel Nexus (an army bending the schedule, which the Nexus Pulse milestone had
       planned).
-- [ ] He is played beside Vasse on the same level; the pull request says whether they read apart in two rounds.
+- [x] He is played beside Vasse on the same level; the pull request says whether they read apart in two rounds.
+      They do: with the same build his side clears round 1 sooner and loses less, he falls in round 2 and she does not,
+      and his side loses more in round 3 while he is out ([the measure](../game-design/commander-armies.md)). His
+      level is her first five rounds: with nothing built he misses round 5, and an empty base cannot hold her round 6.
 
 ### Step 14D — Catch-up, measured
 

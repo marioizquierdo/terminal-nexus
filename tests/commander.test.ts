@@ -78,8 +78,9 @@ test("Vasse is a Commander: a persistent @ on the units layer, and PERIMETER bri
   // The one glyph that is not a letter: the same for either side, so neither case can hide her.
   assert.equal(entityGlyph(VASSE, "A", { x: 0, y: 0 }), "@")
   assert.equal(entityGlyph(VASSE, "B", { x: 0, y: 0 }), "@")
-  // No other content is a Commander.
-  assert.deepEqual(registry.ids().filter((id) => registry.get(id).commander === true), [VASSE])
+  // The Commanders are Vasse and Averno, each with a glyph that is not a letter: hers `@`, his `&`.
+  assert.deepEqual(registry.ids().filter((id) => registry.get(id).commander === true).sort(), ["unit.citizen.averno", VASSE])
+  assert.deepEqual(artFor("unit.citizen.averno"), ["&"])
 
   const squads = PERIMETER.triggers.find((trigger) => trigger.id === "squads")
   const spawned = squads?.do.flatMap((action) => ("spawn" in action ? action.spawn.units : []))

@@ -50,4 +50,32 @@ export const COMMANDER_CONTENT: readonly ContentDef[] = [
     // The Nexus takes its Symbol back: nothing of her is left on the ground to salvage.
     salvage: 0,
   },
+  {
+    // Marshal Averno, the second Commander (commander-armies.md, the mirror; Commander Armies' third step): the same
+    // Citizen army, pressed forward. Where Vasse guards, he pushes — a melee Commander in the front rank whose aura
+    // makes his units hit harder — and he pays for it: lighter than her, and when he falls the Nexus files him a
+    // round late. First fixtures, measured on the curve level beside her, no balance claim.
+    id: "unit.citizen.averno",
+    short: "averno",
+    commander: true,
+    supplyCost: 0,
+    // Out for the round after the one he falls in: the forward Commander's cost (the owner, 2026-10-14: "Maybe some
+    // commander will have this disadvantage that they stay out for a full round").
+    roundsOut: 1,
+    layer: "units",
+    footprint: rectFootprint(1, 1),
+    maxHp: 70,
+    movementRate: { numerator: 10, denominator: 3 },
+    speedTier: 1,
+    // In the front rank: hand to hand, a little harder than a trooper.
+    attack: { kind: "melee", range: 1, damage: 9, cooldownTicks: 12 },
+    collidesWith: ["obstacles", "units"],
+    behavior: "advance",
+    // He charges: he turns from his post to fight what comes within 12 columns or 6 rows of him, where every other
+    // unit waits for 6 and 3 — so he leaves the line for the front, and takes his aura there.
+    engageRange: 12,
+    // Forward Order, his pressing aura: he and his units within a reach of 4 deal a quarter more with every hit.
+    aura: { radius: 4, damageDealtPercent: 125, name: "Forward Order" },
+    salvage: 0,
+  },
 ]

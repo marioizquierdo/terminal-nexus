@@ -84,6 +84,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     targets: state.targets ?? {},
     // Who an aura guards is decided as the attacks begin (`attacks.ts`), once the tick's moves have settled.
     guards: new Map(),
+    boosts: new Map(),
   }
 
   // 1.5. Spawning — from the unit-architecture spike; not one of the nine phases pulse.md names.

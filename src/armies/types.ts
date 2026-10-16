@@ -70,6 +70,8 @@ export type BuildingCard = Readonly<{
  *   (Drill Schedule). `building` is a building card's id.
  * - `addBuilding`: a building joins the build menu, for the rest of the mission (Aid Station Permit). A power
  *   adds; only the tech tree unlocks. `building` is a building card's id; no level unlocks it.
+ * - `modifyUnit`: a kind of unit changes for the rest of the mission — so far, it bursts when it dies
+ *   (`detonation`: Unfiled Ordnance, Averno's). `unit` is a unit's content id.
  * - `credits`: so many credits to spend this Build Phase (War Chest).
  */
 export type PowerEffect =
@@ -77,6 +79,7 @@ export type PowerEffect =
   | Readonly<{ modifyCommander: Readonly<{ auraReachTimes: number }> }>
   | Readonly<{ modifyContent: Readonly<{ building: string; addWaves: number }> }>
   | Readonly<{ addBuilding: Readonly<{ building: string }> }>
+  | Readonly<{ modifyUnit: Readonly<{ unit: string; detonation: Readonly<{ radius: number; damage: number }> }> }>
   | Readonly<{ credits: number }>
 
 /**
@@ -118,6 +121,10 @@ export type PowerCard = Readonly<{
   repeatable?: boolean
   /** Offered beside every hand rather than dealt into one (War Chest, the owner's testing tool). */
   always?: boolean
+  /** The Nexus it comes from when not the army's own (`"ravel"`: a card from the Ravel Nexus in a Citizen
+   *  Commander's hand, Averno's leak). Dealt only by a schedule slot that asks for that Nexus, `{ "from": "ravel" }`,
+   *  and marked as such where it is shown. Absent: the army's own Nexus. */
+  from?: string
   /** Its chance raised for some rounds. Absent: as likely as any power of its rarity. */
   chance?: readonly ChanceModifier[]
   /** What must be true before it can be dealt. Absent: nothing. */
@@ -128,8 +135,9 @@ export type PowerCard = Readonly<{
   notes?: string
 }>
 
-/** One card of a scheduled hand: dealt from a rarity, or a named power a level makes sure of (`{ power }`). */
-export type ScheduleSlot = Rarity | Readonly<{ power: string }>
+/** One card of a scheduled hand: dealt from a rarity, a named power a level makes sure of (`{ power }`), or one of
+ *  the cards from another Nexus (`{ from }`: an army bending the schedule, Averno's leak). */
+export type ScheduleSlot = Rarity | Readonly<{ power: string }> | Readonly<{ from: string }>
 
 /** From round `round` on, until the next entry, each hand deals one card for each of `deal`'s slots. */
 export type ScheduleEntry = Readonly<{ round: number; deal: readonly ScheduleSlot[] }>

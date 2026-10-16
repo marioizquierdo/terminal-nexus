@@ -129,12 +129,19 @@ export type ContentDef = Readonly<{
    * heroes on warcraft3 ... Vasse should provide boost to nearby units"). While its bearer is on the Grid, the
    * units of its side within `radius` tiles of it — measured as range is (`footprintWithin`), to the nearest tile
    * of each footprint, a row counting two columns — take `damageTakenPercent` percent of the damage a hit would
-   * deal them. Vasse's is *By the Book*.
+   * deal them (a guard: Vasse's *By the Book*), or deal `damageDealtPercent` percent of the damage they would (a
+   * boost: Averno's *Forward Order*). An aura is one of the two.
    * The kernel's damage rule reads it (`src/pulse/aura.ts`: rounded down, never below 1, the bearer covered
-   * too, the strongest aura alone when several reach a unit); presentation draws its reach. `name` is what a
-   * card calls it, the way a Nexus power has a name; no rule reads it.
+   * too, the strongest aura of each kind alone when several reach a unit); presentation draws its reach. `name` is
+   * what a card calls it, the way a Nexus power has a name; no rule reads it.
    */
-  aura?: Readonly<{ radius: number; damageTakenPercent: number; name?: string }>
+  aura?: Readonly<{ radius: number; damageTakenPercent?: number; damageDealtPercent?: number; name?: string }>
+  /**
+   * How near an enemy must come before this unit turns from its side's target to fight it (`engageRange`,
+   * `src/pulse/target.ts`), when it is not the shared one: Averno's charge, a Commander who leaves the line for
+   * what comes at it. Measured as range is; undefined for every other unit, which keeps the shared reach.
+   */
+  engageRange?: number
   /**
    * Hard restriction: this entity may only perceive hostiles on these layers as viable targets — for
    * a normal `attack` and for a contact `detonation.triggerRange` alike, since both are resolved from

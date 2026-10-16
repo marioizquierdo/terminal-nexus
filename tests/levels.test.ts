@@ -54,13 +54,14 @@ test("a round the level does not have is refused by name", () => {
   for (const round of [0, 4, 1.5]) assert.throws(() => openRound(DEFAULT_LEVEL, round), /has rounds 1 to 3/)
 })
 
-test("the levels are her campaign's, in its order: PERIMETER, the Commander's cadence, then the curve", () => {
+test("the levels are her campaign's, in its order: PERIMETER, the Commander's cadence, then the curve; then his", () => {
   assert.deepEqual(
     LEVELS.map((level) => [level.id, level.campaign, level.title, level.rounds]),
     [
       ["vasse-test-1", "vasse", "Perimeter", 3],
       ["vasse-test-2", "vasse", "The Commander falls", 3],
       ["vasse-test-3", "vasse", "The curve", 6],
+      ["averno-test-1", "averno", "The curve, pressed", 5],
     ],
   )
   assert.deepEqual(
