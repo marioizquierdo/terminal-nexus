@@ -447,6 +447,17 @@ than any one feature:
 4. **A multi-tile unit can jam its own building.** Survivors come home round their buildings, so a wave of 2x2
    sentinels found room for one or two of three. A building's unit should fit the ring it comes out on.
 
+## Supply and building actions (2026-10-16)
+
+1. **A cap frees places only as units fall.** The supply cap held the army's size, and the opening's share barely
+   moved, because on an easy level the early units live. Before expecting a rule to change a measure, ask what has to
+   happen on the Grid for it to bite; here, attrition.
+2. **A free-looking letter may be an arrow.** `h` was the obvious key for Hold, and `h j k l` move the cursor
+   everywhere; the keyboard tests caught it. Grep the keyboard adapter for the letter before naming a key.
+3. **Arithmetic two layers share belongs below both.** Supply was first written in the kernel, and the Build Phase
+   could not import it (the reducer never reaches the kernel). Content's own arithmetic lives with the content, where
+   every layer may read it.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

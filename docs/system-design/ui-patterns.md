@@ -171,6 +171,16 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   here" rather than a press (dim in monochrome). (RULE — `tests/build-menu.test.ts`, `tests/build-card.test.ts`)
 - **Disabled** rows (unaffordable, or Start Battle Round before the Nexus pick) are dimmed, and pressing one is
   refused with its reason on the bottom line. (RULE — `tests/build-start.test.ts`)
+- **A building's actions are on its card** (the owner, 2026-10-16: "When a building is selected during build-phase
+  map exploration, it should show the available actions, with hotkeys as usual"). Explore Map on a building of the
+  player's lists, after its description, what it lets the player do, each as `[key] Label`; the key, a click on the
+  row and a driver's `building-action` command are one command. Built: Hold production, `z`, on a building that
+  makes units: it sends no wave this round's Battle Round, its WAVE row reads "held this round", the row turns to
+  Resume production, and the bottom line says it trains again the round after. Not `h`, an arrow (h j k l). Every
+  later action — a building's upgrade, a defender inside, a worker slot — is a row of the same kind.
+  (RULE — `tests/building-actions.test.ts`)
+- **The army's supply is on the credits line's left**, `units 5/12`, and bold once full, when a building waits for
+  a place ([`pulse.md`](pulse.md), supply). (RULE — `tests/build-menu.test.ts`)
 - **A building the tech tree has not reached is in the build menu, dimmed**, under its own digit like any other,
   so no hotkey moves when it opens and the tree's state is always in sight (the owner, 2026-10-15: locked buildings
   shown "with what they need"). Pressing it is refused — "Garrison is locked: it needs a Barracks standing." — and

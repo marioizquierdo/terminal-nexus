@@ -87,6 +87,10 @@ Beside it, `clearance`: the room a building that makes units keeps free round it
 Hatchery have one, of one tile); the kernel never reads it either, and while the "Spawn space" Experiment is
 felt its value stands in for each ([`pulse.md`](pulse.md), room round a building that makes units).
 
+Supply: `supplyProvided`, how many more units a structure lets its side field at once (the Grid Nexus 12, a Supply
+Depot 8), and `supplyCost`, the places a unit takes (1 when absent; a Commander's is 0). The kernel reads both, in
+production only ([`pulse.md`](pulse.md), supply).
+
 A building that heals is the kernel's healer on a structure: `behavior: "support"` with a heal `attack`, and
 `targetLayers` naming what it heals, which narrows a healer's wounded allies as it narrows an attacker's enemies.
 The Aid Station names the units' layers, so it never heals a building ([`pulse.md`](pulse.md), a healer).

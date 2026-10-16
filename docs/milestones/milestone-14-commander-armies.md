@@ -1,7 +1,7 @@
 # Milestone 14 — Commander Armies
 
 **Status:** CURRENT
-**Current step:** 14B — the curve on the Grid: a tech tree in tiers that is one rule for the campaign, runs and two players, credits every round, and a six-round level where survivors stack.
+**Current step:** 14B, round 2 — supply given by buildings, and a building's actions (Hold production), on the curve's tech tree, credits every round and six-round level.
 **Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing; complete)
 
 Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
@@ -65,6 +65,19 @@ keeps an early lead from compounding is registered with a recommendation (a supp
 - [x] A second tier: a building that needs a Barracks standing and sends units much stronger than troopers.
 - [x] A test level of six rounds, reachable by route, where survivors stack and the curve can be played.
 - [x] Measured and written down: how much of the last round's army came from the first rounds.
+
+### Step 14B, round 2 — Supply, and a building's actions
+
+Mario's answer to what keeps an early lead from compounding, and a new idea ([his
+words](../history/feedback/2026-10-13-commander-armies.md)): "go with your recommendation, supply cap ... Supply should
+be controlled by another building", and actions on a building, chosen in Explore Map with their keys, "because it
+affects the power curve". Built on the same pull request.
+
+- [x] Supply: an army fields what its buildings give (the Grid Nexus, a Supply Depot), each unit taking its places,
+      and a building waits while its side is full. The credits line shows it.
+- [x] A building's actions on its card, each under its own key and clickable: Hold production, which keeps a
+      building's wave home for one round.
+- [x] The curve level measured again with supply.
 
 ### Step 14C — Marshal Averno
 
