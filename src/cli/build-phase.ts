@@ -146,7 +146,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     host: options.hostName ?? "terminal",
     columns: loggedSize.columns,
     rows: loggedSize.rows,
-    colours: options.settings.capability,
+    colors: options.settings.colors,
     // Where this screen opened, as a route: a report's log says which round of which level it was.
     at: formatRoute(at),
   })
@@ -156,7 +156,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   const backend = await selectBackend(options.backend, {
     stdout,
     stdin,
-    capability: options.settings.capability,
+    colors: options.settings.colors,
     theme: options.settings.theme,
     width: layout.frame.width,
     height: layout.frame.height,
@@ -191,7 +191,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
   const saveSettings = (settings: Settings): void => {
     // A new colour depth or background is drawn on the very next frame, without restarting the
     // backend (`setPresentation`).
-    backend.setPresentation?.(settings.capability, settings.theme)
+    backend.setPresentation?.(settings.colors, settings.theme)
     const store = options.settingsStore
     if (store === undefined) return
     pendingSave = pendingSave.then(() =>
@@ -299,7 +299,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       ? null
       : animation.frame(build.state, now, {
           reducedMotion: settings.reducedMotion,
-          capability: settings.capability,
+          colors: settings.colors,
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
           raidTrail: hasTrail(raid, visibleRange(build.state.camera, build.state.viewport)),
           ...(options.scenes === false ? {} : appearsFor(build.round)),
@@ -322,7 +322,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
               ...(pulse === undefined ? {} : { pulse }),
               ...(raid === undefined ? {} : { raid }),
             },
-            settings.capability,
+            settings.colors,
           )
     // The frame timer runs while anything is still moving: an animation, or a Pulse that is playing (which
     // wants the very next frame, a frame's length away, whatever an animation says). A popup

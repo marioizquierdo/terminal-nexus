@@ -35,10 +35,16 @@ test("--help prints usage and exits zero without needing a terminal at all", () 
   assert.match(result.stdout, /Campaign, Challenge, Settings, About, Exit/)
 })
 
-test("an unknown --capability is a clear error, not a silent fallback", () => {
-  const result = runTerminalNexus(["--capability", "hd"])
+test("an unknown --colors is a clear error, not a silent fallback", () => {
+  const result = runTerminalNexus(["--colors", "hd"])
   assert.notEqual(result.status, 0)
-  assert.match(result.stderr, /unknown capability/)
+  assert.match(result.stderr, /unknown colour depth/)
+})
+
+test("--capability, this setting's old name, is refused with the name that replaced it", () => {
+  const result = runTerminalNexus(["--capability", "truecolor"])
+  assert.equal(result.status, 2)
+  assert.match(result.stderr, /--capability is gone: it is called --colors now/)
 })
 
 test("an argument the game does not read is refused before any screen, and a removed flag names what replaced it", () => {

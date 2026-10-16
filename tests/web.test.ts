@@ -26,13 +26,14 @@ import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { buildLayout } from "../src/build/layout.ts"
 import { keyBytes } from "../src/playtest/keys.ts"
-import { DIM_ALPHA, paintOps } from "../src/view/backends/canvas.ts"
+import { paintOps } from "../src/view/backends/canvas.ts"
 import { chunkText } from "../src/view/backends/ports.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import { keysFromChunk } from "../src/terminal/playback.ts"
-import { BACKGROUND_RGB, rgbFor, seeThroughColours } from "../src/view/roles.ts"
+import { BACKGROUND_RGB, DIM_ALPHA, seeThroughColours } from "../src/view/roles.ts"
+import { rgbFor } from "./color-helpers.ts"
 import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, withShift } from "../src/web/keys.ts"
 import { readAddress } from "../src/web/address.ts"
 import { checkDemos } from "../src/web/demos.ts"
@@ -137,10 +138,10 @@ test("the canvas paints every glyph the terminal shows, where it shows it", () =
   // The opening screen, a popup over the Grid, and the map scrolled to its west edge.
   for (const script of [[], ["n"], ["n", "1", "Tab", "S-Left", "S-Left", "S-Left", "S-Left"]]) {
     const frame = buildFrame(script)
-    for (const capability of ["truecolor", "color256", "monochrome"] as const) {
-      const ops = paintOps(frame, capability)
+    for (const colors of ["truecolor", "color256", "monochrome"] as const) {
+      const ops = paintOps(frame, colors)
       assert.equal(ops.length, frame.width * frame.height)
-      assert.equal(paintedText(frame, ops), frameToText(frame), `${script.join(" ")} at ${capability}`)
+      assert.equal(paintedText(frame, ops), frameToText(frame), `${script.join(" ")} at ${colors}`)
     }
   }
 })
@@ -156,7 +157,11 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
   frame.cells.forEach((cell, index) => {
     const op = ops[index]
     assert.ok(op !== undefined)
-    const colour = css(rgbFor(cell.style.fgRole, "truecolor", "dark", cell.style.fade ?? 0))
+    const ink = rgbFor(cell.style.fgRole, "truecolor", "dark", cell.style.fade ?? 0)
+    const colour = css(ink)
+    // A dim glyph is mixed toward the ground in its colours, the same on every terminal (not drawn at
+    // partial opacity, as monochrome's faint is).
+    const faint = css(ink.map((channel, at) => Math.round(channel + (BACKGROUND_RGB.dark[at]! - channel) * (1 - DIM_ALPHA))))
     // A see-through style that shows — the incoming raid's wash — is the role table's colours mixed as the
     // terminal mixes them, glyph and fill.
     const seen = seeThroughColours(cell, "truecolor", "dark")
@@ -170,11 +175,13 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
       assert.equal(op.background, colour)
       assert.equal(op.foreground, css(BACKGROUND_RGB.dark))
     } else {
-      assert.equal(op.foreground, colour)
+      assert.equal(op.foreground, cell.style.dim === true ? faint : colour)
+      // Every cell has a fill at a colour depth: the ground, unless the cell brings its own.
+      assert.equal(op.background, css(BACKGROUND_RGB.dark))
     }
     if (cell.style.dim === true && seen === null) {
       dim += 1
-      assert.equal(op.alpha, DIM_ALPHA)
+      assert.equal(op.alpha, 1, "dim is in the colours at truecolor, not an opacity")
     }
     assert.equal(op.bold, cell.style.bold === true)
   })
@@ -283,7 +290,7 @@ test("the page plays a terminal that reports key events: it answers, keeps the f
   })
   const keyboard = Object.assign(input, { isTTY: true })
   const running = runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     backend: { name: "page", start: async () => {}, present: () => {}, stop: async () => {} },
     stdout: output,
     stdin: keyboard,

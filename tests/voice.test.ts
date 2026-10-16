@@ -43,8 +43,8 @@ import { AURA_WASH } from "../src/view/pulse-scene.ts"
 import type { PulseFrame } from "../src/view/pulse-scene.ts"
 import type { Moment, Speaker, SpokenLine } from "../src/view/pulse-voice.ts"
 import { CUTS_IN, PRIORITY, VOICE, lineLength, pickLine, planVoice, speakerOf, voiceAt, voiceMoments } from "../src/view/pulse-voice.ts"
-import { CAPABILITY_MODES } from "../src/view/roles.ts"
-import type { CapabilityMode } from "../src/view/roles.ts"
+import { COLOR_DEPTHS } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
 import { MINIMUM, buildSide, compose, panelLines } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 import { COMMANDER_FALLS } from "./commander-fixture.ts"
@@ -554,8 +554,8 @@ test("her aura's reach: a diamond of the content's radius around her, washed on 
   assert.ok(lit > 5, "the reach is barely drawn")
   // A glyphless write: every tier shows the same glyphs with the aura as without it.
   const { aura: _aura, ...withoutAura } = pulse
-  for (const capability of CAPABILITY_MODES) {
-    assert.equal(frameToText(compose(side, {}, capability)), frameToText(compose(side, { pulse: withoutAura }, capability)))
+  for (const colors of COLOR_DEPTHS) {
+    assert.equal(frameToText(compose(side, {}, colors)), frameToText(compose(side, { pulse: withoutAura }, colors)))
   }
   // Gone at cease fire: it guards a fight, and the walk home is not one.
   side.build.advance((side.build.pulse?.times.stopMs ?? 0) + 10)
@@ -586,7 +586,7 @@ test("her aura goes when she falls, and so does every line but her last words", 
   // Her last words are said where she fell, and no light marks them: she is gone from the tile.
   assert.equal(pulse.voice?.text, last.text)
   assert.ok(!pulse.sample.effects.some((effect) => effect.instance.recipe === "fx.light.flash"))
-  for (const capability of ["monochrome", "truecolor"] as const satisfies readonly CapabilityMode[]) {
-    assert.ok(mapOf(compose(side, {}, capability), side).includes(quoted(last.text)))
+  for (const colors of ["monochrome", "truecolor"] as const satisfies readonly ColorDepth[]) {
+    assert.ok(mapOf(compose(side, {}, colors), side).includes(quoted(last.text)))
   }
 })

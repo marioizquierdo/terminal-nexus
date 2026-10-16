@@ -16,7 +16,7 @@
 //
 // **A few stay on a real terminal** (`live`, below), because what they prove is the terminal path
 // itself: the program starting up, the resize gate, real Shift+Arrow and PageDown bytes as tmux
-// sends them, real SGR mouse clicks, and the `--capability monochrome` flag end to end. Those go
+// sends them, real SGR mouse clicks, and the `--colors monochrome` flag end to end. Those go
 // through tmux -> capture-pane -e -> HTML -> headless Chromium (scripts/lib/terminal-capture.mjs),
 // sending one key per tmux call with a short pause, then waiting for the pane to stop changing
 // before it is photographed.
@@ -75,15 +75,15 @@ const PICK_FIRST_POWER = "n 1"
  *  composed onto the last frame, since a key script alone never shows a moment in time.
  *  `experiments`: Experiments to open with instead of the defaults.
  *  A `wait~MS` step in `keys` lets a Battle Round on screen run that long on the script's own clock.
- *  `capability` and `theme` are the player's settings in the playtest as well as the picture's, so a
+ *  `colors` and `theme` are the player's settings in the playtest as well as the picture's, so a
  *  screen that shows them (Settings) says what the picture is. */
-function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", present, experiments }) {
+function scripted(name, caption, { keys, expect, cols = 80, rows = 24, colors = "truecolor", theme = "dark", present, experiments }) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({ scenes: false,
     steps: parseKeyScript(keys),
     columns: cols,
     rows,
-    settings: { ...DEFAULT_SETTINGS, capability, theme },
+    settings: { ...DEFAULT_SETTINGS, colors, theme },
     ...(experiments === undefined ? {} : { experiments }),
   })
   const last = run.frames[run.frames.length - 1]
@@ -94,11 +94,11 @@ function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capabilit
   const frame =
     present === undefined
       ? last.frame
-      : composeBuildFrame({ context: run.context, state: last.state, layout: run.layout, ...present }, capability)
+      : composeBuildFrame({ context: run.context, state: last.state, layout: run.layout, ...present }, colors)
   report(
     renderFramePng({
       frame,
-      capability,
+      colors,
       theme,
       caption,
       targetPath: join(outputDirectory, `${name}.png`),
@@ -108,9 +108,9 @@ function scripted(name, caption, { keys, expect, cols = 80, rows = 24, capabilit
 }
 
 /** A whole key script as an animated GIF, one frame per key. */
-function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", delayMs = 900, holdMs = 2500 }) {
+function scriptedGif(name, { keys, expect, cols = 80, rows = 24, colors = "truecolor", delayMs = 900, holdMs = 2500 }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, capability })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, colors })
   const lastIndex = run.frames.length - 1
   if (!frameToText(run.frames[lastIndex].frame).includes(expect)) {
     throw new Error(`${name}: expected "${expect}" on screen after "${keys}"`)
@@ -121,7 +121,7 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
       caption: frame.index === 0 ? "as it opens" : `step ${frame.index} of ${lastIndex}: ${frame.label}`,
       delayMs: frame.index === lastIndex ? holdMs : delayMs,
     })),
-    capability,
+    colors,
     targetPath: join(outputDirectory, `${name}.gif`),
     scratchDir: scratch,
   })
@@ -135,7 +135,7 @@ function scriptedGif(name, { keys, expect, cols = 80, rows = 24, capability = "t
  * cease-fire, the walk home and the result, in real time. A Pulse's screen is a pure function of that clock, so a script that waits
  * gets exactly what a player who watched gets.
  */
-function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments, cols = 80, rows = 24, capability = "truecolor", scale = 1 }) {
+function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments, cols = 80, rows = 24, colors = "truecolor", scale = 1 }) {
   if (only !== null && only !== name) return
   const planSteps = parseKeyScript(plan).length
   const waits = Array.from({ length: Math.round((toMs - fromMs) / stepMs) }, () => `wait~${stepMs}`)
@@ -143,7 +143,7 @@ function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments,
     steps: parseKeyScript([plan, `wait~${fromMs}`, ...waits].join(" ")),
     columns: cols,
     rows,
-    capability,
+    colors,
     ...(experiments === undefined ? {} : { experiments }),
   })
   const frames = run.frames.slice(planSteps + 1)
@@ -158,7 +158,7 @@ function pulseGif(name, { plan, fromMs, toMs, stepMs = 250, expect, experiments,
         caption: `${((fromMs + index * stepMs) / 1000).toFixed(2)} s into the Battle Round`,
         delayMs: index === lastIndex ? 3000 : stepMs,
       })),
-      capability,
+      colors,
       targetPath: join(outputDirectory, `${name}.gif`),
       scratchDir: scratch,
       scale,
@@ -183,9 +183,9 @@ function settledAnimation(state, options = {}) {
  * is every frame `BuildAnimation` gives between the two cameras and cursors
  * at the live loop's own frame interval — the same function, fed a clock that steps instead of waits.
  */
-function slideGif(name, { before, move, cols = 80, rows = 24, capability = "truecolor" }) {
+function slideGif(name, { before, move, cols = 80, rows = 24, colors = "truecolor" }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${before} ${move}`), columns: cols, rows, capability })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${before} ${move}`), columns: cols, rows, colors })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
   const animation = settledAnimation(from.state)
@@ -193,12 +193,12 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
   const shots = [{ frame: from.frame, caption: "before", delayMs: 900 }]
   for (let now = 1; ; now += FRAME_MS) {
     const live = animation.frame(to.state, now)
-    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, ...livePresentation(live) }, capability)
+    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, ...livePresentation(live) }, colors)
     const done = live.busyUntil === null
     shots.push({ frame, caption: `${move}: ${now - 1} ms`, delayMs: done ? 2500 : 250 })
     if (done) break
   }
-  report(renderFramesGif({ shots, capability, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
+  report(renderFramesGif({ shots, colors, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
 }
 
 /**
@@ -210,14 +210,14 @@ function slideGif(name, { before, move, cols = 80, rows = 24, capability = "true
  */
 function placementGif(
   name,
-  { before, place, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", reducedMotion = false, stepMs = 50, showMs = 100, stillAtMs, caption },
+  { before, place, expect, cols = 80, rows = 24, colors = "truecolor", theme = "dark", reducedMotion = false, stepMs = 50, showMs = 100, stillAtMs, caption },
 ) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({ scenes: false,
     steps: parseKeyScript(`${before} ${place}`),
     columns: cols,
     rows,
-    settings: { ...DEFAULT_SETTINGS, capability, theme, reducedMotion },
+    settings: { ...DEFAULT_SETTINGS, colors, theme, reducedMotion },
   })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
@@ -226,7 +226,7 @@ function placementGif(
   }
   const options = { reducedMotion }
   const compose = (state, live) =>
-    composeBuildFrame({ context: run.context, state, layout: run.layout, reducedMotion, ...livePresentation(live) }, capability)
+    composeBuildFrame({ context: run.context, state, layout: run.layout, reducedMotion, ...livePresentation(live) }, colors)
   const animation = settledAnimation(from.state, options)
   const opening = animation.frame(from.state, 0, options)
   const shots = [{ frame: compose(from.state, opening), caption: `before: ${before}`, delayMs: 1000 }]
@@ -235,14 +235,14 @@ function placementGif(
     const live = animation.frame(to.state, now, options)
     const frame = compose(to.state, live)
     if (stillAtMs !== undefined && now - 1 >= stillAtMs) {
-      report(renderFramePng({ frame, capability, theme, caption, targetPath: join(outputDirectory, `${name}.png`), scratchDir: scratch }))
+      report(renderFramePng({ frame, colors, theme, caption, targetPath: join(outputDirectory, `${name}.png`), scratchDir: scratch }))
       return
     }
     const done = live.busyUntil === null
     shots.push({ frame, caption: `${place}: ${now - 1} ms after placing${done ? ", settled" : speed}`, delayMs: done ? 2500 : showMs })
     if (done) break
   }
-  report(renderFramesGif({ shots, capability, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
+  report(renderFramesGif({ shots, colors, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
 }
 
 /**
@@ -252,13 +252,13 @@ function placementGif(
  * see-through cursor from Explore Map's), and the cursor's blinks when it lands — each shown for
  * `showMs`, so the GIF plays in slow motion and says so.
  */
-function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 20, showMs = 100 }) {
+function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, colors = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 20, showMs = 100 }) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({ scenes: false,
     steps: parseKeyScript(`${before} ${hand}`),
     columns: cols,
     rows,
-    settings: { ...DEFAULT_SETTINGS, capability, theme, glyphPack },
+    settings: { ...DEFAULT_SETTINGS, colors, theme, glyphPack },
   })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
@@ -274,7 +274,7 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
         glyphPack,
         ...livePresentation(live),
       },
-      capability,
+      colors,
     )
   const animation = settledAnimation(from.state)
   const opening = animation.frame(from.state, 0)
@@ -290,7 +290,7 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
     })
     if (done) break
   }
-  report(renderFramesGif({ shots, capability, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
+  report(renderFramesGif({ shots, colors, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch }))
 }
 
 /**
@@ -299,26 +299,26 @@ function handoffGif(name, { before, hand, expect, cols = 80, rows = 24, capabili
  * double flash, every `flashStepMs`), then one whole breath of its border (the "Popup pulse"
  * Experiment's length, every `stepMs`), in real time and looping.
  */
-function popupGif(name, { keys, expect, cols = 80, rows = 24, capability = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 100, flashStepMs = 30 }) {
+function popupGif(name, { keys, expect, cols = 80, rows = 24, colors = "truecolor", theme = "dark", glyphPack = "ascii", stepMs = 100, flashStepMs = 30 }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, settings: { ...DEFAULT_SETTINGS, capability, theme, glyphPack } })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(keys), columns: cols, rows, settings: { ...DEFAULT_SETTINGS, colors, theme, glyphPack } })
   const from = run.frames[run.frames.length - 2]
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${keys}", got:\n${frameToText(to.frame)}`)
-  const options = { capability }
+  const options = { colors }
   const animation = settledAnimation(from.state, options)
-  const effect = popupBorderEffect(to.state, false, capability)
+  const effect = popupBorderEffect(to.state, false, colors)
   const openingMs = effect === null ? 0 : openingLengthMs(effect)
   const breathMs = to.state.experiments.popupPulseMs
   const shots = []
   const shoot = (now, caption, delayMs) => {
     const live = animation.frame(to.state, now, options)
-    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, glyphPack, ...livePresentation(live) }, capability)
+    const frame = composeBuildFrame({ context: run.context, state: to.state, layout: run.layout, glyphPack, ...livePresentation(live) }, colors)
     shots.push({ frame, caption, delayMs })
   }
   for (let now = 0; now < openingMs; now += flashStepMs) shoot(now, `opening flash: ${now} ms of ${openingMs} ms`, flashStepMs)
   for (let at = 0; at < breathMs; at += stepMs) shoot(openingMs + at, `then the breath: ${at} ms of ${breathMs} ms`, stepMs)
-  report(renderFramesGif({ shots, capability, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch, scale: 1 }))
+  report(renderFramesGif({ shots, colors, theme, targetPath: join(outputDirectory, `${name}.gif`), scratchDir: scratch, scale: 1 }))
 }
 
 /**
@@ -326,9 +326,9 @@ function popupGif(name, { keys, expect, cols = 80, rows = 24, capability = "true
  * `timesMs` after placing, side by side with the time over each — the whole run in one still, which a
  * phone shows without playing anything. The window is `span` tiles either side of the placement.
  */
-function placementSheet(name, { before, place, expect, timesMs, capability = "truecolor", theme = "dark", caption, span = { x: 5, y: 3 } }) {
+function placementSheet(name, { before, place, expect, timesMs, colors = "truecolor", theme = "dark", caption, span = { x: 5, y: 3 } }) {
   if (only !== null && only !== name) return
-  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${before} ${place}`), settings: { ...DEFAULT_SETTINGS, capability, theme } })
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript(`${before} ${place}`), settings: { ...DEFAULT_SETTINGS, colors, theme } })
   const to = run.frames[run.frames.length - 1]
   if (!frameToText(to.frame).includes(expect)) throw new Error(`${name}: expected "${expect}" after "${before} ${place}"`)
   const placement = to.state.planned[to.state.planned.length - 1]
@@ -347,7 +347,7 @@ function placementSheet(name, { before, place, expect, timesMs, capability = "tr
   timesMs.forEach((elapsedMs, index) => {
     const frame = composeBuildFrame(
       { context: run.context, state: to.state, layout: run.layout, placing: [{ ordinal: placement.ordinal, elapsedMs }] },
-      capability,
+      colors,
     )
     const left = gap + index * (panelWidth + gap)
     const label = `${elapsedMs} ms`
@@ -362,7 +362,7 @@ function placementSheet(name, { before, place, expect, timesMs, capability = "tr
   report(
     renderFramePng({
       frame: { width, height, cells },
-      capability,
+      colors,
       theme,
       caption,
       targetPath: join(outputDirectory, `${name}.png`),
@@ -416,7 +416,7 @@ placementSheet("build-place-sheet-monochrome", {
   place: "Space",
   expect: "Barracks placed",
   timesMs: SHEET_TIMES,
-  capability: "monochrome",
+  colors: "monochrome",
   caption: "Monochrome: no colour to light, so the plain scaffold turning bold carries it",
 })
 
@@ -449,7 +449,7 @@ placementGif("build-place-barracks-monochrome", {
   before: `${PICK_FIRST_POWER} Down Space`,
   place: "Space",
   expect: "Barracks placed",
-  capability: "monochrome",
+  colors: "monochrome",
 })
 
 placementGif("build-place-reduced-motion", {
@@ -786,7 +786,7 @@ slideGif("build-view-slide", {
 
 // --- Real-terminal shots -------------------------------------------------------------------------
 
-function live(name, caption, { cols = 80, rows = 24, args = "--capability truecolor --theme dark", drive, waitForText } = {}) {
+function live(name, caption, { cols = 80, rows = 24, args = "--colors truecolor --theme dark", drive, waitForText } = {}) {
   if (only !== null && only !== name) return
   killSession(repoRoot, SESSION)
   tmux(repoRoot, [
@@ -883,9 +883,9 @@ live(
 
 live(
   "spike-monochrome",
-  "Monochrome is the floor, not the degraded mode: the same screen with every colour removed, the light and heavy edges, the highlight bar and the preview included",
+  "Monochrome is the floor, where every fact still reads (not the look the game is made for): the same screen with every colour removed, the light and heavy edges, the highlight bar and the preview included",
   {
-    args: "--capability monochrome",
+    args: "--colors monochrome",
     drive: () => {
       pickFirstPower()
       literal("1") // arm Barracks

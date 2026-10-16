@@ -11,7 +11,7 @@
 // rules decide draws the rules' own tiles; and an effect never carries a required cue alone.
 
 import type { Coord } from "../../grid/types.ts"
-import type { CapabilityMode, RoleTint, SeeThrough, StyleRole } from "../roles.ts"
+import type { ColorDepth, RoleTint, SeeThrough, StyleRole } from "../roles.ts"
 
 /** Effects may paint here and nowhere else (`effects.md`). */
 export type EffectBand = "ground-items" | "projectiles" | "effects" | "highlights"
@@ -56,7 +56,7 @@ export type EffectContext = Readonly<{
   timeMs: number
   cosmeticSeed: number
   reducedMotion: boolean
-  capability: CapabilityMode
+  colors: ColorDepth
 }>
 
 /**

@@ -20,7 +20,7 @@ import type { Settings, SettingsStore } from "../src/settings/index.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 
-const SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "color256" }
+const SETTINGS: Settings = { ...DEFAULT_SETTINGS, colors: "color256" }
 const STORE: SettingsStore = { load: async () => null, save: async () => {} }
 /** No process signals, no exit: the loop ends and its promise settles. */
 const HOST: Host = { onInterrupt: () => () => {}, exit: () => {}, reportError: () => {} }
@@ -89,7 +89,7 @@ const TITLE_SCREENS: Readonly<Record<TitleDestination["place"], readonly RegExp[
   menu: [/main menu/u, /\[5\] Exit/u],
   campaign: [/campaign/u, /Campaign is not built yet/u, /\[1\] Back/u],
   challenge: [/main menu/u, /Challenge is not built yet/u],
-  settings: [/settings/u, /Colour depth/u, /\[5\] Back/u],
+  settings: [/settings/u, /Colours/u, /\[5\] Back/u],
   about: [/about/u, /Contributions/u, /\[1\] Back/u],
 }
 

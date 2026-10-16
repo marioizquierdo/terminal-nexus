@@ -14,7 +14,7 @@ import { starterContext } from "../src/cli/starter.ts"
 import { bottomLine, hint } from "../src/build/help.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { cellAt, frameToText, offendingGlyph } from "../src/view/frame.ts"
-import { CAPABILITY_MODES } from "../src/view/roles.ts"
+import { COLOR_DEPTHS } from "../src/view/roles.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { buildKeyboardCommand } from "../src/build/keyboard.ts"
 import { MAXIMUM, MINIMUM, WIDE } from "./build-helpers.ts"
@@ -292,13 +292,13 @@ test("undoing the placement just made lets the same tile be built on again at on
   }
 })
 
-test("every capability tier puts identical glyphs on screen", () => {
+test("every colour depth puts identical glyphs on screen", () => {
   const context = neutralContext()
   const layout = buildLayout(MINIMUM, context.grid)
   const build = readyBuildSession({ context, cursor: { x: 30, y: 20 }, viewport: layout.viewport })
   build.handleData("1", layout)
-  const texts = CAPABILITY_MODES.map((capability) =>
-    frameToText(composeBuildFrame({ context, state: build.state, layout }, capability)),
+  const texts = COLOR_DEPTHS.map((colors) =>
+    frameToText(composeBuildFrame({ context, state: build.state, layout }, colors)),
   )
   for (const text of texts) assert.equal(text, texts[0])
 })

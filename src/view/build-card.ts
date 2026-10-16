@@ -14,7 +14,7 @@ import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put, text } from "./draw.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { ColorDepth } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { placementLook, placementSchedule } from "./placement.ts"
@@ -57,35 +57,35 @@ type CardLook = Readonly<{
   /** Everything on the card below its header that is neither typed nor its icon — the separator, the
    *  numbers — fading in: 1 not there yet, 0 all there. */
   hidden: number
-  capability: CapabilityMode
+  colors: ColorDepth
   /** How far into its placement frames a building's icon is, and how long they run, or `null` for the
    *  finished icon. */
   icon: Readonly<{ elapsedMs: number; framesMs: number }> | null
 }>
 
-const finishedCard = (capability: CapabilityMode): CardLook => ({ typed: (value) => value, hidden: 0, capability, icon: null })
+const finishedCard = (colors: ColorDepth): CardLook => ({ typed: (value) => value, hidden: 0, colors, icon: null })
 
 /** Whether a tier can show a continuous fade (`CellStyle.fade` resolves only there). */
-const blends = (capability: CapabilityMode): boolean => capability !== "monochrome"
+const blends = (colors: ColorDepth): boolean => colors !== "monochrome"
 
 /**
  * One panel cell, `hidden` of the way to gone (0 as it is, 1 not drawn): the `fade` style where a tier
  * blends, and where it cannot — monochrome — the cell drawn dim for the half nearer gone,
  * so every tier sees the step. `null` when it is not drawn at all.
  */
-function fadedCell(entry: BandCell, hidden: number, capability: CapabilityMode): BandCell | null {
+function fadedCell(entry: BandCell, hidden: number, colors: ColorDepth): BandCell | null {
   if (hidden <= 0) return entry
   if (hidden >= 1) return null
   if (!("cell" in entry)) return entry
-  const patch = blends(capability) ? { fade: hidden } : hidden >= 0.5 ? { dim: true } : null
+  const patch = blends(colors) ? { fade: hidden } : hidden >= 0.5 ? { dim: true } : null
   return patch === null ? entry : { ...entry, cell: { glyph: entry.cell.glyph, style: { ...entry.cell.style, ...patch } } }
 }
 
 /** Fade every cell pushed onto `cells` from index `from` on. */
-function fadeFrom(cells: BandCell[], from: number, hidden: number, capability: CapabilityMode): void {
+function fadeFrom(cells: BandCell[], from: number, hidden: number, colors: ColorDepth): void {
   const drawn = cells.splice(from)
   for (const entry of drawn) {
-    const faded = fadedCell(entry, hidden, capability)
+    const faded = fadedCell(entry, hidden, colors)
     if (faded !== null) cells.push(faded)
   }
 }
@@ -95,11 +95,11 @@ function fadeFrom(cells: BandCell[], from: number, hidden: number, capability: C
  * revealed — partway through its three beats (`CARD_BEATS`). Presentation only: the state is the
  * card's all along, and a still frame draws the finished card.
  */
-export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, capability: CapabilityMode): void {
+export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, colors: ColorDepth): void {
   const reveal = input.cardReveal
   const entry = cardEntry(input.state)
   if (reveal === undefined || entry === null || revealProgress(reveal) >= 1) {
-    drawCardPanel(cells, input, pack, finishedCard(capability))
+    drawCardPanel(cells, input, pack, finishedCard(colors))
     return
   }
   const { context, layout } = input
@@ -111,10 +111,10 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
   if (reveal.fromMenu && t < CARD_BEATS.fade) {
     // Beat 1: the menu as it stands — its chosen row already active — with every other row fading out.
     const menu: BandCell[] = []
-    drawPanel(menu, input, pack, capability)
+    drawPanel(menu, input, pack, colors)
     const hidden = t / CARD_BEATS.fade
     for (const drawn of menu) {
-      const faded = drawn.y === home ? drawn : fadedCell(drawn, hidden, capability)
+      const faded = drawn.y === home ? drawn : fadedCell(drawn, hidden, colors)
       if (faded !== null) cells.push(faded)
     }
     return
@@ -125,7 +125,7 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
     if (spec === null) return
     // Slow at both ends: a row that starts from rest and comes to rest on the header line.
     const along = EASINGS.easeInOut((t - CARD_BEATS.fade) / CARD_BEATS.slide)
-    drawMenuRow(cells, layout, Math.round(home + (header - home) * along), spec, capability)
+    drawMenuRow(cells, layout, Math.round(home + (header - home) * along), spec, colors)
     return
   }
   // Beat 3 (the whole reveal, from another card): the card itself.
@@ -138,7 +138,7 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
       return value
     },
     hidden: 0,
-    capability,
+    colors,
     icon: null,
   })
   let budget = Math.floor(total * shown)
@@ -149,7 +149,7 @@ export function drawCard(cells: BandCell[], input: BuildCompositionInput, pack: 
       return visible
     },
     hidden: 1 - shown,
-    capability,
+    colors,
     icon: lengthMs > 0 ? { elapsedMs: shown * lengthMs, framesMs: lengthMs } : null,
   })
 }
@@ -170,10 +170,10 @@ function drawCardPanel(cells: BandCell[], input: BuildCompositionInput, pack: Gl
   const limit = layout.panelLimit
   const entry = cardEntry(state)
   const header = entry === null ? null : menuRowSpec(input, entry)
-  if (header !== null) drawMenuRow(cells, layout, cardHeaderRow(layout), header, look.capability)
+  if (header !== null) drawMenuRow(cells, layout, cardHeaderRow(layout), header, look.colors)
   const separator = cells.length
   text(cells, BANDS.chrome, column, layout.panelRow + CARD_SEPARATOR_ROW, chromeGlyph(pack, "horizontal").repeat(limit), "chrome.frame", { limit })
-  fadeFrom(cells, separator, look.hidden, look.capability)
+  fadeFrom(cells, separator, look.hidden, look.colors)
   const card = currentCard(context, state)
   if (card !== null) drawCardBody(cells, input, pack, layout.panelRow + CARD_FIRST_ROW, card, look)
 }
@@ -273,7 +273,7 @@ function drawCardBody(
     rightAlign(cells, layout, row, stat.value, "chrome.value")
     row += 1
   }
-  fadeFrom(cells, numbers, look.hidden, look.capability)
+  fadeFrom(cells, numbers, look.hidden, look.colors)
 }
 
 /**
@@ -341,7 +341,7 @@ function drawCardIcon(
     const { glyph, role } = terrainGlyph(icon.terrainId, pack)
     const from = cells.length
     put(cells, band, column, top, glyph === " " ? "." : glyph, role, {})
-    fadeFrom(cells, from, look.hidden, look.capability)
+    fadeFrom(cells, from, look.hidden, look.colors)
     return { width: 1, height: 1 }
   }
   const { contentId } = icon
@@ -354,7 +354,7 @@ function drawCardIcon(
   if (portrait !== null) {
     const from = cells.length
     portrait.forEach((line, index) => text(cells, band, column, top + index, line, playerRole(player), { bold: true }))
-    fadeFrom(cells, from, look.hidden, look.capability)
+    fadeFrom(cells, from, look.hidden, look.colors)
     return { width: Math.max(...portrait.map((line) => line.length)), height: portrait.length }
   }
   const art = CONTENT_ART[contentId] ?? [definition.short.charAt(0)]

@@ -108,7 +108,7 @@ test("the backend enters and leaves the alternate screen and raw mode", async ()
   const backend = new AnsiBackend({
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "color256",
+    colors: "color256",
   })
 
   await backend.start()
@@ -130,7 +130,7 @@ test("the disposer is idempotent, whichever path reaches it", async () => {
   const backend = new AnsiBackend({
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "color256",
+    colors: "color256",
   })
   await backend.start()
   await backend.stop()
@@ -152,7 +152,7 @@ test("a non-TTY session writes no escape sequences at all", async () => {
   const backend = new AnsiBackend({
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "color256",
+    colors: "color256",
   })
   await backend.start()
   await backend.stop()
@@ -165,7 +165,7 @@ function backendOptions() {
   return {
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "monochrome" as const,
+    colors: "monochrome" as const,
     ...COMPOSITION_SIZE,
   }
 }
@@ -204,7 +204,7 @@ async function watchSession(
 
   const session = watchPulse({
     timeline,
-    capability: "monochrome",
+    colors: "monochrome",
     speed: 1,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,
@@ -247,7 +247,7 @@ test("q also finishes the playback itself, so whatever ran the Pulse can carry o
   const exits: number[] = []
   const finished = watchPulse({
     timeline,
-    capability: "monochrome",
+    colors: "monochrome",
     speed: 1,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,
@@ -313,7 +313,7 @@ test("watch holds on the final frame after the Pulse ends, and only quits on q",
 
   const session = watchPulse({
     timeline,
-    capability: "monochrome",
+    colors: "monochrome",
     speed: 200,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,
@@ -359,7 +359,7 @@ test("a render failure is caught, and still restores the terminal", async () => 
 
   const status = await watchPulse({
     timeline,
-    capability: "monochrome",
+    colors: "monochrome",
     speed: 1,
     backend: "ansi",
     presentation: DEFAULT_PRESENTATION,

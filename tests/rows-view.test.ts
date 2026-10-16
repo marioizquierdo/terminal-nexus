@@ -128,7 +128,7 @@ test("the live screen at 128 columns draws a tile one column wide too", async ()
   const stdin = new FakeStdin()
   const exits: number[] = []
   void runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,

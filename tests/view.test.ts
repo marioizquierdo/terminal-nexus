@@ -48,8 +48,8 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
     const view = createView(await timelineFor(name))
     for (const fraction of [0, 0.25, 0.5, 0.9]) {
       const timeMs = view.durationMs * fraction
-      for (const capability of ["monochrome", "color256"] as const) {
-        const frame = view.snapshotAt(timeMs, capability)
+      for (const colors of ["monochrome", "color256"] as const) {
+        const frame = view.snapshotAt(timeMs, colors)
         assert.equal(offendingGlyph(frame), null, `${name}: a cell was not one ASCII character`)
       }
     }

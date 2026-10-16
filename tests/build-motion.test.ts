@@ -782,7 +782,7 @@ test("the live screen redraws on a timer while the view slides, and not at all o
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const session = runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     // The raid's trail never settles (the next test): here nothing is foreseen, so only the slide moves.
     at: QUIET_ROUND,
     scenes: false,
@@ -822,7 +822,7 @@ test("with only the raid's trail moving, the live screen redraws at the trail's 
   const session = runBuildPhase({
     // Monochrome: the trail changes twice a step there (an arrow steps on, then its copy goes), and a popup's
     // border does not breathe, so under a popup nothing on the screen moves at all.
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,

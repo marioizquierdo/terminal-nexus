@@ -431,6 +431,38 @@ than any one feature:
    near-black terminal, which is what the screenshot tool simulates (`#0c0c0c`), and it is the real answer to "what
    about Solarized" (Q79), not the sixteen colours.
 
+## The game owns its colours (2026-10-15)
+
+A second round on colour, the day the 16-colour depth went. What it taught:
+
+1. **A name that is three names is a bug.** The setting was `--capability` on the command line, "Colour depth" on the
+   screen and `CapabilityMode` in the code, and "capability" suggested a fact to detect when it is a choice to make.
+   Name a thing once, for what it does, and let one table (`DEVELOPMENT.md`, "The display options") list the flag, the
+   label, the saved field and the values. Keep the old name readable in saved files and refused, with the new name, on the
+   command line, so a note or a settings file from last week still works.
+2. **Leaving the terminal's background to show through was the cause of the light theme "not working".** Dark text on
+   a theme the player had picked, over whatever their terminal's background was, is dark on dark on any dark terminal.
+   The earlier fix (brighter and darker palettes, then a note that the theme should match the terminal) treated the
+   symptom; painting the background made the theme a choice of look and the symptom disappeared. When a colour looks wrong
+   on one terminal and right on another, look for a colour the game never set.
+3. **Every terminal attribute that means "whatever this terminal does" is a colour the game does not control.** Default
+   colour, faint and reverse video each differ from one terminal to the next (faint is a blend toward a background, a
+   darkening, or nothing). With colours the game now resolves each into the two colours a cell has, and sends colour
+   alone; only monochrome, which has no colours to resolve them into, sends the attributes. One function works the
+   colours out exactly, then one last pass turns them into the depth, so a new effect has nothing to write per depth.
+4. **Match colours by how they look, not by how far apart their channels are.** A nearest match in RGB sent a dark
+   green to a grey and a faded red to a brown; the same search in Lab keeps the hue. Both stay limited by the xterm
+   cube, which is coarse at its dark and pale ends, so the real fix for a role that lands badly is a few points of
+   nudge toward the cube, held by a test, not a cleverer search.
+5. **A number bought at the cost of the colour is not a win.** The light theme's `player.b` was made near-black to
+   reach a mutual contrast of 3:1 for red-green colour blindness, and became plain text (and a grey at 256 colours).
+   Measured instead by simulating protanopia and deuteranopia, the readable green is as far from the rust as the
+   near-black one was; the 3:1 floor guarded something the simulation says was never at risk. Test the thing you mean
+   (apart for a colour-blind player, a faction that reads as its colour) rather than a proxy for it.
+6. **A picture is the only check that finds a palette fault.** Both the near-black green and the hairline between rows
+   at 256 colours (the screenshot's own page, a different colour from the background) were found by looking at the light and
+   the 256-colour frames, not by any assertion; the assertions were written afterwards to keep them found.
+
 ## The curve on the Grid (2026-10-15)
 
 1. **A trigger id names one trigger in one mission, not in the file.** A script that tuned the new level's raids

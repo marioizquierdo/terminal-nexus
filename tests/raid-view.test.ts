@@ -15,8 +15,8 @@ import { gridDistance } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
-import { CAPABILITY_MODES, SEE_THROUGH_STEP, resolveCell, seeThroughColours } from "../src/view/roles.ts"
-import type { CapabilityMode } from "../src/view/roles.ts"
+import { COLOR_DEPTHS, SEE_THROUGH_STEP, resolveCell, seeThroughColours } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
 import { CHROME_GLYPHS, terrainGlyph } from "../src/view/theme.ts"
 import type { GlyphPack } from "../src/view/theme.ts"
 import { bearing, raidLines, raidRows, targetName, troopsLines } from "../src/view/raid-panel.ts"
@@ -231,8 +231,8 @@ test("the coming raid is see-through in its own colour where colours blend, full
     assert.notEqual(cell.style.dim, true, "the raid is drawn faint")
     assert.equal(cell.style.fade, undefined, "the raid is drawn faded")
     assert.ok(seeThroughColours(cell, "truecolor") !== null && seeThroughColours(cell, "color256") !== null)
-    for (const capability of ["monochrome"] as const satisfies readonly CapabilityMode[]) {
-      assert.equal(seeThroughColours(cell, capability), null, `at ${capability} the raid is not at full strength`)
+    for (const colors of ["monochrome"] as const satisfies readonly ColorDepth[]) {
+      assert.equal(seeThroughColours(cell, colors), null, `at ${colors} the raid is not at full strength`)
     }
   }
   // Round 1: she arrives with the squads; round 2: she stands where Recall put her. Both bold, never dim,
@@ -388,7 +388,7 @@ test("drawn, a copy is the arrow's glyph further faded where colours blend, and 
   const probe = probeOf(side)
   const { stepMs } = TRAIL_MOTION
   for (const elapsedMs of [stepMs, stepMs + stepMs / 4, stepMs + stepMs / 2]) {
-    const texts = CAPABILITY_MODES.map((capability) => frameToText(compose(side, { raidTrail: { elapsedMs } }, capability)))
+    const texts = COLOR_DEPTHS.map((colors) => frameToText(compose(side, { raidTrail: { elapsedMs } }, colors)))
     for (const text of texts) assert.equal(text, texts[0], `${elapsedMs} ms: a depth draws other glyphs`)
   }
   const frame = compose(side, { raidTrail: { elapsedMs: stepMs } }, "truecolor")
@@ -404,14 +404,14 @@ test("drawn, a copy is the arrow's glyph further faded where colours blend, and 
   assert.deepEqual(copy.style, { fgRole: "player.b", dim: true, fade: GHOST_FADES[0] })
   assert.ok((arrow.style.fade ?? 0) < (copy.style.fade ?? 0))
   // Composed the same at every depth, the copy's look included: only resolving it differs.
-  for (const capability of CAPABILITY_MODES) {
-    const at = compose(side, { raidTrail: { elapsedMs: stepMs } }, capability)
-    assert.deepEqual(tileCell(side, at, (copies[0] as (typeof marks)[number]).tile), copy, capability)
+  for (const colors of COLOR_DEPTHS) {
+    const at = compose(side, { raidTrail: { elapsedMs: stepMs } }, colors)
+    assert.deepEqual(tileCell(side, at, (copies[0] as (typeof marks)[number]).tile), copy, colors)
   }
   // Where colours blend the copy is a fainter colour than the arrow; in monochrome, which cannot blend,
   // it is the arrow's own dim look — until it is gone.
-  for (const capability of ["truecolor", "color256"] as const) {
-    assert.notDeepEqual(resolveCell(copy, capability).sgr, resolveCell(arrow, capability).sgr, capability)
+  for (const colors of ["truecolor", "color256"] as const) {
+    assert.notDeepEqual(resolveCell(copy, colors).sgr, resolveCell(arrow, colors).sgr, colors)
   }
   assert.deepEqual(resolveCell(copy, "monochrome").sgr, resolveCell(arrow, "monochrome").sgr)
   assert.ok(resolveCell(copy, "monochrome").dim)
@@ -426,7 +426,7 @@ test("still under reduced motion, under a popup and in every still frame: an arr
   assert.equal(trailMarks(probe.path, probe.target.tiles).filter((mark) => mark.ghost !== undefined).length, 0)
   // The live loop hands the view no motion while a popup is open, motion is reduced, or the plan is committed.
   const animation = new BuildAnimation()
-  const moving = { raidTrail: true, capability: "monochrome" as const }
+  const moving = { raidTrail: true, colors: "monochrome" as const }
   assert.ok(animation.frame(side.build.state, 0, moving).raidTrail !== undefined)
   assert.equal(animation.frame(side.build.state, 100, { ...moving, reducedMotion: true }).raidTrail, undefined)
   const popup = { ...side.build.state, popup: "nexus-powers" as const }
@@ -434,9 +434,9 @@ test("still under reduced motion, under a popup and in every still frame: an arr
   assert.equal(animation.frame({ ...side.build.state, committed: true }, 300, moving).raidTrail, undefined)
   // With reduced motion every frame is the still one, whatever the time; without it, the same waits move it.
   const waits = parseKeyScript(`wait~${TRAIL_MOTION.stepMs / 4}*8`)
-  const reduced = runBuildPlaytest({ scenes: false, steps: waits, settings: { ...DEFAULT_SETTINGS, capability: "truecolor", reducedMotion: true } })
+  const reduced = runBuildPlaytest({ scenes: false, steps: waits, settings: { ...DEFAULT_SETTINGS, colors: "truecolor", reducedMotion: true } })
   assert.equal(new Set(reduced.frames.map((each) => frameToText(each.frame))).size, 1, "the trail moved under reduced motion")
-  const moved = runBuildPlaytest({ scenes: false, steps: waits, settings: { ...DEFAULT_SETTINGS, capability: "truecolor" } })
+  const moved = runBuildPlaytest({ scenes: false, steps: waits, settings: { ...DEFAULT_SETTINGS, colors: "truecolor" } })
   assert.ok(new Set(moved.frames.map((each) => frameToText(each.frame))).size > 1, "the trail never moved")
 })
 
@@ -446,7 +446,7 @@ test("the live loop moves it from the first frame that drew it moving, asks for 
   const quarter = stepMs / 4
   // Where colours blend, three changes a step: an arrow steps on, its copy fades, its copy goes.
   const blended = new BuildAnimation()
-  const options = { raidTrail: true, capability: "truecolor" as const }
+  const options = { raidTrail: true, colors: "truecolor" as const }
   const first = blended.frame(side.build.state, 1000, options)
   assert.deepEqual(first.raidTrail, { elapsedMs: 0 })
   assert.deepEqual([first.busyUntil, first.frameMs], [1000 + 4 * quarter, 4 * quarter], "the still trail asked before its first step")
@@ -458,17 +458,17 @@ test("the live loop moves it from the first frame that drew it moving, asks for 
   assert.equal(between.busyUntil, 1000 + 8 * quarter)
   assert.ok((between.frameMs ?? 0) > FRAME_MS, "the trail asks for every frame")
   // In monochrome, two: an arrow steps on, its copy goes.
-  for (const capability of ["monochrome"] as const) {
+  for (const colors of ["monochrome"] as const) {
     const plain = new BuildAnimation()
-    const opts = { raidTrail: true, capability }
+    const opts = { raidTrail: true, colors }
     assert.equal(plain.frame(side.build.state, 0, opts).busyUntil, 4 * quarter)
-    assert.equal(plain.frame(side.build.state, 4 * quarter, opts).busyUntil, 6 * quarter, capability)
-    assert.equal(plain.frame(side.build.state, 6 * quarter, opts).busyUntil, 8 * quarter, capability)
+    assert.equal(plain.frame(side.build.state, 4 * quarter, opts).busyUntil, 6 * quarter, colors)
+    assert.equal(plain.frame(side.build.state, 6 * quarter, opts).busyUntil, 8 * quarter, colors)
   }
   // A popup holds it still and asks for nothing (no breath in monochrome); as it closes the motion starts over
   // from the still trail, so nothing jumps.
   const animation = new BuildAnimation()
-  const mono = { raidTrail: true, capability: "monochrome" as const }
+  const mono = { raidTrail: true, colors: "monochrome" as const }
   animation.frame(side.build.state, 0, mono)
   assert.deepEqual(animation.frame(side.build.state, 5 * quarter, mono).raidTrail, { elapsedMs: 5 * quarter })
   const held = animation.frame({ ...side.build.state, popup: "game-menu" }, 6 * quarter, mono)
@@ -482,7 +482,7 @@ test("the live loop moves it from the first frame that drew it moving, asks for 
   assert.equal(gliding.frameMs, undefined)
   assert.equal(gliding.busyUntil, 10 + TUNING.cursorGlideMs)
   // Without a trail on the map it asks for nothing.
-  assert.equal(new BuildAnimation().frame(side.build.state, 0, { capability: "truecolor" }).busyUntil, null)
+  assert.equal(new BuildAnimation().frame(side.build.state, 0, { colors: "truecolor" }).busyUntil, null)
 })
 
 test("a building's reach yields to every tile of the trail's way, wherever its arrows are this instant: the same set, moving or still — and the trail moves only while some of that way is in view", () => {

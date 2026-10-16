@@ -15,7 +15,7 @@ import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
-import type { CapabilityMode, StyleRole } from "./roles.ts"
+import type { ColorDepth, StyleRole } from "./roles.ts"
 import { chromeGlyph, entityGlyph, playerRole } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import { statusStyle } from "./status.ts"
@@ -408,7 +408,7 @@ export function drawEffects(
   cells: BandCell[],
   input: BuildCompositionInput,
   animating: ReadonlyMap<number, Animating>,
-  capability: CapabilityMode,
+  colors: ColorDepth,
 ): void {
   const { context, state, layout } = input
   const reducedMotion = input.reducedMotion === true
@@ -421,7 +421,7 @@ export function drawEffects(
   const range = visibleRange(state.camera, state.viewport)
   const sources: EffectCellSource[] = []
   for (const { schedule, elapsedMs } of tracks) {
-    const effectContext = placementEffectContext(elapsedMs, reducedMotion, capability)
+    const effectContext = placementEffectContext(elapsedMs, reducedMotion, colors)
     for (const instance of trackEffectsAt(schedule, elapsedMs)) {
       const recipe = EFFECT_RECIPES[instance.recipe]
       if (recipe === undefined) continue
@@ -503,7 +503,7 @@ export const CURSOR_ROLE: StyleRole = HIGHLIGHT_BAR.role
 
 /** One cursor, drawn as a style-only write so it keeps whatever glyph is beneath it — the mechanism
  *  `src/view/frame.ts` already provides, and the only honest way to mark a tile without deleting
- *  what is standing on it. Inverse video carries "here" at every capability tier.
+ *  what is standing on it. Inverse video carries "here" at every colour depth.
  *
  * Bare ground gets a contrast boost on top of that: it is drawn dim, and inverting a dim cell is
  * still a dim one, so `bold` and an explicit `dim: false` are added — `composeBands` merges a

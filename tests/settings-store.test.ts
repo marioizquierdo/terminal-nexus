@@ -30,7 +30,7 @@ test("saving then loading round-trips every field exactly — the actual 'surviv
   const { path, cleanup } = tempSettingsPath()
   try {
     const store = createSettingsStore(path)
-    const saved: Settings = { capability: "truecolor", theme: "light", glyphPack: "unicode", reducedMotion: true }
+    const saved: Settings = { colors: "truecolor", theme: "light", glyphPack: "unicode", reducedMotion: true }
     await store.save(saved)
 
     // A brand new store instance over the same path — nothing in memory is reused — is the honest
@@ -69,7 +69,7 @@ test("a file that is not valid JSON at all loads as null, the same as a missing 
 test("a JSON array or a bare string is not a settings object, so it loads as null too", async () => {
   const { path, cleanup } = tempSettingsPath()
   try {
-    writeFileSync(path, JSON.stringify(["capability", "monochrome"]))
+    writeFileSync(path, JSON.stringify(["colors", "monochrome"]))
     assert.equal(await createSettingsStore(path).load(), null)
     writeFileSync(path, JSON.stringify("monochrome"))
     assert.equal(await createSettingsStore(path).load(), null)
@@ -82,13 +82,13 @@ test("a real but partially wrong file keeps every field it got right", async () 
   // A saved preference should not be thrown away wholesale over one bad field — see parseSettings's
   // own doc comment for why.
   const parsed = parseSettings({
-    capability: "not-a-real-tier",
+    colors: "not-a-real-tier",
     theme: "light",
     glyphPack: 42,
     reducedMotion: true,
   })
   assert.deepEqual(parsed, {
-    capability: DEFAULT_SETTINGS.capability, // repaired
+    colors: DEFAULT_SETTINGS.colors, // repaired
     theme: "light", // kept
     glyphPack: DEFAULT_SETTINGS.glyphPack, // repaired
     reducedMotion: true, // kept

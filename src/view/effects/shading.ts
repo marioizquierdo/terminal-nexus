@@ -105,7 +105,7 @@ const focusLight: EffectRecipe = (instance, context) => {
   const width = Math.max(1, paramNumber(instance, "width", 1))
   const height = Math.max(1, paramNumber(instance, "height", 1))
   const { x: left, y: top } = instance.origin
-  if (context.capability === "monochrome") {
+  if (context.colors === "monochrome") {
     for (let y = 0; y < height; y += 1) {
       for (let x = 0; x < width; x += 1) cells.push({ tile: { x: left + x, y: top + y }, glyph: "", inverse: true })
     }

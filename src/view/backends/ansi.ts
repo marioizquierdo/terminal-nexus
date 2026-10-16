@@ -7,8 +7,8 @@
 // reject it, so the restore path is the part written first.
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
-import { frameToAnsi } from "../frame.ts"
-import type { CapabilityMode, Theme } from "../roles.ts"
+import { frameToAnsi, padFrame } from "../frame.ts"
+import type { ColorDepth, Theme } from "../roles.ts"
 import { DEFAULT_THEME } from "../roles.ts"
 import type { TerminalInput, TerminalOutput } from "./ports.ts"
 
@@ -24,7 +24,7 @@ const RESET = `${ESC}[0m`
 export type AnsiBackendOptions = Readonly<{
   stdout: TerminalOutput
   stdin: TerminalInput
-  capability: CapabilityMode
+  colors: ColorDepth
   theme?: Theme
 }>
 
@@ -34,14 +34,16 @@ export class AnsiBackend implements TerminalBackend {
   // Held separately from `options` (which stays exactly what the caller passed in, unread after
   // construction for these two) so `setPresentation` can change them without needing `options`
   // itself to be mutable.
-  private capability: CapabilityMode
+  private colors: ColorDepth
   private theme: Theme
   private started = false
   private stopped = false
+  // Set when the depth or theme changed since the last frame: the next one starts the screen over.
+  private startOver = false
 
   constructor(options: AnsiBackendOptions) {
     this.options = options
-    this.capability = options.capability
+    this.colors = options.colors
     this.theme = options.theme ?? DEFAULT_THEME
   }
 
@@ -57,11 +59,21 @@ export class AnsiBackend implements TerminalBackend {
   }
 
   present(frame: ReadonlyCellFrame): void {
-    this.options.stdout.write(CURSOR_HOME + frameToAnsi(frame, this.capability, this.theme) + RESET)
+    const { stdout } = this.options
+    // With colours the game paints the whole screen, so a frame smaller than the terminal is grown with
+    // background. Monochrome leaves the terminal's own colours alone, beside the frame as in it.
+    const drawn =
+      this.colors === "monochrome" ? frame : padFrame(frame, stdout.columns ?? frame.width, stdout.rows ?? frame.height)
+    // A new depth or theme starts the screen over: going from colours to monochrome must not leave the
+    // background painted where the frame no longer reaches.
+    const reset = this.startOver ? RESET + CLEAR : ""
+    this.startOver = false
+    stdout.write(reset + CURSOR_HOME + frameToAnsi(drawn, this.colors, this.theme) + RESET)
   }
 
-  setPresentation(capability: CapabilityMode, theme: Theme): void {
-    this.capability = capability
+  setPresentation(colors: ColorDepth, theme: Theme): void {
+    if (colors !== this.colors || theme !== this.theme) this.startOver = true
+    this.colors = colors
     this.theme = theme
   }
 

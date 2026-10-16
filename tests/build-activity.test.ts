@@ -631,7 +631,7 @@ test("the live screen records where it started, and hands an Activity Logs expor
   const log = activityLog()
   const exported: Exported[] = []
   const running = runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome" },
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
@@ -657,7 +657,7 @@ test("the live screen records where it started, and hands an Activity Logs expor
     host: "terminal",
     columns: 80,
     rows: 24,
-    colours: "monochrome",
+    colors: "monochrome",
     at: "campaign?level=vasse-test-1",
   })
   const resized = log.entries().filter((entry) => entry.event === "session.resize")

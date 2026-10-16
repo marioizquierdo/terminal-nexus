@@ -1,7 +1,7 @@
 // The terminal boundary (`docs/system-design/presentation.md`). An engine-owned structured cell frame, and an
 // excellent snapshot surface. No backend object ever appears inside a frame.
 
-import type { CapabilityMode, SeeThrough, RoleTint, StyleRole, Theme } from "./roles.ts"
+import type { ColorDepth, SeeThrough, RoleTint, StyleRole, Theme } from "./roles.ts"
 import { DEFAULT_THEME, resolveCell } from "./roles.ts"
 
 const ESC = "\u001b"
@@ -16,7 +16,7 @@ export type CellStyle = Readonly<{
   /**
    * A continuous decay/stacking scalar for `fgRole`, `0` (the role's own colour) to `1` (the theme's
    * background) — the transparency half of the style model. Resolved only
-   * at `color256` and `truecolor` (`roles.ts`'s `sgrFor`); has no representable effect in
+   * at `color256` and `truecolor` (`roles.ts`'s `resolveCell`); has no representable effect in
    * `monochrome`, which stays exactly as bold/dim/inverse already describe it. Set by
    * `fx.damage.flash`, and in chrome by the card reveal and a popup's breathing border —
    * the craft rule in `effects.md` against fading glyphs has narrow, deliberate exceptions, not a
@@ -59,7 +59,7 @@ export interface TerminalBackend {
    * backend. Optional: a backend whose session never changes these (`grid watch`'s fixed-for-the-
    * session use) may simply not implement it.
    */
-  setPresentation?(capability: CapabilityMode, theme: Theme): void
+  setPresentation?(colors: ColorDepth, theme: Theme): void
 }
 
 export const BLANK: Cell = { glyph: " ", style: {} }
@@ -130,16 +130,35 @@ export function frameToText(frame: ReadonlyCellFrame): string {
   return rows.join("\n")
 }
 
-/** One cell's SGR sequence, as `resolveCell` resolves it — empty for a plain cell. */
-function sgrOf(cell: Cell, capability: CapabilityMode, theme: Theme): string {
-  const { sgr } = resolveCell(cell, capability, theme)
+/**
+ * The frame grown to at least `width` x `height` with blank cells to the right and below, or as it is
+ * when it already is. What a backend draws when the screen is bigger than the frame (the title menu is
+ * one 80 x 24 frame, whatever the terminal), so the background the game paints fills the whole screen and the
+ * terminal's own colour does not show beside it.
+ */
+export function padFrame(frame: ReadonlyCellFrame, width: number, height: number): ReadonlyCellFrame {
+  // A size a host reports as something other than a number counts as no size at all.
+  const wide = Math.max(frame.width, Number.isFinite(width) ? Math.floor(width) : 0)
+  const tall = Math.max(frame.height, Number.isFinite(height) ? Math.floor(height) : 0)
+  if (wide === frame.width && tall === frame.height) return frame
+  const cells: Cell[] = new Array<Cell>(wide * tall).fill(BLANK)
+  for (let y = 0; y < frame.height; y += 1) {
+    for (let x = 0; x < frame.width; x += 1) cells[y * wide + x] = cellAt(frame, x, y)
+  }
+  return { width: wide, height: tall, cells }
+}
+
+/** One cell's SGR sequence, as `resolveCell` resolves it — empty for a plain monochrome cell. */
+function sgrOf(cell: Cell, colors: ColorDepth, theme: Theme): string {
+  const { sgr } = resolveCell(cell, colors, theme)
   return sgr.length === 0 ? "" : `${ESC}[${sgr.join(";")}m`
 }
 
-/** ANSI text for a whole frame. One reset per styled run, and never a stray escape on a blank. */
+/** ANSI text for a whole frame. One reset per styled run: a run is every neighbouring cell with the same colours
+ *  (the background, across a blank stretch of the map, is one), and in monochrome a plain blank costs no escape. */
 export function frameToAnsi(
   frame: ReadonlyCellFrame,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
 ): string {
   const reset = `${ESC}[0m`
@@ -149,7 +168,7 @@ export function frameToAnsi(
     let openStyle = ""
     for (let x = 0; x < frame.width; x += 1) {
       const cell = cellAt(frame, x, y)
-      const sgr = sgrOf(cell, capability, theme)
+      const sgr = sgrOf(cell, colors, theme)
       if (sgr !== openStyle) {
         if (openStyle !== "") row += reset
         row += sgr

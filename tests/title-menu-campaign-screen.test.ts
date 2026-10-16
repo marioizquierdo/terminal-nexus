@@ -16,7 +16,7 @@ import type { Settings, SettingsStore } from "../src/settings/index.ts"
 
 const ESC = String.fromCharCode(27)
 
-const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "color256" }
+const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, colors: "color256" }
 
 class FakeStdout extends EventEmitter {
   isTTY = true

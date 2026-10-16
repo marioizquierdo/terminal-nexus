@@ -33,8 +33,8 @@ here, which age the moment the tool's presentation changes again.
 | `2026-08-19 - gameplay concept 2.png` | Gameplay composition concept |
 | `2026-08-21 - dev screenshot 1.png` | A real captured frame of `grid` running |
 | `2026-08-21 - dev screenshot 2.png` | A real captured frame of `grid` running |
-| `2026-08-21 - grid prototype 1 - b&w.PNG` | `grid`, monochrome capability tier |
-| `2026-08-21 - grid prototype 1 - color.PNG` | `grid`, colour capability tier |
+| `2026-08-21 - grid prototype 1 - b&w.PNG` | `grid`, monochrome colour depth |
+| `2026-08-21 - grid prototype 1 - color.PNG` | `grid`, colour depth |
 | `2026-08-21 - grid prototype 2 - ravelsclash wide.png` | `grid`, a Ravels engagement, wide composition |
 | `2026-08-21 - grid prototype 2 - ravelsclash.png` | `grid`, a Ravels engagement |
 

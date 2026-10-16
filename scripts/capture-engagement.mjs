@@ -45,12 +45,12 @@ function arg(name, fallback) {
 const scenario = arg("scenario", null)
 if (scenario === null) {
   console.error("usage: capture-engagement.mjs --scenario <name> [--around-tick N] [--frames N] " +
-    "[--lead-ticks N] [--capability c] [--glyphs g] [--out dir]")
+    "[--lead-ticks N] [--colors c] [--glyphs g] [--out dir]")
   process.exit(1)
 }
 const framesWanted = Number(arg("frames", "10"))
 const leadTicks = Number(arg("lead-ticks", "1"))
-const capability = arg("capability", "truecolor")
+const colors = arg("colors", "truecolor")
 const glyphs = arg("glyphs", "unicode")
 const cols = Number(arg("cols", "80"))
 const rows = Number(arg("rows", "24"))
@@ -97,7 +97,7 @@ async function main() {
   const startTick = Math.max(0, aroundTick - leadTicks)
 
   const extraArgs = [
-    "--capability", capability,
+    "--colors", colors,
     "--glyphs", glyphs,
   ]
 

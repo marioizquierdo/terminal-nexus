@@ -25,7 +25,7 @@ import { text } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
 import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulsePanel } from "./pulse-scene.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { ColorDepth } from "./roles.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { drawChrome, drawTopBarAndBottomLine } from "./build-frame.ts"
@@ -169,7 +169,7 @@ function drawCommittedPanel(cells: BandCell[], input: BuildCompositionInput): vo
 
 export function composeBuildFrame(
   given: BuildCompositionInput,
-  capability: CapabilityMode,
+  colors: ColorDepth,
 ): ReadonlyCellFrame {
   // A sliding view is drawn through the camera it has reached, not the one it is heading for: the
   // Grid, the preview, the cursor and the edge weights all move together.
@@ -206,9 +206,9 @@ export function composeBuildFrame(
   const hidden = commanderHidden(input.context, input.roundElapsed?.elapsedMs, input.reducedMotion === true)
   drawGrid(cells, hidden ? { ...input, commanderHidden: true } : input, pack, animating)
   drawOutInBuild(cells, input)
-  drawExploredCommander(cells, input, capability)
+  drawExploredCommander(cells, input, colors)
   drawRaidIntent(cells, input, pack)
-  drawEffects(cells, input, animating, capability)
+  drawEffects(cells, input, animating, colors)
   drawPreview(cells, input, preview)
   drawCursor(cells, input)
   drawRefusedTry(cells, input, preview)
@@ -220,14 +220,14 @@ export function composeBuildFrame(
   // does not fit is left off rather than drawn over the rule and the bottom bar.
   const panel: BandCell[] = []
   if (input.state.committed) drawCommittedPanel(panel, input)
-  else if (cardShowing(input.state)) drawCard(panel, input, pack, capability)
-  else drawPanel(panel, input, pack, capability)
+  else if (cardShowing(input.state)) drawCard(panel, input, pack, colors)
+  else drawPanel(panel, input, pack, colors)
   for (const cell of panel) if (cell.y <= input.layout.panelLastRow) cells.push(cell)
   // The hand-off crosses from the panel into the map, so it is drawn over both — and under any popup.
   drawHandoff(cells, input, pack, preview)
   drawPopup(cells, input, pack)
   // The dialog's speaker on its border, and its light on the map.
-  drawDialog(cells, input, capability)
+  drawDialog(cells, input, colors)
   // Her appearance as the round opens: over the map, under nothing but the frame.
   if (input.state.popup === null || input.state.popup === "dialog") drawAppearance(cells, input)
 

@@ -21,7 +21,7 @@ import type { BuildCompositionInput } from "../src/view/build.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
-import type { CapabilityMode } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
 import type { ActivityLog } from "../src/log/activity.ts"
 import { createActivityLog } from "../src/log/activity.ts"
 
@@ -186,7 +186,7 @@ export function goToGameMenuRow(side: Side, row: GameMenuRow): void {
 /** The frame the screen draws for the session as it is — in its own glyph pack and reduced motion, the
  *  Battle Round included while one plays — with `extra` for what the live loop adds at an instant (a
  *  flash, a flight, a reveal) or overrides. */
-export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
+export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, colors: ColorDepth = "monochrome"): ReadonlyCellFrame {
   const { build, layout } = side
   const pulse = build.pulseFrame()
   const raid = build.raid()
@@ -202,13 +202,13 @@ export function compose(side: Side, extra: Partial<BuildCompositionInput> = {}, 
       ...(raid === undefined ? {} : { raid }),
       ...extra,
     },
-    capability,
+    colors,
   )
 }
 
 /** The screen as text, a line a frame row. */
-export function screenText(side: Side, capability: CapabilityMode = "monochrome"): string {
-  return frameToText(compose(side, {}, capability))
+export function screenText(side: Side, colors: ColorDepth = "monochrome"): string {
+  return frameToText(compose(side, {}, colors))
 }
 
 /** The frame row a panel row is drawn on: `CREDITS_ROW`, `CARD_HEADER_ROW` and their kind count from

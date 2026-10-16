@@ -31,7 +31,7 @@ import { chunkText } from "../view/backends/ports.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { PROCESS_HOST, createTerminalSession } from "./lifecycle.ts"
 import type { Host } from "./lifecycle.ts"
-import { nextCapability, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
+import { nextColorDepth, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
 import type { Settings, SettingsStore } from "../settings/index.ts"
 import { formatRoute, parseRoute } from "./route.ts"
 import { shownSetting } from "../build/all-settings.ts"
@@ -62,7 +62,7 @@ const BACK_ONLY_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: 
  */
 export function settingsItems(settings: Settings): readonly MenuItem[] {
   return [
-    { id: "capability", hotkey: "1", label: `Colour depth: ${shownSetting("capability").format(settings.capability)}` },
+    { id: "colors", hotkey: "1", label: `Colours: ${shownSetting("colors").format(settings.colors)}` },
     { id: "theme", hotkey: "2", label: `Background: ${settings.theme}` },
     { id: "glyphPack", hotkey: "3", label: `Symbols: ${settings.glyphPack}` },
     {
@@ -78,8 +78,8 @@ export function settingsItems(settings: Settings): readonly MenuItem[] {
  *  changes screen for that one instead of touching a value). */
 function withNextValue(settings: Settings, id: string): Settings {
   switch (id) {
-    case "capability":
-      return { ...settings, capability: nextCapability(settings.capability) }
+    case "colors":
+      return { ...settings, colors: nextColorDepth(settings.colors) }
     case "theme":
       return { ...settings, theme: nextTheme(settings.theme) }
     case "glyphPack":
@@ -167,7 +167,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   const backend = await selectBackend(options.backend, {
     stdout,
     stdin,
-    capability: options.settings.capability,
+    colors: options.settings.colors,
     theme: options.settings.theme,
     width: MENU_SIZE.width,
     height: MENU_SIZE.height,
@@ -224,7 +224,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
             showBack: info.showBack,
             ...(screen === "about" ? { body: about } : {}),
           },
-          settings.capability,
+          settings.colors,
         )
     try {
       backend.present(frame)
@@ -292,7 +292,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       settingsMenu.setItems(settingsItems(settings))
       // Takes effect on the very next frame, without stopping and restarting the backend — the
       // point of `setPresentation` (src/view/frame.ts, src/view/backends/).
-      backend.setPresentation?.(settings.capability, settings.theme)
+      backend.setPresentation?.(settings.colors, settings.theme)
       pendingSave = pendingSave.then(() =>
         options.settingsStore.save(settings).catch((error: unknown) => {
           // A failed write is not a reason to crash or block the exit path, but it should not vanish
@@ -379,7 +379,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     host: options.hostName ?? "terminal",
     columns: stdout.columns ?? null,
     rows: stdout.rows ?? null,
-    colours: settings.capability,
+    colors: settings.colors,
     ...(options.at === undefined ? {} : { at: formatRoute(options.at) }),
   })
 
