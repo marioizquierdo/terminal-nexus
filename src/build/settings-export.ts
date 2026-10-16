@@ -82,10 +82,9 @@ export function formatSettingsExport(snapshot: SettingsSnapshot, build?: string)
 
 /** Other names a person might write for a player setting: the settings file's names are canonical. */
 const PLAYER_ALIASES: Readonly<Record<string, PlayerField>> = {
-  colours: "capability",
-  colors: "capability",
-  colourdepth: "capability",
-  colordepth: "capability",
+  colours: "colors",
+  colourdepth: "colors",
+  colordepth: "colors",
   background: "theme",
   glyphs: "glyphPack",
   symbols: "glyphPack",

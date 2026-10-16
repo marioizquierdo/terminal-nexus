@@ -3,11 +3,11 @@
 // file access, no menu/view import here: this is the value shape and how each one cycles, nothing
 // about how it's shown or saved.
 
-import type { CapabilityMode, GlyphPack, Theme } from "../terminal/display.ts"
-import { CAPABILITY_MODES, GLYPH_PACKS, THEMES } from "../terminal/display.ts"
+import type { ColorDepth, GlyphPack, Theme } from "../terminal/display.ts"
+import { COLOR_DEPTHS, GLYPH_PACKS, THEMES } from "../terminal/display.ts"
 
 export type Settings = Readonly<{
-  capability: CapabilityMode
+  colors: ColorDepth
   theme: Theme
   glyphPack: GlyphPack
   reducedMotion: boolean
@@ -15,7 +15,7 @@ export type Settings = Readonly<{
 
 /**
  * What a brand-new player (or a corrupt/missing settings file — see `store.ts`) starts with.
- * Monochrome rather than `grid`'s own `detectCapability()` guess: a saved file is an explicit choice
+ * Monochrome rather than `grid`'s own `detectColorDepth()` guess: a saved file is an explicit choice
  * once made, but *before* any choice exists, a fixed, honest baseline is simpler to reason about and
  * to test than probing `COLORTERM`/`TERM` from inside a settings default, and monochrome is the floor
  * that draws right on any terminal. `terminal-nexus.ts` still applies that same detection when nothing
@@ -23,7 +23,7 @@ export type Settings = Readonly<{
  * value that no longer is one, so it reads as this default.
  */
 export const DEFAULT_SETTINGS: Settings = {
-  capability: "monochrome",
+  colors: "monochrome",
   theme: "dark",
   glyphPack: "ascii",
   reducedMotion: false,
@@ -34,8 +34,8 @@ function cycle<T>(all: readonly T[], current: T): T {
   return all[(index + 1) % all.length] as T
 }
 
-export function nextCapability(current: CapabilityMode): CapabilityMode {
-  return cycle(CAPABILITY_MODES, current)
+export function nextColorDepth(current: ColorDepth): ColorDepth {
+  return cycle(COLOR_DEPTHS, current)
 }
 
 export function nextTheme(current: Theme): Theme {
@@ -81,14 +81,15 @@ function isOneOf<T extends string>(all: readonly T[], value: unknown): value is 
  */
 export function parseSettings(value: unknown): Settings {
   const record = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {}
-  const capability: CapabilityMode = isOneOf(CAPABILITY_MODES, record["capability"])
-    ? record["capability"]
-    : DEFAULT_SETTINGS.capability
+  // A file saved before the setting was named for what it does calls it `capability`; the choice is kept,
+  // and the first of the two names that holds a depth this version knows is the one read.
+  const saved = [record["colors"], record["capability"]].find((value) => isOneOf(COLOR_DEPTHS, value))
+  const colors: ColorDepth = isOneOf(COLOR_DEPTHS, saved) ? saved : DEFAULT_SETTINGS.colors
   const theme: Theme = isOneOf(THEMES, record["theme"]) ? record["theme"] : DEFAULT_SETTINGS.theme
   const glyphPack: GlyphPack = isOneOf(GLYPH_PACKS, record["glyphPack"])
     ? record["glyphPack"]
     : DEFAULT_SETTINGS.glyphPack
   const reducedMotion =
     typeof record["reducedMotion"] === "boolean" ? record["reducedMotion"] : DEFAULT_SETTINGS.reducedMotion
-  return { capability, theme, glyphPack, reducedMotion }
+  return { colors, theme, glyphPack, reducedMotion }
 }

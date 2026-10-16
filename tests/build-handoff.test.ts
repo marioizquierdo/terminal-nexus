@@ -28,7 +28,7 @@ import { CURSOR_ROLE } from "../src/view/build-grid.ts"
 import { BuildAnimation, handoffAt, handoffSchedule } from "../src/view/build-live.ts"
 import type { HandoffTiming } from "../src/view/build-live.ts"
 import { cellAt } from "../src/view/frame.ts"
-import type { CapabilityMode } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
 import {
   DOWN,
   ENTER,
@@ -61,8 +61,8 @@ const turretRow = (layout: BuildLayout): number => menuEntryRow(layout, starterC
 const HEAD_ALPHA = 0.8
 
 /** What a frame with the flight `progress` of the way has that the same frame without it does not. */
-function flight(side: Side, progress: number, extra: Partial<BuildCompositionInput> = {}, capability: CapabilityMode = "monochrome"): ChangedCell[] {
-  return changedCells(compose(side, { ...extra, handoffFlight: { progress } }, capability), compose(side, extra, capability))
+function flight(side: Side, progress: number, extra: Partial<BuildCompositionInput> = {}, colors: ColorDepth = "monochrome"): ChangedCell[] {
+  return changedCells(compose(side, { ...extra, handoffFlight: { progress } }, colors), compose(side, extra, colors))
 }
 
 // --- The timeline -----------------------------------------------------------------------------------
@@ -561,7 +561,7 @@ test("the live screen draws the arrow on its own clock, then the plain divider o
   const stdout = new FakeStdout()
   const stdin = new FakeStdin()
   const session = runBuildPhase({
-    settings: { ...DEFAULT_SETTINGS, capability: "monochrome", glyphPack: "ascii" },
+    settings: { ...DEFAULT_SETTINGS, colors: "monochrome", glyphPack: "ascii" },
     scenes: false,
     backend: "ansi",
     stdout: stdout as unknown as NodeJS.WriteStream,

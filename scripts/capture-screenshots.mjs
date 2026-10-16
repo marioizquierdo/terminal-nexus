@@ -45,7 +45,7 @@ const shots = [
     tick: 0,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -55,7 +55,7 @@ const shots = [
     tick: 133,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -78,7 +78,7 @@ const shots = [
     tick: 321,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -95,7 +95,7 @@ const shots = [
     afterTick: 321,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -106,7 +106,7 @@ const shots = [
     afterTick: 321,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -117,7 +117,7 @@ const shots = [
     afterTick: 321,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -128,7 +128,7 @@ const shots = [
     afterTick: 321,
     cols: 80,
     rows: 24,
-    capability: "monochrome",
+    colors: "monochrome",
   },
   {
     // Reduced motion needs neither afterTick nor a late tick to make its point: it holds every
@@ -140,7 +140,7 @@ const shots = [
     tick: 321,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
     reducedMotion: true,
   },
@@ -175,7 +175,7 @@ const shots = [
     tick: 160,
     cols: 80,
     rows: 24,
-    capability: "monochrome",
+    colors: "monochrome",
   },
   {
     name: "nexus-falls",
@@ -209,7 +209,7 @@ const shots = [
     tick: 178,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -223,7 +223,7 @@ const shots = [
     tick: 178,
     cols: 80,
     rows: 24,
-    capability: "color256",
+    colors: "color256",
     glyphs: "unicode",
   },
   {
@@ -233,7 +233,7 @@ const shots = [
     tick: 178,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
     effects: false,
   },
@@ -244,7 +244,7 @@ const shots = [
     tick: 25,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -254,17 +254,17 @@ const shots = [
     tick: 25,
     cols: 80,
     rows: 24,
-    capability: "monochrome",
+    colors: "monochrome",
     reducedMotion: true,
   },
   {
     name: "mirror-light-theme",
-    caption: "Tick 160 on a light terminal background - --theme light",
+    caption: "Tick 160 in the light theme - --theme light",
     scenario: "citizen-mirror-skirmish",
     tick: 160,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     theme: "light",
   },
   {
@@ -283,7 +283,7 @@ const shots = [
     tick: 206,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -296,7 +296,7 @@ const shots = [
     tick: 207,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
 
@@ -311,7 +311,7 @@ const shots = [
     tick: 50,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -322,7 +322,7 @@ const shots = [
     tick: 58,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -334,7 +334,7 @@ const shots = [
     tick: 48,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -345,7 +345,7 @@ const shots = [
     tick: 33,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
   {
@@ -358,15 +358,15 @@ const shots = [
     tick: 49,
     cols: 80,
     rows: 24,
-    capability: "truecolor",
+    colors: "truecolor",
     glyphs: "unicode",
   },
 ]
 
 function extraArgsFor(shot) {
   return [
-    "--capability",
-    shot.capability ?? "truecolor",
+    "--colors",
+    shot.colors ?? "truecolor",
     "--theme",
     shot.theme ?? "dark",
     "--glyphs",

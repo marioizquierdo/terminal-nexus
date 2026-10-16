@@ -1,5 +1,5 @@
 // The three choices a player makes about how the terminal is drawn on: what colour it can show
-// (the capability mode), whether its background is dark or light (the theme), and which glyph pack
+// (the colour depth), whether its background is dark or light (the theme), and which glyph pack
 // (ASCII or Unicode) the field and frame use. Plain vocabulary and its parsers, shared by the saved
 // settings, the Build Phase's settings list and the command line, and below the view: the view reads
 // these, they read nothing of the view.
@@ -11,27 +11,27 @@
  * is the floor (no colour code at all, so the terminal's own colours show); 256 colours and truecolor
  * come from one palette.
  */
-export type CapabilityMode = "monochrome" | "color256" | "truecolor"
+export type ColorDepth = "monochrome" | "color256" | "truecolor"
 
-export const CAPABILITY_MODES: readonly CapabilityMode[] = ["monochrome", "color256", "truecolor"]
+export const COLOR_DEPTHS: readonly ColorDepth[] = ["monochrome", "color256", "truecolor"]
 
-export function parseCapability(value: string): CapabilityMode {
-  const found = CAPABILITY_MODES.find((mode) => mode === value)
+export function parseColorDepth(value: string): ColorDepth {
+  const found = COLOR_DEPTHS.find((mode) => mode === value)
   if (found === undefined) {
-    throw new Error(`unknown capability "${value}"; expected one of ${CAPABILITY_MODES.join(", ")}`)
+    throw new Error(`unknown colour depth "${value}"; expected one of ${COLOR_DEPTHS.join(", ")}`)
   }
   return found
 }
 
 /**
- * Which background the palette assumes — an open question in the design, answered minimally
- * (owner playtest: on a light terminal background, the dark theme's chrome text was nearly
- * invisible). Two fixed themes rather than a background probe: querying a terminal's actual
- * background colour (OSC 11) is unreliable across emulators and is real complexity for a first version
- * that was asked to start simple. `dark` is the default — it is the palette the lore and every screenshot so
- * far were designed against — and `light` is one explicit flag away. The door stays open for a real
- * themes/modding system later without anything here needing to change shape, only to grow more
- * entries.
+ * Which look the game paints: its own background and the palette set against it. The game paints the
+ * background itself at 256 colours and in millions (`src/view/roles.ts`), so a theme is a choice of look and has
+ * nothing to do with the terminal's own colours: dark on a white terminal and light on a black one both
+ * work. (It once had to match the terminal, when the terminal's background showed through; an owner
+ * playtest found the dark theme's chrome text nearly invisible on a light one.) Monochrome leaves the
+ * terminal's colours alone, so a theme means nothing there. `dark` is the default — it is the palette the
+ * lore and every screenshot so far were designed against. The door stays open for a real themes/modding
+ * system later without anything here needing to change shape, only to grow more entries.
  */
 export type Theme = "dark" | "light"
 

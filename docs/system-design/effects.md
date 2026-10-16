@@ -28,7 +28,7 @@ interface EffectContext {
   readonly timeMs: number          // absolute presentation time, not time-since-start
   readonly cosmeticSeed: number    // from the cosmetic stream only
   readonly reducedMotion: boolean
-  readonly capability: CapabilityMode
+  readonly colors: ColorDepth
 }
 
 interface EffectInstance {
@@ -296,7 +296,7 @@ is a tier-1 effect that grew up.
 RULE — `tests/effects.test.ts`. An effect is a pure function, so it is directly testable without a
 terminal:
 
-- `f(t)` for a fixed instance, seed and capability returns byte-identical cells every time;
+- `f(t)` for a fixed instance, seed and colour depth returns byte-identical cells every time;
 - sampling `f(t)` at *t* alone equals sampling it after rendering every intervening frame;
 - an effect emits nothing outside `[startMs, startMs + durationMs)`;
 - an effect emits nothing in a forbidden band;

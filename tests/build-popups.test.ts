@@ -436,7 +436,7 @@ test("a click on the scroll bar's upper half scrolls up, on its lower half down;
   const wheel = buildSide()
   keys(wheel, ESC, "s")
   clickCell(wheel, placed(wheel).box.left + 3, placed(wheel).box.top + 3, MOUSE_WHEEL_DOWN)
-  assert.equal(wheel.build.state.popupHighlight, settingRow("capability"))
+  assert.equal(wheel.build.state.popupHighlight, settingRow("colors"))
 })
 
 test("hit-testing the scroll bar reads the same placement the frame draws: every bar cell answers, the cell beside it does not", () => {

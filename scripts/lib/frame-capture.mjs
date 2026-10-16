@@ -34,15 +34,15 @@ import {
 
 /** A cell frame as the HTML `renderPng` expects — through the real ANSI encoder, so colour, dim and
  *  inverse come out exactly as the terminal backend would send them. */
-export function frameHtml(frame, capability = "truecolor", theme = "dark") {
-  const ansi = frameToAnsi(frame, capability, theme).replace(/\r\n/gu, "\n")
+export function frameHtml(frame, colors = "truecolor", theme = "dark") {
+  const ansi = frameToAnsi(frame, colors, theme).replace(/\r\n/gu, "\n")
   return ansiToHtml(ansi, frame.width, frame.height, theme)
 }
 
 /** One frame to a PNG. Returns `{ path, written }`; an unchanged image is left alone. */
-export function renderFramePng({ frame, capability = "truecolor", theme = "dark", caption, targetPath, scratchDir, scale = 2 }) {
+export function renderFramePng({ frame, colors = "truecolor", theme = "dark", caption, targetPath, scratchDir, scale = 2 }) {
   return renderPngIfChanged({
-    html: frameHtml(frame, capability, theme),
+    html: frameHtml(frame, colors, theme),
     caption,
     cols: frame.width,
     rows: frame.height,
@@ -57,8 +57,8 @@ export function renderFramePng({ frame, capability = "truecolor", theme = "dark"
  * Several frames to one looping GIF. `shots` is `[{ frame, caption, delayMs }]`. The frames are
  * rendered at `scale`: 2 reads sharply on a phone, 1 is about a third of the size.
  */
-export function renderFramesGif({ shots, capability = "truecolor", theme = "dark", targetPath, scratchDir, scale = 2 }) {
-  const pages = shots.map((shot) => frameHtml(shot.frame, capability, theme))
+export function renderFramesGif({ shots, colors = "truecolor", theme = "dark", targetPath, scratchDir, scale = 2 }) {
+  const pages = shots.map((shot) => frameHtml(shot.frame, colors, theme))
   const hash = sourceHash(
     scale,
     theme,

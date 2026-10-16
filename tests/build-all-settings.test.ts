@@ -74,7 +74,7 @@ test("a value reads the same wherever it is: the live Experiment, the saved sett
   assert.equal(formatValue("jumpStep", 10), "10 tiles")
   assert.equal(formatValue("cursorBlinks", 3), "3 taps")
   assert.equal(formatValue("reducedMotion", true), "on")
-  assert.equal(formatValue("capability", "color256"), "256")
+  assert.equal(formatValue("colors", "color256"), "256")
   assert.equal(formatValue("nextRound", "auto"), "auto")
 })
 
@@ -95,7 +95,7 @@ test("Settings lists its rows section by section: Display, Keyboard navigation, 
     SHOWN_SETTINGS.filter((spec) => spec.section === "display").map((spec) => spec.field),
     PLAYER_FIELDS.map((spec) => spec.field),
   )
-  assert.deepEqual(PLAYER_FIELDS.map((spec) => spec.field), ["theme", "capability", "glyphPack", "reducedMotion"])
+  assert.deepEqual(PLAYER_FIELDS.map((spec) => spec.field), ["theme", "colors", "glyphPack", "reducedMotion"])
   // Each heading says what its rows are.
   assert.equal(sectionHeading("display"), "DISPLAY - saved")
   assert.equal(sectionHeading("keyboard"), "KEYBOARD NAVIGATION - experiments")

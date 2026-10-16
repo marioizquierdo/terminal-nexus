@@ -103,8 +103,9 @@ export const SETTLED_EXPERIMENTS: ReadonlySet<string> = new Set<string>([
 /**
  * Settings that changed their name, by the name an old export uses: read as the setting they are now,
  * on whatever tier it stands. The Battle Round screen's pulse became every popup's when the menus
- * were merged.
+ * were merged; the colour depth was called `capability` until it was named for what it does.
  */
 export const RENAMED_SETTINGS: Readonly<Record<string, SettingName>> = {
   battleRoundPulseMs: "popupPulseMs",
+  capability: "colors",
 }

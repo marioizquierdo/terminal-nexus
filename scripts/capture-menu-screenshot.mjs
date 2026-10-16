@@ -33,7 +33,7 @@ const ROWS = 24
 function shoot(
   name,
   caption,
-  { args = "--capability truecolor --theme dark", drive, waitForText, background = "dark" } = {},
+  { args = "--colors truecolor --theme dark", drive, waitForText, background = "dark" } = {},
 ) {
   killSession(repoRoot, SESSION)
   tmux(repoRoot, [
@@ -67,9 +67,8 @@ function shoot(
     scratchDir: scratch,
     targetPath: join(outputDirectory, `${name}.png`),
     // Matches the page wrapper to whichever theme this shot actually demonstrates — the same thing
-    // capture-screenshots.mjs does for grid's own light-theme shots. The light theme's palette is
-    // designed to sit on a light terminal background; without this, its own text renders nearly
-    // invisibly against a page still assuming a dark one.
+    // capture-screenshots.mjs does for grid's own light-theme shots: the page around the game's own
+    // background, so a light shot does not sit in a dark frame.
     background,
   })
   console.log(`${result.written ? "wrote" : "unchanged"} ${name}.png`)
@@ -80,9 +79,9 @@ shoot("menu-top-level", "terminal-nexus's top-level menu - Campaign highlighted 
 
 shoot(
   "menu-monochrome",
-  "Monochrome is the floor, not the degraded mode - the same screen with --capability monochrome",
+  "Monochrome is the floor, where every fact still reads - the same screen with --colors monochrome",
   {
-    args: "--capability monochrome",
+    args: "--colors monochrome",
     drive: () => sendKey(repoRoot, SESSION, "Down"),
   },
 )
@@ -122,7 +121,7 @@ shoot(
 // The Settings screen.
 shoot("settings-screen", "Settings, reached by its own hotkey - four choices and a way back", {
   drive: () => sendKeys(repoRoot, SESSION, "3"),
-  waitForText: "Colour depth: truecolor",
+  waitForText: "Colours: truecolor",
 })
 
 shoot(
@@ -148,7 +147,7 @@ shoot(
     // `waitForText` below pass immediately without ever having waited on anything.
     drive: () => {
       sendKeys(repoRoot, SESSION, "3") // 3 = Settings
-      waitFor(repoRoot, SESSION, (text) => text.includes("Colour depth"), "the Settings screen")
+      waitFor(repoRoot, SESSION, (text) => text.includes("Colours"), "the Settings screen")
       sendKeys(repoRoot, SESSION, "5") // 5 = Back
     },
     waitForText: "top-level menu",

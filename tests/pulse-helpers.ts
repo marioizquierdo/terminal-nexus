@@ -13,7 +13,7 @@ import { starterContext } from "../src/cli/starter.ts"
 import type { MissionDefinition, SimulationAction } from "../src/mission/index.ts"
 import type { ReadonlyCellFrame } from "../src/view/frame.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
-import type { CapabilityMode } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
 import { MINIMUM, buildSide, clickCell, compose, screenText } from "./build-helpers.ts"
 
 export { MINIMUM }
@@ -172,8 +172,8 @@ export function play(scenario: Scenario = {}, size: Readonly<{ columns: number; 
 /** The screen as text, and as cells — what the live loop would draw at the Pulse's current time. */
 export { screenText }
 
-export function frameOf(played: Pick<Played, "build" | "context" | "layout">, capability: CapabilityMode = "monochrome"): ReadonlyCellFrame {
-  return compose(played, {}, capability)
+export function frameOf(played: Pick<Played, "build" | "context" | "layout">, colors: ColorDepth = "monochrome"): ReadonlyCellFrame {
+  return compose(played, {}, colors)
 }
 
 /** A mouse click at a frame cell (0-based column and row), through the real mouse adapter; `now` is the screen's

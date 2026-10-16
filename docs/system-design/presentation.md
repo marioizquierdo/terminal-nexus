@@ -41,7 +41,7 @@ writer, OpenTUI and the browser page's canvas only draw those cells. No backend 
 inside a frame.
 
 **Cells carry style roles, never colours** (RULE — `tests/view.test.ts`, `tests/roles.test.ts`). Style
-carries **roles** — `fgRole: "faction.citizen"`, never `"#ff8800"` — and the capability mode resolves
+carries **roles** — `fgRole: "faction.citizen"`, never `"#ff8800"` — and the colour depth resolves
 roles to colour, which is what makes monochrome a setting rather than a rewrite. The compositor emits
 only roles from the committed vocabulary.
 
@@ -49,27 +49,52 @@ only roles from the committed vocabulary.
 Unicode** (RULE — `tests/view.test.ts`, `tests/effects.test.ts`). ASCII is the baseline and the
 acceptance target; colour and Unicode packs add to it and are never required to read a screen.
 
-**Capability modes are three, and they buy fidelity rather than facts**: monochrome, 256-colour and
-truecolor, resolving one role table. Every tier puts identical glyphs on screen, so nothing a player
-needs is available only to a colour terminal. Monochrome is the floor, not the degraded mode (RULE —
-`tests/view.test.ts`, `tests/build-view.test.ts`, `tests/effects.test.ts`: each asserts that every tier
-shows the same glyphs).
+**Colour depths are three, and they buy fidelity rather than facts**: monochrome, 256 colours and
+truecolor, resolving one role table. The setting is `colors` (`--colors`, Settings > Colours; the player
+sees none, 256 and millions); it was called `capability` until it was named for what it is, a choice of how
+much colour to draw with and not a fact the game detects. Every depth puts identical glyphs on screen, so
+nothing a player needs is available only to a colour terminal (RULE — `tests/view.test.ts`,
+`tests/build-view.test.ts`, `tests/effects.test.ts`: each asserts the same glyphs at every depth).
+Monochrome is the floor: the game is whole, testable and playable in it. It is not the look the game is
+designed for. A Battle Round is a field battle read at a glance, and that read is told in colour, contrast,
+layers and transparency, which monochrome stands in for with a glyph, a weight or inverse video. The
+experience is the colour one.
 
-**There is no sixteen-colour mode: the game has one colour look, and the monochrome floor** (RULE —
-`tests/roles.test.ts`). What is authored is the colour look and, wherever it relies on a blend, the form
-monochrome takes instead (a glyph, a weight, inverse video); 256 colours and truecolor are the same code.
-The palette is one table of RGB per theme. Truecolor draws it exactly; 256 colours
-is *derived* from it by nearest match against the xterm cube and greys, indices 16 to 255 only, so no
-colour the game draws is one of the terminal's own sixteen; monochrome sends no colour code at all. The
-sixteen ANSI colours are whatever the player's terminal theme says they are (Solarized's yellow is not
-xterm's), so the game can neither know how a code looks nor blend toward it, and the effects the game
-reads by (backgrounds, fades, see-through mixes) all need real RGB; a sixteen-colour tier would have been
-a second hand-authored palette to playtest, with at most eleven distinct colours doing the work of
-twenty-six roles. A terminal that advertises nothing more than that gets monochrome, which sends it no
-colour to interpret and so leaves its own foreground, background and theme alone; the player picks a colour
-depth in Settings (`--capability` on the command line) if the guess was low. The result is that truecolor
-is the one look to playtest, 256 colours and monochrome are looked at now and then, and nothing else needs
-checking.
+**The game owns its background: with colours, every cell is two colours, the glyph's and its fill** (RULE —
+`tests/background.test.ts`, `tests/roles.test.ts`, `tests/see-through.test.ts`). The fill is the cell's
+`bgRole` or the theme's background (`BACKGROUND_RGB`: a near-black for `dark`, a warm paper white for
+`light`). Nothing is left to the player's terminal theme, so Solarized, a purple terminal and a black one
+show the same game, Background (`--theme`) is a choice of look rather than a match for the terminal, and a
+fade or a see-through mix blends toward a colour that is really there. `resolveCell` (`src/view/roles.ts`)
+is the whole of it, for the ANSI writer, the canvas and OpenTUI alike, in one order: the cell's exact
+colours (roles with tint and fade, plain text when a cell has no role, swapped by inverse video, the glyph
+mixed `1 - DIM_ALPHA` toward its fill when dim, a see-through style over all of it), then one last pass that
+turns each into the depth (`shownAt`: truecolor as it is, 256 colours the nearest entry). No depth has code
+of its own, an RGB renderer shows exactly what a 256-colour terminal shows, and the terminal's own "default
+colour", "faint" and "reverse video", which differ from one terminal to the next, are never sent with
+colours. The ANSI writer also grows a frame smaller than the screen (the title menu is one 80 × 24 frame)
+with blank background (`padFrame`) and starts the screen over when the depth changes. Monochrome alone
+leaves the terminal's colours as they are, so a theme means nothing there.
+
+**There is no sixteen-colour depth** (RULE — `tests/roles.test.ts`). The sixteen ANSI colours are whatever
+the player's terminal theme says they are (Solarized's yellow is not xterm's), so the game can neither
+know how a code looks nor blend toward it, and its backgrounds, fades and see-through mixes need real RGB;
+a sixteen-colour tier would be a second palette to author and playtest, with eleven colours at most doing
+the work of twenty-six roles. The palette is one table of RGB per theme. Truecolor draws it exactly; 256
+colours is derived from it by the nearest match in Lab (how different two colours look, not how far apart
+their channels are) over indices 16 to 255, so no colour the game draws is one of the terminal's sixteen. A
+terminal that advertises no more than that gets monochrome, which sends no colour code and leaves its own
+colours alone; the player picks the colours in Settings if the guess was low. Truecolor is the one look to
+playtest, 256 colours and monochrome are looked at now and then, and nothing else needs checking.
+
+**The palette has a quality bar, held by a test, so a colour added later meets what the ones before did**
+(RULE — `tests/palette.test.ts`). In both themes every role to be read clears 3:1 against the background
+(the quiet marks, a dot of floor, the map's edge and a bullet's trail, are exempt); the muted, label and
+frame colours stay readable after a dim; 256 colours shows every role within a Delta E of 12 of millions,
+and a colour with a hue keeps it; and the two sides are two colours that each read as their own, 40 Delta E
+apart at every depth and for a colour-blind player (simulated protanopia and deuteranopia). A role placed
+by eye in millions is nudged a few points toward the xterm cube only if the test says its 256 match
+drifted.
 
 **A glyph pack is optional, and it changes the field and the frame, never the actors** (RULE —
 `tests/effects.test.ts`). Units stay letters in every pack, because letter case carries ownership and
@@ -83,8 +108,8 @@ flip its case, and `tests/effects.test.ts`). A mirror match stays legible, and m
 **The style attributes beyond roles** are each a role and a number, so "never a colour" stays literally
 true. Each resolves in one place for every renderer.
 
-- **`fade`** is a continuous scalar the resolver blends toward the active theme's background before quantizing
-  to the capability tier. It resolves at `color256` and `truecolor` only; `monochrome` has no continuum to
+- **`fade`** is a continuous scalar the resolver blends toward the active theme's ground before quantizing
+  to the colour depth. It resolves at `color256` and `truecolor` only; `monochrome` has no continuum to
   express it on and ignores it. It is `fgRole`-only: a background is never faded. RULE —
   `tests/roles.test.ts`, `tests/view.test.ts`. Its scope is deliberately narrow, a recorded departure from the
   "decay is not fade-out" craft rule in [`effects.md`](effects.md): no effect recipe sets `fade` except

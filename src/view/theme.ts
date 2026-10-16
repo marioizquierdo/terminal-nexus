@@ -2,7 +2,7 @@
 // place the mapping exists, and a renderer never reverse-engineers a glyph back into a mechanic.
 //
 // Ownership is carried by letter case, never by colour: player A is lower case, player B is upper.
-// That is what makes monochrome the floor rather than the degraded mode.
+// That is what lets monochrome keep every fact.
 
 import { artFor } from "../content/art.ts"
 import type { Coord, TerrainId } from "../grid/types.ts"

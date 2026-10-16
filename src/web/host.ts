@@ -237,13 +237,13 @@ async function switchTo(screen: Screen, route: string | null, notes: readonly st
 }
 
 /** The settings saved in this browser, or a first visit's, in truecolour: a browser always has it. */
-const savedSettings = async (): Promise<Settings> => (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, capability: "truecolor" }
+const savedSettings = async (): Promise<Settings> => (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, colors: "truecolor" }
 
 /** A canvas for the screen starting, in its settings' colours. */
 function canvasFor(settings: Settings): CanvasBackend {
   backend = new CanvasBackend({
     canvas,
-    capability: settings.capability,
+    colors: settings.colors,
     theme: settings.theme,
     fit: () => ({ width: stage.clientWidth, height: stage.clientHeight }),
     pixelRatio: () => window.devicePixelRatio || 1,
@@ -281,7 +281,7 @@ async function startPulse(pulse: PulseName): Promise<void> {
       ...pageTerminal,
       backend: canvasFor(settings),
       timeline,
-      capability: settings.capability,
+      colors: settings.colors,
       theme: settings.theme,
       speed: 1,
       presentation: { ...DEFAULT_PRESENTATION, reducedMotion: settings.reducedMotion, glyphPack: settings.glyphPack },

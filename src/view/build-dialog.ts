@@ -19,7 +19,7 @@ import type { DialogLine } from "../build/types.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { text } from "./draw.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { ColorDepth } from "./roles.ts"
 import { entityGlyph, playerRole } from "./theme.ts"
 import type { BuildCompositionInput } from "./build.ts"
 import { inView } from "./build-grid.ts"
@@ -37,10 +37,10 @@ export function lineOnScreen(input: Pick<BuildCompositionInput, "context" | "sta
 
 /** The dialog's own parts, over the popup shape: the highlight on the map, and the speaker in the border.
  *  Drawn after the popups, so the speaker's title is the last word on the border. */
-export function drawDialog(cells: BandCell[], input: BuildCompositionInput, capability: CapabilityMode): void {
+export function drawDialog(cells: BandCell[], input: BuildCompositionInput, colors: ColorDepth): void {
   const line = lineOnScreen(input)
   if (line === null) return
-  drawFocusLight(cells, input, line, capability)
+  drawFocusLight(cells, input, line, colors)
   drawSpeaker(cells, input, line)
 }
 
@@ -80,16 +80,16 @@ const lightOn = (tile: Coord, periodMs: number): EffectInstance => ({
  * lights a tile of the focus itself; each tile lit once, on the map and in the view. One breath is the
  * "Popup pulse" Experiment's, the dialog's border's own (0 holds it steady).
  */
-function drawFocusLight(cells: BandCell[], input: BuildCompositionInput, line: DialogLine, capability: CapabilityMode): void {
+function drawFocusLight(cells: BandCell[], input: BuildCompositionInput, line: DialogLine, colors: ColorDepth): void {
   const focus = line.focus
   if (focus === null) return
-  drawLightAround(cells, input, focus.own, capability, input.dialogLight?.elapsedMs ?? 0)
+  drawLightAround(cells, input, focus.own, colors, input.dialogLight?.elapsedMs ?? 0)
 }
 
 /** The focus light around `own`, the tiles of what it lights — the ring round each, never on one of them, each tile
  *  lit once, on the map and in the view — at `elapsedMs` into its breath: the dialog's focus, and Explore Map on the
  *  Commander (`commander-moments.ts`). */
-export function drawLightAround(cells: BandCell[], input: BuildCompositionInput, ownTiles: readonly Coord[], capability: CapabilityMode, elapsedMs: number): void {
+export function drawLightAround(cells: BandCell[], input: BuildCompositionInput, ownTiles: readonly Coord[], colors: ColorDepth, elapsedMs: number): void {
   const { context, state, layout } = input
   const range = visibleRange(state.camera, state.viewport)
   const recipe = EFFECT_RECIPES["fx.focus.light"]
@@ -98,7 +98,7 @@ export function drawLightAround(cells: BandCell[], input: BuildCompositionInput,
     timeMs: elapsedMs,
     cosmeticSeed: 0,
     reducedMotion: input.reducedMotion === true,
-    capability,
+    colors,
   }
   const periodMs = state.experiments.popupPulseMs
   const key = (tile: Coord): string => `${tile.x},${tile.y}`

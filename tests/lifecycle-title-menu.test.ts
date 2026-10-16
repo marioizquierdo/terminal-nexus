@@ -15,7 +15,7 @@ const ESC = String.fromCharCode(27)
 
 /** A settings screen exists (tests/title-menu-settings.test.ts covers it); these lifecycle tests only need
  *  *some* legal starting settings and a store that never actually touches a disk. */
-const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
+const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, colors: "monochrome" }
 
 function noopSettingsStore(): SettingsStore {
   return {

@@ -1,9 +1,9 @@
 // The menu frame itself — docs/system-design/presentation.md and input.md: every hotkey is displayed, every glyph is one column,
-// monochrome emits no colour code, and the same information survives every capability tier.
+// monochrome emits no colour code, and the same information survives every colour depth.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { CAPABILITY_MODES, cellAt, frameToAnsi, frameToText, offendingGlyph } from "../src/view/index.ts"
+import { COLOR_DEPTHS, cellAt, frameToAnsi, frameToText, offendingGlyph } from "../src/view/index.ts"
 import { MENU_LAYOUT, MENU_SIZE, composeMenuFrame } from "../src/view/menu.ts"
 import { menuItemLabel, menuItemRow } from "../src/title-menu/layout.ts"
 import { createMenuList } from "../src/title-menu/list.ts"
@@ -15,18 +15,18 @@ import { isColourCode, sgrCodes } from "./helpers.ts"
  *  player sees rather than a copy of it that can fall behind. */
 const ITEMS: readonly MenuItem[] = TOP_LEVEL_ITEMS
 
-test("the frame is the RULE floor, 80x24, at every capability tier", () => {
-  for (const capability of CAPABILITY_MODES) {
-    const frame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, capability)
+test("the frame is the RULE floor, 80x24, at every colour depth", () => {
+  for (const colors of COLOR_DEPTHS) {
+    const frame = composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, colors)
     assert.equal(frame.width, MENU_SIZE.width)
     assert.equal(frame.height, MENU_SIZE.height)
   }
 })
 
-test("every cell is exactly one printable column, at every capability tier and in monochrome", () => {
-  for (const capability of CAPABILITY_MODES) {
-    const frame = composeMenuFrame({ state: createMenuList(ITEMS), notice: "a stub notice" }, capability)
-    assert.equal(offendingGlyph(frame), null, `${capability}: a cell was not one ASCII character`)
+test("every cell is exactly one printable column, at every colour depth and in monochrome", () => {
+  for (const colors of COLOR_DEPTHS) {
+    const frame = composeMenuFrame({ state: createMenuList(ITEMS), notice: "a stub notice" }, colors)
+    assert.equal(offendingGlyph(frame), null, `${colors}: a cell was not one ASCII character`)
   }
 })
 

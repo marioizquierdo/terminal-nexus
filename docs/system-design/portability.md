@@ -120,10 +120,11 @@ Ordered by payoff over cost. None is urgent; each is a candidate for a small ste
 4. **Layout knows cells, not pixels.** Hit targets are counted in cells (the setting's value box is 6
    cells wide "so a finger can hit it"). A host with a different cell-to-pixel ratio wants a minimum
    *physical* size as a layout input.
-5. **`capability` is terminal detection.** Settings' `monochrome | color256 | truecolor` is
-   what a terminal can do (there is no sixteen-colour depth: those colours are the terminal theme's, not
-   the game's); a graphical host is always truecolour and should not present the choice. Let the host
-   declare which settings it exposes.
+5. **`colors` is a choice about a terminal.** Settings' `monochrome | color256 | truecolor` is how much colour
+   the screen is drawn with (there is no sixteen-colour depth: those colours are the terminal theme's, not
+   the game's); a graphical host is always truecolour and should not present the choice. A host paints the
+   game's background itself, as the colour depths do, rather than leaving the terminal's to show through. Let the
+   host declare which settings it exposes.
 6. **Box-drawing in a browser uses the phone's own font**, so the map edge's joins may not tile. A
    canvas backend that draws line and block glyphs itself (as a terminal does) fixes it.
 

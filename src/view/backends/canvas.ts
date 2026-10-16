@@ -11,13 +11,12 @@
 // module type-checks and runs its pure half under Node like every other backend.
 
 import type { ReadonlyCellFrame, TerminalBackend } from "../frame.ts"
-import type { CapabilityMode, Theme } from "../roles.ts"
-import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
+import { BLANK } from "../frame.ts"
+import type { ColorDepth, Theme } from "../roles.ts"
+import { BACKGROUND_RGB, DEFAULT_THEME, DIM_ALPHA, resolveCell } from "../roles.ts"
 
-/** How a dim cell is drawn: the terminal's SGR 2 "faint", approximated as partial opacity. */
-export const DIM_ALPHA = 0.55
 
-/** One cell, ready to paint: colours as CSS strings, `background` null where the theme's own shows. */
+/** One cell, ready to paint: colours as CSS strings, `background` null where the cell has no fill of its own (monochrome). */
 export type PaintOp = Readonly<{
   x: number
   y: number
@@ -34,11 +33,12 @@ const css = (rgb: readonly number[]): string => `rgb(${rgb[0]},${rgb[1]},${rgb[2
 /**
  * What to paint for a frame — pure, and the half of this backend the tests hold to the terminal's:
  * every glyph where `frameToText` has it, every colour as `resolveCell` resolves it (inverse video and
- * a see-through style already folded in), and a dim cell's glyph at `DIM_ALPHA`.
+ * a see-through style already folded in), and a dim cell's glyph at `DIM_ALPHA`: only monochrome's, since
+ * with colours the dim is already mixed into the glyph's colour (`resolveCell`).
  */
 export function paintOps(
   frame: ReadonlyCellFrame,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
 ): PaintOp[] {
   const ops: PaintOp[] = []
@@ -46,7 +46,7 @@ export function paintOps(
     for (let x = 0; x < frame.width; x += 1) {
       const cell = frame.cells[y * frame.width + x]
       if (cell === undefined) continue
-      const resolved = resolveCell(cell, capability, theme)
+      const resolved = resolveCell(cell, colors, theme)
       ops.push({
         x,
         y,
@@ -84,7 +84,7 @@ export type CanvasSurface = {
 
 export type CanvasBackendOptions = Readonly<{
   canvas: CanvasSurface
-  capability: CapabilityMode
+  colors: ColorDepth
   theme?: Theme
   /** The space the screen may fill, in CSS pixels; the cell size follows it. */
   fit: () => Readonly<{ width: number; height: number }>
@@ -101,21 +101,21 @@ export class CanvasBackend implements TerminalBackend {
   /** The size of one cell in CSS pixels at the last frame — what turns a tap into a cell. */
   cellWidth = 10
   cellHeight = 20
-  private capability: CapabilityMode
+  private colors: ColorDepth
   private theme: Theme
   private readonly options: CanvasBackendOptions
 
   constructor(options: CanvasBackendOptions) {
     this.options = options
-    this.capability = options.capability
+    this.colors = options.colors
     this.theme = options.theme ?? DEFAULT_THEME
   }
 
   async start(): Promise<void> {}
   async stop(): Promise<void> {}
 
-  setPresentation(capability: CapabilityMode, theme: Theme): void {
-    this.capability = capability
+  setPresentation(colors: ColorDepth, theme: Theme): void {
+    this.colors = colors
     this.theme = theme
   }
 
@@ -142,15 +142,18 @@ export class CanvasBackend implements TerminalBackend {
     if (g === null) throw new Error("this browser gave the canvas no 2D context")
     g.setTransform(ratio, 0, 0, ratio, 0, 0)
     g.globalAlpha = 1
-    g.fillStyle = css(BACKGROUND_RGB[this.theme])
+    // The background as this depth shows it (the nearest entry at 256 colours), painted once; a cell that is
+    // plain background is then left alone, and only a cell with a fill of its own is painted over it.
+    const background = css(resolveCell(BLANK, this.colors, this.theme).background ?? BACKGROUND_RGB[this.theme])
+    g.fillStyle = background
     g.fillRect(0, 0, width, height)
     g.textBaseline = "middle"
     g.textAlign = "center"
     const size = Math.floor(this.cellWidth * 1.62)
-    for (const op of paintOps(frame, this.capability, this.theme)) {
+    for (const op of paintOps(frame, this.colors, this.theme)) {
       const left = op.x * this.cellWidth
       const top = op.y * this.cellHeight
-      if (op.background !== null) {
+      if (op.background !== null && op.background !== background) {
         g.globalAlpha = 1
         g.fillStyle = op.background
         // Half a pixel over, so neighbouring solid cells meet without a hairline between them.

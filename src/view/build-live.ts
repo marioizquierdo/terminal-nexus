@@ -84,7 +84,7 @@ import { TUNING } from "../build/tuning.ts"
 import type { BuildCompositionInput, CardReveal, RowAck } from "./build.ts"
 import type { PopupBorder, PopupFlash } from "./build-popup.ts"
 import { POPUP_FLASH, POPUP_OPENINGS, openingLengthMs } from "./build-popup.ts"
-import type { CapabilityMode } from "./roles.ts"
+import type { ColorDepth } from "./roles.ts"
 import type { Footprint } from "../grid/types.ts"
 import type { PlacedStructure, PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
 import { placementRequest, removalSchedule } from "./placement.ts"
@@ -132,7 +132,7 @@ export function livePresentation(live: LiveFrame): LivePresentation {
 /** Whether a colour depth blends: tint and fade are continuous at 256 colours and millions; monochrome has
  *  no colour to move. A popup border's breath and its opening flash show only there, and only there does
  *  the copy the raid's trail leaves behind fade by more than one look. */
-const blends = (capability: CapabilityMode | undefined): boolean => capability !== "monochrome"
+const blends = (colors: ColorDepth | undefined): boolean => colors !== "monochrome"
 
 /** The opening flash as the "Battle Round flash" and "Flash strength" Experiments set it, over the
  *  view's own table for the rest (`POPUP_FLASH`: how many, the gap). */
@@ -151,13 +151,13 @@ export const openingFlash = (state: BuildState): PopupFlash => ({
 export function popupBorderEffect(
   state: BuildState,
   reducedMotion: boolean,
-  capability?: CapabilityMode,
+  colors?: ColorDepth,
   flash: PopupFlash = openingFlash(state),
 ): Pick<PopupBorder, "opening" | "breathMs"> | null {
   if (state.popup === null || reducedMotion) return null
-  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && blends(capability) ? flash : null
+  const opening = POPUP_OPENINGS[state.popup] === "double-flash" && flash.flashMs > 0 && blends(colors) ? flash : null
   const lengthMs = state.experiments.popupPulseMs
-  const breathMs = lengthMs > 0 && blends(capability) ? lengthMs : null
+  const breathMs = lengthMs > 0 && blends(colors) ? lengthMs : null
   const effect = { opening, breathMs }
   return breathMs === null && openingLengthMs(effect) === 0 ? null : effect
 }
@@ -220,7 +220,7 @@ export type LiveOptions = Readonly<{
    *  popup border's breath and its opening flash cannot show, so what cannot show neither ticks the
    *  frame timer nor is handed to the view. Absent (a test), a depth that
    *  shows everything. */
-  capability?: CapabilityMode
+  colors?: ColorDepth
   /** A structure's footprint, for the placement tracks. Only their shape depends on it — when each
    *  one settles, all this loop reads, depends on the timings alone — so without it (a test) every
    *  structure is scheduled as one tile. */
@@ -510,7 +510,7 @@ export class BuildAnimation {
     else if (this.seenPopup?.popup !== state.popup) this.seenPopup = { popup: state.popup, at: now }
     let popupBorder: PopupBorder | undefined
     let breathing = false
-    const effect = popupBorderEffect(state, options.reducedMotion === true, options.capability, this.popupFlash ?? undefined)
+    const effect = popupBorderEffect(state, options.reducedMotion === true, options.colors, this.popupFlash ?? undefined)
     if (effect !== null && this.seenPopup !== null) {
       const elapsedMs = now - this.seenPopup.at
       const openingMs = openingLengthMs(effect)
@@ -530,7 +530,7 @@ export class BuildAnimation {
     if (state.popup === "dialog" && state.dialog !== null) {
       if (this.seenLine?.line !== state.dialog.line) this.seenLine = { line: state.dialog.line, at: now }
       dialogLight = { elapsedMs: now - this.seenLine.at }
-      if (options.reducedMotion !== true && blends(options.capability) && state.experiments.popupPulseMs > 0) breathing = true
+      if (options.reducedMotion !== true && blends(options.colors) && state.experiments.popupPulseMs > 0) breathing = true
     } else this.seenLine = null
 
     // The Commander's appearance: timed from the first frame of the round's Build Phase, and drawn every frame until
@@ -550,7 +550,7 @@ export class BuildAnimation {
     // nothing faster is moving, whose own ends keep it at every frame until they pass.
     let slowUntil: number | null = breathing ? now + BREATH_FRAME_MS : null
     if (raidTrail !== null) {
-      const next = now - raidTrail.elapsedMs + nextTrailChange(raidTrail.elapsedMs, blends(options.capability))
+      const next = now - raidTrail.elapsedMs + nextTrailChange(raidTrail.elapsedMs, blends(options.colors))
       slowUntil = slowUntil === null ? next : Math.min(slowUntil, next)
     }
     const slowOnly = slowUntil !== null && ends.length === 0

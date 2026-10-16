@@ -27,7 +27,7 @@ import { DEFENCE_KEYS } from "./pulse-helpers.ts"
 /** The title row's clock, whatever styling sits between the words and the time. */
 const timerAt = (write: string): string | undefined => new RegExp(`BATTLE ROUND 1(?:${ESC}\\[[0-9;]*m)* +(\\d:\\d\\d)`).exec(write)?.[1]
 
-const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, capability: "monochrome" }
+const TEST_SETTINGS: Settings = { ...DEFAULT_SETTINGS, colors: "monochrome" }
 
 class FakeStdout extends EventEmitter {
   isTTY = true
@@ -405,7 +405,7 @@ async function keyboardRun(answers: Answers, options: { keyReleases?: "auto" | "
   const inner = new AnsiBackend({
     stdout: stdout as unknown as NodeJS.WriteStream,
     stdin: stdin as unknown as NodeJS.ReadStream,
-    capability: "monochrome",
+    colors: "monochrome",
   })
   const session = runBuildPhase({
     settings: TEST_SETTINGS,

@@ -16,7 +16,8 @@
 // neither the compositor nor the kernel knows which one presented a frame.
 
 import type { ReadonlyCellFrame } from "../frame.ts"
-import type { CapabilityMode, Rgb, Theme } from "../roles.ts"
+import { padFrame } from "../frame.ts"
+import type { ColorDepth, Rgb, Theme } from "../roles.ts"
 import { BACKGROUND_RGB, DEFAULT_THEME, resolveCell } from "../roles.ts"
 import type { BackendOptions, NamedBackend } from "./index.ts"
 
@@ -32,6 +33,9 @@ export type CellSink = Readonly<{
     bg: unknown,
     attributes: number,
   ): void
+  /** The buffer's size, where it says: the screen the game's background is painted across. */
+  readonly width?: number
+  readonly height?: number
 }>
 
 /**
@@ -43,26 +47,27 @@ export function drawFrameInto(
   core: OpenTuiCore,
   buffer: CellSink,
   frame: ReadonlyCellFrame,
-  capability: CapabilityMode,
+  colors: ColorDepth,
   theme: Theme = DEFAULT_THEME,
 ): void {
   const colour = ([red, green, blue]: Rgb) => core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1)
-  // OpenTUI paints its own background rather than leaving the terminal's ambient colour to show
-  // through (unlike the direct-ANSI backend), so the theme has to reach this fill too or a light
-  // theme would still render on a forced-black background.
-  const ground = colour(BACKGROUND_RGB[theme])
-  for (let y = 0; y < frame.height; y += 1) {
-    for (let x = 0; x < frame.width; x += 1) {
-      const cell = frame.cells[y * frame.width + x]
+  // Monochrome's cells have no fill of their own, so what shows behind them is the background; the colour
+  // depths always give one (`resolveCell`). With colours a frame smaller than the screen is grown with
+  // blank background, the way the direct-ANSI backend does; monochrome is drawn as it is.
+  const background = colour(BACKGROUND_RGB[theme])
+  const screen = colors === "monochrome" ? frame : padFrame(frame, buffer.width ?? frame.width, buffer.height ?? frame.height)
+  for (let y = 0; y < screen.height; y += 1) {
+    for (let x = 0; x < screen.width; x += 1) {
+      const cell = screen.cells[y * screen.width + x]
       if (cell === undefined) continue
       // Inverse video is already in the colours `resolveCell` gives, so no reverse attribute is sent.
-      const resolved = resolveCell(cell, capability, theme)
+      const resolved = resolveCell(cell, colors, theme)
       const attributes = core.createTextAttributes({
         bold: resolved.bold,
         dim: resolved.dim,
         underline: resolved.underline,
       })
-      const fill = resolved.background === null ? ground : colour(resolved.background)
+      const fill = resolved.background === null ? background : colour(resolved.background)
       buffer.setCell(x, y, cell.glyph, colour(resolved.foreground), fill, attributes)
     }
   }
@@ -79,10 +84,10 @@ export async function createOpenTuiBackend(options: BackendOptions): Promise<Nam
     exitOnCtrlC: false,
   })
 
-  // Mutable, like `AnsiBackend`'s own capability/theme fields — `setPresentation` changes these
+  // Mutable, like `AnsiBackend`'s own colors/theme fields — `setPresentation` changes these
   // without touching the renderer's own lifecycle, so a live Settings change never flashes the
   // alternate screen.
-  let capability = options.capability
+  let colors = options.colors
   let theme = options.theme ?? DEFAULT_THEME
   let stopped = false
   return {
@@ -93,11 +98,11 @@ export async function createOpenTuiBackend(options: BackendOptions): Promise<Nam
     present(frame: ReadonlyCellFrame): void {
       const buffer = renderer.nextRenderBuffer
       if (buffer === undefined) throw new Error("opentui renderer exposed no buffer")
-      drawFrameInto(core, buffer as unknown as CellSink, frame, capability, theme)
+      drawFrameInto(core, buffer as unknown as CellSink, frame, colors, theme)
       renderer.requestRender()
     },
-    setPresentation(nextCapability: CapabilityMode, nextTheme: Theme): void {
-      capability = nextCapability
+    setPresentation(nextColorDepth: ColorDepth, nextTheme: Theme): void {
+      colors = nextColorDepth
       theme = nextTheme
     },
     /** Idempotent, like every other exit path. */

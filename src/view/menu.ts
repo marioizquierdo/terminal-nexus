@@ -1,6 +1,6 @@
 // The top-level menu screen — "a menu is a frame like any other." Reuses
 // the same band compositor, style roles, and glyph packs `compose.ts` draws a Pulse with, so
-// capability tiers, themes, and monochrome come free rather than needing a second accessibility pass.
+// colour depths, themes, and monochrome come free rather than needing a second accessibility pass.
 //
 // Unlike a Pulse, a menu has no ticks and nothing animates, so there is no `Playback` clock here —
 // the resize-gate RULE (`docs/system-design/presentation.md`) still applies, but "resumes from the same presentation time"
@@ -15,7 +15,7 @@ import { wrapWords } from "./draw.ts"
 import type { BandCell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text } from "./draw.ts"
-import type { CapabilityMode, StyleRole } from "./roles.ts"
+import type { ColorDepth, StyleRole } from "./roles.ts"
 import { chromeGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
@@ -108,9 +108,9 @@ function drawBody(
 
 export function composeMenuFrame(
   input: MenuCompositionInput,
-  capability: CapabilityMode,
+  colors: ColorDepth,
 ): ReadonlyCellFrame {
-  void capability
+  void colors
   const size = MENU_SIZE
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
@@ -129,7 +129,7 @@ export function composeMenuFrame(
     const hotkeyPart = `[${item.hotkey}]`
     const labelPart = ` ${item.label}`
     if (highlighted) {
-      // Inverse video carries "selected" at every capability tier, including monochrome — `presentation.md`:
+      // Inverse video carries "selected" at every colour depth, including monochrome — `presentation.md`:
       // colour never carries meaning alone. The hotkey/label split stops mattering once the
       // whole row is one inverted block.
       text(cells, band, MENU_LAYOUT.column, row, hotkeyPart + labelPart, "chrome.title", {

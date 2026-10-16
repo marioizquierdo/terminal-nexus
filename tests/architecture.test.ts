@@ -146,7 +146,7 @@ test("src/report never reaches the kernel or the view", () => {
 
 test("the reducer layers never import the view: src/build, src/title-menu, src/settings and src/terminal import nothing from src/view", () => {
   // The view reads the Build Phase, the title menu, the settings and the terminal vocabulary (key
-  // events, playback control, capability, theme and glyph pack), never the other way round. The title
+  // events, playback control, colors, theme and glyph pack), never the other way round. The title
   // screen's folder is src/title-menu.
   for (const layer of ["build", "title-menu", "settings", "terminal"]) {
     assertNoDependencyOn(layer, ["view"])

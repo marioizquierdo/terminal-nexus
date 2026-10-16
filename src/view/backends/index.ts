@@ -1,12 +1,12 @@
 import type { TerminalBackend } from "../frame.ts"
-import type { CapabilityMode, Theme } from "../roles.ts"
+import type { ColorDepth, Theme } from "../roles.ts"
 import { AnsiBackend } from "./ansi.ts"
 import type { TerminalInput, TerminalOutput } from "./ports.ts"
 
 export type BackendOptions = Readonly<{
   stdout: TerminalOutput
   stdin: TerminalInput
-  capability: CapabilityMode
+  colors: ColorDepth
   /** Defaults to `DEFAULT_THEME` ("dark") wherever a caller has not been taught about themes yet. */
   theme?: Theme
   width: number

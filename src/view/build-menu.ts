@@ -22,7 +22,7 @@ import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import type { DrawExtra } from "./draw.ts"
 import { put, text } from "./draw.ts"
-import type { CapabilityMode, StyleRole } from "./roles.ts"
+import type { ColorDepth, StyleRole } from "./roles.ts"
 import { terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { BuildCompositionInput, RowAck } from "./build.ts"
@@ -158,9 +158,9 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
  * `chrome.muted`; and in monochrome, which has no grey, the bar with its words dim. Never bold, never underlined, never
  * the hotkey's colour: always weaker than the pressed flash, which is all three.
  */
-function refusedWords(bar: boolean, capability: CapabilityMode): CellStyle {
+function refusedWords(bar: boolean, colors: ColorDepth): CellStyle {
   if (!bar) return { fgRole: "chrome.muted", dim: true }
-  if (capability === "monochrome") return { fgRole: HIGHLIGHT_BAR.role, inverse: true, dim: true }
+  if (colors === "monochrome") return { fgRole: HIGHLIGHT_BAR.role, inverse: true, dim: true }
   return { fgRole: HIGHLIGHT_BAR.role, bgRole: "chrome.muted", inverse: true }
 }
 
@@ -170,7 +170,7 @@ function refusedWords(bar: boolean, capability: CapabilityMode): CellStyle {
  * drawn here, the menu's and a card's header alike, so a change to either style reaches every row that
  * has it.
  */
-export function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry: MenuRowSpec, capability: CapabilityMode): void {
+export function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number, entry: MenuRowSpec, colors: ColorDepth): void {
   const column = layout.panelColumn
   const limit = layout.panelLimit
   // A pressed acknowledgement is drawn as its own bar, over the highlight or on a row without one.
@@ -199,7 +199,7 @@ export function drawMenuRow(cells: BandCell[], layout: BuildLayout, row: number,
     part(rightColumn(layout, value), value, own, { bold: entry.active, dim: !entry.active && entry.disabled === true })
   }
   if (entry.ack === "refused") {
-    const style = refusedWords(bar !== null, capability)
+    const style = refusedWords(bar !== null, colors)
     for (let index = words; index < cells.length; index += 1) {
       const drawn = cells[index]
       if (drawn !== undefined && "cell" in drawn) cells[index] = { ...drawn, cell: { glyph: drawn.cell.glyph, style } }
@@ -302,14 +302,14 @@ function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
  * so, and the mouse reads the same answer). In the free rows between the buildings and Start Battle Round, the
  * coming raid (`raid-panel.ts`): information, not rows, so it fades and comes back with the menu.
  */
-export function drawPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, capability: CapabilityMode): void {
+export function drawPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, colors: ColorDepth): void {
   const { context, layout } = input
   drawCredits(cells, input, pack)
   menuEntries(context).forEach((target, entry) => {
     const row = menuEntryRow(layout, context.catalog, target)
     const spec = menuRowSpec(input, entry)
     if (row === null || spec === null) return
-    drawMenuRow(cells, layout, row, spec, capability)
+    drawMenuRow(cells, layout, row, spec, colors)
   })
   drawRaidPanel(cells, input)
 }
