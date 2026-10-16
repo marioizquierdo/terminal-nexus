@@ -22,7 +22,7 @@
 // events, the registry and the round number.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { createRegistry, freshEntityFields } from "../content/index.ts"
+import { createRegistry, freshEntityFields, HEALTH_TUNED_COMMANDER } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
@@ -166,12 +166,9 @@ export function auraReachRegistry(registry: ContentRegistry, times: number): Con
 
 /** `registry` with Vasse's health set to `health` — what the Pulse reads while the Experiment "Vasse's health" is
  *  tuned. The same registry, untouched, when she is not in it. */
-export function commanderRegistry(registry: ContentRegistry, health: number, commander: string = VASSE): ContentRegistry {
+export function commanderRegistry(registry: ContentRegistry, health: number, commander: string = HEALTH_TUNED_COMMANDER): ContentRegistry {
   if (!Number.isInteger(health) || health <= 0) throw new Error(`a Commander's health must be a positive integer, received ${health}`)
   // The Experiment is Vasse's health: another Commander keeps his own (Averno's 70).
   if (!registry.has(commander) || registry.get(commander).commander !== true) return registry
   return createRegistry(registry.ids().map((id) => (id === commander ? { ...registry.get(id), maxHp: health } : registry.get(id))))
 }
-
-/** The Commander the "Vasse's health" Experiment tunes. */
-const VASSE = "unit.citizen.vasse"

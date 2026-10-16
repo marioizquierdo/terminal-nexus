@@ -13,6 +13,9 @@
 import type { ContentDef } from "./types.ts"
 import { rectFootprint } from "./types.ts"
 
+/** The Commander the Experiment "Vasse's health" tunes: her. Another Commander keeps his own health. */
+export const HEALTH_TUNED_COMMANDER = "unit.citizen.vasse"
+
 export const COMMANDER_CONTENT: readonly ContentDef[] = [
   {
     id: "unit.citizen.vasse",

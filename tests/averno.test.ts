@@ -83,7 +83,10 @@ test("his card names him, says he is restored a round late, and gives his aura a
   keys(side, "e")
   const { cursor } = side.build.state
   side.build.run([{ kind: "move-cursor", dx: unit.anchor.x - cursor.x, dy: unit.anchor.y - cursor.y }])
-  assert.equal(currentCard(side.context, side.build.state)?.title, "Averno")
+  const card = currentCard(side.context, side.build.state)
+  assert.equal(card?.title, "Averno")
+  // His own health: the Experiment "Vasse's health" is hers.
+  assert.equal(card?.stats.find((stat) => stat.label === "HEALTH")?.value, "70")
   const text = panelLines(side, compose(side)).join(" ").replace(/\s+/gu, " ")
   assert.match(text, /Forward Order: he and his units within range 4 deal 25% more damage\./u)
   assert.match(text, /a round late/u)

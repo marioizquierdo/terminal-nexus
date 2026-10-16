@@ -2,7 +2,7 @@ export * from "./types.ts"
 export { CITIZEN_CONTENT } from "./citizen.ts"
 export { RAVEL_CONTENT } from "./ravel.ts"
 export { PROVING_GROUND_CONTENT } from "./proving-grounds.ts"
-export { COMMANDER_CONTENT } from "./commanders.ts"
+export { COMMANDER_CONTENT, HEALTH_TUNED_COMMANDER } from "./commanders.ts"
 export { TIER_CONTENT } from "./tiers.ts"
 
 import type { ContentDef, ProductionRecipe } from "./types.ts"
