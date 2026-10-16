@@ -366,7 +366,7 @@ function dealtDraft(mission: MissionDefinition, context: BuildContext, round: nu
 }
 
 export function missionPlay(mission: MissionDefinition): MissionPlay {
-  const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"]): MissionPulseInput => ({
+  const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"], state?: BuildState): MissionPulseInput => ({
     mission,
     grid: context.grid,
     registry: context.registry,
@@ -374,6 +374,11 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
     carried: context.carried ?? null,
     structures,
     callups: callupsOf(context),
+    // The buildings held this round (Hold production), by anchor.
+    held: (state?.held ?? []).map((key) => {
+      const [x = 0, y = 0] = key.split(",").map(Number)
+      return { x, y }
+    }),
   })
 
   /** What the round's triggers bring, set down against the round's opening without a plan — a forecast:
@@ -404,7 +409,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The Pulse's own opening and content, so what is foreseen is what its first tick will do — and, after
       // the raid's groups, where the player's troops head.
       const registry = pulseRegistry(context, state)
-      const round = foreseeRound({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state)), registry })
+      const round = foreseeRound({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state), state), registry })
       return [...raidOf(round.groups), ...troopsGroupOf(round.troops)]
     },
 
@@ -431,7 +436,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The Pulse runs on the content with the level's buildings spawning their waves; the Build Phase's own
       // registry never carries a recipe, so nothing it draws or refuses depends on one.
       const registry = pulseRegistry(context, state)
-      const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
+      const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state), state), registry })
       const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)
       // A Commander who fell is out for the rest of this Pulse, and for the rounds after it her definition says.
       const fell = fallen(run.events, registry, pulse)

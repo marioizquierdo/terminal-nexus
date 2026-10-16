@@ -68,6 +68,9 @@ export type MissionPulseInput = Readonly<{
   /** Units a Nexus power called up for this Pulse (Reserve Callup): set down at tick 0 round their muster, after
    *  the mission's own arrivals, and arriving by no trigger of the mission's. Absent: none. */
   callups?: readonly Force[]
+  /** The player's buildings, by anchor, that hold their wave this Pulse (a building's action, Hold production): they
+   *  open with every wave of the Pulse already sent. Absent: none. */
+  held?: readonly Coord[]
 }>
 
 /** A unit that arrived by a mission's `spawn`, and what it came with — the group and its line of intention.
@@ -239,6 +242,7 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
     structures,
     setup: { seed: mission.seed, pulseTicks: mission.pulseTicks, forces },
     ...(carried === null ? {} : { carried }),
+    ...(input.held === undefined || input.held.length === 0 ? {} : { held: input.held }),
   })
   const arrivals: Arrival[] = []
   for (const entity of result.state.entities) {

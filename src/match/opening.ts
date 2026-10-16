@@ -43,6 +43,9 @@ export type OpeningInput = Readonly<{
   /** The state the last Pulse of a mission left, after Recall — absent for a first Pulse. Its seed,
    *  clock and ground items carry on; `setup.seed` is then not read. */
   carried?: MatchState
+  /** The player's buildings, by anchor, that hold their wave this Pulse (Hold production): they open with every wave
+   *  of the Pulse already sent, so they send none. Absent: none. */
+  held?: readonly Coord[]
 }>
 
 type Placed = Readonly<{
@@ -196,7 +199,16 @@ export function opening(input: OpeningInput): Opening {
       // tuned, and may have been turned down between rounds. Nothing else ever carries more.
       return { ...entity, hp: Math.min(entity.hp, entry.definition.maxHp), anchor: entry.anchor, ...productionFields(entry.definition) }
     })
-  const entities = [...kept, ...born].sort((a, b) => a.ordinal - b.ordinal)
+  const held = input.held ?? []
+  const holding = (entity: EntityState): boolean =>
+    entity.player === "A" && held.some((anchor) => anchor.x === entity.anchor.x && anchor.y === entity.anchor.y)
+  const entities = [...kept, ...born]
+    .map((entity) => {
+      // A building held this Pulse opens with every wave already sent (a building's action, Hold production).
+      const recipe = registry.get(entity.contentId).production
+      return recipe !== undefined && holding(entity) ? { ...entity, produced: recipe.waves } : entity
+    })
+    .sort((a, b) => a.ordinal - b.ordinal)
 
   const state: MatchState = {
     schemaVersion: SCHEMA_VERSION,

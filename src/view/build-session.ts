@@ -39,6 +39,8 @@ import type { MouseEvent } from "../build/mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "../build/mouse.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport, withoutScene } from "../build/state.ts"
+import { currentCard } from "../build/card.ts"
+import { cardActionRows } from "./build-card.ts"
 import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
 import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
 import { TUNING } from "../build/tuning.ts"
@@ -604,9 +606,12 @@ export class BuildSession {
   private mouseCommand(mouse: MouseEvent, layout: BuildLayout, camera: Camera | undefined): BuildCommand | null {
     const state = this.buildState
     const spec = popupSpec(this.context, state)
+    const card = cardEntry(state) === null ? null : currentCard(this.context, state)
+    const actions = card === null ? [] : cardActionRows({ context: this.context, state, layout }, card)
     return buildMouseCommand(mouse, camera ?? state.camera, layout, this.context.catalog, {
       ...(spec === null ? {} : { popup: placePopup(layout, spec) }),
       card: cardEntry(state),
+      ...(actions.length === 0 ? {} : { actions: actions.map((row) => ({ row, command: { kind: "building-action", action: "hold" } as const })) }),
       escLabel: escLabel(state),
       pulse: this.presenter !== null,
       pulseOver: this.presenter?.phase() === "home",

@@ -89,6 +89,8 @@ export type BuildCommand =
    *  menu, where the cursor is hidden, with the flicker of a key that had nothing to do there. */
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
+  /** A building's action, on the building Explore Map is on (`buildingActions`): Hold production, `z`. */
+  | Readonly<{ kind: "building-action"; action: "hold" }>
   /**
    * Esc, and a click on the top bar's `menu [esc]`: step back one level — close a popup (Settings
    * opened from the game menu goes back to it), stop placing or close Explore Map (to where it was

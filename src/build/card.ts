@@ -17,7 +17,7 @@ import type { Coord, TerrainId } from "../grid/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { CardText } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { buildRange, structureAtTile } from "./state.ts"
+import { anchorKey, buildRange, buildingActions, structureAtTile } from "./state.ts"
 import { constructionRadiusOf } from "./territory.ts"
 
 /** What a card's icon is: a thing's own glyphs, or a bare tile's. The view resolves either to glyphs. */
@@ -42,6 +42,9 @@ export type Card = Readonly<{
   description: string
   /** Its numbers: cost, health, size, attack and range — or a bare tile's position. */
   stats: readonly CardStat[]
+  /** What the player can do with it, each under its own key: a building's actions (`buildingActions`), shown while
+   *  Explore Map is on a building of theirs. Absent: none. */
+  actions?: readonly Readonly<{ hotkey: string; label: string }>[]
 }>
 
 /** A thing's words, or — for content nobody has written a card for yet — its short name and nothing
@@ -65,7 +68,12 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
   }
   const structure = structureAtTile(context, state.planned, state.cursor)
   if (structure !== null) {
-    const card = entityCard(context, structure.contentId, state)
+    const actions = buildingActions(context, state, structure).map(({ hotkey, label }) => ({ hotkey, label }))
+    const entity = entityCard(context, structure.contentId, state)
+    // A building holding its wave says so where its wave is written.
+    const held = state.held.includes(anchorKey(structure.anchor))
+    const stats = held ? entity.stats.map((stat) => (stat.label === "WAVE" ? { ...stat, value: "held this round" } : stat)) : entity.stats
+    const card = { ...entity, stats, ...(actions.length === 0 ? {} : { actions }) }
     if (structure.planned) return rangeSays(card, nextRound)
     return linkedHere(context, state, structure) ? card : rangeSays(card, cutOff)
   }

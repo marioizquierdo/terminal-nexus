@@ -306,6 +306,7 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "home/end", text: "as shift, left or right" },
         { keys: "enter/space", text: "Explore Map here" },
         { keys: "bksp/delete", text: "remove what is planned here" },
+        { keys: "z", text: "hold a building's wave" },
         { keys: "tab/esc/x", text: "back to the menu" },
       ],
     },

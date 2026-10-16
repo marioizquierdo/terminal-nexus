@@ -294,6 +294,10 @@ export type BuildState = Readonly<{
    */
   dialog: Readonly<{ line: number; cursor: Coord; camera: Camera }> | null
   planned: readonly PlannedPlacement[]
+  /** The player's buildings, by anchor (`x,y`), that hold their wave this round: a building's action, Hold
+   *  production (the owner, 2026-10-16: "Pause production, that stops producing units for the next round"). The
+   *  round's Battle Round opens them with every wave already sent; the next Build Phase starts with none held. */
+  held: readonly string[]
   /** The last command's answer, which the bottom line shows: what just happened, or why it did not.
    *  It lapses at the next command that says nothing (`lapseStatus`); a refused placement names its
    *  tile (`status.tile`). */
@@ -423,6 +427,7 @@ export function createBuildState(
     message: null,
     dialog: null,
     planned: [],
+    held: [],
     status: context.openingStatus ?? NO_STATUS,
     nextOrdinal: 1,
     nexusPick: null,
@@ -721,6 +726,23 @@ export function buildSupply(context: BuildContext, state: Pick<BuildState, "plan
     ...state.planned,
   ]
   return supplyOf(ours.map((entity) => context.registry.get(entity.contentId)))
+}
+
+/** A building's place, as the held list keys it: `x,y` of its anchor. */
+export const anchorKey = (anchor: Coord): string => `${anchor.x},${anchor.y}`
+
+/** One thing a building lets the player do, under its own key: what Explore Map's card lists for a building of
+ *  the player's (the owner, 2026-10-16: "When a building is selected ... it should show the available actions, with
+ *  hotkeys as usual"). Only Hold production is built; an upgrade, a defender inside and a worker slot are designed
+ *  as actions of the same kind. */
+export type BuildingAction = Readonly<{ action: "hold"; hotkey: string; label: string }>
+
+/** The actions a building of the player's offers now: Hold production for one that makes units, or Resume once
+ *  held. None for anything else. */
+export function buildingActions(context: BuildContext, state: Pick<BuildState, "held">, structure: Readonly<{ contentId: string; anchor: Coord }>): BuildingAction[] {
+  if (catalogItem(context, structure.contentId)?.spawns === undefined) return []
+  const held = state.held.includes(anchorKey(structure.anchor))
+  return [{ action: "hold", hotkey: "z", label: held ? "Resume production" : "Hold production" }]
 }
 
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
@@ -1712,6 +1734,24 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
         status: status(`${displayName(context, target.contentId)} removed, ${costOf(context, target.contentId)} refunded.`),
+      }
+    }
+
+    case "building-action": {
+      const lock = editLock(state)
+      if (lock !== null) return { ...state, status: lock }
+      const target = mapMode(state) === "explore" ? structureAtTile(context, state.planned, state.cursor) : null
+      const action = target === null ? undefined : buildingActions(context, state, target).find((each) => each.action === command.action)
+      if (target === null || action === undefined) {
+        return { ...state, status: status("Explore Map ([e]) onto a building of yours to use its actions.", "warning") }
+      }
+      const key = anchorKey(target.anchor)
+      const holding = state.held.includes(key)
+      const name = displayName(context, target.contentId)
+      return {
+        ...state,
+        held: holding ? state.held.filter((each) => each !== key) : [...state.held, key],
+        status: status(holding ? `${name} trains its wave this round again.` : `${name} holds its wave this round: it trains again the round after.`),
       }
     }
 
