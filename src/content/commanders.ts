@@ -18,6 +18,8 @@ export const COMMANDER_CONTENT: readonly ContentDef[] = [
     id: "unit.citizen.vasse",
     short: "vasse",
     commander: true,
+    // Not bought, so she takes no place of the army's supply (`src/content/supply.ts`).
+    supplyCost: 0,
     // Back as soon as the next round opens: the base Commander pays nothing more for falling than the rest of the
     // round she fell in (the owner, 2026-10-13: "Base will just come back immediately after"). Sitting rounds out is
     // a disadvantage some other Commander may carry.

@@ -2,6 +2,8 @@
 // clock — the same separation `src/title-menu/list.ts` draws for the menu, so every claim about scrolling
 // and placement is checkable without a TTY.
 
+import type { Supply } from "../content/supply.ts"
+import { supplyOf } from "../content/supply.ts"
 import type { LogEntry } from "../log/logger.ts"
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
@@ -704,6 +706,21 @@ export function needsText(context: BuildContext, missing: readonly string[]): st
   const names = missing.map((contentId) => `a ${displayName(context, contentId)}`)
   const listed = names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
   return `${listed} standing`
+}
+
+/**
+ * **The army's supply** as the round will start (`src/content/supply.ts`): the places taken by the player's units that
+ * stand on the field and arrive as the round starts, and what the player's buildings give — standing and planned,
+ * since a planned Supply Depot stands when the Battle Round begins. `cap` is `null` when no building gives any.
+ */
+export function buildSupply(context: BuildContext, state: Pick<BuildState, "planned">): Supply {
+  const ours = [
+    ...(context.field ?? []).filter((entity) => entity.player === "A"),
+    ...(context.incoming ?? []).filter((entity) => entity.player === "A" && entity.tick === 0),
+    ...context.standing,
+    ...state.planned,
+  ]
+  return supplyOf(ours.map((entity) => context.registry.get(entity.contentId)))
 }
 
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */

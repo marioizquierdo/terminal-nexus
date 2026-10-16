@@ -638,7 +638,7 @@ test("the buildings' digits run straight through the one list, with no mode to t
   // that convention exists to forbid — so a hotkey addresses the whole menu.
   const hotkeys = STARTER_CATALOG.map((item) => item.hotkey)
   assert.deepEqual(hotkeys, [...new Set(hotkeys)], "two rows share a hotkey")
-  assert.deepEqual(hotkeys, ["1", "2", "3"], "the digits do not run straight through the menu")
+  assert.deepEqual(hotkeys, ["1", "2", "3", "4"], "the digits do not run straight through the menu")
   const { build, layout } = session()
   build.handleData("3", layout)
   assert.equal(build.state.armed, 2, "the third digit armed the third row of the whole menu")

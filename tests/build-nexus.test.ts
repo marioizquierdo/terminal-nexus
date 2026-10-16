@@ -140,7 +140,7 @@ test("picking applies its own effect exactly once, and cannot be changed afterwa
   // The owner's number (2026-09-28): enough to place buildings freely in a playtest.
   assert.equal(build.state.bonusAllotment, 2000)
   const text = frameToText(composeBuildFrame({ context, state: build.state, layout }, "monochrome"))
-  assert.match(text, /\| {22}\* 2100[|+]/, "the panel's credits line, whole, with the War Chest")
+  assert.match(text, /\| units 5\/12 {11}\* 2100[|+]/, "the panel's credits line, whole, with the War Chest")
   assert.match(build.state.status.text, /War Chest picked/)
 
   const after = build.state

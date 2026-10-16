@@ -198,6 +198,18 @@ export type ContentDef = Readonly<{
    * room" Experiment is being felt, its value replaces this number on every structure that has one.
    */
   clearance?: number
+  /**
+   * Supply (the owner, 2026-10-16: "Supply should be controlled by another building"): a structure with this lets its
+   * side field this many more units at once. A side's supply is the sum of what its standing structures give; a side
+   * whose structures give none has no cap, so every map and scenario from before supply resolves exactly as it did.
+   * The kernel reads it, in production only (`src/content/supply.ts`).
+   */
+  supplyProvided?: number
+  /**
+   * How many places of its side's supply a unit takes: absent, 1 for a unit and nothing for a structure. A stronger
+   * unit may take more; a Commander takes none.
+   */
+  supplyCost?: number
 }>
 
 /**

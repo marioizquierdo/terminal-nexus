@@ -95,6 +95,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
     "barracks structure.citizen.barracks 40",
     "hatchery structure.bench.hatchery 30",
     "turret structure.bench.beamturret 15",
+    "depot structure.citizen.depot 30",
     "garrison structure.citizen.garrison 100",
   ])
   assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
@@ -127,7 +128,7 @@ test("a level offers what its campaign has unlocked by then: PERIMETER unlocks a
   const [perimeter, cadence] = ARMIES.levels
   assert.ok(perimeter !== undefined && cadence !== undefined)
   const everything = {
-    buildings: ["barracks 40", "hatchery 30", "turret 15"],
+    buildings: ["barracks 40", "hatchery 30", "turret 15", "depot 30"],
     powers: [
       "Reserve Callup spawnUnits",
       "Drill Schedule modifyContent",
@@ -193,7 +194,7 @@ test("a level's offer is what its Build Phase offers: the menu, the credits and 
 test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus Pulse are its first level's", () => {
   assert.deepEqual(
     STARTER_CATALOG.map((item) => `${item.hotkey} ${item.label} ${item.cost}`),
-    ["1 Barracks 40", "2 Hatchery 30", "3 Turret 15"],
+    ["1 Barracks 40", "2 Hatchery 30", "3 Turret 15", "4 Supply Depot 30"],
   )
   assert.deepEqual(
     STARTER_NEXUS_DRAFT.map((power) => `${power.hotkey} ${power.name} +${power.bonusAllotment}`),
@@ -359,6 +360,7 @@ test("what a building spawns is its own, on its card: the loader refuses by name
     barracks: { unit: "unit.citizen.trooper", perWave: 4, waves: 1, secondsBetween: 10 },
     hatchery: { unit: "unit.bench.spawnling", perWave: 3, waves: 1, secondsBetween: 10 },
     turret: undefined,
+    depot: undefined,
     garrison: { unit: "unit.citizen.pikeman", perWave: 4, waves: 1, secondsBetween: 10 },
   })
   const spawns = (unit: string, extra: object = {}): object => ({ unit, perWave: 2, waves: 1, secondsBetween: 10, ...extra })

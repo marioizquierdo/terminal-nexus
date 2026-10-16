@@ -18,9 +18,10 @@ import type { ConstructItem, PlannedPlacement } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayableLevel } from "./levels.ts"
 
-/** What a scripted player buys each round, in order of preference: the first it can afford and place, again and
- *  again, until nothing on the list fits. Content ids of the build menu's rows. */
-export type CurvePlan = Readonly<{ name: string; buys: readonly string[]; near: Coord }>
+/** What a scripted player buys, round by round (the last list for every round after it): in turn, the next on the
+ *  round's list it can afford, place and build, round and round, until nothing on it fits. Content ids of the build
+ *  menu's rows. */
+export type CurvePlan = Readonly<{ name: string; buys: readonly (readonly string[])[]; near: Coord }>
 
 /** The army one round fielded: each unit's strength by the round that bought it. */
 export type RoundArmy = Readonly<{ round: number; byRound: readonly number[]; total: number }>
@@ -52,16 +53,22 @@ function planRound(context: BuildContext, state: BuildState, plan: CurvePlan): R
   const bought: string[] = []
   const tiles = candidates(context, plan.near)
   const left = (): number => remaining(context, { ...state, planned })
+  // In turn: each buy starts its search at the row after the last one bought, so a plan that names a Supply Depot
+  // builds one between its producers rather than only once nothing else is affordable.
+  const round = context.round?.number ?? 1
+  const list = plan.buys[Math.min(round, plan.buys.length) - 1] ?? []
+  const rows = list.flatMap((contentId) => context.catalog.find((row) => row.contentId === contentId) ?? [])
+  let next = 0
   for (;;) {
-    const item = plan.buys
-      .map((contentId) => context.catalog.find((row) => row.contentId === contentId))
-      .find((row): row is ConstructItem => row !== undefined && missingFor(context, row).length === 0 && row.cost <= left())
+    const turn = [...rows.slice(next), ...rows.slice(0, next)]
+    const item = turn.find((row): row is ConstructItem => missingFor(context, row).length === 0 && row.cost <= left())
     if (item === undefined) break
     const anchor = tiles.find((tile) => legalityAt(context, planned, item.contentId, tile, left()).ok)
     if (anchor === undefined) break
     planned = [...planned, { ordinal, contentId: item.contentId, anchor }]
     ordinal += 1
     bought.push(item.contentId)
+    next = (rows.indexOf(item) + 1) % rows.length
   }
   return { state: { ...state, planned, nextOrdinal: ordinal }, bought }
 }

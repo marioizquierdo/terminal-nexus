@@ -51,6 +51,8 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
   "structure.citizen.barracks": ["[b]", "|_|"],
   /** The Barracks's bracket, heavier: closed walls where the Barracks's yard is open, and its letter. */
   "structure.citizen.garrison": ["[g]", "[_]"],
+  /** The Citizen bracket round its letter, one row high: a store, not a hall. */
+  "structure.citizen.depot": ["[d]"],
   /** One tile, the aid post's cross: what Aid Station Permit adds. The cross its patches leave rising beside
    *  the unit they mend is the same one (`MEND_GLYPH`, src/view/effects/recipes.ts). */
   "structure.citizen.aidstation": ["+"],

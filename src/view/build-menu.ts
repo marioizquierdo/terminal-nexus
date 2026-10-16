@@ -12,6 +12,7 @@ import {
   entryOfConstruct,
   exploring,
   menuEntries,
+  buildSupply,
   missingFor,
   nexusPowers,
   pendingPicks,
@@ -277,7 +278,8 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
 }
 
 /**
- * The **credits line** (Mario: "they should be on the empty line right before
+ * The **credits line** — and the army's supply on its left, `units 10/12` (the owner, 2026-10-16: a supply cap given
+ * by a building). The credits (Mario: "they should be on the empty line right before
  * the build/construction list ... the same as the symbol used on the map to represent resources"): the
  * map's own resource-deposit glyph (`*` in ASCII, `◆` in Unicode, from the same table the map draws it
  * from, in the deposit's colour) and what there is to spend, right-aligned in the column the costs are
@@ -287,6 +289,14 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
 function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack): void {
   const { context, state, layout } = input
   const row = layout.panelRow + CREDITS_ROW
+  // The army's supply on the line's left, when the player's buildings give any: the places the round will start
+  // with, of how many — "units 10/12" — bold once it is full, when a building waits for a place.
+  const supply = buildSupply(context, state)
+  if (supply.cap !== null) {
+    const full = supply.used >= supply.cap
+    text(cells, BANDS.chrome, layout.panelColumn, row, "units", "chrome.muted")
+    text(cells, BANDS.chrome, layout.panelColumn + 6, row, `${supply.used}/${supply.cap}`, full ? "chrome.title" : "chrome.muted", { bold: full })
+  }
   const amount = String(remaining(context, state))
   const deposit = terrainGlyph("terrain.deposit", pack)
   const end = layout.panelColumn + layout.panelLimit

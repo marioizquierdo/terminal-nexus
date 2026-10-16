@@ -7,6 +7,7 @@
     "structure.citizen.nexus",
     "structure.citizen.barracks",
     "structure.citizen.garrison",
+    "structure.citizen.depot",
     "structure.bench.hatchery",
     "structure.bench.beamturret",
     "structure.ravel.den",
@@ -34,6 +35,12 @@
       "notes": "Three swarmers in one wave a round: every building the player places that makes units spawns in waves, the same rule as the Barracks. Before, it bred one every few seconds, three alive at most (its own spawner, which a grid scenario's Hatchery still has)."
     },
     { "id": "turret", "structure": "structure.bench.beamturret", "cost": 15 },
+    {
+      "id": "depot",
+      "structure": "structure.citizen.depot",
+      "cost": 30,
+      "notes": "Supply as a building: eight more units the army may field at once, where the Grid Nexus alone gives twelve. A building whose next unit would go past the supply waits, so once the army is full a new unit comes only as an old one falls (the power curve: survivors are outgrown). First guesses, no balance claim."
+    },
     {
       "id": "garrison",
       "structure": "structure.citizen.garrison",

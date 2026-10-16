@@ -28,6 +28,11 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Trains pikemen",
     description: "A heavier barracks. Trains a wave of pikemen, each worth about three troopers, a few seconds into each Battle Round.",
   },
+  "structure.citizen.depot": {
+    title: "Supply Depot",
+    subtitle: "Room for 8 more units",
+    description: "Stores what an army needs to field more units at once. Your buildings stop training while the army is full.",
+  },
   "structure.bench.hatchery": {
     title: "Hatchery",
     subtitle: "Spawns swarmers",

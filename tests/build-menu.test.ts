@@ -68,7 +68,9 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
       // end, the symbol in the deposit's colour and the amount in the title's.
       const deposit = terrainGlyph("terrain.deposit", pack)
       assert.equal(deposit.glyph, pack === "ascii" ? "*" : "◆")
-      assert.equal(line(panelRow(side, CREDITS_ROW)), `${deposit.glyph} ${remaining(side.context, side.build.state)}`.padStart(layout.panelLimit))
+      // The army's supply on the line's left: the squads' five places of the twelve the Grid Nexus gives.
+      const credits = `${deposit.glyph} ${remaining(side.context, side.build.state)}`
+      assert.equal(line(panelRow(side, CREDITS_ROW)), `units 5/12${credits.padStart(layout.panelLimit - "units 5/12".length)}`)
       const symbol = cellAt(frame, layout.dividerColumn - 5, panelRow(side, CREDITS_ROW))
       assert.equal(symbol.glyph, deposit.glyph)
       assert.equal(symbol.style.fgRole, deposit.role, "the symbol is not in the deposit's colour")
@@ -93,7 +95,7 @@ test("the menu reads Explore Map, Nexus, the credits line, every building with i
 
 test("the credits line counts down as the plan grows, and leaves with the menu once the plan is committed", () => {
   const side = buildSide()
-  const credits = (): string => panelLine(side, compose(side), panelRow(side, CREDITS_ROW)).trim()
+  const credits = (): string => panelLine(side, compose(side), panelRow(side, CREDITS_ROW)).replace(/^units \d+\/\d+/u, "").trim()
   assert.equal(credits(), `* ${side.context.allotment}`)
   keys(side, "1", ENTER) // a Barracks, back on the menu
   assert.equal(remaining(side.context, side.build.state), side.context.allotment - (STARTER_CATALOG[0] as ConstructItem).cost)

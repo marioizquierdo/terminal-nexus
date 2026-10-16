@@ -14,8 +14,12 @@ import { buildSide, keys, screenText } from "./build-helpers.ts"
 
 const LEVEL = levelById("vasse-test-3")
 const NEAR = { x: 24, y: 8 }
-const TREE: CurvePlan = { name: "climbs the tree", buys: ["structure.citizen.garrison", "structure.citizen.barracks", "structure.bench.beamturret"], near: NEAR }
-const FIRST_TIER: CurvePlan = { name: "Barracks only", buys: ["structure.citizen.barracks", "structure.bench.beamturret"], near: NEAR }
+const BARRACKS = "structure.citizen.barracks"
+const GARRISON = "structure.citizen.garrison"
+const DEPOT = "structure.citizen.depot"
+// A Barracks and Supply Depots in round 1; then Garrisons, or more Barracks, with a depot between each.
+const TREE: CurvePlan = { name: "climbs the tree", buys: [[BARRACKS, DEPOT], [GARRISON, DEPOT]], near: NEAR }
+const FIRST_TIER: CurvePlan = { name: "Barracks only", buys: [[BARRACKS, DEPOT]], near: NEAR }
 
 test("the curve level is six rounds, and a player who builds nothing reaches every one of them", () => {
   assert.ok(LEVEL !== undefined)
@@ -40,16 +44,17 @@ test("climbing the tree fields a stronger last army than the first tier alone; t
   assert.deepEqual(tree.ended, { round: 6, verdict: "won" })
   assert.deepEqual(first.ended, { round: 6, verdict: "won" })
   // The Garrison is bought from round 2, once the round-1 Barracks stands, and never before.
-  assert.equal(tree.bought[0]?.includes("structure.citizen.garrison"), false)
-  assert.equal(tree.bought[1]?.includes("structure.citizen.garrison"), true)
+  assert.equal(tree.bought[0]?.includes(GARRISON), false)
+  assert.equal(tree.bought[1]?.includes(GARRISON), true)
   const last = (measure: typeof tree): number => measure.armies[measure.armies.length - 1]?.total ?? 0
   assert.ok(last(tree) > last(first) * 1.2, `the tree's last army ${last(tree).toFixed(0)} is not well above the first tier's ${last(first).toFixed(0)}`)
-  // The design expects the first three rounds to be at most about a fifth of the last army. Measured, they are close
-  // to half, for both plans: a building bought early sends its units every round after. The register's question on
-  // what keeps an early lead from compounding holds the finding; this pins it, so a change is seen.
-  for (const measure of [tree, first]) {
-    assert.ok(measure.openingShare > 0.4 && measure.openingShare < 0.55, `${measure.plan}: the opening's share is ${measure.openingShare.toFixed(2)}`)
-  }
+  // The design expects the first three rounds to be at most about a fifth of the last army. Without supply it was
+  // close to half for both plans (0.47 and 0.45). With the supply cap the army is held to what its depots give, and a
+  // new unit takes a place an old one left: 0.54 for the tree (its round-2 and round-3 Garrisons count as the
+  // opening) and 0.40 for Barracks alone. Still far from a fifth, because on this level the early units mostly live;
+  // this pins the numbers, so a change is seen.
+  assert.ok(tree.openingShare > 0.45 && tree.openingShare < 0.62, `the tree's opening share is ${tree.openingShare.toFixed(2)}`)
+  assert.ok(first.openingShare > 0.33 && first.openingShare < 0.47, `the first tier's opening share is ${first.openingShare.toFixed(2)}`)
 })
 
 test("a locked building is in the build menu, refused by its digit with what it needs, and the bottom line says so on its row", () => {
