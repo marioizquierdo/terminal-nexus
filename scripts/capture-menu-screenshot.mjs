@@ -68,7 +68,7 @@ function shoot(
     targetPath: join(outputDirectory, `${name}.png`),
     // Matches the page wrapper to whichever theme this shot actually demonstrates — the same thing
     // capture-screenshots.mjs does for grid's own light-theme shots: the page around the game's own
-    // ground, so a light shot does not sit in a dark frame.
+    // background, so a light shot does not sit in a dark frame.
     background,
   })
   console.log(`${result.written ? "wrote" : "unchanged"} ${name}.png`)

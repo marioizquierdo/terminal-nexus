@@ -123,7 +123,7 @@ Ordered by payoff over cost. None is urgent; each is a candidate for a small ste
 5. **`colors` is a choice about a terminal.** Settings' `monochrome | color256 | truecolor` is how much colour
    the screen is drawn with (there is no sixteen-colour depth: those colours are the terminal theme's, not
    the game's); a graphical host is always truecolour and should not present the choice. A host paints the
-   game's ground itself, as the colour depths do, rather than leaving a background to show through. Let the
+   game's background itself, as the colour depths do, rather than leaving the terminal's to show through. Let the
    host declare which settings it exposes.
 6. **Box-drawing in a browser uses the phone's own font**, so the map edge's joins may not tile. A
    canvas backend that draws line and block glyphs itself (as a terminal does) fixes it.

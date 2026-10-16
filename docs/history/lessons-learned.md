@@ -443,7 +443,7 @@ A second round on colour, the day the 16-colour depth went. What it taught:
 2. **Leaving the terminal's background to show through was the cause of the light theme "not working".** Dark text on
    a theme the player had picked, over whatever their terminal's background was, is dark on dark on any dark terminal.
    The earlier fix (brighter and darker palettes, then a note that the theme should match the terminal) treated the
-   symptom; painting the ground made the theme a choice of look and the symptom disappeared. When a colour looks wrong
+   symptom; painting the background made the theme a choice of look and the symptom disappeared. When a colour looks wrong
    on one terminal and right on another, look for a colour the game never set.
 3. **Every terminal attribute that means "whatever this terminal does" is a colour the game does not control.** Default
    colour, faint and reverse video each differ from one terminal to the next (faint is a blend toward a background, a
@@ -460,7 +460,7 @@ A second round on colour, the day the 16-colour depth went. What it taught:
    near-black one was; the 3:1 floor guarded something the simulation says was never at risk. Test the thing you mean
    (apart for a colour-blind player, a faction that reads as its colour) rather than a proxy for it.
 6. **A picture is the only check that finds a palette fault.** Both the near-black green and the hairline between rows
-   at 256 colours (the screenshot's own page, a different colour from the ground) were found by looking at the light and
+   at 256 colours (the screenshot's own page, a different colour from the background) were found by looking at the light and
    the 256-colour frames, not by any assertion; the assertions were written afterwards to keep them found.
 
 ## Habits to keep

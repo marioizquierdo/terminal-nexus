@@ -24,8 +24,8 @@ export function parseColorDepth(value: string): ColorDepth {
 }
 
 /**
- * Which look the game paints: its own ground and the palette set against it. The game paints the ground
- * itself at 256 colours and in millions (`src/view/roles.ts`), so a theme is a choice of look and has
+ * Which look the game paints: its own background and the palette set against it. The game paints the
+ * background itself at 256 colours and in millions (`src/view/roles.ts`), so a theme is a choice of look and has
  * nothing to do with the terminal's own colours: dark on a white terminal and light on a black one both
  * work. (It once had to match the terminal, when the terminal's background showed through; an owner
  * playtest found the dark theme's chrome text nearly invisible on a light one.) Monochrome leaves the

@@ -32,7 +32,6 @@ import {
   offendingGlyph,
 } from "../src/view/index.ts"
 import type {
-  ColorDepth,
   EffectCellSource,
   EffectContext,
   EffectInstance,

@@ -48,7 +48,7 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        With --at, the keys may be left out: the screen as it opens
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, and a larger one centres it)
   --colors <depth>     truecolor (default), color256, monochrome
-  --theme <theme>      dark (default) or light; the game paints its own ground
+  --theme <theme>      dark (default) or light; the game paints its own background
   --glyphs <pack>      ascii (default) or unicode
   --settings "<text>"  start from an exported settings text (Settings > Export settings): paste the
                        whole export, or pairs like "nextRound=auto jumpStep=12"; the three

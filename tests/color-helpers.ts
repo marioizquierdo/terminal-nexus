@@ -1,5 +1,9 @@
-// What the colour tests check the game's colours against, written out again here rather than imported:
-// a test that reads the answer from the code it checks would pass whatever that code did.
+// What the colour tests check the game's colours against. The first half is written out again here rather
+// than imported: a test that reads the answer from the code it checks would pass whatever that code did.
+// The second half only asks the game what a role looks like, through the one resolver every renderer uses.
+
+import { DEFAULT_THEME, resolveCell } from "../src/view/roles.ts"
+import type { ColorDepth, RoleTint, StyleRole, Theme } from "../src/view/roles.ts"
 
 export type Rgb = readonly [number, number, number]
 
@@ -100,4 +104,27 @@ export function seenWith(rgb: Rgb, kind: "protanopia" | "deuteranopia"): Rgb {
   const [r, g, b] = [linear(rgb[0]), linear(rgb[1]), linear(rgb[2])]
   const [x, y, z] = matrix.map((row) => encode((row[0] ?? 0) * r + (row[1] ?? 0) * g + (row[2] ?? 0) * b))
   return [x ?? 0, y ?? 0, z ?? 0]
+}
+
+// --- Asking the game --------------------------------------------------------------------------------
+
+/** The cell a glyph in `role` makes, with the blends a test asks about. */
+function inRole(role: StyleRole | undefined, fade: number, tint: RoleTint | undefined) {
+  return {
+    glyph: "x",
+    style: { ...(role === undefined ? {} : { fgRole: role }), ...(fade > 0 ? { fade } : {}), ...(tint === undefined ? {} : { tint }) },
+  }
+}
+
+/** The colour a glyph in `role` is drawn in at a depth, after its tint and fade: the entry a 256-colour
+ *  terminal shows, not the exact colour it could only approximate; plain text in monochrome, which has no
+ *  role colours. */
+export function rgbFor(role: StyleRole | undefined, colors: ColorDepth, theme: Theme = DEFAULT_THEME, fade = 0, tint?: RoleTint): Rgb {
+  return resolveCell(inRole(role, fade, tint), colors, theme).foreground
+}
+
+/** The foreground SGR parameters a glyph in `role` is sent with (`38;5;n` or `38;2;r;g;b`); none in monochrome. */
+export function sgrFor(role: StyleRole | undefined, colors: ColorDepth, theme: Theme = DEFAULT_THEME, fade = 0, tint?: RoleTint): readonly number[] {
+  const { sgr } = resolveCell(inRole(role, fade, tint), colors, theme)
+  return colors === "monochrome" ? [] : sgr.slice(0, sgr[1] === 2 ? 5 : 3)
 }

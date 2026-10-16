@@ -50,62 +50,51 @@ Unicode** (RULE — `tests/view.test.ts`, `tests/effects.test.ts`). ASCII is the
 acceptance target; colour and Unicode packs add to it and are never required to read a screen.
 
 **Colour depths are three, and they buy fidelity rather than facts**: monochrome, 256 colours and
-truecolor, resolving one role table. The setting is `colors` (`--colors` on the command line, Settings >
-Colours; the player sees none, 256 and millions). It was once called `capability`, which suggested a fact
-the game detects rather than a choice of how much colour to draw with, and it kept three names for one
-thing. Every depth puts identical glyphs on screen, so nothing a player needs is available only to a
-colour terminal. Monochrome is the floor: every fact still reads in it (RULE — `tests/view.test.ts`,
-`tests/build-view.test.ts`, `tests/effects.test.ts`: each asserts that every depth shows the same
-glyphs), so the game is whole, testable and playable on any terminal. It is not the look the game is
-designed for, and the owner is plain about it: **the experience is the colour one**. A Battle Round is a
-field battle to read at a glance, who is where, what is lit, what is fading, what is under the cursor, and
-that read is told in colour, contrast, layers and transparency, all of which need the game to control every
-colour a cell has, background included. Monochrome stands in for each with a glyph, a weight or inverse
-video, so nothing is lost, but it is the compatibility floor and not what a design is judged by.
+truecolor, resolving one role table. The setting is `colors` (`--colors`, Settings > Colours; the player
+sees none, 256 and millions); it was called `capability` until it was named for what it is, a choice of how
+much colour to draw with and not a fact the game detects. Every depth puts identical glyphs on screen, so
+nothing a player needs is available only to a colour terminal (RULE — `tests/view.test.ts`,
+`tests/build-view.test.ts`, `tests/effects.test.ts`: each asserts the same glyphs at every depth).
+Monochrome is the floor: the game is whole, testable and playable in it. It is not the look the game is
+designed for. A Battle Round is a field battle read at a glance, and that read is told in colour, contrast,
+layers and transparency, which monochrome stands in for with a glyph, a weight or inverse video. The
+experience is the colour one.
 
-**The game owns the ground: with colours, every cell is two colours, the glyph's and its fill** (RULE —
-`tests/ground.test.ts`, `tests/roles.test.ts`, `tests/see-through.test.ts`). The fill is the cell's
-`bgRole` or the theme's ground (`BACKGROUND_RGB`: a neutral near-black for `dark`, a warm paper white for
-`light`), so nothing is left to the player's terminal theme: Solarized, a purple terminal and a plain black
-one show the same game, the Background setting (`--theme`) is a choice of look rather than a match for the
-terminal (dark on a white terminal and light on a black one both work), and a fade or a see-through mix
-blends toward a ground that is really there. This is what the light theme needed: its dark text on the
-terminal's own dark background was unreadable. `resolveCell` (`src/view/roles.ts`) is the whole of it, for the
-ANSI writer, the browser canvas and OpenTUI alike, and it works in one order: the cell's exact colours
-(its roles with tint and fade, a cell with no role drawing plain text, `chrome.value`; swapped by inverse
-video; the glyph mixed `1 - DIM_ALPHA` toward its fill when dim; a see-through style over all of it), then a
-single last pass that turns each colour into the depth (`shownAt`: truecolor as it is, 256 colours the
-nearest entry). So no depth has code of its own, an RGB renderer shows exactly the entry a 256-colour
-terminal shows, and the terminal's own ideas of "default colour", "faint" and "reverse video", which differ
-from one to the next, are never sent with colours (monochrome has none to mix, so it sends them). The
-ANSI writer also grows a frame smaller than the screen (the title menu is one 80 × 24 frame) with blank
-ground, so no strip of the terminal's colour shows beside it (`padFrame`). The one depth that leaves the
-terminal's colours alone is monochrome, on purpose; a theme means nothing there.
+**The game owns its background: with colours, every cell is two colours, the glyph's and its fill** (RULE —
+`tests/background.test.ts`, `tests/roles.test.ts`, `tests/see-through.test.ts`). The fill is the cell's
+`bgRole` or the theme's background (`BACKGROUND_RGB`: a near-black for `dark`, a warm paper white for
+`light`). Nothing is left to the player's terminal theme, so Solarized, a purple terminal and a black one
+show the same game, Background (`--theme`) is a choice of look rather than a match for the terminal, and a
+fade or a see-through mix blends toward a colour that is really there. `resolveCell` (`src/view/roles.ts`)
+is the whole of it, for the ANSI writer, the canvas and OpenTUI alike, in one order: the cell's exact
+colours (roles with tint and fade, plain text when a cell has no role, swapped by inverse video, the glyph
+mixed `1 - DIM_ALPHA` toward its fill when dim, a see-through style over all of it), then one last pass that
+turns each into the depth (`shownAt`: truecolor as it is, 256 colours the nearest entry). No depth has code
+of its own, an RGB renderer shows exactly what a 256-colour terminal shows, and the terminal's own "default
+colour", "faint" and "reverse video", which differ from one terminal to the next, are never sent with
+colours. The ANSI writer also grows a frame smaller than the screen (the title menu is one 80 × 24 frame)
+with blank background (`padFrame`) and starts the screen over when the depth changes. Monochrome alone
+leaves the terminal's colours as they are, so a theme means nothing there.
 
-**There is no sixteen-colour depth** (RULE — `tests/roles.test.ts`). What is authored is the colour look
-and, wherever it relies on a blend, the form monochrome takes instead (a glyph, a weight, inverse video);
-256 colours and truecolor are the same code. The palette is one table of RGB per theme. Truecolor draws it
-exactly; 256 colours is *derived* from it by the nearest match in Lab (how different two colours look,
-not how far apart their channels are) against the xterm cube and greys, indices 16 to 255 only, so no
-colour the game draws is one of the terminal's own sixteen; monochrome sends no colour code at all. The
-sixteen ANSI colours are whatever the player's terminal theme says they are (Solarized's yellow is not
-xterm's), so the game can neither know how a code looks nor blend toward it, and the effects the game
-reads by (backgrounds, fades, see-through mixes) all need real RGB; a sixteen-colour tier would have been
-a second hand-authored palette to playtest, with at most eleven distinct colours doing the work of
-twenty-six roles. A terminal that advertises nothing more than that gets monochrome, which sends it no
-colour to interpret and so leaves its own foreground, background and theme alone; the player picks the
-colours in Settings (`--colors` on the command line) if the guess was low. The result is that truecolor
-is the one look to playtest, 256 colours and monochrome are looked at now and then, and nothing else needs
-checking.
+**There is no sixteen-colour depth** (RULE — `tests/roles.test.ts`). The sixteen ANSI colours are whatever
+the player's terminal theme says they are (Solarized's yellow is not xterm's), so the game can neither
+know how a code looks nor blend toward it, and its backgrounds, fades and see-through mixes need real RGB;
+a sixteen-colour tier would be a second palette to author and playtest, with eleven colours at most doing
+the work of twenty-six roles. The palette is one table of RGB per theme. Truecolor draws it exactly; 256
+colours is derived from it by the nearest match in Lab (how different two colours look, not how far apart
+their channels are) over indices 16 to 255, so no colour the game draws is one of the terminal's sixteen. A
+terminal that advertises no more than that gets monochrome, which sends no colour code and leaves its own
+colours alone; the player picks the colours in Settings if the guess was low. Truecolor is the one look to
+playtest, 256 colours and monochrome are looked at now and then, and nothing else needs checking.
 
 **The palette has a quality bar, held by a test, so a colour added later meets what the ones before did**
-(RULE — `tests/palette.test.ts`). Every role to be read clears 3:1 against its ground in both themes (the
-quiet ground marks, a dot of floor, the map's edge and a bullet's trail, are exempt); the muted, label and
-frame colours stay readable after a dim; 256 colours shows every role within a Delta E of 12 of what
-millions shows, and a colour with a hue keeps it there (it never lands on a grey); and the two sides are
-two colours that each read as their own, 40 Delta E apart at every depth and for a colour-blind player
-(simulated protanopia and deuteranopia). A role placed by eye in millions is nudged a few points toward the
-xterm cube only if the test says its 256 match drifted.
+(RULE — `tests/palette.test.ts`). In both themes every role to be read clears 3:1 against the background
+(the quiet marks, a dot of floor, the map's edge and a bullet's trail, are exempt); the muted, label and
+frame colours stay readable after a dim; 256 colours shows every role within a Delta E of 12 of millions,
+and a colour with a hue keeps it; and the two sides are two colours that each read as their own, 40 Delta E
+apart at every depth and for a colour-blind player (simulated protanopia and deuteranopia). A role placed
+by eye in millions is nudged a few points toward the xterm cube only if the test says its 256 match
+drifted.
 
 **A glyph pack is optional, and it changes the field and the frame, never the actors** (RULE —
 `tests/effects.test.ts`). Units stay letters in every pack, because letter case carries ownership and

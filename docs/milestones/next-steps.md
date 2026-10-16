@@ -5,8 +5,8 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Look at the colour work once, on a terminal whose colours are not the game's** ([his words](../history/feedback/2026-10-15-colours-and-ground.md);
-  the game now paints its own ground, so the terminal's theme no longer shows): `./bin/terminal-nexus.ts --colors
+- **Look at the colour work once, on a terminal whose colours are not the game's** ([his words](../history/feedback/2026-10-15-colours-and-background.md);
+  the game now paints its own background, so the terminal's theme no longer shows): `./bin/terminal-nexus.ts --colors
   truecolor --theme light` (the light theme should now read on a dark terminal and on a Solarized one), then
   `--colors color256`, then `--colors monochrome`. Settings (`d`), Colours and Background, are the same choices.
   Worth a look for the light theme's Ravel green (now a green that reads as green, not near-black) and for 256 colours'
@@ -162,9 +162,9 @@ Small, none blocking.
   to seven times a second while it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.
 
 **From the colour work of 2026-10-15** ([the colour depths](../history/feedback/2026-10-15-drop-16-colours.md) and
-[the ground](../history/feedback/2026-10-15-colours-and-ground.md); the lessons file has the reasons):
+[the background](../history/feedback/2026-10-15-colours-and-background.md); the lessons file has the reasons):
 
-- The ANSI writer sends the whole frame every time. With the game's ground painted that is about 13 KB for a
+- The ANSI writer sends the whole frame every time. With the game's background painted that is about 13 KB for a
   104 x 30 truecolor frame (8 KB before) and 24 KB at 200 x 60, a few milliseconds to build: nothing locally, but a
   diff against the last frame (only the cells that changed) would be the first thing to do for play over SSH.
 - At 256 colours a faint wash (a territory's tint, a half-faded `player.a`) lands on the nearest of very few dark or
@@ -173,9 +173,9 @@ Small, none blocking.
 - The light theme's muted text is the palette's quietest readable text, 2.15:1 against the paper after its dim (the
   dark theme's is 2.9:1); the palette test holds 2:1. Darkening it costs the hierarchy with `chrome.value`.
 - `NO_COLOR` (and `FORCE_COLOR`) are not read: the first-launch guess is `COLORTERM` and `TERM` only.
-- The committed pictures under `docs/` were taken before the game painted its ground (each carries its own page
+- The committed pictures under `docs/` were taken before the game painted its background (each carries its own page
   backdrop), and are regenerated, not rewritten, the next time a round touches them.
-- OpenTUI's ground is drawn through the test harness only; its live backend runs under Bun on a real terminal,
+- OpenTUI's background is drawn through the test harness only; its live backend runs under Bun on a real terminal,
   and nobody has looked at it there since.
 - `tests/web.test.ts`'s browser-bundle test fails under Bun 1.4.2 in the cloud session on `main` as well (its
   hashes differ from Node's); not caused by, or looked at in, this change.

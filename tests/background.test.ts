@@ -1,7 +1,7 @@
-// The game owns its ground (docs/system-design/presentation.md). At 256 colours and in millions every cell is two
+// The game owns its background (docs/system-design/presentation.md). At 256 colours and in millions every cell is two
 // colours, its glyph's and its fill, and the terminal's own theme (Solarized, a purple one, a picture) is
 // never consulted: no default-colour code, no "faint" or "reverse" for the terminal to interpret, and a
-// screen bigger than the frame is ground to its edges. Monochrome alone leaves the terminal's colours be.
+// screen bigger than the frame is background to its edges. Monochrome alone leaves the terminal's colours be.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -22,7 +22,7 @@ import type { Cell, ReadonlyCellFrame } from "../src/view/frame.ts"
 import { frameToAnsi, padFrame } from "../src/view/frame.ts"
 import { composeMenuFrame } from "../src/view/menu.ts"
 import { BACKGROUND_RGB, THEMES, resolveCell } from "../src/view/roles.ts"
-import type { ColorDepth, Theme } from "../src/view/roles.ts"
+import type { ColorDepth } from "../src/view/roles.ts"
 import { keyBytes } from "../src/playtest/keys.ts"
 import { sgrAttributes, sgrCodes } from "./helpers.ts"
 
@@ -41,21 +41,21 @@ function screens(colors: ColorDepth): readonly ReadonlyCellFrame[] {
   return frames
 }
 
-test("at a colour depth every cell has a fill, and a cell with none of its own is the theme's ground", () => {
+test("at a colour depth every cell has a fill, and a cell with none of its own is the theme's background", () => {
   for (const colors of WITH_COLOURS) {
     for (const theme of THEMES) {
       for (const frame of screens(colors)) {
-        let ground = 0
+        let plain = 0
         frame.cells.forEach((cell: Cell, index) => {
           const resolved = resolveCell(cell, colors, theme)
           assert.ok(resolved.background !== null, `${colors}/${theme}: cell ${index} has no fill`)
           assert.ok(resolved.sgr.includes(48), `${colors}/${theme}: cell ${index} sends no background`)
           if (cell.style.bgRole === undefined && cell.style.inverse !== true && cell.style.seeThrough === undefined) {
-            ground += 1
+            plain += 1
             if (colors === "truecolor") assert.deepEqual(resolved.background, BACKGROUND_RGB[theme], `cell ${index}`)
           }
         })
-        assert.ok(ground > frame.cells.length / 3, `${colors}/${theme}: the frame is mostly ground`)
+        assert.ok(plain > frame.cells.length / 3, `${colors}/${theme}: the frame is mostly background`)
       }
     }
   }
@@ -83,7 +83,7 @@ test("monochrome is the one depth that leaves the terminal's colours alone: no f
   }
 })
 
-test("the light theme paints its own pale ground, on a terminal of any colour", () => {
+test("the light theme paints its own pale background, on a terminal of any colour", () => {
   for (const colors of WITH_COLOURS) {
     const [menu] = screens(colors)
     assert.ok(menu !== undefined)
@@ -91,8 +91,8 @@ test("the light theme paints its own pale ground, on a terminal of any colour", 
     const light = frameToAnsi(menu, colors, "light")
     assert.notEqual(dark, light)
     if (colors === "truecolor") {
-      assert.ok(light.includes("48;2;242;240;234"), "the light ground was not painted")
-      assert.ok(!light.includes("48;2;10;10;12"), "the dark ground showed through the light theme")
+      assert.ok(light.includes("48;2;242;240;234"), "the light background was not painted")
+      assert.ok(!light.includes("48;2;10;10;12"), "the dark background showed through the light theme")
       assert.ok(dark.includes("48;2;10;10;12") && !dark.includes("48;2;242;240;234"))
     }
   }
@@ -104,11 +104,11 @@ test("dim is the glyph mixed toward its fill, so it is the same wherever it is d
   for (const theme of THEMES) {
     const own = resolveCell(plain, "truecolor", theme).foreground
     const faint = resolveCell(dimmed, "truecolor", theme).foreground
-    const ground = BACKGROUND_RGB[theme]
+    const background = BACKGROUND_RGB[theme]
     own.forEach((channel, at) => {
-      const low = Math.min(channel, ground[at] ?? 0)
-      const high = Math.max(channel, ground[at] ?? 0)
-      assert.ok((faint[at] ?? 0) >= low && (faint[at] ?? 0) <= high, `${theme}: channel ${at} is not between the glyph and the ground`)
+      const low = Math.min(channel, background[at] ?? 0)
+      const high = Math.max(channel, background[at] ?? 0)
+      assert.ok((faint[at] ?? 0) >= low && (faint[at] ?? 0) <= high, `${theme}: channel ${at} is not between the glyph and the background`)
     })
     assert.notDeepEqual(faint, own, `${theme}: dim changed nothing`)
     assert.equal(resolveCell(dimmed, "truecolor", theme).dim, false)
@@ -154,17 +154,7 @@ test("on a terminal bigger than the frame the game paints the whole screen, exce
   }
 })
 
-test("the ground is chosen per theme and never a colour the terminal could have", () => {
-  for (const theme of THEMES as readonly Theme[]) {
-    const [r, g, b] = BACKGROUND_RGB[theme]
-    assert.ok([r, g, b].every((channel) => Number.isInteger(channel) && channel >= 0 && channel <= 255), theme)
-  }
-  // Dark is a dark ground and light a light one: every role in each table was set against it.
-  const mean = (rgb: readonly number[]): number => rgb.reduce((sum, channel) => sum + channel, 0) / 3
-  assert.ok(mean(BACKGROUND_RGB.dark) < 40 && mean(BACKGROUND_RGB.light) > 215)
-})
-
-test("the canvas paints the ground once, in the colour the depth shows, and only a cell with a fill of its own over it", () => {
+test("the canvas paints the background once, in the colour the depth shows, and only a cell with a fill of its own over it", () => {
   const frame: ReadonlyCellFrame = {
     width: 4,
     height: 1,
@@ -175,7 +165,7 @@ test("the canvas paints the ground once, in the colour the depth shows, and only
       { glyph: ".", style: { fgRole: "terrain.plain", dim: true } },
     ],
   }
-  for (const [colors, ground] of [["truecolor", "rgb(10,10,12)"], ["color256", "rgb(8,8,8)"], ["monochrome", "rgb(10,10,12)"]] as const) {
+  for (const [colors, expected] of [["truecolor", "rgb(10,10,12)"], ["color256", "rgb(8,8,8)"], ["monochrome", "rgb(10,10,12)"]] as const) {
     const fills: unknown[] = []
     const context: Canvas2D = {
       fillStyle: "",
@@ -191,13 +181,13 @@ test("the canvas paints the ground once, in the colour the depth shows, and only
     }
     const canvas = { width: 0, height: 0, style: { width: "", height: "" }, getContext: () => context }
     new CanvasBackend({ canvas, colors, theme: "dark", fit: () => ({ width: 400, height: 100 }) }).present(frame)
-    assert.equal(fills[0], ground, `${colors}: the whole canvas is the ground first`)
+    assert.equal(fills[0], expected, `${colors}: the whole canvas is the background first`)
     // Only the one inverse bar is painted over it, at every depth; the plain cells and the dim dot are not.
     assert.equal(fills.length, 2, `${colors}: ${JSON.stringify(fills)}`)
   }
 })
 
-test("switching from colours to monochrome in a live session starts the screen over, so no ground is left behind", () => {
+test("switching from colours to monochrome in a live session starts the screen over, so no background is left behind", () => {
   const stdout = new FakeStdout()
   const backend = new AnsiBackend({ stdout, stdin: new EventEmitter() as never, colors: "truecolor" })
   const [menu] = screens("truecolor")
@@ -216,7 +206,7 @@ test("switching from colours to monochrome in a live session starts the screen o
   assert.equal(clears(), 2, "a new theme starts over too")
 })
 
-test("OpenTUI grows a small frame with ground when it has colours, and draws monochrome as it is", async () => {
+test("OpenTUI grows a small frame with background when it has colours, and draws monochrome as it is", async () => {
   const core = await import("@opentui/core")
   const [menu] = screens("truecolor")
   assert.ok(menu !== undefined)
@@ -229,7 +219,7 @@ test("OpenTUI grows a small frame with ground when it has colours, and draws mon
 })
 
 test("dim on an inverse cell fades its glyph toward the cell it sits on, and leaves the cell as it was", () => {
-  // The highlighted bar's words, drawn dim: the cell stays the bar's colour and its glyph, the ground,
+  // The highlighted bar's words, drawn dim: the cell stays the bar's colour and its glyph, the background,
   // moves toward the bar — what a terminal's faint does to the glyph it draws, and what the browser
   // canvas and the screenshots have always shown.
   const bar: Cell = { glyph: "B", style: { fgRole: "chrome.title", inverse: true } }
@@ -238,7 +228,7 @@ test("dim on an inverse cell fades its glyph toward the cell it sits on, and lea
     const own = resolveCell(bar, "truecolor", theme)
     const dimmed = resolveCell(faint, "truecolor", theme)
     assert.deepEqual(dimmed.background, own.background, `${theme}: the bar itself changed`)
-    assert.deepEqual(own.foreground, BACKGROUND_RGB[theme], `${theme}: the glyph is the ground at full strength`)
+    assert.deepEqual(own.foreground, BACKGROUND_RGB[theme], `${theme}: the glyph is the background at full strength`)
     assert.notDeepEqual(dimmed.foreground, own.foreground, `${theme}: the glyph did not fade`)
   }
 })

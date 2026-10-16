@@ -33,7 +33,7 @@ export type CellSink = Readonly<{
     bg: unknown,
     attributes: number,
   ): void
-  /** The buffer's size, where it says: the screen the game's ground is painted across. */
+  /** The buffer's size, where it says: the screen the game's background is painted across. */
   readonly width?: number
   readonly height?: number
 }>
@@ -51,10 +51,10 @@ export function drawFrameInto(
   theme: Theme = DEFAULT_THEME,
 ): void {
   const colour = ([red, green, blue]: Rgb) => core.RGBA.fromValues(red / 255, green / 255, blue / 255, 1)
-  // Monochrome's cells have no fill of their own, so what shows behind them is the ground; the colour
+  // Monochrome's cells have no fill of their own, so what shows behind them is the background; the colour
   // depths always give one (`resolveCell`). With colours a frame smaller than the screen is grown with
-  // blank ground, the way the direct-ANSI backend does; monochrome is drawn as it is.
-  const ground = colour(BACKGROUND_RGB[theme])
+  // blank background, the way the direct-ANSI backend does; monochrome is drawn as it is.
+  const background = colour(BACKGROUND_RGB[theme])
   const screen = colors === "monochrome" ? frame : padFrame(frame, buffer.width ?? frame.width, buffer.height ?? frame.height)
   for (let y = 0; y < screen.height; y += 1) {
     for (let x = 0; x < screen.width; x += 1) {
@@ -67,7 +67,7 @@ export function drawFrameInto(
         dim: resolved.dim,
         underline: resolved.underline,
       })
-      const fill = resolved.background === null ? ground : colour(resolved.background)
+      const fill = resolved.background === null ? background : colour(resolved.background)
       buffer.setCell(x, y, cell.glyph, colour(resolved.foreground), fill, attributes)
     }
   }

@@ -15,11 +15,8 @@ import { BLANK } from "../frame.ts"
 import type { ColorDepth, Theme } from "../roles.ts"
 import { BACKGROUND_RGB, DEFAULT_THEME, DIM_ALPHA, resolveCell } from "../roles.ts"
 
-// A dimmed glyph is mixed into its colours at every depth that has colours (`resolveCell`); this is the
-// one place that still draws it as partial opacity — monochrome, where a terminal would send "faint".
-export { DIM_ALPHA }
 
-/** One cell, ready to paint: colours as CSS strings, `background` null where the ground (monochrome) is all there is. */
+/** One cell, ready to paint: colours as CSS strings, `background` null where the cell has no fill of its own (monochrome). */
 export type PaintOp = Readonly<{
   x: number
   y: number
@@ -36,7 +33,8 @@ const css = (rgb: readonly number[]): string => `rgb(${rgb[0]},${rgb[1]},${rgb[2
 /**
  * What to paint for a frame — pure, and the half of this backend the tests hold to the terminal's:
  * every glyph where `frameToText` has it, every colour as `resolveCell` resolves it (inverse video and
- * a see-through style already folded in), and a dim cell's glyph at `DIM_ALPHA`.
+ * a see-through style already folded in), and a dim cell's glyph at `DIM_ALPHA`: only monochrome's, since
+ * with colours the dim is already mixed into the glyph's colour (`resolveCell`).
  */
 export function paintOps(
   frame: ReadonlyCellFrame,
@@ -144,10 +142,10 @@ export class CanvasBackend implements TerminalBackend {
     if (g === null) throw new Error("this browser gave the canvas no 2D context")
     g.setTransform(ratio, 0, 0, ratio, 0, 0)
     g.globalAlpha = 1
-    // The ground as this depth shows it (the nearest entry at 256 colours), painted once; a cell that is
-    // plain ground is then left alone, and only a cell with a fill of its own is painted over it.
-    const ground = css(resolveCell(BLANK, this.colors, this.theme).background ?? BACKGROUND_RGB[this.theme])
-    g.fillStyle = ground
+    // The background as this depth shows it (the nearest entry at 256 colours), painted once; a cell that is
+    // plain background is then left alone, and only a cell with a fill of its own is painted over it.
+    const background = css(resolveCell(BLANK, this.colors, this.theme).background ?? BACKGROUND_RGB[this.theme])
+    g.fillStyle = background
     g.fillRect(0, 0, width, height)
     g.textBaseline = "middle"
     g.textAlign = "center"
@@ -155,7 +153,7 @@ export class CanvasBackend implements TerminalBackend {
     for (const op of paintOps(frame, this.colors, this.theme)) {
       const left = op.x * this.cellWidth
       const top = op.y * this.cellHeight
-      if (op.background !== null && op.background !== ground) {
+      if (op.background !== null && op.background !== background) {
         g.globalAlpha = 1
         g.fillStyle = op.background
         // Half a pixel over, so neighbouring solid cells meet without a hairline between them.

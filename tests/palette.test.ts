@@ -4,15 +4,15 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { STYLE_ROLES, BACKGROUND_RGB, THEMES, rgbFor, resolveCell, DIM_ALPHA } from "../src/view/roles.ts"
+import { STYLE_ROLES, BACKGROUND_RGB, THEMES, resolveCell, DIM_ALPHA } from "../src/view/roles.ts"
 import type { StyleRole } from "../src/view/roles.ts"
-import { chroma, contrast, deltaE, hue, hueGap, nearest256, seenWith, xterm256 } from "./color-helpers.ts"
+import { chroma, contrast, deltaE, hue, hueGap, nearest256, rgbFor, seenWith, xterm256 } from "./color-helpers.ts"
 
-/** The ground marks the map is meant to keep quiet: a dot of featureless floor, the map's edge, a bullet's
+/** The marks the map is meant to keep quiet: a dot of featureless floor, the map's edge, a bullet's
  *  trail. Every other role is something to read. */
 const QUIET: readonly StyleRole[] = ["terrain.plain", "chrome.edge", "fx.trail"]
 
-test("every role to be read clears 3:1 against its own ground, in both themes", () => {
+test("every role to be read clears 3:1 against its own background, in both themes", () => {
   for (const theme of THEMES) {
     for (const role of STYLE_ROLES) {
       if (QUIET.includes(role)) continue
@@ -59,7 +59,7 @@ test("a colour with a hue keeps it at 256 colours: it never lands on a grey or a
 test("the two sides are two colours that each read as their own, and stay apart for a colour-blind player", () => {
   for (const theme of THEMES) {
     const [a, b] = [rgbFor("player.a", "truecolor", theme), rgbFor("player.b", "truecolor", theme)]
-    // Each is a colour, not a grey: a faction that reads as black text on the light ground was the fault.
+    // Each is a colour, not a grey: a faction that reads as black text on the light background was the fault.
     assert.ok(chroma(a) >= 35 && chroma(b) >= 35, `${theme}: a side is nearly grey (chroma ${chroma(a).toFixed(0)} and ${chroma(b).toFixed(0)})`)
     assert.ok(deltaE(a, b) >= 40, `${theme}: the two sides are close (Delta E ${deltaE(a, b).toFixed(0)})`)
     assert.ok(deltaE(rgbFor("player.a", "color256", theme), rgbFor("player.b", "color256", theme)) >= 40, `${theme}: close at 256`)

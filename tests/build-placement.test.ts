@@ -26,7 +26,8 @@ import { paintOps } from "../src/view/backends/canvas.ts"
 import { placementCell, placementEffectContext, placementRequest, placementRun, placementSchedule, placementTiming, removalSchedule } from "../src/view/placement.ts"
 import type { PlacementClock, RemovalClock } from "../src/view/placement.ts"
 import { EFFECT_RECIPES } from "../src/view/effects/recipes.ts"
-import { COLOR_DEPTHS, RAINBOW_ROLES, rgbFor, sgrFor } from "../src/view/roles.ts"
+import { COLOR_DEPTHS, RAINBOW_ROLES } from "../src/view/roles.ts"
+import { rgbFor, sgrFor } from "./color-helpers.ts"
 
 /** The placement's numbers as the game plays them. */
 const FLAGS = TUNING

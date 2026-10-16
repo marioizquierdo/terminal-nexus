@@ -2,15 +2,13 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { nearest256, xterm256 } from "./color-helpers.ts"
+import { nearest256, rgbFor, sgrFor, xterm256 } from "./color-helpers.ts"
 import {
   BACKGROUND_RGB,
   COLOR_DEPTHS,
   DEFAULT_THEME,
   parseColorDepth,
   parseTheme,
-  rgbFor,
-  sgrFor,
   STYLE_ROLES,
   THEMES,
 } from "../src/view/roles.ts"

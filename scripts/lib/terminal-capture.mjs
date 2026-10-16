@@ -18,8 +18,7 @@ import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import pngjs from "pngjs"
-import { DIM_ALPHA } from "../../src/view/backends/canvas.ts"
-import { xterm256Rgb } from "../../src/view/roles.ts"
+import { DIM_ALPHA, xterm256Rgb } from "../../src/view/roles.ts"
 
 /**
  * Where the headless Chromium is: `CHROMIUM_PATH` if set, else the newest `chromium-<revision>/chrome-linux/chrome`
@@ -208,7 +207,7 @@ export function stepPastEnd(repoRoot, session, lastResolvedTick, tick) {
 const FAINT_PERCENT = Math.round(DIM_ALPHA * 100)
 
 /** Turn one captured pane into HTML: a span per styled run, nothing else. `theme` is the terminal's
- *  own background, which only monochrome shows: the colour depths paint the game's own ground on every
+ *  own background, which only monochrome shows: the colour depths paint the game's own background on every
  *  cell, and reverse video is already in their colours. Monochrome's reverse video swaps a cell's colour
  *  with it, so on a light terminal a reversed cell's text is light, not the dark default. */
 export function ansiToHtml(text, cols, rows, theme = "dark") {
@@ -234,7 +233,7 @@ export function ansiToHtml(text, cols, rows, theme = "dark") {
       const behind = style.inverse ? foreground : (background ?? defaultBackground)
       // Faint fades the glyph toward what is behind it, as a terminal does — never the cell's
       // background, which a whole-span opacity also faded, drawing every dim inverse cell too pale.
-      // By as much as the browser page's canvas fades it (`DIM_ALPHA`).
+      // By as much as the game dims a glyph (`DIM_ALPHA`).
       const parts = [`color:${style.dim ? `color-mix(in srgb, ${text} ${FAINT_PERCENT}%, ${behind})` : text}`]
       if (style.inverse) parts.push(`background:${foreground}`)
       else if (background !== null) parts.push(`background:${background}`)
@@ -327,7 +326,7 @@ function pageFor(html, caption, cols, rows, background) {
     white-space: pre;
   }
   /* A terminal fills a cell's whole height with its background; an inline span would only fill the glyphs' own
-     (a hairline of the pane between rows wherever the two backgrounds differ, as 256 colours' ground does). */
+     (a hairline of the pane between rows wherever the two backgrounds differ, as 256 colours' does). */
   pre span { display: inline-block; vertical-align: top; height: 1.25em; }
   .caption {
     margin: 10px 2px 0;

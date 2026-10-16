@@ -1,4 +1,4 @@
-# The colour setting's name, and the game painting its own ground (2026-10-15)
+# The colour setting's name, and the game painting its own background (2026-10-15)
 
 Mario, the day he dropped the 16-colour depth, asked for the next round of colour work: what the setting should be
 called, a decision on the background question, and the light theme. These notes continue
@@ -31,11 +31,11 @@ it is `--colors`. The four display options, their flags, their saved names and w
 > only achieve that with colored backgrounds. We also implement layers and transparency, all that needs a strong control
 > over the background.
 
-**Built.** This answers the question the Solarized remark opened (whether the game paints its own ground or leaves the
+**Built.** This answers the question the Solarized remark opened (whether the game paints its own background or leaves the
 terminal's): it paints it. At 256 colours and in millions every cell is two colours, its glyph's and its fill, the fill
-being the theme's ground unless the cell brings its own, so a Solarized terminal, a purple one and a black one all show
-the same game, and a fade or a see-through mix blends toward a ground that is really there. A screen bigger than the game
-(the title menu is 80 by 24 on any terminal) is ground to its edges. The terminal's own ideas of "default colour",
+being the theme's background unless the cell brings its own, so a Solarized terminal, a purple one and a black one all show
+the same game, and a fade or a see-through mix blends toward a background that is really there. A screen bigger than the game
+(the title menu is 80 by 24 on any terminal) is background to its edges. The terminal's own ideas of "default colour",
 "faint" and "reverse video", which differ from one terminal to the next, are no longer sent with colours: a dim glyph is
 mixed toward its fill by the game, the same everywhere. Monochrome alone leaves the terminal's colours as they are.
 It also settles how monochrome is described: the floor where every fact still reads, kept for testing and for any
@@ -48,8 +48,8 @@ terminal, and not the look the game is made for (the documents said "not the deg
 >
 > Go ahead and address the next iteration of cor stability improvements
 
-**Built.** It was fixed by the ground, as he guessed: the light theme's dark text had been drawn on whatever the terminal's
-own background was, which on a dark terminal is dark on dark. Looking at the light theme with its ground painted found one
+**Built.** It was fixed by painting the background, as he guessed: the light theme's dark text had been drawn on whatever the terminal's
+own background was, which on a dark terminal is dark on dark. Looking at the light theme with its background painted found one
 more thing, which is also fixed: the Ravel side's green had been darkened almost to black (so the "RAID" line and the raid's
 units read as plain text, and at 256 colours as grey), to keep it far from the Citizens' rust in lightness. It is now a
 green that reads as green (the cube's own forest green), and the two sides stay well apart for a red-green colour-blind

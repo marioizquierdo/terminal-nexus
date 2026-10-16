@@ -38,8 +38,8 @@ export class AnsiBackend implements TerminalBackend {
   private theme: Theme
   private started = false
   private stopped = false
-  // What the last frame was drawn with: a change of depth or theme starts the screen over (below).
-  private drawnWith: string | null = null
+  // Set when the depth or theme changed since the last frame: the next one starts the screen over.
+  private startOver = false
 
   constructor(options: AnsiBackendOptions) {
     this.options = options
@@ -61,18 +61,18 @@ export class AnsiBackend implements TerminalBackend {
   present(frame: ReadonlyCellFrame): void {
     const { stdout } = this.options
     // With colours the game paints the whole screen, so a frame smaller than the terminal is grown with
-    // ground. Monochrome leaves the terminal's own colours alone, beside the frame as in it.
+    // background. Monochrome leaves the terminal's own colours alone, beside the frame as in it.
     const drawn =
       this.colors === "monochrome" ? frame : padFrame(frame, stdout.columns ?? frame.width, stdout.rows ?? frame.height)
-    // A new depth or theme starts the screen over: leaving colours for monochrome must not leave the ground
-    // painted where the frame no longer reaches, and monochrome leaves the terminal's colours alone.
-    const look = `${this.colors}/${this.theme}`
-    const restart = this.drawnWith !== null && this.drawnWith !== look
-    this.drawnWith = look
-    stdout.write((restart ? RESET + CLEAR : "") + CURSOR_HOME + frameToAnsi(drawn, this.colors, this.theme) + RESET)
+    // A new depth or theme starts the screen over: going from colours to monochrome must not leave the
+    // background painted where the frame no longer reaches.
+    const reset = this.startOver ? RESET + CLEAR : ""
+    this.startOver = false
+    stdout.write(reset + CURSOR_HOME + frameToAnsi(drawn, this.colors, this.theme) + RESET)
   }
 
   setPresentation(colors: ColorDepth, theme: Theme): void {
+    if (colors !== this.colors || theme !== this.theme) this.startOver = true
     this.colors = colors
     this.theme = theme
   }

@@ -9,8 +9,8 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { nearest256, xterm256 } from "./color-helpers.ts"
-import { DIM_ALPHA, paintOps } from "../src/view/backends/canvas.ts"
+import { nearest256, rgbFor, sgrFor, xterm256 } from "./color-helpers.ts"
+import { paintOps } from "../src/view/backends/canvas.ts"
 import type { CellSink } from "../src/view/backends/opentui.ts"
 import { drawFrameInto } from "../src/view/backends/opentui.ts"
 import type { Cell, CellStyle, ReadonlyCellFrame } from "../src/view/frame.ts"
@@ -19,12 +19,10 @@ import type { ColorDepth, SeeThrough, StyleRole, Theme } from "../src/view/roles
 import {
   BACKGROUND_RGB,
   COLOR_DEPTHS,
-  SEE_THROUGH_STEP,
+  DIM_ALPHA,
   mixSeeThrough,
   resolveCell,
   seeThroughColours,
-  rgbFor,
-  sgrFor,
 } from "../src/view/roles.ts"
 import { isColourCode, sgrCodes } from "./helpers.ts"
 

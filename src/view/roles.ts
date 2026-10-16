@@ -10,10 +10,10 @@
 // family, terrain by shape, salvage by its own character.
 //
 // **The game owns every colour it draws, the background included.** At 256 colours and in millions a
-// cell is always two colours, its glyph's and its fill: the fill is its `bgRole` or the theme's ground,
-// and nothing is left to the terminal's own theme, so a Solarized terminal, a purple one and a plain
-// black one all show the same game, and a fade or a see-through mix lands exactly on the ground it
-// blends toward. The one depth that does leave the terminal's colours alone is monochrome, by design.
+// cell is always two colours, its glyph's and its fill: the fill is its `bgRole` or the theme's
+// background, and nothing is left to the terminal's own theme, so a Solarized terminal, a purple one and
+// a plain black one all show the same game, and a fade or a see-through mix lands exactly on the
+// background it blends toward. The one depth that leaves the terminal's colours alone is monochrome.
 //
 // `resolveCell`, at the bottom, is where a cell's roles become what a renderer draws — for the ANSI
 // writer, the browser page's canvas and OpenTUI alike, so the three cannot disagree about a cell. It
@@ -87,12 +87,11 @@ export const RAINBOW_ROLES: readonly StyleRole[] = [
 ]
 
 /**
- * The ground: the colour every cell without a fill of its own is painted, at 256 colours and in
- * millions. The game paints it itself rather than leaving the terminal's background to show through
- * (monochrome alone leaves it), so the palette is always read against the ground it was chosen for,
- * and a fade is a walk toward a colour that is really there. Chosen with the roles, not borrowed from
- * any terminal: the dark ground is a neutral near-black that every role was set against, and the
- * light one a warm paper white.
+ * The background: the colour every cell without a fill of its own is painted, at 256 colours and in
+ * millions. The game paints it rather than leaving the terminal's to show through (monochrome alone
+ * leaves it), so the palette is always read against the background it was chosen for and a fade is a
+ * walk toward a colour that is really there. Chosen with the roles, not borrowed from any terminal: dark
+ * is a neutral near-black that every role was set against, light a warm paper white.
  */
 export const BACKGROUND_RGB: Readonly<Record<Theme, Rgb>> = {
   dark: [10, 10, 12],
@@ -110,13 +109,8 @@ const INK_ROLE: StyleRole = "chrome.value"
  * the lore document. The `dark` table is the reference: the one the lore and every screenshot so far were
  * designed against, and the one to extend first when a role needs a stronger identity.
  *
- * **There is no sixteen-colour table, on purpose** (dropped 2026-10-15; the lessons file has the
- * reasons). The sixteen ANSI colours are whatever the player's terminal theme says they are, so nothing
- * here can know what a code looks like or blend toward it, and matching the sixteen against a guessed
- * palette is no fix: measured, it sent `chrome.muted` to bright black and gave `player.a` and `player.b`
- * the same grey. The game draws with backgrounds, blends and see-through mixes that need real RGB, so
- * below 256 colours it is monochrome, which sends no colour code and leaves the terminal's own colours
- * alone. For the same reason the 256 search starts at index 16: indices 0 to 15 are the terminal's.
+ * There is no sixteen-colour table, on purpose (`ColorDepth`, `src/terminal/display.ts`, has the reason):
+ * the 256 search starts at index 16 because indices 0 to 15 are the terminal's, not the game's.
  *
  * Playtest findings folded into the values:
  *
@@ -126,18 +120,17 @@ const INK_ROLE: StyleRole = "chrome.value"
  *     map's edge carry the same `dim` on their soft segments and took the muted role's colour for it
  *     ("during day time I was not able to tell where the UI is").
  *   - Light theme `player.a`/`player.b` are two colours that each read as their own, not one colour and a
- *     near-black. The first retune pushed Ravel green to a lightness of 11.5:1 against the ground so the
- *     pair would clear a 3:1 mutual contrast; it got there by making the colour almost black ("RAID" read
- *     as plain text, and at 256 colours it was a grey, the cube having no dark green of that depth). The
- *     colour-blindness worry behind that floor does not need it: under a simulated deuteranopia and
- *     protanopia the pair is as far apart in Lab (Delta E 70 and over) as the near-black one was, since
- *     orange and green still part on lightness and on the blue-yellow axis, and ownership is carried by
- *     letter case and glyph family anyway. `player.b` is xterm's own forest green (0, 95, 0), nearly: 6.9:1
- *     against the ground and the same colour at 256; `player.a` is nudged to sit on the cube too.
+ *     near-black. An earlier retune darkened Ravel green until the pair cleared a 3:1 mutual contrast, and
+ *     "RAID" read as plain text (a grey at 256 colours, the cube having no dark green of that depth). The
+ *     colour-blindness worry behind that floor does not need it: simulated with protanopia and
+ *     deuteranopia the pair is as far apart in Lab (Delta E 70 and over) as the near-black one was, orange
+ *     and green still parting on lightness and on the blue-yellow axis, and ownership is carried by letter
+ *     case and glyph family anyway. `player.b` is nearly xterm's own forest green (0, 95, 0): 6.9:1 against
+ *     the background, and the same colour at 256.
  *   - A few roles were moved a few points (under 3.5 of lightness, 6 degrees of hue) to sit near an entry
  *     of the xterm cube, so 256 colours shows what millions shows within a Delta E of 12 for every role
- *     (`tests/palette.test.ts` holds the budget): a new role is placed by eye in millions and then nudged
- *     only if the test says its 256 match drifted.
+ *     (`tests/palette.test.ts` holds the budget): a new role is placed by eye in millions and nudged only
+ *     if the test says its 256 match drifted.
  */
 const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
   dark: {
@@ -195,8 +188,8 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
     "terrain.plain": [196, 192, 184],
     "terrain.rock": [70, 66, 60],
     "terrain.deposit": [168, 124, 24],
-    // Two sides that each read as their own colour on the pale ground, one on a cube entry (see the
-    // PALETTE doc comment above for why `player.b` is no longer near-black).
+    // Two sides that each read as their own colour on the pale background (see the PALETTE doc comment
+    // above for why `player.b` is no longer near-black).
     "player.a": [211, 98, 21],
     "player.b": [0, 96, 16],
     "item.salvage": [80, 120, 72],
@@ -309,15 +302,16 @@ function nearestIndexedCached(rgb: Rgb): number {
   return found
 }
 
-/**
- * A colour as a depth can show it: the RGB it comes out as, and the SGR parameters that say so (what
- * follows `38` or `48`). Truecolor shows any colour as it is; 256 colours shows the nearest of its
- * entries, and `rgb` is that entry's own — so a renderer that draws RGB (the canvas, OpenTUI) shows
- * exactly what a 256-colour terminal shows, rather than a colour the terminal cannot. The last step of
- * every colour the game draws, and the only place a depth is looked at.
- */
+/** A colour as a depth shows it: the RGB it comes out as, and the SGR parameters that say so (what follows
+ *  `38` or `48`). */
 type Shown = Readonly<{ rgb: Rgb; params: readonly number[] }>
 
+/**
+ * The last step of every colour the game draws, and the only place a depth is looked at. Truecolor shows
+ * any colour as it is; 256 colours shows the nearest of its entries, and `rgb` is that entry's own, so a
+ * renderer that draws RGB (the canvas, OpenTUI) shows exactly what a 256-colour terminal shows, not a
+ * colour the terminal cannot.
+ */
 function shownAt(rgb: Rgb, colors: Exclude<ColorDepth, "monochrome">): Shown {
   if (colors === "truecolor") return { rgb, params: [2, rgb[0], rgb[1], rgb[2]] }
   const index = nearestIndexedCached(rgb)
@@ -356,51 +350,13 @@ export type SeeThrough = Readonly<{ role: StyleRole; alpha: number }>
 /**
  * The exact RGB of a role after its tint and fade — the one place both blends meet, and the only
  * place a fade scalar touches a colour (the recommended shape): the tinted colour taken `fade` of the
- * way toward the theme's ground. `mixRgb` clamps the amount, so a caller that hands in more than 1
- * still lands on the ground rather than past it.
+ * way toward the theme's background. `mixRgb` clamps the amount, so a caller that hands in more than 1
+ * still lands on the background rather than past it.
  */
 function blendedRgb(colour: Rgb, theme: Theme, fade: number, tint: RoleTint | undefined): Rgb {
   const target = tint === undefined || tint.amount <= 0 ? undefined : PALETTE[theme][tint.role]
   const tinted = target === undefined ? colour : mixRgb(colour, target, tint?.amount ?? 0)
   return fade > 0 ? mixRgb(tinted, BACKGROUND_RGB[theme], fade) : tinted
-}
-
-/**
- * SGR parameters for a foreground role at a depth. Monochrome returns nothing at all — not a grey,
- * *nothing* — so that a monochrome frame provably contains no colour code. `theme` defaults to
- * `DEFAULT_THEME` so every caller that has not been taught about themes keeps today's look exactly.
- *
- * `fade` (default `0`, meaning none) is the transparency scalar — see `CellStyle.fade`'s doc comment in
- * `frame.ts` for the full contract. It resolves at `color256` and `truecolor`; `monochrome` ignores it
- * entirely, having nothing between a role's own look and off: it stays exactly as `bold`/`dim`/`inverse`
- * already describe it.
- */
-export function sgrFor(
-  role: StyleRole | undefined,
-  colors: ColorDepth,
-  theme: Theme = DEFAULT_THEME,
-  fade = 0,
-  tint?: RoleTint,
-): readonly number[] {
-  if (role === undefined || colors === "monochrome") return []
-  return [38, ...shownAt(blendedRgb(PALETTE[theme][role], theme, fade, tint), colors).params]
-}
-
-/**
- * The same roles as RGB, for the renderers that take colours rather than SGR parameters (the canvas
- * and OpenTUI, through `resolveCell`), as the depth shows them: a 256-colour terminal's own entry, not
- * the exact colour it could only approximate. `monochrome` has no role colours, so it is plain text
- * (`INK_ROLE`) whatever the role.
- */
-export function rgbFor(
-  role: StyleRole | undefined,
-  colors: ColorDepth,
-  theme: Theme = DEFAULT_THEME,
-  fade = 0,
-  tint?: RoleTint,
-): Rgb {
-  if (colors === "monochrome" || role === undefined) return PALETTE[theme][INK_ROLE]
-  return shownAt(blendedRgb(PALETTE[theme][role], theme, fade, tint), colors).rgb
 }
 
 /**
@@ -470,7 +426,7 @@ export type SeeThroughColours = Readonly<{
 
 /**
  * The cell's own two colours, exactly: the glyph's (its `fgRole` after tint and fade, plain text when it
- * has none) and the fill (its `bgRole`, or the theme's ground), swapped by inverse video. What the cell
+ * has none) and the fill (its `bgRole`, or the theme's background), swapped by inverse video. What the cell
  * would show before any depth, dim or see-through style is applied to it; `resolveCell` and
  * `seeThroughColours` both start here, so they cannot disagree about what is being drawn.
  */
@@ -489,8 +445,8 @@ function cellColours(cell: Cell, theme: Theme): Readonly<{ glyph: Rgb; fill: Rgb
  * The cell's own colours are worked out first, as the renderers already draw them (`cellColours`: an
  * `inverse` cell has swapped them, so the see-through style mixes what is actually seen), and a blank
  * cell has no glyph, so its glyph is its fill and the cell becomes simply that mixed toward the cursor.
- * Then `mixSeeThrough`, with the see-through style's role as the cursor colour and the theme's ground as
- * the cursor's glyph colour — the real cursor is inverse video, so its glyph is drawn in the ground.
+ * Then `mixSeeThrough`, with the see-through style's role as the cursor colour and the theme's background
+ * as the cursor's glyph colour — the real cursor is inverse video, so its glyph is drawn in the background.
  *
  * - `truecolor`: that exact mix;
  * - `color256`: the nearest palette entry to each of the two mixed colours (the RGB returned is that
@@ -509,20 +465,20 @@ export function seeThroughColours(
   if (seeThrough === undefined || !(seeThrough.alpha > 0)) return null
   const cursor = PALETTE[theme][seeThrough.role]
   if (cursor === undefined) return null
-  const ground = BACKGROUND_RGB[theme]
+  const background = BACKGROUND_RGB[theme]
   const alpha = Math.min(1, seeThrough.alpha)
   if (colors === "monochrome") {
-    return alpha < SEE_THROUGH_STEP ? null : { foreground: ground, background: PALETTE[theme][INK_ROLE], sgr: [7] }
+    return alpha < SEE_THROUGH_STEP ? null : { foreground: background, background: PALETTE[theme][INK_ROLE], sgr: [7] }
   }
   const { glyph, fill } = cellColours(cell, theme)
   const blank = cell.glyph === " " || cell.glyph === ""
-  const mixed = mixSeeThrough(fill, blank ? fill : glyph, cursor, ground, alpha)
-  const foreground = shownAt(mixed.foreground, colors)
-  const background = shownAt(mixed.background, colors)
+  const mixed = mixSeeThrough(fill, blank ? fill : glyph, cursor, background, alpha)
+  const shownInk = shownAt(mixed.foreground, colors)
+  const shownFill = shownAt(mixed.background, colors)
   return {
-    foreground: foreground.rgb,
-    background: background.rgb,
-    sgr: [38, ...foreground.params, 48, ...background.params],
+    foreground: shownInk.rgb,
+    background: shownFill.rgb,
+    sgr: [38, ...shownInk.params, 48, ...shownFill.params],
   }
 }
 
@@ -550,7 +506,7 @@ export type ResolvedCell = Readonly<{
    * Faint, for the one depth that cannot mix it into a colour: monochrome, where it is the cell's `dim`.
    * Never set where colours exist, and never where a see-through style shows (the mix already says
    * exactly how bright the glyph is, and faint on top would fade it back toward the now lighter fill —
-   * the very loss the real cursor avoids by clearing `dim` on bare ground, `src/view/build.ts`).
+   * the very loss the real cursor avoids by clearing `dim` on bare ground tiles, `src/view/build.ts`).
    */
   dim: boolean
   underline: boolean
@@ -558,10 +514,10 @@ export type ResolvedCell = Readonly<{
 
 /**
  * What a renderer draws for `cell` at `colors` on `theme`. At 256 colours and in millions its colours are
- * its glyph's (`fgRole` after tint and fade) and its fill (`bgRole`, or the theme's ground), inverse video
+ * its glyph's (`fgRole` after tint and fade) and its fill (`bgRole`, or the theme's background), inverse video
  * swapping the two and `dim` mixing the glyph `1 - DIM_ALPHA` of the way toward the fill, all worked out
  * exactly and then shown at the depth (`shownAt`). Monochrome has no colour to paint: bold, faint,
- * underline and reverse video are sent as they are, and an RGB renderer gets plain text on the ground.
+ * underline and reverse video are sent as they are, and an RGB renderer gets plain text on the background.
  * A see-through style that shows at this depth (`seeThroughColours`) replaces all of that, and the
  * cell's dim with it; bold and underline always stay the cell's own.
  */
@@ -595,10 +551,10 @@ export function resolveCell(cell: Cell, colors: ColorDepth, theme: Theme = DEFAU
     }
   }
   const { glyph, fill } = cellColours(cell, theme)
-  const ink = shownAt(dim ? mixRgb(glyph, fill, 1 - DIM_ALPHA) : glyph, colors)
-  const ground = shownAt(fill, colors)
-  const sgr = [38, ...ink.params, 48, ...ground.params]
+  const shownInk = shownAt(dim ? mixRgb(glyph, fill, 1 - DIM_ALPHA) : glyph, colors)
+  const shownFill = shownAt(fill, colors)
+  const sgr = [38, ...shownInk.params, 48, ...shownFill.params]
   if (bold) sgr.push(1)
   if (underline) sgr.push(4)
-  return { sgr, foreground: ink.rgb, background: ground.rgb, bold, dim: false, underline }
+  return { sgr, foreground: shownInk.rgb, background: shownFill.rgb, bold, dim: false, underline }
 }

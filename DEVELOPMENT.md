@@ -94,17 +94,18 @@ too. Each program refuses an argument it does not read, and a retired one says w
 a tile is one column at every size; `--capability`: it is `--colors`). ASCII and monochrome are the floor;
 everything above them is fidelity, never information.
 
-**The game paints its own ground.** At 256 colours and in millions every cell has a fill, the theme's
-ground unless a cell brings its own, so the game looks the same on any terminal theme, the light theme works
-on a black terminal, and a fade or a see-through mix blends toward a colour that is really there. Only
-`--colors monochrome` leaves the terminal's own colours alone, and `--theme` means nothing there. So when
-you try a colour change, try it on a terminal whose own colours are *not* the game's (a light terminal,
-Solarized) and in both themes; a picture of the playtest (`scripts/playtest.mjs --theme light --colors
-color256`) is the quick way, since it draws the ground the way a terminal would.
+**The game paints its own background** (the screen's colour; "ground" in this project is the terrain). At 256
+colours and in millions every cell has a fill, the theme's background unless a cell brings its own, so the
+game looks the same on any terminal theme, the light theme works on a black terminal, and a fade or a
+see-through mix blends toward a colour that is really there. Only `--colors monochrome` leaves the terminal's
+own colours alone, and `--theme` means nothing there. So try a colour change in both themes and on a terminal
+whose colours are *not* the game's (a light one, Solarized); a picture from the playtest script
+(`scripts/playtest.mjs --theme light --colors color256 --png final`) is the quick way, since it draws the
+background the way a terminal would.
 
 **Where a colour change goes.** A new role is a row in each theme's table in `src/view/roles.ts` (the one
 table every depth is made from) and nowhere else; nothing is authored per depth. Then `tests/palette.test.ts`
-says whether it meets the bar (3:1 against the ground, within a Delta E of 12 at 256 colours, hue kept, the
+says whether it meets the bar (3:1 against the background, within a Delta E of 12 at 256 colours, hue kept, the
 two sides apart for a colour-blind player), and a nudge of a few points toward the xterm cube is the fix when
 it does not. There are three colour depths (monochrome, 256 colours, truecolor) and no sixteen-colour one, so
 a change is looked at in truecolor, and in 256 colours and monochrome now and then (see
