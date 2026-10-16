@@ -59,6 +59,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 | Q64 | 2026-10-01 | **Answered in practice.** Option A: a placed building's light pulls its characters toward the theme's strongest ink, so on the light theme it is the darkest ink and the building darkens as it finishes, like ink setting. A warm glow role of its own (option B) stays one role and a colour per theme away if Mario, having played the light theme, wants it | [`effects.md`](../system-design/effects.md) (`fx.light.flash`); `../../src/view/effects/shading.ts` |
 | Q77 | 2026-10-15 | **A — Vasse keeps `@`.** Mario: "ok vase keeps @". Her portrait, already built on her `@`, stays; the symbol rule for a Commander stands, and the Alder's claim on `@` is for whoever designs them | [`commander-armies.md`](../game-design/commander-armies.md) (a Commander's symbol) |
 | Q78 | 2026-10-15 | **A — the mission delays her return once.** Mario: "the mission delays her return once". RESTORATION keeps the round without her: the Nexus files her late that once, as mission data that changes her rounds out for that level, and the delay is the thing the player notices the Nexus doing. Vasse is otherwise back the round after she falls | [`campaigns.md`](../game-design/campaigns.md) (RESTORATION) |
+| Q80 | 2026-10-16 | **A — a supply cap, given by a building.** Mario: "go with your recommendation, supply cap", and "Supply should be controlled by another building". Built: an army fields what its buildings give (the Grid Nexus 12, a Supply Depot 8 more); a unit takes one place, a pikeman two, a Commander none; a building whose next unit would go past it waits. Measured on the curve level, Barracks alone moved from 0.45 to 0.40 of the last army bought in the first three rounds; on that level early units mostly live, so the cap frees few places | [`pulse.md`](../system-design/pulse.md) (the economy: supply), [`commander-armies.md`](../game-design/commander-armies.md) (the expected power curve) |
 
 ### Q50 — answered
 
@@ -962,3 +963,29 @@ back the round after she falls, she has no round of absence to hold.
 
 **Recommendation: A.** It keeps what the mission was for — restoration read closely — and makes the delay itself the
 thing the player notices the Nexus doing.
+
+### Q80 — answered
+
+**Question:** Q80 — What keeps an early lead from compounding?
+
+**Status:** ANSWERED 2026-10-16 — A, by Mario (the Answered table has the decision). The original entry follows.
+
+**Status:** OPEN — registered 2026-10-15, from the curve measured on the Grid. Blocks nothing built; it decides what
+the power curve's "survivors are outgrown" rests on.
+
+The power curve expects what the first three rounds bought to be at most about a fifth of the army that fights the
+last round (the owner: early moves "exploratory and opportunistic", the last ones "decisive"). Measured on the
+curve's six-round test level, it is close to half, whether a player climbs the tree or not: units that survive stack,
+and a building bought in round 1 sends its wave every round after. Credits that grow, and a second tier worth a
+fifth more per credit, do not change that much: a Garrison at 40 credits instead of 100 moved it from 0.47 to 0.42.
+
+| Option | What it costs |
+| --- | --- |
+| A. **A supply cap**: an army may field so many units at once, and a building waits while it is full, so stronger units take the places of weaker ones rather than piling on them | The genre's answer, and already in the design (the economy: "supply is a shared population cap"); a number to tune, a new thing on the menu's credits line, and a building's waiting shown |
+| B. **A building sends its wave for a price each round**: its credits pay for the wave, not only for the building | Early buildings stop being free forever; every round becomes a spending decision, which is more to read in a Build Phase |
+| C. **A unit's strength fades with the rounds it has fought**, or survivors go home and do not come back | Contradicts "I like being able to keep fighting with the previous units if they survive" |
+| D. **Accept it**: the opening is the foundation, about half; what decides late is the Nexus Pulse's rares and the higher tiers | The curve's numbers change to match; an early lead weighs more than the design wanted |
+
+**Recommendation: A**, measured on the curve level before it is built for good: it keeps survivors (they still
+fight, and a place is worth keeping), it makes "new units much stronger" matter, since a place is the scarce thing,
+and it is the cap the economy was always going to need. Try a cap that a plan reaches by about round 4.

@@ -72,7 +72,7 @@
           "map": "starter",
           "credits": 100,
           "unlocks": {
-            "buildings": ["barracks", "hatchery", "turret"],
+            "buildings": ["barracks", "hatchery", "turret", "depot"],
             "powers": ["reserve-callup", "drill-schedule", "drill-schedule-ii", "standing-order", "aid-station-permit", "war-chest"]
           },
           "schedule": [
@@ -289,6 +289,466 @@
               { "id": "probe-3", "when": { "pulse": 3, "tick": 0 }, "do": [{ "spawn": { "side": "B", "units": [{ "unit": "unit.ravel.runner", "count": 2 }], "at": "ambush" } }] },
               { "id": "fallen", "when": { "event": "nexus.destroyed", "side": "A" }, "do": [{ "lose": true }] },
               { "id": "hold", "when": { "event": "pulse.end", "pulse": 3 }, "do": [{ "win": true }] }
+            ]
+          }
+        },
+        {
+          "id": "vasse-test-3",
+          "notes": "The power curve's test level (Commander Armies): six rounds on the starter map with only the Grid Nexus standing, credits every round from the curve, two troopers from the Nexus each round, and the Garrison \u2014 the tech tree's first second tier \u2014 unlocked by a Barracks standing. It unlocks the Garrison; everything else it offers PERIMETER unlocked before it. Reached by route: campaign?level=vasse-test-3.",
+          "map": "starter-open",
+          "credits": 100,
+          "unlocks": {
+            "buildings": [
+              "garrison"
+            ]
+          },
+          "mission": {
+            "id": "mission.test.curve",
+            "name": "The curve",
+            "notes": "The power curve on the Grid, as a level (Commander Armies): six Battle Rounds on the starter map with only the Grid Nexus standing, so the tech tree is climbed from its first building \u2014 a Barracks, then the Garrison it unlocks the round after. Each round adds the curve's credits, and the raid grows round by round, slower than the credits at first and faster at the end, so survivors of the early rounds matter and the last rounds are decided by what came later. PERIMETER's regions, squads and post, so it reads as the same front. The raid's sizes are first guesses, measured against a scripted plan (tests/curve-level.test.ts), not balance.",
+            "pulses": 6,
+            "pulseTicks": 360,
+            "seed": 1129666118,
+            "regions": [
+              {
+                "id": "muster",
+                "x": 21,
+                "y": 9,
+                "width": 3,
+                "height": 3
+              },
+              {
+                "id": "ridge",
+                "x": 40,
+                "y": 0,
+                "width": 4,
+                "height": 2
+              },
+              {
+                "id": "east-flats",
+                "x": 50,
+                "y": 9,
+                "width": 5,
+                "height": 3
+              },
+              {
+                "id": "nexus",
+                "x": 17,
+                "y": 10,
+                "width": 3,
+                "height": 2
+              },
+              {
+                "id": "line",
+                "name": "the line",
+                "x": 22,
+                "y": 7,
+                "width": 5,
+                "height": 2
+              }
+            ],
+            "roundText": {
+              "1": "A probe at the ridge. Build what the next rounds need.",
+              "2": "Your first building stands: what it leads to is open.",
+              "3": "They come with slingers now.",
+              "4": "The middle of it. They flank from the east.",
+              "5": "Heavier, from two sides.",
+              "6": "The push. Hold until their schedule ends."
+            },
+            "endText": {
+              "won": "The line held to the end.",
+              "lost": "The Nexus fell."
+            },
+            "triggers": [
+              {
+                "id": "squads",
+                "when": {
+                  "pulse": 1,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        {
+                          "unit": "unit.citizen.vasse",
+                          "count": 1
+                        },
+                        {
+                          "unit": "unit.citizen.trooper",
+                          "count": 3
+                        },
+                        {
+                          "unit": "unit.citizen.marksman",
+                          "count": 2
+                        }
+                      ],
+                      "at": "muster",
+                      "group": "squads"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "reinforcements-2",
+                "when": {
+                  "pulse": 2,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        {
+                          "unit": "unit.citizen.trooper",
+                          "count": 2
+                        }
+                      ],
+                      "at": "muster"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "reinforcements-3",
+                "when": {
+                  "pulse": 3,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        {
+                          "unit": "unit.citizen.trooper",
+                          "count": 2
+                        }
+                      ],
+                      "at": "muster"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "reinforcements-4",
+                "when": {
+                  "pulse": 4,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        {
+                          "unit": "unit.citizen.trooper",
+                          "count": 2
+                        }
+                      ],
+                      "at": "muster"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "reinforcements-5",
+                "when": {
+                  "pulse": 5,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        {
+                          "unit": "unit.citizen.trooper",
+                          "count": 2
+                        }
+                      ],
+                      "at": "muster"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "reinforcements-6",
+                "when": {
+                  "pulse": 6,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "A",
+                      "units": [
+                        {
+                          "unit": "unit.citizen.trooper",
+                          "count": 2
+                        }
+                      ],
+                      "at": "muster"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "post",
+                "when": {
+                  "pulse": 1,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "target": {
+                      "side": "A",
+                      "region": "line"
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-1",
+                "when": {
+                  "pulse": 1,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        {
+                          "unit": "unit.ravel.runner",
+                          "count": 3
+                        },
+                        {
+                          "unit": "unit.ravel.raider",
+                          "count": 1
+                        }
+                      ],
+                      "at": "ridge",
+                      "group": "probe",
+                      "intent": "Probe the line at the ridge."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-2",
+                "when": {
+                  "pulse": 2,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        {
+                          "unit": "unit.ravel.runner",
+                          "count": 4
+                        },
+                        {
+                          "unit": "unit.ravel.raider",
+                          "count": 2
+                        }
+                      ],
+                      "at": "ridge",
+                      "group": "second",
+                      "intent": "Push at the ridge."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-3",
+                "when": {
+                  "pulse": 3,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        {
+                          "unit": "unit.ravel.runner",
+                          "count": 5
+                        },
+                        {
+                          "unit": "unit.ravel.raider",
+                          "count": 3
+                        },
+                        {
+                          "unit": "unit.ravel.slinger",
+                          "count": 1
+                        }
+                      ],
+                      "at": "ridge",
+                      "group": "third",
+                      "intent": "Push at the ridge, with slingers."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-4",
+                "when": {
+                  "pulse": 4,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [{"unit": "unit.ravel.runner", "count": 4}, {"unit": "unit.ravel.raider", "count": 3}, {"unit": "unit.ravel.slinger", "count": 1}],
+                      "at": "ridge",
+                      "group": "fourth",
+                      "intent": "Break the line at the ridge."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-4-flank",
+                "when": {
+                  "pulse": 4,
+                  "tick": 84
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [{"unit": "unit.ravel.raider", "count": 1}],
+                      "at": "east-flats",
+                      "group": "flank",
+                      "intent": "Flank from the east."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-5",
+                "when": {
+                  "pulse": 5,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [{"unit": "unit.ravel.runner", "count": 5}, {"unit": "unit.ravel.raider", "count": 3}, {"unit": "unit.ravel.slinger", "count": 2}],
+                      "at": "ridge",
+                      "group": "fifth",
+                      "intent": "Break the line at the ridge."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-5-flank",
+                "when": {
+                  "pulse": 5,
+                  "tick": 84
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [{"unit": "unit.ravel.raider", "count": 1}],
+                      "at": "east-flats",
+                      "group": "flank-5",
+                      "intent": "Flank from the east."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-6",
+                "when": {
+                  "pulse": 6,
+                  "tick": 0
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        {
+                          "unit": "unit.ravel.runner",
+                          "count": 8
+                        },
+                        {
+                          "unit": "unit.ravel.raider",
+                          "count": 6
+                        },
+                        {
+                          "unit": "unit.ravel.slinger",
+                          "count": 4
+                        }
+                      ],
+                      "at": "ridge",
+                      "group": "push",
+                      "intent": "The push: take the Nexus."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "raid-6-reserve",
+                "when": {
+                  "pulse": 6,
+                  "tick": 96
+                },
+                "do": [
+                  {
+                    "spawn": {
+                      "side": "B",
+                      "units": [
+                        {
+                          "unit": "unit.ravel.runner",
+                          "count": 3
+                        },
+                        {
+                          "unit": "unit.ravel.raider",
+                          "count": 4
+                        }
+                      ],
+                      "at": "east-flats",
+                      "group": "reserve",
+                      "intent": "The reserve, from the east."
+                    }
+                  }
+                ]
+              },
+              {
+                "id": "fallen",
+                "when": {
+                  "event": "nexus.destroyed",
+                  "side": "A"
+                },
+                "do": [
+                  {
+                    "lose": true
+                  }
+                ]
+              },
+              {
+                "id": "hold",
+                "when": {
+                  "event": "pulse.end",
+                  "pulse": 6
+                },
+                "do": [
+                  {
+                    "win": true
+                  }
+                ]
+              }
             ]
           }
         }

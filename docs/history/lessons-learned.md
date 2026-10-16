@@ -463,6 +463,33 @@ A second round on colour, the day the 16-colour depth went. What it taught:
    at 256 colours (the screenshot's own page, a different colour from the background) were found by looking at the light and
    the 256-colour frames, not by any assertion; the assertions were written afterwards to keep them found.
 
+## The curve on the Grid (2026-10-15)
+
+1. **A trigger id names one trigger in one mission, not in the file.** A script that tuned the new level's raids
+   found `raid-1` by searching the army file and edited PERIMETER's, which comes first; fifteen tests failed at once,
+   none of them about the new level. Scope a data edit to the level it is for (find the level, then the trigger
+   inside it), and diff the file against the last commit before measuring anything with it.
+2. **A level's later rounds must be reachable by a player who builds nothing.** Routes open a round by playing the
+   ones before it with nothing built, so a level whose Nexus falls in round 4 to an empty plan has no round 5 to
+   open. The curve level keeps it with a rule a player can read (the Nexus sends two troopers each round), not by
+   tuning raids until an empty plan scrapes through.
+3. **Measure what was bought, not what walked out.** Counting a unit for the round it first stood made the opening
+   look small; counting it for the round its building was bought (the spawn event's `trainedBy`) showed the opening
+   paying for the whole match. The question a design asks decides the attribution.
+4. **A multi-tile unit can jam its own building.** Survivors come home round their buildings, so a wave of 2x2
+   sentinels found room for one or two of three. A building's unit should fit the ring it comes out on.
+
+## Supply and building actions (2026-10-16)
+
+1. **A cap frees places only as units fall.** The supply cap held the army's size, and the opening's share barely
+   moved, because on an easy level the early units live. Before expecting a rule to change a measure, ask what has to
+   happen on the Grid for it to bite; here, attrition.
+2. **A free-looking letter may be an arrow.** `h` was the obvious key for Hold, and `h j k l` move the cursor
+   everywhere; the keyboard tests caught it. Grep the keyboard adapter for the letter before naming a key.
+3. **Arithmetic two layers share belongs below both.** Supply was first written in the kernel, and the Build Phase
+   could not import it (the reducer never reaches the kernel). Content's own arithmetic lives with the content, where
+   every layer may read it.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

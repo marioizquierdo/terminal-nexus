@@ -2,6 +2,8 @@
 // clock — the same separation `src/title-menu/list.ts` draws for the menu, so every claim about scrolling
 // and placement is checkable without a TTY.
 
+import type { Supply } from "../content/supply.ts"
+import { supplyOf } from "../content/supply.ts"
 import type { LogEntry } from "../log/logger.ts"
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
@@ -292,6 +294,10 @@ export type BuildState = Readonly<{
    */
   dialog: Readonly<{ line: number; cursor: Coord; camera: Camera }> | null
   planned: readonly PlannedPlacement[]
+  /** The player's buildings, by anchor (`x,y`), that hold their wave this round: a building's action, Hold
+   *  production (the owner, 2026-10-16: "Pause production, that stops producing units for the next round"). The
+   *  round's Battle Round opens them with every wave already sent; the next Build Phase starts with none held. */
+  held: readonly string[]
   /** The last command's answer, which the bottom line shows: what just happened, or why it did not.
    *  It lapses at the next command that says nothing (`lapseStatus`); a refused placement names its
    *  tile (`status.tile`). */
@@ -421,6 +427,7 @@ export function createBuildState(
     message: null,
     dialog: null,
     planned: [],
+    held: [],
     status: context.openingStatus ?? NO_STATUS,
     nextOrdinal: 1,
     nexusPick: null,
@@ -687,6 +694,55 @@ export function catalogItem(context: Pick<BuildContext, "catalog">, contentId: s
  *  the menu does not sell, its card's title ("Citizen Nexus"), or its short name when it has no card. */
 export function displayName(context: BuildContext, contentId: string): string {
   return catalogItem(context, contentId)?.label ?? CARD_TEXT[contentId]?.title ?? shortName(context, contentId)
+}
+
+/**
+ * **The tech tree's lock**: the structures a menu row still needs standing for the player before it can be built,
+ * none when it can. What stands is what stood as the Build Phase opened — a building planned this round unlocks
+ * what it leads to next round, once it stands — so a row is locked or open for the whole phase.
+ */
+export function missingFor(context: Pick<BuildContext, "standing">, item: ConstructItem): string[] {
+  const standing = new Set(context.standing.map((structure) => structure.contentId))
+  return (item.needs ?? []).filter((contentId) => !standing.has(contentId))
+}
+
+/** What a locked row needs, in words: "a Barracks standing", "a Barracks and a Hatchery standing". */
+export function needsText(context: BuildContext, missing: readonly string[]): string {
+  const names = missing.map((contentId) => `a ${displayName(context, contentId)}`)
+  const listed = names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`
+  return `${listed} standing`
+}
+
+/**
+ * **The army's supply** as the round will start (`src/content/supply.ts`): the places taken by the player's units that
+ * stand on the field and arrive as the round starts, and what the player's buildings give — standing and planned,
+ * since a planned Supply Depot stands when the Battle Round begins. `cap` is `null` when no building gives any.
+ */
+export function buildSupply(context: BuildContext, state: Pick<BuildState, "planned">): Supply {
+  const ours = [
+    ...(context.field ?? []).filter((entity) => entity.player === "A"),
+    ...(context.incoming ?? []).filter((entity) => entity.player === "A" && entity.tick === 0),
+    ...context.standing,
+    ...state.planned,
+  ]
+  return supplyOf(ours.map((entity) => context.registry.get(entity.contentId)))
+}
+
+/** A building's place, as the held list keys it: `x,y` of its anchor. */
+export const anchorKey = (anchor: Coord): string => `${anchor.x},${anchor.y}`
+
+/** One thing a building lets the player do, under its own key: what Explore Map's card lists for a building of
+ *  the player's (the owner, 2026-10-16: "When a building is selected ... it should show the available actions, with
+ *  hotkeys as usual"). Only Hold production is built; an upgrade, a defender inside and a worker slot are designed
+ *  as actions of the same kind. */
+export type BuildingAction = Readonly<{ action: "hold"; hotkey: string; label: string }>
+
+/** The actions a building of the player's offers now: Hold production for one that makes units, or Resume once
+ *  held. None for anything else. */
+export function buildingActions(context: BuildContext, state: Pick<BuildState, "held">, structure: Readonly<{ contentId: string; anchor: Coord }>): BuildingAction[] {
+  if (catalogItem(context, structure.contentId)?.spawns === undefined) return []
+  const held = state.held.includes(anchorKey(structure.anchor))
+  return [{ action: "hold", hotkey: "z", label: held ? "Resume production" : "Hold production" }]
 }
 
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
@@ -1061,6 +1117,16 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
   if (refused !== null) return refused
   const entry = entryOfConstruct(index)
   const left = remaining(context, state)
+  const missing = missingFor(context, item)
+  if (missing.length > 0) {
+    // Locked by the tech tree: refused the way an unaffordable row is, saying what it needs.
+    return {
+      ...state,
+      menuHighlight: entry,
+      ack: acknowledge(state, "refused", entry),
+      status: status(`${item.label} is locked: it needs ${needsText(context, missing)}.`, "warning"),
+    }
+  }
   if (item.cost > left) {
     // A disabled row: the key was understood, and nothing happens — the row flickers and the status
     // line says why, affordability first (docs/system-design/presentation.md).
@@ -1668,6 +1734,24 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
         ...state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
         status: status(`${displayName(context, target.contentId)} removed, ${costOf(context, target.contentId)} refunded.`),
+      }
+    }
+
+    case "building-action": {
+      const lock = editLock(state)
+      if (lock !== null) return { ...state, status: lock }
+      const target = mapMode(state) === "explore" ? structureAtTile(context, state.planned, state.cursor) : null
+      const action = target === null ? undefined : buildingActions(context, state, target).find((each) => each.action === command.action)
+      if (target === null || action === undefined) {
+        return { ...state, status: status("Explore Map ([e]) onto a building of yours to use its actions.", "warning") }
+      }
+      const key = anchorKey(target.anchor)
+      const holding = state.held.includes(key)
+      const name = displayName(context, target.contentId)
+      return {
+        ...state,
+        held: holding ? state.held.filter((each) => each !== key) : [...state.held, key],
+        status: status(holding ? `${name} trains its wave this round again.` : `${name} holds its wave this round: it trains again the round after.`),
       }
     }
 

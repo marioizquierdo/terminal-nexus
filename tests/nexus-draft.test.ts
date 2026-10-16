@@ -256,11 +256,11 @@ test("Aid Station Permit puts the Aid Station on the menu at once, under the nex
   keys(permit, "n", "1")
   assert.deepEqual(
     permit.build.round.catalog.map((item) => `${item.hotkey} ${item.label} ${item.cost}`),
-    ["1 Barracks 40", "2 Hatchery 30", "3 Turret 15", "4 Aid Station 25"],
+    ["1 Barracks 40", "2 Hatchery 30", "3 Turret 15", "4 Supply Depot 30", "5 Aid Station 25"],
   )
-  assert.match(panelLines(permit, compose(permit)).join("\n"), /\[4\] Aid Station +25/)
-  keys(permit, "4")
-  assert.equal(permit.build.state.armed, 3, "the Aid Station cannot be placed in the round it is unlocked")
+  assert.match(panelLines(permit, compose(permit)).join("\n"), /\[5\] Aid Station +25/)
+  keys(permit, "5")
+  assert.equal(permit.build.state.armed, 4, "the Aid Station cannot be placed in the round it is unlocked")
   // The round after has it still, kept.
   const resolved = play.startPulse(permit.build.round, permit.build.state)
   assert.ok(resolved !== null)
@@ -273,7 +273,7 @@ test("Aid Station Permit puts the Aid Station on the menu at once, under the nex
 
 test("the Aid Station's card says what one heal mends and how far it reaches, and its hints fit the bottom line at 80 columns", () => {
   const permit = side(dealt("aid-station-permit"))
-  keys(permit, "n", "1", TAB, "4")
+  keys(permit, "n", "1", TAB, "5")
   assert.match(panelLines(permit, compose(permit)).join("\n"), /^HEAL +4\nRANGE +2$/m)
   // The longest building name yet: placing it, and exploring it once planned, each hint is one whole line.
   const fits = (): string => {

@@ -11,6 +11,7 @@ import assert from "node:assert/strict"
 import { defaultValue } from "../src/build/all-settings.ts"
 import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
+import { hasRoom, supplyCostOf, supplyOf } from "../src/content/supply.ts"
 import type { ProductionRecipe } from "../src/content/index.ts"
 import { footprintRing } from "../src/grid/coords.ts"
 import { openingState, recall, resolveMissionPulse, spawnRecipe, spawningRegistry } from "../src/match/index.ts"
@@ -221,9 +222,12 @@ test("PERIMETER's round 1: the Barracks on the map sends its four troopers toget
 })
 
 test("a building the player placed spawns too, its wave on the same tick as the map's; a Hatchery's brood the same way", () => {
+  // A Supply Depot beside them, so the army has room for both waves (the Grid Nexus alone gives twelve: the squads
+  // and the map's Barracks's wave fill ten of them).
   const placed = [
     { contentId: BARRACKS, anchor: { x: 17, y: 13 } },
     { contentId: HATCHERY, anchor: { x: 24, y: 13 } },
+    { contentId: "structure.citizen.depot", anchor: { x: 30, y: 16 } },
   ]
   const run = round(1, null, placed)
   const opening = run.states[0]?.entities ?? []
@@ -242,6 +246,36 @@ test("a building the player placed spawns too, its wave on the same tick as the 
   // Its brood is all it makes: no swarmer is bred any other way.
   const swarmers = run.events.filter((event) => event.kind === "entity.spawned" && event.contentId === SWARMER)
   assert.equal(swarmers.length, 3)
+})
+
+test("supply: an army fields no more than its buildings give, and a wave past it waits for a place, coming as one falls", () => {
+  // No Supply Depot: the Grid Nexus gives twelve. The squads take five and the map's Barracks's wave four; a planned
+  // Barracks's four and a Hatchery's three would take the army to sixteen.
+  const placed = [
+    { contentId: BARRACKS, anchor: { x: 17, y: 13 } },
+    { contentId: HATCHERY, anchor: { x: 24, y: 13 } },
+  ]
+  const run = round(1, null, placed)
+  const unitsAt = (state: MatchState): number =>
+    supplyOf(state.entities.filter((entity) => entity.player === "A").map((entity) => campaignRegistry.get(entity.contentId))).used
+  for (const state of run.states) assert.ok(unitsAt(state) <= 12, `the army took ${unitsAt(state)} places at tick ${state.tick}`)
+  const trained = trainedEvents(run.events).map((event) => event.tick)
+  // Seven fit as the first waves come; the rest come later, as places open.
+  assert.equal(trained.filter((tick) => tick === 60).length, 7)
+  assert.ok(trained.some((tick) => tick > 60), "no unit waiting for a place ever came")
+})
+
+test("supply's arithmetic: a unit takes 1 unless it says, a Commander none, a structure none; no building giving any is no cap", () => {
+  const trooper = campaignRegistry.get("unit.citizen.trooper")
+  const nexus = campaignRegistry.get("structure.citizen.nexus")
+  const vasse = campaignRegistry.get("unit.citizen.vasse")
+  const pikeman = campaignRegistry.get("unit.citizen.pikeman")
+  assert.deepEqual([supplyCostOf(trooper), supplyCostOf(vasse), supplyCostOf(pikeman), supplyCostOf(nexus)], [1, 0, 2, 0])
+  assert.deepEqual(supplyOf([nexus, trooper, pikeman, vasse]), { used: 3, cap: 12 })
+  assert.deepEqual(supplyOf([trooper, trooper]), { used: 2, cap: null })
+  assert.equal(hasRoom({ used: 11, cap: 12 }, trooper), true)
+  assert.equal(hasRoom({ used: 11, cap: 12 }, pikeman), false)
+  assert.equal(hasRoom({ used: 99, cap: null }, pikeman), true)
 })
 
 test("a wave's survivors come home to their building; Recall and the next opening start its counters afresh, on the recipe that round runs", () => {

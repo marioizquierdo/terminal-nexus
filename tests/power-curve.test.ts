@@ -131,3 +131,46 @@ test("every Commander names what her army leans on, one or two of five, and Vass
   assert.deepEqual(problemsOf(["units", "units"]), ['army "leans": the Commander "leaner" names a lean twice'])
   assert.deepEqual(problemsOf(["luck"]), ['army "leans": commanders[leaner].lean[0] should be one of "units", "nexus", "structures", "commander", "economy", not "luck"'])
 })
+
+test("the tech tree is checked by name: tiers in range, lower tiers required, the tier below named, and every level able to reach what it offers", () => {
+  const card = (id: string, extra: object = {}): object => ({ id, structure: "structure.bench.beamturret", cost: 10, ...extra })
+  const tree = {
+    id: "tree",
+    title: "Tree",
+    requires: ["vasse"],
+    buildings: [
+      card("high", { tier: 4, requires: ["barracks"] }),
+      card("selfish", { tier: 2, requires: ["selfish"] }),
+      card("lost", { tier: 2, requires: ["nowhere"] }),
+      card("level", { tier: 2, requires: ["garrison"] }),
+      card("floating", { tier: 2 }),
+      card("leap", { tier: 3, requires: ["barracks"] }),
+    ],
+    campaigns: [
+      {
+        id: "tree",
+        title: "Tree",
+        commander: "vasse",
+        levels: [{ id: "tree-1", map: "starter-open", credits: 10, unlocks: { buildings: ["garrison"] }, mission: PERIMETER_LEVEL.mission }],
+      },
+    ],
+  }
+  const problems = (() => {
+    try {
+      loadArmies([all, vasse, tree], { registry: FIXTURE_REGISTRY, maps: MAPS })
+      return []
+    } catch (error) {
+      assert.ok(error instanceof ArmyError, String(error))
+      return error.problems
+    }
+  })()
+  assert.deepEqual(problems, [
+    'army "tree": the building "high" is of tier 4: the tree has tiers 1 to 3',
+    'army "tree": the building "selfish" requires itself, so it is never unlocked',
+    'army "tree": the building "lost" requires the building "nowhere", which no army has',
+    'army "tree": the building "level" of tier 2 requires "garrison", of tier 2: a building requires only lower tiers',
+    'army "tree": the building "floating" of tier 2 requires nothing: name the building of tier 1 that unlocks it',
+    'army "tree": the building "leap" of tier 3 requires no building of tier 2',
+    'army "tree": level "tree-1" offers the building "garrison", which requires "barracks", which the level neither offers nor has standing',
+  ])
+})

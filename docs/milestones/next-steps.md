@@ -16,11 +16,12 @@ it is done.*
   move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
   become tuned values. The next navigation ideas, from [the roguelike survey](../history/reports/2026-10-09-roguelike-navigation.md),
   wait for his pick.
-- **Read the power curve and the anatomy of a Commander Army** (Commander Armies' first step): the numbers an army
-  is designed against — what each round's credits, a tier of the tree and each Nexus Pulse's pick are worth — what
-  each army leans its build on, and the guidelines for catch-up, in [`commander-armies.md`](../game-design/commander-armies.md).
-  Every number is a first guess, for the next step to put on the Grid and measure. Then the next step, when he says:
-  the curve on the Grid.
+- **Play the curve level** (Commander Armies' second step), from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-3'`:
+  six rounds on the starter map with only the Nexus standing. The credits line's left says the army's supply,
+  `units 5/12`; a Supply Depot (`4`) gives 8 more. The Garrison (`5`) is dimmed: it needs a Barracks standing. Build a
+  Barracks (`1`, Enter), start the round (`s`, `s`); round 2 opens with what you did not spend and 120 more, and the
+  Garrison can be built — four pikemen a wave, each about three troopers and two places. Explore Map (`e`) onto a
+  Barracks: its card lists `[z] Hold production`, which keeps its wave home this round.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When
   she falls, a small window opens beside her, her face falls and the window evaporates; her dim `@` waits beside the

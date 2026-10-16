@@ -233,6 +233,18 @@ function drawCardBody(
     row += 1
   }
 
+  // A building's actions, each under its own key, right after the description, so they are never the rows a short
+  // panel loses (the owner, 2026-10-16: "it should show the available actions, with hotkeys as usual").
+  const actions = card.actions ?? []
+  if (actions.length > 0 && description.length > 0 && row + actions.length + card.stats.length < floor) row += 1
+  for (const action of actions) {
+    if (row > floor) return
+    const key = `[${action.hotkey}]`
+    text(cells, band, column, row, key, "chrome.hotkey", { bold: true, limit })
+    text(cells, band, column + key.length + 1, row, look.typed(action.label), "chrome.value", { limit: limit - key.length - 1 })
+    row += 1
+  }
+
   // What follows the description: a Commander's skill, then the numbers, a row each. A blank line comes before
   // each while there is room for it and every line after it — the one before the skill first — so at 80 x 24 the
   // tallest card, Vasse's, closes them up rather than lose a number.
@@ -262,6 +274,28 @@ function drawCardBody(
     row += 1
   }
   fadeFrom(cells, numbers, look.hidden, look.colors)
+}
+
+/**
+ * The panel rows a card's actions are drawn on, in order — what a click on one of them lands on (`MouseUiState.actions`,
+ * the rule that a click activates what it lands on). Worked out as `drawCardBody` places them: under the icon or the
+ * subtitle, after the description, a blank row before them when the panel has room. Only a building's card has
+ * actions, and a building's icon is its own art.
+ */
+export function cardActionRows(input: Pick<BuildCompositionInput, "context" | "state" | "layout">, card: Card): number[] {
+  const actions = card.actions ?? []
+  if (actions.length === 0 || card.icon.kind !== "entity") return []
+  const { layout } = input
+  const definition = input.context.registry.get(card.icon.contentId)
+  const art = CONTENT_ART[card.icon.contentId] ?? [definition.short.charAt(0)]
+  const icon = { width: Math.max(...art.map((line) => line.length)), height: art.length }
+  const top = layout.panelRow + CARD_FIRST_ROW
+  const textLimit = layout.panelColumn + layout.panelLimit - (layout.panelColumn + icon.width + 2)
+  const subtitle = wrapWords(card.subtitle, textLimit)
+  const description = wrapWords(card.description, layout.panelLimit)
+  let row = top + Math.max(icon.height, 1 + subtitle.length) + (icon.height > 2 ? 0 : 1) + description.length
+  if (description.length > 0 && row + actions.length + card.stats.length < menuFloor(layout)) row += 1
+  return actions.map((_, index) => row + index).filter((each) => each <= menuFloor(layout))
 }
 
 /** What a card says of the skill its unit has on its own: the lines it is drawn in, and the name that opens the

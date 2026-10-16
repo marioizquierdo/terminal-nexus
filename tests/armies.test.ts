@@ -85,6 +85,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
     [
       [1, "vasse-test-1", "vasse", "starter", "Perimeter"],
       [2, "vasse-test-2", "vasse", "starter", "The Commander falls"],
+      [3, "vasse-test-3", "vasse", "starter-open", "The curve"],
     ],
   )
   assert.deepEqual(ARMIES.levels, campaign.levels)
@@ -94,6 +95,8 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
     "barracks structure.citizen.barracks 40",
     "hatchery structure.bench.hatchery 30",
     "turret structure.bench.beamturret 15",
+    "depot structure.citizen.depot 30",
+    "garrison structure.citizen.garrison 100",
   ])
   assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
     ["Reserve Callup", "Two troopers join at your Nexus.", "spawnUnits"],
@@ -125,7 +128,7 @@ test("a level offers what its campaign has unlocked by then: PERIMETER unlocks a
   const [perimeter, cadence] = ARMIES.levels
   assert.ok(perimeter !== undefined && cadence !== undefined)
   const everything = {
-    buildings: ["barracks 40", "hatchery 30", "turret 15"],
+    buildings: ["barracks 40", "hatchery 30", "turret 15", "depot 30"],
     powers: [
       "Reserve Callup spawnUnits",
       "Drill Schedule modifyContent",
@@ -191,7 +194,7 @@ test("a level's offer is what its Build Phase offers: the menu, the credits and 
 test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus Pulse are its first level's", () => {
   assert.deepEqual(
     STARTER_CATALOG.map((item) => `${item.hotkey} ${item.label} ${item.cost}`),
-    ["1 Barracks 40", "2 Hatchery 30", "3 Turret 15"],
+    ["1 Barracks 40", "2 Hatchery 30", "3 Turret 15", "4 Supply Depot 30"],
   )
   assert.deepEqual(
     STARTER_NEXUS_DRAFT.map((power) => `${power.hotkey} ${power.name} +${power.bonusAllotment}`),
@@ -357,6 +360,8 @@ test("what a building spawns is its own, on its card: the loader refuses by name
     barracks: { unit: "unit.citizen.trooper", perWave: 4, waves: 1, secondsBetween: 10 },
     hatchery: { unit: "unit.bench.spawnling", perWave: 3, waves: 1, secondsBetween: 10 },
     turret: undefined,
+    depot: undefined,
+    garrison: { unit: "unit.citizen.pikeman", perWave: 4, waves: 1, secondsBetween: 10 },
   })
   const spawns = (unit: string, extra: object = {}): object => ({ unit, perWave: 2, waves: 1, secondsBetween: 10, ...extra })
   const problems = problemsOf([
@@ -510,7 +515,7 @@ test("a level's mission is checked against its map, its content against what its
     'army "solo": the Nexus power "nest-drill" adds waves to the building "nest", which spawns nothing',
     'army "solo": the Nexus power "lost-permit" names the building "missing", which no army has',
     'army "solo": the Commander "trooper" is "unit.citizen.trooper", which "all" brings and "solo" does not require',
-    'army "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter")',
+    'army "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter", "starter-open")',
     'army "solo": level "solo-1" unlocks the building "nest" twice',
     'army "solo": level "solo-1" unlocks the building "war-chest", which no army has (it is a Nexus power)',
     'army "solo": level "solo-1", mission "mission.solo-1" uses "unit.citizen.vasse", which "vasse" brings and "solo" does not require',

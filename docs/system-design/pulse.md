@@ -402,6 +402,26 @@ actually renders, so it is worth reading before building one.
 population cap, not a second currency. Nexus energy is a state readout, not something a player
 spends.
 
+**Credits every round** (RULE — `src/cli/pulse-run.ts`, `src/armies/curve.ts`, `tests/mission-loop.test.ts`; the
+owner, 2026-10-15). What a Build Phase did not spend carries over, and each round after the first adds the power
+curve's credits for it — 120 in round 2, 140 in round 3, up to 430 from round 9 ([`commander-armies.md`](../game-design/commander-armies.md),
+the expected power curve); a level gives round 1's. The same in every mode: until workers gather, this is how a
+round's resources arrive, and the worker economy will earn on top of it or replace it.
+
+**Supply** (RULE — `src/content/supply.ts`, `src/pulse/production.ts`, `tests/production.test.ts`; the owner,
+2026-10-16: "go with your recommendation, supply cap", and "Supply should be controlled by another building"). An
+army fields so many units at once: what its standing buildings give (`supplyProvided`: the Grid Nexus 12, a Supply
+Depot 8 more). A unit takes its `supplyCost` places (1 when it says nothing; a pikeman 2; a Commander none). A
+building whose next unit would take its side past its supply keeps the unit owed and waits, so once an army is full
+a new unit comes only as an old one falls. Units a mission or a Nexus power sets down are never held back, and count
+once they stand. A side whose buildings give none has no cap, so every scenario from before supply resolves as it
+did. The Build Phase shows it on the credits line, `units 5/12`: the places the round starts with, of what the
+buildings give, a planned Supply Depot counted, since it stands when the Battle Round begins.
+
+**A building held this round sends no wave** (RULE — `src/match/opening.ts`, `tests/building-actions.test.ts`): a
+building's action, Hold production ([`ui-patterns.md`](ui-patterns.md), a building's actions). Its Pulse opens it with
+every wave already sent; the kernel is untouched, and the next round it trains again.
+
 `ResourceCost` stays a keyed record (see [`content.md`](content.md)) so a later microgame can earn a
 second resource without a schema change — but nothing before real rosters are authored may assume one
 exists.

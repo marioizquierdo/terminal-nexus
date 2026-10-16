@@ -26,6 +26,9 @@ export type ConstructItem = Readonly<{
    *  shows, and what the shell gives it to spawn when a battle starts (`src/cli/pulse-run.ts`). Absent: it
    *  spawns nothing. */
   spawns?: BuildingSpawns
+  /** The structures, by content id, that must stand for the player as the Build Phase opens before it can be built:
+   *  its place in the tech tree (`requires` on its card). Absent: none, open from the start. */
+  needs?: readonly string[]
   // What it is *for* is not here: a building's card words — title, subtitle, description — are written
   // with the content (`src/content/cards.ts`) and read through `cardText` (`card.ts`).
 }>
@@ -86,6 +89,8 @@ export type BuildCommand =
    *  menu, where the cursor is hidden, with the flicker of a key that had nothing to do there. */
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
+  /** A building's action, on the building Explore Map is on (`buildingActions`): Hold production, `z`. */
+  | Readonly<{ kind: "building-action"; action: "hold" }>
   /**
    * Esc, and a click on the top bar's `menu [esc]`: step back one level — close a popup (Settings
    * opened from the game menu goes back to it), stop placing or close Explore Map (to where it was

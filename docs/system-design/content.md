@@ -87,6 +87,10 @@ Beside it, `clearance`: the room a building that makes units keeps free round it
 Hatchery have one, of one tile); the kernel never reads it either, and while the "Spawn space" Experiment is
 felt its value stands in for each ([`pulse.md`](pulse.md), room round a building that makes units).
 
+Supply: `supplyProvided`, how many more units a structure lets its side field at once (the Grid Nexus 12, a Supply
+Depot 8), and `supplyCost`, the places a unit takes (1 when absent; a Commander's is 0). The kernel reads both, in
+production only ([`pulse.md`](pulse.md), supply).
+
 A building that heals is the kernel's healer on a structure: `behavior: "support"` with a heal `attack`, and
 `targetLayers` naming what it heals, which narrows a healer's wounded allies as it narrows an attacker's enemies.
 The Aid Station names the units' layers, so it never heals a building ([`pulse.md`](pulse.md), a healer).
@@ -112,7 +116,10 @@ whose levels each offer what it has unlocked by then.
 `armies/` holding an `army.json`: its id and title, the armies it `requires`, `notes`, and any of five sections —
 `content` (the content ids it brings to the Grid), `buildings` (a structure, its cost and, for one that makes
 units, what it spawns in each battle: `spawns`, the unit, how many a wave, how many waves a round and the seconds
-between waves, each a whole number above zero), `powers` (a Nexus power's name, its one line and its effect: one
+between waves, each a whole number above zero; and its place in the tech tree: `tier`, 1 to 3, and `requires`, the
+buildings that must stand for the player as a Build Phase opens before it can be built — each of a lower tier, one
+of them of the tier just below, and every one a level offers reachable from what it offers or has standing on its
+map), `powers` (a Nexus power's name, its one line and its effect: one
 key naming its kind — `spawnUnits` (a unit and how many), `modifyCommander` (how many times as far her aura
 reaches), `modifyContent` (a building card and how many waves it adds), `addBuilding` (a building card, which no
 level need unlock: a power adds, only the tech tree unlocks) — or `credits`, War Chest's; its `rarity` (`common`,

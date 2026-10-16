@@ -22,6 +22,7 @@ import { nexusTile, remaining, withoutScene } from "../build/state.ts"
 import type { CommanderAbsence, DialogFocus, DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
+import { MAX_ROUNDS, roundCredits } from "../armies/curve.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
@@ -144,6 +145,11 @@ function mapOf(registry: ContentRegistry, carried: MatchState): Readonly<{ stand
 
 /** What each building the level offers spawns in its battles, by its content id: its army's word for it,
  *  carried on its row of the build menu (`spawns`). A building the level does not offer spawns nothing. */
+/** The credits round `number` adds as it opens, from the power curve; past its last round, the last round's. */
+export function roundIncome(number: number): number {
+  return roundCredits(Math.min(Math.max(1, number), MAX_ROUNDS))
+}
+
 function spawnsOf(context: Pick<BuildContext, "catalog">): Readonly<Record<string, BuildingSpawns>> {
   const spawns: Record<string, BuildingSpawns> = {}
   for (const item of context.catalog) if (item.spawns !== undefined) spawns[item.contentId] ??= item.spawns
@@ -334,7 +340,7 @@ export function keepPower(context: BuildContext, card: PowerCard): BuildContext 
   if ("addBuilding" in effect) {
     const card = building(effect.addBuilding.building)
     if (card === undefined || context.catalog.some((item) => item.contentId === card.structure)) return kept
-    return { ...kept, catalog: [...context.catalog, constructItem(card, context.catalog.length)] }
+    return { ...kept, catalog: [...context.catalog, constructItem(card, context.catalog.length, context.buildingCards ?? [])] }
   }
   return kept
 }
@@ -360,7 +366,7 @@ function dealtDraft(mission: MissionDefinition, context: BuildContext, round: nu
 }
 
 export function missionPlay(mission: MissionDefinition): MissionPlay {
-  const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"]): MissionPulseInput => ({
+  const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"], state?: BuildState): MissionPulseInput => ({
     mission,
     grid: context.grid,
     registry: context.registry,
@@ -368,6 +374,11 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
     carried: context.carried ?? null,
     structures,
     callups: callupsOf(context),
+    // The buildings held this round (Hold production), by anchor.
+    held: (state?.held ?? []).map((key) => {
+      const [x = 0, y = 0] = key.split(",").map(Number)
+      return { x, y }
+    }),
   })
 
   /** What the round's triggers bring, set down against the round's opening without a plan — a forecast:
@@ -398,7 +409,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The Pulse's own opening and content, so what is foreseen is what its first tick will do — and, after
       // the raid's groups, where the player's troops head.
       const registry = pulseRegistry(context, state)
-      const round = foreseeRound({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state)), registry })
+      const round = foreseeRound({ ...inputFor(context, context.round?.number ?? 1, newStructures(context, state), state), registry })
       return [...raidOf(round.groups), ...troopsGroupOf(round.troops)]
     },
 
@@ -425,7 +436,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The Pulse runs on the content with the level's buildings spawning their waves; the Build Phase's own
       // registry never carries a recipe, so nothing it draws or refuses depends on one.
       const registry = pulseRegistry(context, state)
-      const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state)), registry })
+      const run = resolveMissionPulse({ ...inputFor(context, pulse, newStructures(context, state), state), registry })
       const timeline = timelineOf({ id: mission.id, name: mission.name }, run.states, run.events, mission.pulseTicks, mission.seed, registry)
       // A Commander who fell is out for the rest of this Pulse, and for the rounds after it her definition says.
       const fell = fallen(run.events, registry, pulse)
@@ -452,6 +463,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       const back = restoreCommanders(resolved.recall.state, absent, number, commanderRegistry(context.registry, setting(state, "commanderHealth")))
       const carried = back.state
       const { standing, field } = mapOf(context.registry, carried)
+      const income = roundIncome(number)
       const last = `Round ${number - 1}: ${resultOf(outcomeOf(resolved.timeline)).headline.toLowerCase()}.`
       const news = commanderNews(back.restored, back.absent, number, mission.pulses)
       const opened: BuildContext = {
@@ -462,8 +474,9 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         absent: back.absent,
         restored: back.restored.map((restoration) => ({ player: restoration.player, contentId: restoration.contentId })),
         round: round(number),
-        // Credits carry over: what the last Build Phase did not spend, the Nexus power it picked included.
-        allotment: remaining(context, state),
+        // Credits carry over — what the last Build Phase did not spend, the Nexus power it picked included — and the
+        // round adds its own from the power curve (`src/armies/curve.ts`), the same in every mode.
+        allotment: remaining(context, state) + income,
         // What was kept stays kept (it is in this context already); what was called up has arrived.
         callups: [],
       }

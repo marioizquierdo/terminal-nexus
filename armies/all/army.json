@@ -6,11 +6,14 @@
   "content": [
     "structure.citizen.nexus",
     "structure.citizen.barracks",
+    "structure.citizen.garrison",
+    "structure.citizen.depot",
     "structure.bench.hatchery",
     "structure.bench.beamturret",
     "structure.ravel.den",
     "unit.citizen.trooper",
     "unit.citizen.marksman",
+    "unit.citizen.pikeman",
     "unit.bench.spawnling",
     "unit.ravel.runner",
     "unit.ravel.raider",
@@ -31,7 +34,22 @@
       "spawns": { "unit": "unit.bench.spawnling", "perWave": 3, "waves": 1, "secondsBetween": 10 },
       "notes": "Three swarmers in one wave a round: every building the player places that makes units spawns in waves, the same rule as the Barracks. Before, it bred one every few seconds, three alive at most (its own spawner, which a grid scenario's Hatchery still has)."
     },
-    { "id": "turret", "structure": "structure.bench.beamturret", "cost": 15 }
+    { "id": "turret", "structure": "structure.bench.beamturret", "cost": 15 },
+    {
+      "id": "depot",
+      "structure": "structure.citizen.depot",
+      "cost": 30,
+      "notes": "Supply as a building: eight more units the army may field at once, where the Grid Nexus alone gives twelve. A building whose next unit would go past the supply waits, so once the army is full a new unit comes only as an old one falls (the power curve: survivors are outgrown). First guesses, no balance claim."
+    },
+    {
+      "id": "garrison",
+      "structure": "structure.citizen.garrison",
+      "cost": 100,
+      "tier": 2,
+      "requires": ["barracks"],
+      "spawns": { "unit": "unit.citizen.pikeman", "perWave": 4, "waves": 1, "secondsBetween": 10 },
+      "notes": "The tech tree's first second tier: it can be built once a Barracks stands as the Build Phase opens, so a Barracks placed this round unlocks it next round. Four pikemen a wave, as a Barracks sends four troopers, each about three troopers in health times damage, for two and a half times a Barracks's cost: a fifth better per credit, the power curve's guidance for a higher tier (commander-armies.md). First guesses, no balance claim."
+    }
   ],
   "powers": [
     {

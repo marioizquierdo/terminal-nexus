@@ -512,7 +512,7 @@ test("no header or footer line is cut off at the 80-column floor", () => {
   // Against the divider, which here is the map's own west edge (the starter map's fence: a rail or a post).
   assert.match(explore, /\[e\] Explore Map {11}>[|+]/, "the Explore Map row, whole")
   const menu = screenAt(MINIMUM, (build) => build.dispatch({ kind: "focus", target: "menu" })).text
-  assert.match(menu, /\| {23}\* 100[|+]/, "the panel's credits line, whole")
+  assert.match(menu, /\| units 5\/12 {12}\* 100[|+]/, "the panel's credits line, whole, the army's supply on its left")
   assert.match(menu, /\[e\] Explore Map {12}[|+]/, "the first menu entry, whole")
 })
 

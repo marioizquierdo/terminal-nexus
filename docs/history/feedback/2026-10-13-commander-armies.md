@@ -197,3 +197,49 @@ portrait already wears it); RESTORATION keeps its round without her, the mission
 its own data (the question on what the mission plays is answered, and the campaign says so); and the first step of
 Commander Armies is written, in [`commander-armies.md`](../../game-design/commander-armies.md), with what the army
 loader can check of it.
+
+## The curve on the Grid (2026-10-15)
+
+After pull request 72 merged, with the plan for the next step in front of him (credits every round, carried over;
+locked buildings shown in the build menu with what they need).
+
+### F176 — A tech tree for every mode
+
+> ok thanks. Let's pick and plan the next milestone
+
+> go ahead, yes to both. Let's define a tech tree and keep working to simplify and streamline thinking this will
+> work for both the campaign, runs and pvp
+
+**Built** (see the step). Unspent credits carry over and each round adds the curve's; a building the tree has not
+reached yet shows in the build menu, dim, with what it needs. The tech tree is the army's, one rule in every mode:
+a mode decides only which cards are offered, never how they unlock.
+
+## Supply and building actions (2026-10-16)
+
+On pull request 73, the curve on the Grid, asked what keeps an early lead from compounding. Built on the same pull
+request.
+
+### F177 — A supply cap, given by a building
+
+> go with your recommendation, supply cap.
+
+> Supply should be controlled by another building
+
+**Built** (see the step): an army fields so many units at once; a building that would go past it keeps its wave owed
+and waits for room. The supply is what the side's buildings give: the Grid Nexus some, a Supply Depot more.
+
+### F178 — Actions on a building
+
+> Additionally, buildings should have actions on them. Maybe this is the time to implement that, because it affects
+> the power curve. When a building is selected during build-phase mal exploration, it should show the available
+> actions, with hotkeys as usual. One of those actions for the barraks is "Pause production", that stops producing
+> units for the next round. Another option would be to Upgrade to level 2, which produces stronger units. Another
+> option would be to enable turrets, where the next produced unit will stay inside the barraks to defend with a
+> turret. Another option would be to add a worker slot, that brings a nearby worker inside rhe barraks to boost
+> production. Etc. This creates Many gameplay possibilities. We don't have to imement them now, perhaps just the
+> stopping production option, but this will allow to unlock many upgrades that manifest through the same unified UI
+> of selecting a building and activating something.
+
+"mal exploration" is Explore Map. **Built**: Explore Map on a building of yours shows its actions, each under its own
+key, and a Barracks, Hatchery or Garrison can pause production for the next round. The others he named (upgrade to
+level 2, a defender inside, a worker slot) are designed as actions of the same kind, not built.

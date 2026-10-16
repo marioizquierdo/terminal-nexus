@@ -3,6 +3,7 @@
 // Vasse's PERIMETER, then the Commander's cadence, where her return can be played.
 
 import { test } from "node:test"
+import { roundCredits } from "../src/armies/curve.ts"
 import assert from "node:assert/strict"
 import { ARMIES, PERIMETER } from "../src/armies/index.ts"
 import { DEFAULT_LEVEL, LEVELS, levelById, openRound } from "../src/cli/levels.ts"
@@ -41,8 +42,10 @@ test("a later round is reached by playing the ones before it with nothing built,
     assert.deepEqual(first.field, again.field)
     assert.equal(first.allotment, again.allotment)
     // The walk builds nothing and keeps no power (the pick is optional), so its battles are the mission's own and
-    // the credits it did not spend carry over untouched.
-    assert.equal(first.allotment, level.firstRound().allotment)
+    // the credits it did not spend carry over untouched, each round adding its own from the power curve.
+    let income = 0
+    for (let opened = 2; opened <= round; opened += 1) income += roundCredits(opened)
+    assert.equal(first.allotment, level.firstRound().allotment + income)
     assert.deepEqual(first.kept, [])
   }
 })
@@ -51,12 +54,13 @@ test("a round the level does not have is refused by name", () => {
   for (const round of [0, 4, 1.5]) assert.throws(() => openRound(DEFAULT_LEVEL, round), /has rounds 1 to 3/)
 })
 
-test("the levels are her campaign's, in its order: PERIMETER, then the Commander's cadence", () => {
+test("the levels are her campaign's, in its order: PERIMETER, the Commander's cadence, then the curve", () => {
   assert.deepEqual(
     LEVELS.map((level) => [level.id, level.campaign, level.title, level.rounds]),
     [
       ["vasse-test-1", "vasse", "Perimeter", 3],
       ["vasse-test-2", "vasse", "The Commander falls", 3],
+      ["vasse-test-3", "vasse", "The curve", 6],
     ],
   )
   assert.deepEqual(

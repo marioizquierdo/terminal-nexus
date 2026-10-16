@@ -243,6 +243,9 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "q") return { kind: "open-game-menu" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
+  // `z`: the building Explore Map is on holds its wave this round, or trains it again (its action, listed on its
+  // card). Not `h`, which is an arrow (h j k l).
+  if (key === "z") return { kind: "building-action", action: "hold" }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
   // `g`: go to the player's Nexus, from either focus.

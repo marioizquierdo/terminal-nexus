@@ -18,19 +18,22 @@ export { STARTER_EDGE_STYLE, STARTER_GRID_SIZE, STARTER_STANDING, STARTER_START_
  * label is the building's card title, so a building says the same about itself wherever it is named
  * (`src/content/cards.ts`). A building that makes units carries what it spawns, as its army's card says.
  */
-export function constructMenu(offer: Pick<Offer, "buildings">): ConstructItem[] {
-  return offer.buildings.map((card, index) => constructItem(card, index))
+export function constructMenu(offer: Pick<Offer, "buildings" | "addable">): ConstructItem[] {
+  const cards = [...offer.buildings, ...offer.addable]
+  return offer.buildings.map((card, index) => constructItem(card, index, cards))
 }
 
 /** A building card as the build menu's row number `index` (from 0): its digit, its structure, its card
- *  title, its cost and what it spawns. */
-export function constructItem(card: BuildingCard, index: number): ConstructItem {
+ *  title, its cost, what it spawns, and the structures it needs standing (its `requires`, found among `cards`). */
+export function constructItem(card: BuildingCard, index: number, cards: readonly BuildingCard[] = []): ConstructItem {
+  const needs = (card.requires ?? []).flatMap((id) => cards.find((other) => other.id === id)?.structure ?? [])
   return {
     hotkey: String(index + 1),
     contentId: card.structure,
     label: CARD_TEXT[card.structure]?.title ?? card.structure,
     cost: card.cost,
     ...(card.spawns === undefined ? {} : { spawns: card.spawns }),
+    ...(needs.length === 0 ? {} : { needs }),
   }
 }
 

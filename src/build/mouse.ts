@@ -25,6 +25,9 @@ export type MouseUiState = Readonly<{
   pulse?: boolean
   /** The Pulse on screen has ended and its result stands: its "go on" row answers a click. */
   pulseOver?: boolean
+  /** The card's action rows, each the frame row it is drawn on and the command its key sends (a building's
+   *  actions, Explore Map's card): a click on one is that action. */
+  actions?: readonly Readonly<{ row: number; command: BuildCommand }>[]
 }>
 
 const SGR_MOUSE = /^\u001b\[<(\d+);(\d+);(\d+)([Mm])$/
@@ -98,6 +101,9 @@ export function buildMouseCommand(
     // header row, so the whole panel is one target: a click on the card's own row, its header. Sent as
     // the menu click it is, so a driver's `click-menu` while a card shows means exactly the same.
     if (ui.card !== undefined && ui.card !== null && inPanel(layout, event.column, event.row)) {
+      // A building's action on the card is a button: a click on its row is its key.
+      const action = ui.actions?.find((each) => each.row === event.row)
+      if (action !== undefined) return action.command
       return { kind: "click-menu", entry: ui.card }
     }
     // The Pulse's panel has no menu: a click there is not a menu row.
