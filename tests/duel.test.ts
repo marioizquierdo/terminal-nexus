@@ -23,6 +23,11 @@ test("a duel resolves the same every run: the same setup and plans give the same
   const twice = playDuel(setup(), players)
   assert.equal(hashOf(once), hashOf(twice))
   assert.ok(once.result !== null && once.history.length >= 1)
+  // A round can be watched, a state a tick from the opening on, and watching changes nothing.
+  const seen: number[] = []
+  const watched = playRound(newDuel(setup()), { A: hold, B: hold }, (battle) => seen.push(battle.tick))
+  assert.deepEqual([seen[0], seen.length], [0, watched.report.ticks + 1])
+  assert.equal(hashOf(watched.state), hashOf(playRound(newDuel(setup()), { A: hold, B: hold }).state))
   // Another seed deals other hands.
   assert.notDeepEqual(handOf(newDuel(setup({ seed: 4 })), "A").map((card) => card.id), handOf(newDuel(setup()), "A").map((card) => card.id), "two seeds dealt the same hand")
 })

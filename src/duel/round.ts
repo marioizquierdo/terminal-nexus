@@ -220,9 +220,15 @@ function tally(contentIds: readonly string[]): Record<string, number> {
  * **One round of the duel.** Each side keeps the card its plan names from its hand, builds what its plan asks for that
  * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; Recall
  * brings the survivors home; a Commander who fell is out by her own rule; credits carry over, the next round adds the
- * curve's and each side's battle earnings. Returns the duel after the round, and what happened in it.
+ * curve's and each side's battle earnings. Returns the duel after the round, and what happened in it. `watch`, when
+ * given, sees every state of the battle from its opening on, and each tick's events, with side A's content to draw it by: for a picture or a
+ * viewer, never read back.
  */
-export function playRound(state: DuelState, plans: Readonly<Record<Side, SidePlan>>): Readonly<{ state: DuelState; report: RoundReport }> {
+export function playRound(
+  state: DuelState,
+  plans: Readonly<Record<Side, SidePlan>>,
+  watch?: (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry) => void,
+): Readonly<{ state: DuelState; report: RoundReport }> {
   if (state.result !== null) throw new Error("the duel is over")
   const map = mapOf(state)
   const grid = duelGrid(map)
@@ -299,10 +305,12 @@ export function playRound(state: DuelState, plans: Readonly<Record<Side, SidePla
   const context = contextFor(start, sides.A, state.setup.pulseTicks, { sides })
   const events: DomainEvent[] = []
   let current = start
+  watch?.(current, [], sides.A)
   while (current.outcome === null && current.tick < state.setup.pulseTicks) {
     const step = stepTick(current, context)
     current = step.state
     events.push(...step.events)
+    watch?.(current, [], sides.A)
   }
 
   // After it: who fell, what each side earned, what the next round starts from.
