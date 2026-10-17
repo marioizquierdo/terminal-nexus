@@ -203,6 +203,11 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     behavior: "static",
     salvage: 120,
     detonation: { radius: 2, damage: 15 },
+    // A Ravel side builds as a Citizen one does (a duel's, `src/duel/`): a build range and a supply of its own, the
+    // Citizen Nexus's numbers. Only the Build Phase reads the range; the raid's own Nexus never produces, so the supply
+    // changes no battle it fights.
+    constructionRadius: 6,
+    supplyProvided: 12,
   },
   {
     // Scrap welded into a shape. Cheaper to kill than a barracks, and it takes the block with it.
@@ -216,5 +221,9 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     behavior: "static",
     salvage: 40,
     detonation: { radius: 1, damage: 12 },
+    // The Ravel side's Barracks when it is a player's (the Ravel faction's `den` card): a build range, and a tile of
+    // room round it for the runners it sends. Only the Build Phase reads either.
+    constructionRadius: 6,
+    clearance: 1,
   },
 ]

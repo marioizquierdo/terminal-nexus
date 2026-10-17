@@ -1,6 +1,7 @@
 // 8. Death resolution (phase order in pulse.md). Deaths, destruction, salvage — and detonations, which can
 // cause more of all three.
 
+import { afterDeaths, bodyOf } from "./abilities.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { actorsWithin, applyDamage } from "./shared.ts"
 import { spawnOnDeath } from "./spawn.ts"
@@ -21,6 +22,9 @@ export const DEATH_SETTLE_TICKS = 2
  * anything that reaches zero joins the queue. **The chain is bounded because an entity can only die
  * once**, so the queue drains after at most one round per entity, and the order is ordinal order
  * throughout — the same fight resolves the same way whichever entity happens to be checked first.
+ *
+ * After each wave of deaths, the abilities that answer a death have their say (`afterDeaths`, `abilities.ts`): a
+ * bounty notes what it earned; anything an ability's hit brings to zero joins the queue like a blast's victim.
  */
 export function resolution(context: TickContext): void {
   const settled = new Set<number>()
@@ -31,6 +35,10 @@ export function resolution(context: TickContext): void {
     if (dying.length === 0) break
     for (const actor of dying) settled.add(actor.ordinal)
     resolveDeaths(context, dying)
+    afterDeaths(
+      context,
+      dying.map((actor) => ({ body: bodyOf(actor), killer: context.actors.find((other) => other.id === actor.killer) ?? null })),
+    )
   }
   const dead = context.actors.filter((actor) => actor.pendingDead)
   if (dead.length > 0) {

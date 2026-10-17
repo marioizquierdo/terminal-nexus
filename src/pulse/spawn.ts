@@ -17,6 +17,7 @@
 import { footprintExtent, footprintRing } from "../grid/coords.ts"
 import { maskFrom } from "../grid/occupancy.ts"
 import { freshEntityFields } from "../content/index.ts"
+import { contentOf } from "./context.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
 /**
@@ -35,7 +36,8 @@ export function spawnOneNear(
   contentId: string,
   trainedBy?: string,
 ): Actor | null {
-  const registry = context.pulse.registry
+  // The child is its side's: a side whose content a Nexus power changed spawns the changed unit.
+  const registry = contentOf(context.pulse, origin.player)
   if (!registry.has(contentId)) return null
   const childDef = registry.get(contentId)
   const { width, height } = footprintExtent(origin.definition.footprint)

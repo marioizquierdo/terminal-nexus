@@ -146,19 +146,29 @@ to take. A renderer drawing a tracer holds the impact, the damage flash, and the
 until the end of that window, so what the player sees lands when the tracer does; a renderer that
 draws no tracer (reduced motion, monochrome) still presents damage at the impact beat.
 
-**An aura guards the units beside its bearer** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`, the
-`aura-by-the-book` scenario). A Commander's aura (content's `aura`: a radius and the share of a hit taken) is
-decided once a tick, as the attacks begin: every unit of the bearer's side within its radius, measured as range
-is, the bearer included. A covered unit takes the aura's share of every hit that tick, blasts included, rounded
-down and never below 1. Several auras never stack: the strongest applies. Buildings are not covered. A bearer who
-falls still covers that tick. The hit's `damage.applied` names the bearer (`guardedBy`); no rule reads it.
+**An ability is decided by the kernel, from a table** (RULE — `src/pulse/abilities.ts`, `src/abilities/`,
+`tests/abilities.test.ts`, `tests/aura.test.ts`, the `aura-by-the-book` and `dob-bounty` scenarios). What a unit does
+on its own is content's `abilities`, each one an entry of the abilities table (`PulseContext.abilities`, the shipped
+`ABILITIES` by default), and the kernel calls each kind at four fixed moments: as the attacks begin it asks every
+kind for the tick's damage modifiers, on a read-only view of the bodies; as each attack lands (heals and blasts
+excluded) it asks the attacker's kinds about the hit; after the attacks, each kind's tick; and as each unit falls,
+each kind's death. A kind changes the world only through what it is handed: a draw from the gameplay stream, a
+heal, a damage, a note that becomes an `ability.triggered` event. The table order and the reading order of the
+bodies decide ties, so a run hashes the same.
 
-**An aura that boosts makes its units hit harder** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`). Averno's
-Forward Order is an aura with the share of a hit dealt (`damageDealtPercent`, 125) in place of the share taken. It
-is decided with the guards, once a tick, over the same units. A covered unit's every hit that tick, blasts
-included, is that share of itself, rounded down and never less than the hit. The strongest boost applies. A hit is
-boosted by its source first, then guarded by its target's aura, so a unit may be guarded by one aura and boosted by
-another.
+- **An aura guards or boosts the units beside its bearer** (`src/abilities/aura.ts`). Its radius is measured as
+  range is; it covers every unit of the bearer's side within it, the bearer included, and a building with an aura
+  covers itself too. A guard (`damageTakenPercent`, Vasse's By the Book at 75) makes a covered unit take that share
+  of every hit that tick, blasts included, rounded down and never below 1; a boost (`damageDealtPercent`, Averno's
+  Forward Order at 125) makes its every hit that share of itself, rounded down and never less than the hit. Several
+  auras never stack: the strongest of each applies. A hit is boosted by its source first, then guarded by its
+  target's aura. A bearer who falls still covers that tick. The hit's `damage.applied` names the guard
+  (`guardedBy`); no rule reads it.
+- **A bounty pays for enemies that fall near its bearer** (`src/abilities/bounty.ts`, Dob Hunter): credits a
+  fall within its radius, noted on `ability.triggered`; the rules between rounds add them to the side's credits
+  (`src/match/earnings.ts`). Nothing in a Pulse reads them.
+- **Loaded dice make a hit sometimes count several times over** (Dob's, one in four for triple) (`src/abilities/loaded-dice.ts`): a seeded draw on
+  each of the bearer's attacks.
 
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
 `src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
@@ -296,7 +306,7 @@ R + 1 + roundsOut opens. Vasse sits none out, so the Nexus restores her as the r
 a Commander may be given, proven on a test-only Commander who sits one round out, and one who sits two. **Commander death is not the victory condition** (RULE —
 `src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
 
-What is built is that cadence, for one Commander, Vasse (`src/content/commanders.ts`). A unit is a
+What is built is that cadence, for the Commanders in `armies/` (Vasse, Averno and Dob Hunter, each in her own army). A unit is a
 Commander by a flag on its content (`commander`), which only the rules between rounds read: the kernel
 sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her
 back. When she falls, the round loop carries an absence beside the state — whose, which, the round she fell
@@ -307,9 +317,8 @@ third mission reads it ("the next restores her"); a side with no Grid Nexus stan
 restore her to, so her absence goes on until it has one. At a Pulse's end Recall sends her home to the
 Grid Nexus, since no building makes her. A mission brings its Commander once (`src/mission/validate.ts`
 refuses a second arrival, or two of her), and the Commander it brings for the player is its campaign's
-(`src/armies/load.ts` refuses another). How much she can take is an Experiment while it is tuned
-(**Vasse's health**). Her skill, By the Book, is an aura the kernel keeps (the attacks step, above); its
-strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names
+(`src/armies/load.ts` refuses another). How much she can take is her army's data, settled at 80 for Vasse. Her skill, By the Book, is an ability the kernel
+keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names
 a target for the player's troops she heads there with them, fights what comes within reach and stands with them
 (a side's target, above). Holding a post waits (posts, in the backlog).
 
@@ -397,7 +406,7 @@ few rounds and what a Commander may bend are designed there and not built.
 
 What a power may *do*: to a player, a power is a name and a plain description of what it does — no
 classification to learn — and in code the effect is one of a small bounded union: `addBuilding`,
-`spawnUnits`, `modifyContent`, `modifyRule`, `modifyCommander`, `reveal` (see
+`spawnUnits`, `addWaves`, `setDetonation`, `modifyAbility`, and, designed, `modifyRule` and `reveal` (see
 [`commander-armies.md`](../game-design/commander-armies.md)). That union is what a Build Phase panel
 actually renders, so it is worth reading before building one.
 

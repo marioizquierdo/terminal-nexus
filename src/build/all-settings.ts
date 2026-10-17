@@ -360,15 +360,6 @@ export const ALL_SETTINGS = {
    *  round, where she falls; with something built she lives through it in four plans of five from 60 up, and in
    *  two of five at 20 and 40. Before the waves she fell in the last round of every plan, and a plan that built
    *  nothing lost it (docs/history/reports/2026-10-01-commander-vasse.md has those outcomes). */
-  commanderHealth: {
-    tier: "experiment",
-    section: "mission",
-    label: "Vasse's health",
-    question: "How much Vasse can take: enough to come through most rounds, or little enough that keeping her alive shapes the plan.",
-    values: [20, 40, 60, 80, 100, 150],
-    unit: "count",
-    default: 80,
-  },
 
   // --- Construction territory -----------------------------------------------------------------------
   // The owner: buildings "can only be built within the build-range of the other buildings" (round 4). How far
@@ -392,26 +383,6 @@ export const ALL_SETTINGS = {
     values: [4, 6, 8],
     unit: "tiles",
     default: 6,
-  },
-
-  // --- Vasse's aura, By the Book (the Commander round 4) ---------------------------------------------
-  // The owner: Commanders "should be like heroes on warcraft3 ... Vasse should provide boost to nearby units".
-  // It asks the open question on a Commander's passive skill: how strong should it be, strong enough to feel
-  // that she is there and never so strong that standing beside her is the whole plan?
-
-  /** How much less damage By the Book, Vasse's aura, lets the units of her side within its reach take, herself
-   *  included, as a share of every hit; off takes the aura away (`auraRegistry`, `src/match/commander.ts`).
-   *  PERIMETER was measured at every value (the pull request has the table). First guess: a quarter less,
-   *  the content's own value. */
-  commanderAura: {
-    tier: "experiment",
-    section: "mission",
-    label: "By the Book",
-    question: "Vasse's aura: how much less damage your units near her take, and she does, from every hit. Off: none.",
-    values: [0, 10, 25, 40],
-    unit: "percent",
-    names: { "0": "off", "10": "10% less", "25": "25% less", "40": "40% less" },
-    default: 25,
   },
 
   // --- A building's waves (the Commander round 5) ----------------------------------------------------

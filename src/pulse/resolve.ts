@@ -9,7 +9,7 @@ import { hashEvents } from "../events/serialize.ts"
 import { hashOf } from "../state/canonical.ts"
 import { hashState } from "../state/serialize.ts"
 import type { MatchState } from "../state/types.ts"
-import type { PulseContext } from "./context.ts"
+import type { PulseContext, PulseOptions } from "./context.ts"
 import { createContext } from "./context.ts"
 import { stepTick } from "./tick.ts"
 
@@ -57,11 +57,12 @@ export type ResolveOptions = Readonly<{
   registry: ContentRegistry
   pulseTicks: number
   seed: number
-}>
+}> &
+  PulseOptions
 
 export function resolvePulse(options: ResolveOptions): PulseRun {
-  const { initialState, registry, pulseTicks, seed } = options
-  const context = createContext(initialState, registry, pulseTicks)
+  const { initialState, registry, pulseTicks, seed, sides, abilities } = options
+  const context = createContext(initialState, registry, pulseTicks, { ...(sides === undefined ? {} : { sides }), ...(abilities === undefined ? {} : { abilities }) })
   const events: DomainEvent[] = spawnEvents(initialState, registry)
 
   let state = initialState
@@ -100,8 +101,8 @@ export function resolvePulseAt(
   options: ResolveOptions,
   snapshotTick: number,
 ): PulseRun & { snapshot: MatchState | null } {
-  const { initialState, registry, pulseTicks, seed } = options
-  const context = createContext(initialState, registry, pulseTicks)
+  const { initialState, registry, pulseTicks, seed, sides, abilities } = options
+  const context = createContext(initialState, registry, pulseTicks, { ...(sides === undefined ? {} : { sides }), ...(abilities === undefined ? {} : { abilities }) })
   const events: DomainEvent[] = spawnEvents(initialState, registry)
 
   let state = initialState
@@ -134,8 +135,9 @@ export function contextFor(
   initialState: MatchState,
   registry: ContentRegistry,
   pulseTicks: number,
+  options: PulseOptions = {},
 ): PulseContext {
-  return createContext(initialState, registry, pulseTicks)
+  return createContext(initialState, registry, pulseTicks, options)
 }
 
 export { spawnEvents }

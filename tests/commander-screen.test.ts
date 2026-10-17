@@ -6,6 +6,7 @@
 // she is back.
 
 import { test } from "node:test"
+import { auraOf } from "../src/abilities/index.ts"
 import assert from "node:assert/strict"
 import {
   STARTER_ALLOTMENT,
@@ -109,34 +110,22 @@ test("PERIMETER's first round: Vasse is an @ among the squads, and her card name
   assert.match(card, /Vasse/)
   assert.match(card, /Commander Edda Vasse leads/)
   assert.match(card, /HEALTH +80/)
-
-  // The Experiment is what the Pulse will run on, so it is what the card says.
-  for (let step = 0; step < 3; step += 1) side.build.dispatch({ kind: "experiment-adjust", field: "commanderHealth", step: -1 })
-  assert.equal(side.build.state.experiments.commanderHealth, 20)
-  assert.match(panelText(side), /HEALTH +20/)
 })
 
-test("her card says what By the Book does in one plain sentence with its range, at the strength the battle will run on, and nothing while it is off", () => {
+test("her card says what By the Book does in one plain sentence with its range, at the strength the battle will run on", () => {
   const side = perimeter()
   const vasse = (side.build.round.incoming ?? []).find((entity) => entity.contentId === VASSE)
   assert.ok(vasse !== undefined, "she is not with the squads")
   side.build.dispatch({ kind: "look-at", x: vasse.anchor.x, y: vasse.anchor.y })
   side.build.dispatch({ kind: "explore" })
-  const { aura, attack } = side.build.round.registry.get(VASSE)
-  assert.ok(aura !== undefined && attack !== undefined)
+  const definition = side.build.round.registry.get(VASSE)
+  const aura = auraOf(definition)
+  const { attack } = definition
+  assert.ok(aura !== null && attack !== undefined)
   // Its name opening one sentence, under the description, saying how far it reaches as every range is said, one
   // number; and at 80 x 24 every number still shows beneath it, down to her own range under her attack.
   assert.match(panelText(side), new RegExp(`Nexus restores her as the next round opens\\. By the Book: she and her units within range ${aura.radius} take 25% less damage\\.`))
   assert.match(panelText(side), new RegExp(`HEALTH +80 ATTACK +5 RANGE +${attack.range} `))
-  // The Experiment is what the battle will run on, so it is what the card says.
-  side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: 1 })
-  assert.equal(side.build.state.experiments.commanderAura, 40)
-  assert.match(panelText(side), /within range \d+ take 40% less damage/)
-  for (let step = 0; step < 3; step += 1) side.build.dispatch({ kind: "experiment-adjust", field: "commanderAura", step: -1 })
-  assert.equal(side.build.state.experiments.commanderAura, 0)
-  // (The bottom line names the Experiment just changed; the card says nothing of the aura.)
-  assert.doesNotMatch(panelText(side), /By the Book: she|less damage/)
-  assert.match(panelText(side), /Nexus restores her as the next round opens\. ARRIVES as the round starts/)
 })
 
 test("she falls: the feed says so, the result says she is back next round, and round 2 opens with her beside the Nexus", () => {

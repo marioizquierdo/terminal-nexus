@@ -14,7 +14,6 @@ import type { ContentRegistry } from "../src/content/index.ts"
 import { artFor } from "../src/content/art.ts"
 import { footprintSteps } from "../src/grid/coords.ts"
 import {
-  commanderRegistry,
   fallen,
   openingState,
   recall,
@@ -78,9 +77,10 @@ test("Vasse is a Commander: a persistent @ on the units layer, and PERIMETER bri
   // The one glyph that is not a letter: the same for either side, so neither case can hide her.
   assert.equal(entityGlyph(VASSE, "A", { x: 0, y: 0 }), "@")
   assert.equal(entityGlyph(VASSE, "B", { x: 0, y: 0 }), "@")
-  // The Commanders are Vasse and Averno, each with a glyph that is not a letter: hers `@`, his `&`.
-  assert.deepEqual(registry.ids().filter((id) => registry.get(id).commander === true).sort(), ["unit.citizen.averno", VASSE])
+  // The Commanders are Vasse, Averno and Dob, each with a glyph that is not a letter: hers `@`, his `&`, Dob's `$`.
+  assert.deepEqual(registry.ids().filter((id) => registry.get(id).commander === true).sort(), ["unit.citizen.averno", VASSE, "unit.ravel.dob"])
   assert.deepEqual(artFor("unit.citizen.averno"), ["&"])
+  assert.deepEqual(artFor("unit.ravel.dob"), ["$"])
 
   const squads = PERIMETER.triggers.find((trigger) => trigger.id === "squads")
   const spawned = squads?.do.flatMap((action) => ("spawn" in action ? action.spawn.units : []))
@@ -271,13 +271,11 @@ test("a Commander due back with no Grid Nexus standing stays absent until there 
   assert.equal(later.state.nextOrdinal, withNexus.nextOrdinal + 1)
 })
 
-test("Vasse's health is the Experiment's while it is tuned, and a carried Commander never has more than it allows", () => {
-  const tuned = commanderRegistry(registry, 20)
-  assert.equal(tuned.get(VASSE).maxHp, 20)
-  for (const id of registry.ids().filter((candidate) => candidate !== VASSE)) assert.equal(tuned.get(id), registry.get(id))
-  assert.throws(() => commanderRegistry(registry, 0), /positive integer/)
-
-  // Turned down between rounds: a Vasse carried at 70 opens the next round at the new 20.
+test("Vasse's health is her own, settled at 80, and a carried Commander never has more than her content allows", () => {
+  // The Experiment "Vasse's health" was felt and settled at 80: her health is her army's data now.
+  assert.equal(registry.get(VASSE).maxHp, 80)
+  // A content whose most is lowered between rounds (a mod, a later power): a Vasse carried at 70 opens at the new 20.
+  const tuned = createRegistry(registry.ids().map((id) => (id === VASSE ? { ...registry.get(id), maxHp: 20 } : registry.get(id))))
   const opening = openingState({
     grid,
     registry,

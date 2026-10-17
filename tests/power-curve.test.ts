@@ -5,13 +5,12 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import all from "../armies/all/army.json" with { type: "json" }
-import vasse from "../armies/vasse/army.json" with { type: "json" }
 import { MAPS } from "../src/build/maps.ts"
 import type { PowerCard, Rarity, Role } from "../src/armies/index.ts"
 import {
   ACTS,
   ARMIES,
+  ARMY_FILES,
   ArmyError,
   DEFAULT_SCHEDULE,
   EARLIEST_ROUND,
@@ -113,11 +112,11 @@ test("every Commander names what her army leans on, one or two of five, and Vass
     id: "leans",
     title: "Leans",
     requires: ["vasse"],
-    commanders: [{ id: "leaner", name: "Leaner", unit: "unit.citizen.vasse", ...(lean === undefined ? {} : { lean }) }],
+    commander: { id: "leaner", name: "Leaner", unit: "unit.citizen.vasse", faction: "citizen", ...(lean === undefined ? {} : { lean }) },
   })
   const problemsOf = (lean: unknown): readonly string[] => {
     try {
-      loadArmies([all, vasse, commanders(lean)], { registry: FIXTURE_REGISTRY, maps: MAPS })
+      loadArmies({ armies: [...ARMY_FILES, commanders(lean)] }, { registry: FIXTURE_REGISTRY, maps: MAPS })
       return []
     } catch (error) {
       assert.ok(error instanceof ArmyError, String(error))
@@ -126,11 +125,11 @@ test("every Commander names what her army leans on, one or two of five, and Vass
   }
   assert.deepEqual(problemsOf(["units"]), [])
   assert.deepEqual(problemsOf(["nexus", "economy"]), [])
-  assert.deepEqual(problemsOf(undefined), ['army "leans": commanders[leaner] needs "lean"'])
+  assert.deepEqual(problemsOf(undefined), ['army "leans": commander needs "lean"'])
   assert.deepEqual(problemsOf([]), ['army "leans": the Commander "leaner" leans on nothing: name one or two of "units", "nexus", "structures", "commander", "economy"'])
   assert.deepEqual(problemsOf(["units", "nexus", "economy"]), ['army "leans": the Commander "leaner" leans on 3 things: 2 at most, or it leans on nothing'])
   assert.deepEqual(problemsOf(["units", "units"]), ['army "leans": the Commander "leaner" names a lean twice'])
-  assert.deepEqual(problemsOf(["luck"]), ['army "leans": commanders[leaner].lean[0] should be one of "units", "nexus", "structures", "commander", "economy", not "luck"'])
+  assert.deepEqual(problemsOf(["luck"]), ['army "leans": commander.lean[0] should be one of "units", "nexus", "structures", "commander", "economy", not "luck"'])
 })
 
 test("the tech tree is checked by name: tiers in range, lower tiers required, the tier below named, and every level able to reach what it offers", () => {
@@ -147,18 +146,17 @@ test("the tech tree is checked by name: tiers in range, lower tiers required, th
       card("floating", { tier: 2 }),
       card("leap", { tier: 3, requires: ["barracks"] }),
     ],
-    campaigns: [
-      {
-        id: "tree",
-        title: "Tree",
-        commander: "vasse",
-        levels: [{ id: "tree-1", map: "starter-open", credits: 10, unlocks: { buildings: ["garrison"] }, mission: PERIMETER_LEVEL.mission }],
-      },
-    ],
+  }
+  const treeCampaign = {
+    id: "tree",
+    title: "Tree",
+    commander: "vasse",
+    requires: ["vasse", "ravel"],
+    levels: [{ id: "tree-1", map: "starter-open", credits: 10, unlocks: { buildings: ["garrison"] }, mission: PERIMETER_LEVEL.mission }],
   }
   const problems = (() => {
     try {
-      loadArmies([all, vasse, tree], { registry: FIXTURE_REGISTRY, maps: MAPS })
+      loadArmies({ armies: [...ARMY_FILES, tree], campaigns: [treeCampaign] }, { registry: FIXTURE_REGISTRY, maps: MAPS })
       return []
     } catch (error) {
       assert.ok(error instanceof ArmyError, String(error))
@@ -172,6 +170,6 @@ test("the tech tree is checked by name: tiers in range, lower tiers required, th
     'army "tree": the building "level" of tier 2 requires "garrison", of tier 2: a building requires only lower tiers',
     'army "tree": the building "floating" of tier 2 requires nothing: name the building of tier 1 that unlocks it',
     'army "tree": the building "leap" of tier 3 requires no building of tier 2',
-    'army "tree": level "tree-1" offers the building "garrison", which requires "barracks", which the level neither offers nor has standing',
+    'campaign "tree": level "tree-1" offers the building "garrison", which requires "barracks", which the level neither offers nor has standing',
   ])
 })

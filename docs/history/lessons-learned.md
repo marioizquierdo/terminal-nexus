@@ -502,6 +502,20 @@ A second round on colour, the day the 16-colour depth went. What it taught:
    when he falls made that player lose his level a round early. Decide what the level asks of the player, then shape
    the level, rather than tuning the Commander until the walk survives.
 
+## The army structure and duels (2026-10-17)
+
+1. **A hook placed where it is convenient catches more than it should.** Loaded dice first sat on every damage a
+   unit caused and multiplied Dob's death burst too, 48 damage from a 12 blast. Put a hook at the one moment its
+   words name (here, an attack landing), and test the case it must leave alone.
+2. **Model players find what scripts do not.** The scripts only built what the brief listed; a model asked for a
+   Ravel building as Averno, and the brief had listed it: a Commander's arsenal had leaked his faction's neighbour.
+   Let a curious player at a new rule before trusting it, and make the rule the loader's, not the brief's.
+3. **A symmetric map is not a symmetric game.** Mirror duels went east about nine times in ten: facing and placement
+   ties were fixed, and what is left is the kernel reading the Grid west to east. Play both sides before reading a
+   number, and look for reading-order tie-breaks wherever two sides should be equal.
+4. **Small agents wander.** A few cheap-model players called a tool they were told not to (each refused or
+   harmless). Name the only commands an agent may run and tell it to call no other tool.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

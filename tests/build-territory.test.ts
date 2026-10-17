@@ -244,10 +244,12 @@ test("the room holds both ways, against every building on the map: the Nexus, a 
   assert.ok(legal(context, [], BARRACKS, { x: 21, y: 13 }).ok)
   // A Hatchery under the standing Barracks is in the Barracks's room.
   assert.deepEqual(legal(context, [], HATCHERY, { x: 25, y: 12 }), { ok: false, reason: "too close to the Barracks - its troops need room" })
-  // The raid's den, standing on the field: a Barracks may not stand beside it, a Turret may.
+  // The raid's den, standing on the field, keeps the room a Den keeps for the runners it sends (it is a Ravel
+  // side's Barracks): nothing stands beside it, a Turret a tile off may.
   const raided: BuildContext = { ...context, field: [{ contentId: DEN, anchor: { x: 13, y: 7 }, player: "B", hp: 90 }] }
-  assert.deepEqual(legal(raided, [], BARRACKS, { x: 17, y: 7 }), { ok: false, reason: "too close to the Den - troops need room" })
-  assert.ok(legal(raided, [], TURRET, { x: 16, y: 8 }).ok)
+  assert.deepEqual(legal(raided, [], BARRACKS, { x: 17, y: 7 }), { ok: false, reason: "too close to the Den - its troops need room" })
+  assert.deepEqual(legal(raided, [], TURRET, { x: 16, y: 8 }), { ok: false, reason: "too close to the Den - its troops need room" })
+  assert.ok(legal(raided, [], TURRET, { x: 17, y: 8 }).ok)
   // A unit is no building: Vasse, arriving in the middle of the squad's line, takes no room from a Barracks placed
   // right under her.
   assert.ok((context.incoming ?? []).some((unit) => unit.contentId === "unit.citizen.vasse" && unit.anchor.x === 22 && unit.anchor.y === 10))

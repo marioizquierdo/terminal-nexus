@@ -102,58 +102,36 @@ economy. No content definition carries a recipe; a battle opts a building in fro
 spawns (see "Automatic production" in [`pulse.md`](pulse.md)).
 
 Upgrades, Nexus powers, Commanders, and Commander Armies follow the same pattern and are described in
-[`commander-armies.md`](../game-design/commander-armies.md). A Commander today is a unit whose content says so
-(`commander: true`, Vasse in `src/content/commanders.ts`), and how many whole rounds it sits out after it falls (`roundsOut`, none when absent; checked by `createRegistry`), which only the rules between rounds read (see
-"Commander" in [`pulse.md`](pulse.md)). A **Commander Army** is the playable content boundary:
+[`commander-armies.md`](../game-design/commander-armies.md). A **Commander Army** is the playable content boundary:
 the complete set of choices legally available to one player in one match — a Nexus and faction, a
 Commander, starting units and structures, blueprints and a tech tree, upgrades, Nexus powers, and
 Specials, bounded against its faction's pools (same document). The match, the Pulse, and every
-renderer see an army; none of them ever sees a faction. What is built of one is smaller, and written as
-data in an army folder: the buildings and Nexus powers a player may be offered, a Commander, and a campaign
-whose levels each offer what it has unlocked by then.
+renderer see an army; none of them ever sees a faction.
 
-**An army is data, not code** (RULE — `armies/`, `src/armies/`, `tests/armies.test.ts`). An army is a folder under
-`armies/` holding an `army.json`: its id and title, the armies it `requires`, `notes`, and any of five sections —
-`content` (the content ids it brings to the Grid), `buildings` (a structure, its cost and, for one that makes
-units, what it spawns in each battle: `spawns`, the unit, how many a wave, how many waves a round and the seconds
-between waves, each a whole number above zero; and its place in the tech tree: `tier`, 1 to 3, and `requires`, the
-buildings that must stand for the player as a Build Phase opens before it can be built — each of a lower tier, one
-of them of the tier just below, and every one a level offers reachable from what it offers or has standing on its
-map), `powers` (a Nexus power's name, its one line and its effect: one
-key naming its kind — `spawnUnits` (a unit and how many), `modifyCommander` (how many times as far her aura
-reaches), `modifyContent` (a building card and how many waves it adds), `modifyUnit` (a unit and the `detonation` it
-gains for the rest of the mission: Averno's Unfiled Ordnance), `addBuilding` (a building card, which no
-level need unlock: a power adds, only the tech tree unlocks) — or `credits`, War Chest's; its `rarity` (`common`,
-`uncommon`, `rare` or `legendary`) and `role` (`troops`, `production`, `offense`, `defense`, `support`, `economy`,
-`commander`, `information` or `movement`), which every power has; `repeatable` when it may be kept again, `always`
-when it is offered beside every hand rather than dealt into one, `chance` for rounds it is more likely in (`from`,
-`to` and how many `times`, each a whole number), `requires` for what must hold before it is dealt (`powers` kept,
-`buildings` standing, a `round` reached), `upgrades` naming the power it upgrades, and `from` for a card another
-Nexus slips into the hand — `"ravel"`, Averno's leak — which is dealt only into a slot that asks for it), `commanders` (a name, her unit, her `lean` — one or two of `units`, `nexus`, `structures`, `commander` and `economy`, what her army's build leans on; her `portrait` and the `portraitFalls` frames shaped like it; and her `barks`: a few
-lines for each moment of a Battle Round she answers, refused by name for a moment no Commander speaks at, a moment
-with no lines, or a line that says nothing or does not fit the panel's feed or one row of the map at 80 × 24) and
-`campaigns` (a Commander and her levels in the order they are played, each with a map by name, its credits, what
-it unlocks, its mission, and — in place of the game's default — its own `schedule` for the Nexus Pulse: entries
-from round 1 on, each a `round` and the cards it `deal`s, every card a rarity, `{ "power": id }` for one the level
-makes sure of, or `{ "from": "ravel" }` for one from another Nexus, which the level must offer, and no rarity before its act on the power curve: a rare from round 4, a legendary from round 7, `src/armies/curve.ts`). **An army sees what it and the armies it requires bring, directly or through another,
-and nothing else**, so content forms a tree with a campaign at the top: its levels, then the cards and units they
-use, from its own army or one beneath it. `armies/all` holds the buildings and Nexus powers any Commander may use;
-`armies/vasse` requires it and holds her Commander, her own powers, the Aid Station her permit adds, and her
-campaign (the owner's names, 2026-10-04: "call the folder armies/vasse and armies/all"). The loader
-(`src/armies/load.ts`, pure: the content registry and the map table are its arguments) refuses a broken army with
-every problem at once, each naming where by ids (`campaigns[vasse].levels[vasse-test-2].mission.pulses`), and
-freezes what it hands the game. The kernel never reads an army; the Build Phase's assembly reads what a level
-offers.
+**An army is data, not code** (RULE — `armies/`, `campaigns/`, `src/armies/`, `tests/armies.test.ts`). How to write
+one, field by field, with its conventions and a checklist for a new Commander, is
+[`army-authoring.md`](army-authoring.md); what follows is the shape. Armies stack: `armies/all` holds what any
+Commander may use (the Hatchery, the Turret, War Chest); a faction army (`armies/citizen`, `armies/ravel`) requires
+it and holds that faction's Nexus, units, buildings and powers; a Commander army (`armies/vasse`, `armies/averno`,
+`armies/dob`) requires her faction and holds her unit, her `commanders` entry (her faction, lean, portrait, barks,
+starting package and Nexus Pulse schedule) and her own powers. Campaigns are their own folders under `campaigns/`,
+requiring the armies they play; a level may extend another and change its mission. **An army sees what it and the
+armies it requires bring, and nothing else.** A unit or a structure is written in an army's `content` as data —
+its stats, its footprint, its card text and its glyph — with the engine's defaults filled in
+(`src/content/army-content.ts`); a few long-standing ids are still defined in `src/content` and named by id.
 
-Still code, each named by id from an army: the content definitions themselves (stats and footprints, in
-`src/content`; moving them into the armies is the next step), what a Nexus power's effect kinds do, the
-maps (`src/build/maps.ts`: the starter map) and the mission vocabulary (`src/mission/`). The game reads only the
-armies `src/armies/index.ts` lists, imported with the code: there is no mod loader looking for folders on
-disk. **To add a Commander**: a folder requiring `all`, her unit's id in `content`, her `commanders` entry (with her lean, and her barks for her to speak in battle), a
-campaign whose levels unlock `all`'s cards or her own, and one line in that list.
+What a Nexus power does is one entry of a table (`EFFECTS`, `src/armies/effects.ts`), and what a unit does on its
+own — an aura, a bounty, loaded dice — one entry of another (`ABILITIES`, `src/abilities/`), each with its shape,
+its checks and its card line in one place. The loader (`src/armies/load.ts`, pure) refuses a broken army with
+every problem at once, each naming where by ids, and freezes what it hands the game. A Commander's arsenal is her
+own army and her faction chain: she deals and builds only from those, and a card another Nexus slips into her hand
+is marked `from` that faction. The kernel never reads an army; it reads content definitions, each side's own.
+The game reads only the armies and campaigns `src/shipped.ts` lists, imported with the code: there is no mod
+loader looking for folders on disk.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,
-radius, restoration, regroup anchor — over inheritance. Exceptional behaviour may register narrow
-hooks that receive read-only context and return intents for the kernel to validate. A hook API
-protects engine integrity; it is **not** a security sandbox, and installed TypeScript is arbitrary
-local code. No hook API is built (**IDEA**).
+radius, restoration, regroup anchor — over inheritance. **Exceptional behaviour is an ability kind** (RULE —
+`src/abilities/`, `src/pulse/abilities.ts`, `tests/abilities.test.ts`): a kind registers narrow hooks (damage
+modifiers decided on a read-only view, a hit dealt, a tick, a death), and each hook changes the world only
+through what it is handed (a seeded draw, a heal, a damage, a note), so the kernel stays pure and every run
+hashes the same. The table is a seam, not a security sandbox: installed TypeScript is arbitrary local code.

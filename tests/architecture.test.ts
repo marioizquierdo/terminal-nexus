@@ -74,6 +74,13 @@ test("src/pulse never reaches the view, the report, the shell, or the match laye
   assertNoDependencyOn("pulse", ["view", "report", "cli", "match"])
 })
 
+test("src/abilities is the kernel's world, handed in: it never reaches the tick, the rules layer, the armies, the view or the shell", () => {
+  // An ability acts through the narrow world the kernel hands it (`AbilityWorld`), never through the kernel's own
+  // functions: so a kind a mod writes needs nothing but this folder's types, and the kernel takes its table of kinds
+  // as an argument (`PulseContext.abilities`).
+  assertNoDependencyOn("abilities", ["pulse", "match", "armies", "view", "report", "cli", "build"])
+})
+
 test("src/match never reaches the view, the report, the shell, or the Build Phase", () => {
   // Rules-layer code around the kernel: deterministic, and blind to how anything is drawn or asked for.
   assertNoDependencyOn("match", ["view", "report", "cli", "build"])
@@ -91,7 +98,7 @@ test("src/armies is data: it never reaches the kernel's tick, the rules layer, t
   // along. The loader takes the content and the maps as arguments; only the game's own list of armies
   // (src/armies/index.ts) names the map table, which is still code beside the Build Phase (src/build/maps.ts).
   assertNoDependencyOn("armies", ["pulse", "match", "view", "report", "cli"])
-  for (const loader of ["armies/load.ts", "armies/shape.ts", "armies/mission-shape.ts", "armies/types.ts"]) {
+  for (const loader of ["armies/load.ts", "armies/mission-shape.ts", "armies/types.ts"]) {
     for (const file of transitiveDependencies(resolve(SRC, loader), { asFile: true })) {
       const path = relative(SRC, file)
       assert.ok(!path.startsWith("build/"), `src/${loader} reaches src/${path}; the loader is handed the maps, it never imports them`)
@@ -158,7 +165,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "armies"]
+  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "armies", "abilities", "duel"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,

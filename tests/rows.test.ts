@@ -7,6 +7,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { auraOf } from "../src/abilities/index.ts"
 import { ALL_SETTINGS } from "../src/build/all-settings.ts"
 import { FIXTURE_REGISTRY, createRegistry } from "../src/content/index.ts"
 import type { ContentDef, ContentRegistry } from "../src/content/index.ts"
@@ -658,7 +659,7 @@ test("every reach the content and the Experiments offer is a whole number of row
       "splash radius": definition.attack?.splash?.radius,
       "detonation radius": definition.detonation?.radius,
       "detonation trigger": definition.detonation?.triggerRange,
-      "aura radius": definition.aura?.radius,
+      "aura radius": auraOf(definition)?.radius,
       "construction radius": definition.constructionRadius,
       clearance: definition.clearance,
       // Worked out from those: the reach a unit heading for its side's target turns to fight within, and how near

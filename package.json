@@ -14,6 +14,7 @@
     "test": "./scripts/run-tests.sh node",
     "test:bun": "./scripts/run-tests.sh bun",
     "grid": "node bin/grid.ts",
+    "duel": "node bin/duel.ts",
     "terminal-nexus": "node bin/terminal-nexus.ts",
     "maps": "ls scenarios/*.map.json",
     "test:all": "npm run typecheck && npm test && npm run test:bun",

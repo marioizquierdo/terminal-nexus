@@ -1,18 +1,24 @@
-// Armies, as the game reads them once the loader has checked them (`load.ts`): the shapes an army's JSON
-// manifest holds, and what the loader resolves them into — each campaign's levels, with what each offers.
+// Armies and campaigns, as the game reads them once the loader has checked them (`load.ts`): the shapes their JSON
+// files hold, and what the loader resolves them into — each campaign's levels, with what each offers.
 //
 // The owner, 2026-10-04: organize content "as a tree where the campaign progression is at the top, depending on
 // levels, that depend on buildings and units (that may be on the same bundle or another dependent bundle like
-// the common)" — and, the round after, "call the folder armies/vasse and armies/all". So an army is a folder of
-// data (`armies/<id>/army.json`) that names the armies it builds on, and sees what they provide and nothing
-// else: `all` holds the buildings and Nexus powers any Commander may use; `vasse` requires it, and holds her
-// Commander and her campaign, its levels in order, what each unlocks and its mission. A level offers what its
-// campaign has unlocked by then.
+// the common)" — and, once a second Commander stood beside the first, to "solidify the commander army files" and keep
+// what a campaign plays apart from the armies (2026-10-17). So there are two kinds of file:
 //
-// The Campaign is one producer of these shapes; the run mode will be another, with its own progression over
-// the same cards and units, in its own section of an army. Nothing here knows which mode reads it, and the
-// kernel never reads an army.
+// - **an army** (`armies/<id>/army.json`): what a side can field. It names the armies it builds on (`requires`) and
+//   sees what they provide and nothing else. `all` holds what any army may use; a faction army (`citizen`, `ravel`)
+//   holds a Nexus's units, buildings and powers; a Commander army (`vasse`, `averno`) holds one Commander — her unit,
+//   her voice, her own cards — on top of a faction. An army may define units and structures as data (`content`).
+// - **a campaign** (`campaigns/<id>/campaign.json`): a Commander's levels in order, what each unlocks and its
+//   mission. It names the armies it plays with (`requires`: the Commander's, and the raid's), and a level may extend
+//   another level, its own campaign's or another's, so a second Commander replays a first one's rounds unchanged.
+//
+// The Campaign is one mode reading armies; the duel (`src/duel/`) is another, over the same cards and units. Nothing
+// here knows which mode reads it, and the kernel never reads an army. docs/system-design/army-authoring.md is the guide.
 
+import type { ContentEntry } from "../content/data.ts"
+import type { ContentRegistry } from "../content/index.ts"
 import type { GridTerrain } from "../grid/types.ts"
 import type { MissionDefinition } from "../mission/types.ts"
 import type { Barks } from "./barks.ts"
@@ -45,7 +51,7 @@ export type BuildingCard = Readonly<{
   /** The structure's content id: a building (`src/content`). */
   structure: string
   cost: number
-  /** What it spawns in each battle of a campaign that offers it. Absent: it spawns nothing. */
+  /** What it spawns in each battle, in any mode that offers it. Absent: it spawns nothing. */
   spawns?: BuildingSpawns
   /** Its tier in the army's tech tree, 1 to `MAX_TIER` (`curve.ts`). Absent: 1, open from the start. */
   tier?: number
@@ -57,29 +63,32 @@ export type BuildingCard = Readonly<{
 }>
 
 /**
- * What a Nexus power does once it is kept: one key, which names its kind — the effect kinds of
- * commander-armies.md ("what a Nexus power does"), named for the code and never shown to a player — and what it
- * does. Four of the six kinds are built, the four PERIMETER's powers need; `credits` is not one of them but War
- * Chest's, the owner's tool for testing placement, kept beside the real draft.
+ * What a Nexus power does once it is kept: one key, which names its kind — named for the code and never shown to a
+ * player (commander-armies.md, "what a Nexus power does") — and what it does. `credits` is War Chest's, the owner's
+ * tool for testing placement, kept beside the real draft.
  *
  * - `spawnUnits`: so many of a unit join the player's troops at the Grid Nexus as the round's Battle Round
  *   starts, and stay with the army after (Reserve Callup).
- * - `modifyCommander`: the Commander's aura reaches so many times as far, for the rest of the mission
- *   (Standing Order).
- * - `modifyContent`: a building that spawns sends so many more waves a round, for the rest of the mission
+ * - `addWaves`: a building that spawns sends so many more waves a round, for the rest of the mission
  *   (Drill Schedule). `building` is a building card's id.
  * - `addBuilding`: a building joins the build menu, for the rest of the mission (Aid Station Permit). A power
  *   adds; only the tech tree unlocks. `building` is a building card's id; no level unlocks it.
- * - `modifyUnit`: a kind of unit changes for the rest of the mission — so far, it bursts when it dies
- *   (`detonation`: Unfiled Ordnance, Averno's). `unit` is a unit's content id.
+ * - `setDetonation`: a kind of unit bursts when it dies, for the rest of the mission (Unfiled Ordnance, Averno's).
+ *   `unit` is a unit's content id.
+ * - `modifyAbility`: a unit's or a building's ability of a kind gains so much of its numbers, for the rest of the
+ *   mission (Standing Order: By the Book reaches 4 further; Lucky Scrap: Dob's Bounty pays more). `content` is its
+ *   content id; `add` a number to add to each named number.
  * - `credits`: so many credits to spend this Build Phase (War Chest).
+ *
+ * Each kind is one entry of `EFFECTS` (`effects.ts`), which says what it holds, what the loader refuses and what it
+ * changes: no reader branches on a kind.
  */
 export type PowerEffect =
   | Readonly<{ spawnUnits: Readonly<{ unit: string; count: number }> }>
-  | Readonly<{ modifyCommander: Readonly<{ auraReachTimes: number }> }>
-  | Readonly<{ modifyContent: Readonly<{ building: string; addWaves: number }> }>
+  | Readonly<{ addWaves: Readonly<{ building: string; waves: number }> }>
   | Readonly<{ addBuilding: Readonly<{ building: string }> }>
-  | Readonly<{ modifyUnit: Readonly<{ unit: string; detonation: Readonly<{ radius: number; damage: number }> }> }>
+  | Readonly<{ setDetonation: Readonly<{ unit: string; detonation: Readonly<{ radius: number; damage: number }> }> }>
+  | Readonly<{ modifyAbility: Readonly<{ content: string; kind: string; add: Readonly<Record<string, number>> }> }>
   | Readonly<{ credits: number }>
 
 /**
@@ -149,14 +158,27 @@ export type ScheduleEntry = Readonly<{ round: number; deal: readonly ScheduleSlo
  */
 export type Schedule = readonly ScheduleEntry[]
 
-/** A Commander: her name, and her unit — the persistent `@`, a content definition flagged `commander`. */
+/** A Commander army's Commander: her name, and her unit — a content definition flagged `commander`, usually defined
+ *  in the same file. How a card names her (she, he, they) is her unit's card's `pronouns`. */
 export type CommanderEntry = Readonly<{
+  /** What a campaign's `commander` and a duel's `--a` name her by. By convention her army's id too (`vasse` leads
+   *  `armies/vasse` and `campaigns/vasse`): a campaign's `requires` names armies, its `commander` names her. */
   id: string
   name: string
   unit: string
+  /** Her faction, by army id (`citizen`, `ravel`): the Nexus she builds from, and the army whose buildings and Nexus
+   *  powers are hers. Anything she sees from another faction (Averno's Ravel cards) is foreign: never built, and dealt
+   *  only by a schedule slot that asks for that Nexus (`{ "from": "ravel" }`). */
+  faction: string
   /** What her army's build leans on, one or two of `LEANS` (`curve.ts`): where it takes its power from on the
    *  expected power curve. Every army names one. */
   lean: readonly Lean[]
+  /** Her starting package: the units that walk out with her where a mode does not script its own (a duel's first
+   *  round). A campaign's level brings its own. Absent: she walks out alone. */
+  start?: readonly Readonly<{ unit: string; count: number }>[]
+  /** How her army bends the Nexus Pulse's schedule, in every mode: what each round's hand deals (Averno's: a card
+   *  from the Ravel Nexus some rounds). A level that gives its own schedule replaces it. Absent: the game's default. */
+  schedule?: Schedule
   /** What she says during a Battle Round, by moment (`barks.ts`). Absent: she says nothing. */
   barks?: Barks
   /** Her face on her card in Explore Map and in the vignette of her fall: three rows of the same width, at most
@@ -175,33 +197,58 @@ export const PORTRAIT_WIDTH = 5
 /** The cards a level adds to what its campaign offers, by id: from its own army or one it requires. */
 export type Unlocks = Readonly<{ buildings?: readonly string[]; powers?: readonly string[] }>
 
-/** A level of a campaign, as its army writes it. */
+/** The trigger a mission reads when its campaign's Commander walks onto the Grid: a spawn of `"@commander"` sets down
+ *  whichever Commander leads the campaign that plays the level, so a level is written once for every Commander. */
+export const COMMANDER_PLACEHOLDER = "@commander"
+
+/**
+ * What a level that extends another changes of its mission: any of its fields, whole; and its triggers, either as a
+ * whole new list or as a change to the extended one's — the triggers to drop by id, and the triggers to put in (in
+ * place of the one with the same id, or after the rest).
+ */
+export type MissionPatch = Readonly<
+  Partial<Omit<MissionDefinition, "triggers">> & {
+    triggers?: MissionDefinition["triggers"] | Readonly<{ remove?: readonly string[]; replace?: MissionDefinition["triggers"] }>
+  }
+>
+
+/** A level of a campaign, as its campaign file writes it. */
 export type LevelEntry = Readonly<{
-  /** What a route names (`campaign?level=vasse-test-1`): unique across every army. */
+  /** What a route names (`campaign?level=vasse-test-1`): unique across every campaign. */
   id: string
+  /** Another level, by id, this one is a copy of, with what it gives in place of that one's: its own campaign's or
+   *  another's. `unlocks` and `schedule` given here replace the extended level's; `mission` changes it (`MissionPatch`).
+   *  Absent: it says everything itself. */
+  extends?: string
   /** The map it is played on, by its name in the map table (`src/build/maps.ts`). */
-  map: string
+  map?: string
   /** The credits a Build Phase of it starts with. */
-  credits: number
+  credits?: number
   /** What it adds to what its campaign offers. Absent: nothing new. */
   unlocks?: Unlocks
-  /** What its Nexus Pulse deals, round by round, in place of the game's default. Absent: the default. */
+  /** What its Nexus Pulse deals, round by round, in place of its Commander's schedule and the game's default. Absent:
+   *  her schedule, or the default. */
   schedule?: Schedule
-  mission: MissionDefinition
+  /** Its mission; for a level that extends another, what it changes of that one's. */
+  mission?: MissionDefinition | MissionPatch
   notes?: string
 }>
 
-/** A campaign: its Commander, and its levels in the order they are played. */
-export type CampaignEntry = Readonly<{
+/** A campaign's file, `campaigns/<id>/campaign.json`: its Commander, the armies it plays with, and its levels in the
+ *  order they are played. */
+export type CampaignManifest = Readonly<{
   id: string
   title: string
-  /** Its Commander, by id: defined by its army or by one it requires. */
+  /** Its Commander, by id: the Commander of one of the armies it requires. */
   commander: string
+  /** The armies its levels use: the Commander's (which brings her faction's), and the raid's. It sees what they
+   *  provide, and what theirs provide; nothing else. */
+  requires: readonly string[]
   levels: readonly LevelEntry[]
   notes?: string
 }>
 
-/** An army's manifest, `armies/<id>/army.json`. Every section is optional. */
+/** An army's file, `armies/<id>/army.json`. Every section but its name and what it requires is optional. */
 export type ArmyManifest = Readonly<{
   id: string
   title: string
@@ -209,14 +256,15 @@ export type ArmyManifest = Readonly<{
   requires: readonly string[]
   notes?: string
   /**
-   * The content ids it brings to the game: the units and structures its cards, its levels and their maps put
-   * on the Grid. The definitions themselves (stats, footprints) are still TypeScript, in `src/content`.
+   * The units and structures it brings: each one either defined here, as data (`ContentEntry`, `src/content/data.ts`:
+   * its numbers, its card and its glyph), or named by id when the engine defines it in TypeScript (the bench rosters,
+   * `src/content`).
    */
-  content?: readonly string[]
+  content?: readonly (string | ContentEntry)[]
   buildings?: readonly BuildingCard[]
   powers?: readonly PowerCard[]
-  commanders?: readonly CommanderEntry[]
-  campaigns?: readonly CampaignEntry[]
+  /** Its Commander, when it is a Commander army: one a file. Absent: a faction or a shared army. */
+  commander?: CommanderEntry
 }>
 
 // --- What the loader needs besides the armies -----------------------------------------------------------
@@ -235,7 +283,11 @@ export type Commander = Readonly<{
   army: string
   name: string
   unit: string
+  faction: string
   lean: readonly Lean[]
+  start: readonly Readonly<{ unit: string; count: number }>[]
+  /** Her army's own schedule for the Nexus Pulse; absent, the game's default. */
+  schedule?: Schedule
   barks: Barks
   portrait: readonly string[]
   portraitFalls: readonly (readonly string[])[]
@@ -260,7 +312,7 @@ export type Level = Readonly<{
   id: string
   /** Its campaign's id. */
   campaign: string
-  /** The army that defines it. */
+  /** Its Commander's army. */
   army: string
   /** Its place in its campaign, counted from 1. */
   number: number
@@ -275,13 +327,19 @@ export type Level = Readonly<{
 /** A campaign, resolved: its Commander and its levels, in order. */
 export type Campaign = Readonly<{
   id: string
+  /** Its Commander's army. */
   army: string
   title: string
   commander: Commander
   levels: readonly Level[]
 }>
 
-/** Every army the loader was given, checked and resolved. */
+/** What an army can field: every building card, Nexus power and content id in its sight, in the order the armies list
+ *  them (the ones it requires first). A Commander army's is her faction's and her own: what she sees of another faction
+ *  is not among its buildings, and its powers are marked `from` that faction, dealt only by a slot that asks for it. */
+export type Arsenal = Readonly<{ buildings: readonly BuildingCard[]; powers: readonly PowerCard[]; content: readonly string[] }>
+
+/** Every army and campaign the loader was given, checked and resolved. */
 export type Armies = Readonly<{
   /** Each army after the armies it requires. */
   armies: readonly ArmyManifest[]
@@ -289,9 +347,14 @@ export type Armies = Readonly<{
   campaigns: readonly Campaign[]
   /** Every campaign's levels: campaign by campaign, each campaign's in order. */
   levels: readonly Level[]
+  /** What each army can field, by its id: every building card and Nexus power of the armies in its sight, its own
+   *  and what it requires — what a mode that is not a campaign offers a side (`src/duel/`). */
+  arsenals: Readonly<Record<string, Arsenal>>
+  /** The content the files were checked against, with everything the armies define as data. */
+  registry: ContentRegistry
 }>
 
-/** Armies that fail to load, with every problem found — not just the first. */
+/** Armies or campaigns that fail to load, with every problem found — not just the first. */
 export class ArmyError extends Error {
   readonly problems: readonly string[]
   constructor(problems: readonly string[]) {

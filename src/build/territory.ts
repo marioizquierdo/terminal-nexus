@@ -7,7 +7,7 @@
 //   nearest tile of its footprint, a row counting two columns, so a build range of 6 reaches 6 columns either side
 //   of the building and 3 rows above and below it — as far on screen either way. While the "Build range"
 //   Experiment is being felt, its value is every projecting structure's radius (it replaces the number on the
-//   content, as "Vasse's health" replaces hers).
+//   content).
 // - **The player's Grid Nexus roots a network.** Two of the player's structures are linked when their build
 //   ranges meet — share a tile, so their footprints are at most the two radii apart (`footprintDistance`): exactly
 //   so for build ranges of whole rows, an even number of columns, as every build range is — and the network is

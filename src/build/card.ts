@@ -9,7 +9,6 @@
 
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { AttackDef } from "../content/types.ts"
-import { HEALTH_TUNED_COMMANDER } from "../content/commanders.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"
@@ -88,12 +87,9 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
 const covers = (context: Pick<BuildContext, "registry">, entity: Readonly<{ contentId: string; anchor: Coord }>, tile: Coord): boolean =>
   tilesOf(entity.anchor, context.registry.get(entity.contentId).footprint).some((t) => t.x === tile.x && t.y === tile.y)
 
-/** How much a thing can take: its content's health, or — for Vasse, while the Experiment "Vasse's health" is
- *  tuned — the Experiment's, which is what the Pulse will run on (`commanderRegistry`: another Commander keeps his
- *  own). */
-function maxHpOf(context: Pick<BuildContext, "registry">, contentId: string, state?: SettingSource): number {
-  const definition = context.registry.get(contentId)
-  return contentId === HEALTH_TUNED_COMMANDER && state !== undefined ? setting(state, "commanderHealth") : definition.maxHp
+/** How much a thing can take: its content's health. */
+function maxHpOf(context: Pick<BuildContext, "registry">, contentId: string): number {
+  return context.registry.get(contentId).maxHp
 }
 
 /** How hard a thing hits, and how far: its damage, then its range — one number, or "melee" for one that fights
@@ -108,7 +104,7 @@ function attackStats(attack: AttackDef): CardStat[] {
 /** A thing's health and attack, the numbers a unit's card shows. */
 function fightStats(context: Pick<BuildContext, "registry">, contentId: string, hp?: number, state?: SettingSource): CardStat[] {
   const definition = context.registry.get(contentId)
-  const max = maxHpOf(context, contentId, state)
+  const max = maxHpOf(context, contentId)
   const stats: CardStat[] = [{ label: "HEALTH", value: hp === undefined ? String(max) : `${Math.min(hp, max)}/${max}` }]
   if (definition.attack !== undefined) stats.push(...attackStats(definition.attack))
   return stats
