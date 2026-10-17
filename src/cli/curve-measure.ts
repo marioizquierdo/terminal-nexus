@@ -23,8 +23,20 @@ import type { PlayableLevel } from "./levels.ts"
  *  menu's rows. */
 export type CurvePlan = Readonly<{ name: string; buys: readonly (readonly string[])[]; near: Coord }>
 
-/** The army one round fielded: each unit's strength by the round that bought it. */
-export type RoundArmy = Readonly<{ round: number; byRound: readonly number[]; total: number }>
+/** The army one round fielded: each unit's strength by the round that bought it — and how its fight went: the
+ *  damage the player's side dealt and took, the tick the last enemy fell (the round's last tick when one lived), the
+ *  units it lost, and whether its Commander fell. Two Commanders are told apart by these: on a raid both sides
+ *  destroy, the damage dealt is the raid's health either way, and how fast and how dearly is the difference. */
+export type RoundArmy = Readonly<{
+  round: number
+  byRound: readonly number[]
+  total: number
+  dealt: number
+  taken: number
+  clearedAt: number
+  lost: number
+  commanderFell: boolean
+}>
 
 export type CurveMeasure = Readonly<{
   plan: string
@@ -113,7 +125,24 @@ export function measureCurve(level: PlayableLevel, plan: CurvePlan): CurveMeasur
       const index = boughtIn(id) - 1
       byRound[index] = (byRound[index] ?? 0) + value
     }
-    armies.push({ round, byRound, total: byRound.reduce((sum, value) => sum + value, 0) })
+    let dealt = 0
+    let taken = 0
+    let clearedAt = 0
+    let lost = 0
+    let commanderFell = false
+    for (const event of resolved.timeline.events) {
+      if (event.kind === "damage.applied" && event.source.startsWith("A:") && !event.entity.startsWith("A:")) dealt += event.amount
+      if (event.kind === "damage.applied" && event.entity.startsWith("A:") && !event.source.startsWith("A:")) taken += event.amount
+      if (event.kind === "entity.died" && !event.entity.startsWith("A:")) clearedAt = Math.max(clearedAt, event.tick)
+      if (event.kind === "entity.died" && event.entity.startsWith("A:")) {
+        const definition = registry.has(event.contentId) ? registry.get(event.contentId) : null
+        if (definition?.commander === true) commanderFell = true
+        else if (definition !== null && definition.layer !== "obstacles") lost += 1
+      }
+    }
+    const enemyStands = (resolved.timeline.states.at(-1)?.entities ?? []).some((entity) => entity.player !== "A" && registry.get(entity.contentId).layer === "units")
+    if (enemyStands) clearedAt = resolved.timeline.states.length - 1
+    armies.push({ round, byRound, total: byRound.reduce((sum, value) => sum + value, 0), dealt, taken, clearedAt, lost, commanderFell })
     ended = { round, verdict: resolved.mission?.verdict.kind ?? "none" }
     const next = level.play.nextRound(context, planned.state, resolved)
     if (next === null) break

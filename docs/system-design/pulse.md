@@ -153,6 +153,13 @@ is, the bearer included. A covered unit takes the aura's share of every hit that
 down and never below 1. Several auras never stack: the strongest applies. Buildings are not covered. A bearer who
 falls still covers that tick. The hit's `damage.applied` names the bearer (`guardedBy`); no rule reads it.
 
+**An aura that boosts makes its units hit harder** (RULE — `src/pulse/aura.ts`, `tests/aura.test.ts`). Averno's
+Forward Order is an aura with the share of a hit dealt (`damageDealtPercent`, 125) in place of the share taken. It
+is decided with the guards, once a tick, over the same units. A covered unit's every hit that tick, blasts
+included, is that share of itself, rounded down and never less than the hit. The strongest boost applies. A hit is
+boosted by its source first, then guarded by its target's aura, so a unit may be guarded by one aura and boosted by
+another.
+
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
 `src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
 `behavior: "support"` with a heal `attack` — chooses the nearest wounded ally rather than the nearest enemy, ties
@@ -212,7 +219,7 @@ A side may have a **target**: a rectangle of the map, kept in the state as `targ
 trigger runner, never by the kernel (the owner, 2026-10-04: "The campaign levels should have a target well
 defined so it is predictable where your troops are moving"). Every unit of that side that moves and fights heads
 for it. On the way it turns on an enemy within its engage range (6, six columns across and three rows up and
-down, or its own attack's range when longer, rounded up to whole rows; measured as range is) and fights it as
+down — 12 for a Commander who charges, content's `engageRange`, Averno's — or its own attack's range when longer, rounded up to whole rows; measured as range is) and fights it as
 every unit does. When nothing is in range it walks on, and at the target
 it stands. Units fill the target first, each toward the nearest free tile of it; one that cannot get in stands
 beside one that did, or beside its own building in the target, and claims no tile. A side with no target engages

@@ -1,7 +1,9 @@
 // A Commander's aura in the damage step (pulse.md): a skill that works on its own, the owner's "heroes on
-// warcraft3 ... Vasse should provide boost to nearby units". Vasse's is By the Book (`ContentDef.aura`):
-// while she is on the Grid, the units of her side within its radius of her take a share of the damage a hit
-// would deal them.
+// warcraft3 ... Vasse should provide boost to nearby units". An aura is a guard or a boost (`ContentDef.aura`).
+// Vasse's By the Book guards: while she is on the Grid, the units of her side within its radius of her take a
+// share of the damage a hit would deal them. Averno's Forward Order boosts: the units of his side within its
+// radius deal more damage with every hit. Both are decided the same way, once a tick, below; a unit may be guarded
+// by one aura and boosted by another.
 //
 // - **Who is guarded is decided once a tick, as the attacks begin** (`guardsOf`), from where everyone stands
 //   once the tick's moves have settled: a mobile entity of the bearer's side whose footprint is within the
@@ -32,24 +34,56 @@ export type Guard = Readonly<{ bearer: Actor; damageTakenPercent: number }>
 export function guardsOf(context: TickContext): Map<number, Guard> {
   const guards = new Map<number, Guard>()
   // In ordinal order (`context.actors` is), so the first bearer keeps a tie.
-  const bearers = context.actors.filter((actor) => actor.definition.aura !== undefined && !actor.pendingDead)
+  const bearers = context.actors.filter((actor) => actor.definition.aura?.damageTakenPercent !== undefined && !actor.pendingDead)
   if (bearers.length === 0) return guards
   for (const unit of context.actors) {
     // A unit on the move or in the air is guarded; a structure is not.
     if (unit.pendingDead || unit.definition.layer === "obstacles") continue
     for (const bearer of bearers) {
       const aura = bearer.definition.aura
-      if (aura === undefined || bearer.player !== unit.player) continue
+      const taken = aura?.damageTakenPercent
+      if (aura === undefined || taken === undefined || bearer.player !== unit.player) continue
       // Measured as range is, to the nearest tile of each footprint (`within`, `shared.ts`, which this file cannot
       // import: `shared.ts` reads from here).
       if (!footprintWithin(bearer.anchor, bearer.definition.footprint, unit.anchor, unit.definition.footprint, aura.radius)) continue
       const best = guards.get(unit.ordinal)
-      if (best === undefined || aura.damageTakenPercent < best.damageTakenPercent) {
-        guards.set(unit.ordinal, { bearer, damageTakenPercent: aura.damageTakenPercent })
+      if (best === undefined || taken < best.damageTakenPercent) {
+        guards.set(unit.ordinal, { bearer, damageTakenPercent: taken })
       }
     }
   }
   return guards
+}
+
+/** What boosts a unit this tick: the bearer whose aura reaches it, and how much of its hit it deals. */
+export type Boost = Readonly<{ bearer: Actor; damageDealtPercent: number }>
+
+/** Every unit an aura boosts this tick, by ordinal: a mobile entity of a boosting bearer's side within its radius,
+ *  the bearer included, the strongest boost when several reach it (the first bearer in ordinal order on a tie).
+ *  Decided with the guards, once, as the attacks begin. Empty when nobody on the Grid boosts. */
+export function boostsOf(context: TickContext): Map<number, Boost> {
+  const boosts = new Map<number, Boost>()
+  const bearers = context.actors.filter((actor) => actor.definition.aura?.damageDealtPercent !== undefined && !actor.pendingDead)
+  if (bearers.length === 0) return boosts
+  for (const unit of context.actors) {
+    if (unit.pendingDead || unit.definition.layer === "obstacles") continue
+    for (const bearer of bearers) {
+      const aura = bearer.definition.aura
+      const dealt = aura?.damageDealtPercent
+      if (aura === undefined || dealt === undefined || bearer.player !== unit.player) continue
+      if (!footprintWithin(bearer.anchor, bearer.definition.footprint, unit.anchor, unit.definition.footprint, aura.radius)) continue
+      const best = boosts.get(unit.ordinal)
+      if (best === undefined || dealt > best.damageDealtPercent) boosts.set(unit.ordinal, { bearer, damageDealtPercent: dealt })
+    }
+  }
+  return boosts
+}
+
+/** What a hit of `amount` deals from a unit an aura boosts by `damageDealtPercent`: rounded down, never less than
+ *  the hit itself. */
+export function boostedAmount(amount: number, damageDealtPercent: number): number {
+  if (amount <= 0) return amount
+  return Math.max(amount, Math.floor((amount * damageDealtPercent) / 100))
 }
 
 /** What a hit of `amount` deals through an aura that lets `damageTakenPercent` of it through: rounded down,

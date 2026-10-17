@@ -498,7 +498,10 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
             highlighted: position === state.popupHighlight,
             description: option.description,
             // How rare each dealt power is, so the schedule's ramp shows; War Chest, beside every hand, says nothing.
-            ...(option.card.always === true ? {} : { tag: option.card.rarity }),
+            // A card from another Nexus says whose it is instead (Averno's leak: "Ravel").
+            ...(option.card.always === true
+              ? {}
+              : { tag: option.card.from === undefined ? option.card.rarity : `${option.card.from.charAt(0).toUpperCase()}${option.card.from.slice(1)}` }),
           })
         })
       } else {

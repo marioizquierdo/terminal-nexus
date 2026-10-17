@@ -490,6 +490,18 @@ A second round on colour, the day the 16-colour depth went. What it taught:
    could not import it (the reducer never reaches the kernel). Content's own arithmetic lives with the content, where
    every layer may read it.
 
+## Averno beside Vasse (2026-10-16)
+
+1. **Identical numbers for two different things are a finding, not a result.** The first comparison gave Averno's
+   and Vasse's sides the same damage, losses and timings to the tick. Neither Commander was fighting: the scripted
+   plan built right beside the muster and walled both in, and Averno, melee, stood behind his own line out of every
+   reach. When a measure cannot tell two things apart, trace one entity through a round before believing it.
+2. **A measure capped by its opponent says nothing.** Damage dealt was the raid's whole health on every winning
+   round, whoever led. Count what can differ: how soon the raid falls, what it costs, who falls.
+3. **A route walk is a player too.** The route test reaches a round by building nothing; a Commander who costs more
+   when he falls made that player lose his level a round early. Decide what the level asks of the player, then shape
+   the level, rather than tuning the Commander until the walk survives.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

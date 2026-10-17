@@ -575,6 +575,26 @@ PERIMETER deals four of these, the owner's choice when the Nexus Pulse was built
 - *Unfiled Ordnance* — "Your troopers explode when they die." (Nobody authorized this.)
 - *Countersigned Elsewhere* — "Each Build Phase, one offered card may come from the Ravel Nexus."
 
+**What is built of him** (first fixtures, no balance claim; `armies/averno`, `unit.citizen.averno`). The Ravel leak is his army's own schedule, not a card he picks: Countersigned Elsewhere is his quirk as data, and Unfiled Ordnance is the first of his few.
+
+- **On the Grid he is `&`, 70 health, melee 9 every 12 ticks**: lighter than Vasse, in the front rank where she fires from behind it.
+- **He charges** (RULE for him, GUIDANCE as a content field): he turns from his side's target to fight anything within 12 columns or 6 rows, twice the reach every other unit waits for. A Commander who holds the line with his troops is the one who never swings.
+- **Forward Order**, his aura: he and his units within a reach of 4 deal a quarter more with every hit, rounded down and never less than the hit. Her By the Book makes them last; his makes them hit. A unit may be guarded by one and boosted by the other.
+- **He is filed a round late.** He is out for the round after the one he falls in, and back for the one after that, where Vasse is back the next round.
+- **His powers act on the enemy or come from it.**
+  - *Forward Drill* (uncommon): Forward Order reaches twice as far.
+  - *Unfiled Ordnance* (uncommon): "Your troopers explode when they die", a burst of 8 within 2 for the rest of the mission.
+  - *Raider Contract* (uncommon) and *Runner Crew* (common): Ravel raiders and runners who fight for him. They are tagged **Ravel** on the Nexus Pulse, where every other card says how rare it is.
+- **The leak, built.** His level's schedule names a slot "from the Ravel Nexus" in rounds 2 and 4, filled only from the cards that say they come from it. A card from another Nexus is never dealt into an ordinary slot.
+
+**Beside Vasse, measured.** His test level is hers (the curve level), with him in her place: her map, raids, reinforcements and seed, her first five rounds. The same plan of Barracks and Supply Depots, built behind the Nexus, plays out like this:
+
+- **Round 1:** his side clears the raid at tick 138 against her 157, and loses no unit against her one.
+- **Round 2:** he falls; she does not.
+- **Round 3:** his side, without him, loses five to seven units where hers loses one to four.
+
+So they read apart within two rounds. With nothing built, he falls in round 4 and is out for round 5, the heaviest raid, so an empty base cannot hold to her round 6. That is why his level is her first five: the forward Commander's cost is paid by a build behind him.
+
 **Why a near-twin is worth a whole Commander.** It is the Warcraft II trade, and it is a good one: a player who finishes Vasse's campaign already knows how to play Averno, so his campaign spends its whole budget on **story and two or three new toys** rather than on re-teaching a game. It halves the content bill for the second opening, it gives a genuine reason to replay the same missions, and it gives the campaign somewhere to put its first real moral question — the same army, in hands that use it differently, taking help from something it should probably report.
 
 #### Dob Hunter — Ravel Nexus — Native — *the gambler*

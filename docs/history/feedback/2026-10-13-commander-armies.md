@@ -243,3 +243,20 @@ and waits for room. The supply is what the side's buildings give: the Grid Nexus
 "mal exploration" is Explore Map. **Built**: Explore Map on a building of yours shows its actions, each under its own
 key, and a Barracks, Hatchery or Garrison can pause production for the next round. The others he named (upgrade to
 level 2, a defender inside, a worker slot) are designed as actions of the same kind, not built.
+
+## Marshal Averno (2026-10-16)
+
+After pull request 73 merged, given the choice between a harder curve level and the second Commander.
+
+### F179 — Averno
+
+> go for Averno! :)
+
+**Built** (see the step): Marshal Averno, the second Commander, on Vasse's buildings, played on the curve level beside
+her. He is `&` on the Grid, lighter than her and hand to hand. He charges from twice the reach other units wait for,
+and his aura, Forward Order, makes his units near him hit a quarter harder. His powers act on the enemy or come from
+it: Unfiled Ordnance makes troopers burst when they die, and Ravel raiders and runners fight for him. In rounds 2 and
+4 one card of his hand comes from the Ravel Nexus, tagged `Ravel`. When he falls he is out for a round, a round
+later than Vasse. His level is her first five rounds with him in her place. With the same build, his side clears
+round 1 sooner and loses less, he falls in round 2 where she stands, and his side loses more while he is out: they
+read apart within two rounds.

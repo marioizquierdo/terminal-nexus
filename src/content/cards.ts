@@ -14,7 +14,13 @@
 // stands — never a mechanic the game does not have yet. Lore is a platform, not a plot; the Grid wins.
 
 /** A card's words: its name, one line on what it is for, and a few sentences more. */
-export type CardText = Readonly<{ title: string; subtitle: string; description: string }>
+export type CardText = Readonly<{
+  title: string
+  subtitle: string
+  description: string
+  /** How a card's sentences name a Commander: she and her when absent. */
+  pronouns?: Readonly<{ subject: string; possessive: string }>
+}>
 
 export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   // --- What the Build Phase can build (the catalog's rows; the title is the menu row's label) --------
@@ -66,6 +72,12 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     title: "Vasse",
     subtitle: "Your Commander",
     description: "Commander Edda Vasse leads from just behind the line. If she falls, the Nexus restores her as the next round opens.",
+  },
+  "unit.citizen.averno": {
+    title: "Averno",
+    subtitle: "Your Commander",
+    description: "Marshal Averno fights in the front rank and presses forward. If he falls, the Nexus restores him a round late.",
+    pronouns: { subject: "he", possessive: "his" },
   },
   "unit.citizen.marksman": {
     title: "Marksman",

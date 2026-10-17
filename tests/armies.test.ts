@@ -8,6 +8,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import all from "../armies/all/army.json" with { type: "json" }
 import vasse from "../armies/vasse/army.json" with { type: "json" }
+import averno from "../armies/averno/army.json" with { type: "json" }
 import { constructMenu, nexusDraftOf, STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT } from "../src/build/catalog.ts"
 import { MAPS } from "../src/build/maps.ts"
 import type { Armies, LoadWorld, Offer, PowerCard } from "../src/armies/index.ts"
@@ -45,7 +46,7 @@ const campaignBundle = (levels: readonly object[], extra: object = {}): object =
 })
 
 /** The game's armies and `more`, loaded. */
-const withGame = (...more: readonly object[]): Armies => loadArmies([all, vasse, ...more], WORLD)
+const withGame = (...more: readonly object[]): Armies => loadArmies([all, vasse, averno, ...more], WORLD)
 
 /** What a power does, in a word: its credits (War Chest's), or its effect's kind. */
 const effectOf = (card: PowerCard): string => ("credits" in card.effect ? `+${card.effect.credits}` : (Object.keys(card.effect)[0] ?? "?"))
@@ -62,21 +63,30 @@ const registryWith = (...more: readonly ContentDef[]) => createRegistry([...FIXT
 
 // --- What the game ships ---------------------------------------------------------------------------------
 
-test("the game ships two armies: all, and Vasse's on top of it, her campaign's levels in order", () => {
+test("the game ships three armies: all, and Vasse's and Averno's on top of it, her campaign's levels in order", () => {
   assert.deepEqual(
     ARMIES.armies.map((army) => [army.id, army.requires]),
     [
       ["all", []],
       ["vasse", ["all"]],
+      ["averno", ["all"]],
     ],
   )
   assert.deepEqual(
-    ARMIES.commanders.map(({ barks: _barks, ...commander }) => commander),
-    [{ id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", lean: ["structures", "commander"], portrait: [" _@_ ", "(-_-)", "/|@|\\"], portraitFalls: [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]] }],
+    ARMIES.commanders.map(({ barks: _barks, portraitFalls: _falls, ...commander }) => commander),
+    [
+      { id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", lean: ["structures", "commander"], portrait: [" _@_ ", "(-_-)", "/|@|\\"] },
+      { id: "averno", army: "averno", name: "Marshal Averno", unit: "unit.citizen.averno", lean: ["units", "nexus"], portrait: [" _&_ ", "(o_-)", "/[&]\\"] },
+    ],
   )
-  // Her lines in battle come with her (tests/voice.test.ts has what is said when).
-  assert.ok(Object.keys(ARMIES.commanders[0]?.barks ?? {}).length > 0, "Vasse has nothing to say")
-  assert.equal(ARMIES.campaigns.length, 1)
+  assert.deepEqual(ARMIES.commanders[0]?.portraitFalls, [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]])
+  // Their lines in battle come with them (tests/voice.test.ts has what is said when).
+  for (const commander of ARMIES.commanders) assert.ok(Object.keys(commander.barks).length > 0, `${commander.name} has nothing to say`)
+  assert.equal(ARMIES.campaigns.length, 2)
+  assert.deepEqual(
+    ARMIES.campaigns[1]?.levels.map((entry) => [entry.number, entry.id, entry.campaign, entry.map, entry.mission.name, entry.mission.pulses]),
+    [[1, "averno-test-1", "averno", "starter-open", "The curve, pressed", 5]],
+  )
   const [campaign] = ARMIES.campaigns
   assert.ok(campaign !== undefined)
   assert.deepEqual([campaign.id, campaign.army, campaign.commander.unit], ["vasse", "vasse", "unit.citizen.vasse"])
@@ -88,7 +98,7 @@ test("the game ships two armies: all, and Vasse's on top of it, her campaign's l
       [3, "vasse-test-3", "vasse", "starter-open", "The curve"],
     ],
   )
-  assert.deepEqual(ARMIES.levels, campaign.levels)
+  assert.deepEqual(ARMIES.levels, [...campaign.levels, ...(ARMIES.campaigns[1]?.levels ?? [])])
   // What the levels stand on is all's: the buildings and powers any Commander may use.
   const [shared, hers] = ARMIES.armies
   assert.deepEqual(shared?.buildings?.map((card) => `${card.id} ${card.structure} ${card.cost}`), [
@@ -684,6 +694,6 @@ test("a Nexus power's rarity and role, and each card of a schedule, are words fr
     `army "deck": powers[odd].rarity should be one of ${rarities}, not "epic"`,
     'army "deck": powers[odd].role should be one of "troops", "production", "offense", "defense", "support", "economy", "commander", "information", "movement", not "magic"',
     `army "deck": campaigns[deck].levels[deck-1].schedule[0].deal[0] should be one of ${rarities}, not "epic"`,
-    `army "deck": campaigns[deck].levels[deck-1].schedule[0].deal[1] should be a rarity (${rarities}) or { "power": its id }, not 3`,
+    `army "deck": campaigns[deck].levels[deck-1].schedule[0].deal[1] should be a rarity (${rarities}), { "power": its id } or { "from": a Nexus }, not 3`,
   ])
 })

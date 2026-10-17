@@ -132,20 +132,29 @@ export function dealHand(deal: Deal): PowerCard[] {
 
   // The powers a level makes sure of, first.
   slots.forEach((slot, place) => {
-    if (typeof slot === "string") return
+    if (typeof slot === "string" || !("power" in slot)) return
     const card = eligible.find((candidate) => candidate.id === slot.power && !taken.has(candidate.id))
     if (card !== undefined) take(place, card)
   })
 
-  // Then each other slot, in order, from its rarity: a role the hand does not hold yet while the rarity has one.
+  // A card from another Nexus (Averno's leak), for each slot that asks for one: any of that Nexus's cards the pool
+  // holds, as likely as their chance, of any rarity the round may deal. None left: the slot deals nothing.
   slots.forEach((slot, place) => {
-    if (hand[place] !== null) return
+    if (typeof slot === "string" || !("from" in slot)) return
+    const left = eligible.filter((card) => card.from === slot.from && !taken.has(card.id) && dealtBy(card.rarity, round))
+    if (left.length > 0) take(place, weighted(left, round, rng))
+  })
+
+  // Then each other slot, in order, from its rarity: a role the hand does not hold yet while the rarity has one. A
+  // card from another Nexus is never dealt by a rarity: only a slot that asks for its Nexus deals it.
+  slots.forEach((slot, place) => {
+    if (hand[place] !== null || (typeof slot !== "string" && "from" in slot)) return
     const rarity: Rarity = typeof slot === "string" ? slot : (pool.find((card) => card.id === slot.power)?.rarity ?? "common")
     const roles = new Set(hand.flatMap((card) => (card === null ? [] : [card.role])))
     for (const from of rarityOrder(rarity)) {
       // Falling back to a rarer card never deals a rarity before its act on the power curve (`curve.ts`).
       if (RARITIES.indexOf(from) > RARITIES.indexOf(rarity) && !dealtBy(from, round)) continue
-      const left = eligible.filter((card) => card.rarity === from && !taken.has(card.id))
+      const left = eligible.filter((card) => card.rarity === from && card.from === undefined && !taken.has(card.id))
       if (left.length === 0) continue
       const fresh = left.filter((card) => !roles.has(card.role))
       take(place, weighted(fresh.length > 0 ? fresh : left, round, rng))

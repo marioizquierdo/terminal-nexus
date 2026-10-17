@@ -61,6 +61,10 @@ const powerEffect: Shape<PowerEffect> = keyed("a Nexus power's effect", {
   modifyCommander: record<Readonly<{ auraReachTimes: number }>>({ auraReachTimes: positiveWholeNumber }, {}),
   modifyContent: record<Readonly<{ building: string; addWaves: number }>>({ building: text, addWaves: positiveWholeNumber }, {}),
   addBuilding: record<Readonly<{ building: string }>>({ building: text }, {}),
+  modifyUnit: record<Readonly<{ unit: string; detonation: Readonly<{ radius: number; damage: number }> }>>(
+    { unit: text, detonation: record<Readonly<{ radius: number; damage: number }>>({ radius: positiveWholeNumber, damage: positiveWholeNumber }, {}) },
+    {},
+  ),
   credits: wholeNumber,
 })
 const rarity = literal(...RARITIES)
@@ -75,16 +79,18 @@ const powerCard = record<PowerCard>(
     chance: list(chanceModifier),
     requires: powerRequirements,
     upgrades: text,
+    from: text,
     notes: text,
   },
 )
 /** One card of a scheduled hand: a rarity's name, or `{ "power": id }` for a power the level makes sure of. */
 const pinnedPower = record<Readonly<{ power: string }>>({ power: text }, {})
+const otherNexus = record<Readonly<{ from: string }>>({ from: text }, {})
 const scheduleSlot: Shape<ScheduleSlot> = {
   check(value: unknown, at: string, say: Say): value is ScheduleSlot {
     if (typeof value === "string") return rarity.check(value, at, say)
-    if (isObject(value)) return pinnedPower.check(value, at, say)
-    say(`${at} should be a rarity (${RARITIES.map((name) => `"${name}"`).join(", ")}) or { "power": its id }, not ${shown(value)}`)
+    if (isObject(value)) return "from" in value ? otherNexus.check(value, at, say) : pinnedPower.check(value, at, say)
+    say(`${at} should be a rarity (${RARITIES.map((name) => `"${name}"`).join(", ")}), { "power": its id } or { "from": a Nexus }, not ${shown(value)}`)
     return false
   },
 }
@@ -439,6 +445,11 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
       if (unseen !== null) said.push(`calls up ${unseen}`)
       else if (registry.get(effect.spawnUnits.unit).layer === "obstacles") said.push(`calls up "${effect.spawnUnits.unit}", which is a building, not a unit`)
     }
+    if ("modifyUnit" in effect) {
+      const unseen = unseenContent(army, effect.modifyUnit.unit)
+      if (unseen !== null) said.push(`changes ${unseen}`)
+      else if (registry.get(effect.modifyUnit.unit).layer === "obstacles") said.push(`changes "${effect.modifyUnit.unit}", which is a building, not a unit`)
+    }
     if ("modifyCommander" in effect && effect.modifyCommander.auraReachTimes < 2) {
       said.push(`multiplies the aura's reach by ${effect.modifyCommander.auraReachTimes}, which changes nothing`)
     }
@@ -496,6 +507,12 @@ export function loadArmies(manifests: readonly unknown[], world: LoadWorld): Arm
       const before = given[index - 1]
       if (before !== undefined && entry.round <= before.round) said.push(`has a schedule entry for round ${entry.round} after one for round ${before.round}: entries go in order`)
       for (const slot of entry.deal) {
+        if (typeof slot !== "string" && "from" in slot) {
+          // A card from another Nexus: the level must offer one, or the slot would always deal nothing.
+          const any = [...offered].some((id) => powersBy.get(id)?.card.from === slot.from)
+          if (!any) said.push(`deals a card from the ${slot.from} Nexus in round ${entry.round}, and the level offers none`)
+          continue
+        }
         // A rarity is never dealt before its act on the power curve, whether a slot asks for it or names a power of it.
         const rarity = typeof slot === "string" ? slot : powersBy.get(slot.power)?.card.rarity
         if (rarity !== undefined && entry.round < EARLIEST_ROUND[rarity]) {

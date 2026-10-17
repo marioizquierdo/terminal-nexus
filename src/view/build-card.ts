@@ -3,6 +3,7 @@
 // What a card says is data built elsewhere (`src/build/card.ts`, from `src/content/cards.ts`); this file
 // only draws it.
 
+import { CARD_TEXT } from "../content/cards.ts"
 import { portraitOf } from "./commander-moments.ts"
 import type { Card, CardIcon } from "../build/card.ts"
 import { currentCard } from "../build/card.ts"
@@ -317,11 +318,15 @@ export function skillLines(input: Pick<BuildCompositionInput, "context" | "state
   if (card.icon.kind !== "entity") return NO_SKILL
   const aura = input.context.registry.get(card.icon.contentId).aura
   if (aura === undefined) return NO_SKILL
+  const { subject, possessive } = CARD_TEXT[card.icon.contentId]?.pronouns ?? { subject: "she", possessive: "her" }
+  const name = `${aura.name ?? "Aura"}:`
+  // A range of 1 is what is next to the bearer.
+  const who = aura.radius === 1 ? `${subject} and the units next to ${subject === "she" ? "her" : "him"}` : `${subject} and ${possessive} units within range ${aura.radius}`
+  // A boost (Forward Order) says how much more its units deal; a guard (By the Book), how much less they take, at the
+  // strength its Experiment sets now.
+  if (aura.damageDealtPercent !== undefined) return { name, lines: wrapWords(`${name} ${who} deal ${aura.damageDealtPercent - 100}% more damage.`, limit) }
   const less = setting(input.state, "commanderAura")
   if (less === 0) return NO_SKILL
-  const name = `${aura.name ?? "Aura"}:`
-  // A range of 1 is what is next to her.
-  const who = aura.radius === 1 ? "she and the units next to her" : `she and her units within range ${aura.radius}`
   return { name, lines: wrapWords(`${name} ${who} take ${less}% less damage.`, limit) }
 }
 

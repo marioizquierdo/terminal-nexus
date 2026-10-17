@@ -67,6 +67,12 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * so she reads apart from every trooper at a glance and in monochrome, and the same for either side.
    */
   "unit.citizen.vasse": ["@"],
+  /**
+   * Marshal Averno: `&`, a figure with its weight thrown forward — the ruled glyph the register once weighed for
+   * Vasse, a stance rather than a spiral. Free in both packs, and like her `@` neither a letter nor a bracket, so
+   * a Commander reads apart from every unit.
+   */
+  "unit.citizen.averno": ["&"],
 
   // --- Ravels --------------------------------------------------------------------------------
   "unit.ravel.scav": ["s"],

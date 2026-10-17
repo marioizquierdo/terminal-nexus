@@ -246,7 +246,8 @@ title screen's menu.
   `tests/build-start.test.ts`, `tests/build-nexus.test.ts`, `tests/nexus-draft.test.ts`)
 - ***The Nexus Pulse in its popup*** (`[n]`): titled `NEXUS PULSE`, it reads `PICK ONE - or start without`, then the hand dealt this round — three
   powers, each its name under its digit with its rarity in a quiet word at the end of the row (`common`,
-  `uncommon`, `rare`, `legendary`), and its one line under that; then War Chest under the next digit, with no
+  `uncommon`, `rare`, `legendary`) — or, for a card another Nexus slipped in, whose it is (`Ravel`, Averno's
+  leak) — and its one line under that; then War Chest under the next digit, with no
   rarity — and `ACTIVE`, every power kept this mission still in force, this round's pick among them once made (War
   Chest's credits and Reserve Callup's troopers are spent in the round they are kept; an upgrade kept is listed in
   its power's place, `Drill Schedule II` and not `Drill Schedule` beside it), or "None yet." A pick closes the popup

@@ -8,6 +8,7 @@
 
 import all from "../../armies/all/army.json" with { type: "json" }
 import vasse from "../../armies/vasse/army.json" with { type: "json" }
+import averno from "../../armies/averno/army.json" with { type: "json" }
 import { MAPS } from "../build/maps.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import type { MissionDefinition } from "../mission/types.ts"
@@ -23,7 +24,7 @@ export { ACTS, EARLIEST_ROUND, LEANS, MAX_LEANS, MAX_ROUNDS, PICK_WORTH, ROUND_C
 export type { Lean } from "./curve.ts"
 
 /** Every army the game ships, checked and resolved. */
-export const ARMIES: Armies = loadArmies([all, vasse], { registry: FIXTURE_REGISTRY, maps: MAPS })
+export const ARMIES: Armies = loadArmies([all, vasse, averno], { registry: FIXTURE_REGISTRY, maps: MAPS })
 
 /** A level of a shipped campaign by its id. Throws for one no army has: what names it is code that expects it. */
 export function campaignLevel(id: string): Level {

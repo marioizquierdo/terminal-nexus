@@ -11,8 +11,8 @@ import type { Coord, Direction } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
-import type { Guard } from "./aura.ts"
-import { guardedAmount } from "./aura.ts"
+import type { Boost, Guard } from "./aura.ts"
+import { boostedAmount, guardedAmount } from "./aura.ts"
 import type { PulseContext } from "./context.ts"
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] }
@@ -75,6 +75,9 @@ export type TickContext = {
    * after it in the tick, a blast's included. Empty until then, and for a battle with no aura in it.
    */
   guards: Map<number, Guard>
+  /** Who an aura boosts this tick, by ordinal (`aura.ts`): decided with the guards, read by every hit its units
+   *  deal. Empty for a battle with no boosting aura. */
+  boosts: Map<number, Boost>
 }
 
 /**
@@ -185,8 +188,11 @@ export function applyDamage(
   source: Actor,
   amount: number,
 ): boolean {
-  const guard = amount > 0 ? context.guards.get(target.ordinal) : undefined
-  const dealt = guard === undefined ? amount : guardedAmount(amount, guard.damageTakenPercent)
+  // A boosted source hits harder, then a guarded target takes its share of that.
+  const boost = amount > 0 ? context.boosts.get(source.ordinal) : undefined
+  const boosted = boost === undefined ? amount : boostedAmount(amount, boost.damageDealtPercent)
+  const guard = boosted > 0 ? context.guards.get(target.ordinal) : undefined
+  const dealt = guard === undefined ? boosted : guardedAmount(boosted, guard.damageTakenPercent)
   const hpBefore = target.hp
   const hpAfter = Math.max(0, hpBefore - dealt)
   target.hp = hpAfter

@@ -22,7 +22,7 @@
 // events, the registry and the round number.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { createRegistry, freshEntityFields } from "../content/index.ts"
+import { createRegistry, freshEntityFields, HEALTH_TUNED_COMMANDER } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
@@ -130,11 +130,12 @@ export function restoreCommanders(
 export function auraRegistry(registry: ContentRegistry, less: number): ContentRegistry {
   if (!Number.isInteger(less) || less < 0 || less >= 100) throw new Error(`an aura takes away 0 to 99 percent of a hit, received ${less}`)
   const ids = registry.ids()
-  if (!ids.some((id) => registry.get(id).aura !== undefined)) return registry
+  // A guarding aura only (By the Book): a boost (Forward Order) is not what this Experiment tunes.
+  if (!ids.some((id) => registry.get(id).aura?.damageTakenPercent !== undefined)) return registry
   return createRegistry(
     ids.map((id) => {
       const definition = registry.get(id)
-      if (definition.aura === undefined) return definition
+      if (definition.aura?.damageTakenPercent === undefined) return definition
       if (less === 0) {
         const { aura: _off, ...without } = definition
         return without
@@ -163,16 +164,11 @@ export function auraReachRegistry(registry: ContentRegistry, times: number): Con
   )
 }
 
-/** `registry` with every Commander's health set to `health` — what the Pulse reads while the Experiment
- *  "Vasse's health" is tuned. The same registry, untouched, when nothing in it is a Commander. */
-export function commanderRegistry(registry: ContentRegistry, health: number): ContentRegistry {
+/** `registry` with Vasse's health set to `health` — what the Pulse reads while the Experiment "Vasse's health" is
+ *  tuned. The same registry, untouched, when she is not in it. */
+export function commanderRegistry(registry: ContentRegistry, health: number, commander: string = HEALTH_TUNED_COMMANDER): ContentRegistry {
   if (!Number.isInteger(health) || health <= 0) throw new Error(`a Commander's health must be a positive integer, received ${health}`)
-  const ids = registry.ids()
-  if (!ids.some((id) => registry.get(id).commander === true)) return registry
-  return createRegistry(
-    ids.map((id) => {
-      const definition = registry.get(id)
-      return definition.commander === true ? { ...definition, maxHp: health } : definition
-    }),
-  )
+  // The Experiment is Vasse's health: another Commander keeps his own (Averno's 70).
+  if (!registry.has(commander) || registry.get(commander).commander !== true) return registry
+  return createRegistry(registry.ids().map((id) => (id === commander ? { ...registry.get(id), maxHp: health } : registry.get(id))))
 }

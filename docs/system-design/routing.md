@@ -56,6 +56,8 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `campaign?level=vasse-test-2&round=3` | its round 3, its last |
 | `campaign?level=vasse-test-3` | the power curve's test level: six rounds, the Garrison locked until a Barracks stands |
 | `campaign?level=vasse-test-3&round=6` | its round 6, its last (`&round=2` to `&round=5` the ones between) |
+| `campaign?level=averno-test-1` | the same curve with Marshal Averno in Vasse's place: her first five rounds |
+| `campaign?level=averno-test-1&round=2` | his round 2: one card of the hand is from the Ravel Nexus (`&round=4` too) |
 
 Every level the game can open is a route the same way, `campaign?level=<id>` with each of its rounds: the
 levels are every shipped campaign's, from its army ([`content.md`](content.md)). `terminal-nexus --help`
