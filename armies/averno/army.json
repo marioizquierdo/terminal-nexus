@@ -32,7 +32,7 @@
       "id": "forward-drill",
       "name": "Forward Drill",
       "description": "Forward Order reaches twice as far.",
-      "effect": {"modifyAbility": {"unit": "unit.citizen.averno", "kind": "aura", "add": {"radius": 4}}},
+      "effect": {"modifyAbility": {"content": "unit.citizen.averno", "kind": "aura", "add": {"radius": 4}}},
       "rarity": "uncommon",
       "role": "commander",
       "notes": "His skill, wider: the mirror of Vasse's Standing Order, on his aura that presses."
@@ -41,7 +41,7 @@
       "id": "unfiled-ordnance",
       "name": "Unfiled Ordnance",
       "description": "Your troopers explode when they die.",
-      "effect": {"modifyUnit": {"unit": "unit.citizen.trooper", "detonation": {"radius": 2, "damage": 8}}},
+      "effect": {"setDetonation": {"unit": "unit.citizen.trooper", "detonation": {"radius": 2, "damage": 8}}},
       "rarity": "uncommon",
       "role": "offense",
       "notes": "Nobody authorized this (commander-armies.md, his few): a power that acts on the enemy through the troopers he spends, the Ravel way of ending, in a Citizen army."
@@ -73,7 +73,19 @@
     "id": "averno",
     "name": "Marshal Averno",
     "unit": "unit.citizen.averno",
+    "faction": "citizen",
     "lean": ["units", "nexus"],
+    "start": [
+      {"unit": "unit.citizen.trooper", "count": 3},
+      {"unit": "unit.citizen.marksman", "count": 2}
+    ],
+    "schedule": [
+      {"round": 1, "deal": ["common", "common", "uncommon"]},
+      {"round": 2, "deal": ["common", "uncommon", {"from": "ravel"}]},
+      {"round": 3, "deal": ["common", "uncommon", "uncommon"]},
+      {"round": 4, "deal": ["common", "uncommon", {"from": "ravel"}]},
+      {"round": 5, "deal": ["common", "uncommon", "uncommon"]}
+    ],
     "portrait": [" _&_ ", "(o_-)", "/[&]\\"],
     "portraitFalls": [[" _&_ ", "(O_-)", "/[&]\\"], [" _&_ ", "(x_x)", "/[&]\\"]],
     "barks": {

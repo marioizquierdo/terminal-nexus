@@ -6,6 +6,8 @@
 //   damage, a blast's included (`TickContext.guards`, `boosts`).
 // - **`hitDealtBy`**, as each attack is made (`attacks.ts`): the attacker's own `hitDealt` hooks, before the tier's
 //   hits are added up and before any aura — never on a blast or a splash's spread.
+// - **`abilityTicks`**, once a tick after the attacks and before the deaths settle (`tick.ts`): every standing bearer's
+//   `tick` hook — a healing pulse, a slow burn — whose hits join the tick's deaths like any other.
 // - **`afterDeaths`**, once a tick's deaths are settled (`death.ts`): every standing bearer's `death` hook, once for
 //   each unit that died, in ordinal order of the bearers and then of the dead.
 //
@@ -87,11 +89,13 @@ function worldOf(context: TickContext): AbilityWorld {
 export function decideDamageModifiers(context: TickContext): void {
   const bearers = context.actors.filter((actor) => !actor.pendingDead && abilitiesOf(context, actor).some(({ kind }) => kind.damageModifiers !== undefined))
   if (bearers.length === 0) return
-  const world = worldOf(context)
+  // Deciding only: the hook is handed what it can see, never what acts.
+  const { tick, bodies, within } = worldOf(context)
+  const view = { tick, bodies, within }
   for (const bearer of bearers) {
     const body = bodyOf(bearer)
     for (const { use, kind } of abilitiesOf(context, bearer)) {
-      kind.damageModifiers?.(body, use, world, (unit, channel, percent) => {
+      kind.damageModifiers?.(body, use, view, (unit, channel, percent) => {
         if (channel === "taken") {
           const best = context.guards.get(unit.ordinal)
           if (best === undefined || percent < best.damageTakenPercent) context.guards.set(unit.ordinal, { bearer, damageTakenPercent: percent })
@@ -112,6 +116,17 @@ export function hitDealtBy(context: TickContext, source: Actor, target: Actor, a
   let dealt = amount
   for (const { use, kind } of abilities) if (kind.hitDealt !== undefined) dealt = kind.hitDealt(bodyOf(source), bodyOf(target), dealt, use, world)
   return dealt
+}
+
+/** Every standing bearer's `tick` hook, in ordinal order. */
+export function abilityTicks(context: TickContext): void {
+  const bearers = context.actors.filter((actor) => !actor.pendingDead && abilitiesOf(context, actor).some(({ kind }) => kind.tick !== undefined))
+  if (bearers.length === 0) return
+  const world = worldOf(context)
+  for (const bearer of bearers) {
+    if (bearer.pendingDead) continue
+    for (const { use, kind } of abilitiesOf(context, bearer)) kind.tick?.(bodyOf(bearer), use, world)
+  }
 }
 
 /** Every standing bearer's `death` hook, once for each of `dead` (the tick's deaths, in ordinal order). */

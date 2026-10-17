@@ -222,6 +222,14 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     else campaignFiles.set(campaign.id, campaign)
   })
 
+  // An army may not define what the engine already defines another way.
+  for (const army of read.values()) {
+    for (const entry of army.entries) {
+      if (world.registry.has(entry.id) && JSON.stringify(world.registry.get(entry.id)) !== JSON.stringify(definitionOf(entry))) {
+        problems.push(`army "${army.id}": the content "${entry.id}" is defined differently already; name it by id, or give it an id of its own`)
+      }
+    }
+  }
   // What the armies define as data joins the content the game has.
   const defined = [...read.values()].flatMap((army) => army.entries.filter((entry) => !world.registry.has(entry.id)).map(definitionOf))
   const registry = defined.length === 0 ? world.registry : createRegistry([...world.registry.ids().map((id) => world.registry.get(id)), ...defined])
@@ -330,6 +338,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     },
     building: (id) => unseenCard(viewer, "building", id),
     spawns: (id) => buildingsBy.get(id)?.card.spawns !== undefined,
+    content: (id) => unseenContent(viewer, id),
     registry,
   })
 
@@ -431,6 +440,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     }
     for (const card of army.powers) {
       if (card.name.trim() === "" || card.description.trim() === "") say(`the Nexus power "${card.id}" needs a name and a description`)
+      if (card.from !== undefined && !viewer.sees.has(card.from)) say(`the Nexus power "${card.id}" names "${card.from}" as the Nexus it comes from, which is not an army "${army.id}" requires`)
       const { kind, params } = effectParts(card.effect)
       for (const problem of kind.problems(params, sightFor(viewer))) say(`the Nexus power "${card.id}" ${problem}`)
       for (const problem of dealProblems(viewer, card)) say(`the Nexus power "${card.id}" ${problem}`)
@@ -441,10 +451,25 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     const entry = army.commander
     if (entry !== null) {
       if (entry.name.trim() === "") say(`the Commander "${entry.id}" has no name`)
+      // Her faction: an army she sees that brings a Grid Nexus.
+      if (!viewer.sees.has(entry.faction)) say(`the Commander "${entry.id}" names the faction "${entry.faction}", which is not an army "${army.id}" requires`)
+      else if (!(read.get(entry.faction)?.content ?? []).some((id) => registry.has(id) && registry.get(id).nexus === true)) {
+        say(`the Commander "${entry.id}" names the faction "${entry.faction}", which brings no Grid Nexus`)
+      }
       const unseen = unseenContent(viewer, entry.unit)
       if (unseen !== null) say(`the Commander "${entry.id}" is ${unseen}`)
       else if (registry.get(entry.unit).commander !== true) say(`the Commander "${entry.id}" is "${entry.unit}", which is not a Commander`)
       for (const problem of [...barkProblems(entry), ...portraitProblems(entry), ...leanProblems(entry)]) say(problem)
+      // Her starting package: units her army sees.
+      for (const { unit } of entry.start ?? []) {
+        const problem = sightFor(viewer).unit(unit)
+        if (problem !== null) say(`the Commander "${entry.id}" starts with ${problem}`)
+      }
+      // Her army's schedule, against every power her army can offer.
+      if (entry.schedule !== undefined) {
+        const offered = new Set([...powersBy.entries()].filter(([, owned]) => viewer.sees.has(owned.army)).map(([id]) => id))
+        for (const problem of scheduleProblems(entry.schedule, offered)) say(`the Commander "${entry.id}" ${problem}`)
+      }
     }
   }
 
@@ -563,7 +588,19 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
   for (const army of ordered) {
     const entry = army.commander
     if (entry === null) continue
-    commanders.set(entry.id, { id: entry.id, army: army.id, name: entry.name, unit: entry.unit, lean: entry.lean, barks: entry.barks ?? {}, portrait: entry.portrait ?? [], portraitFalls: entry.portraitFalls ?? [] })
+    commanders.set(entry.id, {
+      id: entry.id,
+      army: army.id,
+      name: entry.name,
+      unit: entry.unit,
+      faction: entry.faction,
+      lean: entry.lean,
+      start: entry.start ?? [],
+      ...(entry.schedule === undefined ? {} : { schedule: entry.schedule }),
+      barks: entry.barks ?? {},
+      portrait: entry.portrait ?? [],
+      portraitFalls: entry.portraitFalls ?? [],
+    })
   }
   const campaigns: Campaign[] = []
   for (const campaign of campaignFiles.values()) {
@@ -588,7 +625,8 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
         number: index + 1,
         map: entry.map as string,
         mission: missions.get(entry.id) as MissionDefinition,
-        offer: { credits: entry.credits as number, buildings, powers, addable, ...(entry.schedule === undefined ? {} : { schedule: entry.schedule }) },
+        // The level's own schedule, or else her army's: how her army bends the Nexus Pulse holds in every level.
+        offer: { credits: entry.credits as number, buildings, powers, addable, ...((entry.schedule ?? commander.schedule) === undefined ? {} : { schedule: entry.schedule ?? commander.schedule }) },
         unlocked: { buildings: newBuildings, powers: newPowers },
       })
     })
@@ -602,11 +640,17 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     arsenals: Object.fromEntries(
       ordered.map((army) => {
         const sees = sightOf(read, [army.id])
+        // A Commander's own: her army and her faction's chain. What else she sees belongs to another faction.
+        const own = army.commander === null ? sees : new Set([army.id, ...sightOf(read, [army.commander.faction])])
+        const factionOf = (owner: string): string => [...sees].find((id) => id !== army.id && read.get(id)?.commander === null && sightOf(read, [id]).has(owner) && (read.get(id)?.content ?? []).some((content) => registry.has(content) && registry.get(content).nexus === true)) ?? owner
         return [
           army.id,
           {
-            buildings: [...buildingsBy.values()].filter((owned) => sees.has(owned.army)).map((owned) => owned.card),
-            powers: [...powersBy.values()].filter((owned) => sees.has(owned.army)).map((owned) => owned.card),
+            buildings: [...buildingsBy.values()].filter((owned) => own.has(owned.army)).map((owned) => owned.card),
+            powers: [...powersBy.values()]
+              .filter((owned) => sees.has(owned.army))
+              .map((owned) => (own.has(owned.army) || owned.card.from !== undefined ? owned.card : { ...owned.card, from: factionOf(owned.army) })),
+            content: [...contentBy.entries()].filter(([, owned]) => sees.has(owned.army)).map(([id]) => id),
           },
         ]
       }),

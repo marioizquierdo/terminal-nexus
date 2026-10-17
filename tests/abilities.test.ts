@@ -162,9 +162,35 @@ test("what a card says of a unit's abilities, and how far the furthest reaches, 
 
 test("a Nexus power changes an ability's numbers for the rest of the mission: Lucky Scrap doubles Dob's price", () => {
   const loadout = { registry: FIXTURE_REGISTRY, catalog: [], callups: [], cards: [], row: () => ({ contentId: "" }) }
-  const changed = applyEffect(loadout, { modifyAbility: { unit: "unit.ravel.dob", kind: "bounty", add: { credits: 3 } } })
+  const changed = applyEffect(loadout, { modifyAbility: { content: "unit.ravel.dob", kind: "bounty", add: { credits: 3 } } })
   assert.deepEqual(changed.registry.get("unit.ravel.dob").abilities?.[0], { kind: "bounty", name: "Bounty", radius: 6, credits: 6, structureCredits: 15 })
   // Nothing else changed: his dice, and every other unit.
   assert.deepEqual(changed.registry.get("unit.ravel.dob").abilities?.[1], FIXTURE_REGISTRY.get("unit.ravel.dob").abilities?.[1])
   assert.equal(changed.registry.get("unit.citizen.trooper"), FIXTURE_REGISTRY.get("unit.citizen.trooper"))
+})
+
+test("a tick hook acts every tick, after the attacks: a building that mends the units near it, written as a kind the game does not ship", () => {
+  // The review's engineer: a Turret that mends instead of a gun. A kind with a `tick` hook heals each unit of its side
+  // within its reach by `amount` every tick it stands.
+  type Mend = Readonly<{ kind: "mend"; radius: number; amount: number }>
+  const mend: AbilityKind<Mend> = {
+    kind: "mend",
+    params: record<Mend>({ kind: literal("mend"), radius: positiveWholeNumber, amount: positiveWholeNumber }, {}),
+    describe: (params) => `Mend: units within range ${params.radius} heal ${params.amount} a tick.`,
+    tick: (bearer, params, world) => {
+      for (const body of world.bodies()) if (body.player === bearer.player && body.ordinal !== bearer.ordinal && body.hp < body.maxHp && world.within(bearer, body, params.radius)) world.heal(body, bearer, params.amount)
+    },
+  }
+  const table: AbilityTable = { ...ABILITIES, mend: mend as unknown as AbilityKind }
+  const mender = stander("structure.test.mender", [{ kind: "mend", radius: 4, amount: 1 }], { layer: "obstacles", collidesWith: ["obstacles", "workers", "units"] })
+  const tough = stander("unit.test.tough", undefined, { maxHp: 100 })
+  const registry = createRegistry([...REGISTRY.ids().map((id) => REGISTRY.get(id)), mender, tough])
+  // A tough unit beside the mender, a gambler hitting it every second: the mender's heals land between the hits.
+  const sides = { A: [[2, 2, "structure.test.mender"], [4, 2, "unit.test.tough"]] as const, B: [[5, 2, "unit.test.gambler"]] as const }
+  const events = run(sides, 12, registry, table)
+  const heals = events.filter((event) => event.kind === "heal.applied" && event.source.startsWith("A:mender"))
+  assert.ok(heals.length > 0, "the mender never mended")
+  assert.ok(heals.every((event) => event.kind === "heal.applied" && event.amount === 1))
+  // Without its kind in the table it does nothing, and the same fight has no heal in it.
+  assert.equal(run(sides, 12, registry).filter((event) => event.kind === "heal.applied").length, 0)
 })

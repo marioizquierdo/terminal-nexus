@@ -165,7 +165,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "armies", "abilities"]
+  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "armies", "abilities", "duel"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,

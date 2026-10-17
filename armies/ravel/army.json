@@ -108,7 +108,7 @@
       "id": "hot-shift",
       "name": "Hot Shift",
       "description": "Dens send a second wave.",
-      "effect": {"modifyContent": {"building": "den", "addWaves": 1}},
+      "effect": {"addWaves": {"building": "den", "waves": 1}},
       "rarity": "common",
       "role": "production",
       "requires": {"buildings": ["den"]},
@@ -118,7 +118,7 @@
       "id": "short-fuses",
       "name": "Short Fuses",
       "description": "Your raiders explode harder.",
-      "effect": {"modifyUnit": {"unit": "unit.ravel.raider", "detonation": {"radius": 2, "damage": 16}}},
+      "effect": {"setDetonation": {"unit": "unit.ravel.raider", "detonation": {"radius": 2, "damage": 16}}},
       "rarity": "uncommon",
       "role": "offense",
       "notes": "The cascade, wider: a raider's blast reaches two tiles and hits harder."

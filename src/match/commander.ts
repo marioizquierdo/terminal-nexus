@@ -72,14 +72,17 @@ export function restoreCommanders(
   absent: readonly Absence[],
   round: number,
   registry: ContentRegistry,
+  sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>,
 ): Readonly<{ state: MatchState; absent: Absence[]; restored: Restoration[] }> {
+  /** The content `player`'s things are defined by: its side's own in a duel (`PulseContext.sides`), else `registry`. */
+  const contentFor = (player: PlayerId): ContentRegistry => sides?.[player] ?? registry
   const due = absent.filter((absence) => absence.returnsInRound <= round)
   if (due.length === 0) return { state, absent: [...absent], restored: [] }
 
   // The room there is: everything standing, and each Commander as she is set down.
   const index = new OccupancyIndex(state.grid)
   for (const entity of state.entities) {
-    const definition = registry.get(entity.contentId)
+    const definition = contentFor(entity.player).get(entity.contentId)
     index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
   }
 
@@ -93,13 +96,14 @@ export function restoreCommanders(
       continue
     }
     // Her side's Grid Nexus, the lowest ordinal if it has several: the Commander's anchor on the Grid.
-    const nexus = state.entities.find((entity) => entity.player === absence.player && registry.get(entity.contentId).nexus === true)
-    const definition = registry.get(absence.contentId)
+    const content = contentFor(absence.player)
+    const nexus = state.entities.find((entity) => entity.player === absence.player && content.get(entity.contentId).nexus === true)
+    const definition = content.get(absence.contentId)
     const mask = maskFrom(index, { layers: ENTITY_LAYERS, terrain: definition.layer === "air" ? "ignore" : "impassable" })
     const anchor =
       nexus === undefined
         ? null
-        : nearestFit(mask, definition.footprint, centreTile(nexus.anchor, registry.get(nexus.contentId).footprint), RESTORE_RADIUS)
+        : nearestFit(mask, definition.footprint, centreTile(nexus.anchor, content.get(nexus.contentId).footprint), RESTORE_RADIUS)
     if (anchor === null) {
       still.push(absence)
       continue

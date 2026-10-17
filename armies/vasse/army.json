@@ -64,7 +64,7 @@
       "id": "standing-order",
       "name": "Standing Order",
       "description": "By the Book reaches twice as far.",
-      "effect": {"modifyAbility": {"unit": "unit.citizen.vasse", "kind": "aura", "add": {"radius": 4}}},
+      "effect": {"modifyAbility": {"content": "unit.citizen.vasse", "kind": "aura", "add": {"radius": 4}}},
       "rarity": "uncommon",
       "role": "commander",
       "notes": "Her skill, wider: By the Book's reach doubles for the rest of the mission, on her card, on the map and in the battle."
@@ -83,7 +83,12 @@
     "id": "vasse",
     "name": "Edda Vasse",
     "unit": "unit.citizen.vasse",
+    "faction": "citizen",
     "lean": ["structures", "commander"],
+    "start": [
+      {"unit": "unit.citizen.trooper", "count": 3},
+      {"unit": "unit.citizen.marksman", "count": 2}
+    ],
     "portrait": [" _@_ ", "(-_-)", "/|@|\\"],
     "portraitFalls": [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]],
     "barks": {

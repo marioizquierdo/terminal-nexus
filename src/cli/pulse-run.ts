@@ -23,7 +23,8 @@ import type { CommanderAbsence, DialogFocus, DialogLine, FieldEntity, IncomingEn
 import type { ContentRegistry } from "../content/index.ts"
 import { createRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
-import { MAX_ROUNDS, roundCredits } from "../armies/curve.ts"
+import { roundIncome } from "../armies/curve.ts"
+export { roundIncome } from "../armies/curve.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
@@ -145,10 +146,6 @@ function mapOf(registry: ContentRegistry, carried: MatchState): Readonly<{ stand
 
 /** What each building the level offers spawns in its battles, by its content id: its army's word for it,
  *  carried on its row of the build menu (`spawns`). A building the level does not offer spawns nothing. */
-/** The credits round `number` adds as it opens, from the power curve; past its last round, the last round's. */
-export function roundIncome(number: number): number {
-  return roundCredits(Math.min(Math.max(1, number), MAX_ROUNDS))
-}
 
 function spawnsOf(context: Pick<BuildContext, "catalog">): Readonly<Record<string, BuildingSpawns>> {
   const spawns: Record<string, BuildingSpawns> = {}

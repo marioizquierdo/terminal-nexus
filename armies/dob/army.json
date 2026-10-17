@@ -47,7 +47,7 @@
       "id": "rigged-charges",
       "name": "Rigged Charges",
       "description": "Your runners explode harder.",
-      "effect": {"modifyUnit": {"unit": "unit.ravel.runner", "detonation": {"radius": 2, "damage": 8}}},
+      "effect": {"setDetonation": {"unit": "unit.ravel.runner", "detonation": {"radius": 2, "damage": 8}}},
       "rarity": "uncommon",
       "role": "offense",
       "notes": "His few, the commander-armies.md list: every runner's burst reaches two tiles."
@@ -56,7 +56,7 @@
       "id": "lucky-scrap",
       "name": "Lucky Scrap",
       "description": "Bounty pays 3 more for each kill.",
-      "effect": {"modifyAbility": {"unit": "unit.ravel.dob", "kind": "bounty", "add": {"credits": 3}}},
+      "effect": {"modifyAbility": {"content": "unit.ravel.dob", "kind": "bounty", "add": {"credits": 3}}},
       "rarity": "uncommon",
       "role": "economy",
       "notes": "Wreckage pays more: his Bounty's price doubles, for the rest of the mission."
@@ -65,7 +65,7 @@
       "id": "hot-dice",
       "name": "Hot Dice",
       "description": "Loaded Dice hit one time in three.",
-      "effect": {"modifyAbility": {"unit": "unit.ravel.dob", "kind": "loadedDice", "add": {"chanceIn": -1}}},
+      "effect": {"modifyAbility": {"content": "unit.ravel.dob", "kind": "loadedDice", "add": {"chanceIn": -1}}},
       "rarity": "rare",
       "role": "commander",
       "notes": "The dice warm up: one lucky hit in three instead of four."
@@ -85,7 +85,9 @@
     "id": "dob",
     "name": "Dob Hunter",
     "unit": "unit.ravel.dob",
+    "faction": "ravel",
     "lean": ["economy", "commander"],
+    "start": [{"unit": "unit.ravel.runner", "count": 5}, {"unit": "unit.ravel.slinger", "count": 2}],
     "portrait": [" ,$, ", "(^_~)", "/{$}\\"],
     "portraitFalls": [[" ,$, ", "(O_O)", "/{$}\\"], [" *$* ", "(x_x)", "/{$}\\"]],
     "barks": {

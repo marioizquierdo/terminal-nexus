@@ -18,6 +18,7 @@ import type { EntityState, MatchState } from "../state/types.ts"
 import type { PulseContext } from "./context.ts"
 import { contentOf } from "./context.ts"
 import { arbitrate, settle } from "./arbitration.ts"
+import { abilityTicks } from "./abilities.ts"
 import { attacks } from "./attacks.ts"
 import { resolution } from "./death.ts"
 import { intents } from "./intents.ts"
@@ -98,6 +99,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
   const grants = arbitrate(context, declared) // 5
   settle(context, grants) // 6
   attacks(context) // 7
+  abilityTicks(context) // 7.5: abilities that act every tick (`abilities.ts`), after the attacks
   resolution(context) // 8
   const outcome = victory(context) // 9
 

@@ -7,6 +7,9 @@
 // problem at once (`src/armies/load.ts`), so a broken entry never reaches a battle.
 
 import { ARMY_FILES } from "../shipped.ts"
+import { CITIZEN_CONTENT } from "./citizen.ts"
+import { PROVING_GROUND_CONTENT } from "./proving-grounds.ts"
+import { RAVEL_CONTENT } from "./ravel.ts"
 import type { CardText } from "./cards.ts"
 import type { Glyph } from "./data.ts"
 import { definitionOf, entriesOf } from "./data.ts"
@@ -16,7 +19,9 @@ import type { ContentDef } from "./types.ts"
 export type ArmyContent = Readonly<{ definition: ContentDef; card: CardText; glyph: Glyph }>
 
 /** Everything the shipped army files define, in the order they list it. */
-export const ARMY_CONTENT: readonly ArmyContent[] = entriesOf(ARMY_FILES).map((entry) => ({
+const bench = new Set([...CITIZEN_CONTENT, ...RAVEL_CONTENT, ...PROVING_GROUND_CONTENT].map((definition) => definition.id))
+
+export const ARMY_CONTENT: readonly ArmyContent[] = entriesOf(ARMY_FILES, (id) => bench.has(id)).map((entry) => ({
   definition: definitionOf(entry),
   card: entry.card,
   glyph: entry.glyph,

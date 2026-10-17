@@ -34,6 +34,8 @@ export type Glyph = readonly string[]
  * default its comment gives.
  */
 export type ContentEntry = Readonly<{
+  /** Unique across the game: `<kind>.<faction>.<name>` by convention (`unit.ravel.dob`). Only its last part means
+   *  anything to the engine, as the default `short` name; the army that defines it is whichever file it is in. */
   id: string
   /** The short name report lines use (`A:trooper#1`). Absent: the id's last part. */
   short?: string
@@ -195,16 +197,21 @@ export function definitionOf(entry: ContentEntry): ContentDef {
 }
 
 /** The entries of some army files: every object in their `content` lists (a string there names content the engine
- *  defines). What does not have the shape is left out here; the army loader says why (`src/armies/load.ts`). */
-export function entriesOf(files: readonly unknown[]): ContentEntry[] {
+ *  defines), the first of each id, none that `known` already has. What does not have the shape is left out here; the
+ *  army loader says why (`src/armies/load.ts`). */
+export function entriesOf(files: readonly unknown[], known: (id: string) => boolean = () => false): ContentEntry[] {
   const entries: ContentEntry[] = []
+  const seen = new Set<string>()
   const quiet: Say = () => {}
   for (const file of files) {
     const content = file !== null && typeof file === "object" ? (file as Record<string, unknown>)["content"] : undefined
     if (!Array.isArray(content)) continue
     for (const item of content) {
       if (typeof item === "string") continue
-      if (contentEntry.check(item, "content", quiet) && entryProblems(item).length === 0) entries.push(item)
+      // The first of an id only, and none the engine already defines: the loader names the second one, with the rest.
+      if (!contentEntry.check(item, "content", quiet) || entryProblems(item).length > 0 || seen.has(item.id) || known(item.id)) continue
+      seen.add(item.id)
+      entries.push(item)
     }
   }
   return entries

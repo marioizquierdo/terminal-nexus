@@ -40,8 +40,12 @@ export function createRegistry(definitions: readonly ContentDef[]): ContentRegis
   }
 }
 
+/** The engine's own content, written in TypeScript: the bench rosters the bench maps and the kernel's tests stand on. */
+export const BENCH_CONTENT: readonly ContentDef[] = [...CITIZEN_CONTENT, ...RAVEL_CONTENT, ...PROVING_GROUND_CONTENT]
+
 /**
- * The fixture registry. The first battles held Citizens alone, so that nothing which happened could be
+ * Every piece of content the game has: the bench's and every army's, as one registry (the name is the first battles':
+ * all of it was fixtures then). The first battles held Citizens alone, so that nothing which happened could be
  * blamed on balance; the Ravels were added so that something which happens can be blamed on *contrast*.
  * The Proving Grounds roster (from the unit-architecture spike) adds a third, faction-neutral set for a
  * different reason again: not contrast, but coverage — a batch of deliberately varied unit mechanics
@@ -49,12 +53,7 @@ export function createRegistry(definitions: readonly ContentDef[]): ContentRegis
  * Beside them stands everything the army files define as data (`./army-content.ts`): the Commanders, and the units
  * and buildings their armies and factions bring.
  */
-export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([
-  ...CITIZEN_CONTENT,
-  ...RAVEL_CONTENT,
-  ...PROVING_GROUND_CONTENT,
-  ...ARMY_CONTENT.map((entry) => entry.definition),
-])
+export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([...BENCH_CONTENT, ...ARMY_CONTENT.map((entry) => entry.definition)])
 
 /**
  * `registry`, with each named building given a production recipe — how a battle opts its buildings into

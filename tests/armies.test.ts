@@ -84,7 +84,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ],
   )
   assert.deepEqual(
-    ARMIES.commanders.map(({ barks: _barks, portraitFalls: _falls, ...commander }) => commander),
+    ARMIES.commanders.map(({ barks: _barks, portraitFalls: _falls, start: _start, schedule: _schedule, faction: _faction, ...commander }) => commander),
     [
       { id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", lean: ["structures", "commander"], portrait: [" _@_ ", "(-_-)", "/|@|\\"] },
       { id: "averno", army: "averno", name: "Marshal Averno", unit: "unit.citizen.averno", lean: ["units", "nexus"], portrait: [" _&_ ", "(o_-)", "/[&]\\"] },
@@ -92,6 +92,17 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ],
   )
   assert.deepEqual(ARMIES.commanders[0]?.portraitFalls, [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]])
+  // Each walks out with a starting package where a mode scripts none (a duel), and Averno's army bends the Nexus Pulse
+  // in every mode: a card from the Ravel Nexus in rounds 2 and 4.
+  assert.deepEqual(
+    ARMIES.commanders.map((commander) => commander.start.map(({ unit, count }) => `${count} ${unit}`).join(", ")),
+    ["3 unit.citizen.trooper, 2 unit.citizen.marksman", "3 unit.citizen.trooper, 2 unit.citizen.marksman", "5 unit.ravel.runner, 2 unit.ravel.slinger"],
+  )
+  assert.deepEqual(
+    ARMIES.commanders[1]?.schedule?.flatMap((entry) => entry.deal.filter((slot) => typeof slot !== "string" && "from" in slot).map(() => entry.round)),
+    [2, 4],
+  )
+  assert.equal(ARMIES.commanders[0]?.schedule, undefined)
   // Their lines in battle come with them (tests/voice.test.ts has what is said when).
   for (const commander of ARMIES.commanders) assert.ok(Object.keys(commander.barks).length > 0, `${commander.name} has nothing to say`)
   assert.equal(ARMIES.campaigns.length, 2)
@@ -123,8 +134,8 @@ test("the game ships the shared army, two factions and three Commanders on top o
   assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [["War Chest", "Adds 2000 resources to spend.", "+2000"]])
   assert.deepEqual(citizens?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
     ["Reserve Callup", "Two troopers join at your Nexus.", "spawnUnits"],
-    ["Drill Schedule", "Barracks send a second wave.", "modifyContent"],
-    ["Drill Schedule II", "Barracks send a third wave.", "modifyContent"],
+    ["Drill Schedule", "Barracks send a second wave.", "addWaves"],
+    ["Drill Schedule II", "Barracks send a third wave.", "addWaves"],
   ])
   // Each says what the Nexus Pulse deals it by: how rare it is and what it is for.
   assert.deepEqual(
@@ -168,6 +179,14 @@ test("a Commander army defines its Commander as data: her unit's numbers, her ca
     ARMIES.arsenals["averno"]?.powers.map((card) => card.id),
     ["war-chest", "reserve-callup", "drill-schedule", "drill-schedule-ii", "scrap-rush", "hot-shift", "short-fuses", "forward-drill", "unfiled-ordnance", "raider-contract", "runner-crew"],
   )
+  // Averno sees the Ravel faction only for the cards that leak to him: its buildings are not his, and its powers are
+  // foreign to him, marked from the Ravel Nexus, so only a slot that asks for that Nexus deals them.
+  assert.ok(!(ARMIES.arsenals["averno"]?.buildings ?? []).some((card) => card.id === "den"))
+  assert.deepEqual(
+    (ARMIES.arsenals["averno"]?.powers ?? []).filter((card) => card.from !== undefined).map((card) => `${card.id} ${card.from}`),
+    ["scrap-rush ravel", "hot-shift ravel", "short-fuses ravel", "raider-contract ravel", "runner-crew ravel"],
+  )
+  assert.ok((ARMIES.arsenals["dob"]?.powers ?? []).every((card) => card.from === undefined), "Dob's own faction's cards are foreign to him")
   assert.deepEqual(ARMIES.arsenals["dob"]?.buildings.map((card) => card.id), ["hatchery", "turret", "den", "sling-pit", "stash", "chop-shop"])
   assert.deepEqual(
     ARMIES.arsenals["dob"]?.powers.map((card) => card.id),
@@ -182,8 +201,8 @@ test("a level offers what its campaign has unlocked by then: PERIMETER unlocks a
     buildings: ["barracks 40", "hatchery 30", "turret 15", "depot 30"],
     powers: [
       "Reserve Callup spawnUnits",
-      "Drill Schedule modifyContent",
-      "Drill Schedule II modifyContent",
+      "Drill Schedule addWaves",
+      "Drill Schedule II addWaves",
       "Standing Order modifyAbility",
       "Aid Station Permit addBuilding",
       "War Chest +2000",
@@ -623,15 +642,15 @@ test("a level's mission is checked against its map, its content against what its
       // spawns when it adds waves, a reach that changes.
       { id: "ghost-call", name: "Ghost Call", description: "Nobody comes.", effect: { spawnUnits: { unit: "unit.test.nobody", count: 2 } }, rarity: "common", role: "economy" },
       { id: "nest-call", name: "Nest Call", description: "A nest walks in.", effect: { spawnUnits: { unit: "structure.test.nest", count: 1 } }, rarity: "common", role: "economy" },
-      { id: "same-reach", name: "Same Reach", description: "As far as ever.", effect: { modifyAbility: { unit: "unit.test.hero", kind: "aura", add: { radius: 0 } } }, rarity: "common", role: "economy" },
-      { id: "odd-reach", name: "Odd Reach", description: "A column further.", effect: { modifyAbility: { unit: "unit.test.hero", kind: "aura", add: { radius: 1 } } }, rarity: "common", role: "economy" },
-      { id: "no-dice", name: "No Dice", description: "Nothing to change.", effect: { modifyAbility: { unit: "unit.test.hero", kind: "loadedDice", add: { chanceIn: 1 } } }, rarity: "common", role: "economy" },
-      { id: "nest-drill", name: "Nest Drill", description: "More of nothing.", effect: { modifyContent: { building: "nest", addWaves: 1 } }, rarity: "common", role: "economy" },
+      { id: "same-reach", name: "Same Reach", description: "As far as ever.", effect: { modifyAbility: { content: "unit.test.hero", kind: "aura", add: { radius: 0 } } }, rarity: "common", role: "economy" },
+      { id: "odd-reach", name: "Odd Reach", description: "A column further.", effect: { modifyAbility: { content: "unit.test.hero", kind: "aura", add: { radius: 1 } } }, rarity: "common", role: "economy" },
+      { id: "no-dice", name: "No Dice", description: "Nothing to change.", effect: { modifyAbility: { content: "unit.test.hero", kind: "loadedDice", add: { chanceIn: 1 } } }, rarity: "common", role: "economy" },
+      { id: "nest-drill", name: "Nest Drill", description: "More of nothing.", effect: { addWaves: { building: "nest", waves: 1 } }, rarity: "common", role: "economy" },
       { id: "lost-permit", name: "Lost Permit", description: "Adds nothing.", effect: { addBuilding: { building: "missing" } }, rarity: "common", role: "economy" },
     ],
-    commander: { id: "hero", name: "Hero", unit: "unit.test.hero", lean: ["units"] },
+    commander: { id: "hero", name: "Hero", unit: "unit.test.hero", faction: "solo", lean: ["units"] },
   }
-  const pretender = { id: "pretender", title: "Pretender", requires: ["citizen"], commander: { id: "trooper", name: "Not one", unit: "unit.citizen.trooper", lean: ["units"] } }
+  const pretender = { id: "pretender", title: "Pretender", requires: ["citizen"], commander: { id: "trooper", name: "Not one", unit: "unit.citizen.trooper", faction: "citizen", lean: ["units"] } }
   const soloCampaign = {
     id: "solo",
     title: "Solo",
@@ -678,6 +697,7 @@ test("a level's mission is checked against its map, its content against what its
     'army "solo": the Nexus power "no-dice" changes the ability "loadedDice" of "unit.test.hero", which has none',
     'army "solo": the Nexus power "nest-drill" adds waves to the building "nest", which spawns nothing',
     'army "solo": the Nexus power "lost-permit" names the building "missing", which no army has',
+    'army "solo": the Commander "hero" names the faction "solo", which brings no Grid Nexus',
     'army "pretender": the Commander "trooper" is "unit.citizen.trooper", which is not a Commander',
     'campaign "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter", "starter-open")',
     'campaign "solo": level "solo-1" unlocks the building "nest" twice',

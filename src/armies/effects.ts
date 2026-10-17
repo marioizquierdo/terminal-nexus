@@ -45,6 +45,8 @@ export type EffectSight = Readonly<{
   unit: (id: string) => string | null
   building: (id: string) => string | null
   spawns: (id: string) => boolean
+  /** Why a content id, a unit or a building, is not one the army can name, or `null` when it is. */
+  content: (id: string) => string | null
   /** The content the power's army sees, for an effect that reads what it changes (`modifyAbility`). */
   registry: ContentRegistry
 }>
@@ -81,18 +83,18 @@ const spawnUnits: EffectKind<Readonly<{ unit: string; count: number }>> = {
   lasts: false,
 }
 
-const modifyContent: EffectKind<Readonly<{ building: string; addWaves: number }>> = {
-  shape: record({ building: text, addWaves: positiveWholeNumber }, {}),
+const addWaves: EffectKind<Readonly<{ building: string; waves: number }>> = {
+  shape: record({ building: text, waves: positiveWholeNumber }, {}),
   problems: ({ building }, sight) => {
     const unseen = sight.building(building)
     if (unseen !== null) return [`names ${unseen}`]
     return sight.spawns(building) ? [] : [`adds waves to the building "${building}", which spawns nothing`]
   },
-  apply: (loadout, { building, addWaves }) => {
+  apply: (loadout, { building, waves }) => {
     const structure = loadout.cards.find((card) => card.id === building)?.structure
     return {
       catalog: loadout.catalog.map((row) =>
-        row.contentId === structure && row.spawns !== undefined ? { ...row, spawns: { ...row.spawns, waves: row.spawns.waves + addWaves } } : row,
+        row.contentId === structure && row.spawns !== undefined ? { ...row, spawns: { ...row.spawns, waves: row.spawns.waves + waves } } : row,
       ),
     }
   },
@@ -114,7 +116,7 @@ const addBuilding: EffectKind<Readonly<{ building: string }>> = {
   adds: ({ building }) => building,
 }
 
-const modifyUnit: EffectKind<Readonly<{ unit: string; detonation: Readonly<{ radius: number; damage: number }> }>> = {
+const setDetonation: EffectKind<Readonly<{ unit: string; detonation: Readonly<{ radius: number; damage: number }> }>> = {
   shape: record({ unit: text, detonation: record({ radius: positiveWholeNumber, damage: positiveWholeNumber }, {}) }, {}),
   problems: ({ unit }, sight) => unitProblem("changes", unit, sight),
   apply: (loadout, { unit, detonation }) => ({
@@ -130,11 +132,11 @@ type Addition = Readonly<Record<string, number>>
 const added = (use: AbilityUse, add: Addition): AbilityUse =>
   ({ ...use, ...Object.fromEntries(Object.entries(add).map(([key, more]) => [key, (typeof use[key] === "number" ? (use[key] as number) : 0) + more])) }) as AbilityUse
 
-const modifyAbility: EffectKind<Readonly<{ unit: string; kind: string; add: Addition }>> = {
-  shape: record({ unit: text, kind: text, add: dictionary(number) }, {}),
-  problems: ({ unit, kind, add }, sight) => {
-    const unseen = unitProblem("changes", unit, sight)
-    if (unseen.length > 0) return unseen
+const modifyAbility: EffectKind<Readonly<{ content: string; kind: string; add: Addition }>> = {
+  shape: record({ content: text, kind: text, add: dictionary(number) }, {}),
+  problems: ({ content: unit, kind, add }, sight) => {
+    const unseen = sight.content(unit)
+    if (unseen !== null) return [`changes ${unseen}`]
     const uses = (sight.registry.get(unit).abilities ?? []).filter((use) => use.kind === kind)
     if (uses.length === 0) return [`changes the ability "${kind}" of "${unit}", which has none`]
     const said: string[] = []
@@ -152,7 +154,7 @@ const modifyAbility: EffectKind<Readonly<{ unit: string; kind: string; add: Addi
       return [...abilityProblems(made, `the ability "${kind}" of "${unit}" once changed`), ...reach]
     })
   },
-  apply: (loadout, { unit, kind, add }) => ({
+  apply: (loadout, { content: unit, kind, add }) => ({
     registry: changedRegistry(loadout.registry, (definition) =>
       definition.id !== unit || definition.abilities === undefined
         ? definition
@@ -171,7 +173,7 @@ const credits: EffectKind<number> = {
 }
 
 /** Every kind of effect, by the key that names it in a power's JSON. */
-export const EFFECTS = { spawnUnits, modifyContent, addBuilding, modifyUnit, modifyAbility, credits } as const
+export const EFFECTS = { spawnUnits, addWaves, addBuilding, setDetonation, modifyAbility, credits } as const
 
 export type EffectName = keyof typeof EFFECTS
 

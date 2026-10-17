@@ -13,7 +13,7 @@ import { BOUNTY } from "./bounty.ts"
 import { LOADED_DICE } from "./loaded-dice.ts"
 import type { AbilityKind, AbilityTable, Pronouns } from "./types.ts"
 
-export type { AbilityKind, AbilityTable, AbilityWorld, Body, DamageOffer, Pronouns, Side } from "./types.ts"
+export type { AbilityKind, AbilityTable, AbilityView, AbilityWorld, Body, DamageOffer, Pronouns, Side } from "./types.ts"
 export type { Aura } from "./aura.ts"
 export { boostedAmount, guardedAmount } from "./aura.ts"
 

@@ -6,8 +6,8 @@
 // Adding an army is a folder under `armies/` with its `army.json` and one line in `ARMY_FILES`; adding a campaign is a
 // folder under `campaigns/` with its `campaign.json` and one line in `CAMPAIGN_FILES`
 // (docs/system-design/army-authoring.md). The game reads only the files listed here, imported with the code: there is
-// no mod loader looking for folders on disk. The order does not matter: the loader puts each army after the ones it
-// requires.
+// no mod loader looking for folders on disk. The loader puts each army after the ones it requires; the order here is
+// only the order cards are listed in.
 
 import all from "../armies/all/army.json" with { type: "json" }
 import citizen from "../armies/citizen/army.json" with { type: "json" }

@@ -1,4 +1,4 @@
-// The armies and campaigns the game ships (`files.ts`), loaded once and checked against the content the game has and
+// The armies and campaigns the game ships (`src/shipped.ts`), loaded once and checked against the content the game has and
 // the maps a level can name. A broken army or campaign stops the game where it starts, with every problem named
 // (`load.ts`). docs/system-design/army-authoring.md is the guide to writing one.
 
@@ -13,7 +13,7 @@ export * from "./types.ts"
 export { loadArmies } from "./load.ts"
 export type { GameFiles, LoadWorld } from "./load.ts"
 export { ARMY_FILES, CAMPAIGN_FILES } from "../shipped.ts"
-export { EFFECTS, applyEffect, creditsOf, lasts } from "./effects.ts"
+export { EFFECTS, addsOf, applyEffect, creditsOf, lasts } from "./effects.ts"
 export type { BuildingRow, Callup, EffectKind, Loadout } from "./effects.ts"
 export { DEFAULT_SCHEDULE, dealable, dealHand, rarityOrder, slotsFor, weightOf } from "./deal.ts"
 export type { Deal } from "./deal.ts"

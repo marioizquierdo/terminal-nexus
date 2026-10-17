@@ -112,7 +112,7 @@ test("every Commander names what her army leans on, one or two of five, and Vass
     id: "leans",
     title: "Leans",
     requires: ["vasse"],
-    commander: { id: "leaner", name: "Leaner", unit: "unit.citizen.vasse", ...(lean === undefined ? {} : { lean }) },
+    commander: { id: "leaner", name: "Leaner", unit: "unit.citizen.vasse", faction: "citizen", ...(lean === undefined ? {} : { lean }) },
   })
   const problemsOf = (lean: unknown): readonly string[] => {
     try {

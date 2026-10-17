@@ -70,8 +70,15 @@ const scheduleSlot: Shape<ScheduleSlot> = {
 export const scheduleShape: Shape<Schedule> = list(record<ScheduleEntry>({ round: positiveWholeNumber, deal: list(scheduleSlot) }, {}))
 /** A Commander's own fields. Her lines' moments and their fit are checked after, with the rest of what she names. */
 const commanderEntry = record<CommanderEntry>(
-  { id: text, name: text, unit: text, lean: list(literal(...LEANS)) },
-  { notes: text, barks: dictionary(list(text)) as Shape<Barks>, portrait: list(text), portraitFalls: list(list(text)) },
+  { id: text, name: text, unit: text, faction: text, lean: list(literal(...LEANS)) },
+  {
+    notes: text,
+    barks: dictionary(list(text)) as Shape<Barks>,
+    portrait: list(text),
+    portraitFalls: list(list(text)),
+    start: list(record<Readonly<{ unit: string; count: number }>>({ unit: text, count: positiveWholeNumber }, {})),
+    schedule: scheduleShape,
+  },
 )
 /** An army file's own fields. Its lists are checked item by item, after. */
 const armyFields = record<ArmyManifest>(
