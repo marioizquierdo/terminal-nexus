@@ -204,6 +204,22 @@ answered). Its mode buttons that are game screens open their routes, and a copy 
 address says: `#at=campaign?level=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A
 claude.ai link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
 
+**Duels put two armies against each other** (`npm run duel -- ...`, [`duels.md`](docs/system-design/duels.md),
+the `duel` skill). Headless: each round both sides keep a Nexus power and plan a Build Phase blind, then a Battle
+Round plays between them. Scripts play in one process; a model plays through files, one agent a side. Use them to
+see how an army spends its power curve, never as a verdict on balance.
+
+```bash
+npm run duel -- bench --seeds 1-6 --rounds 8                          # every Commander, every script, both sides
+npm run duel -- play --a vasse --b dob --player-a script:rush --seed 2 --out .playtest/duel
+npm run duel -- new --dir .playtest/d1 --a averno --b dob --seed 11 --rounds 6   # then one model agent a side:
+npm run duel -- wait --dir .playtest/d1 --side A     # prints the brief; the agent writes a plan, then
+npm run duel -- submit --dir .playtest/d1 --side A --plan .playtest/d1/plan-A.json
+```
+
+Model against model, step by step and with the task to give each agent, is in [`duels.md`](docs/system-design/duels.md):
+use a small, cheap model, play each pairing from both sides, and read the reports beside `result.md` for why.
+
 **The log is the feedback loop for the kernel.** `grid --headless` writes fixed-column lines to one
 stream, `[tick] LEVEL kind subject [-> object] detail...`, at `ERROR`, `WARN` (default), `INFO`,
 `DEBUG` or `TRACE`, closed by a `report` line with the outcome, losses and hashes. It grows by adding

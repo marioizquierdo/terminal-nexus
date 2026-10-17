@@ -260,3 +260,47 @@ it: Unfiled Ordnance makes troopers burst when they die, and Ravel raiders and r
 later than Vasse. His level is her first five rounds with him in her place. With the same build, his side clears
 round 1 sooner and loses less, he falls in round 2 where she stands, and his side loses more while he is out: they
 read apart within two rounds.
+
+## The army structure, a third Commander, and duels (2026-10-17)
+
+After Averno was built, asked what designing a second Commander taught and what the structure could do better, and
+told the four improvements proposed (each Commander's army in one file with its campaign apart, abilities as data
+the kernel calls, effects as one table, and a way to fight armies against each other).
+
+### F180 — Solidify the army structure, a third Commander on it, and duels to test them
+
+> i agree. Yes, make a refactor/cleanup branch to solidify the commander army files, separate mals from commander
+> armies, solidify Vasse's values and prepare the code to allow making more commanders easier and with less
+> branching logic / switch. We will tune armies later, for now we are worried about structure. Eventually we want to
+> allow a modder to define new files on a different repo that would still affect the events in battle, for that we
+> need a structure that allows adding new elements and code throughout hooks and event handlers to customize
+> behavior. We only have 2 examples with Vasse and Averno. I recommend you do the logical changes in structure, check
+> for improved modularity, then define a new Commander Army on the new structure, take notes of what could be
+> improved, then make more changes, try to implement some cool ideas on the new commander, then make more code
+> changes to allow defining special behaviors throughout configuration or hooks, finally review the 3 commanders, use
+> a coding adversarial subagent to check for code intuitiveness (validate is if the code structure is self
+> explanatory, this will be very useful for future coding sessions), then try to test a pvp fight between
+> commanders. We don't have a good way to bench-mark them against each other and the campaign is not a great way to
+> do it. Having a run as benchmark will be useful too, but for now we can simply put each commander nexus on one side
+> of the map and play a pvp (or to be more precise, script vs script). Having a ai-friendly scriptable api to plan a
+> build phase for each side with a model call (yourself or using a subagent) then run a battle round, and use the
+> relevant logs plus current map state, plus game instructions for llms, as the context to plan the next build phase,
+> with that we can build a ai to play against, and we can use that both as a quick match and as llm-vs-llm mode, then
+> run some games to see how different commanders approach their power curve. Use cheap model on the ai subagents for
+> tests. And note that a scripted llm play is not the same as a good player, so don't be too clinched to the match
+> conclusions, but it is still an awesome way to test armies against each other.
+>
+> This is actually a long iteration that will create the ground for us to start making and polishing armies. When
+> you make the PR, explain the army file structure and code conventions, this also needs to be on a specific document
+> that will be the guide for future sessions where we make new armies, and later the llace for modders to have a
+> reference. Add some screenshots, don't worry about playable build yet, just give me some numbers after the pvp mod
+> tests. Make sure to document how to play llm-vs-llm for testing (as part of project files, for development, which
+> is for our own coding and less for extrrnal documentation).
+
+"mals" is read as campaigns and their levels. **Built** (see the step): armies stack (`all`, a faction, a
+Commander) with every unit and structure written as data in its army, and campaigns in their own folder; Vasse's
+tuned values are her army's data and their Experiments are gone; a Nexus power's effect and a unit's ability are each
+one entry of a table, so no reader branches on a kind and a new kind is one file; Dob Hunter, the third Commander,
+on the Ravel Nexus with a bounty and loaded dice; an adversarial review of the code's readability, its findings
+applied; and duels, two armies on one map, script or model a side, with a bench and model games run. The guide is
+`docs/system-design/army-authoring.md`; duels and model against model are `docs/system-design/duels.md`.

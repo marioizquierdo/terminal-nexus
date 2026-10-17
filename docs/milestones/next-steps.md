@@ -27,6 +27,12 @@ it is done.*
   rounds. He is `&`, he charges out of the line, and his units near him hit a quarter harder. In round 2 the Nexus
   Pulse (`n`) deals one card tagged `Ravel`: raiders or runners from the Ravel Nexus who fight for him. When he
   falls he is out for the next round, not back at once as she is. Do they feel different within two rounds?
+- **Read the army guide, and run a duel** (the army structure round): [`army-authoring.md`](../system-design/army-authoring.md)
+  is the guide for writing a Commander as data; `npm run duel -- bench --seeds 1-6` fights Vasse, Averno and Dob
+  Hunter against each other with three scripts, and [`duels.md`](../system-design/duels.md) says how to set two model
+  agents against each other. Three things the duels found wait on his word: Averno won all four of his model games and
+  most benches (his players attacked nearly every round, and Forward Order pays for attacking), Ravel buildings train about half the
+  strength a credit Citizen ones do, and Dob has no campaign yet.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When
   she falls, a small window opens beside her, her face falls and the window evaporates; her dim `@` waits beside the
@@ -217,6 +223,7 @@ Small, none blocking.
 | Item | Why | Size |
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
+| Duel tie-breaks that mirror for the side: a building's new units and a muster read the Grid west to east, so the east side wins about nine mirror duels in ten | A duel's numbers should not depend on the side; benches play both sides until then | medium |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet
