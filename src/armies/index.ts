@@ -1,14 +1,8 @@
-// The armies the game ships, loaded once: `all` (the buildings and Nexus powers any Commander may use, and
-// the bench content its levels put on the Grid) and `vasse` (her Commander and her campaign), checked against the
-// content the game has and the maps a level can name. A broken army stops the game where it starts, with every
-// problem named (`load.ts`).
-//
-// Adding an army is a folder under `armies/` with its `army.json`, and one line here: the game reads only
-// the armies this file lists, imported with the code — there is no mod loader looking for folders on disk.
+// The armies and campaigns the game ships (`files.ts`), loaded once and checked against the content the game has and
+// the maps a level can name. A broken army or campaign stops the game where it starts, with every problem named
+// (`load.ts`). docs/system-design/army-authoring.md is the guide to writing one.
 
-import all from "../../armies/all/army.json" with { type: "json" }
-import vasse from "../../armies/vasse/army.json" with { type: "json" }
-import averno from "../../armies/averno/army.json" with { type: "json" }
+import { ARMY_FILES, CAMPAIGN_FILES } from "../shipped.ts"
 import { MAPS } from "../build/maps.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import type { MissionDefinition } from "../mission/types.ts"
@@ -17,14 +11,17 @@ import type { Armies, Level } from "./types.ts"
 
 export * from "./types.ts"
 export { loadArmies } from "./load.ts"
-export type { LoadWorld } from "./load.ts"
+export type { GameFiles, LoadWorld } from "./load.ts"
+export { ARMY_FILES, CAMPAIGN_FILES } from "../shipped.ts"
+export { EFFECTS, applyEffect, creditsOf, lasts } from "./effects.ts"
+export type { BuildingRow, Callup, EffectKind, Loadout } from "./effects.ts"
 export { DEFAULT_SCHEDULE, dealable, dealHand, rarityOrder, slotsFor, weightOf } from "./deal.ts"
 export type { Deal } from "./deal.ts"
 export { ACTS, EARLIEST_ROUND, LEANS, MAX_LEANS, MAX_ROUNDS, PICK_WORTH, ROUND_CREDITS, dealtBy, pickWorth, roundCredits } from "./curve.ts"
 export type { Lean } from "./curve.ts"
 
-/** Every army the game ships, checked and resolved. */
-export const ARMIES: Armies = loadArmies([all, vasse, averno], { registry: FIXTURE_REGISTRY, maps: MAPS })
+/** Every army and campaign the game ships, checked and resolved. */
+export const ARMIES: Armies = loadArmies({ armies: ARMY_FILES, campaigns: CAMPAIGN_FILES }, { registry: FIXTURE_REGISTRY, maps: MAPS })
 
 /** A level of a shipped campaign by its id. Throws for one no army has: what names it is code that expects it. */
 export function campaignLevel(id: string): Level {
@@ -33,7 +30,8 @@ export function campaignLevel(id: string): Level {
   return level
 }
 
-/** PERIMETER: the first level of Vasse's campaign, the one the game opens when nothing names another. */
+/** PERIMETER: the first level of Vasse's campaign (`campaigns/vasse`), the one the game opens when nothing names
+ *  another. */
 export const PERIMETER_LEVEL: Level = campaignLevel("vasse-test-1")
 
 /** PERIMETER's mission, by the name the shell and the tests have always used for it. */

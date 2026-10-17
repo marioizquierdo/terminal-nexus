@@ -13,6 +13,7 @@ import type { DomainEvent } from "../src/events/types.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { ENGAGE_RANGE } from "../src/pulse/target.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
+import { creditsEarned } from "../src/match/index.ts"
 
 function baseScenario(): ScenarioDefinition {
   return {
@@ -495,4 +496,31 @@ test("aura-by-the-book: the units near Vasse take three quarters of every hit, s
   // The one beyond her reach falls first.
   const fell = (entity: string): number => run.events.find((event) => event.kind === "entity.died" && event.entity === entity)?.tick ?? Number.POSITIVE_INFINITY
   assert.ok(fell("A:trooper#4") < fell("A:trooper#2"), "the guarded trooper fell first")
+})
+
+test("dob-bounty: what falls near Dob pays his side, and one throw in four lands three times as hard", async () => {
+  const resolved = await resolveScenario("dob-bounty.map.json")
+  const { run } = resolved
+  const dob = run.initialState.entities.find((entity) => entity.contentId === "unit.ravel.dob")
+  assert.ok(dob !== undefined)
+  type Triggered = Extract<DomainEvent, { kind: "ability.triggered" }>
+  const triggered = run.events.filter((event): event is Triggered => event.kind === "ability.triggered")
+  // Every enemy that fell within his reach while he stood paid three credits, noted on his side's account.
+  const paid = triggered.filter((event) => event.ability === "bounty")
+  assert.ok(paid.length >= 2, "his bounty paid for fewer than two kills")
+  for (const event of paid) assert.deepEqual([event.entity, event.player, event.name, event.credits], [dob.id, "A", "Bounty", 3])
+  assert.equal(creditsEarned(run.events, "A"), 3 * paid.length)
+  assert.equal(creditsEarned(run.events, "B"), 0)
+  // Each paid once, for an enemy of his that fell (tests/abilities.test.ts has one that falls out of his reach).
+  const fell = new Set(run.events.flatMap((event) => (event.kind === "entity.died" && event.player === "B" ? [event.entity] : [])))
+  assert.ok(paid.every((event) => event.target !== undefined && fell.has(event.target)))
+  assert.equal(new Set(paid.map((event) => event.target)).size, paid.length)
+  // His lucky throws: each one noted, three times the six a charge deals, and the hit it changed is that hard.
+  const lucky = triggered.filter((event) => event.ability === "loadedDice")
+  assert.ok(lucky.length > 0, "the dice never came up on this seed")
+  for (const event of lucky) {
+    assert.equal(event.amount, 18)
+    const hit = run.events.find((other) => other.kind === "damage.applied" && other.tick === event.tick && other.source === dob.id && other.entity === event.target)
+    assert.ok(hit !== undefined && hit.kind === "damage.applied" && hit.hpBefore - hit.hpAfter === Math.min(18, hit.hpBefore))
+  }
 })

@@ -11,6 +11,7 @@ import type { BuildLayout } from "../build/layout.ts"
 import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, menuEntryRow, menuFloor } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import { cardEntry, menuEntries } from "../build/state.ts"
+import { abilityLines } from "../abilities/index.ts"
 import { CONTENT_ART } from "../content/art.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
@@ -306,28 +307,21 @@ export type SkillLines = Readonly<{ name: string; lines: readonly string[] }>
 const NO_SKILL: SkillLines = { name: "", lines: [] }
 
 /**
- * What a card says of the skill its unit has on its own — a Commander's aura, Vasse's By the Book: its name, then
- * one plain sentence of what it does and how far it reaches, its range said as a card says any range, one number,
- * wrapped to the panel ("By the Book: she and her units within range 4 take 25% less damage.") — at the strength
- * the Experiment sets now, which is the strength the battle will run on (`auraRegistry`, `src/match/commander.ts`).
- * Nothing for anything else, nor while the Experiment has turned it off. The name opens the sentence rather than
- * standing on a line of its own, and its range is said in the sentence, so it takes no more rows than it needs: at
- * 80 x 24 Vasse's card has none to spare.
+ * What a card says of the skills its unit has on its own — a Commander's aura, a bounty, a lucky hit: each ability's
+ * own sentence (`abilityLines`, `src/abilities/`), its name opening it ("By the Book: she and her units within range 4
+ * take 25% less damage."), wrapped to the panel. The first ability's name is drawn bold. Nothing for anything without
+ * one. The name opens the sentence rather than standing on a line of its own, so it takes no more rows than it needs:
+ * at 80 x 24 a Commander's card has none to spare.
  */
-export function skillLines(input: Pick<BuildCompositionInput, "context" | "state">, card: Card, limit: number): SkillLines {
+export function skillLines(input: Pick<BuildCompositionInput, "context">, card: Card, limit: number): SkillLines {
   if (card.icon.kind !== "entity") return NO_SKILL
-  const aura = input.context.registry.get(card.icon.contentId).aura
-  if (aura === undefined) return NO_SKILL
-  const { subject, possessive } = CARD_TEXT[card.icon.contentId]?.pronouns ?? { subject: "she", possessive: "her" }
-  const name = `${aura.name ?? "Aura"}:`
-  // A range of 1 is what is next to the bearer.
-  const who = aura.radius === 1 ? `${subject} and the units next to ${subject === "she" ? "her" : "him"}` : `${subject} and ${possessive} units within range ${aura.radius}`
-  // A boost (Forward Order) says how much more its units deal; a guard (By the Book), how much less they take, at the
-  // strength its Experiment sets now.
-  if (aura.damageDealtPercent !== undefined) return { name, lines: wrapWords(`${name} ${who} deal ${aura.damageDealtPercent - 100}% more damage.`, limit) }
-  const less = setting(input.state, "commanderAura")
-  if (less === 0) return NO_SKILL
-  return { name, lines: wrapWords(`${name} ${who} take ${less}% less damage.`, limit) }
+  const definition = input.context.registry.get(card.icon.contentId)
+  const pronouns = CARD_TEXT[card.icon.contentId]?.pronouns ?? { subject: "it", possessive: "its" }
+  const sentences = abilityLines(definition, pronouns)
+  const [first] = sentences
+  if (first === undefined) return NO_SKILL
+  const name = first.slice(0, first.indexOf(":") + 1)
+  return { name, lines: sentences.flatMap((sentence) => wrapWords(sentence, limit)) }
 }
 
 /** A card's icon at `top`: a thing's own glyphs as its side draws them — or, while the card is

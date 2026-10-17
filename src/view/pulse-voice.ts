@@ -32,6 +32,7 @@ import type { BarkMoment, Barks } from "../armies/barks.ts"
 import { barkMapWidth, quoted } from "../armies/barks.ts"
 import { ARMIES } from "../armies/index.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { abilityReach } from "../abilities/index.ts"
 import { commanderName } from "../content/cards.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { footprintWithin, tilesOf } from "../grid/coords.ts"
@@ -147,7 +148,7 @@ export function speakerOf(timeline: VoiceTimeline, barksOf: (contentId: string) 
     player,
     name: commanderName(commander.contentId),
     maxHp: definition.maxHp,
-    near: definition.aura?.radius ?? VOICE.nearTiles,
+    near: abilityReach(definition) ?? VOICE.nearTiles,
     barks,
   }
 }

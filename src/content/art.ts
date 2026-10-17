@@ -17,6 +17,8 @@
 // wide. Case is applied later — player A lower, player B upper (`entityGlyph`) — so author in lower
 // case and let ownership do its own work.
 
+import { ARMY_CONTENT } from "./army-content.ts"
+
 /** One entity's body: rows north to south, one character per tile. */
 export type UnitArt = readonly string[]
 
@@ -27,13 +29,11 @@ export type UnitArt = readonly string[]
  * hauler `(h)` is the same one that makes a Nexus `[=]`, and the Ravel arrowhead that makes a raider
  * `>x<` is the same one under its Nexus.
  */
-export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
+const BUILT_IN_ART: Readonly<Record<string, UnitArt>> = {
   // --- Citizens ------------------------------------------------------------------------------
   "unit.citizen.worker": ["w"],
   "unit.citizen.trooper": ["t"],
   "unit.citizen.marksman": ["m"],
-  /** The Garrison's heavy infantry: the letter of its pike. */
-  "unit.citizen.pikeman": ["p"],
   /** Three tiles of chassis: the brackets are the vehicle, the letter is the crew. */
   "unit.citizen.hauler": ["(h)"],
   /**
@@ -49,30 +49,12 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
    * agreement test in tests/content.test.ts caught it the first time it ran.
    */
   "structure.citizen.barracks": ["[b]", "|_|"],
-  /** The Barracks's bracket, heavier: closed walls where the Barracks's yard is open, and its letter. */
-  "structure.citizen.garrison": ["[g]", "[_]"],
-  /** The Citizen bracket round its letter, one row high: a store, not a hall. */
-  "structure.citizen.depot": ["[d]"],
-  /** One tile, the aid post's cross: what Aid Station Permit adds. The cross its patches leave rising beside
-   *  the unit they mend is the same one (`MEND_GLYPH`, src/view/effects/recipes.ts). */
-  "structure.citizen.aidstation": ["+"],
   /**
    * Two by two, between the trooper and the hauler in scale as well as in the roster. A sealed
    * turret over two struts - the bracket vocabulary at its smallest multi-tile size, still reading
    * as "contained" rather than "vehicle" the way the hauler's open `(h)` does.
    */
   "unit.citizen.sentinel": ["[]", "||"],
-  /**
-   * The Commander: the one glyph on the Grid that is not a letter or a bracket (pulse.md: "normally `@`"),
-   * so she reads apart from every trooper at a glance and in monochrome, and the same for either side.
-   */
-  "unit.citizen.vasse": ["@"],
-  /**
-   * Marshal Averno: `&`, a figure with its weight thrown forward — the ruled glyph the register once weighed for
-   * Vasse, a stance rather than a spiral. Free in both packs, and like her `@` neither a letter nor a bracket, so
-   * a Commander reads apart from every unit.
-   */
-  "unit.citizen.averno": ["&"],
 
   // --- Ravels --------------------------------------------------------------------------------
   "unit.ravel.scav": ["s"],
@@ -154,6 +136,13 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
   /** An alarm mark: the glyph gets no less urgent the longer it stays locked on, even though the
    * damage behind it does. */
   "structure.bench.beamturret": ["!"],
+}
+
+/** Every piece of content's art: the engine's own and the glyphs each army file writes for what it defines
+ *  (`./army-content.ts`). */
+export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
+  ...BUILT_IN_ART,
+  ...Object.fromEntries(ARMY_CONTENT.map((content) => [content.definition.id, content.glyph])),
 }
 
 /** The art for a content id, or `undefined` for content nobody has drawn yet. */

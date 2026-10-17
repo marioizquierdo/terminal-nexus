@@ -65,6 +65,15 @@ export type AttackDef = Readonly<{
 
 export type Behavior = "advance" | "flee" | "static" | "support"
 
+/** One of an ability's own values: a whole number, a word, or a list of them — what a canonical hash can hold. */
+export type AbilityValue = number | string | readonly AbilityValue[]
+
+/**
+ * An ability a unit has, as its content names it (`ContentDef.abilities`): its `kind`, which names the code that runs
+ * it (`src/abilities/`), and that kind's own numbers. `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
+ */
+export type AbilityUse = Readonly<{ kind: string } & Record<string, AbilityValue>>
+
 /**
  * Volatile munitions — the Ravel rule shape from commander-armies.md: many Ravel
  * things detonate when they die, theirs and what they kill, and chains are legal and bounded.
@@ -125,23 +134,18 @@ export type ContentDef = Readonly<{
    */
   roundsOut?: number
   /**
-   * A Commander's passive aura, a skill that works on its own (the owner, 2026-10-04: Commanders "should be like
-   * heroes on warcraft3 ... Vasse should provide boost to nearby units"). While its bearer is on the Grid, the
-   * units of its side within `radius` tiles of it — measured as range is (`footprintWithin`), to the nearest tile
-   * of each footprint, a row counting two columns — take `damageTakenPercent` percent of the damage a hit would
-   * deal them (a guard: Vasse's *By the Book*), or deal `damageDealtPercent` percent of the damage they would (a
-   * boost: Averno's *Forward Order*). An aura is one of the two.
-   * The kernel's damage rule reads it (`src/pulse/aura.ts`: rounded down, never below 1, the bearer covered
-   * too, the strongest aura of each kind alone when several reach a unit); presentation draws its reach. `name` is
-   * what a card calls it, the way a Nexus power has a name; no rule reads it.
-   */
-  aura?: Readonly<{ radius: number; damageTakenPercent?: number; damageDealtPercent?: number; name?: string }>
-  /**
    * How near an enemy must come before this unit turns from its side's target to fight it (`engageRange`,
    * `src/pulse/target.ts`), when it is not the shared one: Averno's charge, a Commander who leaves the line for
    * what comes at it. Measured as range is; undefined for every other unit, which keeps the shared reach.
    */
   engageRange?: number
+  /**
+   * What it does on its own besides fighting, each run by the code its `kind` names (`src/abilities/`): an aura, a
+   * bounty on what dies near it, a lucky hit. The kernel calls each kind's hooks at the moments it declares
+   * (docs/system-design/army-authoring.md, "Abilities"); a kind it does not know stops the registry from loading.
+   * Absent: none.
+   */
+  abilities?: readonly AbilityUse[]
   /**
    * Hard restriction: this entity may only perceive hostiles on these layers as viable targets — for
    * a normal `attack` and for a contact `detonation.triggerRange` alike, since both are resolved from

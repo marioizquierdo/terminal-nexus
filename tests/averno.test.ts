@@ -36,7 +36,7 @@ test("he charges: he turns to fight from twice as far as every other unit, and h
   assert.equal(averno.commander, true)
   assert.equal(engageRange(averno), 2 * ENGAGE_RANGE)
   assert.equal(engageRange(FIXTURE_REGISTRY.get("unit.citizen.vasse")), ENGAGE_RANGE)
-  assert.deepEqual(averno.aura, { radius: 4, damageDealtPercent: 125, name: "Forward Order" })
+  assert.deepEqual(averno.abilities, [{ kind: "aura", name: "Forward Order", radius: 4, damageDealtPercent: 125 }])
   // A round late: out for the round after the one he falls in, where she is back the next.
   assert.equal(averno.roundsOut, 1)
 })

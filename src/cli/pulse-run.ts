@@ -28,9 +28,7 @@ import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlayerId } from "../state/types.ts"
 import {
-  auraReachRegistry,
-  auraRegistry,
-  commanderRegistry,
+  creditsEarned,
   fallen,
   laterArrivals,
   missionOpening,
@@ -40,8 +38,9 @@ import {
   spawningRegistry,
 } from "../match/index.ts"
 import type { Arrival, Force, MissionPulseInput, Restoration } from "../match/index.ts"
-import type { BuildingSpawns, PowerCard } from "../armies/index.ts"
-import { dealHand } from "../armies/index.ts"
+import type { BuildingSpawns, Loadout, PowerCard } from "../armies/index.ts"
+import { applyEffect, dealHand } from "../armies/index.ts"
+import type { ConstructItem } from "../build/types.ts"
 import { constructItem, nexusDraftOf } from "../build/catalog.ts"
 import { foreseeRound } from "../match/index.ts"
 import type { GroupIntent, TroopsIntent } from "../match/index.ts"
@@ -310,49 +309,21 @@ function withRoundScene(context: BuildContext, scene: readonly DialogLine[]): Bu
 
 /**
  * What keeping a Nexus power does to the round's context, for the rest of the mission (commander-armies.md, what
- * a Nexus power does): `kept` gains it, and its effect is applied where the Build Phase and the Pulse both read
- * it — so what it changes is on screen the moment it is picked, and is what the battle runs on.
- *
- * - `spawnUnits` calls its units up for this round's Pulse (`callups`), mustered on the Grid Nexus; the caller
- *   foresees the round again so they show as arriving.
- * - `modifyCommander` multiplies every Commander's aura reach (`auraReachRegistry`): her card and the battle.
- * - `modifyContent` gives every row of the building it names more waves a round: its card and the battle.
- * - `modifyUnit` changes the unit it names in the round's registry (Unfiled Ordnance: troopers burst when they die).
- * - `addBuilding` adds the building it names to the build menu, after the rows already there.
- * - `credits` changes nothing here: the reducer adds them to what is left to spend when the pick is made.
+ * a Nexus power does): `kept` gains it, and its effect is applied to the round's content, build menu and call-ups
+ * (`applyEffect`, `src/armies/effects.ts`, where each kind of effect says what it changes) — so what it changes is on
+ * screen the moment it is picked, and is what the battle runs on. Credits change nothing here: the reducer adds them
+ * to what is left to spend when the pick is made.
  */
 export function keepPower(context: BuildContext, card: PowerCard): BuildContext {
-  const kept: BuildContext = { ...context, kept: [...(context.kept ?? []), card] }
-  const { effect } = card
-  const building = (id: string) => (context.buildingCards ?? []).find((candidate) => candidate.id === id)
-  if ("spawnUnits" in effect) {
-    return { ...kept, callups: [...(context.callups ?? []), { unit: effect.spawnUnits.unit, count: effect.spawnUnits.count }] }
+  const loadout: Loadout<ConstructItem> = {
+    registry: context.registry,
+    catalog: context.catalog,
+    callups: context.callups ?? [],
+    cards: context.buildingCards ?? [],
+    row: (building, index) => constructItem(building, index, context.buildingCards ?? []),
   }
-  if ("modifyCommander" in effect) return { ...kept, registry: auraReachRegistry(context.registry, effect.modifyCommander.auraReachTimes) }
-  if ("modifyContent" in effect) {
-    const structure = building(effect.modifyContent.building)?.structure
-    const addWaves = effect.modifyContent.addWaves
-    return {
-      ...kept,
-      catalog: context.catalog.map((item) =>
-        item.contentId === structure && item.spawns !== undefined ? { ...item, spawns: { ...item.spawns, waves: item.spawns.waves + addWaves } } : item,
-      ),
-    }
-  }
-  if ("modifyUnit" in effect) {
-    // A kind of unit changed for the rest of the mission (Unfiled Ordnance: it bursts when it dies), in the registry
-    // the Build Phase and every later battle read.
-    const { unit, detonation } = effect.modifyUnit
-    if (!context.registry.has(unit)) return kept
-    const ids = context.registry.ids()
-    return { ...kept, registry: createRegistry(ids.map((id) => (id === unit ? { ...context.registry.get(id), detonation } : context.registry.get(id)))) }
-  }
-  if ("addBuilding" in effect) {
-    const card = building(effect.addBuilding.building)
-    if (card === undefined || context.catalog.some((item) => item.contentId === card.structure)) return kept
-    return { ...kept, catalog: [...context.catalog, constructItem(card, context.catalog.length, context.buildingCards ?? [])] }
-  }
-  return kept
+  const changed = applyEffect(loadout, card.effect)
+  return { ...context, kept: [...(context.kept ?? []), card], registry: changed.registry, catalog: changed.catalog, callups: changed.callups }
 }
 
 /** The hand round `round` deals from the context's Nexus power pool, under its digits — or the draft as it is,
@@ -397,14 +368,10 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 
   const round = (number: number) => ({ number, of: mission.pulses })
 
-  /** The content a round's Pulse runs on: the level's buildings spawning their waves as their army says, and
-   *  its Commander as tough, and her aura as strong, as the Experiments say. The Build Phase's own registry
-   *  carries none of them. */
+  /** The content a round's Pulse runs on: the level's buildings spawning their waves as their army says. The Build
+   *  Phase's own registry carries no recipe. */
   const pulseRegistry = (context: BuildContext, state: BuildState): ContentRegistry =>
-    auraRegistry(
-      commanderRegistry(spawningRegistry(context.registry, spawnsOf(context), firstWaveTicks(state)), setting(state, "commanderHealth")),
-      setting(state, "commanderAura"),
-    )
+    spawningRegistry(context.registry, spawnsOf(context), firstWaveTicks(state))
 
   return {
     mission,
@@ -412,7 +379,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
     keep(context, card) {
       const next = keepPower(context, card)
       // What arrives changed only with units called up; the rest of the round's forecast is as it was.
-      return "spawnUnits" in card.effect ? { ...next, incoming: forecast(next, next.round?.number ?? 1) } : next
+      return next.callups !== context.callups ? { ...next, incoming: forecast(next, next.round?.number ?? 1) } : next
     },
 
     foresee(context, state) {
@@ -468,9 +435,9 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       if (resolved.mission?.verdict.kind !== "continue") return null
       const number = (context.round?.number ?? 1) + 1
       // The Commanders who fell last round join the ones already out; whoever is due is set down beside the
-      // Nexus before the Build Phase opens, at the health the Experiment says now.
+      // Nexus before the Build Phase opens.
       const absent = [...(context.absent ?? []), ...(resolved.mission.fell ?? [])]
-      const back = restoreCommanders(resolved.recall.state, absent, number, commanderRegistry(context.registry, setting(state, "commanderHealth")))
+      const back = restoreCommanders(resolved.recall.state, absent, number, context.registry)
       const carried = back.state
       const { standing, field } = mapOf(context.registry, carried)
       const income = roundIncome(number)
@@ -484,9 +451,10 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         absent: back.absent,
         restored: back.restored.map((restoration) => ({ player: restoration.player, contentId: restoration.contentId })),
         round: round(number),
-        // Credits carry over — what the last Build Phase did not spend, the Nexus power it picked included — and the
-        // round adds its own from the power curve (`src/armies/curve.ts`), the same in every mode.
-        allotment: remaining(context, state) + income,
+        // Credits carry over — what the last Build Phase did not spend, the Nexus power it picked included — the
+        // round adds its own from the power curve (`src/armies/curve.ts`), the same in every mode, and the player's
+        // abilities add what they earned in the battle (a bounty: `src/match/earnings.ts`).
+        allotment: remaining(context, state) + income + creditsEarned(resolved.timeline.events, "A"),
         // What was kept stays kept (it is in this context already); what was called up has arrived.
         callups: [],
       }

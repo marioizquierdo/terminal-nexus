@@ -1,6 +1,6 @@
-// The shape an army's JSON must have, checked before anything reads it: a modder writes JSON without
-// TypeScript, so the loader is what tells them, by path and all at once, that a field is missing, is
-// misspelt, or holds the wrong kind of value.
+// The shape a JSON file must have — an army, a campaign, a unit written as data — checked before anything reads it:
+// a modder writes JSON without TypeScript, so the loader is what tells them, by path and all at once, that a field is
+// missing, is misspelt, or holds the wrong kind of value.
 //
 // A handful of combinators — text, numbers, fixed values, lists, objects and keyed variants — each a check
 // that says every problem it finds and returns whether the value has the shape. An object's shape is typed
@@ -134,13 +134,13 @@ export function record<T extends object>(
   return {
     check(value: unknown, at: string, say: Say): value is T {
       if (!isObject(value)) {
-        say(`${at === "" ? "an army" : at} should be an object, not ${shown(value)}`)
+        say(`${at === "" ? "the file" : at} should be an object, not ${shown(value)}`)
         return false
       }
       let fits = true
       for (const [key, shape] of Object.entries(needed)) {
         if (!Object.hasOwn(value, key)) {
-          say(`${at === "" ? "the army" : at} needs "${key}"`)
+          say(`${at === "" ? "the file" : at} needs "${key}"`)
           fits = false
         } else if (!shape.check(value[key], fieldAt(at, key), say)) fits = false
       }
@@ -150,7 +150,7 @@ export function record<T extends object>(
       for (const key of Object.keys(value)) {
         if (Object.hasOwn(needed, key) || Object.hasOwn(allowed, key)) continue
         const known = [...Object.keys(needed), ...Object.keys(allowed)].map((name) => `"${name}"`).join(", ")
-        say(`${at === "" ? "the army" : at} has "${key}", which is not one of its fields (${known})`)
+        say(`${at === "" ? "the file" : at} has "${key}", which is not one of its fields (${known})`)
         fits = false
       }
       return fits

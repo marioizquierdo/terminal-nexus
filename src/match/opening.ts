@@ -37,6 +37,8 @@ const MUSTER_RADIUS = 24
 export type OpeningInput = Readonly<{
   grid: GridTerrain
   registry: ContentRegistry
+  /** Each side's own content, when the sides' differ (a duel's: `PulseContext.sides`). Absent: `registry` for both. */
+  sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>
   /** Everything newly standing or committed for this Pulse, the player's and anyone else's. */
   structures: readonly StructurePlacement[]
   setup: PulseSetup
@@ -73,7 +75,9 @@ export function openingState(input: OpeningInput): MatchState {
 
 /** `openingState`, with which force each new unit came from. */
 export function opening(input: OpeningInput): Opening {
-  const { grid, registry, structures, setup, carried } = input
+  const { grid, structures, setup, carried } = input
+  /** The content `player`'s things are defined by. */
+  const contentFor = (player: PlayerId): ContentRegistry => input.sides?.[player] ?? input.registry
   if (!Number.isInteger(setup.seed)) throw new PulseSetupError(`seed must be an integer, received ${setup.seed}`)
   if (!Number.isInteger(setup.pulseTicks) || setup.pulseTicks <= 0) {
     throw new PulseSetupError(`pulseTicks must be a positive integer, received ${setup.pulseTicks}`)
@@ -107,24 +111,26 @@ export function opening(input: OpeningInput): Opening {
     placed.push({ player, definition, anchor, ...from })
   }
 
-  const known = (contentId: string, where: string): ContentDef => {
-    if (!registry.has(contentId)) throw new PulseSetupError(`${where} names the unknown content id "${contentId}"`)
-    return registry.get(contentId)
+  const known = (player: PlayerId, contentId: string, where: string): ContentDef => {
+    const content = contentFor(player)
+    if (!content.has(contentId)) throw new PulseSetupError(`${where} names the unknown content id "${contentId}"`)
+    return content.get(contentId)
   }
+  const definitionOf = (entity: EntityState): ContentDef => contentFor(entity.player).get(entity.contentId)
 
   const unitMask = (definition: ContentDef) =>
     maskFrom(index, { layers: ENTITY_LAYERS, terrain: definition.layer === "air" ? "ignore" : "impassable" })
 
   // What still stands from the last Pulse goes down first, where it stood.
   const carriedEntities = carried?.entities ?? []
-  const isStructure = (entity: EntityState): boolean => registry.get(entity.contentId).layer === "obstacles"
+  const isStructure = (entity: EntityState): boolean => definitionOf(entity).layer === "obstacles"
   for (const entity of carriedEntities.filter(isStructure)) {
-    claim(entity.player, registry.get(entity.contentId), entity.anchor, `standing ${entity.id}`, { carried: entity })
+    claim(entity.player, definitionOf(entity), entity.anchor, `standing ${entity.id}`, { carried: entity })
   }
 
   structures.forEach((structure, position) => {
     const where = `structure ${position + 1}`
-    const definition = known(structure.contentId, where)
+    const definition = known(structure.player ?? "A", structure.contentId, where)
     claim(
       structure.player ?? "A",
       definition,
@@ -136,7 +142,7 @@ export function opening(input: OpeningInput): Opening {
   // Then the carried units: where they stood, or — a building planned on top of one — the nearest free
   // tile to it.
   for (const entity of carriedEntities.filter((candidate) => !isStructure(candidate))) {
-    const definition = registry.get(entity.contentId)
+    const definition = definitionOf(entity)
     const anchor = nearestFit(unitMask(definition), definition.footprint, centreTile(entity.anchor, definition.footprint), MUSTER_RADIUS)
     if (anchor === null) throw new PulseSetupError(`${entity.id}: no room within ${MUSTER_RADIUS} tiles of where it stood`)
     claim(entity.player, definition, anchor, entity.id, { carried: entity })
@@ -148,7 +154,7 @@ export function opening(input: OpeningInput): Opening {
   setup.forces.forEach((force, forceIndex) => {
     force.units.forEach((contentId, unitIndex) => {
       const where = `force ${forceIndex + 1}, unit ${unitIndex + 1}`
-      const definition = known(contentId, where)
+      const definition = known(force.player, contentId, where)
       const anchor = nearestFit(unitMask(definition), definition.footprint, force.muster, MUSTER_RADIUS)
       if (anchor === null) {
         throw new PulseSetupError(
@@ -195,8 +201,7 @@ export function opening(input: OpeningInput): Opening {
     // given another wave, or none any more.
     .map((entry) => {
       const { productionCooldown: _cooldown, produced: _produced, owed: _owed, ...entity } = entry.carried as EntityState
-      // Never more health than its content now allows: a Commander's health is an Experiment while it is
-      // tuned, and may have been turned down between rounds. Nothing else ever carries more.
+      // Never more health than its content now allows: a content changed between rounds may allow less.
       return { ...entity, hp: Math.min(entity.hp, entry.definition.maxHp), anchor: entry.anchor, ...productionFields(entry.definition) }
     })
   const held = input.held ?? []
@@ -205,7 +210,7 @@ export function opening(input: OpeningInput): Opening {
   const entities = [...kept, ...born]
     .map((entity) => {
       // A building held this Pulse opens with every wave already sent (a building's action, Hold production).
-      const recipe = registry.get(entity.contentId).production
+      const recipe = definitionOf(entity).production
       return recipe !== undefined && holding(entity) ? { ...entity, produced: recipe.waves } : entity
     })
     .sort((a, b) => a.ordinal - b.ordinal)

@@ -22,7 +22,7 @@
 // events, the registry and the round number.
 
 import type { ContentRegistry } from "../content/index.ts"
-import { createRegistry, freshEntityFields, HEALTH_TUNED_COMMANDER } from "../content/index.ts"
+import { freshEntityFields } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
@@ -120,55 +120,4 @@ export function restoreCommanders(
     restored.push({ player: absence.player, contentId: absence.contentId, ordinal, anchor })
   }
   return { state: { ...state, entities: [...state.entities, ...born], nextOrdinal }, absent: still, restored }
-}
-
-/**
- * `registry` with every aura letting through `100 - less` percent of a hit — what the Pulse reads while the
- * Experiment "By the Book" (Vasse's aura) is tuned — and, with `less` 0, no aura at all. The same registry,
- * untouched, when nothing in it has an aura.
- */
-export function auraRegistry(registry: ContentRegistry, less: number): ContentRegistry {
-  if (!Number.isInteger(less) || less < 0 || less >= 100) throw new Error(`an aura takes away 0 to 99 percent of a hit, received ${less}`)
-  const ids = registry.ids()
-  // A guarding aura only (By the Book): a boost (Forward Order) is not what this Experiment tunes.
-  if (!ids.some((id) => registry.get(id).aura?.damageTakenPercent !== undefined)) return registry
-  return createRegistry(
-    ids.map((id) => {
-      const definition = registry.get(id)
-      if (definition.aura?.damageTakenPercent === undefined) return definition
-      if (less === 0) {
-        const { aura: _off, ...without } = definition
-        return without
-      }
-      return { ...definition, aura: { ...definition.aura, damageTakenPercent: 100 - less } }
-    }),
-  )
-}
-
-/**
- * `registry` with every Commander's aura reaching `times` as far — what Standing Order, a Nexus power, does for the
- * rest of a mission once kept ("By the Book reaches twice as far"). Its reach stays a whole number of rows, as every
- * reach is (`wholeRows`, `src/grid/reach.ts`): an even reach doubled is even. The same registry, untouched, when no
- * Commander has an aura.
- */
-export function auraReachRegistry(registry: ContentRegistry, times: number): ContentRegistry {
-  if (!Number.isInteger(times) || times < 1) throw new Error(`an aura's reach is multiplied by a whole number from 1, received ${times}`)
-  const ids = registry.ids()
-  if (!ids.some((id) => registry.get(id).commander === true && registry.get(id).aura !== undefined)) return registry
-  return createRegistry(
-    ids.map((id) => {
-      const definition = registry.get(id)
-      if (definition.commander !== true || definition.aura === undefined) return definition
-      return { ...definition, aura: { ...definition.aura, radius: definition.aura.radius * times } }
-    }),
-  )
-}
-
-/** `registry` with Vasse's health set to `health` — what the Pulse reads while the Experiment "Vasse's health" is
- *  tuned. The same registry, untouched, when she is not in it. */
-export function commanderRegistry(registry: ContentRegistry, health: number, commander: string = HEALTH_TUNED_COMMANDER): ContentRegistry {
-  if (!Number.isInteger(health) || health <= 0) throw new Error(`a Commander's health must be a positive integer, received ${health}`)
-  // The Experiment is Vasse's health: another Commander keeps his own (Averno's 70).
-  if (!registry.has(commander) || registry.get(commander).commander !== true) return registry
-  return createRegistry(registry.ids().map((id) => (id === commander ? { ...registry.get(id), maxHp: health } : registry.get(id))))
 }

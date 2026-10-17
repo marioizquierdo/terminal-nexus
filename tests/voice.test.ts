@@ -13,6 +13,7 @@
 import { BUILD_MOMENTS } from "../src/view/commander-moments.ts"
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { auraOf } from "../src/abilities/index.ts"
 import { BARK_MOMENTS, BARK_ROOM, barkProblem, quoted } from "../src/armies/barks.ts"
 import type { Barks } from "../src/armies/barks.ts"
 import { ARMIES } from "../src/armies/index.ts"
@@ -158,7 +159,7 @@ test("the moments she answers are read off the round's events, the first of each
   assert.equal(speaker.ordinal, HER.ordinal)
   assert.equal(speaker.name, "Vasse")
   // Near her is her aura's reach, read from the content.
-  assert.equal(speaker.near, FIXTURE_REGISTRY.get(VASSE).aura?.radius)
+  assert.equal(speaker.near, auraOf(FIXTURE_REGISTRY.get(VASSE))?.radius)
   const moments = voiceMoments(timeline, speaker, { resultMs: 90 * TICK_MS, won: true })
   assert.deepEqual(
     moments.map((moment) => [moment.moment, Math.round(moment.atMs)]),
@@ -512,7 +513,7 @@ test("her aura's reach: a diamond of the content's radius around her, washed on 
   const pulse = pulseFrameOf(side)
   const aura = pulse.aura
   assert.ok(aura !== undefined, "no aura while the fight is on")
-  assert.equal(aura.radius, FIXTURE_REGISTRY.get(VASSE).aura?.radius)
+  assert.equal(aura.radius, auraOf(FIXTURE_REGISTRY.get(VASSE))?.radius)
   const her = pulse.sample.state.entities.find((each) => each.contentId === VASSE)
   assert.ok(her !== undefined)
   assert.deepEqual(aura.at, pulse.positions.get(her.ordinal), "the reach does not move with her as she is drawn")

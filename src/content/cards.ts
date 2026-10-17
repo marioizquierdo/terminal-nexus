@@ -13,41 +13,28 @@
 // Plain and short, in the game's voice, and honest: a card says what the thing does in the game as it
 // stands — never a mechanic the game does not have yet. Lore is a platform, not a plot; the Grid wins.
 
+import { ARMY_CONTENT } from "./army-content.ts"
+
 /** A card's words: its name, one line on what it is for, and a few sentences more. */
 export type CardText = Readonly<{
   title: string
   subtitle: string
   description: string
-  /** How a card's sentences name a Commander: she and her when absent. */
+  /** How a card's sentences name a Commander: every Commander's card says (the army loader checks it). */
   pronouns?: Readonly<{ subject: string; possessive: string }>
 }>
 
-export const CARD_TEXT: Readonly<Record<string, CardText>> = {
+const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
   // --- What the Build Phase can build (the catalog's rows; the title is the menu row's label) --------
   "structure.citizen.barracks": {
     title: "Barracks",
     subtitle: "Trains troopers",
     description: "Trains a wave of troopers, all at once, a few seconds into each Battle Round. They join the fight, and come home to it after.",
   },
-  "structure.citizen.garrison": {
-    title: "Garrison",
-    subtitle: "Trains pikemen",
-    description: "A heavier barracks. Trains a wave of pikemen, each worth about three troopers, a few seconds into each Battle Round.",
-  },
-  "structure.citizen.depot": {
-    title: "Supply Depot",
-    subtitle: "Room for 8 more units",
-    description: "Stores what an army needs to field more units at once. Your buildings stop training while the army is full.",
-  },
   "structure.bench.hatchery": {
     title: "Hatchery",
     subtitle: "Spawns swarmers",
     description: "Breeds a wave of small biting swarmers a few seconds into each Battle Round, all at once. They rush the enemy.",
-  },
-  "structure.citizen.aidstation": {
-    title: "Aid Station",
-    subtitle: "Heals units near it",
-    description: "A field post that heals your units near it, one at a time, through each Battle Round. Place it where the line will stand.",
   },
   "structure.bench.beamturret": {
     title: "Turret",
@@ -68,26 +55,10 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Your foot soldier",
     description: "Fights in melee and holds the line. You start with a squad; a Barracks trains more.",
   },
-  "unit.citizen.vasse": {
-    title: "Vasse",
-    subtitle: "Your Commander",
-    description: "Commander Edda Vasse leads from just behind the line. If she falls, the Nexus restores her as the next round opens.",
-  },
-  "unit.citizen.averno": {
-    title: "Averno",
-    subtitle: "Your Commander",
-    description: "Marshal Averno fights in the front rank and presses forward. If he falls, the Nexus restores him a round late.",
-    pronouns: { subject: "he", possessive: "his" },
-  },
   "unit.citizen.marksman": {
     title: "Marksman",
     subtitle: "Shoots from far back",
     description: "Hits from further away than a trooper, but falls quickly if the raid reaches it.",
-  },
-  "unit.citizen.pikeman": {
-    title: "Pikeman",
-    subtitle: "From your Garrison",
-    description: "Heavy infantry. Fights in melee like a trooper, and is worth about three of them.",
   },
   "unit.bench.spawnling": {
     title: "Swarmer",
@@ -111,8 +82,13 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   },
   "structure.ravel.den": {
     title: "Den",
-    subtitle: "Raid's forward camp",
-    description: "Scrap welded into a shelter. Easier to destroy than a Barracks.",
+    subtitle: "Ravel runner camp",
+    description: "Scrap welded into a shelter. A Den of yours sends a wave of runners each Battle Round. It bursts when it falls.",
+  },
+  "structure.ravel.nexus": {
+    title: "Ravel Nexus",
+    subtitle: "Their base: guard it",
+    description: "The Ravel heart of a base. If it falls, the battle is lost, and it takes what stands beside it down with it.",
   },
 
   // --- Bare ground ----------------------------------------------------------------------------------
@@ -131,6 +107,13 @@ export const CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Resources lie here",
     description: "A seam of the resources you spend, under the same mark. For now you can build and walk on it.",
   },
+}
+
+/** Every card's words: the engine's own content and the terrain, and what each army file writes for the units and
+ *  structures it defines (`./army-content.ts`). */
+export const CARD_TEXT: Readonly<Record<string, CardText>> = {
+  ...BUILT_IN_CARD_TEXT,
+  ...Object.fromEntries(ARMY_CONTENT.map((content) => [content.definition.id, content.card])),
 }
 
 /** A Commander's name as a player reads it — her card's title — for the lines that say she fell, is out

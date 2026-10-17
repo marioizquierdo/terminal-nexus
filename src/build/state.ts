@@ -12,6 +12,7 @@ import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import type { MatchState } from "../state/types.ts"
 import type { BuildingCard, PowerCard, Schedule } from "../armies/types.ts"
+import { lasts as effectLasts } from "../armies/effects.ts"
 import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
 import type { Camera, Margin, Viewport } from "./camera.ts"
@@ -600,7 +601,7 @@ export type NexusPowers = Readonly<{
 
 /** Whether what a power does lasts once kept — everything but credits and called-up units, spent where they are
  *  given: the credits on the plan, the units set down as the round starts, to stay as units like any other. */
-export const lasts = (card: PowerCard): boolean => !("credits" in card.effect) && !("spawnUnits" in card.effect)
+export const lasts = (card: PowerCard): boolean => effectLasts(card.effect)
 
 export function nexusPowers(context: BuildContext, state: BuildState): NexusPowers {
   // What the shell has kept this mission (this Build Phase's pick among it, once made), lasting: a War Chest or a

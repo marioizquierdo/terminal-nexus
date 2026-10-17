@@ -16,6 +16,7 @@ import { OccupancyIndex, VacatedOverlay } from "../grid/occupancy.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, MatchState } from "../state/types.ts"
 import type { PulseContext } from "./context.ts"
+import { contentOf } from "./context.ts"
 import { arbitrate, settle } from "./arbitration.ts"
 import { attacks } from "./attacks.ts"
 import { resolution } from "./death.ts"
@@ -49,7 +50,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
 
   const actors: Actor[] = state.entities.map((entity) => ({
     ...entity,
-    definition: pulse.registry.get(entity.contentId),
+    definition: contentOf(pulse, entity.player).get(entity.contentId),
     pendingDead: false,
     killer: null,
   }))
@@ -156,7 +157,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
 export function occupancyFor(state: MatchState, pulse: PulseContext): OccupancyIndex {
   const index = new OccupancyIndex(state.grid)
   for (const entity of state.entities) {
-    const definition = pulse.registry.get(entity.contentId)
+    const definition = contentOf(pulse, entity.player).get(entity.contentId)
     index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
   }
   return index

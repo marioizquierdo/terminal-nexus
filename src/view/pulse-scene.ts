@@ -181,7 +181,7 @@ const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
  * moving with her while the fight is on. A glyphless write on the ground's own band, under everything that stands:
  * a unit or a building in her reach keeps its glyph and every colour of its own, standing in the glow rather than
  * tinted by it (at 256 colours a washed glyph would change hue), and an effect draws over it. Read from the
- * content's aura (`ContentDef.aura`), so a Commander with a wider one is drawn wider.
+ * content's aura (an `aura` ability, `src/abilities/aura.ts`), so a Commander with a wider one is drawn wider.
  */
 export function drawAura(cells: BandCell[], view: SceneView, pulse: PulseFrame): void {
   const aura = pulse.aura

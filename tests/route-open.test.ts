@@ -195,8 +195,8 @@ test("the scripted playtest's --at opens a level at a round, and refuses a title
   assert.match(frameToText(third.frames[0]!.frame), /build phase - round 3 of 3/u)
   assert.equal(third.context.round?.number, 3)
   // With a settings text, the rounds on the way are played with its Experiments too.
-  const settled = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "campaign?level=vasse-test-1&round=2" }).at, experiments: { commanderHealth: 20 } })
-  assert.equal(settled.frames[0]!.state.experiments.commanderHealth, 20)
+  const settled = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "campaign?level=vasse-test-1&round=2" }).at, experiments: { buildRange: 8 } })
+  assert.equal(settled.frames[0]!.state.experiments.buildRange, 8)
   assert.throws(() => playtestOpening({ at: "settings" }), /--at settings is on the title menu, and the scripted playtest plays a campaign level's Build Phase/u)
   assert.throws(() => playtestOpening({ at: "campaign" }), /on the title menu/u)
   assert.throws(() => playtestOpening({ at: "campaign?level=nowhere" }), /no level "nowhere"/u)

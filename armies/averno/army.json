@@ -1,23 +1,38 @@
 {
   "id": "averno",
   "title": "Marshal Averno",
-  "notes": "Marshal Averno, the second Commander (commander-armies.md, the mirror), and his campaign. He requires all for the buildings, the shared Nexus powers and the units, and brings his Commander, his own powers and the cards the Ravel Nexus slips into his hand. The same army as Vasse's, pressed forward: his aura makes his units hit harder where hers makes them last, his powers act on the enemy, and some rounds one card of his hand comes from the Ravel Nexus. First versions with no balance claim.",
-  "requires": [
-    "all"
-  ],
+  "notes": "Marshal Averno, the second Citizen Commander: the mirror. His army requires the Citizen faction for its buildings and the Ravel faction for the two cards that leak to him from the Ravel Nexus (Raider Contract, Runner Crew: each marked from ravel, and dealt only by a schedule slot that asks for that Nexus). His campaign is campaigns/averno.",
+  "requires": ["citizen", "ravel"],
   "content": [
-    "unit.citizen.averno"
+    {
+      "id": "unit.citizen.averno",
+      "layer": "units",
+      "size": [1, 1],
+      "commander": true,
+      "roundsOut": 1,
+      "supplyCost": 0,
+      "maxHp": 70,
+      "movementRate": {"numerator": 10, "denominator": 3},
+      "speedTier": 1,
+      "attack": {"kind": "melee", "range": 1, "damage": 9, "cooldownTicks": 12},
+      "engageRange": 12,
+      "abilities": [{"kind": "aura", "name": "Forward Order", "radius": 4, "damageDealtPercent": 125}],
+      "card": {
+        "title": "Averno",
+        "subtitle": "Your Commander",
+        "description": "Marshal Averno fights in the front rank and presses forward. If he falls, the Nexus restores him a round late.",
+        "pronouns": {"subject": "he", "possessive": "his"}
+      },
+      "glyph": ["&"],
+      "notes": "Vasse's doctrine pressed forward: a melee Commander in the front rank, a little harder than a trooper, lighter than her. He charges: he turns to fight what comes within 12 columns or 6 rows of him where every other unit waits for 6 and 3, and takes his aura there. Forward Order presses: he and his units within a reach of 4 deal a quarter more with every hit. When he falls the Nexus files him a round late (roundsOut 1: the owner, 2026-10-14, \"Maybe some commander will have this disadvantage that they stay out for a full round\"). His glyph is a figure with its weight thrown forward. First fixtures, no balance claim."
+    }
   ],
   "powers": [
     {
       "id": "forward-drill",
       "name": "Forward Drill",
       "description": "Forward Order reaches twice as far.",
-      "effect": {
-        "modifyCommander": {
-          "auraReachTimes": 2
-        }
-      },
+      "effect": {"modifyAbility": {"unit": "unit.citizen.averno", "kind": "aura", "add": {"radius": 4}}},
       "rarity": "uncommon",
       "role": "commander",
       "notes": "His skill, wider: the mirror of Vasse's Standing Order, on his aura that presses."
@@ -26,15 +41,7 @@
       "id": "unfiled-ordnance",
       "name": "Unfiled Ordnance",
       "description": "Your troopers explode when they die.",
-      "effect": {
-        "modifyUnit": {
-          "unit": "unit.citizen.trooper",
-          "detonation": {
-            "radius": 2,
-            "damage": 8
-          }
-        }
-      },
+      "effect": {"modifyUnit": {"unit": "unit.citizen.trooper", "detonation": {"radius": 2, "damage": 8}}},
       "rarity": "uncommon",
       "role": "offense",
       "notes": "Nobody authorized this (commander-armies.md, his few): a power that acts on the enemy through the troopers he spends, the Ravel way of ending, in a Citizen army."
@@ -43,12 +50,7 @@
       "id": "raider-contract",
       "name": "Raider Contract",
       "description": "Two Ravel raiders fight for you.",
-      "effect": {
-        "spawnUnits": {
-          "unit": "unit.ravel.raider",
-          "count": 2
-        }
-      },
+      "effect": {"spawnUnits": {"unit": "unit.ravel.raider", "count": 2}},
       "rarity": "uncommon",
       "role": "troops",
       "repeatable": true,
@@ -59,12 +61,7 @@
       "id": "runner-crew",
       "name": "Runner Crew",
       "description": "Four Ravel runners join you.",
-      "effect": {
-        "spawnUnits": {
-          "unit": "unit.ravel.runner",
-          "count": 4
-        }
-      },
+      "effect": {"spawnUnits": {"unit": "unit.ravel.runner", "count": 4}},
       "rarity": "common",
       "role": "troops",
       "repeatable": true,
@@ -72,576 +69,65 @@
       "notes": "From the Ravel Nexus: four quick, fragile runners that burst when they fall."
     }
   ],
-  "commanders": [
-    {
-      "id": "averno",
-      "name": "Marshal Averno",
-      "unit": "unit.citizen.averno",
-      "lean": [
-        "units",
-        "nexus"
+  "commander": {
+    "id": "averno",
+    "name": "Marshal Averno",
+    "unit": "unit.citizen.averno",
+    "lean": ["units", "nexus"],
+    "portrait": [" _&_ ", "(o_-)", "/[&]\\"],
+    "portraitFalls": [[" _&_ ", "(O_-)", "/[&]\\"], [" _&_ ", "(x_x)", "/[&]\\"]],
+    "barks": {
+      "appears": [
+        "Averno. Forward command.",
+        "On the Grid. We move.",
+        "Marshal on station. Advance."
       ],
-      "portrait": [
-        " _&_ ",
-        "(o_-)",
-        "/[&]\\"
+      "restored": [
+        "Late. Filed late. Move.",
+        "Back. Someone owes me a round.",
+        "Restored. Pick up the pace."
       ],
-      "portraitFalls": [
-        [
-          " _&_ ",
-          "(O_-)",
-          "/[&]\\"
-        ],
-        [
-          " _&_ ",
-          "(x_x)",
-          "/[&]\\"
-        ]
+      "round-start": [
+        "Forward. No one waits.",
+        "Take ground. Then take more.",
+        "Advance on my mark. Now."
       ],
-      "barks": {
-        "appears": [
-          "Averno. Forward command.",
-          "On the Grid. We move.",
-          "Marshal on station. Advance."
-        ],
-        "restored": [
-          "Late. Filed late. Move.",
-          "Back. Someone owes me a round.",
-          "Restored. Pick up the pace."
-        ],
-        "round-start": [
-          "Forward. No one waits.",
-          "Take ground. Then take more.",
-          "Advance on my mark. Now."
-        ],
-        "first-contact": [
-          "Contact. Press it.",
-          "Hit them first. Hit them hard.",
-          "Engage. Do not stop."
-        ],
-        "raid-arrives": [
-          "More targets. Good.",
-          "They brought friends. Fine.",
-          "Another group. Press them too."
-        ],
-        "unit-lost": [
-          "Step over. Keep moving.",
-          "Down one. Forward anyway.",
-          "Fill the gap. Push."
-        ],
-        "building-lost": [
-          "We build it further out.",
-          "Lost one. Push harder.",
-          "Write it off. Advance."
-        ],
-        "badly-hurt": [
-          "Hit. Still forward.",
-          "Not yet. Keep pressing.",
-          "I can walk. So I advance."
-        ],
-        "nexus-hit": [
-          "They reached the Nexus. Turn.",
-          "Off the pyramid. Now.",
-          "Back to the Nexus. Then forward."
-        ],
-        "falls": [
-          "Hold the line I gave you.",
-          "Back the round after next.",
-          "Keep pushing. I'll be back."
-        ],
-        "round-won": [
-          "Round's ours. Forward.",
-          "Taken. Log it later.",
-          "They broke. Next."
-        ]
-      },
-      "notes": "His unit's definition (his health, his blow, the commander flag, his aura and the round he sits out) is TypeScript in src/content/commanders.ts; this names it, and him. He, his: correct, clipped, a shade too comfortable with what the machine keeps offering him. His glyph is & (the symbol is the identity): a figure with its weight thrown forward, worn on his cap and his chest in his portrait. He leans on units and the Nexus: Forward Order makes the units round him hit harder, and his hand brings Ravel troops some rounds."
+      "first-contact": [
+        "Contact. Press it.",
+        "Hit them first. Hit them hard.",
+        "Engage. Do not stop."
+      ],
+      "raid-arrives": [
+        "More targets. Good.",
+        "They brought friends. Fine.",
+        "Another group. Press them too."
+      ],
+      "unit-lost": [
+        "Step over. Keep moving.",
+        "Down one. Forward anyway.",
+        "Fill the gap. Push."
+      ],
+      "building-lost": [
+        "We build it further out.",
+        "Lost one. Push harder.",
+        "Write it off. Advance."
+      ],
+      "badly-hurt": [
+        "Hit. Still forward.",
+        "Not yet. Keep pressing.",
+        "I can walk. So I advance."
+      ],
+      "nexus-hit": [
+        "They reached the Nexus. Turn.",
+        "Off the pyramid. Now.",
+        "Back to the Nexus. Then forward."
+      ],
+      "falls": [
+        "Hold the line I gave you.",
+        "Back the round after next.",
+        "Keep pushing. I'll be back."
+      ],
+      "round-won": ["Round's ours. Forward.", "Taken. Log it later.", "They broke. Next."]
     }
-  ],
-  "campaigns": [
-    {
-      "id": "averno",
-      "title": "The Citizen mirror",
-      "commander": "averno",
-      "notes": "His campaign, as far as the curve's test needs: one level, the curve level with him in Vasse's place, so the two can be played side by side.",
-      "levels": [
-        {
-          "id": "averno-test-1",
-          "notes": "The power curve's test level with Averno: the same map, raids and seed as Vasse's (vasse-test-3), her first five rounds, his powers and the shared ones offered, and his hand dealing one card from the Ravel Nexus in rounds 2 and 4 (an army bending the schedule). Reached by route: campaign?level=averno-test-1.",
-          "map": "starter-open",
-          "credits": 100,
-          "unlocks": {
-            "buildings": [
-              "barracks",
-              "hatchery",
-              "turret",
-              "depot",
-              "garrison"
-            ],
-            "powers": [
-              "reserve-callup",
-              "drill-schedule",
-              "drill-schedule-ii",
-              "forward-drill",
-              "unfiled-ordnance",
-              "raider-contract",
-              "runner-crew",
-              "war-chest"
-            ]
-          },
-          "schedule": [
-            {
-              "round": 1,
-              "deal": [
-                "common",
-                "common",
-                "uncommon"
-              ]
-            },
-            {
-              "round": 2,
-              "deal": [
-                "common",
-                "uncommon",
-                {
-                  "from": "ravel"
-                }
-              ]
-            },
-            {
-              "round": 3,
-              "deal": [
-                "common",
-                "uncommon",
-                "uncommon"
-              ]
-            },
-            {
-              "round": 4,
-              "deal": [
-                "common",
-                "uncommon",
-                {
-                  "from": "ravel"
-                }
-              ]
-            },
-            {
-              "round": 5,
-              "deal": [
-                "common",
-                "uncommon",
-                "uncommon"
-              ]
-            }
-          ],
-          "mission": {
-            "id": "mission.test.curve-averno",
-            "name": "The curve, pressed",
-            "notes": "The power curve's test level with Marshal Averno in Vasse's place, so the two Commanders can be played side by side on the same rounds: the same map, raids, reinforcements and seed as hers (vasse-test-3), only the Commander who walks out with the squads differs — and it is her first five rounds. Measured with nothing built, he falls in round 4 and, filed a round late, misses round 5, the heaviest raid, so an empty base cannot hold to her round 6: the forward Commander's cost, which a build behind him pays.",
-            "pulses": 5,
-            "pulseTicks": 360,
-            "seed": 1129666118,
-            "regions": [
-              {
-                "id": "muster",
-                "x": 21,
-                "y": 9,
-                "width": 3,
-                "height": 3
-              },
-              {
-                "id": "ridge",
-                "x": 40,
-                "y": 0,
-                "width": 4,
-                "height": 2
-              },
-              {
-                "id": "east-flats",
-                "x": 50,
-                "y": 9,
-                "width": 5,
-                "height": 3
-              },
-              {
-                "id": "nexus",
-                "x": 17,
-                "y": 10,
-                "width": 3,
-                "height": 2
-              },
-              {
-                "id": "line",
-                "name": "the line",
-                "x": 22,
-                "y": 7,
-                "width": 5,
-                "height": 2
-              }
-            ],
-            "roundText": {
-              "1": "A probe at the ridge. Build what the next rounds need.",
-              "2": "Your first building stands: what it leads to is open.",
-              "3": "They come with slingers now.",
-              "4": "The middle of it. They flank from the east.",
-              "5": "Heavier, from two sides. Hold until their schedule ends."
-            },
-            "endText": {
-              "won": "The line held to the end.",
-              "lost": "The Nexus fell."
-            },
-            "triggers": [
-              {
-                "id": "squads",
-                "when": {
-                  "pulse": 1,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "A",
-                      "units": [
-                        {
-                          "unit": "unit.citizen.averno",
-                          "count": 1
-                        },
-                        {
-                          "unit": "unit.citizen.trooper",
-                          "count": 3
-                        },
-                        {
-                          "unit": "unit.citizen.marksman",
-                          "count": 2
-                        }
-                      ],
-                      "at": "muster",
-                      "group": "squads"
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "reinforcements-2",
-                "when": {
-                  "pulse": 2,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "A",
-                      "units": [
-                        {
-                          "unit": "unit.citizen.trooper",
-                          "count": 2
-                        }
-                      ],
-                      "at": "muster"
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "reinforcements-3",
-                "when": {
-                  "pulse": 3,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "A",
-                      "units": [
-                        {
-                          "unit": "unit.citizen.trooper",
-                          "count": 2
-                        }
-                      ],
-                      "at": "muster"
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "reinforcements-4",
-                "when": {
-                  "pulse": 4,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "A",
-                      "units": [
-                        {
-                          "unit": "unit.citizen.trooper",
-                          "count": 2
-                        }
-                      ],
-                      "at": "muster"
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "reinforcements-5",
-                "when": {
-                  "pulse": 5,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "A",
-                      "units": [
-                        {
-                          "unit": "unit.citizen.trooper",
-                          "count": 2
-                        }
-                      ],
-                      "at": "muster"
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "post",
-                "when": {
-                  "pulse": 1,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "target": {
-                      "side": "A",
-                      "region": "line"
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "raid-1",
-                "when": {
-                  "pulse": 1,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "B",
-                      "units": [
-                        {
-                          "unit": "unit.ravel.runner",
-                          "count": 3
-                        },
-                        {
-                          "unit": "unit.ravel.raider",
-                          "count": 1
-                        }
-                      ],
-                      "at": "ridge",
-                      "group": "probe",
-                      "intent": "Probe the line at the ridge."
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "raid-2",
-                "when": {
-                  "pulse": 2,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "B",
-                      "units": [
-                        {
-                          "unit": "unit.ravel.runner",
-                          "count": 4
-                        },
-                        {
-                          "unit": "unit.ravel.raider",
-                          "count": 2
-                        }
-                      ],
-                      "at": "ridge",
-                      "group": "second",
-                      "intent": "Push at the ridge."
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "raid-3",
-                "when": {
-                  "pulse": 3,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "B",
-                      "units": [
-                        {
-                          "unit": "unit.ravel.runner",
-                          "count": 5
-                        },
-                        {
-                          "unit": "unit.ravel.raider",
-                          "count": 3
-                        },
-                        {
-                          "unit": "unit.ravel.slinger",
-                          "count": 1
-                        }
-                      ],
-                      "at": "ridge",
-                      "group": "third",
-                      "intent": "Push at the ridge, with slingers."
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "raid-4",
-                "when": {
-                  "pulse": 4,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "B",
-                      "units": [
-                        {
-                          "unit": "unit.ravel.runner",
-                          "count": 4
-                        },
-                        {
-                          "unit": "unit.ravel.raider",
-                          "count": 3
-                        },
-                        {
-                          "unit": "unit.ravel.slinger",
-                          "count": 1
-                        }
-                      ],
-                      "at": "ridge",
-                      "group": "fourth",
-                      "intent": "Break the line at the ridge."
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "raid-4-flank",
-                "when": {
-                  "pulse": 4,
-                  "tick": 84
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "B",
-                      "units": [
-                        {
-                          "unit": "unit.ravel.raider",
-                          "count": 1
-                        }
-                      ],
-                      "at": "east-flats",
-                      "group": "flank",
-                      "intent": "Flank from the east."
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "raid-5",
-                "when": {
-                  "pulse": 5,
-                  "tick": 0
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "B",
-                      "units": [
-                        {
-                          "unit": "unit.ravel.runner",
-                          "count": 5
-                        },
-                        {
-                          "unit": "unit.ravel.raider",
-                          "count": 3
-                        },
-                        {
-                          "unit": "unit.ravel.slinger",
-                          "count": 2
-                        }
-                      ],
-                      "at": "ridge",
-                      "group": "fifth",
-                      "intent": "Break the line at the ridge."
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "raid-5-flank",
-                "when": {
-                  "pulse": 5,
-                  "tick": 84
-                },
-                "do": [
-                  {
-                    "spawn": {
-                      "side": "B",
-                      "units": [
-                        {
-                          "unit": "unit.ravel.raider",
-                          "count": 1
-                        }
-                      ],
-                      "at": "east-flats",
-                      "group": "flank-5",
-                      "intent": "Flank from the east."
-                    }
-                  }
-                ]
-              },
-              {
-                "id": "fallen",
-                "when": {
-                  "event": "nexus.destroyed",
-                  "side": "A"
-                },
-                "do": [
-                  {
-                    "lose": true
-                  }
-                ]
-              },
-              {
-                "id": "hold",
-                "when": {
-                  "event": "pulse.end",
-                  "pulse": 5
-                },
-                "do": [
-                  {
-                    "win": true
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ]
+  }
 }

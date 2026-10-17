@@ -1,16 +1,16 @@
 // A Commander's aura in the damage step (docs/system-design/pulse.md): Vasse's By the Book, the owner's
 // "Commanders ... should be like heroes on warcraft3 ... Vasse should provide boost to nearby units". The
 // story is the named scenario `scenarios/aura-by-the-book.map.json` (tests/scenario.test.ts); here are the
-// rule's edges, each on a few units placed to show one thing, and the Experiment that sets its strength.
+// rule's edges, each on a few units placed to show one thing. An aura is an ability (`src/abilities/aura.ts`), named by
+// a unit's content as data: `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY, rectFootprint } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
-import { auraRegistry } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { boostedAmount, guardedAmount } from "../src/pulse/aura.ts"
+import { auraOf, boostedAmount, guardedAmount } from "../src/abilities/index.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
@@ -27,7 +27,7 @@ const bearer = (id: string, damageTakenPercent: number, maxHp = 50): ContentDef 
   speedTier: 2,
   collidesWith: ["obstacles", "units"],
   behavior: "static",
-  aura: { radius: 3, damageTakenPercent },
+  abilities: [{ kind: "aura", name: "Steady", radius: 3, damageTakenPercent }],
   salvage: 0,
 })
 
@@ -53,7 +53,7 @@ const REGISTRY = createRegistry([
   striker("unit.test.striker", 11),
   striker("unit.test.pricker", 1),
   // A bearer of a boost, Averno's kind: his units within 3 deal a quarter more.
-  { ...bearer("unit.test.pressing", 75), aura: { radius: 3, damageDealtPercent: 125 } },
+  { ...bearer("unit.test.pressing", 75), abilities: [{ kind: "aura", name: "Pressing", radius: 3, damageDealtPercent: 125 }] },
   // A trooper that stands still: guarded or not, it only takes hits.
   { ...FIXTURE_REGISTRY.get("unit.citizen.trooper"), id: "unit.test.standing", short: "standing", behavior: "static" },
 ])
@@ -161,18 +161,14 @@ test("a bearer who falls guards to the end of the tick she falls in, and from th
   assert.deepEqual([second?.tick, second?.amount, second?.guardedBy], [13, 11, undefined], "a fallen bearer still guarded")
 })
 
-test("By the Book's strength is the Experiment's: off takes the aura away, and every other value sets the share a hit lets through", () => {
-  const off = auraRegistry(FIXTURE_REGISTRY, 0)
-  assert.equal(off.get(VASSE).aura, undefined)
-  assert.deepEqual(auraRegistry(FIXTURE_REGISTRY, 25).get(VASSE).aura, { radius: 4, damageTakenPercent: 75, name: "By the Book" })
-  assert.equal(auraRegistry(FIXTURE_REGISTRY, 40).get(VASSE).aura?.damageTakenPercent, 60)
-  assert.equal(auraRegistry(FIXTURE_REGISTRY, 10).get(VASSE).aura?.damageTakenPercent, 90)
-  // Nothing else is touched, and a registry with no aura in it comes back as it was.
-  for (const id of FIXTURE_REGISTRY.ids().filter((candidate) => candidate !== VASSE)) assert.equal(off.get(id), FIXTURE_REGISTRY.get(id))
-  const plain = createRegistry([FIXTURE_REGISTRY.get("unit.citizen.trooper")])
-  assert.equal(auraRegistry(plain, 25), plain)
-  assert.throws(() => auraRegistry(FIXTURE_REGISTRY, 100), /0 to 99 percent/)
-  assert.throws(() => auraRegistry(FIXTURE_REGISTRY, 2.5), /0 to 99 percent/)
+test("By the Book is Vasse's own, settled from the Experiment that tuned it: a quarter less from every hit, within 4", () => {
+  // The Experiment "By the Book" was felt at 25 percent less and settled there (as was "Vasse's health", at 80): her
+  // aura is now her data, in her army's file, and nothing tunes it on the side.
+  assert.deepEqual(auraOf(FIXTURE_REGISTRY.get(VASSE)), { kind: "aura", name: "By the Book", radius: 4, damageTakenPercent: 75 })
+  assert.equal(FIXTURE_REGISTRY.get(VASSE).maxHp, 80)
+  // Nobody else bears a guard: Averno's is a boost, and no bench unit has one.
+  const guards = FIXTURE_REGISTRY.ids().filter((id) => auraOf(FIXTURE_REGISTRY.get(id))?.damageTakenPercent !== undefined)
+  assert.deepEqual(guards, [VASSE])
 })
 
 test("a boost: a unit within a boosting aura deals more with every hit, rounded down, never less than the hit; a guard on the target still takes its share", () => {
