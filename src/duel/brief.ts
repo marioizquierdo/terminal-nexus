@@ -237,7 +237,7 @@ export function briefText(data: BriefData): string {
   lines.push("")
   lines.push("## What you can build (by id)")
   for (const building of data.buildings) {
-    const locked = building.open ? "" : ` LOCKED: needs ${building.needs.join(" and ")} standing as the round opens`
+    const locked = building.open ? "" : ` LOCKED: needs ${building.needs.join(" and ")} standing as the round opens.`
     const does = [building.spawns === undefined ? "" : `trains ${building.spawns}`, building.supply === undefined ? "" : `room for ${building.supply} more units`].filter((part) => part !== "").join("; ")
     const worth = building.strength === 0 ? "" : ` Strength trained a round ${building.strength} (${Math.round(building.strength / building.cost)} a credit).`
     lines.push(`- ${building.id}: ${building.name}, ${building.cost} credits, tier ${building.tier}${does === "" ? "" : `, ${does}`}.${locked}${worth} ${building.about}${building.skills.map((skill) => ` ${skill}`).join("")}`)
