@@ -178,7 +178,9 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   const resolved = mission.startPulse(context, { ...opened, nexusPick: 1, planned: placeholderPlan, committed: true })
   assert.ok(resolved !== null)
   const { timeline } = resolved
-  assert.ok(timeline.stateHash.startsWith("0e789311"), `state hash ${timeline.stateHash}`)
-  assert.ok(timeline.eventsHash.startsWith("54f14400"), `events hash ${timeline.eventsHash}`)
-  assert.equal(timeline.states.length - 1, 217)
+  // Pinned again when every tie came to go by what a unit faces, then a draw: the Hatchery's brood comes out on its
+  // side toward the raid, and the plan wins at tick 171 where it once took until 217.
+  assert.ok(timeline.stateHash.startsWith("c3e889e2"), `state hash ${timeline.stateHash}`)
+  assert.ok(timeline.eventsHash.startsWith("44dec90d"), `events hash ${timeline.eventsHash}`)
+  assert.equal(timeline.states.length - 1, 171)
 })

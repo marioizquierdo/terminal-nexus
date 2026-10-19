@@ -589,11 +589,11 @@ PERIMETER deals four of these, the owner's choice when the Nexus Pulse was built
 
 **Beside Vasse, measured.** His test level is hers (the curve level), with him in her place: her map, raids, reinforcements and seed, her first five rounds. The same plan of Barracks and Supply Depots, built behind the Nexus, plays out like this:
 
-- **Round 1:** his side clears the raid at tick 138 against her 157, and loses no unit against her one.
+- **Round 1:** her side clears the raid at tick 152 against his 174, and loses one unit against his two. (It was the other way round, 138 against 157, before every tie came to go by what a unit faces, then a draw: round 1 is close enough for that to tip it.)
 - **Round 2:** he falls; she does not.
-- **Round 3:** his side, without him, loses five to seven units where hers loses one to four.
+- **Round 3:** his side, without him, loses four units where hers loses three.
 
-So they read apart within two rounds. With nothing built, he falls in round 4 and is out for round 5, the heaviest raid, so an empty base cannot hold to her round 6. That is why his level is her first five: the forward Commander's cost is paid by a build behind him.
+So they read apart within two rounds, by who falls. With nothing built, an empty base holds his round 4 with little to spare and cannot hold her round 6. That is why his level is her first five: the forward Commander's cost is paid by a build behind him.
 
 **Why a near-twin is worth a whole Commander.** It is the Warcraft II trade, and it is a good one: a player who finishes Vasse's campaign already knows how to play Averno, so his campaign spends its whole budget on **story and two or three new toys** rather than on re-teaching a game. It halves the content bill for the second opening, it gives a genuine reason to replay the same missions, and it gives the campaign somewhere to put its first real moral question — the same army, in hands that use it differently, taking help from something it should probably report.
 

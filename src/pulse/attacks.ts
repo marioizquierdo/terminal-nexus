@@ -11,27 +11,10 @@
 // rather than swept into an end-of-function pass that would let it act after every tier already had.
 
 import { decideDamageModifiers, hitDealtBy } from "./abilities.ts"
-import { actorsWithin, applyDamage, applyHeal, distanceBetween, drawAmong, inAttackRange, resolveTarget, speedTier, within } from "./shared.ts"
+import { actorsWithin, applyDamage, applyHeal, distanceBetween, inAttackRange, resolveTarget, speedTier, within } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
-/** What lands on one target in a tier: the total, and what each attacker dealt toward it. */
-type Tally = { total: number; dealt: Map<Actor, number> }
-
-/** Adds `amount` from `source` to `target`'s tally in `tallies`. */
-function tallied(tallies: Map<number, Tally>, target: number, source: Actor, amount: number): void {
-  const tally = tallies.get(target) ?? { total: 0, dealt: new Map<Actor, number>() }
-  tally.total += amount
-  tally.dealt.set(source, (tally.dealt.get(source) ?? 0) + amount)
-  tallies.set(target, tally)
-}
-
-/** Who a tier's tally is credited to — the kill, a bounty, the pause a killer takes: the attacker that dealt the
- *  most of it; of several that dealt as much, a draw (`drawAmong`), never the lower ordinal. */
-function creditedTo(context: TickContext, tally: Tally): Actor {
-  const most = Math.max(...tally.dealt.values())
-  const tied = [...tally.dealt.entries()].filter(([, amount]) => amount === most).map(([source]) => source)
-  return drawAmong(context, tied) as Actor
-}
+type Tally = { total: number; source: Actor }
 type SplashImpact = {
   anchor: Actor["anchor"]
   footprint: Actor["definition"]["footprint"]
@@ -133,7 +116,9 @@ export function attacks(context: TickContext): void {
       })
 
       if (attack.kind === "heal") {
-        tallied(heals, target.ordinal, actor, amount)
+        const existing = heals.get(target.ordinal)
+        if (existing === undefined) heals.set(target.ordinal, { total: amount, source: actor })
+        else existing.total += amount
         continue
       }
       if (attack.splash !== undefined) {
@@ -146,7 +131,12 @@ export function attacks(context: TickContext): void {
         })
         continue
       }
-      tallied(damage, target.ordinal, actor, amount)
+      const existing = damage.get(target.ordinal)
+      if (existing === undefined) {
+        damage.set(target.ordinal, { total: amount, source: actor })
+      } else {
+        existing.total += amount
+      }
     }
 
     const targets = [...damage.keys()].sort((a, b) => a - b)
@@ -154,8 +144,7 @@ export function attacks(context: TickContext): void {
       const entry = damage.get(ordinal)
       const target = context.byOrdinal.get(ordinal)
       if (entry === undefined || target === undefined) continue
-      const source = creditedTo(context, entry)
-      const killed = applyDamage(context, target, source, entry.total)
+      const killed = applyDamage(context, target, entry.source, entry.total)
       if (killed) {
         // A killer holds for one full movement cadence before it may step again - owner playtest,
         // 2026-08-22: "when a unit kills an enemy, it should wait a full movement cooldown before
@@ -165,7 +154,7 @@ export function attacks(context: TickContext): void {
         // if it had spent this tick moving rather than attacking. `intents()` (phase 4) has already
         // run for this tick by the time `attacks()` (phase 7) gets here, so the earliest this can
         // affect is next tick's movement - this tick's own step, if the killer took one, is untouched.
-        source.moveCredit = 0
+        entry.source.moveCredit = 0
       }
     }
 
@@ -180,7 +169,9 @@ export function attacks(context: TickContext): void {
     const splashTally = new Map<number, Tally>()
     for (const impact of splashes) {
       for (const victim of actorsWithin(context, impact.anchor, impact.footprint, impact.radius, impact.source)) {
-        tallied(splashTally, victim.ordinal, impact.source, impact.damage)
+        const existing = splashTally.get(victim.ordinal)
+        if (existing === undefined) splashTally.set(victim.ordinal, { total: impact.damage, source: impact.source })
+        else existing.total += impact.damage
       }
     }
     const splashTargets = [...splashTally.keys()].sort((a, b) => a - b)
@@ -188,9 +179,8 @@ export function attacks(context: TickContext): void {
       const entry = splashTally.get(ordinal)
       const target = context.byOrdinal.get(ordinal)
       if (entry === undefined || target === undefined) continue
-      const source = creditedTo(context, entry)
-      const killed = applyDamage(context, target, source, entry.total)
-      if (killed) source.moveCredit = 0
+      const killed = applyDamage(context, target, entry.source, entry.total)
+      if (killed) entry.source.moveCredit = 0
     }
 
     // Heals last: applied after this tier's damage settles, so a target that is both hit and healed
@@ -202,7 +192,7 @@ export function attacks(context: TickContext): void {
       const entry = heals.get(ordinal)
       const target = context.byOrdinal.get(ordinal)
       if (entry === undefined || target === undefined || target.pendingDead) continue
-      applyHeal(context, target, creditedTo(context, entry), entry.total)
+      applyHeal(context, target, entry.source, entry.total)
     }
 
     // Contact detonation, this tier's own detonators: the same initiative reasoning as everything

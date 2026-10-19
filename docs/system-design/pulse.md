@@ -204,6 +204,12 @@ balanced one.
   (`enemyNexusMiddle`), and Recall sets its survivors down nearest home first, then nearest the enemy. A duel places
   a building by its footprint's middle, not its north-west corner.
 
+One order is left inside a side: of several attackers whose blows kill a unit in the same tick, the lowest id is
+named its killer and takes a killer's pause. It never decides which side gains, only which of one side's units
+waits; changing it tipped the campaign's empty-base walks (a route to a later round plays the rounds before it
+building nothing) more than anything else did, so it waits for a
+reason of its own.
+
 A mirror battle with nothing tied stays a mirror tick for tick; with ties, each side wins it as often over seeds, and
 mirror duels split about evenly (`tests/fairness.test.ts`). Entity id still orders iteration and the events.
 

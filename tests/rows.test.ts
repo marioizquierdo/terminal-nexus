@@ -644,8 +644,9 @@ test("the battle with the most rules in it resolves the same way on every run, a
   assert.deepEqual(first, PINNED_BATTLE)
 })
 
-// The Citizens against the Ravels, blasts among its rules: its state and its events.
-const PINNED_BATTLE = ["030e40b3ca69c383c53e3f4455db901360e0bbbaa39cc09c0a2bfb829d863181", "9349bec06ff8fcbdec9cca65d68ccf434259599c47730a44b28bf4477dba6cfe"] as const
+// The Citizens against the Ravels, blasts among its rules: its state and its events (pinned again when every tie came
+// to go by what a unit faces, then a draw).
+const PINNED_BATTLE = ["d878a9ba993dd90b6b08eb1a856277db0d8878a9a119729d742ab7a9dbcae68b", "08ef3a53557c0d3ad19a301ae33672b195f8b3104b605e313f559f6c3da8fad5"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of

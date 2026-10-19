@@ -88,9 +88,10 @@ Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-
       in his hand comes from the Ravel Nexus (an army bending the schedule, which the Nexus Pulse milestone had
       planned).
 - [x] He is played beside Vasse on the same level; the pull request says whether they read apart in two rounds.
-      They do: with the same build his side clears round 1 sooner and loses less, he falls in round 2 and she does not,
-      and his side loses more in round 3 while he is out ([the measure](../game-design/commander-armies.md)). His
-      level is her first five rounds: with nothing built he misses round 5, and an empty base cannot hold her round 6.
+      They do: with the same build he falls in round 2 and she does not, and his side loses more in round 3 while he
+      is out ([the measure](../game-design/commander-armies.md)). (His side also cleared round 1 sooner and lost less;
+      since every tie goes by what a unit faces, then a draw, hers does, by a unit.) His level is her first five
+      rounds: an empty base holds his round 4 with little to spare, and cannot hold her round 6.
 
 ### Step 14C, round 2 — The army structure, Dob Hunter, and duels
 

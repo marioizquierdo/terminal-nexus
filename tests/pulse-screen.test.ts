@@ -255,9 +255,9 @@ test("the survivors are drawn walking home, and home when the walk ends", () => 
     assert.ok(frame !== undefined)
     return frame.positions
   }
-  // A walk long on screen, by the Grid's own distance.
-  const far = moves.find((move) => gridDistance(move.from, move.to) > 6)
-  assert.ok(far !== undefined, "every survivor was already home; the test proves nothing")
+  // The longest walk on screen, by the Grid's own distance: long enough that its middle is neither end.
+  const far = [...moves].sort((a, b) => gridDistance(b.from, b.to) - gridDistance(a.from, a.to))[0]
+  assert.ok(far !== undefined && gridDistance(far.from, far.to) >= 5, "every survivor was already home; the test proves nothing")
   assert.deepEqual(drawn(moments.walkMs - 50).get(far.ordinal) ?? far.from, far.from, "it walked before the walk began")
   const middle = drawn((moments.walkMs + moments.homeMs) / 2).get(far.ordinal)
   assert.ok(middle !== undefined)
