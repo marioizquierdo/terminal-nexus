@@ -28,7 +28,7 @@ import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
-import { centreTile, nearestFit } from "./placement.ts"
+import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 
 /** How many whole rounds the Commander `contentId` sits out after the Battle Round she falls in: her
  *  definition's `roundsOut`, and 0 when it says nothing. */
@@ -86,6 +86,7 @@ export function restoreCommanders(
     index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
   }
 
+  const standing = state.entities.map((entity) => ({ player: entity.player, anchor: entity.anchor, definition: contentFor(entity.player).get(entity.contentId) }))
   const born: EntityState[] = []
   const restored: Restoration[] = []
   const still: Absence[] = []
@@ -100,10 +101,11 @@ export function restoreCommanders(
     const nexus = state.entities.find((entity) => entity.player === absence.player && content.get(entity.contentId).nexus === true)
     const definition = content.get(absence.contentId)
     const mask = maskFrom(index, { layers: ENTITY_LAYERS, terrain: definition.layer === "air" ? "ignore" : "impassable" })
+    const beside = nexus === undefined ? null : centreTile(nexus.anchor, content.get(nexus.contentId).footprint)
     const anchor =
-      nexus === undefined
+      beside === null
         ? null
-        : nearestFit(mask, definition.footprint, centreTile(nexus.anchor, content.get(nexus.contentId).footprint), RESTORE_RADIUS)
+        : nearestFit(mask, definition.footprint, beside, RESTORE_RADIUS, beside, enemyNexusMiddle(standing, absence.player, beside))
     if (anchor === null) {
       still.push(absence)
       continue

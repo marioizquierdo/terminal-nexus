@@ -223,7 +223,6 @@ Small, none blocking.
 | Item | Why | Size |
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
-| Duel tie-breaks that mirror for the side: a building's new units and a muster read the Grid west to east, so the east side wins about nine mirror duels in ten | A duel's numbers should not depend on the side; benches play both sides until then | medium |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet

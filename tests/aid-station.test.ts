@@ -258,9 +258,12 @@ const PINNED_AID_STATION = [
   "81f2d4de6a136420014eafcff90baefcd47f30e47d39655c5f43a5e64be71af3",
   "4f9602c34e41efda28e1407e2aab36d892197d01b5be69b9c81c264da4835a93",
 ]
+// Its state's hash is the one from before the Aid Station; its events' was pinned again when a unit among equally near
+// enemies came to keep the one it holds, then take the weakest (no side wins by where it stands): the same battle,
+// told with other target events.
 const PINNED_MEDIC = [
   "08a556835c0c4b1fefda99b52da283d385f530db7f071db9a5ace6ec14fa951e",
-  "7c803a0bcaf4dfaa106d39b5968bc05b88ffe23fa9c12b1aedd980acdc2637ec",
+  "4b65fa3dc95bda17c2601baefcbeb899028001d1e5ab87e471c4ffb18a2feed1",
 ]
 
 // --- How a heal looks ----------------------------------------------------------------------------------

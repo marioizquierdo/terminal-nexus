@@ -95,11 +95,11 @@ It does not show balance. Read the numbers for direction, the reports for why.
 
 ## 5. What a duel measures, and what biases it
 
-- **The east side wins mirror duels** — about nine in ten, the same Commander on both sides with the same script
-  (measured 2026-10-17). A plain symmetric fight between two lines of units is even, so it is in the tie-breaks
-  that read the Grid west to east (a building sets its new units down from its north-west corner; a muster fills its
-  nearest tiles in reading order). Play every pairing from both sides; making those tie-breaks mirror for the side
-  is registered as follow-up work.
+- **No side wins by where it stands** (since 2026-10-19; before, one end of the map won nearly every mirror duel,
+  which end by the plan). Every tie the rules break goes by what the deciding unit faces, then a seeded draw
+  ([`pulse.md`](pulse.md), "No side wins by where it stands"), so the same Commander and plan win from either end
+  about as often (`tests/fairness.test.ts`). A bench still plays every pairing from both sides: the two ends are
+  each other's mirror, but a seed's hand and draws are not.
 - **A duel that ends on time is judged on the Nexuses' health, then on damage**, which a stalemate decides by small
   margins. A duel that ends with a Nexus falling says more.
 - **Strength a credit is in the brief** (each building's units' health times damage a second, a credit): Ravel

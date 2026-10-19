@@ -76,7 +76,9 @@ cost over five hundred ticks, and in the jammed-corridor fixture a mover blocked
 the next — which is only possible if a refused step spends nothing.
 
 Steps are ranked by the distance they gain for the time they take, then by how little they turn from the way
-straight at the goal, then by compass order. A step down gains two in twice the time, so it ties with a step
+straight at the goal, then by compass order. Distance is measured from the mover's tile nearest the goal, not its
+anchor, so a unit three tiles wide walks east as its mirror walks west, nose first; and a step must gain ground: one
+that only keeps the distance, which a wide mover's could, is not taken, or a walk could pace for ever. A step down gains two in twice the time, so it ties with a step
 across and the turn decides: a unit walks the screen's diagonal, two columns across for each row down
 (`tests/rows.test.ts`).
 
@@ -89,8 +91,8 @@ over entities can never decide an outcome:
 2. **Economy and production.** Scheduled resource yield; producers attempt recipes. Only the
    recipes exist so far (`src/pulse/production.ts`, below); the yield waits for the worker economy. A
    mid-Pulse combat spawn (a spawner, a unit that splits on death) runs just ahead of it.
-3. **Perception.** Each actor scores and selects a target. Deterministic scoring, ties broken by
-   entity id.
+3. **Perception.** Each actor scores and selects a target: the nearest; among equally near ones the one it
+   already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw.
 4. **Intents.** Each actor with movement credit declares one destination tile.
 5. **Arbitration** (`src/pulse/arbitration.ts`). Group intents by destination *within a layer*.
    Contested claims resolve by speed tier — **tier 1 outranks tier 2** — with any remaining tie
@@ -153,8 +155,8 @@ on its own is content's `abilities`, each one an entry of the abilities table (`
 kind for the tick's damage modifiers, on a read-only view of the bodies; as each attack lands (heals and blasts
 excluded) it asks the attacker's kinds about the hit; after the attacks, each kind's tick; and as each unit falls,
 each kind's death. A kind changes the world only through what it is handed: a draw from the gameplay stream, a
-heal, a damage, a note that becomes an `ability.triggered` event. The table order and the reading order of the
-bodies decide ties, so a run hashes the same.
+heal, a damage, a note that becomes an `ability.triggered` event. The table order and the bodies' order decide only
+in what order things are said, so a run hashes the same.
 
 - **An aura guards or boosts the units beside its bearer** (`src/abilities/aura.ts`). Its radius is measured as
   range is; it covers every unit of the bearer's side within it, the bearer included, and a building with an aura
@@ -173,13 +175,37 @@ bodies decide ties, so a run hashes the same.
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
 `src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
 `behavior: "support"` with a heal `attack` — chooses the nearest wounded ally rather than the nearest enemy, ties
-broken by entity id, and one that names `targetLayers` chooses only among what stands on them, as an attacker's
+broken as a target's are (below), and one that names `targetLayers` chooses only among what stands on them, as an attacker's
 layers narrow its enemies. A building never moves, so a building that heals reaches that ally only once it stands
 within its reach, measured as range is: one heal each time its cooldown allows, never past full health
 (`heal.applied`, never a negative `damage.applied`). A heal lands in its tier of the attacks step, after the blows
 of earlier tiers, so at tier 9 a unit a blow kills that tick is not saved. The Aid Station, what Aid Station Permit
 adds, names the units' layers: it heals units, never a building, itself included, and never the enemy. The
 bench medic names none and heals every wounded ally, as it always did.
+
+### 1.3a No side wins by where it stands — RULE — `tests/fairness.test.ts`
+
+The owner, 2026-10-19: "the solution should be deterministic independently of the side or top vs down or
+diagonal". **Every tie a rule breaks goes first by what the deciding unit faces — the enemy, or where it is headed —
+and what is still tied after that by one draw from the seeded stream** (`drawAmong`, `src/pulse/shared.ts`). Never
+by reading order, compass order or entity id: the opening hands ids out in reading order, so each of those favours
+the side the map put west, north or first. Before this rule one end of the map won nearly every mirror duel: the west with a rushing plan, the east with a
+balanced one.
+
+- **Blows land together.** Every hit of a speed tier is worked out against the state as the tier began and applied
+  at once (the attacks step), so two equal units that strike each other in the same tick both fall.
+- **A building sets its units down facing the fight**: on the free tile round it nearest where they head — its
+  side's target if it follows one, else the nearest enemy as the tick began — ties drawn; with nowhere to head, the
+  ring's own order. Neighbouring buildings set theirs down front first, nearest the enemy (`src/pulse/spawn.ts`).
+- **A unit's target among equally near enemies** is the one it holds, then the weakest, then a draw (perception).
+- **A wide unit measures its walk from its nose**: its tile nearest the goal, and the enemy tile nearest it.
+- **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, Recall's homes and
+  tiles, a Commander's return and a mission's arrivals break a tie toward the enemy's Grid Nexus
+  (`enemyNexusMiddle`), and Recall sets its survivors down nearest home first, then nearest the enemy. A duel places
+  a building by its footprint's middle, not its north-west corner.
+
+A mirror battle with nothing tied stays a mirror tick for tick; with ties, each side wins it as often over seeds, and
+mirror duels split about evenly (`tests/fairness.test.ts`). Entity id still orders iteration and the events.
 
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
 
@@ -346,8 +372,8 @@ recomputed; repeat until nothing legal remains.
 
 What is built is the smallest slice of that: **a building with a recipe spawns its unit in waves** (RULE —
 `src/pulse/production.ts`, `tests/production.test.ts`). A wave is the units a building sets down at once:
-every unit of it comes out on the same tick, one after another in a fixed order round the building, so it
-stands together beside the building that made it (the owner, 2026-10-05: "spawning units: should happen
+every unit of it comes out on the same tick, one after another on the free tiles round the building nearest where
+they head (section 1.3a), so it stands together on the building's front (the owner, 2026-10-05: "spawning units: should happen
 simultaneously at the beginning of the round, creating a more predictable squad formation"). The recipe says
 how many a wave, how many waves a Pulse, when the first comes and the gap to the next; the schedule never
 slips. A building short of room never spawns fewer: what fits comes out on the wave's tick, and the rest on

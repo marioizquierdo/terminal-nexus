@@ -20,10 +20,12 @@
 // ordinal order: nothing here can make two runs differ.
 
 import type { ContentDef } from "../content/types.ts"
-import { footprintSteps, gridDistance, tilesOf } from "../grid/coords.ts"
+import { footprintDistance, footprintSteps, tilesOf } from "../grid/coords.ts"
 import { wholeRows } from "../grid/reach.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord, Footprint } from "../grid/types.ts"
+
+const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { stepsBetween } from "./shared.ts"
@@ -78,13 +80,13 @@ export function areaTiles(area: TargetArea): Coord[] {
  * all, nearest by the Grid's own distance (`gridDistance`). A mover aims at it as it aims at the nearest tile of
  * an enemy's footprint (`movementGoal`).
  */
-export function areaGoal(from: Coord, area: TargetArea, mask: CollisionMask): Coord {
+export function areaGoal(anchor: Coord, footprint: Footprint, area: TargetArea, mask: CollisionMask): Coord {
   let clear: Coord | null = null
   let clearDistance = Number.POSITIVE_INFINITY
   let nearest: Coord = { x: area.x, y: area.y }
   let nearestDistance = Number.POSITIVE_INFINITY
   for (const tile of areaTiles(area)) {
-    const distance = gridDistance(from, tile)
+    const distance = footprintDistance(anchor, footprint, tile, ONE_TILE)
     if (distance < nearestDistance) {
       nearest = tile
       nearestDistance = distance

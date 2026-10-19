@@ -216,9 +216,11 @@ test("PERIMETER's round 1: the Barracks on the map sends its four troopers toget
   assert.deepEqual([opening.productionCooldown, opening.produced, opening.owed], [FIRST_WAVE, 0, 0])
   const trained = trainedEvents(run.events)
   assert.deepEqual(trained.map((event) => event.tick), [60, 60, 60, 60])
-  // In the ring's own order, a row of four along its north side, facing the raid's way in.
+  // A row of four along its north side, the side facing where they head (the line, the troops' target): the tiles of
+  // the ring nearest it, the middle ones first and the ties between them drawn.
   const ring = footprintRing(3, 2, 1).map((offset) => ({ x: opening.anchor.x + offset.x, y: opening.anchor.y + offset.y }))
-  assert.deepEqual(trained.map((event) => (event.kind === "entity.spawned" ? event.at : null)), ring.slice(0, 4))
+  const at = trained.map((event) => (event.kind === "entity.spawned" ? `${event.at.x},${event.at.y}` : "")).sort()
+  assert.deepEqual(at, ring.slice(0, 4).map((tile) => `${tile.x},${tile.y}`).sort())
 })
 
 test("a building the player placed spawns too, its wave on the same tick as the map's; a Hatchery's brood the same way", () => {
@@ -312,5 +314,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 
 // PERIMETER's round 1 as the rules play it: Vasse arriving with the squads, who hold the line ahead of the base, By
 // the Book guarding those beside her, the Barracks's four troopers together five seconds in, a row counting two
-// columns in every distance and step, and every step taking whole beats, one across and two up or down.
-const PINNED_ROUND_1 = "6b85d3a6fdb4ebf900a694863bdcf14489b4aa64e95fabb6b52470b81e4aad3c"
+// columns in every distance and step, every step taking whole beats, one across and two up or down, and every tie
+// broken by what a unit faces, then a draw.
+const PINNED_ROUND_1 = "fc45c478959f17ae16193620699b533236073809881b7765bd5a502138c567aa"

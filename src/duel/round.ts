@@ -18,8 +18,8 @@ import type { ConstructItem, FieldEntity, PlannedPlacement } from "../build/type
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
-import { tilesOf } from "../grid/coords.ts"
-import type { Coord, GridTerrain } from "../grid/types.ts"
+import { footprintExtent, tilesOf } from "../grid/coords.ts"
+import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 import { centreTile, creditsEarned, fallen, opening, recall, restoreCommanders, spawningRegistry } from "../match/index.ts"
 import type { Force, StructurePlacement } from "../match/index.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
@@ -136,14 +136,20 @@ export function zonePoint(state: DuelState, side: Side, zone: Zone, registry: Co
   }
 }
 
-/** Tiles in order of nearness to `point`, a row counting two columns as range does; on a tie the one further toward
- *  the enemy, then the northern — the same choice for either side, mirrored, so neither side's buildings land a tile
- *  further forward by the order tiles are read in. */
-function nearest(grid: GridTerrain, point: Coord, way: number): Coord[] {
-  const tiles: Coord[] = []
-  for (let y = 0; y < grid.height; y += 1) for (let x = 0; x < grid.width; x += 1) tiles.push({ x, y })
-  const distance = (tile: Coord): number => Math.abs(tile.x - point.x) + 2 * Math.abs(tile.y - point.y)
-  return tiles.sort((a, b) => distance(a) - distance(b) || (b.x - a.x) * way || a.y - b.y)
+/** Anchors for `footprint` in order of how near its middle stands to `point`, a row counting two columns as range
+ *  does; on a tie the one further toward the enemy, then the northern. Measured from the footprint's middle, in
+ *  half tiles, not from its anchor (its north-west tile): the same choice for either side, mirrored, so neither
+ *  side's buildings land a tile further forward by the corner they are measured from. */
+function nearest(grid: GridTerrain, point: Coord, way: number, footprint: Footprint): Coord[] {
+  const { width, height } = footprintExtent(footprint)
+  const middle = (anchor: Coord): Coord => ({ x: 2 * anchor.x + width - 1, y: 2 * anchor.y + height - 1 })
+  const distance = (anchor: Coord): number => {
+    const at = middle(anchor)
+    return Math.abs(at.x - 2 * point.x) + 2 * Math.abs(at.y - 2 * point.y)
+  }
+  const anchors: Coord[] = []
+  for (let y = 0; y < grid.height; y += 1) for (let x = 0; x < grid.width; x += 1) anchors.push({ x, y })
+  return anchors.sort((a, b) => distance(a) - distance(b) || (middle(b).x - middle(a).x) * way || a.y - b.y)
 }
 
 /** What a side's plan builds: each placement in order, held to the Build Phase's rules — the card in its menu, what it
@@ -178,7 +184,7 @@ function placeAll(
     const tiles =
       placement.x !== undefined && placement.y !== undefined
         ? [{ x: placement.x, y: placement.y }]
-        : nearest(grid, zonePoint(state, side, placement.at ?? "nexus", registry), facing(map, side)).slice(0, 600)
+        : nearest(grid, zonePoint(state, side, placement.at ?? "nexus", registry), facing(map, side), registry.get(row.contentId).footprint).slice(0, 600)
     let reason = "no legal spot near there"
     for (const anchor of tiles) {
       const legality = legalityAt(context, planned, row.contentId, anchor, left, defaultValue("buildRange"), defaultValue("spawnClearance"))
@@ -310,7 +316,7 @@ export function playRound(
     const step = stepTick(current, context)
     current = step.state
     events.push(...step.events)
-    watch?.(current, [], sides.A)
+    watch?.(current, step.events, sides.A)
   }
 
   // After it: who fell, what each side earned, what the next round starts from.

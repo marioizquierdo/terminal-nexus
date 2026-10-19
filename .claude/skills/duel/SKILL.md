@@ -15,8 +15,9 @@ npm run duel -- bench --seeds 1-6 --rounds 8 --out .playtest/bench.json
 ```
 
 Every pairing of every Commander, from both sides, for each script (`balanced`, `rush`, `turtle`). Read a pairing
-only across both sides: the east side wins most mirror games (a kernel tie-break, registered). A sweep like 12–0
-under one script is a lead to explain from a report (`play --out <dir>` writes every round's), not a result.
+across both sides: neither end of the map is favoured (`tests/fairness.test.ts`), but a seed's hand is its own. A
+sweep like 12–0 under one script is a lead to explain from a report (`play --out <dir>` writes every round's), not a
+result.
 
 ## 2. Model against model (about a minute and 75 thousand small-model tokens a side)
 

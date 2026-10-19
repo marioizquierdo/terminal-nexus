@@ -125,10 +125,11 @@ which side flips the result exactly, so there is no bias tied to identity; acros
 is likely to make this moot. If the formations sliding past each other reads as broken rather than as
 manoeuvre, take C.
 
-**2026-10-17, from the duels:** a mirror duel between two Commander Armies goes to the east side about nine times in
-ten, from tie-breaks of the same family that read the Grid west to east (where a building sets its new units down,
-which tiles a muster fills first). Those are not movement and are queued as cleanup to mirror for the side; the
-duels play every pairing from both sides meanwhile ([`duels.md`](../system-design/duels.md)).
+**2026-10-17, from the duels:** a mirror duel between two Commander Armies went to one side most of the time, from
+tie-breaks of the same family that read the Grid west to east. **2026-10-19:** every one of those now goes by what
+the deciding unit faces, then a seeded draw (`pulse.md`, "No side wins by where it stands"), and mirror duels split
+evenly. The compass order this question is about is the one left: it is mirror-fair west to east, both sides
+preferring north, and it decides only between two steps of equal gain and turn.
 
 ### Q15 — What should a mover with no route do: circle, or stop?
 

@@ -516,6 +516,22 @@ A second round on colour, the day the 16-colour depth went. What it taught:
 4. **Small agents wander.** A few cheap-model players called a tool they were told not to (each refused or
    harmless). Name the only commands an agent may run and tell it to call no other tool.
 
+## No side wins by where it stands (2026-10-19)
+
+1. **Run a battle beside its mirror and find the first tick they part.** The east side's edge was nine tie-breaks
+   deep; a harness that mirrors a state west to east, swaps the sides, and compares every tick named each one in
+   turn, where a bench of win counts only said something was wrong. Renumber the mirror as the opening would, or an
+   ordinal tie-break follows its unit and hides.
+2. **A draw is fair but not a mirror.** Two sides drawing in turn from one stream get different numbers, so a battle
+   with a tie in it mirrors only over seeds. Test exact mirrors on battles with nothing tied, and fairness on the rest
+   by counting wins.
+3. **The lower ordinal was doing a job.** Breaking target ties by ordinal made a squad fire into the same enemy; a
+   plain draw split its fire, and two levels an empty base had just survived fell a round early. Least health first
+   kept the focus and the fairness. Before replacing a tie-break, ask what its accidental order was buying.
+4. **A one-character substring replacement can hit twice.** `watch?.(current, sides.A)` is inside
+   `    watch?.(current, sides.A)`: one replace changed both call sites and the duel's watcher saw no events, which its
+   test, counting only ticks, did not notice. Test what a hook is for, not only that it is called.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

@@ -26,7 +26,7 @@ import { gameplayRng } from "../rng/pcg32.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { SCHEMA_VERSION } from "../state/types.ts"
-import { centreTile, nearestFit } from "./placement.ts"
+import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { PulseSetup, StructurePlacement } from "./types.ts"
 import { PulseSetupError } from "./types.ts"
 
@@ -143,7 +143,8 @@ export function opening(input: OpeningInput): Opening {
   // tile to it.
   for (const entity of carriedEntities.filter((candidate) => !isStructure(candidate))) {
     const definition = definitionOf(entity)
-    const anchor = nearestFit(unitMask(definition), definition.footprint, centreTile(entity.anchor, definition.footprint), MUSTER_RADIUS)
+    const stood = centreTile(entity.anchor, definition.footprint)
+    const anchor = nearestFit(unitMask(definition), definition.footprint, stood, MUSTER_RADIUS, stood, enemyNexusMiddle(placed, entity.player, stood))
     if (anchor === null) throw new PulseSetupError(`${entity.id}: no room within ${MUSTER_RADIUS} tiles of where it stood`)
     claim(entity.player, definition, anchor, entity.id, { carried: entity })
   }
@@ -155,7 +156,7 @@ export function opening(input: OpeningInput): Opening {
     force.units.forEach((contentId, unitIndex) => {
       const where = `force ${forceIndex + 1}, unit ${unitIndex + 1}`
       const definition = known(force.player, contentId, where)
-      const anchor = nearestFit(unitMask(definition), definition.footprint, force.muster, MUSTER_RADIUS)
+      const anchor = nearestFit(unitMask(definition), definition.footprint, force.muster, MUSTER_RADIUS, force.muster, enemyNexusMiddle(placed, force.player, force.muster))
       if (anchor === null) {
         throw new PulseSetupError(
           `${where}: no room for "${contentId}" within ${MUSTER_RADIUS} tiles of (${force.muster.x},${force.muster.y})`,
