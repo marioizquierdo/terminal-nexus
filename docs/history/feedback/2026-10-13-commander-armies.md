@@ -335,4 +335,28 @@ tick, and mirror duels split about evenly.
 > battle round.
 
 **Scheduled**: registered beside the routing question and in the backlog, with what this round leaves ready for it
-(movement measured from a unit's footprint, a step that must gain ground, and side-fair ties).
+(movement measured from a unit's footprint, a step that must gain ground, and side-fair ties). Since 2026-10-19 it is a
+milestone of its own (F183).
+
+### F183 — A milestone for pathfinding
+
+> Well okay, not sure how we forgot, but we need to write a milestone dedicated to pathfinding. Please write the
+> milestone so we can move on with other issues. Some notes to take into account:
+>
+> Pathfinding Milestone:
+>
+> * This is a solved problem in many videogames, please do some initial research to identify the typical situations
+> and algorithms. Then contrast with our specific situation, our units move like in a RST or tactical auto-battler,
+> using ticks, but all units are automated.Units need to move towards a target, dodge obstacles, identify enemies on
+> their vision radius, crowd control (e.g. walking through a small passage), react to dynamic obstacles during the
+> battle (e.g. units pushed after an explosion, a magnet ability or new units spawned), different terrains, and worker
+> units being able to walk over other friendly units.
+
+**Scheduled.** Before it, the cause of the stuck raiders was found by playing PERIMETER headless: there is no
+pathfinding, a unit only takes a step that brings it strictly closer, so a slinger directly above the Grid Nexus with
+the north-west wall between them stands there for good and the raiders behind it queue. The milestone
+([`milestone-16-pathfinding.md`](../../milestones/milestone-16-pathfinding.md)) has that, the research (A\*, distance
+fields and flow fields, hierarchy, clearance for unit sizes, local avoidance, cooperative pathfinding, weighted
+terrain, what auto-battlers do), each of his needs set against it, and six steps: a bench and a measure, routes round
+the map, crowds, a Grid that changes mid-round, terrain and who passes whom, and goals with banners. When a banner is set,
+in the plan or live during the round, is a question for him. Its place in the build order is his call.

@@ -24,9 +24,9 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | --- | --- | --- | --- |
 | [Q5](#q5--what-is-the-default-construction-radius) | What is the default construction radius? | OBSERVABLE | Mario's playtest of the Build range Experiment |
 | [Q7](#q7--do-workers-carry-or-produce-in-place) | Do workers carry, or produce in place? | OPEN | Milestone 7 (worker economy), for the storage half |
-| [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Backlog: routing and economy |
-| [Q14](#q14--should-the-movement-tie-break-be-mirror-fair-or-is-a-fixed-compass-order-enough) | Should the movement tie-break be mirror-fair? | OPEN | Backlog: routing |
-| [Q15](#q15--what-should-a-mover-with-no-route-do-circle-or-stop) | What should a mover with no route do? | OPEN | Backlog: routing |
+| [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Milestone 16 (pathfinding) and the worker economy |
+| [Q14](#q14--should-the-movement-tie-break-be-mirror-fair-or-is-a-fixed-compass-order-enough) | Should the movement tie-break be mirror-fair? | OPEN | Milestone 16 (pathfinding) |
+| [Q15](#q15--what-should-a-mover-with-no-route-do-circle-or-stop) | What should a mover with no route do? | OPEN | Milestone 16 (pathfinding), its second step |
 | [Q19](#q19--where-should-a-sandbox-placement-mode-rewind-and-fast-forward-and-a-feedback-replay-engine-live) | Where do a sandbox, rewind and a feedback replay live? | OPEN | Backlog: replay format |
 | [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
@@ -48,6 +48,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
+| [Q81](#q81--when-does-a-player-set-a-banner-in-the-build-phase-or-during-the-battle-round) | When does a player set a banner: in the Build Phase, or during the Battle Round? | OPEN | Milestone 16 (pathfinding), its last step |
 
 ## Open
 
@@ -107,7 +108,7 @@ worker. Whether the dragging is visible still wants someone to watch it.
 
 ### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
 
-**Status:** OPEN — parked under the backlog's routing work, whose rewrite is likely to make it moot.
+**Status:** OPEN — parked under the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), whose routes are likely to make it moot.
 
 When two steps gain as much for the time they take — every step toward a goal does — the tie breaks on how far
 each turns from the way straight at the goal, then on a fixed compass order (`n, e, s, w`). Both sides prefer their own left, so in the mirror skirmish player A's
@@ -133,7 +134,7 @@ preferring north, and it decides only between two steps of equal gain and turn.
 
 ### Q15 — What should a mover with no route do: circle, or stop?
 
-**Status:** OPEN — parked as the opening case of the backlog's routing work.
+**Status:** OPEN — parked as the opening case of the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), settled in its second step.
 
 Greedy routing has no memory. With four-way movement every legal step changes the distance to the goal, by
 one across or two up or down, so an actor approaching an obstacle **off-axis** still slides along its face
@@ -613,3 +614,23 @@ a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one 
 **Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
 and that is a contained change best made with the next change to the mission format; the engine's internal names
 cost nothing as long as the vocabulary says what they mean.
+
+### Q81 — When does a player set a banner: in the Build Phase, or during the Battle Round?
+
+**Status:** OPEN — registered 2026-10-19, for the pathfinding milestone's last step
+([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)).
+
+The owner: "we will likely implement banners to point at priority rally points during a battle round." A banner is a
+place a side's troops head for before the enemy's Grid Nexus. The routing makes one cheap: it is one more goal with
+its own distance field. What is not settled is when a player puts it down. Today the Battle Round is decided entirely
+by the plans both players commit in the hidden Build Phase, and nothing a player does while it plays changes it.
+
+| Option | What it costs |
+| --- | --- |
+| A. **In the Build Phase, as part of the plan**: a banner is placed like a building, and the troops head for it from the round's first tick | Nothing new to the round's shape: the plan is still the whole input, the replay still a seed and two plans. A player cannot answer what they see happen |
+| B. **Live, during the Battle Round**: a player drops or moves a banner while the round plays, and the troops turn at the next tick | The first input during a round: the battle then depends on a player's timing, a replay must record each command with its tick, and two players in multiplayer need their commands on the same tick. Watching becomes playing, which changes what a Battle Round is |
+| C. **A, then B as a Nexus power or a building's action**: planted in the Build Phase; moving it during the round is something a card grants, a few times a round | A first, so routing ships without a new input path; B later as content, with its cost (recorded commands) paid once something earns it |
+
+**Recommendation: C.** Banners in the plan give rally points now with no change to how a round is decided, and the
+owner's "during a battle round" stays open as a power, where its cost is a choice the game makes per card rather than
+for every round.

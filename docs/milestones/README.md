@@ -28,6 +28,7 @@ remains.
 | [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 12, repeating | Does each new card make a run more interesting and let a mission teach it — measured, not asserted? |
 | [13 — The Nexus Pulse](milestone-13-nexus-pulse.md) | PLANNED | not placed: Mario's call | Does each round open on a Nexus Pulse that feels like the Nexus speaking to its Commander — its own moment on screen, a hand worth reading, a schedule to plan around — without making a round slower? |
 | [15 — ASCII Art](milestone-15-ascii-art.md) | PLANNED | not placed: Mario's call | Is there a workflow — research, a tool, an image model and a pass by hand — that makes ASCII and ANSI art a person calls good, for every unit, portrait and vignette? |
+| [16 — Pathfinding](milestone-16-pathfinding.md) | PLANNED | not placed: Mario's call (recommended next) | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a Grid that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast? |
 
 The order is for a played loop as early as possible. The match experience comes first (menu, Build Phase,
 Battle Round), then the two mode shells (the Commander and draft, the run, the campaign), then depth (the worker
@@ -54,5 +55,5 @@ missions exist (packaging, a title and credits sequence, whatever the finished c
 Neither is a file yet, and no number is reserved; each gets one when the milestone before it is close
 enough to done that its contents are no longer a guess.
 
-Horizontal kernel work that no milestone needs yet (real routing, a second resource, the full replay
-format, visibility) is in [`backlog.md`](backlog.md).
+Horizontal kernel work that no milestone needs yet (a second resource, the full replay format, visibility) is in
+[`backlog.md`](backlog.md); real routing has its own milestone, 16.
