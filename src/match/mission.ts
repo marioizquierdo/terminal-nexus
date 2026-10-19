@@ -47,7 +47,7 @@ import type { PulseContext } from "../pulse/context.ts"
 import { contextFor, spawnEvents, stepTick } from "../pulse/index.ts"
 import type { EntityState, MatchState, PlayerId, TargetArea } from "../state/types.ts"
 import { opening } from "./opening.ts"
-import { nearestFit } from "./placement.ts"
+import { enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { Force, StructurePlacement } from "./types.ts"
 
 /** How far from a region's centre an arrival may be set down, by the Grid's own distance (`nearestFit`): 12 rows up
@@ -273,6 +273,7 @@ function arriveBetweenTicks(
     index.add(definition.layer, entity.ordinal, entity.anchor, definition.footprint)
   }
   const vacated = new VacatedOverlay(state.vacatedTiles.filter((entry) => entry.until > state.tick))
+  const standing = state.entities.map((entity) => ({ player: entity.player, anchor: entity.anchor, definition: registry.get(entity.contentId) }))
   const born: EntityState[] = []
   const arrivals: Arrival[] = []
   const events: DomainEvent[] = []
@@ -286,7 +287,7 @@ function arriveBetweenTicks(
         terrain: definition.layer === "air" ? "ignore" : "impassable",
         vacated,
       })
-      const anchor = nearestFit(mask, definition.footprint, muster, ARRIVAL_RADIUS)
+      const anchor = nearestFit(mask, definition.footprint, muster, ARRIVAL_RADIUS, muster, enemyNexusMiddle(standing, entry.spawn.side, muster))
       if (anchor === null) continue
       const ordinal = nextOrdinal
       nextOrdinal += 1

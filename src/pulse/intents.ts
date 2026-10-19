@@ -1,7 +1,7 @@
 // 4. Intents (phase order in pulse.md). What each actor wants to do this tick, before arbitration decides who
 // actually gets it.
 
-import { directionOf, nearestFootprintTile, step } from "../grid/coords.ts"
+import { directionOf, footprintDistance, nearestFootprintTile, step, tilesOf } from "../grid/coords.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { StepChoice } from "./movement.ts"
@@ -50,7 +50,7 @@ export function intents(context: TickContext): Intent[] {
       area = targetFor(context, actor)
       if (area === null || insideArea(actor, area)) continue
       intent = "toward"
-      goal = areaGoal(actor.anchor, area, maskForActor(context, actor))
+      goal = areaGoal(actor.anchor, actor.definition.footprint, area, maskForActor(context, actor))
     } else {
       if (actor.definition.behavior === "flee") {
         // Measured as range is, so the threat's reach and the worker's nerve are counted alike.
@@ -73,7 +73,7 @@ export function intents(context: TickContext): Intent[] {
         if (attack !== undefined && inAttackRange(actor, target, attack)) continue
         intent = "toward"
       }
-      goal = movementGoal(actor.anchor, target)
+      goal = movementGoal(actor, target)
     }
 
     if (!canStep(actor.moveCredit, rate)) continue
@@ -134,21 +134,34 @@ export function intents(context: TickContext): Intent[] {
 }
 
 /**
- * The tile a mover is actually walking toward: the nearest tile of the target's footprint, not its
- * anchor. Routing and range-checking must agree on this point, or a mover can rank every step that would
- * put it in range as "further from the goal" and never take it (see `nearestFootprintTile`).
+ * The tile a mover is actually walking toward: the tile of the target's footprint nearest the mover's own footprint,
+ * not either anchor. Routing and range-checking must agree on this point, or a mover can rank every step that would
+ * put it in range as "further from the goal" and never take it (see `nearestFootprintTile`). Footprint to footprint,
+ * so a wide mover heading east or west aims alike.
  */
-export function movementGoal(from: Coord, target: Actor): Coord {
-  return nearestFootprintTile(from, target.anchor, target.definition.footprint)
+export function movementGoal(mover: Actor, target: Actor): Coord {
+  let best = target.anchor
+  let bestDistance = Number.POSITIVE_INFINITY
+  for (const tile of tilesOf(target.anchor, target.definition.footprint)) {
+    const distance = footprintDistance(mover.anchor, mover.definition.footprint, tile, ONE_TILE)
+    if (distance < bestDistance) {
+      best = tile
+      bestDistance = distance
+    }
+  }
+  return best
 }
+
+const ONE_TILE = [{ x: 0, y: 0 }]
 
 /** The tile the actor wanted, for the report: one step along the direction it was heading. */
 export function desiredTile(actor: Actor, target: Actor, intent: "toward" | "away"): Coord {
-  return step(actor.anchor, desiredDirection(actor, movementGoal(actor.anchor, target), intent))
+  return step(actor.anchor, desiredDirection(actor, movementGoal(actor, target), intent))
 }
 
 /** Which way the actor heads along the way to — or, fleeing, away from — `goal`: straight at it, along the
  *  screen's own diagonal (`directionOf`). */
 function desiredDirection(actor: Actor, goal: Coord, intent: "toward" | "away"): Direction {
-  return intent === "toward" ? directionOf(actor.anchor, goal, actor.facing) : directionOf(goal, actor.anchor, actor.facing)
+  const nose = nearestFootprintTile(goal, actor.anchor, actor.definition.footprint)
+  return intent === "toward" ? directionOf(nose, goal, actor.facing) : directionOf(goal, nose, actor.facing)
 }

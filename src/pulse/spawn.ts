@@ -7,28 +7,36 @@
 // Two triggers, one construction primitive: `spawning()` below (periodic, `ContentDef.spawn`) and
 // `spawnOnDeath()` (`death.ts` calls it for `ContentDef.splitOnDeath`) both create entities the same
 // way, through `spawnOneNear`. A second real use is exactly what pulled that primitive out on its own
-// rather than writing "find a free adjacent tile and build an Actor" twice.
+// rather than writing "find a free adjacent tile and build an Actor" twice. Where it sets a unit down, and the
+// order spawners act in, go by what they face, never by reading order (pulse.md, "No side wins by where it stands").
 //
 // This is a **combat ability**, not production: a building's recipe is `production.ts`, which runs in
 // the production phase and borrows `spawnOneNear` to set its units down. Whether a unit that spawns
 // units counts as a combat ability or as production is still an open question for Mario (Q26 in
 // docs/milestones/open-questions.md), to be answered before a real roster relies on it.
 
-import { footprintExtent, footprintRing } from "../grid/coords.ts"
+import type { ContentDef } from "../content/types.ts"
+import { rectFootprint } from "../content/types.ts"
+import { footprintDistance, footprintExtent, footprintRing } from "../grid/coords.ts"
 import { maskFrom } from "../grid/occupancy.ts"
+import type { Coord } from "../grid/types.ts"
 import { freshEntityFields } from "../content/index.ts"
 import { contentOf } from "./context.ts"
 import type { Actor, TickContext } from "./shared.ts"
+import { distanceBetween, drawAmong } from "./shared.ts"
+import { followsTarget } from "./target.ts"
 
 /**
- * Finds the first free tile adjacent to `origin`'s own footprint — a fixed, deterministic search
- * order (`footprintRing`, no RNG, no clock) — that fits `contentId`'s footprint under its own
- * collision rule, and creates one new entity there for `origin`'s player: wired into
- * `context.actors`/`byOrdinal`/`index` and given an `entity.spawned` event exactly as if the scenario
- * loader had placed it. Returns the new actor, or `null` if nothing adjacent fits this attempt — a
- * boxed-in spawner simply tries again next interval (`spawning()`), a building owes the rest of its wave
- * until the first tick there is room (`production()`), and a dying unit does not split further
- * (`spawnOnDeath()`), rather than searching further afield or erroring.
+ * Sets one new entity of `contentId` down for `origin`'s player on a free tile touching `origin`'s footprint
+ * (`footprintRing`) that fits its footprint under its own collision rule: **the one nearest where it is headed** —
+ * its side's target when it follows one, else the nearest enemy — so a building's units come out on the side facing
+ * the fight, east or west alike, and a tie between equally near tiles is a draw (`drawAmong`). With nowhere to head,
+ * the first free tile of the ring. The new entity is wired
+ * into `context.actors`/`byOrdinal`/`index` and given an `entity.spawned` event exactly as if the scenario loader had
+ * placed it. Returns it, or `null` if nothing adjacent fits this attempt — a boxed-in spawner simply tries again next
+ * interval (`spawning()`), a building owes the rest of its wave until the first tick there is room
+ * (`production()`), and a dying unit does not split further (`spawnOnDeath()`), rather than searching further
+ * afield or erroring.
  */
 export function spawnOneNear(
   context: TickContext,
@@ -48,10 +56,13 @@ export function spawnOneNear(
     vacated: context.vacated,
   })
 
-  for (const offset of footprintRing(width, height, 1)) {
-    const anchor = { x: origin.anchor.x + offset.x, y: origin.anchor.y + offset.y }
-    if (!mask.footprintFits(anchor, childDef.footprint)) continue
-
+  const free = footprintRing(width, height, 1)
+    .map((offset) => ({ x: origin.anchor.x + offset.x, y: origin.anchor.y + offset.y }))
+    .filter((anchor) => mask.footprintFits(anchor, childDef.footprint))
+  const toward = nearestHeading(context, origin, childDef, free)
+  // With nowhere to head there is no side to favour: the ring's own order, so a wave still stands together.
+  const anchor = toward === null ? free[0] : drawAmong(context, toward)
+  if (anchor !== undefined) {
     const ordinal = context.nextOrdinal
     context.nextOrdinal += 1
     const id = `${origin.player}:${childDef.short}#${ordinal + 1}`
@@ -89,6 +100,45 @@ export function spawnOneNear(
 }
 
 /**
+ * `actors` front first: nearest the enemy as the tick began, then by ordinal. The order buildings set their units
+ * down in, so of two neighbours sharing free ground the one further forward claims first, on either side of the map —
+ * not the one read first, which is the western one.
+ */
+export function frontFirst(context: TickContext, actors: readonly Actor[]): Actor[] {
+  const front = new Map<number, number>()
+  for (const actor of actors) {
+    let nearest = Number.POSITIVE_INFINITY
+    for (const other of context.actors) {
+      if (other.player === actor.player || other.pendingDead || other.ordinal >= context.bornFrom) continue
+      nearest = Math.min(nearest, distanceBetween(actor, other))
+    }
+    front.set(actor.ordinal, nearest)
+  }
+  return [...actors].sort((a, b) => (front.get(a.ordinal) as number) - (front.get(b.ordinal) as number) || a.ordinal - b.ordinal)
+}
+
+/**
+ * The tiles of `free` nearest where a new `child` of `origin`'s side is headed: its side's target when it follows one
+ * (`followsTarget`), else the nearest enemy as the tick began, measured footprint to footprint (`footprintDistance`).
+ * `null` when there is nowhere to head: no target and no enemy.
+ */
+function nearestHeading(context: TickContext, origin: Actor, child: ContentDef, free: readonly Coord[]): Coord[] | null {
+  const area = followsTarget(child) ? context.targets[origin.player] : undefined
+  const enemies =
+    area !== undefined
+      ? []
+      : context.actors.filter((other) => other.player !== origin.player && !other.pendingDead && other.ordinal < context.bornFrom)
+  if (area === undefined && enemies.length === 0) return null
+  const away = (anchor: Coord): number =>
+    area !== undefined
+      ? footprintDistance(anchor, child.footprint, { x: area.x, y: area.y }, rectFootprint(area.width, area.height))
+      : Math.min(...enemies.map((other) => footprintDistance(anchor, child.footprint, other.anchor, other.definition.footprint)))
+  const scored = free.map((anchor) => ({ anchor, distance: away(anchor) }))
+  const best = Math.min(...scored.map((entry) => entry.distance))
+  return scored.filter((entry) => entry.distance === best).map((entry) => entry.anchor)
+}
+
+/**
  * Phase "1.5": every living entity with `ContentDef.spawn` attempts it. The cadence mirrors
  * `attacks()`'s own cooldown pattern exactly (decrement first, then gate on the post-decrement value,
  * then reset to the full interval on a completed attempt) so the two per-actor timers behave
@@ -99,8 +149,9 @@ export function spawnOneNear(
  * newborns still join every phase after this one, just not a second spawn attempt within it.
  */
 export function spawning(context: TickContext): void {
-  const spawners = context.actors.filter(
-    (actor) => actor.definition.spawn !== undefined && !actor.pendingDead,
+  const spawners = frontFirst(
+    context,
+    context.actors.filter((actor) => actor.definition.spawn !== undefined && !actor.pendingDead),
   )
   for (const actor of spawners) {
     if (actor.spawnCooldown > 0) actor.spawnCooldown -= 1

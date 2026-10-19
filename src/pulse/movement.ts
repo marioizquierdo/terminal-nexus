@@ -8,7 +8,7 @@
 // unit that can reach a tile within a range by walking reaches it in the time the range says.
 
 import type { ContentDef, MovementRate } from "../content/types.ts"
-import { DIRECTIONS, directionOf, gridDistance, step, stepLength } from "../grid/coords.ts"
+import { DIRECTIONS, directionOf, gridDistance, nearestFootprintTile, step, stepLength } from "../grid/coords.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 
@@ -97,6 +97,9 @@ export type StepOptions = Readonly<{
  * obstacle stands. This is a known, accepted gap in the first routing, and real pathfinding, not this greedy
  * stepping, is what would close it. What a mover with no route should do (circle or stop) is still an open
  * question (Q15).
+ *
+ * **Measured from the mover's tile nearest the goal**, not from its anchor (its western tile): a unit three tiles wide
+ * walking east and its mirror walking west rank their steps alike, nose first either way.
  */
 export function rankedSteps(
   anchor: Coord,
@@ -105,15 +108,19 @@ export function rankedSteps(
   options: StepOptions,
 ): StepChoice[] {
   const { goal, intent } = options
-  const current = gridDistance(anchor, goal)
-  const desired = intent === "toward" ? directionOf(anchor, goal) : directionOf(goal, anchor)
+  const away = (at: Coord): number => gridDistance(nearestFootprintTile(goal, at, definition.footprint), goal)
+  const current = away(anchor)
+  const nose = nearestFootprintTile(goal, anchor, definition.footprint)
+  const desired = intent === "toward" ? directionOf(nose, goal) : directionOf(goal, nose)
 
   const candidates: Array<StepChoice & { turn: number; index: number }> = []
   DIRECTIONS.forEach((direction, index) => {
     const to = step(anchor, direction)
     if (!mask.footprintFits(to, definition.footprint)) return
-    const distanceAfter = gridDistance(to, goal)
-    const improves = intent === "toward" ? distanceAfter <= current : distanceAfter >= current
+    const distanceAfter = away(to)
+    // Strictly: a step that only keeps the distance — a wide mover sliding along, its nose tile changing — is no step
+    // at all, or a walk could pace back and forth for ever. A one-tile mover's every step changes it anyway.
+    const improves = intent === "toward" ? distanceAfter < current : distanceAfter > current
     if (!improves) return
     candidates.push({
       direction,

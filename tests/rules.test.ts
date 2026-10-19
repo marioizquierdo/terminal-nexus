@@ -208,11 +208,11 @@ test("arbitration terminates under a bounded pass count with a decreasing progre
   const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
 
   let state = loaded.state
-  let contests = 0
+  const contested: number[] = []
   while (state.outcome === null && state.tick < scenario.pulseTicks) {
     const result = stepTick(state, context)
     for (const event of result.events) {
-      if (event.kind === "move.contested") contests += 1
+      if (event.kind === "move.contested") contested.push(event.tick)
       assert.notEqual(
         event.kind,
         "arbitration.bounded",
@@ -221,7 +221,12 @@ test("arbitration terminates under a bounded pass count with a decreasing progre
     }
     state = result.state
   }
-  assert.ok(contests > 5, `the jammed corridor produced only ${contests} contested claims`)
+  // The contest recurs rather than resolving once: at the junction, at the lines' own rhythm (a trooper's step), for as
+  // long as the lines last — five times or more. (Six on the stream as it was before a fleeing worker came to draw
+  // between two equally near threats, which spends one more draw; five since.)
+  assert.ok(contested.length >= 5, `the jammed corridor produced only ${contested.length} contested claims`)
+  const gaps = new Set(contested.slice(1).map((tick, index) => tick - (contested[index] as number)))
+  assert.deepEqual([...gaps], [5], `the contests came at ticks ${contested.join(", ")}`)
 })
 
 test("contested claims resolve by speed tier before the seeded stream is consulted", async () => {

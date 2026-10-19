@@ -223,7 +223,7 @@ Small, none blocking.
 | Item | Why | Size |
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
-| Duel tie-breaks that mirror for the side: a building's new units and a muster read the Grid west to east, so the east side wins about nine mirror duels in ten | A duel's numbers should not depend on the side; benches play both sides until then | medium |
+| The curve levels' empty-base walk is a knife edge | A route to a later round plays the rounds before it building nothing; on Averno's level that base holds round 4 with 25 of 400 health left, and almost any change to how a battle plays tips it. Shape the levels (what an empty base faces) before the next rule change, rather than tuning rules until the walk survives | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet

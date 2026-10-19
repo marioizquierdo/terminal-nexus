@@ -4,7 +4,7 @@ import type { ContentDef } from "../content/types.ts"
 import { directionOf } from "../grid/coords.ts"
 import { wholeRows } from "../grid/reach.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { distanceBetween, isMobile, setTarget, within } from "./shared.ts"
+import { distanceBetween, drawAmong, isMobile, setTarget, within } from "./shared.ts"
 import { engageRange, targetFor } from "./target.ts"
 
 export function hostilesOf(context: TickContext, actor: Actor): Actor[] {
@@ -43,26 +43,32 @@ function eligibleTargets(actor: Actor, candidates: readonly Actor[]): readonly A
 }
 
 /**
- * The whole scoring function is "nearest enemy across every hostile layer, ties broken by entity id", nearest by
- * the Grid's own distance (`distanceBetween`: a row counts two columns), the shortest walk on screen.
- * It is kept this plain on purpose: a smarter one would be a design change, not a fix.
+ * The whole scoring function is "nearest enemy across every hostile layer", nearest by the Grid's own distance
+ * (`distanceBetween`: a row counts two columns), the shortest walk on screen. Among equally near ones it keeps the
+ * one it already holds; otherwise it takes the one closest to falling (least health), so a squad that meets a line
+ * fires into the same enemy; and what is still tied is a draw (`drawAmong`). Never the lower ordinal, which the
+ * opening hands out in reading order, west first, and so would favour a side by where it stands. It is kept this
+ * plain on purpose: a smarter one would be a design change, not a fix.
  */
 export function selectTarget(
   context: TickContext,
   actor: Actor,
   candidates: readonly Actor[],
 ): { target: Actor; distance: number } | null {
-  let best: { target: Actor; distance: number } | null = null
+  let nearest: Actor[] = []
+  let best = Number.POSITIVE_INFINITY
   for (const candidate of candidates) {
     const distance = distanceBetween(actor, candidate)
-    if (best === null || distance < best.distance) {
-      best = { target: candidate, distance }
-    }
-    // Ties break on the entity id, and ordinals are assigned in scenario order, so the earlier
-    // entity wins. `<` above already keeps the first-seen candidate, and `context.actors` is
-    // ordered by ordinal.
+    if (distance < best) {
+      best = distance
+      nearest = [candidate]
+    } else if (distance === best) nearest.push(candidate)
   }
-  return best
+  const held = nearest.find((candidate) => candidate.ordinal === actor.targetOrdinal)
+  if (held !== undefined) return { target: held, distance: best }
+  const least = Math.min(...nearest.map((candidate) => candidate.hp))
+  const target = drawAmong(context, nearest.filter((candidate) => candidate.hp === least))
+  return target === undefined ? null : { target, distance: best }
 }
 
 export function perception(context: TickContext): void {

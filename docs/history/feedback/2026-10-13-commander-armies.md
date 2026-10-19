@@ -304,3 +304,35 @@ one entry of a table, so no reader branches on a kind and a new kind is one file
 on the Ravel Nexus with a bounty and loaded dice; an adversarial review of the code's readability, its findings
 applied; and duels, two armies on one map, script or model a side, with a bench and model games run. The guide is
 `docs/system-design/army-authoring.md`; duels and model against model are `docs/system-design/duels.md`.
+
+## Mirror fairness, and the pathfinding coming (2026-10-19)
+
+After the army structure and duels merged, on the duels' finding that the east side won most mirror duels.
+
+### F181 — No side wins by where it stands
+
+> In mirror duels the east side wins about nine in ten. The cause is tie-breaks that read the Grid west to east;
+> This should be fixed, when two troops equally strong attack each other at the same time, the solution should be
+> deterministic independently of the side or top vs down or diagonal. They should either kill each other at the same
+> time, or decide randomly (leaving the weak unit alive but with only one last hit point). There may be other effects
+> that need to be resolved simultaneously instead of from left to right. This may result on a significant refactor for
+> the grid code that handles attacks.
+
+**Built** (see the step). The attacks were already simultaneous: two equal units that strike each other in the same
+tick both fall. What favoured a side was everything round them, each tie settled by reading the Grid west to east or
+by the ordinal the opening hands out in that order: where a building sets its new units down, which of two equally
+near enemies a unit picks, where a group is mustered, which home a survivor goes back to and which tile it takes, the
+order two neighbouring buildings claim free ground in, where a duel puts a building, and the tile a unit three tiles
+wide measured its walk from. Each now goes by what the deciding unit faces — the enemy, or where it is headed — and
+what is still tied after that is a draw from the battle's seeded stream. A mirror battle now stays a mirror tick for
+tick, and mirror duels split about evenly.
+
+### F182 — Pathfinding and banners, next
+
+> Please take into account that pathfinding code will also need improvements soon, because in some playable demos on
+> the PERIMETER Vasse campaign, I've seen enemy troops get stuck behind rocks. The general game will point troop
+> lovements towards enemy nexus, but we will likely implement banners to point at priority rally points during a
+> battle round.
+
+**Scheduled**: registered beside the routing question and in the backlog, with what this round leaves ready for it
+(movement measured from a unit's footprint, a step that must gain ground, and side-fair ties).

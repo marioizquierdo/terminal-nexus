@@ -60,6 +60,9 @@ export type TickContext = {
    * entities can be created and destroyed inside the same Pulse.
    */
   nextOrdinal: number
+  /** `nextOrdinal` as the tick began: an entity with an ordinal at or above it was born this tick. What a spawn reads
+   *  the field by is the field as the tick began, so which of two buildings spawns first changes nothing. */
+  bornFrom: number
   /**
    * Reverse index from a target's ordinal to the actors currently aiming at it (grid-engine.md, on scaling).
    * Maintained by `setTarget` at every targetOrdinal write site (all in perception.ts) so death
@@ -106,6 +109,17 @@ export function setTarget(context: TickContext, actor: Actor, targetOrdinal: num
     }
     observers.add(actor)
   }
+}
+
+/**
+ * **No side is favoured by where it stands** (pulse.md): the one way a tie between equally good choices is broken — a
+ * target among equally near enemies, a tile among equally good ones — is a draw from the seeded stream. Never the
+ * first in reading order, compass order or ordinal order: each of those favours whichever side the map put west,
+ * north or first. A single choice takes no draw, so a run with no tie draws exactly what it drew before.
+ */
+export function drawAmong<T>(context: TickContext, tied: readonly T[]): T | undefined {
+  if (tied.length <= 1) return tied[0]
+  return context.rng.pick(tied)
 }
 
 /** Maps a mask's blocker to the reason a `move.blocked` event reports. */

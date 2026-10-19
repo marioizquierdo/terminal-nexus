@@ -1,7 +1,7 @@
 # Milestone 14 — Commander Armies
 
 **Status:** CURRENT
-**Current step:** 14C, round 2 — the army structure: armies stacked as data, abilities and effects as tables, Dob Hunter the third Commander, and duels to fight armies against each other.
+**Current step:** 14C, round 3 — no side wins by where it stands: every tie broken by what a unit faces, then a seeded draw, so mirror duels split evenly.
 **Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing; complete)
 
 Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
@@ -88,9 +88,10 @@ Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-
       in his hand comes from the Ravel Nexus (an army bending the schedule, which the Nexus Pulse milestone had
       planned).
 - [x] He is played beside Vasse on the same level; the pull request says whether they read apart in two rounds.
-      They do: with the same build his side clears round 1 sooner and loses less, he falls in round 2 and she does not,
-      and his side loses more in round 3 while he is out ([the measure](../game-design/commander-armies.md)). His
-      level is her first five rounds: with nothing built he misses round 5, and an empty base cannot hold her round 6.
+      They do: with the same build he falls in round 2 and she does not, and his side loses more in round 3 while he
+      is out ([the measure](../game-design/commander-armies.md)). (His side also cleared round 1 sooner and lost less;
+      since every tie goes by what a unit faces, then a draw, hers does, by a unit.) His level is her first five
+      rounds: an empty base holds his round 4 with little to spare, and cannot hold her round 6.
 
 ### Step 14C, round 2 — The army structure, Dob Hunter, and duels
 
@@ -109,6 +110,20 @@ between commanders" ([his words](../history/feedback/2026-10-13-commander-armies
       bench of every pairing from both sides, and model games played.
 - [x] The guide for writing an army ([`army-authoring.md`](../system-design/army-authoring.md)) and for duels and
       model against model ([`duels.md`](../system-design/duels.md)).
+
+### Step 14C, round 3 — No side wins by where it stands
+
+Mario, 2026-10-19: "when two troops equally strong attack each other at the same time, the solution should be
+deterministic independently of the side" ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+
+- [x] Every tie a rule breaks goes by what the deciding unit faces (the enemy, or where it is headed), and what is
+      still tied after that by a draw from the battle's seeded stream: never by reading order, compass order or
+      ordinal. Where a building sets its units down, a unit's target among equally near enemies, a group's muster,
+      Recall's homes and tiles, the order neighbouring buildings set units down in, a duel's placement, and how a wide
+      unit measures its walk.
+- [x] Two equal units that strike each other in the same tick both fall (it was already so; now a test says it).
+- [x] A mirror battle stays a mirror, tick for tick, and mirror duels split about evenly over the bench.
+- [x] Pathfinding round rocks and banners for rally points are registered for the routing work, not built.
 
 ### Step 14D — Catch-up, measured
 

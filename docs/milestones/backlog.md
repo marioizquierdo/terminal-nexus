@@ -15,7 +15,12 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
   goal, by one across or two up or down, so an actor whose approach is exactly on-axis with its goal and meets an
   obstacle has no fallback direction at all, a hard dead end rather than a stall to route around.
   [`open-questions.md`](open-questions.md) Q15 has the measurement; whichever level first needs real
-  routing is where it gets an actual fix.
+  routing is where it gets an actual fix. **The owner has seen it** (2026-10-19): raiders stuck behind rocks in
+  PERIMETER's playable demos, and "pathfinding code will also need improvements soon". Two things he named go with
+  it: troops head for the enemy Nexus by default, and **banners**, rally points a player sets during a Battle Round
+  that troops head for first. What the side-fairness round leaves ready for it: a mover's distance is measured from
+  its own footprint, a step must gain ground, and every tie goes by what a unit faces, then a seeded draw — so a
+  router built on that is fair from either end of the map.
 - **Behaviour states.** The owner's viewing: "units should have a default movement direction
   (towards the enemy Nexus, closest resources, etc) and then activate a different pathfinding mode
   when there are enemies in range... defining multiple states will allow more complex and engaging
@@ -63,7 +68,7 @@ called settled.
 
 | Question | What was measured | Where it bites |
 | --- | --- | --- |
-| **Q14** — should the movement tie-break be mirror-fair? | A fixed compass order makes both sides prefer *their own left*, so formations meet at an angle. Symmetric between sides, and seed variance dominates it | Real routing replaces the greedy step this question is about; answer it as part of that |
+| **Q14** — should the movement tie-break be mirror-fair? | A fixed compass order makes both sides prefer *their own left*, so formations meet at an angle. Symmetric between sides, and seed variance dominates it. Every other tie the rules break is mirror-fair since 2026-10-19 (what a unit faces, then a draw); the compass order between two equally good steps is the one left, and the mirror duels split evenly with it | Real routing replaces the greedy step this question is about; answer it as part of that |
 | **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. A level authored to avoid the on-axis dead end (map layout, not a kernel fix) may ship without either, as PERIMETER's own note in [`campaigns.md`](../game-design/campaigns.md) says |
 | **Q13** — where do workers flee, and what counts as annihilation? | Workers move at `1/1` and every fixture attacker at `3/4` or slower, so a fleeing worker on open ground is **never caught**. The mirror never reaches annihilation and always runs its full tick count | Real routing gives fleeing a danger cost, and an economy gives workers somewhere to be. Both change the shape of this question |
 

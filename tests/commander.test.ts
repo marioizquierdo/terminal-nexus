@@ -192,8 +192,9 @@ test("a Commander who sits two rounds out is out for the rest of the three-round
     assert.ok(round.pulse.states.every((state) => vasseIn(state).length === 0), "she was on the Grid while she sat out")
     assert.deepEqual(round.absent, [{ player: "A", contentId: VASSE, fellInRound: 1, returnsInRound: 4 }])
   }
-  // Had the mission a fourth round, it would open with her.
-  const fourth = restoreCommanders(recall(round3.pulse.final, registry).state, round3.absent, 4, registry)
+  // Had the mission a fourth round, it would open with her: due in round 4, the Nexus sets her down as it opens. (From
+  // round 2's end, where her Nexus still stands; with her out two rounds this empty base does not hold round 3.)
+  const fourth = restoreCommanders(recall(round2.pulse.final, registry).state, round2.absent, 4, registry)
   assert.equal(fourth.restored.length, 1)
   assert.deepEqual(fourth.absent, [])
 })
@@ -221,17 +222,18 @@ test("the named scenario is the same every run, and on both runtimes, whatever s
 // taking whole beats, one across and two up or down. Round 1 is the same whatever she sits out; from round 2 on,
 // Vasse, back beside the Nexus, fights in it.
 const PINNED_ROUNDS = [
-  "9b9606aa2e68a83d65d0485301702c87c266773e3afabcb9a0e32e11c1f84764",
-  "cd4b8b6f51e01ddc9e7c9e81664a8a47c91bb335d19f87da1959df06c13d8181",
-  "69b4d37d887b83f8343e951a7685f7c10c72e9a091324c81fe6d88c276361cf6",
+  "0999258726f408b8d33813950b446c4dd8404ad80250086ad68416f1b4607ae4",
+  "9a67edf3d6a7abacf597914201e6a08a4cffe1e2f17dcaed1d09b5b88da097b4",
+  "4a01850c2ec6537a5c8b3ac8cb57abd6f83cec27369be8eca8f9240a68e5cae8",
 ]
 
 // The same three rounds with a test-only Vasse who sits one round out: the rule as it stood before Vasse came back at
-// once, and the hashes it pinned then.
+// once. Both sets pinned again when every tie came to go by what a unit faces, then a draw (no side wins by where it
+// stands).
 const PINNED_SITTING_OUT = [
-  "9b9606aa2e68a83d65d0485301702c87c266773e3afabcb9a0e32e11c1f84764",
-  "92a62feefdba826ea643475f030a01b8a5637c3de4e468e7767abf533aa29c35",
-  "4db4c46d8cd5c03dc1a848d8c34e0e5672a51ef6e1d00ab3fe99dab79fa115cf",
+  "0999258726f408b8d33813950b446c4dd8404ad80250086ad68416f1b4607ae4",
+  "bc28aa75c7e0aac2435fc65f52afde998f70f6abcf9407a9cb3c58ac03c9c997",
+  "27d5d789a9b5f3661683c091bb18f2a2e46d23b26456329601e63dc645a488ff",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

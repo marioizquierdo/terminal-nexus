@@ -28,12 +28,12 @@
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { footprintDistance, nearestFootprintTile } from "../grid/coords.ts"
+import { footprintDistance, gridDistance, nearestFootprintTile } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
-import { centreTile, nearestFit } from "./placement.ts"
+import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { RecallMove, RecallResult } from "./types.ts"
 
 /** How far from its home a survivor may be set down before Recall gives the search up and widens it, by the
@@ -44,17 +44,19 @@ const FALLBACK_RADIUS = 80
 
 type Home = Readonly<{ entity: EntityState; definition: ContentDef; kind: "producer" | "nexus" }>
 
-/** The nearest of `candidates` to `survivor`, by the distance range is measured in (`footprintDistance`); ties
- *  to the lower ordinal. `null` when there are none. */
-function nearest(survivor: EntityState, survivorDefinition: ContentDef, candidates: readonly Home[]): Home | null {
+/** The nearest of `candidates` to `survivor`, by the distance range is measured in (`footprintDistance`); on a tie
+ *  the one nearer the enemy (`toward`, as `nearestFit` breaks its ties), then the lower ordinal — so the same home
+ *  for either side of the map, mirrored. `null` when there are none. */
+function nearest(survivor: EntityState, survivorDefinition: ContentDef, candidates: readonly Home[], toward: Coord | undefined): Home | null {
   let best: Home | null = null
-  let bestDistance = Number.POSITIVE_INFINITY
+  let bestKey: readonly [number, number] = [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY]
   for (const candidate of candidates) {
     const distance = footprintDistance(survivor.anchor, survivorDefinition.footprint, candidate.entity.anchor, candidate.definition.footprint)
-    // Candidates arrive in ordinal order, so a strict comparison keeps the lower ordinal on a tie.
-    if (distance < bestDistance) {
+    const facing = toward === undefined ? 0 : gridDistance(centreTile(candidate.entity.anchor, candidate.definition.footprint), toward)
+    // Candidates arrive in ordinal order, so a strict comparison keeps the lower ordinal on a full tie.
+    if (distance < bestKey[0] || (distance === bestKey[0] && facing < bestKey[1])) {
       best = candidate
-      bestDistance = distance
+      bestKey = [distance, facing]
     }
   }
   return best
@@ -68,6 +70,7 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
 
   const structures = state.entities.filter((entity) => definitionOf(entity).layer === "obstacles")
   const survivors = state.entities.filter((entity) => definitionOf(entity).layer !== "obstacles")
+  const standing = structures.map((entity) => ({ player: entity.player, anchor: entity.anchor, definition: definitionOf(entity) }))
 
   // The room Recall has to work with: every structure where it stands, and each survivor as it is set
   // down. A survivor that is going somewhere is not in it at its old place — it is about to leave it.
@@ -90,7 +93,8 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     const nexuses: Home[] = mates
       .filter((structure) => definitionOf(structure).nexus === true)
       .map((entity) => ({ entity, definition: definitionOf(entity), kind: "nexus" as const }))
-    return nearest(survivor, definition, producers) ?? nearest(survivor, definition, nexuses)
+    const toward = enemyNexusMiddle(standing, survivor.player, centreTile(survivor.anchor, definition.footprint))
+    return nearest(survivor, definition, producers, toward) ?? nearest(survivor, definition, nexuses, toward)
   }
   const homes = new Map<number, Home | null>(survivors.map((survivor) => [survivor.ordinal, homeOf(survivor)]))
 
@@ -104,7 +108,26 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     anchors.set(survivor.ordinal, survivor.anchor)
   }
 
-  for (const survivor of survivors) {
+  // Set down nearest home first, then the one nearer the enemy, then by ordinal: an order that is the same for
+  // either side of the map, mirrored — by ordinal alone, which the opening hands out in reading order, the western
+  // survivor of a side would always take the nearer tile.
+  const homeward = (survivor: EntityState): readonly number[] => {
+    const home = homes.get(survivor.ordinal)
+    const here = centreTile(survivor.anchor, definitionOf(survivor).footprint)
+    if (home === null || home === undefined) return [0, 0]
+    const toward = enemyNexusMiddle(standing, survivor.player, here)
+    return [
+      gridDistance(here, nearestFootprintTile(here, home.entity.anchor, home.definition.footprint)),
+      toward === undefined ? 0 : gridDistance(here, toward),
+    ]
+  }
+  const keys = new Map(survivors.map((survivor) => [survivor.ordinal, homeward(survivor)]))
+  const inTurn = [...survivors].sort((a, b) => {
+    const [homeA = 0, enemyA = 0] = keys.get(a.ordinal) ?? []
+    const [homeB = 0, enemyB = 0] = keys.get(b.ordinal) ?? []
+    return homeA - homeB || enemyA - enemyB || a.ordinal - b.ordinal
+  })
+  for (const survivor of inTurn) {
     const home = homes.get(survivor.ordinal) ?? null
     if (home === null) continue
     const definition = definitionOf(survivor)
@@ -118,10 +141,11 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     // The tile of the home building nearest the survivor is what it comes back *to*: it arrives on the
     // side it was already on, not on the far side of the building.
     const target = nearestFootprintTile(here, home.entity.anchor, home.definition.footprint)
+    const toward = enemyNexusMiddle(standing, survivor.player, here)
     // Nowhere free near home: take the nearest free tile to where it stands rather than overlap anyone.
     const to =
-      nearestFit(mask, definition.footprint, target, HOME_RADIUS, here) ??
-      nearestFit(mask, definition.footprint, here, FALLBACK_RADIUS)
+      nearestFit(mask, definition.footprint, target, HOME_RADIUS, here, toward) ??
+      nearestFit(mask, definition.footprint, here, FALLBACK_RADIUS, here, toward)
     if (to === null) throw new Error(`recall: no free tile for ${survivor.id} within ${FALLBACK_RADIUS} tiles of it`)
     index.add(definition.layer, survivor.ordinal, to, definition.footprint)
     anchors.set(survivor.ordinal, to)
