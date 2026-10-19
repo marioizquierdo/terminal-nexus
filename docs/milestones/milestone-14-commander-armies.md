@@ -1,7 +1,7 @@
 # Milestone 14 — Commander Armies
 
 **Status:** CURRENT
-**Current step:** 14C — Marshal Averno, the second Commander, on Vasse's buildings: an aura that presses, powers of his own, a card from the Ravel Nexus some rounds, and the curve level played by both.
+**Current step:** 14C, round 2 — the army structure: armies stacked as data, abilities and effects as tables, Dob Hunter the third Commander, and duels to fight armies against each other.
 **Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing; complete)
 
 Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
@@ -92,7 +92,27 @@ Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-
       and his side loses more in round 3 while he is out ([the measure](../game-design/commander-armies.md)). His
       level is her first five rounds: with nothing built he misses round 5, and an empty base cannot hold her round 6.
 
+### Step 14C, round 2 — The army structure, Dob Hunter, and duels
+
+Mario, 2026-10-17, agreeing to the structure's improvements: "make a refactor/cleanup branch to solidify the
+commander army files ... then define a new Commander Army on the new structure ... then try to test a pvp fight
+between commanders" ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+
+- [x] Armies stack — `all`, a faction (`citizen`, `ravel`), a Commander (`vasse`, `averno`) — and every unit and
+      structure an army brings is data in its file; campaigns are their own folders and a level may extend another.
+- [x] Vasse's tuned values are her army's data, and the Experiments that tuned them are gone (By the Book stays).
+- [x] A Nexus power's effect is one entry of a table and a unit's ability one entry of another, each saying its
+      shape, its checks and what it does, so nothing branches on a kind; a test adds a kind of its own.
+- [x] A third Commander, Dob Hunter, on the Ravel Nexus, with a bounty and loaded dice, written on the structure.
+- [x] An adversarial review of whether the code explains itself, its findings applied.
+- [x] Duels: two armies on one map, a round at a time, a script or a model planning each side through files; a
+      bench of every pairing from both sides, and model games played.
+- [x] The guide for writing an army ([`army-authoring.md`](../system-design/army-authoring.md)) and for duels and
+      model against model ([`duels.md`](../system-design/duels.md)).
+
 ### Step 14D — Catch-up, measured
+
+The duel it needs is built (the round above); what is left is the measure.
 
 - [ ] A headless duel: two scripted sides drafting from the Nexus Pulse on one map, over many seeds, measuring how
       often a lucky early hand predicts the winner.
@@ -101,5 +121,5 @@ Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-
 
 ## Out of scope
 
-The full Citizens roster and its balance (Milestone 12), Dob Hunter and any Ravel Commander, multiplayer itself,
+The full Citizens roster and its balance (Milestone 12), a campaign for Dob Hunter or any Ravel Commander, multiplayer itself,
 a catch-up mechanic built, and any input from the player during a Battle Round.

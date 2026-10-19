@@ -24,6 +24,8 @@ version of the design beyond git.
 - [`testing.md`](system-design/testing.md) — what the suite proves and how.
 - [`replay-format.md`](system-design/replay-format.md) — the unbuilt replay file design (GUIDANCE).
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
+- [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a campaign as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
+- [`duels.md`](system-design/duels.md) — two Commander Armies fought out headless, script or model a side: the rules, the command line, the brief and plan, how to run model against model for testing, and what the numbers can say.
 - [`routing.md`](system-design/routing.md) — how a place in the game is named and reached: routes, `--at`, the title menu's rows and the browser page's links.
 
 ## Planning — what is next (`milestones/`)

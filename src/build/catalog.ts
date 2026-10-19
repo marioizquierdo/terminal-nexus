@@ -5,7 +5,7 @@
 // campaign has unlocked by then. The starter map is the map table's (`./maps.ts`), re-exported here so the
 // screens keep reading it where they always have.
 
-import { PERIMETER_LEVEL } from "../armies/index.ts"
+import { PERIMETER_LEVEL, creditsOf } from "../armies/index.ts"
 import type { BuildingCard, Offer } from "../armies/types.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ConstructItem, NexusPowerOption } from "./types.ts"
@@ -43,7 +43,7 @@ export function nexusDraftOf(offer: Pick<Offer, "powers">): NexusPowerOption[] {
     hotkey: String(index + 1),
     name: card.name,
     description: card.description,
-    bonusAllotment: "credits" in card.effect ? card.effect.credits : 0,
+    bonusAllotment: creditsOf(card.effect),
     card,
   }))
 }

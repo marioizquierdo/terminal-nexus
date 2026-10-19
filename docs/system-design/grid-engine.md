@@ -198,7 +198,9 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.
 - **Recall** — what happens when a Battle Round ends: surviving units walk home, so the next round starts from what the last one left.
 - **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
-- **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds the cards any Commander may use, `armies/vasse` her Commander and her campaign ([`content.md`](content.md)).
+- **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds what any Commander may use, a faction army (`armies/citizen`, `armies/ravel`) its Nexus, units and buildings, and a Commander army her unit, her own powers and her starting package; a campaign is `campaigns/<id>/campaign.json` ([`army-authoring.md`](army-authoring.md)).
+- **ability** — what a unit does on its own, by a kind from one table (`src/abilities/`): an aura, a bounty, loaded dice.
+- **duel** — two Commander Armies fought out headless, round by round, a script or a model planning each side ([`duels.md`](duels.md)).
 - **target** — the place a level sends a side's troops: they head for it, engage what comes within reach on the way, and stand there ([`pulse.md`](pulse.md)). PERIMETER's is the line.
 - **build range** — the ground a new building needs a tile on: within the construction radius of the player's Grid Nexus and of every standing building linked to it, counted as any reach is; a building planned this round gives its range from the next ([`pulse.md`](pulse.md)).
 - **room** — the tiles a building that makes units keeps free round it, so its waves have somewhere to appear: no other building may stand there ([`pulse.md`](pulse.md)).

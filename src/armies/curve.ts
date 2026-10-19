@@ -56,6 +56,11 @@ export function roundCredits(round: number): number {
   return credits
 }
 
+/** The credits round `number` adds as it opens, in any mode: the curve's, and past its last round the last round's. */
+export function roundIncome(number: number): number {
+  return roundCredits(Math.min(Math.max(1, number), MAX_ROUNDS))
+}
+
 /** What a pick of `rarity` dealt in round `round` is expected to be worth, in credits, rounded down. */
 export function pickWorth(rarity: Rarity, round: number): number {
   const { of, per } = PICK_WORTH[rarity]

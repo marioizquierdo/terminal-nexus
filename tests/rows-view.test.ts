@@ -5,6 +5,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { auraOf } from "../src/abilities/index.ts"
 import { EventEmitter } from "node:events"
 import { ARMIES } from "../src/armies/index.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
@@ -357,7 +358,7 @@ const entity = (ordinal: number, player: PlayerId, contentId: string, anchor: Co
 
 test("near her, for her voice, is her aura's reach by the rule: a trooper falling that many steps off on a slant is not near, straight below her is", () => {
   const her = entity(1, "A", VASSE, { x: 10, y: 10 }, 80)
-  const near = FIXTURE_REGISTRY.get(VASSE).aura?.radius
+  const near = auraOf(FIXTURE_REGISTRY.get(VASSE))?.radius
   assert.ok(near !== undefined && near >= 2)
   // One row down and `near - 1` columns across: as many four-way steps as her reach, and one more than it by the rule.
   const aside = entity(2, "A", TROOPER, { x: 10 + near - 1, y: 11 })

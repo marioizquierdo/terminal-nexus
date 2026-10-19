@@ -133,7 +133,7 @@ export type DomainEvent =
         hpBefore: number
         hpAfter: number
         /**
-         * The bearer of the aura that guarded this hit (`ContentDef.aura`: Vasse's By the Book), when one
+         * The bearer of the aura that guarded this hit (an `aura` ability, `src/abilities/aura.ts`: Vasse's By the Book), when one
          * did — the hit then dealt the aura's share of what it would have. Absent for an unguarded hit, so
          * every event of a battle with no aura in it is byte for byte what it was. For presentation; no
          * rule reads it.
@@ -187,6 +187,24 @@ export type DomainEvent =
       }>)
   | (Base &
       Readonly<{
+        /** An ability did something on its own (`src/abilities/`): a lucky hit, a bounty earned. */
+        kind: "ability.triggered"
+        entity: string
+        ordinal: number
+        player: PlayerId
+        /** The ability's kind (`"bounty"`), and the name its card gives it (`"Bounty"`). */
+        ability: string
+        name?: string
+        /** What it touched, when it touched one: the unit hit, the enemy whose fall paid. */
+        target?: string
+        targetOrdinal?: number
+        /** A number it changed: what a lucky hit dealt. */
+        amount?: number
+        /** Credits its side earned, to spend from its next Build Phase (`src/match/earnings.ts`). */
+        credits?: number
+      }>)
+  | (Base &
+      Readonly<{
         kind: "salvage.dropped"
         at: Coord
         amount: number
@@ -223,6 +241,7 @@ export const DOMAIN_EVENT_KINDS: readonly DomainEventKind[] = [
   "entity.died",
   "structure.destroyed",
   "entity.detonated",
+  "ability.triggered",
   "salvage.dropped",
   "arbitration.bounded",
   "pulse.ended",

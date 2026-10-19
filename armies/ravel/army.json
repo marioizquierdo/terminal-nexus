@@ -1,0 +1,127 @@
+{
+  "id": "ravel",
+  "title": "The Ravel Nexus",
+  "notes": "The Ravel faction: what every Ravel Commander builds on, and what the campaigns' raids are drawn from. The engine's bench Ravel roster is named by id (runners that burst, raiders, slingers, the Den and the Ravel Nexus); the Stash and the Chop Shop are defined here. Its buildings mirror the Citizens' at Ravel prices: the Den sends runners as the Barracks sends troopers, the Sling Pit slingers, the Stash is the Supply Depot, and the Chop Shop is the second tier, raiders as the Garrison's pikemen. A Citizen Commander who takes a card from the Ravel Nexus (Averno) requires it to see what that card brings. First guesses, no balance claim.",
+  "requires": ["all"],
+  "content": [
+    "structure.ravel.nexus",
+    "structure.ravel.den",
+    "unit.ravel.runner",
+    "unit.ravel.raider",
+    "unit.ravel.slinger",
+    {
+      "id": "structure.ravel.stash",
+      "layer": "obstacles",
+      "size": [3, 1],
+      "maxHp": 90,
+      "salvage": 15,
+      "constructionRadius": 6,
+      "supplyProvided": 8,
+      "detonation": {"radius": 1, "damage": 8},
+      "card": {
+        "title": "Stash",
+        "subtitle": "Room for 8 more units",
+        "description": "Scrap and fuel, piled where the crews can reach it. Lets your side field more units at once. It bursts when it falls."
+      },
+      "glyph": ["<$>"],
+      "notes": "The Ravel Supply Depot: eight more units the side may field at once. Like everything Ravel, it bursts when it falls."
+    },
+    {
+      "id": "structure.ravel.slingpit",
+      "layer": "obstacles",
+      "size": [2, 2],
+      "maxHp": 80,
+      "salvage": 20,
+      "constructionRadius": 6,
+      "clearance": 1,
+      "detonation": {"radius": 1, "damage": 8},
+      "card": {
+        "title": "Sling Pit",
+        "subtitle": "Sends slingers",
+        "description": "A pit of loose scrap and the crews who throw it. Sends a wave of slingers each Battle Round."
+      },
+      "glyph": ["/z", "<_"],
+      "notes": "A second tier-1 producer, so a Ravel side chooses between quick melee and thrown range: slingers stay behind the runners and hit buildings over them."
+    },
+    {
+      "id": "structure.ravel.chopshop",
+      "layer": "obstacles",
+      "size": [3, 2],
+      "maxHp": 140,
+      "salvage": 40,
+      "constructionRadius": 6,
+      "clearance": 1,
+      "detonation": {"radius": 2, "damage": 16},
+      "card": {
+        "title": "Chop Shop",
+        "subtitle": "Builds raiders",
+        "description": "Where wrecks become raiders. Sends a wave of the heavy brawlers each Battle Round, once a Den stands."
+      },
+      "glyph": ["/h\\", "<#>"],
+      "notes": "The Ravel second tier, the Garrison's mirror: it needs a Den standing as the Build Phase opens."
+    }
+  ],
+  "buildings": [
+    {
+      "id": "den",
+      "structure": "structure.ravel.den",
+      "cost": 35,
+      "spawns": {"unit": "unit.ravel.runner", "perWave": 5, "waves": 1, "secondsBetween": 10},
+      "notes": "The Ravel Barracks: five runners a wave for a little less than a Barracks's four troopers. A runner is two fifths of a trooper in health and bursts when it falls, so a Den's wave is cheaper and more fragile, and hurts what it dies against."
+    },
+    {
+      "id": "sling-pit",
+      "structure": "structure.ravel.slingpit",
+      "cost": 45,
+      "spawns": {"unit": "unit.ravel.slinger", "perWave": 3, "waves": 1, "secondsBetween": 10},
+      "notes": "Three slingers a wave: thrown range, at the price of a Barracks and a bit."
+    },
+    {
+      "id": "stash",
+      "structure": "structure.ravel.stash",
+      "cost": 30,
+      "notes": "The Supply Depot's mirror, at its price."
+    },
+    {
+      "id": "chop-shop",
+      "structure": "structure.ravel.chopshop",
+      "cost": 95,
+      "tier": 2,
+      "requires": ["den"],
+      "spawns": {"unit": "unit.ravel.raider", "perWave": 3, "waves": 1, "secondsBetween": 10},
+      "notes": "Three raiders a wave once a Den stands: the Garrison's mirror, a little cheaper and a little fewer."
+    }
+  ],
+  "powers": [
+    {
+      "id": "scrap-rush",
+      "name": "Scrap Rush",
+      "description": "Three runners join at your Nexus.",
+      "effect": {"spawnUnits": {"unit": "unit.ravel.runner", "count": 3}},
+      "rarity": "common",
+      "role": "troops",
+      "repeatable": true,
+      "chance": [{"from": 1, "to": 3, "times": 2}],
+      "notes": "Reserve Callup's mirror: more bodies, each one less, and every one bursts."
+    },
+    {
+      "id": "hot-shift",
+      "name": "Hot Shift",
+      "description": "Dens send a second wave.",
+      "effect": {"addWaves": {"building": "den", "waves": 1}},
+      "rarity": "common",
+      "role": "production",
+      "requires": {"buildings": ["den"]},
+      "notes": "Drill Schedule's mirror, on the Den."
+    },
+    {
+      "id": "short-fuses",
+      "name": "Short Fuses",
+      "description": "Your raiders explode harder.",
+      "effect": {"setDetonation": {"unit": "unit.ravel.raider", "detonation": {"radius": 2, "damage": 16}}},
+      "rarity": "uncommon",
+      "role": "offense",
+      "notes": "The cascade, wider: a raider's blast reaches two tiles and hits harder."
+    }
+  ]
+}

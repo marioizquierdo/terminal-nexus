@@ -20,8 +20,8 @@ import type {
   TriggerDefinition,
 } from "../mission/types.ts"
 import type { PlayerId } from "../state/types.ts"
-import type { Say, Shape } from "./shape.ts"
-import { dictionary, fieldAt, isObject, keyed, list, literal, number, record, shown, text } from "./shape.ts"
+import type { Say, Shape } from "../content/shape.ts"
+import { dictionary, fieldAt, isObject, keyed, list, literal, number, record, shown, text } from "../content/shape.ts"
 
 const side: Shape<PlayerId> = literal("A", "B")
 

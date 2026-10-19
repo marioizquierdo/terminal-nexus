@@ -11,11 +11,16 @@ import type { Coord, Direction } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
-import type { Boost, Guard } from "./aura.ts"
-import { boostedAmount, guardedAmount } from "./aura.ts"
+import { boostedAmount, guardedAmount } from "../abilities/index.ts"
 import type { PulseContext } from "./context.ts"
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] }
+
+/** What guards a unit this tick: the bearer whose aura reaches it, and the share of a hit it lets through. */
+export type Guard = Readonly<{ bearer: Actor; damageTakenPercent: number }>
+
+/** What boosts a unit this tick: the bearer whose aura reaches it, and how much of its hit it deals. */
+export type Boost = Readonly<{ bearer: Actor; damageDealtPercent: number }>
 
 /**
  * An entity, mid-tick. Every field `EntityState` carries, writable, plus the resolved content
@@ -71,12 +76,13 @@ export type TickContext = {
    */
   targets: Readonly<Partial<Record<PlayerId, TargetArea>>>
   /**
-   * Who an aura guards this tick, by ordinal (`aura.ts`): decided as the attacks begin and read by every hit
-   * after it in the tick, a blast's included. Empty until then, and for a battle with no aura in it.
+   * Who an ability guards this tick, by ordinal (an aura's `damageModifiers`, `abilities.ts`): decided as the attacks
+   * begin and read by every hit after it in the tick, a blast's included. Empty until then, and for a battle with no
+   * aura in it.
    */
   guards: Map<number, Guard>
-  /** Who an aura boosts this tick, by ordinal (`aura.ts`): decided with the guards, read by every hit its units
-   *  deal. Empty for a battle with no boosting aura. */
+  /** Who an ability boosts this tick, by ordinal: decided with the guards, read by every hit its units deal. Empty
+   *  for a battle with no boosting aura. */
   boosts: Map<number, Boost>
 }
 
@@ -178,9 +184,10 @@ export function inAttackRange(actor: Actor, target: Actor, attack: AttackDef): b
  * Returns whether *this* call is what killed the target, so a caller that reacts to its own kill —
  * attacks()'s post-kill movement hold — does not have to re-derive it from hp afterward.
  *
- * A target an aura guards this tick (`context.guards`, `aura.ts`) takes the aura's share of `amount`, and
- * the event names the aura's bearer. Here, the one place damage becomes a hit, so a tier's tally, a splash
- * and a blast are all guarded the same way.
+ * A source an aura boosts hits harder, then a target an aura guards takes the aura's share (`context.boosts`,
+ * `context.guards`), and the event names the guarding bearer. Here, the one place damage becomes a hit, so a tier's
+ * tally, a splash and a blast are all changed the same way. (An attacker's own abilities change its attack before
+ * this, where the attack is made: `hitDealtBy`, `attacks.ts`.)
  */
 export function applyDamage(
   context: TickContext,

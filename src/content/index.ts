@@ -2,15 +2,13 @@ export * from "./types.ts"
 export { CITIZEN_CONTENT } from "./citizen.ts"
 export { RAVEL_CONTENT } from "./ravel.ts"
 export { PROVING_GROUND_CONTENT } from "./proving-grounds.ts"
-export { COMMANDER_CONTENT, HEALTH_TUNED_COMMANDER } from "./commanders.ts"
-export { TIER_CONTENT } from "./tiers.ts"
+export { ARMY_CONTENT } from "./army-content.ts"
 
 import type { ContentDef, ProductionRecipe } from "./types.ts"
 import { CITIZEN_CONTENT } from "./citizen.ts"
 import { RAVEL_CONTENT } from "./ravel.ts"
 import { PROVING_GROUND_CONTENT } from "./proving-grounds.ts"
-import { COMMANDER_CONTENT } from "./commanders.ts"
-import { TIER_CONTENT } from "./tiers.ts"
+import { ARMY_CONTENT } from "./army-content.ts"
 
 export type ContentRegistry = Readonly<{
   get(id: string): ContentDef
@@ -42,22 +40,20 @@ export function createRegistry(definitions: readonly ContentDef[]): ContentRegis
   }
 }
 
+/** The engine's own content, written in TypeScript: the bench rosters the bench maps and the kernel's tests stand on. */
+export const BENCH_CONTENT: readonly ContentDef[] = [...CITIZEN_CONTENT, ...RAVEL_CONTENT, ...PROVING_GROUND_CONTENT]
+
 /**
- * The fixture registry. The first battles held Citizens alone, so that nothing which happened could be
+ * Every piece of content the game has: the bench's and every army's, as one registry (the name is the first battles':
+ * all of it was fixtures then). The first battles held Citizens alone, so that nothing which happened could be
  * blamed on balance; the Ravels were added so that something which happens can be blamed on *contrast*.
  * The Proving Grounds roster (from the unit-architecture spike) adds a third, faction-neutral set for a
  * different reason again: not contrast, but coverage — a batch of deliberately varied unit mechanics
  * to stress the content/kernel boundary. All three are disposable bench content, not Commander Armies.
- * Beside them stands the one named Commander, Vasse (`./commanders.ts`), at the size PERIMETER needs:
- * a Commander, which is still not a Commander Army; and the tech tree's second tier (`./tiers.ts`).
+ * Beside them stands everything the army files define as data (`./army-content.ts`): the Commanders, and the units
+ * and buildings their armies and factions bring.
  */
-export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([
-  ...CITIZEN_CONTENT,
-  ...RAVEL_CONTENT,
-  ...PROVING_GROUND_CONTENT,
-  ...COMMANDER_CONTENT,
-  ...TIER_CONTENT,
-])
+export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([...BENCH_CONTENT, ...ARMY_CONTENT.map((entry) => entry.definition)])
 
 /**
  * `registry`, with each named building given a production recipe — how a battle opts its buildings into

@@ -1,0 +1,127 @@
+{
+  "id": "dob",
+  "title": "Dob Hunter",
+  "notes": "Dob Hunter, the Ravel Nexus's gambler (commander-armies.md): variance as a build. His army requires the Ravel faction and brings his unit and his own powers. Where a Citizen plans, Dob posts a price: his Bounty pays credits for what falls near him, so his economy is the fight itself, and his Loaded Dice make every exchange a throw. He has no campaign yet; he plays in duels (src/duel/).",
+  "requires": ["ravel"],
+  "content": [
+    {
+      "id": "unit.ravel.dob",
+      "layer": "units",
+      "size": [1, 1],
+      "commander": true,
+      "roundsOut": 0,
+      "supplyCost": 0,
+      "maxHp": 60,
+      "movementRate": {"numerator": 4, "denominator": 1},
+      "speedTier": 1,
+      "attack": {
+        "kind": "ranged",
+        "range": 4,
+        "damage": 6,
+        "cooldownTicks": 15,
+        "projectileTilesPerTick": 3
+      },
+      "detonation": {"radius": 2, "damage": 12},
+      "abilities": [
+        {
+          "kind": "bounty",
+          "name": "Bounty",
+          "radius": 6,
+          "credits": 3,
+          "structureCredits": 15
+        },
+        {"kind": "loadedDice", "name": "Loaded Dice", "chanceIn": 4, "times": 3}
+      ],
+      "card": {
+        "title": "Dob",
+        "subtitle": "Your Commander",
+        "description": "Dob Hunter posts a price on the enemy and throws charges from the second rank. If he falls, he goes up with a bang.",
+        "pronouns": {"subject": "he", "possessive": "his"}
+      },
+      "glyph": ["$"],
+      "notes": "The gambler: a Ravel Commander whose economy runs on the fight. He throws charges from the second rank (range 4, gently) at a Ravel's pace. Bounty: every enemy that falls within 6 of him pays his side 3 credits next round, 15 for a building, so a fight he stands in is income. Loaded Dice: one hit in four deals three times as much, from the battle's own seeded stream. When he falls he goes up like any Ravel (a blast of 12 within 2), and the Nexus restores him the next round. Lighter than both Citizens. First fixtures, no balance claim."
+    }
+  ],
+  "powers": [
+    {
+      "id": "rigged-charges",
+      "name": "Rigged Charges",
+      "description": "Your runners explode harder.",
+      "effect": {"setDetonation": {"unit": "unit.ravel.runner", "detonation": {"radius": 2, "damage": 8}}},
+      "rarity": "uncommon",
+      "role": "offense",
+      "notes": "His few, the commander-armies.md list: every runner's burst reaches two tiles."
+    },
+    {
+      "id": "lucky-scrap",
+      "name": "Lucky Scrap",
+      "description": "Bounty pays 3 more for each kill.",
+      "effect": {"modifyAbility": {"content": "unit.ravel.dob", "kind": "bounty", "add": {"credits": 3}}},
+      "rarity": "uncommon",
+      "role": "economy",
+      "notes": "Wreckage pays more: his Bounty's price doubles, for the rest of the mission."
+    },
+    {
+      "id": "hot-dice",
+      "name": "Hot Dice",
+      "description": "Loaded Dice hit one time in three.",
+      "effect": {"modifyAbility": {"content": "unit.ravel.dob", "kind": "loadedDice", "add": {"chanceIn": -1}}},
+      "rarity": "rare",
+      "role": "commander",
+      "notes": "The dice warm up: one lucky hit in three instead of four."
+    },
+    {
+      "id": "hired-guns",
+      "name": "Hired Guns",
+      "description": "Two raiders join at your Nexus.",
+      "effect": {"spawnUnits": {"unit": "unit.ravel.raider", "count": 2}},
+      "rarity": "uncommon",
+      "role": "troops",
+      "repeatable": true,
+      "notes": "Paid in advance: two raiders join and stay."
+    }
+  ],
+  "commander": {
+    "id": "dob",
+    "name": "Dob Hunter",
+    "unit": "unit.ravel.dob",
+    "faction": "ravel",
+    "lean": ["economy", "commander"],
+    "start": [{"unit": "unit.ravel.runner", "count": 5}, {"unit": "unit.ravel.slinger", "count": 2}],
+    "portrait": [" ,$, ", "(^_~)", "/{$}\\"],
+    "portraitFalls": [[" ,$, ", "(O_O)", "/{$}\\"], [" *$* ", "(x_x)", "/{$}\\"]],
+    "barks": {
+      "appears": ["Dob. Bounties open.", "Hunter on the Grid. Pay up.", "New job. Same odds."],
+      "restored": [
+        "Back. The house always pays.",
+        "Rebuilt. Double or nothing.",
+        "Missed me? Nobody does."
+      ],
+      "round-start": [
+        "Prices are posted. Go.",
+        "Everybody earns today.",
+        "Throw first. Count later."
+      ],
+      "first-contact": [
+        "There is the money.",
+        "Contact. Cash it in.",
+        "Fresh targets. Fresh pay."
+      ],
+      "raid-arrives": [
+        "More bounties walking in.",
+        "They brought their wallets.",
+        "Another group. Good odds."
+      ],
+      "unit-lost": ["That one owed me.", "Down one. Still ahead.", "Cheap loss. Keep going."],
+      "building-lost": ["Insured. Probably.", "We build it out of them.", "Write it off."],
+      "badly-hurt": ["Bad roll. Next one.", "Still in the game.", "Hit. Not out."],
+      "nexus-hit": [
+        "Hands off my Nexus.",
+        "That is the bank. Guard it.",
+        "Back to the pile. Now."
+      ],
+      "falls": ["Double or nothing.", "Bet's off. Back soon.", "House wins. Once."],
+      "round-won": ["Pay day.", "Count it twice.", "Told you. Good odds."]
+    }
+  }
+}

@@ -5,6 +5,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
+import { auraOf } from "../src/abilities/index.ts"
 import type { PowerCard, Rarity, Role, ScheduleSlot } from "../src/armies/index.ts"
 import { DEFAULT_SCHEDULE, dealable, dealHand, PERIMETER, PERIMETER_LEVEL, rarityOrder, slotsFor, weightOf } from "../src/armies/index.ts"
 import { nexusDraftOf, STARTER_START_CURSOR } from "../src/build/catalog.ts"
@@ -302,9 +303,9 @@ test("Drill Schedule sends every Barracks a second wave: its card says so, and t
 
 test("Standing Order doubles By the Book's reach: her card says range 8, and the battle runs on it", () => {
   const order = side(dealt("standing-order"))
-  const reach = order.build.round.registry.get(VASSE).aura?.radius
+  const reach = auraOf(order.build.round.registry.get(VASSE))?.radius
   keys(order, "n", "1")
-  assert.equal(order.build.round.registry.get(VASSE).aura?.radius, (reach ?? 0) * 2)
+  assert.equal(auraOf(order.build.round.registry.get(VASSE))?.radius, (reach ?? 0) * 2)
   assert.equal(reach, 4)
   // Her card, explored where she arrives.
   const vasse = (order.build.round.incoming ?? []).find((entity) => entity.contentId === VASSE)
@@ -313,7 +314,7 @@ test("Standing Order doubles By the Book's reach: her card says range 8, and the
   assert.match(screenText(order).replace(/\s+\|?\s*/g, " "), /within range 8/)
   const resolved = play.startPulse(order.build.round, order.build.state)
   assert.ok(resolved !== null)
-  assert.equal(resolved.timeline.registry.get(VASSE).aura?.radius, 8)
+  assert.equal(auraOf(resolved.timeline.registry.get(VASSE))?.radius, 8)
 })
 
 test("Reserve Callup: two troopers join at the Nexus — shown arriving the moment it is picked, set down as the round starts", () => {
@@ -357,7 +358,7 @@ test("a power kept lasts: the next round lists it as active, and the round's han
   assert.ok(resolved !== null)
   const next = play.nextRound(order.build.round, order.build.state, resolved)
   assert.ok(next !== null)
-  assert.equal(next.registry.get(VASSE).aura?.radius, 8, "Standing Order did not last into the next round")
+  assert.equal(auraOf(next.registry.get(VASSE))?.radius, 8, "Standing Order did not last into the next round")
   const state = { ...opened(next), popup: "nexus-powers" as const }
   const rows = popupSpec(next, state)?.rows ?? []
   const texts = rows.flatMap((row) => ("text" in row ? [row.text] : "label" in row ? [row.label] : []))

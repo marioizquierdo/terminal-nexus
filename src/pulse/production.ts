@@ -24,6 +24,7 @@
 
 import { spawnOneNear } from "./spawn.ts"
 import type { TickContext } from "./shared.ts"
+import { contentOf } from "./context.ts"
 import type { Supply } from "../content/supply.ts"
 import { hasRoom, supplyCostOf, supplyOf } from "../content/supply.ts"
 
@@ -58,7 +59,8 @@ export function production(context: TickContext): void {
     }
     // Everything owed, together, as far as the room beside the building and its side's supply go; the rest waits
     // for room, and for a place in the army.
-    const output = context.pulse.registry.has(recipe.output) ? context.pulse.registry.get(recipe.output) : null
+    const content = contentOf(context.pulse, actor.player)
+    const output = content.has(recipe.output) ? content.get(recipe.output) : null
     while (owed > 0) {
       const supply = supplyFor(actor.player)
       if (output !== null && !hasRoom(supply, output)) break

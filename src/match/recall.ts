@@ -32,7 +32,7 @@ import { footprintDistance, nearestFootprintTile } from "../grid/coords.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
-import type { EntityState, MatchState } from "../state/types.ts"
+import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { centreTile, nearestFit } from "./placement.ts"
 import type { RecallMove, RecallResult } from "./types.ts"
 
@@ -60,9 +60,10 @@ function nearest(survivor: EntityState, survivorDefinition: ContentDef, candidat
   return best
 }
 
-export function recall(state: MatchState, registry: ContentRegistry): RecallResult {
+export function recall(state: MatchState, registry: ContentRegistry, sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>): RecallResult {
   const definitions = new Map<number, ContentDef>()
-  for (const entity of state.entities) definitions.set(entity.ordinal, registry.get(entity.contentId))
+  // Each thing as its side defines it (a duel's sides may differ: `PulseContext.sides`).
+  for (const entity of state.entities) definitions.set(entity.ordinal, (sides?.[entity.player] ?? registry).get(entity.contentId))
   const definitionOf = (entity: EntityState): ContentDef => definitions.get(entity.ordinal) as ContentDef
 
   const structures = state.entities.filter((entity) => definitionOf(entity).layer === "obstacles")

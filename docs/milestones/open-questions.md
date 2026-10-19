@@ -125,6 +125,11 @@ which side flips the result exactly, so there is no bias tied to identity; acros
 is likely to make this moot. If the formations sliding past each other reads as broken rather than as
 manoeuvre, take C.
 
+**2026-10-17, from the duels:** a mirror duel between two Commander Armies goes to the east side about nine times in
+ten, from tie-breaks of the same family that read the Grid west to east (where a building sets its new units down,
+which tiles a muster fills first). Those are not movement and are queued as cleanup to mirror for the side; the
+duels play every pairing from both sides meanwhile ([`duels.md`](../system-design/duels.md)).
+
 ### Q15 — What should a mover with no route do: circle, or stop?
 
 **Status:** OPEN — parked as the opening case of the backlog's routing work.

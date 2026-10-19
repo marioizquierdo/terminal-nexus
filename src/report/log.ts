@@ -299,6 +299,20 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           })
           break
 
+        case "ability.triggered":
+          emit({
+            tick,
+            level: "info",
+            kind: "ability",
+            subject: event.entity,
+            ...(event.target === undefined ? {} : { object: event.target }),
+            // What it did, in its own numbers: what a lucky hit dealt, what a bounty paid.
+            detail: [event.name ?? event.ability, event.amount === undefined ? "" : `dmg ${event.amount}`, event.credits === undefined ? "" : `credits ${event.credits}`]
+              .filter((part) => part !== "")
+              .join("  "),
+          })
+          break
+
         case "salvage.dropped":
           emit({
             tick,

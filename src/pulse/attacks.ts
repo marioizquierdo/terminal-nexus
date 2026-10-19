@@ -10,7 +10,7 @@
 // triggerRange`) — the one of the four with no `attack` at all, bucketed by tier alongside the rest
 // rather than swept into an end-of-function pass that would let it act after every tier already had.
 
-import { boostsOf, guardsOf } from "./aura.ts"
+import { decideDamageModifiers, hitDealtBy } from "./abilities.ts"
 import { actorsWithin, applyDamage, applyHeal, distanceBetween, inAttackRange, resolveTarget, speedTier, within } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
@@ -31,8 +31,7 @@ export function attacks(context: TickContext): void {
   // Who an aura guards, decided once from where everyone stands now the moves have settled, and held for
   // every hit of the tick — this phase's tiers and the blasts the resolution after it sets off — so no hit is
   // guarded or not by the order two hits of one tier are applied in (`aura.ts`).
-  context.guards = guardsOf(context)
-  context.boosts = boostsOf(context)
+  decideDamageModifiers(context)
 
   // Bucketed once, in `context.actors` order, so each tier below iterates only its own attackers
   // instead of re-scanning every actor — the same actors in the same relative order either way, so
@@ -94,8 +93,11 @@ export function attacks(context: TickContext): void {
       const baseAmount = attack.splash === undefined ? attack.damage : attack.splash.damage
       const ramp = attack.focusRamp
       const percent = ramp === undefined ? 100 : Math.min(ramp.maxPercent, 100 + actor.focusStreak * ramp.perHitPercent)
-      const amount = ramp === undefined ? baseAmount : Math.round((baseAmount * percent) / 100)
+      const ramped = ramp === undefined ? baseAmount : Math.round((baseAmount * percent) / 100)
       if (ramp !== undefined) actor.focusStreak += 1
+      // The attacker's own abilities have their say on each of its attacks (a lucky hit), before the tier's hits are
+      // added up; a heal is not a hit.
+      const amount = attack.kind === "heal" ? ramped : hitDealtBy(context, actor, target, ramped)
 
       context.events.push({
         kind: "attack.launched",

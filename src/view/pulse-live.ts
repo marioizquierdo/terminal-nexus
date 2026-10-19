@@ -17,6 +17,7 @@
 
 import type { FallFrame } from "./commander-moments.ts"
 import { commanderArt, vignetteLengthMs } from "./commander-moments.ts"
+import { auraOf } from "../abilities/index.ts"
 import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
 import type { Camera, Viewport, VisibleRange } from "../build/camera.ts"
@@ -431,6 +432,6 @@ function inRange(tile: Coord, range: VisibleRange): boolean {
 function bearerOf(timeline: PulseTimeline): Bearer | null {
   const commander = commanderOf(timeline)
   if (commander === null) return null
-  const aura = timeline.registry.get(commander.contentId).aura?.radius ?? null
+  const aura = auraOf(timeline.registry.get(commander.contentId))?.radius ?? null
   return { ordinal: commander.ordinal, contentId: commander.contentId, player: commander.player, aura }
 }
