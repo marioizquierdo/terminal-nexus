@@ -9,7 +9,8 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
 
 - **Routing** has its own milestone now: [`milestone-16-pathfinding.md`](milestone-16-pathfinding.md), with what
   the greedy step does today, where it fails in PERIMETER, what other games do, and the steps (distance fields,
-  crowds, a Grid that changes mid-round, terrain costs, workers crossing their own troops, goals and banners). The owner saw
+  crowds, a Grid that changes mid-round, terrain costs, workers crossing their own troops, where a side heads,
+  and units that walk out over the roofs of their buildings). The owner saw
   raiders stuck behind rocks in PERIMETER on 2026-10-19 and asked for it.
 - **Banners.** A rally point a player plants for their troops to head for before the enemy's Grid Nexus. The owner,
   2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
