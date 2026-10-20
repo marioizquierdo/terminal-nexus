@@ -105,14 +105,38 @@ What makes this game's version its own:
 
 Not started. Each waits for Mario's word, and the order is a first guess.
 
-### Step 16A — The bench and the measure
+### Step 16A — A clean slate, and the measure
 
-- [ ] Route scenarios that fail today, each with one thing moving where it can (the lesson from the first routing): the
-      dead end above a wall, a pocket, the ridge's gap with a squad, a three-wide raider and a two-wide gap, a crowd
-      round one target, a corridor two ways at once, a building that falls mid-round and opens a way.
-- [ ] A measure run on every scenario and on PERIMETER, the duels and the campaign levels: ticks each unit stands
-      blocked, how long the longest walk takes against its shortest route, and the time a tick takes. Today's
-      numbers written down, so each step says what it changed.
+The owner, 2026-10-20: "We should also invalidate the older maps and the data we have on them that decide what
+something is better than another thing. Maybe this is time to write a summary in some design file, a spec, and just
+forget about that old data, and we're gonna have to start a new one." Every result measured so far was measured on
+units that stand behind rocks, so none of it says what is better than what once they route.
+
+- [ ] **A spec of how a battle is measured**, a design document of its own: what is measured (who wins and in which
+      round, how long a round runs, what each side loses, when a Commander falls, how long units stand blocked, a
+      mirror's split between the two ends), on what (the bench maps, the duels between Commanders, the campaign
+      levels walked with a fixed set of plans: nothing built, a defended base, the level's own scripted plans), over
+      which seeds, how each result is written down with the build and the date it was measured on, and where results
+      live. One command runs it all.
+- [ ] **The old results set aside**, not deleted: moved to one history report, "measured before routing", and the
+      sentences that state them as current fact rewritten to say what is designed and that the numbers wait for new
+      routes. They are in the Commander Armies design (the power curve and Averno beside Vasse), the Commander Armies
+      milestone, next steps, the open questions (the aura's strength per plan, the old mirror drift), the duels and
+      pulse documents (mirror duels split evenly), the routes document and the campaign design (who falls in which
+      round), and the notes in the campaign and army files (raid sizes tuned against this map, who falls when, the
+      aura's tuning). The reports already in history stay as they are; the new report names them.
+- [ ] **The old route maps retired**: the scenarios that only show the greedy step's shapes (the on-axis dead end,
+      the two-tile and three-tile gaps, the rock spine slid along, the crowded raider's tail) are replaced by this
+      step's own, not kept passing for a rule that is gone.
+- [ ] **Route scenarios that fail today**, each with one thing moving where it can (the lesson from the first
+      routing): the dead end above a wall, a pocket, the ridge's gap with a squad, a three-wide raider and a two-wide
+      gap, a crowd round one target, a corridor two ways at once, a building that falls mid-round and opens a way.
+- [ ] **Today's numbers**, run once with the spec on the old step rule and kept only as the baseline each later step
+      is compared with: ticks each unit stands blocked, how long the longest walk takes against its shortest route,
+      and the time a tick takes.
+- [ ] Tests that pin a battle's outcome or hash (the campaign levels, the curve level, the mirror, PERIMETER's rounds,
+      the Aid Station's, the rows battle) are listed with what each claims, so the steps that change routes re-pin
+      them knowingly and drop a claim that only held for the old rule.
 
 ### Step 16B — Routes round the map
 
@@ -149,6 +173,14 @@ Not started. Each waits for Mario's word, and the order is a first guess.
       we have to define the target position for campaign as well").
 - [ ] No banner: a banner is set in the Build Phase as part of the plan, and waits until there is a plan for it on
       screen (the backlog). This step leaves it one more goal to add.
+
+### Step 16G — Measure again
+
+- [ ] The spec run whole on the new routes: the duels, the bench, every campaign level with its plans. The results
+      written down as the spec says, the first under the new rules.
+- [ ] What they show, in plain words: which Commander, building or plan is stronger now, and which level no longer
+      reads as designed (a raid that now walks round the wall it used to stand behind). Levels retuned only where
+      one breaks; the rest of balance stays later work, as the owner has said.
 
 ## Out of scope
 
