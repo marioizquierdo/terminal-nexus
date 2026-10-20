@@ -41,9 +41,10 @@ export function measureScenario(scenario: ScenarioDefinition, seed: number, regi
   return { scenario: scenario.id, seed, battle: recorder.record() }
 }
 
-/** One side of one duel round: the rarities of the hand it was dealt, the rarity of the card it kept (null for none),
- *  and its Nexus's health when the battle ended. */
-export type DuelSideRound = Readonly<{ hand: readonly Rarity[]; kept: Rarity | null; nexus: number; nexusMost: number }>
+/** One side of one duel round: the rarities of the hand it was dealt, the rarity of the card it kept (null for none)
+ *  and which card that was, and its Nexus's health when the battle ended. A result written before cards were named
+ *  has no `keptId`. */
+export type DuelSideRound = Readonly<{ hand: readonly Rarity[]; kept: Rarity | null; keptId?: string | null; nexus: number; nexusMost: number }>
 
 export type DuelRound = Readonly<{ round: number; battle: BattleRecord; sides: Readonly<Record<Side, DuelSideRound>> }>
 
@@ -75,6 +76,7 @@ export function measureDuel(setup: DuelSetup, players: Readonly<Record<Side, Rea
       return {
         hand: hand.map((card) => card.rarity as Rarity),
         kept: picked === undefined ? null : (picked.rarity as Rarity),
+        keptId: picked === undefined ? null : picked.id,
         nexus: report.nexus.after,
         nexusMost: report.nexus.most,
       }

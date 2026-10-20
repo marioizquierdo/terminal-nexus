@@ -40,8 +40,52 @@ function predicted(duels: readonly DuelMeasure[], score: (duel: DuelMeasure, sid
   return { decided, right }
 }
 
-/** How lucky a side's first two hands were: the rarity of what it kept, added up. */
-const earlyLuck = (duel: DuelMeasure, side: Side): number => duel.rounds.slice(0, 2).reduce((sum, round) => sum + luckOf(round.sides[side].kept), 0)
+/**
+ * How lucky a side's first two hands were. **By the cards it kept, as they did in every other duel**: each card's
+ * share of the duels won by a side that kept it, in the duels besides this one, added up over its first two rounds; a
+ * card no other duel kept counts as even, a half. Rarity cannot say it: the Nexus Pulse deals both sides the same
+ * rarities each round, so they never differ by it. Only when no card is named (a result written before they were)
+ * does it fall back to the rarity of what was kept.
+ */
+export function luckByCards(duels: readonly DuelMeasure[]): (duel: DuelMeasure, side: Side) => number {
+  const named = duels.some((duel) => duel.rounds.some((round) => round.sides.A.keptId !== undefined))
+  if (!named) return (duel, side) => duel.rounds.slice(0, 2).reduce((sum, round) => sum + luckOf(round.sides[side].kept), 0)
+  // Every card's duels kept in and won, over all of them; each duel's own taken out when it is judged.
+  const tally = new Map<string, { kept: number; won: number }>()
+  const own = (duel: DuelMeasure): Map<string, { kept: number; won: number }> => {
+    const mine = new Map<string, { kept: number; won: number }>()
+    for (const side of ["A", "B"] as const) {
+      const cards = new Set(duel.rounds.map((round) => round.sides[side].keptId).filter((id): id is string => typeof id === "string"))
+      for (const id of cards) {
+        const entry = mine.get(id) ?? { kept: 0, won: 0 }
+        entry.kept += 1
+        if (duel.result.winner === side) entry.won += 1
+        mine.set(id, entry)
+      }
+    }
+    return mine
+  }
+  const owns = new Map(duels.map((duel) => [duel, own(duel)] as const))
+  for (const mine of owns.values()) {
+    for (const [id, entry] of mine) {
+      const total = tally.get(id) ?? { kept: 0, won: 0 }
+      total.kept += entry.kept
+      total.won += entry.won
+      tally.set(id, total)
+    }
+  }
+  return (duel, side) => {
+    const mine = owns.get(duel) ?? new Map()
+    return duel.rounds.slice(0, 2).reduce((sum, round) => {
+      const id = round.sides[side].keptId
+      if (typeof id !== "string") return sum
+      const total = tally.get(id) ?? { kept: 0, won: 0 }
+      const kept = total.kept - (mine.get(id)?.kept ?? 0)
+      const won = total.won - (mine.get(id)?.won ?? 0)
+      return sum + (kept === 0 ? 0.5 : won / kept)
+    }, 0)
+  }
+}
 
 /** How far a side led after round 2: its Nexus's share of health left, less the enemy's, then damage dealt. */
 const earlyLead = (duel: DuelMeasure, side: Side): number => {
@@ -93,7 +137,7 @@ export function summaryLines(measurement: Measurement): string[] {
     const west = mirrors.filter((duel) => duel.result.winner === "A").length
     const east = mirrors.filter((duel) => duel.result.winner === "B").length
     lines.push(`  mirrors: ${mirrors.length}, side A (west) won ${west}, side B (east) ${east}, draws ${mirrors.length - west - east}`)
-    const luck = predicted(duels, earlyLuck)
+    const luck = predicted(duels, luckByCards(duels))
     const lead = predicted(duels, earlyLead)
     lines.push(`  the luckier first two hands won ${luck.right} of ${luck.decided} duels they differed in (${percent(luck.right, luck.decided)})`)
     lines.push(`  the side ahead after round 2 won ${lead.right} of ${lead.decided} (${percent(lead.right, lead.decided)})`)

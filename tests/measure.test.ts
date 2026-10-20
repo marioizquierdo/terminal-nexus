@@ -87,3 +87,29 @@ test("a measurement says in plain words what it found", async () => {
   assert.match(text, /route-dead-end\s+A won 2\/2/u)
   assert.match(text, /stalled units 0/u)
 })
+
+test("an early hand's luck is how the cards it kept did in the other duels, each duel's own left out", async () => {
+  const { luckByCards } = await import("../src/measure/index.ts")
+  type Duel = Parameters<ReturnType<typeof luckByCards>>[0]
+  const side = (keptId: string | null) => ({ hand: [], kept: keptId === null ? null : ("common" as const), keptId, nexus: 0, nexusMost: 400 })
+  const battle = { ticks: 0, winner: null, reason: "time", sides: {} } as unknown as Duel["rounds"][number]["battle"]
+  const duel = (a: string | null, b: string | null, winner: "A" | "B"): Duel =>
+    ({
+      commanders: { A: "vasse", B: "vasse" },
+      players: { A: "s", B: "s" },
+      map: "crossing",
+      seed: 1,
+      result: { winner, by: "nexus", round: 2 },
+      rounds: [{ round: 1, battle, sides: { A: side(a), B: side(b) } }],
+    }) as unknown as Duel
+  // A strong card wins both other duels it was kept in; a weak one loses both.
+  const others = [duel("strong", "weak", "A"), duel("weak", "strong", "B")]
+  const judged = duel("strong", "weak", "B")
+  const luck = luckByCards([...others, judged])
+  assert.equal(luck(judged, "A"), 1, "the strong card's record, without this duel's loss")
+  assert.equal(luck(judged, "B"), 0)
+  // A card no other duel kept counts as even.
+  const alone = duel("new", null, "A")
+  assert.equal(luckByCards([alone])(alone, "A"), 0.5)
+  assert.equal(luckByCards([alone])(alone, "B"), 0)
+})

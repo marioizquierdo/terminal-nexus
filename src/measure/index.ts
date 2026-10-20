@@ -14,7 +14,7 @@ export * from "./battle.ts"
 export * from "./formations.ts"
 export * from "./spec.ts"
 export * from "./suites.ts"
-export { summaryLines } from "./summary.ts"
+export { luckByCards, summaryLines } from "./summary.ts"
 
 export type SpecInputs = Readonly<{
   /** The maps to play, already read. */
