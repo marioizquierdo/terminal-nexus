@@ -24,9 +24,9 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | --- | --- | --- | --- |
 | [Q5](#q5--what-is-the-default-construction-radius) | What is the default construction radius? | OBSERVABLE | Mario's playtest of the Build range Experiment |
 | [Q7](#q7--do-workers-carry-or-produce-in-place) | Do workers carry, or produce in place? | OPEN | Milestone 7 (worker economy), for the storage half |
-| [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Backlog: routing and economy |
-| [Q14](#q14--should-the-movement-tie-break-be-mirror-fair-or-is-a-fixed-compass-order-enough) | Should the movement tie-break be mirror-fair? | OPEN | Backlog: routing |
-| [Q15](#q15--what-should-a-mover-with-no-route-do-circle-or-stop) | What should a mover with no route do? | OPEN | Backlog: routing |
+| [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Milestone 16 (pathfinding) and the worker economy |
+| [Q14](#q14--should-the-movement-tie-break-be-mirror-fair-or-is-a-fixed-compass-order-enough) | Should the movement tie-break be mirror-fair? | OPEN | Milestone 16 (pathfinding) |
+| [Q15](#q15--what-should-a-mover-with-no-route-do-circle-or-stop) | What should a mover with no route do? | OPEN | Milestone 16 (pathfinding), its second step |
 | [Q19](#q19--where-should-a-sandbox-placement-mode-rewind-and-fast-forward-and-a-feedback-replay-engine-live) | Where do a sandbox, rewind and a feedback replay live? | OPEN | Backlog: replay format |
 | [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
@@ -107,7 +107,7 @@ worker. Whether the dragging is visible still wants someone to watch it.
 
 ### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
 
-**Status:** OPEN — parked under the backlog's routing work, whose rewrite is likely to make it moot.
+**Status:** OPEN — parked under the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), whose routes are likely to make it moot.
 
 When two steps gain as much for the time they take — every step toward a goal does — the tie breaks on how far
 each turns from the way straight at the goal, then on a fixed compass order (`n, e, s, w`). Both sides prefer their own left, so in the mirror skirmish player A's
@@ -133,7 +133,7 @@ preferring north, and it decides only between two steps of equal gain and turn.
 
 ### Q15 — What should a mover with no route do: circle, or stop?
 
-**Status:** OPEN — parked as the opening case of the backlog's routing work.
+**Status:** OPEN — parked as the opening case of the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), settled in its second step.
 
 Greedy routing has no memory. With four-way movement every legal step changes the distance to the goal, by
 one across or two up or down, so an actor approaching an obstacle **off-axis** still slides along its face

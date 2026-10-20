@@ -7,20 +7,14 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
 
 ### What is not built yet
 
-- **Routing.** Real pathfinding around obstacles: weighted terrain, routes to a legal attack position
-  rather than to an occupied tile, temporary danger cost for fleeing workers, deterministic
-  tie-breaking, and bounded recalculation when a contested destination changes. The spike's greedy
-  step will strand units on rock; this is where that stops being acceptable. **Sharper since four-way
-  movement** (Mario's own choice after watching the first battles): every legal step changes the distance to the
-  goal, by one across or two up or down, so an actor whose approach is exactly on-axis with its goal and meets an
-  obstacle has no fallback direction at all, a hard dead end rather than a stall to route around.
-  [`open-questions.md`](open-questions.md) Q15 has the measurement; whichever level first needs real
-  routing is where it gets an actual fix. **The owner has seen it** (2026-10-19): raiders stuck behind rocks in
-  PERIMETER's playable demos, and "pathfinding code will also need improvements soon". Two things he named go with
-  it: troops head for the enemy Nexus by default, and **banners**, rally points a player sets during a Battle Round
-  that troops head for first. What the side-fairness round leaves ready for it: a mover's distance is measured from
-  its own footprint, a step must gain ground, and every tie goes by what a unit faces, then a seeded draw — so a
-  router built on that is fair from either end of the map.
+- **Routing** has its own milestone now: [`milestone-16-pathfinding.md`](milestone-16-pathfinding.md), with what
+  the greedy step does today, where it fails in PERIMETER, what other games do, and the steps (distance fields,
+  crowds, a Grid that changes mid-round, terrain costs, workers crossing their own troops, goals and banners). The owner saw
+  raiders stuck behind rocks in PERIMETER on 2026-10-19 and asked for it.
+- **Banners.** A rally point a player plants for their troops to head for before the enemy's Grid Nexus. The owner,
+  2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
+  screen; until then there is no banner. The pathfinding milestone leaves the goal a banner would be: one more place
+  a side heads for, like a campaign level's target.
 - **Behaviour states.** The owner's viewing: "units should have a default movement direction
   (towards the enemy Nexus, closest resources, etc) and then activate a different pathfinding mode
   when there are enemies in range... defining multiple states will allow more complex and engaging

@@ -335,4 +335,71 @@ tick, and mirror duels split about evenly.
 > battle round.
 
 **Scheduled**: registered beside the routing question and in the backlog, with what this round leaves ready for it
-(movement measured from a unit's footprint, a step that must gain ground, and side-fair ties).
+(movement measured from a unit's footprint, a step that must gain ground, and side-fair ties). Since 2026-10-19 it is a
+milestone of its own (F183).
+
+### F183 — A milestone for pathfinding
+
+> Well okay, not sure how we forgot, but we need to write a milestone dedicated to pathfinding. Please write the
+> milestone so we can move on with other issues. Some notes to take into account:
+>
+> Pathfinding Milestone:
+>
+> * This is a solved problem in many videogames, please do some initial research to identify the typical situations
+> and algorithms. Then contrast with our specific situation, our units move like in a RST or tactical auto-battler,
+> using ticks, but all units are automated.Units need to move towards a target, dodge obstacles, identify enemies on
+> their vision radius, crowd control (e.g. walking through a small passage), react to dynamic obstacles during the
+> battle (e.g. units pushed after an explosion, a magnet ability or new units spawned), different terrains, and worker
+> units being able to walk over other friendly units.
+
+**Scheduled.** Before it, the cause of the stuck raiders was found by playing PERIMETER headless: there is no
+pathfinding, a unit only takes a step that brings it strictly closer, so a slinger directly above the Grid Nexus with
+the north-west wall between them stands there for good and the raiders behind it queue. The milestone
+([`milestone-16-pathfinding.md`](../../milestones/milestone-16-pathfinding.md)) has that, the research (A\*, distance
+fields and flow fields, hierarchy, clearance for unit sizes, local avoidance, cooperative pathfinding, weighted
+terrain, what auto-battlers do), each of his needs set against it, and six steps: a bench and a measure, routes round
+the map, crowds, a Grid that changes mid-round, terrain and who passes whom, and goals with banners. When a banner is set,
+in the plan or live during the round, is a question for him. Its place in the build order is his call.
+
+### F184 — Banners in the Build Phase, later; pathfinding as soon as it can be; start the measurements over
+
+> Oh, yes, placing the banner is during the build phase, of course. We don't know how to deal with that in the UI yet,
+> but the idea will be to do that when we can prove there is a good plan for it. So for now, there is no banner. It's
+> just going to be going to the enemy nexus. Or maybe we have to define the target position for campaign as well.
+> Second thing, where does the milestone go? We can work on that anytime. It's kind of independent, but the sooner the
+> better, because that will make the other tests better. We should also invalidate the older maps and the data we have
+> on them that decide what something is better than another thing. Maybe this is time to write a summary in some
+> design file, a spec, and just forget about that old data, and we're gonna have to start a new one. Maybe that can be
+> part of the milestone as well.
+
+**Scheduled.** The banner question is answered (a banner belongs to the Build Phase's plan, and waits for a plan for it
+on screen; it is in the backlog). The pathfinding milestone builds no banner: a unit heads for the enemy's Grid Nexus,
+or a campaign level's target where the level names one. It is placed next in the build order, after Commander
+Armies. And it now opens with a clean slate: a spec of how a battle is measured, every measured result from before
+it marked as old and set aside, the old route maps retired, and the measurements made again on the new routes as its
+last step.
+
+### F185 — Units come out on top of their building and walk out
+
+> And something else that we can put together along with the pathfinding, because it is kind of related, but this is
+> something I was thinking more generally for gameplay, is that since army position and formation is so important to
+> win or lose a battle, the users will have a lot of control over where their units are positioned, and that is
+> decided indirectly by placing the buildings right now. So if units spawn around the building, there is a lot of
+> space that is being taken in between units, so they naturally not be able to cluster before attacking the enemy, and
+> being able to cluster or disperse the units seems like a great way to add a strategy for area of damage or not. So I
+> was thinking, what if units spawn on top of the building and they find a way out to the closest area where they can
+> walk? So that will, for example, let people place a lot of the same buildings together next to each other without
+> having to have a space in the middle, and the units will pop out and walk all the way until they can actually be
+> outside. There is a bunch of questions in here, especially for pathfinding, and that is why I think we can put it
+> together on the pathfinding milestone. Is when they pop, they will be out on their own layer, I think, where the
+> multiple units are also spawning at the same time out of the building. They need to not collide with each other and
+> slowly walk outside of the building area. If there is multiple buildings on top of each other, they should walk out
+> of them. And this will work equally for bigger units or smaller units. So what happens if there is an enemy in
+> range? Should they start shooting each other? And I think, yes, they should be able to start shooting right away
+> from on top of the building. When the enemy destroys the unit,
+
+**Scheduled**, as a step of the pathfinding milestone (units come out of their building): units appear on top of the
+building that made them, cross their own side's buildings to the nearest open ground without sharing a tile, fight
+from the roof, and buildings that make units no longer need room round them, so the Spawn space Experiment goes.
+His note stopped mid-sentence ("When the enemy destroys the unit,"): what happens to a unit hit on its roof, or on a
+building that falls, waits on him.
