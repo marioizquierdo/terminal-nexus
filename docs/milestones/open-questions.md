@@ -25,10 +25,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q5](#q5--what-is-the-default-construction-radius) | What is the default construction radius? | OBSERVABLE | Mario's playtest of the Build range Experiment |
 | [Q7](#q7--do-workers-carry-or-produce-in-place) | Do workers carry, or produce in place? | OPEN | Milestone 7 (worker economy), for the storage half |
 | [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Milestone 16 (pathfinding) and the worker economy |
-| [Q14](#q14--should-the-movement-tie-break-be-mirror-fair-or-is-a-fixed-compass-order-enough) | Should the movement tie-break be mirror-fair? | OPEN | Milestone 16 (pathfinding) |
-| [Q15](#q15--what-should-a-mover-with-no-route-do-circle-or-stop) | What should a mover with no route do? | OPEN | Milestone 16 (pathfinding), its second step |
 | [Q19](#q19--where-should-a-sandbox-placement-mode-rewind-and-fast-forward-and-a-feedback-replay-engine-live) | Where do a sandbox, rewind and a feedback replay live? | OPEN | Backlog: replay format |
-| [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
 | [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-round regrouping via outposts |
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
@@ -48,6 +45,8 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
+| [Q82](#q82--what-makes-a-loose-army-worth-building) | What makes a loose army worth building? | OPEN | Mario, after feeling the Way off the roof Experiment; the armies' next pass |
+| [Q83](#q83--how-are-a-duels-first-rounds-kept-from-deciding-it) | How are a duel's first rounds kept from deciding it? | OPEN | Mario; the armies' next pass |
 
 ## Open
 
@@ -105,61 +104,6 @@ worker on open ground is never caught. The mirror skirmish never reaches annihil
 its full 240 ticks, the last eighty empty; `worker-flight.ts` ends only because an east wall corners the
 worker. Whether the dragging is visible still wants someone to watch it.
 
-### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
-
-**Status:** OPEN — parked under the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), whose routes are likely to make it moot.
-
-When two steps gain as much for the time they take — every step toward a goal does — the tie breaks on how far
-each turns from the way straight at the goal, then on a fixed compass order (`n, e, s, w`). Both sides prefer their own left, so in the mirror skirmish player A's
-formation drifts north and player B's south, and the squads meet at an angle. Swapping which player owns
-which side flips the result exactly, so there is no bias tied to identity; across seeds the mirror lands
-3-3, 4-4, 4-4, 5-1 and 4-4, which is seed variance. The artifact is real, small, and visible.
-
-| Option | Cost |
-| --- | --- |
-| A. **Keep the fixed compass order.** Document the drift | Free, and the cheapest thing to reason about. Leaves a geometric artifact a sharp player could eventually exploit |
-| B. Break equal-distance ties with a draw from the seeded gameplay stream | Removes the artifact and stays deterministic. Spends draws every tick on something no player perceives as a choice, and ties movement replay to stream position |
-| C. Derive the preference from the target vector, so the tie leans toward the target's secondary axis | Deterministic with no draws. A rule harder to explain than "the compass order", and still arbitrary when the target is exactly on an axis |
-
-**Recommendation: A, and decide it with the routing work**, which replaces greedy routing wholesale and
-is likely to make this moot. If the formations sliding past each other reads as broken rather than as
-manoeuvre, take C.
-
-**2026-10-17, from the duels:** a mirror duel between two Commander Armies went to one side most of the time, from
-tie-breaks of the same family that read the Grid west to east. **2026-10-19:** every one of those now goes by what
-the deciding unit faces, then a seeded draw (`pulse.md`, "No side wins by where it stands"), and mirror duels split
-evenly. The compass order this question is about is the one left: it is mirror-fair west to east, both sides
-preferring north, and it decides only between two steps of equal gain and turn.
-
-### Q15 — What should a mover with no route do: circle, or stop?
-
-**Status:** OPEN — parked as the opening case of the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), settled in its second step.
-
-Greedy routing has no memory. With four-way movement every legal step changes the distance to the goal, by
-one across or two up or down, so an actor approaching an obstacle **off-axis** still slides along its face
-until it clears (`obstacle-routing.map.json`), but an actor approaching **on-axis** has exactly one
-improving direction and, if a wall blocks it, no fallback: a hard stop, reported correctly by the
-`move.blocked` streak warning but never recovering. The older two-tile pacing case is
-`hauler-two-tile-gap`. The owner hit the on-axis case in a playtest ("Two units on the top of the screen
-around tick 200 got stuck"); `scenarios/on-axis-deadlock.map.json` isolates it and `tests/report.test.ts`
-asserts the `WARN stuck` it raises.
-
-| Option | Cost |
-| --- | --- |
-| A. **Leave it and report it.** The log names the actor and the tile it wants | Free, and honest. A unit standing still in front of a wall forever reads as broken |
-| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and a stopped unit reads as stuck rather than idle. Still does not get the unit where it was going |
-| C. Do nothing now; real pathfinding makes it moot | Free. Bets that routing arrives before anyone watches a unit stall on-axis, which is not a safe bet |
-
-**Recommendation: A for now, then treat this as the routing work's opening case**, scoped to solve the
-on-axis dead end (a real search, or at minimum a goal offset that avoids exact axis alignment), not just
-report it more politely. B alone would ship a unit that visibly gives up.
-
-**Confirmed at large footprints** (a bug audit of the existing greedy router; the colossus and leviathan
-fixtures `colossus-two-tile-gap.map.json` and the 5x2 leviathan case): a 3x3 or 5x2 body against a gap it
-cannot pass does not pace, it hard-stops flush against the gap. And a single occupied tile anywhere in a
-large mover's footprint vetoes the whole step, because arbitration grants one winner per bridged conflict
-group rather than per contested tile. Fixing that is the same routing-priority redesign, not a bug fix.
-
 ### Q19 — Where should a sandbox placement mode, rewind and fast-forward, and a feedback replay engine live?
 
 **Status:** OPEN — parked under the backlog's replay format; the owner asked for it to be kept in mind and registered, explicitly not built now.
@@ -189,29 +133,6 @@ mind... but not needed for now." Three things are bundled:
 
 **Recommendation: C for now, then B if the owner wants to play with matchups sooner.** Whichever step first
 designs a real replay format should keep per-tick state cheaply addressable regardless.
-
-### Q20 — When target selection is capped by radius for scale, what should a unit with nothing in range do?
-
-**Status:** OPEN — parked until perception's cost is a measured problem, not a projected one; registered now because the tradeoffs are cheap to write down before any fixture depends on the answer.
-
-Perception (`hostilesOf` + `selectTarget`, `src/pulse/tick.ts`) is the one hot path that is O(N²) every
-tick: every attack-capable actor scans every hostile actor. At dozens of actors it is invisible; at the
-hundreds or thousands the owner has in mind it dominates ([`runtime.md`](../system-design/runtime.md), scaling
-toward hundreds or thousands of units, has the assessment). The undisputed fix is capping the scan to a
-radius around the actor using a coarse spatial index built from the occupancy index's own mutations. What
-is undetermined is what a unit finds when nothing is within the radius.
-
-| Option | Cost |
-| --- | --- |
-| A. **Full-scan fallback**: if nothing is within the radius, scan everything | Behaviour never changes, but defeats the point on a sparse map |
-| B. **Hold idle / keep the last target** until something enters the radius | Cheap and bounded, but a visible behaviour change: a unit that would have crossed the map to engage a straggler now ignores it. Changes fixture hashes for sparse scenarios |
-| C. **A new non-targeting `Behavior`**, such as advancing toward a fixed point (the enemy Nexus) | Bounded and intentional, but new surface: `Behavior` is `"advance" \| "flee" \| "static"` and a new one needs its own fixture and test before it is a rule |
-
-**Recommendation: none of these until the radius is actually needed.** Landing the cap inert/off by
-default is the right amount of design-now, build-later; picking a fallback is a hash-affecting decision
-that is expensive to reconsider once a fixture is pinned to it. When needed, B is the cheapest and most
-honest first cut, and A quietly reintroduces the cost the cap exists to remove. C is worth doing only once
-"advance on the enemy Nexus" is a rule the game wants anyway.
 
 ### Q22 — Should movement carry deterministic, terrain-based jitter?
 
@@ -538,7 +459,7 @@ backlog, after placement; a raid group's own plan would reuse the target rule fo
 The owner asked for Commanders as heroes with skills that work on their own: "Vasse should provide boost to nearby
 units." Her aura is built: she and the units of her side within a reach of 4 of her (4 across, 2 up and down) take less damage from every hit.
 How strong: enough to feel that she is there, never so strong that standing beside her is the whole plan.
-Measured on PERIMETER's last round, beside the level's target for the player's troops:
+Measured on PERIMETER's last round, beside the level's target for the player's troops, before units could find their way round rock (the pathfinding milestone measures it again):
 
 | Option | On PERIMETER |
 | --- | --- |
@@ -613,3 +534,47 @@ a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one 
 **Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
 and that is a contained change best made with the next change to the mission format; the engine's internal names
 cost nothing as long as the vocabulary says what they mean.
+
+### Q82 — What makes a loose army worth building?
+
+**Status:** OPEN — registered 2026-10-20, from the simulated game of the pathfinding milestone's roof step
+([the report](../history/reports/2026-10-20-formations.md)).
+
+Units now come out on the roofs of the buildings that made them, so where a player builds decides how tight the army
+fights: four Barracks in a block meet the enemy about 3 columns from their middle, four set apart about 14. Mario's
+reason for the roofs was that "being able to cluster or disperse the units seems like a great way to add a strategy
+for area of damage or not". In the simulation a tight army beats a loose one every time, and the bench's only attack
+that hits an area (the siege crawler) is too slow and weak to punish a block enough to change who wins. So today
+there is no reason to build apart.
+
+| Option | What it costs |
+| --- | --- |
+| A. **An area power in an army's curve**: a Nexus power or a unit whose blast is strong enough that a block pays for its tightness, measured by `measure formations` until a loose army wins against it | A design pass on the armies; the simulation already measures it |
+| B. **Leave it to the armies' next pass**, with tight as the strong default for now | Nothing now; a formation choice that only ever has one answer until then |
+| C. **Make loose pay elsewhere**: e.g. a building set apart covers more of the map, or a Barracks in a block trains more slowly | A rule change with no player asking for it |
+
+**Recommendation: A, when the armies are iterated next** (Mario: "we will iterate on the armies later"). The roofs
+built what he asked for; what makes a loose army worth building is an army's area attack, and the simulation is ready
+to measure one. Meanwhile the "Way off the roof" Experiment lets him feel his idea against stepping down at once.
+
+### Q83 — How are a duel's first rounds kept from deciding it?
+
+**Status:** OPEN — registered 2026-10-20, from the full Commander duels measured at the end of the pathfinding
+milestone ([the report](../history/reports/2026-10-20-pathfinding-measured.md)).
+
+On the new routes a side with no target marches straight on the enemy Nexus. Of 162 scripted duels on the Crossing, 35
+were over by the end of round 2 and 13 in round 1; and of the duels that went on, the side that dealt more damage in
+the first two rounds won every one. Luck is not the cause (the luckier early hands won 55%); speed is. The power curve
+asks for the last moves to be the most decisive and an opening worth a sixth of a match (the Commander Armies design,
+catch-up), and its guidelines forbid hidden help and rewards for falling behind.
+
+| Option | What it costs |
+| --- | --- |
+| A. **A Nexus that fights back**: the Grid Nexus has an attack of its own, on its card, so a round-1 march meets a defence it must spend to break | One content change and a test; every level and duel re-measured, and an attack is one more thing on the Nexus's card |
+| B. **A guard to start with**: each side's opening includes a building or a squad that holds the Nexus, as PERIMETER's annex does | Per-army data; a defender's opening pays for it on the curve |
+| C. **A Nexus that cannot fall in the opening act**: it stands at its last health through round 3, said on its card | A rule a player can read, but one that changes what a raid is for in the first act |
+| D. **Leave it to the armies**: a forward army is ahead early and pays later, as the curve says | Nothing now; the scripted duels say the payment never comes |
+
+**Recommendation: A, measured with `measure run --spec full` before anything else changes.** It is visible on the
+Grid and on a card, helps whoever is attacked rather than whoever is behind, and leaves every army's own lean intact;
+B is the same idea spent per army, and C changes the first act's purpose.

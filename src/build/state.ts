@@ -38,8 +38,8 @@ import {
   restartMessage,
 } from "./settings.ts"
 import { formatSettingsExport } from "./settings-export.ts"
-import type { Crowding, Footing, Territory } from "./territory.ts"
-import { anyInside, crowding, territoryOf } from "./territory.ts"
+import type { Territory } from "./territory.ts"
+import { anyInside, territoryOf } from "./territory.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ActivitySource } from "./activity.ts"
 import {
@@ -761,21 +761,16 @@ export function buildRange(context: BuildContext, state: SettingSource): Territo
   return territoryOf(context, setting(state, "buildRange"))
 }
 
-/** Every building on the map — the player's standing and planned ones, and the raid's — as the room rule
- *  counts them (`crowding`, `src/build/territory.ts`). */
+/** A building on the map: what it is, and where. */
+export type Footing = Readonly<{ contentId: string; anchor: Coord }>
+
+/** Every building on the map — the player's standing and planned ones, and the raid's. */
 export function buildingsOn(context: BuildContext, planned: readonly PlannedPlacement[]): Footing[] {
   const buildings: Footing[] = [...context.standing, ...planned]
   for (const entity of context.field ?? []) {
     if (context.registry.get(entity.contentId).layer === "obstacles") buildings.push(entity)
   }
   return buildings
-}
-
-/** A building too close to another, in the bottom line's words: the building it is too near, and why — the
- *  room that one keeps for its troops, or the room the building being placed would keep for its own. */
-function crowdingReason(context: BuildContext, crowded: Crowding): string {
-  const near = displayName(context, crowded.near.contentId)
-  return crowded.room === "its" ? `too close to the ${near} - its troops need room` : `too close to the ${near} - troops need room`
 }
 
 /**
@@ -790,10 +785,9 @@ function crowdingReason(context: BuildContext, crowded: Crowding): string {
  * region, a rock or a building about one tile, so a ghost far from the range is sent toward the range
  * rather than off the rock it happens to sit on. One tile of the footprint inside it is enough
  * (`src/build/territory.ts`); when none is, the first of its tiles on the Grid is named. Then each tile's own
- * problem — off the Grid, rock, a building already there — and last **the room a building that makes units
- * keeps** (`crowding`), which names the building it is too near. `radius` and `clearance` are the "Build
- * range" and "Spawn space" Experiments' values — their defaults when the caller has no state to read them
- * from.
+ * problem — off the Grid, rock, a building already there. Buildings may touch: one that makes units sets them on its
+ * roof (pulse.md), so it keeps no room round it. `radius` is the "Build range" Experiment's value — its default when
+ * the caller has no state to read it from.
  */
 export function legalityAt(
   context: BuildContext,
@@ -802,7 +796,6 @@ export function legalityAt(
   anchor: Coord,
   remaining?: number,
   radius: number = defaultValue("buildRange"),
-  clearance: number = defaultValue("spawnClearance"),
 ): Legality {
   const item = catalogItem(context, contentId)
   if (item !== undefined && remaining !== undefined && item.cost > remaining) {
@@ -830,8 +823,6 @@ export function legalityAt(
       return { ok: false, reason: `the ${displayName(context, occupant)} is here`, tile }
     }
   }
-  const crowded = crowding(context.registry, buildingsOn(context, planned), contentId, anchor, clearance)
-  if (crowded !== null) return { ok: false, reason: crowdingReason(context, crowded) }
   return { ok: true }
 }
 
@@ -876,13 +867,11 @@ export function legalityAt(
 export type ArmingSpot = Readonly<{ tile: Coord; found: boolean }>
 
 /**
- * The rules a spot is held to beyond fitting on open ground: a tile inside the build range (`territory`), and
- * the room of a building that makes units (`room`: the building being armed, and the "Spawn space"
- * Experiment's value). Neither, for Explore Map's tile.
+ * The rule a spot is held to beyond fitting on open ground: a tile inside the build range (`territory`). None, for
+ * Explore Map's tile.
  */
 export type ArmingRules = Readonly<{
   territory?: Territory
-  room?: Readonly<{ contentId: string; clearance: number }>
 }>
 
 /** The footprint Explore Map's cursor is placed by, opened from the menu: one tile. */
@@ -899,8 +888,7 @@ export function armingSpot(
   const offset = footprintCentre(footprint)
   const claimed = claimedTiles(context, planned)
   const { grid } = context
-  const { territory, room } = rules
-  const buildings = room === undefined ? [] : buildingsOn(context, planned)
+  const { territory } = rules
 
   const anchorOf = (tile: Coord): Coord => ({ x: tile.x - offset.x, y: tile.y - offset.y })
   const fits = (anchor: Coord): boolean => {
@@ -912,8 +900,7 @@ export function armingSpot(
       if (claimed.has(`${tile.x},${tile.y}`)) return false
       if (!inRange && territory?.has(tile) === true) inRange = true
     }
-    if (!inRange) return false
-    return room === undefined || crowding(context.registry, buildings, room.contentId, anchor, room.clearance) === null
+    return inRange
   }
   // One free tile between structures: nothing claimed on the ring around the footprint's box.
   const spaced = (anchor: Coord): boolean => {
@@ -978,7 +965,7 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
   if (item === undefined) return null
   const footprint = context.registry.get(item.contentId).footprint
   const anchor = anchorForCursor(state.cursor, footprint)
-  // The same call, budget, build range, room and all, whichever side is asking.
+  // The same call, budget, build range and all, whichever side is asking.
   const legality = legalityAt(
     context,
     state.planned,
@@ -986,7 +973,6 @@ export function armedPreview(context: BuildContext, state: BuildState): ArmedPre
     anchor,
     remaining(context, state),
     setting(state, "buildRange"),
-    setting(state, "spawnClearance"),
   )
   const refusal: Refusal | null =
     legality.ok
@@ -1149,13 +1135,12 @@ function armItem(context: BuildContext, state: BuildState, index: number, from: 
     handoff: handOff(state, from, entry),
   }
   const footprint = context.registry.get(item.contentId).footprint
-  const room = { contentId: item.contentId, clearance: setting(state, "spawnClearance") }
-  const spot = armingSpot(context, state.planned, footprint, state.cursor, { territory: buildRange(context, state), room })
+  const spot = armingSpot(context, state.planned, footprint, state.cursor, { territory: buildRange(context, state) })
   const moved = withCursor(context, armed, spot.tile)
   if (!spot.found) {
     // Room nearby, none of it in the build range — or no room at all: said apart, since only the first is
     // answered by moving toward the range the map now shows.
-    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor, { room }).found
+    const roomNearby = armingSpot(context, state.planned, footprint, state.cursor).found
     const why = roomNearby ? "no room in your build range nearby" : `no room within ${TUNING.armSearchTiles} tiles`
     return { ...moved, noSpotFound: true, status: status(`${item.label} selected - ${why}, move to find one.`, "warning") }
   }

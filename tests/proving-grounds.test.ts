@@ -242,3 +242,19 @@ test("pure composition: the structure-only rushers needed no capability beyond t
     }
   }
 })
+
+test("a push moves a unit that did not walk: it stops where its body would not fit, and walks back by its route", async () => {
+  const resolved = await resolveScenario("bench-bulwark-shove.map.json")
+  const events = resolved.run.events
+  const pushes = events.filter((event) => event.kind === "entity.displaced")
+  // From the west, two tiles straight away; from above, one, as the rock two rows up stops it.
+  assert.ok(pushes.some((event) => event.kind === "entity.displaced" && event.from.x === 13 && event.from.y === 6 && event.to.x === 11 && event.to.y === 6))
+  assert.ok(pushes.some((event) => event.kind === "entity.displaced" && event.from.x === 14 && event.from.y === 5 && event.to.x === 14 && event.to.y === 4))
+  for (const push of pushes) {
+    if (push.kind !== "entity.displaced") continue
+    // The next tick it does not stand where it landed for good: it walks back toward the bulwark.
+    const back = events.find((event) => event.kind === "entity.moved" && event.ordinal === push.ordinal && event.tick > push.tick)
+    assert.ok(back !== undefined && back.kind === "entity.moved" && back.from.x === push.to.x && back.from.y === push.to.y, `${push.entity} never walked back`)
+  }
+  assert.equal(resolved.run.finalState.outcome?.winner, "A")
+})

@@ -151,9 +151,21 @@ export function opening(input: OpeningInput): Opening {
 
   // Units are set down after every structure, on tiles no other entity holds: at the start of a Pulse
   // nobody shares a tile, on any layer (the loader's rule for two players, kept for all of them, so a
-  // plan can never begin with a unit inside a building).
-  setup.forces.forEach((force, forceIndex) => {
-    force.units.forEach((contentId, unitIndex) => {
+  // plan can never begin with a unit inside a building). **In turns**, one unit of each force at a time, the
+  // forces taking turns in the order given and then in the order reversed, so two forces whose musters meet share
+  // the ground between them rather than the first claiming all of it (no side wins by where it stands, pulse.md).
+  const turns: Array<Readonly<{ force: (typeof setup.forces)[number]; forceIndex: number; contentId: string; unitIndex: number }>> = []
+  const longest = Math.max(0, ...setup.forces.map((force) => force.units.length))
+  for (let unitIndex = 0; unitIndex < longest; unitIndex += 1) {
+    const order = setup.forces.map((force, forceIndex) => ({ force, forceIndex }))
+    if (unitIndex % 2 === 1) order.reverse()
+    for (const { force, forceIndex } of order) {
+      const contentId = force.units[unitIndex]
+      if (contentId !== undefined) turns.push({ force, forceIndex, contentId, unitIndex })
+    }
+  }
+  turns.forEach(({ force, forceIndex, contentId, unitIndex }) => {
+    {
       const where = `force ${forceIndex + 1}, unit ${unitIndex + 1}`
       const definition = known(force.player, contentId, where)
       const anchor = nearestFit(unitMask(definition), definition.footprint, force.muster, MUSTER_RADIUS, force.muster, enemyNexusMiddle(placed, force.player, force.muster))
@@ -163,7 +175,7 @@ export function opening(input: OpeningInput): Opening {
         )
       }
       claim(force.player, definition, anchor, where, { force: forceIndex })
-    })
+    }
   })
 
   if (placed.length === 0) throw new PulseSetupError("the battle would start with nothing on the Grid")

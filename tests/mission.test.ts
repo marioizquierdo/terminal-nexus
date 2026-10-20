@@ -111,7 +111,8 @@ test("validation refuses every broken shape by name, and reports them all at onc
 
 // --- The runner on the unmodified kernel -----------------------------------------------------------
 
-test("a whole mission is the same mission every run: the same plans give the same hashes, Pulse by Pulse", () => {
+// It plays PERIMETER six times over: longer than Bun's five seconds a test, so it says how long it may take.
+test("a whole mission is the same mission every run: the same plans give the same hashes, Pulse by Pulse", { timeout: 60_000 }, () => {
   const hashes = (pulses: readonly MissionPulse[]) => pulses.map((pulse) => [hashState(pulse.final), pulse.events.length, pulse.verdict.kind])
   const first = hashes(playMission(PERIMETER, STRONG))
   for (let run = 0; run < 5; run += 1) assert.deepEqual(hashes(playMission(PERIMETER, STRONG)), first)
@@ -277,13 +278,19 @@ test("PERIMETER is won by holding and lost when the Nexus falls; a round the pla
 
   // A single trooper for squads: it falls in round 1, the Nexus stands, and the round runs to its time
   // rather than stopping there (Mario, 2026-10-01: only the Nexus falling loses) — and the mission goes on.
-  // Without the intro, too: its lines are Vasse's, and she is not in this squad.
+  // Without the intro, too: its lines are Vasse's, and she is not in this squad. The probe is only two runners: since
+  // routes walk round the ridge, PERIMETER's own probe reaches the Nexus once the trooper is down and brings it down
+  // in round 1, which is not what this asks about.
   const thin: MissionDefinition = {
     ...PERIMETER,
     triggers: PERIMETER.triggers
       .filter((trigger) => trigger.id !== "intro")
       .map((trigger) =>
-        trigger.id !== "squads" ? trigger : { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] },
+        trigger.id === "squads"
+          ? { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] }
+          : trigger.id === "raid-1"
+            ? { ...trigger, do: [{ spawn: { side: "B", units: [{ unit: "unit.ravel.runner", count: 2 }], at: "ridge", group: "probe" } }] }
+            : trigger,
       ),
   }
   validateMission(thin, grid, registry)

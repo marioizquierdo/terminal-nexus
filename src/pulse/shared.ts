@@ -3,16 +3,17 @@
 // here. pulse.md has the phase order these types and helpers serve.
 
 import type { AttackDef, ContentDef } from "../content/types.ts"
-import type { CollisionMask } from "../grid/occupancy.ts"
+import type { CollisionMask, MaskSpec } from "../grid/occupancy.ts"
 import { ClaimOverlay, OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
-import { footprintDistance, footprintSteps, footprintWithin } from "../grid/coords.ts"
+import { footprintDistance, footprintSteps, footprintWithin, step } from "../grid/coords.ts"
 import type { BlockReason } from "../events/types.ts"
-import type { Coord, Direction } from "../grid/types.ts"
+import type { Coord, Direction, EntityLayer } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
 import { boostedAmount, guardedAmount } from "../abilities/index.ts"
 import type { PulseContext } from "./context.ts"
+import type { TickRoutes } from "./routes.ts"
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] }
 
@@ -87,6 +88,9 @@ export type TickContext = {
   /** Who an ability boosts this tick, by ordinal: decided with the guards, read by every hit its units deal. Empty
    *  for a battle with no boosting aura. */
   boosts: Map<number, Boost>
+  /** The tick's routes (`routes.ts`): built by perception once every actor has chosen, from who walks and who
+   *  stands, and walked by intents. Absent until then. */
+  routes?: TickRoutes
 }
 
 /**
@@ -320,8 +324,42 @@ export function applyHeal(context: TickContext, target: Actor, source: Actor, am
   })
 }
 
+/**
+ * **A unit that did not walk** (pulse.md): moves `actor` up to `tiles` tiles in `direction`, a tile at a time, each only
+ * if its whole body fits there by its own collision rule — rock, buildings, other units and a tile still settling stop
+ * it — and stops at the first that does not. A building never moves. Its credit and its route are untouched: next tick
+ * it reads its route from where it landed, as a unit that appears there would. Says where it went
+ * (`entity.displaced`) when it went anywhere, and returns where it stands.
+ */
+export function displace(context: TickContext, actor: Actor, direction: Direction, tiles: number, by: Actor): Coord {
+  if (actor.pendingDead || !isMobile(actor) || actor.definition.movementRate === undefined) return actor.anchor
+  const from = actor.anchor
+  const mask = maskForActor(context, actor)
+  let at = from
+  for (let moved = 0; moved < tiles; moved += 1) {
+    const next = step(at, direction)
+    if (!mask.footprintFits(next, actor.definition.footprint)) break
+    at = next
+  }
+  if (at.x === from.x && at.y === from.y) return from
+  context.index.move(actor.definition.layer, actor.ordinal, actor.definition.footprint, from, at)
+  actor.anchor = at
+  context.events.push({ kind: "entity.displaced", tick: context.tick, entity: actor.id, ordinal: actor.ordinal, from, to: at, by: by.id, byOrdinal: by.ordinal })
+  return at
+}
+
 export function isMobile(actor: Actor): boolean {
   return actor.definition.layer !== "obstacles"
+}
+
+/**
+ * The ground layer a unit of `definition` shares with its own side and not the enemy's: a worker crosses its own
+ * troops and a trooper its own workers, but each is stopped by the enemy's (pulse.md, routes). `null` for a layer that
+ * shares none — air, a building.
+ */
+export function sideLayerOf(definition: Readonly<{ layer: string; collidesWith: readonly string[] }>): "units" | "workers" | null {
+  const other = definition.layer === "workers" ? "units" : definition.layer === "units" ? "workers" : null
+  return other === null || definition.collidesWith.includes(other) ? null : other
 }
 
 export function maskForActor(
@@ -330,12 +368,46 @@ export function maskForActor(
   overlay?: ClaimOverlay,
 ): CollisionMask {
   return maskFrom(context.index, {
-    layers: actor.definition.collidesWith,
     // Air ignores what is on the ground, including impassable terrain: the mask is composed from
     // chosen layers, never inferred from a layer's position in the render order.
     terrain: actor.definition.layer === "air" ? "ignore" : "impassable",
     ignore: [actor.ordinal],
     vacated: context.vacated,
     ...(overlay === undefined ? {} : { overlay }),
+    ...ownSideLayers(context, actor.definition, actor.player, onRoof(context, actor)),
   })
+}
+
+/**
+ * What blocks a unit of `definition` on `player`'s side, as a mask's layers: what it collides with, but on the layers
+ * it shares with its own side only the enemy's — its side layer (`sideLayerOf`), and its own buildings while it is on
+ * their roofs (`onRoof`). The one rule for a unit's mask, its route's ground and where a building sets it down.
+ */
+export function ownSideLayers(
+  context: Pick<TickContext, "byOrdinal">,
+  definition: ContentDef,
+  player: PlayerId,
+  roof: boolean,
+): Pick<MaskSpec, "layers" | "sideLayers"> {
+  const side = sideLayerOf(definition)
+  const shared: EntityLayer[] = [...(side === null ? [] : [side]), ...(roof ? (["obstacles"] as const) : [])]
+  const layers = roof ? definition.collidesWith.filter((layer) => layer !== "obstacles") : definition.collidesWith
+  if (shared.length === 0) return { layers }
+  return { layers, sideLayers: { layers: shared, blocks: (ordinal: number) => context.byOrdinal.get(ordinal)?.player !== player } }
+}
+
+/**
+ * **On the roofs** (pulse.md, units walk out over the roofs): whether some tile of `actor`'s body stands over one of
+ * its own side's buildings — as a unit a building has just made does. Read from where it stands, so a unit is on the
+ * roofs until all of it stands on ground: while it is, its own buildings are ground it may walk; once it is out they
+ * are walls to it, its own included, and it never climbs back. A building, or a unit in the air, never is.
+ */
+export function onRoof(context: Pick<TickContext, "index" | "byOrdinal">, actor: Actor): boolean {
+  const { layer } = actor.definition
+  if (layer === "obstacles" || layer === "air") return false
+  for (const offset of actor.definition.footprint) {
+    const occupant = context.index.occupantAt("obstacles", { x: actor.anchor.x + offset.x, y: actor.anchor.y + offset.y })
+    if (occupant !== null && context.byOrdinal.get(occupant)?.player === actor.player) return true
+  }
+  return false
 }

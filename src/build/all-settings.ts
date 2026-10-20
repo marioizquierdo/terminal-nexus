@@ -89,6 +89,9 @@ type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
 const NEXT_ROUND = ["key", "auto"] as const
 const POWER_PICK = ["optional", "required"] as const
 
+/** How a building's units leave its roof (`roofExit`): along their route, or to the nearest open ground. */
+const ROOF_EXIT = ["route", "ground"] as const
+
 export const ALL_SETTINGS = {
   // --- Display: the player's own, saved with the title menu's Settings -----------------------------
 
@@ -396,27 +399,6 @@ export const ALL_SETTINGS = {
    *  battle starts (`src/cli/pulse-run.ts`), in the kernel's ticks. */
   firstWave: { tier: "tuned", unit: "seconds", default: 5 },
 
-  // --- Spawn space around a Barracks (the Commander round 5) -----------------------------------------
-  // The owner: "barraks and other spawning buildings should require minimum distance from other buildings so
-  // they leave space for units spawning". It asks how much space a Barracks needs: enough that its troops always
-  // have somewhere to appear, and never so much that there is nowhere left to build one.
-
-  /** How many free tiles a building that makes units (a Barracks, a Hatchery) keeps round it, measured as range
-   *  is (`src/build/territory.ts`); it replaces each such structure's own `clearance` while it is felt. 1 keeps
-   *  every tile along its sides free, so its troops always have room to appear; 2 also the second column either
-   *  side, a row counting two columns. Why not more: a spawner must stand further than this from every building
-   *  and still have a tile in a linked building's range, and a larger value can leave nowhere to build one. First
-   *  guess: 1. */
-  spawnClearance: {
-    tier: "experiment",
-    section: "mission",
-    label: "Spawn space",
-    question: "Kept free around a Barracks or Hatchery so its troops can spawn: 1 is the tiles next to it, 2 adds a column each side.",
-    values: [1, 2],
-    unit: "tiles",
-    default: 1,
-  },
-
   // --- The Nexus Pulse (the Commander step 8B) -------------------------------------------------------
   // The owner made the pick optional for testing (round 5: "Nexus Powers should be optional for now, it's easier
   // for testing if I can just start a round"), and the Nexus Pulse's step was to settle with him whether it stays so
@@ -432,6 +414,25 @@ export const ALL_SETTINGS = {
     question: "Optional: a round may start with its Nexus power unpicked. Required: one is kept before every round.",
     values: POWER_PICK,
     default: "optional",
+  },
+
+  // --- Units walk out over the roofs (the pathfinding milestone, step 16H) ---------------------------------
+  // The owner: units appear on the roof of the building that made them and "will just keep walking on the rooftops on
+  // the natural direction where their destination is, this will help keep the troop waves together when they spawn".
+  // His idea is the default; the simulated game the step set (src/measure/formations.ts) did not settle it on its
+  // own, so he feels the other way too.
+
+  /** How a building's units leave its roof: along their route toward where they are going, stepping down on the
+   *  side facing it (his idea), or to the nearest open ground first, so a wave spills off every side of a block.
+   *  Read when a battle starts (`src/cli/pulse-run.ts`). First guess: along the route. */
+  roofExit: {
+    tier: "experiment",
+    section: "mission",
+    label: "Way off the roof",
+    question: "Units come out on their building's roof. Route: they walk the roofs toward the enemy. Nearest: they step down at once.",
+    values: ROOF_EXIT,
+    names: { route: "route", ground: "nearest" },
+    default: "route",
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

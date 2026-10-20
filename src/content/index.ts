@@ -77,6 +77,7 @@ export function withProduction(
       const value = recipe[field]
       if (!Number.isInteger(value) || value <= 0) throw new Error(`production: "${id}" ${field} must be a positive integer, received ${value}`)
     }
+    if (recipe.exit !== undefined && recipe.exit !== "ground") throw new Error(`production: "${id}" exit must be "ground" or absent, received ${String(recipe.exit)}`)
   }
   const definitions = registry.ids().map((id) => {
     const definition = registry.get(id)

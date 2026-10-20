@@ -17,7 +17,8 @@ import { hashOf } from "../src/state/canonical.ts"
 const setup = (extra: Partial<DuelSetup> = {}): DuelSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
 const hold: SidePlan = { build: [], stance: "hold" }
 
-test("a duel resolves the same every run: the same setup and plans give the same duel, round by round", () => {
+// It plays a whole duel twice over: longer than Bun's five seconds a test, so it says how long it may take.
+test("a duel resolves the same every run: the same setup and plans give the same duel, round by round", { timeout: 60_000 }, () => {
   const players = { A: SCRIPTED.balanced!, B: SCRIPTED.rush! }
   const once = playDuel(setup(), players)
   const twice = playDuel(setup(), players)

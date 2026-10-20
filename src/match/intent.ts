@@ -14,14 +14,13 @@
 // (`src/pulse/perception.ts`). The player's troops head out on that same first tick, so the raid soon meets
 // them on the way; what it goes for *first* is still this, and the panel says no more than that.
 //
-// **Along which way**: the path one of the group's units would take toward that target by the kernel's
-// own step rule (`rankedSteps`: greedy, four-way, sliding along whatever blocks it), over the terrain and
-// the buildings as they stand when the round starts — the nearest unit whose walk gets there, since a
-// greedy step can leave some pressing on a ridge that others go round. Units are left out of what blocks
-// it, since they move. A forecast of the approach that never walks through a ridge, so a trail drawn on it
-// cannot lie about the way round; a group none of whose units can get there is shown pressing on what
-// stops it, which is what the kernel will do too. The kernel's own step rule walks it, so the trail follows the
-// screen's diagonal as the units will, and "next to it" is touching along a side, as melee's touch is.
+// **Along which way**: the path one of the group's units would take toward that target by the kernel's own
+// routes (`src/routing/`: a distance field to the tiles beside the target, walked downhill), over the terrain and the
+// buildings as they stand when the round starts — the nearest unit whose walk gets there. Units are left out of what
+// blocks it, since they move. A forecast of the approach that never walks through a ridge, so a trail drawn on it
+// cannot lie about the way round; a group none of whose units can get there is shown as far as it can go. The
+// kernel's own ranking walks it, so the trail follows the screen's diagonal as the units will, and "next to it" is
+// touching along a side, as melee's touch is.
 //
 // **And where the player's own troops head** (`foreseeRound`): the target the level names for their side,
 // read off the same opening — which units go, those standing and those the round's waves will bring, and the
@@ -33,11 +32,12 @@
 
 import type { ContentDef, ContentRegistry, ProductionRecipe } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { footprintDistance, footprintSteps, nearestFootprintTile, nearestTile, tilesOf } from "../grid/coords.ts"
-import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord } from "../grid/types.ts"
+import { directionOf, footprintDistance, footprintSteps, nearestFootprintTile, nearestTile, tilesOf } from "../grid/coords.ts"
+import { OccupancyIndex } from "../grid/occupancy.ts"
+import type { Coord, Direction } from "../grid/types.ts"
+import { DistanceField, goalsNear, groundFor, rankSteps, wallsOf } from "../routing/index.ts"
 import type { MissionDefinition } from "../mission/types.ts"
-import { contextFor, rankedSteps, stepTick } from "../pulse/index.ts"
+import { contextFor, stepTick } from "../pulse/index.ts"
 import { followsTarget } from "../pulse/target.ts"
 import { regionTiles } from "../mission/validate.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
@@ -159,22 +159,34 @@ function chosenTarget(arrivals: readonly Arrival[], after: ReadonlyMap<number, E
 }
 
 /**
- * The way `walker`, standing at `from`, would walk toward `target` by the kernel's step rule, over the
- * terrain and `structures` (an index of the structures alone): every step's anchor, until it stands next
- * to the target — touching it along a side (`footprintSteps`) — or no step gets it closer. Next to it rather
- * than in range: a group's ranged units stop short and its others close in, and the way is drawn to what it
- * goes for. Each step brings it closer, so the walk ends within the distance it started at.
+ * The way `walker`, standing at `from`, would walk toward `target` by the kernel's routes (`src/routing/`), over the
+ * terrain and `structures` (an index of the structures alone): every step's anchor, downhill on the distance field to
+ * the tiles beside the target — touching it along a side — until it stands there, or no route reaches it. Next to it
+ * rather than in range: a group's ranged units stop short and its others close in, and the way is drawn to what it
+ * goes for. A step as good as another goes by the turn from the way the walker faces the target, as the kernel's does;
+ * a tie still left, which the kernel breaks with a draw, takes the first in compass order here: a forecast draws nothing.
  */
 function walk(structures: OccupancyIndex, registry: ContentRegistry, walker: ContentDef, from: Coord, target: IntentTarget): Coord[] {
-  const mask = maskFrom(structures, { layers: walker.collidesWith, terrain: walker.layer === "air" ? "ignore" : "impassable" })
   const footprint = registry.get(target.contentId).footprint
+  const blocked: Coord[] = []
+  for (let y = 0; y < structures.grid.height; y += 1) {
+    for (let x = 0; x < structures.grid.width; x += 1) {
+      const tile = { x, y }
+      if (walker.collidesWith.some((layer) => structures.occupantAt(layer, tile) !== null)) blocked.push(tile)
+    }
+  }
+  const ground = groundFor(wallsOf(structures.grid, walker.layer === "air" ? "ignore" : "impassable", blocked), walker.footprint)
+  const field = new DistanceField(ground, goalsNear(ground, walker.footprint, target.anchor, footprint, { kind: "touch", steps: 1 }))
   const path: Coord[] = []
   let at = from
-  while (footprintSteps(at, walker.footprint, target.anchor, footprint) > 1) {
-    const goal = nearestFootprintTile(at, target.anchor, footprint)
-    const next = rankedSteps(at, walker, mask, { goal, intent: "toward" })[0]
+  let facing: Direction = "s"
+  while (footprintSteps(at, walker.footprint, target.anchor, footprint) > 1 && path.length < structures.grid.width * structures.grid.height) {
+    const nose = nearestFootprintTile(nearestFootprintTile(at, target.anchor, footprint), at, walker.footprint)
+    facing = directionOf(nose, nearestFootprintTile(nose, target.anchor, footprint), facing)
+    const next = rankSteps(field, at, facing).flat().find((choice) => choice.downhill)
     if (next === undefined) break
     at = next.to
+    facing = next.direction
     path.push(at)
   }
   return path

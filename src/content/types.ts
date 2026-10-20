@@ -199,17 +199,6 @@ export type ContentDef = Readonly<{
    */
   constructionRadius?: number
   /**
-   * Room around a building that makes units (the owner, round 5: "barraks and other spawning buildings should
-   * require minimum distance from other buildings so they leave space for units spawning"): no tile of another
-   * building may stand within this many tiles of it, measured as range is (`footprintWithin`), to the nearest tile
-   * of each footprint, a row counting two columns. At 1 nothing touches it along a side, so the ring its units
-   * appear on stays open.
-   * It holds both ways, for a building placed near it and for it placed near a building. Absent: it keeps no
-   * room. Only the Build Phase reads it (`src/build/territory.ts`); the kernel never does. While the "Barracks
-   * room" Experiment is being felt, its value replaces this number on every structure that has one.
-   */
-  clearance?: number
-  /**
    * Supply (the owner, 2026-10-16: "Supply should be controlled by another building"): a structure with this lets its
    * side field this many more units at once. A side's supply is the sum of what its standing structures give; a side
    * whose structures give none has no cap, so every map and scenario from before supply resolves exactly as it did.
@@ -244,6 +233,12 @@ export type ProductionRecipe = Readonly<{
   firstTicks: number
   /** Ticks from one wave to the next. */
   intervalTicks: number
+  /**
+   * How its units leave its roof (pulse.md, units walk out over the roofs): absent, by their ordinary route toward
+   * where they are going, stepping down on the side that faces it; `"ground"`, to the nearest open ground first, then
+   * on their way. The "Way off the roof" Experiment sets it on every building that makes units.
+   */
+  exit?: "ground"
 }>
 
 /**

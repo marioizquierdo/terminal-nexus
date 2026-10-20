@@ -192,17 +192,18 @@ test("the stuck warning names the actor's own tile, not the one it cannot enter"
   // Owner playtest, 2026-08-22: two units at the top of the Grid stopped facing each other across a
   // two-tile rock, and the log said `stuck A:trooper#3 at (20,2)` — which is the rock. The blocked
   // tile is exactly the one tile the actor is guaranteed *not* to be standing on, so reporting it as
-  // a position sent a reader to look at the wrong cell.
-  const resolved = await resolveScenario("on-axis-deadlock.map.json")
+  // a position sent a reader to look at the wrong cell. Routes walk round that rock now; a hauler three
+  // tiles wide before a gap two wide still stands for good, as near as it can get.
+  const resolved = await resolveScenario("hauler-two-tile-gap.map.json")
   const lines = buildLog(reportInputOf(resolved), "warn").filter((line) => /no legal step/.test(line))
-
-  const trooper = lines.find((line) => /A:trooper#1/.test(line))
-  assert.ok(trooper !== undefined, "the trooper no longer stalls in front of the rock")
-  assert.match(trooper, /at \(9,5\)  no legal step for \d+ ticks  wants \(10,5\)/)
-
-  const runner = lines.find((line) => /B:runner#2/.test(line))
-  assert.ok(runner !== undefined, "the runner no longer stalls on the far side of the same rock")
-  assert.match(runner, /at \(12,5\)  no legal step for \d+ ticks  wants \(11,5\)/)
+  const hauler = lines.find((line) => /A:hauler#1/.test(line))
+  assert.ok(hauler !== undefined, "the hauler no longer stands before the gap")
+  const stands = resolved.run.finalState.entities.find((entity) => entity.id === "A:hauler#1")
+  assert.ok(stands !== undefined)
+  const where = /at \((\d+),(\d+)\)  no legal step for \d+ ticks  wants \((\d+),(\d+)\)/.exec(hauler)
+  assert.ok(where !== null, hauler)
+  assert.deepEqual([Number(where[1]), Number(where[2])], [stands.anchor.x, stands.anchor.y], "the warning names a tile it does not stand on")
+  assert.notDeepEqual([Number(where[3]), Number(where[4])], [stands.anchor.x, stands.anchor.y])
 })
 
 test("no stuck warning in any scenario reports an impassable tile as a position", async () => {

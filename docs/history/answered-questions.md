@@ -6,6 +6,9 @@ Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
+| Q20 | 2026-10-20 | **C: a fighting unit with nothing in reach heads for the enemy's Grid Nexus.** Mario, planning the pathfinding milestone (feedback F184): "It's just going to be going to the enemy nexus." The register's own condition for C — "only once advance on the enemy Nexus is a rule the game wants anyway" — is met, and it was built as a rule of where a side heads rather than as a new behaviour: a side with no target heads for the enemy Nexus and turns on what comes within its engage reach, as a side with a target does. Perception still scans every enemy; capping that scan for scale now has its answer ready | [`pulse.md`](../system-design/pulse.md) 1.5 (a side's target); `src/pulse/perception.ts` (`headsForNexus`) |
+| Q15 | 2026-10-20 | **Neither: a unit with no route stands as near its goal as it can get, and says so.** Answered by the pathfinding milestone Mario asked for (feedback F183): units walk distance fields, so one that can reach its goal always walks there; where no way exists — a body three wide before every gap two wide, a target walled in — it walks to the anchor it can reach nearest the goal and stands there, reporting `no-route` | [`pulse.md`](../system-design/pulse.md) 1.6 (routes); [`grid.md`](../system-design/grid.md) 7.6 |
+| Q14 | 2026-10-20 | **Mirror-fair: a step as good as another goes by the turn from the way the unit faces its goal, then by a seeded draw; the compass order is gone.** Answered by the pathfinding milestone, as the register recommended ("decide it with the routing work"): the last tie-break that read the Grid in a fixed order, after every other went by what a unit faces (no side wins by where it stands) | [`pulse.md`](../system-design/pulse.md) 1.3a and 1.6 |
 | Q81 | 2026-10-20 | **A banner is set in the Build Phase, as part of the plan — and not yet.** Mario (feedback F184): "placing the banner is during the build phase, of course. We don't know how to deal with that in the UI yet, but the idea will be to do that when we can prove there is a good plan for it. So for now, there is no banner. It's just going to be going to the enemy nexus. Or maybe we have to define the target position for campaign as well." The pathfinding milestone builds the goals a unit heads for — the enemy's Grid Nexus, and a campaign level's target — and no banner; a banner comes when there is a plan for it on screen | [`milestone-16-pathfinding.md`](../milestones/milestone-16-pathfinding.md) (goals); [`backlog.md`](../milestones/backlog.md) (banners) |
 | Q79 | 2026-10-15 | **B, and no Experiment: the game paints its own background at 256 colours and in millions.** Mario (feedback F177), answering the question his Solarized remark opened: "while Terminal Nexus is game played on the terminal, it is still a rich game ... colors and contrast are crucial here, and we can only achieve that with colored backgrounds. We also implement layers and transparency, all that needs a strong control over the background." Every cell carries the theme's ground as its fill, a frame smaller than the screen is grown with ground, fades and see-through mixes blend toward that ground, and monochrome alone leaves the terminal's own colours. The Background setting is a choice of look rather than a match for the terminal | [`presentation.md`](../system-design/presentation.md) (the game owns the ground); `src/view/roles.ts` (`resolveCell`), `src/view/backends/ansi.ts` |
 | Q30 | 2026-09-21 | **A, built.** The Build Phase panel is the construct menu, what is left to spend, the selected item's cost and effect, and the reason a placement was refused — and **no radius preview**, because nothing in the content that exists has a radius. Gate 5B built exactly the recommendation and the panel came out shorter than gate 5A's, not longer: the blocks it replaced were reporting things already visible on the Grid | [`engine.md`](../system-design/grid-engine.md) Section 9.2; [`docs/history/milestones/milestone-05-build-phase.md`](milestones/milestone-05-build-phase.md) |
@@ -990,3 +993,81 @@ fifth more per credit, do not change that much: a Garrison at 40 credits instead
 **Recommendation: A**, measured on the curve level before it is built for good: it keeps survivors (they still
 fight, and a place is worth keeping), it makes "new units much stronger" matter, since a place is the scarce thing,
 and it is the cap the economy was always going to need. Try a cap that a plan reaches by about round 4.
+
+### Q14 — answered (Should the movement tie-break be mirror-fair, or is a fixed compass order enough?)
+
+**Status:** OPEN — parked under the pathfinding milestone ([`milestone-16-pathfinding.md`](../milestones/milestone-16-pathfinding.md)), whose routes are likely to make it moot.
+
+When two steps gain as much for the time they take — every step toward a goal does — the tie breaks on how far
+each turns from the way straight at the goal, then on a fixed compass order (`n, e, s, w`). Both sides prefer their own left, so in the mirror skirmish player A's
+formation drifts north and player B's south, and the squads meet at an angle. Swapping which player owns
+which side flips the result exactly, so there is no bias tied to identity; across seeds the mirror lands
+3-3, 4-4, 4-4, 5-1 and 4-4, which is seed variance. The artifact is real, small, and visible.
+
+| Option | Cost |
+| --- | --- |
+| A. **Keep the fixed compass order.** Document the drift | Free, and the cheapest thing to reason about. Leaves a geometric artifact a sharp player could eventually exploit |
+| B. Break equal-distance ties with a draw from the seeded gameplay stream | Removes the artifact and stays deterministic. Spends draws every tick on something no player perceives as a choice, and ties movement replay to stream position |
+| C. Derive the preference from the target vector, so the tie leans toward the target's secondary axis | Deterministic with no draws. A rule harder to explain than "the compass order", and still arbitrary when the target is exactly on an axis |
+
+**Recommendation: A, and decide it with the routing work**, which replaces greedy routing wholesale and
+is likely to make this moot. If the formations sliding past each other reads as broken rather than as
+manoeuvre, take C.
+
+**2026-10-17, from the duels:** a mirror duel between two Commander Armies went to one side most of the time, from
+tie-breaks of the same family that read the Grid west to east. **2026-10-19:** every one of those now goes by what
+the deciding unit faces, then a seeded draw (`pulse.md`, "No side wins by where it stands"), and mirror duels split
+evenly. The compass order this question is about is the one left: it is mirror-fair west to east, both sides
+preferring north, and it decides only between two steps of equal gain and turn.
+
+### Q15 — answered (What should a mover with no route do: circle, or stop?)
+
+**Status:** OPEN — parked as the opening case of the pathfinding milestone ([`milestone-16-pathfinding.md`](../milestones/milestone-16-pathfinding.md)), settled in its second step.
+
+Greedy routing has no memory. With four-way movement every legal step changes the distance to the goal, by
+one across or two up or down, so an actor approaching an obstacle **off-axis** still slides along its face
+until it clears (`obstacle-routing.map.json`), but an actor approaching **on-axis** has exactly one
+improving direction and, if a wall blocks it, no fallback: a hard stop, reported correctly by the
+`move.blocked` streak warning but never recovering. The older two-tile pacing case is
+`hauler-two-tile-gap`. The owner hit the on-axis case in a playtest ("Two units on the top of the screen
+around tick 200 got stuck"); `scenarios/on-axis-deadlock.map.json` isolates it and `tests/report.test.ts`
+asserts the `WARN stuck` it raises.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it and report it.** The log names the actor and the tile it wants | Free, and honest. A unit standing still in front of a wall forever reads as broken |
+| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and a stopped unit reads as stuck rather than idle. Still does not get the unit where it was going |
+| C. Do nothing now; real pathfinding makes it moot | Free. Bets that routing arrives before anyone watches a unit stall on-axis, which is not a safe bet |
+
+**Recommendation: A for now, then treat this as the routing work's opening case**, scoped to solve the
+on-axis dead end (a real search, or at minimum a goal offset that avoids exact axis alignment), not just
+report it more politely. B alone would ship a unit that visibly gives up.
+
+**Confirmed at large footprints** (a bug audit of the existing greedy router; the colossus and leviathan
+fixtures `colossus-two-tile-gap.map.json` and the 5x2 leviathan case): a 3x3 or 5x2 body against a gap it
+cannot pass does not pace, it hard-stops flush against the gap. And a single occupied tile anywhere in a
+large mover's footprint vetoes the whole step, because arbitration grants one winner per bridged conflict
+group rather than per contested tile. Fixing that is the same routing-priority redesign, not a bug fix.
+
+### Q20 — answered (When target selection is capped by radius for scale, what should a unit with nothing in range do?)
+
+**Status:** OPEN — parked until perception's cost is a measured problem, not a projected one; registered now because the tradeoffs are cheap to write down before any fixture depends on the answer.
+
+Perception (`hostilesOf` + `selectTarget`, `src/pulse/tick.ts`) is the one hot path that is O(N²) every
+tick: every attack-capable actor scans every hostile actor. At dozens of actors it is invisible; at the
+hundreds or thousands the owner has in mind it dominates ([`runtime.md`](../system-design/runtime.md), scaling
+toward hundreds or thousands of units, has the assessment). The undisputed fix is capping the scan to a
+radius around the actor using a coarse spatial index built from the occupancy index's own mutations. What
+is undetermined is what a unit finds when nothing is within the radius.
+
+| Option | Cost |
+| --- | --- |
+| A. **Full-scan fallback**: if nothing is within the radius, scan everything | Behaviour never changes, but defeats the point on a sparse map |
+| B. **Hold idle / keep the last target** until something enters the radius | Cheap and bounded, but a visible behaviour change: a unit that would have crossed the map to engage a straggler now ignores it. Changes fixture hashes for sparse scenarios |
+| C. **A new non-targeting `Behavior`**, such as advancing toward a fixed point (the enemy Nexus) | Bounded and intentional, but new surface: `Behavior` is `"advance" \| "flee" \| "static"` and a new one needs its own fixture and test before it is a rule |
+
+**Recommendation: none of these until the radius is actually needed.** Landing the cap inert/off by
+default is the right amount of design-now, build-later; picking a fallback is a hash-affecting decision
+that is expensive to reconsider once a fixture is pinned to it. When needed, B is the cheapest and most
+honest first cut, and A quietly reintroduces the cost the cap exists to remove. C is worth doing only once
+"advance on the enemy Nexus" is a rule the game wants anyway.

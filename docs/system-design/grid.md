@@ -248,10 +248,16 @@ Different questions compose different masks, and that is the point:
 | Where may a structure be placed? | `terrain` (unbuildable) + `obstacles` + `workers` + `units` |
 | What can this unit see or shoot? | every layer holding a hostile entity |
 
-So a worker and a soldier may share a tile, because neither one's movement mask includes the other's
+So a worker and a soldier of one side may share a tile, because neither one's movement mask includes the other's
 layer: not because of a rule about layers, but because of how their masks are composed. And a unit
 still collides with a building on a different layer, because its mask includes `obstacles`. Both
 follow from the same mechanism, and cross-layer collision is normal.
+
+**A worker crosses its own troops and never the enemy's** (RULE — `sideLayerOf`, `src/pulse/shared.ts`,
+`tests/route-scenarios.test.ts`). The ground layer a unit does not collide with — `units` for a worker, `workers` for
+a trooper — is added to its mask for the enemy's occupants only (`MaskSpec.sideLayers`): the owner's "workers walk
+over their own side's units", and the enemy's stop them. A building's wave is never set down on an enemy's worker or
+trooper either.
 
 **Make masks cheap and make them explicit.** A unit definition declares which layers it collides with.
 Nothing may compute occupancy by scanning entity lists in an inner loop, and nothing may assume a
@@ -468,7 +474,7 @@ v
 X            4 rows down: there at 2.7 s
 ```
 
-**A walk on a slant is a staircase along the screen's own diagonal** (RULE — `directionOf` and `rankedSteps`; the
+**A walk on a slant is a staircase along the screen's own diagonal** (RULE — `directionOf` and `rankSteps`; the
 picture is the kernel's own walk). Every step toward a goal closes distance in proportion to the time it takes, so
 no step is better than another by pace alone, and the way straight at the goal decides: a mover steps along
 whichever way has more columns left, a row counting two, and across on a tie. Toward a goal on the screen's 45° it
@@ -542,24 +548,26 @@ jebacfk
   lgm
 ```
 
-A building's wave is set down differently: on the first free tiles of the ring round its footprint, corners
-included, in reading order (`spawnOneNear`, `footprintRing`), so the troops a Barracks sends stand in a line above
-it when that ground is free.
+A building's wave is set down differently: on the free tiles of the ring round its footprint, corners included,
+nearest where its units head, ties drawn (`spawnOneNear`, `footprintRing`), so the troops a Barracks sends stand on
+its side facing the fight.
 
-### 7.6 Where greedy steps stop
+### 7.6 Where a route cannot reach
 
-Every four-way step changes the distance to a goal, by one across or two up or down; no step merely holds it level.
-An actor approaching an obstacle off-axis still has two improving directions and can slide along the obstacle's
-face; an actor exactly on-axis with its goal has one, and if a wall blocks it there is no fallback at all. What a
-mover with no route should do is an open question (Q15 in [`open-questions.md`](../milestones/open-questions.md),
-with the measurement and the recommendation); real pathfinding is what closes it, and greedy steps were never
-meant to.
+A unit walks a route (the Pulse's routes, [`pulse.md`](pulse.md)), so it goes round a wall or out of a pocket however
+it meets it. Where no way exists at all — a body three tiles wide before every gap two wide, a target walled in — it
+walks to the anchor it can reach nearest its goal and stands there, saying it has no route (`move.blocked`, reason
+`no-route`). Before routes, units took only steps that brought them strictly closer, and stood for good before an
+obstacle straight between them and their goal.
 
 ### 7.7 Terrain and positions
 
-**IDEA**: terrain could make a step dearer. Nothing does yet; where it did, a walk would no longer take its
-distance, and "in range" and "can get there in that time" would part. Immutable terrain cannot be attacked; only
-blockers explicitly marked destructible enter targeting and damage.
+**Terrain can make a step dearer** (RULE — `TerrainKind.stepWeight`, `src/grid/types.ts`; `route-slow-ground`,
+`route-scrub-crossing`). Scrub weighs 2: a step onto it costs twice its length in movement credit, so a unit crosses
+it at half its pace, and a route counts it so, going round a band of it when that is quicker. A wide body pays the
+heaviest ground it would cover. Air ignores it, as it ignores rock. On slow ground a walk no longer takes its
+distance, and "in range" and "can get there in that time" part, as they should there. Immutable terrain cannot be
+attacked; only blockers explicitly marked destructible enter targeting and damage.
 
 There is **no fractional authoritative position** (RULE — `src/grid/types.ts`). A unit stands on a whole tile, both
 its squares at once; between-tile positions are something the renderer invents for smoothness and the kernel never

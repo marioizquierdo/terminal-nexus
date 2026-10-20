@@ -81,8 +81,8 @@ export type SpawnAction = Readonly<{
  * **A side's target**: from this moment, every fighting unit of `side` — those on the Grid, those a building
  * trains, those carried into later rounds — heads for `region`, engages an enemy that comes within its reach
  * on the way, and stands there when nothing does (the kernel's rule: `src/pulse/target.ts`). It holds, round
- * after round, until another `target` for the side moves it. A side no `target` names keeps the one rule
- * every unit had before: engage the nearest enemy, wherever it is.
+ * after round, until another `target` for the side moves it. A side no `target` names heads for the enemy's
+ * Grid Nexus, engaging what comes within its reach on the way (`headsForNexus`, `src/pulse/perception.ts`).
  *
  * It replaced the `order` a spawned group once carried (`{ advance: region }`), which the kernel never read:
  * a side's target is what the kernel keeps, and a group's line of `intent` is what the player reads.

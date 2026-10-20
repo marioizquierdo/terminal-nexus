@@ -171,6 +171,9 @@ export type MaskSpec = Readonly<{
   overlay?: ClaimOverlay
   /** Tiles still settling after a death — treated as blocked, like terrain. */
   vacated?: VacatedOverlay
+  /** Layers whose occupants block only when `blocks` says so: what a mover shares with its own side and not the
+   *  enemy's — a worker crosses its own troops, never the enemy's (pulse.md, routes). */
+  sideLayers?: Readonly<{ layers: readonly EntityLayer[]; blocks: OccupantLookup }>
 }>
 
 /** A lazy view over an occupancy index. Never a materialised boolean grid — see the note above. */
@@ -209,6 +212,15 @@ export class CollisionMask {
       if (this.ignored.has(occupant)) continue
       if (this.spec.predicate !== undefined && !this.spec.predicate(occupant)) continue
       return occupant
+    }
+    const side = this.spec.sideLayers
+    if (side !== undefined) {
+      for (const layer of side.layers) {
+        const claimed = this.spec.overlay?.claimantAt(layer, tile) ?? null
+        const occupant = claimed ?? this.index.occupantAt(layer, tile)
+        if (occupant === null || this.ignored.has(occupant) || !side.blocks(occupant)) continue
+        return occupant
+      }
     }
     return null
   }

@@ -13,7 +13,7 @@ import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import { hasRoom, supplyCostOf, supplyOf } from "../src/content/supply.ts"
 import type { ProductionRecipe } from "../src/content/index.ts"
-import { footprintRing } from "../src/grid/coords.ts"
+import { footprintRing, tilesOf } from "../src/grid/coords.ts"
 import { openingState, recall, resolveMissionPulse, spawnRecipe, spawningRegistry } from "../src/match/index.ts"
 import type { Force, MissionPulse } from "../src/match/index.ts"
 import { PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
@@ -99,7 +99,7 @@ test("a building makes its units one way in a battle: given a recipe, the Hatche
 
 // --- The kernel's production phase -----------------------------------------------------------------
 
-test("a wave comes whole on its tick: every unit of it at once, side by side in the ring round the building", () => {
+test("a wave comes whole on its tick: every unit of it at once, side by side on the building's roof", () => {
   const { run } = lone(recipe())
   const trained = trainedEvents(run.events)
   assert.deepEqual(trained.map((event) => event.tick), [60, 60, 60, 60], "the wave came at the wrong tick, or not all at once")
@@ -111,10 +111,11 @@ test("a wave comes whole on its tick: every unit of it at once, side by side in 
     assert.equal(event.player, "A")
     assert.equal(event.contentId, TROOPER)
   }
-  // The first four tiles of the ring, in its fixed order: a row of four along the Barracks's north side.
-  const ring = footprintRing(3, 2, 1).map((offset) => ({ x: barracks.anchor.x + offset.x, y: barracks.anchor.y + offset.y }))
-  assert.deepEqual(trained.map((event) => (event.kind === "entity.spawned" ? event.at : null)), ring.slice(0, 4))
-  assert.ok(ring.slice(0, 4).every((tile) => tile.y === barracks.anchor.y - 1))
+  // On top of it (pulse.md, units walk out over the roofs): four of its six tiles, never two on one.
+  const roof = new Set(tilesOf(barracks.anchor, FIXTURE_REGISTRY.get(BARRACKS).footprint).map((tile) => `${tile.x},${tile.y}`))
+  const at = trained.map((event) => (event.kind === "entity.spawned" ? `${event.at.x},${event.at.y}` : ""))
+  assert.ok(at.every((tile) => roof.has(tile)), `a trooper came down off the roof: ${at.join(" ")}`)
+  assert.equal(new Set(at).size, 4, "two troopers on one tile")
   assert.deepEqual([barracks.produced, barracks.owed], [1, 0])
   assert.equal(run.finalState.entities.filter((entity) => entity.contentId === TROOPER).length, 4)
 })
@@ -140,17 +141,17 @@ test("a crowded building never spawns fewer: what fits comes out on the wave's t
   const barracks = run.finalState.entities.find((entity) => entity.contentId === BARRACKS)
   assert.deepEqual([barracks?.produced, barracks?.owed], [1, 0])
 
-  // Walled in by its own side, a trooper on each of those six tiles, it owes every wave and spawns nothing; the
-  // schedule does not wait for it, so both waves have come and both are owed.
+  // Walled in by its own side, a trooper on each of those six tiles, nothing it sets on its roof can walk off: its roof
+  // fills, the rest of what it owes stays owed, and the schedule does not wait for it, so both waves have come.
   const free = footprintRing(3, 2, 1)
     .map((offset) => ({ x: corner.x + offset.x, y: corner.y + offset.y }))
     .filter((tile) => grid.tiles[tile.y * grid.width + tile.x] !== "terrain.rock")
   assert.equal(free.length, 6)
   const crowd: Force[] = free.map((tile) => ({ player: "A", muster: tile, units: [TROOPER] }))
-  const boxed = lone(recipe({ perWave: 2, waves: 2, firstTicks: 12, intervalTicks: 24 }), 60, corner, crowd)
+  const boxed = lone(recipe({ perWave: 4, waves: 2, firstTicks: 12, intervalTicks: 24 }), 60, corner, crowd)
   const walledIn = boxed.run.finalState.entities.find((entity) => entity.contentId === BARRACKS)
-  assert.equal(ticksOf(boxed.run.events).length, 0)
-  assert.deepEqual([walledIn?.produced, walledIn?.owed], [2, 4])
+  assert.deepEqual(ticksOf(boxed.run.events), [12, 12, 12, 12, 36, 36], "the roof did not fill, or filled past its six tiles")
+  assert.deepEqual([walledIn?.produced, walledIn?.owed], [2, 2])
 })
 
 test("a building without a recipe carries no production fields, so a state without a producer is byte for byte what it was", () => {
@@ -209,18 +210,20 @@ test("the Barracks and the Hatchery say what they spawn on their own cards, and 
   assert.equal(spawningRegistry(FIXTURE_REGISTRY, {}, FIRST_WAVE), FIXTURE_REGISTRY)
 })
 
-test("PERIMETER's round 1: the Barracks on the map sends its four troopers together, five seconds in, beside it", () => {
+test("PERIMETER's round 1: the Barracks on the map sends its four troopers together, five seconds in, on its roof", () => {
   const run = round(1, null)
   const opening = run.states[0]?.entities.find((entity) => entity.contentId === BARRACKS)
   assert.ok(opening !== undefined)
   assert.deepEqual([opening.productionCooldown, opening.produced, opening.owed], [FIRST_WAVE, 0, 0])
   const trained = trainedEvents(run.events)
   assert.deepEqual(trained.map((event) => event.tick), [60, 60, 60, 60])
-  // A row of four along its north side, the side facing where they head (the line, the troops' target): the tiles of
-  // the ring nearest it, the middle ones first and the ties between them drawn.
-  const ring = footprintRing(3, 2, 1).map((offset) => ({ x: opening.anchor.x + offset.x, y: opening.anchor.y + offset.y }))
-  const at = trained.map((event) => (event.kind === "entity.spawned" ? `${event.at.x},${event.at.y}` : "")).sort()
-  assert.deepEqual(at, ring.slice(0, 4).map((tile) => `${tile.x},${tile.y}`).sort())
+  // On its roof, on the tiles nearest where they head (the line, the troops' target, north-west of it): its north row
+  // whole, and the ties for the fourth drawn.
+  const roof = tilesOf(opening.anchor, campaignRegistry.get(BARRACKS).footprint)
+  const at = trained.map((event) => (event.kind === "entity.spawned" ? `${event.at.x},${event.at.y}` : ""))
+  assert.ok(at.every((tile) => roof.some((own) => `${own.x},${own.y}` === tile)), `a trooper came down off the roof: ${at.join(" ")}`)
+  const north = roof.filter((tile) => tile.y === opening.anchor.y).map((tile) => `${tile.x},${tile.y}`)
+  assert.ok(north.every((tile) => at.includes(tile)), `the north row is not all taken: ${at.join(" ")}`)
 })
 
 test("a building the player placed spawns too, its wave on the same tick as the map's; a Hatchery's brood the same way", () => {
@@ -262,9 +265,32 @@ test("supply: an army fields no more than its buildings give, and a wave past it
     supplyOf(state.entities.filter((entity) => entity.player === "A").map((entity) => campaignRegistry.get(entity.contentId))).used
   for (const state of run.states) assert.ok(unitsAt(state) <= 12, `the army took ${unitsAt(state)} places at tick ${state.tick}`)
   const trained = trainedEvents(run.events).map((event) => event.tick)
-  // Seven fit as the first waves come; the rest come later, as places open.
+  // Seven fit as the first waves come; the rest wait for a place.
   assert.equal(trained.filter((tick) => tick === 60).length, 7)
-  assert.ok(trained.some((tick) => tick > 60), "no unit waiting for a place ever came")
+
+  // And a wave that waits comes as places open: twelve troopers fill what the Grid Nexus gives and meet eight raiders;
+  // the Barracks's wave of four comes as they fall, each the tick after a place opens, never past twelve.
+  const full = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: recipe() })
+  const initialState = openingState({
+    grid,
+    registry: full,
+    structures: [{ contentId: "structure.citizen.nexus", anchor: { x: 17, y: 10 } }, { contentId: BARRACKS, anchor: { x: 25, y: 10 } }],
+    setup: {
+      seed: 1,
+      pulseTicks: 400,
+      forces: [
+        { player: "A", muster: { x: 40, y: 12 }, units: Array.from({ length: 12 }, () => TROOPER) },
+        { player: "B", muster: { x: 50, y: 12 }, units: Array.from({ length: 8 }, () => "unit.ravel.raider") },
+      ],
+    },
+  })
+  const battle = resolvePulse({ initialState, registry: full, pulseTicks: 400, seed: 1 })
+  const fell = battle.events.filter((event) => event.kind === "entity.died" && event.entity.startsWith("A:")).map((event) => event.tick)
+  const came = ticksOf(battle.events)
+  assert.equal(came.length, 4, `the wave did not all come: ${JSON.stringify(came)}`)
+  assert.ok(came.some((tick) => tick > 60), "no unit waiting for a place ever came")
+  // Each comes no earlier than enough places have opened for it.
+  came.forEach((tick, index) => assert.ok(fell.filter((death) => death < tick).length >= index + 1, `the ${index + 1}th came at ${tick} with no place for it`))
 })
 
 test("supply's arithmetic: a unit takes 1 unless it says, a Commander none, a structure none; no building giving any is no cap", () => {
@@ -314,6 +340,7 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 
 // PERIMETER's round 1 as the rules play it: Vasse arriving with the squads, who hold the line ahead of the base, By
 // the Book guarding those beside her, the Barracks's four troopers together five seconds in, a row counting two
-// columns in every distance and step, every step taking whole beats, one across and two up or down, and every tie
-// broken by what a unit faces, then a draw.
-const PINNED_ROUND_1 = "fc45c478959f17ae16193620699b533236073809881b7765bd5a502138c567aa"
+// columns in every distance and step, every step taking whole beats, one across and two up or down, every tie
+// broken by what a unit faces, then a draw, every unit walking by its route, the raid heading for the Nexus,
+// turning only to what comes within its reach, and the Barracks's wave coming out over its roof.
+const PINNED_ROUND_1 = "e81d7592d1c112292269aabcedd9c948de134f3f628d44304fb595ae4074427c"

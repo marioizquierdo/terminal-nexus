@@ -1,0 +1,60 @@
+{
+  "id": "route-pocket",
+  "name": "Route: the pocket - a trooper at the bottom of a rock cup, its goal beyond the bottom",
+  "notes": "A cup of rock open to the north, a trooper inside it at the bottom, the enemy's Grid Nexus straight south beyond the cup. Every step out of the cup first takes it further from its goal, which the greedy step never took. Done when the trooper climbs out, walks round and the Nexus falls.",
+  "grid": {
+    "width": 24,
+    "height": 12
+  },
+  "seed": 1,
+  "pulseTicks": 1200,
+  "terrain": [
+    "........................",
+    "........................",
+    "........#.......#.......",
+    "........#.......#.......",
+    "........#.......#.......",
+    "........#.......#.......",
+    "........#.......#.......",
+    "........#########.......",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 12,
+        "y": 6
+      },
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 12,
+        "y": 10
+      },
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.citizen.nexus"
+        }
+      }
+    }
+  }
+}

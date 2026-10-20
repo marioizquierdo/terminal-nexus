@@ -10,7 +10,7 @@ import { STARTER_STANDING, STARTER_START_CURSOR, starterGrid } from "../src/buil
 import type { RaidForecast } from "../src/build/types.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { footprintDistance } from "../src/grid/coords.ts"
+import { footprintSteps } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { foreseeIntents, foreseeRound, recall, resolveMissionPulse, restoreCommanders, spawningRegistry } from "../src/match/index.ts"
 import type { Absence, Arrival, MissionPulseInput, StructurePlacement } from "../src/match/index.ts"
@@ -25,12 +25,13 @@ const grid = starterGrid()
 const registry = FIXTURE_REGISTRY
 const TURRET = "structure.bench.beamturret"
 const BARRACKS = "structure.citizen.barracks"
+const NEXUS = "structure.citizen.nexus"
 
 const turrets = (...anchors: readonly Coord[]): StructurePlacement[] => anchors.map((anchor) => ({ contentId: TURRET, anchor }))
 
-/** Two plans, a round each: none, and a few Turrets toward the ridge and the flats each round — the second
- *  makes the raid's choice move, and its first round stands a Turret just beyond the ridge, straight below its
- *  north face, where the probe's way presses on the rock. */
+/** Three plans, a round each: none; a few Turrets toward the ridge and the flats each round, which makes the raid's
+ *  choice move, its first round standing a Turret just beyond the ridge, straight below its north face, which the
+ *  probe's way walks round; and a Turret a round by the line, so a base that holds plays every round. */
 const PLANS: readonly (readonly (readonly StructurePlacement[])[])[] = [
   [[], [], []],
   [
@@ -38,6 +39,7 @@ const PLANS: readonly (readonly (readonly StructurePlacement[])[])[] = [
     turrets({ x: 31, y: 8 }, { x: 35, y: 9 }, { x: 38, y: 13 }),
     turrets({ x: 27, y: 7 }, { x: 40, y: 8 }, { x: 44, y: 12 }),
   ],
+  [turrets({ x: 24, y: 8 }), turrets({ x: 22, y: 7 }), turrets({ x: 20, y: 8 })],
 ]
 
 /** The target most of `units` chose in `state` — on a tie, the first unit's among the tied, units in
@@ -80,7 +82,16 @@ function rounds(plan: readonly (readonly StructurePlacement[])[]): MissionPulseI
   return inputs
 }
 
-test("what each group goes for first is the kernel's own choice on the real Pulse's first tick, in every round, with and without a plan", () => {
+/** Whether a round is lost on its first tick — to raiders the last round left beside the Nexus — and so ends before
+ *  anyone chooses what to go for. */
+function lostOnItsFirstTick(input: MissionPulseInput): boolean {
+  const run = resolveMissionPulse(input)
+  return run.verdict.kind !== "continue" && run.states.length <= 2
+}
+
+// It plays PERIMETER three times over, with and without a plan, each round twice: longer than Bun's five seconds a
+// test, so it says how long it may take.
+test("what each group goes for first is the kernel's own choice on the real Pulse's first tick, in every round, with and without a plan", { timeout: 60_000 }, () => {
   let compared = 0
   for (const plan of PLANS) {
     for (const input of rounds(plan)) {
@@ -88,6 +99,7 @@ test("what each group goes for first is the kernel's own choice on the real Puls
       const run = resolveMissionPulse(input)
       const first = run.states[1]
       assert.ok(first !== undefined)
+      if (lostOnItsFirstTick(input)) continue
       // The groups that arrive as the round starts: their units are in the real Pulse from tick 0.
       const arrived = run.arrivals.filter((arrival) => arrival.player === "B" && arrival.tick === 0)
       const byGroup = new Map<string, Arrival[]>()
@@ -164,40 +176,43 @@ const firstTarget = (raid: RaidForecast | undefined): string => {
   return target == null ? "nothing" : `${target.contentId}@${target.anchor.x},${target.anchor.y}`
 }
 
-test("placing a building nearer the raid moves what it goes for to it; undoing, or removing it, moves it back", () => {
+test("a building on the raid's way moves the way it would go round it, not what it goes for; undoing, or removing it, puts the way back", () => {
+  // A raid heads for the player's Nexus and turns only to what comes within its reach (`headsForNexus`), so a
+  // building out of its reach as the round opens never draws it: it changes the way, which the forecast walks round.
   const side: BuildSide = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
   const before = side.build.raid()
-  assert.equal(firstTarget(before), `${BARRACKS}@25,10`, "PERIMETER's probe goes for the Barracks with nothing built")
+  assert.equal(firstTarget(before), `${NEXUS}@17,10`, "PERIMETER's probe goes for the Nexus with nothing built")
   // Asked again with nothing changed, it is the same answer, not worked out again.
   assert.equal(side.build.raid(), before)
+  const way = (raid: RaidForecast | undefined): string => (raid?.[0]?.path ?? []).map((tile) => `${tile.x},${tile.y}`).join(" ")
+  assert.ok(way(before).includes("26,7"), "the probe's way no longer crosses the tile the Turret goes on")
 
-  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 28, y: 8 }, { kind: "click-tile", x: 28, y: 8 }])
+  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 26, y: 7 }, { kind: "click-tile", x: 26, y: 7 }])
   assert.equal(side.build.state.planned.length, 1)
   const turret = side.build.raid()
-  assert.equal(firstTarget(turret), `${TURRET}@28,8`, "a Turret on the probe's way did not draw it")
-  // The way now ends beside the Turret.
-  const way = turret?.[0]?.path ?? []
-  const last = way.at(-1)
-  assert.ok(last !== undefined && footprintDistance(last, [{ x: 0, y: 0 }], { x: 28, y: 8 }, [{ x: 0, y: 0 }]) <= 1)
+  assert.equal(firstTarget(turret), `${NEXUS}@17,10`, "a Turret out of the probe's reach drew it")
+  assert.ok(!way(turret).includes("26,7"), "the way walks through the Turret")
+  assert.notEqual(way(turret), way(before))
 
   side.build.dispatch({ kind: "undo" })
   assert.equal(side.build.state.planned.length, 0)
-  assert.equal(firstTarget(side.build.raid()), `${BARRACKS}@25,10`, "undoing did not move it back")
+  assert.equal(way(side.build.raid()), way(before), "undoing did not put the way back")
 
-  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 28, y: 8 }, { kind: "click-tile", x: 28, y: 8 }])
-  assert.equal(firstTarget(side.build.raid()), `${TURRET}@28,8`)
+  side.build.run([{ kind: "arm", index: 2 }, { kind: "click-tile", x: 26, y: 7 }, { kind: "click-tile", x: 26, y: 7 }])
+  assert.equal(way(side.build.raid()), way(turret))
   side.build.run([{ kind: "focus", target: "grid" }, { kind: "remove" }])
   assert.equal(side.build.state.planned.length, 0)
-  assert.equal(firstTarget(side.build.raid()), `${BARRACKS}@25,10`, "removing did not move it back")
+  assert.equal(way(side.build.raid()), way(before), "removing did not put the way back")
 })
 
 /** Whether a tile is rock on the starter map. */
 const rock = (tile: Coord): boolean => grid.tiles[tile.y * grid.width + tile.x] === "terrain.rock"
 
-test("the way each group would go is the kernel's own steps: one tile at a time, never through rock, ending next to what it goes for or pressed against rock", () => {
-  let pressed = 0
+test("the way each group would go is the kernel's own route: one tile at a time, never through rock, round the ridge, ending next to what it goes for", () => {
+  let checked = 0
   for (const plan of PLANS) {
     for (const input of rounds(plan)) {
+      if (lostOnItsFirstTick(input)) continue
       for (const group of foreseeIntents(input)) {
         assert.ok(group.target !== null)
         assert.ok(group.path.length > 0, `${group.group} has no way`)
@@ -207,23 +222,21 @@ test("the way each group would go is the kernel's own steps: one tile at a time,
           if (previous !== undefined) assert.equal(Math.abs(step.x - previous.x) + Math.abs(step.y - previous.y), 1, `${group.group} jumps`)
           previous = step
         }
-        // Next to it — or where the step rule leaves it no closer step: the kernel's greedy steps stop on
-        // a ridge's face when what they go for is straight beyond it, and the way says so.
+        // Next to it, touching it along a side: a route goes round the ridge to what lies beyond it, where the first
+        // routing's greedy steps stood pressed on its face.
         const end = group.path.at(-1) as Coord
-        const nearest = [...group.target.tiles].sort((a, b) => Math.abs(a.x - end.x) + Math.abs(a.y - end.y) - (Math.abs(b.x - end.x) + Math.abs(b.y - end.y)))[0] as Coord
-        const near = Math.abs(nearest.x - end.x) + Math.abs(nearest.y - end.y)
-        if (near === 1) continue
-        const toward = Math.abs(nearest.x - end.x) >= Math.abs(nearest.y - end.y) ? { x: end.x + Math.sign(nearest.x - end.x), y: end.y } : { x: end.x, y: end.y + Math.sign(nearest.y - end.y) }
-        assert.ok(rock(toward), `${group.group}'s way ends ${near} tiles from what it goes for, with nothing in its way`)
-        pressed += 1
+        const touching = group.target.tiles.some((tile) => Math.abs(tile.x - end.x) + Math.abs(tile.y - end.y) === 1)
+        assert.ok(touching, `${group.group}'s way ends at ${end.x},${end.y}, not beside what it goes for`)
+        checked += 1
       }
     }
   }
-  // The Turret just beyond the ridge is such a dead end: the probe presses on the ridge's north face.
-  assert.ok(pressed > 0)
+  assert.ok(checked >= 6, `only ${checked} ways were checked`)
 })
 
-test("the forecast says where the player's troops head as each round starts — the line, by its name — and who goes, off the round's own opening", () => {
+// It plays PERIMETER three times over, once a plan: longer than Bun's five seconds a test, so it says how long it may
+// take.
+test("the forecast says where the player's troops head as each round starts — the line, by its name — and who goes, off the round's own opening", { timeout: 60_000 }, () => {
   const line = Array.from({ length: 10 }, (_, index) => ({ x: 22 + (index % 5), y: 7 + Math.floor(index / 5) }))
   let rounds_ = 0
   for (const plan of PLANS) {

@@ -224,6 +224,5 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     // The Ravel side's Barracks when it is a player's (the Ravel faction's `den` card): a build range, and a tile of
     // room round it for the runners it sends. Only the Build Phase reads either.
     constructionRadius: 6,
-    clearance: 1,
   },
 ]

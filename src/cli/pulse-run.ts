@@ -368,7 +368,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
   /** The content a round's Pulse runs on: the level's buildings spawning their waves as their army says. The Build
    *  Phase's own registry carries no recipe. */
   const pulseRegistry = (context: BuildContext, state: BuildState): ContentRegistry =>
-    spawningRegistry(context.registry, spawnsOf(context), firstWaveTicks(state))
+    spawningRegistry(context.registry, spawnsOf(context), firstWaveTicks(state), setting(state, "roofExit"))
 
   return {
     mission,

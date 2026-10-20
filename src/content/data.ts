@@ -63,7 +63,6 @@ export type ContentEntry = Readonly<{
   spawn?: NonNullable<ContentDef["spawn"]>
   splitOnDeath?: NonNullable<ContentDef["splitOnDeath"]>
   constructionRadius?: number
-  clearance?: number
   supplyProvided?: number
   supplyCost?: number
   abilities?: readonly AbilityUse[]
@@ -138,7 +137,6 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     spawn: record<NonNullable<ContentDef["spawn"]>>({ contentId: text, intervalTicks: positiveWholeNumber, maxAlive: positiveWholeNumber }, {}),
     splitOnDeath: record<NonNullable<ContentDef["splitOnDeath"]>>({ contentId: text, count: positiveWholeNumber }, {}),
     constructionRadius: positiveWholeNumber,
-    clearance: positiveWholeNumber,
     supplyProvided: positiveWholeNumber,
     supplyCost: wholeNumber,
     abilities: list(abilityUse),
@@ -170,7 +168,6 @@ export function entryProblems(entry: ContentEntry): string[] {
     "detonation radius": entry.detonation?.radius,
     "detonation trigger": entry.detonation?.triggerRange,
     "construction radius": entry.constructionRadius,
-    clearance: entry.clearance,
     "engage range": entry.engageRange,
     ...Object.fromEntries((entry.abilities ?? []).map((ability, index) => [`ability ${index + 1}'s radius`, typeof ability["radius"] === "number" ? ability["radius"] : undefined])),
   }

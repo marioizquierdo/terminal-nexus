@@ -4,7 +4,7 @@
 // machine; nothing here reads a clock, a screen or a model — plans are handed in (`src/duel/players.ts` makes them).
 //
 // What it reuses rather than restates: the dealer (`dealHand`), the effect table (`applyEffect`, through each side's
-// loadout), the Build Phase's legality (`legalityAt`: build range, clearance, footprint, rock, cost — the rules a
+// loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a
 // player's cursor is held to), the opening and Recall (`src/match`), the Commander's absence and return, and the kernel
 // itself, each side on its own content (`PulseContext.sides`).
 
@@ -187,7 +187,7 @@ function placeAll(
         : nearest(grid, zonePoint(state, side, placement.at ?? "nexus", registry), facing(map, side), registry.get(row.contentId).footprint).slice(0, 600)
     let reason = "no legal spot near there"
     for (const anchor of tiles) {
-      const legality = legalityAt(context, planned, row.contentId, anchor, left, defaultValue("buildRange"), defaultValue("spawnClearance"))
+      const legality = legalityAt(context, planned, row.contentId, anchor, left, defaultValue("buildRange"))
       if (!legality.ok) {
         if (tiles.length === 1) reason = legality.reason
         continue
@@ -227,13 +227,13 @@ function tally(contentIds: readonly string[]): Record<string, number> {
  * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; Recall
  * brings the survivors home; a Commander who fell is out by her own rule; credits carry over, the next round adds the
  * curve's and each side's battle earnings. Returns the duel after the round, and what happened in it. `watch`, when
- * given, sees every state of the battle from its opening on, and each tick's events, with side A's content to draw it by: for a picture or a
- * viewer, never read back.
+ * given, sees every state of the battle from its opening on, and each tick's events, with side A's content to draw it by and
+ * each side's own: for a picture, a viewer or a measure, never read back.
  */
 export function playRound(
   state: DuelState,
   plans: Readonly<Record<Side, SidePlan>>,
-  watch?: (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry) => void,
+  watch?: (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry, sides: Readonly<Record<Side, ContentRegistry>>) => void,
 ): Readonly<{ state: DuelState; report: RoundReport }> {
   if (state.result !== null) throw new Error("the duel is over")
   const map = mapOf(state)
@@ -311,12 +311,12 @@ export function playRound(
   const context = contextFor(start, sides.A, state.setup.pulseTicks, { sides })
   const events: DomainEvent[] = []
   let current = start
-  watch?.(current, [], sides.A)
+  watch?.(current, [], sides.A, sides)
   while (current.outcome === null && current.tick < state.setup.pulseTicks) {
     const step = stepTick(current, context)
     current = step.state
     events.push(...step.events)
-    watch?.(current, step.events, sides.A)
+    watch?.(current, step.events, sides.A, sides)
   }
 
   // After it: who fell, what each side earned, what the next round starts from.

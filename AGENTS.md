@@ -101,6 +101,7 @@ IDEA (a sketch). The ones every session needs:
 | `armies/`, `campaigns/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions `armies/citizen` and `armies/ravel`, and one army per Commander (`vasse`, `averno`, `dob`); campaigns and their levels in `campaigns/`; the loader and the effects table. How to write one: `docs/system-design/army-authoring.md`. |
 | `src/abilities/` | What a unit does on its own (an aura, a bounty, loaded dice): one table of kinds the kernel calls at fixed moments. |
 | `src/duel/`, `bin/duel.ts` | Two armies fought out headless, script or model a side (`docs/system-design/duels.md`). |
+| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: scenarios, duels, campaign levels (`docs/system-design/measurement.md`). |
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format and the checked-in maps. |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, Recall, missions and their trigger runner. |

@@ -154,6 +154,5 @@ export const CITIZEN_CONTENT: readonly ContentDef[] = [
     salvage: 30,
     constructionRadius: 6,
     // The ring its troopers appear on, kept free of other buildings (the "Spawn space" Experiment).
-    clearance: 1,
   },
 ]

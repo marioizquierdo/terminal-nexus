@@ -276,6 +276,26 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     salvage: 14,
   },
 
+  // --- Bulwark: a push, the rule for a unit that did not walk (`bench-bulwark-shove.map.json`) ----------
+  {
+    // Milestone 16's test effect for a Grid that changes under a unit: every two seconds it shoves each enemy
+    // touching it two tiles straight away (`shove`, src/abilities/shove.ts, through the kernel's `displace`). A pushed
+    // unit stops where its body would not fit and walks back from where it lands, by its route — so the first power
+    // that pushes or pulls has the rule ready, proven here.
+    id: "unit.bench.bulwark",
+    short: "bulwark",
+    layer: "units",
+    footprint: rectFootprint(1, 1),
+    maxHp: 120,
+    movementRate: { numerator: 5, denominator: 2 },
+    speedTier: 3,
+    attack: { kind: "melee", range: 1, damage: 4, cooldownTicks: 12 },
+    collidesWith: GROUND_UNIT_COLLISIONS,
+    behavior: "static",
+    salvage: 20,
+    abilities: [{ kind: "shove", name: "Shove", tiles: 2, everyTicks: 24 }],
+  },
+
   // --- Spawner: a combat-only summon primitive (`hatchery-spawn.map.json`) -----------------------
   {
     // "Large unit that creates smaller units" needed real, new machinery: nothing in the kernel could
@@ -297,7 +317,6 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     spawn: { contentId: "unit.bench.spawnling", intervalTicks: 50, maxAlive: 3 },
     constructionRadius: 6,
     // The ring its swarmers appear on, kept free of other buildings (the "Spawn space" Experiment).
-    clearance: 1,
   },
   {
     // The disposable minion both the hatchery (periodically, while alive) and the shard-giant

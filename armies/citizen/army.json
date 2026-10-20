@@ -15,7 +15,6 @@
       "maxHp": 160,
       "salvage": 40,
       "constructionRadius": 6,
-      "clearance": 1,
       "card": {
         "title": "Garrison",
         "subtitle": "Trains pikemen",

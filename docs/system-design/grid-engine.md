@@ -225,7 +225,8 @@ Design commitments the game documents own, GUIDANCE until built and played:
 This document is the overview. The design is in its parts, one document each:
 
 - [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
-- [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, match structure, economy, events.
+- [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, routes, match structure, economy, events.
+- [`measurement.md`](measurement.md) — how a battle is measured, so results before and after a rule change compare.
 - [`content.md`](content.md) — content interfaces.
 - [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.
 - [`input.md`](input.md) — the command vocabulary, the three adapters, hotkeys and bindings.

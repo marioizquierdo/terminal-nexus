@@ -22,7 +22,7 @@ export type EntityLayer = Exclude<GridLayer, "terrain">
 
 export const ENTITY_LAYERS: readonly EntityLayer[] = ["obstacles", "workers", "units", "air"]
 
-export type TerrainId = "terrain.plain" | "terrain.rock" | "terrain.deposit"
+export type TerrainId = "terrain.plain" | "terrain.rock" | "terrain.deposit" | "terrain.scrub"
 
 export type TerrainKind = Readonly<{
   id: TerrainId
@@ -30,12 +30,17 @@ export type TerrainKind = Readonly<{
   impassable: boolean
   /** Immutable terrain cannot be attacked (grid.md). */
   destructible: boolean
+  /** What a step onto it costs against a step onto open ground: 1 for open ground, more for ground that slows a unit
+   *  down. A walk across it takes that many times as long, and a route counts it so (pulse.md, routes). Air ignores
+   *  it, as it ignores rock. */
+  stepWeight: number
 }>
 
 export const TERRAIN: Readonly<Record<TerrainId, TerrainKind>> = {
-  "terrain.plain": { id: "terrain.plain", impassable: false, destructible: false },
-  "terrain.rock": { id: "terrain.rock", impassable: true, destructible: false },
-  "terrain.deposit": { id: "terrain.deposit", impassable: false, destructible: false },
+  "terrain.plain": { id: "terrain.plain", impassable: false, destructible: false, stepWeight: 1 },
+  "terrain.rock": { id: "terrain.rock", impassable: true, destructible: false, stepWeight: 1 },
+  "terrain.deposit": { id: "terrain.deposit", impassable: false, destructible: false, stepWeight: 1 },
+  "terrain.scrub": { id: "terrain.scrub", impassable: false, destructible: false, stepWeight: 2 },
 }
 
 export function isTerrainId(value: string): value is TerrainId {

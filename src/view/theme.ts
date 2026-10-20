@@ -21,11 +21,13 @@ const TERRAIN_GLYPHS: Readonly<
     "terrain.plain": { glyph: ".", role: "terrain.plain" },
     "terrain.rock": { glyph: "#", role: "terrain.rock" },
     "terrain.deposit": { glyph: "*", role: "terrain.deposit" },
+    "terrain.scrub": { glyph: ",", role: "terrain.scrub" },
   },
   unicode: {
     "terrain.plain": { glyph: "·", role: "terrain.plain" },
     "terrain.rock": { glyph: "▓", role: "terrain.rock" },
     "terrain.deposit": { glyph: "◆", role: "terrain.deposit" },
+    "terrain.scrub": { glyph: "⁏", role: "terrain.scrub" },
   },
 }
 

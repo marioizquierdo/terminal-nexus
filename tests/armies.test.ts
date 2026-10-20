@@ -594,11 +594,11 @@ test("a unit an army defines as data is checked by path: its numbers, its glyph 
   })
   assert.deepEqual(problems, [
     'army "data": content[unit.test.heavy].maxHp should be a whole number above zero, not 0',
-    'army "data": content[unit.test.heavy] has "speed", which is not one of its fields ("id", "layer", "size", "maxHp", "card", "glyph", "short", "movementRate", "speedTier", "attack", "collidesWith", "behavior", "salvage", "detonation", "nexus", "commander", "roundsOut", "engageRange", "targetLayers", "targetPreference", "spawn", "splitOnDeath", "constructionRadius", "clearance", "supplyProvided", "supplyCost", "abilities", "notes")',
+    'army "data": content[unit.test.heavy] has "speed", which is not one of its fields ("id", "layer", "size", "maxHp", "card", "glyph", "short", "movementRate", "speedTier", "attack", "collidesWith", "behavior", "salvage", "detonation", "nexus", "commander", "roundsOut", "engageRange", "targetLayers", "targetPreference", "spawn", "splitOnDeath", "constructionRadius", "supplyProvided", "supplyCost", "abilities", "notes")',
     'army "data": the content "unit.test.wide" is 2 wide and its glyph\'s row 1 is 1',
     'army "data": the content "unit.test.leader" is a Commander, and its card needs pronouns',
     'army "data": the content "unit.test.sitter" sits rounds out, and only a Commander does',
-    'army "data": the content "unit.test.odd"\'s ability 1 is of the kind "telepathy", which is not an ability the game has ("aura", "bounty", "loadedDice")',
+    'army "data": the content "unit.test.odd"\'s ability 1 is of the kind "telepathy", which is not an ability the game has ("aura", "bounty", "loadedDice", "shove")',
     'army "data": the content "unit.test.odd"\'s ability 2 should give one of "damageTakenPercent" (a guard) and "damageDealtPercent" (a boost)',
     'army "data": the content "unit.test.reach"\'s attack range is 3: a reach is 1, which is touching, or even, a whole number of rows',
     'army "data": the content "unit.test.reach"\'s ability 1\'s radius is 5: a reach is 1, which is touching, or even, a whole number of rows',

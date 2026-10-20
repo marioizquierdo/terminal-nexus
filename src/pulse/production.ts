@@ -22,16 +22,33 @@
 // first wave comes on tick `firstTicks` exactly.
 
 import { frontFirst, spawnOneNear } from "./spawn.ts"
-import type { TickContext } from "./shared.ts"
+import type { Actor, TickContext } from "./shared.ts"
+import type { ContentDef } from "../content/types.ts"
 import { contentOf } from "./context.ts"
 import type { Supply } from "../content/supply.ts"
 import { hasRoom, supplyCostOf, supplyOf } from "../content/supply.ts"
 
 export function production(context: TickContext): void {
   // Snapshotted, so a unit spawned this tick is never itself asked to spawn.
-  // Front first (`frontFirst`), so of two neighbours sharing free ground the one nearer the enemy sets its wave down first.
-  const producers = frontFirst(context, context.actors.filter((actor) => actor.definition.production !== undefined && !actor.pendingDead))
+  const producers = context.actors.filter((actor) => actor.definition.production !== undefined && !actor.pendingDead)
   if (producers.length === 0) return
+  // Each producer's own timer first: a wave that comes is owed at once. One producer's timer reads nothing of another's.
+  for (const actor of producers) {
+    const recipe = actor.definition.production
+    if (recipe === undefined) continue
+    // Every producer carries what it owes from its first tick on, nothing owed included.
+    actor.owed = actor.owed ?? 0
+    const come = actor.produced ?? 0
+    if (come >= recipe.waves) continue
+    const cooldown = Math.max(0, (actor.productionCooldown ?? recipe.firstTicks) - 1)
+    if (cooldown > 0) actor.productionCooldown = cooldown
+    else {
+      // A wave comes: all of it is owed at once, and the next one is a full gap away.
+      actor.produced = come + 1
+      actor.owed = (actor.owed ?? 0) + recipe.perWave
+      actor.productionCooldown = recipe.intervalTicks
+    }
+  }
   // Each side's supply as the tick's production begins, kept up to date as its producers spawn (`supply.ts`).
   const supplies = new Map<string, Supply>()
   const supplyFor = (player: string): Supply => {
@@ -42,25 +59,28 @@ export function production(context: TickContext): void {
     }
     return supply
   }
-  for (const actor of producers) {
+  const outputOf = (actor: Actor): ContentDef | null => {
+    const output = actor.definition.production?.output
+    const content = contentOf(context.pulse, actor.player)
+    return output !== undefined && content.has(output) ? content.get(output) : null
+  }
+  // Then the ones owing units set them down, front first (`frontFirst`), so of two neighbours sharing free ground the
+  // one nearer the enemy sets its wave down first. Only those that can set one down are ordered: a producer owing
+  // nothing, or whose side has no place left in its army for what it trains, sets nothing down this tick, as supply
+  // only fills while production runs.
+  const owing = producers.filter((actor) => {
+    if ((actor.owed ?? 0) === 0) return false
+    const output = outputOf(actor)
+    return output === null || hasRoom(supplyFor(actor.player), output)
+  })
+  if (owing.length === 0) return
+  for (const actor of frontFirst(context, owing)) {
     const recipe = actor.definition.production
     if (recipe === undefined) continue
     let owed = actor.owed ?? 0
-    const come = actor.produced ?? 0
-    if (come < recipe.waves) {
-      const cooldown = Math.max(0, (actor.productionCooldown ?? recipe.firstTicks) - 1)
-      if (cooldown > 0) actor.productionCooldown = cooldown
-      else {
-        // A wave comes: all of it is owed at once, and the next one is a full gap away.
-        actor.produced = come + 1
-        owed += recipe.perWave
-        actor.productionCooldown = recipe.intervalTicks
-      }
-    }
     // Everything owed, together, as far as the room beside the building and its side's supply go; the rest waits
     // for room, and for a place in the army.
-    const content = contentOf(context.pulse, actor.player)
-    const output = content.has(recipe.output) ? content.get(recipe.output) : null
+    const output = outputOf(actor)
     while (owed > 0) {
       const supply = supplyFor(actor.player)
       if (output !== null && !hasRoom(supply, output)) break

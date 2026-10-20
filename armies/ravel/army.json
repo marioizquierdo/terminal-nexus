@@ -33,7 +33,6 @@
       "maxHp": 80,
       "salvage": 20,
       "constructionRadius": 6,
-      "clearance": 1,
       "detonation": {"radius": 1, "damage": 8},
       "card": {
         "title": "Sling Pit",
@@ -50,7 +49,6 @@
       "maxHp": 140,
       "salvage": 40,
       "constructionRadius": 6,
-      "clearance": 1,
       "detonation": {"radius": 2, "damage": 16},
       "card": {
         "title": "Chop Shop",

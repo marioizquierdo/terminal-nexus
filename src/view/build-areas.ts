@@ -41,7 +41,6 @@ import { cellForTile } from "../build/layout.ts"
 import type { ArmedPreview, BuildContext } from "../build/state.ts"
 import { buildRange, buildingsOn, mapMode, structureAtTile } from "../build/state.ts"
 import type { Territory } from "../build/territory.ts"
-import { clearanceOf } from "../build/territory.ts"
 import type { ContentDef } from "../content/types.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
@@ -109,70 +108,6 @@ export function reachOf(definition: ContentDef): number | null {
 export function unitReachOf(definition: ContentDef): number | null {
   const range = reachOf(definition)
   return range !== null && range >= 2 ? range : null
-}
-
-// --- A Barracks's room ----------------------------------------------------------------------------------------
-
-/** The mark on a tile of a Barracks's room, in both glyph packs: a tick, where open ground would show a dot. */
-export const ROOM_GLYPH = "'"
-
-/** The room's look: the ground's own role, dim, the lightest there is — the tick says the rest. */
-const ROOM_STYLE: CellStyle = { fgRole: "terrain.plain", dim: true }
-
-/** The room's look on the build range's ground: the range's light kept, so it reads as drawn on that floor. */
-const ROOM_ON_FLOOR: CellStyle = { ...ROOM_STYLE, ...BUILD_RANGE_LIGHT }
-
-/**
- * The room a building that makes units keeps: every tile within `clearance` of the footprint anchored at
- * `anchor`, measured as range is — the room rule's own test (`tilesWithin`, `footprintWithin`) — and not on it, in
- * reading order. Pure, and in tiles: the view lays it on cells.
- */
-export function roomApron(anchor: Coord, footprint: Footprint, clearance: number): Coord[] {
-  const own = new Set(tilesOf(anchor, footprint).map(keyOf))
-  return tilesWithin(anchor, footprint, clearance).filter((tile) => !own.has(keyOf(tile)))
-}
-
-/** A tile as a key for a set of tiles. */
-const keyOf = (tile: Coord): string => `${tile.x},${tile.y}`
-
-/**
- * ***A Barracks's room***, while a building is armed: round every building on the map that keeps room —
- * standing, planned or the raid's — and round the armed one's ghost, moving with it (`shift`), every open tile of
- * the room shows a dim tick, at the "Spawn space" Experiment's size, measured as the room rule measures it
- * (`roomApron`). In the `territory` band, over the build range's dot and under everything that
- * stands; never on a tile in `avoid` (anything standing, planned or arriving, and the raid's trail), under the
- * ghost, on rock or on a deposit. A building's reach, drawn above it, keeps its strokes where the two cross.
- */
-export function drawRoom(cells: BandCell[], input: BuildCompositionInput, preview: ArmedPreview | null, shift: Coord, avoid: ReadonlySet<string>): void {
-  const { context, state, layout } = input
-  const floor = shownBuildRange(input)
-  if (floor === null) return
-  const override = setting(state, "spawnClearance")
-  const keepers: Readonly<{ anchor: Coord; footprint: Footprint; room: number }>[] = []
-  for (const building of buildingsOn(context, state.planned)) {
-    const definition = context.registry.get(building.contentId)
-    const room = clearanceOf(definition, override)
-    if (room !== null) keepers.push({ anchor: building.anchor, footprint: definition.footprint, room })
-  }
-  const ghost = preview === null ? null : { x: preview.anchor.x + shift.x, y: preview.anchor.y + shift.y }
-  const armed = preview === null ? null : clearanceOf(context.registry.get(preview.item.contentId), override)
-  if (preview !== null && ghost !== null && armed !== null) keepers.push({ anchor: ghost, footprint: preview.footprint, room: armed })
-  if (keepers.length === 0) return
-  const under = new Set<string>()
-  if (preview !== null && ghost !== null) for (const tile of tilesOf(ghost, preview.footprint)) under.add(`${tile.x},${tile.y}`)
-  const range = visibleRange(state.camera, state.viewport)
-  const marked = new Set<string>()
-  for (const keeper of keepers) {
-    for (const tile of roomApron(keeper.anchor, keeper.footprint, keeper.room)) {
-      if (tile.x < range.firstX || tile.x > range.lastX || tile.y < range.firstY || tile.y > range.lastY) continue
-      const key = `${tile.x},${tile.y}`
-      if (marked.has(key) || avoid.has(key) || under.has(key)) continue
-      if (context.grid.tiles[tile.y * context.grid.width + tile.x] !== "terrain.plain") continue
-      marked.add(key)
-      const cell = cellForTile(layout, state.camera, tile)
-      cells.push({ band: BANDS.territory, x: cell.x, y: cell.y, cell: { glyph: ROOM_GLYPH, style: floor.has(tile) ? ROOM_ON_FLOOR : ROOM_STYLE } })
-    }
-  }
 }
 
 // --- A building's reach, and a unit's -------------------------------------------------------------------------

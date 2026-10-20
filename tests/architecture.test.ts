@@ -81,6 +81,11 @@ test("src/abilities is the kernel's world, handed in: it never reaches the tick,
   assertNoDependencyOn("abilities", ["pulse", "match", "armies", "view", "report", "cli", "build"])
 })
 
+test("src/routing is routing's parts alone: it knows the Grid and nothing of a tick, a unit, a side or a screen", () => {
+  // Each part is tested alone on small Grids (tests/routing.test.ts); the kernel builds its routes from them.
+  assertNoDependencyOn("routing", ["pulse", "state", "match", "content", "armies", "view", "report", "cli", "build"])
+})
+
 test("src/match never reaches the view, the report, the shell, or the Build Phase", () => {
   // Rules-layer code around the kernel: deterministic, and blind to how anything is drawn or asked for.
   assertNoDependencyOn("match", ["view", "report", "cli", "build"])

@@ -79,7 +79,7 @@
         "triggers": [
           {
             "id": "squads",
-            "notes": "'Commander Vasse holds the ground with what walked out of the annex: two squads' (the briefing). She is listed first, so she takes the muster's centre with the squads around her: listed last she stood at their edge and fell in round 2 behind every Turret plan measured. She arrives once; when she falls, the rules between rounds bring her back.",
+            "notes": "'Commander Vasse holds the ground with what walked out of the annex: two squads' (the briefing). She is listed first, so she takes the muster's centre with the squads around her: listed last she stood at their edge and fell in round 2 behind every Turret plan measured. She arrives once; when she falls, the rules between rounds bring her back. Measured before units could find their way round rock, (docs/history/reports/2026-10-20-measured-before-routing.md); on the new routes the level plays to the same verdict by both plans (docs/history/reports/2026-10-20-pathfinding-measured.md).",
             "when": {"pulse": 1, "tick": 0},
             "do": [
               {
@@ -104,7 +104,7 @@
           },
           {
             "id": "post",
-            "notes": "Where the player's troops head, every round: the line just ahead of the base. They fight what comes within their reach and stand there when nothing does, so a building placed beside the line fights beside them, and a raid that goes round them meets the buildings. Set once; it holds every round. Chosen over the gap in the ridge, the pass and the ground before the Barracks, and measured with every place one building can go inside the build range: a plan that builds nothing still lost the last round at every strength of Vasse's aura and every health from 20 to 100, as it did before the line, and the raid needed no change. With the Barracks's troopers in a wave (the Commander round 5) it holds it at every one of those values but one, Vasse at 60 with 10% less, where the raid brings the Nexus down eight ticks before the last round ends; the troopers head for the line as soon as they are out.",
+            "notes": "Where the player's troops head, every round: the line just ahead of the base. They fight what comes within their reach and stand there when nothing does, so a building placed beside the line fights beside them, and a raid that goes round them meets the buildings. Set once; it holds every round. Chosen over the gap in the ridge, the pass and the ground before the Barracks, and measured with every place one building can go inside the build range: a plan that builds nothing still lost the last round at every strength of Vasse's aura and every health from 20 to 100, as it did before the line, and the raid needed no change. With the Barracks's troopers in a wave (the Commander round 5) it holds it at every one of those values but one, Vasse at 60 with 10% less, where the raid brings the Nexus down eight ticks before the last round ends; the troopers head for the line as soon as they are out. Measured before units could find their way round rock, (docs/history/reports/2026-10-20-measured-before-routing.md); on the new routes the level plays to the same verdict by both plans (docs/history/reports/2026-10-20-pathfinding-measured.md).",
             "when": {"pulse": 1, "tick": 0},
             "do": [{"target": {"side": "A", "region": "line"}}]
           },
@@ -342,7 +342,7 @@
           },
           {
             "id": "ambush",
-            "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid at all of them but her least health with the weakest aura (20, and 10% less), where the raid outlasts the round.",
+            "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid at all of them but her least health with the weakest aura (20, and 10% less), where the raid outlasts the round. Measured before units could find their way round rock, (docs/history/reports/2026-10-20-measured-before-routing.md); on the new routes the level plays to the same verdict by both plans (docs/history/reports/2026-10-20-pathfinding-measured.md).",
             "when": {"pulse": 1, "tick": 0},
             "do": [
               {
@@ -406,7 +406,7 @@
       "mission": {
         "id": "mission.test.curve",
         "name": "The curve",
-        "notes": "The power curve on the Grid, as a level (Commander Armies): six Battle Rounds on the starter map with only the Grid Nexus standing, so the tech tree is climbed from its first building — a Barracks, then the Garrison it unlocks the round after. Each round adds the curve's credits, and the raid grows round by round, slower than the credits at first and faster at the end, so survivors of the early rounds matter and the last rounds are decided by what came later. PERIMETER's regions, squads and post, so it reads as the same front. The raid's sizes are first guesses, measured against a scripted plan (tests/curve-level.test.ts), not balance.",
+        "notes": "The power curve on the Grid, as a level (Commander Armies): six Battle Rounds on the starter map with only the Grid Nexus standing, so the tech tree is climbed from its first building — a Barracks, then the Garrison it unlocks the round after. Each round adds the curve's credits, and the raid grows round by round, slower than the credits at first and faster at the end, so survivors of the early rounds matter and the last rounds are decided by what came later. PERIMETER's regions, squads and post, so it reads as the same front. The raid's sizes are first guesses, measured against a scripted plan (tests/curve-level.test.ts), not balance. Once units found their way round rock (the pathfinding milestone, 2026-10-20) the raids of rounds 3 to 5 lost a runner and a raider each, so a base that builds nothing still reaches round 6, which is how a route opens a later round; the milestone measures it again at its end.",
         "pulses": 6,
         "pulseTicks": 360,
         "seed": 1129666118,
@@ -590,8 +590,8 @@
                 "spawn": {
                   "side": "B",
                   "units": [
-                    {"unit": "unit.ravel.runner", "count": 5},
-                    {"unit": "unit.ravel.raider", "count": 3},
+                    {"unit": "unit.ravel.runner", "count": 4},
+                    {"unit": "unit.ravel.raider", "count": 2},
                     {
                       "unit": "unit.ravel.slinger",
                       "count": 1
@@ -612,8 +612,8 @@
                 "spawn": {
                   "side": "B",
                   "units": [
-                    {"unit": "unit.ravel.runner", "count": 4},
-                    {"unit": "unit.ravel.raider", "count": 3},
+                    {"unit": "unit.ravel.runner", "count": 3},
+                    {"unit": "unit.ravel.raider", "count": 2},
                     {
                       "unit": "unit.ravel.slinger",
                       "count": 1
@@ -649,8 +649,8 @@
                 "spawn": {
                   "side": "B",
                   "units": [
-                    {"unit": "unit.ravel.runner", "count": 5},
-                    {"unit": "unit.ravel.raider", "count": 3},
+                    {"unit": "unit.ravel.runner", "count": 4},
+                    {"unit": "unit.ravel.raider", "count": 2},
                     {
                       "unit": "unit.ravel.slinger",
                       "count": 2

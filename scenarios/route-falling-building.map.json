@@ -1,0 +1,68 @@
+{
+  "id": "route-falling-building",
+  "name": "Route: a building that falls mid-round opens a way",
+  "notes": "A ridge the whole height of the map with one gap, and the enemy's Barracks standing in front of it on the far side, closing it. Four troopers west of the ridge, the enemy's Grid Nexus east. They reach the Barracks through the gap's mouth and break it, and the way through opens for the rest of the round. Done when the troopers go through once it falls and the Nexus falls too.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 2400,
+  "terrain": [
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "................................................",
+    "................................................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#......................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 10,
+        "y": 7
+      },
+      "rows": [
+        "tt",
+        "tt"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 26,
+        "y": 7
+      },
+      "rows": [
+        "b              n"
+      ],
+      "legend": {
+        "b": {
+          "content": "structure.citizen.barracks"
+        },
+        "n": {
+          "content": "structure.citizen.nexus"
+        }
+      }
+    }
+  }
+}

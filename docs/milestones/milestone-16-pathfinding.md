@@ -1,8 +1,9 @@
 # Milestone 16 — Pathfinding
 
-**Status:** PLANNED
+**Status:** CURRENT
+**Current step:** none open: all nine steps are built and wait for Mario's playtest.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
-wins by where it stands, all built. Next in the build order, after Commander Armies.
+wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
 On 2026-10-19 the owner watched raiders stand behind rocks in PERIMETER and asked for this milestone
 ([his words](../history/feedback/2026-10-13-commander-armies.md)): "This is a solved problem in many videogames,
@@ -12,6 +13,12 @@ crowd through a narrow passage, cope with a Grid that changes mid-round (a unit 
 magnet, new units appearing), cross different terrains, and let workers walk over their own side's units. On its
 place in the order: "We can work on that anytime. It's kind of independent, but the sooner the better, because that
 will make the other tests better."
+
+Made current on 2026-10-20, when he closed Commander Armies: "Make sure to split the pathfinding architecture in
+smaller compartments that are each testable, then build up from the primitives into more complex behaviors, and
+close up with full commander deck duels. This will be a key component of the grid architecture and very relevant to
+gameplay. Pathfinding also has to work well with targeting, attacking, adding new units, etc. Go ahead, take your
+time, implement slow."
 
 ## Question
 
@@ -32,7 +39,7 @@ That works on open ground and fails in three shapes, all seen in PERIMETER playe
 - **The dead end.** A unit straight above its goal, with rock between them, has one step that brings it closer:
   into the rock. It stands there for good. In round 3 a slinger walks along the top of the north-west wall until it is
   directly above the Grid Nexus and stops, two raiders queue behind it, and all three are still there when the round
-  ends. `scenarios/on-axis-deadlock.map.json` is the same shape on a small Grid.
+  ends. The route scenario `route-dead-end` is the same shape on a small Grid.
 - **The pocket.** A unit meeting a wall at an angle slides along it to the point nearest its goal, which can be the
   bottom of a pocket: the corner of the north-west wall, the crater's rim, the space behind the ridge.
 - **The queue.** A unit behind an ally never steps round it, because that step does not bring it closer. Melee raiders
@@ -98,85 +105,153 @@ What makes this game's version its own:
 - **Readable on screen.** A unit should look like it knows where it is going: no pacing, no hugging one wall when the
   open way is in plain sight. The Activity Logs say why a unit took the route it did.
 
+## How it is built: from small parts up
+
+Routing is built as parts that each do one thing and are each tested alone, on Grids a few tiles wide, before
+anything in a battle leans on them. Each layer uses only the ones under it.
+
+1. **The parts** (`src/routing/`). Pure functions of a Grid, with no tick, no state and no draw:
+   - **Ground**: which tiles a body of a given size and shape can stand on, given the terrain and what stands still
+     on it. One answer per body, not per unit.
+   - **Costs**: what a step costs, one across and two up or down, and later more on slow ground.
+   - **Goals**: the tiles a body must reach to do what it came for: touching an enemy for a melee unit, within
+     its range for a shot, inside an area for a side's target. A goal is a set of tiles, so "a place I can attack
+     from" is one idea for every unit.
+   - **Distance fields**: from a goal outward, every tile's walking cost to it, in whole numbers. Worked out only as
+     far as someone asks, and shared by everyone heading for the same goal with the same body.
+   - **The choice of a step**: from a tile, the steps that follow the field downhill, best first; equally good ones
+     go by what the unit faces, and what is still tied is left for the caller's seeded draw.
+2. **The tick's routes** (`src/pulse/routes.ts`). Once a tick: who stands still this tick (a building, a unit
+   fighting, a unit that cannot move) and so is a wall to everyone else, and the fields the tick needs, built from
+   that and kept for the tick. A field is a pure function of the state the tick began with, so a run replays the same
+   on Node and Bun.
+3. **Behaviours** on top, each a rule in the tick order with a scenario of its own: walking a route, waiting for or
+   stepping round an ally, choosing a target that can be reached, standing where an attack reaches, units that
+   appear mid-round, a Grid that changes under a unit, and units walking out over the roofs.
+4. **Measurement** over all of it: the route scenarios, the bench, the campaign levels and full Commander duels,
+   measured the same way before and after (the first step).
+
+Routing must agree with targeting and attacking at every point: a unit walks toward a place its attack reaches
+from, it stands once it is there, and it chooses a target it can reach. The same functions answer all three, so the
+three can never disagree.
+
 ## Steps
 
-None started; each waits for Mario's word, and the order is a first guess.
+Mario asked for the whole milestone, built slowly in this order. Each step lands with its tests and the battles it
+moves re-pinned, saying why.
 
-### Step 16A — A clean slate, and how we measure
+### Step 16A — A clean slate, and how a battle is measured
 
 The owner, 2026-10-20: "We should also invalidate the older maps and the data we have on them that decide what
 something is better than another thing. Maybe this is time to write a summary in some design file, a spec, and just
 forget about that old data." Every result so far was measured on units that stand behind rocks, so none of it says
 what is better than what once units find their way.
 
-- [ ] **A spec of how a battle is measured**, a design document of its own, and one command that runs it all:
+- [x] **A spec of how a battle is measured**, a design document of its own, and one command that runs it all:
   - what is measured: who wins and in which round, how long a round runs, what each side loses, when a Commander
     falls, how long units stand blocked, how evenly a mirror splits between the two ends of the map, and how tight
     or loose an army stands when it first meets the enemy;
-  - on what: the bench maps, the duels between Commanders, and every campaign level played with a fixed set of
-    plans (nothing built, a defended base, the level's own scripted plans);
+  - on what: the route scenarios, the duels between Commanders, and every campaign level played with a fixed set of
+    plans (nothing built, a defended base);
   - over which seeds, and how each result is written down, with the build and the date it was measured on.
-- [ ] **The old results set aside**, not deleted. They move to one history report, "measured before routing", and
+- [x] **The old results set aside**, not deleted. They move to one history report, "measured before routing", and
   every sentence that states one as current fact is rewritten to say what is designed and that its numbers wait for
-  the new routes. They are in:
-  - the Commander Armies design (the power curve, Averno beside Vasse) and milestone, and the next steps;
-  - the open questions (the aura's strength per plan, the old mirror drift);
-  - the duels and Pulse documents (mirror duels split evenly), the routes document and the campaign design (who
-    falls in which round);
-  - the notes in the campaign and army files (raid sizes tuned against this map, who falls when, the aura's tuning).
-
-  The reports already in history stay as they are; the new report points to them.
-- [ ] **The old route maps retired.** The scenarios that only show the greedy step's shapes (the on-axis dead end, the
-  two- and three-tile gaps, the rock spine slid along, the crowded raider's tail) are replaced by this step's own
-  rather than kept passing for a rule that is gone.
-- [ ] **Route scenarios that fail today**, each with one thing moving where it can (the lesson of the first routing
-  work): the dead end above a wall, a pocket, a squad through the ridge's gap, a three-wide raider at a two-wide gap,
-  a crowd round one target, a corridor walked both ways at once, a building that falls mid-round and opens a way.
-- [ ] **A baseline**: the spec run once on today's step rule, kept only to compare each later step with: the ticks
+  the new routes. They are in the Commander Armies design (the power curve, Averno beside Vasse), the next steps,
+  the open questions (the aura's strength per plan, the old mirror drift), the duels document, the campaign design
+  (who falls in which round), and the notes in the campaign and army files. The reports already in history stay as
+  they are; the new report points to them.
+- [x] **The old route maps retired.** The scenarios that only show the greedy step's shapes (the on-axis dead end,
+  the two- and three-tile gaps, the rock spine slid along, the crowded raider's tail) are replaced by this step's own,
+  rather than kept passing for a rule that is about to go. The on-axis dead end is gone; the crowded raider now queues
+  in a corridor one row tall, the shape its test is about; the gaps too narrow for a wide body and the rock spine stay,
+  as shapes a route must still manage.
+- [x] **Route scenarios that fail today**, each with one thing moving where it can: the dead end above a wall, a
+  pocket, a squad through the ridge's gap, a three-wide raider at a two-wide gap, a crowd round one target, a
+  corridor walked both ways at once, and a building that falls mid-round and opens a way.
+- [x] **A baseline**: the spec run once on today's step rule, kept only to compare each later step with: the ticks
   each unit stands blocked, the longest walk against its shortest route, and the time a tick takes.
-- [ ] **The tests that pin a battle's outcome or hash** (the campaign levels, the curve level, the mirror, PERIMETER's
-  rounds, the Aid Station's, the rows battle) listed with what each claims, so the steps that change routes re-pin
-  them knowingly and drop a claim that only held for the old rule.
+- [x] **The tests that pin a battle's outcome or hash** listed with what each claims, so the steps that change
+  routes re-pin them knowingly and drop a claim that only held for the old rule ([the list](../system-design/measurement.md)).
 
-### Step 16B — Routes round the map
+### Step 16B — The parts, each tested alone
 
-- [ ] A distance field per goal and body size, over terrain and buildings, in whole-number costs, rebuilt only when
-  what it was made from changes. A unit steps downhill on it; ties go by what it faces, then a draw.
-- [ ] The dead end, the pocket and PERIMETER's north-west wall walked round. A unit whose goal cannot be reached heads
-  for the nearest tile that can, and the log says so; what a unit with no route at all does is settled here.
-- [ ] Mirror duels still split evenly, and every re-pinned battle says why it moved.
+Nothing in a battle changes in this step: the parts exist, with their tests, and nothing calls them yet.
 
-### Step 16C — Crowds
+- [x] **Ground** for a body: a tile is open to it when every tile its body covers is in the Grid, not rock, and not
+  under something that stands still. Wide and tall bodies, the Grid's edges and a body that fits a gap exactly, each
+  tested.
+- [x] **Goals** as sets of tiles: touching a footprint (melee), within a range of it (a shot, measured as range is),
+  inside an area. A goal under a wall or off the Grid is left out; a goal with no tile left is said so.
+- [x] **A distance field** from a goal: exact whole-number walking costs, a row two columns, worked out outward only
+  as far as it is asked, the same values whichever tile is asked first. Tested against a plain search on small
+  Grids, on mazes, and on a goal that cannot be reached.
+- [x] **The choice of a step**: the steps along a shortest route first, then those that keep the cost level, and
+  ties by the turn from the way the unit faces its goal. Mirrored Grids give mirrored choices.
+- [x] **Their cost measured**: a field over the starter map, and a tick's worth of them, against the frame budget the
+  browser page already keeps. Twelve fields worked out over the whole 96 by 40 map take about 10 ms on the machine
+  that built them, under a third of the page's 33 ms frame; a battle's fields stop as soon as they have their answer,
+  so most cost far less.
 
-- [ ] An ally in the way is waited for, stepped round, or swapped with, each a rule in the tick order with its
-  scenario.
-- [ ] Units spread round a target to the free tiles beside it; a melee unit picks a tile it can reach, not the one
-  behind its friend.
-- [ ] A narrow gap with both sides pushing through it never jams for good (a run over many seeds says so).
+### Step 16C — Routes round the map
 
-### Step 16D — A Grid that changes
+- [x] Units walk their field downhill: the dead end, the pocket and PERIMETER's north-west wall are walked round,
+  and the greedy step goes, with its compass order.
+- [x] What stands still is a wall to the field for this tick: a building, a unit fighting. What walks is not, and
+  the tick order settles who steps where, as it does today.
+- [x] A unit whose goal cannot be reached heads for the reachable tile nearest it, and the log says so; a unit with
+  no route at all stands, and says that.
+- [x] Mirror duels still split evenly, and every re-pinned battle says why it moved. Two side biases the routes
+  exposed were fixed on the way: two buildings equally near the enemy set their units down in a drawn order, not by
+  id, and forces whose musters meet are set down in turns. On the routes, PERIMETER's nothing-built plan loses its last
+  round, and the curve level's raids of rounds 3 to 5 lost a runner and a raider each so a base that builds nothing
+  still reaches round 6.
 
-- [ ] Fields go stale and rebuild when a building rises or falls; units that appear mid-round route from where they
-  stand.
-- [ ] The rule for moving a unit that did not walk (a push, a pull), with a test effect behind a bench card, so the
+### Step 16D — Crowds
+
+- [x] An ally in the way is waited for while it walks; one that stands is routed round, because it is a wall to
+  the field; two allies that want each other's tile swap.
+- [x] Units spread round a target to the free tiles that reach it, because those tiles are the goal: a melee unit
+  heads for a free tile beside its target, not the one behind its friend.
+- [x] A unit blocked for a while by units that walk routes round them for itself, so no crowd stands still for
+  good. A narrow gap with both sides pushing through it never jams for good (a run over many seeds says so).
+
+### Step 16E — Targeting, attacking and new units agree with routes
+
+- [x] A unit chooses among the enemies it can reach: one walled off, or deep in a block where nothing reaches it,
+  is passed over for one it can reach ("same as usual": what it can reach, the building first if that is all).
+- [x] A melee unit turns to fight the enemy nearest to walk to, not the one nearest across a wall.
+- [x] A unit stands once its attack reaches its target, and its route ends exactly where its attack begins: the
+  same test for both, as today.
+- [x] Units that appear mid-round (a wave, a spawner, a unit that splits on death) route from where they appear on
+  their first tick.
+- [x] A building that rises or falls changes the routes from the next tick; a unit pushed or pulled reads its route
+  from where it lands. The rule for moving a unit that did not walk, with a test effect behind a bench card, so the
   first power that pushes has it ready.
-- [ ] A melee unit turns to fight the enemy nearest to walk to, not the one nearest across a wall.
 
-### Step 16E — Terrain, and who passes whom
+### Step 16F — Terrain, and who passes whom
 
-- [ ] A cost per terrain, and one slow ground on a bench map to show it.
-- [ ] Workers cross their own side's units and not the enemy's.
-- [ ] A fleeing worker routes away from danger, not only away from the nearest threat.
+- [x] A cost per terrain, and one slow ground on a bench map to show it.
+- [x] Workers cross their own side's units and not the enemy's.
+- [x] A fleeing worker routes away from danger, not only away from the nearest threat.
 
-### Step 16F — Where a side heads
+### Step 16G — Where a side heads
 
-- [ ] One kind of goal for everything a unit heads for, each with its field: the enemy's Grid Nexus by default, and a
+- [x] One kind of goal for everything a unit heads for, each with its field: the enemy's Grid Nexus by default, and a
   campaign level's target where the level names one (the owner: "It's just going to be going to the enemy nexus. Or
-  maybe we have to define the target position for campaign as well").
-- [ ] No banner. A banner is set in the Build Phase as part of the plan, and waits for a way to show that plan on
+  maybe we have to define the target position for campaign as well"). A side with no target heads for the enemy
+  Nexus and turns on what comes within its engage reach on the way, as a side with a target does; a unit that cannot
+  strike a Nexus, or a map with none, still goes for the nearest enemy. The question of what a unit with nothing in
+  reach should do, kept open for the day targeting is capped for scale, is answered by it.
+- [x] No banner. A banner is set in the Build Phase as part of the plan, and waits for a way to show that plan on
   screen (the backlog); this step leaves it as one more goal to add.
+- [x] What moved, re-pinned: PERIMETER's raid now goes for the Nexus rather than the Barracks (the panel says so), its
+  first round with the defence plan runs 14 seconds rather than 15, so Drill Schedule's second wave at 15 seconds
+  comes only in a longer battle; with nothing built, the raiders left beside the Nexus at the end of round 2 finish it
+  on round 3's first tick; the curve level's tree fields 1.17 times the first tier's last army, down from more than
+  1.2. A corridor two rows tall now has troopers queuing a little over five seconds behind a fight at its front, so
+  its test holds the battle, not each unit, to never standing still for five seconds.
 
-### Step 16G — Units walk out over the roofs
+### Step 16H — Units walk out over the roofs
 
 The owner, 2026-10-20, on why: "since army position and formation is so important to win or lose a battle, the users
 will have a lot of control over where their units are positioned, and that is decided indirectly by placing the
@@ -193,51 +268,72 @@ What the step builds, as he described it; he also said the real test is a simula
 is just what I think it would work, but the real test is playing a simulated game and checking if it is possible to
 make good unit formations that can foster interesting strategies"):
 
-- [ ] **Units appear on the roof.** A wave appears on top of the building that made it, small units and wide ones
+- [x] **Units appear on the roof.** A wave appears on top of the building that made it, small units and wide ones
   alike, never two on one tile, so a big wave files out over a few ticks instead of all at once.
-- [ ] **They walk the roofs toward where they are going**, not to the nearest free ground. A unit's route out is its
+- [x] **They walk the roofs toward where they are going**, not to the nearest free ground. A unit's route out is its
   ordinary route to its goal, with its own side's buildings counted as open ground, so it leaves by the side that
   faces the enemy and the wave comes off the roofs together. The owner: "they will just keep walking on the rooftops
   on the natural direction where their destination is, this will help keep the troop waves together when they
   spawn."
-- [ ] **A unit is on the roofs until all of it stands on ground.** A wide unit with part of its body over an open tile
+- [x] **A unit is on the roofs until all of it stands on ground.** A wide unit with part of its body over an open tile
   keeps walking the roofs, across that tile, until every tile it covers is ordinary ground. Then it is out: from then
   on buildings are walls to it, its own included, and it never climbs back.
-- [ ] **No room round a building.** Buildings that make units may touch, the ring of free tiles round them goes, and
+- [x] **No room round a building.** Buildings that make units may touch, the ring of free tiles round them goes, and
   the Spawn space Experiment with it.
-- [ ] **They fight from the roof.** A unit on a roof with an enemy in reach shoots or strikes at once, as it would
+- [x] **They fight from the roof.** A unit on a roof with an enemy in reach shoots or strikes at once, as it would
   from the ground.
-- [ ] **They are hit like any unit.** An enemy hits a unit on a roof as it would on the ground; when the unit dies the
+- [x] **They are hit like any unit.** An enemy hits a unit on a roof as it would on the ground; when the unit dies the
   enemy picks a new target as usual, which may be the building under it. An enemy that cannot reach the unit (a melee
-  enemy, a unit in the middle of a block) attacks the building or whatever else it can reach, as usual. A blast that
-  hits an area hits units on a roof as it would on the ground.
-- [ ] **A building that falls with units on it** leaves them standing where they are, on what is now open ground; they
+  enemy, a unit in the middle of a block) attacks the building or whatever else it can reach, as usual (the targeting
+  of the step before). A blast that hits an area hits units on a roof as it would on the ground.
+- [x] **A building that falls with units on it** leaves them standing where they are, on what is now open ground; they
   are out. This follows the owner's "same as usual" and is the step's reading, not his word yet.
-- [ ] **On screen**, a unit on a roof is drawn over its building on its own tiles only, and its card or the log says
-  it is coming out.
-- [ ] **The test he set: formations in a simulated game.** Using the spec from the first step, sides built three ways
+- [x] **On screen**, a unit on a roof is drawn over its building on its own tiles only, and the log says it is coming
+  out ("at 26,10 on the roof of A:barracks#2, coming out").
+- [x] **The test he set: formations in a simulated game.** Using the spec from the first step, sides built three ways
   (a block of four Barracks side by side, four set apart, a long line of them) are played against each other and
-  against a blast that hits an area, over many seeds. Done when it shows, in plain words, how tight each army stands
-  when it first meets the enemy, and that each shape beats something and loses to something. If the shapes come out
-  the same, the step says so and tries the variant below before calling it built.
-- [ ] **An Experiment for the way out**, if the simulation leaves it open: along the route to the goal (his idea), or
-  to the nearest open ground, so he can watch both on the playable page.
+  against a blast that hits an area, over many seeds (`node bin/measure.ts formations`,
+  [the report](../history/reports/2026-10-20-formations.md)). Where a player builds decides how tight the army meets
+  the enemy: a block about 3 columns from its middle, a line 4, set apart 14. A block and a line each beat an army set
+  apart (10 to 2, 12 to 0), which reaches the fight a wave at a time, and are close to each other (5 to 7). Set apart
+  beats nothing yet: the bench's only area attack does not punish a tight army enough to change who wins. That is a
+  question of what the armies carry, put to Mario with a recommendation (what makes a loose army worth building).
+- [x] **An Experiment for the way out**, left open by the simulation: along the route to the goal (his idea, the
+  default), or to the nearest open ground ("Way off the roof"), so he can watch both on the playable page. The nearest
+  way spills a block's wave off every side (8.8 columns rather than 3.1), and it then loses every game to a line.
 
 This step is the first half of a choice that is still in the backlog, a sparse formation where units prefer not to
 stand straight behind one another (next steps, "a sparse formation, when he says"): this step lets a player decide how
 their army leaves; that one would decide how it keeps its shape on the way.
 
-### Step 16H — Measure again
+### Step 16I — Measure again, with full Commander duels
 
-- [ ] The whole spec run on the new routes: the duels, the bench, every campaign level with its plans, written down as
-  the spec says, the first results under the new rules.
-- [ ] What they show, in plain words: which Commander, building or plan is now stronger, and which level no longer
-  plays as designed (a raid that now walks round the wall it used to stand behind). Levels are retuned only where one
-  breaks; the rest of balance stays later work, as the owner has said.
+The owner: "close up with full commander deck duels", and "use the pending commander checks as part of pathfinding
+validation at the end". The checks Commander Armies left are measured here, on the new routes.
+
+- [x] **The whole spec run on the new routes**: every Commander against every other from both ends of the map,
+  drafting from their whole decks over many seeds; the bench; every campaign level with its plans. Written down as
+  the spec says: the first results under the new rules
+  ([the result](../history/measurements/2026-10-20-routes-and-roofs.json),
+  [what it says](../history/reports/2026-10-20-pathfinding-measured.md)). Every route scenario walked; a twelfth of
+  the blocking; mirrors 28 to 26; 90 of 162 duels ended by a Nexus falling, where 23 did. A tick costs about 14 ms
+  at 200 units, so a duel's last rounds take a few seconds to resolve.
+- [x] **The catch-up measure** (Commander Armies' last step): how often a lucky early hand predicts the winner, over
+  the duels — judged by how the cards kept did in every other duel, since both sides are dealt the same rarities. The
+  luckier early hands won 55%; but an early lead decides almost every duel, a Nexus falling in round 1 or 2 in 35 of
+  them. The power curve's guidelines revised (the opening must not end a match), and what should hold a Nexus in the
+  first act registered with a recommendation, not built.
+- [x] **The Commander checks, measured**: the six-round curve level played by its plans (both win in round 6; the
+  tree's last army 1.13 times the first tier's; the opening still more than half the last army); Averno beside Vasse
+  on the same curve (he clears faster and falls in rounds 1 and 5, she never falls, apart from the first round); and
+  the three duel findings re-measured (Averno wins 65%, Dob wins mostly when he holds, Dob still has no campaign).
+- [x] **What they show, in plain words**: Averno is the strongest Commander, Dob a defender, climbing the tree pays
+  by less than before, and an early lead decides a duel. Every campaign level plays to the same verdict by both plans
+  as on the baseline, so none is retuned.
 
 ## Waiting on Mario
 
-Nothing yet: each step waits for his word to start.
+Nothing: he asked for the whole milestone, built slowly, one step after another.
 
 ## Out of scope
 

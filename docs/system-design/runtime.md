@@ -131,7 +131,7 @@ them uniformly:
 | --- | --- | --- |
 | Occupancy rebuild (`OccupancyIndex`, `src/grid/occupancy.ts`) | O(A) | map area: four `Int32Array`s sized to `width * height`, rebuilt every tick (`src/pulse/tick.ts`) |
 | Collision queries (`CollisionMask`, see [`grid.md`](grid.md)) | O(1) per query | neither: a lazy view, allocates nothing |
-| Movement and routing (`rankedSteps`, intents) | O(N) | actor count, cheap |
+| Movement and routing (distance fields, `src/pulse/routes.ts`; intents) | O(F × A) at worst, F the tick's fields, usually far less | map area and distinct goals: a field stops once it has its answer, and is shared by every unit heading for the same goal with the same body |
 | Arbitration (contested tiles) | O(N) typical, O(C²) at one chokepoint | contestants at a single tile, bounded and self-reporting (`arbitration.bounded`) |
 | **Perception and targeting** (`hostilesOf` + `selectTarget`, `src/pulse/perception.ts`) | **O(N²), every tick, unconditionally** | actor count: the confirmed primary risk |
 | Attacks | O(N × T), T = distinct speed tiers | small today, not architecturally bounded |
@@ -169,9 +169,10 @@ written, instead of scanning every observer. The kernel's tick is one file per p
    and it is a design decision, not an engineering one.** Capping "nearest enemy anywhere" to "nearest
    enemy within R" is cheap once rule 3 exists; deciding what a unit with nothing in R does instead
    changes emergent behaviour and is expensive to reconsider once a scenario is pinned to a specific
-   contract. What such a unit should do waits on an open question (Q20 in
-   [`open-questions.md`](../milestones/open-questions.md), with the options and a recommendation). Land
-   it inert and off by default until a scenario actually needs it.
+   contract. What such a unit does is answered: it heads for the enemy's Grid Nexus, the rule a side with no
+   target already walks by ([`pulse.md`](pulse.md), a side's target; the options weighed are in
+   [the answered register](../history/answered-questions.md)). Land the cap itself inert until a scenario
+   actually needs it.
 
 **What this section is not.** It is not a commitment to build real pathfinding, a spatial index or a
 radius cap, and not a claim that the scenarios are slow: nothing here is a measurement, only an

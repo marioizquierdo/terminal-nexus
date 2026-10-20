@@ -4,12 +4,12 @@
 import { ClaimOverlay } from "../grid/occupancy.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { Intent } from "./intents.ts"
-import { rankedSteps, stepCost } from "./movement.ts"
+import { choiceCost, stepCost } from "./movement.ts"
 import type { StepChoice } from "./movement.ts"
 import { blockReasonFor, maskForActor, speedTier } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
-type Grant = { actor: Actor; to: Coord; direction: Direction }
+type Grant = { actor: Actor; to: Coord; direction: Direction; weight?: number; swapWith?: Actor }
 
 /**
  * Contested claims resolve by speed tier — lower outranks higher — with any remaining tie broken by
@@ -23,7 +23,15 @@ type Grant = { actor: Actor; to: Coord; direction: Direction }
 export function arbitrate(context: TickContext, declared: Intent[]): Grant[] {
   const overlay = new ClaimOverlay()
   const grants: Grant[] = []
-  let unresolved = [...declared].sort((a, b) => a.actor.ordinal - b.actor.ordinal)
+  // Two allies that swap tiles take each other's, together: no one else can claim a tile still held, so theirs are
+  // granted first and kept out of the contest.
+  for (const intent of declared) {
+    const choice = intent.choices[0]
+    if (intent.swapWith === undefined || choice === undefined) continue
+    grants.push({ actor: intent.actor, to: choice.to, direction: choice.direction, weight: choice.weight ?? 1, swapWith: intent.swapWith })
+    overlay.claim(intent.actor.definition.layer, intent.actor.ordinal, choice.to, intent.actor.definition.footprint)
+  }
+  let unresolved = declared.filter((intent) => intent.swapWith === undefined).sort((a, b) => a.actor.ordinal - b.actor.ordinal)
   const bound = declared.length + 1
   let passes = 0
 
@@ -53,7 +61,7 @@ export function arbitrate(context: TickContext, declared: Intent[]): Grant[] {
       if (winner === undefined) continue
       const choice = winner.choices[winner.chosen]
       if (choice === undefined) continue
-      grants.push({ actor: winner.actor, to: choice.to, direction: choice.direction })
+      grants.push({ actor: winner.actor, to: choice.to, direction: choice.direction, weight: choice.weight ?? 1 })
       overlay.claim(
         winner.actor.definition.layer,
         winner.actor.ordinal,
@@ -89,9 +97,9 @@ export function arbitrate(context: TickContext, declared: Intent[]): Grant[] {
 }
 
 /**
- * A fresh ranking for a mover, against occupancy plus every claim granted so far this tick — toward the goal
- * it declared (an enemy's nearest tile, or its side's target), which nothing in arbitration can move: no one
- * has moved yet and no one has died.
+ * A mover's steps again, against occupancy plus every claim granted so far this tick: the ones it declared, best first
+ * (`intents.ts`), less those a claim now covers. Its route cannot change in arbitration: no one has moved yet and no
+ * one has died.
  */
 function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): StepChoice[] | null {
   const actor = intent.actor
@@ -99,8 +107,8 @@ function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): St
   const mask = maskForActor(context, actor, overlay)
   // Only a step it can pay for: its credit was capped at the cost of the step it declared (`intents.ts`), so a
   // loser of a claim across cannot take a dearer step up or down instead.
-  const choices = rankedSteps(actor.anchor, actor.definition, mask, { goal: intent.goal, intent: intent.heading }).filter(
-    (choice) => rate === undefined || stepCost(rate, choice.direction) <= actor.moveCredit,
+  const choices = intent.choices.filter(
+    (choice) => mask.footprintFits(choice.to, actor.definition.footprint) && (rate === undefined || choiceCost(rate, choice) <= actor.moveCredit),
   )
   return choices.length === 0 ? null : choices
 }
@@ -123,7 +131,7 @@ function reportBlocked(context: TickContext, intent: Intent, overlay: ClaimOverl
     blocker: typeof blocker === "number" ? (context.byOrdinal.get(blocker)?.id ?? null) : null,
     credit: actor.moveCredit,
     // The cost of the step it lost.
-    cost: actor.definition.movementRate === undefined ? 0 : stepCost(actor.definition.movementRate, intent.choices[intent.chosen]?.direction),
+    cost: actor.definition.movementRate === undefined ? 0 : stepCost(actor.definition.movementRate, intent.choices[intent.chosen]?.direction, intent.choices[intent.chosen]?.weight ?? 1),
   })
 }
 
@@ -206,24 +214,23 @@ function contestWinner(context: TickContext, group: Intent[]): Intent | undefine
 
 export function settle(context: TickContext, grants: readonly Grant[]): void {
   const ordered = [...grants].sort((a, b) => a.actor.ordinal - b.actor.ordinal)
+  // A swap's two movers leave their tiles before either takes the other's.
+  for (const grant of ordered) {
+    if (grant.swapWith !== undefined) context.index.remove(grant.actor.definition.layer, grant.actor.ordinal, grant.actor.anchor, grant.actor.definition.footprint)
+  }
   for (const grant of ordered) {
     const actor = grant.actor
     const from = actor.anchor
     const rate = actor.definition.movementRate
     if (rate === undefined) continue
-    context.index.move(
-      actor.definition.layer,
-      actor.ordinal,
-      actor.definition.footprint,
-      from,
-      grant.to,
-    )
+    if (grant.swapWith === undefined) context.index.move(actor.definition.layer, actor.ordinal, actor.definition.footprint, from, grant.to)
+    else context.index.add(actor.definition.layer, actor.ordinal, grant.to, actor.definition.footprint)
     actor.anchor = grant.to
     actor.facing = grant.direction
     // The step it took spends that step's cost (`stepCost`), its credit capped there first as it is at the step it
     // declared (`intents.ts`): a loser of a claim on a step up or down granted a step across instead spends all it
     // saved, so waiting never banks a sprint on this path either.
-    const cost = stepCost(rate, grant.direction)
+    const cost = stepCost(rate, grant.direction, grant.weight ?? 1)
     actor.moveCredit = Math.min(actor.moveCredit, cost) - cost
     // A unit that just arrived does not also fire this tick — attacks() skips it. Stop first,
     // then attack, is the owner's second finding: without this a unit can step into range and

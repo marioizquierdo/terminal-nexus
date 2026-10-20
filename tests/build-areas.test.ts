@@ -10,13 +10,12 @@ import assert from "node:assert/strict"
 import { setting } from "../src/build/all-settings.ts"
 import { cellForTile } from "../src/build/layout.ts"
 import { armedPreview, buildRange, buildingsOn } from "../src/build/state.ts"
-import { clearanceOf } from "../src/build/territory.ts"
 import { DEFAULT_LEVEL, openRound } from "../src/cli/levels.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { footprintDistance, footprintSteps, footprintWithin } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
-import { ROOM_GLYPH, reachOf, reachOutline, roomApron, unitReachOf } from "../src/view/build-areas.ts"
+import { reachOf, reachOutline, unitReachOf } from "../src/view/build-areas.ts"
 import { trailMarks, trailTiles } from "../src/view/build-grid.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { cellAt, frameToAnsi, frameToText, offendingGlyph } from "../src/view/frame.ts"
@@ -152,19 +151,6 @@ test("a building with no reach draws none, and a placed Turret shows its reach w
   assert.equal(strokes(compose(side)), 0)
 })
 
-/** Every tile of the room the buildings on the map keep (standing, planned, the raid's), as `x,y`. */
-function roomTiles(side: Side): Set<string> {
-  const tiles = new Set<string>()
-  const { context, state } = { context: side.build.round, state: side.build.state }
-  for (const building of buildingsOn(context, state.planned)) {
-    const definition = context.registry.get(building.contentId)
-    const room = clearanceOf(definition, setting(state, "spawnClearance"))
-    if (room === null) continue
-    for (const tile of roomApron(building.anchor, definition.footprint, room)) tiles.add(`${tile.x},${tile.y}`)
-  }
-  return tiles
-}
-
 /** The open tile nearest `tile` (not `tile` itself), searched ring by ring in reading order. */
 function openNear(side: Side, tile: Coord): Coord {
   for (let ring = 1; ring < 10; ring += 1) {
@@ -198,17 +184,15 @@ test("while a building is armed, the build range is the dotted ground, lit where
   const beyond = at(side, armed, outside)
   assert.equal(beyond.glyph, " ")
   assert.equal(beyond.style.seeThrough, undefined)
-  // Every open tile of the range in view takes a dot, but the room the Barracks keeps, which takes its tick;
-  // nothing outside it gains one.
+  // Every open tile of the range in view takes a dot; nothing outside it gains one.
   const range = side.build.state
-  const room = roomTiles(side)
   for (let y = range.camera.y; y < range.camera.y + range.viewport.height; y += 1) {
     for (let x = range.camera.x; x < range.camera.x + range.viewport.width; x += 1) {
       const tile = { x, y }
       if (!open(side, tile) || (tile.x === range.cursor.x && tile.y === range.cursor.y)) continue
       const was = at(side, before, tile).glyph
       const now = at(side, armed, tile).glyph
-      const marks = room.has(`${x},${y}`) ? [ROOM_GLYPH] : territory.has(tile) ? ["."] : [was]
+      const marks = territory.has(tile) ? ["."] : [was]
       assert.ok(marks.includes(now) || ["-", "|", "/", "\\"].includes(now), `${x},${y} drew ${now}`)
     }
   }
@@ -274,106 +258,9 @@ test("at 80x24 and on a wide terminal, the frame keeps its size and its glyphs, 
   }
 })
 
-// --- A Barracks's room ---------------------------------------------------------------------------------------
-
-const BARRACKS = "structure.citizen.barracks"
 const STROKES = ["-", "|", "/", "\\"]
 
-/** How many cells of a frame carry the room's tick. */
-const ticks = (frame: ReadonlyCellFrame): number => frame.cells.filter((cell) => cell.glyph === ROOM_GLYPH).length
-
-test("a room is every tile within its size of the footprint, measured as range is, and not on it; the buildings that make units keep one", () => {
-  const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
-  const one = roomApron({ x: 10, y: 10 }, footprint, 1)
-  // A Barracks keeps the ten tiles touching its sides; its corners are three away, as range is measured (a row
-  // counts two columns).
-  assert.equal(one.length, 10)
-  for (const tile of one) assert.equal(footprintSteps({ x: 10, y: 10 }, footprint, tile, ONE), 1, `${tile.x},${tile.y} does not touch it`)
-  assert.ok(!one.some((tile) => tile.x === 9 && tile.y === 9), "a corner is in a room of one tile")
-  // A room of two adds the second column either side; a row above is two away already, and touches.
-  const two = roomApron({ x: 10, y: 10 }, footprint, 2)
-  assert.equal(two.length, 14)
-  for (const tile of two) {
-    const distance = footprintDistance({ x: 10, y: 10 }, footprint, tile, ONE)
-    assert.ok(distance >= 1 && distance <= 2, `${tile.x},${tile.y} is ${distance} away`)
-    assert.ok(footprintWithin({ x: 10, y: 10 }, footprint, tile, ONE, 2))
-  }
-  assert.deepEqual(
-    two.filter((tile) => !one.some((near) => near.x === tile.x && near.y === tile.y)),
-    [
-      { x: 8, y: 10 },
-      { x: 14, y: 10 },
-      { x: 8, y: 11 },
-      { x: 14, y: 11 },
-    ],
-  )
-  // Counted in the tiles' own coordinates: no negative zero, even at the map's corner.
-  for (const tile of roomApron({ x: 0, y: 0 }, ONE, 2)) assert.ok(!Object.is(tile.x, -0) && !Object.is(tile.y, -0), `${tile.x},${tile.y}`)
-  // What keeps room: the Barracks and the Hatchery, the buildings the player places that make units.
-  assert.equal(clearanceOf(FIXTURE_REGISTRY.get(BARRACKS)), 1)
-  assert.equal(clearanceOf(FIXTURE_REGISTRY.get("structure.bench.hatchery")), 1)
-  assert.equal(clearanceOf(FIXTURE_REGISTRY.get(TURRET)), null)
-  assert.equal(clearanceOf(FIXTURE_REGISTRY.get("structure.citizen.nexus")), null)
-  assert.equal(clearanceOf(FIXTURE_REGISTRY.get(BARRACKS), 2), 2, "the Experiment's value stands in for it")
-})
-
-test("while a building is armed, the room a Barracks keeps is a ring of dim ticks: round one standing, one planned, and the armed one's ghost", () => {
-  const side = buildSide({ cursor: STARTER_START_CURSOR })
-  const standing = side.context.standing.find((structure) => structure.contentId === BARRACKS)
-  assert.ok(standing !== undefined)
-  assert.equal(ticks(compose(side)), 0, "a room was drawn with nothing armed")
-  // A Turret, which keeps no room, armed well away from the Barracks: the Barracks's room shows.
-  keys(side, "3")
-  moveTo(side, { x: 16, y: 13 })
-  const armed = compose(side)
-  let drawn = 0
-  for (const tile of roomApron(standing.anchor, FIXTURE_REGISTRY.get(BARRACKS).footprint, 1)) {
-    if (!open(side, tile)) continue
-    const cell = at(side, armed, tile)
-    assert.equal(cell.glyph, ROOM_GLYPH, `${tile.x},${tile.y}`)
-    assert.equal(cell.style.fgRole, "terrain.plain")
-    assert.equal(cell.style.dim, true)
-    // Its own build range covers its room, so the floor's light is kept: it does not read as ground outside it.
-    assert.deepEqual(cell.style.seeThrough, { role: "chrome.edge", alpha: 0.12 })
-    drawn += 1
-  }
-  assert.ok(drawn >= 8, `only ${drawn} ticks round the Barracks`)
-  // The Nexus and the Turret keep no room: nothing else takes a tick.
-  assert.equal(ticks(armed), drawn)
-
-  // The armed Barracks's own room, round its ghost, moving with it.
-  keys(side, ESC, "1")
-  moveTo(side, { x: 21, y: 13 })
-  const ghost = { x: 20, y: 13 }
-  const own = roomApron(ghost, FIXTURE_REGISTRY.get(BARRACKS).footprint, 1).filter((tile) => open(side, tile))
-  assert.ok(own.length >= 8)
-  const atGhost = compose(side)
-  for (const tile of own) assert.equal(at(side, atGhost, tile).glyph, ROOM_GLYPH, `the ghost's room at ${tile.x},${tile.y}`)
-  moveTo(side, { x: 21, y: 14 })
-  assert.notEqual(at(side, compose(side), { x: 20, y: 12 }).glyph, ROOM_GLYPH, "the ghost's room stayed behind")
-
-  // Placed (it hangs over the range's edge), and a Turret armed: the planned Barracks keeps its room too.
-  moveTo(side, { x: 21, y: 13 })
-  keys(side, ENTER)
-  assert.equal(side.build.state.planned.length, 1, side.build.state.status.text)
-  keys(side, "3")
-  moveTo(side, { x: 16, y: 13 })
-  const planned = side.build.state.planned[0]!
-  // The Turret's reach, drawn above the room, keeps its strokes where the two cross.
-  const reach = new Set(reachOutline({ x: 16, y: 13 }, ONE, 6).map(({ tile }) => `${tile.x},${tile.y}`))
-  const theirs = roomApron(planned.anchor, FIXTURE_REGISTRY.get(BARRACKS).footprint, 1).filter((tile) => open(side, tile))
-  const withPlan = compose(side)
-  for (const tile of theirs) {
-    const glyph = at(side, withPlan, tile).glyph
-    if (reach.has(`${tile.x},${tile.y}`)) assert.ok(STROKES.includes(glyph), `the reach at ${tile.x},${tile.y}`)
-    else assert.equal(glyph, ROOM_GLYPH, `the planned Barracks's room at ${tile.x},${tile.y}`)
-  }
-  // Explore Map and the menu draw none of it.
-  keys(side, ESC, "e")
-  assert.equal(ticks(compose(side)), 0)
-})
-
-test("the build range's dots give way along the raid's trail's whole way, as a reach and a room do: a tile of the way draws the same armed or not", () => {
+test("the build range's dots give way along the raid's trail's whole way, as a reach does: a tile of the way draws the same armed or not", () => {
   const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
   const glyphsOnTheWay = (): string[] => {
     const frame = compose(side)
@@ -388,43 +275,6 @@ test("the build range's dots give way along the raid's trail's whole way, as a r
   keys(side, "3")
   assert.ok(buildRange(side.context, side.build.state).has({ x: 27, y: 9 }), "the build range does not reach the trail")
   assert.deepEqual(glyphsOnTheWay(), unarmed)
-})
-
-test("the room never covers the raid's trail, reads by its tick alone in monochrome, and grows with the Spawn space Experiment", () => {
-  const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
-  const raid = side.build.raid() ?? []
-  const trail = new Set(raid.flatMap((group) => (group.target === null ? [] : trailMarks(group.path, group.target.tiles))).map((mark) => `${mark.tile.x},${mark.tile.y}`))
-  const crossing = [...roomTiles(side)].filter((key) => trail.has(key)).map((key) => {
-    const [x, y] = key.split(",").map(Number) as [number, number]
-    return { x, y }
-  })
-  assert.ok(crossing.length > 0, "the raid's trail does not cross the Barracks's room")
-  // Each read through the camera of its own frame.
-  const before = compose(side)
-  const marks = crossing.map((tile) => at(side, before, tile).glyph)
-  keys(side, "3")
-  moveTo(side, { x: 16, y: 13 })
-  const armed = compose(side)
-  crossing.forEach((tile, index) => {
-    assert.equal(at(side, armed, tile).glyph, marks[index], `the trail mark at ${tile.x},${tile.y} was drawn over`)
-  })
-  // In monochrome, the tick alone: no colour code, and still a ring.
-  const mono = compose(side, {}, "monochrome")
-  assert.equal(sgrCodes(frameToAnsi(mono, "monochrome")).filter(isColourCode).length, 0)
-  assert.ok(ticks(mono) >= 6)
-
-  // At two tiles, the room reaches a second column out either side of the Barracks (25 to 27, rows 10 and 11); a
-  // corner, three away, stays out of it.
-  const wide = buildSide({ cursor: STARTER_START_CURSOR, context: { ...starterContext(), experiments: { spawnClearance: 2 } } })
-  keys(wide, "3")
-  moveTo(wide, { x: 16, y: 13 })
-  const frame = compose(wide)
-  for (const tile of [{ x: 23, y: 11 }, { x: 29, y: 10 }, { x: 29, y: 11 }]) {
-    assert.ok(open(wide, tile), `${tile.x},${tile.y} is not open ground`)
-    assert.equal(at(wide, frame, tile).glyph, ROOM_GLYPH, `${tile.x},${tile.y} at two tiles`)
-    assert.notEqual(at(side, armed, tile).glyph, ROOM_GLYPH, `${tile.x},${tile.y} at one tile`)
-  }
-  assert.notEqual(at(wide, frame, { x: 24, y: 9 }).glyph, ROOM_GLYPH, "a corner is in a room of two tiles")
 })
 
 // --- A unit's reach, explored ---------------------------------------------------------------------------------

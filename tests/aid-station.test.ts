@@ -249,7 +249,7 @@ test("the Aid Station's battle hashes the same every run, and it is pinned: a ch
 
 test("the bench medic, the one healer before buildings could heal, heals exactly as it did: its battle is the one it always was", async () => {
   // A healer's wounded allies are now narrowed by its layers (`perception.ts`); the medic names none, so nothing it
-  // does may move. These are its battle's hashes from before the Aid Station.
+  // does may move by that rule. These are its battle's hashes, pinned again when units came to walk by routes.
   const { run: battle } = await resolveScenario("bench-medic-support.map.json")
   assert.deepEqual([battle.stateHash, battle.eventsHash], PINNED_MEDIC)
 })
@@ -258,12 +258,13 @@ const PINNED_AID_STATION = [
   "81f2d4de6a136420014eafcff90baefcd47f30e47d39655c5f43a5e64be71af3",
   "4f9602c34e41efda28e1407e2aab36d892197d01b5be69b9c81c264da4835a93",
 ]
-// Its state's hash is the one from before the Aid Station; its events' was pinned again when a unit among equally near
+// Its state's hash was the one from before the Aid Station, its events' pinned again when a unit among equally near
 // enemies came to keep the one it holds, then take the weakest (no side wins by where it stands): the same battle,
-// told with other target events.
+// told with other target events. Both pinned again when units came to walk by routes: the battle's walks changed,
+// not what the medic heals.
 const PINNED_MEDIC = [
-  "08a556835c0c4b1fefda99b52da283d385f530db7f071db9a5ace6ec14fa951e",
-  "4b65fa3dc95bda17c2601baefcbeb899028001d1e5ab87e471c4ffb18a2feed1",
+  "cc003bb315d549ad8a09f2d6acf3e7ac3b2df2d2003d8a797df1885e649f3803",
+  "52f5bbd0dedde1bec4c8d216b51ba5716c80a760ff52cc0fc09f80f648b30acc",
 ]
 
 // --- How a heal looks ----------------------------------------------------------------------------------

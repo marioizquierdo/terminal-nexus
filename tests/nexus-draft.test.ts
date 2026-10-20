@@ -287,18 +287,25 @@ test("the Aid Station's card says what one heal mends and how far it reaches, an
   assert.match(fits(), /^Planned Aid Station: /)
 })
 
-test("Drill Schedule sends every Barracks a second wave: its card says so, and the battle trains twice as many", () => {
-  const trainedIn = (context: BuildContext): number => {
+test("Drill Schedule sends every Barracks a second wave: its card says so, and the battle runs on it", () => {
+  const battle = (context: BuildContext) => {
     const resolved = play.startPulse(context, opened(context))
     assert.ok(resolved !== null)
-    return resolved.timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined).length
+    return resolved.timeline
   }
+  const trained = (timeline: ReturnType<typeof battle>): number =>
+    timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined).length
   const drill = side(dealt("drill-schedule"))
-  const without = trainedIn(drill.build.round)
+  const without = battle(drill.build.round)
   keys(drill, "n", "1")
   assert.deepEqual(wavesStat(drill.build.round, BARRACKS, drill.build.state), { label: "WAVES", value: "4 at 5s, 15s" })
-  assert.ok(without > 0, "PERIMETER's Barracks trains nothing in round 1")
-  assert.equal(trainedIn(drill.build.round), without * 2)
+  assert.ok(trained(without) > 0, "PERIMETER's Barracks trains nothing in round 1")
+  const doubled = battle(drill.build.round)
+  assert.equal(doubled.registry.get(BARRACKS).production?.waves, (without.registry.get(BARRACKS).production?.waves ?? 0) * 2)
+  // The second wave comes 15 seconds in; round 1 now ends a little before that, the raid heading straight for the
+  // Nexus and meeting the squads sooner, so the battle trains the second wave only when it lasts that long.
+  const secondWaveTick = 15 * 12
+  assert.equal(trained(doubled), doubled.states.length - 1 >= secondWaveTick ? trained(without) * 2 : trained(without))
 })
 
 test("Standing Order doubles By the Book's reach: her card says range 8, and the battle runs on it", () => {

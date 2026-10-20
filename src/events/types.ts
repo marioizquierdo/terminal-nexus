@@ -9,7 +9,9 @@ import type { Coord, Direction } from "../grid/types.ts"
 import type { AttackKind } from "../content/types.ts"
 import type { PlayerId, VictoryReason } from "../state/types.ts"
 
-export type BlockReason = "edge" | "terrain" | "entity" | "settling"
+/** Why a unit could not take the step it wanted: the Grid's edge, rock, another entity, a tile still settling after a
+ *  death, or no route at all — it stands as near its goal as it can get (`intents.ts`). */
+export type BlockReason = "edge" | "terrain" | "entity" | "settling" | "no-route"
 
 export type ContestResolution = "speed-tier" | "random"
 
@@ -104,6 +106,19 @@ export type DomainEvent =
         from: Coord
         to: Coord
         facing: Direction
+      }>)
+  | (Base &
+      Readonly<{
+        /** A unit moved by something other than its own walk — a push, a pull — from one tile to another. It walks on
+         *  from where it lands (pulse.md, "A unit that did not walk"). */
+        kind: "entity.displaced"
+        entity: string
+        ordinal: number
+        from: Coord
+        to: Coord
+        /** What moved it. */
+        by: string
+        byOrdinal: number
       }>)
   | (Base &
       Readonly<{
@@ -235,6 +250,7 @@ export const DOMAIN_EVENT_KINDS: readonly DomainEventKind[] = [
   "move.contested",
   "move.blocked",
   "entity.moved",
+  "entity.displaced",
   "attack.launched",
   "damage.applied",
   "heal.applied",

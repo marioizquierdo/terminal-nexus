@@ -88,7 +88,7 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
   assert.match(text, /KEYBOARD NAVIGATION - experiments/)
   // In order, group by group: keyboard navigation — how far an arrow and Shift go, how often a held key
   // moves, then the terminal's own two (the hold window and key releases) — the popup pulse (every popup's) and the Battle Round flash, and the mission's next round, Vasse's health,
-  // the build range, her aura, the space a Barracks keeps and whether a Nexus power must be picked. (Her voice in
+  // the build range, her aura, whether a Nexus power must be picked and the way units come off a roof. (Her voice in
   // battle was settled beside her.)
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.field),
@@ -105,8 +105,8 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "popupFlashPeak",
       "nextRound",
       "buildRange",
-      "spawnClearance",
       "powerPick",
+      "roofExit",
     ],
   )
   assert.deepEqual(

@@ -201,7 +201,9 @@ test("the compositor only ever emits roles from the committed vocabulary", async
   }
 })
 
-test("the view and the headless run agree on the fight they describe", async () => {
+// It plays every map in scenarios/ twice, once headless and once for the view: longer than Bun's five seconds a
+// test, so it says how long it may take.
+test("the view and the headless run agree on the fight they describe", { timeout: 60_000 }, async () => {
   const { resolveScenario } = await import("./helpers.ts")
   for (const name of scenarioFiles()) {
     const headless = await resolveScenario(name)

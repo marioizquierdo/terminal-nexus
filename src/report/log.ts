@@ -72,7 +72,8 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             level: "info",
             kind: "spawn",
             subject: event.entity,
-            detail: `at ${formatCoordinate(event.at)}`,
+            // A building's units appear on its roof and walk out over it (pulse.md, roofs): the line says so.
+            detail: event.trainedBy === undefined ? `at ${formatCoordinate(event.at)}` : `at ${formatCoordinate(event.at)} on the roof of ${event.trainedBy}, coming out`,
           })
           break
 
@@ -310,6 +311,19 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             detail: [event.name ?? event.ability, event.amount === undefined ? "" : `dmg ${event.amount}`, event.credits === undefined ? "" : `credits ${event.credits}`]
               .filter((part) => part !== "")
               .join("  "),
+          })
+          break
+
+        case "entity.displaced":
+          where.set(event.ordinal, event.to)
+          blocked.delete(event.ordinal)
+          emit({
+            tick,
+            level: "info",
+            kind: "pushed",
+            subject: event.entity,
+            object: event.by,
+            detail: `${formatCoordinate(event.from)} to ${formatCoordinate(event.to)}`,
           })
           break
 

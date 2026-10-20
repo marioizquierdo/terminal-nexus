@@ -245,7 +245,9 @@ function playMission(mission: MissionDefinition): MissionPulse[] {
   return pulses
 }
 
-test("a mission's lines never change what its Pulses resolve: with or without them, the same states, Pulse by Pulse", () => {
+// It hashes every state of every round of PERIMETER, four times over: longer than Bun's five seconds a test, so it says
+// how long it may take, as the curve level's measurement does.
+test("a mission's lines never change what its Pulses resolve: with or without them, the same states, Pulse by Pulse", { timeout: 60_000 }, () => {
   const shape = (pulses: readonly MissionPulse[]) =>
     pulses.map((pulse) => [pulse.states.map(hashState), pulse.events.length, pulse.verdict, pulse.fired])
   const withLines = shape(playMission(PERIMETER))

@@ -1,4 +1,5 @@
-// Movement credit and step choice (pulse.md).
+// Movement credit (pulse.md): what a step costs and when a unit can pay for it. Which step it wants is its route's
+// (`routes.ts`, `src/routing/`).
 //
 // A unit walks to a **beat**: the whole number of ticks a step across a column takes, `ceil(12 x denominator /
 // numerator)` at 12 ticks a second. A step costs a beat's worth of credit for each column of distance it covers
@@ -7,9 +8,8 @@
 // distance at one pace — a walk down the screen and one across it cover the same ground in the same time, and a
 // unit that can reach a tile within a range by walking reaches it in the time the range says.
 
-import type { ContentDef, MovementRate } from "../content/types.ts"
-import { DIRECTIONS, directionOf, gridDistance, nearestFootprintTile, step, stepLength } from "../grid/coords.ts"
-import type { CollisionMask } from "../grid/occupancy.ts"
+import type { MovementRate } from "../content/types.ts"
+import { DIRECTIONS, stepLength } from "../grid/coords.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 
 /** The longest step there is, up or down a row: what credit is capped at. */
@@ -32,11 +32,12 @@ function creditFor(rate: MovementRate, length: number): number {
 
 /**
  * What a step costs in movement credit, in proportion to how far it goes (`stepLength`): a step across costs a beat's
- * worth of credit, and a step up or down `ROW_DISTANCE` times that, so it takes exactly two beats. With no direction,
- * the dearest step's cost: what credit is capped at (`accrueCredit`).
+ * worth of credit, and a step up or down `ROW_DISTANCE` times that, so it takes exactly two beats — times `weight`,
+ * what the ground it steps onto weighs (slow ground, `TerrainKind.stepWeight`). With no direction, the dearest step's
+ * cost on open ground: what credit is capped at (`accrueCredit`).
  */
-export function stepCost(rate: MovementRate, direction?: Direction): number {
-  return creditFor(rate, direction === undefined ? LONGEST_STEP : stepLength(direction))
+export function stepCost(rate: MovementRate, direction?: Direction, weight = 1): number {
+  return creditFor(rate, (direction === undefined ? LONGEST_STEP : stepLength(direction)) * weight)
 }
 
 /**
@@ -45,10 +46,11 @@ export function stepCost(rate: MovementRate, direction?: Direction): number {
  * its credit is capped again at that step's own cost (`intents.ts`), and at the cost of the step it is granted
  * (`settle`, `arbitration.ts`), so waiting never buys two quick steps across, not even for a mover that lost its
  * claim on a step down and took a step across instead. A blocked step keeps its credit, which is simply what *not*
- * subtracting means.
+ * subtracting means. Beside slow ground the cap is the dearest step from where the unit stands (`cap`), so it can save
+ * up for a step onto it.
  */
-export function accrueCredit(credit: number, rate: MovementRate): number {
-  return Math.min(credit + rate.numerator, stepCost(rate))
+export function accrueCredit(credit: number, rate: MovementRate, cap: number = stepCost(rate)): number {
+  return Math.min(credit + rate.numerator, cap)
 }
 
 /** Whether an actor has the credit for a step at all: the cheapest, a step across. */
@@ -56,91 +58,16 @@ export function canStep(credit: number, rate: MovementRate): boolean {
   return credit >= creditFor(rate, SHORTEST_STEP)
 }
 
-/** Turn cost in 90-degree increments, 0..2. Used only to rank equally good steps. */
-function turnCost(from: Direction, to: Direction): number {
-  if (from === to) return 0
-  const reversed = (from === "n" && to === "s") || (from === "s" && to === "n")
-  const flipped = (from === "e" && to === "w") || (from === "w" && to === "e")
-  return reversed || flipped ? 2 : 1
-}
-
 export type StepChoice = Readonly<{
   direction: Direction
   to: Coord
   distanceAfter: number
+  /** What the ground it steps onto weighs (`TerrainKind.stepWeight`): the step costs that many times its length.
+   *  Absent: open ground, 1. */
+  weight?: number
 }>
 
-export type StepOptions = Readonly<{
-  /** Ranked best-first once, so a caller can walk the list when arbitration rejects a claim. */
-  goal: Coord
-  /** `toward` closes with the goal; `away` opens distance from it — worker flight. */
-  intent: "toward" | "away"
-}>
-
-/**
- * Greedy step with a deterministic sidestep, over the mover's own collision mask
- * (the first routing). Candidates are ranked by the distance they gain for the time they take, then by
- * how far they turn from the direction the actor wanted, then by a fixed compass order — so two
- * equally good steps always resolve the same way on every machine.
- *
- * Gain for time, not gain alone: a step up or down gains `ROW_DISTANCE` and takes as much longer (`stepLength`).
- * Ranked by gain alone every unit would walk down first and across after; ranked by gain for its time every
- * improving step is as good as another, and the turn from the way straight at the goal decides (`directionOf`), so
- * a unit walks the screen's own diagonal, a staircase of two steps across for each step down. Compared by
- * cross-multiplying, whole numbers only.
- *
- * Every four-way step changes the distance to the goal: never a step that merely holds it level. That means an
- * actor whose approach is off-axis (both a row and a column separate it from the goal) has two improving
- * directions to fall back on, and can slide along an obstacle's face one of them at a time until it clears. An
- * actor whose approach is exactly on-axis (same row or column as the goal) has exactly one improving direction, and
- * if that is blocked there is no fallback at all: it holds and the tick reports it blocked, for as long as the
- * obstacle stands. This is a known, accepted gap in the first routing, and real pathfinding, not this greedy
- * stepping, is what would close it. What a mover with no route should do (circle or stop) is still an open
- * question (Q15).
- *
- * **Measured from the mover's tile nearest the goal**, not from its anchor (its western tile): a unit three tiles wide
- * walking east and its mirror walking west rank their steps alike, nose first either way.
- */
-export function rankedSteps(
-  anchor: Coord,
-  definition: ContentDef,
-  mask: CollisionMask,
-  options: StepOptions,
-): StepChoice[] {
-  const { goal, intent } = options
-  const away = (at: Coord): number => gridDistance(nearestFootprintTile(goal, at, definition.footprint), goal)
-  const current = away(anchor)
-  const nose = nearestFootprintTile(goal, anchor, definition.footprint)
-  const desired = intent === "toward" ? directionOf(nose, goal) : directionOf(goal, nose)
-
-  const candidates: Array<StepChoice & { turn: number; index: number }> = []
-  DIRECTIONS.forEach((direction, index) => {
-    const to = step(anchor, direction)
-    if (!mask.footprintFits(to, definition.footprint)) return
-    const distanceAfter = away(to)
-    // Strictly: a step that only keeps the distance — a wide mover sliding along, its nose tile changing — is no step
-    // at all, or a walk could pace back and forth for ever. A one-tile mover's every step changes it anyway.
-    const improves = intent === "toward" ? distanceAfter < current : distanceAfter > current
-    if (!improves) return
-    candidates.push({
-      direction,
-      to,
-      distanceAfter,
-      turn: turnCost(desired, direction),
-      index,
-    })
-  })
-
-  // What a step gains, and how long it takes: in proportion to how far it goes (`stepLength`).
-  const gainOf = (choice: StepChoice): number => (intent === "toward" ? current - choice.distanceAfter : choice.distanceAfter - current)
-  candidates.sort((a, b) => {
-    // gain(a) / time(a) against gain(b) / time(b), the better first.
-    const forA = gainOf(a) * stepLength(b.direction)
-    const forB = gainOf(b) * stepLength(a.direction)
-    if (forA !== forB) return forB - forA
-    if (a.turn !== b.turn) return a.turn - b.turn
-    return a.index - b.index
-  })
-
-  return candidates.map(({ direction, to, distanceAfter }) => ({ direction, to, distanceAfter }))
+/** What `choice` costs a unit walking at `rate`, the ground it steps onto weighed in. */
+export function choiceCost(rate: MovementRate, choice: StepChoice): number {
+  return stepCost(rate, choice.direction, choice.weight ?? 1)
 }

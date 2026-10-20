@@ -396,15 +396,15 @@ test("melee is touching: a trooper swings at the enemy straight above it, and st
     "two troopers one above the other did not fight at once",
   )
   assert.ok(!above.some((event) => event.kind === "entity.moved"), "a trooper touching its enemy walked")
-  // A row and a column off a Barracks's corner it does not touch it: it steps beside it — up, along the screen's
-  // diagonal — and only then swings. (A placement block puts a building by its centre tile, so the Barracks covers
-  // columns 11 to 13 of rows 7 and 8.)
+  // A row and a column off a Barracks's corner it does not touch it: it steps beside it — one column across, the
+  // shorter walk than a row up — and only then swings. (A placement block puts a building by its centre tile, so the
+  // Barracks covers columns 11 to 13 of rows 7 and 8.)
   const corner = play(field({ A: [[10, 9, TROOPER]], B: [[12, 7, BARRACKS]] }), 24).events
   const moves = corner.filter((event) => event.kind === "entity.moved")
   const firstSwing = corner.find((event) => event.kind === "attack.launched")
   assert.deepEqual(
     moves.map((event) => (event.kind === "entity.moved" ? event.to : null)),
-    [{ x: 10, y: 8 }],
+    [{ x: 11, y: 9 }],
   )
   assert.ok(firstSwing !== undefined && (moves[0]?.tick ?? Infinity) < firstSwing.tick, "it swung at a building it did not touch")
 })
@@ -468,28 +468,33 @@ test("waiting never banks a sprint across: credit saved for a step down buys one
 })
 
 test("losing a claim on a step down banks no sprint: the step across taken instead spends the credit saved, and the next waits a whole beat", () => {
-  // A trooper wants the step down to 20,11, toward the raid's Nexus; a hogrider, quicker to claim, takes that tile on
-  // the same tick, and the trooper steps aside to 19,10. Rock at 19,11 leaves it only steps across from there. (A
-  // placement block puts a building by its centre tile, so the Nexus covers columns 15 to 17 of rows 12 and 13.)
+  // A trooper wants the step down to 20,11, toward the raid's Nexus: a step down and a step west leave it as long a walk,
+  // and it faces south, so down ranks first. A hogrider, quicker to claim, takes that tile on the same tick, and the
+  // trooper steps aside to 19,10. (A placement block puts a building by its centre tile, so the Nexus covers columns
+  // 15 to 17 of rows 12 and 13.)
   const rate = FIXTURE_REGISTRY.get(TROOPER).movementRate
   const hogRate = FIXTURE_REGISTRY.get(HOG).movementRate
   assert.ok(rate !== undefined && hogRate !== undefined)
   const beat = stepCost(rate, "e") / rate.numerator
-  const rocks = [{ x: 19, y: 11 }]
   // Saved by standing: the trooper holds a step down's credit, and the hogrider stands one step from the tile.
-  const near = field({ A: [[20, 10, TROOPER], [21, 11, HOG]], B: [[16, 12, NEXUS]] }, {}, { rocks })
+  const near = field({ A: [[20, 10, TROOPER], [21, 11, HOG]], B: [[16, 12, NEXUS]] })
   const credit = (contentId: string): number => (contentId === TROOPER ? stepCost(rate, "s") : contentId === HOG ? stepCost(hogRate, "e") : 0)
   const saved: MatchState = { ...near, entities: near.entities.map((entity) => ({ ...entity, moveCredit: credit(entity.contentId) })) }
   // Saved on its own: the trooper waits two beats for its step down, and the hogrider walks in along the row and
   // takes the tile on that very tick.
-  const waited = field({ A: [[20, 10, TROOPER], [24, 11, HOG]], B: [[16, 12, NEXUS]] }, {}, { rocks })
+  const waited = field({ A: [[20, 10, TROOPER], [24, 11, HOG]], B: [[16, 12, NEXUS]] })
   for (const [how, state, lostOn] of [["saved by standing", saved, 1], ["saved on its own", waited, 2 * beat]] as const) {
     const { events } = play(state, 24)
     const trooper = state.entities.find((entity) => entity.contentId === TROOPER)?.id
     const lost = events.flatMap((event) => (event.kind === "move.contested" && event.losers.includes(trooper ?? "") ? [event.tick] : []))
     assert.deepEqual(lost, [lostOn], `${how}: the trooper did not lose its step down once`)
-    const steps = events.flatMap((event) => (event.kind === "entity.moved" && event.entity === trooper ? [[event.tick, event.facing]] : []))
-    assert.deepEqual(steps.slice(0, 2), [[lostOn, "w"], [lostOn + beat, "w"]], `${how}: it sprinted, ${JSON.stringify(steps)}`)
+    const steps = events.flatMap((event) => (event.kind === "entity.moved" && event.entity === trooper ? [{ tick: event.tick, facing: event.facing }] : []))
+    const [first, second] = steps
+    assert.ok(first !== undefined && second !== undefined, `${how}: it did not step twice`)
+    assert.deepEqual([first.tick, first.facing], [lostOn, "w"], `${how}: it did not step aside at once`)
+    // The step across spent everything it had saved: the next waits that step's whole cost, a beat across or two down.
+    assert.equal(second.tick - first.tick, stepCost(rate, second.facing) / rate.numerator, `${how}: it sprinted, ${JSON.stringify(steps)}`)
+    assert.ok(second.tick - first.tick >= beat)
   }
 })
 
@@ -583,7 +588,8 @@ test("the forecast's way is the Pulse's own walk: down the screen's diagonal fro
 
 test("the forecast's way ends touching what it goes for, straight above or below it, never on it", () => {
   // An open field, the player's Grid Nexus far to the south-west, a trooper of the player's out on it, and one trooper
-  // of the raid's straight above or below it: the raid's goes for the nearer, the player's trooper. Units never block
+  // of the raid's straight above or below it, within its reach: the raid's turns to it rather than heading on for the
+  // Nexus (`headsForNexus`). Units never block
   // a forecast's way, so a way that ran on to the target's own tile would stand on it.
   const grid: GridTerrain = { width: 40, height: 24, tiles: Array.from({ length: 40 * 24 }, () => "terrain.plain" as const) }
   const endOfWay = (raidAt: Coord, postAt: Coord): Coord | undefined => {
@@ -611,8 +617,8 @@ test("the forecast's way ends touching what it goes for, straight above or below
     return group?.path.at(-1)
   }
   // From the north, the way ends on the tile straight above the player's trooper; from the south, straight below.
-  assert.deepEqual(endOfWay({ x: 20, y: 2 }, { x: 20, y: 12 }), { x: 20, y: 11 })
-  assert.deepEqual(endOfWay({ x: 20, y: 22 }, { x: 20, y: 12 }), { x: 20, y: 13 })
+  assert.deepEqual(endOfWay({ x: 20, y: 9 }, { x: 20, y: 12 }), { x: 20, y: 11 })
+  assert.deepEqual(endOfWay({ x: 20, y: 15 }, { x: 20, y: 12 }), { x: 20, y: 13 })
 })
 
 test("Recall sends a survivor to the home nearest by the rule: a Nexus four columns beside it, not one three rows above", () => {
@@ -645,8 +651,9 @@ test("the battle with the most rules in it resolves the same way on every run, a
 })
 
 // The Citizens against the Ravels, blasts among its rules: its state and its events (pinned again when every tie came
-// to go by what a unit faces, then a draw).
-const PINNED_BATTLE = ["d878a9ba993dd90b6b08eb1a856277db0d8878a9a119729d742ab7a9dbcae68b", "08ef3a53557c0d3ad19a301ae33672b195f8b3104b605e313f559f6c3da8fad5"] as const
+// to go by what a unit faces, then a draw, when units came to walk by routes, and when a side with no target came to
+// head for the enemy's Nexus, turning only to what comes within its reach).
+const PINNED_BATTLE = ["bff55b350e713b7800defb795db2e6f377a076dff1b48ac619a887ee7ed82ec6", "82fd828d46aa7dd01073109208ae8c10e72914b1f1f5e9e86fa3569ea5dae2d9"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of
@@ -662,7 +669,6 @@ test("every reach the content and the Experiments offer is a whole number of row
       "detonation trigger": definition.detonation?.triggerRange,
       "aura radius": auraOf(definition)?.radius,
       "construction radius": definition.constructionRadius,
-      clearance: definition.clearance,
       // Worked out from those: the reach a unit heading for its side's target turns to fight within, and how near
       // an attacker may come before a worker runs from it.
       "engage reach": followsTarget(definition) ? engageRange(definition) : undefined,
@@ -673,7 +679,7 @@ test("every reach the content and the Experiments offer is a whole number of row
     // and a corner its card's words do not say.
     if (definition.attack?.kind === "melee" && definition.attack.range !== 1) odd.push(`${id} melee range ${definition.attack.range}`)
   }
-  for (const name of ["buildRange", "spawnClearance"] as const) {
+  for (const name of ["buildRange"] as const) {
     for (const value of ALL_SETTINGS[name].values) if (!whole(value)) odd.push(`the ${name} Experiment offers ${value}`)
   }
   assert.deepEqual(odd, [])

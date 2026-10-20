@@ -1,0 +1,64 @@
+{
+  "id": "route-crowd",
+  "name": "Route: a crowd round one target - eight troopers in a file against one Grid Nexus",
+  "notes": "Eight troopers in a single file, one behind another on the row of the enemy's Grid Nexus. The greedy step queued them: the one in front fought, the rest waited behind it, because no step round the one in front brought them closer. Measured by how many strike at once and how soon the Nexus falls; done when they spread round it to the free tiles beside it.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 1200,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 4,
+        "y": 8
+      },
+      "rows": [
+        "tttttttt"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 38,
+        "y": 8
+      },
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.citizen.nexus"
+        }
+      }
+    }
+  }
+}
