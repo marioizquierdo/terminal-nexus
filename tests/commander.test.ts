@@ -222,18 +222,18 @@ test("the named scenario is the same every run, and on both runtimes, whatever s
 // taking whole beats, one across and two up or down. Round 1 is the same whatever she sits out; from round 2 on,
 // Vasse, back beside the Nexus, fights in it.
 const PINNED_ROUNDS = [
-  "0999258726f408b8d33813950b446c4dd8404ad80250086ad68416f1b4607ae4",
-  "9a67edf3d6a7abacf597914201e6a08a4cffe1e2f17dcaed1d09b5b88da097b4",
-  "4a01850c2ec6537a5c8b3ac8cb57abd6f83cec27369be8eca8f9240a68e5cae8",
+  "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
+  "a77f8ba8161e9c05f30ad4f6e30ef7e72d7c3125dfd8d38b923d5eacd950e148",
+  "2341933382f9101ba34c9d7105853a860cafadfbb3966bc00ee36cee1ea29899",
 ]
 
 // The same three rounds with a test-only Vasse who sits one round out: the rule as it stood before Vasse came back at
 // once. Both sets pinned again when every tie came to go by what a unit faces, then a draw (no side wins by where it
-// stands).
+// stands), and when units came to walk by routes.
 const PINNED_SITTING_OUT = [
-  "0999258726f408b8d33813950b446c4dd8404ad80250086ad68416f1b4607ae4",
-  "bc28aa75c7e0aac2435fc65f52afde998f70f6abcf9407a9cb3c58ac03c9c997",
-  "27d5d789a9b5f3661683c091bb18f2a2e46d23b26456329601e63dc645a488ff",
+  "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
+  "514a6ea0e399d6c4fab50a87ab3429c1edcc28451f75e5186fcd06236ed4a9b3",
+  "444c6f2b73ea314a1972c1564777935f759e7b854bd3fedccc6001ca37b6725a",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

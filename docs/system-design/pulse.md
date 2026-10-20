@@ -75,12 +75,9 @@ Two rules govern what happens when an actor cannot step:
 cost over five hundred ticks, and in the jammed-corridor fixture a mover blocked on one tick steps on
 the next — which is only possible if a refused step spends nothing.
 
-Steps are ranked by the distance they gain for the time they take, then by how little they turn from the way
-straight at the goal, then by compass order. Distance is measured from the mover's tile nearest the goal, not its
-anchor, so a unit three tiles wide walks east as its mirror walks west, nose first; and a step must gain ground: one
-that only keeps the distance, which a wide mover's could, is not taken, or a walk could pace for ever. A step down gains two in twice the time, so it ties with a step
-across and the turn decides: a unit walks the screen's diagonal, two columns across for each row down
-(`tests/rows.test.ts`).
+Which step a unit wants is its route's (section 1.6): the step along a shortest walk to where its attack reaches its
+target. A step down costs two beats and a step across one, so a route counts a row as two columns, and a unit walks
+the screen's diagonal, two columns across for each row down (`tests/rows.test.ts`).
 
 ### 1.3 Tick order — RULE — `src/pulse/tick.ts`, `tests/rules.test.ts`
 
@@ -92,8 +89,12 @@ over entities can never decide an outcome:
    recipes exist so far (`src/pulse/production.ts`, below); the yield waits for the worker economy. A
    mid-Pulse combat spawn (a spawner, a unit that splits on death) runs just ahead of it.
 3. **Perception.** Each actor scores and selects a target: the nearest; among equally near ones the one it
-   already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw.
-4. **Intents.** Each actor with movement credit declares one destination tile.
+   already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw. Then the
+   tick's routes are built from who walks and who stands (section 1.6), and a unit that would walk chooses again by
+   what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all.
+4. **Intents.** Each actor with movement credit declares one destination tile: the best step of its route it
+   fits now. A unit held up behind allies that are stuck walks round them; two allies that want each other's tile
+   swap.
 5. **Arbitration** (`src/pulse/arbitration.ts`). Group intents by destination *within a layer*.
    Contested claims resolve by speed tier — **tier 1 outranks tier 2** — with any remaining tie
    broken by one draw from the seeded stream. Entity id orders iteration and event emission, never
@@ -196,13 +197,18 @@ balanced one.
   at once (the attacks step), so two equal units that strike each other in the same tick both fall.
 - **A building sets its units down facing the fight**: on the free tile round it nearest where they head — its
   side's target if it follows one, else the nearest enemy as the tick began — ties drawn; with nowhere to head, the
-  ring's own order. Neighbouring buildings set theirs down front first, nearest the enemy (`src/pulse/spawn.ts`).
+  ring's own order. Neighbouring buildings set theirs down front first, nearest the enemy, and two as far forward in
+  a drawn order (`src/pulse/spawn.ts`), so neither claims the ground between them by its id.
+- **A step as good as another** goes by the turn from the way the unit faces its goal, then a draw (section 1.6),
+  never by compass order.
 - **A unit's target among equally near enemies** is the one it holds, then the weakest, then a draw (perception).
 - **A wide unit measures its walk from its nose**: its tile nearest the goal, and the enemy tile nearest it.
 - **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, Recall's homes and
   tiles, a Commander's return and a mission's arrivals break a tie toward the enemy's Grid Nexus
-  (`enemyNexusMiddle`), and Recall sets its survivors down nearest home first, then nearest the enemy. A duel places
-  a building by its footprint's middle, not its north-west corner.
+  (`enemyNexusMiddle`), and Recall sets its survivors down nearest home first, then nearest the enemy. Forces whose
+  musters meet are set down in turns, a unit of each at a time, the order reversed each turn, so the first listed does
+  not take all the ground between them. A duel places a building by its footprint's middle, not its north-west
+  corner.
 
 One order is left inside a side: of several attackers whose blows kill a unit in the same tick, the lowest id is
 named its killer and takes a killer's pause. It never decides which side gains, only which of one side's units
@@ -211,7 +217,8 @@ building nothing) more than anything else did, so it waits for a
 reason of its own.
 
 A mirror battle with nothing tied stays a mirror tick for tick; with ties, each side wins it as often over seeds, and
-mirror duels split about evenly (`tests/fairness.test.ts`). Entity id still orders iteration and the events.
+mirror duels split about evenly (`tests/fairness.test.ts`, over forty-eight duels; `tests/route-scenarios.test.ts`,
+two squads in one corridor). Entity id still orders iteration and the events.
 
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
 
@@ -268,6 +275,51 @@ beside one that did, or beside its own building in the target, and claims no til
 the nearest enemy wherever it is. Workers that flee, healers and buildings never follow a target. `targets` is
 absent when no side has one, so such a state hashes as it always did. The named scenario is
 `target-head-engage-stand`.
+
+### 1.6 Routes — RULE — `src/routing/`, `src/pulse/routes.ts`, `tests/routing.test.ts`, `tests/route-scenarios.test.ts`
+
+The owner, 2026-10-19, watching raiders stand behind rocks: units must get where they are going, round obstacles,
+through crowds and narrow gaps, on a Grid that changes ([the milestone](../milestones/milestone-16-pathfinding.md)).
+Routes are built from small parts, each tested alone (`src/routing/`): where a body of a given shape may stand, the
+anchors from which it reaches a goal, a distance field from a goal outward, and the ranking of a unit's four steps.
+
+- **A unit walks its distance field downhill.** A field gives every anchor the walking cost to the nearest goal
+  anchor, one a column and two a row, whole numbers; a unit takes the step that leaves the shortest walk, so it goes
+  round rock and out of pockets by construction. A field is worked out only as far as it is asked, the same values
+  whatever order it is asked in, and shared by every unit of the same shape heading for the same goal on the same
+  ground. It is built from the state the tick began with and kept for that tick only.
+- **A route ends where an attack begins.** A unit's goal is every anchor from which its attack reaches its target —
+  touching it for a melee unit, within range for a shot or a heal, measured as range is — or from which it stands
+  inside its side's target (`goalsNear`, `goalsInside`): the same tests the attacks step and the hold use, so the three
+  never disagree. A unit with no attack heads for a tile beside its target.
+- **What stands still is a wall; what walks is not.** Who walks this tick is decided from the targets perception
+  chose (`purposeOf`): a unit whose attack does not reach its target yet, or heading for its side's target, or
+  fleeing. Every other entity on a layer a body collides with — a building, a unit fighting, a unit at its side's
+  target, a unit that cannot move — is a wall to that body's fields. So a crowd round one target spreads to the tiles
+  still free round it, and a route goes round a fight rather than queuing behind it. A walker is no wall: it will
+  have moved, and the tick order settles who steps where.
+- **Equally good steps** go by how far each turns from the way the unit faces its goal, then by a seeded draw.
+- **A goal that cannot be reached**: a unit heads for the anchor it can reach that is nearest the goal's tile (then
+  nearest to walk, then a draw), and standing there it has no route: it says so (`move.blocked`, reason
+  `no-route`) and stands. A wide body before a gap too narrow for it stands as near as it can get.
+- **Targeting knows what can be reached.** Once routes are built, a unit that would walk to its target chooses again:
+  a melee unit fights the enemy nearest to walk to — by the walk to a tile beside it, then the one it holds, the
+  weakest, a draw — and, heading for its side's target, turns only to what it could walk to within its engage reach;
+  any other unit keeps the nearest by range, shots reaching over rock, but passes over one it cannot get within range
+  of for the nearest it can.
+- **Crowds.** An ally in the way is waited for while it walks. A unit held up behind allies that are stuck — with no
+  route, or in a ring of units each waiting on the next — walks round them by a field of its own that counts them as
+  walls; one that only waits behind a walker that will step on soon waits, since walking round a queue and back would
+  pace. Two allies of one tile each that want each other's tile swap, together.
+- **A unit that did not walk** (`displace`, `src/pulse/shared.ts`): a push or a pull moves a unit a tile at a time
+  in one direction, each tile only if its whole body fits there, and stops at the first that does not; a building
+  never moves. Its credit is untouched, it says so (`entity.displaced`), and it walks on from where it landed. The
+  bench bulwark's Shove is its test (`bench-bulwark-shove`); the first power that pushes uses the same rule.
+- **The raid's forecast walks the same routes** (`src/match/intent.ts`): the way drawn on the Build Phase is the
+  field walked downhill over the terrain and the buildings, ending beside what the raid goes for.
+
+What a tick's routes cost is measured in `tests/routing.test.ts`: twelve fields worked out over the whole starter
+map take a third of a frame at most, and a battle's stop far sooner.
 
 ## 2. Match structure
 

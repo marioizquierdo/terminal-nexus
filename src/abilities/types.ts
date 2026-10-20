@@ -69,6 +69,9 @@ export type AbilityWorld = AbilityView &
   /** Deals `amount` to `target` as a hit from `source`, guarded and boosted like any (`damage.applied`); a unit it
    *  brings to nothing dies this tick. */
   damage: (target: Body, source: Body, amount: number) => void
+  /** Pushes `target` up to `tiles` tiles straight away from `source`, stopping where its body would not fit — the
+   *  kernel's rule for a unit that did not walk (`entity.displaced`). A building never moves. */
+  push: (target: Body, source: Body, tiles: number) => void
   /**
    * Says the ability did something: an `ability.triggered` event naming the bearer and the ability, and what it
    * touched. With `credits`, the bearer's side earns them, to spend from its next Build Phase (the rules between

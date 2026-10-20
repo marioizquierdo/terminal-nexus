@@ -40,9 +40,11 @@ test("Ravels claim and swing before Citizens of the same role", () => {
 })
 
 test("volatile munitions damage friend and foe alike", async () => {
-  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
+  // The cascade fixture, built so blasts reach into both lines: in the asymmetric skirmish the Ravels walk round
+  // each other since pathfinding, and a blast there no longer happens to catch its own side.
+  const resolved = await resolveScenario("ravel-cascade.map.json")
   const blasts = resolved.run.events.filter((event) => event.kind === "entity.detonated")
-  assert.ok(blasts.length > 3, "nothing detonated in the asymmetric fixture")
+  assert.ok(blasts.length > 3, "nothing detonated in the cascade fixture")
 
   let caughtFriendly = false
   let caughtEnemy = false

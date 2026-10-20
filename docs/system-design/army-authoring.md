@@ -135,12 +135,13 @@ the union in `src/armies/types.ts` and its row here.
 An ability is how a Commander or a unit does something besides fighting — an aura, a bounty, a lucky hit — written once
 as an `AbilityKind` (`src/abilities/`) and named by data, `{ "kind": "aura", ... }`. A kind declares its numbers
 (checked when the army is loaded), the sentence its card says, how far it reaches (for the view to draw), and any of
-three **hooks**, which the kernel calls at fixed moments (RULE — `src/pulse/abilities.ts`, `tests/abilities.test.ts`):
+four **hooks**, which the kernel calls at fixed moments (RULE — `src/pulse/abilities.ts`, `tests/abilities.test.ts`):
 
 | Hook | When | What it may do |
 | --- | --- | --- |
 | `damageModifiers` | Once a tick, as the attacks begin | Offer the units it covers a share of what they deal or take; each keeps the strongest offer of each kind. |
 | `hitDealt` | Each attack its bearer makes, before auras | Return what that attack deals instead. Never a blast. |
+| `tick` | Once a tick, after the attacks, before deaths settle | Heal, damage, push, note. |
 | `death` | Once for each unit that died, after a tick's deaths | Heal, damage, note; earn credits for its side. |
 
 | Kind | Numbers | Hook |
@@ -148,9 +149,10 @@ three **hooks**, which the kernel calls at fixed moments (RULE — `src/pulse/ab
 | `aura` | `name`, `radius`, `damageTakenPercent` (a guard, below 100) or `damageDealtPercent` (a boost, above 100) | `damageModifiers` |
 | `bounty` | `name`, `radius`, `credits`, `structureCredits` | `death`: notes the credits; the rules between rounds add them to its side's next Build Phase (`src/match/earnings.ts`) |
 | `loadedDice` | `name`, `chanceIn`, `times` | `hitDealt`, rolling the battle's own seeded stream |
+| `shove` | `name`, `tiles`, `everyTicks` | `tick`: pushes each enemy touching the bearer `tiles` away, by the kernel's rule for a unit that did not walk (the bench bulwark's; [`pulse.md`](pulse.md), routes) |
 
 **An ability never touches the kernel's state.** It reads `Body`s and acts through the `AbilityWorld` it is handed —
-`bodies`, `within`, `random`, `heal`, `damage`, `note` — each of which goes through the kernel's own rules and leaves
+`bodies`, `within`, `random`, `heal`, `damage`, `push`, `note` — each of which goes through the kernel's own rules and leaves
 an event, so an ability is deterministic, hashed and replayed like everything else. `src/abilities/` imports nothing
 of the kernel (RULE — `tests/architecture.test.ts`): a mod's kind needs only that folder's types.
 

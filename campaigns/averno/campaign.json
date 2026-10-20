@@ -26,7 +26,7 @@
         "id": "mission.test.curve-averno",
         "name": "The curve, pressed",
         "pulses": 5,
-        "notes": "The power curve's test level with Marshal Averno in Vasse's place, so the two Commanders can be played side by side on the same rounds: the same map, raids, reinforcements and seed as hers (vasse-test-3), only the Commander who walks out with the squads differs — and it is her first five rounds. Measured with nothing built, he falls in round 4 and, filed a round late, misses round 5, the heaviest raid, so an empty base cannot hold to her round 6: the forward Commander's cost, which a build behind him pays.",
+        "notes": "The power curve's test level with Marshal Averno in Vasse's place, so the two Commanders can be played side by side on the same rounds: the same map, raids, reinforcements and seed as hers (vasse-test-3), only the Commander who walks out with the squads differs — and it is her first five rounds. Measured with nothing built, he falls in round 4 and, filed a round late, misses round 5, the heaviest raid, so an empty base cannot hold to her round 6: the forward Commander's cost, which a build behind him pays. Measured before units could find their way round rock, and measured again at the end of the pathfinding milestone (docs/history/reports/2026-10-20-measured-before-routing.md).",
         "roundText": {
           "1": "A probe at the ridge. Build what the next rounds need.",
           "2": "Your first building stands: what it leads to is open.",

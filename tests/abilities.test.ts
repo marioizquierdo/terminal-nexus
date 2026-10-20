@@ -146,7 +146,7 @@ test("a kind the game does not ship runs the same way: the kernel takes its tabl
   assert.equal(triggered(events).filter((event) => event.ability === "wake").length, 1)
   // Without the kind in the table, the kernel skips it: the loader is what refuses an unknown kind, before a battle.
   assert.equal(triggered(run({ A: [[2, 2, "unit.test.mourner"], [4, 2, "unit.test.killer"]], B: [[5, 2, "unit.test.prey"]] }, 20, registry)).length, 0)
-  assert.deepEqual(abilityProblems({ kind: "wake", radius: 4, amount: 5 }, "it"), ['it is of the kind "wake", which is not an ability the game has ("aura", "bounty", "loadedDice")'])
+  assert.deepEqual(abilityProblems({ kind: "wake", radius: 4, amount: 5 }, "it"), ['it is of the kind "wake", which is not an ability the game has ("aura", "bounty", "loadedDice", "shove")'])
   assert.deepEqual(abilityProblems({ kind: "wake", radius: 4, amount: 5 }, "it", table), [])
 })
 

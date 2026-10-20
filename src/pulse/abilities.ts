@@ -18,9 +18,9 @@
 import type { AbilityKind, AbilityTable, AbilityWorld, Body } from "../abilities/index.ts"
 import { ABILITIES } from "../abilities/index.ts"
 import type { AbilityUse } from "../content/types.ts"
-import { footprintWithin } from "../grid/coords.ts"
+import { directionOf, footprintWithin, nearestFootprintTile } from "../grid/coords.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { applyDamage, applyHeal } from "./shared.ts"
+import { applyDamage, applyHeal, displace } from "./shared.ts"
 
 /** A unit's abilities, each with its kind from the battle's table. A kind the table lacks was refused when the content
  *  loaded, so it is skipped here rather than thrown on mid-battle. */
@@ -67,6 +67,15 @@ function worldOf(context: TickContext): AbilityWorld {
       const into = actorOf(target)
       const from = actorOf(source)
       if (into !== undefined && from !== undefined && !into.pendingDead && amount > 0) applyDamage(context, into, from, amount)
+    },
+    push: (target, source, tiles) => {
+      const unit = actorOf(target)
+      const from = actorOf(source)
+      if (unit === undefined || from === undefined || unit.pendingDead || tiles <= 0) return
+      // Straight away from the source: from its tile nearest the unit to the unit's tile nearest it.
+      const near = nearestFootprintTile(unit.anchor, from.anchor, from.definition.footprint)
+      const nose = nearestFootprintTile(near, unit.anchor, unit.definition.footprint)
+      displace(context, unit, directionOf(near, nose, unit.facing), tiles, from)
     },
     note: (bearer, ability, detail = {}) => {
       context.events.push({

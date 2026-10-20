@@ -92,7 +92,7 @@ test("his card names him, says he is restored a round late, and gives his aura a
   assert.match(text, /a round late/u)
 })
 
-test("played beside Vasse on the same rounds, they read apart within two: he falls in round 2 and she stands", { timeout: 120_000 }, () => {
+test("played beside Vasse on the same rounds, they read apart within two: he falls in one of them and she stands in both", { timeout: 120_000 }, () => {
   assert.ok(LEVEL !== undefined && HERS !== undefined)
   // A Barracks and a Supply Depot each round, built behind the Nexus so the muster stays open to the front.
   const plan: CurvePlan = { name: "barracks", buys: [["structure.citizen.barracks", "structure.citizen.depot"]], near: { x: 10, y: 10 } }
@@ -101,10 +101,10 @@ test("played beside Vasse on the same rounds, they read apart within two: he fal
   const [hisFirst, hisSecond] = his
   const [herFirst, herSecond] = hers
   assert.ok(hisFirst !== undefined && hisSecond !== undefined && herFirst !== undefined && herSecond !== undefined)
-  // Round 1 is not the same round with either: it clears at another tick. (He once cleared it sooner and lost less;
-  // since every tie goes by what a unit faces, then a draw, she clears it sooner, losing one to his two.)
+  // Round 1 is not the same round with either: it clears at another tick.
   assert.notEqual(hisFirst.clearedAt, herFirst.clearedAt)
-  // Round 2: the forward Commander falls, the one who holds does not.
-  assert.equal(hisSecond.commanderFell, true)
-  assert.equal(herSecond.commanderFell, false)
+  // The forward Commander falls within the first two rounds; the one who holds does not. (He fell in round 2 when
+  // units stood behind rocks; on routes the probe reaches him in round 1.)
+  assert.equal(hisFirst.commanderFell || hisSecond.commanderFell, true)
+  assert.equal(herFirst.commanderFell || herSecond.commanderFell, false)
 })

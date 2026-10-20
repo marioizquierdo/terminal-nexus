@@ -5,7 +5,7 @@
 import type { AttackDef, ContentDef } from "../content/types.ts"
 import type { CollisionMask } from "../grid/occupancy.ts"
 import { ClaimOverlay, OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
-import { footprintDistance, footprintSteps, footprintWithin } from "../grid/coords.ts"
+import { footprintDistance, footprintSteps, footprintWithin, step } from "../grid/coords.ts"
 import type { BlockReason } from "../events/types.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
@@ -13,6 +13,7 @@ import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
 import { boostedAmount, guardedAmount } from "../abilities/index.ts"
 import type { PulseContext } from "./context.ts"
+import type { TickRoutes } from "./routes.ts"
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] }
 
@@ -87,6 +88,9 @@ export type TickContext = {
   /** Who an ability boosts this tick, by ordinal: decided with the guards, read by every hit its units deal. Empty
    *  for a battle with no boosting aura. */
   boosts: Map<number, Boost>
+  /** The tick's routes (`routes.ts`): built by perception once every actor has chosen, from who walks and who
+   *  stands, and walked by intents. Absent until then. */
+  routes?: TickRoutes
 }
 
 /**
@@ -318,6 +322,30 @@ export function applyHeal(context: TickContext, target: Actor, source: Actor, am
     hpBefore,
     hpAfter,
   })
+}
+
+/**
+ * **A unit that did not walk** (pulse.md): moves `actor` up to `tiles` tiles in `direction`, a tile at a time, each only
+ * if its whole body fits there by its own collision rule — rock, buildings, other units and a tile still settling stop
+ * it — and stops at the first that does not. A building never moves. Its credit and its route are untouched: next tick
+ * it reads its route from where it landed, as a unit that appears there would. Says where it went
+ * (`entity.displaced`) when it went anywhere, and returns where it stands.
+ */
+export function displace(context: TickContext, actor: Actor, direction: Direction, tiles: number, by: Actor): Coord {
+  if (actor.pendingDead || !isMobile(actor) || actor.definition.movementRate === undefined) return actor.anchor
+  const from = actor.anchor
+  const mask = maskForActor(context, actor)
+  let at = from
+  for (let moved = 0; moved < tiles; moved += 1) {
+    const next = step(at, direction)
+    if (!mask.footprintFits(next, actor.definition.footprint)) break
+    at = next
+  }
+  if (at.x === from.x && at.y === from.y) return from
+  context.index.move(actor.definition.layer, actor.ordinal, actor.definition.footprint, from, at)
+  actor.anchor = at
+  context.events.push({ kind: "entity.displaced", tick: context.tick, entity: actor.id, ordinal: actor.ordinal, from, to: at, by: by.id, byOrdinal: by.ordinal })
+  return at
 }
 
 export function isMobile(actor: Actor): boolean {

@@ -11,6 +11,7 @@ import { AURA } from "./aura.ts"
 import type { Aura } from "./aura.ts"
 import { BOUNTY } from "./bounty.ts"
 import { LOADED_DICE } from "./loaded-dice.ts"
+import { SHOVE } from "./shove.ts"
 import type { AbilityKind, AbilityTable, Pronouns } from "./types.ts"
 
 export type { AbilityKind, AbilityTable, AbilityView, AbilityWorld, Body, DamageOffer, Pronouns, Side } from "./types.ts"
@@ -18,7 +19,7 @@ export type { Aura } from "./aura.ts"
 export { boostedAmount, guardedAmount } from "./aura.ts"
 
 /** Every ability kind the game ships, by the `kind` data names it with. */
-export const ABILITIES: AbilityTable = Object.fromEntries([AURA, BOUNTY, LOADED_DICE].map((kind) => [kind.kind, kind as unknown as AbilityKind]))
+export const ABILITIES: AbilityTable = Object.fromEntries([AURA, BOUNTY, LOADED_DICE, SHOVE].map((kind) => [kind.kind, kind as unknown as AbilityKind]))
 
 /** What is wrong with an ability as content names it: a kind the table does not have, or numbers its kind refuses —
  *  each said with `at`, the path to it. */

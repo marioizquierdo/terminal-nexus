@@ -125,6 +125,8 @@ const BUILT_IN_ART: Readonly<Record<string, UnitArt>> = {
   /** The one universal healer glyph: a cross, and it is the same right side up or upside down, which
    * is exactly what a symmetric non-letter glyph gets away with (`unit.ravel.buzzard`'s own note). */
   "unit.bench.medic": ["+"],
+  /** A shield square to the front: what stands and pushes back. */
+  "unit.bench.bulwark": ["#"],
   /** An egg sac, split down the middle - a diamond hull built to open, not to fight. */
   "structure.bench.hatchery": ["/\\", "\\/"],
   /** The smallest possible mark - a comma-sized thing, spawned by the hatch or spilled by the

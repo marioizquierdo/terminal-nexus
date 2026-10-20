@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** 16A — a clean slate, and how a battle is measured.
+**Current step:** 16F — terrain, and who passes whom.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -39,7 +39,7 @@ That works on open ground and fails in three shapes, all seen in PERIMETER playe
 - **The dead end.** A unit straight above its goal, with rock between them, has one step that brings it closer:
   into the rock. It stands there for good. In round 3 a slinger walks along the top of the north-west wall until it is
   directly above the Grid Nexus and stops, two raiders queue behind it, and all three are still there when the round
-  ends. `scenarios/on-axis-deadlock.map.json` is the same shape on a small Grid.
+  ends. The route scenario `route-dead-end` is the same shape on a small Grid.
 - **The pocket.** A unit meeting a wall at an angle slides along it to the point nearest its goal, which can be the
   bottom of a pocket: the corner of the north-west wall, the crater's rim, the space behind the ridge.
 - **The queue.** A unit behind an ally never steps round it, because that step does not bring it closer. Melee raiders
@@ -147,29 +147,31 @@ something is better than another thing. Maybe this is time to write a summary in
 forget about that old data." Every result so far was measured on units that stand behind rocks, so none of it says
 what is better than what once units find their way.
 
-- [ ] **A spec of how a battle is measured**, a design document of its own, and one command that runs it all:
+- [x] **A spec of how a battle is measured**, a design document of its own, and one command that runs it all:
   - what is measured: who wins and in which round, how long a round runs, what each side loses, when a Commander
     falls, how long units stand blocked, how evenly a mirror splits between the two ends of the map, and how tight
     or loose an army stands when it first meets the enemy;
   - on what: the route scenarios, the duels between Commanders, and every campaign level played with a fixed set of
     plans (nothing built, a defended base);
   - over which seeds, and how each result is written down, with the build and the date it was measured on.
-- [ ] **The old results set aside**, not deleted. They move to one history report, "measured before routing", and
+- [x] **The old results set aside**, not deleted. They move to one history report, "measured before routing", and
   every sentence that states one as current fact is rewritten to say what is designed and that its numbers wait for
   the new routes. They are in the Commander Armies design (the power curve, Averno beside Vasse), the next steps,
   the open questions (the aura's strength per plan, the old mirror drift), the duels document, the campaign design
   (who falls in which round), and the notes in the campaign and army files. The reports already in history stay as
   they are; the new report points to them.
-- [ ] **The old route maps retired.** The scenarios that only show the greedy step's shapes (the on-axis dead end,
+- [x] **The old route maps retired.** The scenarios that only show the greedy step's shapes (the on-axis dead end,
   the two- and three-tile gaps, the rock spine slid along, the crowded raider's tail) are replaced by this step's own,
-  rather than kept passing for a rule that is about to go.
-- [ ] **Route scenarios that fail today**, each with one thing moving where it can: the dead end above a wall, a
+  rather than kept passing for a rule that is about to go. The on-axis dead end is gone; the crowded raider now queues
+  in a corridor one row tall, the shape its test is about; the gaps too narrow for a wide body and the rock spine stay,
+  as shapes a route must still manage.
+- [x] **Route scenarios that fail today**, each with one thing moving where it can: the dead end above a wall, a
   pocket, a squad through the ridge's gap, a three-wide raider at a two-wide gap, a crowd round one target, a
   corridor walked both ways at once, and a building that falls mid-round and opens a way.
-- [ ] **A baseline**: the spec run once on today's step rule, kept only to compare each later step with: the ticks
+- [x] **A baseline**: the spec run once on today's step rule, kept only to compare each later step with: the ticks
   each unit stands blocked, the longest walk against its shortest route, and the time a tick takes.
-- [ ] **The tests that pin a battle's outcome or hash** listed with what each claims, so the steps that change
-  routes re-pin them knowingly and drop a claim that only held for the old rule.
+- [x] **The tests that pin a battle's outcome or hash** listed with what each claims, so the steps that change
+  routes re-pin them knowingly and drop a claim that only held for the old rule ([the list](../system-design/measurement.md)).
 
 ### Step 16B — The parts, each tested alone
 
@@ -192,33 +194,37 @@ Nothing in a battle changes in this step: the parts exist, with their tests, and
 
 ### Step 16C — Routes round the map
 
-- [ ] Units walk their field downhill: the dead end, the pocket and PERIMETER's north-west wall are walked round,
+- [x] Units walk their field downhill: the dead end, the pocket and PERIMETER's north-west wall are walked round,
   and the greedy step goes, with its compass order.
-- [ ] What stands still is a wall to the field for this tick: a building, a unit fighting. What walks is not, and
+- [x] What stands still is a wall to the field for this tick: a building, a unit fighting. What walks is not, and
   the tick order settles who steps where, as it does today.
-- [ ] A unit whose goal cannot be reached heads for the reachable tile nearest it, and the log says so; a unit with
+- [x] A unit whose goal cannot be reached heads for the reachable tile nearest it, and the log says so; a unit with
   no route at all stands, and says that.
-- [ ] Mirror duels still split evenly, and every re-pinned battle says why it moved.
+- [x] Mirror duels still split evenly, and every re-pinned battle says why it moved. Two side biases the routes
+  exposed were fixed on the way: two buildings equally near the enemy set their units down in a drawn order, not by
+  id, and forces whose musters meet are set down in turns. On the routes, PERIMETER's nothing-built plan loses its last
+  round, and the curve level's raids of rounds 3 to 5 lost a runner and a raider each so a base that builds nothing
+  still reaches round 6.
 
 ### Step 16D — Crowds
 
-- [ ] An ally in the way is waited for while it walks; one that stands is routed round, because it is a wall to
+- [x] An ally in the way is waited for while it walks; one that stands is routed round, because it is a wall to
   the field; two allies that want each other's tile swap.
-- [ ] Units spread round a target to the free tiles that reach it, because those tiles are the goal: a melee unit
+- [x] Units spread round a target to the free tiles that reach it, because those tiles are the goal: a melee unit
   heads for a free tile beside its target, not the one behind its friend.
-- [ ] A unit blocked for a while by units that walk routes round them for itself, so no crowd stands still for
+- [x] A unit blocked for a while by units that walk routes round them for itself, so no crowd stands still for
   good. A narrow gap with both sides pushing through it never jams for good (a run over many seeds says so).
 
 ### Step 16E — Targeting, attacking and new units agree with routes
 
-- [ ] A unit chooses among the enemies it can reach: one walled off, or deep in a block where nothing reaches it,
+- [x] A unit chooses among the enemies it can reach: one walled off, or deep in a block where nothing reaches it,
   is passed over for one it can reach ("same as usual": what it can reach, the building first if that is all).
-- [ ] A melee unit turns to fight the enemy nearest to walk to, not the one nearest across a wall.
-- [ ] A unit stands once its attack reaches its target, and its route ends exactly where its attack begins: the
+- [x] A melee unit turns to fight the enemy nearest to walk to, not the one nearest across a wall.
+- [x] A unit stands once its attack reaches its target, and its route ends exactly where its attack begins: the
   same test for both, as today.
-- [ ] Units that appear mid-round (a wave, a spawner, a unit that splits on death) route from where they appear on
+- [x] Units that appear mid-round (a wave, a spawner, a unit that splits on death) route from where they appear on
   their first tick.
-- [ ] A building that rises or falls changes the routes from the next tick; a unit pushed or pulled reads its route
+- [x] A building that rises or falls changes the routes from the next tick; a unit pushed or pulled reads its route
   from where it lands. The rule for moving a unit that did not walk, with a test effect behind a bench card, so the
   first power that pushes has it ready.
 

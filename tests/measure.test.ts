@@ -19,9 +19,9 @@ test("a spread is how far, on average, points stand from their middle, a row cou
   assert.equal(spreadOf([{ x: 0, y: 0 }, { x: 0, y: 2 }]), 2)
 })
 
-test("a trooper that stands for good above a wall is measured as stalled, and never strikes", async () => {
-  const scenario = await loadScenarioFile("route-dead-end.map.json")
-  const run = measureScenario(scenario, 1)
+test("a hauler before a gap too narrow for it stands for good: measured as stalled, and never strikes", async () => {
+  const scenario = await loadScenarioFile("hauler-two-tile-gap.map.json")
+  const run = measureScenario(scenario, scenario.seed)
   assert.equal(run.battle.winner, null)
   assert.equal(run.battle.reason, "tick-limit")
   assert.equal(run.battle.sides.A.firstContact, null)
@@ -84,6 +84,6 @@ test("a measurement says in plain words what it found", async () => {
   }
   const text = summaryLines(measurement).join("\n")
   assert.match(text, /routes: the greedy step/u)
-  assert.match(text, /route-dead-end\s+A won 0\/2/u)
-  assert.match(text, /stalled units 2/u)
+  assert.match(text, /route-dead-end\s+A won 2\/2/u)
+  assert.match(text, /stalled units 0/u)
 })

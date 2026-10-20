@@ -10,7 +10,7 @@ import { STARTER_STANDING, STARTER_START_CURSOR, starterGrid } from "../src/buil
 import type { RaidForecast } from "../src/build/types.ts"
 import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { footprintDistance } from "../src/grid/coords.ts"
+import { footprintSteps } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { foreseeIntents, foreseeRound, recall, resolveMissionPulse, restoreCommanders, spawningRegistry } from "../src/match/index.ts"
 import type { Absence, Arrival, MissionPulseInput, StructurePlacement } from "../src/match/index.ts"
@@ -28,9 +28,9 @@ const BARRACKS = "structure.citizen.barracks"
 
 const turrets = (...anchors: readonly Coord[]): StructurePlacement[] => anchors.map((anchor) => ({ contentId: TURRET, anchor }))
 
-/** Two plans, a round each: none, and a few Turrets toward the ridge and the flats each round — the second
- *  makes the raid's choice move, and its first round stands a Turret just beyond the ridge, straight below its
- *  north face, where the probe's way presses on the rock. */
+/** Three plans, a round each: none; a few Turrets toward the ridge and the flats each round, which makes the raid's
+ *  choice move, its first round standing a Turret just beyond the ridge, straight below its north face, which the
+ *  probe's way walks round; and a Turret a round by the line, so a base that holds plays every round. */
 const PLANS: readonly (readonly (readonly StructurePlacement[])[])[] = [
   [[], [], []],
   [
@@ -38,6 +38,7 @@ const PLANS: readonly (readonly (readonly StructurePlacement[])[])[] = [
     turrets({ x: 31, y: 8 }, { x: 35, y: 9 }, { x: 38, y: 13 }),
     turrets({ x: 27, y: 7 }, { x: 40, y: 8 }, { x: 44, y: 12 }),
   ],
+  [turrets({ x: 24, y: 8 }), turrets({ x: 22, y: 7 }), turrets({ x: 20, y: 8 })],
 ]
 
 /** The target most of `units` chose in `state` — on a tie, the first unit's among the tied, units in
@@ -175,10 +176,11 @@ test("placing a building nearer the raid moves what it goes for to it; undoing, 
   assert.equal(side.build.state.planned.length, 1)
   const turret = side.build.raid()
   assert.equal(firstTarget(turret), `${TURRET}@28,8`, "a Turret on the probe's way did not draw it")
-  // The way now ends beside the Turret.
+  // The way now ends beside the Turret, the body of the probe's unit that walks it touching it along a side.
   const way = turret?.[0]?.path ?? []
   const last = way.at(-1)
-  assert.ok(last !== undefined && footprintDistance(last, [{ x: 0, y: 0 }], { x: 28, y: 8 }, [{ x: 0, y: 0 }]) <= 1)
+  const bodies = (turret?.[0]?.units ?? []).map((entry) => registry.get(entry.contentId).footprint)
+  assert.ok(last !== undefined && bodies.some((body) => footprintSteps(last, body, { x: 28, y: 8 }, [{ x: 0, y: 0 }]) === 1))
 
   side.build.dispatch({ kind: "undo" })
   assert.equal(side.build.state.planned.length, 0)
@@ -194,8 +196,8 @@ test("placing a building nearer the raid moves what it goes for to it; undoing, 
 /** Whether a tile is rock on the starter map. */
 const rock = (tile: Coord): boolean => grid.tiles[tile.y * grid.width + tile.x] === "terrain.rock"
 
-test("the way each group would go is the kernel's own steps: one tile at a time, never through rock, ending next to what it goes for or pressed against rock", () => {
-  let pressed = 0
+test("the way each group would go is the kernel's own route: one tile at a time, never through rock, round the ridge, ending next to what it goes for", () => {
+  let checked = 0
   for (const plan of PLANS) {
     for (const input of rounds(plan)) {
       for (const group of foreseeIntents(input)) {
@@ -207,20 +209,16 @@ test("the way each group would go is the kernel's own steps: one tile at a time,
           if (previous !== undefined) assert.equal(Math.abs(step.x - previous.x) + Math.abs(step.y - previous.y), 1, `${group.group} jumps`)
           previous = step
         }
-        // Next to it — or where the step rule leaves it no closer step: the kernel's greedy steps stop on
-        // a ridge's face when what they go for is straight beyond it, and the way says so.
+        // Next to it, touching it along a side: a route goes round the ridge to what lies beyond it, where the first
+        // routing's greedy steps stood pressed on its face.
         const end = group.path.at(-1) as Coord
-        const nearest = [...group.target.tiles].sort((a, b) => Math.abs(a.x - end.x) + Math.abs(a.y - end.y) - (Math.abs(b.x - end.x) + Math.abs(b.y - end.y)))[0] as Coord
-        const near = Math.abs(nearest.x - end.x) + Math.abs(nearest.y - end.y)
-        if (near === 1) continue
-        const toward = Math.abs(nearest.x - end.x) >= Math.abs(nearest.y - end.y) ? { x: end.x + Math.sign(nearest.x - end.x), y: end.y } : { x: end.x, y: end.y + Math.sign(nearest.y - end.y) }
-        assert.ok(rock(toward), `${group.group}'s way ends ${near} tiles from what it goes for, with nothing in its way`)
-        pressed += 1
+        const touching = group.target.tiles.some((tile) => Math.abs(tile.x - end.x) + Math.abs(tile.y - end.y) === 1)
+        assert.ok(touching, `${group.group}'s way ends at ${end.x},${end.y}, not beside what it goes for`)
+        checked += 1
       }
     }
   }
-  // The Turret just beyond the ridge is such a dead end: the probe presses on the ridge's north face.
-  assert.ok(pressed > 0)
+  assert.ok(checked >= 6, `only ${checked} ways were checked`)
 })
 
 test("the forecast says where the player's troops head as each round starts — the line, by its name — and who goes, off the round's own opening", () => {

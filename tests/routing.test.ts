@@ -267,13 +267,13 @@ test("a tick's worth of fields over the starter map fits well inside a frame", (
   const bodies = [ONE, WIDE, BLOCK]
   const run = (): number => {
     const started = performance.now()
-    // Twelve fields, each worked out over the whole map: more than a battle's tick asks for, and further than any asks.
+    // As a tick does: the ground once for each body, then twelve fields over it, each worked out over the whole map —
+    // more than a battle's tick asks for, and further than any asks.
+    const grounds = bodies.map((body) => groundFor(wallsOf(grid, "impassable"), body))
     for (let index = 0; index < 12; index += 1) {
       const body = bodies[index % bodies.length] as Footprint
-      const ground = groundFor(wallsOf(grid, "impassable"), body)
+      const ground = grounds[index % bodies.length] as Ground
       const field = new DistanceField(ground, goalsNear(ground, body, { x: 70 + index, y: 20 }, BLOCK, { kind: "touch", steps: 1 }))
-      field.distanceAt({ x: -1, y: -1 })
-      field.distanceAt({ x: 0, y: 0 })
       for (let y = 0; y < grid.height; y += 1) for (let x = 0; x < grid.width; x += 1) field.distanceAt({ x, y })
     }
     return performance.now() - started
@@ -281,6 +281,7 @@ test("a tick's worth of fields over the starter map fits well inside a frame", (
   run()
   const samples = [run(), run(), run(), run(), run()].sort((a, b) => a - b)
   const median = samples[2] as number
-  // The browser page's frame is 33 ms; the whole tick, rendering aside, should take a fraction of it.
-  assert.ok(median < 33 / 2, `twelve whole fields took ${median.toFixed(2)} ms`)
+  // The browser page's frame is 33 ms; a tick's routes should take a third of it at most, on a machine also running
+  // the rest of the suite.
+  assert.ok(median < 33 / 3, `twelve whole fields took ${median.toFixed(2)} ms`)
 })

@@ -100,9 +100,10 @@ export function spawnOneNear(
 }
 
 /**
- * `actors` front first: nearest the enemy as the tick began, then by ordinal. The order buildings set their units
- * down in, so of two neighbours sharing free ground the one further forward claims first, on either side of the map —
- * not the one read first, which is the western one.
+ * `actors` front first: nearest the enemy as the tick began, and among equally near ones in an order drawn from the
+ * seeded stream. The order buildings set their units down in, so of two neighbours sharing free ground the one further
+ * forward claims first, on either side of the map — and of two as far forward, neither by its id, which the opening
+ * hands out west first.
  */
 export function frontFirst(context: TickContext, actors: readonly Actor[]): Actor[] {
   const front = new Map<number, number>()
@@ -114,7 +115,20 @@ export function frontFirst(context: TickContext, actors: readonly Actor[]): Acto
     }
     front.set(actor.ordinal, nearest)
   }
-  return [...actors].sort((a, b) => (front.get(a.ordinal) as number) - (front.get(b.ordinal) as number) || a.ordinal - b.ordinal)
+  const sorted = [...actors].sort((a, b) => (front.get(a.ordinal) as number) - (front.get(b.ordinal) as number) || a.ordinal - b.ordinal)
+  const ordered: Actor[] = []
+  for (let start = 0; start < sorted.length; ) {
+    let end = start + 1
+    while (end < sorted.length && front.get((sorted[end] as Actor).ordinal) === front.get((sorted[start] as Actor).ordinal)) end += 1
+    const tied = sorted.slice(start, end)
+    while (tied.length > 0) {
+      const next = drawAmong(context, tied) as Actor
+      ordered.push(next)
+      tied.splice(tied.indexOf(next), 1)
+    }
+    start = end
+  }
+  return ordered
 }
 
 /**

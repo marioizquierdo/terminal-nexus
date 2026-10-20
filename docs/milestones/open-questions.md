@@ -25,8 +25,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q5](#q5--what-is-the-default-construction-radius) | What is the default construction radius? | OBSERVABLE | Mario's playtest of the Build range Experiment |
 | [Q7](#q7--do-workers-carry-or-produce-in-place) | Do workers carry, or produce in place? | OPEN | Milestone 7 (worker economy), for the storage half |
 | [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Milestone 16 (pathfinding) and the worker economy |
-| [Q14](#q14--should-the-movement-tie-break-be-mirror-fair-or-is-a-fixed-compass-order-enough) | Should the movement tie-break be mirror-fair? | OPEN | Milestone 16 (pathfinding) |
-| [Q15](#q15--what-should-a-mover-with-no-route-do-circle-or-stop) | What should a mover with no route do? | OPEN | Milestone 16 (pathfinding), its second step |
 | [Q19](#q19--where-should-a-sandbox-placement-mode-rewind-and-fast-forward-and-a-feedback-replay-engine-live) | Where do a sandbox, rewind and a feedback replay live? | OPEN | Backlog: replay format |
 | [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
@@ -104,61 +102,6 @@ a Citizen worker moves at `1/1` and every attacker in either fixture at `3/4` or
 worker on open ground is never caught. The mirror skirmish never reaches annihilation and always runs
 its full 240 ticks, the last eighty empty; `worker-flight.ts` ends only because an east wall corners the
 worker. Whether the dragging is visible still wants someone to watch it.
-
-### Q14 — Should the movement tie-break be mirror-fair, or is a fixed compass order enough?
-
-**Status:** OPEN — parked under the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), whose routes are likely to make it moot.
-
-When two steps gain as much for the time they take — every step toward a goal does — the tie breaks on how far
-each turns from the way straight at the goal, then on a fixed compass order (`n, e, s, w`). Both sides prefer their own left, so in the mirror skirmish player A's
-formation drifts north and player B's south, and the squads meet at an angle. Swapping which player owns
-which side flips the result exactly, so there is no bias tied to identity; across seeds the mirror lands
-3-3, 4-4, 4-4, 5-1 and 4-4, which is seed variance. The artifact is real, small, and visible.
-
-| Option | Cost |
-| --- | --- |
-| A. **Keep the fixed compass order.** Document the drift | Free, and the cheapest thing to reason about. Leaves a geometric artifact a sharp player could eventually exploit |
-| B. Break equal-distance ties with a draw from the seeded gameplay stream | Removes the artifact and stays deterministic. Spends draws every tick on something no player perceives as a choice, and ties movement replay to stream position |
-| C. Derive the preference from the target vector, so the tie leans toward the target's secondary axis | Deterministic with no draws. A rule harder to explain than "the compass order", and still arbitrary when the target is exactly on an axis |
-
-**Recommendation: A, and decide it with the routing work**, which replaces greedy routing wholesale and
-is likely to make this moot. If the formations sliding past each other reads as broken rather than as
-manoeuvre, take C.
-
-**2026-10-17, from the duels:** a mirror duel between two Commander Armies went to one side most of the time, from
-tie-breaks of the same family that read the Grid west to east. **2026-10-19:** every one of those now goes by what
-the deciding unit faces, then a seeded draw (`pulse.md`, "No side wins by where it stands"), and mirror duels split
-evenly. The compass order this question is about is the one left: it is mirror-fair west to east, both sides
-preferring north, and it decides only between two steps of equal gain and turn.
-
-### Q15 — What should a mover with no route do: circle, or stop?
-
-**Status:** OPEN — parked as the opening case of the pathfinding milestone ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)), settled in its second step.
-
-Greedy routing has no memory. With four-way movement every legal step changes the distance to the goal, by
-one across or two up or down, so an actor approaching an obstacle **off-axis** still slides along its face
-until it clears (`obstacle-routing.map.json`), but an actor approaching **on-axis** has exactly one
-improving direction and, if a wall blocks it, no fallback: a hard stop, reported correctly by the
-`move.blocked` streak warning but never recovering. The older two-tile pacing case is
-`hauler-two-tile-gap`. The owner hit the on-axis case in a playtest ("Two units on the top of the screen
-around tick 200 got stuck"); `scenarios/on-axis-deadlock.map.json` isolates it and `tests/report.test.ts`
-asserts the `WARN stuck` it raises.
-
-| Option | Cost |
-| --- | --- |
-| A. **Leave it and report it.** The log names the actor and the tile it wants | Free, and honest. A unit standing still in front of a wall forever reads as broken |
-| B. Kernel-side no-progress detection that parks the actor until its goal or the obstacle changes | Cheap, and a stopped unit reads as stuck rather than idle. Still does not get the unit where it was going |
-| C. Do nothing now; real pathfinding makes it moot | Free. Bets that routing arrives before anyone watches a unit stall on-axis, which is not a safe bet |
-
-**Recommendation: A for now, then treat this as the routing work's opening case**, scoped to solve the
-on-axis dead end (a real search, or at minimum a goal offset that avoids exact axis alignment), not just
-report it more politely. B alone would ship a unit that visibly gives up.
-
-**Confirmed at large footprints** (a bug audit of the existing greedy router; the colossus and leviathan
-fixtures `colossus-two-tile-gap.map.json` and the 5x2 leviathan case): a 3x3 or 5x2 body against a gap it
-cannot pass does not pace, it hard-stops flush against the gap. And a single occupied tile anywhere in a
-large mover's footprint vetoes the whole step, because arbitration grants one winner per bridged conflict
-group rather than per contested tile. Fixing that is the same routing-priority redesign, not a bug fix.
 
 ### Q19 — Where should a sandbox placement mode, rewind and fast-forward, and a feedback replay engine live?
 

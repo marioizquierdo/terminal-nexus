@@ -313,6 +313,19 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           })
           break
 
+        case "entity.displaced":
+          where.set(event.ordinal, event.to)
+          blocked.delete(event.ordinal)
+          emit({
+            tick,
+            level: "info",
+            kind: "pushed",
+            subject: event.entity,
+            object: event.by,
+            detail: `${formatCoordinate(event.from)} to ${formatCoordinate(event.to)}`,
+          })
+          break
+
         case "salvage.dropped":
           emit({
             tick,

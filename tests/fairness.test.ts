@@ -203,15 +203,18 @@ test("a mirror battle with nothing tied stays a mirror, tick for tick, a unit th
   assert.ok(deaths.length >= 2, `${deaths.length} fell`)
 })
 
-test("a mirror duel is won from either end about as often: the same Commander and plan on both sides, over seeds", { timeout: 60_000 }, () => {
+test("a mirror duel is won from either end about as often: the same Commander and plan on both sides, over seeds", { timeout: 180_000 }, () => {
   // Before ties went by what a unit faces, the west won all sixteen of these: its new units came out of the back of
-  // its buildings and its musters filled the western tiles first.
+  // its buildings and its musters filled the western tiles first. On the Pocket the two bases touch, and one early
+  // draw — whose building sets its units down first between them — snowballs over three rounds, so the split is read
+  // over forty seeds there and eight on the Crossing: a side that won for where it stands would win nearly all of them.
   const won = { A: 0, B: 0, draw: 0 }
-  for (const map of ["pocket", "crossing"]) {
-    for (let seed = 1; seed <= 8; seed += 1) {
+  for (const [map, seeds] of [["pocket", 40], ["crossing", 8]] as const) {
+    for (let seed = 1; seed <= seeds; seed += 1) {
       const duel = playDuel({ map, seed, rounds: 3, pulseTicks: 400, commanders: { A: "vasse", B: "vasse" } }, { A: SCRIPTED.rush!, B: SCRIPTED.rush! })
       won[duel.result?.winner ?? "draw"] += 1
     }
   }
-  assert.ok(Math.max(won.A, won.B) <= 11, `west ${won.A}, east ${won.B}, drawn ${won.draw}`)
+  // Even odds give more than 32 of 48 to one end about one time in a hundred; the seeds are fixed, so it never flickers.
+  assert.ok(Math.max(won.A, won.B) <= 32, `west ${won.A}, east ${won.B}, drawn ${won.draw}`)
 })

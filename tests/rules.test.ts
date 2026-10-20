@@ -212,7 +212,8 @@ test("arbitration terminates under a bounded pass count with a decreasing progre
   while (state.outcome === null && state.tick < scenario.pulseTicks) {
     const result = stepTick(state, context)
     for (const event of result.events) {
-      if (event.kind === "move.contested") contested.push(event.tick)
+      // The junction's own contests: the chase that ends the run claims tiles of its own far from it.
+      if (event.kind === "move.contested" && event.tile.x === 10 && event.tile.y === 5) contested.push(event.tick)
       assert.notEqual(
         event.kind,
         "arbitration.bounded",
@@ -223,7 +224,7 @@ test("arbitration terminates under a bounded pass count with a decreasing progre
   }
   // The contest recurs rather than resolving once: at the junction, at the lines' own rhythm (a trooper's step), for as
   // long as the lines last — five times or more. (Six on the stream as it was before a fleeing worker came to draw
-  // between two equally near threats, which spends one more draw; five since.)
+  // between two equally near threats, which spends one more draw; five since, and five on routes.)
   assert.ok(contested.length >= 5, `the jammed corridor produced only ${contested.length} contested claims`)
   const gaps = new Set(contested.slice(1).map((tick, index) => tick - (contested[index] as number)))
   assert.deepEqual([...gaps], [5], `the contests came at ticks ${contested.join(", ")}`)

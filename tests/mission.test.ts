@@ -277,13 +277,19 @@ test("PERIMETER is won by holding and lost when the Nexus falls; a round the pla
 
   // A single trooper for squads: it falls in round 1, the Nexus stands, and the round runs to its time
   // rather than stopping there (Mario, 2026-10-01: only the Nexus falling loses) — and the mission goes on.
-  // Without the intro, too: its lines are Vasse's, and she is not in this squad.
+  // Without the intro, too: its lines are Vasse's, and she is not in this squad. The probe is only two runners: since
+  // routes walk round the ridge, PERIMETER's own probe reaches the Nexus once the trooper is down and brings it down
+  // in round 1, which is not what this asks about.
   const thin: MissionDefinition = {
     ...PERIMETER,
     triggers: PERIMETER.triggers
       .filter((trigger) => trigger.id !== "intro")
       .map((trigger) =>
-        trigger.id !== "squads" ? trigger : { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] },
+        trigger.id === "squads"
+          ? { ...trigger, do: [{ spawn: { side: "A", units: [{ unit: "unit.citizen.trooper", count: 1 }], at: "muster" } }] }
+          : trigger.id === "raid-1"
+            ? { ...trigger, do: [{ spawn: { side: "B", units: [{ unit: "unit.ravel.runner", count: 2 }], at: "ridge", group: "probe" } }] }
+            : trigger,
       ),
   }
   validateMission(thin, grid, registry)

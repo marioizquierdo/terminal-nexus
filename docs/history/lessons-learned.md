@@ -539,3 +539,11 @@ A second round on colour, the day the 16-colour depth went. What it taught:
   tuned on.
 - Leave the branch clean for the next session: merged worktrees removed, the branch reset to `main`,
   the trigger deleted.
+
+### A function named `declare` does not parse under Bun
+
+2026-10-20, the pathfinding milestone. A helper called `declare(...)`, called at the start of a statement, type-checked
+and ran under Node and failed to parse under Bun ("Unexpected }"), because Bun's parser reads a statement that begins
+with `declare` as TypeScript's `declare` keyword. Every scenario's Node-and-Bun hash test failed at once, which pointed
+at a parse error rather than a rule. TypeScript's contextual keywords (`declare`, `type`, `module`, `namespace`,
+`abstract`, `readonly`) make poor function names; `bun build <file> --no-bundle` finds such a problem in a second.

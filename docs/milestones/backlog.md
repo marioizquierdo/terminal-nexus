@@ -63,11 +63,10 @@ called settled.
 
 | Question | What was measured | Where it bites |
 | --- | --- | --- |
-| **Q14** — should the movement tie-break be mirror-fair? | A fixed compass order makes both sides prefer *their own left*, so formations meet at an angle. Symmetric between sides, and seed variance dominates it. Every other tie the rules break is mirror-fair since 2026-10-19 (what a unit faces, then a draw); the compass order between two equally good steps is the one left, and the mirror duels split evenly with it | Real routing replaces the greedy step this question is about; answer it as part of that |
-| **Q15** — what should a mover with no route do? | Greedy routing with a sidestep leaves an actor pacing between two tiles forever. The report detects it from net progress; the kernel does not | Pathfinding makes it moot, or makes it a deliberate choice. A level authored to avoid the on-axis dead end (map layout, not a kernel fix) may ship without either, as PERIMETER's own note in [`campaigns.md`](../game-design/campaigns.md) says |
 | **Q13** — where do workers flee, and what counts as annihilation? | Workers move at `1/1` and every fixture attacker at `3/4` or slower, so a fleeing worker on open ground is **never caught**. The mirror never reaches annihilation and always runs its full tick count | Real routing gives fleeing a danger cost, and an economy gives workers somewhere to be. Both change the shape of this question |
 
-Q17 (the degenerate tie of a rank-deployed army) resolved itself when four-way movement and Manhattan
+Q14 (the compass order between equal steps) and Q15 (a mover with no route) were answered by the pathfinding
+milestone (2026-10-20). Q17 (the degenerate tie of a rank-deployed army) resolved itself when four-way movement and Manhattan
 distance shipped, so target scoring owes nothing further for it; [`open-questions.md`](open-questions.md)
 has the mechanism. One lesson from this work: **a fixture for a movement rule should have exactly one
 thing moving**, because two movers each rounding an obstacle drag each other's targets and the fixture

@@ -50,7 +50,8 @@ export function replayEvents(events: readonly DomainEvent[]): ReplayState {
           diedAtTick: null,
         })
         break
-      case "entity.moved": {
+      case "entity.moved":
+      case "entity.displaced": {
         const entity = entities.get(event.ordinal)
         if (entity !== undefined) entity.anchor = event.to
         break

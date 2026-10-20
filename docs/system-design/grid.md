@@ -468,7 +468,7 @@ v
 X            4 rows down: there at 2.7 s
 ```
 
-**A walk on a slant is a staircase along the screen's own diagonal** (RULE — `directionOf` and `rankedSteps`; the
+**A walk on a slant is a staircase along the screen's own diagonal** (RULE — `directionOf` and `rankSteps`; the
 picture is the kernel's own walk). Every step toward a goal closes distance in proportion to the time it takes, so
 no step is better than another by pace alone, and the way straight at the goal decides: a mover steps along
 whichever way has more columns left, a row counting two, and across on a tie. Toward a goal on the screen's 45° it
@@ -542,18 +542,17 @@ jebacfk
   lgm
 ```
 
-A building's wave is set down differently: on the first free tiles of the ring round its footprint, corners
-included, in reading order (`spawnOneNear`, `footprintRing`), so the troops a Barracks sends stand in a line above
-it when that ground is free.
+A building's wave is set down differently: on the free tiles of the ring round its footprint, corners included,
+nearest where its units head, ties drawn (`spawnOneNear`, `footprintRing`), so the troops a Barracks sends stand on
+its side facing the fight.
 
-### 7.6 Where greedy steps stop
+### 7.6 Where a route cannot reach
 
-Every four-way step changes the distance to a goal, by one across or two up or down; no step merely holds it level.
-An actor approaching an obstacle off-axis still has two improving directions and can slide along the obstacle's
-face; an actor exactly on-axis with its goal has one, and if a wall blocks it there is no fallback at all. What a
-mover with no route should do is an open question (Q15 in [`open-questions.md`](../milestones/open-questions.md),
-with the measurement and the recommendation); real pathfinding is what closes it, and greedy steps were never
-meant to.
+A unit walks a route (the Pulse's routes, [`pulse.md`](pulse.md)), so it goes round a wall or out of a pocket however
+it meets it. Where no way exists at all — a body three tiles wide before every gap two wide, a target walled in — it
+walks to the anchor it can reach nearest its goal and stands there, saying it has no route (`move.blocked`, reason
+`no-route`). Before routes, units took only steps that brought them strictly closer, and stood for good before an
+obstacle straight between them and their goal.
 
 ### 7.7 Terrain and positions
 

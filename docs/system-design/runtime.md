@@ -131,7 +131,7 @@ them uniformly:
 | --- | --- | --- |
 | Occupancy rebuild (`OccupancyIndex`, `src/grid/occupancy.ts`) | O(A) | map area: four `Int32Array`s sized to `width * height`, rebuilt every tick (`src/pulse/tick.ts`) |
 | Collision queries (`CollisionMask`, see [`grid.md`](grid.md)) | O(1) per query | neither: a lazy view, allocates nothing |
-| Movement and routing (`rankedSteps`, intents) | O(N) | actor count, cheap |
+| Movement and routing (distance fields, `src/pulse/routes.ts`; intents) | O(F × A) at worst, F the tick's fields, usually far less | map area and distinct goals: a field stops once it has its answer, and is shared by every unit heading for the same goal with the same body |
 | Arbitration (contested tiles) | O(N) typical, O(C²) at one chokepoint | contestants at a single tile, bounded and self-reporting (`arbitration.bounded`) |
 | **Perception and targeting** (`hostilesOf` + `selectTarget`, `src/pulse/perception.ts`) | **O(N²), every tick, unconditionally** | actor count: the confirmed primary risk |
 | Attacks | O(N × T), T = distinct speed tiers | small today, not architecturally bounded |
