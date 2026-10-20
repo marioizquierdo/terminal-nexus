@@ -26,6 +26,7 @@ version of the design beyond git.
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
 - [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a campaign as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
 - [`duels.md`](system-design/duels.md) — two Commander Armies fought out headless, script or model a side: the rules, the command line, the brief and plan, how to run model against model for testing, and what the numbers can say.
+- [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route scenarios, duels and campaign levels played, seeds, how a result is written down, and the `measure` command.
 - [`routing.md`](system-design/routing.md) — how a place in the game is named and reached: routes, `--at`, the title menu's rows and the browser page's links.
 
 ## Planning — what is next (`milestones/`)
@@ -43,6 +44,7 @@ version of the design beyond git.
 - [`answered-questions.md`](history/answered-questions.md) — every answered question, the decision and where it lives now.
 - [`feedback/`](history/feedback) — Mario's playtest feedback, item by item, with what was done.
 - [`reports/`](history/reports) — long-form reports on past work, dated.
+- [`measurements/`](history/measurements/README.md) — results of the `measure` command, dated, each with the build and the routes it measured.
 - [`milestones/`](history/milestones/) — the completed milestones, kept as records.
 - [`spec-audit-2026-08-21.md`](history/spec-audit-2026-08-21.md), [`original-spec-2026-08-19.md`](history/original-spec-2026-08-19.md) — the August audit and the original specification, verbatim.
 

@@ -31,7 +31,7 @@ it is done.*
   is the guide for writing a Commander as data; `npm run duel -- bench --seeds 1-6` fights Vasse, Averno and Dob
   Hunter against each other with three scripts, and [`duels.md`](../system-design/duels.md) says how to set two model
   agents against each other. Three things the duels found wait on his word, and are measured again on the new routes at the end of Pathfinding: Averno won all four of his model games and
-  most benches (his players attacked nearly every round, and Forward Order pays for attacking), Ravel buildings train about half the
+  most benches, before units could find their way round rock (his players attacked nearly every round, and Forward Order pays for attacking), Ravel buildings train about half the
   strength a credit Citizen ones do, and Dob has no campaign yet.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When

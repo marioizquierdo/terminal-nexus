@@ -538,7 +538,7 @@ backlog, after placement; a raid group's own plan would reuse the target rule fo
 The owner asked for Commanders as heroes with skills that work on their own: "Vasse should provide boost to nearby
 units." Her aura is built: she and the units of her side within a reach of 4 of her (4 across, 2 up and down) take less damage from every hit.
 How strong: enough to feel that she is there, never so strong that standing beside her is the whole plan.
-Measured on PERIMETER's last round, beside the level's target for the player's troops:
+Measured on PERIMETER's last round, beside the level's target for the player's troops, before units could find their way round rock (the pathfinding milestone measures it again):
 
 | Option | On PERIMETER |
 | --- | --- |
