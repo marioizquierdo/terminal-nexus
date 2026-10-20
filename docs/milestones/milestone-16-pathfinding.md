@@ -174,13 +174,52 @@ units that stand behind rocks, so none of it says what is better than what once 
 - [ ] No banner: a banner is set in the Build Phase as part of the plan, and waits until there is a plan for it on
       screen (the backlog). This step leaves it one more goal to add.
 
-### Step 16G — Measure again
+### Step 16G — Units come out of their building
+
+The owner, 2026-10-20: "since army position and formation is so important to win or lose a battle ... what if units
+spawn on top of the building and they find a way out to the closest area where they can walk? So that will, for
+example, let people place a lot of the same buildings together next to each other without having to have a space in
+the middle, and the units will pop out and walk all the way until they can actually be outside." Clustering or
+spreading a side's units becomes a choice a player makes with where they build, and a reason to fear or to want a
+blast that hits an area.
+
+Today a building that makes units sets each one down on a free tile round it, and keeps a ring of tiles free round
+itself so there is room ("Spawn space", 1 or 2 tiles, an Experiment): two Barracks can never touch, and a wave stands
+spread along a building's face before it moves.
+
+- [ ] **Units appear on top of the building that made them**, a wave together, small or wide alike, and walk out to
+      the nearest ground they can stand on. While they are on their own side's buildings they cross them as if they
+      were open ground; they still never share a tile with each other, so a wave files out in order rather than all
+      at once.
+- [ ] **A block of buildings is walked out of**: the way out crosses every building of their own side, so buildings
+      set side by side need no gap, and the room round a building that makes units, its rule and the Spawn space
+      Experiment, go.
+- [ ] **They fight from the roof**: a unit on a building that has an enemy in reach shoots or strikes at once, as it
+      would from the ground (the owner: "they should be able to start shooting right away from on top of the
+      building").
+- [ ] **What the enemy can do to them there**: whether a unit on a roof can be hit, and what happens to the units on a
+      building that falls, wait on the owner's word below.
+- [ ] On screen, a unit on a roof is drawn over its building, never replacing the building's look beyond its own tile,
+      and the card or the log says it is coming out.
+- [ ] Measured with the spec: a wave out of a block of four Barracks against one out of four set apart, and the same
+      under a blast that hits an area.
+
+Questions this raises for routing, answered in the step: a side's own buildings are open ground to its own units only
+while they are coming out (or always, so a block of buildings is a road for its side and a wall for the enemy);
+whether a unit that has left may climb back on; and how a wide unit leaves a narrow block.
+
+### Step 16H — Measure again
 
 - [ ] The spec run whole on the new routes: the duels, the bench, every campaign level with its plans. The results
       written down as the spec says, the first under the new rules.
 - [ ] What they show, in plain words: which Commander, building or plan is stronger now, and which level no longer
       reads as designed (a raid that now walks round the wall it used to stand behind). Levels retuned only where
       one breaks; the rest of balance stays later work, as the owner has said.
+
+## Waiting on Mario
+
+- **Units on a roof under attack.** His note stopped at "When the enemy destroys the unit,": what happens when the
+  enemy hits a unit still on its building, or brings down a building with units on it.
 
 ## Out of scope
 

@@ -378,3 +378,28 @@ or a campaign level's target where the level names one. It is placed next in the
 Armies. And it now opens with a clean slate: a spec of how a battle is measured, every measured result from before
 it marked as old and set aside, the old route maps retired, and the measurements made again on the new routes as its
 last step.
+
+### F185 — Units come out on top of their building and walk out
+
+> And something else that we can put together along with the pathfinding, because it is kind of related, but this is
+> something I was thinking more generally for gameplay, is that since army position and formation is so important to
+> win or lose a battle, the users will have a lot of control over where their units are positioned, and that is
+> decided indirectly by placing the buildings right now. So if units spawn around the building, there is a lot of
+> space that is being taken in between units, so they naturally not be able to cluster before attacking the enemy, and
+> being able to cluster or disperse the units seems like a great way to add a strategy for area of damage or not. So I
+> was thinking, what if units spawn on top of the building and they find a way out to the closest area where they can
+> walk? So that will, for example, let people place a lot of the same buildings together next to each other without
+> having to have a space in the middle, and the units will pop out and walk all the way until they can actually be
+> outside. There is a bunch of questions in here, especially for pathfinding, and that is why I think we can put it
+> together on the pathfinding milestone. Is when they pop, they will be out on their own layer, I think, where the
+> multiple units are also spawning at the same time out of the building. They need to not collide with each other and
+> slowly walk outside of the building area. If there is multiple buildings on top of each other, they should walk out
+> of them. And this will work equally for bigger units or smaller units. So what happens if there is an enemy in
+> range? Should they start shooting each other? And I think, yes, they should be able to start shooting right away
+> from on top of the building. When the enemy destroys the unit,
+
+**Scheduled**, as a step of the pathfinding milestone (units come out of their building): units appear on top of the
+building that made them, cross their own side's buildings to the nearest open ground without sharing a tile, fight
+from the roof, and buildings that make units no longer need room round them, so the Spawn space Experiment goes.
+His note stopped mid-sentence ("When the enemy destroys the unit,"): what happens to a unit hit on its roof, or on a
+building that falls, waits on him.
