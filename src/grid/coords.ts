@@ -215,8 +215,19 @@ export function footprintWithin(
   footprintB: Footprint,
   radius: number,
 ): boolean {
-  if (footprintDistance(anchorA, footprintA, anchorB, footprintB) <= radius) return true
-  return radius >= 1 && footprintSteps(anchorA, footprintA, anchorB, footprintB) <= 1
+  // One pass over the pairs of tiles, both measures at once, done at the first pair within reach: the same answer as
+  // `footprintDistance(...) <= radius || (radius >= 1 && footprintSteps(...) <= 1)`, asked many times a tick.
+  for (const offsetA of footprintA) {
+    const ax = anchorA.x + offsetA.x
+    const ay = anchorA.y + offsetA.y
+    for (const offsetB of footprintB) {
+      const dx = Math.abs(anchorB.x + offsetB.x - ax)
+      const dy = Math.abs(anchorB.y + offsetB.y - ay)
+      if (dx + ROW_DISTANCE * dy <= radius) return true
+      if (radius >= 1 && dx + dy <= 1) return true
+    }
+  }
+  return false
 }
 
 /** The tile of `tiles` nearest `from` (`gridDistance`), the first listed on a tie; `null` when there are none. */

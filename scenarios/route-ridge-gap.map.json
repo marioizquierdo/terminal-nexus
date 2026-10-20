@@ -1,0 +1,65 @@
+{
+  "id": "route-ridge-gap",
+  "name": "Route: a squad through the ridge's gap - six troopers, one narrow gap far off the straight line",
+  "notes": "Six troopers in a block west of a ridge that runs the whole height of the map, with a gap two rows tall near its north end; the enemy's Grid Nexus stands east, level with the squad. The greedy step slid them along the ridge to the point nearest the Nexus and stood them there. Done when the squad files through the gap and the Nexus falls.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 1800,
+  "terrain": [
+    "........................#.......................",
+    "........................#.......................",
+    "................................................",
+    "................................................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#......................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 6,
+        "y": 7
+      },
+      "rows": [
+        "ttt",
+        "ttt"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 40,
+        "y": 8
+      },
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.citizen.nexus"
+        }
+      }
+    }
+  }
+}

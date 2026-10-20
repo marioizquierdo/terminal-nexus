@@ -58,8 +58,8 @@ function candidates(context: BuildContext, near: Coord): Coord[] {
   return tiles.sort((a, b) => distance(a) - distance(b) || a.y - b.y || a.x - b.x)
 }
 
-/** Round `context`'s plan: what `plan` buys, placed legally nearest its point. */
-function planRound(context: BuildContext, state: BuildState, plan: CurvePlan): Readonly<{ state: BuildState; bought: string[] }> {
+/** Round `context`'s plan: what `plan` buys, placed legally nearest its point. The measure (`src/measure/`) plays a level by it too. */
+export function planRound(context: BuildContext, state: BuildState, plan: CurvePlan): Readonly<{ state: BuildState; bought: string[] }> {
   let planned: PlannedPlacement[] = []
   let ordinal = state.nextOrdinal
   const bought: string[] = []

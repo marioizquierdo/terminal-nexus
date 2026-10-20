@@ -1,0 +1,64 @@
+{
+  "id": "route-wide-gap",
+  "name": "Route: a three-wide raider at a two-wide gap, with a three-wide gap further off",
+  "notes": "A raider three tiles wide stands north of a rock wall across the whole map, straight above a gap only two tiles wide; a gap three wide opens further east. The enemy's Grid Nexus is straight south. The raider cannot pass the near gap, and the greedy step stood it above it. Done when it walks to the wide gap, through it, and the Nexus falls.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 1800,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "#######################..###############...#####",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 24,
+        "y": 2
+      },
+      "rows": [
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.ravel.raider"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 24,
+        "y": 12
+      },
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.citizen.nexus"
+        }
+      }
+    }
+  }
+}
