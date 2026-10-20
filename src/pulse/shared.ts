@@ -352,11 +352,22 @@ export function isMobile(actor: Actor): boolean {
   return actor.definition.layer !== "obstacles"
 }
 
+/**
+ * The ground layer a unit of `definition` shares with its own side and not the enemy's: a worker crosses its own
+ * troops and a trooper its own workers, but each is stopped by the enemy's (pulse.md, routes). `null` for a layer that
+ * shares none — air, a building.
+ */
+export function sideLayerOf(definition: Readonly<{ layer: string; collidesWith: readonly string[] }>): "units" | "workers" | null {
+  const other = definition.layer === "workers" ? "units" : definition.layer === "units" ? "workers" : null
+  return other === null || definition.collidesWith.includes(other) ? null : other
+}
+
 export function maskForActor(
   context: TickContext,
   actor: Actor,
   overlay?: ClaimOverlay,
 ): CollisionMask {
+  const side = sideLayerOf(actor.definition)
   return maskFrom(context.index, {
     layers: actor.definition.collidesWith,
     // Air ignores what is on the ground, including impassable terrain: the mask is composed from
@@ -365,5 +376,6 @@ export function maskForActor(
     ignore: [actor.ordinal],
     vacated: context.vacated,
     ...(overlay === undefined ? {} : { overlay }),
+    ...(side === null ? {} : { sideLayers: { layers: [side], blocks: (ordinal: number) => context.byOrdinal.get(ordinal)?.player !== actor.player } }),
   })
 }

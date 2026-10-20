@@ -47,6 +47,9 @@ export const STYLE_ROLES = [
   "terrain.plain",
   "terrain.rock",
   "terrain.deposit",
+  // Slow ground: thorny scrub a unit takes twice as long to cross. A dry olive, quieter than the deposit's gold and
+  // apart from both players' hues.
+  "terrain.scrub",
   "player.a",
   "player.b",
   "item.salvage",
@@ -151,6 +154,7 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
     "terrain.plain": [72, 78, 86],
     "terrain.rock": [128, 132, 138],
     "terrain.deposit": [198, 160, 40],
+    "terrain.scrub": [124, 132, 84],
     // Citizen rust orange against Ravel bioluminescent cyan-green: the two Energy palettes the lore
     // gives the factions, which later content work will pair.
     "player.a": [201, 118, 68],
@@ -188,6 +192,7 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
     "terrain.plain": [196, 192, 184],
     "terrain.rock": [70, 66, 60],
     "terrain.deposit": [168, 124, 24],
+    "terrain.scrub": [120, 126, 76],
     // Two sides that each read as their own colour on the pale background (see the PALETTE doc comment
     // above for why `player.b` is no longer near-black).
     "player.a": [211, 98, 21],

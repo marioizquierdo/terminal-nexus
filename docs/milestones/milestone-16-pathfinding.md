@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** 16F — terrain, and who passes whom.
+**Current step:** 16G — where a side heads.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -230,9 +230,9 @@ Nothing in a battle changes in this step: the parts exist, with their tests, and
 
 ### Step 16F — Terrain, and who passes whom
 
-- [ ] A cost per terrain, and one slow ground on a bench map to show it.
-- [ ] Workers cross their own side's units and not the enemy's.
-- [ ] A fleeing worker routes away from danger, not only away from the nearest threat.
+- [x] A cost per terrain, and one slow ground on a bench map to show it.
+- [x] Workers cross their own side's units and not the enemy's.
+- [x] A fleeing worker routes away from danger, not only away from the nearest threat.
 
 ### Step 16G — Where a side heads
 

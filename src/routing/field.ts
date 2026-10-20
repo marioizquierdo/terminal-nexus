@@ -15,43 +15,53 @@ import { ROW_DISTANCE } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Ground } from "./ground.ts"
 
-/** The four neighbours of an anchor, as offsets, and what a step to each costs before weight. */
-const NEIGHBOURS: readonly Readonly<{ dx: number; dy: number; length: number }>[] = [
-  { dx: 0, dy: -1, length: ROW_DISTANCE },
-  { dx: 1, dy: 0, length: 1 },
-  { dx: 0, dy: 1, length: ROW_DISTANCE },
-  { dx: -1, dy: 0, length: 1 },
-]
-
 export const UNREACHABLE = Number.POSITIVE_INFINITY
+
+/** What `distance` holds for an anchor no way has reached yet: beyond any walk on a Grid. */
+const FAR = 0x7fffffff
+
+/** A goal anchor that starts at a cost of its own rather than at nothing: what a flight map is built from
+ *  (`TickRoutes.safetyOf`). A whole number, 0 or more. */
+export type Seed = Readonly<{ anchor: Coord; cost: number }>
 
 export class DistanceField {
   readonly ground: Ground
   private readonly weights: Uint8Array | null
-  private readonly distance: Float64Array
+  /** Each anchor's walking cost found so far, `FAR` until one is: whole numbers, so a typed array of them. */
+  private readonly distance: Int32Array
   private readonly settled: Uint8Array
-  private readonly buckets: number[][] = []
+  /** The bucket queue, flat: `head[d]` is the last entry pushed at distance `d` (-1 for none), and each entry holds
+   *  its anchor and the entry pushed at that distance before it. Typed arrays, as a field settles thousands. */
+  private head: Int32Array = new Int32Array(64).fill(-1)
+  private entryAnchor: Int32Array
+  private entryNext: Int32Array
+  private entries = 0
   private cursor = 0
   private remaining = 0
   /** How many anchors have been settled so far: what the field has cost. */
   settledCount = 0
 
   /**
-   * A field toward `goals` (anchors the body may stand on; others are ignored) over `ground`. `weights`, when given,
-   * is what stepping onto each anchor costs per column of the step, row-major like the ground; absent, one everywhere.
+   * A field toward `goals` (anchors the body may stand on; others are ignored) over `ground`, each starting at nothing
+   * or at a cost of its own (`Seed`). `weights`, when given, is what stepping onto each anchor costs per column of the
+   * step, row-major like the ground; absent, one everywhere.
    */
-  constructor(ground: Ground, goals: readonly Coord[], weights?: Uint8Array) {
+  constructor(ground: Ground, goals: readonly (Coord | Seed)[], weights?: Uint8Array) {
     this.ground = ground
     this.weights = weights ?? null
     const size = ground.width * ground.height
-    this.distance = new Float64Array(size).fill(UNREACHABLE)
+    this.distance = new Int32Array(size).fill(FAR)
     this.settled = new Uint8Array(size)
-    for (const goal of goals) {
+    this.entryAnchor = new Int32Array(size + 64)
+    this.entryNext = new Int32Array(size + 64)
+    for (const entry of goals) {
+      const goal = "anchor" in entry ? entry.anchor : entry
+      const cost = "anchor" in entry ? entry.cost : 0
       if (goal.x < 0 || goal.y < 0 || goal.x >= ground.width || goal.y >= ground.height) continue
       const index = goal.y * ground.width + goal.x
-      if (ground.open[index] !== 1 || this.distance[index] === 0) continue
-      this.distance[index] = 0
-      this.push(index, 0)
+      if (ground.open[index] !== 1 || cost >= (this.distance[index] as number)) continue
+      this.distance[index] = cost
+      this.push(index, cost)
     }
   }
 
@@ -61,24 +71,37 @@ export class DistanceField {
   }
 
   private push(index: number, at: number): void {
-    let bucket = this.buckets[at]
-    if (bucket === undefined) {
-      bucket = []
-      this.buckets[at] = bucket
+    if (at >= this.head.length) {
+      const grown = new Int32Array(Math.max(at + 1, this.head.length * 2)).fill(-1)
+      grown.set(this.head)
+      this.head = grown
     }
-    bucket.push(index)
+    if (this.entries === this.entryAnchor.length) {
+      const anchors = new Int32Array(this.entries * 2)
+      anchors.set(this.entryAnchor)
+      this.entryAnchor = anchors
+      const nexts = new Int32Array(this.entries * 2)
+      nexts.set(this.entryNext)
+      this.entryNext = nexts
+    }
+    const entry = this.entries
+    this.entries += 1
+    this.entryAnchor[entry] = index
+    this.entryNext[entry] = this.head[at] as number
+    this.head[at] = entry
     this.remaining += 1
   }
 
   /** Settles the next nearest anchor, and returns it, or -1 once nothing is left. */
   private settleNext(): number {
     while (this.remaining > 0) {
-      const bucket = this.buckets[this.cursor]
-      if (bucket === undefined || bucket.length === 0) {
+      const entry = this.head[this.cursor] as number
+      if (entry === -1) {
         this.cursor += 1
         continue
       }
-      const index = bucket.pop() as number
+      this.head[this.cursor] = this.entryNext[entry] as number
+      const index = this.entryAnchor[entry] as number
       this.remaining -= 1
       if (this.settled[index] === 1 || this.distance[index] !== this.cursor) continue
       this.settled[index] = 1
@@ -89,26 +112,27 @@ export class DistanceField {
     return -1
   }
 
-  /** From a settled anchor, offers each neighbour that may step onto it the way through it. */
+  /** From a settled anchor, offers each neighbour that may step onto it the way through it: a unit at the
+   *  neighbour steps onto this anchor, and the step costs what stepping here costs. Written out for the four
+   *  neighbours, as it runs for every anchor a field settles. */
   private relaxAround(index: number): void {
-    const { width, height, open } = this.ground
+    const { width, height } = this.ground
     const x = index % width
     const y = (index - x) / width
     const here = this.distance[index] as number
     const weight = this.weights === null ? 1 : (this.weights[index] as number)
-    for (const { dx, dy, length } of NEIGHBOURS) {
-      // A unit at the neighbour steps onto this anchor: the step costs what stepping here costs.
-      const nx = x - dx
-      const ny = y - dy
-      if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue
-      const next = ny * width + nx
-      if (open[next] !== 1 || this.settled[next] === 1) continue
-      const through = here + length * weight
-      if (through < (this.distance[next] as number)) {
-        this.distance[next] = through
-        this.push(next, through)
-      }
-    }
+    const across = here + weight
+    const down = here + ROW_DISTANCE * weight
+    if (y > 0) this.offer(index - width, down)
+    if (x < width - 1) this.offer(index + 1, across)
+    if (y < height - 1) this.offer(index + width, down)
+    if (x > 0) this.offer(index - 1, across)
+  }
+
+  private offer(next: number, through: number): void {
+    if (this.ground.open[next] !== 1 || this.settled[next] === 1 || through >= (this.distance[next] as number)) return
+    this.distance[next] = through
+    this.push(next, through)
   }
 
   /** The walking cost from `anchor` to the nearest goal, or `UNREACHABLE`. An anchor the body may not stand on is

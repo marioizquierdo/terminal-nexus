@@ -10,10 +10,13 @@
 import { directionOf, nearestFootprintTile, step, tilesOf, footprintDistance } from "../grid/coords.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { DistanceField } from "../routing/index.ts"
-import { rankSteps, UNREACHABLE } from "../routing/index.ts"
+import { rankSteps, UNREACHABLE, weightAt } from "../routing/index.ts"
+import { DIRECTIONS } from "../grid/coords.ts"
+import { TERRAIN } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { StepChoice } from "./movement.ts"
-import { accrueCredit, canStep, rankedSteps, stepCost } from "./movement.ts"
+import { accrueCredit, canStep, choiceCost, stepCost } from "./movement.ts"
+import type { MovementRate } from "../content/types.ts"
 import type { RouteGoal } from "./routes.ts"
 import { purposeOf, TickRoutes } from "./routes.ts"
 import type { Actor, TickContext } from "./shared.ts"
@@ -52,7 +55,7 @@ function plans(context: TickContext): Plan[] {
   for (const actor of context.actors) {
     const rate = actor.definition.movementRate
     if (rate === undefined || actor.definition.behavior === "static" || actor.pendingDead) continue
-    actor.moveCredit = accrueCredit(actor.moveCredit, rate)
+    actor.moveCredit = accrueCredit(actor.moveCredit, rate, dearestStepFrom(context, actor, rate))
     const target = resolveTarget(context, actor)
     const purpose = purposeOf(context, actor, target)
     if (purpose.kind === "stand") continue
@@ -118,9 +121,11 @@ export function intents(context: TickContext): Intent[] {
     let wanted: Coord | null
     let noRoute = false
     if (route === null) {
-      // Fleeing still goes by the first routing's step, away from the threat (the milestone's terrain step routes it).
-      choices = rankedSteps(actor.anchor, actor.definition, mask, { goal: toward, intent: "away" })
-      wanted = null
+      // Fleeing walks the flight map downhill: away from every enemy that can strike, not only the nearest, and
+      // toward open ground rather than into a corner (`TickRoutes.safetyOf`).
+      const fled = walk(context, routes.safetyOf(actor), routes, actor, toward, desiredDirection(actor, toward, "away"), (to) => mask.footprintFits(to, actor.definition.footprint))
+      choices = fled.choices
+      wanted = fled.wanted
     } else {
       const facing = desiredDirection(actor, toward, heading)
       const walked = walk(context, routes.fieldOf(actor, route), routes, actor, toward, facing, (to) => mask.footprintFits(to, actor.definition.footprint))
@@ -134,7 +139,7 @@ export function intents(context: TickContext): Intent[] {
       // rather than pressing on them.
       if (area !== null && gatheredOf(actor.player, area).has(actor.ordinal)) continue
       const direction = wanted === null ? desiredDirection(actor, toward, heading) : directionOf(actor.anchor, wanted, actor.facing)
-      const cost = stepCost(rate, direction)
+      const cost = stepCost(rate, direction, weightAt(context.index.grid, actor.definition.footprint, step(actor.anchor, direction), terrainRuleOf(actor)))
       // Blocked is a step it could pay for and could not take; short of that step's credit — a step up or down
       // costs more than one across — it is still waiting for it, as it would be with the way clear.
       if (actor.moveCredit < cost) continue
@@ -179,7 +184,7 @@ export function intents(context: TickContext): Intent[] {
         const around = walk(context, field, routes, actor, toward, facing, (to) => mask.footprintFits(to, actor.definition.footprint))
         const first = around.choices[0]
         const rate = actor.definition.movementRate
-        if (first !== undefined && rate !== undefined && actor.moveCredit >= stepCost(rate, first.direction)) {
+        if (first !== undefined && rate !== undefined && actor.moveCredit >= choiceCost(rate, first)) {
           declareStep(context, declared, entry.plan, around.choices)
           continue
         }
@@ -251,7 +256,7 @@ function declareStep(context: TickContext, declared: Intent[], plan: Plan, choic
   // A step up or down costs more than one across (`stepCost`). The actor waits for the step it wants rather than
   // taking a cheaper one it likes less — which would bend every walk across first — and once it can pay, its
   // credit is capped at that step's cost, so waiting never banks a sprint across.
-  const cost = stepCost(rate, first.direction)
+  const cost = choiceCost(rate, first)
   if (actor.moveCredit < cost) return
   actor.moveCredit = Math.min(actor.moveCredit, cost)
   context.events.push({
@@ -287,7 +292,7 @@ function declareSwap(context: TickContext, declared: Intent[], a: Held, b: Held)
     })
     declared.push({
       actor,
-      choices: [{ direction, to: other.plan.actor.anchor, distanceAfter: 0 }],
+      choices: [{ direction, to: other.plan.actor.anchor, distanceAfter: 0, weight: weightAt(context.index.grid, actor.definition.footprint, other.plan.actor.anchor, terrainRuleOf(actor)) }],
       chosen: 0,
       goal: mover.plan.toward,
       heading: mover.plan.heading,
@@ -330,7 +335,7 @@ function walk(
     // arbitration to fall back on.
     const first = choices.length === 0 && free.length > 1 ? drawAmong(context, free) : undefined
     const ordered = first === undefined ? free : [first, ...free.filter((candidate) => candidate !== first)]
-    for (const candidate of ordered) choices.push({ direction: candidate.direction, to: candidate.to, distanceAfter: candidate.after })
+    for (const candidate of ordered) choices.push({ direction: candidate.direction, to: candidate.to, distanceAfter: candidate.after, weight: field.weightAt(candidate.to) })
   }
   return { choices, wanted, noRoute: false }
 }
@@ -365,4 +370,32 @@ export function desiredTile(actor: Actor, target: Actor, intent: "toward" | "awa
 function desiredDirection(actor: Actor, goal: Coord, intent: "toward" | "away"): Direction {
   const nose = nearestFootprintTile(goal, actor.anchor, actor.definition.footprint)
   return intent === "toward" ? directionOf(nose, goal, actor.facing) : directionOf(goal, nose, actor.facing)
+}
+
+/** Whether a unit walks on the ground, where rock and slow ground count, or flies over them. */
+function terrainRuleOf(actor: Actor): "impassable" | "ignore" {
+  return actor.definition.layer === "air" ? "ignore" : "impassable"
+}
+
+/** Grids with slow ground, worked out once for each Grid a battle is played on. */
+const SLOW_GROUND = new WeakMap<object, boolean>()
+
+/**
+ * What credit is capped at for `actor` this tick: the dearest of its four steps from where it stands, slow ground
+ * weighed in, so it can save up for a step onto scrub; on a Grid with no slow ground, the dearest step on open ground,
+ * as it always was.
+ */
+function dearestStepFrom(context: TickContext, actor: Actor, rate: MovementRate): number {
+  const grid = context.index.grid
+  let slow = SLOW_GROUND.get(grid)
+  if (slow === undefined) {
+    slow = grid.tiles.some((id) => TERRAIN[id].stepWeight !== 1)
+    SLOW_GROUND.set(grid, slow)
+  }
+  if (!slow || actor.definition.layer === "air") return stepCost(rate)
+  let dearest = stepCost(rate)
+  for (const direction of DIRECTIONS) {
+    dearest = Math.max(dearest, stepCost(rate, direction, weightAt(grid, actor.definition.footprint, step(actor.anchor, direction))))
+  }
+  return dearest
 }

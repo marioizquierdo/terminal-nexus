@@ -1,0 +1,65 @@
+{
+  "id": "route-slow-ground",
+  "name": "Route: slow ground - a band of scrub where the way round is quicker than the way through",
+  "notes": "A trooper west, the enemy's Grid Nexus east, and between them a band of scrub twenty columns wide and eight rows tall. Scrub costs twice as much to cross, a row twice a column: through it the trooper would pay twenty columns more, round its end sixteen. Its route goes round, and it never sets foot on the scrub. Done when the Nexus falls with no scrub walked.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 1200,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "..............,,,,,,,,,,,,,,,,,,,,..............",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit",
+    ",": "terrain.scrub"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 4,
+        "y": 7
+      },
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 43,
+        "y": 7
+      },
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.citizen.nexus"
+        }
+      }
+    }
+  }
+}

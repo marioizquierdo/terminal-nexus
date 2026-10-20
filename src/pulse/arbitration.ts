@@ -4,12 +4,12 @@
 import { ClaimOverlay } from "../grid/occupancy.ts"
 import type { Coord, Direction } from "../grid/types.ts"
 import type { Intent } from "./intents.ts"
-import { stepCost } from "./movement.ts"
+import { choiceCost, stepCost } from "./movement.ts"
 import type { StepChoice } from "./movement.ts"
 import { blockReasonFor, maskForActor, speedTier } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
 
-type Grant = { actor: Actor; to: Coord; direction: Direction; swapWith?: Actor }
+type Grant = { actor: Actor; to: Coord; direction: Direction; weight?: number; swapWith?: Actor }
 
 /**
  * Contested claims resolve by speed tier — lower outranks higher — with any remaining tie broken by
@@ -28,7 +28,7 @@ export function arbitrate(context: TickContext, declared: Intent[]): Grant[] {
   for (const intent of declared) {
     const choice = intent.choices[0]
     if (intent.swapWith === undefined || choice === undefined) continue
-    grants.push({ actor: intent.actor, to: choice.to, direction: choice.direction, swapWith: intent.swapWith })
+    grants.push({ actor: intent.actor, to: choice.to, direction: choice.direction, weight: choice.weight ?? 1, swapWith: intent.swapWith })
     overlay.claim(intent.actor.definition.layer, intent.actor.ordinal, choice.to, intent.actor.definition.footprint)
   }
   let unresolved = declared.filter((intent) => intent.swapWith === undefined).sort((a, b) => a.actor.ordinal - b.actor.ordinal)
@@ -61,7 +61,7 @@ export function arbitrate(context: TickContext, declared: Intent[]): Grant[] {
       if (winner === undefined) continue
       const choice = winner.choices[winner.chosen]
       if (choice === undefined) continue
-      grants.push({ actor: winner.actor, to: choice.to, direction: choice.direction })
+      grants.push({ actor: winner.actor, to: choice.to, direction: choice.direction, weight: choice.weight ?? 1 })
       overlay.claim(
         winner.actor.definition.layer,
         winner.actor.ordinal,
@@ -108,7 +108,7 @@ function rerank(context: TickContext, intent: Intent, overlay: ClaimOverlay): St
   // Only a step it can pay for: its credit was capped at the cost of the step it declared (`intents.ts`), so a
   // loser of a claim across cannot take a dearer step up or down instead.
   const choices = intent.choices.filter(
-    (choice) => mask.footprintFits(choice.to, actor.definition.footprint) && (rate === undefined || stepCost(rate, choice.direction) <= actor.moveCredit),
+    (choice) => mask.footprintFits(choice.to, actor.definition.footprint) && (rate === undefined || choiceCost(rate, choice) <= actor.moveCredit),
   )
   return choices.length === 0 ? null : choices
 }
@@ -131,7 +131,7 @@ function reportBlocked(context: TickContext, intent: Intent, overlay: ClaimOverl
     blocker: typeof blocker === "number" ? (context.byOrdinal.get(blocker)?.id ?? null) : null,
     credit: actor.moveCredit,
     // The cost of the step it lost.
-    cost: actor.definition.movementRate === undefined ? 0 : stepCost(actor.definition.movementRate, intent.choices[intent.chosen]?.direction),
+    cost: actor.definition.movementRate === undefined ? 0 : stepCost(actor.definition.movementRate, intent.choices[intent.chosen]?.direction, intent.choices[intent.chosen]?.weight ?? 1),
   })
 }
 
@@ -230,7 +230,7 @@ export function settle(context: TickContext, grants: readonly Grant[]): void {
     // The step it took spends that step's cost (`stepCost`), its credit capped there first as it is at the step it
     // declared (`intents.ts`): a loser of a claim on a step up or down granted a step across instead spends all it
     // saved, so waiting never banks a sprint on this path either.
-    const cost = stepCost(rate, grant.direction)
+    const cost = stepCost(rate, grant.direction, grant.weight ?? 1)
     actor.moveCredit = Math.min(actor.moveCredit, cost) - cost
     // A unit that just arrived does not also fire this tick — attacks() skips it. Stop first,
     // then attack, is the owner's second finding: without this a unit can step into range and

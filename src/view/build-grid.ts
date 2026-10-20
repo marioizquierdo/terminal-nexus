@@ -269,7 +269,7 @@ export function nextTrailChange(elapsedMs: number, blends: boolean, motion: Trai
 
 /**
  * How many steps on along the way a trail's arrow points: a whole stair of the screen's diagonal, `ROW_DISTANCE`
- * steps across and one up or down — the way a unit walks it (`rankedSteps`). Looking less far, an arrow on a
+ * steps across and one up or down — the way a unit walks it (`rankSteps`). Looking less far, an arrow on a
  * diagonal way would read a step across one moment and a step down the next, and turn from `<` to `/` and back as
  * it moves.
  */

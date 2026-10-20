@@ -102,6 +102,11 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Blocks everything",
     description: "Nothing can be built on it and no unit can cross it, so it shapes where a fight can go.",
   },
+  "terrain.scrub": {
+    title: "Scrub",
+    subtitle: "Slow going",
+    description: "Thorny ground: a unit takes twice as long to cross each tile of it, and a route goes round it when that is quicker. Buildings can go here.",
+  },
   "terrain.deposit": {
     title: "Deposit",
     subtitle: "Resources lie here",

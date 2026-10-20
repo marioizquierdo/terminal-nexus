@@ -311,6 +311,14 @@ anchors from which it reaches a goal, a distance field from a goal outward, and 
   route, or in a ring of units each waiting on the next — walks round them by a field of its own that counts them as
   walls; one that only waits behind a walker that will step on soon waits, since walking round a queue and back would
   pace. Two allies of one tile each that want each other's tile swap, together.
+- **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
+  a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
+  from where a unit stands, so it can save up for a step onto scrub ([`grid.md`](grid.md), terrain).
+- **Workers cross their own side's troops, and not the enemy's**; a trooper the same with workers ([`grid.md`](grid.md),
+  collision masks). The enemy's are walls to their routes.
+- **A unit that flees walks a flight map** (`TickRoutes.safetyOf`): the walk from every enemy that can strike, scaled
+  by 1.2 and worked out again from every anchor at once, walked downhill. It runs from all threats, not only the
+  nearest, and toward open ground rather than into a corner (the roguelikes' "safety map"; `worker-flight-between`).
 - **A unit that did not walk** (`displace`, `src/pulse/shared.ts`): a push or a pull moves a unit a tile at a time
   in one direction, each tile only if its whole body fits there, and stops at the first that does not; a building
   never moves. Its credit is untouched, it says so (`entity.displaced`), and it walks on from where it landed. The

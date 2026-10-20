@@ -23,7 +23,7 @@ import type { Coord } from "../grid/types.ts"
 import { freshEntityFields } from "../content/index.ts"
 import { contentOf } from "./context.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { distanceBetween, drawAmong } from "./shared.ts"
+import { distanceBetween, drawAmong, sideLayerOf } from "./shared.ts"
 import { followsTarget } from "./target.ts"
 
 /**
@@ -49,11 +49,14 @@ export function spawnOneNear(
   if (!registry.has(contentId)) return null
   const childDef = registry.get(contentId)
   const { width, height } = footprintExtent(origin.definition.footprint)
+  const side = sideLayerOf(childDef)
   const mask = maskFrom(context.index, {
     layers: childDef.collidesWith,
     // Air ignores terrain entirely, same rule `maskForActor` already applies to a mover's own mask.
     terrain: childDef.layer === "air" ? "ignore" : "impassable",
     vacated: context.vacated,
+    // Never on an enemy's worker or trooper, though on its own side's (`sideLayerOf`).
+    ...(side === null ? {} : { sideLayers: { layers: [side], blocks: (ordinal: number) => context.byOrdinal.get(ordinal)?.player !== origin.player } }),
   })
 
   const free = footprintRing(width, height, 1)

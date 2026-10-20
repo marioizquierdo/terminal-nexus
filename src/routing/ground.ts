@@ -12,22 +12,43 @@ import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 /** The tiles no body may cover, row-major from the north-west, 1 for a wall. */
 export type Walls = Readonly<{ width: number; height: number; wall: Uint8Array }>
 
+/** The rock of each Grid, for a body that walks the ground, worked out once: a Grid's terrain never changes after it is
+ *  made, so it is kept by its tiles. */
+const ROCK = new WeakMap<readonly unknown[], Uint8Array>()
+
+function rockOf(grid: GridTerrain): Uint8Array {
+  let rock = ROCK.get(grid.tiles)
+  if (rock === undefined) {
+    rock = new Uint8Array(grid.width * grid.height)
+    for (let index = 0; index < grid.tiles.length; index += 1) if (TERRAIN[grid.tiles[index] as keyof typeof TERRAIN].impassable) rock[index] = 1
+    ROCK.set(grid.tiles, rock)
+  }
+  return rock
+}
+
 /**
  * The walls of a Grid: its rock, unless `terrain` is "ignore" (a body in the air), and `blocked`, the tiles of
  * whatever stands still. A tile of `blocked` off the Grid is ignored: the edge is a wall already.
  */
 export function wallsOf(grid: GridTerrain, terrain: "impassable" | "ignore", blocked: Iterable<Coord> = []): Walls {
-  const wall = new Uint8Array(grid.width * grid.height)
-  if (terrain === "impassable") {
-    grid.tiles.forEach((id, index) => {
-      if (TERRAIN[id].impassable) wall[index] = 1
-    })
-  }
+  const wall = terrain === "impassable" ? rockOf(grid).slice() : new Uint8Array(grid.width * grid.height)
   for (const tile of blocked) {
     if (tile.x < 0 || tile.y < 0 || tile.x >= grid.width || tile.y >= grid.height) continue
     wall[tile.y * grid.width + tile.x] = 1
   }
   return { width: grid.width, height: grid.height, wall }
+}
+
+/** Marks as walls, in `walls`, the tiles a body anchored at `anchor` covers: what stands still, written straight in
+ *  rather than listed first, as a tick does it for every unit. Tiles off the Grid are left: the edge is a wall. */
+export function addWall(walls: Walls, anchor: Coord, body: Footprint): void {
+  const { width, height, wall } = walls
+  for (const offset of body) {
+    const x = anchor.x + offset.x
+    const y = anchor.y + offset.y
+    if (x < 0 || y < 0 || x >= width || y >= height) continue
+    wall[y * width + x] = 1
+  }
 }
 
 /** Whether `tile` is a wall, the Grid's edge included. */
@@ -48,23 +69,79 @@ export function bodyKey(body: Footprint): string {
 export type Ground = Readonly<{ width: number; height: number; open: Uint8Array }>
 
 export function groundFor(walls: Walls, body: Footprint): Ground {
-  const { width, height } = walls
-  const open = new Uint8Array(width * height)
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      let fits = 1
-      for (const offset of body) {
-        const tx = x + offset.x
-        const ty = y + offset.y
-        if (tx < 0 || ty < 0 || tx >= width || ty >= height || walls.wall[ty * width + tx] === 1) {
-          fits = 0
-          break
-        }
+  const { width, height, wall } = walls
+  const open = new Uint8Array(width * height).fill(1)
+  // A tile of the body at a time, over the whole Grid: an anchor stays open while that tile, from it, is on the Grid
+  // and no wall. The same answer as asking every anchor for every tile, in plain runs along each row.
+  for (const offset of body) {
+    for (let y = 0; y < height; y += 1) {
+      const row = y * width
+      const ty = y + offset.y
+      if (ty < 0 || ty >= height) {
+        open.fill(0, row, row + width)
+        continue
       }
-      open[y * width + x] = fits
+      const from = Math.max(0, -offset.x)
+      const to = Math.min(width, width - offset.x)
+      if (from > 0) open.fill(0, row, row + from)
+      if (to < width) open.fill(0, row + Math.max(to, 0), row + width)
+      const shift = ty * width + offset.x - row
+      for (let x = from; x < to; x += 1) if (wall[row + x + shift] === 1) open[row + x] = 0
     }
   }
   return { width, height, open }
+}
+
+/**
+ * What stepping onto each anchor costs a body, per column of the step: the heaviest ground its body would cover there
+ * (`stepWeight`), row-major like the ground; 1 everywhere for a body in the air. `null` when every tile weighs 1, so
+ * a Grid with no slow ground costs nothing to ask.
+ */
+export function weightsFor(grid: GridTerrain, body: Footprint, terrain: "impassable" | "ignore"): Uint8Array | null {
+  if (terrain === "ignore") return null
+  let byBody = WEIGHTS.get(grid.tiles)
+  if (byBody === undefined) {
+    byBody = new Map()
+    WEIGHTS.set(grid.tiles, byBody)
+  }
+  const key = bodyKey(body)
+  if (!byBody.has(key)) byBody.set(key, weighed(grid, body))
+  return byBody.get(key) ?? null
+}
+
+/** Each Grid's weights by body, worked out once: its terrain never changes after it is made. */
+const WEIGHTS = new WeakMap<readonly unknown[], Map<string, Uint8Array | null>>()
+
+function weighed(grid: GridTerrain, body: Footprint): Uint8Array | null {
+  if (grid.tiles.every((id) => TERRAIN[id].stepWeight === 1)) return null
+  const { width, height } = grid
+  const weights = new Uint8Array(width * height).fill(1)
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      let heaviest = 1
+      for (const offset of body) {
+        const tx = x + offset.x
+        const ty = y + offset.y
+        if (tx < 0 || ty < 0 || tx >= width || ty >= height) continue
+        heaviest = Math.max(heaviest, TERRAIN[grid.tiles[ty * width + tx] as keyof typeof TERRAIN].stepWeight)
+      }
+      weights[y * width + x] = heaviest
+    }
+  }
+  return weights
+}
+
+/** What stepping onto `anchor` costs a body per column of the step: the heaviest ground under it there. */
+export function weightAt(grid: GridTerrain, body: Footprint, anchor: Coord, terrain: "impassable" | "ignore" = "impassable"): number {
+  if (terrain === "ignore") return 1
+  let heaviest = 1
+  for (const offset of body) {
+    const tx = anchor.x + offset.x
+    const ty = anchor.y + offset.y
+    if (tx < 0 || ty < 0 || tx >= grid.width || ty >= grid.height) continue
+    heaviest = Math.max(heaviest, TERRAIN[grid.tiles[ty * grid.width + tx] as keyof typeof TERRAIN].stepWeight)
+  }
+  return heaviest
 }
 
 /** Whether a body may stand with its anchor at `anchor`. Off the Grid it may not. */

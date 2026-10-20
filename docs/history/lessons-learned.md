@@ -547,3 +547,12 @@ and ran under Node and failed to parse under Bun ("Unexpected }"), because Bun's
 with `declare` as TypeScript's `declare` keyword. Every scenario's Node-and-Bun hash test failed at once, which pointed
 at a parse error rather than a rule. TypeScript's contextual keywords (`declare`, `type`, `module`, `namespace`,
 `abstract`, `readonly`) make poor function names; `bun build <file> --no-bundle` finds such a problem in a second.
+
+### A cloud session's Bun saves memory, and is slower for it
+
+2026-10-20, the pathfinding milestone. In a Claude Code on the web session every `bun` runs with `--smol` (the shell
+sets `BUN_OPTIONS`), which collects garbage far more often. Battle tests that take 4 seconds under plain Bun took
+over 5 there and hit Bun's per-test limit; one dialog test already did before any routing existed. Before reading a
+Bun timeout as a slowdown, run the file again with `BUN_OPTIONS= bun test <file>` and compare with the commit before.
+A real slowdown still shows: routing made a duel twice as slow, and a profile (`node --cpu-prof`) named the cause,
+a whole-map search every tick for each unit that could not reach its goal.
