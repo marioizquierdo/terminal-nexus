@@ -175,18 +175,20 @@ what is better than what once units find their way.
 
 Nothing in a battle changes in this step: the parts exist, with their tests, and nothing calls them yet.
 
-- [ ] **Ground** for a body: a tile is open to it when every tile its body covers is in the Grid, not rock, and not
+- [x] **Ground** for a body: a tile is open to it when every tile its body covers is in the Grid, not rock, and not
   under something that stands still. Wide and tall bodies, the Grid's edges and a body that fits a gap exactly, each
   tested.
-- [ ] **Goals** as sets of tiles: touching a footprint (melee), within a range of it (a shot, measured as range is),
+- [x] **Goals** as sets of tiles: touching a footprint (melee), within a range of it (a shot, measured as range is),
   inside an area. A goal under a wall or off the Grid is left out; a goal with no tile left is said so.
-- [ ] **A distance field** from a goal: exact whole-number walking costs, a row two columns, worked out outward only
+- [x] **A distance field** from a goal: exact whole-number walking costs, a row two columns, worked out outward only
   as far as it is asked, the same values whichever tile is asked first. Tested against a plain search on small
   Grids, on mazes, and on a goal that cannot be reached.
-- [ ] **The choice of a step**: the steps along a shortest route first, then those that keep the cost level, and
+- [x] **The choice of a step**: the steps along a shortest route first, then those that keep the cost level, and
   ties by the turn from the way the unit faces its goal. Mirrored Grids give mirrored choices.
-- [ ] **Their cost measured**: a field over the starter map, and a tick's worth of them, against the frame budget the
-  browser page already keeps.
+- [x] **Their cost measured**: a field over the starter map, and a tick's worth of them, against the frame budget the
+  browser page already keeps. Twelve fields worked out over the whole 96 by 40 map take about 10 ms on the machine
+  that built them, under a third of the page's 33 ms frame; a battle's fields stop as soon as they have their answer,
+  so most cost far less.
 
 ### Step 16C — Routes round the map
 
