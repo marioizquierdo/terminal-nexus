@@ -399,7 +399,32 @@ last step.
 > from on top of the building. When the enemy destroys the unit,
 
 **Scheduled**, as a step of the pathfinding milestone (units come out of their building): units appear on top of the
-building that made them, cross their own side's buildings to the nearest open ground without sharing a tile, fight
+building that made them, cross their own side's buildings to open ground without sharing a tile (toward their goal, since his next note), fight
 from the roof, and buildings that make units no longer need room round them, so the Spawn space Experiment goes.
-His note stopped mid-sentence ("When the enemy destroys the unit,"): what happens to a unit hit on its roof, or on a
-building that falls, waits on him.
+His note stopped mid-sentence ("When the enemy destroys the unit,"); he finished it on 2026-10-20 (below).
+
+### F186 — A unit on a roof is hit as usual; units walk the roofs toward their goal
+
+> let's do an extra iteration on the Pathfindinf milestone. When a unit is hit on the roof of a building, it should be
+> like a normal hit, the unit dies and then the attacket picks a new target, that maybe is the building. If the
+> attacker can't reach the unit then it would attack the building or whatever can reach, so same as usual.
+> Another thing is when units spawn, they should start moving towards their target path, instead of going to the
+> closest free tile, they will just keep walking on the rooftops on the natural direction wjere their destination,
+> this will help keep the troop waves together when they spawn. Units that spawn over multiple tiles will continue
+> through the roofs even if there's an empty tile in the middle, so basically they "walk in the roofs" until they are
+> fully in regular terrain.
+>
+> But you don't have to do it exactly like I describe, this is just what I think it would work, bit the real test is
+> playing a simulated game an checking if it is possible to make good unit formations that can foster interesting
+> strategies.
+>
+> Take the chance to make a quality pass on design writing
+
+**Scheduled**, in the pathfinding milestone's step on units walking out over the roofs. A unit on a roof is hit,
+dies and is replaced as a target as on the ground; an enemy that cannot reach it attacks what it can. A wave's way
+out is its ordinary route to its goal with its own side's buildings counted as open ground, so it leaves by the side
+facing the enemy and stays together; a unit is on the roofs until all of it stands on ground, then buildings are walls
+to it again. Units on a building that falls stay where they stand (the step's reading of "same as usual", not his
+word). The step is done when a simulated game shows that a block of buildings, buildings set apart and a long line of
+them send out armies of different shapes, each beating something and losing to something, with an Experiment for the
+way out if that leaves it open. The milestone's writing was tightened in the same change.
