@@ -149,3 +149,39 @@ export function canStand(ground: Ground, anchor: Coord): boolean {
   if (anchor.x < 0 || anchor.y < 0 || anchor.x >= ground.width || anchor.y >= ground.height) return false
   return ground.open[anchor.y * ground.width + anchor.x] === 1
 }
+
+/**
+ * Which patch of `ground` each anchor is on, numbered from 1 in reading order of their first anchor, 0 where the body
+ * cannot stand: two anchors share a patch exactly when each can be walked to from the other, a step at a time along
+ * the Grid's sides. One flood of the ground; what a field asks first, so a goal on another patch is known unreachable
+ * without searching (`DistanceField`).
+ */
+export function patchesOf(ground: Ground): Int32Array {
+  const { width, height, open } = ground
+  const patches = new Int32Array(width * height)
+  const queue = new Int32Array(width * height)
+  let count = 0
+  for (let start = 0; start < open.length; start += 1) {
+    if (open[start] !== 1 || patches[start] !== 0) continue
+    count += 1
+    patches[start] = count
+    let head = 0
+    let tail = 0
+    queue[tail++] = start
+    while (head < tail) {
+      const index = queue[head++] as number
+      const x = index % width
+      const y = (index - x) / width
+      const offer = (next: number): void => {
+        if (open[next] !== 1 || patches[next] !== 0) return
+        patches[next] = count
+        queue[tail++] = next
+      }
+      if (y > 0) offer(index - width)
+      if (x < width - 1) offer(index + 1)
+      if (y < height - 1) offer(index + width)
+      if (x > 0) offer(index - 1)
+    }
+  }
+  return patches
+}

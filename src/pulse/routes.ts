@@ -16,10 +16,10 @@
 import { gridDistance, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import type { Area, Ground, Reach, Seed } from "../routing/index.ts"
-import { addWall, bodyKey, canStand, DistanceField, goalsInside, goalsNear, groundFor, UNREACHABLE, wallsOf, weightsFor } from "../routing/index.ts"
+import { addWall, bodyKey, canStand, DistanceField, patchesOf, goalsInside, goalsNear, groundFor, UNREACHABLE, wallsOf, weightsFor } from "../routing/index.ts"
 import type { TargetArea } from "../state/types.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { drawAmong, inAttackRange, onRoof, ownSideLayers, sideLayerOf, within } from "./shared.ts"
+import { inAttackRange, onRoof, ownSideLayers, sideLayerOf, within } from "./shared.ts"
 import { fleeTrigger } from "./perception.ts"
 import { insideArea, targetFor } from "./target.ts"
 
@@ -52,7 +52,7 @@ export class TickRoutes {
   private readonly fields = new Map<string, DistanceField>()
   private readonly weights = new Map<string, Uint8Array | null>()
   private readonly patches = new Map<string, Int32Array>()
-  private readonly nearest = new Map<string, Coord[]>()
+  private readonly nearest = new Map<string, Readonly<{ field: DistanceField; anchors: ReadonlySet<number> }>>()
   private readonly masks = new Map<number, string>()
 
   /** `walking`: the ordinals of the actors that walk this tick; every other actor stands, and is a wall. */
@@ -116,7 +116,8 @@ export class TickRoutes {
     const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|${goalKey(goal)}`
     let field = this.fields.get(key)
     if (field === undefined) {
-      field = fieldOver(this.context, this.groundOf(actor), this.weightsOf(actor), actor, goal)
+      const ground = this.groundOf(actor)
+      field = fieldOver(this.context, ground, this.weightsOf(actor), actor, goal, this.patchesOf(`${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`, ground))
       this.fields.set(key, field)
     }
     return field
@@ -187,24 +188,24 @@ export class TickRoutes {
   }
 
   /**
-   * When `actor` cannot reach its goal from where it stands: the field toward the anchor it can reach that is nearest
-   * `toward` (the goal's own tile), nearest by the Grid's distance, then by the walk to it, then by a seeded draw —
-   * what it heads for instead. `null` when it can reach nowhere at all.
+   * When `actor` cannot reach its goal from where it stands: a field toward the anchors it can reach that are nearest
+   * `toward` (the goal's own tile), nearest by the Grid's distance — what it heads for instead, walking downhill to
+   * the nearest of them to walk to. `here` when it already stands on one: it stays. `null` when it can reach nowhere
+   * at all. The anchors it can reach are the patch of ground it stands on (`patchesOf`), so the field is one for every
+   * unit on that patch heading toward that tile, worked out once a tick.
    */
-  nearestReachable(actor: Actor, toward: Coord): Readonly<{ field: DistanceField; anchor: Coord }> | null {
+  nearestReachable(actor: Actor, toward: Coord): Readonly<{ field: DistanceField; here: boolean }> | null {
     const ground = this.groundOf(actor)
     const body = actor.definition.footprint
     if (!canStand(ground, actor.anchor)) return null
-    // The anchors it can walk to are the patch of ground it stands on; of those, the ones nearest `toward`, shared by
-    // every unit on that patch heading there. Then the nearest of them to walk to, by a field from where it stands
-    // (walking is symmetric: a step costs the same either way on ground with no weights), asked only about them.
     const groundKey = `${this.maskOf(actor)}|${bodyKey(body)}`
     const patches = this.patchesOf(groundKey, ground)
-    const patch = patches[actor.anchor.y * ground.width + actor.anchor.x] as number
-    const nearKey = `${groundKey}|patch ${patch}|nearest ${toward.x},${toward.y}`
-    let nearest = this.nearest.get(nearKey)
-    if (nearest === undefined) {
-      nearest = []
+    const at = actor.anchor.y * ground.width + actor.anchor.x
+    const patch = patches[at] as number
+    const key = `${groundKey}|patch ${patch}|nearest ${toward.x},${toward.y}`
+    let entry = this.nearest.get(key)
+    if (entry === undefined) {
+      let nearest: Coord[] = []
       let bestNear = UNREACHABLE
       for (let index = 0; index < patches.length; index += 1) {
         if (patches[index] !== patch) continue
@@ -215,75 +216,33 @@ export class TickRoutes {
           bestNear = near
         } else if (near === bestNear) nearest.push(anchor)
       }
-      this.nearest.set(nearKey, nearest)
+      entry = { field: new DistanceField(ground, nearest, undefined, patches), anchors: new Set(nearest.map((anchor) => anchor.y * ground.width + anchor.x)) }
+      this.nearest.set(key, entry)
     }
-    const from = new DistanceField(ground, [actor.anchor])
-    let tied: Coord[] = []
-    let bestWalk = UNREACHABLE
-    for (const anchor of nearest) {
-      const walk = from.distanceAt(anchor)
-      if (walk < bestWalk) {
-        tied = [anchor]
-        bestWalk = walk
-      } else if (walk === bestWalk) tied.push(anchor)
-    }
-    // Where it stands, when that is as near as any: it stays. Otherwise a tie is a draw, never reading order.
-    const best = tied.find((anchor) => anchor.x === actor.anchor.x && anchor.y === actor.anchor.y) ?? drawAmong(this.context, tied)
-    if (best === undefined) return null
-    const key = `${groundKey}|near:${best.x},${best.y}`
-    let field = this.fields.get(key)
-    if (field === undefined) {
-      field = new DistanceField(ground, [best])
-      this.fields.set(key, field)
-    }
-    return { field, anchor: best }
+    return { field: entry.field, here: entry.anchors.has(at) }
   }
 
-  /** Which patch of `ground` each anchor is on, numbered from 1 (0 where the body cannot stand): two anchors on one
-   *  patch can each be walked to from the other. Kept for the tick with the ground. */
+  /** Which patch of `ground` each anchor is on (`patchesOf`, `src/routing/`), kept for the tick with the ground. */
   private patchesOf(groundKey: string, ground: Ground): Int32Array {
     let patches = this.patches.get(groundKey)
-    if (patches !== undefined) return patches
-    const { width, height, open } = ground
-    patches = new Int32Array(width * height)
-    const queue = new Int32Array(width * height)
-    let count = 0
-    for (let start = 0; start < open.length; start += 1) {
-      if (open[start] !== 1 || patches[start] !== 0) continue
-      count += 1
-      patches[start] = count
-      let head = 0
-      let tail = 0
-      queue[tail++] = start
-      while (head < tail) {
-        const index = queue[head++] as number
-        const x = index % width
-        const y = (index - x) / width
-        const offer = (next: number): void => {
-          if (open[next] !== 1 || patches[next] !== 0) return
-          patches[next] = count
-          queue[tail++] = next
-        }
-        if (y > 0) offer(index - width)
-        if (x < width - 1) offer(index + 1)
-        if (y < height - 1) offer(index + width)
-        if (x > 0) offer(index - 1)
-      }
+    if (patches === undefined) {
+      patches = patchesOf(ground)
+      this.patches.set(groundKey, patches)
     }
-    this.patches.set(groundKey, patches)
     return patches
   }
+
 }
 
 /** A field over `ground` toward the anchors from which `actor` reaches `goal`. */
-function fieldOver(context: TickContext, ground: Ground, weights: Uint8Array | null, actor: Actor, goal: RouteGoal): DistanceField {
+function fieldOver(context: TickContext, ground: Ground, weights: Uint8Array | null, actor: Actor, goal: RouteGoal, patches?: Int32Array): DistanceField {
   const goals =
     goal.kind === "unit"
       ? goalsNear(ground, actor.definition.footprint, goal.target.anchor, goal.target.definition.footprint, goal.reach)
       : goal.kind === "area"
         ? goalsInside(ground, actor.definition.footprint, goal.area as Area)
         : offTheRoofs(context, ground, actor)
-  return new DistanceField(ground, goals, weights ?? undefined)
+  return new DistanceField(ground, goals, weights ?? undefined, patches)
 }
 
 /** Every anchor `actor`'s body may stand on with no tile of it over one of its side's buildings: the ground. */

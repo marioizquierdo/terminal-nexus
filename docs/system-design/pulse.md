@@ -302,9 +302,11 @@ anchors from which it reaches a goal, a distance field from a goal outward, and 
   still free round it, and a route goes round a fight rather than queuing behind it. A walker is no wall: it will
   have moved, and the tick order settles who steps where.
 - **Equally good steps** go by how far each turns from the way the unit faces its goal, then by a seeded draw.
-- **A goal that cannot be reached**: a unit heads for the anchor it can reach that is nearest the goal's tile (then
-  nearest to walk, then a draw), and standing there it has no route: it says so (`move.blocked`, reason
-  `no-route`) and stands. A wide body before a gap too narrow for it stands as near as it can get.
+- **A goal that cannot be reached**: a unit heads for the anchors it can reach that are nearest the goal's tile,
+  walking downhill to the nearest of them to walk to (one field toward them all, shared by every unit on the same
+  patch of ground; a patch is the ground a body can walk between, `patchesOf`), and standing on one it has no route:
+  it says so (`move.blocked`, reason `no-route`) and stands. A wide body before a gap too narrow for it stands as near
+  as it can get. A field asked about an anchor on no goal's patch says unreachable at once, without searching.
 - **Targeting knows what can be reached.** Once routes are built, a unit that would walk to its target chooses again:
   a melee unit fights the enemy nearest to walk to — by the walk to a tile beside it, then the one it holds, the
   weakest, a draw — and, heading for its side's target, turns only to what it could walk to within its engage reach;

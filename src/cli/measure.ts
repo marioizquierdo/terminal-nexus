@@ -2,7 +2,8 @@
 // shell around `src/measure/`: it reads the maps, keeps time, asks git for the build and writes the result down.
 // Commands:
 //
-//   measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--routing "<words>"] [--out <file>]
+//   measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
+//               [--routing "<words>"] [--out <file>]
 //       plays the spec and prints what it says; with --out, writes every battle's record as JSON too
 //   measure show <file>
 //       prints what a measurement written down says
@@ -21,8 +22,10 @@ import { loadMapFile } from "../scenario/load-map-file.ts"
 
 const HELP = `measure: battles measured the same way before and after a rule changes (docs/system-design/measurement.md).
 
-  measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--routing "<words>"] [--out <file>]
-      plays the spec and prints what it says; with --out, writes every battle's record as JSON too
+  measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
+              [--routing "<words>"] [--out <file>]
+      plays the spec and prints what it says; with --out, writes every battle's record as JSON too. --parts and
+      --players play part of a spec, so a long one can run as several processes side by side
   measure show <file>
       prints what a measurement written down says
   measure compare <before> <after>
@@ -109,7 +112,9 @@ export async function main(args: readonly string[]): Promise<number> {
 
   const base = SPECS[options["spec"] ?? "quick"]
   if (base === undefined) throw new Error(`no spec "${options["spec"]}" (${Object.keys(SPECS).join(", ")})`)
-  const spec: MeasureSpec = options["seeds"] === undefined ? base : { ...base, seeds: seedsOf(options["seeds"]) }
+  const seeded: MeasureSpec = options["seeds"] === undefined ? base : { ...base, seeds: seedsOf(options["seeds"]) }
+  const players = options["players"]?.split(",")
+  const spec: MeasureSpec = players === undefined ? seeded : { ...seeded, duels: { ...seeded.duels, players } }
   const parts = new Set((options["parts"] ?? "scenarios,duels,levels").split(","))
   const scenarios = await Promise.all(
     readdirSync("scenarios")

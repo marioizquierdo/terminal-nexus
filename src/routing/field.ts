@@ -40,15 +40,23 @@ export class DistanceField {
   private remaining = 0
   /** How many anchors have been settled so far: what the field has cost. */
   settledCount = 0
+  /** Which patch of the ground each anchor is on, when given (`patches`), and the patches its goals are on: an anchor
+   *  on no goal's patch is unreachable, said at once rather than found by working out the whole of its own. */
+  private readonly patches: Int32Array | null
+  private readonly goalPatches: Set<number> | null
 
   /**
    * A field toward `goals` (anchors the body may stand on; others are ignored) over `ground`, each starting at nothing
    * or at a cost of its own (`Seed`). `weights`, when given, is what stepping onto each anchor costs per column of the
-   * step, row-major like the ground; absent, one everywhere.
+   * step, row-major like the ground; absent, one everywhere. `patches`, when given, labels each anchor with the patch
+   * of the ground it is on — two anchors share one only when each can be walked to from the other — so an anchor that
+   * cannot reach any goal is answered at once.
    */
-  constructor(ground: Ground, goals: readonly (Coord | Seed)[], weights?: Uint8Array) {
+  constructor(ground: Ground, goals: readonly (Coord | Seed)[], weights?: Uint8Array, patches?: Int32Array) {
     this.ground = ground
     this.weights = weights ?? null
+    this.patches = patches ?? null
+    this.goalPatches = patches === undefined ? null : new Set()
     const size = ground.width * ground.height
     this.distance = new Int32Array(size).fill(FAR)
     this.settled = new Uint8Array(size)
@@ -62,6 +70,7 @@ export class DistanceField {
       if (ground.open[index] !== 1 || cost >= (this.distance[index] as number)) continue
       this.distance[index] = cost
       this.push(index, cost)
+      this.goalPatches?.add(patches?.[index] as number)
     }
   }
 
@@ -142,6 +151,7 @@ export class DistanceField {
     if (anchor.x < 0 || anchor.y < 0 || anchor.x >= width || anchor.y >= height) return UNREACHABLE
     const index = anchor.y * width + anchor.x
     if (this.ground.open[index] !== 1) return UNREACHABLE
+    if (this.goalPatches !== null && !this.goalPatches.has(this.patches?.[index] as number)) return UNREACHABLE
     while (this.settled[index] !== 1) {
       if (this.settleNext() === -1) return UNREACHABLE
     }

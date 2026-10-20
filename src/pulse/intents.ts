@@ -320,8 +320,7 @@ function walk(
   let field = routeField
   if (field.distanceAt(actor.anchor) === UNREACHABLE) {
     const nearest = routes.nearestReachable(actor, toward)
-    if (nearest === null) return { choices: [], wanted: null, noRoute: true }
-    if (nearest.anchor.x === actor.anchor.x && nearest.anchor.y === actor.anchor.y) return { choices: [], wanted: null, noRoute: true }
+    if (nearest === null || nearest.here) return { choices: [], wanted: null, noRoute: true }
     field = nearest.field
   }
   const choices: StepChoice[] = []
