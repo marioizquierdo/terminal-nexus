@@ -22,7 +22,7 @@ it is done.*
   Barracks (`1`, Enter), start the round (`s`, `s`); round 2 opens with what you did not spend and 120 more, and the
   Garrison can be built — four pikemen a wave, each about three troopers and two places. Explore Map (`e`) onto a
   Barracks: its card lists `[z] Hold production`, which keeps its wave home this round.
-- **Play Averno beside Vasse** (Commander Armies' third step; measured again headless at the end of Pathfinding), from `./bin/terminal-nexus.ts --at 'campaign?level=averno-test-1'`
+- **Play Averno beside Vasse** (Commander Armies' third step; measured headless on the new routes: he clears his rounds faster and falls in rounds 1 and 5, she never falls, [the report](../history/reports/2026-10-20-pathfinding-measured.md)), from `./bin/terminal-nexus.ts --at 'campaign?level=averno-test-1'`
   and then `--at 'campaign?level=vasse-test-3'`: the same curve, her map and raids, with him in her place for five
   rounds. He is `&`, he charges out of the line, and his units near him hit a quarter harder. In round 2 the Nexus
   Pulse (`n`) deals one card tagged `Ravel`: raiders or runners from the Ravel Nexus who fight for him. When he
@@ -30,9 +30,10 @@ it is done.*
 - **Read the army guide, and run a duel** (the army structure round): [`army-authoring.md`](../system-design/army-authoring.md)
   is the guide for writing a Commander as data; `npm run duel -- bench --seeds 1-6` fights Vasse, Averno and Dob
   Hunter against each other with three scripts, and [`duels.md`](../system-design/duels.md) says how to set two model
-  agents against each other. Three things the duels found wait on his word, and are measured again on the new routes at the end of Pathfinding: Averno won all four of his model games and
-  most benches, before units could find their way round rock (his players attacked nearly every round, and Forward Order pays for attacking), Ravel buildings train about half the
-  strength a credit Citizen ones do, and Dob has no campaign yet.
+  agents against each other. Three things the duels found wait on his word, measured again on the new routes ([the report](../history/reports/2026-10-20-pathfinding-measured.md)):
+  Averno still wins most (65% of 72 scripted duels), Ravel buildings train about half the strength a credit Citizen ones
+  do and Dob wins mostly when he holds, and Dob has no campaign yet. The same duels found that an early lead decides
+  a duel almost every time (a question for him, with a recommendation).
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When
   she falls, a small window opens beside her, her face falls and the window evaporates; her dim `@` waits beside the

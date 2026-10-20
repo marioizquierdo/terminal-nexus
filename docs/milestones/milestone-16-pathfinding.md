@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** 16I — measure again, with full Commander duels.
+**Current step:** none open: all nine steps are built and wait for Mario's playtest.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -311,18 +311,25 @@ their army leaves; that one would decide how it keeps its shape on the way.
 The owner: "close up with full commander deck duels", and "use the pending commander checks as part of pathfinding
 validation at the end". The checks Commander Armies left are measured here, on the new routes.
 
-- [ ] **The whole spec run on the new routes**: every Commander against every other from both ends of the map,
+- [x] **The whole spec run on the new routes**: every Commander against every other from both ends of the map,
   drafting from their whole decks over many seeds; the bench; every campaign level with its plans. Written down as
-  the spec says: the first results under the new rules.
-- [ ] **The catch-up measure** (Commander Armies' last step): how often a lucky early hand predicts the winner, over
-  the duels. The power curve's guidelines revised by what it shows; any catch-up mechanic it suggests registered with
-  a recommendation, not built.
-- [ ] **The Commander checks, measured**: the six-round curve level played by its plans (supply, the Garrison,
-  holding a wave home); Averno beside Vasse on the same curve; and the three duel findings re-measured (Averno winning
-  most games, Ravel buildings training about half the strength a credit of Citizen ones, Dob without a campaign).
-- [ ] **What they show, in plain words**: which Commander, building or plan is now stronger, and which level no
-  longer plays as designed (a raid that now walks round the wall it used to stand behind). Levels are retuned only
-  where one breaks; the rest of balance stays later work, as the owner has said.
+  the spec says: the first results under the new rules
+  ([the result](../history/measurements/2026-10-20-routes-and-roofs.json),
+  [what it says](../history/reports/2026-10-20-pathfinding-measured.md)). Every route scenario walked; a twelfth of
+  the blocking; mirrors 28 to 26; 90 of 162 duels ended by a Nexus falling, where 23 did. A tick costs about 14 ms
+  at 200 units, so a duel's last rounds take a few seconds to resolve.
+- [x] **The catch-up measure** (Commander Armies' last step): how often a lucky early hand predicts the winner, over
+  the duels — judged by how the cards kept did in every other duel, since both sides are dealt the same rarities. The
+  luckier early hands won 55%; but an early lead decides almost every duel, a Nexus falling in round 1 or 2 in 35 of
+  them. The power curve's guidelines revised (the opening must not end a match), and what should hold a Nexus in the
+  first act registered with a recommendation, not built.
+- [x] **The Commander checks, measured**: the six-round curve level played by its plans (both win in round 6; the
+  tree's last army 1.13 times the first tier's; the opening still more than half the last army); Averno beside Vasse
+  on the same curve (he clears faster and falls in rounds 1 and 5, she never falls, apart from the first round); and
+  the three duel findings re-measured (Averno wins 65%, Dob wins mostly when he holds, Dob still has no campaign).
+- [x] **What they show, in plain words**: Averno is the strongest Commander, Dob a defender, climbing the tree pays
+  by less than before, and an early lead decides a duel. Every campaign level plays to the same verdict by both plans
+  as on the baseline, so none is retuned.
 
 ## Waiting on Mario
 

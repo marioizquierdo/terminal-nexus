@@ -46,6 +46,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
 | [Q82](#q82--what-makes-a-loose-army-worth-building) | What makes a loose army worth building? | OPEN | Mario, after feeling the Way off the roof Experiment; the armies' next pass |
+| [Q83](#q83--how-are-a-duels-first-rounds-kept-from-deciding-it) | How are a duel's first rounds kept from deciding it? | OPEN | Mario; the armies' next pass |
 
 ## Open
 
@@ -555,3 +556,25 @@ there is no reason to build apart.
 **Recommendation: A, when the armies are iterated next** (Mario: "we will iterate on the armies later"). The roofs
 built what he asked for; what makes a loose army worth building is an army's area attack, and the simulation is ready
 to measure one. Meanwhile the "Way off the roof" Experiment lets him feel his idea against stepping down at once.
+
+### Q83 — How are a duel's first rounds kept from deciding it?
+
+**Status:** OPEN — registered 2026-10-20, from the full Commander duels measured at the end of the pathfinding
+milestone ([the report](../history/reports/2026-10-20-pathfinding-measured.md)).
+
+On the new routes a side with no target marches straight on the enemy Nexus. Of 162 scripted duels on the Crossing, 35
+were over by the end of round 2 and 13 in round 1; and of the duels that went on, the side that dealt more damage in
+the first two rounds won every one. Luck is not the cause (the luckier early hands won 55%); speed is. The power curve
+asks for the last moves to be the most decisive and an opening worth a sixth of a match (the Commander Armies design,
+catch-up), and its guidelines forbid hidden help and rewards for falling behind.
+
+| Option | What it costs |
+| --- | --- |
+| A. **A Nexus that fights back**: the Grid Nexus has an attack of its own, on its card, so a round-1 march meets a defence it must spend to break | One content change and a test; every level and duel re-measured, and an attack is one more thing on the Nexus's card |
+| B. **A guard to start with**: each side's opening includes a building or a squad that holds the Nexus, as PERIMETER's annex does | Per-army data; a defender's opening pays for it on the curve |
+| C. **A Nexus that cannot fall in the opening act**: it stands at its last health through round 3, said on its card | A rule a player can read, but one that changes what a raid is for in the first act |
+| D. **Leave it to the armies**: a forward army is ahead early and pays later, as the curve says | Nothing now; the scripted duels say the payment never comes |
+
+**Recommendation: A, measured with `measure run --spec full` before anything else changes.** It is visible on the
+Grid and on a card, helps whoever is attacked rather than whoever is behind, and leaves every army's own lean intact;
+B is the same idea spent per army, and C changes the first act's purpose.

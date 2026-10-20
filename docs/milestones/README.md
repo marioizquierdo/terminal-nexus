@@ -33,7 +33,8 @@ remains.
 **Pathfinding is current, 2026-10-20**: the owner closed Commander Armies ("the new commander army design is
 excellent, we will iterate on the armies later") and started it: "Next for us is: Pathfinding improvements!" Every
 battle runs on it, so what was measured before it lands is measured again after, Commander Armies' catch-up measure
-included.
+included. All nine of its steps are built ([what the last measured](../history/reports/2026-10-20-pathfinding-measured.md)),
+waiting on his playtest.
 
 The order is for a played loop as early as possible. The match experience comes first (menu, Build Phase,
 Battle Round), then the two mode shells (the Commander and draft, the run, the campaign), then depth (the worker

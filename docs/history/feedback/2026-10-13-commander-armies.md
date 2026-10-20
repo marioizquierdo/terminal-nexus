@@ -352,7 +352,9 @@ milestone of its own (F183).
 > battle (e.g. units pushed after an explosion, a magnet ability or new units spawned), different terrains, and worker
 > units being able to walk over other friendly units.
 
-**Scheduled.** Before it, the cause of the stuck raiders was found by playing PERIMETER headless: there is no
+**Built** (2026-10-20): units walk distance fields round rock, crowds and gaps, every route scenario is walked and
+the duels' units stand blocked a twelfth as long ([what was measured](../reports/2026-10-20-pathfinding-measured.md)).
+**Scheduled** at first. Before it, the cause of the stuck raiders was found by playing PERIMETER headless: there is no
 pathfinding, a unit only takes a step that brings it strictly closer, so a slinger directly above the Grid Nexus with
 the north-west wall between them stands there for good and the raiders behind it queue. The milestone
 ([`milestone-16-pathfinding.md`](../../milestones/milestone-16-pathfinding.md)) has that, the research (A\*, distance
@@ -372,7 +374,8 @@ in the plan or live during the round, is a question for him. Its place in the bu
 > design file, a spec, and just forget about that old data, and we're gonna have to start a new one. Maybe that can be
 > part of the milestone as well.
 
-**Scheduled.** The banner question is answered (a banner belongs to the Build Phase's plan, and waits for a plan for it
+**Built** (2026-10-20): a side with no target heads for the enemy's Grid Nexus, a level's target where it names one,
+and no banner; the measurements started over from a spec. **Scheduled** at first. The banner question is answered (a banner belongs to the Build Phase's plan, and waits for a plan for it
 on screen; it is in the backlog). The pathfinding milestone builds no banner: a unit heads for the enemy's Grid Nexus,
 or a campaign level's target where the level names one. It is placed next in the build order, after Commander
 Armies. And it now opens with a clean slate: a spec of how a battle is measured, every measured result from before
@@ -398,7 +401,8 @@ last step.
 > range? Should they start shooting each other? And I think, yes, they should be able to start shooting right away
 > from on top of the building. When the enemy destroys the unit,
 
-**Scheduled**, as a step of the pathfinding milestone (units come out of their building): units appear on top of the
+**Built** (2026-10-20): units appear on the roof of the building that made them and walk out, buildings may touch,
+and the Spawn space Experiment is gone. **Scheduled** at first, as a step of the pathfinding milestone (units come out of their building): units appear on top of the
 building that made them, cross their own side's buildings to open ground without sharing a tile (toward their goal, since his next note), fight
 from the roof, and buildings that make units no longer need room round them, so the Spawn space Experiment goes.
 His note stopped mid-sentence ("When the enemy destroys the unit,"); he finished it on 2026-10-20 (below).
@@ -420,7 +424,10 @@ His note stopped mid-sentence ("When the enemy destroys the unit,"); he finished
 >
 > Take the chance to make a quality pass on design writing
 
-**Scheduled**, in the pathfinding milestone's step on units walking out over the roofs. A unit on a roof is hit,
+**Built** (2026-10-20), with the simulated game he set: where a player builds decides how tight the army fights (a
+block about 3 columns from its middle, set apart 14) and a tight army beats a loose one; set apart beats nothing yet,
+so what makes a loose army worth building is a question for him, and a "Way off the roof" Experiment lets him feel
+his idea against stepping down at once ([the report](../reports/2026-10-20-formations.md)). **Scheduled** at first, in the pathfinding milestone's step on units walking out over the roofs. A unit on a roof is hit,
 dies and is replaced as a target as on the ground; an enemy that cannot reach it attacks what it can. A wave's way
 out is its ordinary route to its goal with its own side's buildings counted as open ground, so it leaves by the side
 facing the enemy and stays together; a unit is on the roofs until all of it stands on ground, then buildings are walls
@@ -444,7 +451,8 @@ way out if that leaves it open. The milestone's writing was tightened in the sam
 >
 > Go ahead, take your time, implement slow
 
-**Built** in part, **Scheduled** for the rest. Commander Armies is closed and in history; its last step, the catch-up
+**Built** (2026-10-20): every step of the pathfinding milestone, closing on full Commander duels and the Commander
+checks ([what they show](../reports/2026-10-20-pathfinding-measured.md)). At first **Built** in part, **Scheduled** for the rest. Commander Armies is closed and in history; its last step, the catch-up
 measure, moved into the pathfinding milestone's last step with the other Commander checks (the curve level, Averno
 beside Vasse, the duel findings), measured on the new routes. Pathfinding is current. Its plan was rewritten as
 compartments that are each tested on their own (what a body can stand on, a goal, a distance field, the choice of a

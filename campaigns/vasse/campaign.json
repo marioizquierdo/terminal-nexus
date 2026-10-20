@@ -79,7 +79,7 @@
         "triggers": [
           {
             "id": "squads",
-            "notes": "'Commander Vasse holds the ground with what walked out of the annex: two squads' (the briefing). She is listed first, so she takes the muster's centre with the squads around her: listed last she stood at their edge and fell in round 2 behind every Turret plan measured. She arrives once; when she falls, the rules between rounds bring her back. Measured before units could find their way round rock, and measured again at the end of the pathfinding milestone (docs/history/reports/2026-10-20-measured-before-routing.md).",
+            "notes": "'Commander Vasse holds the ground with what walked out of the annex: two squads' (the briefing). She is listed first, so she takes the muster's centre with the squads around her: listed last she stood at their edge and fell in round 2 behind every Turret plan measured. She arrives once; when she falls, the rules between rounds bring her back. Measured before units could find their way round rock, (docs/history/reports/2026-10-20-measured-before-routing.md); on the new routes the level plays to the same verdict by both plans (docs/history/reports/2026-10-20-pathfinding-measured.md).",
             "when": {"pulse": 1, "tick": 0},
             "do": [
               {
@@ -104,7 +104,7 @@
           },
           {
             "id": "post",
-            "notes": "Where the player's troops head, every round: the line just ahead of the base. They fight what comes within their reach and stand there when nothing does, so a building placed beside the line fights beside them, and a raid that goes round them meets the buildings. Set once; it holds every round. Chosen over the gap in the ridge, the pass and the ground before the Barracks, and measured with every place one building can go inside the build range: a plan that builds nothing still lost the last round at every strength of Vasse's aura and every health from 20 to 100, as it did before the line, and the raid needed no change. With the Barracks's troopers in a wave (the Commander round 5) it holds it at every one of those values but one, Vasse at 60 with 10% less, where the raid brings the Nexus down eight ticks before the last round ends; the troopers head for the line as soon as they are out. Measured before units could find their way round rock, and measured again at the end of the pathfinding milestone (docs/history/reports/2026-10-20-measured-before-routing.md).",
+            "notes": "Where the player's troops head, every round: the line just ahead of the base. They fight what comes within their reach and stand there when nothing does, so a building placed beside the line fights beside them, and a raid that goes round them meets the buildings. Set once; it holds every round. Chosen over the gap in the ridge, the pass and the ground before the Barracks, and measured with every place one building can go inside the build range: a plan that builds nothing still lost the last round at every strength of Vasse's aura and every health from 20 to 100, as it did before the line, and the raid needed no change. With the Barracks's troopers in a wave (the Commander round 5) it holds it at every one of those values but one, Vasse at 60 with 10% less, where the raid brings the Nexus down eight ticks before the last round ends; the troopers head for the line as soon as they are out. Measured before units could find their way round rock, (docs/history/reports/2026-10-20-measured-before-routing.md); on the new routes the level plays to the same verdict by both plans (docs/history/reports/2026-10-20-pathfinding-measured.md).",
             "when": {"pulse": 1, "tick": 0},
             "do": [{"target": {"side": "A", "region": "line"}}]
           },
@@ -342,7 +342,7 @@
           },
           {
             "id": "ambush",
-            "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid at all of them but her least health with the weakest aura (20, and 10% less), where the raid outlasts the round. Measured before units could find their way round rock, and measured again at the end of the pathfinding milestone (docs/history/reports/2026-10-20-measured-before-routing.md).",
+            "notes": "Two raiders and two runners: with two raiders alone, once By the Book guarded her she fell on the round's last tick at her first health, and lived at more. With the runners she falls in round 1 at every health from 20 to 100 and every strength of her aura, and the line still finishes the raid at all of them but her least health with the weakest aura (20, and 10% less), where the raid outlasts the round. Measured before units could find their way round rock, (docs/history/reports/2026-10-20-measured-before-routing.md); on the new routes the level plays to the same verdict by both plans (docs/history/reports/2026-10-20-pathfinding-measured.md).",
             "when": {"pulse": 1, "tick": 0},
             "do": [
               {

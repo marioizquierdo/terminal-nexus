@@ -556,3 +556,12 @@ over 5 there and hit Bun's per-test limit; one dialog test already did before an
 Bun timeout as a slowdown, run the file again with `BUN_OPTIONS= bun test <file>` and compare with the commit before.
 A real slowdown still shows: routing made a duel twice as slow, and a profile (`node --cpu-prof`) named the cause,
 a whole-map search every tick for each unit that could not reach its goal.
+
+### A measure can agree with itself
+
+2026-10-20, the pathfinding milestone's last step. The catch-up measure said the side ahead after round 2 won 54 of 54
+duels. Two thirds of that was arithmetic: 35 of those duels were already over by round 2, and the rest were judged at
+the end by damage dealt, the same number the lead was measured by. Before reading a measure's verdict, take out the
+cases where the measure and the outcome are the same thing, and say what is left (here: the side that dealt more
+damage early won all 19 duels that went on and were decided). The luck half had the opposite fault: judged by
+rarity, it never told two hands apart, because the dealer gives both sides the same rarities each round.

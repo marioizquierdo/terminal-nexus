@@ -7,3 +7,4 @@ one run of a spec, with the build and the day it ran on and the routes it measur
 | Date | Spec | Routes | File |
 | --- | --- | --- | --- |
 | 2026-10-20 | full | the greedy step, before pathfinding: the baseline | [2026-10-20-baseline-greedy.json](2026-10-20-baseline-greedy.json) |
+| 2026-10-20 | full | distance fields round what stands, crowds and swaps, reachable targets, slow ground, side layers, flight maps, the enemy Nexus by default, units out over the roofs: the pathfinding milestone, built ([what it says](../reports/2026-10-20-pathfinding-measured.md)) | [2026-10-20-routes-and-roofs.json](2026-10-20-routes-and-roofs.json) |

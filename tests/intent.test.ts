@@ -234,7 +234,9 @@ test("the way each group would go is the kernel's own route: one tile at a time,
   assert.ok(checked >= 6, `only ${checked} ways were checked`)
 })
 
-test("the forecast says where the player's troops head as each round starts — the line, by its name — and who goes, off the round's own opening", () => {
+// It plays PERIMETER three times over, once a plan: longer than Bun's five seconds a test, so it says how long it may
+// take.
+test("the forecast says where the player's troops head as each round starts — the line, by its name — and who goes, off the round's own opening", { timeout: 60_000 }, () => {
   const line = Array.from({ length: 10 }, (_, index) => ({ x: 22 + (index % 5), y: 7 + Math.floor(index / 5) }))
   let rounds_ = 0
   for (const plan of PLANS) {
