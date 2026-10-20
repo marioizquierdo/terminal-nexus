@@ -89,7 +89,9 @@ function lostOnItsFirstTick(input: MissionPulseInput): boolean {
   return run.verdict.kind !== "continue" && run.states.length <= 2
 }
 
-test("what each group goes for first is the kernel's own choice on the real Pulse's first tick, in every round, with and without a plan", () => {
+// It plays PERIMETER three times over, with and without a plan, each round twice: longer than Bun's five seconds a
+// test, so it says how long it may take.
+test("what each group goes for first is the kernel's own choice on the real Pulse's first tick, in every round, with and without a plan", { timeout: 60_000 }, () => {
   let compared = 0
   for (const plan of PLANS) {
     for (const input of rounds(plan)) {

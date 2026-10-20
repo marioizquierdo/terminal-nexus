@@ -24,10 +24,12 @@ import { fleeTrigger } from "./perception.ts"
 import { insideArea, targetFor } from "./target.ts"
 
 /** Where a mover heads: a unit's footprint — an enemy's, or a wounded ally's for a healer — to stand where its attack
- *  reaches it, or its side's target. */
+ *  reaches it; its side's target; or, for a unit leaving a roof the nearest way (`roofExit`), the nearest ground wholly
+ *  off its side's roofs, `toward` being where it is going after. */
 export type RouteGoal =
   | Readonly<{ kind: "unit"; target: Actor; reach: Reach }>
   | Readonly<{ kind: "area"; area: TargetArea }>
+  | Readonly<{ kind: "ground"; toward: Coord }>
 
 /** The reach a unit's goal is measured by: what its attack reaches, or touching, for a unit with no attack. */
 export function reachOf(actor: Actor): Reach {
@@ -39,7 +41,9 @@ export function reachOf(actor: Actor): Reach {
 const goalKey = (goal: RouteGoal): string =>
   goal.kind === "unit"
     ? `unit:${goal.target.ordinal}@${goal.target.anchor.x},${goal.target.anchor.y}:${goal.reach.kind === "touch" ? `t${goal.reach.steps}` : `w${goal.reach.radius}`}`
-    : `area:${goal.area.x},${goal.area.y},${goal.area.width},${goal.area.height}`
+    : goal.kind === "area"
+      ? `area:${goal.area.x},${goal.area.y},${goal.area.width},${goal.area.height}`
+      : "off the roofs"
 
 export class TickRoutes {
   private readonly context: TickContext
@@ -112,7 +116,7 @@ export class TickRoutes {
     const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|${goalKey(goal)}`
     let field = this.fields.get(key)
     if (field === undefined) {
-      field = fieldOver(this.groundOf(actor), this.weightsOf(actor), actor, goal)
+      field = fieldOver(this.context, this.groundOf(actor), this.weightsOf(actor), actor, goal)
       this.fields.set(key, field)
     }
     return field
@@ -179,7 +183,7 @@ export class TickRoutes {
    * good. Not kept: it is one unit's, this tick.
    */
   detourOf(actor: Actor, goal: RouteGoal, held: ReadonlySet<number>): DistanceField {
-    return fieldOver(this.groundOf(actor, held), this.weightsOf(actor), actor, goal)
+    return fieldOver(this.context, this.groundOf(actor, held), this.weightsOf(actor), actor, goal)
   }
 
   /**
@@ -272,12 +276,37 @@ export class TickRoutes {
 }
 
 /** A field over `ground` toward the anchors from which `actor` reaches `goal`. */
-function fieldOver(ground: Ground, weights: Uint8Array | null, actor: Actor, goal: RouteGoal): DistanceField {
+function fieldOver(context: TickContext, ground: Ground, weights: Uint8Array | null, actor: Actor, goal: RouteGoal): DistanceField {
   const goals =
     goal.kind === "unit"
       ? goalsNear(ground, actor.definition.footprint, goal.target.anchor, goal.target.definition.footprint, goal.reach)
-      : goalsInside(ground, actor.definition.footprint, goal.area as Area)
+      : goal.kind === "area"
+        ? goalsInside(ground, actor.definition.footprint, goal.area as Area)
+        : offTheRoofs(context, ground, actor)
   return new DistanceField(ground, goals, weights ?? undefined)
+}
+
+/** Every anchor `actor`'s body may stand on with no tile of it over one of its side's buildings: the ground. */
+function offTheRoofs(context: TickContext, ground: Ground, actor: Actor): Coord[] {
+  const goals: Coord[] = []
+  for (let index = 0; index < ground.open.length; index += 1) {
+    if (ground.open[index] !== 1) continue
+    const x = index % ground.width
+    const anchor = { x, y: (index - x) / ground.width }
+    if (!onRoof(context, { ...actor, anchor })) goals.push(anchor)
+  }
+  return goals
+}
+
+/** How `actor`, on a roof, leaves it: as the building under it says (`ProductionRecipe.exit`); along its route when
+ *  none says otherwise. */
+function roofExitOf(context: TickContext, actor: Actor): "route" | "ground" {
+  for (const offset of actor.definition.footprint) {
+    const occupant = context.index.occupantAt("obstacles", { x: actor.anchor.x + offset.x, y: actor.anchor.y + offset.y })
+    const building = occupant === null ? undefined : context.byOrdinal.get(occupant)
+    if (building !== undefined && building.player === actor.player && building.definition.production?.exit === "ground") return "ground"
+  }
+  return "route"
 }
 
 /** How near a body anchored at `anchor` comes to `tile`: from its nearest tile, by the Grid's distance. */
@@ -305,7 +334,7 @@ export function purposeOf(context: TickContext, actor: Actor, target: Actor | nu
     // (`target.ts`). Anything else with nothing to go for holds, as it always has.
     const area = targetFor(context, actor)
     if (area === null || insideArea(actor, area)) return { kind: "stand" }
-    return { kind: "walk", goal: { kind: "area", area } }
+    return offTheRoofFirst(context, actor, { kind: "walk", goal: { kind: "area", area } })
   }
   if (actor.definition.behavior === "flee") {
     // Measured as range is, so the threat's reach and the worker's nerve are counted alike.
@@ -314,5 +343,14 @@ export function purposeOf(context: TickContext, actor: Actor, target: Actor | nu
   // An actor already in range holds and shoots or swings: the attacks step's own test, so the two never disagree.
   const attack = actor.definition.attack
   if (attack !== undefined && inAttackRange(actor, target, attack)) return { kind: "stand" }
-  return { kind: "walk", goal: { kind: "unit", target, reach: reachOf(actor) } }
+  return offTheRoofFirst(context, actor, { kind: "walk", goal: { kind: "unit", target, reach: reachOf(actor) } })
+}
+
+/** A walk, unless `actor` is on a roof its building says to leave the nearest way (`roofExit`): then to the nearest
+ *  ground first, facing where the walk was going. */
+function offTheRoofFirst(context: TickContext, actor: Actor, walk: Extract<Purpose, { kind: "walk" }>): Purpose {
+  if (!onRoof(context, actor) || roofExitOf(context, actor) !== "ground") return walk
+  const goal = walk.goal
+  const toward = goal.kind === "unit" ? goal.target.anchor : goal.kind === "area" ? { x: goal.area.x, y: goal.area.y } : goal.toward
+  return { kind: "walk", goal: { kind: "ground", toward } }
 }

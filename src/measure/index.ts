@@ -11,6 +11,7 @@ import type { DuelMeasure, LevelMeasure, ScenarioMeasure } from "./suites.ts"
 import { measureDuel, measureLevel, measureScenario } from "./suites.ts"
 
 export * from "./battle.ts"
+export * from "./formations.ts"
 export * from "./spec.ts"
 export * from "./suites.ts"
 export { summaryLines } from "./summary.ts"

@@ -460,7 +460,10 @@ route toward where it is going and steps down on the side that faces it. Once al
 walls to it again, its own included, and it never climbs back. A unit on a roof fights and is hit as on the ground;
 an enemy that cannot reach it passes it over (section 1.6, targeting knows what can be reached), and a blast hits it
 by the tiles it covers. A building that falls with units on it leaves them standing where they were, now on
-ground. A unit in the air, and one a unit makes, is set down round its maker as before. A recipe costs nothing yet, because a Pulse has no resource, so no two attempts
+ground. A unit in the air, and one a unit makes, is set down round its maker as before. **How it leaves** is the
+building's (`ProductionRecipe.exit`): along its route, Mario's idea and the default, or to the nearest open ground
+first while the "Way off the roof" Experiment says nearest (`src/pulse/routes.ts`, `offTheRoofFirst`), which a
+simulated game shows spills a block's wave off every side ([formations](../history/reports/2026-10-20-formations.md)). A recipe costs nothing yet, because a Pulse has no resource, so no two attempts
 can compete and the contention process has nothing to decide; it is not built, and arrives with cost and
 supply in the worker economy. A unit a building spawned says so on its `entity.spawned` event (`trainedBy`),
 which is how the battle feed and the Activity Logs tell it from an arrival.

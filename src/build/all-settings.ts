@@ -89,6 +89,9 @@ type SettingSpec = Readonly<{ default: Value; unit?: Unit }> &
 const NEXT_ROUND = ["key", "auto"] as const
 const POWER_PICK = ["optional", "required"] as const
 
+/** How a building's units leave its roof (`roofExit`): along their route, or to the nearest open ground. */
+const ROOF_EXIT = ["route", "ground"] as const
+
 export const ALL_SETTINGS = {
   // --- Display: the player's own, saved with the title menu's Settings -----------------------------
 
@@ -411,6 +414,25 @@ export const ALL_SETTINGS = {
     question: "Optional: a round may start with its Nexus power unpicked. Required: one is kept before every round.",
     values: POWER_PICK,
     default: "optional",
+  },
+
+  // --- Units walk out over the roofs (the pathfinding milestone, step 16H) ---------------------------------
+  // The owner: units appear on the roof of the building that made them and "will just keep walking on the rooftops on
+  // the natural direction where their destination is, this will help keep the troop waves together when they spawn".
+  // His idea is the default; the simulated game the step set (src/measure/formations.ts) did not settle it on its
+  // own, so he feels the other way too.
+
+  /** How a building's units leave its roof: along their route toward where they are going, stepping down on the
+   *  side facing it (his idea), or to the nearest open ground first, so a wave spills off every side of a block.
+   *  Read when a battle starts (`src/cli/pulse-run.ts`). First guess: along the route. */
+  roofExit: {
+    tier: "experiment",
+    section: "mission",
+    label: "Way off the roof",
+    question: "Units come out on their building's roof. Route: they walk the roofs toward the enemy. Nearest: they step down at once.",
+    values: ROOF_EXIT,
+    names: { route: "route", ground: "nearest" },
+    default: "route",
   },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 

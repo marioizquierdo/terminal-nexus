@@ -12,24 +12,29 @@ import { TICKS_PER_SECOND } from "../scenario/load.ts"
 
 /** The recipe a building's spawns become in a battle: its waves, the first `firstTicks` into the round and
  *  each after it `secondsBetween` later. */
-export function spawnRecipe(spawns: BuildingSpawns, firstTicks: number): ProductionRecipe {
+export function spawnRecipe(spawns: BuildingSpawns, firstTicks: number, exit: RoofExit = "route"): ProductionRecipe {
   return {
     output: spawns.unit,
     perWave: spawns.perWave,
     waves: spawns.waves,
     firstTicks,
     intervalTicks: spawns.secondsBetween * TICKS_PER_SECOND,
+    ...(exit === "ground" ? { exit } : {}),
   }
 }
 
+/** How a building's units leave its roof: along their route (the default), or to the nearest open ground first. */
+export type RoofExit = "route" | "ground"
+
 /** `registry`, with each building in `spawns` (by its content id) spawning as it says, its first wave
- *  `firstTicks` into the round. `registry` itself when nothing spawns. */
+ *  `firstTicks` into the round, its units leaving its roof by `exit`. `registry` itself when nothing spawns. */
 export function spawningRegistry(
   registry: ContentRegistry,
   spawns: Readonly<Record<string, BuildingSpawns>>,
   firstTicks: number,
+  exit: RoofExit = "route",
 ): ContentRegistry {
   const entries = Object.entries(spawns)
   if (entries.length === 0) return registry
-  return withProduction(registry, Object.fromEntries(entries.map(([structure, own]) => [structure, spawnRecipe(own, firstTicks)])))
+  return withProduction(registry, Object.fromEntries(entries.map(([structure, own]) => [structure, spawnRecipe(own, firstTicks, exit)])))
 }

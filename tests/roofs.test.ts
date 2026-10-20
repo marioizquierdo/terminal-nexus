@@ -245,3 +245,16 @@ test("in PERIMETER's first round with the defence plan, every unit that walks ou
   assert.ok(trained(run.events).length >= 8, "the Barracks did not all send their waves")
   assert.deepEqual(neverClimbsBack({ registry, states: [...run.states], events: [...run.events] }), [])
 })
+
+test("the way off the roof: along the route a wave crosses a block's roofs; the nearest way it steps straight down", () => {
+  // A row of four Barracks twelve tiles long, the enemy's Nexus far east. Twenty ticks after the wave comes, along the
+  // route the westmost Barracks's troopers are still crossing the roofs; the nearest way, every trooper is down.
+  const blockOfFour: Placed[] = [6, 9, 12, 15].map((x) => [x, 7, BARRACKS] as const)
+  const stillOnRoofs = (exit: "route" | "ground"): number => {
+    const fight = battle({ A: blockOfFour, B: [[42, 7, RAVEL_NEXUS]] }, { [BARRACKS]: { ...recipe(TROOPER, 4), ...(exit === "ground" ? { exit } : {}) } }, 22)
+    const state = fight.states.at(-1) as MatchState
+    return state.entities.filter((entity) => entity.contentId === TROOPER && onRoofs(fight.registry, state, entity) > 0).length
+  }
+  assert.ok(stillOnRoofs("route") > 0, "along the route, no trooper crossed the roofs")
+  assert.equal(stillOnRoofs("ground"), 0, "the nearest way, a trooper is still on the roofs")
+})

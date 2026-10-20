@@ -111,7 +111,8 @@ test("validation refuses every broken shape by name, and reports them all at onc
 
 // --- The runner on the unmodified kernel -----------------------------------------------------------
 
-test("a whole mission is the same mission every run: the same plans give the same hashes, Pulse by Pulse", () => {
+// It plays PERIMETER six times over: longer than Bun's five seconds a test, so it says how long it may take.
+test("a whole mission is the same mission every run: the same plans give the same hashes, Pulse by Pulse", { timeout: 60_000 }, () => {
   const hashes = (pulses: readonly MissionPulse[]) => pulses.map((pulse) => [hashState(pulse.final), pulse.events.length, pulse.verdict.kind])
   const first = hashes(playMission(PERIMETER, STRONG))
   for (let run = 0; run < 5; run += 1) assert.deepEqual(hashes(playMission(PERIMETER, STRONG)), first)

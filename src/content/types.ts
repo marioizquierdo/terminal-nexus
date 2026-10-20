@@ -233,6 +233,12 @@ export type ProductionRecipe = Readonly<{
   firstTicks: number
   /** Ticks from one wave to the next. */
   intervalTicks: number
+  /**
+   * How its units leave its roof (pulse.md, units walk out over the roofs): absent, by their ordinary route toward
+   * where they are going, stepping down on the side that faces it; `"ground"`, to the nearest open ground first, then
+   * on their way. The "Way off the roof" Experiment sets it on every building that makes units.
+   */
+  exit?: "ground"
 }>
 
 /**

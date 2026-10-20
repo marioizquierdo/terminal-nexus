@@ -52,8 +52,8 @@ export class DistanceField {
     const size = ground.width * ground.height
     this.distance = new Int32Array(size).fill(FAR)
     this.settled = new Uint8Array(size)
-    this.entryAnchor = new Int32Array(size + 64)
-    this.entryNext = new Int32Array(size + 64)
+    this.entryAnchor = new Int32Array(256)
+    this.entryNext = new Int32Array(256)
     for (const entry of goals) {
       const goal = "anchor" in entry ? entry.anchor : entry
       const cost = "anchor" in entry ? entry.cost : 0

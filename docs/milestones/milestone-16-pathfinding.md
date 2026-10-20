@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** 16H — units walk out over the roofs.
+**Current step:** 16I — measure again, with full Commander duels.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -290,13 +290,17 @@ make good unit formations that can foster interesting strategies"):
   are out. This follows the owner's "same as usual" and is the step's reading, not his word yet.
 - [x] **On screen**, a unit on a roof is drawn over its building on its own tiles only, and the log says it is coming
   out ("at 26,10 on the roof of A:barracks#2, coming out").
-- [ ] **The test he set: formations in a simulated game.** Using the spec from the first step, sides built three ways
+- [x] **The test he set: formations in a simulated game.** Using the spec from the first step, sides built three ways
   (a block of four Barracks side by side, four set apart, a long line of them) are played against each other and
-  against a blast that hits an area, over many seeds. Done when it shows, in plain words, how tight each army stands
-  when it first meets the enemy, and that each shape beats something and loses to something. If the shapes come out
-  the same, the step says so and tries the variant below before calling it built.
-- [ ] **An Experiment for the way out**, if the simulation leaves it open: along the route to the goal (his idea), or
-  to the nearest open ground, so he can watch both on the playable page.
+  against a blast that hits an area, over many seeds (`node bin/measure.ts formations`,
+  [the report](../history/reports/2026-10-20-formations.md)). Where a player builds decides how tight the army meets
+  the enemy: a block about 3 columns from its middle, a line 4, set apart 14. A block and a line each beat an army set
+  apart (10 to 2, 12 to 0), which reaches the fight a wave at a time, and are close to each other (5 to 7). Set apart
+  beats nothing yet: the bench's only area attack does not punish a tight army enough to change who wins. That is a
+  question of what the armies carry, put to Mario with a recommendation (what makes a loose army worth building).
+- [x] **An Experiment for the way out**, left open by the simulation: along the route to the goal (his idea, the
+  default), or to the nearest open ground ("Way off the roof"), so he can watch both on the playable page. The nearest
+  way spills a block's wave off every side (8.8 columns rather than 3.1), and it then loses every game to a line.
 
 This step is the first half of a choice that is still in the backlog, a sparse formation where units prefer not to
 stand straight behind one another (next steps, "a sparse formation, when he says"): this step lets a player decide how

@@ -45,6 +45,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
+| [Q82](#q82--what-makes-a-loose-army-worth-building) | What makes a loose army worth building? | OPEN | Mario, after feeling the Way off the roof Experiment; the armies' next pass |
 
 ## Open
 
@@ -532,3 +533,25 @@ a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one 
 **Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
 and that is a contained change best made with the next change to the mission format; the engine's internal names
 cost nothing as long as the vocabulary says what they mean.
+
+### Q82 — What makes a loose army worth building?
+
+**Status:** OPEN — registered 2026-10-20, from the simulated game of the pathfinding milestone's roof step
+([the report](../history/reports/2026-10-20-formations.md)).
+
+Units now come out on the roofs of the buildings that made them, so where a player builds decides how tight the army
+fights: four Barracks in a block meet the enemy about 3 columns from their middle, four set apart about 14. Mario's
+reason for the roofs was that "being able to cluster or disperse the units seems like a great way to add a strategy
+for area of damage or not". In the simulation a tight army beats a loose one every time, and the bench's only attack
+that hits an area (the siege crawler) is too slow and weak to punish a block enough to change who wins. So today
+there is no reason to build apart.
+
+| Option | What it costs |
+| --- | --- |
+| A. **An area power in an army's curve**: a Nexus power or a unit whose blast is strong enough that a block pays for its tightness, measured by `measure formations` until a loose army wins against it | A design pass on the armies; the simulation already measures it |
+| B. **Leave it to the armies' next pass**, with tight as the strong default for now | Nothing now; a formation choice that only ever has one answer until then |
+| C. **Make loose pay elsewhere**: e.g. a building set apart covers more of the map, or a Barracks in a block trains more slowly | A rule change with no player asking for it |
+
+**Recommendation: A, when the armies are iterated next** (Mario: "we will iterate on the armies later"). The roofs
+built what he asked for; what makes a loose army worth building is an army's area attack, and the simulation is ready
+to measure one. Meanwhile the "Way off the roof" Experiment lets him feel his idea against stepping down at once.

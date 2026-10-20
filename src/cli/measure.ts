@@ -8,13 +8,15 @@
 //       prints what a measurement written down says
 //   measure compare <before> <after>
 //       prints two measurements one after the other, the older first
+//   measure formations [--seeds 1-6] [--exit route|ground]
+//       plays four Barracks built three ways against each other and against a blast, and says what it shows
 
 import { execSync } from "node:child_process"
 import { readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { LEVELS } from "./levels.ts"
 import type { Measurement, MeasureSpec } from "../measure/index.ts"
-import { runSpec, SPECS, summaryLines } from "../measure/index.ts"
+import { formationLines, measureFormations, runSpec, SPECS, summaryLines } from "../measure/index.ts"
 import { loadMapFile } from "../scenario/load-map-file.ts"
 
 const HELP = `measure: battles measured the same way before and after a rule changes (docs/system-design/measurement.md).
@@ -25,6 +27,9 @@ const HELP = `measure: battles measured the same way before and after a rule cha
       prints what a measurement written down says
   measure compare <before> <after>
       prints two measurements one after the other, the older first
+  measure formations [--seeds 1-6] [--exit route|ground]
+      plays four Barracks built three ways (a block, set apart, a line) against each other and against a blast, and
+      says how tight each army meets the enemy and who wins; --exit is the "Way off the roof" Experiment's value
 
 The quick spec plays the route scenarios and one scripted player's duels on two seeds; the full spec every map, three
 players' duels and every campaign level by its plans on six seeds. --routing names the rule units walk by, in a few
@@ -93,7 +98,14 @@ export async function main(args: readonly string[]): Promise<number> {
     process.stdout.write(`${summaryLines(read(before)).join("\n")}\n\n${summaryLines(read(after)).join("\n")}\n`)
     return 0
   }
-  if (command !== "run") throw new Error(`no command "${command}" (run, show, compare, help)`)
+  if (command === "formations") {
+    const exit = options["exit"] ?? "route"
+    if (exit !== "route" && exit !== "ground") throw new Error(`--exit takes route or ground, not "${exit}"`)
+    const battles = measureFormations(seedsOf(options["seeds"] ?? "1-6"), exit)
+    process.stdout.write(`${formationLines(battles).join("\n")}\n`)
+    return 0
+  }
+  if (command !== "run") throw new Error(`no command "${command}" (run, show, compare, formations, help)`)
 
   const base = SPECS[options["spec"] ?? "quick"]
   if (base === undefined) throw new Error(`no spec "${options["spec"]}" (${Object.keys(SPECS).join(", ")})`)

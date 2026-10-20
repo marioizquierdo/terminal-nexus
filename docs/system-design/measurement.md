@@ -56,6 +56,11 @@ was wiped out, time ran out). For each side:
 
 The full spec is what a step that changes routes is measured by; the quick one is for a look while working.
 
+**Formations** are measured on their own (`node bin/measure.ts formations [--seeds 1-6] [--exit route|ground]`,
+`src/measure/formations.ts`): an open field, four Barracks a side built as a block, set apart or in a line, every
+shape against every shape from both ends and each against a blast, saying how tight each army meets the enemy and who
+wins. The first run is [a report of its own](../history/reports/2026-10-20-formations.md).
+
 ## 4. How a result is written down
 
 `node bin/measure.ts run --spec full --routing "<the rule, in a few words>" --out <file>` writes one JSON file: the
