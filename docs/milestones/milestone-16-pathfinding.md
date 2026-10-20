@@ -2,8 +2,8 @@
 
 **Status:** PLANNED
 **Depends on:** nothing new; the kernel's tick order, its collision masks and the rule that no side wins by where it
-stands (all built). Where it sits in the build order is Mario's call; the recommendation is next, after Commander
-Armies, because every battle on every map goes through it.
+stands (all built). Next in the build order, after Commander Armies (the owner, 2026-10-20: "We can work on that
+anytime. It's kind of independent, but the sooner the better, because that will make the other tests better").
 
 The owner, 2026-10-19 ([his words](../history/feedback/2026-10-13-commander-armies.md)), after watching raiders stand
 behind rocks in PERIMETER: "pathfinding code will also need improvements soon ... The general game will point troop
@@ -78,7 +78,7 @@ steers a unit, every unit decides every tick, and the whole battle must replay i
 
 | What the owner named | What it means here | What fits |
 | --- | --- | --- |
-| **Move toward a target** | Few goals and many units: a side heads for one place (the enemy Nexus, its level's target, a banner) and most units share it | A distance field per goal, shared by every unit that heads for it. Recomputed only when the map under it changes |
+| **Move toward a target** | Few goals and many units: a side heads for one place (the enemy Nexus, or its level's target) and most units share it | A distance field per goal, shared by every unit that heads for it. Recomputed only when the map under it changes |
 | **Dodge obstacles** | Rock, the crater, the long walls; buildings, which stand for a round and fall during it | The field routes round them by construction: no dead end, no pocket. A goal that cannot be reached at all is said so, and the unit heads for the reachable tile nearest it |
 | **Identify enemies in its vision radius** | Today a unit turns to fight what comes within its engage reach, measured straight; a rock between them is not counted | Perception that measures how far an enemy is **to walk** for a melee unit (an enemy across a wall is not near), and straight for a shot. A sight radius as a named stat, and whether rock blocks sight, is a design choice this milestone puts behind an Experiment |
 | **Crowds and narrow passages** | The ridge's gap, the crater's mouth, a corridor between two buildings; a melee crowd round one target | Local rules on top of the field, each a rule in the tick order: an ally in the way is waited for, stepped round when the field allows a sideways step, or swapped with when it is walking the other way; units that reach a target spread round it to the free tiles beside it instead of queuing behind one another. Arbitration already resolves two claims on a tile fairly |
@@ -142,20 +142,16 @@ Not started. Each waits for Mario's word, and the order is a first guess.
 - [ ] Workers cross their own side's units and not the enemy's.
 - [ ] A fleeing worker routes away from danger, not only away from the nearest threat.
 
-### Step 16F — Goals as data, and banners
+### Step 16F — Where a side heads
 
-- [ ] One goal type for everything a unit heads for: the enemy's Grid Nexus by default, a level's target, and a
-      rally point, each a field. What a banner is on screen, and when a player sets it, waits on Mario's answer below.
-
-## Waiting on Mario
-
-- **When is a banner set?** In the Build Phase as part of the plan, or live while the Battle Round plays (which makes
-  the battle depend on a player's timing, and its replay on recorded commands). The recommendation and the costs are
-  in [the open questions](open-questions.md#q81--when-does-a-player-set-a-banner-in-the-build-phase-or-during-the-battle-round).
-- **Where it goes in the build order.**
+- [ ] One goal type for everything a unit heads for, each a field: the enemy's Grid Nexus by default, and a campaign
+      level's target where the level names one (the owner: "It's just going to be going to the enemy nexus. Or maybe
+      we have to define the target position for campaign as well").
+- [ ] No banner: a banner is set in the Build Phase as part of the plan, and waits until there is a plan for it on
+      screen (the backlog). This step leaves it one more goal to add.
 
 ## Out of scope
 
 Formations and spacing between moving units (they wait on behaviour states, in the backlog), holding and withdrawing
-on an order (posts, in the backlog), what a banner looks like beyond a marker, line of sight for shots, diagonal
+on an order (posts, in the backlog), banners, line of sight for shots, diagonal
 movement, and a map larger than the starter map.

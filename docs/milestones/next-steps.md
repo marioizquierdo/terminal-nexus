@@ -5,10 +5,6 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Place the pathfinding milestone** ([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md), his request): read
-  it, say where it goes in the build order (the recommendation is next, after Commander Armies), and answer when a
-  banner is set — in the Build Phase's plan, or live during the Battle Round
-  ([the question](open-questions.md#q81--when-does-a-player-set-a-banner-in-the-build-phase-or-during-the-battle-round)).
 - **Look at the colour work once, on a terminal whose colours are not the game's** ([his words](../history/feedback/2026-10-15-colours-and-background.md);
   the game now paints its own background, so the terminal's theme no longer shows): `./bin/terminal-nexus.ts --colors
   truecolor --theme light` (the light theme should now read on a dark terminal and on a Solarized one), then

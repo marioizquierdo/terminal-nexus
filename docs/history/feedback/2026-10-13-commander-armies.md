@@ -360,3 +360,21 @@ fields and flow fields, hierarchy, clearance for unit sizes, local avoidance, co
 terrain, what auto-battlers do), each of his needs set against it, and six steps: a bench and a measure, routes round
 the map, crowds, a Grid that changes mid-round, terrain and who passes whom, and goals with banners. When a banner is set,
 in the plan or live during the round, is a question for him. Its place in the build order is his call.
+
+### F184 — Banners in the Build Phase, later; pathfinding as soon as it can be; start the measurements over
+
+> Oh, yes, placing the banner is during the build phase, of course. We don't know how to deal with that in the UI yet,
+> but the idea will be to do that when we can prove there is a good plan for it. So for now, there is no banner. It's
+> just going to be going to the enemy nexus. Or maybe we have to define the target position for campaign as well.
+> Second thing, where does the milestone go? We can work on that anytime. It's kind of independent, but the sooner the
+> better, because that will make the other tests better. We should also invalidate the older maps and the data we have
+> on them that decide what something is better than another thing. Maybe this is time to write a summary in some
+> design file, a spec, and just forget about that old data, and we're gonna have to start a new one. Maybe that can be
+> part of the milestone as well.
+
+**Scheduled.** The banner question is answered (a banner belongs to the Build Phase's plan, and waits for a plan for it
+on screen; it is in the backlog). The pathfinding milestone builds no banner: a unit heads for the enemy's Grid Nexus,
+or a campaign level's target where the level names one. It is placed next in the build order, after Commander
+Armies. And it now opens with a clean slate: a spec of how a battle is measured, every measured result from before
+it marked as old and set aside, the old route maps retired, and the measurements made again on the new routes as its
+last step.

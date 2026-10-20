@@ -48,7 +48,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q74](#q74--should-picking-a-nexus-power-stay-optional) | Should picking a Nexus power stay optional? | OBSERVABLE | The Nexus pick Experiment |
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
-| [Q81](#q81--when-does-a-player-set-a-banner-in-the-build-phase-or-during-the-battle-round) | When does a player set a banner: in the Build Phase, or during the Battle Round? | OPEN | Milestone 16 (pathfinding), its last step |
 
 ## Open
 
@@ -614,23 +613,3 @@ a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one 
 **Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,
 and that is a contained change best made with the next change to the mission format; the engine's internal names
 cost nothing as long as the vocabulary says what they mean.
-
-### Q81 — When does a player set a banner: in the Build Phase, or during the Battle Round?
-
-**Status:** OPEN — registered 2026-10-19, for the pathfinding milestone's last step
-([`milestone-16-pathfinding.md`](milestone-16-pathfinding.md)).
-
-The owner: "we will likely implement banners to point at priority rally points during a battle round." A banner is a
-place a side's troops head for before the enemy's Grid Nexus. The routing makes one cheap: it is one more goal with
-its own distance field. What is not settled is when a player puts it down. Today the Battle Round is decided entirely
-by the plans both players commit in the hidden Build Phase, and nothing a player does while it plays changes it.
-
-| Option | What it costs |
-| --- | --- |
-| A. **In the Build Phase, as part of the plan**: a banner is placed like a building, and the troops head for it from the round's first tick | Nothing new to the round's shape: the plan is still the whole input, the replay still a seed and two plans. A player cannot answer what they see happen |
-| B. **Live, during the Battle Round**: a player drops or moves a banner while the round plays, and the troops turn at the next tick | The first input during a round: the battle then depends on a player's timing, a replay must record each command with its tick, and two players in multiplayer need their commands on the same tick. Watching becomes playing, which changes what a Battle Round is |
-| C. **A, then B as a Nexus power or a building's action**: planted in the Build Phase; moving it during the round is something a card grants, a few times a round | A first, so routing ships without a new input path; B later as content, with its cost (recorded commands) paid once something earns it |
-
-**Recommendation: C.** Banners in the plan give rally points now with no change to how a round is decided, and the
-owner's "during a battle round" stays open as a power, where its cost is a choice the game makes per card rather than
-for every round.

@@ -11,6 +11,10 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
   the greedy step does today, where it fails in PERIMETER, what other games do, and the steps (distance fields,
   crowds, a Grid that changes mid-round, terrain costs, workers crossing their own troops, goals and banners). The owner saw
   raiders stuck behind rocks in PERIMETER on 2026-10-19 and asked for it.
+- **Banners.** A rally point a player plants for their troops to head for before the enemy's Grid Nexus. The owner,
+  2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
+  screen; until then there is no banner. The pathfinding milestone leaves the goal a banner would be: one more place
+  a side heads for, like a campaign level's target.
 - **Behaviour states.** The owner's viewing: "units should have a default movement direction
   (towards the enemy Nexus, closest resources, etc) and then activate a different pathfinding mode
   when there are enemies in range... defining multiple states will allow more complex and engaging
