@@ -16,13 +16,13 @@ it is done.*
   move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
   become tuned values. The next navigation ideas, from [the roguelike survey](../history/reports/2026-10-09-roguelike-navigation.md),
   wait for his pick.
-- **Play the curve level** (Commander Armies' second step), from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-3'`:
+- **Play the curve level** (Commander Armies' second step; Pathfinding's last step also plays it headless, on the new routes), from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-3'`:
   six rounds on the starter map with only the Nexus standing. The credits line's left says the army's supply,
   `units 5/12`; a Supply Depot (`4`) gives 8 more. The Garrison (`5`) is dimmed: it needs a Barracks standing. Build a
   Barracks (`1`, Enter), start the round (`s`, `s`); round 2 opens with what you did not spend and 120 more, and the
   Garrison can be built — four pikemen a wave, each about three troopers and two places. Explore Map (`e`) onto a
   Barracks: its card lists `[z] Hold production`, which keeps its wave home this round.
-- **Play Averno beside Vasse** (Commander Armies' third step), from `./bin/terminal-nexus.ts --at 'campaign?level=averno-test-1'`
+- **Play Averno beside Vasse** (Commander Armies' third step; measured again headless at the end of Pathfinding), from `./bin/terminal-nexus.ts --at 'campaign?level=averno-test-1'`
   and then `--at 'campaign?level=vasse-test-3'`: the same curve, her map and raids, with him in her place for five
   rounds. He is `&`, he charges out of the line, and his units near him hit a quarter harder. In round 2 the Nexus
   Pulse (`n`) deals one card tagged `Ravel`: raiders or runners from the Ravel Nexus who fight for him. When he
@@ -30,7 +30,7 @@ it is done.*
 - **Read the army guide, and run a duel** (the army structure round): [`army-authoring.md`](../system-design/army-authoring.md)
   is the guide for writing a Commander as data; `npm run duel -- bench --seeds 1-6` fights Vasse, Averno and Dob
   Hunter against each other with three scripts, and [`duels.md`](../system-design/duels.md) says how to set two model
-  agents against each other. Three things the duels found wait on his word: Averno won all four of his model games and
+  agents against each other. Three things the duels found wait on his word, and are measured again on the new routes at the end of Pathfinding: Averno won all four of his model games and
   most benches (his players attacked nearly every round, and Forward Order pays for attacking), Ravel buildings train about half the
   strength a credit Citizen ones do, and Dob has no campaign yet.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from

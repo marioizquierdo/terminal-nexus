@@ -19,8 +19,8 @@ remains.
 | [5 — Build Phase](../history/milestones/milestone-05-build-phase.md) | COMPLETE | done | Can a player place buildings, pick a Nexus upgrade, and scroll a real map during Build Phase — by keyboard, mouse, and driver? |
 | [6 — Nexus Pulse Phase](../history/milestones/milestone-06-pulse-phase.md) | COMPLETE | done | Can a player start the Battle Round (then called the Nexus Pulse), watch it resolve, see a legible ending with Recall, and land in the next Build Phase? |
 | [8 — Commander](../history/milestones/milestone-08-commander.md) | COMPLETE | done | Can Commander Vasse and a Nexus Pulse that deals from an army's pool exist without becoming a full Commander Army? |
-| [14 — Commander Armies](milestone-14-commander-armies.md) | CURRENT | 6 | Can two Commanders on the same buildings feel different, each army leaning its build on something of its own, against one expected power curve a lucky early hand cannot run away with? |
-| [16 — Pathfinding](milestone-16-pathfinding.md) | PLANNED | 7 | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a Grid that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast; and can where a player builds send their army out tight or loose? |
+| [14 — Commander Armies](../history/milestones/milestone-14-commander-armies.md) | COMPLETE | done | Can two Commanders on the same buildings feel different, each army leaning its build on something of its own, against one expected power curve a lucky early hand cannot run away with? |
+| [16 — Pathfinding](milestone-16-pathfinding.md) | CURRENT | 7 | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a Grid that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast; and can where a player builds send their army out tight or loose? |
 | [11 — Challenge Mode: Runs](milestone-11-challenge-runs.md) | PLANNED | 8 | Can a player play a seeded run of battles with a run draft between them, and does the same seed give the same run? |
 | [4 — Campaign Menu](milestone-04-campaign-menu.md) | PLANNED | 9 | Can a player start or load a campaign and see progress, army, and enemy intel? |
 | [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 10 | Can workers be built and gather resources deterministically during the Battle Round? |
@@ -30,9 +30,10 @@ remains.
 | [13 — The Nexus Pulse](milestone-13-nexus-pulse.md) | PLANNED | not placed: Mario's call | Does each round open on a Nexus Pulse that feels like the Nexus speaking to its Commander — its own moment on screen, a hand worth reading, a schedule to plan around — without making a round slower? |
 | [15 — ASCII Art](milestone-15-ascii-art.md) | PLANNED | not placed: Mario's call | Is there a workflow — research, a tool, an image model and a pass by hand — that makes ASCII and ANSI art a person calls good, for every unit, portrait and vignette? |
 
-**Pathfinding comes next, 2026-10-20**: the owner, "We can work on that anytime. It's kind of independent, but
-the sooner the better, because that will make the other tests better." Every battle runs on it, so what is
-measured before it lands is measured again after.
+**Pathfinding is current, 2026-10-20**: the owner closed Commander Armies ("the new commander army design is
+excellent, we will iterate on the armies later") and started it: "Next for us is: Pathfinding improvements!" Every
+battle runs on it, so what was measured before it lands is measured again after, Commander Armies' catch-up measure
+included.
 
 The order is for a played loop as early as possible. The match experience comes first (menu, Build Phase,
 Battle Round), then the two mode shells (the Commander and draft, the run, the campaign), then depth (the worker

@@ -1,8 +1,13 @@
 # Milestone 14 — Commander Armies
 
-**Status:** CURRENT
-**Current step:** 14C, round 3 — no side wins by where it stands: every tie broken by what a unit faces, then a seeded draw, so mirror duels split evenly.
+**Status:** COMPLETE
+**Current step:** none — steps 14A to 14C are built; closed by Mario on 2026-10-20, its last step moved into Pathfinding
 **Depends on:** Milestone 8 (the Commander, her presence on screen and her return; the Nexus Pulse's dealing; complete)
+
+> **CLOSED, 2026-10-20.** Mario: "Let's close the commander milestone, the new commander army design is excellent, we
+> will iterate on the armies later" ([his words](../feedback/2026-10-13-commander-armies.md)). Its last step, the
+> catch-up measure, is measured on the new routes as part of the pathfinding milestone's last step
+> ([Pathfinding](../../milestones/milestone-16-pathfinding.md)), with the checks this milestone left for him to play.
 
 Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
 please".
@@ -10,7 +15,7 @@ please".
 The owner, 2026-10-12, once the Nexus Pulse dealt by schedule: "The part I'm most interested in covering now is the
 'structure' of a commander army, thinking about ways to differentiate commanders from each other, giving them
 character and presence in the UI ... and start thinking about catch-up mechanics" ([his
-words](../history/feedback/2026-10-13-commander-armies.md)). The Commander milestone built one Commander and said it
+words](../feedback/2026-10-13-commander-armies.md)). The Commander milestone built one Commander and said it
 was not a Commander Army; this milestone says what one is, gives a second Commander to set beside her, and writes the
 rules every army is built against. It still does not lock the Citizens' roster or its balance (Milestone 12).
 
@@ -53,7 +58,7 @@ Design, with what the loader can check. Built; the numbers are first guesses for
 
 Mario, 2026-10-15: "Let's define a tech tree and keep working to simplify and streamline thinking this will work for
 both the campaign, runs and pvp"; and yes to credits carried over with each round's added, and to locked buildings
-shown in the build menu with what they need ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+shown in the build menu with what they need ([his words](../feedback/2026-10-13-commander-armies.md)).
 Built; the measurement found the opening is close to half of the last army, not a fifth, and the question of what
 keeps an early lead from compounding is registered with a recommendation (a supply cap).
 
@@ -69,7 +74,7 @@ keeps an early lead from compounding is registered with a recommendation (a supp
 ### Step 14B, round 2 — Supply, and a building's actions
 
 Mario's answer to what keeps an early lead from compounding, and a new idea ([his
-words](../history/feedback/2026-10-13-commander-armies.md)): "go with your recommendation, supply cap ... Supply should
+words](../feedback/2026-10-13-commander-armies.md)): "go with your recommendation, supply cap ... Supply should
 be controlled by another building", and actions on a building, chosen in Explore Map with their keys, "because it
 affects the power curve". Built on the same pull request.
 
@@ -81,7 +86,7 @@ affects the power curve". Built on the same pull request.
 
 ### Step 14C — Marshal Averno
 
-Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+Mario, 2026-10-16: "go for Averno! :)" ([his words](../feedback/2026-10-13-commander-armies.md)).
 
 - [x] Averno is a second Commander on Vasse's buildings, with his own automatic abilities, a build that leans
       forward where hers holds, a few powers that act on the enemy, and his structural quirk: some rounds, one card
@@ -89,7 +94,7 @@ Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-
       planned).
 - [x] He is played beside Vasse on the same level; the pull request says whether they read apart in two rounds.
       They do: with the same build he falls in round 2 and she does not, and his side loses more in round 3 while he
-      is out ([the measure](../game-design/commander-armies.md)). (His side also cleared round 1 sooner and lost less;
+      is out ([the measure](../../game-design/commander-armies.md)). (His side also cleared round 1 sooner and lost less;
       since every tie goes by what a unit faces, then a draw, hers does, by a unit.) His level is her first five
       rounds: an empty base holds his round 4 with little to spare, and cannot hold her round 6.
 
@@ -97,7 +102,7 @@ Mario, 2026-10-16: "go for Averno! :)" ([his words](../history/feedback/2026-10-
 
 Mario, 2026-10-17, agreeing to the structure's improvements: "make a refactor/cleanup branch to solidify the
 commander army files ... then define a new Commander Army on the new structure ... then try to test a pvp fight
-between commanders" ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+between commanders" ([his words](../feedback/2026-10-13-commander-armies.md)).
 
 - [x] Armies stack — `all`, a faction (`citizen`, `ravel`), a Commander (`vasse`, `averno`) — and every unit and
       structure an army brings is data in its file; campaigns are their own folders and a level may extend another.
@@ -108,13 +113,13 @@ between commanders" ([his words](../history/feedback/2026-10-13-commander-armies
 - [x] An adversarial review of whether the code explains itself, its findings applied.
 - [x] Duels: two armies on one map, a round at a time, a script or a model planning each side through files; a
       bench of every pairing from both sides, and model games played.
-- [x] The guide for writing an army ([`army-authoring.md`](../system-design/army-authoring.md)) and for duels and
-      model against model ([`duels.md`](../system-design/duels.md)).
+- [x] The guide for writing an army ([`army-authoring.md`](../../system-design/army-authoring.md)) and for duels and
+      model against model ([`duels.md`](../../system-design/duels.md)).
 
 ### Step 14C, round 3 — No side wins by where it stands
 
 Mario, 2026-10-19: "when two troops equally strong attack each other at the same time, the solution should be
-deterministic independently of the side" ([his words](../history/feedback/2026-10-13-commander-armies.md)).
+deterministic independently of the side" ([his words](../feedback/2026-10-13-commander-armies.md)).
 
 - [x] Every tie a rule breaks goes by what the deciding unit faces (the enemy, or where it is headed), and what is
       still tied after that by a draw from the battle's seeded stream: never by reading order, compass order or
@@ -127,7 +132,8 @@ deterministic independently of the side" ([his words](../history/feedback/2026-1
 
 ### Step 14D — Catch-up, measured
 
-The duel it needs is built (the round above); what is left is the measure.
+Moved, 2026-10-20, into the pathfinding milestone's last step: every result measured before units could find their
+way round rock is set aside, so the catch-up measure is taken once, on the new routes.
 
 - [ ] A headless duel: two scripted sides drafting from the Nexus Pulse on one map, over many seeds, measuring how
       often a lucky early hand predicts the winner.

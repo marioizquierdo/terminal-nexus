@@ -20,7 +20,7 @@ are voice transcription, kept as they arrived. Status values: **Built**, **Sched
 **Scheduled.** The plan, which he accepted (F166): the Commander milestone ends with one more step, the Commander's
 presence on screen and her return, which is the one claim the milestone had not proved ("a player understands what
 her death did"). The rest is a new milestone, Commander Armies
-([`milestone-14-commander-armies.md`](../../milestones/milestone-14-commander-armies.md)): what a Commander Army is,
+([`milestone-14-commander-armies.md`](../milestones/milestone-14-commander-armies.md)): what a Commander Army is,
 the expected power curve, a second Commander, and the guidelines for catch-up.
 
 ### F164 — Survivors stack; later units are much stronger
@@ -428,3 +428,25 @@ to it again. Units on a building that falls stay where they stand (the step's re
 word). The step is done when a simulated game shows that a block of buildings, buildings set apart and a long line of
 them send out armies of different shapes, each beating something and losing to something, with an Experiment for the
 way out if that leaves it open. The milestone's writing was tightened in the same change.
+
+### F187 — Close Commander Armies; build pathfinding from primitives up, and end on full duels
+
+> Yes! Let's close the commander milestone, the new commander army design is excellent, we will iterate on the armies
+> later.
+>
+> Next for us is: Patfinding improvements! Use the pending commander checks as part of pathfinding validation at the
+> end.
+>
+> Make sure to split the parhfinding architecture in smaller compartments that are eaxh testable, then build up from
+> the primitives into more compmex behaviors, and close up with full commander deck duels. This will be a key
+> component of the grid architecture and very relevant to gameplay. Pathfinding also has to work well with targeting,
+> atracking, adding new units, etc.
+>
+> Go ahead, take your time, implement slow
+
+**Built** in part, **Scheduled** for the rest. Commander Armies is closed and in history; its last step, the catch-up
+measure, moved into the pathfinding milestone's last step with the other Commander checks (the curve level, Averno
+beside Vasse, the duel findings), measured on the new routes. Pathfinding is current. Its plan was rewritten as
+compartments that are each tested on their own (what a body can stand on, a goal, a distance field, the choice of a
+step), then the kernel built on them in order (routes, crowds, targeting and attacks that know what can be reached,
+units that appear mid-round, a Grid that changes), and it closes on full Commander duels.

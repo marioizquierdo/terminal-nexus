@@ -38,4 +38,4 @@ Not started. Each waits for Mario's word, and the order is a first guess.
 
 The run draft between battles (Milestone 11), new rosters (Milestone 12), and a required pick, which stays
 Mario's call through the Nexus pick Experiment. An army bending the schedule, planned here at first, is Marshal
-Averno's quirk in [Milestone 14](milestone-14-commander-armies.md).
+Averno's quirk in [Milestone 14](../history/milestones/milestone-14-commander-armies.md).
