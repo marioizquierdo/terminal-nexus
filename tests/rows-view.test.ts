@@ -1,6 +1,6 @@
 // What the screen draws by the one rule of distance (tests/rows.test.ts): a tile is one column wide and a row about
 // two columns tall, so a reach the rules count as wide as it is tall is as wide as it is tall on screen. The build
-// range, a building's reach and the room a Barracks keeps are the rules' own answers drawn; her voice's "near" is
+// range and a building's reach are the rules' own answers drawn; her voice's "near" is
 // her aura's reach; and the raid's trail and the raid panel's bearing read a slope the way the screen shows it.
 
 import { test } from "node:test"
@@ -12,7 +12,6 @@ import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { buildLayout, cellForTile, tileAtCell } from "../src/build/layout.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { buildRange } from "../src/build/state.ts"
-import { crowding } from "../src/build/territory.ts"
 import { runBuildPhase } from "../src/cli/build-phase.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
@@ -22,7 +21,7 @@ import type { Coord, TerrainId } from "../src/grid/types.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
-import { reachOutline, roomApron } from "../src/view/build-areas.ts"
+import { reachOutline } from "../src/view/build-areas.ts"
 import { outlineWithin } from "../src/view/reach-outline.ts"
 import { LOOK_AHEAD, trailGlyph, trailMarks } from "../src/view/build-grid.ts"
 import { cellAt, frameToText } from "../src/view/frame.ts"
@@ -146,7 +145,7 @@ test("the live screen at 128 columns draws a tile one column wide too", async ()
   assert.deepEqual(exits, [0])
 })
 
-// --- A reach, the build range and the room a Barracks keeps -------------------------------------------------
+// --- A reach and the build range -------------------------------------------------
 
 test("a reach's outline is its last tiles: from one tile a reach of 6 is a ring two tiles thick on its slants, a reach of 1 what touches", () => {
   // The picture `src/view/reach-outline.ts` draws, `@` the tile reached from: every tile within the reach with a
@@ -243,24 +242,6 @@ test("the build range reaches six columns and three rows from a standing buildin
   keys(side, ENTER)
   assert.equal(side.build.state.planned.length, 2)
   assert.match(side.build.state.status.text, /outside your build range/)
-})
-
-test("the room a Barracks keeps: what touches a side is too close, a corner or two columns off is not, and its ticks are exactly where the rule refuses", () => {
-  const barracks = [{ contentId: BARRACKS, anchor: { x: 20, y: 8 } }]
-  const footprint = FIXTURE_REGISTRY.get(BARRACKS).footprint
-  const crowded = (tile: Coord): boolean => crowding(FIXTURE_REGISTRY, barracks, TURRET, tile) !== null
-  // The Barracks covers 20,8 to 22,9.
-  assert.ok(crowded({ x: 21, y: 7 }), "above")
-  assert.ok(crowded({ x: 19, y: 8 }), "beside")
-  assert.ok(!crowded({ x: 19, y: 7 }), "the corner")
-  assert.ok(!crowded({ x: 18, y: 8 }), "two columns off")
-  const apron = new Set(roomApron({ x: 20, y: 8 }, footprint, 1).map((tile) => `${tile.x},${tile.y}`))
-  for (let y = 4; y <= 13; y += 1) {
-    for (let x = 14; x <= 28; x += 1) {
-      const onIt = x >= 20 && x <= 22 && y >= 8 && y <= 9
-      assert.equal(apron.has(`${x},${y}`), !onIt && crowded({ x, y }), `${x},${y}`)
-    }
-  }
 })
 
 // --- Slopes, as the screen shows them -----------------------------------------------------------------------

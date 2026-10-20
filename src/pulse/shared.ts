@@ -3,11 +3,11 @@
 // here. pulse.md has the phase order these types and helpers serve.
 
 import type { AttackDef, ContentDef } from "../content/types.ts"
-import type { CollisionMask } from "../grid/occupancy.ts"
+import type { CollisionMask, MaskSpec } from "../grid/occupancy.ts"
 import { ClaimOverlay, OccupancyIndex, VacatedOverlay, maskFrom } from "../grid/occupancy.ts"
 import { footprintDistance, footprintSteps, footprintWithin, step } from "../grid/coords.ts"
 import type { BlockReason } from "../events/types.ts"
-import type { Coord, Direction } from "../grid/types.ts"
+import type { Coord, Direction, EntityLayer } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
 import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
@@ -367,15 +367,47 @@ export function maskForActor(
   actor: Actor,
   overlay?: ClaimOverlay,
 ): CollisionMask {
-  const side = sideLayerOf(actor.definition)
   return maskFrom(context.index, {
-    layers: actor.definition.collidesWith,
     // Air ignores what is on the ground, including impassable terrain: the mask is composed from
     // chosen layers, never inferred from a layer's position in the render order.
     terrain: actor.definition.layer === "air" ? "ignore" : "impassable",
     ignore: [actor.ordinal],
     vacated: context.vacated,
     ...(overlay === undefined ? {} : { overlay }),
-    ...(side === null ? {} : { sideLayers: { layers: [side], blocks: (ordinal: number) => context.byOrdinal.get(ordinal)?.player !== actor.player } }),
+    ...ownSideLayers(context, actor.definition, actor.player, onRoof(context, actor)),
   })
+}
+
+/**
+ * What blocks a unit of `definition` on `player`'s side, as a mask's layers: what it collides with, but on the layers
+ * it shares with its own side only the enemy's — its side layer (`sideLayerOf`), and its own buildings while it is on
+ * their roofs (`onRoof`). The one rule for a unit's mask, its route's ground and where a building sets it down.
+ */
+export function ownSideLayers(
+  context: Pick<TickContext, "byOrdinal">,
+  definition: ContentDef,
+  player: PlayerId,
+  roof: boolean,
+): Pick<MaskSpec, "layers" | "sideLayers"> {
+  const side = sideLayerOf(definition)
+  const shared: EntityLayer[] = [...(side === null ? [] : [side]), ...(roof ? (["obstacles"] as const) : [])]
+  const layers = roof ? definition.collidesWith.filter((layer) => layer !== "obstacles") : definition.collidesWith
+  if (shared.length === 0) return { layers }
+  return { layers, sideLayers: { layers: shared, blocks: (ordinal: number) => context.byOrdinal.get(ordinal)?.player !== player } }
+}
+
+/**
+ * **On the roofs** (pulse.md, units walk out over the roofs): whether some tile of `actor`'s body stands over one of
+ * its own side's buildings — as a unit a building has just made does. Read from where it stands, so a unit is on the
+ * roofs until all of it stands on ground: while it is, its own buildings are ground it may walk; once it is out they
+ * are walls to it, its own included, and it never climbs back. A building, or a unit in the air, never is.
+ */
+export function onRoof(context: Pick<TickContext, "index" | "byOrdinal">, actor: Actor): boolean {
+  const { layer } = actor.definition
+  if (layer === "obstacles" || layer === "air") return false
+  for (const offset of actor.definition.footprint) {
+    const occupant = context.index.occupantAt("obstacles", { x: actor.anchor.x + offset.x, y: actor.anchor.y + offset.y })
+    if (occupant !== null && context.byOrdinal.get(occupant)?.player === actor.player) return true
+  }
+  return false
 }

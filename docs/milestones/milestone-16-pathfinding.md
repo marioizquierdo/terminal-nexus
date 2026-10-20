@@ -268,28 +268,28 @@ What the step builds, as he described it; he also said the real test is a simula
 is just what I think it would work, but the real test is playing a simulated game and checking if it is possible to
 make good unit formations that can foster interesting strategies"):
 
-- [ ] **Units appear on the roof.** A wave appears on top of the building that made it, small units and wide ones
+- [x] **Units appear on the roof.** A wave appears on top of the building that made it, small units and wide ones
   alike, never two on one tile, so a big wave files out over a few ticks instead of all at once.
-- [ ] **They walk the roofs toward where they are going**, not to the nearest free ground. A unit's route out is its
+- [x] **They walk the roofs toward where they are going**, not to the nearest free ground. A unit's route out is its
   ordinary route to its goal, with its own side's buildings counted as open ground, so it leaves by the side that
   faces the enemy and the wave comes off the roofs together. The owner: "they will just keep walking on the rooftops
   on the natural direction where their destination is, this will help keep the troop waves together when they
   spawn."
-- [ ] **A unit is on the roofs until all of it stands on ground.** A wide unit with part of its body over an open tile
+- [x] **A unit is on the roofs until all of it stands on ground.** A wide unit with part of its body over an open tile
   keeps walking the roofs, across that tile, until every tile it covers is ordinary ground. Then it is out: from then
   on buildings are walls to it, its own included, and it never climbs back.
-- [ ] **No room round a building.** Buildings that make units may touch, the ring of free tiles round them goes, and
+- [x] **No room round a building.** Buildings that make units may touch, the ring of free tiles round them goes, and
   the Spawn space Experiment with it.
-- [ ] **They fight from the roof.** A unit on a roof with an enemy in reach shoots or strikes at once, as it would
+- [x] **They fight from the roof.** A unit on a roof with an enemy in reach shoots or strikes at once, as it would
   from the ground.
-- [ ] **They are hit like any unit.** An enemy hits a unit on a roof as it would on the ground; when the unit dies the
+- [x] **They are hit like any unit.** An enemy hits a unit on a roof as it would on the ground; when the unit dies the
   enemy picks a new target as usual, which may be the building under it. An enemy that cannot reach the unit (a melee
   enemy, a unit in the middle of a block) attacks the building or whatever else it can reach, as usual (the targeting
   of the step before). A blast that hits an area hits units on a roof as it would on the ground.
-- [ ] **A building that falls with units on it** leaves them standing where they are, on what is now open ground; they
+- [x] **A building that falls with units on it** leaves them standing where they are, on what is now open ground; they
   are out. This follows the owner's "same as usual" and is the step's reading, not his word yet.
-- [ ] **On screen**, a unit on a roof is drawn over its building on its own tiles only, and its card or the log says
-  it is coming out.
+- [x] **On screen**, a unit on a roof is drawn over its building on its own tiles only, and the log says it is coming
+  out ("at 26,10 on the roof of A:barracks#2, coming out").
 - [ ] **The test he set: formations in a simulated game.** Using the spec from the first step, sides built three ways
   (a block of four Barracks side by side, four set apart, a long line of them) are played against each other and
   against a blast that hits an area, over many seeds. Done when it shows, in plain words, how tight each army stands

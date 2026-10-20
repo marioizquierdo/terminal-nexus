@@ -180,9 +180,10 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   const { timeline } = resolved
   // Pinned again when every tie came to go by what a unit faces, then a draw (the plan won at tick 171 where it once
   // took until 217), when units came to walk by routes, and when the raid came to head for the Nexus and turn only to
-  // what comes within its reach: the plan still wipes the raid out, now at tick 220.
-  assert.ok(timeline.stateHash.startsWith("545bdefa"), `state hash ${timeline.stateHash}`)
-  assert.ok(timeline.eventsHash.startsWith("cdf0af77"), `events hash ${timeline.eventsHash}`)
-  assert.equal(timeline.states.length - 1, 220)
-  assert.deepEqual(timeline.states.at(-1)?.outcome, { winner: "A", reason: "annihilation", tick: 220 })
+  // what comes within its reach (tick 220), and when a building's units came to appear on its roof and walk out over
+  // it: the plan still wipes the raid out, now at tick 206.
+  assert.ok(timeline.stateHash.startsWith("ba9be0a2"), `state hash ${timeline.stateHash}`)
+  assert.ok(timeline.eventsHash.startsWith("f45db1b0"), `events hash ${timeline.eventsHash}`)
+  assert.equal(timeline.states.length - 1, 206)
+  assert.deepEqual(timeline.states.at(-1)?.outcome, { winner: "A", reason: "annihilation", tick: 206 })
 })

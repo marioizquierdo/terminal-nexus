@@ -195,9 +195,9 @@ balanced one.
 
 - **Blows land together.** Every hit of a speed tier is worked out against the state as the tier began and applied
   at once (the attacks step), so two equal units that strike each other in the same tick both fall.
-- **A building sets its units down facing the fight**: on the free tile round it nearest where they head — its
-  side's target if it follows one, else the nearest enemy as the tick began — ties drawn; with nowhere to head, the
-  ring's own order. Neighbouring buildings set theirs down front first, nearest the enemy, and two as far forward in
+- **A building sets its units down facing the fight**: on the tile of its roof nearest where they head — its side's
+  target if it follows one, else the enemy's Grid Nexus, else the nearest enemy as the tick began — ties drawn; with
+  nowhere to head, the roof's own order. Neighbouring buildings set theirs down front first, nearest the enemy, and two as far forward in
   a drawn order (`src/pulse/spawn.ts`), so neither claims the ground between them by its id.
 - **A step as good as another** goes by the turn from the way the unit faces its goal, then a draw (section 1.6),
   never by compass order.
@@ -441,12 +441,26 @@ recomputed; repeat until nothing legal remains.
 
 What is built is the smallest slice of that: **a building with a recipe spawns its unit in waves** (RULE —
 `src/pulse/production.ts`, `tests/production.test.ts`). A wave is the units a building sets down at once:
-every unit of it comes out on the same tick, one after another on the free tiles round the building nearest where
-they head (section 1.3a), so it stands together on the building's front (the owner, 2026-10-05: "spawning units: should happen
-simultaneously at the beginning of the round, creating a more predictable squad formation"). The recipe says
+every unit of it comes out on the same tick, one after another **on the building's own roof**, on the tiles nearest
+where they head (section 1.3a), so it stands together on the side facing the fight (the owner, 2026-10-05:
+"spawning units: should happen simultaneously at the beginning of the round, creating a more predictable squad
+formation"). The recipe says
 how many a wave, how many waves a Pulse, when the first comes and the gap to the next; the schedule never
-slips. A building short of room never spawns fewer: what fits comes out on the wave's tick, and the rest on
-the first tick there is room. A recipe costs nothing yet, because a Pulse has no resource, so no two attempts
+slips. A building short of room never spawns fewer: what fits on its roof comes out on the wave's tick, and the
+rest on the first tick there is room, as the first walk off.
+
+**Units walk out over the roofs** (RULE — `src/pulse/spawn.ts`, `src/pulse/shared.ts` `onRoof`, `tests/roofs.test.ts`;
+the owner, 2026-10-20: "they will just keep walking on the rooftops on the natural direction where their destination
+is, this will help keep the troop waves together when they spawn"). A building sets the units it makes down on its
+roof: every anchor from which a unit's body covers some of the building, never two on one tile, those wholly on the
+roof first, so a unit as wide as its building comes out on top of it too. **A unit is on the roofs while any tile of
+it stands over one of its own side's buildings**, read from where it stands: while it is, its side's buildings are
+ground it may walk (its collision mask and its route's ground both say so), so it walks the roofs by its ordinary
+route toward where it is going and steps down on the side that faces it. Once all of it stands on ground they are
+walls to it again, its own included, and it never climbs back. A unit on a roof fights and is hit as on the ground;
+an enemy that cannot reach it passes it over (section 1.6, targeting knows what can be reached), and a blast hits it
+by the tiles it covers. A building that falls with units on it leaves them standing where they were, now on
+ground. A unit in the air, and one a unit makes, is set down round its maker as before. A recipe costs nothing yet, because a Pulse has no resource, so no two attempts
 can compete and the contention process has nothing to decide; it is not built, and arrives with cost and
 supply in the worker economy. A unit a building spawned says so on its `entity.spawned` event (`trainedBy`),
 which is how the battle feed and the Activity Logs tell it from an arrival.
@@ -572,17 +586,10 @@ is every projecting structure's radius; outposts that reach farther wait for out
 of the player's standing there is no network and nothing can be built. The Build Phase enforces this and the
 kernel never reads it, since the Build Phase is the only way a player's plan is made.
 
-**Room round a building that makes units** (RULE — `src/build/territory.ts`, `tests/build-territory.test.ts`).
-A building that makes units — a content definition with a `clearance`; today the Barracks and the Hatchery —
-keeps that many tiles free round it (the owner, 2026-10-05: "so they leave space for units spawning"): no tile
-of another building may stand within it, measured as range is. At one, nothing may touch it, beside or above or
-below, though another building may stand at a corner, which is three away as range is measured, and the sides of
-the ring its units appear on stay open. It holds both ways — a building placed near one, and one placed near any
-building — and against every building on the map: standing or planned, the player's or the raid's, the Grid
-Nexus included. Units take no room. While the "Spawn space" Experiment is felt, its value (1 or 2; 1 to begin
-with) is every such building's room. Every Build range offered leaves a place for a room of two: a spawner must
-then stand more than two away from every building and still have a tile in range. The Build Phase enforces this
-and the kernel never reads it.
+**Buildings may touch** (RULE — `src/build/state.ts`, `tests/build-territory.test.ts`). A building that makes units
+sets them on its own roof (section 2, units walk out over the roofs), so it keeps no room round it: two Barracks may
+stand side by side, and a block of them is a choice of where an army forms. The room each once kept, and the
+"Spawn space" Experiment with it, went with the pathfinding milestone.
 
 Still open, because nothing reaches them yet: building inside enemy coverage that was public at Build Phase
 start (no raid stands a building at the start of a Build Phase), simultaneous same-cell conflicts and refunds

@@ -396,27 +396,6 @@ export const ALL_SETTINGS = {
    *  battle starts (`src/cli/pulse-run.ts`), in the kernel's ticks. */
   firstWave: { tier: "tuned", unit: "seconds", default: 5 },
 
-  // --- Spawn space around a Barracks (the Commander round 5) -----------------------------------------
-  // The owner: "barraks and other spawning buildings should require minimum distance from other buildings so
-  // they leave space for units spawning". It asks how much space a Barracks needs: enough that its troops always
-  // have somewhere to appear, and never so much that there is nowhere left to build one.
-
-  /** How many free tiles a building that makes units (a Barracks, a Hatchery) keeps round it, measured as range
-   *  is (`src/build/territory.ts`); it replaces each such structure's own `clearance` while it is felt. 1 keeps
-   *  every tile along its sides free, so its troops always have room to appear; 2 also the second column either
-   *  side, a row counting two columns. Why not more: a spawner must stand further than this from every building
-   *  and still have a tile in a linked building's range, and a larger value can leave nowhere to build one. First
-   *  guess: 1. */
-  spawnClearance: {
-    tier: "experiment",
-    section: "mission",
-    label: "Spawn space",
-    question: "Kept free around a Barracks or Hatchery so its troops can spawn: 1 is the tiles next to it, 2 adds a column each side.",
-    values: [1, 2],
-    unit: "tiles",
-    default: 1,
-  },
-
   // --- The Nexus Pulse (the Commander step 8B) -------------------------------------------------------
   // The owner made the pick optional for testing (round 5: "Nexus Powers should be optional for now, it's easier
   // for testing if I can just start a round"), and the Nexus Pulse's step was to settle with him whether it stays so

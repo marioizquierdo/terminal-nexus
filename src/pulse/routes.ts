@@ -19,7 +19,7 @@ import type { Area, Ground, Reach, Seed } from "../routing/index.ts"
 import { addWall, bodyKey, canStand, DistanceField, goalsInside, goalsNear, groundFor, UNREACHABLE, wallsOf, weightsFor } from "../routing/index.ts"
 import type { TargetArea } from "../state/types.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { drawAmong, inAttackRange, sideLayerOf, within } from "./shared.ts"
+import { drawAmong, inAttackRange, onRoof, ownSideLayers, sideLayerOf, within } from "./shared.ts"
 import { fleeTrigger } from "./perception.ts"
 import { insideArea, targetFor } from "./target.ts"
 
@@ -36,11 +36,6 @@ export function reachOf(actor: Actor): Reach {
   return attack.kind === "melee" ? { kind: "touch", steps: attack.range } : { kind: "within", radius: attack.range }
 }
 
-const maskKey = (actor: Actor): string => {
-  const side = sideLayerOf(actor.definition)
-  return `${actor.definition.layer === "air" ? "air" : "ground"}:${[...actor.definition.collidesWith].sort().join(",")}${side === null ? "" : `|${side} of ${actor.player === "A" ? "B" : "A"}`}`
-}
-
 const goalKey = (goal: RouteGoal): string =>
   goal.kind === "unit"
     ? `unit:${goal.target.ordinal}@${goal.target.anchor.x},${goal.target.anchor.y}:${goal.reach.kind === "touch" ? `t${goal.reach.steps}` : `w${goal.reach.radius}`}`
@@ -54,11 +49,28 @@ export class TickRoutes {
   private readonly weights = new Map<string, Uint8Array | null>()
   private readonly patches = new Map<string, Int32Array>()
   private readonly nearest = new Map<string, Coord[]>()
+  private readonly masks = new Map<number, string>()
 
   /** `walking`: the ordinals of the actors that walk this tick; every other actor stands, and is a wall. */
   constructor(context: TickContext, walking: ReadonlySet<number>) {
     this.context = context
     this.walking = walking
+  }
+
+  /** A name for what blocks `actor` this tick, the same for every unit it blocks alike: its layer, what it collides
+   *  with, the side it shares a layer with, and whether it is on the roofs (`onRoof`). What ground and fields are kept
+   *  by, with the body's shape. */
+  private maskOf(actor: Actor): string {
+    let key = this.masks.get(actor.ordinal)
+    if (key === undefined) {
+      const side = sideLayerOf(actor.definition)
+      const roof = onRoof(this.context, actor)
+      // Which side it is only matters where it passes its own side and not the enemy's.
+      const own = side === null && !roof ? "" : `|${side ?? ""} of ${actor.player}${roof ? " on the roofs" : ""}`
+      key = `${actor.definition.layer === "air" ? "air" : "ground"}:${[...actor.definition.collidesWith].sort().join(",")}${own}`
+      this.masks.set(actor.ordinal, key)
+    }
+    return key
   }
 
   /**
@@ -67,17 +79,17 @@ export class TickRoutes {
    * (`detourOf`); such ground is the actor's own and is not kept.
    */
   groundOf(actor: Actor, alsoStanding?: ReadonlySet<number>): Ground {
-    const key = `${maskKey(actor)}|${bodyKey(actor.definition.footprint)}`
+    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`
     const kept = alsoStanding === undefined ? this.grounds.get(key) : undefined
     if (kept !== undefined) return kept
-    const layers = actor.definition.collidesWith
-    const side = sideLayerOf(actor.definition)
+    const { layers, sideLayers } = ownSideLayers(this.context, actor.definition, actor.player, onRoof(this.context, actor))
     const walls = wallsOf(this.context.index.grid, actor.definition.layer === "air" ? "ignore" : "impassable")
     for (const other of this.context.actors) {
       if (other.pendingDead || other === actor) continue
       if (this.walking.has(other.ordinal) && alsoStanding?.has(other.ordinal) !== true) continue
-      // What it collides with, of either side; on the layer it shares with its own side, only the enemy's.
-      const blocks = layers.includes(other.definition.layer) || (other.definition.layer === side && other.player !== actor.player)
+      // What it collides with, of either side; on the layers it shares with its own side, only the enemy's: its side
+      // layer, and its own buildings while it is on their roofs.
+      const blocks = layers.includes(other.definition.layer) || (sideLayers?.layers.includes(other.definition.layer) === true && other.player !== actor.player)
       if (blocks) addWall(walls, other.anchor, other.definition.footprint)
     }
     const ground = groundFor(walls, actor.definition.footprint)
@@ -88,7 +100,7 @@ export class TickRoutes {
   /** What stepping onto each anchor costs `actor`'s body: slow ground weighed in (`weightsFor`), or `null` on a Grid
    *  with none. Kept for the tick by the body's shape and how it moves. */
   weightsOf(actor: Actor): Uint8Array | null {
-    const key = `${maskKey(actor)}|${bodyKey(actor.definition.footprint)}`
+    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`
     if (!this.weights.has(key)) {
       this.weights.set(key, weightsFor(this.context.index.grid, actor.definition.footprint, actor.definition.layer === "air" ? "ignore" : "impassable"))
     }
@@ -97,7 +109,7 @@ export class TickRoutes {
 
   /** The field `actor` walks toward `goal` by, shared with every actor of its mask and shape heading there. */
   fieldOf(actor: Actor, goal: RouteGoal): DistanceField {
-    const key = `${maskKey(actor)}|${bodyKey(actor.definition.footprint)}|${goalKey(goal)}`
+    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|${goalKey(goal)}`
     let field = this.fields.get(key)
     if (field === undefined) {
       field = fieldOver(this.groundOf(actor), this.weightsOf(actor), actor, goal)
@@ -113,7 +125,7 @@ export class TickRoutes {
    * and ground.
    */
   dangerOf(actor: Actor): DistanceField {
-    const key = `${maskKey(actor)}|${bodyKey(actor.definition.footprint)}|danger of ${actor.player}`
+    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|danger of ${actor.player}`
     let field = this.fields.get(key)
     if (field === undefined) {
       const ground = this.groundOf(actor)
@@ -136,7 +148,7 @@ export class TickRoutes {
    * into a corner, where straight away from the nearest would go. Ground no threat can reach is the safest of all.
    */
   safetyOf(actor: Actor): DistanceField {
-    const key = `${maskKey(actor)}|${bodyKey(actor.definition.footprint)}|safety of ${actor.player}`
+    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|safety of ${actor.player}`
     let field = this.fields.get(key)
     if (field === undefined) {
       const ground = this.groundOf(actor)
@@ -182,7 +194,7 @@ export class TickRoutes {
     // The anchors it can walk to are the patch of ground it stands on; of those, the ones nearest `toward`, shared by
     // every unit on that patch heading there. Then the nearest of them to walk to, by a field from where it stands
     // (walking is symmetric: a step costs the same either way on ground with no weights), asked only about them.
-    const groundKey = `${maskKey(actor)}|${bodyKey(body)}`
+    const groundKey = `${this.maskOf(actor)}|${bodyKey(body)}`
     const patches = this.patchesOf(groundKey, ground)
     const patch = patches[actor.anchor.y * ground.width + actor.anchor.x] as number
     const nearKey = `${groundKey}|patch ${patch}|nearest ${toward.x},${toward.y}`

@@ -149,12 +149,13 @@ test("the whole mission, round by round, to its end; Play again and Restart both
     toResult(side)
     if (round < 3 && /Next round/.test(screenText(side))) keys(side, ENTER)
   }
-  // Nothing built: the last round's raid takes the Nexus. (Nothing built lost the last round before the troopers came
-  // in a wave, held it once they did while the raids stood behind the ridge, and loses it again since units walk by
-  // routes.)
+  // Nothing built, the mission ends on its last round either way. Which way is the level's balance, not this loop's:
+  // nothing built lost the last round before the troopers came in a wave, held it once they did while the raids stood
+  // behind the ridge, lost it once units walked by routes, and holds it again, the Nexus at 21 of 400, since the
+  // Barracks's troopers come out over its roof — measured again with every level at the end of the pathfinding
+  // milestone.
   const end = screenText(side)
-  assert.match(end, /MISSION FAILED/)
-  assert.match(end, /The Nexus fell\./)
+  assert.match(end, /MISSION (FAILED|COMPLETE)/)
   assert.match(end, /\[enter\] Play again/)
   keys(side, ENTER)
   assert.equal(side.build.state.pulseNumber, 1)

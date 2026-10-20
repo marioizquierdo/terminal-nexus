@@ -96,9 +96,9 @@ test("a scripted playtest plays a Battle Round on the script's own clock and sho
   const started = texts.findIndex((text) => text.includes("battle round"))
   assert.ok(started > 0, "the script never reached the Pulse")
   // The frame right after the second `s` is the Pulse's own first moment, already looking at the Nexus. (The clock is
-  // how long this battle runs: 14 seconds since the raid heads straight for the Nexus, 15 when it went for whatever
-  // was nearest, and 24 when it stood behind the ridge before routes.)
-  assert.match(texts[started]!, /^\| BATTLE ROUND 1 +0:14 /m)
+  // how long this battle runs: 15 seconds since the Barracks's wave comes out over its roof, 14 with it set down round
+  // the Barracks and the raid heading for the Nexus, and 24 when the raid stood behind the ridge before routes.)
+  assert.match(texts[started]!, /^\| BATTLE ROUND 1 +0:15 /m)
   // Centred on the Nexus's own tile (the position readout that once said so is gone).
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })

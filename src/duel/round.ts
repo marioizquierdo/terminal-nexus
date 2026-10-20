@@ -4,7 +4,7 @@
 // machine; nothing here reads a clock, a screen or a model — plans are handed in (`src/duel/players.ts` makes them).
 //
 // What it reuses rather than restates: the dealer (`dealHand`), the effect table (`applyEffect`, through each side's
-// loadout), the Build Phase's legality (`legalityAt`: build range, clearance, footprint, rock, cost — the rules a
+// loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a
 // player's cursor is held to), the opening and Recall (`src/match`), the Commander's absence and return, and the kernel
 // itself, each side on its own content (`PulseContext.sides`).
 
@@ -187,7 +187,7 @@ function placeAll(
         : nearest(grid, zonePoint(state, side, placement.at ?? "nexus", registry), facing(map, side), registry.get(row.contentId).footprint).slice(0, 600)
     let reason = "no legal spot near there"
     for (const anchor of tiles) {
-      const legality = legalityAt(context, planned, row.contentId, anchor, left, defaultValue("buildRange"), defaultValue("spawnClearance"))
+      const legality = legalityAt(context, planned, row.contentId, anchor, left, defaultValue("buildRange"))
       if (!legality.ok) {
         if (tiles.length === 1) reason = legality.reason
         continue

@@ -317,7 +317,6 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     spawn: { contentId: "unit.bench.spawnling", intervalTicks: 50, maxAlive: 3 },
     constructionRadius: 6,
     // The ring its swarmers appear on, kept free of other buildings (the "Spawn space" Experiment).
-    clearance: 1,
   },
   {
     // The disposable minion both the hatchery (periodically, while alive) and the shard-giant

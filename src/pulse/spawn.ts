@@ -17,20 +17,21 @@
 
 import type { ContentDef } from "../content/types.ts"
 import { rectFootprint } from "../content/types.ts"
-import { footprintDistance, footprintExtent, footprintRing } from "../grid/coords.ts"
+import { footprintBox, footprintDistance, footprintExtent, footprintRing, tilesOf } from "../grid/coords.ts"
 import { maskFrom } from "../grid/occupancy.ts"
 import type { Coord } from "../grid/types.ts"
 import { freshEntityFields } from "../content/index.ts"
 import { contentOf } from "./context.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { distanceBetween, drawAmong, sideLayerOf } from "./shared.ts"
+import { distanceBetween, drawAmong, ownSideLayers } from "./shared.ts"
 import { followsTarget } from "./target.ts"
 
 /**
- * Sets one new entity of `contentId` down for `origin`'s player on a free tile touching `origin`'s footprint
- * (`footprintRing`) that fits its footprint under its own collision rule: **the one nearest where it is headed** —
- * its side's target when it follows one, else the nearest enemy — so a building's units come out on the side facing
- * the fight, east or west alike, and a tie between equally near tiles is a draw (`drawAmong`). With nowhere to head,
+ * Sets one new entity of `contentId` down for `origin`'s player: a building's on its own roof (`onItsRoof`), a unit's
+ * on a free tile touching it (`roundIt`), either fitting its body under its own collision rule; of those, **the one
+ * nearest where it is headed** —
+ * its side's target when it follows one, else the enemy's Nexus, else the nearest enemy — so a building's units come out
+ * on the side facing the fight, east or west alike, and a tie between equally near tiles is a draw (`drawAmong`). With nowhere to head,
  * the first free tile of the ring. The new entity is wired
  * into `context.actors`/`byOrdinal`/`index` and given an `entity.spawned` event exactly as if the scenario loader had
  * placed it. Returns it, or `null` if nothing adjacent fits this attempt — a boxed-in spawner simply tries again next
@@ -48,20 +49,7 @@ export function spawnOneNear(
   const registry = contentOf(context.pulse, origin.player)
   if (!registry.has(contentId)) return null
   const childDef = registry.get(contentId)
-  const { width, height } = footprintExtent(origin.definition.footprint)
-  const side = sideLayerOf(childDef)
-  const mask = maskFrom(context.index, {
-    layers: childDef.collidesWith,
-    // Air ignores terrain entirely, same rule `maskForActor` already applies to a mover's own mask.
-    terrain: childDef.layer === "air" ? "ignore" : "impassable",
-    vacated: context.vacated,
-    // Never on an enemy's worker or trooper, though on its own side's (`sideLayerOf`).
-    ...(side === null ? {} : { sideLayers: { layers: [side], blocks: (ordinal: number) => context.byOrdinal.get(ordinal)?.player !== origin.player } }),
-  })
-
-  const free = footprintRing(width, height, 1)
-    .map((offset) => ({ x: origin.anchor.x + offset.x, y: origin.anchor.y + offset.y }))
-    .filter((anchor) => mask.footprintFits(anchor, childDef.footprint))
+  const free = origin.definition.layer === "obstacles" && childDef.layer !== "air" ? onItsRoof(context, origin, childDef) : roundIt(context, origin, childDef)
   const toward = nearestHeading(context, origin, childDef, free)
   // With nowhere to head there is no side to favour: the ring's own order, so a wave still stands together.
   const anchor = toward === null ? free[0] : drawAmong(context, toward)
@@ -103,6 +91,51 @@ export function spawnOneNear(
 }
 
 /**
+ * Where a building may set a new `child` down: **on its own roof** (pulse.md, units walk out over the roofs) — every
+ * anchor from which the child's body covers some of the building, on its side's roofs or open ground, never on a unit,
+ * an enemy's building or rock; those that put all of it on the building first, so a wave stands on its roof while it
+ * has room, and one wider than the building still comes out over it. Never two on one tile: a wave with no room left
+ * waits for the ones before it to walk off.
+ */
+function onItsRoof(context: TickContext, building: Actor, child: ContentDef): Coord[] {
+  const mask = maskFrom(context.index, {
+    terrain: "impassable",
+    vacated: context.vacated,
+    ...ownSideLayers(context, child, building.player, true),
+  })
+  const roof = new Set(tilesOf(building.anchor, building.definition.footprint).map((tile) => `${tile.x},${tile.y}`))
+  const own = footprintBox(building.anchor, building.definition.footprint)
+  const body = footprintBox({ x: 0, y: 0 }, child.footprint)
+  const whole: Coord[] = []
+  const part: Coord[] = []
+  for (let y = own.top - body.bottom; y <= own.bottom - body.top; y += 1) {
+    for (let x = own.left - body.right; x <= own.right - body.left; x += 1) {
+      const anchor = { x, y }
+      const on = tilesOf(anchor, child.footprint).filter((tile) => roof.has(`${tile.x},${tile.y}`)).length
+      if (on === 0 || !mask.footprintFits(anchor, child.footprint)) continue
+      ;(on === child.footprint.length ? whole : part).push(anchor)
+    }
+  }
+  return whole.length > 0 ? whole : part
+}
+
+/** Where a unit that makes units, or one that splits as it dies, sets a new `child` down: a free tile touching it
+ *  (`footprintRing`) that fits the child's body under its own collision rule. */
+function roundIt(context: TickContext, origin: Actor, child: ContentDef): Coord[] {
+  const { width, height } = footprintExtent(origin.definition.footprint)
+  const mask = maskFrom(context.index, {
+    // Air ignores terrain entirely, same rule `maskForActor` already applies to a mover's own mask.
+    terrain: child.layer === "air" ? "ignore" : "impassable",
+    vacated: context.vacated,
+    // Never on an enemy's worker or trooper, though on its own side's (`ownSideLayers`).
+    ...ownSideLayers(context, child, origin.player, false),
+  })
+  return footprintRing(width, height, 1)
+    .map((offset) => ({ x: origin.anchor.x + offset.x, y: origin.anchor.y + offset.y }))
+    .filter((anchor) => mask.footprintFits(anchor, child.footprint))
+}
+
+/**
  * `actors` front first: nearest the enemy as the tick began, and among equally near ones in an order drawn from the
  * seeded stream. The order buildings set their units down in, so of two neighbours sharing free ground the one further
  * forward claims first, on either side of the map — and of two as far forward, neither by its id, which the opening
@@ -136,15 +169,15 @@ export function frontFirst(context: TickContext, actors: readonly Actor[]): Acto
 
 /**
  * The tiles of `free` nearest where a new `child` of `origin`'s side is headed: its side's target when it follows one
- * (`followsTarget`), else the nearest enemy as the tick began, measured footprint to footprint (`footprintDistance`).
+ * (`followsTarget`), else the enemy's Grid Nexus when it would head there, else the nearest enemy as the tick began, measured footprint to footprint (`footprintDistance`).
  * `null` when there is nowhere to head: no target and no enemy.
  */
 function nearestHeading(context: TickContext, origin: Actor, child: ContentDef, free: readonly Coord[]): Coord[] | null {
   const area = followsTarget(child) ? context.targets[origin.player] : undefined
-  const enemies =
-    area !== undefined
-      ? []
-      : context.actors.filter((other) => other.player !== origin.player && !other.pendingDead && other.ordinal < context.bornFrom)
+  const all = area !== undefined ? [] : context.actors.filter((other) => other.player !== origin.player && !other.pendingDead && other.ordinal < context.bornFrom)
+  // A fighting unit with no target heads for the enemy's Grid Nexus (`headsForNexus`, perception.ts).
+  const nexus = followsTarget(child) ? all.filter((other) => other.definition.nexus === true) : []
+  const enemies = nexus.length > 0 ? nexus : all
   if (area === undefined && enemies.length === 0) return null
   const away = (anchor: Coord): number =>
     area !== undefined

@@ -468,12 +468,6 @@ test("legality: an illegal placement is refused with a reason and nothing is mov
   assert.match(build.state.status.text, /outside your build range at 33,14/)
   assert.deepEqual(build.state.cursor, { x: 34, y: 14 }, "the cursor did not slide into the range")
 
-  // Beside the standing Barracks, in the room it keeps for its troops.
-  moveTo(build, { x: 29, y: 10 })
-  build.handleData(ENTER, layout)
-  assert.equal(build.state.planned.length, 0)
-  assert.match(build.state.status.text, /too close to the Barracks - its troops need room/)
-
   // The Grid's own edge, where a 3x2 footprint hangs off it: a Nexus standing at the north-west corner, so the
   // range reaches the edge.
   const corner = { ...context, standing: [{ contentId: "structure.citizen.nexus", anchor: { x: 0, y: 3 } }] }

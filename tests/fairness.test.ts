@@ -133,8 +133,9 @@ test("two equal units that strike each other in the same tick both fall, on that
   assert.equal(deaths[0]?.tick, deaths[1]?.tick, "one fell before the other")
 })
 
-test("a building sets its units down on the side facing the enemy, east or west alike", () => {
-  // A yard each, with an enemy straight across: a wave comes out on the face toward it, whichever end the yard is at.
+test("a building sets its units down on its roof, on the edge facing the enemy, east or west alike", () => {
+  // A yard each, with an enemy straight across: a wave comes out on its roof, along the edge toward the enemy,
+  // whichever end the yard is at.
   for (const [player, yard, enemy] of [["A", 3, 26], ["B", 26, 3]] as const) {
     const sides = { A: [] as Placed[], B: [] as Placed[] }
     sides[player].push([yard, 4, "structure.test.yard"])
@@ -145,11 +146,14 @@ test("a building sets its units down on the side facing the enemy, east or west 
     const { events } = run(start, 2)
     const spawned = events.filter((event): event is Extract<DomainEvent, { kind: "entity.spawned" }> => event.kind === "entity.spawned")
     assert.equal(spawned.length, 4)
-    // The face toward the enemy: the column just east of the yard for A, just west of it for B.
-    const face = player === "A" ? anchor.x + 3 : anchor.x - 1
-    assert.ok(spawned.slice(0, 3).every((event) => event.at.x === face), `${player}: ${spawned.map((event) => `${event.at.x},${event.at.y}`).join(" ")}`)
-    // The first straight across from the enemy; the next two either side of it.
-    assert.deepEqual(spawned[0]?.at, { x: face, y: 4 })
+    // The edge toward the enemy: the yard's own east column for A, its west column for B.
+    const face = player === "A" ? anchor.x + 2 : anchor.x
+    // The first on that edge straight across from the enemy; the next two along the same row behind it, a row
+    // counting two columns, so the wave fills the roof from the enemy's side.
+    const at = spawned.map((event) => `${event.at.x},${event.at.y}`)
+    assert.deepEqual(spawned[0]?.at, { x: face, y: 4 }, `${player}: ${at.join(" ")}`)
+    const step = player === "A" ? -1 : 1
+    assert.deepEqual(at.slice(0, 3), [0, 1, 2].map((behind) => `${face + step * behind},4`), `${player}: ${at.join(" ")}`)
   }
 })
 

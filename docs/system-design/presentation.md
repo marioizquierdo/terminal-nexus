@@ -305,8 +305,7 @@ below).
 
 **A reach is drawn where it is felt.** In the Build Phase a building's reach is an outline round its ghost, or
 round a building or ranged unit the cursor rests on; the build range is the dotted ground while a building is
-armed, and a Barracks's room a ring of ticks on it (the interface patterns, the build range, a Barracks's room
-and a reach). During a Battle Round Vasse's aura is the first radius on the Grid: its reach is a see-through style of
+armed (the interface patterns, the build range and a reach). During a Battle Round Vasse's aura is the first radius on the Grid: its reach is a see-through style of
 her side's colour on the ground's band, under every unit: a diamond twice as wide as it is tall in tiles and as
 tall as it is wide on screen, since a row counts two columns ([`grid.md`](grid.md), distance, reach and movement),
 shown where colours blend and said in words on her card where they do not (the interface patterns, her aura's
@@ -329,7 +328,7 @@ largest view it buys centring, never another shape. At 80 × 24 the map shows 49
 acceptance target**; a larger terminal shows more of the same Grid, up to 72 × 24 tiles, and the same information.
 
 **A picture of an area the rules decide draws the rules' own tiles**: a building's or a unit's reach, the build
-range, a Barracks's room, Vasse's aura and a blast are each drawn from the Grid's own sets of tiles (`tilesWithin`,
+range, Vasse's aura and a blast are each drawn from the Grid's own sets of tiles (`tilesWithin`,
 `src/grid/reach.ts`; a reach's outline, the last tiles it covers, is `outlineWithin`), so what the screen shows
 as a reach is what the rules count. A picture that claims no area — death debris and its shockwave, the tracer's
 line, the intro highlight's ring — may take a shape of its own.
@@ -353,7 +352,7 @@ point:
 | Band | Fed by |
 | --- | --- |
 | 1 `terrain` | `terrain` layer |
-| 2 `territory` | construction coverage: the build range and a Barracks's room while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Battle Round |
+| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Battle Round |
 | 3 `ground-items` | salvage, rubble, deposits |
 | 4 `structures` | `obstacles` layer |
 | 5 `units` | `workers` and `units` layers |

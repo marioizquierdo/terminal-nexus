@@ -323,7 +323,7 @@ loop times the rest. (RULE — `tests/build-handoff.test.ts`)
   its row to the cursor over whatever it crosses (see *See-through styles*). Exploring only moves the focus, so it sends
   the cursor itself rather than a ray. (RULE — `tests/build-handoff.test.ts`)
 - **Where the cursor lands** (`armingSpot` in `src/build/state.ts`): where it is, if Enter would take it there
-  — a tile of it inside the build range, and the room a Barracks keeps left free; else the nearest such spot
+  — a tile of it inside the build range; else the nearest such spot
   within reach leaving a free tile around it, else the nearest such spot touching — nearest by the cursor's
   move, a step up or down costing more than a step sideways, so a run grows to the right (the reach and the
   cost are tuned values, `armSearchTiles` and `armVerticalCost`). With none in reach, arming steps one right
@@ -516,10 +516,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   tone, and tones resolve onto style roles in one place (`src/view/status.ts`).
 - **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`. **A refusal names its
   tile**: affordability comes first, then the build range (a region; with no tile of the building inside it,
-  its first tile is named), then the tile's own problem, and last the room a building that makes units keeps,
-  which names the building rather than a tile: "too close to the Barracks - its troops need room", or, for a
-  Barracks placed too near something, "too close to the Citizen Nexus - troops need room". (RULE —
-  `tests/build-help.test.ts`)
+  its first tile is named), then the tile's own problem. Buildings may touch: one that makes units sets them on its
+  roof, so no refusal is about room round it. (RULE — `tests/build-help.test.ts`)
 - **Looking reads quietly, trying loudly**: a ghost on a tile it cannot use shows a grey block of `x` and
   a plain-toned reason; once the player tries, the same words turn red and bold until the answer lapses.
   **A command's own answer comes first**, a refusal included; the ghost's reason is what the line says
@@ -594,17 +592,13 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   monochrome, so every depth draws the same glyphs. A popup, reduced motion and a committed plan hold it still,
   as the still trail, the one beside the target drawn; it moves again from there. The target is underlined under a wash of the raid's colour, never red. Later groups are foreseen
   against the round's opening. (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
-- ***The build range, a Barracks's room and a reach*** (named patterns; the owner's "a cool and unobstrussive
-  way to show where the turrets will reach ... they also can only be built within the build-range of the other
-  buildings", and "so they leave space for units spawning"). Three different things get three different marks.
+- ***The build range and a reach*** (named patterns; the owner's "a cool and unobstrussive way to show where the
+  turrets will reach ... they also can only be built within the build-range of the other buildings"). Two
+  different things get two different marks.
   **The build range is an area.** While a building is armed, every open tile inside it shows the ground's own
   dot, dim, so where a building may have a tile is the densely dotted ground, and where colours blend it is
-  lit by a faint grey wash; a building may hang over its edge. **A Barracks's room is an apron.** While a
-  building is armed, every open tile of the room a building that makes units keeps — round every standing or
-  planned Barracks and Hatchery, the raid's too, and round the armed one's ghost, moving with it — shows a dim
-  tick (`'`) in the ground's colour where the ground would show its dot, keeping the range's light where it
-  lies in the range. A tick, not a gap: nothing may ever stand on it, while a gap in the dots would read as
-  ground outside the range, which a building may hang over. **A reach is an outline.** The last tiles a
+  lit by a faint grey wash; a building may hang over its edge. (A Barracks's room, a ring of dim ticks round
+  every building that made units, went when units came to walk out over the roofs.) **A reach is an outline.** The last tiles a
   building reaches, as the kernel measures range, are drawn round its ghost in strokes: `-` and `|` along its
   footprint's sides, `/` and `\` across the corners (`─ │ ╱ ╲` in Unicode). The outline is dim, in the ghost's
   own look (the hotkey's colour where Enter would place it, grey where it would refuse), moves with the ghost,

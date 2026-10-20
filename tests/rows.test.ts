@@ -669,7 +669,6 @@ test("every reach the content and the Experiments offer is a whole number of row
       "detonation trigger": definition.detonation?.triggerRange,
       "aura radius": auraOf(definition)?.radius,
       "construction radius": definition.constructionRadius,
-      clearance: definition.clearance,
       // Worked out from those: the reach a unit heading for its side's target turns to fight within, and how near
       // an attacker may come before a worker runs from it.
       "engage reach": followsTarget(definition) ? engageRange(definition) : undefined,
@@ -680,7 +679,7 @@ test("every reach the content and the Experiments offer is a whole number of row
     // and a corner its card's words do not say.
     if (definition.attack?.kind === "melee" && definition.attack.range !== 1) odd.push(`${id} melee range ${definition.attack.range}`)
   }
-  for (const name of ["buildRange", "spawnClearance"] as const) {
+  for (const name of ["buildRange"] as const) {
     for (const value of ALL_SETTINGS[name].values) if (!whole(value)) odd.push(`the ${name} Experiment offers ${value}`)
   }
   assert.deepEqual(odd, [])

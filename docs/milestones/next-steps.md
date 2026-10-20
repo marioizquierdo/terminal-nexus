@@ -52,8 +52,8 @@ it is done.*
   the order; his call where it goes. An army bending the schedule moved to Commander Armies, as Averno's quirk.
 - **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
   --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
-  given only by what stood when the round opened, and a building needs one tile on it; the dim ticks round
-  each Barracks and Hatchery are the room it keeps, where nothing may stand. Explore Map (`e`) over a marksman
+  given only by what stood when the round opened, and a building needs one tile on it; buildings may touch, since
+  units come out over the roofs. Explore Map (`e`) over a marksman
   draws its range; the raid's trail is a slow line of arrows. Start the battle without picking a Nexus power:
   four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
   MISSION in Settings (`d`), **Spawn space** (1 or 2) is new beside **Build range** and **By the

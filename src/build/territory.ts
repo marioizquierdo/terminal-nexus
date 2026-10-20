@@ -23,20 +23,13 @@
 //   "should allow to build if at least 1 building tile is within range (not the whole building). This is
 //   important for large buildings otherwise they have no space to build"); rock, another building and the map's
 //   edge are still refused tile by tile.
-// - **A building that makes units keeps room round it** (its content's `clearance`; the owner, round 5:
-//   "barraks and other spawning buildings should require minimum distance from other buildings so they leave
-//   space for units spawning"): no tile of another building may stand within that many tiles of it, measured as
-//   range is (`crowding`, `footprintWithin`): at 1, nothing touches it along a side. Every building on the map
-//   counts — standing or planned, the player's or the raid's, the Grid Nexus too — and it holds both ways: for a
-//   building placed near one, and for one placed near any building. While the "Spawn space" Experiment is being
-//   felt, its value is every such building's room.
 //
 // What it is not: a path. A range passes over rock, which is refused on its own, and nothing the raid stands
 // is part of the player's network, nor (yet) limits it: building inside the enemy's coverage waits for a raid
 // that stands buildings at the start of a Build Phase. With no Grid Nexus of the player's standing there is no
 // network, and nothing can be built.
 //
-// Pure: the reducer's legality and the view's drawing all read one answer (`territoryOf`, `crowding`).
+// Pure: the reducer's legality and the view's drawing all read one answer (`territoryOf`).
 
 import { footprintDistance, footprintWithin, inBounds } from "../grid/coords.ts"
 import { tilesWithin } from "../grid/reach.ts"
@@ -151,55 +144,4 @@ function workOut(source: TerritorySource, radius?: number): Territory {
 /** Whether any tile of a footprint anchored at `anchor` is inside the territory — the placement rule. */
 export function anyInside(territory: Territory, anchor: Coord, footprint: Footprint): boolean {
   return footprint.some((offset) => territory.has({ x: anchor.x + offset.x, y: anchor.y + offset.y }))
-}
-
-// --- Room around a building that makes units ----------------------------------------------------------------
-
-/** A building on the map, as the room rule sees it: what it is, and where. */
-export type Footing = Readonly<{ contentId: string; anchor: Coord }>
-
-/**
- * How many tiles a structure keeps free round it — `override` (the "Spawn space" Experiment's value) for every
- * structure that keeps room at all, its own `clearance` without one — or `null` for one that keeps none.
- */
-export function clearanceOf(definition: ContentDef, override?: number): number | null {
-  if (definition.clearance === undefined) return null
-  return override ?? definition.clearance
-}
-
-/**
- * Why a building would stand too close to another: the building it is too near, and whose room it would stand
- * in — `its`, the other one's, a building that makes units; or `own`, the room of the one being placed.
- */
-export type Crowding = Readonly<{ near: Footing; room: "its" | "own" }>
-
-/**
- * **The room rule**: the building on the map (`buildings`: standing, planned, the raid's) that `contentId`
- * anchored at `anchor` would stand too close to, or `null` when there is none. Too close is within the room
- * either of the two keeps (`clearanceOf`), measured as range is (`footprintWithin`: a building touching another
- * along a side is within a room of 1). The nearest is named, the first listed on a tie. A building it would
- * overlap is the occupancy check's to refuse, which comes first.
- */
-export function crowding(
-  registry: ContentRegistry,
-  buildings: readonly Footing[],
-  contentId: string,
-  anchor: Coord,
-  override?: number,
-): Crowding | null {
-  const definition = registry.get(contentId)
-  const own = clearanceOf(definition, override) ?? 0
-  let found: Readonly<{ near: Footing; distance: number; room: "its" | "own" }> | null = null
-  for (const other of buildings) {
-    const theirs = clearanceOf(registry.get(other.contentId), override) ?? 0
-    const keep = Math.max(own, theirs)
-    if (keep === 0) continue
-    const footprint = registry.get(other.contentId).footprint
-    if (!footprintWithin(anchor, definition.footprint, other.anchor, footprint, keep)) continue
-    const distance = footprintDistance(anchor, definition.footprint, other.anchor, footprint)
-    if (found !== null && distance >= found.distance) continue
-    const room = footprintWithin(anchor, definition.footprint, other.anchor, footprint, theirs) ? "its" : "own"
-    found = { near: other, distance, room }
-  }
-  return found === null ? null : { near: found.near, room: found.room }
 }

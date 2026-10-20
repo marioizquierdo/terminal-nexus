@@ -72,7 +72,8 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             level: "info",
             kind: "spawn",
             subject: event.entity,
-            detail: `at ${formatCoordinate(event.at)}`,
+            // A building's units appear on its roof and walk out over it (pulse.md, roofs): the line says so.
+            detail: event.trainedBy === undefined ? `at ${formatCoordinate(event.at)}` : `at ${formatCoordinate(event.at)} on the roof of ${event.trainedBy}, coming out`,
           })
           break
 

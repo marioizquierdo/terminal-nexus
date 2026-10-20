@@ -2,8 +2,8 @@
 // build-range of the other buildings") as round 5 reshaped it: the Grid Nexus roots it and standing buildings
 // link where their ranges meet; a building planned in this Build Phase gives no range until it stands, next
 // round ("Expansing territory is only done at next round"); one tile of a new building inside the range is
-// enough ("should allow to build if at least 1 building tile is within range"); and a building that makes units
-// keeps room round it ("so they leave space for units spawning"). The rules are the reducer's
+// enough ("should allow to build if at least 1 building tile is within range"); and buildings may touch, as one
+// that makes units sets them on its own roof (the pathfinding milestone). The rules are the reducer's
 // (`src/build/territory.ts`, `src/build/state.ts`); how they are drawn is tests/build-areas.test.ts's.
 
 import { test } from "node:test"
@@ -12,7 +12,7 @@ import { defaultValue, shownSetting } from "../src/build/all-settings.ts"
 import { formatSettingsExport } from "../src/build/settings-export.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { anchorForCursor, armingSpot, buildRange, legalityAt } from "../src/build/state.ts"
-import { crowding, territoryOf } from "../src/build/territory.ts"
+import { territoryOf } from "../src/build/territory.ts"
 import type { PlannedPlacement } from "../src/build/types.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
@@ -30,8 +30,8 @@ const DEN = "structure.ravel.den"
 const turretAt = (ordinal: number, anchor: Coord): PlannedPlacement => ({ ordinal, contentId: TURRET, anchor })
 
 /** Whether a placement of `contentId` with its centre on `tile` is legal on `context` with `planned`. */
-function legal(context: BuildContext, planned: readonly PlannedPlacement[], contentId: string, tile: Coord, radius?: number, clearance?: number) {
-  return legalityAt(context, planned, contentId, anchorForCursor(tile, FIXTURE_REGISTRY.get(contentId).footprint), undefined, radius, clearance)
+function legal(context: BuildContext, planned: readonly PlannedPlacement[], contentId: string, tile: Coord, radius?: number) {
+  return legalityAt(context, planned, contentId, anchorForCursor(tile, FIXTURE_REGISTRY.get(contentId).footprint), undefined, radius)
 }
 
 /** Moves the map cursor onto `tile` and asserts it got there. */
@@ -214,121 +214,22 @@ test("the build range is an Experiment: 4, 6 or 8 tiles, felt at once, and writt
   assert.equal(FIXTURE_REGISTRY.get(HATCHERY).constructionRadius, 6)
 })
 
-// --- The room a building that makes units keeps ---------------------------------------------------------------
+// --- Buildings may touch -------------------------------------------------------------------------------------
 
-test("a Barracks keeps a tile of room round it: nothing may stand beside it, and the refusal says why", () => {
+test("buildings may touch: one that makes units sets them on its own roof, so it keeps no room round it", () => {
   const context = starterContext()
-  // The standing Barracks is 25,10 to 27,11. Beside it to the east, refused; a tile further, or at its corner
-  // (three away, as range is measured: a row counts two columns), allowed.
-  assert.deepEqual(legal(context, [], TURRET, { x: 28, y: 10 }), { ok: false, reason: "too close to the Barracks - its troops need room" })
-  assert.ok(legal(context, [], TURRET, { x: 29, y: 10 }).ok)
-  assert.ok(legal(context, [], TURRET, { x: 28, y: 12 }).ok)
-  // Through the reducer: the bottom line says it, as every refusal does.
-  const side = buildSide()
-  keys(side, "3")
-  moveTo(side, { x: 28, y: 10 })
-  keys(side, ENTER)
-  assert.equal(side.build.state.planned.length, 0)
-  assert.equal(side.build.state.status.text, "Cannot build here: too close to the Barracks - its troops need room.")
-  assert.ok(side.build.state.status.text.length <= 76, "the refusal does not fit the bottom line")
-})
-
-test("the room holds both ways, against every building on the map: the Nexus, a planned one, the raid's", () => {
-  const context = starterContext()
-  // A Barracks beside the Nexus (17,10 to 19,11): its own troops need the room, so it names what it is too near.
-  assert.deepEqual(legal(context, [], BARRACKS, { x: 21, y: 11 }), { ok: false, reason: "too close to the Citizen Nexus - troops need room" })
-  assert.ok(legal(context, [], BARRACKS, { x: 22, y: 11 }).ok, "two tiles off the Nexus")
-  // Beside a planned Turret, the same.
-  const planned = [turretAt(1, { x: 19, y: 13 })]
-  assert.deepEqual(legal(context, planned, BARRACKS, { x: 21, y: 13 }), { ok: false, reason: "too close to the Turret - troops need room" })
-  assert.ok(legal(context, [], BARRACKS, { x: 21, y: 13 }).ok)
-  // A Hatchery under the standing Barracks is in the Barracks's room.
-  assert.deepEqual(legal(context, [], HATCHERY, { x: 25, y: 12 }), { ok: false, reason: "too close to the Barracks - its troops need room" })
-  // The raid's den, standing on the field, keeps the room a Den keeps for the runners it sends (it is a Ravel
-  // side's Barracks): nothing stands beside it, a Turret a tile off may.
+  // The standing Barracks is 25,10 to 27,11: a Turret right beside it, a Hatchery right under it.
+  assert.ok(legal(context, [], TURRET, { x: 28, y: 10 }).ok, "a Turret beside the Barracks")
+  assert.ok(legal(context, [], HATCHERY, { x: 25, y: 12 }).ok, "a Hatchery under the Barracks")
+  // A Barracks beside the Nexus (17,10 to 19,11), and a second beside the first: a block of them.
+  assert.ok(legal(context, [], BARRACKS, { x: 21, y: 11 }).ok, "a Barracks beside the Nexus")
+  const block: PlannedPlacement[] = [{ ordinal: 1, contentId: BARRACKS, anchor: anchorForCursor({ x: 21, y: 13 }, FIXTURE_REGISTRY.get(BARRACKS).footprint) }]
+  assert.ok(legal(context, block, BARRACKS, { x: 24, y: 13 }).ok, "a Barracks beside a planned Barracks")
+  // The raid's den is no different.
   const raided: BuildContext = { ...context, field: [{ contentId: DEN, anchor: { x: 13, y: 7 }, player: "B", hp: 90 }] }
-  assert.deepEqual(legal(raided, [], BARRACKS, { x: 17, y: 7 }), { ok: false, reason: "too close to the Den - its troops need room" })
-  assert.deepEqual(legal(raided, [], TURRET, { x: 16, y: 8 }), { ok: false, reason: "too close to the Den - its troops need room" })
-  assert.ok(legal(raided, [], TURRET, { x: 17, y: 8 }).ok)
-  // A unit is no building: Vasse, arriving in the middle of the squad's line, takes no room from a Barracks placed
-  // right under her.
-  assert.ok((context.incoming ?? []).some((unit) => unit.contentId === "unit.citizen.vasse" && unit.anchor.x === 22 && unit.anchor.y === 10))
-  assert.ok(legal(context, [], BARRACKS, { x: 22, y: 11 }).ok)
-})
-
-test("the room names the nearest building too close, and is measured as range is", () => {
-  const registry = FIXTURE_REGISTRY
-  const buildings = [
-    { contentId: NEXUS, anchor: { x: 0, y: 0 } },
-    { contentId: TURRET, anchor: { x: 10, y: 0 } },
-  ]
-  // A Barracks anchored at 7,0 (7 to 9) is a tile from the Turret at 10,0 and five from the Nexus's east edge:
-  // the Turret is named, and the room is the Barracks's own.
-  assert.deepEqual(crowding(registry, buildings, BARRACKS, { x: 7, y: 0 }), { near: buildings[1], room: "own" })
-  assert.equal(footprintDistance({ x: 7, y: 0 }, registry.get(BARRACKS).footprint, buildings[1]!.anchor, registry.get(TURRET).footprint), 1)
-  // Anchored at 4,0 it is two from the Nexus, as range is measured, and a tile clear of both.
-  assert.equal(crowding(registry, buildings, BARRACKS, { x: 4, y: 0 }), null)
-  // Anchored at 3,0 (3 to 5), with a third Turret at 6,0, it is a tile from the Nexus and from that Turret: the
-  // nearest is named, and on a tie the first listed.
-  assert.deepEqual(crowding(registry, [...buildings, { contentId: TURRET, anchor: { x: 6, y: 0 } }], BARRACKS, { x: 3, y: 0 }), {
-    near: buildings[0],
-    room: "own",
-  })
-  // Nothing keeps room between two buildings that make no units.
-  assert.equal(crowding(registry, buildings, TURRET, { x: 11, y: 0 }), null)
-  // Two Barracks: the one placed near another stands in that one's room.
-  assert.deepEqual(crowding(registry, [{ contentId: BARRACKS, anchor: { x: 0, y: 10 } }], BARRACKS, { x: 3, y: 10 }), {
-    near: { contentId: BARRACKS, anchor: { x: 0, y: 10 } },
-    room: "its",
-  })
-})
-
-test("arming a building that makes units proposes only a spot that leaves its room, and its neighbours', free", () => {
-  for (const cursor of [{ x: 26, y: 13 }, { x: 21, y: 11 }, { x: 18, y: 10 }]) {
-    const side = buildSide({ cursor })
-    keys(side, "1")
-    const spot = side.build.state.cursor
-    const anchor = anchorForCursor(spot, FIXTURE_REGISTRY.get(BARRACKS).footprint)
-    assert.ok(legalityAt(side.context, [], BARRACKS, anchor).ok, `arming from ${cursor.x},${cursor.y} proposed ${spot.x},${spot.y}, which Enter refuses`)
-    for (const building of side.context.standing) {
-      const distance = footprintDistance(anchor, FIXTURE_REGISTRY.get(BARRACKS).footprint, building.anchor, FIXTURE_REGISTRY.get(building.contentId).footprint)
-      assert.ok(distance >= 2, `${spot.x},${spot.y} is ${distance} from the ${building.contentId}`)
-    }
-  }
-  // Looking for a spot for one tile, as Explore Map does, knows no room.
-  assert.deepEqual(armingSpot(starterContext(), [], [{ x: 0, y: 0 }], { x: 28, y: 10 }), { tile: { x: 28, y: 10 }, found: true })
-})
-
-test("how much room is an Experiment: 1 or 2 tiles, felt at once, and written into the export", () => {
-  const spec = shownSetting("spawnClearance")
-  assert.equal(spec.tier, "experiment")
-  assert.equal(spec.section, "mission")
-  assert.equal(spec.label, "Spawn space")
-  assert.deepEqual(spec.values, [1, 2])
-  assert.equal(defaultValue("spawnClearance"), 1)
-  assert.equal(spec.applies, "now")
-  assert.doesNotMatch(spec.question, /\((F|Q)\d+\)/)
-  // A Turret two columns beside the Barracks: placed at 1, refused at 2, without a restart.
-  const context = { ...starterContext(), allotment: 1000 }
-  assert.ok(legal(context, [], TURRET, { x: 29, y: 10 }, undefined, 1).ok)
-  assert.equal(legal(context, [], TURRET, { x: 29, y: 10 }, undefined, 2).ok, false)
-  const side = buildSide({ context })
-  side.build.dispatch({ kind: "experiment-adjust", field: "spawnClearance", step: 1 })
-  assert.equal(side.build.state.experiments.spawnClearance, 2)
-  keys(side, "3")
-  moveTo(side, { x: 29, y: 10 })
-  keys(side, ENTER)
-  assert.equal(side.build.state.planned.length, 0)
-  assert.equal(side.build.state.status.text, "Cannot build here: too close to the Barracks - its troops need room.")
-  side.build.dispatch({ kind: "experiment-adjust", field: "spawnClearance", step: -1 })
-  keys(side, ENTER)
-  assert.equal(side.build.state.planned.length, 1, side.build.state.status.text)
-  assert.match(formatSettingsExport({ settings: side.build.state.settings, experiments: side.build.state.experiments }), /^spawnClearance = 1\b/m)
-  // At 2 a Barracks still has somewhere to go at the default build range: a tile of it in range, three off
-  // everything else.
-  const room = buildSide({ context: { ...context, experiments: { spawnClearance: 2 } } })
-  keys(room, "1")
-  assert.equal(room.build.state.noSpotFound, false, room.build.state.status.text)
-  const anchor = anchorForCursor(room.build.state.cursor, FIXTURE_REGISTRY.get(BARRACKS).footprint)
-  assert.ok(legalityAt(room.context, [], BARRACKS, anchor, undefined, defaultValue("buildRange"), 2).ok)
+  assert.ok(legal(raided, [], TURRET, { x: 16, y: 8 }).ok, "a Turret beside the Den")
+  // A building still never stands on another.
+  assert.equal(legal(context, block, BARRACKS, { x: 22, y: 13 }).ok, false)
+  // And the Experiment that set how much room a Barracks kept is gone with it.
+  assert.ok(!("spawnClearance" in (starterContext().experiments ?? {})), "the Spawn space Experiment is still felt")
 })

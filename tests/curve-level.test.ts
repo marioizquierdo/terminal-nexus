@@ -47,16 +47,17 @@ test("climbing the tree fields a stronger last army than the first tier alone; t
   assert.equal(tree.bought[0]?.includes(GARRISON), false)
   assert.equal(tree.bought[1]?.includes(GARRISON), true)
   const last = (measure: typeof tree): number => measure.armies[measure.armies.length - 1]?.total ?? 0
-  // Pinned: 1.17 times the first tier's since the raids head for the Nexus (more than 1.2
-  // when they went for whatever was nearest). Measured again, with every level, at the end of the pathfinding milestone.
+  // Pinned: 1.17 times the first tier's since the raids head for the Nexus, and since units come out over the roofs
+  // (more than 1.2 when the raids went for whatever was nearest). Measured again, with every level, at the end of the pathfinding milestone.
   assert.ok(last(tree) > last(first) * 1.15, `the tree's last army ${last(tree).toFixed(0)} is not well above the first tier's ${last(first).toFixed(0)}`)
   // The design expects the first three rounds to be at most about a fifth of the last army. Without supply it was
   // close to half for both plans (0.47 and 0.45). With the supply cap the army is held to what its depots give, and a
   // new unit takes a place an old one left: 0.54 for the tree (its round-2 and round-3 Garrisons count as the
-  // opening) and 0.40 for Barracks alone. Still far from a fifth, because on this level the early units mostly live;
-  // this pins the numbers, so a change is seen.
-  assert.ok(tree.openingShare > 0.45 && tree.openingShare < 0.62, `the tree's opening share is ${tree.openingShare.toFixed(2)}`)
-  assert.ok(first.openingShare > 0.33 && first.openingShare < 0.47, `the first tier's opening share is ${first.openingShare.toFixed(2)}`)
+  // opening) and 0.40 for Barracks alone. Since a building's units come out over its roof, 0.61 and 0.54: the early
+  // units live longer still. Far from a fifth, because on this level the early units mostly live; this pins the
+  // numbers, so a change is seen, and the milestone's last step measures the level again.
+  assert.ok(tree.openingShare > 0.52 && tree.openingShare < 0.68, `the tree's opening share is ${tree.openingShare.toFixed(2)}`)
+  assert.ok(first.openingShare > 0.45 && first.openingShare < 0.6, `the first tier's opening share is ${first.openingShare.toFixed(2)}`)
 })
 
 test("a locked building is in the build menu, refused by its digit with what it needs, and the bottom line says so on its row", () => {
