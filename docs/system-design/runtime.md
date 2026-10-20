@@ -169,9 +169,10 @@ written, instead of scanning every observer. The kernel's tick is one file per p
    and it is a design decision, not an engineering one.** Capping "nearest enemy anywhere" to "nearest
    enemy within R" is cheap once rule 3 exists; deciding what a unit with nothing in R does instead
    changes emergent behaviour and is expensive to reconsider once a scenario is pinned to a specific
-   contract. What such a unit should do waits on an open question (Q20 in
-   [`open-questions.md`](../milestones/open-questions.md), with the options and a recommendation). Land
-   it inert and off by default until a scenario actually needs it.
+   contract. What such a unit does is answered: it heads for the enemy's Grid Nexus, the rule a side with no
+   target already walks by ([`pulse.md`](pulse.md), a side's target; the options weighed are in
+   [the answered register](../history/answered-questions.md)). Land the cap itself inert until a scenario
+   actually needs it.
 
 **What this section is not.** It is not a commitment to build real pathfinding, a spatial index or a
 radius cap, and not a claim that the scenarios are slow: nothing here is a measurement, only an

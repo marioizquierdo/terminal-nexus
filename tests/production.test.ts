@@ -315,5 +315,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // PERIMETER's round 1 as the rules play it: Vasse arriving with the squads, who hold the line ahead of the base, By
 // the Book guarding those beside her, the Barracks's four troopers together five seconds in, a row counting two
 // columns in every distance and step, every step taking whole beats, one across and two up or down, every tie
-// broken by what a unit faces, then a draw, and every unit walking by its route.
-const PINNED_ROUND_1 = "0b436ddda5113db2d1822416dfb04ab983d2f7156f3ed6f2bcddee89628a492a"
+// broken by what a unit faces, then a draw, every unit walking by its route, and the raid heading for the Nexus,
+// turning only to what comes within its reach.
+const PINNED_ROUND_1 = "954b3f9361f0d152745c87f465d21334079dfec48821415dcd65fe010e9824ec"

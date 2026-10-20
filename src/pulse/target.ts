@@ -1,7 +1,8 @@
 // A side's target (pulse.md, perception and intents): the region a campaign level names for a side's troops,
 // so where they move can be read before the battle (the owner: "the campaign levels should have a target well
-// defined"). Before targets every unit did one thing — engage the nearest enemy, wherever it was — and a side
-// with no target still does.
+// defined"). Before targets every unit did one thing — engage the nearest enemy, wherever it was. A side with no
+// target now heads for the enemy's Grid Nexus in the same way, the Nexus standing in for the region
+// (`headsForNexus`, `perception.ts`).
 //
 // A side's **fighting units** (on the move, `advance` behaviour: not a worker that flees, not a healer, not
 // a structure) follow its target:

@@ -271,10 +271,13 @@ for it. On the way it turns on an enemy within its engage range (6, six columns 
 down — 12 for a Commander who charges, content's `engageRange`, Averno's — or its own attack's range when longer, rounded up to whole rows; measured as range is) and fights it as
 every unit does. When nothing is in range it walks on, and at the target
 it stands. Units fill the target first, each toward the nearest free tile of it; one that cannot get in stands
-beside one that did, or beside its own building in the target, and claims no tile. A side with no target engages
-the nearest enemy wherever it is. Workers that flee, healers and buildings never follow a target. `targets` is
-absent when no side has one, so such a state hashes as it always did. The named scenario is
-`target-head-engage-stand`.
+beside one that did, or beside its own building in the target, and claims no tile. **A side with no target heads for
+the enemy's Grid Nexus** (the owner, 2026-10-20: "It's just going to be going to the enemy nexus"): its fighting units
+turn on an enemy within the same engage range on the way, a melee unit only on one it could walk to that near, and
+otherwise keep walking to the Nexus; a unit that cannot strike a Nexus, or a map with none, still engages the nearest
+enemy wherever it is (`headsForNexus`, `src/pulse/perception.ts`, `tests/heading.test.ts`). Workers that flee,
+healers and buildings never follow a target. `targets` is absent when no side has one, so such a state hashes as it
+always did. The named scenario is `target-head-engage-stand`.
 
 ### 1.6 Routes — RULE — `src/routing/`, `src/pulse/routes.ts`, `tests/routing.test.ts`, `tests/route-scenarios.test.ts`
 

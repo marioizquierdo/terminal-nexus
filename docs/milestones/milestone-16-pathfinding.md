@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** 16G — where a side heads.
+**Current step:** 16H — units walk out over the roofs.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -236,11 +236,20 @@ Nothing in a battle changes in this step: the parts exist, with their tests, and
 
 ### Step 16G — Where a side heads
 
-- [ ] One kind of goal for everything a unit heads for, each with its field: the enemy's Grid Nexus by default, and a
+- [x] One kind of goal for everything a unit heads for, each with its field: the enemy's Grid Nexus by default, and a
   campaign level's target where the level names one (the owner: "It's just going to be going to the enemy nexus. Or
-  maybe we have to define the target position for campaign as well").
-- [ ] No banner. A banner is set in the Build Phase as part of the plan, and waits for a way to show that plan on
+  maybe we have to define the target position for campaign as well"). A side with no target heads for the enemy
+  Nexus and turns on what comes within its engage reach on the way, as a side with a target does; a unit that cannot
+  strike a Nexus, or a map with none, still goes for the nearest enemy. The question of what a unit with nothing in
+  reach should do, kept open for the day targeting is capped for scale, is answered by it.
+- [x] No banner. A banner is set in the Build Phase as part of the plan, and waits for a way to show that plan on
   screen (the backlog); this step leaves it as one more goal to add.
+- [x] What moved, re-pinned: PERIMETER's raid now goes for the Nexus rather than the Barracks (the panel says so), its
+  first round with the defence plan runs 14 seconds rather than 15, so Drill Schedule's second wave at 15 seconds
+  comes only in a longer battle; with nothing built, the raiders left beside the Nexus at the end of round 2 finish it
+  on round 3's first tick; the curve level's tree fields 1.17 times the first tier's last army, down from more than
+  1.2. A corridor two rows tall now has troopers queuing a little over five seconds behind a fight at its front, so
+  its test holds the battle, not each unit, to never standing still for five seconds.
 
 ### Step 16H — Units walk out over the roofs
 

@@ -391,9 +391,12 @@ test("the build range's dots give way along the raid's trail's whole way, as a r
 })
 
 test("the room never covers the raid's trail, reads by its tick alone in monochrome, and grows with the Spawn space Experiment", () => {
+  // A second Barracks north of the first, beside the raid's way to the Nexus: the way goes round it, through its room.
   const side = buildSide({ cursor: STARTER_START_CURSOR, startPulse, nextRound, foresee })
+  side.build.run([{ kind: "arm", index: 0 }, { kind: "click-tile", x: 24, y: 6 }, { kind: "click-tile", x: 24, y: 6 }])
+  assert.equal(side.build.state.planned.length, 1, "the second Barracks was not placed")
   const raid = side.build.raid() ?? []
-  const trail = new Set(raid.flatMap((group) => (group.target === null ? [] : trailMarks(group.path, group.target.tiles))).map((mark) => `${mark.tile.x},${mark.tile.y}`))
+  const trail = new Set(raid.flatMap((group) => (group.target === null ? [] : group.path)).map((tile) => `${tile.x},${tile.y}`))
   const crossing = [...roomTiles(side)].filter((key) => trail.has(key)).map((key) => {
     const [x, y] = key.split(",").map(Number) as [number, number]
     return { x, y }

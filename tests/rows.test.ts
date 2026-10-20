@@ -588,7 +588,8 @@ test("the forecast's way is the Pulse's own walk: down the screen's diagonal fro
 
 test("the forecast's way ends touching what it goes for, straight above or below it, never on it", () => {
   // An open field, the player's Grid Nexus far to the south-west, a trooper of the player's out on it, and one trooper
-  // of the raid's straight above or below it: the raid's goes for the nearer, the player's trooper. Units never block
+  // of the raid's straight above or below it, within its reach: the raid's turns to it rather than heading on for the
+  // Nexus (`headsForNexus`). Units never block
   // a forecast's way, so a way that ran on to the target's own tile would stand on it.
   const grid: GridTerrain = { width: 40, height: 24, tiles: Array.from({ length: 40 * 24 }, () => "terrain.plain" as const) }
   const endOfWay = (raidAt: Coord, postAt: Coord): Coord | undefined => {
@@ -616,8 +617,8 @@ test("the forecast's way ends touching what it goes for, straight above or below
     return group?.path.at(-1)
   }
   // From the north, the way ends on the tile straight above the player's trooper; from the south, straight below.
-  assert.deepEqual(endOfWay({ x: 20, y: 2 }, { x: 20, y: 12 }), { x: 20, y: 11 })
-  assert.deepEqual(endOfWay({ x: 20, y: 22 }, { x: 20, y: 12 }), { x: 20, y: 13 })
+  assert.deepEqual(endOfWay({ x: 20, y: 9 }, { x: 20, y: 12 }), { x: 20, y: 11 })
+  assert.deepEqual(endOfWay({ x: 20, y: 15 }, { x: 20, y: 12 }), { x: 20, y: 13 })
 })
 
 test("Recall sends a survivor to the home nearest by the rule: a Nexus four columns beside it, not one three rows above", () => {
@@ -650,8 +651,9 @@ test("the battle with the most rules in it resolves the same way on every run, a
 })
 
 // The Citizens against the Ravels, blasts among its rules: its state and its events (pinned again when every tie came
-// to go by what a unit faces, then a draw, and when units came to walk by routes).
-const PINNED_BATTLE = ["1bf420390bcd38e9211e65ba803d013fa4d53c6a4d96344234bc40d1e4c57b65", "c78522115b2e85bc27e2ce2eeeac9d59b82c43b185046d9138b8112a40c4088f"] as const
+// to go by what a unit faces, then a draw, when units came to walk by routes, and when a side with no target came to
+// head for the enemy's Nexus, turning only to what comes within its reach).
+const PINNED_BATTLE = ["bff55b350e713b7800defb795db2e6f377a076dff1b48ac619a887ee7ed82ec6", "82fd828d46aa7dd01073109208ae8c10e72914b1f1f5e9e86fa3569ea5dae2d9"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of

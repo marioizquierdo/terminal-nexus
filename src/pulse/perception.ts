@@ -5,7 +5,7 @@ import { directionOf, ROW_DISTANCE } from "../grid/coords.ts"
 import { wholeRows } from "../grid/reach.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { distanceBetween, drawAmong, isMobile, setTarget, within } from "./shared.ts"
-import { engageRange, targetFor } from "./target.ts"
+import { engageRange, followsTarget, targetFor } from "./target.ts"
 import { purposeOf, reachOf, TickRoutes } from "./routes.ts"
 import { UNREACHABLE } from "../routing/index.ts"
 
@@ -113,7 +113,16 @@ export function perception(context: TickContext): void {
       const reach = engageRange(actor.definition)
       candidates = eligibleTargets(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
     } else {
-      candidates = eligibleTargets(actor, hostilesOf(context, actor))
+      // With no target of its side's, a fighting unit heads for the enemy's Grid Nexus (`headsForNexus`), fighting
+      // what comes within its reach on the way; one that cannot strike a Nexus, or on a map with none, still engages
+      // the nearest enemy wherever it is.
+      const hostiles = hostilesOf(context, actor)
+      if (headsForNexus(actor, hostiles)) {
+        const reach = engageRange(actor.definition)
+        candidates = eligibleTargets(actor, hostiles.filter((other) => other.definition.nexus === true || within(actor, other, reach)))
+      } else {
+        candidates = eligibleTargets(actor, hostiles)
+      }
     }
     choices.push({ actor, candidates, selection: selectTarget(context, actor, candidates) })
   }
@@ -183,6 +192,7 @@ function walkTo(routes: TickRoutes, actor: Actor, target: Actor): number {
 function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice): Choice["selection"] {
   const { actor, candidates, selection } = choice
   if (selection === null) return null
+  const heading = targetFor(context, actor) === null && headsForNexus(actor, candidates)
   if (actor.definition.attack?.kind !== "melee") {
     if (walkTo(routes, actor, selection.target) !== UNREACHABLE) return selection
     const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && walkTo(routes, actor, candidate) !== UNREACHABLE)
@@ -204,10 +214,25 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   if (nearest.length === 0) return selection
   // Heading for its side's target, it turns only to what it could walk to within its reach.
   if (targetFor(context, actor) !== null && best > engageRange(actor.definition)) return null
+  // Heading for the enemy's Nexus, likewise, the Nexus aside: what it could not walk to within its reach is passed
+  // over for the Nexus.
+  if (heading && best > engageRange(actor.definition) && !nearest.some((candidate) => candidate.definition.nexus === true)) {
+    const nexus = candidates.filter((candidate) => candidate.definition.nexus === true)
+    return nexus.length > 0 ? chooseByRoute(context, routes, { actor, candidates: nexus, selection: selectTarget(context, actor, nexus) }) : selection
+  }
   const held = nearest.find((candidate) => candidate.ordinal === actor.targetOrdinal)
   const least = Math.min(...nearest.map((candidate) => candidate.hp))
   const target = held ?? drawAmong(context, nearest.filter((candidate) => candidate.hp === least))
   return target === undefined ? selection : { target, distance: distanceBetween(actor, target) }
+}
+
+/**
+ * Whether `actor`, among `hostiles`, heads for the enemy's Grid Nexus: a fighting unit (`followsTarget`) whose side
+ * has no target, with an enemy Nexus it can strike. The owner, 2026-10-20, on where a side goes when its level names
+ * nowhere: "It's just going to be going to the enemy nexus."
+ */
+export function headsForNexus(actor: Actor, hostiles: readonly Actor[]): boolean {
+  return followsTarget(actor.definition) && eligibleTargets(actor, hostiles.filter((other) => other.definition.nexus === true)).length > 0
 }
 
 /**

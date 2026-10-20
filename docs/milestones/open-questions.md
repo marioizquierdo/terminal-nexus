@@ -26,7 +26,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q7](#q7--do-workers-carry-or-produce-in-place) | Do workers carry, or produce in place? | OPEN | Milestone 7 (worker economy), for the storage half |
 | [Q13](#q13--where-do-workers-flee-and-what-counts-as-annihilation-on-a-grid-with-no-nexus) | Where do workers flee, and what counts as annihilation, with no Nexus? | OPEN | Milestone 16 (pathfinding) and the worker economy |
 | [Q19](#q19--where-should-a-sandbox-placement-mode-rewind-and-fast-forward-and-a-feedback-replay-engine-live) | Where do a sandbox, rewind and a feedback replay live? | OPEN | Backlog: replay format |
-| [Q20](#q20--when-target-selection-is-capped-by-radius-for-scale-what-should-a-unit-with-nothing-in-range-do) | What does a unit with nothing in range do, once targeting is capped for scale? | OPEN | Backlog: scale, once perception is a measured cost |
 | [Q22](#q22--should-movement-carry-deterministic-terrain-based-jitter) | Should movement carry deterministic jitter? | OPEN | Backlog: movement feel |
 | [Q23](#q23--how-does-an-army-reach-its-first-engagement-faster-beyond-raw-movement-speed) | How does an army reach its first engagement faster? | OPEN | Backlog: multi-round regrouping via outposts |
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
@@ -132,29 +131,6 @@ mind... but not needed for now." Three things are bundled:
 
 **Recommendation: C for now, then B if the owner wants to play with matchups sooner.** Whichever step first
 designs a real replay format should keep per-tick state cheaply addressable regardless.
-
-### Q20 — When target selection is capped by radius for scale, what should a unit with nothing in range do?
-
-**Status:** OPEN — parked until perception's cost is a measured problem, not a projected one; registered now because the tradeoffs are cheap to write down before any fixture depends on the answer.
-
-Perception (`hostilesOf` + `selectTarget`, `src/pulse/tick.ts`) is the one hot path that is O(N²) every
-tick: every attack-capable actor scans every hostile actor. At dozens of actors it is invisible; at the
-hundreds or thousands the owner has in mind it dominates ([`runtime.md`](../system-design/runtime.md), scaling
-toward hundreds or thousands of units, has the assessment). The undisputed fix is capping the scan to a
-radius around the actor using a coarse spatial index built from the occupancy index's own mutations. What
-is undetermined is what a unit finds when nothing is within the radius.
-
-| Option | Cost |
-| --- | --- |
-| A. **Full-scan fallback**: if nothing is within the radius, scan everything | Behaviour never changes, but defeats the point on a sparse map |
-| B. **Hold idle / keep the last target** until something enters the radius | Cheap and bounded, but a visible behaviour change: a unit that would have crossed the map to engage a straggler now ignores it. Changes fixture hashes for sparse scenarios |
-| C. **A new non-targeting `Behavior`**, such as advancing toward a fixed point (the enemy Nexus) | Bounded and intentional, but new surface: `Behavior` is `"advance" \| "flee" \| "static"` and a new one needs its own fixture and test before it is a rule |
-
-**Recommendation: none of these until the radius is actually needed.** Landing the cap inert/off by
-default is the right amount of design-now, build-later; picking a fallback is a hash-affecting decision
-that is expensive to reconsider once a fixture is pinned to it. When needed, B is the cheapest and most
-honest first cut, and A quietly reintroduces the cost the cap exists to remove. C is worth doing only once
-"advance on the enemy Nexus" is a rule the game wants anyway.
 
 ### Q22 — Should movement carry deterministic, terrain-based jitter?
 

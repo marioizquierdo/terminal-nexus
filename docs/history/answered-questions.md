@@ -6,6 +6,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
+| Q20 | 2026-10-20 | **C: a fighting unit with nothing in reach heads for the enemy's Grid Nexus.** Mario, planning the pathfinding milestone (feedback F184): "It's just going to be going to the enemy nexus." The register's own condition for C — "only once advance on the enemy Nexus is a rule the game wants anyway" — is met, and it was built as a rule of where a side heads rather than as a new behaviour: a side with no target heads for the enemy Nexus and turns on what comes within its engage reach, as a side with a target does. Perception still scans every enemy; capping that scan for scale now has its answer ready | [`pulse.md`](../system-design/pulse.md) 1.5 (a side's target); `src/pulse/perception.ts` (`headsForNexus`) |
 | Q15 | 2026-10-20 | **Neither: a unit with no route stands as near its goal as it can get, and says so.** Answered by the pathfinding milestone Mario asked for (feedback F183): units walk distance fields, so one that can reach its goal always walks there; where no way exists — a body three wide before every gap two wide, a target walled in — it walks to the anchor it can reach nearest the goal and stands there, reporting `no-route` | [`pulse.md`](../system-design/pulse.md) 1.6 (routes); [`grid.md`](../system-design/grid.md) 7.6 |
 | Q14 | 2026-10-20 | **Mirror-fair: a step as good as another goes by the turn from the way the unit faces its goal, then by a seeded draw; the compass order is gone.** Answered by the pathfinding milestone, as the register recommended ("decide it with the routing work"): the last tie-break that read the Grid in a fixed order, after every other went by what a unit faces (no side wins by where it stands) | [`pulse.md`](../system-design/pulse.md) 1.3a and 1.6 |
 | Q81 | 2026-10-20 | **A banner is set in the Build Phase, as part of the plan — and not yet.** Mario (feedback F184): "placing the banner is during the build phase, of course. We don't know how to deal with that in the UI yet, but the idea will be to do that when we can prove there is a good plan for it. So for now, there is no banner. It's just going to be going to the enemy nexus. Or maybe we have to define the target position for campaign as well." The pathfinding milestone builds the goals a unit heads for — the enemy's Grid Nexus, and a campaign level's target — and no banner; a banner comes when there is a plan for it on screen | [`milestone-16-pathfinding.md`](../milestones/milestone-16-pathfinding.md) (goals); [`backlog.md`](../milestones/backlog.md) (banners) |
@@ -1047,3 +1048,26 @@ fixtures `colossus-two-tile-gap.map.json` and the 5x2 leviathan case): a 3x3 or 
 cannot pass does not pace, it hard-stops flush against the gap. And a single occupied tile anywhere in a
 large mover's footprint vetoes the whole step, because arbitration grants one winner per bridged conflict
 group rather than per contested tile. Fixing that is the same routing-priority redesign, not a bug fix.
+
+### Q20 — answered (When target selection is capped by radius for scale, what should a unit with nothing in range do?)
+
+**Status:** OPEN — parked until perception's cost is a measured problem, not a projected one; registered now because the tradeoffs are cheap to write down before any fixture depends on the answer.
+
+Perception (`hostilesOf` + `selectTarget`, `src/pulse/tick.ts`) is the one hot path that is O(N²) every
+tick: every attack-capable actor scans every hostile actor. At dozens of actors it is invisible; at the
+hundreds or thousands the owner has in mind it dominates ([`runtime.md`](../system-design/runtime.md), scaling
+toward hundreds or thousands of units, has the assessment). The undisputed fix is capping the scan to a
+radius around the actor using a coarse spatial index built from the occupancy index's own mutations. What
+is undetermined is what a unit finds when nothing is within the radius.
+
+| Option | Cost |
+| --- | --- |
+| A. **Full-scan fallback**: if nothing is within the radius, scan everything | Behaviour never changes, but defeats the point on a sparse map |
+| B. **Hold idle / keep the last target** until something enters the radius | Cheap and bounded, but a visible behaviour change: a unit that would have crossed the map to engage a straggler now ignores it. Changes fixture hashes for sparse scenarios |
+| C. **A new non-targeting `Behavior`**, such as advancing toward a fixed point (the enemy Nexus) | Bounded and intentional, but new surface: `Behavior` is `"advance" \| "flee" \| "static"` and a new one needs its own fixture and test before it is a rule |
+
+**Recommendation: none of these until the radius is actually needed.** Landing the cap inert/off by
+default is the right amount of design-now, build-later; picking a fallback is a hash-affecting decision
+that is expensive to reconsider once a fixture is pinned to it. When needed, B is the cheapest and most
+honest first cut, and A quietly reintroduces the cost the cap exists to remove. C is worth doing only once
+"advance on the enemy Nexus" is a rule the game wants anyway.
