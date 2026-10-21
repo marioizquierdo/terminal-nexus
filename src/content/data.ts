@@ -20,7 +20,7 @@ import type { EntityLayer } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { Say, Shape } from "./shape.ts"
 import { dictionary, fieldAt, list, literal, positiveWholeNumber, record, text, wholeNumber } from "./shape.ts"
-import type { AbilityUse, AreaDamage, AttackDef, Behavior, ContentDef, Detonation, MovementRate } from "./types.ts"
+import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, MovementRate } from "./types.ts"
 import { rectFootprint } from "./types.ts"
 import { abilityProblems } from "../abilities/index.ts"
 import type { CardText } from "./cards.ts"
@@ -60,6 +60,7 @@ export type ContentEntry = Readonly<{
   engageRange?: number
   targetLayers?: readonly EntityLayer[]
   targetPreference?: readonly EntityLayer[]
+  aim?: "crowd"
   spawn?: NonNullable<ContentDef["spawn"]>
   splitOnDeath?: NonNullable<ContentDef["splitOnDeath"]>
   constructionRadius?: number
@@ -90,6 +91,7 @@ const attack = record<AttackDef>(
     projectileTilesPerTick: positiveWholeNumber,
     windupTicks: positiveWholeNumber,
     splash: areaDamage,
+    burn: record<Burn>({ radius: positiveWholeNumber, damage: positiveWholeNumber, everyTicks: positiveWholeNumber, ticks: positiveWholeNumber }, {}),
     focusRamp: record<Readonly<{ perHitPercent: number; maxPercent: number }>>({ perHitPercent: positiveWholeNumber, maxPercent: positiveWholeNumber }, {}),
   },
 )
@@ -135,6 +137,7 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     engageRange: positiveWholeNumber,
     targetLayers: list(layer),
     targetPreference: list(layer),
+    aim: literal("crowd"),
     spawn: record<NonNullable<ContentDef["spawn"]>>({ contentId: text, intervalTicks: positiveWholeNumber, maxAlive: positiveWholeNumber }, {}),
     splitOnDeath: record<NonNullable<ContentDef["splitOnDeath"]>>({ contentId: text, count: positiveWholeNumber }, {}),
     constructionRadius: positiveWholeNumber,
