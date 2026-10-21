@@ -40,7 +40,7 @@ field" of crowd games (Supreme Commander 2 made it known), and the "Dijkstra map
 Why every tick and not once: the Grid changes under a battle — buildings fall, crowds form and break — and a field is
 cheap. It is worked out lazily, from the goal outward, only as far as the furthest unit asking needs, with a bucket for
 each distance since steps cost small whole numbers. A tick with 30 units costs under a millisecond; with 200 units in
-an eighth-round duel about 14 ms ([the measurement](../history/reports/2026-10-20-pathfinding-measured.md)).
+an eighth-round duel about 14 ms ([the measurement](../history/reports/2026-10-20-pathfinding-measured.md), before the Nexus fought back and before breaching; not measured since).
 
 ## 3. The building blocks
 
