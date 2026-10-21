@@ -248,12 +248,19 @@ test("at 80x24 the result's words are never cut off, whichever way the Pulse end
   }
 })
 
-test("the survivors are drawn walking home, and home when the walk ends", () => {
-  // The first of the defence's buildings alone: a Pulse whose survivors end far from home. With the full defence, once
-  // the raid's runners went for what stands behind the front (the march's backliners), its one survivor ended a tile
-  // from home, too near for a walk to have a middle.
+/**
+ * A won Pulse whose survivors end far from home: the first of the defence's buildings alone. With the full defence, once
+ * the raid's runners went for what stands behind the front (the march's backliners), its one survivor ended at home,
+ * with no walk to draw.
+ */
+function walkingHome(): Played {
   const played = play({ plan: [DEFENCE[0]!] })
   at(played, 0)
+  return played
+}
+
+test("the survivors are drawn walking home, and home when the walk ends", () => {
+  const played = walkingHome()
   const moments = times(played)
   const moves = played.pulse.recall.moves
   assert.ok(moves.length > 0, "nobody survived to walk")
@@ -275,7 +282,7 @@ test("the survivors are drawn walking home, and home when the walk ends", () => 
 })
 
 test("reduced motion holds the timer and the light steady and puts the survivors home the moment the walk begins", () => {
-  const played = victorious()
+  const played = walkingHome()
   played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 })
   assert.equal(played.build.state.settings.reducedMotion, true)
   const moments = times(played)
@@ -294,7 +301,7 @@ test("reduced motion holds the timer and the light steady and puts the survivors
   const positions = played.build.pulseFrame()!.positions
   for (const move of played.pulse.recall.moves) assert.deepEqual(positions.get(move.ordinal), move.to)
   // With motion, the same instant is mid-walk.
-  const moving = victorious()
+  const moving = walkingHome()
   at(moving, moments.walkMs + 5)
   assert.ok(moving.pulse.recall.moves.some((move) => {
     const drawnAt = moving.build.pulseFrame()!.positions.get(move.ordinal)
