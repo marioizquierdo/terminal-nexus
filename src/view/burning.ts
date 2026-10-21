@@ -4,8 +4,12 @@
 //
 //   - `fireAt` — which tiles burn at one presentation instant, and how each is lit: a pure function of the state of
 //     the tick shown, the presentation time and a hash of the patch's identity and the tile. No clock, no stream.
-//   - `drawFire` — those tiles as cells: on open ground a flickering flame (`fx.fire`) on a scorched fill
-//     (`fx.fire.ground`); under a unit, a building or a corpse the fill alone, so it keeps its glyph and every
+//   - `drawFire` — those tiles as cells: every tile on a faint scorch (`fx.fire.ground`), the ground's own colour
+//     barely warmed; on open ground, at any instant, a few tiles flashing a tall yellow flame (`fx.fire.tall`) on a red
+//     glow (`fx.fire.glow`) and a few more a low red one (`fx.fire`), the rest showing the ground itself — so the
+//     patch reads as fire alive on the ground, not a red carpet over it (Mario, 2026-10-21: "that red seems too
+//     intense and will be part of many battles ... red and yellow, more transparent and use flashing effect instead
+//     of constant color"). Under a unit, a building or a corpse the scorch alone, so it keeps its glyph and every
 //     colour of its own and only the ground round it changes (the corruption law).
 //
 // Both Pulse views draw it from the same `PulseSample.fire`: the engine tool's (`compose.ts`) and the Build Phase
@@ -21,7 +25,8 @@ import type { BandCell, CellStyle } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import type { GlyphPack } from "./theme.ts"
 
-/** How a burning tile is lit at one instant: a tall flame, a low one, or none (the scorched ground shows). */
+/** How a burning tile is lit at one instant: a tall flame (yellow, flashing a red glow), a low one (red), or none
+ *  (the ground shows, faintly scorched). */
 export type Flame = "tall" | "low" | null
 
 /** One tile of burning ground at one presentation instant. `dying`: in its patch's last moments, burning low. */
@@ -35,11 +40,12 @@ export const FIRE = {
   /** The last stretch of a patch's life, drawn burning low (only low flames, dim, fewer of them), so the end reads
    *  before it comes. */
   dyingMs: 1000,
-  /** While it burns: the share of tiles in a tall flame, then in a tall or a low one; the rest are scorched ground. */
-  tall: 0.45,
-  lit: 0.8,
+  /** While it burns: the share of tiles in a tall flame, then in a tall or a low one; the rest, most of the patch at
+   *  any instant, show the ground. Each tile rolls again every beat, so over a second nearly every tile has flared. */
+  tall: 0.16,
+  lit: 0.4,
   /** While it dies down: the share of tiles still in a (low) flame. */
-  dyingLit: 0.4,
+  dyingLit: 0.2,
 } as const
 
 /** The glyphs, by pack: a tall flame, a low one. ASCII first: `^` is a tongue of flame and `~` the low flicker
@@ -58,7 +64,7 @@ const HASH_NAME = "ground.burning"
 const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 /** Ground that shows a flame: open ground. Rock and a deposit are features of the map, always drawn, so they keep
- *  their glyphs and take the scorched fill alone. */
+ *  their glyphs and take the scorch alone. */
 const FLAMMABLE: ReadonlySet<TerrainId> = new Set<TerrainId>(["terrain.plain", "terrain.scrub"])
 
 /**
@@ -132,8 +138,11 @@ function flameAt(input: FireInput, startedTick: number, identity: number, tile: 
   return roll < FIRE.lit ? "low" : null
 }
 
-/** The scorched fill every burning tile takes where colours are drawn, under whatever stands there. */
+/** The faint scorch every burning tile takes where colours are drawn, under whatever stands there. */
 const SCORCHED: CellStyle = { bgRole: "fx.fire.ground" }
+
+/** The fills a burning tile can take: the scorch, or the glow under a tall flame. */
+export const FIRE_FILLS: ReadonlySet<string> = new Set(["fx.fire.ground", "fx.fire.glow"])
 
 export type FireView = Readonly<{
   grid: GridTerrain
@@ -148,14 +157,16 @@ export type FireView = Readonly<{
 /**
  * ***Burning ground*** drawn under what stands on it. Call it after the entities are drawn and before the effects.
  *
- * - **Open ground**: the flame of the instant (`FIRE_GLYPHS`) in `fx.fire`, dim while it dies down, on the
- *   scorched fill — on the ground's own band, under every unit, building, corpse and effect; a tile with no flame at
- *   that instant shows its own terrain glyph on the fill. Rock and deposits keep their glyphs and take the fill.
- * - **Under a unit, a building or a corpse**: the fill alone, a glyphless write that keeps its glyph and its own
+ * - **Open ground**: the flame of the instant (`FIRE_GLYPHS`) — a tall one bold in `fx.fire.tall` (yellow) on the
+ *   `fx.fire.glow` (red), a low one in `fx.fire` (red) on the scorch, dim while it dies down — on the ground's own
+ *   band, under every unit, building, corpse and effect; a tile with no flame at that instant, most of them, shows its
+ *   own terrain glyph on the scorch. Rock and deposits keep their glyphs and take the scorch.
+ * - **Under a unit, a building or a corpse**: the scorch alone, a glyphless write that keeps its glyph and its own
  *   colour, so a unit standing in the fire is seen standing in it (a fill, not a wash: a see-through mix would pull
  *   its glyph's colour toward another and change its hue at 256 colours).
  *
- * In **monochrome** the fill is not drawn, and the flames carry the patch alone, by their glyphs.
+ * In **monochrome** no fill is drawn, and the flames carry the patch alone, by their glyphs: under half its tiles at
+ * any instant, flaring in turn across it, so its shape is drawn over a second rather than in one frame.
  */
 export function drawFire(cells: BandCell[], fire: readonly FireTile[], pack: GlyphPack, view: FireView): void {
   const glyphs = FIRE_GLYPHS[pack]
@@ -172,7 +183,10 @@ export function drawFire(cells: BandCell[], fire: readonly FireTile[], pack: Gly
       cells.push({ band: BANDS.territory, x, y, style: SCORCHED })
       continue
     }
-    const style: CellStyle = { fgRole: "fx.fire", bgRole: "fx.fire.ground", ...(dying ? { dim: true } : { bold: flame === "tall" }) }
+    const style: CellStyle =
+      flame === "tall"
+        ? { fgRole: "fx.fire.tall", bgRole: "fx.fire.glow", bold: true }
+        : { fgRole: "fx.fire", bgRole: "fx.fire.ground", ...(dying ? { dim: true } : {}) }
     cells.push({ band: BANDS.territory, x, y, cell: { glyph: flame === "tall" ? glyphs.tall : glyphs.low, style } })
   }
 }

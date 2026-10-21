@@ -62,10 +62,14 @@ export const STYLE_ROLES = [
   "fx.debris",
   "fx.critical",
   "fx.flash",
-  // Burning ground (a Citizen mortar's shell sets it alight): a flame's colour, and the scorched fill under
-  // every tile that burns — a fill only, never a glyph's colour, so it is drawn under units and flames alike.
+  // Burning ground (a Citizen mortar's shell sets it alight), red and yellow and mostly see-through (Mario: "red and
+  // yellow, more transparent and use flashing effect instead of constant color"): a low flame's red, a tall flame's
+  // yellow; the faint scorch under every tile that burns, and the red glow a tile flashes while a tall flame stands on
+  // it — those two fills only, never a glyph's colour, the scorch drawn under units and flames alike.
   "fx.fire",
+  "fx.fire.tall",
   "fx.fire.ground",
+  "fx.fire.glow",
   // The rainbow (Mario: "colour interpolation (a rainbow, lighting on the characters)").
   // Six hues the theme owns like any other role, so a rainbow is a walk through roles rather than a
   // list of colours in a view module. Used by the shading and particle recipes' rainbow palettes
@@ -171,10 +175,14 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
     "fx.debris": [148, 142, 132],
     "fx.critical": [244, 178, 44],
     "fx.flash": [255, 255, 255],
-    // A red-orange flame, apart from the blast's orange and the critical's gold, on a deep ember fill that still
-    // leaves both sides' letters well clear of it.
-    "fx.fire": [248, 108, 36],
-    "fx.fire.ground": [95, 22, 4],
+    // A red low flame and a yellow tall one, apart from the blast's orange and the critical's gold. The scorch is
+    // the ground's own near-black taken an eighth of the way toward a flame's red, so the patch reads as ground with
+    // heat in it rather than a red carpet (at 256 colours the nearest is a grey a step up from the ground); the glow
+    // a tall flame flashes on is two fifths of the way (the cube's darkest red at 256).
+    "fx.fire": [226, 80, 64],
+    "fx.fire.tall": [252, 208, 72],
+    "fx.fire.ground": [36, 16, 13],
+    "fx.fire.glow": [100, 32, 20],
     "fx.hue.red": [240, 84, 84],
     "fx.hue.yellow": [240, 212, 72],
     "fx.hue.green": [96, 222, 112],
@@ -213,10 +221,13 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
     "fx.debris": [120, 110, 96],
     "fx.critical": [168, 110, 8],
     "fx.flash": [8, 8, 8],
-    // The flame darkened to a red to read on the pale ground, apart from the Citizens' own orange, on a pale peach
-    // fill that leaves both sides' letters clear of it.
+    // The flames darkened to read on the pale ground: a red apart from the Citizens' own orange, and a deep gold for
+    // the tall one. The scorch is the paper barely warmed, lighter than the old peach so both sides' letters stay
+    // clear of it; the glow a tall flame flashes on a pale rose.
     "fx.fire": [190, 50, 10],
-    "fx.fire.ground": [252, 226, 214],
+    "fx.fire.tall": [156, 108, 0],
+    "fx.fire.ground": [248, 232, 224],
+    "fx.fire.glow": [250, 206, 190],
     // Dark enough to read on the pale ground, each still clearly its own hue.
     "fx.hue.red": [192, 32, 32],
     "fx.hue.yellow": [156, 118, 0],

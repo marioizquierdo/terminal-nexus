@@ -12,7 +12,7 @@ import { withinArea } from "../src/pulse/shared.ts"
 import type { Actor } from "../src/pulse/shared.ts"
 import { TICKS_PER_SECOND, loadScenario } from "../src/scenario/index.ts"
 import type { BurningGround, MatchState } from "../src/state/types.ts"
-import { FIRE, FIRE_GLYPHS, fireAt, patchTiles } from "../src/view/burning.ts"
+import { FIRE, FIRE_FILLS, FIRE_GLYPHS, fireAt, patchTiles } from "../src/view/burning.ts"
 import { DEFAULT_PRESENTATION, cellAt, createView, frameToText, gridOrigin, offendingGlyph, resolveCell } from "../src/view/index.ts"
 import type { PulseTimeline, ReadonlyCellFrame } from "../src/view/index.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
@@ -58,14 +58,15 @@ async function timelineWith(burningAt: (tick: number) => readonly BurningGround[
 
 const quiet = (reducedMotion = false) => ({ ...DEFAULT_PRESENTATION, effects: false, reducedMotion })
 
-/** The frame cells a patch's tiles are drawn on in the engine tool's view, and whether each is burning there. */
+/** The frame cells a patch's tiles are drawn on in the engine tool's view, and whether each is burning there: on the
+ *  scorch, or on the glow under a tall flame. */
 function burningCells(frame: ReadonlyCellFrame, timeline: PulseTimeline): Set<string> {
   const origin = gridOrigin(timeline.grid)
   const burning = new Set<string>()
   for (let y = 0; y < timeline.grid.height; y += 1) {
     for (let x = 0; x < timeline.grid.width; x += 1) {
       const cell = cellAt(frame, origin.column + x, origin.row + y)
-      if (cell.style.bgRole === "fx.fire.ground") burning.add(`${x},${y}`)
+      if (cell.style.bgRole !== undefined && FIRE_FILLS.has(cell.style.bgRole)) burning.add(`${x},${y}`)
     }
   }
   return burning
@@ -99,7 +100,7 @@ test("the drawn patch is the rule's own tiles: within its radius of its centre, 
     }
     assert.deepEqual(new Set(patchTiles({ centre, radius }).map(keyOf)), ruled, `radius ${radius}`)
 
-    // And on screen: every tile of the patch on the map, and nothing else, takes the scorched fill.
+    // And on screen: every tile of the patch on the map, and nothing else, takes a fire's fill.
     const timeline = await timelineWith(() => [patch(centre, radius)])
     const frame = createView(timeline, quiet()).snapshotAt(10 * TICK_MS, "truecolor")
     const onMap = [...ruled].filter((key) => {
@@ -142,11 +143,14 @@ test("in monochrome the flames alone carry the patch: its open ground shows flam
   const view = createView(timeline, quiet())
   const origin = gridOrigin(timeline.grid)
   const tiles = patchTiles({ centre, radius: 4 }).filter((tile) => tile.x >= 0 && tile.y >= 0)
-  for (const timeMs of [0, 170, 340, 1000, 2000, 3000]) {
+  const flared = new Set<string>()
+  for (const timeMs of [0, 170, 340, 510, 680, 850, 1020]) {
     const frame = view.snapshotAt(timeMs, "monochrome")
     const lit = tiles.filter((tile) => FLAMES.has(cellAt(frame, origin.column + tile.x, origin.row + tile.y).glyph))
-    // Most of the patch is alight at any instant (`FIRE.lit` of it on average), so its shape reads by glyph alone.
-    assert.ok(lit.length >= tiles.length * 0.5, `${lit.length} of ${tiles.length} tiles alight at ${timeMs} ms`)
+    // Some of the patch is alight at every instant (`FIRE.lit` of it on average, under half: Mario's lighter fire), so
+    // the patch is there by glyph alone; over a second the flames have flared on nearly all of it, so its shape is too.
+    assert.ok(lit.length >= tiles.length * 0.2, `${lit.length} of ${tiles.length} tiles alight at ${timeMs} ms`)
+    for (const tile of lit) flared.add(keyOf(tile))
     for (const tile of lit) {
       const resolved = resolveCell(cellAt(frame, origin.column + tile.x, origin.row + tile.y), "monochrome")
       assert.equal(resolved.background, null, "monochrome paints no fill")
@@ -154,6 +158,33 @@ test("in monochrome the flames alone carry the patch: its open ground shows flam
     // The text a monochrome terminal shows has the flames in it.
     assert.match(frameToText(frame), /[\^~]/u)
   }
+  assert.ok(flared.size >= tiles.length * 0.85, `only ${flared.size} of ${tiles.length} tiles flared in a second`)
+})
+
+test("the fire flashes rather than glowing: most of a patch shows the ground at any instant, and which tiles flare changes", async () => {
+  const centre = { x: 6, y: 4 }
+  const timeline = await timelineWith(() => [patch(centre, 4, 100)])
+  const view = createView(timeline, quiet())
+  const origin = gridOrigin(timeline.grid)
+  const tiles = patchTiles({ centre, radius: 4 }).filter((tile) => tile.x >= 0 && tile.y >= 0)
+  const ground = mapText(createView(await timelineWith(() => []), quiet()).snapshotAt(0, "truecolor"), timeline)
+  const looks = new Set<string>()
+  for (const timeMs of [0, 170, 340, 510, 680, 850, 1020, 2000, 3000]) {
+    const frame = view.snapshotAt(timeMs, "truecolor")
+    const cells = tiles.map((tile) => cellAt(frame, origin.column + tile.x, origin.row + tile.y))
+    // Most tiles show what the ground shows without the fire, its own glyph on the faint scorch.
+    const groundRows = ground.split("\n")
+    const bare = tiles.filter((tile, index) => cells[index]?.glyph === groundRows[tile.y]?.[tile.x] && cells[index]?.style.bgRole === "fx.fire.ground")
+    assert.ok(bare.length > tiles.length / 2, `${bare.length} of ${tiles.length} tiles show the ground at ${timeMs} ms`)
+    // A flare is red or yellow: a low flame red on the scorch, a tall one yellow on the red glow.
+    for (const cell of cells) {
+      if (cell.glyph === FIRE_GLYPHS.ascii.tall) assert.deepEqual([cell.style.fgRole, cell.style.bgRole], ["fx.fire.tall", "fx.fire.glow"])
+      if (cell.glyph === FIRE_GLYPHS.ascii.low) assert.deepEqual([cell.style.fgRole, cell.style.bgRole], ["fx.fire", "fx.fire.ground"])
+    }
+    looks.add(cells.map((cell) => `${cell.glyph}${cell.style.bgRole}`).join(""))
+  }
+  // It flickers: nine instants, a beat or more apart, and the patch is lit otherwise at nearly every one.
+  assert.ok(looks.size >= 8, `only ${looks.size} looks in nine instants`)
 })
 
 test("the flicker is a pure function of presentation time: the same instant, the same frame, however it is reached", async () => {
@@ -191,14 +222,18 @@ test("it dies down in its last second, low and dim, and is gone the tick after i
   for (const reducedMotion of [false, true]) {
     const view = createView(timeline, quiet(reducedMotion))
     const endMs = (untilTick + 1) * TICK_MS
-    const before = view.sampleAt(endMs - FIRE.dyingMs - 20, "truecolor").fire
+    // The four beats before its last second. Tall flames flash on a few tiles at a time, so one instant may hold none:
+    // the beats together do.
+    const beats = [0, 1, 2, 3].map((beat) => view.sampleAt(endMs - FIRE.dyingMs - 20 - beat * FIRE.flickerMs, "truecolor").fire)
+    const before = beats.flat()
     assert.ok(before.length > 0 && before.every((tile) => !tile.dying))
     assert.ok(before.some((tile) => tile.flame === "tall"), "burning high before its last second")
+    const litBefore = before.filter((tile) => tile.flame !== null).length / beats.length
     for (const timeMs of [endMs - FIRE.dyingMs + 10, endMs - 500, endMs - 10]) {
       const dying = view.sampleAt(timeMs, "truecolor").fire
       assert.ok(dying.length > 0 && dying.every((tile) => tile.dying && tile.flame !== "tall"), `at ${timeMs} ms`)
-      // Fewer flames than while it burned.
-      assert.ok(dying.filter((tile) => tile.flame !== null).length < before.filter((tile) => tile.flame !== null).length)
+      // Fewer flames than while it burned, a beat for a beat.
+      assert.ok(dying.filter((tile) => tile.flame !== null).length < litBefore)
       const frame = view.snapshotAt(timeMs, "truecolor")
       const origin = gridOrigin(timeline.grid)
       for (const tile of dying) {
@@ -258,7 +293,7 @@ test("the Build Phase screen's Battle Round draws it the same way, under the uni
   for (const tile of patchTiles({ centre, radius: 4 })) {
     const at = cellForTile(run.layout, state.camera, tile)
     const cell = cellAt(frame, at.x, at.y)
-    if (cell.style.bgRole === "fx.fire.ground") scorched += 1
+    if (cell.style.bgRole !== undefined && FIRE_FILLS.has(cell.style.bgRole)) scorched += 1
     if (FLAMES.has(cell.glyph)) flames += 1
   }
   assert.ok(scorched >= patchTiles({ centre, radius: 4 }).length - 2, `${scorched} tiles scorched`)
