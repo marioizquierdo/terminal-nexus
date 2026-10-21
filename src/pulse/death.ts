@@ -18,7 +18,7 @@ export const DEATH_SETTLE_TICKS = 2
  * Deaths, destruction, salvage — and detonations, which can cause more of all three.
  *
  * Volatile munitions make death contagious, so resolution is a queue rather than a pass: an entity
- * that dies detonates, the blast damages everything inside its radius including its own side, and
+ * that dies detonates, the blast damages everything inside its radius, its own side too unless it `hits: "enemies"`, and
  * anything that reaches zero joins the queue. **The chain is bounded because an entity can only die
  * once**, so the queue drains after at most one round per entity, and the order is ordinal order
  * throughout — the same fight resolves the same way whichever entity happens to be checked first.
@@ -57,7 +57,10 @@ function detonate(context: TickContext, actor: Actor): void {
   // `actor.definition.footprint`, not a bare point: a multi-tile detonator's blast reaches from its
   // nearest occupied tile, exactly as `distanceBetween` always measured it (shared.ts's own comment
   // has the regression this caught).
-  const caught = actorsWithin(context, actor.anchor, actor.definition.footprint, blast.radius, actor)
+  // A blast that `hits: "enemies"` passes over the dying entity's own side; one without hurts friend and foe.
+  const caught = actorsWithin(context, actor.anchor, actor.definition.footprint, blast.radius, actor).filter(
+    (other) => blast.hits !== "enemies" || other.player !== actor.player,
+  )
 
   context.events.push({
     kind: "entity.detonated",

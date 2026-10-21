@@ -13,7 +13,7 @@ export type FormationLine = "backliner" | "melee" | "short" | "long"
 export const SHORT_RANGE = 4
 
 /**
- * Area damage centred on a point, hitting friend and foe alike — the same `{radius, damage}` shape
+ * Area damage centred on a point, hitting friend and foe alike unless it `hits: "enemies"` — the same `{radius, damage}` shape
  * `ContentDef.detonation` already uses. Pulled out under its own name (during the unit-architecture spike)
  * once a second use needed it: an attack's `splash` and a death's `detonation` are the same mechanism
  * at two different trigger moments, not two mechanisms that happen to share a shape.
@@ -65,8 +65,9 @@ export type AttackDef = Readonly<{
   windupTicks?: number
   /**
    * If present, a landing hit deals `splash.damage` in `splash.radius` of the *target's* tile to
-   * everyone there, friend and foe alike, instead of `damage` to the target alone — the siege-crawler
-   * rule shape's AOE half. `damage` is unused when `splash` is set.
+   * everyone there instead of `damage` to the target alone — the siege-crawler rule shape's AOE half. Friend and
+   * foe alike by default; only the shooter's enemies with `hits: "enemies"` (the Citizen mortar's shell). The
+   * shooter itself is never caught. `damage` is unused when `splash` is set.
    */
   splash?: AreaDamage
   /**
@@ -137,7 +138,8 @@ export type ContentDef = Readonly<{
   behavior: Behavior
   /** Dropped as a ground item on death. Nothing consumes it yet; there is no economy. */
   salvage: number
-  /** If present, this entity detonates when it dies, damaging friend and foe alike. */
+  /** If present, this entity detonates when it dies, damaging friend and foe alike (or only its enemies, with
+   *  `hits: "enemies"`). */
   detonation?: Detonation
   /**
    * This entity is the player's Grid Nexus, and losing it loses the Pulse. A flag rather than a
