@@ -582,3 +582,12 @@ while only terrain weighed ground. The first weight that belonged to a route alo
 ground) made a step cost more than credit can ever hold, and units froze inside the fire with no event to say so. A
 step's credit now comes from the terrain; a field may weigh ground dearer than walking it costs. When a new thing
 makes ground dear to a route, ask separately what it costs to walk.
+
+### Count what a structure costs to make, and time ticks by the wall clock
+
+On Node, making a typed array costs microseconds whatever its size, so a structure made dozens of times a tick (a
+distance field made five of them) should make as few as it can; and `process.cpuUsage` is a system call that can cost
+as much as a small tick in a sandbox, so time ticks by `performance.now`. Wall-clock budget tests fail under parallel
+load at the base commit too: when one fails while agents build side by side, run it on the base before suspecting the
+change. (The pathfinding wrap-up, 2026-10-21: routes made a fifth faster with every battle's events byte for byte the
+same, `scripts/profile-routes.ts`.)

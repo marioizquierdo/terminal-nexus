@@ -39,8 +39,13 @@ field" of crowd games (Supreme Commander 2 made it known), and the "Dijkstra map
 
 Why every tick and not once: the Grid changes under a battle — buildings fall, crowds form and break — and a field is
 cheap. It is worked out lazily, from the goal outward, only as far as the furthest unit asking needs, with a bucket for
-each distance since steps cost small whole numbers. A tick with 30 units costs under a millisecond; with 200 units in
-an eighth-round duel about 14 ms ([the measurement](../history/reports/2026-10-20-pathfinding-measured.md), before the Nexus fought back and before breaching; not measured since).
+each distance since steps cost small whole numbers — or no further than the best walk already found when a unit only
+compares walks — and it says at once, from the patch of ground a unit stands on, whether it can reach the goal at all.
+A tick with 30 units costs about half a millisecond; with about 200 units and buildings in an eighth-round duel, about
+5½ ms ([`scripts/profile-routes.ts`](../../scripts/profile-routes.ts) on the Crossing, Vasse against Averno with the
+balanced player, seed 1, wall clock on a shared four-core machine, 2026-10-21, after the Nexus fought back and
+breaching; 7 ms before the routes were tuned that day). The same script fingerprints every battle it plays, so a
+change meant to make routes faster is proved to change no outcome.
 
 ## 3. The building blocks
 
