@@ -16,6 +16,23 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
   2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
   screen; until then there is no banner. The pathfinding milestone leaves the goal a banner would be: one more place
   a side heads for, like a campaign level's target.
+- **The units to come.** The owner, 2026-10-21: "Every unit in the games will have its own personality ... special
+  units are what make this game fun, especially looking for things that will create complex entropy ... things that
+  will create chain effects from little differences." Each to find its army, "in the most thematic possible way", in
+  the armies' next pass, and to plug into the building blocks of
+  [`movement.md`](../system-design/movement.md) and the abilities table where it can:
+  - **Disrupting a formation**: units that push, slow, pull or hook a unit from the back.
+  - **Changing sides and coming back**: mind control that turns a unit to the other side; units that rise again from
+    debris.
+  - **Getting past the front**: long range; teleporting or throwing itself forward to strike the back line; flying
+    over the others; burrowing underground to reach the ranged units.
+  - **Surviving**: a lot of health; stepping back to dodge an attack; a shield that recovers.
+  - **Helping others**: making units stronger, healing them, or shielding them.
+  - **Trading health for numbers or damage**: weak but explosive; easy to kill but many if left alive; a huge single
+    shot with a long recovery; a tank that takes a while to set up, then hits hard; area damage.
+  - **Targeting buildings** first.
+  - **Merging**: units that combine mid-battle into something new.
+  The bomber and the mortar (area damage) are the first of them.
 - **A beacon.** A building a player places where their army gathers before it moves, set during the Build Phase to a
   formation. The owner, 2026-10-21: "some bacon buildings that can be placed that tell units to group together before
   moving, and maybe that building can be configured during build time to define different formations. I don't know if
