@@ -343,5 +343,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // columns in every distance and step, every step taking whole beats, one across and two up or down, every tie
 // broken by what a unit faces, then a draw, every unit walking by its route, the raid heading for the Nexus,
 // turning only to what comes within its reach, the Barracks's wave coming out over its roof, and the Nexus shooting
-// whatever of the raid comes within a marksman's reach of it.
-const PINNED_ROUND_1 = "59b69caf742b01d77e90167beddcc48855f4399be813b8774d22de1f401c4bec"
+// whatever of the raid comes within a marksman's reach of it — and each trooper the Barracks trained remembering it and
+// the tile it came out on (re-pinned for that alone: the round's events are byte for byte what they were).
+const PINNED_ROUND_1 = "5f26baf025eef2fe46f8ef678f46182438cae8e908de4602b06f4c175dca4b17"

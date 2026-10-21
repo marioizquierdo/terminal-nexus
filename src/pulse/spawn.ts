@@ -34,7 +34,8 @@ import { followsTarget } from "./target.ts"
  * on the side facing the fight, east or west alike, and a tie between equally near tiles is a draw (`drawAmong`). With nowhere to head,
  * the first free tile of the ring. The new entity is wired
  * into `context.actors`/`byOrdinal`/`index` and given an `entity.spawned` event exactly as if the scenario loader had
- * placed it. Returns it, or `null` if nothing adjacent fits this attempt — a boxed-in spawner simply tries again next
+ * placed it. A unit a building trains (`trainedBy`, `production.ts`) remembers that building and the anchor it was set
+ * down on (`EntityState.home`, `homeAt`), which is where Recall sends it home. Returns it, or `null` if nothing adjacent fits this attempt — a boxed-in spawner simply tries again next
  * interval (`spawning()`), a building owes the rest of its wave until the first tick there is room
  * (`production()`), and a dying unit does not split further (`spawnOnDeath()`), rather than searching further
  * afield or erroring.
@@ -67,6 +68,8 @@ export function spawnOneNear(
       // Same convention the loader uses for a fresh entity with no fight yet to derive a facing from.
       facing: origin.player === "A" ? "e" : "w",
       ...freshEntityFields(childDef),
+      // A unit a building trained remembers it, and the tile it came out on: Recall sends it home there.
+      ...(trainedBy === undefined ? {} : { home: origin.ordinal, homeAt: anchor }),
       definition: childDef,
       pendingDead: false,
       killer: null,
