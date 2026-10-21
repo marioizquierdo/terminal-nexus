@@ -12,9 +12,10 @@
 // **A later Pulse of a mission starts from what the last one left**: the state after Recall is
 // `carried` in, and everything in it keeps its ordinal, id, health and place — a survivor is the same
 // unit it was — while the new plan's structures and whatever arrives at tick 0 are added after it, with
-// ordinals from where the last Pulse stopped (in Grid reading order among themselves). A building the
-// player planned on a tile a carried unit stands on moves the unit to the nearest free tile, the same
-// rule a muster point already follows: the plan is the player's, and a unit steps aside for it.
+// ordinals from where the last Pulse stopped (in Grid reading order among themselves). A carried unit may stand on
+// the roof of one of its side's standing buildings, as Recall leaves it; a building the player planned on a tile a
+// carried unit stands on moves the unit to the nearest free tile, the same rule a muster point already follows: the
+// plan is the player's, and a unit steps aside for it.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields, productionFields } from "../content/index.ts"
@@ -139,12 +140,19 @@ export function opening(input: OpeningInput): Opening {
     )
   })
 
-  // Then the carried units: where they stood, or — a building planned on top of one — the nearest free
-  // tile to it.
+  // Then the carried units: where they stood — on the roof of one of their side's standing buildings, where Recall
+  // brings them home, too — or, a building planned on top of one, the nearest free tile to it.
   for (const entity of carriedEntities.filter((candidate) => !isStructure(candidate))) {
     const definition = definitionOf(entity)
     const stood = centreTile(entity.anchor, definition.footprint)
-    const anchor = nearestFit(unitMask(definition), definition.footprint, stood, MUSTER_RADIUS, stood, enemyNexusMiddle(placed, entity.player, stood))
+    const ownRoofs = maskFrom(index, {
+      layers: ENTITY_LAYERS.filter((layer) => layer !== "obstacles"),
+      terrain: definition.layer === "air" ? "ignore" : "impassable",
+      sideLayers: { layers: ["obstacles"], blocks: (occupant) => placed[occupant]?.carried === undefined || placed[occupant]?.player !== entity.player },
+    })
+    const anchor = ownRoofs.footprintFits(entity.anchor, definition.footprint)
+      ? entity.anchor
+      : nearestFit(unitMask(definition), definition.footprint, stood, MUSTER_RADIUS, stood, enemyNexusMiddle(placed, entity.player, stood))
     if (anchor === null) throw new PulseSetupError(`${entity.id}: no room within ${MUSTER_RADIUS} tiles of where it stood`)
     claim(entity.player, definition, anchor, entity.id, { carried: entity })
   }

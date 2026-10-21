@@ -25,7 +25,8 @@ export function centreTile(anchor: Coord, footprint: Footprint): Coord {
 
 /**
  * The anchor for `footprint` whose **centre tile** is nearest `around` and whose whole footprint fits
- * the mask — `null` when nothing within `maxDistance` of it does.
+ * the mask — `null` when nothing within `maxDistance` of it does. The mask is anything that says whether a footprint
+ * fits an anchor: a collision mask, or one narrowed to a building's roof (Recall's `roofOf`).
  *
  * Candidates are tried one ring of the Grid's own distance at a time, outward from `around` (`ringOffsets`).
  * Within one ring they are tried nearest to `prefer` first (a unit coming home takes the side of the building it
@@ -34,7 +35,7 @@ export function centreTile(anchor: Coord, footprint: Footprint): Coord {
  * it is read first; the answer never depends on anything but the mask, the footprint and the points.
  */
 export function nearestFit(
-  mask: CollisionMask,
+  mask: Pick<CollisionMask, "footprintFits">,
   footprint: Footprint,
   around: Coord,
   maxDistance: number,

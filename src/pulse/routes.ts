@@ -23,6 +23,7 @@ import { inAttackRange, onRoof, ownSideLayers, sideLayerOf, within } from "./sha
 import { fleeTrigger } from "./perception.ts"
 import { insideArea, targetFor } from "./target.ts"
 import { burnsOn, onPatch } from "./burning.ts"
+import { makingWay } from "./make-way.ts"
 
 /** Where a mover heads: a unit's footprint — an enemy's, or a wounded ally's for a healer — to stand where its attack
  *  reaches it; its side's target; or, for a unit leaving a roof the nearest way (`roofExit`), the nearest ground wholly
@@ -437,6 +438,11 @@ export type Purpose =
   | Readonly<{ kind: "flee"; threat: Actor }>
 
 export function purposeOf(context: TickContext, actor: Actor, target: Actor | null): Purpose {
+  return makingWay(context, actor, target, ownPurposeOf(context, actor, target))
+}
+
+/** What `actor` means to do before it makes way for a wave (`make-way.ts`). */
+function ownPurposeOf(context: TickContext, actor: Actor, target: Actor | null): Purpose {
   const rate = actor.definition.movementRate
   if (rate === undefined || actor.definition.behavior === "static" || actor.pendingDead) return { kind: "stand" }
   if (target === null) {

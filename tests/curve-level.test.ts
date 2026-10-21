@@ -49,13 +49,15 @@ test("climbing the tree fields a stronger last army than the first tier alone; t
   const last = (measure: typeof tree): number => measure.armies[measure.armies.length - 1]?.total ?? 0
   // Pinned: 1.13 times the first tier's on the new routes, units out over the roofs and the raids heading for the
   // Nexus (more than 1.2 when the raids went for whatever was nearest, about a third stronger before routes): climbing
-  // the tree still pays, by less (docs/history/reports/2026-10-20-pathfinding-measured.md).
+  // the tree still pays, by less (docs/history/reports/2026-10-20-pathfinding-measured.md). 1.11 since survivors come
+  // home onto the roof of the building that trained them and make way for its next wave.
   assert.ok(last(tree) > last(first) * 1.1, `the tree's last army ${last(tree).toFixed(0)} is not well above the first tier's ${last(first).toFixed(0)}`)
   // The design expects the first three rounds to be at most about a fifth of the last army. Without supply it was
   // close to half for both plans (0.47 and 0.45). With the supply cap the army is held to what its depots give, and a
   // new unit takes a place an old one left: 0.54 for the tree (its round-2 and round-3 Garrisons count as the
   // opening) and 0.40 for Barracks alone. Since a building's units come out over its roof, 0.55 and 0.56: the early
-  // units live longer still. Far from a fifth, because on this level the early units mostly live; this pins the
+  // units live longer still. Since survivors come home onto their own building's roof and make way for its wave, 0.59
+  // and 0.56: a survivor goes back to the building that trained it, not the nearest that trains its kind. Far from a fifth, because on this level the early units mostly live; this pins the
   // numbers, so a change is seen, and the milestone's last step measures the level again.
   assert.ok(tree.openingShare > 0.52 && tree.openingShare < 0.68, `the tree's opening share is ${tree.openingShare.toFixed(2)}`)
   assert.ok(first.openingShare > 0.45 && first.openingShare < 0.6, `the first tier's opening share is ${first.openingShare.toFixed(2)}`)

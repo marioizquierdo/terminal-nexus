@@ -245,7 +245,7 @@ test("what the raid destroyed stays destroyed", () => {
   }
 })
 
-test("a building planned where a survivor stands moves the survivor aside, and nobody shares a tile", () => {
+test("a building planned where a survivor stands moves the survivor aside, and nobody shares a tile but a survivor its own side's roof", () => {
   const [round1] = playMission(PERIMETER, STRONG)
   assert.ok(round1 !== undefined)
   const carried = recall(round1.final, registry).state
@@ -255,14 +255,29 @@ test("a building planned where a survivor stands moves the survivor aside, and n
   const moved = opening.entities.find((entity) => entity.ordinal === survivor.ordinal)
   assert.ok(moved !== undefined)
   assert.notDeepEqual(moved.anchor, survivor.anchor, "the survivor stayed under the Turret")
-  const seen = new Set<string>()
-  for (const entity of opening.entities) {
+  // Two buildings never share a tile, nor two units; a unit stands on a building only when it is its own side's, as
+  // Recall brings a survivor home onto the roof of the building that trained it.
+  const buildings = new Map<string, string>()
+  const units = new Set<string>()
+  const structure = (entity: MatchState["entities"][number]): boolean => registry.get(entity.contentId).layer === "obstacles"
+  for (const entity of [...opening.entities].sort((a, b) => Number(structure(b)) - Number(structure(a)))) {
     for (const tile of tilesOf(entity.anchor, registry.get(entity.contentId).footprint)) {
       const key = `${tile.x},${tile.y}`
-      assert.ok(!seen.has(key), `${key} is held twice`)
-      seen.add(key)
+      if (structure(entity)) {
+        assert.ok(!buildings.has(key), `${key} is held twice`)
+        buildings.set(key, entity.player)
+      } else {
+        assert.ok(!units.has(key), `${key} is held twice`)
+        const owner = buildings.get(key)
+        assert.ok(owner === undefined || owner === entity.player, `${entity.id} stands on the enemy's building`)
+        units.add(key)
+      }
     }
   }
+  // The survivor moved off the planned Turret, not onto it.
+  const turret = registry.get(TURRET).footprint
+  const under = tilesOf(survivor.anchor, turret).map((tile) => `${tile.x},${tile.y}`)
+  assert.ok(!tilesOf(moved.anchor, registry.get(moved.contentId).footprint).some((tile) => under.includes(`${tile.x},${tile.y}`)), "the survivor stands on the planned Turret")
 })
 
 // --- How a mission ends ---------------------------------------------------------------------------

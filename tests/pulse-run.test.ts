@@ -107,14 +107,25 @@ test("the timeline runs to the outcome and no further; Recall hands the next Bui
     assert.equal(timeline.states.length - 1, last.outcome.tick, "the timeline ran past its own ending")
     assert.equal(recall.state.tick, 0)
     assert.equal(recall.state.outcome, null)
-    // Nobody is on top of anybody, and nothing left the Grid.
-    const keys = new Set<string>()
+    // Nobody is on top of anybody — but a survivor home on its own side's roof — and nothing left the Grid.
+    const buildings = new Map<string, string>()
+    const units = new Set<string>()
     for (const entity of recall.state.entities) {
+      const structure = FIXTURE_REGISTRY.get(entity.contentId).layer === "obstacles"
       for (const tile of tilesOf(entity.anchor, FIXTURE_REGISTRY.get(entity.contentId).footprint)) {
         assert.ok(inBounds(timeline.grid, tile))
         const key = `${tile.x},${tile.y}`
-        assert.ok(!keys.has(key), `${key} is covered twice after Recall`)
-        keys.add(key)
+        const held = structure ? buildings.has(key) : units.has(key)
+        assert.ok(!held, `${key} is covered twice after Recall`)
+        if (structure) buildings.set(key, entity.player)
+        else units.add(key)
+      }
+    }
+    for (const entity of recall.state.entities) {
+      if (FIXTURE_REGISTRY.get(entity.contentId).layer === "obstacles") continue
+      for (const tile of tilesOf(entity.anchor, FIXTURE_REGISTRY.get(entity.contentId).footprint)) {
+        const owner = buildings.get(`${tile.x},${tile.y}`)
+        assert.ok(owner === undefined || owner === entity.player, `${entity.id} stands on the enemy's building`)
       }
     }
     // The survivors are exactly the mobile units alive when the Pulse ended.

@@ -12,14 +12,24 @@
 // The rule, in the terms the state can express today:
 //
 // - a **survivor** is anything alive on `workers`, `units` or `air`; structures stay where they are;
-// - its **home** is the nearest structure of its own side that makes units like it (a building whose
-//   production recipe trains its content id, or whose `spawn` makes it), else
-//   the side's Grid Nexus (the "orphan" rule), else nothing: a side with neither has nowhere to go and
-//   its survivors stay where they stand. Nearest by the Grid's own distance (`footprintDistance`: a row counts
-//   two columns), so the home it walks to is the one it can reach soonest;
-// - it is set down on the free tile nearest that building, on the side it is nearest to, under its own
-//   collision mask, one survivor at a time in ordinal order — so the answer never depends on anything
-//   but the state, the registry and the order of the entities;
+// - its **home** is the building that trained it (`EntityState.home`, set as a building's wave sets it down) while
+//   that building still stands; else the nearest structure of its own side that makes units like it (a building
+//   whose production recipe trains its content id, or whose `spawn` makes it), else the side's Grid Nexus (the
+//   "orphan" rule, a Commander's too), else nothing: a side with neither has nowhere to go and its survivors stay
+//   where they stand. Nearest by the Grid's own distance (`footprintDistance`: a row counts two columns), so the
+//   home it walks to is the one it can reach soonest;
+// - one going home to a building that makes it is set down **on its roof** (the owner, 2026-10-21: "survivors should
+//   return to their building piling on the roof as close to original position as possible"): its body wholly on the
+//   building's tiles, as near the tile it came out on (`homeAt`) as there is room — for one with no such tile, as near
+//   the tile of the building it was nearest. A unit shares a tile with its own building, never with another unit. A
+//   body too wide for the roof, a roof already full, and a unit in the air (which comes out beside its building, never
+//   on it) are set down on the free ground nearest that tile instead, on the side it is nearest to, under its own
+//   collision mask. One going home to the Grid Nexus — an orphan, a Commander — is set down on the free ground beside
+//   it, never on it: the Nexus is what the player watches, its health and its warnings drawn on its own tiles, and it
+//   made none of them;
+// - one survivor at a time, nearest its home first, then nearer the enemy, then by ordinal — so the answer never
+//   depends on anything but the state, the registry and the order of the entities, and a mirrored state gives
+//   mirrored places;
 // - every entity's transient fields go back to what a fresh one starts with (`freshEntityFields`), which
 //   is what starts a producer's waves afresh (its first one its recipe's delay away, none come, nothing
 //   owed) and clears a shot in progress;
@@ -30,9 +40,10 @@
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields } from "../content/index.ts"
-import { footprintDistance, gridDistance, nearestFootprintTile } from "../grid/coords.ts"
+import { footprintDistance, gridDistance, nearestFootprintTile, tilesOf } from "../grid/coords.ts"
+import type { CollisionMask } from "../grid/occupancy.ts"
 import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
-import type { Coord } from "../grid/types.ts"
+import type { Coord, Footprint } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
@@ -45,6 +56,42 @@ const HOME_RADIUS = 16
 const FALLBACK_RADIUS = 80
 
 type Home = Readonly<{ entity: EntityState; definition: ContentDef; kind: "producer" | "nexus" }>
+
+/** Every layer but the buildings': what a unit coming home onto a roof must find empty. */
+const UNIT_LAYERS = ENTITY_LAYERS.filter((layer) => layer !== "obstacles")
+
+/** `mask`, with the doorsteps kept clear: no body on a tile in `doorsteps`. */
+function offTheDoorsteps(mask: CollisionMask, doorsteps: ReadonlySet<string>): Pick<CollisionMask, "footprintFits"> {
+  return {
+    footprintFits: (anchor: Coord, footprint: Footprint): boolean =>
+      !tilesOf(anchor, footprint).some((tile) => doorsteps.has(`${tile.x},${tile.y}`)) && mask.footprintFits(anchor, footprint),
+  }
+}
+
+/** A building's **doorstep**: the ground touching it, corners included — where the units on its roof step down. */
+function doorstepOf(anchor: Coord, footprint: Footprint): string[] {
+  const own = new Set(tilesOf(anchor, footprint).map((tile) => `${tile.x},${tile.y}`))
+  const step = new Set<string>()
+  for (const tile of tilesOf(anchor, footprint)) {
+    for (let dy = -1; dy <= 1; dy += 1) {
+      for (let dx = -1; dx <= 1; dx += 1) {
+        const key = `${tile.x + dx},${tile.y + dy}`
+        if (!own.has(key)) step.add(key)
+      }
+    }
+  }
+  return [...step]
+}
+
+/** `mask` narrowed to `home`'s roof: a body fits only where all of it stands on the building's tiles and the mask
+ *  (every layer but the buildings') has room for it. */
+function roofOf(mask: CollisionMask, home: Home): Pick<CollisionMask, "footprintFits"> {
+  const roof = new Set(tilesOf(home.entity.anchor, home.definition.footprint).map((tile) => `${tile.x},${tile.y}`))
+  return {
+    footprintFits: (anchor: Coord, footprint: Footprint): boolean =>
+      tilesOf(anchor, footprint).every((tile) => roof.has(`${tile.x},${tile.y}`)) && mask.footprintFits(anchor, footprint),
+  }
+}
 
 /** The nearest of `candidates` to `survivor`, by the distance range is measured in (`footprintDistance`); on a tie
  *  the one nearer the enemy (`toward`, as `nearestFit` breaks its ties), then the lower ordinal — so the same home
@@ -92,6 +139,9 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
   const homeOf = (survivor: EntityState): Home | null => {
     const definition = definitionOf(survivor)
     const mates = structures.filter((structure) => structure.player === survivor.player)
+    // The building that trained it, while it stands (a building's ordinal is never reused, so a fallen one is not found).
+    const trainer = survivor.home === undefined ? undefined : mates.find((structure) => structure.ordinal === survivor.home)
+    if (trainer !== undefined) return { entity: trainer, definition: definitionOf(trainer), kind: "producer" }
     const producers: Home[] = mates
       .filter((structure) => {
         const producer = definitionOf(structure)
@@ -105,6 +155,17 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     return nearest(survivor, definition, producers, toward) ?? nearest(survivor, definition, nexuses, toward)
   }
   const homes = new Map<number, Home | null>(survivors.map((survivor) => [survivor.ordinal, homeOf(survivor)]))
+  // Each side's doorsteps: the ground touching its buildings that make units. A survivor that finds no room on a roof
+  // is set down off them while there is room elsewhere near home, so the units on a roof can always step down to make
+  // way for a wave (`src/pulse/make-way.ts`) — a roof ringed by survivors standing idle would hold its wave for good.
+  const doorsteps = new Map<PlayerId, Set<string>>()
+  for (const structure of structures) {
+    const definition = definitionOf(structure)
+    if (definition.production === undefined && definition.spawn === undefined) continue
+    const own = doorsteps.get(structure.player) ?? new Set<string>()
+    for (const key of doorstepOf(structure.anchor, definition.footprint)) own.add(key)
+    doorsteps.set(structure.player, own)
+  }
 
   // A survivor with no home to go to stays exactly where it stands — and is set down first, so the
   // ones that do move make room for it rather than the other way round.
@@ -139,19 +200,29 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     const home = homes.get(survivor.ordinal) ?? null
     if (home === null) continue
     const definition = definitionOf(survivor)
-    // Nobody shares a tile after Recall, on any layer: the screen draws one glyph a tile, and a survivor
-    // hidden under another is a survivor that did not visibly come home.
+    // Nobody shares a tile after Recall, on any layer, but a unit and its own home's roof: the screen draws one glyph
+    // a tile, and a survivor hidden under another is a survivor that did not visibly come home.
     const mask = maskFrom(index, {
       layers: ENTITY_LAYERS,
       terrain: definition.layer === "air" ? "ignore" : "impassable",
     })
     const here = centreTile(survivor.anchor, definition.footprint)
-    // The tile of the home building nearest the survivor is what it comes back *to*: it arrives on the
-    // side it was already on, not on the far side of the building.
-    const target = nearestFootprintTile(here, home.entity.anchor, home.definition.footprint)
+    // The tile it comes back *to*: the one it came out on, when it is going back to the building that trained it;
+    // else the tile of its home nearest it, so it arrives on the side it was already on, not the far side.
+    const trainedHere = survivor.home === home.entity.ordinal && survivor.homeAt !== undefined
+    const target = trainedHere ? centreTile(survivor.homeAt as Coord, definition.footprint) : nearestFootprintTile(here, home.entity.anchor, home.definition.footprint)
     const toward = enemyNexusMiddle(standing, survivor.player, here)
-    // Nowhere free near home: take the nearest free tile to where it stands rather than overlap anyone.
+    // On the roof while it has room — a building's that makes it, never the Grid Nexus's, and never for a unit in the
+    // air, which comes out beside its building; then the nearest free ground; nowhere free near home, the nearest free
+    // tile to where it stands rather than overlap anyone.
+    const onTheRoof =
+      home.kind !== "producer" || definition.layer === "air"
+        ? null
+        : nearestFit(roofOf(maskFrom(index, { layers: UNIT_LAYERS, terrain: "impassable" }), home), definition.footprint, target, HOME_RADIUS, here, toward)
+    const clear = doorsteps.get(survivor.player)
     const to =
+      onTheRoof ??
+      (clear === undefined || definition.layer === "air" ? null : nearestFit(offTheDoorsteps(mask, clear), definition.footprint, target, HOME_RADIUS, here, toward)) ??
       nearestFit(mask, definition.footprint, target, HOME_RADIUS, here, toward) ??
       nearestFit(mask, definition.footprint, here, FALLBACK_RADIUS, here, toward)
     if (to === null) throw new Error(`recall: no free tile for ${survivor.id} within ${FALLBACK_RADIUS} tiles of it`)
