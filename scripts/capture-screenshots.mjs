@@ -186,7 +186,7 @@ const shots = [
   },
   {
     name: "march-guide",
-    caption: "Tick 100 - Vasse leads the march across the map: nobody but the runner, a backliner, is ahead of her",
+    caption: "Tick 100 - Vasse leads the march across the map: nobody but the flanker, a backliner, is ahead of her",
     scenario: "march-guide",
     tick: 100,
     cols: 80,
