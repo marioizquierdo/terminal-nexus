@@ -141,8 +141,9 @@ function reportLine(label: string, report: SideReport): string {
   ].join("\n")
 }
 
-/** The brief side `side` reads before it plans the duel's next round. */
-export function briefOf(state: DuelState, side: Side): Brief {
+/** The brief side `side` reads before it plans the duel's next round. `strategies`, when given, is what duels have
+ *  taught so far (`docs/game-design/play-strategies.md`), for a player that reads words: the text carries it. */
+export function briefOf(state: DuelState, side: Side, strategies?: string): Brief {
   const enemy = other(side)
   const army: DuelArmy = duelArmy(state.sides[side].commander)
   const enemyArmy: DuelArmy = duelArmy(state.sides[enemy].commander)
@@ -238,11 +239,12 @@ export function briefOf(state: DuelState, side: Side): Brief {
       return `round ${report.round}: you dealt ${ours.dealt.units + ours.dealt.buildings + ours.dealt.nexus} and lost ${Object.values(ours.lost).reduce((sum, count) => sum + count, 0)} things; they dealt ${theirs.dealt.units + theirs.dealt.buildings + theirs.dealt.nexus} and lost ${Object.values(theirs.lost).reduce((sum, count) => sum + count, 0)}; your Nexus ${ours.nexus.after}, theirs ${theirs.nexus.after}.`
     }),
   }
-  return { data, text: briefText(data) }
+  return { data, text: briefText(data, strategies) }
 }
 
-/** The brief written out, for a reader that reads words. */
-export function briefText(data: BriefData): string {
+/** The brief written out, for a reader that reads words; `strategies`, the play strategies so far, just before the
+ *  plan it is asked for. */
+export function briefText(data: BriefData, strategies?: string): string {
   const lines: string[] = []
   lines.push(`# Duel, round ${data.round} of ${data.rounds}: you are side ${data.side}, base in the ${data.base}`)
   lines.push("")
@@ -293,6 +295,10 @@ export function briefText(data: BriefData): string {
     lines.push("")
     lines.push("## Every round so far")
     lines.push(...data.history)
+  }
+  if (strategies !== undefined && strategies.trim() !== "") {
+    lines.push("")
+    lines.push(strategies.trim())
   }
   lines.push("")
   lines.push("## Your plan")

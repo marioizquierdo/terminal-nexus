@@ -49,3 +49,8 @@ loses.
 Give the numbers (who won, how: a Nexus falling, health share or damage; credits spent and earned; powers kept)
 and one sentence on why from the reports. Say every time that a scripted or small-model player is not a good
 player. Anything an army needs changed becomes a question for Mario with a recommendation, not a quiet retune.
+
+**What a duel teaches about playing goes in the play strategies** ([`play-strategies.md`](../../../docs/game-design/play-strategies.md)):
+one entry of advice a player can act on, with the measurement in brackets, or a change to an entry a new measurement
+contradicts. A model player reads that page in its brief, so what one duel learns the next one plays with. Never an
+entry no measurement or playtest backs.
