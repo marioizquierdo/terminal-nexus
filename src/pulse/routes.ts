@@ -13,7 +13,7 @@
 // reaches its target (`goalsNear`) or from which it stands inside its side's target (`goalsInside`): a route ends where
 // an attack begins. Pure: built from the tick's state, never kept from one tick to the next, the same on every machine.
 
-import { gridDistance, tilesOf } from "../grid/coords.ts"
+import { ROW_DISTANCE, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import type { Area, Ground, Reach, Seed } from "../routing/index.ts"
 import { addWall, bodyKey, canStand, DistanceField, patchesOf, goalsInside, goalsNear, groundFor, rankSteps, UNREACHABLE, wallsOf, weightsFor } from "../routing/index.ts"
@@ -268,18 +268,20 @@ export class TickRoutes {
     const key = `${groundKey}|patch ${patch}|nearest ${toward.x},${toward.y}`
     let entry = this.nearest.get(key)
     if (entry === undefined) {
-      let nearest: Coord[] = []
+      // Every anchor of the patch measured, and the nearest kept by index: a patch can be most of the Grid.
+      let nearest: number[] = []
       let bestNear = UNREACHABLE
       for (let index = 0; index < patches.length; index += 1) {
         if (patches[index] !== patch) continue
-        const anchor = { x: index % ground.width, y: (index - (index % ground.width)) / ground.width }
-        const near = nearestOf(anchor, body, toward)
+        const x = index % ground.width
+        const near = nearestOf(x, (index - x) / ground.width, body, toward)
         if (near < bestNear) {
-          nearest = [anchor]
+          nearest = [index]
           bestNear = near
-        } else if (near === bestNear) nearest.push(anchor)
+        } else if (near === bestNear) nearest.push(index)
       }
-      entry = { field: new DistanceField(ground, nearest, undefined, patches), anchors: new Set(nearest.map((anchor) => anchor.y * ground.width + anchor.x)) }
+      const anchors = nearest.map((index) => ({ x: index % ground.width, y: (index - (index % ground.width)) / ground.width }))
+      entry = { field: new DistanceField(ground, anchors, undefined, patches), anchors: new Set(nearest) }
       this.nearest.set(key, entry)
     }
     return { field: entry.field, here: entry.anchors.has(at) }
@@ -296,7 +298,7 @@ export class TickRoutes {
    * target one of the buildings."
    */
   breachOf(actor: Actor, goal: RouteGoal): Actor | null {
-    if (this.fieldOf(actor, goal).distanceAt(actor.anchor) !== UNREACHABLE) return null
+    if (this.fieldOf(actor, goal).reaches(actor.anchor)) return null
     const body = actor.definition.footprint
     const key = `${this.maskOf(actor)}|${bodyKey(body)}|breaching ${actor.player}`
     let entry = this.breaches.get(key)
@@ -393,10 +395,11 @@ function roofExitOf(context: TickContext, actor: Actor): "route" | "ground" {
   return "route"
 }
 
-/** How near a body anchored at `anchor` comes to `tile`: from its nearest tile, by the Grid's distance. */
-function nearestOf(anchor: Coord, body: Footprint, tile: Coord): number {
+/** How near a body anchored at `x`, `y` comes to `tile`: from its nearest tile, by the Grid's distance. Written out
+ *  (`gridDistance`) and given the anchor as two numbers, as it runs for every anchor of a patch. */
+function nearestOf(x: number, y: number, body: Footprint, tile: Coord): number {
   let best = UNREACHABLE
-  for (const offset of body) best = Math.min(best, gridDistance({ x: anchor.x + offset.x, y: anchor.y + offset.y }, tile))
+  for (const offset of body) best = Math.min(best, Math.abs(x + offset.x - tile.x) + ROW_DISTANCE * Math.abs(y + offset.y - tile.y))
   return best
 }
 

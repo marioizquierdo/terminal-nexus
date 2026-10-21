@@ -168,19 +168,32 @@ export function patchesOf(ground: Ground): Int32Array {
     let head = 0
     let tail = 0
     queue[tail++] = start
+    // Written out for the four neighbours, with no function made per anchor: it floods the whole ground of every
+    // body a tick routes.
     while (head < tail) {
       const index = queue[head++] as number
       const x = index % width
       const y = (index - x) / width
-      const offer = (next: number): void => {
-        if (open[next] !== 1 || patches[next] !== 0) return
+      let next = index - width
+      if (y > 0 && open[next] === 1 && patches[next] === 0) {
         patches[next] = count
         queue[tail++] = next
       }
-      if (y > 0) offer(index - width)
-      if (x < width - 1) offer(index + 1)
-      if (y < height - 1) offer(index + width)
-      if (x > 0) offer(index - 1)
+      next = index + 1
+      if (x < width - 1 && open[next] === 1 && patches[next] === 0) {
+        patches[next] = count
+        queue[tail++] = next
+      }
+      next = index + width
+      if (y < height - 1 && open[next] === 1 && patches[next] === 0) {
+        patches[next] = count
+        queue[tail++] = next
+      }
+      next = index - 1
+      if (x > 0 && open[next] === 1 && patches[next] === 0) {
+        patches[next] = count
+        queue[tail++] = next
+      }
     }
   }
   return patches

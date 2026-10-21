@@ -237,9 +237,16 @@ export function perception(context: TickContext): void {
 }
 
 /** How far `actor` walks to where its attack reaches `target`, round what stands this tick: `UNREACHABLE` when it
- *  cannot. */
-function walkTo(routes: TickRoutes, actor: Actor, target: Actor): number {
-  return routes.fieldOf(actor, { kind: "unit", target, reach: reachOf(actor) }).distanceAt(actor.anchor)
+ *  cannot, or when the walk is longer than `limit` — a walk that could not beat the best found so far need not be
+ *  worked out to the end. */
+function walkTo(routes: TickRoutes, actor: Actor, target: Actor, limit = UNREACHABLE): number {
+  return routes.fieldOf(actor, { kind: "unit", target, reach: reachOf(actor) }).distanceWithin(actor.anchor, limit)
+}
+
+/** Whether `actor` can walk to where its attack reaches `target` at all, round what stands this tick: known from the
+ *  patch it stands on, without working out how far (`DistanceField.reaches`). */
+function canWalkTo(routes: TickRoutes, actor: Actor, target: Actor): boolean {
+  return routes.fieldOf(actor, { kind: "unit", target, reach: reachOf(actor) }).reaches(actor.anchor)
 }
 
 /**
@@ -258,8 +265,8 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   // A unit that aims at a crowd keeps the crowd it chose, as a shot keeps the nearest: by range, passing over one it
   // cannot reach for the thickest it can.
   if (actor.definition.attack?.kind !== "melee" || actor.definition.aim === "crowd") {
-    if (walkTo(routes, actor, selection.target) !== UNREACHABLE) return selection
-    const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && walkTo(routes, actor, candidate) !== UNREACHABLE)
+    if (canWalkTo(routes, actor, selection.target)) return selection
+    const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && canWalkTo(routes, actor, candidate))
     return reachableOnes.length > 0 ? selectTarget(context, actor, reachableOnes) : (breach(routes, actor, selection.target) ?? selection)
   }
   // Nearest by range first: a walk is never shorter than the range less a row (a tile beside a target is at most two
@@ -269,7 +276,8 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   let nearest: Actor[] = []
   for (const { candidate, range } of byRange) {
     if (range - ROW_DISTANCE > best) break
-    const walk = walkTo(routes, actor, candidate)
+    // Only a walk as short as the best so far can change the choice, so none is worked out further than that.
+    const walk = walkTo(routes, actor, candidate, best)
     if (walk < best) {
       best = walk
       nearest = [candidate]

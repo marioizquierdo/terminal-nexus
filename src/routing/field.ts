@@ -20,6 +20,9 @@ export const UNREACHABLE = Number.POSITIVE_INFINITY
 /** What `distance` holds for an anchor no way has reached yet: beyond any walk on a Grid. */
 const FAR = 0x7fffffff
 
+/** The cost of a settled anchor, from what `DistanceField.distance` holds for it (`-1 - cost`). */
+const settledCost = (stored: number): number => -1 - stored
+
 /** A goal anchor that starts at a cost of its own rather than at nothing: what a flight map is built from
  *  (`TickRoutes.safetyOf`). A whole number, 0 or more. */
 export type Seed = Readonly<{ anchor: Coord; cost: number }>
@@ -27,14 +30,19 @@ export type Seed = Readonly<{ anchor: Coord; cost: number }>
 export class DistanceField {
   readonly ground: Ground
   private readonly weights: Uint8Array | null
-  /** Each anchor's walking cost found so far, `FAR` until one is: whole numbers, so a typed array of them. */
+  /**
+   * Each anchor's walking cost: `FAR` until a way reaches it, the cost of the best way found so far while it waits,
+   * and, once it is settled and that cost is exact, `-1 - cost`: negative, so one array says both what is known and
+   * whether it is final (`settledCost`). One typed array rather than one for the costs and one for what is settled:
+   * a tick builds dozens of fields, and making a typed array costs more than filling one.
+   */
   private readonly distance: Int32Array
-  private readonly settled: Uint8Array
-  /** The bucket queue, flat: `head[d]` is the last entry pushed at distance `d` (-1 for none), and each entry holds
-   *  its anchor and the entry pushed at that distance before it. Typed arrays, as a field settles thousands. */
-  private head: Int32Array = new Int32Array(64).fill(-1)
-  private entryAnchor: Int32Array
-  private entryNext: Int32Array
+  /** The bucket queue: `head[d]` is the last entry pushed at distance `d` (-1 for none), a plain array grown as the
+   *  search goes further; and the entries, two numbers each in one typed array, doubled when full: the anchor, then
+   *  the entry pushed at that distance before it. Two arrays to make where there were four: on Node a typed array
+   *  costs a few microseconds to make, and a tick makes dozens of fields that each settle only hundreds of anchors. */
+  private readonly head: number[] = []
+  private entry: Int32Array = new Int32Array(512)
   private entries = 0
   private cursor = 0
   private remaining = 0
@@ -57,11 +65,7 @@ export class DistanceField {
     this.weights = weights ?? null
     this.patches = patches ?? null
     this.goalPatches = patches === undefined ? null : new Set()
-    const size = ground.width * ground.height
-    this.distance = new Int32Array(size).fill(FAR)
-    this.settled = new Uint8Array(size)
-    this.entryAnchor = new Int32Array(256)
-    this.entryNext = new Int32Array(256)
+    this.distance = new Int32Array(ground.width * ground.height).fill(FAR)
     for (const entry of goals) {
       const goal = "anchor" in entry ? entry.anchor : entry
       const cost = "anchor" in entry ? entry.cost : 0
@@ -80,23 +84,16 @@ export class DistanceField {
   }
 
   private push(index: number, at: number): void {
-    if (at >= this.head.length) {
-      const grown = new Int32Array(Math.max(at + 1, this.head.length * 2)).fill(-1)
-      grown.set(this.head)
-      this.head = grown
-    }
-    if (this.entries === this.entryAnchor.length) {
-      const anchors = new Int32Array(this.entries * 2)
-      anchors.set(this.entryAnchor)
-      this.entryAnchor = anchors
-      const nexts = new Int32Array(this.entries * 2)
-      nexts.set(this.entryNext)
-      this.entryNext = nexts
+    while (this.head.length <= at) this.head.push(-1)
+    if (2 * this.entries === this.entry.length) {
+      const grown = new Int32Array(this.entry.length * 2)
+      grown.set(this.entry)
+      this.entry = grown
     }
     const entry = this.entries
     this.entries += 1
-    this.entryAnchor[entry] = index
-    this.entryNext[entry] = this.head[at] as number
+    this.entry[2 * entry] = index
+    this.entry[2 * entry + 1] = this.head[at] as number
     this.head[at] = entry
     this.remaining += 1
   }
@@ -104,31 +101,32 @@ export class DistanceField {
   /** Settles the next nearest anchor, and returns it, or -1 once nothing is left. */
   private settleNext(): number {
     while (this.remaining > 0) {
-      const entry = this.head[this.cursor] as number
+      const entry = this.head[this.cursor] ?? -1
       if (entry === -1) {
         this.cursor += 1
         continue
       }
-      this.head[this.cursor] = this.entryNext[entry] as number
-      const index = this.entryAnchor[entry] as number
+      this.head[this.cursor] = this.entry[2 * entry + 1] as number
+      const index = this.entry[2 * entry] as number
       this.remaining -= 1
-      if (this.settled[index] === 1 || this.distance[index] !== this.cursor) continue
-      this.settled[index] = 1
+      // An entry left behind when a shorter way was found later, or for an anchor already settled (its cost
+      // negative), is passed over.
+      if (this.distance[index] !== this.cursor) continue
+      this.distance[index] = -1 - this.cursor
       this.settledCount += 1
-      this.relaxAround(index)
+      this.relaxAround(index, this.cursor)
       return index
     }
     return -1
   }
 
-  /** From a settled anchor, offers each neighbour that may step onto it the way through it: a unit at the
+  /** From an anchor settled at `here`, offers each neighbour that may step onto it the way through it: a unit at the
    *  neighbour steps onto this anchor, and the step costs what stepping here costs. Written out for the four
    *  neighbours, as it runs for every anchor a field settles. */
-  private relaxAround(index: number): void {
+  private relaxAround(index: number, here: number): void {
     const { width, height } = this.ground
     const x = index % width
     const y = (index - x) / width
-    const here = this.distance[index] as number
     const weight = this.weights === null ? 1 : (this.weights[index] as number)
     const across = here + weight
     const down = here + ROW_DISTANCE * weight
@@ -138,8 +136,10 @@ export class DistanceField {
     if (x > 0) this.offer(index - 1, across)
   }
 
+  /** Offers `next` a way costing `through`, taken when it is shorter than the best found. A settled anchor's cost is
+   *  negative, so no way is ever shorter, and it is left as it is without asking. */
   private offer(next: number, through: number): void {
-    if (this.ground.open[next] !== 1 || this.settled[next] === 1 || through >= (this.distance[next] as number)) return
+    if (this.ground.open[next] !== 1 || through >= (this.distance[next] as number)) return
     this.distance[next] = through
     this.push(next, through)
   }
@@ -147,15 +147,39 @@ export class DistanceField {
   /** The walking cost from `anchor` to the nearest goal, or `UNREACHABLE`. An anchor the body may not stand on is
    *  unreachable. */
   distanceAt(anchor: Coord): number {
+    return this.distanceWithin(anchor, UNREACHABLE)
+  }
+
+  /**
+   * The walking cost from `anchor` to the nearest goal when it is `limit` or less; `UNREACHABLE` when it is more, or
+   * when there is no way at all. For a caller that only wants to know whether a walk beats one it already has
+   * (`chooseByRoute`, `src/pulse/perception.ts`): the search stops once everything still unsettled is further than
+   * `limit`, rather than going on to `anchor`. Whatever it settled stays settled and exact for the next question.
+   */
+  distanceWithin(anchor: Coord, limit: number): number {
     const { width, height } = this.ground
     if (anchor.x < 0 || anchor.y < 0 || anchor.x >= width || anchor.y >= height) return UNREACHABLE
     const index = anchor.y * width + anchor.x
     if (this.ground.open[index] !== 1) return UNREACHABLE
     if (this.goalPatches !== null && !this.goalPatches.has(this.patches?.[index] as number)) return UNREACHABLE
-    while (this.settled[index] !== 1) {
+    while ((this.distance[index] as number) >= 0) {
+      // Every anchor still unsettled is at least `cursor` away: once that is past the limit, so is this one.
+      if (this.cursor > limit) return UNREACHABLE
       if (this.settleNext() === -1) return UNREACHABLE
     }
-    return this.distance[index] as number
+    const distance = settledCost(this.distance[index] as number)
+    return distance <= limit ? distance : UNREACHABLE
+  }
+
+  /**
+   * Whether `anchor` can walk to a goal at all. With the ground's patches given, said at once, without searching: an
+   * anchor reaches a goal exactly when one is on its own patch. Without them, worked out as `distanceAt` does.
+   */
+  reaches(anchor: Coord): boolean {
+    const { width, height } = this.ground
+    if (this.goalPatches === null || anchor.x < 0 || anchor.y < 0 || anchor.x >= width || anchor.y >= height) return this.distanceAt(anchor) !== UNREACHABLE
+    const index = anchor.y * width + anchor.x
+    return this.ground.open[index] === 1 && this.goalPatches.has(this.patches?.[index] as number)
   }
 
   /** What stepping onto `anchor` costs per column of the step. */
