@@ -39,15 +39,20 @@ test("a spec split into jobs and merged back is what one process plays, in the s
   const jobs = jobsOf(TINY, parts)
   assert.deepEqual(
     jobs.map((job) => job.label),
-    ["duels balanced seed 1", "duels balanced seed 2", "duels rush seed 1", "duels rush seed 2", "scenarios"],
+    [
+      ...["duels balanced vasse seed 1", "duels balanced vasse seed 2", "duels balanced dob seed 1", "duels balanced dob seed 2"],
+      ...["duels rush vasse seed 1", "duels rush vasse seed 2", "duels rush dob seed 1", "duels rush dob seed 2"],
+      "scenarios",
+    ],
   )
-  const played = jobs.map((job) =>
-    written(runSpec({ ...TINY, seeds: job.seeds, duels: { ...TINY.duels, players: job.players } }, { scenarios, levels: [], parts: new Set(job.parts) })),
-  )
+  const played = jobs.map((job) => {
+    const share: MeasureSpec = { ...TINY, seeds: job.seeds, duels: { ...TINY.duels, players: job.players, west: job.west } }
+    return written(runSpec(share, { scenarios, levels: [], parts: new Set(job.parts) }))
+  })
   const merged = mergeMeasurements([...played].reverse(), TINY)
   assert.deepEqual(merged.duels, whole.duels)
   assert.deepEqual(merged.scenarios, whole.scenarios)
-  assert.equal(merged.jobs, jobs.length)
+  assert.equal(merged.jobs, jobs.length, "parts merged by hand are taken to have played side by side")
   assert.equal(merged.msPerTick, 1, "every part's tick took 1 ms, so the merged one did")
 })
 

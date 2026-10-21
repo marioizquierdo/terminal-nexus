@@ -17,6 +17,9 @@ export type MeasureSpec = Readonly<{
     commanders: readonly string[]
     /** Scripted players (`src/duel/players.ts`); both sides of a duel play the same one. */
     players: readonly string[]
+    /** The Commanders that play side A, each against every one of `commanders`: all of them when absent. A share of
+     *  the duels, for one of several processes (`jobsOf`, `src/measure/merge.ts`). */
+    west?: readonly string[]
   }>
   /** Campaign levels by id (empty: every level), each played by every plan. */
   levels: readonly string[]

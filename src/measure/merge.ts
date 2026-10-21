@@ -7,21 +7,33 @@
 import type { BattleRecord } from "./battle.ts"
 import type { Measurement, MeasureSpec } from "./spec.ts"
 
-/** One process's share of a spec: which parts it plays, and for duels which scripted player on which seeds. */
-export type MeasureJob = Readonly<{ label: string; parts: readonly string[]; players: readonly string[]; seeds: readonly number[] }>
+/** One process's share of a spec: which parts it plays, and for duels which scripted player, with which Commander
+ *  on side A, on which seeds. */
+export type MeasureJob = Readonly<{
+  label: string
+  parts: readonly string[]
+  players: readonly string[]
+  west: readonly string[]
+  seeds: readonly number[]
+}>
 
-/** A spec split into jobs: each player's duels on each seed (a duel is the slow part, and the seeds split it
- *  evenly), the levels, the maps. The longest first, so the last to start are short. */
+/** A spec split into jobs: each player's duels for each Commander on side A on each seed (duels are the slow part,
+ *  and one seed's can take several times another's, so they are cut small), then the levels, then the maps. */
 export function jobsOf(spec: MeasureSpec, parts: ReadonlySet<string>): MeasureJob[] {
   const jobs: MeasureJob[] = []
   const { players } = spec.duels
+  const west = spec.duels.west ?? spec.duels.commanders
   if (parts.has("duels")) {
     for (const player of players) {
-      for (const seed of spec.seeds) jobs.push({ label: `duels ${player} seed ${seed}`, parts: ["duels"], players: [player], seeds: [seed] })
+      for (const a of west) {
+        for (const seed of spec.seeds) {
+          jobs.push({ label: `duels ${player} ${a} seed ${seed}`, parts: ["duels"], players: [player], west: [a], seeds: [seed] })
+        }
+      }
     }
   }
-  if (parts.has("levels")) jobs.push({ label: "levels", parts: ["levels"], players, seeds: spec.seeds })
-  if (parts.has("scenarios")) jobs.push({ label: "scenarios", parts: ["scenarios"], players, seeds: spec.seeds })
+  if (parts.has("levels")) jobs.push({ label: "levels", parts: ["levels"], players, west, seeds: spec.seeds })
+  if (parts.has("scenarios")) jobs.push({ label: "scenarios", parts: ["scenarios"], players, west, seeds: spec.seeds })
   return jobs
 }
 
@@ -47,9 +59,10 @@ export function ticksOf(measurement: Measurement): number {
  * refused: two builds in one file would compare nothing. The duels are put in the order `runSpec` plays them — by
  * player, then the west Commander, then the east, as `spec` lists them (one it does not list after, by name), then by
  * seed — so the result does not depend on how the spec was split; the maps and the levels in the order the parts are
- * given. A tick's time is weighted by the ticks each part played.
+ * given. A tick's time is weighted by the ticks each part played; `jobs` is how many played at once (all of them, unless
+ * the caller knows better).
  */
-export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSpec): Measurement {
+export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSpec, jobs = parts.length): Measurement {
   const first = parts[0]
   if (first === undefined) throw new Error("nothing to merge")
   for (const part of parts) {
@@ -84,7 +97,7 @@ export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSp
     date: parts.reduce((latest, part) => (part.date > latest ? part.date : latest), first.date),
     routing: first.routing,
     ...(question === undefined ? {} : { question }),
-    jobs: parts.reduce((sum, part) => sum + (part.jobs ?? 1), 0),
+    jobs,
     msPerTick: ticks === 0 ? null : Math.round((ms / ticks) * 1000) / 1000,
     scenarios: parts.flatMap((part) => part.scenarios),
     duels,

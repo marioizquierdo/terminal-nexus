@@ -44,9 +44,9 @@ const HELP = `measure: battles measured the same way before and after a rule cha
   measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
               [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
       plays the spec and prints what it says; with --out, writes every battle's record as JSON too. --jobs plays
-      it as up to N processes side by side (the maps, each player's duels, the levels) and merges what they wrote
+      it as up to N processes side by side (the maps, the levels, and the duels a few at a time) and merges what they wrote
       into one result, in the order one process would have played it. --question records the one question the run
-      is meant to answer. --parts and --players play part of a spec
+      is meant to answer. --parts, --players and --west (the Commanders on side A) play part of a spec
   measure merge <file>... [--out <file>]
       makes parts of one spec, played apart, one measurement, and prints what it says; refuses parts of different
       builds or specs
@@ -209,8 +209,14 @@ export async function main(args: readonly string[]): Promise<number> {
   const base = SPECS[options["spec"] ?? "quick"]
   if (base === undefined) throw new Error(`no spec "${options["spec"]}" (${Object.keys(SPECS).join(", ")})`)
   const seeded: MeasureSpec = options["seeds"] === undefined ? base : { ...base, seeds: seedsOf(options["seeds"]) }
-  const players = options["players"]?.split(",")
-  const spec: MeasureSpec = players === undefined ? seeded : { ...seeded, duels: { ...seeded.duels, players } }
+  const spec: MeasureSpec = {
+    ...seeded,
+    duels: {
+      ...seeded.duels,
+      ...(options["players"] === undefined ? {} : { players: options["players"].split(",") }),
+      ...(options["west"] === undefined ? {} : { west: options["west"].split(",") }),
+    },
+  }
   const parts = new Set((options["parts"] ?? "scenarios,duels,levels").split(","))
   const jobs = Number(options["jobs"] ?? "1")
   if (!Number.isInteger(jobs) || jobs < 1) throw new Error(`--jobs takes a whole number from 1, not "${options["jobs"]}"`)
@@ -219,9 +225,10 @@ export async function main(args: readonly string[]): Promise<number> {
     if (options["question"] !== undefined) shared.push("--question", options["question"])
     const played = await runJobs(jobsOf(spec, parts), jobs, (job, out) => [
       ...shared,
-      ...["--seeds", job.seeds.join(","), "--parts", job.parts.join(","), "--players", job.players.join(","), "--out", out],
+      ...["--seeds", job.seeds.join(","), "--parts", job.parts.join(","), "--players", job.players.join(",")],
+      ...["--west", job.west.join(","), "--out", out],
     ])
-    return finish(mergeMeasurements(played, spec), options["out"])
+    return finish(mergeMeasurements(played, spec, Math.min(jobs, played.length)), options["out"])
   }
   const scenarios = await Promise.all(
     readdirSync("scenarios")

@@ -62,7 +62,7 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
     for (const name of setup.players) {
       const player = SCRIPTED[name]
       if (player === undefined) throw new Error(`no scripted player "${name}"`)
-      for (const a of setup.commanders) {
+      for (const a of setup.west ?? setup.commanders) {
         for (const b of setup.commanders) {
           for (const seed of spec.seeds) {
             const duel = measureDuel(
