@@ -133,7 +133,8 @@ arbitration's progress measure simple.
 **Death can be contagious, and step 8 is a queue rather than a pass** (RULE —
 `tests/ravel.test.ts`). Where content detonates on death — Ravel volatile munitions are the first
 such rule, and they sit in the bench rosters — the blast damages everything inside its
-radius, friend and foe, and anything reduced to zero joins the queue. **The chain is bounded because
+radius, friend and foe — or only the other side's, where the content says it hits enemies alone — and anything
+reduced to zero joins the queue. **The chain is bounded because
 an entity can only die once**, so the queue drains after at most one round per entity and the whole
 cascade settles inside the tick that started it. Order is entity order throughout.
 
@@ -198,7 +199,10 @@ blow the shooter strikes where it stands. A kill by fire is the shooter's, named
 not, and gives no killer's pause. A patch whose time is up goes out after it burns its last (`ground.lit`,
 `ground.burned`, `ground.out`). The state carries `burning` only while something burns, so a state without fire hashes
 as it did before fire existed. Routes weigh it while it burns (section 1.6), and Recall puts it out (section 2). The
-Citizen mortar's shell is the first that burns.
+Citizen mortar's shell is the first that burns, and it has two jobs (the owner, 2026-10-21): its burst, 12 within 2,
+hurts only the enemy (an area's `hits: "enemies"`, which a splash and a death's blast both read; without it an area
+hurts friend and foe), and the fire it leaves, 8 a second within 4 for four seconds (48 ticks), hurts everyone on it,
+either side.
 
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
 `src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
