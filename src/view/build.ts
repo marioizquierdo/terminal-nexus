@@ -24,7 +24,7 @@ import { BANDS, composeBands } from "./frame.ts"
 import { text } from "./draw.ts"
 import { drawTerrain } from "./grid-layer.ts"
 import type { PulseFrame } from "./pulse-scene.ts"
-import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulsePanel } from "./pulse-scene.ts"
+import { drawFrameLight, drawPulseEffects, drawPulseEntities, drawPulseFire, drawPulsePanel } from "./pulse-scene.ts"
 import type { ColorDepth } from "./roles.ts"
 import type { GlyphPack } from "./theme.ts"
 import type { PlacementClock, PlacementTuning, RemovalClock } from "./placement.ts"
@@ -184,6 +184,7 @@ export function composeBuildFrame(
     const view = { camera: input.state.camera, viewport: input.state.viewport, layout: input.layout, grid: input.context.grid }
     drawTerrain(cells, view, pack)
     const occupied = drawPulseEntities(cells, view, input.pulse)
+    drawPulseFire(cells, view, input.pulse, occupied, pack)
     drawPulseEffects(cells, view, input.pulse, occupied)
     // When she falls: her dim glyph beside the Nexus, and the vignette over the battle.
     drawOutInBattle(cells, view, input.pulse.fall, input.pulse.timeMs, nexusIn(input.pulse), occupied)

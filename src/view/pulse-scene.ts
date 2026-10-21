@@ -27,6 +27,7 @@ import type { EndingPhase, EndingTimes, PulseResult } from "./ending.ts"
 import { BEAM_BOLD, beamFrame, beamLight, formatTimer, timerLit, timerSeconds } from "./ending.ts"
 import { drawnBold, forceBar } from "./compose.ts"
 import { inView } from "./build-grid.ts"
+import { drawFire } from "./burning.ts"
 import { paintEffectCells } from "./effects/composite.ts"
 import type { EffectCellSource } from "./effects/composite.ts"
 import type { BandCell, CellStyle } from "./frame.ts"
@@ -35,6 +36,7 @@ import type { DrawExtra } from "./draw.ts"
 import { put, text } from "./draw.ts"
 import type { StyleRole } from "./roles.ts"
 import type { PulseSample } from "./snapshot.ts"
+import type { GlyphPack } from "./theme.ts"
 import { entityGlyph, playerRole } from "./theme.ts"
 
 /** What the Pulse's scene needs for one presentation instant. Built by `PulsePresenter.frame`. */
@@ -128,6 +130,21 @@ export function drawPulseEntities(cells: BandCell[], view: SceneView, pulse: Pul
   pulse.sample.state.entities.forEach(draw)
   pulse.sample.heldCorpses.forEach(draw)
   return occupied
+}
+
+/**
+ * ***Burning ground*** (`src/view/burning.ts`): every tile the state's patches burn at this instant, through the
+ * camera — a flickering flame on a scorched fill on open ground, the fill alone under a unit, a building or a corpse,
+ * which keep their glyphs. Drawn after the entities, whose tiles it needs, and before the effects, which draw over it.
+ */
+export function drawPulseFire(cells: BandCell[], view: SceneView, pulse: PulseFrame, occupied: ReadonlySet<number>, pack: GlyphPack): void {
+  const range = visibleRange(view.camera, view.viewport)
+  drawFire(cells, pulse.sample.fire, pack, {
+    grid: view.grid,
+    cellOf: (tile) => cellForTile(view.layout, view.camera, tile),
+    visible: (tile) => inView(range, tile),
+    standing: (tile) => occupied.has(tileIndex(view.grid, tile)),
+  })
 }
 
 /**

@@ -311,6 +311,31 @@ tall as it is wide on screen, since a row counts two columns ([`grid.md`](grid.m
 shown where colours blend and said in words on her card where they do not (the interface patterns, her aura's
 reach).
 
+**Burning ground is drawn on its own ground, under what stands on it** (RULE — `tests/burning-ground.test.ts`). A
+patch a mortar's shell sets alight (`MatchState.burning`) is every tile within its radius of its centre by the Grid's
+own test (`tilesWithin`, which is the kernel's `withinArea`), so the patch drawn and the patch that burns cannot
+disagree, and it is drawn in the state of the tick shown, from the tick it was lit to its last. It has two roles of its
+own: **`fx.fire`**, a flame's colour (a red-orange in the dark theme, apart from the blast's orange and the critical's
+gold; a red in the light one, apart from the Citizens' orange), and **`fx.fire.ground`**, the scorched fill every
+burning tile takes where colours are drawn (a deep ember on the dark background, a pale peach on the light one; a
+fill only, never a glyph's colour, chosen so both sides' letters and the flame clear 3:1 on it). On open ground a
+tile shows a flame on the fill: `^` a tall one, bold, and `~` a low one (the Unicode pack's tall flame is `▴`),
+glyphs nothing else on a Battle Round's Grid uses; a tile with no flame at that instant shows its own ground on the
+fill, and rock and deposits keep their glyphs. **Under a unit, a building, a corpse still drawn or salvage** the fill
+alone is laid, a glyphless write that keeps its glyph and every colour of its own, so a unit standing in the fire is
+seen standing in it (a fill rather than a see-through wash, which would pull the glyph's colour and change its hue at
+256 colours). Effects draw over it. **It flickers by cosmetic randomness only**: each tile changes its look once a
+beat (170 ms), its beats offset from its neighbours' by a hash, the look a hash of the cosmetic seed, the patch's
+identity (when it was lit, by whom, where), the tile and the beat — a pure function of presentation time
+(`fireAt`, `src/view/burning.ts`). About four tiles in five are alight at any instant, nearly half in a tall flame.
+**It dies down in its last second**: low flames only, dim, two tiles in five, so the end reads before it comes; the
+fill holds to the end, since the ground still hurts. Ground still burning when the fight ends is put out once
+everything in flight has landed, as Recall puts it out in the rules. **Reduced motion** holds each tile's look still
+(the dying down stays: it is the patch's state, not decoration). **In monochrome** the fill is not drawn and the
+flames carry the patch alone, by their glyphs. Both Pulse views draw it from one list worked out with the rest of a
+presentation instant (`PulseSample.fire`): the engine tool's and the Build Phase screen's, the live Battle Round and
+the replay of the last round alike, and with them the browser page.
+
 **The Battle Round's view shows everything by default.** Selection is an addition the player reaches for, never a
 prerequisite for following the fight. If a battle can only be understood by clicking things, the
 presentation has failed and no panel will rescue it.
@@ -328,7 +353,7 @@ largest view it buys centring, never another shape. At 80 × 24 the map shows 49
 acceptance target**; a larger terminal shows more of the same Grid, up to 72 × 24 tiles, and the same information.
 
 **A picture of an area the rules decide draws the rules' own tiles**: a building's or a unit's reach, the build
-range, Vasse's aura and a blast are each drawn from the Grid's own sets of tiles (`tilesWithin`,
+range, Vasse's aura, a blast and burning ground are each drawn from the Grid's own sets of tiles (`tilesWithin`,
 `src/grid/reach.ts`; a reach's outline, the last tiles it covers, is `outlineWithin`), so what the screen shows
 as a reach is what the rules count. A picture that claims no area — death debris and its shockwave, the tracer's
 line, the intro highlight's ring — may take a shape of its own.
@@ -352,7 +377,7 @@ point:
 | Band | Fed by |
 | --- | --- |
 | 1 `terrain` | `terrain` layer |
-| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach during a Battle Round |
+| 2 `territory` | construction coverage: the build range while a building is armed; the raid's trail in the Build Phase; a Commander's aura's reach and burning ground during a Battle Round |
 | 3 `ground-items` | salvage, rubble, deposits |
 | 4 `structures` | `obstacles` layer |
 | 5 `units` | `workers` and `units` layers |

@@ -192,6 +192,7 @@ const PACK_GLYPHS = new Set([
   "\u2593", // dark shade, rock
   "\u25c6", // black diamond, deposit
   "\u25aa", // small black square, salvage
+  "\u25b4", // small black up-pointing triangle, a tall flame on burning ground (East Asian width neutral)
   "\u2500",
   "\u2502",
   "\u250c",

@@ -62,6 +62,10 @@ export const STYLE_ROLES = [
   "fx.debris",
   "fx.critical",
   "fx.flash",
+  // Burning ground (a Citizen mortar's shell sets it alight): a flame's colour, and the scorched fill under
+  // every tile that burns — a fill only, never a glyph's colour, so it is drawn under units and flames alike.
+  "fx.fire",
+  "fx.fire.ground",
   // The rainbow (Mario: "colour interpolation (a rainbow, lighting on the characters)").
   // Six hues the theme owns like any other role, so a rainbow is a walk through roles rather than a
   // list of colours in a view module. Used by the shading and particle recipes' rainbow palettes
@@ -167,6 +171,10 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
     "fx.debris": [148, 142, 132],
     "fx.critical": [244, 178, 44],
     "fx.flash": [255, 255, 255],
+    // A red-orange flame, apart from the blast's orange and the critical's gold, on a deep ember fill that still
+    // leaves both sides' letters well clear of it.
+    "fx.fire": [248, 108, 36],
+    "fx.fire.ground": [95, 22, 4],
     "fx.hue.red": [240, 84, 84],
     "fx.hue.yellow": [240, 212, 72],
     "fx.hue.green": [96, 222, 112],
@@ -205,6 +213,10 @@ const PALETTE: Readonly<Record<Theme, Record<StyleRole, Rgb>>> = {
     "fx.debris": [120, 110, 96],
     "fx.critical": [168, 110, 8],
     "fx.flash": [8, 8, 8],
+    // The flame darkened to a red to read on the pale ground, apart from the Citizens' own orange, on a pale peach
+    // fill that leaves both sides' letters clear of it.
+    "fx.fire": [190, 50, 10],
+    "fx.fire.ground": [252, 226, 214],
     // Dark enough to read on the pale ground, each still clearly its own hue.
     "fx.hue.red": [192, 32, 32],
     "fx.hue.yellow": [156, 118, 0],
