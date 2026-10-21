@@ -101,11 +101,12 @@ function seedsOf(text: string): number[] {
   })
 }
 
-/** The commit measured, "+uncommitted" when tracked files differ from it: a result is only as named as its build. */
+/** The commit measured, "+uncommitted" when what a battle is made of (the code, the armies, the campaigns, the maps)
+ *  differs from it, new files included: a result is only as named as its build. A document being written is not. */
 function build(): string {
   try {
     const head = execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim()
-    const changed = execSync("git status --porcelain --untracked-files=no", { encoding: "utf8" }).trim() !== ""
+    const changed = execSync("git status --porcelain -- src bin armies campaigns scenarios", { encoding: "utf8" }).trim() !== ""
     return changed ? `${head}+uncommitted` : head
   } catch {
     return "unknown"

@@ -230,6 +230,14 @@ while IFS= read -r cited; do
 done < <(grep -RhoE 'tests/[A-Za-z0-9._/-]+\.test\.ts' --include='*.md' --exclude-dir='history' \
   docs AGENTS.md DEVELOPMENT.md README.md CLAUDE.md 2>/dev/null | sort -u)
 
+# Every measurement kept for the record has a row in the index saying what it measured and whether it still
+# describes the game (the remeasure skill): one was once kept with no row, and nothing said the older ones were stale.
+for measurement in docs/history/measurements/*.json; do
+  [[ -e "$measurement" ]] || continue
+  grep -Fq "$(basename "$measurement")" docs/history/measurements/README.md \
+    || fail "$measurement has no row in docs/history/measurements/README.md"
+done
+
 while IFS= read -r markdown_file; do
   fence_count="$(grep -c '^```' "$markdown_file" || true)"
   if (( fence_count % 2 != 0 )); then

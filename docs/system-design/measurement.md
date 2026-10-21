@@ -54,7 +54,8 @@ was wiped out, time ran out). For each side:
 | `full` | 1 to 6 | every map | balanced, rush, turtle | every level, both plans |
 | `quick` | 1 and 2 | the route scenarios | balanced | every level, both plans |
 
-The full spec is what a step that changes routes is measured by; the quick one is for a look while working.
+The full spec is what a power-curve change or a step that changes routes is measured by; the quick one is for a look
+while working. Which to play for which kind of change is the `remeasure` skill's first table.
 
 **Formations** are measured on their own (`node bin/measure.ts formations [--seeds 1-6] [--exit route|ground]`,
 `src/measure/formations.ts`): an open field, four Barracks a side built as a block, set apart or in a line, every
@@ -63,18 +64,48 @@ wins. The first run is [a report of its own](../history/reports/2026-10-20-forma
 
 ## 4. How a result is written down
 
-`node bin/measure.ts run --spec full --routing "<the rule, in a few words>" --out <file>` writes one JSON file: the
-spec, the build (the commit it ran on), the date, the routing it measured, the milliseconds a tick took on that
-machine, and every battle's record. Results kept for the record go in
-[`docs/history/measurements/`](../history/measurements/README.md), named by date and what they measured, with a line
-in its table. `measure show <file>` prints what one says; `measure compare <before> <after>` prints two, the older
-first.
+`node bin/measure.ts run --spec full --routing "<the rules, in a few words>" --question "<what it must answer>"
+--out <file>` writes one JSON file: the spec, the build (the commit it ran on, ending `+uncommitted` when the code,
+armies, campaigns or maps differed from it), the date, the rules it measured, the question it was played to answer, the milliseconds a
+tick took on that machine, and every battle's record. `measure show <file>` prints what one says; `measure compare
+<before> <after>` prints two, the older first. How much to play for which kind of change, and the rest of the
+procedure, is the [`remeasure`](../../.claude/skills/remeasure/SKILL.md) skill.
 
-## 5. What the numbers say, and what they cannot
+**Played in parallel, written down as one** (`src/measure/merge.ts`, `tests/measure-process.test.ts`). `--jobs N`
+plays a spec as up to N processes at once (each scripted player's duels for each Commander on side A on each seed,
+since one seed's duels can take several times another's; the campaign levels; the maps) and merges what they wrote in
+the order one process plays it, so the file holds the same battles in the same order either way; it records how many
+processes played at once, since a tick takes longer on a loaded machine. `measure merge <file>... --out <file>` does
+the same for parts played by hand with `--parts`, `--players`, `--west` (the Commanders on side A) and `--seeds`, and
+refuses parts of two builds, two specs or two sets of rules.
+
+**What one unit did** (`src/measure/who.ts`): `measure who <content id> [--plan nothing|defended|both]
+[--levels <id>,<id>]` plays the campaign levels by the plans and says, for each round, that unit's or building's hits
+on the enemy, their damage, its kills and the second of its first hit, on each side it stood. It is what a sentence
+that tells the owner to watch something happen in a round is checked against.
+
+## 5. When a measurement goes stale
+
+Results kept for the record go in [`docs/history/measurements/`](../history/measurements/README.md), named by date
+and what they measured, with a row in its index: the build, the rules it measured, its report and its **status**.
+
+- **current**: the latest result on the rules now built.
+- **current, short of** a change: a later change moved part of what it measured (a movement rule after a full run)
+  and those parts have not been played again.
+- **superseded by** a later file: the rules it measured have changed under it — a power-curve change (the Grid
+  Nexus, supply, credits, income, a tier, the Nexus Pulse's hand) supersedes every result before it.
+
+A superseded result's report gets one line at its top saying so and linking what replaced it. Nothing is deleted
+and no number is edited; a current design document never quotes a superseded number. The validator refuses a
+measurement file with no row in the index.
+
+## 6. What the numbers say, and what they cannot
 
 - **Plain words first.** The summary says, per scenario, how often side A won, how long a run took, when A first
   struck and how long units stood blocked; per pair of Commanders, who won; for mirrors, how often each end won; for
   each level and plan, the verdict, the round it ended, the rounds its Commander fell and what it lost.
+- **How soon duels end**: how many were over by the end of rounds 1, 2 and 3. An opening that ends a match is what
+  the Grid Nexus's own shot was built against.
 - **The catch-up measure** (Commander Armies' last step): of the duels where the two sides' first two kept cards
   differ in rarity, how often the luckier side won; and of those where one side was ahead after round 2 (more of its
   Nexus left, then more damage dealt), how often it won. A lucky early hand that wins nearly always is the runaway
@@ -82,12 +113,15 @@ first.
 - **How tight armies meet**: the average spread at first contact, over every battle, and per scenario.
 - **Scripted players are not players.** A script that attacks every round tells which army spends its curve better
   when attacking, not which is stronger; model players and Mario's own games say more ([`duels.md`](duels.md)).
-- **A tick's time is the machine's.** It compares two runs on one machine, never two machines.
+- **A tick's time is the machine's.** It compares two runs on one machine, played the same way (one process, or the
+  same number side by side), never two machines.
 
-## 6. The battles the tests pin
+## 7. The battles the tests pin
 
-Some tests hold one battle's outcome or hash, so a change that moves it is seen. A step that changes routes re-pins
-them knowingly, each with a line saying why it moved, and drops a claim that only held for the old rule:
+Some tests hold one battle's outcome or hash, so a change that moves it is seen. A change that moves them re-pins
+them knowingly, each with a clause in its comment saying why it moved, and drops a claim that only held for the old
+rule; a test whose premise the change broke gets a fixture that isolates its rule instead (the `remeasure` skill sorts
+the failures):
 
 | Test | What it claims |
 | --- | --- |

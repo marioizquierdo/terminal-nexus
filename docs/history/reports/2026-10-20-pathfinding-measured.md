@@ -1,5 +1,8 @@
 # Pathfinding, measured
 
+_Superseded on 2026-10-21, when every Grid Nexus came to shoot and mend: the routes below still stand, but the duels'
+and levels' numbers are history. The current measurement is [the Nexus fights back](2026-10-21-nexus-fights-back.md)._
+
 _2026-10-20, the pathfinding milestone's last step. The whole spec ([`measurement.md`](../../system-design/measurement.md))
 run on the new routes, beside the baseline the milestone began with, and the checks Commander Armies left for it. The
 result is [`2026-10-20-routes-and-roofs.json`](../measurements/2026-10-20-routes-and-roofs.json); read it with
