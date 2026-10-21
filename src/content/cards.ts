@@ -31,6 +31,11 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Trains troopers",
     description: "Trains a wave of troopers, all at once, a few seconds into each Battle Round. They join the fight, and come home to it after.",
   },
+  "structure.bench.nexus": {
+    title: "Practice Nexus",
+    subtitle: "A target that never shoots",
+    description: "A Grid Nexus for the engine's own test maps. If it falls, the battle is lost, but it never fights back.",
+  },
   "structure.bench.hatchery": {
     title: "Hatchery",
     subtitle: "Spawns swarmers",
@@ -46,7 +51,7 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.nexus": {
     title: "Citizen Nexus",
     subtitle: "Your base: guard it",
-    description: "The heart of everything you build. If it falls, the battle is lost: put your defences in front of it.",
+    description: "The heart of everything you build. It shoots one unit near it every few seconds and mends a little between rounds. If it falls, the battle is lost: put your defences in front of it.",
   },
 
   // --- On the map between rounds: survivors of both sides, the raid's camp, what is coming ---
@@ -88,7 +93,7 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.ravel.nexus": {
     title: "Ravel Nexus",
     subtitle: "Their base: guard it",
-    description: "The Ravel heart of a base. If it falls, the battle is lost, and it takes what stands beside it down with it.",
+    description: "The Ravel heart of a base. It shoots one unit near it every few seconds and mends a little between rounds. If it falls, the battle is lost, and it takes what stands beside it down with it.",
   },
 
   // --- Bare ground ----------------------------------------------------------------------------------

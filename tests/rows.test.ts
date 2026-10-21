@@ -561,7 +561,8 @@ test("the forecast's way is the Pulse's own walk: down the screen's diagonal fro
     registry: FIXTURE_REGISTRY,
     pulse: 1,
     carried: null,
-    structures: [{ contentId: "structure.citizen.nexus", anchor: { x: 5, y: 17 } }],
+    // The bench's passive Nexus: the game's own shoots the walker before its walk is done.
+    structures: [{ contentId: "structure.bench.nexus", anchor: { x: 5, y: 17 } }],
   }
   const [group] = foreseeIntents(input)
   assert.ok(group !== undefined && group.path.length > 0)
@@ -652,8 +653,8 @@ test("the battle with the most rules in it resolves the same way on every run, a
 
 // The Citizens against the Ravels, blasts among its rules: its state and its events (pinned again when every tie came
 // to go by what a unit faces, then a draw, when units came to walk by routes, and when a side with no target came to
-// head for the enemy's Nexus, turning only to what comes within its reach).
-const PINNED_BATTLE = ["bff55b350e713b7800defb795db2e6f377a076dff1b48ac619a887ee7ed82ec6", "82fd828d46aa7dd01073109208ae8c10e72914b1f1f5e9e86fa3569ea5dae2d9"] as const
+// head for the enemy's Nexus, turning only to what comes within its reach, and when the Grid Nexus came to fight back).
+const PINNED_BATTLE = ["261d6aac97e0fa1bfb18154ca141cfe6c9902a0ae092c3fdf1fe8b4871cb31df", "d4966d022f4f3168bcb5b0a02582dc81ad1cc34e5f76119290d898fc7e27e89e"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of

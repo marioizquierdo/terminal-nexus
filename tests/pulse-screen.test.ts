@@ -187,16 +187,20 @@ test("the timer counts down the seconds left to the last shot, and its last seco
   assert.equal(clock(moments.stopMs - 1), "0:01", "the last second reads 0:01, not 0:00")
 })
 
-test("a lost Pulse and a timed-out one say so plainly, and a force wiped out with the Nexus standing plays on", () => {
-  // Nothing built: the squads fall, the Nexus stands, and the round runs to its end (Mario, 2026-10-01:
-  // only the Nexus falling loses).
-  const fallen = play()
-  atHome(fallen)
-  assert.match(screenText(fallen), /^\| TIME'S UP /m)
-  assert.doesNotMatch(screenText(fallen), /Your force was wiped out\./)
+test("a lost Pulse and a timed-out one say so plainly, and a round with nobody left to walk home says that", () => {
+  // Nothing built: the squads and the Nexus's own shots wipe the first raid out (the owner, 2026-10-21: the Nexus
+  // fights back). A force wiped out with its Nexus standing playing on to the end is the mission's own test, with a
+  // raid the Nexus cannot stop alone (tests/mission.test.ts).
+  const nothing = play()
+  atHome(nothing)
+  assert.match(screenText(nothing), /^\| VICTORY /m)
+  assert.match(screenText(nothing), /The raid was wiped out\./)
   // Nobody left to walk home is said as that, not as "0 of yours".
-  assert.match(screenText(fallen), /None of yours came home\./)
-  assert.doesNotMatch(screenText(fallen), /\b0 of yours came home/)
+  const alone = play({ crew: "none" })
+  atHome(alone)
+  assert.doesNotMatch(screenText(alone), /Your force was wiped out\./)
+  assert.match(screenText(alone), /None of yours came home\./)
+  assert.doesNotMatch(screenText(alone), /\b0 of yours came home/)
 
   // A Nexus that falls ends the mission: the mission's verdict leads, and the fight's reason stays under it.
   const nexusFell = play({ crew: "none", raid: "heavy" })

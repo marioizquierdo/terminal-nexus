@@ -22,7 +22,9 @@
 //   but the state, the registry and the order of the entities;
 // - every entity's transient fields go back to what a fresh one starts with (`freshEntityFields`), which
 //   is what starts a producer's waves afresh (its first one its recipe's delay away, none come, nothing
-//   owed) and clears a shot in progress; and
+//   owed) and clears a shot in progress;
+// - a structure that `mends` regains that much health, never past its `maxHp` (the Grid Nexus, so an early
+//   raid is not a wound it carries all match); and
 // - the Pulse's own bookkeeping is cleared: the clock is zero, there is no outcome, no tile is still
 //   cooling from a death. The gameplay stream carries on where it stopped.
 
@@ -60,6 +62,12 @@ function nearest(survivor: EntityState, survivorDefinition: ContentDef, candidat
     }
   }
   return best
+}
+
+/** `entity`'s health after Recall: what it ended the Pulse on, plus what its definition `mends`, capped at its `maxHp`. */
+function mended(entity: EntityState, definition: ContentDef): number {
+  if (definition.mends === undefined) return entity.hp
+  return Math.min(definition.maxHp, entity.hp + definition.mends)
 }
 
 export function recall(state: MatchState, registry: ContentRegistry, sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>): RecallResult {
@@ -164,6 +172,7 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     ...entity,
     anchor: anchors.get(entity.ordinal) ?? entity.anchor,
     ...freshEntityFields(definitionOf(entity)),
+    hp: mended(entity, definitionOf(entity)),
   }))
   return {
     state: { ...state, tick: 0, outcome: null, vacatedTiles: [], entities },

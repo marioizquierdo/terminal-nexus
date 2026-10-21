@@ -21,7 +21,7 @@
         "description": "A heavier barracks. Trains a wave of pikemen, each worth about three troopers, a few seconds into each Battle Round."
       },
       "glyph": ["[g]", "[_]"],
-      "notes": "The tech tree's first second-tier building: the Barracks's bracket, heavier, closed walls where the Barracks's yard is open. It keeps a tile of room round it, as the Barracks does, so its units have somewhere to stand."
+      "notes": "The tech tree's first second-tier building: the Barracks's bracket, heavier, closed walls where the Barracks's yard is open. Its pikemen appear on its roof and walk out over it, as a Barracks's troopers do."
     },
     {
       "id": "unit.citizen.pikeman",

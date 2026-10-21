@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** none open: all nine steps are built and wait for Mario's playtest.
+**Current step:** 16J — after the merge: the Nexus fights back, breaching, and the chapter on how things move.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -330,6 +330,27 @@ validation at the end". The checks Commander Armies left are measured here, on t
 - [x] **What they show, in plain words**: Averno is the strongest Commander, Dob a defender, climbing the tree pays
   by less than before, and an early lead decides a duel. Every campaign level plays to the same verdict by both plans
   as on the baseline, so none is retuned.
+
+### Step 16J — After the merge: the Nexus fights back, breaching, and the chapter on how things move
+
+Mario's round after the milestone merged ([his words](../history/feedback/2026-10-21-pathfinding.md)): the duels'
+early lead answered by the Nexus itself, the difference between rock and a building in the way, and the pathfinding
+design written as a chapter of the grid's architecture.
+
+- [ ] **The Nexus fights back**: the Citizen and the Ravel Grid Nexus each get one shot that kills a trooper, said on
+  its card, the two alike ("let's start with just saying the Nexus have a single attack that deals enough damage to
+  kill a trooper").
+- [ ] **It mends a little between rounds**, the two alike, said on its card. A Nexus power that raises either, and the
+  factions' Nexuses differing, are later.
+- [ ] **Rock and buildings are not the same wall**: a unit whose way to its goal is closed only by the enemy's
+  buildings turns on the building in its way, rather than standing before it. A scenario of its own.
+- [ ] **A chapter on how things move**, in the grid's design: the building blocks, from where a body may stand to the
+  step a unit takes, each in a sentence and a picture; how a goal becomes a field shared by every unit heading
+  there (his general path, worked out once); and where a modifier — a unit that steps back from a blow, one that
+  leaps forward — plugs in.
+- [ ] **The duels measured again** with the Nexus fighting back: do the first two rounds still decide a duel?
+- [ ] Area damage for the Citizens (missiles that leave the ground burning) proposed for his word, and a beacon that
+  gathers an army into a formation put in the backlog.
 
 ## Waiting on Mario
 

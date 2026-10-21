@@ -64,6 +64,7 @@ export type ContentEntry = Readonly<{
   splitOnDeath?: NonNullable<ContentDef["splitOnDeath"]>
   constructionRadius?: number
   supplyProvided?: number
+  mends?: number
   supplyCost?: number
   abilities?: readonly AbilityUse[]
   card: CardText
@@ -138,6 +139,7 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     splitOnDeath: record<NonNullable<ContentDef["splitOnDeath"]>>({ contentId: text, count: positiveWholeNumber }, {}),
     constructionRadius: positiveWholeNumber,
     supplyProvided: positiveWholeNumber,
+    mends: positiveWholeNumber,
     supplyCost: wholeNumber,
     abilities: list(abilityUse),
     notes: text,

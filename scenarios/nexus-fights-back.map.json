@@ -1,0 +1,65 @@
+{
+  "id": "nexus-fights-back",
+  "name": "The Nexus fights back - one shot drops a trooper",
+  "notes": "A Citizen Grid Nexus, a raid trooper walking at it from the east, and a raid Den standing within its reach. The Nexus shoots the trooper once, as it comes within a marksman's reach, and it falls where it stands; it never shoots the Den, a building. Done when the trooper has fallen to the one shot and the raid has no unit left.",
+  "grid": {
+    "preset": "small-wide"
+  },
+  "seed": 1,
+  "pulseTicks": 240,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 5,
+        "y": 6
+      },
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.citizen.nexus"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 9,
+        "y": 6
+      },
+      "rows": [
+        "           t",
+        "",
+        "",
+        "d"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "d": {
+          "content": "structure.ravel.den"
+        }
+      }
+    }
+  }
+}

@@ -314,6 +314,14 @@ The owner, 2026-10-13: "start thinking about catch-up mechanics (specially for m
 
 - **The opening must not end a match.** An army that can bring down a Nexus in round 1 has spent no curve to do it. Whatever an army leans on, its first act should hurt, not finish; a Nexus that falls in round 1 or 2 of a mirror duel is a broken curve. What should hold the line there — the Nexus itself, a guard it starts with, or the armies' own opening — is the owner's call ([the open questions](../milestones/open-questions.md), how a duel's first rounds are kept from deciding it).
 
+**The owner's answer: the Nexus fights back, and mends** (2026-10-21: "let's start with just saying the Nexus have a
+single attack that deals enough damage to kill a trooper ... And perhaps we add like a little bit of self-healing";
+built, [`pulse.md`](../system-design/pulse.md)). Every Grid Nexus shoots a unit within a marksman's reach every
+three seconds, hard enough to drop a trooper, and mends 40 of its 400 between rounds. It is a stop for the opening,
+not a wall: a few units marching on an unguarded Nexus in round 1 are shot down one by one, while an army of the
+later tiers walks through its fire. The Citizen and the Ravel Nexus are alike for now; a faction's Nexus differing,
+and Nexus powers that raise its shot or its mending, are later.
+
 ## 3. Strategy-design requirements
 
 Terminal Nexus should layer counterplay across several dimensions rather than reduce every matchup to one unit triangle:

@@ -254,9 +254,10 @@ test("the bench medic, the one healer before buildings could heal, heals exactly
   assert.deepEqual([battle.stateHash, battle.eventsHash], PINNED_MEDIC)
 })
 
+// Pinned again when the Grid Nexus came to fight back: its shots are among the battle's.
 const PINNED_AID_STATION = [
-  "81f2d4de6a136420014eafcff90baefcd47f30e47d39655c5f43a5e64be71af3",
-  "4f9602c34e41efda28e1407e2aab36d892197d01b5be69b9c81c264da4835a93",
+  "7fa0b15cba3e4212e29a64fc80250aba4abc348ebda82b0055c2f74e33292dad",
+  "cb90fedfe306c6bf3c974f6f6ff9bf85927adb41b6e76f7a2f85c05f4f8a35bf",
 ]
 // Its state's hash was the one from before the Aid Station, its events' pinned again when a unit among equally near
 // enemies came to keep the one it holds, then take the weakest (no side wins by where it stands): the same battle,
