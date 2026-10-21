@@ -66,8 +66,8 @@ wins. The first run is [a report of its own](../history/reports/2026-10-20-forma
 
 `node bin/measure.ts run --spec full --routing "<the rules, in a few words>" --question "<what it must answer>"
 --out <file>` writes one JSON file: the spec, the build (the commit it ran on, ending `+uncommitted` when the code,
-armies, campaigns or maps differed from it), the date, the rules it measured, the question it was played to answer, the milliseconds a
-tick took on that machine, and every battle's record. `measure show <file>` prints what one says; `measure compare
+armies, campaigns or maps differed from it), the date, the rules it measured, the question it was played to answer,
+the milliseconds a tick took on that machine, and every battle's record. `measure show <file>` prints what one says; `measure compare
 <before> <after>` prints two, the older first. How much to play for which kind of change, and the rest of the
 procedure, is the [`remeasure`](../../.claude/skills/remeasure/SKILL.md) skill.
 

@@ -44,9 +44,10 @@ const HELP = `measure: battles measured the same way before and after a rule cha
   measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
               [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
       plays the spec and prints what it says; with --out, writes every battle's record as JSON too. --jobs plays
-      it as up to N processes side by side (the maps, the levels, and the duels a few at a time) and merges what they wrote
-      into one result, in the order one process would have played it. --question records the one question the run
-      is meant to answer. --parts, --players and --west (the Commanders on side A) play part of a spec
+      it as up to N processes side by side (the maps, the levels, and the duels a few at a time) and merges what
+      they wrote into one result, in the order one process would have played it. --question records the one
+      question the run is meant to answer. --parts, --players and --west (the Commanders on side A) play part of
+      a spec
   measure merge <file>... [--out <file>]
       makes parts of one spec, played apart, one measurement, and prints what it says; refuses parts of different
       builds or specs
@@ -63,8 +64,9 @@ const HELP = `measure: battles measured the same way before and after a rule cha
       says how tight each army meets the enemy and who wins; --exit is the "Way off the roof" Experiment's value
 
 The quick spec plays the route scenarios and one scripted player's duels on two seeds; the full spec every map, three
-players' duels and every campaign level by its plans on six seeds. --routing names the rule units walk by, in a few
-words, for the record. A build ending "+uncommitted" was measured with changes not yet committed.`
+players' duels and every campaign level by its plans on six seeds. --routing names the rules it measured (the routes,
+the Nexus, a tier), in a few words, for the record. A build ending "+uncommitted" was measured with changes to the
+code, armies, campaigns or maps not yet committed.`
 
 type Options = Record<string, string>
 
