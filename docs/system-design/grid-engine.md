@@ -220,13 +220,50 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **see-through style** — a glyphless cell write that blends a colour into whatever is under it at a given opacity; the cursor uses it.
 - **resize gate** — the TERMINAL TOO SMALL screen shown below the minimum size instead of a cropped Grid.
 
-## 5. The parts
+## 5. How a unit moves: pathfinding
+
+The owner, 2026-10-21: "Make sure we have a dedicated section on the grid architecture spec about pathfinding ... is
+it defined in a way that can explain the default units behavior?" This section is the summary; the chapter, with
+every number and its pictures, is [`movement.md`](movement.md), and the rules with their tests are in
+[`pulse.md`](pulse.md), routes. GUIDANCE unless marked.
+
+**What a unit does when nobody tells it anything** — which is always, until orders exist — is one of six states,
+worked out fresh every tick from what it chose (RULE — `MoveState`, `src/pulse/march.ts`):
+
+1. **Leaving the roof.** A unit a building trains comes out on its roof, and survivors come home onto it; standing on
+   its own building, it walks to the nearest ground first (or along the roofs, the "Way off the roof" Experiment), and
+   does so too when its side's building owes a wave it has no room for.
+2. **Marching.** With no enemy within its engage reach (6 columns), it walks for its side's goal: the level's target,
+   or the enemy's Grid Nexus. It keeps its place in the army's formation: melee in front, short range behind it, long
+   range behind that, backliners anywhere, and nobody but a backliner ahead of its Commander while she marches.
+3. **Yielding.** A marcher ahead of its place takes no step this tick and lets an ally behind it pass.
+4. **Engaged.** An enemy came within its engage reach: it walks to where its attack reaches that enemy.
+5. **Standing.** Its attack reaches, or it is gathered at its side's target, or it has nothing to do: it fights or
+   holds, and is a wall to everyone's routes.
+6. **Fleeing.** A worker with a threat near runs from every threat at once into open ground.
+
+**How it gets there** is five building blocks, each tested alone (`src/routing/`): *ground* (where a body may stand:
+rock and whatever stands still are walls, a walker is not), *goals* (where the walk ends: where its attack reaches, or
+inside its target), the *distance field* (the walk from every tile to the nearest goal, a row counting two columns,
+slow ground and burning ground weighed in), *step choice* (the four steps ranked by the walk each leaves, ties by the
+turn and then a seeded draw), and *arbitration* (who gets a tile two want, and allies swapping). One field serves every
+unit heading for the same goal with the same body, worked out every tick from that tick's Grid and only as far as
+asked, so a fallen building or a moved crowd is in the next tick's routes with nothing kept up to date.
+
+**What makes it the game's**: the general path is the field, not a line; the Commander is the line an army keeps to
+while she leads (without her, the line from its Nexus to its goal); rock is never broken but an enemy building in the
+only way is; and every tie is broken by what a unit faces and then the seeded stream, never by reading order, so a
+mirrored battle stays a mirror (RULE — [`pulse.md`](pulse.md), no side wins by where it stands). A new way of
+moving — stepping back from damage, leaping forward, a beacon to gather at — is a new goal, a new field or a move that
+is not a step, on the same parts ([`movement.md`](movement.md), where modifiers plug in).
+
+## 6. The parts
 
 This document is the overview. The design is in its parts, one document each:
 
 - [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
 - [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, routes, match structure, economy, events.
-- [`movement.md`](movement.md) — how things move: the pathfinding chapter, its building blocks, the shared field as the general path, breaching, and where modifiers plug in.
+- [`movement.md`](movement.md) — how things move: the pathfinding chapter, what a unit does by default (its states and the army's march), its building blocks, the shared field as the general path, breaching, and where modifiers plug in.
 - [`measurement.md`](measurement.md) — how a battle is measured, so results before and after a rule change compare.
 - [`content.md`](content.md) — content interfaces.
 - [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.

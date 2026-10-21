@@ -92,10 +92,11 @@ over entities can never decide an outcome:
    already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw; a unit that
    aims at a crowd first takes the enemies with the most of their side round them (below). Then the
    tick's routes are built from who walks and who stands (section 1.6), and a unit that would walk chooses again by
-   what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all.
+   what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all. Every target set,
+   who marches and who of them yields (the march, section 1.6).
 4. **Intents.** Each actor with movement credit declares one destination tile: the best step of its route it
    fits now. A unit held up behind allies that are stuck walks round them; two allies that want each other's tile
-   swap.
+   swap. A marcher that yields declares no step; an ally held up behind it swaps with it, or releases it.
 5. **Arbitration** (`src/pulse/arbitration.ts`). Group intents by destination *within a layer*.
    Contested claims resolve by speed tier — **tier 1 outranks tier 2** — with any remaining tie
    broken by one draw from the seeded stream. Entity id orders iteration and event emission, never
@@ -236,6 +237,9 @@ balanced one.
   unit that aims at a crowd counts each candidate's crowd from where bodies stand and whose they are, never an order,
   and breaks a tie between equal crowds the same way.
 - **A wide unit measures its walk from its nose**: its tile nearest the goal, and the enemy tile nearest it.
+- **The march** reads only where bodies stand and whose they are: progress and the band are distances, the guide line
+  is drawn alike from either end (a point exactly between two tiles takes both), and two allies that would swap with
+  one yielder are drawn between; a mirrored march stays a mirror tick for tick (`march-mirror`).
 - **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, Recall's homes and
   tiles, a Commander's return and a mission's arrivals break a tie toward the enemy's Grid Nexus
   (`enemyNexusMiddle`), and Recall sets its survivors down nearest home first, then nearest the enemy. Forces whose
@@ -355,6 +359,19 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   route, or in a ring of units each waiting on the next — walks round them by a field of its own that counts them as
   walls; one that only waits behind a walker that will step on soon waits, since walking round a queue and back would
   pace. Two allies of one tile each that want each other's tile swap, together.
+- **The march** (the owner, 2026-10-21; `src/pulse/march.ts`, `tests/march.test.ts`, how it reads in
+  [`movement.md`](movement.md), section 5). A unit marches when it walks for its side's goal — its target, or the
+  enemy's Grid Nexus while that is beyond its engage reach; one walking to an enemy within reach is engaged and fights
+  as before. Once perception has set every target, a marcher's progress is its walk, for one tile, to its side's goal
+  over rock and the enemy's standing buildings. A marcher with a line (`lineOf`; a backliner, a flyer, a unit with no
+  attack and a unit on its own roof keep none) yields — declares no step — when it is further forward than its line's
+  place behind its side's Commander while she marches (melee 2 ahead, short 4 behind, long 8 behind), or, in the short
+  or long line, when a marching ally of a line ahead within 12 columns is not 4 columns of progress ahead per line
+  between them; never with an enemy within 12 columns of it. A yielder is a walker to the routes, not a wall: a held
+  ally of one tile on its layer swaps with it when both can pay, and a bigger one releases it to take its own best step
+  (`march.made-way`). A marcher more than 6 columns off its side's guide line — from the Commander, or its Nexus
+  without her, to its goal — breaks a tie between equally good steps toward the line. A backliner chooses first among
+  the enemies within its reach that are not in the melee line, the nearest it can walk to.
 - **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
   a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
   from where a unit stands, so it can save up for a step onto scrub ([`grid.md`](grid.md), terrain).
@@ -377,7 +394,8 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   field walked downhill over the terrain and the buildings, ending beside what the raid goes for.
 
 What a tick's routes cost is measured in `tests/routing.test.ts`: twelve fields worked out over the whole starter
-map take a third of a frame at most, and a battle's stop far sooner.
+map take a third of a frame at most, and a battle's stop far sooner. A whole tick's is profiled by
+`scripts/profile-routes.ts` ([`movement.md`](movement.md), the general path).
 
 ## 2. Match structure
 
