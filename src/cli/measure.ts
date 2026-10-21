@@ -3,9 +3,10 @@
 // Commands:
 //
 //   measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
-//               [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
+//               [--formations block,apart] [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
 //       plays the spec and prints what it says; with --out, writes every battle's record as JSON too; with --jobs,
-//       as up to N processes side by side, merged into one result
+//       as up to N processes side by side, merged into one result; with --formations, each player's duels set the
+//       formations against each other (rush-block against rush-apart)
 //   measure merge <file>... [--out <file>]
 //       makes parts of one spec, played apart, one measurement
 //   measure who <content id> [--plan nothing|defended|both] [--levels <id>,<id>]
@@ -42,12 +43,15 @@ import { loadMapFile } from "../scenario/load-map-file.ts"
 const HELP = `measure: battles measured the same way before and after a rule changes (docs/system-design/measurement.md).
 
   measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
-              [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
+              [--formations block,apart] [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
       plays the spec and prints what it says; with --out, writes every battle's record as JSON too. --jobs plays
       it as up to N processes side by side (the maps, the levels, and the duels a few at a time) and merges what
       they wrote into one result, in the order one process would have played it. --question records the one
       question the run is meant to answer. --parts, --players and --west (the Commanders on side A) play part of
-      a spec
+      a spec. --formations block,apart has each player build as a block on one side and apart on the other, every
+      ordered pair of the formations named, so each meets each from both ends (one formation: both sides play
+      it); the summary then says who won by formation. A player named with one (--players rush-block) plays it on
+      both sides
   measure merge <file>... [--out <file>]
       makes parts of one spec, played apart, one measurement, and prints what it says; refuses parts of different
       builds or specs
@@ -218,6 +222,7 @@ export async function main(args: readonly string[]): Promise<number> {
       ...seeded.duels,
       ...(options["players"] === undefined ? {} : { players: options["players"].split(",") }),
       ...(options["west"] === undefined ? {} : { west: options["west"].split(",") }),
+      ...(options["formations"] === undefined ? {} : { formations: options["formations"].split(",") }),
     },
   }
   const parts = new Set((options["parts"] ?? "scenarios,duels,levels").split(","))
@@ -226,6 +231,7 @@ export async function main(args: readonly string[]): Promise<number> {
   if (jobs > 1) {
     const shared = ["--spec", base.name, "--routing", options["routing"] ?? "not named"]
     if (options["question"] !== undefined) shared.push("--question", options["question"])
+    if (options["formations"] !== undefined) shared.push("--formations", options["formations"])
     const played = await runJobs(jobsOf(spec, parts), jobs, (job, out) => [
       ...shared,
       ...["--seeds", job.seeds.join(","), "--parts", job.parts.join(","), "--players", job.players.join(",")],

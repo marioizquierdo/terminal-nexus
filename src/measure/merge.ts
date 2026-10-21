@@ -6,6 +6,7 @@
 
 import type { BattleRecord } from "./battle.ts"
 import type { Measurement, MeasureSpec } from "./spec.ts"
+import { pairingIndex } from "./spec.ts"
 
 /** One process's share of a spec: which parts it plays, and for duels which scripted player, with which Commander
  *  on side A, on which seeds. */
@@ -57,9 +58,9 @@ export function ticksOf(measurement: Measurement): number {
 /**
  * Parts of one spec made one measurement. They must share the spec, the build and the rules named, or the merge is
  * refused: two builds in one file would compare nothing. The duels are put in the order `runSpec` plays them — by
- * player, then the west Commander, then the east, as `spec` lists them (one it does not list after, by name), then by
- * seed — so the result does not depend on how the spec was split; the maps and the levels in the order the parts are
- * given. A tick's time is weighted by the ticks each part played; `jobs` is how many played at once (all of them, unless
+ * player and the formations it plays by (`playerPairs`), then the west Commander, then the east, as `spec` lists them
+ * (one it does not list after, by name), then by seed — so the result does not depend on how the spec was split; the
+ * maps and the levels in the order the parts are given. A tick's time is weighted by the ticks each part played; `jobs` is how many played at once (all of them, unless
  * the caller knows better).
  */
 export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSpec, jobs = parts.length): Measurement {
@@ -72,11 +73,14 @@ export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSp
   }
   const { players, commanders } = spec.duels
   const named = (order: readonly string[], x: string, y: string): number => placeIn(order, x) - placeIn(order, y) || x.localeCompare(y)
+  const pairing = (duel: Measurement["duels"][number]): number => pairingIndex(spec.duels, duel.players) ?? Number.MAX_SAFE_INTEGER
   const duels = parts
     .flatMap((part) => part.duels)
     .sort(
       (x, y) =>
+        pairing(x) - pairing(y) ||
         named(players, x.players.A, y.players.A) ||
+        named(players, x.players.B, y.players.B) ||
         named(commanders, x.commanders.A, y.commanders.A) ||
         named(commanders, x.commanders.B, y.commanders.B) ||
         placeIn(spec.seeds, x.seed) - placeIn(spec.seeds, y.seed) ||

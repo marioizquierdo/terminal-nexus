@@ -18,7 +18,7 @@ import type { DuelArmy } from "./sides.ts"
 import { duelArmy, loadoutOf, powerOf } from "./sides.ts"
 import { handOf, mapOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
 import type { DuelState, RoundReport, Side, SideReport } from "./types.ts"
-import { STANCES, ZONES } from "./types.ts"
+import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
 
 /** A building the side can build: its card id, name, cost, what it needs standing, and what it does. */
 export type BriefBuilding = Readonly<{
@@ -59,7 +59,16 @@ export type BriefData = Readonly<{
   /** What stands for it as the round opens, and its units home after the last round, by name. */
   yours: Readonly<{ buildings: readonly string[]; units: Readonly<Record<string, number>> }>
   zones: Readonly<Record<string, Readonly<{ x: number; y: number }>>>
-  enemy: Readonly<{ commander: string; nexus: Readonly<{ health: number; most: number }>; kept: readonly string[]; buildings: readonly string[]; units: Readonly<Record<string, number>> }>
+  enemy: Readonly<{
+    commander: string
+    nexus: Readonly<{ health: number; most: number }>
+    kept: readonly string[]
+    buildings: readonly string[]
+    units: Readonly<Record<string, number>>
+    /** What each building its army can build trains, and what those units do (its army is public, as its kept
+     *  powers are): where to look for an attack that hits an area. */
+    trains: readonly string[]
+  }>
   map: readonly string[]
   last: RoundReport | null
   history: readonly string[]
@@ -68,12 +77,18 @@ export type BriefData = Readonly<{
 /** A side's brief: its data and its text. */
 export type Brief = Readonly<{ data: BriefData; text: string }>
 
-/** One plain line of a unit's numbers: health, attack and range, speed. */
+/** One plain line of a unit's numbers: health, attack and range, speed, and what of it hits an area — the damage a
+ *  tight army pays for (`Formation`). */
 function statsOf(definition: ContentDef): string {
   const attack = definition.attack
-  const hit = attack === undefined ? "no attack" : `${attack.kind === "heal" ? "heals" : "hits"} ${attack.damage} every ${(attack.cooldownTicks / 12).toFixed(1)}s, ${attack.kind === "melee" ? "melee" : `range ${attack.range}`}`
+  const seconds = (ticks: number): string => `${(ticks / 12).toFixed(1)}s`
+  const struck = attack?.splash === undefined ? `${attack?.damage ?? 0}` : `${attack.splash.damage} to everyone within ${attack.splash.radius} of where it lands`
+  const hit = attack === undefined ? "no attack" : `${attack.kind === "heal" ? "heals" : "hits"} ${struck} every ${seconds(attack.cooldownTicks)}, ${attack.kind === "melee" ? "melee" : `range ${attack.range}`}`
+  const burn = attack?.burn === undefined ? "" : `, sets the ground within ${attack.burn.radius} burning (${attack.burn.damage} every ${seconds(attack.burn.everyTicks)} for ${seconds(attack.burn.ticks)} to whoever stands on it)`
+  const aim = definition.aim === "crowd" ? ", aims at the thickest knot of enemies" : ""
+  const burst = definition.detonation === undefined ? "" : `, bursts for ${definition.detonation.damage} within ${definition.detonation.radius} ${definition.detonation.triggerRange === undefined ? "when it dies" : "on contact"}`
   const speed = definition.movementRate === undefined ? "" : `, ${(definition.movementRate.numerator / definition.movementRate.denominator).toFixed(1)} tiles/s`
-  return `health ${definition.maxHp}, ${hit}${speed}`
+  return `health ${definition.maxHp}, ${hit}${burn}${aim}${burst}${speed}`
 }
 
 /** A unit's strength: its health times its damage a second, rounded down (the power curve's measure). */
@@ -117,7 +132,7 @@ function reportLine(label: string, report: SideReport): string {
       .map(([name, count]) => `${count} ${name}`)
       .join(", ") || "none"
   return [
-    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.refused.length === 0 ? "" : `; refused ${report.refused.join("; ")}`}; stance ${report.stance}.`,
+    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.refused.length === 0 ? "" : `; refused ${report.refused.join("; ")}`}; stance ${report.stance}.`,
     `  fielded ${counts(report.fielded)}; trained ${counts(report.trained)}; lost ${counts(report.lost)}.`,
     `  dealt ${report.dealt.units} to units, ${report.dealt.buildings} to buildings, ${report.dealt.nexus} to the Nexus; Nexus ${report.nexus.before} -> ${report.nexus.after} of ${report.nexus.most}${report.commanderFell ? "; the Commander fell" : ""}${report.earned > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(report.abilities).length === 0 ? "" : `; abilities ${counts(report.abilities)}`}.`,
   ].join("\n")
@@ -129,7 +144,8 @@ export function briefOf(state: DuelState, side: Side): Brief {
   const army: DuelArmy = duelArmy(state.sides[side].commander)
   const enemyArmy: DuelArmy = duelArmy(state.sides[enemy].commander)
   const loadout = loadoutOf(army, state.sides[side])
-  const registryOf = (who: Side): ContentRegistry => (who === side ? loadout.registry : loadoutOf(enemyArmy, state.sides[enemy]).registry)
+  const enemyLoadout = loadoutOf(enemyArmy, state.sides[enemy])
+  const registryOf = (who: Side): ContentRegistry => (who === side ? loadout.registry : enemyLoadout.registry)
   const commanderDef = loadout.registry.get(army.commander.unit)
   const card = CARD_TEXT[army.commander.unit]
   const pronouns = card?.pronouns ?? { subject: "they", possessive: "their" }
@@ -206,6 +222,9 @@ export function briefOf(state: DuelState, side: Side): Brief {
       kept: state.sides[enemy].kept.flatMap((id) => powerOf(enemyArmy, id)?.name ?? []),
       buildings: standingOf(state, enemy).map((structure) => `${titleOf(structure.contentId)} at ${structure.anchor.x},${structure.anchor.y}`),
       units: theirUnits,
+      trains: enemyLoadout.catalog.flatMap((item) =>
+        item.spawns === undefined ? [] : [`${item.label}: ${item.spawns.perWave * item.spawns.waves} ${titleOf(item.spawns.unit)} a round (${statsOf(enemyLoadout.registry.get(item.spawns.unit))})`],
+      ),
     },
     map: picture(state, registryOf),
     last,
@@ -248,10 +267,17 @@ export function briefText(data: BriefData): string {
   lines.push(...data.map)
   lines.push("```")
   lines.push(`Places you can name for a building (it goes to the legal spot nearest): ${Object.entries(data.zones).map(([zone, tile]) => `${zone} (${tile.x},${tile.y})`).join(", ")}. "forward" is ahead of your furthest building, so a base pushed forward builds further forward. You may give x and y instead.`)
-  lines.push(`You build within 6 of your Nexus and of buildings linked to it; a building that trains units keeps a tile clear round it.`)
+  lines.push(`You build within 6 of your Nexus and of buildings linked to it (a row counting two columns); buildings may touch.`)
+  lines.push("")
+  lines.push("## How tight your army fights")
+  lines.push("Units come out on the roofs of the buildings that trained them, so where you put those buildings decides how tight your army fights.")
+  lines.push("- Built touching, in a block, their waves come off the roofs together and meet the enemy as one: a tight army wins a clash of lines, but an attack that hits an area (a shell that bursts or sets the ground burning, a unit that bursts, one that aims at the thickest knot) catches many of them at once.")
+  lines.push("- Built apart, the waves come out apart and reach the fight one after another, to be beaten one at a time by an army that arrives together; but an area attack catches few at once.")
+  lines.push("What the enemy's buildings train, and whether any of it hits an area, is under The enemy, below.")
   lines.push("")
   lines.push("## The enemy")
   lines.push(`${data.enemy.commander}. Buildings: ${data.enemy.buildings.join(", ") || "none"}. Units home after the last round: ${Object.entries(data.enemy.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}. Powers kept: ${data.enemy.kept.join(", ") || "none"}.`)
+  if (data.enemy.trains.length > 0) lines.push(`What their buildings can train: ${data.enemy.trains.join("; ")}.`)
   if (data.last !== null) {
     lines.push("")
     lines.push(`## Last round (round ${data.last.round}, ended ${data.last.ended === "nexus" ? "when a Nexus fell" : "on time"})`)
@@ -268,10 +294,13 @@ export function briefText(data: BriefData): string {
   lines.push("## Your plan")
   lines.push("Answer with one JSON object and nothing else:")
   lines.push("```json")
-  lines.push(`{ "power": 1, "build": [ { "building": "${data.buildings[0]?.id ?? "barracks"}", "at": "forward" } ], "stance": "attack", "note": "one sentence on why" }`)
+  lines.push(`{ "power": 1, "build": [ { "building": "${data.buildings[0]?.id ?? "barracks"}", "at": "forward" } ], "formation": "block", "stance": "attack", "note": "one sentence on why" }`)
   lines.push("```")
   lines.push(`- "power": the number of the card you keep, or 0 for none.`)
   lines.push(`- "build": buildings in the order you want them, while credits last; "at" is one of ${ZONES.map((zone) => `"${zone}"`).join(", ")}, or give "x" and "y". What you cannot afford or place is refused and said in the next brief.`)
+  lines.push(
+    `- "formation" (you may leave it out): "block" sets every building you build this round that trains units touching another, round where you ask for the first of them; "apart" sets each at least ${APART_GAP} from the others (a row counting two columns), as near there as that allows; "zones", or none, puts each where its own "at" or "x" and "y" says. Buildings that train nothing always go where they say. One of ${FORMATIONS.map((name) => `"${name}"`).join(", ")}.`,
+  )
   lines.push(`- "stance": ${STANCES.map((stance) => `"${stance}"`).join(" or ")}: your troops march on their Nexus, or hold the ground in front of yours. Units that survive come home and fight again next round.`)
   return lines.join("\n")
 }

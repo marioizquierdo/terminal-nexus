@@ -8,10 +8,15 @@
 //   credit, and attacks every round;
 // - **turtle**: builds two Turrets forward and its strongest producers behind them, and holds until the last two rounds.
 //
+// Each plays by a formation too (`rush-block`, `rush-apart`, `balanced-block` ...): the same plan, with every building
+// that trains units set touching the others or set apart (`Formation`, `types.ts`), round where the plan puts its
+// first one. Played by its bare name, a script names no formation and each building goes where the script says.
+//
 // Pure: a plan is a function of the brief.
 
 import type { BriefBuilding, BriefCard, BriefData } from "./brief.ts"
-import type { Placement, SidePlan, Zone } from "./types.ts"
+import type { Formation, Placement, SidePlan, Zone } from "./types.ts"
+import { FORMATIONS } from "./types.ts"
 
 /** A player: a plan from a brief. */
 export type Player = (brief: BriefData) => SidePlan
@@ -93,3 +98,34 @@ export const turtle: Player = (brief) => {
 
 /** Every scripted player, by name. */
 export const SCRIPTED: Readonly<Record<string, Player>> = { balanced, rush, turtle }
+
+/** A player that plays `player`'s plan by `formation`. */
+export function inFormation(player: Player, formation: Formation): Player {
+  const words = formation === "zones" ? "each building where the script says" : formation === "block" ? "built as a block" : "built apart"
+  return (brief) => {
+    const plan = player(brief)
+    return { ...plan, formation, note: plan.note === undefined ? words : `${plan.note}; ${words}` }
+  }
+}
+
+/** A scripted player's name read: the script and the formation it plays by, `rush-block` the rush in a block; a bare
+ *  name none. `undefined` for a script or a formation there is not. */
+export function scriptedName(name: string): Readonly<{ script: string; formation?: Formation }> | undefined {
+  const dash = name.lastIndexOf("-")
+  const script = dash < 0 ? name : name.slice(0, dash)
+  const formation = dash < 0 ? undefined : name.slice(dash + 1)
+  if (SCRIPTED[script] === undefined) return undefined
+  if (formation === undefined) return { script }
+  return (FORMATIONS as readonly string[]).includes(formation) ? { script, formation: formation as Formation } : undefined
+}
+
+/** A scripted player by its name, `rush` or `rush-block`: `undefined` for none. */
+export function scriptedPlayer(name: string): Player | undefined {
+  const named = scriptedName(name)
+  if (named === undefined) return undefined
+  const player = SCRIPTED[named.script] as Player
+  return named.formation === undefined ? player : inFormation(player, named.formation)
+}
+
+/** Every name a scripted player answers to, in words for an error. */
+export const scriptedNames = (): string => `${Object.keys(SCRIPTED).join(", ")}, each also with -${FORMATIONS.join(", -")} (rush-block)`

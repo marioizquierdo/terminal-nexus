@@ -36,11 +36,32 @@ export const STANCES = ["attack", "hold"] as const
 export type Stance = (typeof STANCES)[number]
 
 /**
+ * How tight a side builds the buildings that train units, and so how tight its army fights: units come out on the
+ * roofs of the buildings that made them (pulse.md), so where those buildings stand is where each wave starts.
+ *
+ * - **block**: each one touching another along a side, the block grown round where the plan asks for the first of
+ *   them: the waves come off the roofs together and meet the enemy as one.
+ * - **apart**: each one set at least `APART_GAP` from every other (columns, a row counting two), as near where the
+ *   plan asks for the first as that allows: the waves come out apart, and an area attack catches fewer at once.
+ * - **zones**: no formation, each building where its own placement says (a named place or a tile): how every plan
+ *   placed before formations, and what a plan that names none still does.
+ *
+ * A formation places only the buildings that train units; a Turret or a Supply Depot goes where its placement says.
+ */
+export const FORMATIONS = ["block", "apart", "zones"] as const
+export type Formation = (typeof FORMATIONS)[number]
+
+/** How far apart an `apart` formation sets its buildings that train units, from the nearest tile of one to the
+ *  nearest of the other, a row counting two columns: about the formations measure's square set apart. */
+export const APART_GAP = 10
+
+/**
  * A side's plan for one round, the whole of what a player decides: which card of the Nexus Pulse's hand to keep (1 to
- * the hand's size; 0 or absent keeps none), what to build and where (in order, while credits last), and the stance.
+ * the hand's size; 0 or absent keeps none), what to build and where (in order, while credits last), how tight to set
+ * the buildings that train units (`formation`; absent, each goes where its placement says), and the stance.
  * `note` is the player's own words on why, kept in the record and shown to nobody else during the duel.
  */
-export type SidePlan = Readonly<{ power?: number; build: readonly Placement[]; stance: Stance; note?: string }>
+export type SidePlan = Readonly<{ power?: number; build: readonly Placement[]; formation?: Formation; stance: Stance; note?: string }>
 
 /** A side between rounds: its Commander, what it has to spend, the powers it kept (by id, in the order kept), and its
  *  Commander's absence when she is out. */
@@ -66,6 +87,8 @@ export type SideReport = Readonly<{
   /** What it asked for and could not have, each with the reason. */
   refused: readonly string[]
   stance: Stance
+  /** The formation its plan named, when it named one. */
+  formation?: Formation
   note?: string
   /** Its units on the Grid as the battle began, by name and count; those its buildings trained during it; its losses
    *  and kills, by name and count. */

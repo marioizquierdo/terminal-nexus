@@ -1,6 +1,6 @@
 # Terminal Nexus — duels
 
-_Two Commander Armies fought out on one map, headless: script against script, model against model, or any mix. How a duel plays, the command line, the brief a player reads and the plan it answers with, how to run model-against-model games for testing, and what the numbers can and cannot say._
+_Two Commander Armies fought out on one map, headless: script against script, model against model, or any mix. How a duel plays, the command line, the brief a player reads and the plan it answers with, the formation a player builds by, how to run model-against-model games for testing, and what the numbers can and cannot say._
 
 A duel is the development bench for armies (the owner, 2026-10-17: "put each commander nexus on one side of the map
 and play a pvp ... script vs script", and a model planning each side from "the relevant logs plus current map state,
@@ -41,8 +41,9 @@ node bin/duel.ts status --dir D
 ```
 
 - **`play`** fights one duel in one process. A player is `script:balanced`, `script:rush`, `script:turtle`
-  (`src/duel/players.ts`), or `cmd:<command>`: the command runs once a round with the brief's text on its input, and
-  what it prints is the plan — the hook for a model on the command line.
+  (`src/duel/players.ts`), each also by a formation (`script:rush-block`, `script:rush-apart`: formations, below), or
+  `cmd:<command>`: the command runs once a round with the brief's text on its input, and what it prints is the plan
+  — the hook for a model on the command line.
 - **`bench`** plays every pairing **from both sides** over the seeds, so a side's advantage on the map cancels out, and
   prints who won. With no `--commanders`, every Commander the armies have.
 - **`new` / `wait` / `submit`** play a duel through files, for players that are other processes: `new` writes
@@ -63,14 +64,56 @@ Never the enemy's plan.
 wrote.
 
 ```json
-{ "power": 1, "build": [{ "building": "barracks", "at": "forward" }, { "building": "depot", "at": "back" }], "stance": "attack", "note": "why" }
+{ "power": 1, "build": [{ "building": "barracks", "at": "forward" }, { "building": "depot", "at": "back" }], "formation": "block", "stance": "attack", "note": "why" }
 ```
 
 `power` is the hand's card number (0 for none); `build` is in order, while credits last, each `at` one of `nexus`,
 `forward` (ahead of the furthest building, so a base pushed forward builds further forward), `back`, `north`,
-`south`, or an `x` and `y`; `stance` is `attack` or `hold`. What the rules refuse is said in the next brief.
+`south`, or an `x` and `y`; `formation`, which may be left out, is `block`, `apart` or `zones` (formations,
+below); `stance` is `attack` or `hold`. What the rules refuse is said in the next brief, and a field it cannot
+read (a formation it does not know) is dropped with the problem said.
 
-## 4. Model against model, for testing
+The brief also says, in a section of its own, that where a side builds decides how tight its army fights and what that
+wins and loses, and lists what the enemy's buildings can train with what those units do, an attack that hits an area
+said as one (a splash, burning ground, a burst, aiming at the thickest knot), so a player can weigh a formation
+against the army it faces.
+
+## 4. How tight an army fights: formations
+
+Units come out on the roofs of the buildings that made them, so where a side builds decides how tight its army fights
+([the formations report](../history/reports/2026-10-20-formations.md): a block of Barracks meets the enemy about 3
+columns from its middle, set apart about 14). **A plan's `formation` makes that a choice** (RULE — `src/duel/round.ts`,
+`tests/duel-formation.test.ts`). It places only the buildings that train units; a Turret or a Supply Depot goes where
+its own placement says. Every spot is still one the Build Phase allows (`legalityAt`), and both ends of the map play
+it as each other's mirror.
+
+| Formation | Where each building that trains units goes | What it is for |
+| --- | --- | --- |
+| `block` | touching another of the side's producers along a side (standing or placed this round), as near where the plan asks for the first of them as that allows; the first ever goes nearest there | the waves come off the roofs together and meet the enemy as one; an area attack catches many at once |
+| `apart` | as far from every other producer as it can, up to 10 (nearest tiles, a row counting two columns), and on a tie nearest where the plan asks for the first | the waves come out apart and reach the fight one after another; an area attack catches few |
+| `zones` | where its own placement says, a named place or a tile | no formation: how every plan placed before there were formations, and what a plan that names none still does |
+
+**Where a formation is centred** is where the plan asks for its first building that trains units (its `at`, or its
+`x` and `y`); the others' own places are not read. **When the shape will not fit** — a block hemmed in by rock or the
+edge of the build range, or no spot the full gap from the others — a block takes the nearest legal spot, touching or
+not, and `apart` the spot furthest from the others it can have: in the first round on the Crossing both shapes fit
+whole; in later rounds a side set apart is often nearer its neighbours than the full gap. **Neither builds past its
+centre toward the enemy while it has room behind it**: without that, a side set apart pushed its base further forward
+each round than a block did (the building furthest forward moves `forward` with it), and block against apart
+measured how far forward a base stood as much as how tight its army fought.
+
+**The scripted players by a formation**: `balanced-block`, `rush-apart`, `turtle-block` and so on, each its script's
+own plan with the formation set: the balanced player's block grows from where its first producer goes (forward), the
+rush's forward, the turtle's behind its Nexus. A script's bare name names no formation, and plays exactly as it did
+before formations (`balanced-zones` plays the same duel). A script picks its producers from the brief's buildings
+that train units, so a new one (a bomber's nest, a mortar pit) is placed by its formation once it is in the army's
+menu.
+
+**The record says it**: each side's round report carries the formation its plan named (`formation`), the round's
+lines say `built 3 (block)`, and a measurement names each side's player with it (`rush-block` against
+`rush-apart`), so a summary can say who won by formation ([`measurement.md`](measurement.md)).
+
+## 5. Model against model, for testing
 
 A cheap model plays a side well enough to put an army through its paces. The recipe this repository has run (from a
 Claude Code session; any agent that can run a shell command works):
@@ -93,7 +136,7 @@ may run, and prefer `cmd:` on a machine with a command-line model.
 does in the hands of a plain plan, where its strengths come from, and where the rules or the brief let a player down.
 It does not show balance. Read the numbers for direction, the reports for why.
 
-## 5. What a duel measures, and what biases it
+## 6. What a duel measures, and what biases it
 
 - **No side wins by where it stands** (since 2026-10-19; before, one end of the map won nearly every mirror duel,
   which end by the plan). Every tie the rules break goes by what the deciding unit faces, then a seeded draw

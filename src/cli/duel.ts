@@ -11,16 +11,16 @@
 //   duel submit --dir <dir> --side A --plan <file|->   hands in A's plan; the second side's plan plays the round
 //   duel status --dir <dir>                            how the duel stands
 //
-// A player is `script:<name>` (`balanced`, `rush`, `turtle`), or `cmd:<command>`: the command is run once a round with
-// the brief's text on its standard input, and its standard output is the plan (`readPlan`), so a model on the command
-// line can play. Through files, a player is anything that reads `brief-<side>-<round>.md` and runs `duel submit`.
+// A player is `script:<name>` (`balanced`, `rush`, `turtle`, each also by a formation: `rush-block`, `rush-apart`,
+// `rush-zones`), or `cmd:<command>`: the command is run once a round with the brief's text on its standard input, and
+// its standard output is the plan (`readPlan`), so a model on the command line can play. Through files, a player is anything that reads `brief-<side>-<round>.md` and runs `duel submit`.
 
 import { execSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, rmdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { ARMIES } from "../armies/index.ts"
 import type { DuelSetup, DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
-import { briefOf, newDuel, playRound, readPlan, SCRIPTED, SIDES } from "../duel/index.ts"
+import { briefOf, newDuel, playRound, readPlan, scriptedNames, scriptedPlayer, SIDES } from "../duel/index.ts"
 
 type Options = Readonly<Record<string, string>>
 
@@ -56,8 +56,8 @@ function setupOf(options: Options, a: string, b: string, seed: number): DuelSetu
 /** A player by its name: a script, or a command run each round. */
 function playerOf(name: string): Player {
   if (name.startsWith("script:")) {
-    const script = SCRIPTED[name.slice("script:".length)]
-    if (script === undefined) throw new Error(`no script "${name}" (${Object.keys(SCRIPTED).map((key) => `script:${key}`).join(", ")})`)
+    const script = scriptedPlayer(name.slice("script:".length))
+    if (script === undefined) throw new Error(`no script "${name}" (script: and one of ${scriptedNames()})`)
     return script
   }
   if (name.startsWith("cmd:")) throw new Error("a cmd: player is run with the brief's text: see playerWithText")
@@ -79,7 +79,7 @@ export function roundLines(report: RoundReport): string[] {
     const own = report.sides[side]
     const counts = (record: Readonly<Record<string, number>>): string => Object.entries(record).map(([name, count]) => `${count} ${name}`).join(", ") || "none"
     lines.push(
-      `  ${side} ${own.commander}: ${own.credits} credits, spent ${own.spent}${own.earned > 0 ? `, earned ${own.earned}` : ""}; kept ${own.kept ?? "nothing"}; built ${own.built.length}${own.refused.length > 0 ? `, refused ${own.refused.length}` : ""}; ${own.stance}`,
+      `  ${side} ${own.commander}: ${own.credits} credits, spent ${own.spent}${own.earned > 0 ? `, earned ${own.earned}` : ""}; kept ${own.kept ?? "nothing"}; built ${own.built.length}${own.formation === undefined ? "" : ` (${own.formation})`}${own.refused.length > 0 ? `, refused ${own.refused.length}` : ""}; ${own.stance}`,
       `     fielded ${counts(own.fielded)}; trained ${counts(own.trained)}; lost ${counts(own.lost)}`,
       `     dealt ${own.dealt.units}/${own.dealt.buildings}/${own.dealt.nexus} (units/buildings/Nexus); Nexus ${own.nexus.after}/${own.nexus.most}${own.commanderFell ? "; Commander fell" : ""}${Object.keys(own.abilities).length > 0 ? `; ${counts(own.abilities)}` : ""}`,
     )

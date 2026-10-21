@@ -139,7 +139,29 @@ export function summaryLines(measurement: Measurement): string[] {
         lines.push(`  ${a} v ${b}: ${a} ${wins(a)}, ${b} ${wins(b)}, draw ${games.length - wins(a) - wins(b)}`)
       }
     }
-    const mirrors = duels.filter((duel) => duel.commanders.A === duel.commanders.B)
+    const met = duels.filter((duel) => duel.players.A !== duel.players.B)
+    if (met.length > 0) {
+      // Players set against each other: the formations, rush-block against rush-apart. Who won, and how tight each
+      // side met the enemy in its battles, by the name it played under.
+      lines.push(`  players set against each other (${met.length} duels, from both ends):`)
+      const names = [...new Set(met.flatMap((duel) => [duel.players.A, duel.players.B]))]
+      for (let i = 0; i < names.length; i += 1) {
+        for (let j = i + 1; j < names.length; j += 1) {
+          const [x, y] = [names[i] as string, names[j] as string]
+          const games = met.filter((duel) => (duel.players.A === x && duel.players.B === y) || (duel.players.A === y && duel.players.B === x))
+          if (games.length === 0) continue
+          const wins = (name: string): number => games.filter((duel) => duel.result.winner !== null && duel.players[duel.result.winner] === name).length
+          const byNexus = games.filter((duel) => duel.result.by === "nexus").length
+          lines.push(`    ${x} v ${y}: ${x} ${wins(x)}, ${y} ${wins(y)}, draw ${games.length - wins(x) - wins(y)}; ${byNexus} by a Nexus falling`)
+        }
+      }
+      for (const name of names) {
+        const sides = met.flatMap((duel) => (["A", "B"] as const).filter((side) => duel.players[side] === name).flatMap((side) => duel.rounds.map((round) => round.battle.sides[side])))
+        const spreads = sides.map((side) => side.spreadAtContact).filter((spread): spread is number => spread !== null)
+        lines.push(`    ${name} met the enemy ${fixed(mean(spreads))} columns from its middle, lost ${fixed(mean(sides.map((side) => side.lost)))} units a battle`)
+      }
+    }
+    const mirrors = duels.filter((duel) => duel.commanders.A === duel.commanders.B && duel.players.A === duel.players.B)
     const west = mirrors.filter((duel) => duel.result.winner === "A").length
     const east = mirrors.filter((duel) => duel.result.winner === "B").length
     lines.push(`  mirrors: ${mirrors.length}, side A (west) won ${west}, side B (east) ${east}, draws ${mirrors.length - west - east}`)

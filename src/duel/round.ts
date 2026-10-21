@@ -18,7 +18,7 @@ import type { ConstructItem, FieldEntity, PlannedPlacement } from "../build/type
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
-import { footprintExtent, tilesOf } from "../grid/coords.ts"
+import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 import { centreTile, creditsEarned, fallen, opening, recall, restoreCommanders, spawningRegistry } from "../match/index.ts"
 import type { Force, StructurePlacement } from "../match/index.ts"
@@ -29,8 +29,8 @@ import type { DuelMap } from "./maps.ts"
 import { DUEL_MAPS, duelGrid } from "./maps.ts"
 import type { DuelArmy } from "./sides.ts"
 import { duelArmy, loadoutOf, powerOf } from "./sides.ts"
-import type { DuelResult, DuelSetup, DuelState, Placement, RoundReport, Side, SidePlan, SideReport, SideState, Zone } from "./types.ts"
-import { SIDES } from "./types.ts"
+import type { DuelResult, DuelSetup, DuelState, Formation, Placement, RoundReport, Side, SidePlan, SideReport, SideState, Zone } from "./types.ts"
+import { APART_GAP, SIDES } from "./types.ts"
 
 /** The other side. */
 export const other = (side: Side): Side => (side === "A" ? "B" : "A")
@@ -152,8 +152,56 @@ function nearest(grid: GridTerrain, point: Coord, way: number, footprint: Footpr
   return anchors.sort((a, b) => distance(a) - distance(b) || (middle(b).x - middle(a).x) * way || a.y - b.y)
 }
 
+/** A building that trains units, where it stands: what a formation sets its next one by. */
+type Producer = Readonly<{ anchor: Coord; footprint: Footprint }>
+
+/**
+ * The anchors a formation tries for its next building that trains units, best first; the first of them the rules
+ * allow is where it goes. `order` is every anchor, nearest the formation's centre first (`nearest`), and `producers`
+ * the side's buildings that train units, standing and planned this round.
+ *
+ * - **block**: the anchors whose footprint touches a producer along a side, nearest the centre first; then, when none
+ *   of those is legal (the block hemmed in by rock or the build range), the rest. With no producer yet, the nearest.
+ * - **apart**: the anchors furthest from every producer, up to `APART_GAP` (so beyond it, every anchor counts the
+ *   same), nearest the centre on a tie: the first goes nearest the centre, each next one as near it as the gap allows,
+ *   and where the gap fits nowhere legal, as far from the others as it can.
+ *
+ * **Neither builds past its centre toward the enemy while it has room behind it**: an anchor whose middle stands
+ * further toward the enemy than the centre comes after every one that does not. Without it, set apart, a base reached
+ * further forward each round than a block did (a building furthest forward moves `forward` with it), and a duel of
+ * block against apart measured how far forward a base was as much as how tight its army stood.
+ *
+ * Mirror-fair: the order is mirrored for the other side (`nearest`, `way`) and the distances are a footprint's to a
+ * footprint's, the same either way.
+ */
+function formationOrder(
+  formation: Exclude<Formation, "zones">,
+  order: readonly Coord[],
+  centre: Coord,
+  way: number,
+  footprint: Footprint,
+  producers: readonly Producer[],
+): Coord[] {
+  const { width } = footprintExtent(footprint)
+  const ahead = (anchor: Coord): number => ((2 * anchor.x + width - 1 - 2 * centre.x) * way > 0 ? 1 : 0)
+  const touching = (anchor: Coord): number => (producers.some((producer) => footprintSteps(anchor, footprint, producer.anchor, producer.footprint) === 1) ? 0 : 1)
+  const room = (anchor: Coord): number => Math.min(APART_GAP, ...producers.map((producer) => footprintDistance(anchor, footprint, producer.anchor, producer.footprint)))
+  const scored = order.map((anchor, index) => ({
+    anchor,
+    index,
+    ahead: ahead(anchor),
+    shape: producers.length === 0 ? 0 : formation === "block" ? touching(anchor) : -room(anchor),
+  }))
+  // A block: touching first, then not ahead. Apart: not ahead first, then the most room.
+  const block = (a: (typeof scored)[number], b: (typeof scored)[number]): number => a.shape - b.shape || a.ahead - b.ahead || a.index - b.index
+  const apart = (a: (typeof scored)[number], b: (typeof scored)[number]): number => a.ahead - b.ahead || a.shape - b.shape || a.index - b.index
+  return scored.sort(formation === "block" ? block : apart).map((entry) => entry.anchor)
+}
+
 /** What a side's plan builds: each placement in order, held to the Build Phase's rules — the card in its menu, what it
- *  requires standing as the round opens, its cost, and a legal spot — with every refusal said. */
+ *  requires standing as the round opens, its cost, and a legal spot — with every refusal said. With a formation other
+ *  than `zones`, each building that trains units goes where the formation sets it (`formationOrder`), round where the
+ *  plan asks for the first of them; every other building where its own placement says. */
 function placeAll(
   state: DuelState,
   side: Side,
@@ -170,6 +218,13 @@ function placeAll(
   const refused: string[] = []
   let spent = 0
   const context = sideBuild(state, side, grid, catalog, registry, credits)
+  const formation = plan.formation ?? "zones"
+  const trains = (contentId: string): boolean => catalog.find((item) => item.contentId === contentId)?.spawns !== undefined
+  const producers: Producer[] =
+    formation === "zones"
+      ? []
+      : standingOf(state, side).flatMap((structure) => (trains(structure.contentId) ? [{ anchor: structure.anchor, footprint: registry.get(structure.contentId).footprint }] : []))
+  let centre: Coord | undefined
   plan.build.forEach((placement: Placement, index) => {
     const card = army.buildings.find((candidate) => candidate.id === placement.building)
     const row = card === undefined ? undefined : catalog.find((item) => item.contentId === card.structure)
@@ -181,10 +236,15 @@ function placeAll(
     if (missing.length > 0) return say(`needs ${missing.map((contentId) => titleOf(contentId)).join(" and ")} standing as the round opens`)
     const left = credits - spent
     if (row.cost > left) return say(`costs ${row.cost}, ${left} left`)
-    const tiles =
-      placement.x !== undefined && placement.y !== undefined
+    const footprint = registry.get(row.contentId).footprint
+    const asked = (): Coord => (placement.x !== undefined && placement.y !== undefined ? { x: placement.x, y: placement.y } : zonePoint(state, side, placement.at ?? "nexus", registry))
+    const formed = formation !== "zones" && row.spawns !== undefined
+    if (formed) centre ??= asked()
+    const tiles = formed
+      ? formationOrder(formation, nearest(grid, centre as Coord, facing(map, side), footprint), centre as Coord, facing(map, side), footprint, producers)
+      : placement.x !== undefined && placement.y !== undefined
         ? [{ x: placement.x, y: placement.y }]
-        : nearest(grid, zonePoint(state, side, placement.at ?? "nexus", registry), facing(map, side), registry.get(row.contentId).footprint).slice(0, 600)
+        : nearest(grid, asked(), facing(map, side), footprint).slice(0, 600)
     let reason = "no legal spot near there"
     for (const anchor of tiles) {
       const legality = legalityAt(context, planned, row.contentId, anchor, left, defaultValue("buildRange"))
@@ -193,6 +253,7 @@ function placeAll(
         continue
       }
       planned.push({ ordinal: index, contentId: row.contentId, anchor })
+      if (formed) producers.push({ anchor, footprint })
       spent += row.cost
       built.push(`${card.id} at ${anchor.x},${anchor.y}`)
       return
@@ -455,6 +516,7 @@ function sideReport(
     built: phase.placed.built,
     refused: phase.placed.refused,
     stance: plan.stance,
+    ...(plan.formation === undefined ? {} : { formation: plan.formation }),
     ...(plan.note === undefined ? {} : { note: plan.note }),
     fielded: tally(start.entities.filter((entity) => entity.player === side && definition(side, entity.contentId).layer !== "obstacles").map((entity) => entity.contentId)),
     trained: tally(trained),
