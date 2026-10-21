@@ -120,28 +120,41 @@ export class DistanceField {
     return -1
   }
 
-  /** From an anchor settled at `here`, offers each neighbour that may step onto it the way through it: a unit at the
-   *  neighbour steps onto this anchor, and the step costs what stepping here costs. Written out for the four
-   *  neighbours, as it runs for every anchor a field settles. */
+  /**
+   * From an anchor settled at `here`, offers each neighbour that may step onto it the way through it: a unit at the
+   * neighbour steps onto this anchor, and the step costs what stepping here costs. The way is taken when it is shorter
+   * than the best the neighbour has; a settled anchor's cost is negative, so no way is ever shorter and it is left as
+   * it is without asking. Written out for the four neighbours, with the arrays in hand, as it runs for every anchor a
+   * field settles.
+   */
   private relaxAround(index: number, here: number): void {
-    const { width, height } = this.ground
-    const x = index % width
-    const y = (index - x) / width
+    const { width, height, open } = this.ground
+    const distance = this.distance
+    const y = (index / width) | 0
+    const x = index - y * width
     const weight = this.weights === null ? 1 : (this.weights[index] as number)
     const across = here + weight
     const down = here + ROW_DISTANCE * weight
-    if (y > 0) this.offer(index - width, down)
-    if (x < width - 1) this.offer(index + 1, across)
-    if (y < height - 1) this.offer(index + width, down)
-    if (x > 0) this.offer(index - 1, across)
-  }
-
-  /** Offers `next` a way costing `through`, taken when it is shorter than the best found. A settled anchor's cost is
-   *  negative, so no way is ever shorter, and it is left as it is without asking. */
-  private offer(next: number, through: number): void {
-    if (this.ground.open[next] !== 1 || through >= (this.distance[next] as number)) return
-    this.distance[next] = through
-    this.push(next, through)
+    let next = index - width
+    if (y > 0 && open[next] === 1 && down < (distance[next] as number)) {
+      distance[next] = down
+      this.push(next, down)
+    }
+    next = index + 1
+    if (x < width - 1 && open[next] === 1 && across < (distance[next] as number)) {
+      distance[next] = across
+      this.push(next, across)
+    }
+    next = index + width
+    if (y < height - 1 && open[next] === 1 && down < (distance[next] as number)) {
+      distance[next] = down
+      this.push(next, down)
+    }
+    next = index - 1
+    if (x > 0 && open[next] === 1 && across < (distance[next] as number)) {
+      distance[next] = across
+      this.push(next, across)
+    }
   }
 
   /** The walking cost from `anchor` to the nearest goal, or `UNREACHABLE`. An anchor the body may not stand on is

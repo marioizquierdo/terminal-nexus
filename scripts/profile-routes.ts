@@ -5,7 +5,7 @@
 //                                  [--out <file>]
 //
 // Plays every map in `scenarios/` (or only the route scenarios) on the seeds given, and N duels on the Crossing
-// (Commander pairs by the scripted players, eight rounds at most), timing each tick by the processor time it took and
+// (Commander pairs by the scripted players, eight rounds at most), timing each tick by the wall clock and
 // fingerprinting each battle: the SHA-256 of every event it emitted, in order, and of its last state. Prints the
 // fingerprints, then how long a tick took by how many units stood in it. `--out` writes the fingerprints as JSON;
 // run it before and after a change and compare the two files with `diff`: one differing line is one battle whose
@@ -38,12 +38,9 @@ const firstDuel = Number(option("first-duel", "0"))
 const maps = option("maps", "all")
 const out = option("out", "")
 
-/** The processor time this process has spent, in milliseconds: steadier than the wall clock on a machine busy with
- *  other work, which is when a profile is usually taken. */
-const clock = (): number => {
-  const used = process.cpuUsage()
-  return (used.user + used.system) / 1000
-}
+/** The wall clock, in milliseconds. Not the processor time (`process.cpuUsage`): asking for that is a call into the
+ *  system, which in some sandboxes costs as much as a small tick. On a busy machine, run it more than once. */
+const clock = (): number => performance.now()
 
 /** Ticks timed, bucketed by how many entities stood as the tick began. */
 const buckets = new Map<number, { ticks: number; ms: number; worst: number }>()
