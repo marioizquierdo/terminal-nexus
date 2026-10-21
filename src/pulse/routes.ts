@@ -70,6 +70,7 @@ export class TickRoutes {
   private readonly patches = new Map<string, Int32Array>()
   private readonly nearest = new Map<string, Readonly<{ field: DistanceField; anchors: ReadonlySet<number> }>>()
   private readonly masks = new Map<number, string>()
+  private readonly groundKeys = new Map<number, string>()
   private readonly breaches = new Map<string, Readonly<{ ground: Ground; weights: Uint8Array; buildings: ReadonlyMap<number, Actor>; fields: Map<string, DistanceField> }>>()
 
   /** The ground burning as the tick's routes were built (`TickRoutes.weightsOf`): what the attacks light later in
@@ -100,13 +101,24 @@ export class TickRoutes {
     return key
   }
 
+  /** A name for the ground `actor` walks on this tick: its mask (`maskOf`) and its body's shape. What ground, weights
+   *  and fields are kept by; worked out once a tick for each actor, as every route question asks it. */
+  private groundKeyOf(actor: Actor): string {
+    let key = this.groundKeys.get(actor.ordinal)
+    if (key === undefined) {
+      key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`
+      this.groundKeys.set(actor.ordinal, key)
+    }
+    return key
+  }
+
   /**
    * The ground `actor`'s body walks on this tick: its mask's walls, for its shape. `alsoStanding`, when given, are
    * walkers to count as standing too — the ones held up this tick, for a unit finding its own way round them
    * (`detourOf`); such ground is the actor's own and is not kept.
    */
   groundOf(actor: Actor, alsoStanding?: ReadonlySet<number>): Ground {
-    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`
+    const key = this.groundKeyOf(actor)
     const kept = alsoStanding === undefined ? this.grounds.get(key) : undefined
     if (kept !== undefined) return kept
     const { layers, sideLayers } = ownSideLayers(this.context, actor.definition, actor.player, onRoof(this.context, actor))
@@ -128,7 +140,7 @@ export class TickRoutes {
    *  with none; and, while anything burns, an anchor whose body covers a burning tile weighs `BURNING_WEIGHT` times its
    *  ground, for what fire hurts (a flyer flies over it). Kept for the tick by the body's shape and how it moves. */
   weightsOf(actor: Actor): Uint8Array | null {
-    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`
+    const key = this.groundKeyOf(actor)
     if (!this.weights.has(key)) {
       const ground = weightsFor(this.context.index.grid, actor.definition.footprint, actor.definition.layer === "air" ? "ignore" : "impassable")
       this.weights.set(key, this.burning.length > 0 && burnsOn(actor.definition.layer) ? this.withFire(ground, actor.definition.footprint) : ground)
@@ -176,11 +188,11 @@ export class TickRoutes {
 
   /** The field `actor` walks toward `goal` by, shared with every actor of its mask and shape heading there. */
   fieldOf(actor: Actor, goal: RouteGoal): DistanceField {
-    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|${goalKey(goal)}`
+    const key = `${this.groundKeyOf(actor)}|${goalKey(goal)}`
     let field = this.fields.get(key)
     if (field === undefined) {
       const ground = this.groundOf(actor)
-      field = fieldOver(this.context, ground, this.weightsOf(actor), actor, goal, this.patchesOf(`${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`, ground))
+      field = fieldOver(this.context, ground, this.weightsOf(actor), actor, goal, this.patchesOf(this.groundKeyOf(actor), ground))
       this.fields.set(key, field)
     }
     return field
@@ -193,7 +205,7 @@ export class TickRoutes {
    * and ground.
    */
   dangerOf(actor: Actor): DistanceField {
-    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|danger of ${actor.player}`
+    const key = `${this.groundKeyOf(actor)}|danger of ${actor.player}`
     let field = this.fields.get(key)
     if (field === undefined) {
       const ground = this.groundOf(actor)
@@ -216,7 +228,7 @@ export class TickRoutes {
    * into a corner, where straight away from the nearest would go. Ground no threat can reach is the safest of all.
    */
   safetyOf(actor: Actor): DistanceField {
-    const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}|safety of ${actor.player}`
+    const key = `${this.groundKeyOf(actor)}|safety of ${actor.player}`
     let field = this.fields.get(key)
     if (field === undefined) {
       const ground = this.groundOf(actor)
@@ -261,27 +273,28 @@ export class TickRoutes {
     const ground = this.groundOf(actor)
     const body = actor.definition.footprint
     if (!canStand(ground, actor.anchor)) return null
-    const groundKey = `${this.maskOf(actor)}|${bodyKey(body)}`
+    const groundKey = this.groundKeyOf(actor)
     const patches = this.patchesOf(groundKey, ground)
     const at = actor.anchor.y * ground.width + actor.anchor.x
     const patch = patches[at] as number
     const key = `${groundKey}|patch ${patch}|nearest ${toward.x},${toward.y}`
     let entry = this.nearest.get(key)
     if (entry === undefined) {
-      // Every anchor of the patch measured, and the nearest kept by index: a patch can be most of the Grid.
-      let nearest: number[] = []
+      // Every anchor of the patch measured, row by row, and the nearest kept: a patch can be most of the Grid, so no
+      // anchor is made but the nearest.
+      let nearest: Coord[] = []
       let bestNear = UNREACHABLE
-      for (let index = 0; index < patches.length; index += 1) {
-        if (patches[index] !== patch) continue
-        const x = index % ground.width
-        const near = nearestOf(x, (index - x) / ground.width, body, toward)
-        if (near < bestNear) {
-          nearest = [index]
-          bestNear = near
-        } else if (near === bestNear) nearest.push(index)
+      for (let y = 0, index = 0; y < ground.height; y += 1) {
+        for (let x = 0; x < ground.width; x += 1, index += 1) {
+          if (patches[index] !== patch) continue
+          const near = nearestOf(x, y, body, toward)
+          if (near < bestNear) {
+            nearest = [{ x, y }]
+            bestNear = near
+          } else if (near === bestNear) nearest.push({ x, y })
+        }
       }
-      const anchors = nearest.map((index) => ({ x: index % ground.width, y: (index - (index % ground.width)) / ground.width }))
-      entry = { field: new DistanceField(ground, anchors, undefined, patches), anchors: new Set(nearest) }
+      entry = { field: new DistanceField(ground, nearest, undefined, patches), anchors: new Set(nearest.map((anchor) => anchor.y * ground.width + anchor.x)) }
       this.nearest.set(key, entry)
     }
     return { field: entry.field, here: entry.anchors.has(at) }
@@ -300,7 +313,7 @@ export class TickRoutes {
   breachOf(actor: Actor, goal: RouteGoal): Actor | null {
     if (this.fieldOf(actor, goal).reaches(actor.anchor)) return null
     const body = actor.definition.footprint
-    const key = `${this.maskOf(actor)}|${bodyKey(body)}|breaching ${actor.player}`
+    const key = `${this.groundKeyOf(actor)}|breaching ${actor.player}`
     let entry = this.breaches.get(key)
     if (entry === undefined) {
       const { layers, sideLayers } = ownSideLayers(this.context, actor.definition, actor.player, onRoof(this.context, actor))
