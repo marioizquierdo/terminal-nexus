@@ -6,7 +6,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { footprintSteps, footprintWithin } from "../src/grid/coords.ts"
 import type { Coord, Footprint, GridTerrain, TerrainId } from "../src/grid/types.ts"
-import { canStand, DistanceField, goalsInside, goalsNear, groundFor, isWall, rankSteps, UNREACHABLE, wallsOf } from "../src/routing/index.ts"
+import { canStand, DistanceField, goalsInside, goalsNear, groundFor, isWall, patchesOf, rankSteps, UNREACHABLE, wallsOf } from "../src/routing/index.ts"
 import type { Ground } from "../src/routing/index.ts"
 import { starterGrid } from "../src/build/maps.ts"
 
@@ -216,6 +216,45 @@ test("a field charges what the ground stepped onto weighs", () => {
     [0, 1, 2, 3, 4, 5].map((x) => field.distanceAt({ x, y: 0 })),
     plainDistances(ground, [{ x: 0, y: 0 }], weights),
   )
+})
+
+test("a field asked for a walk within a limit gives the walk when it is that short, none when it is longer, and stays exact", () => {
+  for (const seed of [1, 2, 3, 4, 5, 6]) {
+    const grid = maze(23, 11, seed, 0.25)
+    const next = stream(seed + 100)
+    for (const body of [ONE, WIDE]) {
+      const ground = groundFor(wallsOf(grid, "impassable"), body)
+      const weights = new Uint8Array(23 * 11).map(() => 1 + Math.floor(next() * 4))
+      const goals = [{ x: 11, y: 5 }, { x: 3, y: 2 }].filter((goal) => canStand(ground, goal))
+      const expected = plainDistances(ground, goals, weights)
+      const field = new DistanceField(ground, goals, weights, patchesOf(ground))
+      // Asked within a limit first, in an order that jumps about, each answer the walk or nothing as the limit says.
+      for (let ask = 0; ask < 200; ask += 1) {
+        const anchor = { x: Math.floor(next() * 23), y: Math.floor(next() * 11) }
+        const limit = Math.floor(next() * 40)
+        const walk = expected[anchor.y * 23 + anchor.x] as number
+        assert.equal(field.distanceWithin(anchor, limit), walk <= limit ? walk : UNREACHABLE, `seed ${seed}, at ${anchor.x},${anchor.y} within ${limit}`)
+      }
+      // Then everywhere, without a limit: what the limited questions settled is as exact as the rest.
+      for (let y = 0; y < 11; y += 1) for (let x = 0; x < 23; x += 1) assert.equal(field.distanceAt({ x, y }), expected[y * 23 + x], `seed ${seed}, at ${x},${y}`)
+    }
+  }
+})
+
+test("a field given the ground's patches says whether an anchor reaches a goal without searching, as a search would", () => {
+  for (const seed of [1, 2, 3, 4, 5, 6]) {
+    const ground = groundFor(wallsOf(maze(23, 11, seed, 0.4), "impassable"), ONE)
+    const goals = [{ x: 11, y: 5 }].filter((goal) => canStand(ground, goal))
+    const expected = plainDistances(ground, goals)
+    const field = new DistanceField(ground, goals, undefined, patchesOf(ground))
+    for (let y = -1; y <= 11; y += 1) {
+      for (let x = -1; x <= 23; x += 1) {
+        const reached = x >= 0 && y >= 0 && x < 23 && y < 11 && expected[y * 23 + x] !== UNREACHABLE
+        assert.equal(field.reaches({ x, y }), reached, `seed ${seed}, at ${x},${y}`)
+      }
+    }
+    assert.equal(field.settledCount, 0, "nothing was searched")
+  }
 })
 
 // --- The choice of a step ------------------------------------------------------------------------------------------
