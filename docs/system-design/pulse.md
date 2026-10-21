@@ -416,10 +416,15 @@ At Pulse start plans reveal together and valid construction becomes operational.
 producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
 result (RULE — `tests/pulse-run.test.ts`).
 
-At Pulse end survivors regroup near home producers — the nearest of their side's buildings that trains or
-spawns their kind, nearest by the Grid's distance. Orphans are adopted by the nearest compatible producer or
-regroup near the Grid Nexus. Each survivor is set down on the nearest free tile, searched one ring of the Grid's
-distance at a time, so a group comes home round on screen ([`grid.md`](grid.md), setting a group down). A
+At Pulse end a survivor goes home to the building that trained it while it stands; else to the nearest of its side's
+buildings that trains or spawns its kind; else, an orphan or a Commander, to the Grid Nexus. A survivor whose home
+makes units is set down on that building's roof, wholly on its tiles, as near the tile it came out on as there is room
+(the owner, 2026-10-21: "piling on the roof as close to original position as possible"). A roof that is full, a body
+too wide for it, and a unit in the air go to the nearest free ground round it, searched one ring of the Grid's
+distance at a time ([`grid.md`](grid.md), setting a group down), kept off the ground touching any building of its side
+that makes units while there is room elsewhere, so a roof can always empty. The Grid Nexus is never stood on: its
+survivors are set down beside it. A carried unit opens the next Pulse where Recall left it, on its roof included; a
+building planned on it moves it (RULE — `tests/recall-home.test.ts`). A
 producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`). **Recall puts out burning ground**
@@ -512,7 +517,10 @@ where they head (section 1.3a), so it stands together on the side facing the fig
 formation"). The recipe says
 how many a wave, how many waves a Pulse, when the first comes and the gap to the next; the schedule never
 slips. A building short of room never spawns fewer: what fits on its roof comes out on the wave's tick, and the
-rest on the first tick there is room, as the first walk off.
+rest on the first tick there is room, as the first walk off. While any of its side's buildings owes units, a unit on
+its side's roofs steps down to the nearest ground first and then carries on, unless it is part way through its windup
+(`src/pulse/make-way.ts`), so a roof Recall filled with survivors empties for the wave. A unit a building trains
+remembers that building and the tile it came out on (`EntityState.home`, `homeAt`).
 
 **Units walk out over the roofs** (RULE — `src/pulse/spawn.ts`, `src/pulse/shared.ts` `onRoof`, `tests/roofs.test.ts`;
 the owner, 2026-10-20: "they will just keep walking on the rooftops on the natural direction where their destination

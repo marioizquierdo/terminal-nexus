@@ -274,7 +274,9 @@ title screen's menu.
   size, attack and range, the wave a building spawns (`WAVE 4 troopers at 5s`, or `WAVES 4 at 5s, 15s, 25s` for
   several), the building's build range (one number, see *A range on a card*; `6 (next round)` for one being
   placed or planned, which gives none until it stands; `cut off` in Explore Map for a standing one cut off from
-  the Nexus), or a bare tile's position. **No status
+  the Nexus), `ON ROOF 6 of yours` on a standing building whose roof survivors stand on, or a bare tile's
+  position. A survivor home on its own side's building is drawn on its roof on the Build Phase map; one under a
+  planned building or the other side's is not drawn. **No status
   line**: planned, standing or about to be placed is plain from the rest of the screen. The words are written
   with the content (`src/content/cards.ts`), not in the view, and sized to the panel at 80 × 24. **Panel text
   never cuts a word**; if the words are too long, shorten them. One function draws every card
@@ -660,7 +662,8 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   Nexus, the arrows look around, and the battle never waits for the player.
   (RULE — `tests/pulse-screen.test.ts`)
 - **The panel, in order**: `BATTLE ROUND 1` with the time left until the last shot; what the timer counts and
-  its speed; a line per side (units, a health bar, the number); the last five events in plain words, each thing
+  its speed; a line per side (units, a health bar, the number), and under them, while the fight is on and the
+  player's buildings owe units of a wave, how many: `2 waiting to come out`, or `2 wait: army is full`; the last five events in plain words, each thing
   named as its card names it (`turret > runner`, `swarmer trained`; a Commander by name), coloured by side; under
   them, while she is saying something out of view, her glyph and name and her line; then `[space] Pause` and
   `[r] Replay`. Speed (`[`, `]`) and stepping (`.`, `,`) are keys, on the Controls

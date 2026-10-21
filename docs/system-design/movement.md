@@ -115,6 +115,7 @@ Every way a unit moves is one of three things: **a new goal** for the same field
 | Heading for the enemy Nexus | A goal: the Nexus | Yes |
 | Heading for a level's target | A goal: the target's tiles | Yes |
 | Leaving a roof | A goal: the nearest ground off its side's roofs, or its route along them (the "Way off the roof" Experiment) | Yes |
+| Making way for a wave | The same goal, the nearest ground off its side's roofs, while a building of its side owes units it has no room for (`make-way.ts`) | Yes |
 | Fleeing | A different field: the walk from every threat, turned into a "safety map" and walked downhill, so it runs from all threats into open ground, not into a corner | Yes (workers) |
 | Pushed or pulled | Not a step: moved a tile at a time while its body fits, its credit untouched (`displace`) | Yes (the bulwark's Shove) |
 | Going round burning ground | A weight: an anchor whose body covers a burning tile weighs four times its ground in the field, while it burns; a step's credit is the ground's own | Yes (the mortar's fire) |
