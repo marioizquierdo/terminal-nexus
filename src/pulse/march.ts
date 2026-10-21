@@ -13,10 +13,10 @@
 // fights as it always did.
 //
 // **Progress.** Each side has one march field a tick: the walk, for a body of one tile, to its march goal over the
-// Grid's rock and the enemy's buildings that stand (units ignored, its own buildings open, so a unit on its own roof
-// has a place in the march). A marcher's progress is its walk on it: smaller is further forward.
+// Grid's rock and the enemy's buildings that stand (units ignored, its own buildings open), worked out only when a
+// yield is in question. A marcher's progress is its walk on it: smaller is further forward.
 //
-// **The guide.** A side's Commander, while she stands on the Grid and has a place in the march, is its guide. The
+// **The guide.** A side's Commander, while she stands on the Grid (on the ground), is its guide. The
 // guide line runs from her to the march goal — from the side's own Grid Nexus with no guide — and a marcher more than
 // `BAND` columns off it takes, among its steps that are equally good, the one that brings it nearest the line
 // (`bandOrder`). While she marches herself, no marcher but a backliner goes further forward than its line's place
@@ -81,20 +81,18 @@ type MarchGoal = Readonly<{ kind: "area"; area: TargetArea }> | Readonly<{ kind:
 
 /** One side's march this tick. */
 type SideMarch = {
+  readonly player: PlayerId
   readonly goal: MarchGoal
-  /** The walk from every tile to the goal, for one tile, over rock and the enemy's buildings. */
-  readonly field: DistanceField
-  /** Its guide, while it has one, and her progress. */
+  /** The walk from every tile to the goal, for one tile, over rock and the enemy's buildings: worked out the first
+   *  time a yield is in question (`marchFieldOf`). */
+  field?: DistanceField
+  /** Its guide, while it has one: its Commander, on the Grid and on the ground. */
   readonly guide: Actor | null
-  readonly guideProgress: number
   /** The guide line's two ends, in half tiles (a tile's middle is twice its coordinates), or `null` with no line. */
   readonly ends: Readonly<{ from: Coord; to: Coord }> | null
   /** How far each tile is from the guide line, a row counting two columns: worked out the first time it is asked. */
   lane?: DistanceField
 }
-
-/** How far each tile is from the nearest enemy of a side, a row counting two columns, as `distanceBetween` measures. */
-type Enemies = { field?: DistanceField }
 
 /** The march this tick, for every side: who marches, who yields, and each side's field and line. */
 export class March {
@@ -217,22 +215,28 @@ function sideMarchOf(context: TickContext, player: PlayerId): SideMarch | null {
   const nexus = area === undefined ? context.actors.find((other) => other.player !== player && !other.pendingDead && other.definition.nexus === true) : undefined
   const goal: MarchGoal | null = area !== undefined ? { kind: "area", area } : nexus !== undefined ? { kind: "nexus", nexus } : null
   if (goal === null) return null
-  // The Grid's rock and the enemy's buildings that stand, for a body of one tile; units are no walls to a march.
-  const walls = wallsOf(context.index.grid, "impassable")
-  for (const other of context.actors) {
-    if (other.pendingDead || other.player === player || other.definition.layer !== "obstacles") continue
-    addWall(walls, other.anchor, other.definition.footprint)
-  }
-  const ground = groundFor(walls, ONE_TILE)
-  const goals = goal.kind === "area" ? goalsInside(ground, ONE_TILE, goal.area) : goalsNear(ground, ONE_TILE, goal.nexus.anchor, goal.nexus.definition.footprint, { kind: "touch", steps: 1 })
-  const field = new DistanceField(ground, goals)
-  // Her side's Commander, on the Grid, with a place in the march.
-  const commander = context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.commander === true && other.definition.layer !== "air")
-  const guideProgress = commander === undefined ? UNREACHABLE : progressOn(field, commander)
-  const guide = guideProgress === UNREACHABLE ? null : (commander ?? null)
+  // Her side's Commander, on the Grid and on the ground.
+  const guide = context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.commander === true && other.definition.layer !== "air") ?? null
   const to = goal.kind === "area" ? { x: 2 * goal.area.x + goal.area.width - 1, y: 2 * goal.area.y + goal.area.height - 1 } : middleOf(goal.nexus)
-  const home = guide === null ? context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.nexus === true) : guide
-  return { goal, field, guide, guideProgress, ends: home === undefined ? null : { from: middleOf(home), to } }
+  const home = guide ?? context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.nexus === true)
+  return { player, goal, guide, ends: home === undefined ? null : { from: middleOf(home), to } }
+}
+
+/** `side`'s march field: the walk to its goal for a body of one tile, over the Grid's rock and the enemy's buildings
+ *  that stand (units are no walls to a march, and its own buildings are open). Worked out once a tick, when asked. */
+function marchFieldOf(context: TickContext, side: SideMarch): DistanceField {
+  if (side.field === undefined) {
+    const walls = wallsOf(context.index.grid, "impassable")
+    for (const other of context.actors) {
+      if (other.pendingDead || other.player === side.player || other.definition.layer !== "obstacles") continue
+      addWall(walls, other.anchor, other.definition.footprint)
+    }
+    const ground = groundFor(walls, ONE_TILE)
+    const goal = side.goal
+    const goals = goal.kind === "area" ? goalsInside(ground, ONE_TILE, goal.area) : goalsNear(ground, ONE_TILE, goal.nexus.anchor, goal.nexus.definition.footprint, { kind: "touch", steps: 1 })
+    side.field = new DistanceField(ground, goals)
+  }
+  return side.field
 }
 
 /** The middle of an actor's body, in half tiles: twice its coordinates for a tile, between two tiles for an even
@@ -263,23 +267,33 @@ function nearestOn(field: DistanceField, anchor: Coord, body: Footprint): number
  */
 function yieldersOf(context: TickContext, side: SideMarch, marchers: readonly Actor[], guideMarches: boolean): number[] {
   type Member = Readonly<{ actor: Actor; line: FormationLine; rank: number; progress: number }>
-  const members: Member[] = []
+  const placed: Array<Readonly<{ actor: Actor; line: FormationLine }>> = []
   for (const actor of marchers) {
     const line = keepsLine(actor)
     // A unit still on its own roof keeps no place yet: it steps off first, so the building has room for the next.
     if (line === null || onRoof(context, actor)) continue
-    const progress = progressOn(side.field, actor)
-    if (progress === UNREACHABLE) continue
-    members.push({ actor, line, rank: RANK[line], progress })
+    placed.push({ actor, line })
+  }
+  // Nothing to work out when no one could yield: no guide marching ahead of anyone, and no line behind another.
+  const ranks = placed.filter((each) => each.line !== "backliner" && each.actor !== side.guide).map((each) => RANK[each.line])
+  const paced = guideMarches && ranks.length > 0
+  const lined = ranks.some((rank) => rank >= 2) && ranks.some((rank) => rank < Math.max(...ranks))
+  if (!paced && !lined) return []
+  const field = marchFieldOf(context, side)
+  const guideProgress = side.guide === null ? UNREACHABLE : progressOn(field, side.guide)
+  const members: Member[] = []
+  for (const { actor, line } of placed) {
+    const progress = progressOn(field, actor)
+    if (progress !== UNREACHABLE) members.push({ actor, line, rank: RANK[line], progress })
   }
   // The lines ahead, for the short and long lines to look for: the melee and short lines' members.
   const ahead = members.filter((member) => member.rank === 1 || member.rank === 2)
-  const enemies: Enemies = {}
-  const closing = (actor: Actor): boolean => nearestOn(enemiesOf(context, actor, enemies), actor.anchor, actor.definition.footprint) <= NEAR
+  const enemies = context.actors.filter((other) => other.player !== side.player && !other.pendingDead)
+  const closing = (actor: Actor): boolean => closingOn(actor, enemies)
   const yielders: number[] = []
   for (const member of members) {
     if (member.line === "backliner" || member.actor === side.guide) continue
-    if (guideMarches && member.progress < side.guideProgress + PLACE[member.line]) {
+    if (guideMarches && guideProgress !== UNREACHABLE && member.progress < guideProgress + PLACE[member.line]) {
       if (!closing(member.actor)) yielders.push(member.actor.ordinal)
       continue
     }
@@ -299,17 +313,15 @@ function yieldersOf(context: TickContext, side: SideMarch, marchers: readonly Ac
   return yielders
 }
 
-/** How far each tile is from the nearest enemy of `actor`'s side, of any kind, measured as `distanceBetween` measures
- *  (a row counting two columns): a field from every enemy tile over open ground, worked out once for the side. */
-function enemiesOf(context: TickContext, actor: Actor, kept: Enemies): DistanceField {
-  if (kept.field === undefined) {
-    const { width, height } = context.index.grid
-    const open: Ground = { width, height, open: new Uint8Array(width * height).fill(1) }
-    const tiles: Coord[] = []
-    for (const other of context.actors) if (other.player !== actor.player && !other.pendingDead) tiles.push(...tilesOf(other.anchor, other.definition.footprint))
-    kept.field = new DistanceField(open, tiles)
+/** Whether an enemy of any kind stands within `NEAR` columns of `actor`, measured as `distanceBetween` measures (a row
+ *  counting two columns): `enemies` are the other side's, as the tick began. */
+function closingOn(actor: Actor, enemies: readonly Actor[]): boolean {
+  for (const enemy of enemies) {
+    // Cheap first: a body far off on the Grid is never near.
+    if (Math.abs(enemy.anchor.x - actor.anchor.x) > NEAR + 8 || Math.abs(enemy.anchor.y - actor.anchor.y) > NEAR / 2 + 8) continue
+    if (distanceBetween(actor, enemy) <= NEAR) return true
   }
-  return kept.field
+  return false
 }
 
 /**
