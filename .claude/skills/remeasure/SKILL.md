@@ -20,7 +20,7 @@ the change can move:
 | Presentation only: a screen, an effect, a colour, a key | Nothing. The tests and the `playtest` skill. |
 | A number on one unit or building: health, damage, cost, a timer | `measure who <content id>` on the levels it stands in; the quick spec's duels if a Commander's army fields it |
 | A new unit kind or ability | A scenario that shows it (the `grid` skill), then `measure who <content id>`; the quick spec's duels if an army fields it |
-| A kernel rule on movement, routes or targeting | The quick spec, the full spec's maps (`--spec full --parts scenarios`), and `measure formations` if it touches how units leave their buildings |
+| A kernel rule on movement, routes or targeting | The quick spec, the full spec's maps (`--spec full --parts scenarios`), and `measure formations` if it touches how units leave their buildings; the full spec's duels too when it changes how a common unit chooses or moves (the quick spec plays the balanced player alone, and only a rush showed the runner as a backliner emptying Dob's front) |
 | A power-curve change: the Grid Nexus, supply, credits, income, a tier, the Nexus Pulse's hand | The full spec, then retire what it supersedes (section 4) |
 
 The quick spec takes about a minute with `--jobs 4` (two alone); the full spec's 162 duels are the long part. Do not
@@ -59,7 +59,9 @@ the measurement ends before believing it (DEVELOPMENT.md, "Testing").
    `measure merge <file>... --out <file>`, which refuses parts of two builds. A tick's time under `--jobs` is the
    loaded machine's: compare it only with another run played the same way. Measure on Node; Bun in a cloud session
    runs `--smol` and is slower (lessons-learned, "A cloud session's Bun saves memory").
-3. **Do not run the test suite while it plays.** Run it, timing tests included, after.
+3. **Do not run the test suite while it plays, and commit nothing**: its parts read the build as each starts, and a
+   commit in between gives them two builds that `merge` refuses at the end. Draft the report in the scratchpad.
+   Run the suite, timing tests included, after.
 4. **Compare**: `node bin/measure.ts compare <the current one> <the new one>`. The summary already says how many duels
    were over by the end of rounds 1, 2 and 3, who beat whom, the catch-up measure and every level's verdict; reach for
    a script only for what it does not say, and add that to `src/measure/` when you reach for it twice.

@@ -326,6 +326,8 @@ and Nexus powers that raise its shot or its mending, are later.
 from 35 of 162 to 4, and over in round 1 from 13 to 1; duels last most of a round longer. But of the duels still
 undecided after round 2, the side ahead then won 51 of 54: the Nexus stops the knockout, not the runaway. Turning an
 early lead over is the armies' work — later tiers worth more, the answers in the tree — and their next pass measures it.
+Measured again after the pathfinding milestone's wrap-up ([the report](../history/reports/2026-10-21-the-march.md)): 1
+over in round 1, 6 by round 2, and the side ahead after round 2 won 50 of 54.
 
 ## 3. Strategy-design requirements
 

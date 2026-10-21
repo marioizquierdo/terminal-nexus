@@ -28,12 +28,14 @@ advice as where to start, not a law.
   Citizen mortar's shell lands there and leaves the ground burning. Buildings set apart send their waves out apart,
   and an army built apart took about a third less of that damage than a block. When the enemy trains neither, a block
   meets them as one and wins a clash of lines. [The formation game, 2026-10-21: four Barracks a side against area
-  attacks alone; a block took 120 from two mortars and 372 from four bombers, apart 77 and 240.]
-- **The first two rounds decide most duels: spend early.** The side ahead after round 2 went on to win 51 of 54
-  duels. Credits kept for later are worth less than a wave that fights now. [The full measurement after the Nexus
-  fought back, 2026-10-21, 162 duels.]
+  attacks alone; a block took 120 from two mortars and 372 from four bombers, apart 77 and 240, with the mortar's
+  first numbers: its burst now hurts only the enemy, and its fire bites harder for less long.]
+- **The first two rounds decide most duels: spend early.** The side ahead after round 2 went on to win 50 of 54
+  duels. Credits kept for later are worth less than a wave that fights now. [The full measurement after the
+  pathfinding milestone's wrap-up, 2026-10-21, 162 duels; 51 of 54 before it.]
 - **Do not count on a round-1 rush to end it.** Your enemy's Nexus shoots: one shot every three seconds for 40, at a
   marksman's reach, enough to drop a trooper or a runner in one hit; and it mends 40 between rounds. A march on an
-  unguarded Nexus in round 1 ended one duel of 162. Rush to get ahead, not to win at once. [The same measurement.]
+  unguarded Nexus in round 1 ended one duel of 162. Rush to get ahead, not to win at once. [The same measurement, and
+  the one before it.]
 - **Holding is a real choice for a defender.** Dob Hunter's army wins mostly when it holds in front of its Nexus and
   lets the enemy come to it, under the Nexus's own shots. [The Commander duels, 2026-10-20 and 2026-10-21.]

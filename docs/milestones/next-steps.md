@@ -47,7 +47,7 @@ it is done.*
   Averno still wins most (65% of 72 scripted duels), Ravel buildings train about half the strength a credit Citizen ones
   do and Dob wins mostly when he holds, and Dob has no campaign yet. The same duels found that an early lead decides
   a duel almost every time; with the Nexus fighting back a round-1 march no longer ends one, but the side ahead after
-  round 2 still wins 51 of 54 ([the report](../history/reports/2026-10-21-nexus-fights-back.md)), the armies' next pass.
+  round 2 still wins 50 of 54 ([the report](../history/reports/2026-10-21-the-march.md)), the armies' next pass.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When
   she falls, a small window opens beside her, her face falls and the window evaporates; her dim `@` waits beside the
