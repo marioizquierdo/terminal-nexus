@@ -20,6 +20,7 @@ import { contentOf } from "./context.ts"
 import { arbitrate, settle } from "./arbitration.ts"
 import { abilityTicks } from "./abilities.ts"
 import { attacks } from "./attacks.ts"
+import { burning } from "./burning.ts"
 import { resolution } from "./death.ts"
 import { intents } from "./intents.ts"
 import { perception } from "./perception.ts"
@@ -88,6 +89,8 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     // Who an aura guards is decided as the attacks begin (`attacks.ts`), once the tick's moves have settled.
     guards: new Map(),
     boosts: new Map(),
+    // The ground burning as the tick began; the attacks light more, and the fire's own step drops what goes out.
+    burning: [...(state.burning ?? [])],
   }
 
   // 1.5. Spawning — from the unit-architecture spike; not one of the nine phases pulse.md names.
@@ -101,6 +104,7 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
   settle(context, grants) // 6
   attacks(context) // 7
   abilityTicks(context) // 7.5: abilities that act every tick (`abilities.ts`), after the attacks
+  burning(context) // 7.6: burning ground burns what stands on it, and goes out when its time is up (`burning.ts`)
   resolution(context) // 8
   const outcome = victory(context) // 9
 
@@ -143,8 +147,11 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
     })
   }
 
+  // `burning` only while something burns, so a state without fire keeps every byte it had before fire existed.
+  const { burning: _burning, ...rest } = state
   const next: MatchState = {
-    ...state,
+    ...rest,
+    ...(context.burning.length === 0 ? {} : { burning: context.burning }),
     tick: context.tick,
     entities,
     groundItems: context.groundItems,

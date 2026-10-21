@@ -20,7 +20,7 @@ import type { EntityLayer } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { Say, Shape } from "./shape.ts"
 import { dictionary, fieldAt, list, literal, positiveWholeNumber, record, text, wholeNumber } from "./shape.ts"
-import type { AbilityUse, AreaDamage, AttackDef, Behavior, ContentDef, Detonation, MovementRate } from "./types.ts"
+import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, MovementRate } from "./types.ts"
 import { rectFootprint } from "./types.ts"
 import { abilityProblems } from "../abilities/index.ts"
 import type { CardText } from "./cards.ts"
@@ -60,6 +60,7 @@ export type ContentEntry = Readonly<{
   engageRange?: number
   targetLayers?: readonly EntityLayer[]
   targetPreference?: readonly EntityLayer[]
+  aim?: "crowd"
   spawn?: NonNullable<ContentDef["spawn"]>
   splitOnDeath?: NonNullable<ContentDef["splitOnDeath"]>
   constructionRadius?: number
@@ -90,6 +91,7 @@ const attack = record<AttackDef>(
     projectileTilesPerTick: positiveWholeNumber,
     windupTicks: positiveWholeNumber,
     splash: areaDamage,
+    burn: record<Burn>({ radius: positiveWholeNumber, damage: positiveWholeNumber, everyTicks: positiveWholeNumber, ticks: positiveWholeNumber }, {}),
     focusRamp: record<Readonly<{ perHitPercent: number; maxPercent: number }>>({ perHitPercent: positiveWholeNumber, maxPercent: positiveWholeNumber }, {}),
   },
 )
@@ -135,6 +137,7 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     engageRange: positiveWholeNumber,
     targetLayers: list(layer),
     targetPreference: list(layer),
+    aim: literal("crowd"),
     spawn: record<NonNullable<ContentDef["spawn"]>>({ contentId: text, intervalTicks: positiveWholeNumber, maxAlive: positiveWholeNumber }, {}),
     splitOnDeath: record<NonNullable<ContentDef["splitOnDeath"]>>({ contentId: text, count: positiveWholeNumber }, {}),
     constructionRadius: positiveWholeNumber,
@@ -167,6 +170,7 @@ export function entryProblems(entry: ContentEntry): string[] {
   const reaches: Readonly<Record<string, number | undefined>> = {
     "attack range": entry.attack?.range,
     "splash radius": entry.attack?.splash?.radius,
+    "burn radius": entry.attack?.burn?.radius,
     "detonation radius": entry.detonation?.radius,
     "detonation trigger": entry.detonation?.triggerRange,
     "construction radius": entry.constructionRadius,
@@ -176,6 +180,11 @@ export function entryProblems(entry: ContentEntry): string[] {
   for (const [what, reach] of Object.entries(reaches)) {
     if (reach !== undefined && reach !== 1 && reach % 2 !== 0) problems.push(`${whose}'s ${what} is ${reach}: a reach is 1, which is touching, or even, a whole number of rows`)
   }
+  // A crowd is counted within the unit's area (`areaOf`, src/pulse/perception.ts): a unit with none has no crowd to aim at.
+  if (entry.aim === "crowd" && entry.attack?.burn === undefined && entry.attack?.splash === undefined && entry.detonation === undefined) {
+    problems.push(`${whose} aims at a crowd, and has no area to count one in: a splash, a burn or a detonation`)
+  }
+  if (entry.attack?.burn !== undefined && entry.attack.kind === "heal") problems.push(`${whose} heals, and a heal never sets the ground burning`)
   if (entry.attack?.kind === "melee" && entry.attack.range !== 1) problems.push(`${whose}'s melee range is ${entry.attack.range}: melee reaches what touches it, 1`)
   return problems
 }

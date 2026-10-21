@@ -86,7 +86,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             kind: first ? "engage" : "target",
             subject: event.entity,
             object: event.target,
-            detail: `dist ${event.distance}  score ${formatScore(event.score)}`,
+            detail: `dist ${event.distance}  score ${formatScore(event.score)}${event.crowd === undefined ? "" : `  crowd ${event.crowd}`}`,
           })
           break
         }
@@ -324,6 +324,40 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             subject: event.entity,
             object: event.by,
             detail: `${formatCoordinate(event.from)} to ${formatCoordinate(event.to)}`,
+          })
+          break
+
+        // Burning ground (`src/pulse/burning.ts`): lit by a shell, burning what stands on it each beat, going out.
+        // `grep fire` finds a patch's whole life.
+        case "ground.lit":
+          emit({
+            tick,
+            level: "info",
+            kind: "fire",
+            subject: event.source,
+            object: event.target,
+            detail: `lit at ${formatCoordinate(event.centre)}  radius ${event.radius}  dmg ${event.damage} every ${event.everyTicks}  until ${event.untilTick}`,
+          })
+          break
+
+        case "ground.burned":
+          // A patch that caught nobody is only the clock: DEBUG. One that burnt someone is the story.
+          emit({
+            tick,
+            level: event.caught.length === 0 ? "debug" : "info",
+            kind: "fire",
+            subject: event.source,
+            detail: `burns at ${formatCoordinate(event.centre)}  dmg ${event.damage}  caught ${event.caught.length === 0 ? "nothing" : event.caught.join(" ")}`,
+          })
+          break
+
+        case "ground.out":
+          emit({
+            tick,
+            level: "info",
+            kind: "fire",
+            subject: event.source,
+            detail: `out at ${formatCoordinate(event.centre)}  lit ${event.startedTick}`,
           })
           break
 

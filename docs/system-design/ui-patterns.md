@@ -741,6 +741,13 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   its own (a wash over a glyph would change its hue at 256 colours), and effects draw over it. Gone at cease
   fire and when she falls. It shows where colours blend; in monochrome it does not, and her
   card says what the aura does. (RULE — `tests/voice.test.ts`)
+- ***Burning ground*** (a named pattern; the owner: "a large area that is set on fire ... drawn in its own style"):
+  while a patch burns, every tile the rule burns — within its radius, measured as range is — shows a flickering
+  flame (`^` tall, `~` low; `▴` the Unicode pack's tall one) on a scorched fill of its own role, and under a unit,
+  a building or a corpse the fill alone, so whatever stands in it keeps its glyph and colour and is seen standing in
+  the fire. It burns low and dim in its last second and is gone the tick after its end. Reduced motion holds the
+  flicker still; monochrome has the flames alone. (RULE — `tests/burning-ground.test.ts`; how it is drawn is in
+  `presentation.md`, "Burning ground is drawn on its own ground")
 
 ## 15. Feedback loops
 

@@ -272,6 +272,12 @@ blast in a tick is held back a little longer than the last and the eye can follo
 lie about timing; it may not lie about what happened. (A same-tick ranged kill likewise holds its death
 and blast until the tracer lands: `tests/effects.test.ts`, `tests/view.test.ts`.)
 
+**Burning ground is not an effect.** A patch a mortar's shell sets alight is state (`MatchState.burning`), as
+salvage is, so the compositor draws it from the state of the tick shown rather than a recipe from an event, and it is
+not in the table above. It keeps an effect's rules all the same: a pure function of presentation time, flickering by a
+hash of the cosmetic seed, the patch's identity and the tile, never a stream; still under reduced motion; under every
+glyph that stands (`presentation.md`, "Burning ground is drawn on its own ground"; `src/view/burning.ts`).
+
 If only one effect gets authored well, make it `fx.move.trail`.
 
 ### Adding an effect to the vocabulary

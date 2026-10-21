@@ -574,3 +574,11 @@ stop the raid before it comes within reach — and first fires in the third roun
 PERIMETER's first round had changed, when the round that changed was the engine's placeholder test map. Before a
 sentence tells him where to look, find the moment in the events (a few lines over `LEVELS` and `startPulse`) and name
 the round it happens in.
+
+### A route's weight is not a step's price
+
+2026-10-21, burning ground. Intents took a step's credit cost from the distance field's weights, which was harmless
+while only terrain weighed ground. The first weight that belonged to a route alone (burning ground, four times its
+ground) made a step cost more than credit can ever hold, and units froze inside the fire with no event to say so. A
+step's credit now comes from the terrain; a field may weigh ground dearer than walking it costs. When a new thing
+makes ground dear to a route, ask separately what it costs to walk.

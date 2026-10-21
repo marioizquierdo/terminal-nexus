@@ -20,6 +20,15 @@ export type AreaDamage = Readonly<{
   damage: number
 }>
 
+/** Ground set burning by a landing hit (`AttackDef.burn`): how far round the impact tile, measured as range is; the
+ *  damage each unit and worker on it takes every `everyTicks` ticks; and for how many ticks it burns. */
+export type Burn = Readonly<{
+  radius: number
+  damage: number
+  everyTicks: number
+  ticks: number
+}>
+
 export type AttackDef = Readonly<{
   kind: AttackKind
   /** How far it reaches, measured as range is (`footprintWithin`, src/grid/coords.ts): to the nearest occupied tile
@@ -50,6 +59,13 @@ export type AttackDef = Readonly<{
    * rule shape's AOE half. `damage` is unused when `splash` is set.
    */
   splash?: AreaDamage
+  /**
+   * If present, a landing hit also sets the ground round the impact burning (`BurningGround`, src/state/types.ts):
+   * every unit and worker standing within `radius` of the impact tile, of either side, takes `damage` every
+   * `everyTicks` ticks for `ticks` ticks, and routes weigh the ground as dear while it burns. The Citizen mortar's
+   * shell (the owner, 2026-10-21: "set the ground on fire ... when the units walk through it, they all take damage").
+   */
+  burn?: Burn
   /**
    * Escalating damage the longer this attacker stays locked onto the *same* resolved target,
    * consecutive successful hits only — reset the instant perception reassigns a new target (including
@@ -166,6 +182,14 @@ export type ContentDef = Readonly<{
    * none remain.
    */
   targetPreference?: readonly EntityLayer[]
+  /**
+   * How this unit chooses among the enemies it could target, when not the nearest: `"crowd"` takes the one with the
+   * most units and workers of its own side within the unit's area (its `attack.burn` radius, else its `splash`
+   * radius, else its `detonation`'s), nearest first on a tie, then as `selectTarget` breaks any tie. The bomber and the mortar aim so
+   * (the owner, 2026-10-21: "things that could deal more area damage, affecting a lot of units if they are put
+   * together"). Absent: the nearest, as every unit always has.
+   */
+  aim?: "crowd"
   /**
    * While alive, every `intervalTicks` this entity attempts to create one more `contentId` for its
    * own player on a free adjacent tile, holding off whenever `maxAlive` of that content id already

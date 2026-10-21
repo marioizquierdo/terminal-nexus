@@ -2,8 +2,10 @@
 // test is playing a simulated game and checking if it is possible to make good unit formations that can foster
 // interesting strategies". Each side builds four Barracks one of three ways in front of its Grid Nexus, on an open
 // field, and its troopers come off the roofs and march on the other's Nexus; how tight each army stands when it first
-// meets the enemy, and who wins, over many seeds. And each shape against a blast: the other side the same shape with
-// two siege crawlers among its troopers, whose shots hit an area.
+// meets the enemy, and who wins, over many seeds. And each shape against area damage (the owner, 2026-10-21: "let's
+// start testing area of damage versus clamping"): the same shape across with a support whose attacks hit an area —
+// two siege crawlers, two Citizen mortars whose shells leave the ground burning, or four Ravel bombers that run into
+// the thickest knot and burst — and the support alone, standing before the other side's Nexus as its whole defence.
 //
 // Pure, like every measurement here: the same shapes and seeds measure the same on every machine.
 
@@ -36,6 +38,22 @@ const BARRACKS = "structure.citizen.barracks"
 // game's own since 2026-10-21) twelve troopers seldom bring it down, and nearly every one of these battles is a draw.
 const NEXUS = "structure.bench.nexus"
 const CRAWLER = "unit.bench.siegecrawler"
+
+/** What hits an area, set beside a side's own shape or alone before its Nexus. */
+export type Support = "crawlers" | "mortars" | "bombers"
+
+export const SUPPORTS: readonly Support[] = ["crawlers", "mortars", "bombers"]
+
+/** What each support is, and where it stands (west-side tiles; the east side's mirror them): the crawlers and the
+ *  bombers in front of the Barracks, the mortars behind them, within their long reach of the field. */
+const SUPPORT: Readonly<Record<Support, Readonly<{ content: string; at: readonly Coord[]; words: string }>>> = {
+  crawlers: { content: CRAWLER, at: [{ x: 22, y: 11 }, { x: 22, y: 16 }], words: "two siege crawlers, whose shots hit everything within two" },
+  mortars: { content: "unit.citizen.mortar", at: [{ x: 8, y: 10 }, { x: 8, y: 17 }], words: "two mortars, whose shells leave the ground burning" },
+  bombers: { content: "unit.ravel.bomber", at: [{ x: 24, y: 10 }, { x: 24, y: 12 }, { x: 24, y: 15 }, { x: 24, y: 17 }], words: "four bombers, which burst in the thickest knot" },
+}
+
+/** What the east side brings in a battle: its own shape, with a support or none; or a support alone before its Nexus. */
+export type Opponent = Readonly<{ shape: Shape | null; support: Support | null }>
 const TROOPER = "unit.citizen.trooper"
 const BODY = { width: 3, height: 2 }
 
@@ -93,46 +111,55 @@ function placements(entries: readonly Readonly<{ at: Coord; content: string }>[]
   return { rows: rows.map((row) => row.join("")), legend }
 }
 
-/** A side as a shape: its Nexus at its end of the middle row, its four Barracks before it, and with `blast`, two siege
- *  crawlers in front of them. */
-function sideOf(side: PlayerId, shape: Shape, blast: boolean): PlacementBlock {
+/** A side: its Nexus at its end of the middle row, its four Barracks before it in `shape` (none for `null`), and
+ *  `support` beside them. */
+function sideOf(side: PlayerId, shape: Shape | null, support: Support | null): PlacementBlock {
   const footprintOf = (id: string) => REGISTRIES.route.get(id).footprint
   const entries: { at: Coord; content: string }[] = [{ at: centreTile(mirrored(side, { x: 2, y: 13 }, 3), footprintOf(NEXUS)), content: NEXUS }]
-  for (const anchor of WEST[shape]) entries.push({ at: centreTile(mirrored(side, anchor, BODY.width), footprintOf(BARRACKS)), content: BARRACKS })
-  if (blast) {
-    for (const anchor of [{ x: 22, y: 11 }, { x: 22, y: 16 }]) entries.push({ at: centreTile(mirrored(side, anchor, 2), footprintOf(CRAWLER)), content: CRAWLER })
+  for (const anchor of shape === null ? [] : WEST[shape]) entries.push({ at: centreTile(mirrored(side, anchor, BODY.width), footprintOf(BARRACKS)), content: BARRACKS })
+  if (support !== null) {
+    const { content, at } = SUPPORT[support]
+    const width = Math.max(...footprintOf(content).map((tile) => tile.x)) + 1
+    for (const anchor of at) entries.push({ at: centreTile(mirrored(side, anchor, width), footprintOf(content)), content })
   }
   return placements(entries)
 }
 
-/** The battle of `west`'s shape against `east`'s, the east side given the blast when `blast` is true. */
-export function formationScenario(west: Shape, east: Shape, blast = false): ScenarioDefinition {
+/** The east side in a few words, for a scenario's id and name. */
+const opponentName = (west: Shape, east: Opponent): string =>
+  east.shape === null ? `${west}-against-${east.support}-alone` : `${west}-against-${east.shape}${east.support === null ? "" : `-with-${east.support}`}`
+
+/** The battle of `west`'s shape against `east`: a shape, with a support or none, or a support alone. `true` for the old
+ *  blast, the siege crawlers beside the same shape. */
+export function formationScenario(west: Shape, east: Shape | Opponent, blast = false): ScenarioDefinition {
+  const opponent: Opponent = typeof east === "string" ? { shape: east, support: blast ? "crawlers" : null } : east
+  const id = opponentName(west, opponent)
   return {
-    id: `formation-${west}-against-${east}${blast ? "-with-a-blast" : ""}`,
-    name: `${west} against ${east}${blast ? " with a blast" : ""}`,
+    id: `formation-${id}`,
+    name: id.replaceAll("-", " "),
     grid: { width: WIDTH, height: HEIGHT },
     seed: 1,
     pulseTicks: 1800,
     terrain: Array.from({ length: HEIGHT }, () => ".".repeat(WIDTH)),
     terrainLegend: { ".": "terrain.plain" },
-    placements: { A: sideOf("A", west, false), B: sideOf("B", east, blast) },
+    placements: { A: sideOf("A", west, null), B: sideOf("B", opponent.shape, opponent.support) },
   }
 }
 
-/** One formation battle on one seed. */
-export type FormationBattle = Readonly<{ west: Shape; east: Shape; blast: boolean; seed: number; battle: BattleRecord }>
+/** One formation battle on one seed: the west's shape against the east's opponent. */
+export type FormationBattle = Readonly<{ west: Shape; east: Opponent; seed: number; battle: BattleRecord }>
 
-/** Every shape against every shape, from both ends, and every shape against itself with a blast, on each seed, the
- *  units leaving the roofs by `exit`. */
+/** Every shape against every shape, from both ends; and every shape against each support alone before the other's
+ *  Nexus, whose damage is then the area attack's alone; on each seed, the units leaving the roofs by `exit`. (A support
+ *  beside the same shape across measured only that it is more army: every shape lost almost every trooper.) */
 export function measureFormations(seeds: readonly number[], exit: RoofExit = "route"): FormationBattle[] {
+  const opponents: { west: Shape; east: Opponent }[] = []
+  for (const west of SHAPES) for (const east of SHAPES) opponents.push({ west, east: { shape: east, support: null } })
+  for (const support of SUPPORTS) for (const west of SHAPES) opponents.push({ west, east: { shape: null, support } })
   const battles: FormationBattle[] = []
-  for (const blast of [false, true]) {
-    for (const west of SHAPES) {
-      for (const east of blast ? [west] : SHAPES) {
-        const scenario = formationScenario(west, east, blast)
-        for (const seed of seeds) battles.push({ west, east, blast, seed, battle: measureScenario(scenario, seed, REGISTRIES[exit]).battle })
-      }
-    }
+  for (const { west, east } of opponents) {
+    const scenario = formationScenario(west, east)
+    for (const seed of seeds) battles.push({ west, east, seed, battle: measureScenario(scenario, seed, REGISTRIES[exit]).battle })
   }
   return battles
 }
@@ -145,10 +172,10 @@ export function formationLines(battles: readonly FormationBattle[]): string[] {
   lines.push("How tight each shape stands when it first meets the enemy (columns from its middle, a row counting two):")
   for (const shape of SHAPES) {
     const spreads: number[] = []
-    for (const { west, east, blast, battle } of battles) {
-      if (blast) continue
+    for (const { west, east, battle } of battles) {
+      if (east.support !== null) continue
       if (west === shape && battle.sides.A.spreadAtContact !== null) spreads.push(battle.sides.A.spreadAtContact)
-      if (east === shape && battle.sides.B.spreadAtContact !== null) spreads.push(battle.sides.B.spreadAtContact)
+      if (east.shape === shape && battle.sides.B.spreadAtContact !== null) spreads.push(battle.sides.B.spreadAtContact)
     }
     lines.push(`  ${shape.padEnd(6)} ${mean(spreads).padStart(5)}   ${SHAPE_WORDS[shape]}`)
   }
@@ -160,8 +187,9 @@ export function formationLines(battles: readonly FormationBattle[]): string[] {
       let a = 0
       let b = 0
       let neither = 0
-      for (const { west, east, blast, battle } of battles) {
-        if (blast) continue
+      for (const { west, east: opponent, battle } of battles) {
+        if (opponent.support !== null) continue
+        const east = opponent.shape
         const firstSide: PlayerId | null = west === first && east === second ? "A" : west === second && east === first ? "B" : null
         if (firstSide === null || (first === second && firstSide === "B")) continue
         if (battle.winner === null) neither += 1
@@ -171,12 +199,18 @@ export function formationLines(battles: readonly FormationBattle[]): string[] {
       lines.push(`  ${first} against ${second}: ${a} to ${b}${neither > 0 ? `, ${neither} drawn` : ""}${first === second ? " (west to east)" : ""}`)
     }
   }
-  lines.push("", "Against a blast (the same shape across, with two siege crawlers whose shots hit an area): troopers lost, wins:")
-  for (const shape of SHAPES) {
-    const mine = battles.filter((entry) => entry.blast && entry.west === shape)
-    const lost = mine.map((entry) => entry.battle.sides.A.lost)
-    const wins = mine.filter((entry) => entry.battle.winner === "A").length
-    lines.push(`  ${shape.padEnd(6)} lost ${mean(lost)} of ${mean(mine.map((entry) => entry.battle.sides.A.fielded))}, won ${wins} of ${mine.length}`)
+  lines.push("", "Against area damage alone, standing before the other side's Nexus: the damage it did, the troopers it killed, and")
+  lines.push("how long the Nexus behind it stood (ticks), each shape marching on it:")
+  for (const support of SUPPORTS) {
+    lines.push(`  ${SUPPORT[support].words}:`)
+    for (const shape of SHAPES) {
+      const mine = battles.filter((entry) => entry.west === shape && entry.east.support === support && entry.east.shape === null)
+      const dealt = mean(mine.map((entry) => entry.battle.sides.B.dealt))
+      const lost = mean(mine.map((entry) => entry.battle.sides.A.lost))
+      const ticks = mean(mine.map((entry) => entry.battle.ticks))
+      const won = mine.filter((entry) => entry.battle.winner === "A").length
+      lines.push(`    ${shape.padEnd(6)} took ${dealt.padStart(6)} damage, lost ${lost.padStart(4)} troopers; the Nexus fell at ${ticks}${won < mine.length ? `, taken in ${won} of ${mine.length}` : ""}`)
+    }
   }
   return lines
 }

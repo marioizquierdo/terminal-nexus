@@ -128,6 +128,46 @@ test("the worst case stays inside the budget too: two armies, 48x16, every effec
   assertSustained(inOrder)
 })
 
+test("the worst case with ground burning stays inside the budget: four patches alight under the fight", async () => {
+  // Burning ground is drawn every frame it burns, a flicker worked out per tile (src/view/burning.ts): the busiest
+  // battle again, with four wide patches burning round where the armies meet for the whole of it.
+  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
+  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const resolved = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+  const middle = resolved.states[Math.floor(resolved.states.length / 6)]?.entities ?? []
+  const centres = middle.filter((entity) => resolved.registry.get(entity.contentId).layer === "units").slice(0, 4)
+  assert.equal(centres.length, 4)
+  const burning = centres.map((entity, index) => ({
+    centre: entity.anchor,
+    radius: 4,
+    damage: 2,
+    everyTicks: 12,
+    startedTick: 0,
+    untilTick: resolved.states.length,
+    player: "A" as const,
+    source: `A:mortar#${index}`,
+    sourceOrdinal: 1000 + index,
+  }))
+  const timeline = { ...resolved, states: resolved.states.map((state) => ({ ...state, burning })) }
+  const view = createView(timeline)
+  const samples: number[] = []
+  for (let frame = 0; frame < FRAMES_PER_SECOND * SECONDS; frame += 1) {
+    const timeMs = (frame * 1000) / FRAMES_PER_SECOND
+    const started = performance.now()
+    const composed = view.composeAt(timeMs, "truecolor", { paused: false, speed: 1 })
+    frameToAnsi(composed, "truecolor")
+    samples.push(performance.now() - started)
+  }
+  const inOrder = [...samples]
+  samples.sort((a, b) => a - b)
+  const p50 = samples[Math.floor(samples.length * 0.5)] ?? 0
+  const p95 = samples[Math.floor(samples.length * 0.95)] ?? 0
+  const worst = samples[samples.length - 1] ?? 0
+  console.log(`burning ground: 4 patches  p50 ${p50.toFixed(2)} ms  p95 ${p95.toFixed(2)} ms  max ${worst.toFixed(2)} ms`)
+  assert.ok(p95 < BUDGET_MS, `p95 of ${p95.toFixed(2)} ms exceeds the budget`)
+  assertSustained(inOrder)
+})
+
 test("resolving a whole Pulse costs less than a single frame's budget", async () => {
   const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
   const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })

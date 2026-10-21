@@ -174,8 +174,10 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     ...freshEntityFields(definitionOf(entity)),
     hp: mended(entity, definitionOf(entity)),
   }))
+  // Recall puts out whatever still burns (`MatchState.burning`): the next Pulse opens on ground with no fire.
+  const { burning: _burning, ...rest } = state
   return {
-    state: { ...state, tick: 0, outcome: null, vacatedTiles: [], entities },
+    state: { ...rest, tick: 0, outcome: null, vacatedTiles: [], entities },
     moves,
   }
 }

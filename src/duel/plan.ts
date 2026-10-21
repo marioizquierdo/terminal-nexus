@@ -1,10 +1,11 @@
 // A side's plan as a player hands it in: a JSON object (`SidePlan`), read leniently, because a language model writes it.
 // The first `{ ... }` in the text is the plan, whatever prose or fence surrounds it; a field of the wrong kind is
-// dropped with a problem said, never the whole plan; a stance it does not name holds. What the round then refuses (a
+// dropped with a problem said, never the whole plan; a stance it does not name holds; a formation it does not name is
+// none, each building where its placement says. What the round then refuses (a
 // building it cannot afford, a card number past the hand) is the round's to say (`playRound`).
 
-import type { Placement, SidePlan, Stance, Zone } from "./types.ts"
-import { STANCES, ZONES } from "./types.ts"
+import type { Formation, Placement, SidePlan, Stance, Zone } from "./types.ts"
+import { FORMATIONS, STANCES, ZONES } from "./types.ts"
 
 /** A plan read from text, and every problem found reading it. */
 export type ReadPlan = Readonly<{ plan: SidePlan; problems: readonly string[] }>
@@ -77,6 +78,11 @@ export function readPlan(given: string | unknown): ReadPlan {
   const stanceGiven = raw["stance"]
   const stance: Stance = typeof stanceGiven === "string" && (STANCES as readonly string[]).includes(stanceGiven) ? (stanceGiven as Stance) : "hold"
   if (stanceGiven !== undefined && stance !== stanceGiven) problems.push(`"stance" should be ${STANCES.join(" or ")}; it holds`)
+  const formationGiven = raw["formation"]
+  const formation = typeof formationGiven === "string" && (FORMATIONS as readonly string[]).includes(formationGiven) ? (formationGiven as Formation) : undefined
+  if (formationGiven !== undefined && formationGiven !== null && formation === undefined) {
+    problems.push(`"formation" should be ${FORMATIONS.map((name) => `"${name}"`).join(", ")}; each building goes where its "at" says`)
+  }
   const note = typeof raw["note"] === "string" ? raw["note"].slice(0, 300) : undefined
-  return { plan: { ...(power === undefined ? {} : { power }), build, stance, ...(note === undefined ? {} : { note }) }, problems }
+  return { plan: { ...(power === undefined ? {} : { power }), build, ...(formation === undefined ? {} : { formation }), stance, ...(note === undefined ? {} : { note }) }, problems }
 }

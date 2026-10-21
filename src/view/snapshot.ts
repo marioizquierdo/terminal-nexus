@@ -16,6 +16,8 @@ import type { ReadonlyCellFrame } from "./frame.ts"
 import type { ColorDepth } from "./roles.ts"
 import type { HeldCorpse } from "./compose.ts"
 import { FEED_KINDS, composeFrame } from "./compose.ts"
+import type { FireTile } from "./burning.ts"
+import { fireAt } from "./burning.ts"
 
 export type PulseTimeline = Readonly<{
   scenarioId: string
@@ -72,6 +74,8 @@ export type PulseSample = Readonly<{
   positions: ReadonlyMap<number, Coord>
   heldCorpses: readonly HeldCorpse[]
   effects: readonly ActiveEffect[]
+  /** The ground burning at this instant, tile by tile, and how each is lit (`fireAt`, `src/view/burning.ts`). */
+  fire: readonly FireTile[]
   /** The feed's events up to this tick. */
   recent: readonly DomainEvent[]
 }>
@@ -129,6 +133,9 @@ export function createView(
     (latest, instance) => Math.max(latest, instance.startMs + instance.durationMs),
     lastTick * tickDurationMs,
   )
+
+  // Ground still burning in the last state is put out once everything in flight has landed, when Recall may begin.
+  const fireOutMs = Math.max(effectsEndMs, (lastTick + 1) * tickDurationMs)
 
   const clampTick = (tick: number): number => Math.max(0, Math.min(lastTick, tick))
 
@@ -214,6 +221,15 @@ export function createView(
         reducedMotion,
         colors,
       }),
+      fire: fireAt({
+        burning: state.burning,
+        tick,
+        timeMs: Math.max(0, timeMs),
+        tickDurationMs,
+        outMs: fireOutMs,
+        reducedMotion,
+        cosmeticSeed: presentation.cosmeticSeed,
+      }),
       recent: feed.filter((event) => event.tick <= tick),
     }
   }
@@ -240,6 +256,7 @@ export function createView(
         status: statusOf(sample.state, sample.tick, lastTick),
         glyphPack: presentation.glyphPack,
         effects: sample.effects,
+        fire: sample.fire,
       },
       colors,
     )

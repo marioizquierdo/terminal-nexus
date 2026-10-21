@@ -10,7 +10,7 @@ import type { BlockReason } from "../events/types.ts"
 import type { Coord, Direction, EntityLayer } from "../grid/types.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { Pcg32 } from "../rng/pcg32.ts"
-import type { EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
+import type { BurningGround, EntityState, GroundItem, PlayerId, TargetArea } from "../state/types.ts"
 import { boostedAmount, guardedAmount } from "../abilities/index.ts"
 import type { PulseContext } from "./context.ts"
 import type { TickRoutes } from "./routes.ts"
@@ -91,7 +91,17 @@ export type TickContext = {
   /** The tick's routes (`routes.ts`): built by perception once every actor has chosen, from who walks and who
    *  stands, and walked by intents. Absent until then. */
   routes?: TickRoutes
+  /**
+   * The ground burning (`BurningGround`, `burning.ts`): the state's as the tick began, a patch added as each hit of an
+   * attack that `burn`s lands (`attacks.ts`), and the patches whose time is up dropped once the tick's fire has burnt.
+   * Written back to the state only when something still burns.
+   */
+  burning: BurningGround[]
 }
+
+/** Who a hit is from, as a damage event names it: the actor that struck, or one that has fallen since and is named by
+ *  its id (a patch of burning ground outlives the mortar that lit it). */
+export type DamageSource = Readonly<{ id: string; ordinal: number }>
 
 /**
  * Sets an actor's target and keeps `targetObservers` in sync — the one place perception's five
@@ -205,16 +215,19 @@ export function inAttackRange(actor: Actor, target: Actor, attack: AttackDef): b
  * A source an aura boosts hits harder, then a target an aura guards takes the aura's share (`context.boosts`,
  * `context.guards`), and the event names the guarding bearer. Here, the one place damage becomes a hit, so a tier's
  * tally, a splash and a blast are all changed the same way. (An attacker's own abilities change its attack before
- * this, where the attack is made: `hitDealtBy`, `attacks.ts`.)
+ * this, where the attack is made: `hitDealtBy`, `attacks.ts`.) The source need not stand: burning ground names the
+ * shooter that lit it by its id once it has fallen (`burning.ts`).
  */
 export function applyDamage(
   context: TickContext,
   target: Actor,
-  source: Actor,
+  source: DamageSource,
   amount: number,
+  options: Readonly<{ boosted?: boolean }> = {},
 ): boolean {
-  // A boosted source hits harder, then a guarded target takes its share of that.
-  const boost = amount > 0 ? context.boosts.get(source.ordinal) : undefined
+  // A boosted source hits harder, then a guarded target takes its share of that. Burning ground is not a hit its
+  // shooter makes where it stands now, so no aura round the shooter boosts it (`boosted: false`); a guard still does.
+  const boost = amount > 0 && options.boosted !== false ? context.boosts.get(source.ordinal) : undefined
   const boosted = boost === undefined ? amount : boostedAmount(amount, boost.damageDealtPercent)
   const guard = boosted > 0 ? context.guards.get(target.ordinal) : undefined
   const dealt = guard === undefined ? boosted : guardedAmount(boosted, guard.damageTakenPercent)

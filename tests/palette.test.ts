@@ -9,8 +9,9 @@ import type { StyleRole } from "../src/view/roles.ts"
 import { chroma, contrast, deltaE, hue, hueGap, nearest256, rgbFor, seenWith, xterm256 } from "./color-helpers.ts"
 
 /** The marks the map is meant to keep quiet: a dot of featureless floor, the map's edge, a bullet's
- *  trail. Every other role is something to read. */
-const QUIET: readonly StyleRole[] = ["terrain.plain", "chrome.edge", "fx.trail"]
+ *  trail; and burning ground's scorched fill, which is only ever a cell's fill, never a glyph's colour. Every other
+ *  role is something to read. */
+const QUIET: readonly StyleRole[] = ["terrain.plain", "chrome.edge", "fx.trail", "fx.fire.ground"]
 
 test("every role to be read clears 3:1 against its own background, in both themes", () => {
   for (const theme of THEMES) {
@@ -66,6 +67,18 @@ test("the two sides are two colours that each read as their own, and stay apart 
     for (const kind of ["protanopia", "deuteranopia"] as const) {
       const apart = deltaE(seenWith(a, kind), seenWith(b, kind))
       assert.ok(apart >= 40, `${theme}: the sides are Delta E ${apart.toFixed(0)} apart with ${kind}`)
+    }
+  }
+})
+
+test("on burning ground's scorched fill both sides' letters and the flame still clear 3:1, in both themes", () => {
+  // A unit standing in the fire keeps its own colour on the fill (src/view/burning.ts), so the fill is chosen to
+  // leave it readable.
+  for (const theme of THEMES) {
+    const fill = rgbFor("fx.fire.ground", "truecolor", theme)
+    for (const role of ["player.a", "player.b", "fx.fire"] as const) {
+      const ratio = contrast(rgbFor(role, "truecolor", theme), fill)
+      assert.ok(ratio >= 3, `${role} on the fill/${theme}: ${ratio.toFixed(2)}:1`)
     }
   }
 })

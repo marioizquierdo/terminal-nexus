@@ -13,6 +13,7 @@
 import { decideDamageModifiers, hitDealtBy } from "./abilities.ts"
 import { actorsWithin, applyDamage, applyHeal, distanceBetween, inAttackRange, resolveTarget, speedTier, within } from "./shared.ts"
 import type { Actor, TickContext } from "./shared.ts"
+import { light } from "./burning.ts"
 
 type Tally = { total: number; source: Actor }
 type SplashImpact = {
@@ -121,6 +122,9 @@ export function attacks(context: TickContext): void {
         else existing.total += amount
         continue
       }
+      // A shell that burns sets the ground round the impact burning, the point its splash is centred on; the hit
+      // lands the tick it is launched, so the fire is lit then too, and first burns a beat later (`burning.ts`).
+      if (attack.burn !== undefined) light(context, actor, target, target.anchor, attack.burn)
       if (attack.splash !== undefined) {
         splashes.push({
           anchor: target.anchor,

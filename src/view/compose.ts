@@ -21,6 +21,8 @@ import type { BandCell, Cell, ReadonlyCellFrame } from "./frame.ts"
 import { BANDS, composeBands } from "./frame.ts"
 import { put, text, toAscii } from "./draw.ts"
 import type { ColorDepth, StyleRole } from "./roles.ts"
+import type { FireTile } from "./burning.ts"
+import { drawFire } from "./burning.ts"
 import { chromeGlyph, entityGlyph, playerRole, salvageGlyph, terrainGlyph } from "./theme.ts"
 import type { GlyphPack } from "./theme.ts"
 
@@ -89,6 +91,8 @@ export type CompositionInput = Readonly<{
   glyphPack?: GlyphPack
   /** Ranged kills still waiting for their own tracer to land — drawn, but never counted anywhere. */
   heldCorpses?: readonly HeldCorpse[]
+  /** The ground burning at this instant (`PulseSample.fire`). Absent: none. */
+  fire?: readonly FireTile[]
 }>
 
 function drawGridEdge(
@@ -197,6 +201,16 @@ export function composeFrame(input: CompositionInput, colors: ColorDepth): Reado
       put(cells, band, cell.x, cell.y, glyph, playerRole(entity.player), { bold: drawnBold(definition) })
     }
   }
+
+  // Burning ground, under everything that stands on it (`src/view/burning.ts`) — salvage on the ground included, which
+  // keeps its glyph as a unit does.
+  const salvage = new Set(input.state.groundItems.map((item) => `${item.at.x},${item.at.y}`))
+  drawFire(cells, input.fire ?? [], pack, {
+    grid: input.grid,
+    cellOf,
+    visible: () => true,
+    standing: (tile) => occupied.has(`${tile.x},${tile.y}`) || salvage.has(`${tile.x},${tile.y}`),
+  })
 
   // A quiet rule around the play area, where the Grid is smaller than the pane. Without it a
   // lattice-drawn field has no visible edge, and a player cannot tell empty ground from off-Grid.

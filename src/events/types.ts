@@ -41,6 +41,12 @@ export type DomainEvent =
         distance: number
         /** The whole scoring function is "nearest enemy", so the score is the distance. */
         score: number
+        /**
+         * For a unit that aims at a crowd (`ContentDef.aim`): how many of the target's own side stood within the unit's
+         * area round it, the target included — what it was chosen by. Absent for every other unit, so their events are
+         * byte for byte what they were.
+         */
+        crowd?: number
       }>)
   | (Base &
       Readonly<{
@@ -220,6 +226,48 @@ export type DomainEvent =
       }>)
   | (Base &
       Readonly<{
+        /** A landing hit set the ground burning (`AttackDef.burn`, `BurningGround`): round `centre`, measured as range
+         *  is, every unit and worker of either side takes `damage` each `everyTicks` ticks until `untilTick`. */
+        kind: "ground.lit"
+        centre: Coord
+        radius: number
+        damage: number
+        everyTicks: number
+        untilTick: number
+        player: PlayerId
+        /** The shooter that lit it, and what it hit. */
+        source: string
+        sourceOrdinal: number
+        target: string
+        targetOrdinal: number
+      }>)
+  | (Base &
+      Readonly<{
+        /** Burning ground burnt, on one of its ticks: who stood on it, in ordinal order, each taking `damage` (the
+         *  `damage.applied` events that follow say what each took, a guard counted). */
+        kind: "ground.burned"
+        centre: Coord
+        radius: number
+        damage: number
+        player: PlayerId
+        source: string
+        sourceOrdinal: number
+        caught: readonly string[]
+      }>)
+  | (Base &
+      Readonly<{
+        /** Burning ground went out: its time was up. What still burns as a Pulse ends is put out by Recall between
+         *  rounds, with no event. */
+        kind: "ground.out"
+        centre: Coord
+        radius: number
+        player: PlayerId
+        source: string
+        sourceOrdinal: number
+        startedTick: number
+      }>)
+  | (Base &
+      Readonly<{
         kind: "salvage.dropped"
         at: Coord
         amount: number
@@ -258,6 +306,9 @@ export const DOMAIN_EVENT_KINDS: readonly DomainEventKind[] = [
   "structure.destroyed",
   "entity.detonated",
   "ability.triggered",
+  "ground.lit",
+  "ground.burned",
+  "ground.out",
   "salvage.dropped",
   "arbitration.bounded",
   "pulse.ended",

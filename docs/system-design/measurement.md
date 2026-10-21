@@ -62,6 +62,16 @@ while working. Which to play for which kind of change is the `remeasure` skill's
 shape against every shape from both ends and each against a blast, saying how tight each army meets the enemy and who
 wins. The first run is [a report of its own](../history/reports/2026-10-20-formations.md).
 
+**Formations in a duel** (`--formations`, `src/measure/spec.ts`, `tests/duel-formation.test.ts`): the same question
+asked of whole duels, where each side's scripted player builds its army's own buildings by a formation
+([`duels.md`](duels.md), formations). `measure run --parts duels --players rush --formations block,apart` plays,
+for each player, every ordered pair of two different formations named (`rush-block` on side A against `rush-apart`
+on side B, then the other way round), over every pair of Commanders and every seed; with one formation named, both
+sides play it. A player named with a formation (`--players rush-block`) plays it on both sides. The summary then says,
+for each two players that met, who won and how many by a Nexus falling, and for each player how tight its army met
+the enemy and what it lost a battle. A spec that names no formation plays every player by its bare name, against
+itself, exactly as before formations: the quick spec's duels replay byte for byte.
+
 ## 4. How a result is written down
 
 `node bin/measure.ts run --spec full --routing "<the rules, in a few words>" --question "<what it must answer>"
@@ -110,7 +120,8 @@ measurement file with no row in the index.
   differ in rarity, how often the luckier side won; and of those where one side was ahead after round 2 (more of its
   Nexus left, then more damage dealt), how often it won. A lucky early hand that wins nearly always is the runaway
   the power curve is built against.
-- **How tight armies meet**: the average spread at first contact, over every battle, and per scenario.
+- **How tight armies meet**: the average spread at first contact, over every battle, and per scenario; with players
+  set against each other (`--formations`), who won between each two and each one's spread.
 - **Scripted players are not players.** A script that attacks every round tells which army spends its curve better
   when attacking, not which is stronger; model players and Mario's own games say more ([`duels.md`](duels.md)).
 - **A tick's time is the machine's.** It compares two runs on one machine, played the same way (one process, or the

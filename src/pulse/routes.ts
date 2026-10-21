@@ -17,11 +17,12 @@ import { gridDistance, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import type { Area, Ground, Reach, Seed } from "../routing/index.ts"
 import { addWall, bodyKey, canStand, DistanceField, patchesOf, goalsInside, goalsNear, groundFor, rankSteps, UNREACHABLE, wallsOf, weightsFor } from "../routing/index.ts"
-import type { TargetArea } from "../state/types.ts"
+import type { BurningGround, TargetArea } from "../state/types.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { inAttackRange, onRoof, ownSideLayers, sideLayerOf, within } from "./shared.ts"
 import { fleeTrigger } from "./perception.ts"
 import { insideArea, targetFor } from "./target.ts"
+import { burnsOn, onPatch } from "./burning.ts"
 
 /** Where a mover heads: a unit's footprint — an enemy's, or a wounded ally's for a healer — to stand where its attack
  *  reaches it; its side's target; or, for a unit leaving a roof the nearest way (`roofExit`), the nearest ground wholly
@@ -53,6 +54,13 @@ const goalKey = (goal: RouteGoal): string =>
  */
 const BREACH_WEIGHT = 8
 
+/**
+ * What a step onto burning ground weighs, times the ground under it, while it burns (`MatchState.burning`): four steps
+ * of its ground, so a walker goes round a patch of fire when the way round is less than four times as long, and walks
+ * through it when it is not. Only a route weighs it; a step through fire takes as long as one beside it.
+ */
+export const BURNING_WEIGHT = 4
+
 export class TickRoutes {
   private readonly context: TickContext
   private readonly walking: ReadonlySet<number>
@@ -64,10 +72,16 @@ export class TickRoutes {
   private readonly masks = new Map<number, string>()
   private readonly breaches = new Map<string, Readonly<{ ground: Ground; weights: Uint8Array; buildings: ReadonlyMap<number, Actor>; fields: Map<string, DistanceField> }>>()
 
+  /** The ground burning as the tick's routes were built (`TickRoutes.weightsOf`): what the attacks light later in
+   *  the tick weighs from the next. */
+  private readonly burning: readonly BurningGround[]
+  private burningTiles: Uint8Array | undefined
+
   /** `walking`: the ordinals of the actors that walk this tick; every other actor stands, and is a wall. */
   constructor(context: TickContext, walking: ReadonlySet<number>) {
     this.context = context
     this.walking = walking
+    this.burning = [...context.burning]
   }
 
   /** A name for what blocks `actor` this tick, the same for every unit it blocks alike: its layer, what it collides
@@ -111,13 +125,53 @@ export class TickRoutes {
   }
 
   /** What stepping onto each anchor costs `actor`'s body: slow ground weighed in (`weightsFor`), or `null` on a Grid
-   *  with none. Kept for the tick by the body's shape and how it moves. */
+   *  with none; and, while anything burns, an anchor whose body covers a burning tile weighs `BURNING_WEIGHT` times its
+   *  ground, for what fire hurts (a flyer flies over it). Kept for the tick by the body's shape and how it moves. */
   weightsOf(actor: Actor): Uint8Array | null {
     const key = `${this.maskOf(actor)}|${bodyKey(actor.definition.footprint)}`
     if (!this.weights.has(key)) {
-      this.weights.set(key, weightsFor(this.context.index.grid, actor.definition.footprint, actor.definition.layer === "air" ? "ignore" : "impassable"))
+      const ground = weightsFor(this.context.index.grid, actor.definition.footprint, actor.definition.layer === "air" ? "ignore" : "impassable")
+      this.weights.set(key, this.burning.length > 0 && burnsOn(actor.definition.layer) ? this.withFire(ground, actor.definition.footprint) : ground)
     }
     return this.weights.get(key) ?? null
+  }
+
+  /** `ground`'s weights (one everywhere when `null`), each anchor whose `body` covers a burning tile `BURNING_WEIGHT`
+   *  times as dear, never past what a weight holds. A new array: `weightsFor`'s are the Grid's, kept for every tick. */
+  private withFire(ground: Uint8Array | null, body: Footprint): Uint8Array {
+    const { width, height } = this.context.index.grid
+    const fire = this.fireTiles()
+    const weights = new Uint8Array(width * height)
+    for (let index = 0; index < weights.length; index += 1) {
+      const x = index % width
+      const y = (index - x) / width
+      const base = ground?.[index] ?? 1
+      const burns = body.some((offset) => {
+        const tx = x + offset.x
+        const ty = y + offset.y
+        return tx >= 0 && ty >= 0 && tx < width && ty < height && fire[ty * width + tx] === 1
+      })
+      weights[index] = burns ? Math.min(255, base * BURNING_WEIGHT) : base
+    }
+    return weights
+  }
+
+  /** Which tiles burn as the tick began, 1 for a burning one: every tile on a patch, measured as range is. */
+  private fireTiles(): Uint8Array {
+    if (this.burningTiles === undefined) {
+      const { width, height } = this.context.index.grid
+      const tiles = new Uint8Array(width * height)
+      for (const patch of this.burning) {
+        // A reach of R covers R columns across and R / 2 rows up and down, touching always: a box of R each way holds it.
+        for (let y = Math.max(0, patch.centre.y - patch.radius); y <= Math.min(height - 1, patch.centre.y + patch.radius); y += 1) {
+          for (let x = Math.max(0, patch.centre.x - patch.radius); x <= Math.min(width - 1, patch.centre.x + patch.radius); x += 1) {
+            if (onPatch(patch, { x, y })) tiles[y * width + x] = 1
+          }
+        }
+      }
+      this.burningTiles = tiles
+    }
+    return this.burningTiles
   }
 
   /** The field `actor` walks toward `goal` by, shared with every actor of its mask and shape heading there. */

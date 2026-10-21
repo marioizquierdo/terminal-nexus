@@ -15,8 +15,14 @@ export type MeasureSpec = Readonly<{
     pulseTicks: number
     /** Every ordered pair of these, mirrors included, so each Commander plays from both ends of the map. */
     commanders: readonly string[]
-    /** Scripted players (`src/duel/players.ts`); both sides of a duel play the same one. */
+    /** Scripted players (`src/duel/players.ts`); both sides of a duel play the same one, unless `formations` sets
+     *  them apart. */
     players: readonly string[]
+    /** Formations the players play by (`Formation`, `src/duel/types.ts`): one, and both sides play it; several, and
+     *  each player plays every ordered pair of two different ones, side A by the first, so each formation meets each
+     *  other from both ends. Its duels' players are named with it, `rush-block` against `rush-apart`. Absent: each
+     *  player as it is, by its bare name. */
+    formations?: readonly string[]
     /** The Commanders that play side A, each against every one of `commanders`: all of them when absent. A share of
      *  the duels, for one of several processes (`jobsOf`, `src/measure/merge.ts`). */
     west?: readonly string[]
@@ -25,6 +31,29 @@ export type MeasureSpec = Readonly<{
   levels: readonly string[]
   plans: readonly LevelPlan[]
 }>
+
+/** The players a spec's duels set against each other for one of its scripted players, side A's name and side B's, in
+ *  the order they are played: the player against itself; with one formation, the player by it on both sides; with
+ *  several, every ordered pair of two different ones, in the order they are listed. */
+export function playerPairs(duels: MeasureSpec["duels"], player: string): readonly Readonly<{ A: string; B: string }>[] {
+  const formations = duels.formations ?? []
+  if (formations.length === 0) return [{ A: player, B: player }]
+  if (formations.length === 1) return [{ A: `${player}-${formations[0]}`, B: `${player}-${formations[0]}` }]
+  return formations.flatMap((first) => formations.flatMap((second) => (first === second ? [] : [{ A: `${player}-${first}`, B: `${player}-${second}` }])))
+}
+
+/** Where a duel between `players` comes in a spec's order of play: by its scripted player, then its pair of
+ *  formations. `null` for players the spec does not set against each other. */
+export function pairingIndex(duels: MeasureSpec["duels"], players: Readonly<{ A: string; B: string }>): number | null {
+  let index = 0
+  for (const player of duels.players) {
+    for (const pair of playerPairs(duels, player)) {
+      if (pair.A === players.A && pair.B === players.B) return index
+      index += 1
+    }
+  }
+  return null
+}
 
 const BARRACKS = "structure.citizen.barracks"
 const DEPOT = "structure.citizen.depot"

@@ -89,7 +89,8 @@ over entities can never decide an outcome:
    recipes exist so far (`src/pulse/production.ts`, below); the yield waits for the worker economy. A
    mid-Pulse combat spawn (a spawner, a unit that splits on death) runs just ahead of it.
 3. **Perception.** Each actor scores and selects a target: the nearest; among equally near ones the one it
-   already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw. Then the
+   already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw; a unit that
+   aims at a crowd first takes the enemies with the most of their side round them (below). Then the
    tick's routes are built from who walks and who stands (section 1.6), and a unit that would walk chooses again by
    what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all.
 4. **Intents.** Each actor with movement credit declares one destination tile: the best step of its route it
@@ -104,7 +105,8 @@ over entities can never decide an outcome:
    that cost is spent. Occupancy is now fixed for this tick.
 7. **Attacks** (`src/pulse/attacks.ts`). By speed tier, **tier 1 first**. Within one tier, every
    valid attack is computed against the state at tier start and applied **simultaneously**, so no
-   entity survives merely by being iterated first.
+   entity survives merely by being iterated first. Then each ability's tick (below), then **burning ground** burns
+   what stands on it, and what has burnt its time goes out (`src/pulse/burning.ts`, below).
 8. **Resolution** (`src/pulse/death.ts`). Apply damage, deaths, destruction, salvage. Emit ordered
    events.
 9. **Objectives and victory** (`src/pulse/victory.ts`).
@@ -173,6 +175,31 @@ in what order things are said, so a run hashes the same.
 - **Loaded dice make a hit sometimes count several times over** (Dob's, one in four for triple) (`src/abilities/loaded-dice.ts`): a seeded draw on
   each of the bearer's attacks.
 
+**A unit may aim at a crowd** (RULE — the owner, 2026-10-21; `ContentDef.aim`, `src/pulse/perception.ts`,
+`tests/area-damage.test.ts`, the `bomber-crowd` scenario). A unit whose content says `aim: "crowd"` chooses among the
+enemies it could target the ones with the most units and workers of their own side within its area round them —
+its attack's `burn` radius, else its `splash` radius, else its `detonation`'s, measured as range is, from the
+candidate's body, the candidate counted — and among those as every unit chooses: the nearest, the one it holds, the
+weakest, a draw. Walking to it, it passes over one it cannot reach for the thickest it can, as a shot does. The Ravel
+bomber and the Citizen mortar aim so; every other unit takes the nearest, as it always did. The choice's
+`target.selected` says the crowd it counted (`crowd`); no rule reads it.
+
+**Burning ground** (RULE — the owner, 2026-10-21; `AttackDef.burn`, `MatchState.burning`, `src/pulse/burning.ts`,
+`tests/area-damage.test.ts`, the `mortar-burning-ground` scenario). A landing hit of an attack that `burn`s lights a
+patch round its target's anchor tile — the point its splash is centred on — on the tick it lands, which is the tick
+it is launched. The patch is kept in the state with its place, its radius, its damage, its beat and its lifetime
+(`startedTick`, `untilTick = startedTick + ticks`) and the shooter's id. On each tick a whole number of beats after it
+was lit, up to its last tick, every unit and worker within its radius of its centre, measured as range is, of either
+side, takes its damage — never a flyer, never a building. It burns in its own step after the attacks and the
+abilities' ticks and before the deaths settle; every patch's victims are added up and applied at once, as a splash's
+are, so two patches on one tile are one hit, named by the first patch kept (patches are kept by when they were lit,
+then by the shooter's ordinal). A guard still softens it; a boost round the shooter does not, since the fire is not a
+blow the shooter strikes where it stands. A kill by fire is the shooter's, named by its id whether it still stands or
+not, and gives no killer's pause. A patch whose time is up goes out after it burns its last (`ground.lit`,
+`ground.burned`, `ground.out`). The state carries `burning` only while something burns, so a state without fire hashes
+as it did before fire existed. Routes weigh it while it burns (section 1.6), and Recall puts it out (section 2). The
+Citizen mortar's shell is the first that burns.
+
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
 `src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
 `behavior: "support"` with a heal `attack` — chooses the nearest wounded ally rather than the nearest enemy, ties
@@ -201,7 +228,9 @@ balanced one.
   a drawn order (`src/pulse/spawn.ts`), so neither claims the ground between them by its id.
 - **A step as good as another** goes by the turn from the way the unit faces its goal, then a draw (section 1.6),
   never by compass order.
-- **A unit's target among equally near enemies** is the one it holds, then the weakest, then a draw (perception).
+- **A unit's target among equally near enemies** is the one it holds, then the weakest, then a draw (perception). A
+  unit that aims at a crowd counts each candidate's crowd from where bodies stand and whose they are, never an order,
+  and breaks a tie between equal crowds the same way.
 - **A wide unit measures its walk from its nose**: its tile nearest the goal, and the enemy tile nearest it.
 - **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, Recall's homes and
   tiles, a Commander's return and a mission's arrivals break a tie toward the enemy's Grid Nexus
@@ -325,6 +354,12 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
 - **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
   a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
   from where a unit stands, so it can save up for a step onto scrub ([`grid.md`](grid.md), terrain).
+- **Burning ground is dear ground** (`TickRoutes.weightsOf`, `BURNING_WEIGHT`; `tests/area-damage.test.ts`). While
+  anything burns, an anchor where a unit's or a worker's body covers a burning tile weighs four times its ground in
+  that body's fields, so a walker goes round a patch when the way round is less than four times as long and walks
+  through it when it is not. Only the route weighs it: a step onto burning ground costs the credit its ground does, so
+  a unit that crosses fire crosses it at its own pace. The patches are those burning as the tick began; what the
+  attacks light weighs from the next tick. A flyer flies over it.
 - **Workers cross their own side's troops, and not the enemy's**; a trooper the same with workers ([`grid.md`](grid.md),
   collision masks). The enemy's are walls to their routes.
 - **A unit that flees walks a flight map** (`TickRoutes.safetyOf`): the walk from every enemy that can strike, scaled
@@ -383,7 +418,8 @@ regroup near the Grid Nexus. Each survivor is set down on the nearest free tile,
 distance at a time, so a group comes home round on screen ([`grid.md`](grid.md), setting a group down). A
 producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
-`src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`).
+`src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`). **Recall puts out burning ground**
+(RULE — `src/match/recall.ts`, `tests/area-damage.test.ts`): the next Pulse opens with nothing burning.
 
 **The Grid Nexus mends between rounds** (RULE — the owner, 2026-10-21: "perhaps we add like a little bit of
 self-healing"; `ContentDef.mends`, `src/match/recall.ts`, `tests/match.test.ts`). At Recall a structure whose

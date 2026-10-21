@@ -5,9 +5,11 @@
 // (`bin/measure.ts`) reads the maps, keeps time and writes the result down.
 
 import type { PlayableLevel } from "../cli/levels.ts"
-import { SCRIPTED } from "../duel/index.ts"
+import type { Player } from "../duel/index.ts"
+import { scriptedNames, scriptedPlayer } from "../duel/index.ts"
 import type { ScenarioDefinition } from "../scenario/types.ts"
 import type { MeasureSpec } from "./spec.ts"
+import { playerPairs } from "./spec.ts"
 import type { DuelMeasure, LevelMeasure, ScenarioMeasure } from "./suites.ts"
 import { measureDuel, measureLevel, measureScenario } from "./suites.ts"
 
@@ -59,20 +61,25 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
   }
   if (inputs.parts.has("duels")) {
     const { duels: setup } = spec
+    const scripted = (name: string): Player => {
+      const player = scriptedPlayer(name)
+      if (player === undefined) throw new Error(`no scripted player "${name}" (${scriptedNames()})`)
+      return player
+    }
     for (const name of setup.players) {
-      const player = SCRIPTED[name]
-      if (player === undefined) throw new Error(`no scripted player "${name}"`)
-      for (const a of setup.west ?? setup.commanders) {
-        for (const b of setup.commanders) {
-          for (const seed of spec.seeds) {
-            const duel = measureDuel(
-              { map: setup.map, seed, rounds: setup.rounds, pulseTicks: setup.pulseTicks, commanders: { A: a, B: b } },
-              { A: { name, player }, B: { name, player } },
-            )
-            ticks += duel.rounds.reduce((sum, round) => sum + round.battle.ticks, 0)
-            duels.push(duel)
-            const winner = duel.result.winner === null ? "draw" : duel.commanders[duel.result.winner]
-            say(`duel ${name} ${a} v ${b} seed ${seed}: ${winner} (${duel.result.by}, round ${duel.result.round})`)
+      for (const pair of playerPairs(setup, name)) {
+        const players = { A: { name: pair.A, player: scripted(pair.A) }, B: { name: pair.B, player: scripted(pair.B) } }
+        const label = pair.A === pair.B ? pair.A : `${pair.A} v ${pair.B}`
+        for (const a of setup.west ?? setup.commanders) {
+          for (const b of setup.commanders) {
+            for (const seed of spec.seeds) {
+              const duel = measureDuel({ map: setup.map, seed, rounds: setup.rounds, pulseTicks: setup.pulseTicks, commanders: { A: a, B: b } }, players)
+              ticks += duel.rounds.reduce((sum, round) => sum + round.battle.ticks, 0)
+              duels.push(duel)
+              const won = duel.result.winner
+              const winner = won === null ? "draw" : pair.A === pair.B ? duel.commanders[won] : `${duel.commanders[won]} (${duel.players[won]})`
+              say(`duel ${label} ${a} v ${b} seed ${seed}: ${winner} (${duel.result.by}, round ${duel.result.round})`)
+            }
           }
         }
       }
