@@ -8,6 +8,9 @@
 //   credit, and attacks every round;
 // - **turtle**: builds two Turrets forward and its strongest producers behind them, and holds until the last two rounds.
 //
+// Each also plays with area damage (`rush-area`): one building whose units hit an area bought first each round
+// (`withArea`).
+//
 // Each plays by a formation too (`rush-block`, `rush-apart`, `balanced-block` ...): the same plan, with every building
 // that trains units set touching the others or set apart (`Formation`, `types.ts`), round where the plan puts its
 // first one. Played by its bare name, a script names no formation and each building goes where the script says.
@@ -96,8 +99,37 @@ export const turtle: Player = (brief) => {
   return { power, build, stance: brief.round >= brief.rounds - 1 ? "attack" : "hold", note: "turtle: turrets forward, producers behind, attack in the last two rounds" }
 }
 
-/** Every scripted player, by name. */
-export const SCRIPTED: Readonly<Record<string, Player>> = { balanced, rush, turtle }
+/**
+ * A player that plays `player`'s plan with area damage: each round it buys one building whose units hit an area and aim
+ * at the thickest knot (`BriefBuilding.area`: the Ravels' Fuse Shed, the Citizens' Battery) first, when one is open and
+ * affordable, placed where the script puts its producers, and spends what is left as `player` would. The scripts value
+ * a building by health times damage, which scores a unit that only bursts at nothing, so without this none of them
+ * ever buys one (the owner, 2026-10-21: "let's start testing area of damage versus clamping").
+ */
+export function withArea(player: Player): Player {
+  return (brief) => {
+    const area = brief.buildings.find((building) => building.area === true)
+    if (area === undefined) return player(brief)
+    // Open: buy it. Locked: buy what it needs standing (the Barracks for a Battery, the Den for a Fuse Shed), so it opens
+    // next round, unless that already stands.
+    const first = area.open ? area : brief.buildings.find((building) => area.needs.includes(building.name) && building.open)
+    if (first === undefined || first.cost > brief.credits) return player(brief)
+    const rest = player({ ...brief, credits: brief.credits - first.cost })
+    const at = rest.build.find((placement) => brief.buildings.find((building) => building.id === placement.building)?.spawns !== undefined)?.at ?? "forward"
+    const words = first === area ? `one ${area.name} first, for area damage` : `a ${first.name} first, so a ${area.name} can follow`
+    return { ...rest, build: [{ building: first.id, at }, ...rest.build], note: rest.note === undefined ? words : `${rest.note}; ${words}` }
+  }
+}
+
+/** Every scripted player, by name: each script, and each with area damage (`rush-area`). */
+export const SCRIPTED: Readonly<Record<string, Player>> = {
+  balanced,
+  rush,
+  turtle,
+  "balanced-area": withArea(balanced),
+  "rush-area": withArea(rush),
+  "turtle-area": withArea(turtle),
+}
 
 /** A player that plays `player`'s plan by `formation`. */
 export function inFormation(player: Player, formation: Formation): Player {
@@ -111,6 +143,7 @@ export function inFormation(player: Player, formation: Formation): Player {
 /** A scripted player's name read: the script and the formation it plays by, `rush-block` the rush in a block; a bare
  *  name none. `undefined` for a script or a formation there is not. */
 export function scriptedName(name: string): Readonly<{ script: string; formation?: Formation }> | undefined {
+  if (SCRIPTED[name] !== undefined) return { script: name }
   const dash = name.lastIndexOf("-")
   const script = dash < 0 ? name : name.slice(0, dash)
   const formation = dash < 0 ? undefined : name.slice(dash + 1)

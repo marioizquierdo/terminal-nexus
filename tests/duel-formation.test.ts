@@ -161,3 +161,24 @@ test("a measurement sets formations against each other from both ends, splits an
   assert.match(summary, /rush-block met the enemy \d+\.\d columns from its middle/u)
   assert.match(summary, /mirrors: 0,/u, "a Commander against herself under two formations is no mirror")
 })
+
+test("a script with area damage buys its army's area building, or what opens it, first; the bare script never does", () => {
+  // The scripts value a building by health times damage, which scores a unit that only bursts at nothing; `-area` makes
+  // them buy the Battery (mortars) or the Fuse Shed (bombers), and before it opens what it needs standing.
+  for (const [commander, area, needed] of [
+    ["vasse", "battery", "barracks"],
+    ["dob", "fuse-shed", "den"],
+  ] as const) {
+    const brief = briefOf(newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: commander, B: commander } }), "A").data
+    const building = brief.buildings.find((candidate) => candidate.id === area)
+    assert.ok(building !== undefined && building.area === true, `${commander}'s ${area} is not marked as area damage`)
+    const plan = scriptedPlayer("rush-area")!(brief)
+    assert.equal(plan.build[0]?.building, building.open ? area : needed, `${commander}: ${JSON.stringify(plan.build)}`)
+    assert.equal(scriptedPlayer("rush-area-block")!(brief).formation, "block")
+    for (const script of ["rush", "balanced", "turtle"]) {
+      assert.ok(!SCRIPTED[script]!(brief).build.some((placement) => placement.building === area), `bare ${script} bought the ${area}`)
+    }
+  }
+  assert.deepEqual(scriptedName("rush-area"), { script: "rush-area" })
+  assert.deepEqual(scriptedName("rush-area-apart"), { script: "rush-area", formation: "apart" })
+})

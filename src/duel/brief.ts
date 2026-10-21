@@ -33,6 +33,9 @@ export type BriefBuilding = Readonly<{
   /** What it trains a round, as one number: each unit's health times its damage a second, added up — the measure the
    *  power curve uses ("about three troopers"). 0 for a building that trains nothing. */
   strength: number
+  /** Whether what it trains hits an area and aims at the thickest knot of enemies (`ContentDef.aim`): the bomber's and
+   *  the mortar's buildings. What the scripted players' `-area` plays buy first. */
+  area?: true
   supply?: number
   /** What it does on its own besides training, each ability's own sentence (`abilityLines`). */
   skills: readonly string[]
@@ -171,6 +174,7 @@ export function briefOf(state: DuelState, side: Side): Brief {
       open: needs.every((contentId) => standingIds.has(contentId)),
       ...(item.spawns === undefined ? {} : { spawns: `${item.spawns.perWave * item.spawns.waves} ${titleOf(item.spawns.unit)} a round (${statsOf(loadout.registry.get(item.spawns.unit))})` }),
       strength: item.spawns === undefined ? 0 : item.spawns.perWave * item.spawns.waves * strengthOf(loadout.registry.get(item.spawns.unit)),
+      ...(item.spawns !== undefined && loadout.registry.get(item.spawns.unit).aim === "crowd" ? { area: true as const } : {}),
       ...(definition.supplyProvided === undefined ? {} : { supply: definition.supplyProvided }),
       skills: abilityLines(definition, { subject: "it", possessive: "its" }),
       about: CARD_TEXT[item.contentId]?.description ?? "",
