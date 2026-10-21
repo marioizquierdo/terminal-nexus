@@ -31,7 +31,8 @@ node bin/measure.ts run --spec quick --parts duels --players rush --formations b
 
 The second plays `rush-block` against `rush-apart` from both ends for every pair of Commanders and seed, and says
 who won by formation and how tight each met the enemy. Any script takes `-block`, `-apart` or `-zones` (its own
-places, as the bare name). A model player states `"formation"` in its plan; the brief tells it what each wins and
+places, as the bare name); any script also comes with area damage (`rush-area`, `rush-area-block`), buying a Battery
+or a Fuse Shed first each round. A model player states `"formation"` in its plan; the brief tells it what each wins and
 loses.
 
 ## 3. Model against model (about a minute and 75 thousand small-model tokens a side)

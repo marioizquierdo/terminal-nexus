@@ -358,20 +358,20 @@ Mario's yes to the proposal ([his words](../history/feedback/2026-10-21-pathfind
 differences in formations with units", and "let's start testing area of damage versus clamping", with scripted and
 model players able to choose one strategy or another.
 
-- [ ] **The Ravel bomber**: fast and frail, it runs at the thickest knot of enemies within its reach and bursts there,
+- [x] **The Ravel bomber**: fast and frail, it runs at the thickest knot of enemies within its reach and bursts there,
   hurting everything round it, friend and foe; trained by a Ravel building of its own.
-- [ ] **The Citizen mortar**: slow, it lobs a shell at the thickest knot within a long reach; the shell bursts a little
+- [x] **The Citizen mortar**: slow, it lobs a shell at the thickest knot within a long reach; the shell bursts a little
   and leaves the ground burning; trained by a Citizen building of its own, after the Barracks.
-- [ ] **Burning ground**: a patch with a place, a size and a lifetime, kept in the state, hurting every unit and worker
+- [x] **Burning ground**: a patch with a place, a size and a lifetime, kept in the state, hurting every unit and worker
   on it each second, of either side; routes weigh it as dear ground while it burns; Recall puts it out; drawn on the
   Grid in its own style, under what stands on it.
-- [ ] **Aiming at a crowd**: a unit may aim at the enemy with the most enemies round it, nearest first on a tie; the
+- [x] **Aiming at a crowd**: a unit may aim at the enemy with the most enemies round it, nearest first on a tie; the
   bomber and the mortar do.
-- [ ] **The formation game against area damage**: block, apart and line against the bomber and against the mortar; a
+- [x] **The formation game against area damage**: block, apart and line against the bomber and against the mortar; a
   loose army should now win something a tight one loses.
-- [ ] **A strategy to choose**: the scripted duel players and a model player's plan may say how tight to build, and
+- [x] **A strategy to choose**: the scripted duel players and a model player's plan may say how tight to build, and
   duels measure a block against an army built apart, with and without the new units.
-- [ ] The units to come, from his list, in the backlog for the armies' next pass.
+- [x] The units to come, from his list, in the backlog for the armies' next pass.
 
 ## Waiting on Mario
 

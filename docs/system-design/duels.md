@@ -109,6 +109,13 @@ before formations (`balanced-zones` plays the same duel). A script picks its pro
 that train units, so a new one (a bomber's nest, a mortar pit) is placed by its formation once it is in the army's
 menu.
 
+**The scripted players with area damage**: `rush-area`, `balanced-area`, `turtle-area`, each also by a formation
+(`rush-area-block`). The scripts value a building by what it trains, health times damage, which scores a unit that
+only bursts at nothing, so a bare script never buys a Battery (mortars) or a Fuse Shed (bombers). With `-area` it buys
+one first each round, or the building it needs standing so it opens next round, and spends the rest as its script
+would (`withArea`, `src/duel/players.ts`; the brief marks such a building `area`). It is how a duel measures area damage
+against a tight army ([the report](../history/reports/2026-10-21-area-damage.md)).
+
 **The record says it**: each side's round report carries the formation its plan named (`formation`), the round's
 lines say `built 3 (block)`, and a measurement names each side's player with it (`rush-block` against
 `rush-apart`), so a summary can say who won by formation ([`measurement.md`](measurement.md)).

@@ -109,8 +109,12 @@ where an army gathers before it moves, set during the Build Phase to a formation
 > formations with units. You will see some insignificant changes in strategies, some asymmetry, and that is exactly
 > the type of unit composition that we're looking for.
 
-**Scheduled**: the Ravel bomber, the Citizen mortar and burning ground, the buildings that train them, and the
-formation game played against them.
+**Built.** The Ravel bomber (fast, frail, it runs into the thickest knot of enemies and bursts for 36 within four
+columns and two rows), trained two a wave by a Fuse Shed after the Den; the Citizen mortar (slow, it lobs a shell ten
+columns at the thickest knot: 8 to everything round where it lands, and the ground there burns for six seconds, 4 a
+second to every unit and worker on it, either side), trained two a wave by a Battery after the Barracks. Burning ground
+is drawn under what stands on it, flickering, and routes go round it when that is quicker. Against a block, both take
+about half again as much as against an army built apart ([the report](../reports/2026-10-21-area-damage.md)).
 
 ### F197 — Every unit has its own personality: the units to come
 
@@ -132,8 +136,8 @@ formation game played against them.
 > that are ideas for possible future units we can have that we will fit in the most thematic possible way in the right
 > army. But that is what I'm looking forward to, create complex battles.
 
-**Scheduled** for the armies' next pass: the list kept in [the backlog](../../milestones/backlog.md) as the units to
-come, each to find its army; this round builds only the two area units.
+**Scheduled** for the armies' next pass: the list is in [the backlog](../../milestones/backlog.md) as the units to
+come, grouped by what they do, each to find its army; this round built only the two area units.
 
 ### F198 — Strategies a scripted or a model player can choose
 
@@ -141,5 +145,8 @@ come, each to find its army; this round builds only the two area units.
 > playing versus agent, so we'll be able to decide to do one strategy or another and see significant changes. That
 > will be our next iteration here. I'm looking forward to see the pull requests.
 
-**Scheduled**: the scripted duel players and a model player may choose how tight they build, so a duel can set a block
-against an army built apart, with and without area damage, and measure the difference.
+**Built.** Every scripted player plays as a block or apart (`rush-block`, `rush-apart`) and with area damage
+(`rush-area-block`); a model player's plan may name a formation, and its brief says what each wins and loses.
+Measured: for the balanced player, area damage widens an army built apart's lead from 21 to 15 to 27 to 9; but in
+whole duels where the buildings stand decides more than how tight the army fights, since a block stands in the
+enemy's road and is razed ([the report](../reports/2026-10-21-area-damage.md)).
