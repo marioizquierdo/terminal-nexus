@@ -27,6 +27,7 @@ version of the design beyond git.
 - [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a campaign as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
 - [`duels.md`](system-design/duels.md) — two Commander Armies fought out headless, script or model a side: the rules, the command line, the brief and plan, how to run model against model for testing, and what the numbers can say.
 - [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route scenarios, duels and campaign levels played, seeds, how a result is written down, and the `measure` command.
+- [`movement.md`](system-design/movement.md) — how things move: the pathfinding chapter, from its building blocks (ground, goal, distance field, step choice, arbitration) to the shared field as the general path, breaching through buildings, and where a modifier such as stepping back or leaping forward plugs in.
 - [`routing.md`](system-design/routing.md) — how a place in the game is named and reached: routes, `--at`, the title menu's rows and the browser page's links.
 
 ## Planning — what is next (`milestones/`)

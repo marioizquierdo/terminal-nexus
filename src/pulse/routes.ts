@@ -16,7 +16,7 @@
 import { gridDistance, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import type { Area, Ground, Reach, Seed } from "../routing/index.ts"
-import { addWall, bodyKey, canStand, DistanceField, patchesOf, goalsInside, goalsNear, groundFor, UNREACHABLE, wallsOf, weightsFor } from "../routing/index.ts"
+import { addWall, bodyKey, canStand, DistanceField, patchesOf, goalsInside, goalsNear, groundFor, rankSteps, UNREACHABLE, wallsOf, weightsFor } from "../routing/index.ts"
 import type { TargetArea } from "../state/types.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { inAttackRange, onRoof, ownSideLayers, sideLayerOf, within } from "./shared.ts"
@@ -45,6 +45,14 @@ const goalKey = (goal: RouteGoal): string =>
       ? `area:${goal.area.x},${goal.area.y},${goal.area.width},${goal.area.height}`
       : "off the roofs"
 
+/**
+ * What a step onto ground an enemy building stands on weighs, when a unit works out which building to break
+ * (`breachOf`): eight steps of open ground, so a way through one building is taken over a way through two, and a short
+ * walk round to a thin wall over a long one through a thick. Never a step anyone takes: the unit breaks the building
+ * and walks the ground it leaves.
+ */
+const BREACH_WEIGHT = 8
+
 export class TickRoutes {
   private readonly context: TickContext
   private readonly walking: ReadonlySet<number>
@@ -54,6 +62,7 @@ export class TickRoutes {
   private readonly patches = new Map<string, Int32Array>()
   private readonly nearest = new Map<string, Readonly<{ field: DistanceField; anchors: ReadonlySet<number> }>>()
   private readonly masks = new Map<number, string>()
+  private readonly breaches = new Map<string, Readonly<{ ground: Ground; weights: Uint8Array; buildings: ReadonlyMap<number, Actor>; fields: Map<string, DistanceField> }>>()
 
   /** `walking`: the ordinals of the actors that walk this tick; every other actor stands, and is a wall. */
   constructor(context: TickContext, walking: ReadonlySet<number>) {
@@ -220,6 +229,68 @@ export class TickRoutes {
       this.nearest.set(key, entry)
     }
     return { field: entry.field, here: entry.anchors.has(at) }
+  }
+
+  /**
+   * **Breaching: rock and buildings are not the same wall.** When `actor` cannot reach `goal` from where it stands, the
+   * enemy building in its way that it should break, if breaking buildings opens one: a field toward the goal over the
+   * same ground with the enemy's buildings open, each step onto one weighing `BREACH_WEIGHT` times a step of open
+   * ground, so the way through the fewest buildings is the one taken; walked downhill from where the actor stands, the
+   * first enemy building its body would overlap is the one. `null` when the goal can be reached, or when nothing but
+   * rock (or what is not the enemy's to break) closes the way. The owner, 2026-10-21: "if the enemy blocks the entrance
+   * with buildings, then the pathfinding should know the difference between rocks and buildings and should decide to
+   * target one of the buildings."
+   */
+  breachOf(actor: Actor, goal: RouteGoal): Actor | null {
+    if (this.fieldOf(actor, goal).distanceAt(actor.anchor) !== UNREACHABLE) return null
+    const body = actor.definition.footprint
+    const key = `${this.maskOf(actor)}|${bodyKey(body)}|breaching ${actor.player}`
+    let entry = this.breaches.get(key)
+    if (entry === undefined) {
+      const { layers, sideLayers } = ownSideLayers(this.context, actor.definition, actor.player, onRoof(this.context, actor))
+      const walls = wallsOf(this.context.index.grid, actor.definition.layer === "air" ? "ignore" : "impassable")
+      const buildings = new Map<number, Actor>()
+      for (const other of this.context.actors) {
+        if (other.pendingDead || other === actor || this.walking.has(other.ordinal)) continue
+        if (other.player !== actor.player && other.definition.layer === "obstacles") {
+          for (const tile of tilesOf(other.anchor, other.definition.footprint)) buildings.set(tile.y * walls.width + tile.x, other)
+          continue
+        }
+        const blocks = layers.includes(other.definition.layer) || (sideLayers?.layers.includes(other.definition.layer) === true && other.player !== actor.player)
+        if (blocks) addWall(walls, other.anchor, other.definition.footprint)
+      }
+      const ground = groundFor(walls, body)
+      const base = this.weightsOf(actor)
+      const weights = new Uint8Array(ground.width * ground.height)
+      for (let index = 0; index < weights.length; index += 1) {
+        const x = index % ground.width
+        const y = (index - x) / ground.width
+        const inBuilding = body.some((offset) => buildings.has((y + offset.y) * ground.width + x + offset.x))
+        weights[index] = (base?.[index] ?? 1) * (inBuilding ? BREACH_WEIGHT : 1)
+      }
+      entry = { ground, weights, buildings, fields: new Map() }
+      this.breaches.set(key, entry)
+    }
+    const goalName = goalKey(goal)
+    let field = entry.fields.get(goalName)
+    if (field === undefined) {
+      field = fieldOver(this.context, entry.ground, entry.weights, actor, goal)
+      entry.fields.set(goalName, field)
+    }
+    // Downhill from where it stands, the best step each time, to the first tile of an enemy building.
+    let at = actor.anchor
+    let distance = field.distanceAt(at)
+    while (distance !== UNREACHABLE && distance > 0) {
+      for (const offset of body) {
+        const building = entry.buildings.get((at.y + offset.y) * entry.ground.width + at.x + offset.x)
+        if (building !== undefined) return building
+      }
+      const next = rankSteps(field, at, actor.facing)[0]?.[0]
+      if (next === undefined || !next.downhill) return null
+      at = next.to
+      distance = next.after
+    }
+    return null
   }
 
   /** Which patch of `ground` each anchor is on (`patchesOf`, `src/routing/`), kept for the tick with the ground. */
