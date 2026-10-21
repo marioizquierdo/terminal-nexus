@@ -103,15 +103,17 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   // scripted side's structures, each in its side's colour. Then what the next round brings, always (the
   // owner: "the enemy units should be visible"), in the incoming look — see-through, "not here yet".
   // A unit steps aside for a building when the Pulse starts — a survivor or an arrival alike — so neither
-  // is drawn over one: a tile a building holds, standing, planned or the raid's, shows the building.
-  const built = new Set<string>()
-  const hold = (contentId: string, anchor: Coord): void => {
-    for (const tile of tilesOf(anchor, context.registry.get(contentId).footprint)) built.add(`${tile.x},${tile.y}`)
+  // is drawn over one: a tile a building holds, planned or the other side's, shows the building. A survivor
+  // Recall brought home onto its own side's standing building stays on its roof (`src/match/recall.ts`), and
+  // is drawn there, over the building, as a unit on a roof is in a Battle Round.
+  const built = new Map<string, PlayerId | "planned">()
+  const hold = (contentId: string, anchor: Coord, owner: PlayerId | "planned"): void => {
+    for (const tile of tilesOf(anchor, context.registry.get(contentId).footprint)) built.set(`${tile.x},${tile.y}`, owner)
   }
-  for (const structure of context.standing) hold(structure.contentId, structure.anchor)
-  for (const placement of state.planned) hold(placement.contentId, placement.anchor)
+  for (const structure of context.standing) hold(structure.contentId, structure.anchor, "A")
+  for (const placement of state.planned) hold(placement.contentId, placement.anchor, "planned")
   for (const entity of context.field ?? []) {
-    if (context.registry.get(entity.contentId).layer === "obstacles") hold(entity.contentId, entity.anchor)
+    if (context.registry.get(entity.contentId).layer === "obstacles") hold(entity.contentId, entity.anchor, entity.player)
   }
   const drawEntity = (entity: Readonly<{ contentId: string; anchor: Coord; player: PlayerId }>, incoming: boolean): void => {
     const definition = context.registry.get(entity.contentId)
@@ -121,7 +123,8 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
     for (const offset of definition.footprint) {
       const tile = { x: entity.anchor.x + offset.x, y: entity.anchor.y + offset.y }
       if (!inBounds(context.grid, tile) || !inView(range, tile)) continue
-      if (definition.layer !== "obstacles" && built.has(`${tile.x},${tile.y}`)) continue
+      const under = built.get(`${tile.x},${tile.y}`)
+      if (definition.layer !== "obstacles" && under !== undefined && (incoming || under !== entity.player)) continue
       const cell = cellForTile(layout, state.camera, tile)
       // A Commander is never faint: bold at full strength in her side's colour, arriving or standing (the
       // owner: "make sure vasse is visible, prominent").

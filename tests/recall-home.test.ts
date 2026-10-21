@@ -22,6 +22,13 @@ import { OccupancyIndex } from "../src/grid/occupancy.ts"
 import { makingWay } from "../src/pulse/make-way.ts"
 import type { Actor, TickContext } from "../src/pulse/shared.ts"
 import { freshEntityFields } from "../src/content/index.ts"
+import { waitingToComeOut } from "../src/view/pulse-scene.ts"
+import { currentCard } from "../src/build/card.ts"
+import { cellForTile } from "../src/build/layout.ts"
+import { starterContext } from "../src/cli/starter.ts"
+import { cellAt } from "../src/view/frame.ts"
+import type { Side } from "./build-helpers.ts"
+import { buildSide, compose, keys, screenText } from "./build-helpers.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
 
 const NEXUS = "structure.citizen.nexus"
@@ -367,3 +374,56 @@ test("who makes way: one standing on its side's roofs while a wave is owed, unle
 })
 
 const CRAWLER_WINDUP = registry.get(CRAWLER).attack?.windupTicks ?? 0
+
+test("the Battle Round says how many wait to come out: for room on a roof, or for a place in the army", () => {
+  const nexus = { player: "A" as const, contentId: NEXUS }
+  const owing = { player: "A" as const, contentId: BARRACKS, owed: 3 }
+  const raid = { player: "B" as const, contentId: BARRACKS, owed: 5 }
+  const trooper = { player: "A" as const, contentId: TROOPER }
+  // With no structure giving supply an army has no cap: all three wait for room on the roof. Only the player's count.
+  assert.deepEqual(waitingToComeOut([nexus, owing, raid], registry, "A"), { roof: 3, army: 0 })
+  assert.deepEqual(waitingToComeOut([nexus, trooper], registry, "A"), { roof: 0, army: 0 })
+  // A Nexus that gives two places, both taken: the three wait for a place in the army.
+  const capped = {
+    has: (id: string) => registry.has(id),
+    get: (id: string) => (id === NEXUS ? { ...registry.get(NEXUS), supplyProvided: 2 } : registry.get(id)),
+  } as unknown as ContentRegistry
+  assert.deepEqual(waitingToComeOut([nexus, owing, trooper, trooper], capped, "A"), { roof: 0, army: 3 })
+  assert.deepEqual(waitingToComeOut([nexus, owing, trooper], capped, "A"), { roof: 3, army: 0 })
+})
+
+// --- On screen ------------------------------------------------------------------------------------
+
+test("the Build Phase draws survivors on their own roof, and the building's card says how many stand there", () => {
+  const context = starterContext()
+  // The starter Barracks at 25,10: three of yours home on its roof, one beside it.
+  const field = [
+    { contentId: TROOPER, anchor: { x: 25, y: 10 }, player: "A" as const, hp: 40 },
+    { contentId: TROOPER, anchor: { x: 26, y: 10 }, player: "A" as const, hp: 40 },
+    { contentId: TROOPER, anchor: { x: 27, y: 11 }, player: "A" as const, hp: 40 },
+    { contentId: TROOPER, anchor: { x: 24, y: 12 }, player: "A" as const, hp: 40 },
+  ]
+  const side = buildSide({ context: { ...context, field } })
+  const explore = (on: Side): void => {
+    keys(on, "e")
+    const { cursor } = on.build.state
+    on.build.run([{ kind: "move-cursor", dx: 26 - cursor.x, dy: 11 - cursor.y }])
+  }
+  explore(side)
+  const card = currentCard(side.context, side.build.state)
+  assert.equal(card?.title, "Barracks")
+  assert.deepEqual(card?.stats.find((stat) => stat.label === "ON ROOF"), { label: "ON ROOF", value: "3 of yours" })
+  assert.match(screenText(side), /ON ROOF +3 of yours/u)
+  // Each trooper's own glyph on its roof tile, where the Barracks's would be.
+  const frame = compose(side, {}, "monochrome")
+  const glyphAt = (tile: Coord): string | undefined => {
+    const at = cellForTile(side.layout, side.build.state.camera, tile)
+    return cellAt(frame, at.x, at.y)?.glyph
+  }
+  const trooperGlyph = glyphAt({ x: 24, y: 12 })
+  for (const unit of field.slice(0, 3)) assert.equal(glyphAt(unit.anchor), trooperGlyph, `no trooper drawn on the roof at ${key(unit.anchor)}`)
+  // A roof with nobody on it says nothing.
+  const empty = buildSide({ context: { ...context, field: [] } })
+  explore(empty)
+  assert.equal(currentCard(empty.context, empty.build.state)?.stats.some((stat) => stat.label === "ON ROOF"), false)
+})

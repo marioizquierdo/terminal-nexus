@@ -16,7 +16,10 @@
 // A building short of room never spawns fewer: what fits comes out now, and every unit still owed comes out
 // on the first tick there is room beside it — the rule that a barracks whose doorway is crowded by its own
 // troopers should not quietly train fewer of them, kept for a wave. What a wave owes rides on the building's
-// state (`owed`), so it is part of the state every hash covers.
+// state (`owed`), so it is part of the state every hash covers. While its side owes units, a unit standing on its
+// side's roofs steps down to the nearest ground (`make-way.ts`), so a roof Recall filled with survivors empties for the
+// wave. Each unit it sets down remembers the building and the tile it came out on (`spawnOneNear`), where Recall sends
+// it home.
 //
 // The timer counts down first and acts on reaching zero, as `spawning()`'s does (spawn.ts), so a building's
 // first wave comes on tick `firstTicks` exactly.

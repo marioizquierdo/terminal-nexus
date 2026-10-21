@@ -73,7 +73,7 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
     // A building holding its wave says so where its wave is written.
     const held = state.held.includes(anchorKey(structure.anchor))
     const stats = held ? entity.stats.map((stat) => (stat.label === "WAVE" ? { ...stat, value: "held this round" } : stat)) : entity.stats
-    const card = { ...entity, stats, ...(actions.length === 0 ? {} : { actions }) }
+    const card = { ...entity, stats: [...stats, ...onItsRoof(context, structure)], ...(actions.length === 0 ? {} : { actions }) }
     if (structure.planned) return rangeSays(card, nextRound)
     return linkedHere(context, state, structure) ? card : rangeSays(card, cutOff)
   }
@@ -82,6 +82,20 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
   const incoming = (context.incoming ?? []).find((entity) => covers(context, entity, state.cursor))
   if (incoming !== undefined) return incomingCard(context, incoming, state)
   return groundCard(context, state.cursor)
+}
+
+/**
+ * A standing building's row for the survivors home on its roof (Recall brings a unit home onto the roof of the building
+ * that trained it, `src/match/recall.ts`): how many of yours stand there, which the map draws over the building. They
+ * step down to make way for its wave (`src/pulse/make-way.ts`). None for a planned building, or an empty roof.
+ */
+function onItsRoof(context: BuildContext, structure: Readonly<{ contentId: string; anchor: Coord; planned: boolean }>): CardStat[] {
+  if (structure.planned) return []
+  const roof = tilesOf(structure.anchor, context.registry.get(structure.contentId).footprint)
+  const home = (context.field ?? []).filter(
+    (entity) => entity.player === "A" && context.registry.get(entity.contentId).layer !== "obstacles" && roof.some((tile) => covers(context, entity, tile)),
+  ).length
+  return home === 0 ? [] : [{ label: "ON ROOF", value: `${home} of yours` }]
 }
 
 const covers = (context: Pick<BuildContext, "registry">, entity: Readonly<{ contentId: string; anchor: Coord }>, tile: Coord): boolean =>

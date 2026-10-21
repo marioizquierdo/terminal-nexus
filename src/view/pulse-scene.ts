@@ -15,6 +15,7 @@ import { cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../buil
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
+import { hasRoom, supplyOf } from "../content/supply.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { inBounds, tileIndex } from "../grid/coords.ts"
 import { tilesWithin } from "../grid/reach.ts"
@@ -343,6 +344,37 @@ function forceLine(pulse: PulseFrame, player: PlayerId): string {
   return `${SIDE[player].toUpperCase().padEnd(5)}${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
 }
 
+/** How many units `player`'s buildings owe of the waves that have come (`EntityState.owed`, `src/pulse/production.ts`):
+ *  those its army has a place for, waiting for room on the roof, and those waiting for a place in the army. */
+export function waitingToComeOut(
+  entities: readonly Readonly<{ player: PlayerId; contentId: string; owed?: number }>[],
+  registry: ContentRegistry,
+  player: PlayerId,
+): Readonly<{ roof: number; army: number }> {
+  const own = entities.filter((entity) => entity.player === player)
+  const supply = supplyOf(own.map((entity) => registry.get(entity.contentId)))
+  let roof = 0
+  let army = 0
+  for (const entity of own) {
+    const owed = entity.owed ?? 0
+    const output = registry.get(entity.contentId).production?.output
+    if (owed === 0 || output === undefined || !registry.has(output)) continue
+    if (hasRoom(supply, registry.get(output))) roof += owed
+    else army += owed
+  }
+  return { roof, army }
+}
+
+/** The row under the forces while the player's units wait (`waitingToComeOut`): those waiting for room on a roof
+ *  first, as the one the player can do something about by looking; else those the army has no place for. */
+function waitingLine(pulse: PulseFrame): string | null {
+  if (pulse.phase !== "fighting" && pulse.phase !== "final") return null
+  const { roof, army } = waitingToComeOut(pulse.sample.state.entities, pulse.registry, "A")
+  if (roof > 0) return `  ${roof} waiting to come out`
+  if (army > 0) return `  ${army} wait: army is full`
+  return null
+}
+
 /** `A:trooper#5` is a trooper of side A. */
 function whoIs(id: string): Readonly<{ player: PlayerId | null; name: string }> {
   const [side = "?", rest = ""] = id.split(":")
@@ -490,9 +522,14 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   }
   gap()
 
-  // Both forces, each in its own side's colour.
+  // Both forces, each in its own side's colour. While the fight is on and the player's buildings owe units of a wave
+  // they have had no room to set down — a roof still crowded, or no place left in the army — how many wait, on the
+  // blank row under them (so nothing below moves), and the queue at a building's door is said in words (the owner,
+  // 2026-10-21: "solve how to "queue" a unit that spawned but has no space yet").
   for (const player of PLAYERS) line(forceLine(pulse, player), playerRole(player))
-  gap()
+  const waiting = waitingLine(pulse)
+  if (waiting !== null) line(waiting, playerRole("A"))
+  else gap()
 
   if (pulse.phase === "home") {
     line("RECALL", "chrome.label")
