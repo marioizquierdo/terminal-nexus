@@ -293,15 +293,14 @@ test("the live loop plays a Battle Round on its own clock: timer, last seconds, 
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
-  assert.equal(timerAt(stdout.lastWrite), "0:14", "the Pulse did not open at zero")
+  assert.equal(timerAt(stdout.lastWrite), "0:15", "the Pulse did not open at zero")
   assert.match(stdout.lastWrite, /battle round/)
 
   t += 3_000
   await sleep(80)
-  assert.equal(timerAt(stdout.lastWrite), "0:11", "the Pulse did not follow the screen's clock")
+  assert.equal(timerAt(stdout.lastWrite), "0:12", "the Pulse did not follow the screen's clock")
 
-  // The last seconds, in the run-up to the stop (PERIMETER's first round ends a little before 14 s with this plan,
-  // a second sooner since the raid's runners came to march as backliners, going for what shoots first,
+  // The last seconds, in the run-up to the stop (PERIMETER's first round ends a little before 15 s with this plan,
   // Vasse in the squads, the squads holding the line and the Barracks's wave coming out over its roof five seconds
   // in, the raid heading for the Nexus, and the warning is three seconds; it ran to 24 s when the raid stood behind
   // the ridge before routes).
@@ -351,7 +350,7 @@ test("a Battle Round holds still behind the resize gate and resumes from the sam
   await sleep(60)
   t += 3_000
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:11")
+  assert.equal(timerAt(stdout.lastWrite), "0:12")
 
   stdout.columns = 60
   stdout.emit("resize")
@@ -362,7 +361,7 @@ test("a Battle Round holds still behind the resize gate and resumes from the sam
   stdout.columns = 80
   stdout.emit("resize")
   await sleep(60)
-  assert.equal(timerAt(stdout.lastWrite), "0:11", "the Pulse ran on behind the gate")
+  assert.equal(timerAt(stdout.lastWrite), "0:12", "the Pulse ran on behind the gate")
   stdin.emit("data", Buffer.from([3]))
   await sleep(30)
 })

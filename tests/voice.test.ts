@@ -320,12 +320,20 @@ test("PERIMETER's first round: she speaks a few times, in order, each line hers,
 test("beside her: the line on the map, a few rows from her and whole, and the panel keeps only the feed", () => {
   const side = perimeter()
   const line = firstLineShowing(side)
-  const frame = compose(side)
   const words = quoted(line.text)
+  // Whole while it is read: placed where least stands while it shows, it can still have a unit walk across it, and a
+  // letter a unit stands on is left out (the corruption law). Since the army came to march in its lines, a trooper
+  // walks level with her as the first line is typed in; so the line is looked for whole at any moment it is held up
+  // to be read, a tenth of a second at a time.
+  let frame = compose(side)
+  for (let at = line.startMs + lineLength(line.text).typeMs + 50; at < line.endMs - 500 && !mapOf(frame, side).includes(words); at += 100) {
+    side.build.advance(at)
+    frame = compose(side)
+  }
   const map = mapOf(frame, side)
   const panel = panelOf(frame, side)
   // On the map, a few rows from hers (she may have stepped since it began), whole — clear of what stands there.
-  assert.ok(map.includes(words), `the line is not on the map:\n${map}`)
+  assert.ok(map.includes(words), `the line is never whole on the map while it is read:\n${map}`)
   assert.ok(!panel.includes("@ VASSE"), "the line is in the panel too")
   assert.match(panel, /RECENT/)
   const rows = map.split("\n")

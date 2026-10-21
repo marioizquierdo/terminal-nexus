@@ -126,7 +126,7 @@ not say):
 
 | Line | Comes from | Its place behind the Commander | Waits for |
 | --- | --- | --- | --- |
-| Backliner | The content says so (the Ravel runner and bomber) | Anywhere: never yields, never waited on | Nobody |
+| Backliner | The content says so (the Ravel bomber; the bench's flanker) | Anywhere: never yields, never waited on | Nobody |
 | Melee | A melee attack | Up to 2 columns ahead of her | Nobody but her |
 | Short range | A heal, or a range up to 4 (Vasse, a slinger, a medic) | 4 columns behind her | Melee 4 columns ahead of it |
 | Long range | A range over 4 (a marksman, the mortar) | 8 columns behind her | Melee 8 ahead, short range 4 ahead |
@@ -156,7 +156,10 @@ steps round it. The log says when a yielder makes way (`march.made-way`), never 
 
 **Backliners go beyond the enemy's line.** A backliner chooses first among the enemies within its reach that are not
 in the melee line — a shooter, another backliner, a building that shoots — the nearest it can walk to; with none, it
-chooses as every unit does. The bomber keeps its aim at the thickest crowd.
+chooses as every unit does. The bomber keeps its aim at the thickest crowd. **A backliner is a special unit, not an
+army's mainstay**: the Ravel runner was one at first, and with every runner of Dob's army going beyond the line his front
+was empty — his Nexus fell in round 1 or 2 in 20 of 24 rush duels, against 1 of the same 24 with the runner in the
+melee line, where it now is.
 
 **Fairness.** Everything is read from the state the tick began with, in whole numbers; the line is drawn alike from
 either end of a map (a point exactly between two tiles takes both); two allies that would swap with one yielder are

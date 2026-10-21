@@ -68,6 +68,18 @@ function offTheDoorsteps(mask: CollisionMask, doorsteps: ReadonlySet<string>): P
   }
 }
 
+/**
+ * How many survivors `home`'s roof takes: as many bodies like `survivor`'s as its tiles hold, less the units of one of
+ * its waves, so the next round's first wave always has room on its roof and never waits behind the units that came
+ * home. A playtest of the curve level, whose target lies on its own base, found survivors standing on full roofs inside
+ * the target, the wave held behind them and the units sent down to make way jamming the ground round the base.
+ */
+function roofRoom(home: Home, survivor: ContentDef): number {
+  const tiles = home.definition.footprint.length
+  const wave = home.definition.production?.perWave ?? 0
+  return Math.max(0, Math.floor(tiles / survivor.footprint.length) - wave)
+}
+
 /** A building's **doorstep**: the ground touching it, corners included — where the units on its roof step down. */
 function doorstepOf(anchor: Coord, footprint: Footprint): string[] {
   const own = new Set(tilesOf(anchor, footprint).map((tile) => `${tile.x},${tile.y}`))
@@ -196,6 +208,8 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     const [homeB = 0, enemyB = 0] = keys.get(b.ordinal) ?? []
     return homeA - homeB || enemyA - enemyB || a.ordinal - b.ordinal
   })
+  /** How many survivors each building's roof has taken so far. */
+  const onRoofs = new Map<number, number>()
   for (const survivor of inTurn) {
     const home = homes.get(survivor.ordinal) ?? null
     if (home === null) continue
@@ -216,9 +230,10 @@ export function recall(state: MatchState, registry: ContentRegistry, sides?: Rea
     // air, which comes out beside its building; then the nearest free ground; nowhere free near home, the nearest free
     // tile to where it stands rather than overlap anyone.
     const onTheRoof =
-      home.kind !== "producer" || definition.layer === "air"
+      home.kind !== "producer" || definition.layer === "air" || (onRoofs.get(home.entity.ordinal) ?? 0) >= roofRoom(home, definition)
         ? null
         : nearestFit(roofOf(maskFrom(index, { layers: UNIT_LAYERS, terrain: "impassable" }), home), definition.footprint, target, HOME_RADIUS, here, toward)
+    if (onTheRoof !== null) onRoofs.set(home.entity.ordinal, (onRoofs.get(home.entity.ordinal) ?? 0) + 1)
     const clear = doorsteps.get(survivor.player)
     const to =
       onTheRoof ??

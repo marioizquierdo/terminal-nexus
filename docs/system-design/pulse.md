@@ -437,7 +437,10 @@ result (RULE — `tests/pulse-run.test.ts`).
 At Pulse end a survivor goes home to the building that trained it while it stands; else to the nearest of its side's
 buildings that trains or spawns its kind; else, an orphan or a Commander, to the Grid Nexus. A survivor whose home
 makes units is set down on that building's roof, wholly on its tiles, as near the tile it came out on as there is room
-(the owner, 2026-10-21: "piling on the roof as close to original position as possible"). A roof that is full, a body
+(the owner, 2026-10-21: "piling on the roof as close to original position as possible"), **keeping room there for one
+of its waves**: a roof takes as many survivors as its tiles hold less the units of a wave (a Barracks's six tiles and
+four troopers a wave: two), so the next round's first wave never waits behind the units that came home. A roof that is
+full, a body
 too wide for it, and a unit in the air go to the nearest free ground round it, searched one ring of the Grid's
 distance at a time ([`grid.md`](grid.md), setting a group down), kept off the ground touching any building of its side
 that makes units while there is room elsewhere, so a roof can always empty. The Grid Nexus is never stood on: its
@@ -535,9 +538,11 @@ where they head (section 1.3a), so it stands together on the side facing the fig
 formation"). The recipe says
 how many a wave, how many waves a Pulse, when the first comes and the gap to the next; the schedule never
 slips. A building short of room never spawns fewer: what fits on its roof comes out on the wave's tick, and the
-rest on the first tick there is room, as the first walk off. While any of its side's buildings owes units, a unit on
-its side's roofs steps down to the nearest ground first and then carries on, unless it is part way through its windup
-(`src/pulse/make-way.ts`), so a roof Recall filled with survivors empties for the wave. A unit a building trains
+rest on the first tick there is room, as the first walk off. While any of its side's buildings owes units its army has
+room for, a unit on its side's roofs steps down to the nearest ground first and then carries on, unless it is part way
+through its windup (`src/pulse/make-way.ts`), so a roof that units stand on empties for the wave. A wave its side's
+supply holds back waits for a place in the army, not for the roof, and moves nobody: sending everyone on the roofs down
+for it jammed a crowded base round its own target (the curve level, measured 2026-10-21). A unit a building trains
 remembers that building and the tile it came out on (`EntityState.home`, `homeAt`).
 
 **Units walk out over the roofs** (RULE — `src/pulse/spawn.ts`, `src/pulse/shared.ts` `onRoof`, `tests/roofs.test.ts`;

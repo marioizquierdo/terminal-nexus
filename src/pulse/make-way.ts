@@ -16,7 +16,9 @@
 // until its first shot fires: a shot the rules have already begun to aim is not thrown away for a door, and the wave
 // waits a few ticks longer. A unit that cannot move never makes way, and nothing here reads anything but the state.
 
+import { hasRoom, supplyOf } from "../content/supply.ts"
 import type { Coord } from "../grid/types.ts"
+import { contentOf } from "./context.ts"
 import type { Purpose } from "./routes.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { inAttackRange, onRoof } from "./shared.ts"
@@ -41,12 +43,22 @@ export function makingWay(context: TickContext, actor: Actor, target: Actor | nu
   return { kind: "walk", goal: { kind: "ground", toward } }
 }
 
-/** Whether `actor` stands on its side's roofs while one of its side's buildings still owes units of a wave. Any of its
- *  side's roofs, not only the owing building's: buildings stand side by side, their roofs one floor, and a unit idle
- *  on the next roof is as much in the way of the one behind it as a unit on the building's own. */
-export function onOwingRoof(context: Pick<TickContext, "index" | "byOrdinal" | "actors">, actor: Actor): boolean {
+/** Whether `actor` stands on its side's roofs while one of its side's buildings still owes units of a wave that its
+ *  army has room for. Any of its side's roofs, not only the owing building's: buildings stand side by side, their
+ *  roofs one floor, and a unit idle on the next roof is as much in the way of the one behind it as a unit on the
+ *  building's own. A wave its side's supply holds back waits for a place in the army, not for room on a roof, so it
+ *  moves nobody: a playtest of the curve level, its army at its supply cap from the fourth round, found every unit on
+ *  its roofs sent down into ground already full, walking and never moving, and the base jammed round them. */
+export function onOwingRoof(context: Pick<TickContext, "index" | "byOrdinal" | "actors" | "pulse">, actor: Actor): boolean {
   if (!onRoof(context, actor)) return false
-  return context.actors.some((other) => other.player === actor.player && !other.pendingDead && (other.owed ?? 0) > 0)
+  const owing = context.actors.filter((other) => other.player === actor.player && !other.pendingDead && (other.owed ?? 0) > 0)
+  if (owing.length === 0) return false
+  const supply = supplyOf(context.actors.filter((other) => other.player === actor.player && !other.pendingDead).map((other) => other.definition))
+  const content = contentOf(context.pulse, actor.player)
+  return owing.some((building) => {
+    const output = building.definition.production?.output
+    return output === undefined || !content.has(output) || hasRoom(supply, content.get(output))
+  })
 }
 
 /** Whether `actor` is part way through its windup on `target`: in reach, its windup begun and not yet spent. */

@@ -7,12 +7,12 @@ it is done.*
 
 - **Play the pathfinding milestone's wrap-up** ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)):
   `./bin/grid.ts scenarios/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
-  troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/march-guide` (Vasse leads, only the runner goes
+  troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/march-guide` (Vasse leads; only a backliner goes
   ahead of her), `./bin/grid.ts scenarios/mortar-burning-ground` (the lighter fire), and PERIMETER's round 2 from
-  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'`, where last round's troopers stand on their
-  Barracks' roof. Two things in it are his to judge: the Ravel runner now goes for what stands behind the enemy's
-  front (Vasse, marksmen, Turrets), which changes how a defended PERIMETER round plays; and whether the march's numbers
-  (4 columns between lines, the band of 6) feel right.
+  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'`, where last round's troopers stand on and
+  beside their Barracks. Two things in it are his to judge: whether the march's numbers (4 columns between lines, the
+  band of 6) feel right, and which unit should be an army's first backliner (the bomber is one; the runner was tried
+  and emptied Dob's front, so it stays melee).
 - **Feel the Nexus fighting back** ([his words](../history/feedback/2026-10-21-pathfinding.md)), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'`: start the round without building (`s`, `s`)
   and watch the Nexus shoot the raiders that reach it (in rounds 1 and 2 the squads stop the raid before it comes

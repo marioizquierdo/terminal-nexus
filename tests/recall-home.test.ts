@@ -40,6 +40,8 @@ const CRAWLER = "unit.bench.siegecrawler"
 
 const RECIPE = { output: TROOPER, perWave: 4, waves: 1, firstTicks: 12, intervalTicks: 24 }
 const registry = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: RECIPE })
+/** How many survivors a Barracks's roof takes: its six tiles, less the four of a wave, so the next wave has room. */
+const ROOF_ROOM = registry.get(BARRACKS).footprint.length - RECIPE.perWave
 
 const WIDTH = 40
 const OPEN: GridTerrain = { width: WIDTH, height: 24, tiles: Array.from({ length: WIDTH * 24 }, () => "terrain.plain" as TerrainId) }
@@ -124,9 +126,10 @@ test("a unit a building trains remembers the building and the tile it came out o
 // --- Recall onto the roof ---------------------------------------------------------------------------
 
 test("a survivor comes home onto its building's roof, on the very tile it came out on when that tile is free", () => {
+  // As many as the roof takes while it keeps room for the next wave.
   const before = open(
     [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }, { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } }],
-    [{ player: "A", muster: { x: 26, y: 4 }, units: Array.from({ length: 6 }, () => TROOPER) }],
+    [{ player: "A", muster: { x: 26, y: 4 }, units: Array.from({ length: ROOF_ROOM }, () => TROOPER) }],
   )
   const barracks = find(before, BARRACKS)[0] as EntityState
   const troopers = find(before, TROOPER)
@@ -134,13 +137,13 @@ test("a survivor comes home onto its building's roof, on the very tile it came o
   const roof = tilesOfEntity(barracks).reverse()
   const state = trainedBy(before, troopers.map((unit) => unit.ordinal), barracks.ordinal, roof)
   const back = recall(state, registry)
-  assertHomeIsLegal(back.state, "six home")
+  assertHomeIsLegal(back.state, "a roof's worth home")
   for (const unit of find(back.state, TROOPER)) assert.deepEqual(unit.anchor, unit.homeAt, `${unit.id} did not come back to its own tile`)
   // The walk home goes from where each stood to its tile on the roof; a building is its home.
   for (const move of back.moves) assert.equal(move.home, "producer")
 })
 
-test("a big army piles onto its building's roof and spreads round it, leaving the ground touching it clear", () => {
+test("a big army piles onto its building's roof, keeping room there for the next wave, and spreads round it, leaving the ground touching it clear", () => {
   const before = open(
     [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }, { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } }],
     [
@@ -158,7 +161,7 @@ test("a big army piles onto its building's roof and spreads round it, leaving th
   const home = find(back.state, TROOPER)
   const roof = roofOf(barracks)
   const onRoof = home.filter((unit) => roof.has(key(unit.anchor)))
-  assert.equal(onRoof.length, 6, "the roof is not full")
+  assert.equal(onRoof.length, ROOF_ROOM, "the roof does not take as many as it has room for, less a wave")
   // The rest round it, near, off its doorstep: the units on the roof can always step down.
   const doorstep = doorstepOf(barracks)
   const centre = centreTile(barracks.anchor, footprintOf(barracks))
@@ -181,9 +184,10 @@ test("two Barracks side by side each take their own back, even a unit standing b
       { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } },
     ],
     [
-      // The west Barracks's troopers wait east of the east one, the east one's west of the west one.
-      { player: "A", muster: { x: 23, y: 11 }, units: [TROOPER, TROOPER, TROOPER] },
-      { player: "A", muster: { x: 9, y: 11 }, units: [TROOPER, TROOPER, TROOPER] },
+      // The west Barracks's troopers wait east of the east one, the east one's west of the west one: as many each as a
+      // roof takes while it keeps room for a wave.
+      { player: "A", muster: { x: 23, y: 11 }, units: Array.from({ length: ROOF_ROOM }, () => TROOPER) },
+      { player: "A", muster: { x: 9, y: 11 }, units: Array.from({ length: ROOF_ROOM }, () => TROOPER) },
     ],
   )
   const [west, east] = find(before, BARRACKS).sort((a, b) => a.anchor.x - b.anchor.x) as [EntityState, EntityState]
@@ -297,14 +301,20 @@ test("the next round opens with a unit where Recall left it on its roof; a build
 // --- The queue: a wave owed onto a crowded roof ----------------------------------------------------
 
 test("a wave owed onto a roof full of standing allies comes out within a few ticks, as they make way; none is lost", () => {
-  // Six survivors home on the roof, nothing to fight (the enemy's Nexus far off, out of reach and with no target to
-  // head for, they stand): the wave of four comes due with no room on the roof.
+  // Six allies standing on the roof, nothing to fight (the enemy's Nexus far off, out of reach and with no target to
+  // head for, they stand): the wave of four comes due with no room on the roof. Recall never fills a roof so (it keeps
+  // a wave's room), so the six are set on it by hand: what a wave that never walked off would leave.
   const before = open(
     [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }],
     [{ player: "A", muster: { x: 26, y: 4 }, units: Array.from({ length: 6 }, () => TROOPER) }],
   )
   const barracks = find(before, BARRACKS)[0] as EntityState
-  const carried = recall(trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, tilesOfEntity(barracks)), registry).state
+  const roofTiles = tilesOfEntity(barracks)
+  const recalled = recall(trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, roofTiles), registry).state
+  const carried: MatchState = {
+    ...recalled,
+    entities: recalled.entities.map((entity) => (entity.contentId === TROOPER ? { ...entity, anchor: entity.homeAt as Coord } : entity)),
+  }
   const roof = roofOf(barracks)
   assert.equal(find(carried, TROOPER).filter((unit) => roof.has(key(unit.anchor))).length, 6, "the roof is not full")
   const initialState = openingState({ grid: OPEN, registry, structures: [], carried, setup: { seed: 7, pulseTicks: 60, forces: [] } })
@@ -325,7 +335,7 @@ test("a wave owed onto a roof full of standing allies comes out within a few tic
 function contextOf(actors: Actor[]): TickContext {
   const index = new OccupancyIndex(OPEN)
   for (const actor of actors) index.add(actor.definition.layer, actor.ordinal, actor.anchor, actor.definition.footprint)
-  return { actors, byOrdinal: new Map(actors.map((actor) => [actor.ordinal, actor])), index, targets: {} } as unknown as TickContext
+  return { actors, byOrdinal: new Map(actors.map((actor) => [actor.ordinal, actor])), index, targets: {}, pulse: { registry } } as unknown as TickContext
 }
 
 function actorOf(ordinal: number, contentId: string, player: PlayerId, anchor: Coord, fields: Partial<EntityState> = {}): Actor {
@@ -371,6 +381,15 @@ test("who makes way: one standing on its side's roofs while a wave is owed, unle
   // On the ground, owed or not, it stands.
   barracks.owed = 2
   assert.equal(makingWay(context, actorOf(4, TROOPER, "A", { x: 20, y: 14 }), null, stand).kind, "stand")
+  // Owed, but the army has no place for the wave under its supply: the wave waits for a place, not for the roof, and
+  // nobody is moved for it. A Supply Depot's places, every one taken by troopers standing far off.
+  const depot = actorOf(10, "structure.citizen.depot", "A", { x: 30, y: 2 })
+  const places = registry.get("structure.citizen.depot").supplyProvided ?? 0
+  const army = Array.from({ length: places }, (_, index) => actorOf(11 + index, TROOPER, "A", { x: 2 + index, y: 20 }))
+  const capped = contextOf([barracks, enemy, idle, depot, ...army])
+  assert.equal(makingWay(capped, idle, null, stand).kind, "stand", "a wave the army has no place for moved a unit off the roof")
+  // One place free again: it makes way.
+  assert.equal(makingWay(contextOf([barracks, enemy, idle, depot, ...army.slice(2)]), idle, null, stand).kind, "walk")
 })
 
 const CRAWLER_WINDUP = registry.get(CRAWLER).attack?.windupTicks ?? 0

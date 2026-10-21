@@ -62,7 +62,7 @@ test("march-lines: shooters that start ahead of the troopers arrive behind them,
   assert.ok(events.some((event) => event.kind === "march.made-way" && event.how === "swap"))
 })
 
-test("march-guide: while Vasse marches, no trooper or marksman goes past its place behind her, and the runner, a backliner, passes her", async () => {
+test("march-guide: while Vasse marches, no trooper or marksman goes past its place behind her, and the flanker, a backliner, passes her", async () => {
   const { states, events } = await play("march-guide")
   const contact = firstStrike(events, "A")
   // On an open field a unit's walk to the tiles beside the enemy's Nexus is the Grid's distance to the nearest of them.
@@ -74,7 +74,7 @@ test("march-guide: while Vasse marches, no trooper or marksman goes past its pla
     { x: tile.x, y: tile.y + 1 },
   ])
   const progress = (entity: EntityState): number => Math.min(...beside.map((tile) => gridDistance(entity.anchor, tile)))
-  let runnerPassed = false
+  let flankerPassed = false
   let checked = 0
   // A unit further forward than its place behind her takes no step forward: it yields. Far from the enemy only, since
   // closing on it lifts the formation.
@@ -82,8 +82,8 @@ test("march-guide: while Vasse marches, no trooper or marksman goes past its pla
     const before = states[tick - 1] as MatchState
     const after = states[tick] as MatchState
     const guide = progress(of(before, "A", "unit.citizen.vasse")[0] as EntityState)
-    const runner = of(after, "A", "unit.ravel.runner")[0]
-    if (runner !== undefined && progress(runner) < guide - 8) runnerPassed = true
+    const flanker = of(after, "A", "unit.bench.flanker")[0]
+    if (flanker !== undefined && progress(flanker) < guide - 8) flankerPassed = true
     if (guide <= 12 + 8) continue
     for (const [contentId, place] of [["unit.citizen.trooper", -2], ["unit.citizen.marksman", 8]] as const) {
       for (const unit of of(before, "A", contentId)) {
@@ -95,7 +95,7 @@ test("march-guide: while Vasse marches, no trooper or marksman goes past its pla
     }
   }
   assert.ok(checked > 20, `${checked} units ahead of their place checked`)
-  assert.ok(runnerPassed, "the runner never passed her")
+  assert.ok(flankerPassed, "the flanker never passed her")
   assert.equal(states.at(-1)?.outcome?.winner, "A")
 })
 
@@ -183,7 +183,8 @@ test("the guide line covers mirrored tiles from either end, both tiles where it 
 })
 
 test("a backliner goes for the shooter behind the enemy's front, where any other unit fights the trooper nearest it", () => {
-  // A runner above a trooper, an enemy trooper two columns ahead of the runner and a marksman three behind that.
+  // A flanker (the bench's backliner) above a trooper, an enemy trooper two columns ahead of it and a marksman three
+  // behind that.
   const scenario: ScenarioDefinition = {
     id: "backliner",
     name: "backliner",
@@ -193,7 +194,7 @@ test("a backliner goes for the shooter behind the enemy's front, where any other
     terrain: Array.from({ length: 9 }, () => ".".repeat(30)),
     terrainLegend: { ".": "terrain.plain" },
     placements: {
-      A: { at: { x: 8, y: 4 }, rows: ["r", "t"], legend: { r: { content: "unit.ravel.runner" }, t: { content: "unit.citizen.trooper" } } },
+      A: { at: { x: 8, y: 4 }, rows: ["r", "t"], legend: { r: { content: "unit.bench.flanker" }, t: { content: "unit.citizen.trooper" } } },
       B: { at: { x: 10, y: 4 }, rows: ["t  m"], legend: { t: { content: "unit.citizen.trooper" }, m: { content: "unit.citizen.marksman" } } },
     },
   }
@@ -204,6 +205,6 @@ test("a backliner goes for the shooter behind the enemy's front, where any other
     const chosen = events.find((event) => event.kind === "target.selected" && event.entity.startsWith(who))
     return chosen?.kind === "target.selected" ? chosen.target : ""
   }
-  assert.match(chose("A:runner"), /marksman/)
+  assert.match(chose("A:flanker"), /marksman/)
   assert.match(chose("A:trooper"), /trooper/)
 })

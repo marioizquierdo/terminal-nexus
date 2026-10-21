@@ -654,8 +654,8 @@ test("the battle with the most rules in it resolves the same way on every run, a
 // The Citizens against the Ravels, blasts among its rules: its state and its events (pinned again when every tie came
 // to go by what a unit faces, then a draw, when units came to walk by routes, and when a side with no target came to
 // head for the enemy's Nexus, turning only to what comes within its reach, when the Grid Nexus came to fight back,
-// and when an army came to march in its lines, its runners as backliners: the same losses, 7 of 10 and 9 of 11).
-const PINNED_BATTLE = ["74be88beea78a15454809737a46566b5fe68214e55445820c4e99f66f3f81eb6", "2499172cedffc61f85056740bdec4a9bea86a610d35523e9979e9cc1c997052f"] as const
+// and when an army came to march in its lines: the same losses, 7 of 10 and 9 of 11).
+const PINNED_BATTLE = ["d58815ddd61b657117763d0ea66f82b8983d39f3e2a24f1d50e5823d045a7fea", "6af45a46cc0ab94f284bbe01c640d98bd2d9d794938f9e06089adf2962c3080c"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of
