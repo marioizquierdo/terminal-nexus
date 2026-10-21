@@ -16,6 +16,12 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
   2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
   screen; until then there is no banner. The pathfinding milestone leaves the goal a banner would be: one more place
   a side heads for, like a campaign level's target.
+- **A beacon.** A building a player places where their army gathers before it moves, set during the Build Phase to a
+  formation. The owner, 2026-10-21: "some bacon buildings that can be placed that tell units to group together before
+  moving, and maybe that building can be configured during build time to define different formations. I don't know if
+  that's too advanced, so we'll go without that first and then we'll test it at some point." In the pathfinding
+  chapter's terms it is a goal held until enough of the army stands there, then the next goal
+  ([`movement.md`](../system-design/movement.md)); it waits with the banner for a way to show a plan on screen.
 - **Behaviour states.** The owner's viewing: "units should have a default movement direction
   (towards the enemy Nexus, closest resources, etc) and then activate a different pathfinding mode
   when there are enemies in range... defining multiple states will allow more complex and engaging

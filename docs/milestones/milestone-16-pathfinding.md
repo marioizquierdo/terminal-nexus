@@ -337,19 +337,19 @@ Mario's round after the milestone merged ([his words](../history/feedback/2026-1
 early lead answered by the Nexus itself, the difference between rock and a building in the way, and the pathfinding
 design written as a chapter of the grid's architecture.
 
-- [ ] **The Nexus fights back**: the Citizen and the Ravel Grid Nexus each get one shot that kills a trooper, said on
+- [x] **The Nexus fights back**: the Citizen and the Ravel Grid Nexus each get one shot that kills a trooper, said on
   its card, the two alike ("let's start with just saying the Nexus have a single attack that deals enough damage to
   kill a trooper").
-- [ ] **It mends a little between rounds**, the two alike, said on its card. A Nexus power that raises either, and the
+- [x] **It mends a little between rounds**, the two alike, said on its card. A Nexus power that raises either, and the
   factions' Nexuses differing, are later.
-- [ ] **Rock and buildings are not the same wall**: a unit whose way to its goal is closed only by the enemy's
+- [x] **Rock and buildings are not the same wall**: a unit whose way to its goal is closed only by the enemy's
   buildings turns on the building in its way, rather than standing before it. A scenario of its own.
-- [ ] **A chapter on how things move**, in the grid's design: the building blocks, from where a body may stand to the
+- [x] **A chapter on how things move**, in the grid's design: the building blocks, from where a body may stand to the
   step a unit takes, each in a sentence and a picture; how a goal becomes a field shared by every unit heading
   there (his general path, worked out once); and where a modifier — a unit that steps back from a blow, one that
   leaps forward — plugs in.
-- [ ] **The duels measured again** with the Nexus fighting back: do the first two rounds still decide a duel?
-- [ ] Area damage for the Citizens (missiles that leave the ground burning) proposed for his word, and a beacon that
+- [x] **The duels measured again** with the Nexus fighting back: do the first two rounds still decide a duel?
+- [x] Area damage for the Citizens (missiles that leave the ground burning) proposed for his word, and a beacon that
   gathers an army into a formation put in the backlog.
 
 ## Waiting on Mario

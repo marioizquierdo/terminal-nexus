@@ -44,9 +44,11 @@ it waits for his yes before it is built.
 > just focus on the citizens and the rabble being mostly the same type of nexus. Yeah, that sounds good. Go ahead and
 > implement that.
 
-**Scheduled**, as the round's first part: the Citizen and the Ravel Grid Nexus each get one shot that kills a
-trooper, and mend a little between rounds, the two alike. Upgrading either with a Nexus power, and the factions'
-Nexuses differing, are later.
+**Built.** The Citizen and the Ravel Grid Nexus each shoot a unit within a marksman's reach every three seconds
+for 40, enough to drop a trooper or a runner, never at a building; and each mends 40 of its 400 between rounds. Their
+cards say so. Measured over 162 duels, the duels over by the end of round 2 fell from 35 to 4, though the side ahead
+after round 2 still wins nearly all the rest ([the report](../reports/2026-10-21-nexus-fights-back.md)). Upgrading
+either with a Nexus power, and the factions' Nexuses differing, are later.
 
 ### F191 — A pathfinding chapter in the grid architecture
 
@@ -57,16 +59,19 @@ Nexuses differing, are later.
 > that step back, for example, to avoid damage. Other units will kind of teleport forward. So just defining the basic
 > building blocks for pathfinding will work.
 
-**Scheduled**: a chapter of its own in the grid's design, how a unit moves, from its building blocks up, and where a
-modifier (stepping back, leaping forward) plugs in.
+**Built**: [how things move](../../system-design/movement.md), a chapter of the grid's design — the five building
+blocks, a tick in order, what happens when a goal cannot be reached, and where each modifier plugs in (stepping back
+is a purpose, leaping forward a move that is not a step, burning ground a weight, a beacon a goal).
 
 ### F192 — Rocks and buildings are not the same wall
 
 > Maybe what happens if the enemy blocks the entrance with buildings, then the pathfinding should know the difference
 > between rocks and buildings and should decide to target one of the buildings.
 
-**Scheduled**: when the only ways to a unit's goal are closed by the enemy's buildings, it turns on the building in its
-way rather than standing.
+**Built.** When nothing a unit wants can be walked to, it works out the way with the enemy's buildings open, the
+fewest buildings first, and turns on the first one on that way, if it can strike a building; rock is never broken. A
+scenario closes a ridge's only gap with a Barracks far from the straight line: the troopers break it and take the
+Nexus, where before they stood at the rock until the time ran out.
 
 ### F193 — A general path, once, and the way round obstacles along it
 
@@ -74,8 +79,10 @@ way rather than standing.
 > do something similar to A+, but only to find their way through the general path, so they move in the general
 > direction and they can walk around obstacles when they find them.
 
-**Scheduled**, as part of the chapter: it says how the built design already is this idea (a field toward the enemy
-Nexus worked out once and shared, each unit stepping round what is in its way), and where it differs.
+**Built**, in the chapter: the field toward a goal is his general path, shared by every unit heading there; what
+stands still is a wall in it, and a unit held up behind stuck allies works out its own way round them, his "A\*
+through the general path". The one difference is that the field is worked out again every tick, not once a match,
+because the Grid changes and a field is cheap.
 
 ### F194 — The roofs: so far so good
 
@@ -91,5 +98,5 @@ Nexus worked out once and shared, each unit stepping round what is in its way), 
 > different formations. I don't know if that's too advanced, so we'll go without that first and then we'll test it at
 > some point.
 
-**Scheduled** for later, in the backlog beside the banner: a beacon a player builds where an army gathers before it
-moves, set during the Build Phase to a formation.
+**Scheduled** for later, in [the backlog](../../milestones/backlog.md) beside the banner: a beacon a player builds
+where an army gathers before it moves, set during the Build Phase to a formation.

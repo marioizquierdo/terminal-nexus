@@ -312,7 +312,7 @@ The owner, 2026-10-13: "start thinking about catch-up mechanics (specially for m
 
 **Measured, on the routes the pathfinding milestone built** ([the report](../history/reports/2026-10-20-pathfinding-measured.md)). A hand is judged by how the cards it kept did in every other duel, since both sides are dealt the same rarities. **Luck passes**: the side with the luckier first two hands won 55% of the 106 duels where they differed. **Speed does not**: 35 of 162 duels were over by the end of round 2, 13 in round 1, a forward army marching straight on a Nexus no one had yet built to guard; and of the duels that went on, the side that dealt more damage in the first two rounds won every one. So one more guideline, and a question for the owner:
 
-- **The opening must not end a match.** An army that can bring down a Nexus in round 1 has spent no curve to do it. Whatever an army leans on, its first act should hurt, not finish; a Nexus that falls in round 1 or 2 of a mirror duel is a broken curve. What should hold the line there — the Nexus itself, a guard it starts with, or the armies' own opening — is the owner's call ([the open questions](../milestones/open-questions.md), how a duel's first rounds are kept from deciding it).
+- **The opening must not end a match.** An army that can bring down a Nexus in round 1 has spent no curve to do it. Whatever an army leans on, its first act should hurt, not finish; a Nexus that falls in round 1 or 2 of a mirror duel is a broken curve. What should hold the line there — the Nexus itself, a guard it starts with, or the armies' own opening — was the owner's call, answered below.
 
 **The owner's answer: the Nexus fights back, and mends** (2026-10-21: "let's start with just saying the Nexus have a
 single attack that deals enough damage to kill a trooper ... And perhaps we add like a little bit of self-healing";
@@ -321,6 +321,11 @@ three seconds, hard enough to drop a trooper, and mends 40 of its 400 between ro
 not a wall: a few units marching on an unguarded Nexus in round 1 are shot down one by one, while an army of the
 later tiers walks through its fire. The Citizen and the Ravel Nexus are alike for now; a faction's Nexus differing,
 and Nexus powers that raise its shot or its mending, are later.
+
+**Measured** ([the report](../history/reports/2026-10-21-nexus-fights-back.md)): duels over by the end of round 2 fell
+from 35 of 162 to 4, and over in round 1 from 13 to 1; duels last most of a round longer. But of the duels still
+undecided after round 2, the side ahead then won 51 of 54: the Nexus stops the knockout, not the runaway. Turning an
+early lead over is the armies' work — later tiers worth more, the answers in the tree — and their next pass measures it.
 
 ## 3. Strategy-design requirements
 
