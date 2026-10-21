@@ -378,26 +378,26 @@ model players able to choose one strategy or another.
 Mario's last round on the milestone ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)), "a polish
 PR, but actually a pretty difficult one".
 
-- [ ] **The mortar's two parts**: its shell bursts harder, and hurts only the enemy; its fire is shorter (four seconds)
+- [x] **The mortar's two parts**: its shell bursts harder, and hurts only the enemy; its fire is shorter (four seconds)
   and bites harder, and still hurts everyone on it.
-- [ ] **Burning ground drawn lighter**: red and yellow, more of the ground showing through, flickering rather than a
+- [x] **Burning ground drawn lighter**: red and yellow, more of the ground showing through, flickering rather than a
   steady red.
-- [ ] **Survivors come home to the building that made them**: onto its roof, as near where they came out as there is
+- [x] **Survivors come home to the building that made them**: onto its roof, as near where they came out as there is
   room, then round it; played with a large army.
-- [ ] **A unit waiting to come out**: what a building owes waits inside it until there is room, units standing idle on
+- [x] **A unit waiting to come out**: what a building owes waits inside it until there is room, units standing idle on
   its roof make way, and the wait can be seen.
-- [ ] **Faster routes**: the tick's routes profiled on a late, crowded duel, and what is slow made faster, every battle
+- [x] **Faster routes**: the tick's routes profiled on a late, crowded duel, and what is slow made faster, every battle
   ending as it did.
-- [ ] **The Commander as the army's guide**: while she is in the battle no unit but a backliner marches ahead of her,
+- [x] **The Commander as the army's guide**: while she is in the battle no unit but a backliner marches ahead of her,
   and the army keeps to a band along her way to the goal; without her, a band along the line from the Nexus to the
   goal.
-- [ ] **Formation lines**: backliner, melee, short range and long range; while the army marches, each line yields to
+- [x] **Formation lines**: backliner, melee, short range and long range; while the army marches, each line yields to
   the one ahead, so it arrives in order; a backliner goes for what stands behind the enemy's front.
-- [ ] **The pathfinding section of the architecture** explains what a unit does by default, as the states it moves
+- [x] **The pathfinding section of the architecture** explains what a unit does by default, as the states it moves
   through.
-- [ ] **Play strategies for the model players**: one guide of what duels have taught about building, which the model
+- [x] **Play strategies for the model players**: one guide of what duels have taught about building, which the model
   player's brief reads.
-- [ ] Measured again: the formation game and the duels, the claims checked against the events.
+- [x] Measured again: the formation game and the duels, the claims checked against the events.
 
 ## Waiting on Mario
 
