@@ -67,6 +67,24 @@ export type GroundItem = Readonly<{
  */
 export type TargetArea = Readonly<{ x: number; y: number; width: number; height: number }>
 
+/**
+ * A patch of ground set burning by a landing hit (`AttackDef.burn`): every unit and worker within `radius` of
+ * `centre`, measured as range is, of either side, takes `damage` on each tick that is a whole number of `everyTicks`
+ * after `startedTick`, until `untilTick` (inclusive). `source` and `sourceOrdinal` are the shooter's, for the record
+ * (it may have fallen since); `player` its side. Ordered by when they were lit, then by `sourceOrdinal`.
+ */
+export type BurningGround = Readonly<{
+  centre: Coord
+  radius: number
+  damage: number
+  everyTicks: number
+  startedTick: number
+  untilTick: number
+  player: PlayerId
+  source: string
+  sourceOrdinal: number
+}>
+
 export type VictoryReason = "nexus-destroyed" | "annihilation" | "tick-limit"
 
 export type Outcome = Readonly<{
@@ -106,6 +124,12 @@ export type MatchState = Readonly<{
    * way the production timers did not.
    */
   targets?: Readonly<Partial<Record<PlayerId, TargetArea>>>
+  /**
+   * The ground burning now (`BurningGround`): lit by a landing hit, put out when its time ends, and put out by
+   * Recall between rounds. Absent, never empty, when nothing burns, so a state without fire hashes byte for byte as
+   * it did before fire existed, as `targets` and the production timers did.
+   */
+  burning?: readonly BurningGround[]
 }>
 
 /**

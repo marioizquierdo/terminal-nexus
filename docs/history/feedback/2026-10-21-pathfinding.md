@@ -100,3 +100,46 @@ because the Grid changes and a field is cheap.
 
 **Scheduled** for later, in [the backlog](../../milestones/backlog.md) beside the banner: a beacon a player builds
 where an army gathers before it moves, set during the Build Phase to a formation.
+
+## After the merge of pull request 81
+
+### F196 — Yes to the bomber and the mortar: test area damage against a tight army
+
+> Yes, I like the ideas for the rebel bomber and the citizen mortar. Go ahead, implement those to test differences in
+> formations with units. You will see some insignificant changes in strategies, some asymmetry, and that is exactly
+> the type of unit composition that we're looking for.
+
+**Scheduled**: the Ravel bomber, the Citizen mortar and burning ground, the buildings that train them, and the
+formation game played against them.
+
+### F197 — Every unit has its own personality: the units to come
+
+> Every unit in the games will have its own personality. There may be similar units in between different armies, and
+> some units may be necessary, like a tank and a ranger, but special units are what make this game fun, especially
+> looking for things that will create complex entropy into the battlefield, like, for example, units that will create
+> push or units that will slow down other units, disrupting the formations. All of that that can maybe mind control
+> and change a unit to the other side, resurrect from debris, and things that will create chain effects from little
+> differences, I think, are what makes this type of auto battler the most fun. Pull a unit, hook a unit from the back,
+> have units that have long range, other units that can teleport themselves or throw themselves forward to attack the
+> other units from the back, units that can target buildings specifically, units that have a lot of health, units that
+> can fly and go forward, skipping others, units that step back and can dodge attacks, units that have a shield that
+> recovers, units that help other units become stronger, units that heal other units or protect them with extra
+> shield, units that can burrow and approach underground the ranged units, units that are weak and strong and
+> explosive, units that have a lot of area damage, units that are easy to kill, but if not killed, they can have high
+> numbers. Sometimes there are units that can deal a lot of damage in one shot, but they take a long time to recover.
+> Units that take a while to position themselves, like tanks, and then can deal a lot of damage. Units that can
+> combine with other units, maybe at some point in battle merge with other units to turn into something new. All of
+> that are ideas for possible future units we can have that we will fit in the most thematic possible way in the right
+> army. But that is what I'm looking forward to, create complex battles.
+
+**Scheduled** for the armies' next pass: the list kept in [the backlog](../../milestones/backlog.md) as the units to
+come, each to find its army; this round builds only the two area units.
+
+### F198 — Strategies a scripted or a model player can choose
+
+> For now, let's start testing area of damage versus clamping. And the testing script, or when we have the agent
+> playing versus agent, so we'll be able to decide to do one strategy or another and see significant changes. That
+> will be our next iteration here. I'm looking forward to see the pull requests.
+
+**Scheduled**: the scripted duel players and a model player may choose how tight they build, so a duel can set a block
+against an army built apart, with and without area damage, and measure the difference.

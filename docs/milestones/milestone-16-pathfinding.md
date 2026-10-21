@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** 16J — after the merge: the Nexus fights back, breaching, and the chapter on how things move.
+**Current step:** 16K — area damage against a tight army: the Ravel bomber, the Citizen mortar and burning ground.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -351,6 +351,27 @@ design written as a chapter of the grid's architecture.
 - [x] **The duels measured again** with the Nexus fighting back: do the first two rounds still decide a duel?
 - [x] Area damage for the Citizens (missiles that leave the ground burning) proposed for his word, and a beacon that
   gathers an army into a formation put in the backlog.
+
+### Step 16K — Area damage against a tight army: the bomber, the mortar and burning ground
+
+Mario's yes to the proposal ([his words](../history/feedback/2026-10-21-pathfinding.md)): "implement those to test
+differences in formations with units", and "let's start testing area of damage versus clamping", with scripted and
+model players able to choose one strategy or another.
+
+- [ ] **The Ravel bomber**: fast and frail, it runs at the thickest knot of enemies within its reach and bursts there,
+  hurting everything round it, friend and foe; trained by a Ravel building of its own.
+- [ ] **The Citizen mortar**: slow, it lobs a shell at the thickest knot within a long reach; the shell bursts a little
+  and leaves the ground burning; trained by a Citizen building of its own, after the Barracks.
+- [ ] **Burning ground**: a patch with a place, a size and a lifetime, kept in the state, hurting every unit and worker
+  on it each second, of either side; routes weigh it as dear ground while it burns; Recall puts it out; drawn on the
+  Grid in its own style, under what stands on it.
+- [ ] **Aiming at a crowd**: a unit may aim at the enemy with the most enemies round it, nearest first on a tie; the
+  bomber and the mortar do.
+- [ ] **The formation game against area damage**: block, apart and line against the bomber and against the mortar; a
+  loose army should now win something a tight one loses.
+- [ ] **A strategy to choose**: the scripted duel players and a model player's plan may say how tight to build, and
+  duels measure a block against an army built apart, with and without the new units.
+- [ ] The units to come, from his list, in the backlog for the armies' next pass.
 
 ## Waiting on Mario
 
