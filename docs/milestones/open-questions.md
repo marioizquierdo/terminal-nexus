@@ -46,7 +46,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q75](#q75--how-long-is-a-match) | How long is a match? | OPEN | Milestone 7 (worker economy), when a match with an economy can be timed |
 | [Q76](#q76--should-the-engines-pulse-be-renamed-in-code-and-in-a-missions-data) | Should the engine's "pulse" be renamed in code and in a mission's data? | OPEN | Before modding opens; any step that changes the mission format |
 | [Q82](#q82--what-makes-a-loose-army-worth-building) | What makes a loose army worth building? | OPEN | Mario, after feeling the Way off the roof Experiment; the armies' next pass |
-| [Q83](#q83--how-are-a-duels-first-rounds-kept-from-deciding-it) | How are a duel's first rounds kept from deciding it? | OPEN | Mario; the armies' next pass |
 
 ## Open
 
@@ -557,24 +556,26 @@ there is no reason to build apart.
 built what he asked for; what makes a loose army worth building is an army's area attack, and the simulation is ready
 to measure one. Meanwhile the "Way off the roof" Experiment lets him feel his idea against stepping down at once.
 
-### Q83 — How are a duel's first rounds kept from deciding it?
+**His direction, 2026-10-21** ([the round's log](../history/feedback/2026-10-21-pathfinding.md)): A, like banelings
+against bunched marines — "things that could deal more area damage, affecting a lot of units if they are put
+together, and not that many units if they are separate". The Ravels get "a unit that comes and bombs all your units";
+the Citizens "a unit that is able to throw missiles that have large area, and they should probably set the ground on
+fire ... when the units walk through it, they all take damage ... something that spreads over 5 or 6 tiles". He
+asked what we think. **The proposal, for his yes before anything is built:**
 
-**Status:** OPEN — registered 2026-10-20, from the full Commander duels measured at the end of the pathfinding
-milestone ([the report](../history/reports/2026-10-20-pathfinding-measured.md)).
+- **The Ravel bomber** runs at the thickest knot of enemies it can reach and bursts there. It needs nothing new: a
+  fast unit that dies on contact with a `detonation` (the Ravels' fuel wagon already bursts for 20 within two),
+  made worth its price by a bigger burst — about 30 to everything within three, so a block of troopers loses
+  several and a loose line one or two. What is new is where it aims: at the most enemies inside its burst rather
+  than the nearest, one targeting preference in the table that already holds them.
+- **The Citizen mortar** stands back and lobs a shell at the thickest knot within a long reach, about 10, every
+  four or five seconds. The shell bursts for a little and leaves the ground there **burning**: a patch about five
+  tiles across that hurts every unit standing on it, of either side, a few points a second, for about six seconds,
+  drawn in its own style. It punishes a block that stands and a block that walks through it, and a loose army walks
+  round it, which routes already do for slow ground.
+- **Burning ground is a new thing on the Grid**: a patch with a place, a size and a lifetime, kept in the state and
+  hurting by the kernel's own clock, and the routes treat it as dear ground while it burns. It is small, but it is
+  the first thing on the Grid that is neither terrain nor an entity, so it waits for his word.
 
-On the new routes a side with no target marches straight on the enemy Nexus. Of 162 scripted duels on the Crossing, 35
-were over by the end of round 2 and 13 in round 1; and of the duels that went on, the side that dealt more damage in
-the first two rounds won every one. Luck is not the cause (the luckier early hands won 55%); speed is. The power curve
-asks for the last moves to be the most decisive and an opening worth a sixth of a match (the Commander Armies design,
-catch-up), and its guidelines forbid hidden help and rewards for falling behind.
-
-| Option | What it costs |
-| --- | --- |
-| A. **A Nexus that fights back**: the Grid Nexus has an attack of its own, on its card, so a round-1 march meets a defence it must spend to break | One content change and a test; every level and duel re-measured, and an attack is one more thing on the Nexus's card |
-| B. **A guard to start with**: each side's opening includes a building or a squad that holds the Nexus, as PERIMETER's annex does | Per-army data; a defender's opening pays for it on the curve |
-| C. **A Nexus that cannot fall in the opening act**: it stands at its last health through round 3, said on its card | A rule a player can read, but one that changes what a raid is for in the first act |
-| D. **Leave it to the armies**: a forward army is ahead early and pays later, as the curve says | Nothing now; the scripted duels say the payment never comes |
-
-**Recommendation: A, measured with `measure run --spec full` before anything else changes.** It is visible on the
-Grid and on a card, helps whoever is attacked rather than whoever is behind, and leaves every army's own lean intact;
-B is the same idea spent per army, and C changes the first act's purpose.
+Both are measured by `measure formations` until an army set apart wins against them and a block still beats one set
+apart without them.

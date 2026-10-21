@@ -186,8 +186,9 @@ function walkTo(routes: TickRoutes, actor: Actor, target: Actor): number {
  * the nearest across a wall: by the walk to a tile beside it, then the one it holds, the weakest, a draw; and a unit
  * heading for its side's target turns only to what it could walk to within its engage reach. **Any other unit keeps
  * the nearest by range**, shots and heals reaching over rock, but one it cannot get within range of — walled off, or
- * deep in a crowd that stands — is passed over for the nearest it can. With nothing it can reach, a unit keeps its
- * choice and walks as near as it can get (`intents.ts`).
+ * deep in a crowd that stands — is passed over for the nearest it can. With nothing it can reach, a unit turns on the
+ * enemy building in its way when breaking one opens the way (`breach`), and otherwise keeps its choice and walks as
+ * near as it can get (`intents.ts`).
  */
 function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice): Choice["selection"] {
   const { actor, candidates, selection } = choice
@@ -196,7 +197,7 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   if (actor.definition.attack?.kind !== "melee") {
     if (walkTo(routes, actor, selection.target) !== UNREACHABLE) return selection
     const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && walkTo(routes, actor, candidate) !== UNREACHABLE)
-    return reachableOnes.length > 0 ? selectTarget(context, actor, reachableOnes) : selection
+    return reachableOnes.length > 0 ? selectTarget(context, actor, reachableOnes) : (breach(routes, actor, selection.target) ?? selection)
   }
   // Nearest by range first: a walk is never shorter than the range less a row (a tile beside a target is at most two
   // columns from it), so once the range is that much past the best walk found, nothing further can beat it.
@@ -211,7 +212,7 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
       nearest = [candidate]
     } else if (walk === best && walk !== UNREACHABLE) nearest.push(candidate)
   }
-  if (nearest.length === 0) return selection
+  if (nearest.length === 0) return breach(routes, actor, selection.target) ?? selection
   // Heading for its side's target, it turns only to what it could walk to within its reach.
   if (targetFor(context, actor) !== null && best > engageRange(actor.definition)) return null
   // Heading for the enemy's Nexus, likewise, the Nexus aside: what it could not walk to within its reach is passed
@@ -224,6 +225,16 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   const least = Math.min(...nearest.map((candidate) => candidate.hp))
   const target = held ?? drawAmong(context, nearest.filter((candidate) => candidate.hp === least))
   return target === undefined ? selection : { target, distance: distanceBetween(actor, target) }
+}
+
+/**
+ * When nothing `actor` wants can be walked to: the enemy building in the way to `target`, if breaking one opens it and
+ * `actor` can strike a building (`TickRoutes.breachOf`); else `null`, and it walks as near as it can get.
+ */
+function breach(routes: TickRoutes, actor: Actor, target: Actor): Choice["selection"] {
+  const building = routes.breachOf(actor, { kind: "unit", target, reach: reachOf(actor) })
+  if (building === null || eligibleTargets(actor, [building]).length === 0) return null
+  return { target: building, distance: distanceBetween(actor, building) }
 }
 
 /**

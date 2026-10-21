@@ -199,6 +199,13 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     footprint: rectFootprint(3, 2),
     maxHp: 400,
     speedTier: 9,
+    // It fights back (the owner, 2026-10-21: "a single attack that deals enough damage to kill a trooper"): one shot
+    // every three seconds, at a unit within a marksman's reach, never at a building, enough to drop a trooper or a
+    // runner where it stands; and it mends a little between rounds ("a little bit of self-healing"). The Citizen and
+    // the Ravel Nexus alike, for now.
+    attack: { kind: "ranged", range: 6, damage: 40, cooldownTicks: 36, projectileTilesPerTick: 5 },
+    targetLayers: ["units", "workers", "air"],
+    mends: 40,
     collidesWith: STRUCTURE_COLLISIONS,
     behavior: "static",
     salvage: 120,

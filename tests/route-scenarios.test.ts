@@ -7,7 +7,7 @@ import { readdirSync } from "node:fs"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { measureScenario } from "../src/measure/index.ts"
-import { contextFor, stepTick } from "../src/pulse/index.ts"
+import { contextFor, resolvePulse, stepTick } from "../src/pulse/index.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import { loadScenarioFile, resolveScenario } from "./helpers.ts"
 
@@ -63,6 +63,30 @@ test("route-falling-building: the troopers break the Barracks closing the gap an
   const { battle } = measureScenario(scenario, 1)
   assert.equal(battle.winner, "A")
   assert.equal(battle.sides.B.structuresLost, 2, "the Barracks and then the Nexus")
+})
+
+test("route-breach: buildings closing the only way, far from the straight line, are broken rather than stood at", async () => {
+  // The owner, 2026-10-21: "if the enemy blocks the entrance with buildings, then the pathfinding should know the
+  // difference between rocks and buildings and should decide to target one of the buildings." Walking as near as they
+  // could get, the troopers stood at the rock straight across from the Nexus until the time ran out.
+  const scenario = await loadScenarioFile("route-breach.map.json")
+  for (const seed of SEEDS) {
+    const { run } = await resolveScenario("route-breach.map.json", { seed })
+    const fell = run.events.flatMap((event) => (event.kind === "structure.destroyed" ? [event.contentId] : []))
+    assert.deepEqual(fell, ["structure.citizen.barracks", "structure.bench.nexus"], `seed ${seed}: ${run.finalState.outcome?.reason}`)
+    assert.equal(run.finalState.outcome?.winner, "A")
+  }
+  // The same gap closed with rock instead: nothing to break, and nothing the troopers strike; they stand as near as
+  // they can get, as before.
+  const rock = {
+    ...scenario,
+    terrain: scenario.terrain.map((row, y) => (y === 1 || y === 2 ? `${row.slice(0, 25)}###${row.slice(28)}` : row)),
+    placements: { ...scenario.placements, B: { ...scenario.placements.B!, at: { x: 40, y: 9 }, rows: ["n"] } },
+  }
+  const loaded = loadScenario(rock, { registry: FIXTURE_REGISTRY, seed: 1 })
+  const run = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: 600, seed: 1 })
+  assert.equal(run.finalState.outcome?.reason, "tick-limit")
+  assert.deepEqual(run.events.filter((event) => event.kind === "damage.applied"), [])
 })
 
 test("route-slow-ground: a route goes round a band of scrub when that is quicker, and never sets foot on it", async () => {

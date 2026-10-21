@@ -565,3 +565,12 @@ the end by damage dealt, the same number the lead was measured by. Before readin
 cases where the measure and the outcome are the same thing, and say what is left (here: the side that dealt more
 damage early won all 19 duels that went on and were decided). The luck half had the opposite fault: judged by
 rarity, it never told two hands apart, because the dealer gives both sides the same rarities each round.
+
+### Check a claim about a level against its events
+
+2026-10-21, the Nexus that fights back. The next steps first told Mario to start PERIMETER's first round and watch the
+Nexus shoot; counting the Nexus's hits in every level round with nothing built showed it never fires there — the squads
+stop the raid before it comes within reach — and first fires in the third round. The same day a commit message said
+PERIMETER's first round had changed, when the round that changed was the engine's placeholder test map. Before a
+sentence tells him where to look, find the moment in the events (a few lines over `LEVELS` and `startPulse`) and name
+the round it happens in.

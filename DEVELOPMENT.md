@@ -134,6 +134,11 @@ Things that bite:
 - **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
   failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
   test to make a busy machine pass.
+- **A rule change can fail dozens of tests at once.** Sort them before fixing any: a pin that moved is re-pinned
+  with its reason in its comment, a test whose premise the change broke gets a fixture that isolates its rule, a
+  test whose inputs no longer reach its meaning gets new inputs from a probe; none is loosened or skipped (the
+  [`remeasure`](.claude/skills/remeasure/SKILL.md) skill). Run timing tests after a background measurement ends,
+  not while it plays.
 - **A red assertion in the live-loop test looks like a hang.** `tests/lifecycle-build-phase.test.ts` leaves
   the terminal loop running when an assertion throws, so Node never exits. Run it alone with
   `node --test --test-timeout=30000`.
@@ -219,6 +224,21 @@ npm run duel -- submit --dir .playtest/d1 --side A --plan .playtest/d1/plan-A.js
 
 Model against model, step by step and with the task to give each agent, is in [`duels.md`](docs/system-design/duels.md):
 use a small, cheap model, play each pairing from both sides, and read the reports beside `result.md` for why.
+
+**Measuring a change plays the same battles before and after it** (`node bin/measure.ts`,
+[`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill):
+the route scenarios and every map, duels between every Commander, and every campaign level by fixed plans, written
+down as one JSON file per run and compared in plain words. Play only what the change can move, written down with
+the one question it must answer; after a power-curve change, mark what the new result supersedes rather than
+leaving old numbers to read as current; and check every sentence that tells Mario where to look against the events
+(`measure who <content id>`) before writing it.
+
+```bash
+node bin/measure.ts run --spec quick --jobs 4 --question "<what it must answer>"   # a look while working
+node bin/measure.ts run --spec full --jobs 4 --routing "<the rules>" --out docs/history/measurements/<date>-<what>.json
+node bin/measure.ts compare <before.json> <after.json>
+node bin/measure.ts who structure.citizen.nexus --plan nothing          # what one unit did, round by round
+```
 
 **The log is the feedback loop for the kernel.** `grid --headless` writes fixed-column lines to one
 stream, `[tick] LEVEL kind subject [-> object] detail...`, at `ERROR`, `WARN` (default), `INFO`,

@@ -112,7 +112,7 @@ IDEA (a sketch). The ones every session needs:
 | `bin/grid.ts`, `bin/terminal-nexus.ts` | The engine tool and the game's entry point. |
 | `tests/` | The suite, run by Node and by Bun. |
 | `scripts/` | The validator, the test runner, playtests, screenshots, the browser build. |
-| `.claude/skills/` | `grid`, `playtest`, `grid-screenshots`, `feedback-round`, `pr-description`, `duel`. |
+| `.claude/skills/` | `grid`, `playtest`, `grid-screenshots`, `feedback-round`, `pr-description`, `duel`, `remeasure`. |
 
 ## Finishing a session
 

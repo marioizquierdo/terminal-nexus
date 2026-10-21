@@ -342,5 +342,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // the Book guarding those beside her, the Barracks's four troopers together five seconds in, a row counting two
 // columns in every distance and step, every step taking whole beats, one across and two up or down, every tie
 // broken by what a unit faces, then a draw, every unit walking by its route, the raid heading for the Nexus,
-// turning only to what comes within its reach, and the Barracks's wave coming out over its roof.
-const PINNED_ROUND_1 = "e81d7592d1c112292269aabcedd9c948de134f3f628d44304fb595ae4074427c"
+// turning only to what comes within its reach, the Barracks's wave coming out over its roof, and the Nexus shooting
+// whatever of the raid comes within a marksman's reach of it.
+const PINNED_ROUND_1 = "59b69caf742b01d77e90167beddcc48855f4399be813b8774d22de1f401c4bec"

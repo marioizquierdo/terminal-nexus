@@ -165,7 +165,7 @@ test("a multi-tile entity is damaged and destroyed as one entity", async () => {
   assert.equal(destroyed.length, 1, "a 3x2 Grid Nexus died more than once")
   const nexus = destroyed[0]
   assert.ok(nexus !== undefined && nexus.kind === "structure.destroyed")
-  assert.equal(nexus.contentId, "structure.citizen.nexus")
+  assert.equal(nexus.contentId, "structure.bench.nexus")
 
   // Every hit landed on the entity, never on one of its six tiles.
   const damage = resolved.run.events.filter(

@@ -308,9 +308,16 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
       expectedGlyph,
       `${death.entity} disappeared before its own tracer landed`,
     )
+    // By its glyph and its style both: the impact's own burst may land on the tile in the unit's own letter (an "X",
+    // a runner's), and that is the shot landing, not the unit still standing.
+    const cellKeyAt = (timeMs: number): string => {
+      const frame = view.snapshotAt(timeMs, "monochrome")
+      const cell = frame.cells[(origin.row + death.at.y) * frame.width + origin.column + death.at.x]
+      return JSON.stringify([cell?.glyph, cell?.style])
+    }
     assert.notEqual(
-      cellAt(lastImpactAtMs + 1),
-      expectedGlyph,
+      cellKeyAt(lastImpactAtMs + 1),
+      cellKeyAt(deathAtMs + 1),
       `${death.entity} was still drawn after the impact beat it should have vanished at`,
     )
     checked += 1

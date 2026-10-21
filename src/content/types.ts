@@ -206,6 +206,12 @@ export type ContentDef = Readonly<{
    */
   supplyProvided?: number
   /**
+   * How much health a structure regains between two rounds, at Recall, never past its `maxHp` (the owner, 2026-10-21:
+   * "perhaps we add like a little bit of self-healing"). The Grid Nexus's, so an early raid that hurt it is not a
+   * wound it carries for the whole match. Absent: none.
+   */
+  mends?: number
+  /**
    * How many places of its side's supply a unit takes: absent, 1 for a unit and nothing for a structure. A stronger
    * unit may take more; a Commander takes none.
    */

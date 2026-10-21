@@ -100,7 +100,11 @@ const earlyLead = (duel: DuelMeasure, side: Side): number => {
 export function summaryLines(measurement: Measurement): string[] {
   const lines: string[] = []
   lines.push(`measurement "${measurement.spec}" on ${measurement.date}, build ${measurement.build}, routes: ${measurement.routing}`)
-  if (measurement.msPerTick !== null) lines.push(`a tick took ${fixed(measurement.msPerTick, 3)} ms on average on this machine`)
+  if (measurement.question !== undefined) lines.push(`the question: ${measurement.question}`)
+  if (measurement.msPerTick !== null) {
+    const jobs = (measurement.jobs ?? 1) > 1 ? `, with ${measurement.jobs} processes side by side` : ""
+    lines.push(`a tick took ${fixed(measurement.msPerTick, 3)} ms on average on this machine${jobs}`)
+  }
 
   if (measurement.scenarios.length > 0) {
     lines.push("", "Scenarios (how often side A won, the ticks a run took, A's first strike, how long units stood blocked):")
@@ -124,6 +128,8 @@ export function summaryLines(measurement: Measurement): string[] {
     lines.push("", `Duels: ${duels.length} on ${duels[0]?.map ?? "?"}, each pairing from both ends`)
     const byNexus = duels.filter((duel) => duel.result.by === "nexus").length
     lines.push(`  ${byNexus} ended by a Nexus falling; ${fixed(mean(duels.map((duel) => duel.rounds.length)))} rounds on average`)
+    const overBy = (round: number): number => duels.filter((duel) => duel.rounds.length <= round).length
+    lines.push(`  over by the end of round 1: ${overBy(1)}, round 2: ${overBy(2)}, round 3: ${overBy(3)}`)
     const commanders = [...new Set(duels.flatMap((duel) => [duel.commanders.A, duel.commanders.B]))].sort()
     for (const a of commanders) {
       for (const b of commanders) {

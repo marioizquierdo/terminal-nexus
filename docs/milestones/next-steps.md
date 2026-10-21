@@ -5,6 +5,15 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Say yes, no or change to the area-damage proposal** ([the open questions](open-questions.md), what makes a loose army
+  worth building): a Ravel bomber that runs at the thickest knot of your units and bursts, and a Citizen mortar whose
+  shells leave the ground burning about five tiles across for about six seconds. Burning ground is the first thing on
+  the Grid that is neither terrain nor a unit, so nothing is built until he says.
+- **Feel the Nexus fighting back** ([his words](../history/feedback/2026-10-21-pathfinding.md)), from
+  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'`: start the round without building (`s`, `s`)
+  and watch the Nexus shoot the raiders that reach it (in rounds 1 and 2 the squads stop the raid before it comes
+  within the Nexus's reach); its card (Explore Map, `e`, onto it) says it shoots and mends. Is one shot every three
+  seconds, 40 a shot, the right strength, and is 40 mended a round "a little"?
 - **Look at the colour work once, on a terminal whose colours are not the game's** ([his words](../history/feedback/2026-10-15-colours-and-background.md);
   the game now paints its own background, so the terminal's theme no longer shows): `./bin/terminal-nexus.ts --colors
   truecolor --theme light` (the light theme should now read on a dark terminal and on a Solarized one), then
@@ -33,7 +42,8 @@ it is done.*
   agents against each other. Three things the duels found wait on his word, measured again on the new routes ([the report](../history/reports/2026-10-20-pathfinding-measured.md)):
   Averno still wins most (65% of 72 scripted duels), Ravel buildings train about half the strength a credit Citizen ones
   do and Dob wins mostly when he holds, and Dob has no campaign yet. The same duels found that an early lead decides
-  a duel almost every time (a question for him, with a recommendation).
+  a duel almost every time; with the Nexus fighting back a round-1 march no longer ends one, but the side ahead after
+  round 2 still wins 51 of 54 ([the report](../history/reports/2026-10-21-nexus-fights-back.md)), the armies' next pass.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When
   she falls, a small window opens beside her, her face falls and the window evaporates; her dim `@` waits beside the

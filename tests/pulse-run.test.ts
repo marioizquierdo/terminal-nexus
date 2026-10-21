@@ -36,7 +36,8 @@ test("every ending the player can meet is reachable from the starter map's own d
   // are ending.test.ts's.
   const table: readonly (readonly [string, Scenario, string, string | null, string])[] = [
     // name, scenario, headline, winner, reason
-    ["nothing built", {}, "TIME'S UP", null, "tick-limit"],
+    // The Nexus fights back: with nothing built, the squads and the Nexus's own shots wipe the first raid out.
+    ["nothing built", {}, "VICTORY", "A", "annihilation"],
     ["one Turret", { plan: [DEFENCE[0] as Spot] }, "VICTORY", "A", "annihilation"],
     ["two Turrets and a Hatchery", { plan: DEFENCE }, "VICTORY", "A", "annihilation"],
     ["nobody comes", { raid: "none" }, "TIME'S UP", null, "tick-limit"],
@@ -50,13 +51,9 @@ test("every ending the player can meet is reachable from the starter map's own d
     assert.equal(outcome.winner, winner, `${name}: the winner`)
     assert.equal(outcome.reason, reason, `${name}: why`)
   }
-  // With nothing built the squads still fall, and the Pulse plays on past them to its end.
-  const nothing = play().pulse
-  const final = nothing.timeline.states.at(-1)
-  assert.ok(final !== undefined)
-  assert.equal(final.entities.filter((entity) => entity.player === "A" && FIXTURE_REGISTRY.get(entity.contentId).layer === "units").length, 0)
-  const lastDeath = nothing.timeline.events.filter((event) => event.kind === "entity.died" && event.player === "A").at(-1)
-  assert.ok(lastDeath !== undefined && lastDeath.tick < final.tick, "the Pulse stopped when the squads fell")
+  // A force wiped out with its Nexus standing plays on past its fall to the round's end: with the Nexus fighting
+  // back, nothing built no longer loses the squads to the first raid, so that is the mission's own test, with a raid
+  // of four raiders (tests/mission.test.ts, "PERIMETER is won by holding").
 })
 
 test("the same plan is the same Pulse: hashes stable across runs, and identical to the kernel run directly", () => {
@@ -181,9 +178,10 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   // Pinned again when every tie came to go by what a unit faces, then a draw (the plan won at tick 171 where it once
   // took until 217), when units came to walk by routes, and when the raid came to head for the Nexus and turn only to
   // what comes within its reach (tick 220), and when a building's units came to appear on its roof and walk out over
-  // it: the plan still wipes the raid out, now at tick 206.
+  // it: the plan still wipes the raid out, now at tick 206. Pinned again when the Grid Nexus came to fight back: its
+  // events carry the Nexus's shots, and the raid is wiped out on the same tick, every unit where it would have been.
   assert.ok(timeline.stateHash.startsWith("ba9be0a2"), `state hash ${timeline.stateHash}`)
-  assert.ok(timeline.eventsHash.startsWith("f45db1b0"), `events hash ${timeline.eventsHash}`)
+  assert.ok(timeline.eventsHash.startsWith("7d4a94e4"), `events hash ${timeline.eventsHash}`)
   assert.equal(timeline.states.length - 1, 206)
   assert.deepEqual(timeline.states.at(-1)?.outcome, { winner: "A", reason: "annihilation", tick: 206 })
 })

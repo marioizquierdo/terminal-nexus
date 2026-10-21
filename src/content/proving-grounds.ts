@@ -381,4 +381,21 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     salvage: 24,
     constructionRadius: 6,
   },
+  {
+    // The Grid Nexus as it was before it fought back: a target and nothing more. The kernel's own scenarios that send
+    // a lone trooper round a wall, or ask what ends a Pulse, are about routes and rules, not about a Nexus that shoots
+    // the trooper dead on arrival, so they stand this one where the Citizen Nexus stood.
+    id: "structure.bench.nexus",
+    short: "nexus",
+    nexus: true,
+    layer: "obstacles",
+    footprint: rectFootprint(3, 2),
+    maxHp: 400,
+    speedTier: 9,
+    collidesWith: STRUCTURE_COLLISIONS,
+    behavior: "static",
+    salvage: 100,
+    constructionRadius: 6,
+    supplyProvided: 12,
+  },
 ]

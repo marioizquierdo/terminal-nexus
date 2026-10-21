@@ -32,7 +32,9 @@ export const SHAPE_WORDS: Readonly<Record<Shape, string>> = {
 const WIDTH = 72
 const HEIGHT = 28
 const BARRACKS = "structure.citizen.barracks"
-const NEXUS = "structure.citizen.nexus"
+// The bench's passive Grid Nexus: the formations ask how armies meet each other. Against a Nexus that shoots back (the
+// game's own since 2026-10-21) twelve troopers seldom bring it down, and nearly every one of these battles is a draw.
+const NEXUS = "structure.bench.nexus"
 const CRAWLER = "unit.bench.siegecrawler"
 const TROOPER = "unit.citizen.trooper"
 const BODY = { width: 3, height: 2 }

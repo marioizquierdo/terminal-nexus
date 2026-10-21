@@ -17,6 +17,9 @@ export type MeasureSpec = Readonly<{
     commanders: readonly string[]
     /** Scripted players (`src/duel/players.ts`); both sides of a duel play the same one. */
     players: readonly string[]
+    /** The Commanders that play side A, each against every one of `commanders`: all of them when absent. A share of
+     *  the duels, for one of several processes (`jobsOf`, `src/measure/merge.ts`). */
+    west?: readonly string[]
   }>
   /** Campaign levels by id (empty: every level), each played by every plan. */
   levels: readonly string[]
@@ -53,14 +56,21 @@ export const QUICK_SPEC: MeasureSpec = {
 
 export const SPECS: Readonly<Record<string, MeasureSpec>> = { full: FULL_SPEC, quick: QUICK_SPEC }
 
-/** A measurement as it is written down: the spec it followed, the build and the day it was measured on, how long a
- *  tick took on the machine that measured it, and every battle. */
+/** A measurement as it is written down: the spec it followed, the build and the day it was measured on (the build
+ *  ends "+uncommitted" when the work it measured was not yet committed), how long a tick took on the machine that
+ *  measured it, and every battle. */
 export type Measurement = Readonly<{
   spec: string
   build: string
   date: string
   /** What the routes were when it was measured, in a few words: "the greedy step", "distance fields". */
   routing: string
+  /** The one question it was played to answer, written before it was played. Absent in results written before
+   *  it was asked for. */
+  question?: string
+  /** How many processes played it side by side (`measure run --jobs`); absent for one. Under load a tick takes
+   *  longer, so its time compares only with a run played the same way. */
+  jobs?: number
   /** Milliseconds a tick took, on average over every battle: the machine's, so compared only between runs on one. */
   msPerTick: number | null
   scenarios: readonly ScenarioMeasure[]

@@ -423,7 +423,9 @@ test("Recall resets what a Pulse leaves running and clears the Pulse's own bookk
   )
   for (const entity of state.entities) {
     const wornEntity = worn.entities.find((candidate) => candidate.ordinal === entity.ordinal) as EntityState
-    assert.equal(entity.hp, wornEntity.hp, "Recall does not heal")
+    // Recall heals nothing but what mends, the Grid Nexus (`ContentDef.mends`), and never past full.
+    const mends = definitionOf(entity).mends ?? 0
+    assert.equal(entity.hp, Math.min(definitionOf(entity).maxHp, wornEntity.hp + mends), "Recall heals only what mends")
     assert.equal(entity.cooldown, 0)
     assert.equal(entity.moveCredit, 0)
     assert.equal(entity.targetOrdinal, null)
@@ -502,4 +504,26 @@ test("with nowhere free within reach, Recall says so rather than stacking units"
     ],
   }
   assert.throws(() => recall(withWorker, FIXTURE_REGISTRY), /recall: no free tile/)
+})
+
+test("the Grid Nexus mends between rounds: what it lost, up to its mending, never past full; nothing else mends", () => {
+  // The owner, 2026-10-21: "perhaps we add like a little bit of self-healing", so an early raid that hurt the Nexus
+  // is not a wound it carries all match. The Citizen and the Ravel Nexus mend alike, for now.
+  const nexus = FIXTURE_REGISTRY.get(NEXUS)
+  assert.equal(nexus.mends, 40)
+  assert.equal(FIXTURE_REGISTRY.get("structure.ravel.nexus").mends, nexus.mends)
+  const before = afterwards([{ contentId: HATCHERY, anchor: { x: 20, y: 3 } }])
+  const hurt = (nexusHp: number): MatchState => ({
+    ...before,
+    entities: before.entities.map((entity) => ({ ...entity, hp: entity.contentId === NEXUS ? nexusHp : Math.max(1, entity.hp - 5) })),
+  })
+  const hpAfter = (state: MatchState, contentId: string): number | undefined =>
+    recall(state, FIXTURE_REGISTRY).state.entities.find((entity) => entity.contentId === contentId)?.hp
+  assert.equal(hpAfter(hurt(100), NEXUS), 140)
+  assert.equal(hpAfter(hurt(390), NEXUS), nexus.maxHp, "it mended past full")
+  // A wounded Hatchery and wounded troopers come home as hurt as they were.
+  const hatchery = hurt(100).entities.find((entity) => entity.contentId === HATCHERY) as EntityState
+  assert.equal(hpAfter(hurt(100), HATCHERY), hatchery.hp)
+  const trooper = hurt(100).entities.find((entity) => entity.contentId === TROOPER) as EntityState
+  assert.equal(hpAfter(hurt(100), TROOPER), trooper.hp)
 })

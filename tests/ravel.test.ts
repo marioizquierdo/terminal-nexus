@@ -109,7 +109,7 @@ test("a Grid Nexus is a flag on the definition, not a content id the kernel know
   assert.equal(ravel.nexus, true)
   assert.equal(FIXTURE_REGISTRY.get("structure.ravel.den").nexus, undefined)
 
-  // Destroying either one ends a Pulse; the first fixtures only ever proved it for the Citizen id.
+  // Destroying a Grid Nexus ends a Pulse whatever its id: the scenario's is the bench's passive one, a third id.
   const resolved = await resolveScenario("structure-destruction.map.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
 })

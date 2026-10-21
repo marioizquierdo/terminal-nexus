@@ -12,6 +12,7 @@ import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import { createBuildState, withoutScene } from "../build/state.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import type { DomainEvent } from "../events/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import type { DuelResult, DuelSetup, Side, SidePlan } from "../duel/index.ts"
 import { briefOf, newDuel, playRound } from "../duel/index.ts"
@@ -20,6 +21,7 @@ import { centreTile } from "../match/index.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
 import { loadScenario } from "../scenario/load.ts"
 import type { ScenarioDefinition } from "../scenario/types.ts"
+import type { MatchState } from "../state/types.ts"
 import type { BattleRecord } from "./battle.ts"
 import { BattleRecorder, recordBattle } from "./battle.ts"
 
@@ -110,13 +112,21 @@ export type LevelMeasure = Readonly<{
   rounds: readonly Readonly<{ round: number; bought: readonly string[]; battle: BattleRecord }>[]
 }>
 
-/** Plays `level` by `plan` to its end, recording every round's battle. */
-export function measureLevel(level: PlayableLevel, plan: LevelPlan): LevelMeasure {
+/** One round of a level as it was played: what the plan bought and the battle's states and events. */
+export type LevelRound = Readonly<{
+  round: number
+  bought: readonly string[]
+  states: readonly MatchState[]
+  events: readonly DomainEvent[]
+  registry: ContentRegistry
+}>
+
+/** Plays `level` by `plan` to its end, handing each round to `each` as it is played; says how it ended. */
+export function playLevel(level: PlayableLevel, plan: LevelPlan, each: (round: LevelRound) => void): LevelMeasure["ended"] {
   let context = level.firstRound()
   const nexus = context.standing.find((structure) => context.registry.get(structure.contentId).nexus === true)
   const near = nexus === undefined ? STARTER_START_CURSOR : centreTile(nexus.anchor, context.registry.get(nexus.contentId).footprint)
   const curve: CurvePlan = { name: plan.name, buys: plan.buys, near }
-  const rounds: { round: number; bought: readonly string[]; battle: BattleRecord }[] = []
   let ended = { round: 0, verdict: "unplayed" }
   for (let round = 1; round <= level.rounds; round += 1) {
     const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
@@ -125,11 +135,20 @@ export function measureLevel(level: PlayableLevel, plan: LevelPlan): LevelMeasur
     const resolved = level.play.startPulse(context, planned.state)
     if (resolved === null) throw new Error(`level "${level.id}": round ${round} could not start`)
     const { states, events, registry } = resolved.timeline
-    rounds.push({ round, bought: planned.bought, battle: recordBattle(states, events, registry) })
+    each({ round, bought: planned.bought, states, events, registry })
     ended = { round, verdict: resolved.mission?.verdict.kind ?? "none" }
     const next = level.play.nextRound(context, planned.state, resolved)
     if (next === null) break
     context = next
   }
+  return ended
+}
+
+/** Plays `level` by `plan` to its end, recording every round's battle. */
+export function measureLevel(level: PlayableLevel, plan: LevelPlan): LevelMeasure {
+  const rounds: { round: number; bought: readonly string[]; battle: BattleRecord }[] = []
+  const ended = playLevel(level, plan, ({ round, bought, states, events, registry }) => {
+    rounds.push({ round, bought, battle: recordBattle(states, events, registry) })
+  })
   return { level: level.id, plan: plan.name, ended, rounds }
 }

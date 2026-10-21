@@ -285,6 +285,7 @@ The owner, 2026-10-19, watching raiders stand behind rocks: units must get where
 through crowds and narrow gaps, on a Grid that changes ([the milestone](../milestones/milestone-16-pathfinding.md)).
 Routes are built from small parts, each tested alone (`src/routing/`): where a body of a given shape may stand, the
 anchors from which it reaches a goal, a distance field from a goal outward, and the ranking of a unit's four steps.
+How they fit together, in plain words, and where a new way of moving plugs in, is [`movement.md`](movement.md).
 
 - **A unit walks its distance field downhill.** A field gives every anchor the walking cost to the nearest goal
   anchor, one a column and two a row, whole numbers; a unit takes the step that leaves the shortest walk, so it goes
@@ -307,6 +308,11 @@ anchors from which it reaches a goal, a distance field from a goal outward, and 
   patch of ground; a patch is the ground a body can walk between, `patchesOf`), and standing on one it has no route:
   it says so (`move.blocked`, reason `no-route`) and stands. A wide body before a gap too narrow for it stands as near
   as it can get. A field asked about an anchor on no goal's patch says unreachable at once, without searching.
+- **Rock and buildings are not the same wall** (the owner, 2026-10-21; `TickRoutes.breachOf`, `route-breach`). When
+  nothing a unit wants can be walked to, a second field toward its target is worked out with the enemy's buildings
+  open, a step onto one weighing eight of open ground; walked downhill from the unit, the first enemy building in the
+  way becomes its target, if it can strike a building. It breaks it and walks the gap. Rock, and what is not the
+  enemy's, is never broken: a unit walled off by them walks as near as it can get, as above.
 - **Targeting knows what can be reached.** Once routes are built, a unit that would walk to its target chooses again:
   a melee unit fights the enemy nearest to walk to — by the walk to a tile beside it, then the one it holds, the
   weakest, a draw — and, heading for its side's target, turns only to what it could walk to within its engage reach;
@@ -379,9 +385,26 @@ producer's waves start afresh (its first wave its recipe's delay away, none come
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`).
 
+**The Grid Nexus mends between rounds** (RULE — the owner, 2026-10-21: "perhaps we add like a little bit of
+self-healing"; `ContentDef.mends`, `src/match/recall.ts`, `tests/match.test.ts`). At Recall a structure whose
+definition `mends` regains that much health, never past its full: the Citizen and the Ravel Grid Nexus 40 of their
+400, so an early raid that hurt the Nexus is not a wound it carries all match. Nothing else mends at Recall; a
+building or a unit comes home as hurt as it was. How much a Nexus mends may differ by faction and be raised by a
+Nexus power, later.
+
 **Destroying the enemy Grid Nexus wins** (RULE — `src/pulse/victory.ts`,
 `tests/scenario.test.ts`). Any attacker in a legal attack position may damage it. Defences and
 terrain make practical outer layers; there is no hidden exposure meter.
+
+**The Grid Nexus fights back** (RULE — the owner, 2026-10-21: "the Nexus have a single attack that deals enough
+damage to kill a trooper"; `src/content/citizen.ts`, `src/content/ravel.ts`, `scenarios/nexus-fights-back.map.json`,
+`tests/nexus-fights-back.test.ts`). It is an ordinary ranged attack on its definition, so no rule knows a Nexus
+shoots: 40 damage every three seconds, at a marksman's reach of 6, at units, workers and flyers, never at a
+building. A trooper or a runner falls to one shot; a raider takes two. It matters most early, when a raid is a few
+units and the Nexus alone can turn it, and less as armies grow. The Citizen and the Ravel Nexus are alike for now;
+the factions' Nexuses may differ, and a Nexus power may raise either, later. The engine's own test maps that ask
+about routes and endings stand the bench's passive Grid Nexus (`structure.bench.nexus`) instead, the Nexus as it
+was before, so a lone trooper sent round a wall is not shot on arrival.
 
 **A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/pulse/victory.ts`,
 `scenarios/nexus-stands.map.json`, `tests/scenario.test.ts`). Its Pulse goes on until the Nexus falls or

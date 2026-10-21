@@ -1,0 +1,75 @@
+{
+  "id": "route-breach",
+  "name": "Route: the breach - buildings close the only way, far from the straight line",
+  "notes": "A ridge of rock the whole height of the map with one gap at its top, and the enemy's Barracks standing just past the gap, closing it. Four troopers west of the ridge, the enemy's Grid Nexus east, level with them and far below the gap. Walking as near as they can get would leave them at the rock straight across from the Nexus, where the Barracks is beyond their reach; a unit that tells rock from buildings goes up to the gap and breaks the Barracks. Done when the Barracks falls and then the Nexus.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 1800,
+  "terrain": [
+    "........................#.......................",
+    "................................................",
+    "................................................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#.......................",
+    "........................#......................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 10,
+        "y": 7
+      },
+      "rows": [
+        "tt",
+        "tt"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 26,
+        "y": 1
+      },
+      "rows": [
+        "b",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "              n"
+      ],
+      "legend": {
+        "b": {
+          "content": "structure.citizen.barracks"
+        },
+        "n": {
+          "content": "structure.bench.nexus"
+        }
+      }
+    }
+  }
+}
