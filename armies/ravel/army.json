@@ -57,6 +57,42 @@
       },
       "glyph": ["/h\\", "<#>"],
       "notes": "The Ravel second tier, the Garrison's mirror: it needs a Den standing as the Build Phase opens."
+    },
+    {
+      "id": "structure.ravel.fuseshed",
+      "layer": "obstacles",
+      "size": [3, 2],
+      "maxHp": 90,
+      "salvage": 25,
+      "constructionRadius": 6,
+      "detonation": {"radius": 2, "damage": 16},
+      "card": {
+        "title": "Fuse Shed",
+        "subtitle": "Sends bombers",
+        "description": "Where the crews pack scrap round a fuse. Sends two bombers each Battle Round, once a Den stands."
+      },
+      "glyph": ["/o\\", "<=>"],
+      "notes": "The bomber's building, of the second tier after the Den as the Chop Shop is. A shed packed with charges bursts harder than a Den when it falls, as the Chop Shop does."
+    },
+    {
+      "id": "unit.ravel.bomber",
+      "layer": "units",
+      "size": [1, 1],
+      "maxHp": 20,
+      "movementRate": {"numerator": 4, "denominator": 1},
+      "speedTier": 1,
+      "salvage": 10,
+      "supplyCost": 1,
+      "detonation": {"radius": 4, "damage": 36, "triggerRange": 1},
+      "aim": "crowd",
+      "targetLayers": ["units", "workers"],
+      "card": {
+        "title": "Bomber",
+        "subtitle": "From your Fuse Shed",
+        "description": "Runs at the thickest knot of enemy troops it can reach and bursts there, hurting everything round it, yours too. Never goes for a building."
+      },
+      "glyph": ["o"],
+      "notes": "The owner's yes, 2026-10-21: it runs at the thickest knot of enemies and bursts there. As fast as a runner and as frail (20 health, a runner's speed and initiative), with no weapon: touching its target, it bursts (a contact detonation, triggerRange 1), and it bursts the same way if it is killed first. Radius 4 reaches 4 columns across and 2 rows up and down. 36 damage, where the proposal said about 30: a trooper (40) survives one burst and a runner (16) or a slinger (18) does not, so a block of troopers is hurt all over and a second bomber finishes it, and a loose line loses one or two. It aims at the enemy with the most of its side round it, not the nearest (aim: crowd), and hunts units and workers, never a building. First numbers, to be measured."
     }
   ],
   "buildings": [
@@ -88,6 +124,15 @@
       "requires": ["den"],
       "spawns": {"unit": "unit.ravel.raider", "perWave": 3, "waves": 1, "secondsBetween": 10},
       "notes": "Three raiders a wave once a Den stands: the Garrison's mirror, a little cheaper and a little fewer."
+    },
+    {
+      "id": "fuse-shed",
+      "structure": "structure.ravel.fuseshed",
+      "cost": 40,
+      "tier": 2,
+      "requires": ["den"],
+      "spawns": {"unit": "unit.ravel.bomber", "perWave": 2, "waves": 1, "secondsBetween": 10},
+      "notes": "Two bombers a wave once a Den stands, for a little more than a Den. A bomber has no weapon, so the duel's measure of strength (health times damage a second) counts it as none and no scripted player picks it yet: a player chooses it against a tight army. First numbers, to be measured."
     }
   ],
   "powers": [

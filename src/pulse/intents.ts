@@ -335,7 +335,9 @@ function walk(
     // arbitration to fall back on.
     const first = choices.length === 0 && free.length > 1 ? drawAmong(context, free) : undefined
     const ordered = first === undefined ? free : [first, ...free.filter((candidate) => candidate !== first)]
-    for (const candidate of ordered) choices.push({ direction: candidate.direction, to: candidate.to, distanceAfter: candidate.after, weight: field.weightAt(candidate.to) })
+    // What the step costs in credit is the ground's own weight (slow ground), never the field's: a route may weigh
+    // ground dearer than a step across it takes, as it weighs burning ground (`TickRoutes.weightsOf`).
+    for (const candidate of ordered) choices.push({ direction: candidate.direction, to: candidate.to, distanceAfter: candidate.after, weight: weightAt(context.index.grid, actor.definition.footprint, candidate.to, terrainRuleOf(actor)) })
   }
   return { choices, wanted, noRoute: false }
 }

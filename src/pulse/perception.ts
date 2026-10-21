@@ -8,6 +8,7 @@ import { distanceBetween, drawAmong, isMobile, setTarget, within } from "./share
 import { engageRange, followsTarget, targetFor } from "./target.ts"
 import { purposeOf, reachOf, TickRoutes } from "./routes.ts"
 import { UNREACHABLE } from "../routing/index.ts"
+import { burnsOn } from "./burning.ts"
 
 export function hostilesOf(context: TickContext, actor: Actor): Actor[] {
   return context.actors.filter((other) => other.player !== actor.player && !other.pendingDead)
@@ -51,12 +52,24 @@ function eligibleTargets(actor: Actor, candidates: readonly Actor[]): readonly A
  * fires into the same enemy; and what is still tied is a draw (`drawAmong`). Never the lower ordinal, which the
  * opening hands out in reading order, west first, and so would favour a side by where it stands. It is kept this
  * plain on purpose: a smarter one would be a design change, not a fix.
+ *
+ * **A unit that aims at a crowd** (`aim: "crowd"`, the Ravel bomber and the Citizen mortar) first narrows its
+ * candidates to the ones with the most of their own side round them (`thickestOf`), and then chooses among those as
+ * every unit does: the nearest, the one it holds, the weakest, a draw.
  */
 export function selectTarget(
   context: TickContext,
   actor: Actor,
   candidates: readonly Actor[],
-): { target: Actor; distance: number } | null {
+): { target: Actor; distance: number; crowd?: number } | null {
+  if (actor.definition.aim !== "crowd" || candidates.length === 0) return nearestOf(context, actor, candidates)
+  const thickest = thickestOf(context, actor, candidates)
+  const chosen = nearestOf(context, actor, thickest.candidates)
+  return chosen === null ? null : { ...chosen, crowd: thickest.crowd }
+}
+
+/** Among `candidates`, the nearest; then the one `actor` holds, the weakest, a draw. */
+function nearestOf(context: TickContext, actor: Actor, candidates: readonly Actor[]): { target: Actor; distance: number } | null {
   let nearest: Actor[] = []
   let best = Number.POSITIVE_INFINITY
   for (const candidate of candidates) {
@@ -73,8 +86,55 @@ export function selectTarget(
   return target === undefined ? null : { target, distance: best }
 }
 
-/** One actor's choice this tick, before it is applied: its candidates, and the one it chose, if any. */
-type Choice = { actor: Actor; candidates: readonly Actor[]; selection: { target: Actor; distance: number } | null }
+/**
+ * The reach of `definition`'s area — what a unit that aims at a crowd counts a crowd within: its attack's `burn`
+ * radius, else its `splash` radius, else its `detonation`'s; 0 when it has none (a crowd of one, itself).
+ */
+export function areaOf(definition: ContentDef): number {
+  return definition.attack?.burn?.radius ?? definition.attack?.splash?.radius ?? definition.detonation?.radius ?? 0
+}
+
+/** How many of `candidate`'s own side's units and workers (`side`) stand within `actor`'s area round
+ *  it, itself counted: measured as range is, from its body, as a splash on it would be. */
+function crowdRound(actor: Actor, candidate: Actor, side: readonly Actor[]): number {
+  const radius = areaOf(actor.definition)
+  let count = 1
+  for (const other of side) {
+    if (other === candidate || other.pendingDead || other.player !== candidate.player || !burnsOn(other.definition.layer)) continue
+    if (within(candidate, other, radius)) count += 1
+  }
+  return count
+}
+
+/**
+ * **Aiming at a crowd**: the candidates with the most of their own side's units and workers within `actor`'s area
+ * round them, each counting itself, and that count. Mirror-fair by construction: it reads only where bodies stand and
+ * whose they are, never an order. Cheap enough for the few units that aim so: each candidate against the units and
+ * workers of its own side.
+ */
+function thickestOf(context: TickContext, actor: Actor, candidates: readonly Actor[]): { candidates: Actor[]; crowd: number } {
+  const bySide = new Map<string, Actor[]>()
+  for (const other of context.actors) {
+    if (other.pendingDead || !burnsOn(other.definition.layer)) continue
+    const side = bySide.get(other.player)
+    if (side === undefined) bySide.set(other.player, [other])
+    else side.push(other)
+  }
+  let best = 0
+  let thickest: Actor[] = []
+  for (const candidate of candidates) {
+    const crowd = crowdRound(actor, candidate, bySide.get(candidate.player) ?? [])
+    if (crowd > best) {
+      best = crowd
+      thickest = [candidate]
+    } else if (crowd === best) thickest.push(candidate)
+  }
+  return { candidates: thickest, crowd: best }
+}
+
+/** One actor's choice this tick, before it is applied: its candidates, and the one it chose, if any (with the crowd
+ *  round it, for a unit that aims at one). */
+type Choice = { actor: Actor; candidates: readonly Actor[]; selection: { target: Actor; distance: number; crowd?: number } | null }
 
 export function perception(context: TickContext): void {
   // Each actor chooses among what it can see (the nearest, then the one it holds, the weakest, a draw).
@@ -170,6 +230,7 @@ export function perception(context: TickContext): void {
         targetOrdinal: selection.target.ordinal,
         distance: selection.distance,
         score: selection.distance,
+        ...(selection.crowd === undefined ? {} : { crowd: selection.crowd }),
       })
     }
   }
@@ -194,7 +255,9 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   const { actor, candidates, selection } = choice
   if (selection === null) return null
   const heading = targetFor(context, actor) === null && headsForNexus(actor, candidates)
-  if (actor.definition.attack?.kind !== "melee") {
+  // A unit that aims at a crowd keeps the crowd it chose, as a shot keeps the nearest: by range, passing over one it
+  // cannot reach for the thickest it can.
+  if (actor.definition.attack?.kind !== "melee" || actor.definition.aim === "crowd") {
     if (walkTo(routes, actor, selection.target) !== UNREACHABLE) return selection
     const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && walkTo(routes, actor, candidate) !== UNREACHABLE)
     return reachableOnes.length > 0 ? selectTarget(context, actor, reachableOnes) : (breach(routes, actor, selection.target) ?? selection)

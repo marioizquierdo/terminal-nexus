@@ -184,8 +184,8 @@ export type ContentDef = Readonly<{
   targetPreference?: readonly EntityLayer[]
   /**
    * How this unit chooses among the enemies it could target, when not the nearest: `"crowd"` takes the one with the
-   * most enemies of its own side within the unit's area (its `attack.splash` or `burn` radius, or its
-   * `detonation`'s), nearest first on a tie, then as `selectTarget` breaks any tie. The bomber and the mortar aim so
+   * most units and workers of its own side within the unit's area (its `attack.burn` radius, else its `splash`
+   * radius, else its `detonation`'s), nearest first on a tie, then as `selectTarget` breaks any tie. The bomber and the mortar aim so
    * (the owner, 2026-10-21: "things that could deal more area damage, affecting a lot of units if they are put
    * together"). Absent: the nearest, as every unit always has.
    */

@@ -170,6 +170,7 @@ export function entryProblems(entry: ContentEntry): string[] {
   const reaches: Readonly<Record<string, number | undefined>> = {
     "attack range": entry.attack?.range,
     "splash radius": entry.attack?.splash?.radius,
+    "burn radius": entry.attack?.burn?.radius,
     "detonation radius": entry.detonation?.radius,
     "detonation trigger": entry.detonation?.triggerRange,
     "construction radius": entry.constructionRadius,
@@ -179,6 +180,11 @@ export function entryProblems(entry: ContentEntry): string[] {
   for (const [what, reach] of Object.entries(reaches)) {
     if (reach !== undefined && reach !== 1 && reach % 2 !== 0) problems.push(`${whose}'s ${what} is ${reach}: a reach is 1, which is touching, or even, a whole number of rows`)
   }
+  // A crowd is counted within the unit's area (`areaOf`, src/pulse/perception.ts): a unit with none has no crowd to aim at.
+  if (entry.aim === "crowd" && entry.attack?.burn === undefined && entry.attack?.splash === undefined && entry.detonation === undefined) {
+    problems.push(`${whose} aims at a crowd, and has no area to count one in: a splash, a burn or a detonation`)
+  }
+  if (entry.attack?.burn !== undefined && entry.attack.kind === "heal") problems.push(`${whose} heals, and a heal never sets the ground burning`)
   if (entry.attack?.kind === "melee" && entry.attack.range !== 1) problems.push(`${whose}'s melee range is ${entry.attack.range}: melee reaches what touches it, 1`)
   return problems
 }

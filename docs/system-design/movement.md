@@ -112,6 +112,7 @@ Every way a unit moves is one of three things: **a new goal** for the same field
 | Leaving a roof | A goal: the nearest ground off its side's roofs, or its route along them (the "Way off the roof" Experiment) | Yes |
 | Fleeing | A different field: the walk from every threat, turned into a "safety map" and walked downhill, so it runs from all threats into open ground, not into a corner | Yes (workers) |
 | Pushed or pulled | Not a step: moved a tile at a time while its body fits, its credit untouched (`displace`) | Yes (the bulwark's Shove) |
+| Going round burning ground | A weight: an anchor whose body covers a burning tile weighs four times its ground in the field, while it burns; a step's credit is the ground's own | Yes (the mortar's fire) |
 | The raid's trail in the Build Phase | The same field, walked ahead of time over the plan | Yes |
 
 ## 7. Where modifiers plug in
@@ -129,9 +130,10 @@ is built; this is where each would go, so that adding one is small.
   Because the field already holds the way round rock, a leap never lands on the wrong side of a wall.
 - **Faster or slower units**: not routing. Movement credit (a unit's rate and the ground's weight) decides how often a
   unit steps; an aura or a power that hastes changes the rate.
-- **Ground that costs more** (burning ground, mud, a power's slowing field): a *weight*. A step onto it costs more in
-  credit and in the field, so routes go round it when that is quicker and cross it when it is not — scrub already
-  works this way.
+- **Ground that costs more** (mud, a power's slowing field): a *weight*. A step onto it costs more in credit and in
+  the field, so routes go round it when that is quicker and cross it when it is not — scrub already works this way.
+  Burning ground is built, as a weight in the field alone (section 6): a route goes round fire, and a unit that
+  crosses it does so at its own pace.
 - **Ground no one may cross** (a power's wall): a *wall* in the ground for the ticks it lasts.
 - **Gathering before marching** (a beacon, the backlog's idea): a *goal* — the beacon's tiles — held until enough of
   the army stands there, then the next goal; a formation is where each unit stands round it.

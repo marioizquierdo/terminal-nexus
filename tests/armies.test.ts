@@ -130,6 +130,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     "barracks structure.citizen.barracks 40",
     "depot structure.citizen.depot 30",
     "garrison structure.citizen.garrison 100",
+    "battery structure.citizen.battery 50",
   ])
   assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [["War Chest", "Adds 2000 resources to spend.", "+2000"]])
   assert.deepEqual(citizens?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
@@ -170,10 +171,11 @@ test("a Commander army defines its Commander as data: her unit's numbers, her ca
   // A faction defines what it adds to the engine's bench roster, and names the rest by id.
   assert.ok(citizen.content.includes("unit.citizen.trooper"))
   assert.ok(citizen.content.some((item) => typeof item === "object" && item.id === "structure.citizen.garrison"))
-  // What each army can field: its own cards and what it requires, never another faction's or Commander's.
+  // What each army can field: its own cards and what it requires, never another faction's or Commander's (the
+  // Battery and the Fuse Shed reach every Commander of their faction since the mortar and the bomber came, step 16K).
   assert.deepEqual(
     ARMIES.arsenals["vasse"]?.buildings.map((card) => card.id),
-    ["hatchery", "turret", "barracks", "depot", "garrison", "aid-station"],
+    ["hatchery", "turret", "barracks", "depot", "garrison", "battery", "aid-station"],
   )
   assert.deepEqual(
     ARMIES.arsenals["averno"]?.powers.map((card) => card.id),
@@ -187,7 +189,7 @@ test("a Commander army defines its Commander as data: her unit's numbers, her ca
     ["scrap-rush ravel", "hot-shift ravel", "short-fuses ravel", "raider-contract ravel", "runner-crew ravel"],
   )
   assert.ok((ARMIES.arsenals["dob"]?.powers ?? []).every((card) => card.from === undefined), "Dob's own faction's cards are foreign to him")
-  assert.deepEqual(ARMIES.arsenals["dob"]?.buildings.map((card) => card.id), ["hatchery", "turret", "den", "sling-pit", "stash", "chop-shop"])
+  assert.deepEqual(ARMIES.arsenals["dob"]?.buildings.map((card) => card.id), ["hatchery", "turret", "den", "sling-pit", "stash", "chop-shop", "fuse-shed"])
   assert.deepEqual(
     ARMIES.arsenals["dob"]?.powers.map((card) => card.id),
     ["war-chest", "scrap-rush", "hot-shift", "short-fuses", "rigged-charges", "lucky-scrap", "hot-dice", "hired-guns"],
@@ -477,8 +479,8 @@ test("the loader refuses, by name and all at once: requires unknown or in a circ
 })
 
 test("what a building spawns is its own, on its card: the loader refuses by name a unit it cannot be, a number that is not a whole one above zero, two cards spawning one building two ways, and a mission still listing what trains", () => {
-  // The game's own: the Barracks's four troopers, the Garrison's four pikemen and the Hatchery's three swarmers, one
-  // wave a round each.
+  // The game's own: the Barracks's four troopers, the Garrison's four pikemen, the Battery's two mortars and the
+  // Hatchery's three swarmers, one wave a round each (the Battery since the mortar came, step 16K).
   const cards = Object.fromEntries(([...all.buildings, ...citizen.buildings] as readonly { id: string; spawns?: object }[]).map((card) => [card.id, card.spawns]))
   assert.deepEqual(cards, {
     barracks: { unit: "unit.citizen.trooper", perWave: 4, waves: 1, secondsBetween: 10 },
@@ -486,6 +488,7 @@ test("what a building spawns is its own, on its card: the loader refuses by name
     turret: undefined,
     depot: undefined,
     garrison: { unit: "unit.citizen.pikeman", perWave: 4, waves: 1, secondsBetween: 10 },
+    battery: { unit: "unit.citizen.mortar", perWave: 2, waves: 1, secondsBetween: 10 },
   })
   const spawns = (unit: string, extra: object = {}): object => ({ unit, perWave: 2, waves: 1, secondsBetween: 10, ...extra })
   const problems = problemsWithGame({
@@ -594,7 +597,7 @@ test("a unit an army defines as data is checked by path: its numbers, its glyph 
   })
   assert.deepEqual(problems, [
     'army "data": content[unit.test.heavy].maxHp should be a whole number above zero, not 0',
-    'army "data": content[unit.test.heavy] has "speed", which is not one of its fields ("id", "layer", "size", "maxHp", "card", "glyph", "short", "movementRate", "speedTier", "attack", "collidesWith", "behavior", "salvage", "detonation", "nexus", "commander", "roundsOut", "engageRange", "targetLayers", "targetPreference", "spawn", "splitOnDeath", "constructionRadius", "supplyProvided", "mends", "supplyCost", "abilities", "notes")',
+    'army "data": content[unit.test.heavy] has "speed", which is not one of its fields ("id", "layer", "size", "maxHp", "card", "glyph", "short", "movementRate", "speedTier", "attack", "collidesWith", "behavior", "salvage", "detonation", "nexus", "commander", "roundsOut", "engageRange", "targetLayers", "targetPreference", "aim", "spawn", "splitOnDeath", "constructionRadius", "supplyProvided", "mends", "supplyCost", "abilities", "notes")',
     'army "data": the content "unit.test.wide" is 2 wide and its glyph\'s row 1 is 1',
     'army "data": the content "unit.test.leader" is a Commander, and its card needs pronouns',
     'army "data": the content "unit.test.sitter" sits rounds out, and only a Commander does',
