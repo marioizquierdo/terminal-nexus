@@ -68,6 +68,21 @@ export type DomainEvent =
       }>)
   | (Base &
       Readonly<{
+        /**
+         * A marcher that was yielding to its army made way for an ally held up behind it (`march.ts`, `intents.ts`):
+         * it swaps tiles with the ally (`"swap"`), or, the ally too big to swap with, takes its own step forward out of
+         * the way (`"release"`). Said only when it makes way, never for the ticks it waits.
+         */
+        kind: "march.made-way"
+        entity: string
+        ordinal: number
+        /** The ally it made way for. */
+        ally: string
+        allyOrdinal: number
+        how: "swap" | "release"
+      }>)
+  | (Base &
+      Readonly<{
         kind: "move.intended"
         entity: string
         ordinal: number
@@ -294,6 +309,7 @@ export const DOMAIN_EVENT_KINDS: readonly DomainEventKind[] = [
   "target.selected",
   "target.lost",
   "behavior.flee",
+  "march.made-way",
   "move.intended",
   "move.contested",
   "move.blocked",

@@ -249,7 +249,11 @@ test("at 80x24 the result's words are never cut off, whichever way the Pulse end
 })
 
 test("the survivors are drawn walking home, and home when the walk ends", () => {
-  const played = victorious()
+  // The first of the defence's buildings alone: a Pulse whose survivors end far from home. With the full defence, once
+  // the raid's runners went for what stands behind the front (the march's backliners), its one survivor ended a tile
+  // from home, too near for a walk to have a middle.
+  const played = play({ plan: [DEFENCE[0]!] })
+  at(played, 0)
   const moments = times(played)
   const moves = played.pulse.recall.moves
   assert.ok(moves.length > 0, "nobody survived to walk")

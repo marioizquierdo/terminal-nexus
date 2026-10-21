@@ -1,0 +1,78 @@
+{
+  "id": "march-narrow-gap",
+  "name": "March: yielding in a one-wide corridor never deadlocks - troopers swap past marksmen, a raider releases one",
+  "notes": "A wall of rock with two corridors one tile tall, eight rows apart, each 32 columns long. In the north corridor three troopers walk behind two marksmen; in the south one a raider, three tiles wide, walks behind a marksman. The marksmen yield to the melee behind them, which cannot step round them: each trooper swaps tiles with the marksman in its way, and the raider, too wide to swap, releases its marksman to step on ahead of it. Done when every unit is through and the Nexus falls, with no unit standing still for good.",
+  "grid": {
+    "width": 64,
+    "height": 13
+  },
+  "seed": 1,
+  "pulseTicks": 2400,
+  "terrain": [
+    "..............################################..................",
+    "..............################################..................",
+    "................................................................",
+    "..............################################..................",
+    "..............################################..................",
+    "..............################################..................",
+    "..............################################..................",
+    "..............################################..................",
+    "..............################################..................",
+    "..............################################..................",
+    "................................................................",
+    "..............################################..................",
+    "..............################################.................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 3,
+        "y": 2
+      },
+      "rows": [
+        "             ttt mm",
+        "",
+        "",
+        "",
+        "n",
+        "",
+        "",
+        "",
+        "              r   m"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "m": {
+          "content": "unit.citizen.marksman"
+        },
+        "r": {
+          "content": "unit.ravel.raider"
+        },
+        "n": {
+          "content": "structure.bench.nexus"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 60,
+        "y": 6
+      },
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.bench.nexus"
+        }
+      }
+    }
+  }
+}

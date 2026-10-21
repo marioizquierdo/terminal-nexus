@@ -221,19 +221,21 @@ test("the named scenario is the same every run, and on both runtimes, whatever s
 // runners making sure she falls in round 1, a row counting two columns in every distance and step, and every step
 // taking whole beats, one across and two up or down. Round 1 is the same whatever she sits out; from round 2 on,
 // Vasse, back beside the Nexus, fights in it.
+// Pinned again when the runners came to march as backliners, going for what shoots near them (Vasse among it) before
+// the troopers in their way.
 const PINNED_ROUNDS = [
-  "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
-  "a77f8ba8161e9c05f30ad4f6e30ef7e72d7c3125dfd8d38b923d5eacd950e148",
-  "2341933382f9101ba34c9d7105853a860cafadfbb3966bc00ee36cee1ea29899",
+  "1b22dc11b4b039d6193dac2a12fd7599a0304f4f009c3dcdf66eaa69167ee6ff",
+  "c9c44bab3260c7b6cd54511bb9797174ec5b671ebeccab3b2b6bbbc32548abf1",
+  "d2b4f778631d6f209379f14ea7342422e5570d1878d5276c0bd3ef83e2065a4c",
 ]
 
 // The same three rounds with a test-only Vasse who sits one round out: the rule as it stood before Vasse came back at
 // once. Both sets pinned again when every tie came to go by what a unit faces, then a draw (no side wins by where it
-// stands), and when units came to walk by routes.
+// stands), when units came to walk by routes, and when the runners came to march as backliners.
 const PINNED_SITTING_OUT = [
-  "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
-  "514a6ea0e399d6c4fab50a87ab3429c1edcc28451f75e5186fcd06236ed4a9b3",
-  "444c6f2b73ea314a1972c1564777935f759e7b854bd3fedccc6001ca37b6725a",
+  "1b22dc11b4b039d6193dac2a12fd7599a0304f4f009c3dcdf66eaa69167ee6ff",
+  "5625dc5b2dff47d5a9151dc7be03f722cc48026d1f665d2559bb20b7308b5189",
+  "cc2dbe18e270cdf08ad43f492f8ebf168609f20b5a8db22c9fcde348f711b301",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

@@ -6,6 +6,9 @@
 // (`routes.ts`). The second has each walker read its route and declare its steps, best first: it walks its distance
 // field downhill (`src/routing/`), so it goes round rock, out of pockets and round what stands still, and a step that
 // leaves as long a walk as another goes by the turn from the way it faces its goal, then a seeded draw.
+//
+// A marcher that yields to its army this tick (`march.ts`) declares no step of its own: it waits, and an ally held up
+// behind it swaps with it, or, too big to swap, releases it to take its own best step out of the way.
 
 import { directionOf, nearestFootprintTile, step, tilesOf, footprintDistance } from "../grid/coords.ts"
 import type { Coord, Direction } from "../grid/types.ts"
@@ -17,8 +20,10 @@ import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { StepChoice } from "./movement.ts"
 import { accrueCredit, canStep, choiceCost, stepCost } from "./movement.ts"
 import type { MovementRate } from "../content/types.ts"
+import type { RankedStep } from "../routing/index.ts"
 import type { RouteGoal } from "./routes.ts"
 import { purposeOf, TickRoutes } from "./routes.ts"
+import { moveStateOf } from "./march.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { blockReasonFor, distanceBetween, drawAmong, maskForActor, resolveTarget } from "./shared.ts"
 import { areaGoal, gatheredAt } from "./target.ts"
@@ -46,6 +51,8 @@ type Plan = Readonly<{
   route: RouteGoal | null
   /** Its side's target, when that is where it heads. */
   area: TargetArea | null
+  /** Whether it yields to its army this tick (`March.yielding`): it waits, unless an ally behind it needs its tile. */
+  yielding?: true
 }>
 
 /** Who walks this tick and toward what (`purposeOf`). Credit accrues here for every actor that moves at all, walking
@@ -73,11 +80,13 @@ function plans(context: TickContext): Plan[] {
       continue
     }
     const goal = purpose.goal
+    // A marcher ahead of its place in the army waits this tick (`march.ts`).
+    const yielding = moveStateOf(context, actor, purpose) === "yielding" ? ({ yielding: true } as const) : {}
     if (goal.kind === "area") {
       const toward = areaGoal(actor.anchor, actor.definition.footprint, goal.area, maskForActor(context, actor))
-      planned.push({ actor, heading: "toward", toward, route: goal, area: goal.area })
+      planned.push({ actor, heading: "toward", toward, route: goal, area: goal.area, ...yielding })
     } else if (goal.kind === "ground") planned.push({ actor, heading: "toward", toward: goal.toward, route: goal, area: null })
-    else planned.push({ actor, heading: "toward", toward: movementGoal(actor, goal.target), route: goal, area: null })
+    else planned.push({ actor, heading: "toward", toward: movementGoal(actor, goal.target), route: goal, area: null, ...yielding })
   }
   return planned
 }
@@ -109,11 +118,17 @@ export function intents(context: TickContext): Intent[] {
     return found
   }
   const held: Held[] = []
+  /** The marchers that yield this tick, by ordinal: they wait, unless an ally held up behind one needs its tile. */
+  const yielders = new Map<number, Plan>()
 
   // First, every walker that can pay for a step declares the best one it fits; the rest are held.
   for (const plan of planned) {
     const { actor, heading, toward, route, area } = plan
     const rate = actor.definition.movementRate
+    if (plan.yielding === true) {
+      yielders.set(actor.ordinal, plan)
+      continue
+    }
     if (rate === undefined || !canStep(actor.moveCredit, rate)) continue
 
     const mask = maskForActor(context, actor)
@@ -129,7 +144,7 @@ export function intents(context: TickContext): Intent[] {
       wanted = fled.wanted
     } else {
       const facing = desiredDirection(actor, toward, heading)
-      const walked = walk(context, routes.fieldOf(actor, route), routes, actor, toward, facing, (to) => mask.footprintFits(to, actor.definition.footprint))
+      const walked = walk(context, routes.fieldOf(actor, route), routes, actor, toward, facing, (to) => mask.footprintFits(to, actor.definition.footprint), bandOf(context, actor))
       choices = walked.choices
       wanted = walked.wanted
       noRoute = walked.noRoute
@@ -162,6 +177,7 @@ export function intents(context: TickContext): Intent[] {
   // a walker that will step on soon waits: walking round a queue and back would pace. The rest wait, and say why.
   const heldBy = new Map(held.map((entry) => [entry.plan.actor.ordinal, entry]))
   const swapped = new Set<number>()
+  if (yielders.size > 0) makeWay(context, routes, declared, held, yielders, swapped)
   for (const entry of held) {
     const actor = entry.plan.actor
     if (swapped.has(actor.ordinal) || entry.noRoute || typeof entry.blocker !== "number") continue
@@ -204,6 +220,82 @@ export function intents(context: TickContext): Intent[] {
     })
   }
   return declared
+}
+
+/** How a marcher orders its equally good steps: by the band along its side's guide line (`March.bandOrder`). */
+function bandOf(context: TickContext, actor: Actor): ((groups: RankedStep[][]) => RankedStep[][]) | undefined {
+  const march = context.march
+  if (march === undefined || !march.marching.has(actor.ordinal)) return undefined
+  return (groups) => march.bandOrder(actor, groups)
+}
+
+/**
+ * **Yielding without a deadlock.** A marcher that yields is no wall to the tick's routes, so an ally may be held up
+ * behind it. Each yielder an ally is held up by makes way, once: it **swaps** with an ally of one tile on its own layer
+ * that wants its tile — the ally steps forward onto it, the yielder back onto the ally's, as two allies that want each
+ * other's tile do — when both can pay for the step and the yielder may stand where the ally stood (never back onto its
+ * own roof; one such ally drawn, when several want it); and an ally that cannot swap with it, a bigger body, **releases**
+ * it: it takes its own best step forward this tick, out of the way. A yielder no one is held up by waits.
+ */
+function makeWay(context: TickContext, routes: TickRoutes, declared: Intent[], held: readonly Held[], yielders: ReadonlyMap<number, Plan>, swapped: Set<number>): void {
+  const waiting = new Map<number, Held[]>()
+  for (const entry of held) {
+    if (entry.noRoute || typeof entry.blocker !== "number" || !yielders.has(entry.blocker)) continue
+    const list = waiting.get(entry.blocker)
+    if (list === undefined) waiting.set(entry.blocker, [entry])
+    else list.push(entry)
+  }
+  for (const [ordinal, behind] of [...waiting].sort((a, b) => a[0] - b[0])) {
+    const plan = yielders.get(ordinal) as Plan
+    const yielder = plan.actor
+    const allies = behind.filter((entry) => entry.plan.actor.player === yielder.player)
+    if (allies.length === 0) continue
+    const rate = yielder.definition.movementRate
+    if (rate === undefined) continue
+    const one = (actor: Actor): boolean => actor.definition.footprint.length === 1
+    // It steps back only onto ground it may stand on, the ally aside: never back onto its own roof.
+    const mask = maskForActor(context, yielder)
+    const fitsBack = (ally: Actor): boolean => {
+      const blocker = mask.footprintBlockerAt(ally.anchor, yielder.definition.footprint)
+      return blocker === null || blocker === ally.ordinal
+    }
+    const swappers = allies.filter(
+      (entry) =>
+        one(entry.plan.actor) &&
+        one(yielder) &&
+        entry.plan.actor.definition.layer === yielder.definition.layer &&
+        entry.desired.x === yielder.anchor.x &&
+        entry.desired.y === yielder.anchor.y &&
+        entry.plan.actor.moveCredit >= entry.cost &&
+        fitsBack(entry.plan.actor),
+    )
+    const ally = drawAmong(context, swappers)
+    if (ally !== undefined) {
+      // Back onto the ally's tile: what that step costs it, as any step.
+      const back = ally.plan.actor.anchor
+      const direction = directionOf(yielder.anchor, back, yielder.facing)
+      const cost = stepCost(rate, direction, weightAt(context.index.grid, yielder.definition.footprint, back, terrainRuleOf(yielder)))
+      if (yielder.moveCredit < cost) continue
+      swapped.add(ally.plan.actor.ordinal)
+      swapped.add(ordinal)
+      madeWay(context, yielder, ally.plan.actor, "swap")
+      declareSwap(context, declared, ally, { plan, desired: back, cost, blocker: ally.plan.actor.ordinal, noRoute: false })
+      continue
+    }
+    // Too big to swap with it: the yielder takes its own best step forward, out of the way.
+    if (plan.route === null || !canStep(yielder.moveCredit, rate)) continue
+    const facing = desiredDirection(yielder, plan.toward, plan.heading)
+    const forward = walk(context, routes.fieldOf(yielder, plan.route), routes, yielder, plan.toward, facing, (to) => mask.footprintFits(to, yielder.definition.footprint), bandOf(context, yielder))
+    const first = forward.choices[0]
+    if (first === undefined || yielder.moveCredit < choiceCost(rate, first)) continue
+    madeWay(context, yielder, (allies[0] as Held).plan.actor, "release")
+    declareStep(context, declared, plan, forward.choices)
+  }
+}
+
+/** Says that `yielder` made way for `ally` (`march.made-way`): only then, never for the ticks it waits. */
+function madeWay(context: TickContext, yielder: Actor, ally: Actor, how: "swap" | "release"): void {
+  context.events.push({ kind: "march.made-way", tick: context.tick, entity: yielder.id, ordinal: yielder.ordinal, ally: ally.id, allyOrdinal: ally.ordinal, how })
 }
 
 /**
@@ -316,6 +408,7 @@ function walk(
   toward: Coord,
   facing: Direction,
   fits: (to: Coord) => boolean,
+  order?: (groups: RankedStep[][]) => RankedStep[][],
 ): Readonly<{ choices: StepChoice[]; wanted: Coord | null; noRoute: boolean }> {
   let field = routeField
   if (field.distanceAt(actor.anchor) === UNREACHABLE) {
@@ -325,7 +418,8 @@ function walk(
   }
   const choices: StepChoice[] = []
   let wanted: Coord | null = null
-  for (const group of rankSteps(field, actor.anchor, facing)) {
+  const ranked = rankSteps(field, actor.anchor, facing)
+  for (const group of order === undefined ? ranked : order(ranked)) {
     const downhill = group.filter((candidate) => candidate.downhill)
     if (downhill.length === 0) continue
     wanted ??= downhill[0]?.to ?? null

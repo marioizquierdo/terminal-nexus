@@ -40,7 +40,9 @@ const AIR_UNIT_COLLISIONS = ["air"] as const
 
 export const RAVEL_CONTENT: readonly ContentDef[] = [
   {
-    // Fast, fragile, first. It dies to anything that connects and it usually connects first.
+    // Fast, fragile, first. It dies to anything that connects and it usually connects first. A backliner (the owner,
+    // 2026-10-21: "backliner (tries to go beyond the enemy line)"): it marches ahead of no one's pace and waits on no
+    // line, and goes for the enemy's shooters near it before its front.
     id: "unit.ravel.runner",
     short: "runner",
     layer: "units",
@@ -56,6 +58,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     behavior: "advance",
     salvage: 8,
     detonation: { radius: 1, damage: 4 },
+    line: "backliner",
   },
   {
     // The three-tile raider the design draws as `>x<`. It beats a trooper one to one, cannot turn a
