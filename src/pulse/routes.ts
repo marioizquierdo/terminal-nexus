@@ -280,12 +280,20 @@ export class TickRoutes {
     const key = `${groundKey}|patch ${patch}|nearest ${toward.x},${toward.y}`
     let entry = this.nearest.get(key)
     if (entry === undefined) {
-      // Every anchor of the patch measured, row by row, and the nearest kept: a patch can be most of the Grid, so no
-      // anchor is made but the nearest.
+      // The anchors of the patch measured row by row, the rows that could come nearest first: once a row could come
+      // no nearer than the nearest found, no row after it can either, and the rest of the Grid is left unmeasured.
+      // A patch can be most of the Grid, and this is asked for every unit that cannot reach its goal.
+      const rowBound = (y: number): number => {
+        let bound = UNREACHABLE
+        for (const offset of body) bound = Math.min(bound, ROW_DISTANCE * Math.abs(y + offset.y - toward.y))
+        return bound
+      }
+      const rows = Array.from({ length: ground.height }, (_, y) => y).sort((a, b) => rowBound(a) - rowBound(b) || a - b)
       let nearest: Coord[] = []
       let bestNear = UNREACHABLE
-      for (let y = 0, index = 0; y < ground.height; y += 1) {
-        for (let x = 0; x < ground.width; x += 1, index += 1) {
+      for (const y of rows) {
+        if (rowBound(y) > bestNear) break
+        for (let x = 0, index = y * ground.width; x < ground.width; x += 1, index += 1) {
           if (patches[index] !== patch) continue
           const near = nearestOf(x, y, body, toward)
           if (near < bestNear) {
@@ -294,6 +302,8 @@ export class TickRoutes {
           } else if (near === bestNear) nearest.push({ x, y })
         }
       }
+      // In reading order, as they were found when every row was measured north to south.
+      nearest.sort((a, b) => a.y - b.y || a.x - b.x)
       entry = { field: new DistanceField(ground, nearest, undefined, patches), anchors: new Set(nearest.map((anchor) => anchor.y * ground.width + anchor.x)) }
       this.nearest.set(key, entry)
     }
