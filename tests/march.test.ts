@@ -126,11 +126,11 @@ test("march-narrow-gap: troopers swap past marksmen in a one-wide corridor, a ra
   // releases its marksman.
   assert.ok(madeWay.filter((event) => event.how === "swap" && event.ally.includes("trooper")).length >= 6)
   assert.ok(madeWay.some((event) => event.how === "release" && event.ally.includes("raider")))
-  // Every trooper leaves the north corridor (it ends at column 45) before either marksman does.
+  // Every trooper leaves the north corridor (it ends at column 37) before either marksman does.
   const out = (contentId: string): number[] =>
     of(states[0] as MatchState, "A", contentId)
       .filter((entity) => entity.anchor.y === 2)
-      .map((entity) => states.findIndex((state) => (state.entities.find((other) => other.ordinal === entity.ordinal)?.anchor.x ?? 0) > 45))
+      .map((entity) => states.findIndex((state) => (state.entities.find((other) => other.ordinal === entity.ordinal)?.anchor.x ?? 0) > 37))
   assert.ok(Math.max(...out("unit.citizen.trooper")) < Math.min(...out("unit.citizen.marksman")), `troopers out at ${out("unit.citizen.trooper")}, marksmen at ${out("unit.citizen.marksman")}`)
 })
 

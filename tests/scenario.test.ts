@@ -14,6 +14,7 @@ import { resolvePulse } from "../src/pulse/index.ts"
 import { ENGAGE_RANGE } from "../src/pulse/target.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 import { creditsEarned } from "../src/match/index.ts"
+import { VIEWPORT_TILES } from "../src/view/compose.ts"
 
 function baseScenario(): ScenarioDefinition {
   return {
@@ -280,6 +281,18 @@ test("every scenario file loads, and its id matches its file name", async () => 
     assert.equal(`${scenario.id}.map.json`, name, `${name} declares the id "${scenario.id}"`)
     assert.doesNotThrow(() => loadScenario(scenario, { registry: FIXTURE_REGISTRY }), name)
   }
+})
+
+test("every scenario file fits the engine tool's Grid pane, so no map is cut or drawn over the side panel", async () => {
+  // The engine tool draws one fixed composition: a smaller Grid is centred in the pane, a bigger one is cut and its
+  // columns past the pane drawn over the panel.
+  const misfits: string[] = []
+  for (const name of scenarioFiles()) {
+    const { grid } = await loadScenarioFile(name)
+    const { width, height } = "preset" in grid ? presetDimensions(grid.preset) : grid
+    if (width > VIEWPORT_TILES.width || height > VIEWPORT_TILES.height) misfits.push(`${name} is ${width} x ${height}`)
+  }
+  assert.deepEqual(misfits, [], `over the ${VIEWPORT_TILES.width} x ${VIEWPORT_TILES.height} pane: ${misfits.join("; ")}`)
 })
 
 test("melee-kill: a defender dies to melee and the attackers survive", async () => {

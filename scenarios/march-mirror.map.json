@@ -3,17 +3,17 @@
   "name": "March: two mirrored armies march one corridor at each other, a mirror tick for tick",
   "notes": "One corridor, one row tall, with each side's Grid Nexus at its end and the same army before it - two marksmen ahead of two troopers - the east the west's reflection. Each side's shooters yield to its troopers as they march; nothing is tied, so nothing is drawn, and the battle stays a mirror. Done when both sides' lines arrive as mirror images.",
   "grid": {
-    "width": 70,
+    "width": 48,
     "height": 5
   },
   "seed": 1,
   "pulseTicks": 400,
   "terrain": [
-    "######################################################################",
-    "....##############################################################....",
-    "......................................................................",
-    "....##############################################################....",
-    "######################################################################"
+    "################################################",
+    "....########################################....",
+    "................................................",
+    "....########################################....",
+    "################################################"
   ],
   "terrainLegend": {
     ".": "terrain.plain",
@@ -46,7 +46,7 @@
     },
     "B": {
       "at": {
-        "x": 56,
+        "x": 34,
         "y": 2
       },
       "rows": [
