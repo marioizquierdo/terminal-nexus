@@ -6,6 +6,12 @@ export type MovementRate = Readonly<{ numerator: number; denominator: number }>
 
 export type AttackKind = "melee" | "ranged" | "heal"
 
+/** A unit's place in its army's formation while it marches (`ContentDef.line`, movement.md). */
+export type FormationLine = "backliner" | "melee" | "short" | "long"
+
+/** The range past which a ranged unit marches in the long line rather than the short (`lineOf`). */
+export const SHORT_RANGE = 4
+
 /**
  * Area damage centred on a point, hitting friend and foe alike — the same `{radius, damage}` shape
  * `ContentDef.detonation` already uses. Pulled out under its own name (during the unit-architecture spike)
@@ -18,6 +24,10 @@ export type AreaDamage = Readonly<{
    *  columns either side and one row up and down. */
   radius: number
   damage: number
+  /** Who it hurts: `"enemies"`, only the other side's (the Citizen mortar's shell, the owner, 2026-10-21: "the
+   *  explosion only deals damage to enemies while the fire becomes a terrain effect that affects everyone"). Absent:
+   *  friend and foe alike, as a Ravel bomber's burst. */
+  hits?: "enemies"
 }>
 
 /** Ground set burning by a landing hit (`AttackDef.burn`): how far round the impact tile, measured as range is; the
@@ -191,6 +201,15 @@ export type ContentDef = Readonly<{
    */
   aim?: "crowd"
   /**
+   * Where this unit marches in its army's formation (movement.md, formation lines): `"melee"` at the front, `"short"`
+   * range behind it, `"long"` range behind that, each yielding to the line ahead while the army marches so it arrives
+   * in order; a `"backliner"` yields to no one and goes for what stands behind the enemy's front. Absent: from its
+   * attack (`lineOf`): a melee reach is `"melee"`, a heal or a range up to 4 `"short"`, a longer one `"long"`. The
+   * owner, 2026-10-21: "we could declare 4 preferred lines: backliner (tries to go beyond the enemy line), melee,
+   * short range and long range."
+   */
+  line?: FormationLine
+  /**
    * While alive, every `intervalTicks` this entity attempts to create one more `contentId` for its
    * own player on a free adjacent tile, holding off whenever `maxAlive` of that content id already
    * live for that player. The spawner rule shape (from the unit-architecture spike) — a combat ability
@@ -309,6 +328,17 @@ export function freshEntityFields(definition: ContentDef): Readonly<{
 export function productionFields(definition: ContentDef): Readonly<{ productionCooldown?: number; produced?: number; owed?: number }> {
   if (definition.production === undefined) return {}
   return { productionCooldown: definition.production.firstTicks, produced: 0, owed: 0 }
+}
+
+/** Where `definition` marches in its army's formation: its own `line`, else from its attack — a melee reach is
+ *  `"melee"`, a heal or a range up to `SHORT_RANGE` `"short"`, a longer one `"long"`; `null` for what has no attack
+ *  (a worker, a building), which keeps to no line. */
+export function lineOf(definition: ContentDef): FormationLine | null {
+  if (definition.line !== undefined) return definition.line
+  const attack = definition.attack
+  if (attack === undefined) return null
+  if (attack.kind === "melee") return "melee"
+  return attack.kind === "heal" || attack.range <= SHORT_RANGE ? "short" : "long"
 }
 
 export function rectFootprint(width: number, height: number): Footprint {

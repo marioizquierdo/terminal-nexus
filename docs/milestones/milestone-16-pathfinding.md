@@ -1,7 +1,7 @@
 # Milestone 16 — Pathfinding
 
 **Status:** CURRENT
-**Current step:** 16K — area damage against a tight army: the Ravel bomber, the Citizen mortar and burning ground.
+**Current step:** 16L — the wrap-up: the mortar, survivors home, the Commander as guide, formation lines.
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
@@ -372,6 +372,32 @@ model players able to choose one strategy or another.
 - [x] **A strategy to choose**: the scripted duel players and a model player's plan may say how tight to build, and
   duels measure a block against an army built apart, with and without the new units.
 - [x] The units to come, from his list, in the backlog for the armies' next pass.
+
+### Step 16L — The wrap-up: the mortar, survivors home, the Commander as guide, formation lines
+
+Mario's last round on the milestone ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)), "a polish
+PR, but actually a pretty difficult one".
+
+- [ ] **The mortar's two parts**: its shell bursts harder, and hurts only the enemy; its fire is shorter (four seconds)
+  and bites harder, and still hurts everyone on it.
+- [ ] **Burning ground drawn lighter**: red and yellow, more of the ground showing through, flickering rather than a
+  steady red.
+- [ ] **Survivors come home to the building that made them**: onto its roof, as near where they came out as there is
+  room, then round it; played with a large army.
+- [ ] **A unit waiting to come out**: what a building owes waits inside it until there is room, units standing idle on
+  its roof make way, and the wait can be seen.
+- [ ] **Faster routes**: the tick's routes profiled on a late, crowded duel, and what is slow made faster, every battle
+  ending as it did.
+- [ ] **The Commander as the army's guide**: while she is in the battle no unit but a backliner marches ahead of her,
+  and the army keeps to a band along her way to the goal; without her, a band along the line from the Nexus to the
+  goal.
+- [ ] **Formation lines**: backliner, melee, short range and long range; while the army marches, each line yields to
+  the one ahead, so it arrives in order; a backliner goes for what stands behind the enemy's front.
+- [ ] **The pathfinding section of the architecture** explains what a unit does by default, as the states it moves
+  through.
+- [ ] **Play strategies for the model players**: one guide of what duels have taught about building, which the model
+  player's brief reads.
+- [ ] Measured again: the formation game and the duels, the claims checked against the events.
 
 ## Waiting on Mario
 
