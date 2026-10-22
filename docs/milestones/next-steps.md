@@ -5,6 +5,10 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Play a Challenge run** (the runs milestone's first step): `./bin/terminal-nexus.ts`, then `2` for Challenge, or
+  `./bin/terminal-nexus.ts --at 'challenge?seed=1'` for a chosen seed. Three battles against Dob Hunter's army on the
+  Crossing, each a duel of up to six rounds; a lost battle ends the run on its summary, and the next run begins.
+  Runs play on the armies as they are: they say nothing about balance yet.
 - **Play the pathfinding milestone's wrap-up** ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)):
   `./bin/grid.ts scenarios/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
   troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/march-guide` (Vasse leads; only a backliner goes

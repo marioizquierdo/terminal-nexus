@@ -144,6 +144,19 @@ autobattlers (see the references below), taken at the size Terminal Nexus's 5–
   the interface's own voice (the system-text exemplars in [`lore.md`](lore.md)) and Commander barks — nothing
   authored per run.
 
+**What is built** (RULE — `src/run/`, `src/cli/run-play.ts`, `tests/run.test.ts`, `tests/run-play.test.ts`). **A run
+battle is a duel** ([`duels.md`](../system-design/duels.md)): the player plans one side on the Build Phase screen — the
+same screen, keys, Nexus Pulse and Battle Round as a campaign level — and the opponent's Commander Army is planned by a
+scripted duel player from its brief, the two plans revealed together. The first run is one act of three battles
+against Dob Hunter's army on the Crossing, six rounds each at most (a battle about four to ten minutes), each battle
+played by a different scripted player (rushing, digging in, balanced) in an order the seed shuffles. A lost battle
+ends the run; a drawn one goes on and is not a win. The army is the Commander's duel package every battle, until the
+run draft changes it. The seed is shown as the run opens and at its end, and a run that ends opens the next on a seed
+it names, so a chain of runs replays from its first seed. The title menu's Challenge row starts one on a seed from the
+clock; `challenge?seed=<n>&commander=<id>` opens a chosen one. Between battles and at the end, a round opens on the
+game's own dialog: how the last battle ended, then the next battle's opponent and rounds; at the end, the whole
+summary. A run is played headless by `npm run duel -- run --seed <n>`, through the same functions the screen uses.
+
 ### 3.3 Skirmish — one battle, any legal army, any opponent — IDEA
 
 One match against a local policy, with every legal Commander Army exposed without campaign completion

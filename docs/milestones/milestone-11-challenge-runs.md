@@ -34,16 +34,16 @@ Small, in order, each finishable on its own.
 
 ### Step 11A — Run skeleton
 
-- [ ] A run's definition from its seed: the player's Commander, and three battles, each against Dob Hunter's Ravel
+- [x] A run's definition from its seed: the player's Commander, and three battles, each against Dob Hunter's Ravel
       army (the "Ravel fixture army" this step first named) on a duel map, with a battle seed of its own.
-- [ ] **A run battle is a duel played on the Build Phase screen**: the player plans one side as in a campaign level
+- [x] **A run battle is a duel played on the Build Phase screen**: the player plans one side as in a campaign level
       (the menu, the Nexus Pulse's hand, the Battle Round), a scripted duel player plans the Commander Army on the
       other; plans reveal together; the battle goes round by round until a Nexus falls or its rounds run out.
-- [ ] A plain "next battle" screen between battles, and a run summary at the end; a lost battle ends the run.
-- [ ] The title menu's Challenge row starts a run, its seed shown; `challenge?seed=<n>` opens one from the command
+- [x] A plain "next battle" screen between battles, and a run summary at the end; a lost battle ends the run.
+- [x] The title menu's Challenge row starts a run, its seed shown; `challenge?seed=<n>` opens one from the command
       line, the scripted playtest and the browser page.
-- [ ] The driver plays the run end to end, headless, through the same functions the screen uses.
-- [ ] Seed determinism is asserted: the same seed and driver script give the same battles, outcomes and summary.
+- [x] The driver plays the run end to end, headless, through the same functions the screen uses.
+- [x] Seed determinism is asserted: the same seed and driver script give the same battles, outcomes and summary.
 
 ### Step 11B — The run draft
 

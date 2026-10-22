@@ -153,6 +153,12 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu
   has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
   (RULE — `tests/title-menu-about-screen.test.ts`, `tests/title-menu-campaign-screen.test.ts`)
+- **Challenge** (`[2]`) starts a run on a seed from the clock and hands the terminal to its Build Phase. Between
+  battles, and at a run's end, the round opens on a dialog in the game's own voice: how the last battle ended, then
+  the next battle's opponent, map and rounds; at the run's end one box holds the whole summary, a paragraph a line.
+  The top bar says `battle 1 of 3 - round 1 of 6`; the Battle Round calls the other side ENEMY; a battle's result
+  reads BATTLE WON, BATTLE LOST or BATTLE DRAWN, with `[enter] Next battle` or `[enter] Run summary`.
+  (RULE — `tests/run-play.test.ts`, `tests/lifecycle-title-menu.test.ts`)
 - **A title menu row that opens a place names its route** ([`routing.md`](routing.md)), and choosing it
   follows that route: `--at settings` and pressing Settings open the same frame, and opening at a place
   leaves its row highlighted for Esc to come back to. (RULE — `tests/route-open.test.ts`)
