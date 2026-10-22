@@ -137,7 +137,19 @@ export type BuildContext = Readonly<{
    * Round screen's number and the top bar's "round 2 of 3". Absent: round 1 of a Build Phase with no
    * mission — every context the tests build by hand.
    */
-  round?: Readonly<{ number: number; of: number }>
+  round?: Readonly<{
+    number: number
+    of: number
+    /** Where the round's match stands in the mode that plays it, when the mode says — a Challenge run's "battle 2 of
+     *  3" — said in the top bar before the round. Absent: a campaign mission's round, which needs no more. */
+    stage?: string
+  }>
+  /**
+   * What the mode playing this round keeps between its rounds — a Challenge run's battles so far and the duel in
+   * play — handed back to the shell untouched, as `carried` is: the reducer and the view never read it, so nothing
+   * below the mode knows which mode it serves. Absent: a campaign mission, whose rounds need nothing more.
+   */
+  mode?: unknown
   /**
    * The resolved state the last round left, after Recall — what the next Pulse starts from, handed back
    * to the shell untouched (the reducer never reads it). `null` or absent for a first round.
