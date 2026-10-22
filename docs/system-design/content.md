@@ -13,6 +13,14 @@ and bounded rule shapes on the record, never from code written per unit.
 `tests/ravel.test.ts`, `src/pulse/victory.ts`); see
 [`pulse.md`](pulse.md).
 
+**A building that carries an upgrade or a mode has a content id of its own** (RULE — `src/content/fitted.ts`,
+`tests/building-upgrades.test.ts`): its base and what it carries, in its card's order
+(`structure.citizen.barracks+production-line`). Its side's registry resolves it from the base with those actions'
+effects applied, and keeps it (`ContentRegistry.fitter`, made by the army loader from the cards). So the kernel, the
+hash, Recall and the opening carry it as any content id, and nothing in the kernel knows a building was upgraded;
+a building that carries nothing keeps its base id, and a state holds the bytes it always did. Art, card words and the
+build menu read the base.
+
 **Modding is a set of seams, not a feature**: keep the places a mod would plug in (definitions are
 data, the registry is built from a list, the kernel takes the registry as an argument) but build no
 loader and no stable SDK (RULE — `AGENTS.md`, which forbids building a mod loader).

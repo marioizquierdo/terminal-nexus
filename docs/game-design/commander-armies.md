@@ -293,6 +293,14 @@ Designed as actions of the same kind, and not built: **a defender inside**, the 
 on the building; **a worker slot**, a nearby worker brought in to speed what it makes, once the worker economy exists.
 An action that spends is priced in credits, like everything on the curve.
 
+**Built** (RULE — `actions` on a building card, `tests/building-upgrades.test.ts`): Hold production as an order on
+every building that makes units; the Barracks's **production line**, 15 credits for one more trooper a wave (half
+again a Barracks's price per trooper per round: a wave that needs no new ground, no build range and no second building
+to guard); the Turret's **heavy rounds**, 10 credits for damage 6 to 9 (a little worse per credit than a second
+Turret, since what it buys is one spot made to hold); and the Turret's two modes, **Nearest first** (as it is written)
+and **Units first** (units before buildings), free to switch. First guesses, not measured. The first building to give
+a mode of its own after the Turret: the Aid Station, mending troops or mending buildings.
+
 **The Commander is worth about the first round's credits** as she first arrives, and grows only through her army's powers and what her lean gives her (section 2.4). Coming back the round after she falls is part of that worth; a Commander who sits rounds out (`roundsOut`) is worth less, and her army is paid for it elsewhere on the curve.
 
 **An army may trade along the curve, never above it** (GUIDANCE). It may take power earlier than the curve gives it — a strong opening — at a price: **power moved one act earlier costs half again as much** from the act it came from, and moved two acts, more than twice as much. It may wait instead and be paid the same rate the other way. After its trades, an army's total over nine rounds is the curve's within about a tenth. So a forward army is ahead in rounds 1 to 3 and must finish by round 6 or 7 before its debt comes due; a holding army is behind early, and its closing is larger than anyone else's; and every army, whatever it leans on, is reading the same table.

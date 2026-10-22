@@ -110,6 +110,25 @@ many a wave, how many waves, the seconds between). `tier` and `requires` place i
 tier 1 requires one of the tier below, standing as the Build Phase opens. Every mode offers the same cards by the same
 rule; a mode decides only which.
 
+**A building's actions** (`actions`, `src/armies/actions.ts`; the rule is
+[`commander-armies.md`](../game-design/commander-armies.md), what changes between rounds). A building card may list
+what a building of it lets the player do in a Build Phase, in the order its card shows them. Each has an `id`, a
+`kind` (`upgrade`, `mode` or `order`) and a `label` of at most 18 glyphs. An **upgrade** has a `cost` and `effects`,
+and is kept by that one building. A **mode** belongs to a `set`; the first of a set is the building as written, and
+changes nothing and costs nothing. An **order** names one of the game's orders (`hold`, Hold production). `effects`
+are Nexus power effects naming this building, the kinds with a building form: `addWaves`, `addPerWave`,
+`modifyAbility`, `modifyAttack`, `setTargetPreference`. `requires` may name the building's own upgrades and buildings
+standing; `notes` says why its numbers are what they are. Keys: the order's own (`z`), then `c v b f` by position, at
+most four upgrades and modes. One card gives a structure its actions.
+
+```json
+"actions": [
+  {"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"},
+  {"id": "production-line", "kind": "upgrade", "label": "Production line", "cost": 15,
+   "effects": [{"addPerWave": {"building": "barracks", "perWave": 1}}]}
+]
+```
+
 ## 3. Nexus powers: a table of effects
 
 A power is a name, one line of description, a rarity and a role for the dealer, and **one effect**. Each kind of
@@ -121,6 +140,9 @@ reader branches on an effect's kind**: the campaign keeps a power with `applyEff
 | --- | --- | --- |
 | `spawnUnits` | `unit`, `count` | Units join at the Nexus as this round's battle starts, and stay. Spent. |
 | `addWaves` | `building`, `waves` | Every building of that card sends more waves a round. |
+| `addPerWave` | `building`, `perWave` | Every building of that card sends more units a wave. |
+| `modifyAttack` | `content`, and `damage`, `range` or `cooldownTicks` | That unit's or building's attack changes by those numbers. |
+| `setTargetPreference` | `content`, `prefer` | That unit or building shoots the layers it prefers first. |
 | `addBuilding` | `building` | The card joins the build menu. |
 | `setDetonation` | `unit`, `detonation` | That unit bursts when it dies. |
 | `modifyAbility` | `content`, `kind`, `add` | That unit's or building's ability of that kind gains the numbers in `add` (Standing Order: `{ "radius": 4 }`). |

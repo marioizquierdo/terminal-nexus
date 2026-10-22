@@ -52,17 +52,17 @@ themselves can have actions ... That is the part that I want to formalize and th
 framework can absorb." The rule is in [`commander-armies.md`](../game-design/commander-armies.md), what changes between
 rounds.
 
-- [ ] A building card in an army file declares its actions, of three kinds: an **upgrade** (bought with credits, kept
+- [x] A building card in an army file declares its actions, of three kinds: an **upgrade** (bought with credits, kept
       by that one building for the rest of the match), a **mode** (one of the building's named states, switched between
       rounds and kept until switched again), and an **order** (for the coming Battle Round only). The loader checks them.
-- [ ] What an upgrade or a mode changes is that building's own content — its attack, its wave, what it trains —
+- [x] What an upgrade or a mode changes is that building's own content — its attack, its wave, what it trains —
       applied to that building alone and to nothing else of its kind; the kernel resolves the battle unchanged.
-- [ ] Hold production is an order of this kind, as it plays today.
-- [ ] Selected in the Build Phase, a building of the player's lists its actions with their keys and prices; an upgrade
+- [x] Hold production is an order of this kind, as it plays today.
+- [x] Selected in the Build Phase, a building of the player's lists its actions with their keys and prices; an upgrade
       it has is said on its card. Never during a Battle Round, and never on a unit.
-- [ ] Recall and the next round carry each building's upgrades and mode; a duel side and a run battle play them too.
-- [ ] First content, to prove it: a Barracks upgrade (its production line: one more trooper a wave) and a Turret
-      upgrade, each this building's alone; a mode shown on bench content until a building that needs one exists.
+- [x] Recall and the next round carry each building's upgrades and mode; a duel side and a run battle play them too.
+- [x] First content, to prove it: a Barracks upgrade (its production line: one more trooper a wave) and a Turret
+      upgrade, each this building's alone; the Turret's two firing modes (it is the bench's own turret, so the modes show in the game).
 
 ### Step 11C — The run draft
 

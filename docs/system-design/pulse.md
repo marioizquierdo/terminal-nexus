@@ -444,8 +444,9 @@ full, a body
 too wide for it, and a unit in the air go to the nearest free ground round it, searched one ring of the Grid's
 distance at a time ([`grid.md`](grid.md), setting a group down), kept off the ground touching any building of its side
 that makes units while there is room elsewhere, so a roof can always empty. The Grid Nexus is never stood on: its
-survivors are set down beside it. A carried unit opens the next Pulse where Recall left it, on its roof included; a
-building planned on it moves it (RULE — `tests/recall-home.test.ts`). A
+survivors are set down beside it. A carried building that the Build Phase upgraded or switched opens the Pulse as its
+new content id (`refits`, [`content.md`](content.md)); its health and place are its own. A carried unit opens the next
+Pulse where Recall left it, on its roof included; a building planned on it moves it (RULE — `tests/recall-home.test.ts`). A
 producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`). **Recall puts out burning ground**
