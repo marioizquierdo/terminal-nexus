@@ -14,6 +14,7 @@
 // stands — never a mechanic the game does not have yet. Lore is a platform, not a plot; the Grid wins.
 
 import { ARMY_CONTENT } from "./army-content.ts"
+import { baseContentId } from "./fitted.ts"
 
 /** A card's words: its name, one line on what it is for, and a few sentences more. */
 export type CardText = Readonly<{
@@ -29,7 +30,7 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.citizen.barracks": {
     title: "Barracks",
     subtitle: "Trains troopers",
-    description: "Trains a wave of troopers, all at once, a few seconds into each Battle Round. They join the fight, and come home to it after.",
+    description: "Trains a wave of troopers, a few seconds into each Battle Round. They fight, and come home to it after.",
   },
   "structure.bench.nexus": {
     title: "Practice Nexus",
@@ -44,7 +45,7 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
   "structure.bench.beamturret": {
     title: "Turret",
     subtitle: "Shoots what comes close",
-    description: "A gun on a single tile. Its beam hits harder the longer it holds one target, up to three times as hard.",
+    description: "A gun on one tile. Its beam hits harder the longer it holds a target.",
   },
 
   // --- Already on the map ---------------------------------------------------------------------------
@@ -124,6 +125,12 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
 export const CARD_TEXT: Readonly<Record<string, CardText>> = {
   ...BUILT_IN_CARD_TEXT,
   ...Object.fromEntries(ARMY_CONTENT.map((content) => [content.definition.id, content.card])),
+}
+
+/** A thing's words by its content id: a building that carries an upgrade or a mode says what its base says
+ *  (`fittedId`), and its card adds what it carries (`src/build/card.ts`). `undefined` for content with no card. */
+export function cardTextFor(contentId: string): CardText | undefined {
+  return CARD_TEXT[baseContentId(contentId)]
 }
 
 /** A Commander's name as a player reads it — her card's title — for the lines that say she fell, is out

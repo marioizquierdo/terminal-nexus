@@ -18,6 +18,7 @@
 // case and let ownership do its own work.
 
 import { ARMY_CONTENT } from "./army-content.ts"
+import { baseContentId } from "./fitted.ts"
 
 /** One entity's body: rows north to south, one character per tile. */
 export type UnitArt = readonly string[]
@@ -153,7 +154,8 @@ export const CONTENT_ART: Readonly<Record<string, UnitArt>> = {
 
 /** The art for a content id, or `undefined` for content nobody has drawn yet. */
 export function artFor(contentId: string): UnitArt | undefined {
-  return CONTENT_ART[contentId]
+  // A building that carries an upgrade or a mode looks like its base (`fittedId`).
+  return CONTENT_ART[baseContentId(contentId)]
 }
 
 /** How many tiles wide and tall a piece of art is. */
@@ -222,7 +224,7 @@ export const DEATH_ART: Readonly<Record<string, readonly UnitArt[]>> = {
 
 /** The death-frame sequence for a content id, or `undefined` for content that has none authored. */
 export function deathFramesFor(contentId: string): readonly UnitArt[] | undefined {
-  return DEATH_ART[contentId]
+  return DEATH_ART[baseContentId(contentId)]
 }
 
 /**
@@ -267,5 +269,5 @@ export const PLACEMENT_ART: Readonly<Record<string, readonly UnitArt[]>> = {
 
 /** The placement frames authored for a content id, or `undefined` (the view derives a generic run). */
 export function placementFramesFor(contentId: string): readonly UnitArt[] | undefined {
-  return PLACEMENT_ART[contentId]
+  return PLACEMENT_ART[baseContentId(contentId)]
 }

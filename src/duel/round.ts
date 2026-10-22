@@ -9,14 +9,15 @@
 // itself, each side on its own content (`PulseContext.sides`).
 
 import type { PowerCard } from "../armies/index.ts"
-import { applyEffect, creditsOf, dealHand } from "../armies/index.ts"
+import { applyEffect, creditsOf, dealHand, fittingsWith, modeIn, modeSet } from "../armies/index.ts"
 import { roundIncome } from "../armies/curve.ts"
 import { defaultValue } from "../build/all-settings.ts"
 import type { BuildContext } from "../build/state.ts"
 import { legalityAt, missingFor } from "../build/state.ts"
 import type { ConstructItem, FieldEntity, PlannedPlacement } from "../build/types.ts"
-import { CARD_TEXT } from "../content/cards.ts"
+import { cardTextFor } from "../content/cards.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
@@ -57,7 +58,7 @@ export function mapOf(state: Pick<DuelState, "setup">): DuelMap {
 export function handOf(state: DuelState, side: Side): PowerCard[] {
   const army = duelArmy(state.sides[side].commander)
   const kept = state.sides[side].kept.flatMap((id) => powerOf(army, id) ?? [])
-  const standing = new Set(army.buildings.filter((card) => standingOf(state, side).some((structure) => structure.contentId === card.structure)).map((card) => card.id))
+  const standing = new Set(army.buildings.filter((card) => standingOf(state, side).some((structure) => baseContentId(structure.contentId) === card.structure)).map((card) => card.id))
   return dealHand({
     pool: army.powers,
     kept,
@@ -219,7 +220,7 @@ function placeAll(
   let spent = 0
   const context = sideBuild(state, side, grid, catalog, registry, credits)
   const formation = plan.formation ?? "zones"
-  const trains = (contentId: string): boolean => catalog.find((item) => item.contentId === contentId)?.spawns !== undefined
+  const trains = (contentId: string): boolean => catalog.find((item) => item.contentId === baseContentId(contentId))?.spawns !== undefined
   const producers: Producer[] =
     formation === "zones"
       ? []
@@ -263,6 +264,98 @@ function placeAll(
   return { planned, spent, built, refused }
 }
 
+/** What a side's building actions did this round (`actOn`). */
+type Acted = Readonly<{
+  /** Its buildings placed this round, each as the Battle Round starts it: carrying what was taken on it. */
+  planned: readonly PlannedPlacement[]
+  /** Its standing buildings whose content the actions changed, and the content id each starts the battle with. */
+  refits: readonly Readonly<{ anchor: Coord; contentId: string }>[]
+  /** The buildings an order holds this round (Hold production). */
+  held: readonly Coord[]
+  spent: number
+  /** What each building's actions cost, by its anchor (`x,y`): refunded with it when a clash takes it away. */
+  costAt: ReadonlyMap<string, number>
+  took: readonly string[]
+  refused: readonly string[]
+}>
+
+/**
+ * **A side's building actions** (`SidePlan.actions`), in order, after its buildings are placed, from the credits they
+ * left — by the Build Phase's rules (`buildingAction`, `src/build/state.ts`): a building of its own at that anchor,
+ * standing or just placed; an action its card has; an upgrade it does not carry yet, whose requirements are met and
+ * whose price is left; a mode not already in force; an order, given. Each building carries what was taken on it as its
+ * content id (`fittedId`), which the opening sets it down as.
+ */
+function actOn(state: DuelState, side: Side, plan: SidePlan, catalog: readonly ConstructItem[], planned: readonly PlannedPlacement[], credits: number): Acted {
+  const army = duelArmy(state.sides[side].commander)
+  const key = (anchor: Readonly<{ x: number; y: number }>): string => `${anchor.x},${anchor.y}`
+  const standing = standingOf(state, side)
+  const now = new Map<string, string>()
+  for (const structure of [...standing, ...planned]) now.set(key(structure.anchor), structure.contentId)
+  const standingIds = new Set(standing.map((structure) => baseContentId(structure.contentId)))
+  const held: Coord[] = []
+  const costAt = new Map<string, number>()
+  const took: string[] = []
+  const refused: string[] = []
+  let spent = 0
+  for (const asked of plan.actions ?? []) {
+    const where = `${asked.action} at ${asked.x},${asked.y}`
+    const contentId = now.get(key(asked))
+    if (contentId === undefined) {
+      refused.push(`${where}: no building of yours stands there`)
+      continue
+    }
+    const base = baseContentId(contentId)
+    const card = army.buildings.find((each) => each.structure === base)
+    const actions = catalog.find((item) => item.contentId === base)?.actions ?? []
+    const action = actions.find((each) => each.id === asked.action)
+    if (action === undefined) {
+      refused.push(`${where}: the ${titleOf(base)} has no such action (${actions.map((each) => each.id).join(", ") || "none"})`)
+      continue
+    }
+    const named = `${action.id} on ${card?.id ?? base} at ${asked.x},${asked.y}`
+    if (action.kind === "order") {
+      held.push({ x: asked.x, y: asked.y })
+      took.push(named)
+      continue
+    }
+    const fittings = fittingsOf(contentId)
+    if (action.kind === "upgrade" && fittings.includes(action.id)) {
+      refused.push(`${where}: it has it already`)
+      continue
+    }
+    if (action.kind === "mode" && modeIn(actions, fittings, modeSet(action)) === action.id) {
+      refused.push(`${where}: it is set so already`)
+      continue
+    }
+    const needed = (action.requires?.actions ?? []).filter((id) => !fittings.includes(id))
+    const missing = (action.requires?.buildings ?? []).filter((id) => !standingIds.has(army.buildings.find((each) => each.id === id)?.structure ?? id))
+    if (needed.length > 0 || missing.length > 0) {
+      refused.push(`${where}: needs ${[...needed, ...missing].join(" and ")} first`)
+      continue
+    }
+    const cost = action.cost ?? 0
+    if (cost > credits - spent) {
+      refused.push(`${where}: costs ${cost}, ${credits - spent} left`)
+      continue
+    }
+    spent += cost
+    costAt.set(key(asked), (costAt.get(key(asked)) ?? 0) + cost)
+    now.set(key(asked), fittedId(base, fittingsWith(actions, fittings, action)))
+    took.push(named)
+  }
+  const fitted = (structure: Readonly<{ contentId: string; anchor: Coord }>): string => now.get(key(structure.anchor)) ?? structure.contentId
+  return {
+    planned: planned.map((placed) => ({ ...placed, contentId: fitted(placed) })),
+    refits: standing.flatMap((structure) => (fitted(structure) === structure.contentId ? [] : [{ anchor: structure.anchor, contentId: fitted(structure) }])),
+    held,
+    spent,
+    costAt,
+    took,
+    refused,
+  }
+}
+
 /**
  * Where a side's plan puts its buildings this round, by the Build Phase's rules, as `playRound` places them before the
  * other side's plan is revealed (a clash with it is settled only once both are): each building's card and anchor, in
@@ -281,7 +374,7 @@ export function placementsOf(state: DuelState, side: Side, plan: SidePlan): Plan
 const buildingIdOf = (army: DuelArmy, item: ConstructItem): string => army.buildings.find((card) => card.structure === item.contentId)?.id ?? item.contentId
 
 /** What a card calls a content id, or its short name. */
-export const titleOf = (contentId: string): string => CARD_TEXT[contentId]?.title ?? contentId.slice(contentId.lastIndexOf(".") + 1)
+export const titleOf = (contentId: string): string => cardTextFor(contentId)?.title ?? baseContentId(contentId).slice(baseContentId(contentId).lastIndexOf(".") + 1)
 
 /** `registry` with each building of `catalog` that makes units making them in waves, as its card says. */
 function battleContent(registry: ContentRegistry, catalog: readonly ConstructItem[]): ContentRegistry {
@@ -324,6 +417,7 @@ export function playRound(
     pick: PowerCard | null
     callups: readonly Readonly<{ unit: string; count: number }>[]
     placed: ReturnType<typeof placeAll>
+    acted: Acted
     side: SideState
   }>
   const phase = (side: Side): Planned => {
@@ -336,7 +430,10 @@ export function playRound(
     // The units the card picked this round calls up, if it calls any: what keeping it adds to no call-ups at all.
     const callups = pick === null ? [] : applyEffect(loadoutOf(army, state.sides[side]), pick.effect).callups
     const credits = state.sides[side].credits + (pick === null ? 0 : creditsOf(pick.effect))
-    const placed = placeAll(state, side, plan, loadout.catalog, loadout.registry, credits)
+    const built = placeAll(state, side, plan, loadout.catalog, loadout.registry, credits)
+    // Then what it does with its buildings, from what building them left.
+    const acted = actOn(state, side, plan, loadout.catalog, built.planned, credits - built.spent)
+    const placed = { ...built, planned: [...acted.planned], spent: built.spent + acted.spent, refused: [...built.refused, ...acted.refused] }
     return {
       army,
       registry: battleContent(loadout.registry, loadout.catalog),
@@ -345,6 +442,7 @@ export function playRound(
       pick,
       callups,
       placed,
+      acted,
       side: { ...state.sides[side], kept, credits: credits - placed.spent },
     }
   }
@@ -378,7 +476,8 @@ export function playRound(
     structures,
     setup: { seed: state.setup.seed, pulseTicks: state.setup.pulseTicks, forces },
     ...(restored === null ? {} : { carried: restored.state }),
-    ...heldBy(state, plans),
+    ...heldBy(state, plans, phases),
+    ...refitsOf(phases),
   }).state
   const targets: Record<Side, TargetArea> = { A: targetOf(state, "A", plans.A.stance, sides), B: targetOf(state, "B", plans.B.stance, sides) }
   const start: MatchState = { ...opened, targets }
@@ -429,7 +528,7 @@ export function playRound(
  * meet both may claim a tile. Neither is built there — it would favour one side by a rule of order — and each is paid
  * back, the refusal said in both reports.
  */
-function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>; side: SideState; catalog: readonly ConstructItem[] }>>(
+function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>; acted: Acted; side: SideState; catalog: readonly ConstructItem[] }>>(
   phases: Readonly<Record<Side, P>>,
   sides: Readonly<Record<Side, ContentRegistry>>,
 ): Record<Side, P> {
@@ -449,7 +548,10 @@ function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>
     const phase = phases[side]
     if (clashing[side].size === 0) return phase
     const keep = phase.placed.planned.filter((placed) => !clashing[side].has(placed))
-    const refund = [...clashing[side]].reduce((sum, placed) => sum + (phase.catalog.find((item) => item.contentId === placed.contentId)?.cost ?? 0), 0)
+    // The building and what its actions cost, both paid back.
+    const costOf = (placed: PlannedPlacement): number =>
+      (phase.catalog.find((item) => item.contentId === baseContentId(placed.contentId))?.cost ?? 0) + (phase.acted.costAt.get(`${placed.anchor.x},${placed.anchor.y}`) ?? 0)
+    const refund = [...clashing[side]].reduce((sum, placed) => sum + costOf(placed), 0)
     const dropped = [...clashing[side]].map((placed) => `${titleOf(placed.contentId)} at ${placed.anchor.x},${placed.anchor.y}: the enemy built there at the same moment, so neither was built`)
     return {
       ...phase,
@@ -462,12 +564,21 @@ function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>
 
 /** The buildings both plans hold this round (Hold production), each a building of its own side standing as the round
  *  opens: what the opening holds. Nothing when neither plan holds any, as every script plays. */
-function heldBy(state: DuelState, plans: Readonly<Record<Side, SidePlan>>): Readonly<{ held?: readonly Coord[] }> {
+function heldBy(state: DuelState, plans: Readonly<Record<Side, SidePlan>>, phases: Readonly<Record<Side, Readonly<{ acted: Acted }>>>): Readonly<{ held?: readonly Coord[] }> {
   const held = SIDES.flatMap((side) => {
     const own = standingOf(state, side)
-    return (plans[side].hold ?? []).filter((anchor) => own.some((structure) => structure.anchor.x === anchor.x && structure.anchor.y === anchor.y))
+    const asked = (plans[side].hold ?? []).filter((anchor) => own.some((structure) => structure.anchor.x === anchor.x && structure.anchor.y === anchor.y))
+    // And the buildings its actions gave the order to, not already held.
+    return [...asked, ...phases[side].acted.held.filter((anchor) => !asked.some((each) => each.x === anchor.x && each.y === anchor.y))]
   })
   return held.length === 0 ? {} : { held: held.map(({ x, y }) => ({ x, y })) }
+}
+
+/** The standing buildings both sides' actions changed, and the content id each starts the battle with: what the
+ *  opening sets them down as. Nothing when neither side's actions changed one. */
+function refitsOf(phases: Readonly<Record<Side, Readonly<{ acted: Acted }>>>): Readonly<{ refits?: readonly Readonly<{ anchor: Coord; contentId: string }>[] }> {
+  const refits = SIDES.flatMap((side) => phases[side].acted.refits)
+  return refits.length === 0 ? {} : { refits }
 }
 
 /** Where a side's arriving units gather: in front of its Nexus, toward the enemy. */
@@ -493,7 +604,7 @@ function targetOf(state: DuelState, side: Side, stance: SidePlan["stance"], side
 /** What one side did and suffered in the round, from its phase, the opening, the end and the events. */
 function sideReport(
   side: Side,
-  phase: Readonly<{ army: DuelArmy; hand: PowerCard[]; pick: PowerCard | null; placed: ReturnType<typeof placeAll> }>,
+  phase: Readonly<{ army: DuelArmy; hand: PowerCard[]; pick: PowerCard | null; placed: ReturnType<typeof placeAll>; acted: Acted }>,
   plan: SidePlan,
   credits: number,
   earned: number,
@@ -539,6 +650,7 @@ function sideReport(
     kept: phase.pick?.name ?? null,
     hand: phase.hand.map((card) => card.name),
     built: phase.placed.built,
+    ...(phase.acted.took.length === 0 ? {} : { actions: phase.acted.took }),
     refused: phase.placed.refused,
     stance: plan.stance,
     ...(plan.formation === undefined ? {} : { formation: plan.formation }),

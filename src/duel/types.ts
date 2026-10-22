@@ -69,8 +69,19 @@ export type SidePlan = Readonly<{
   /** The side's buildings standing as the round opens, by anchor, that hold their waves this round (Hold production,
    *  the Build Phase's building action): they send none. Absent: none held, as every script plays. */
   hold?: readonly Readonly<{ x: number; y: number }>[]
+  /**
+   * What it does with its buildings this round, in order, each a building of its own by anchor — standing as the round
+   * opens, or placed by this plan at that tile — and one of its card's actions by id (`BuildingActionCard`): an
+   * upgrade bought (`production-line`), a mode switched to (`units-first`), an order given (`hold`). Taken after its
+   * buildings are placed, from the credits they leave, by the Build Phase's rules; what cannot be is refused and said.
+   * Absent: none, as every script but the `-upgrade` ones plays.
+   */
+  actions?: readonly BuildingOrder[]
   note?: string
 }>
+
+/** One of a plan's building actions: the building by its anchor, and the action by its id. */
+export type BuildingOrder = Readonly<{ x: number; y: number; action: string }>
 
 /** A side between rounds: its Commander, what it has to spend, the powers it kept (by id, in the order kept), and its
  *  Commander's absence when she is out. */
@@ -93,6 +104,9 @@ export type SideReport = Readonly<{
   /** The hand it was dealt, by name. */
   hand: readonly string[]
   built: readonly string[]
+  /** The building actions it took, each with its building and where (`production-line on barracks at 9,5`). Absent:
+   *  none. */
+  actions?: readonly string[]
   /** What it asked for and could not have, each with the reason. */
   refused: readonly string[]
   stance: Stance

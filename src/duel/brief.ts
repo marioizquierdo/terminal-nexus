@@ -7,10 +7,12 @@
 // Pure: the same duel gives the same brief. Presentation of the duel, so it may read the art and card tables.
 
 import { abilityLines } from "../abilities/index.ts"
-import type { PowerCard } from "../armies/index.ts"
+import type { ActionKind, PowerCard } from "../armies/index.ts"
+import { modeIn, modeSet } from "../armies/index.ts"
 import { artFor } from "../content/art.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
+import { baseContentId, fittingsOf } from "../content/index.ts"
 import { supplyOf } from "../content/supply.ts"
 import { tilesOf } from "../grid/coords.ts"
 import { duelGrid } from "./maps.ts"
@@ -42,6 +44,21 @@ export type BriefBuilding = Readonly<{
   about: string
 }>
 
+/** What one of its buildings standing as the round opens can do (`BuildingActionCard`): the building by its card id,
+ *  name and anchor, the action by its id, kind, label and price, and — for an upgrade it carries, or the mode it is
+ *  in — that it has it already. What a plan names in `actions`. */
+export type BriefAction = Readonly<{
+  x: number
+  y: number
+  building: string
+  name: string
+  action: string
+  kind: ActionKind
+  label: string
+  cost: number
+  has?: true
+}>
+
 /** A card of the hand: its number in the plan, name, what it does, rarity. */
 export type BriefCard = Readonly<{ number: number; id: string; name: string; does: string; rarity: string }>
 
@@ -58,6 +75,8 @@ export type BriefData = Readonly<{
   nexus: Readonly<{ health: number; most: number }>
   hand: readonly BriefCard[]
   buildings: readonly BriefBuilding[]
+  /** What its buildings standing as the round opens can do this round: each one's upgrades, modes and orders. */
+  actions: readonly BriefAction[]
   kept: readonly string[]
   /** What stands for it as the round opens, and its units home after the last round, by name. */
   yours: Readonly<{ buildings: readonly string[]; units: Readonly<Record<string, number>> }>
@@ -161,7 +180,7 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
         ? "restored beside the Nexus as this round opens"
         : `out this round: ${pronouns.subject} fell in round ${absence.fellInRound} and is back for round ${absence.returnsInRound}`
   const standing = standingOf(state, side)
-  const standingIds = new Set(standing.map((structure) => structure.contentId))
+  const standingIds = new Set(standing.map((structure) => baseContentId(structure.contentId)))
   const buildings: BriefBuilding[] = loadout.catalog.map((item) => {
     const building = army.buildings.find((candidate) => candidate.structure === item.contentId)
     const definition = loadout.registry.get(item.contentId)
@@ -180,6 +199,26 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
       skills: abilityLines(definition, { subject: "it", possessive: "its" }),
       about: CARD_TEXT[item.contentId]?.description ?? "",
     }
+  })
+  const actions: BriefAction[] = standing.flatMap((structure) => {
+    const base = baseContentId(structure.contentId)
+    const own = loadout.catalog.find((item) => item.contentId === base)?.actions ?? []
+    const fittings = fittingsOf(structure.contentId)
+    const building = army.buildings.find((candidate) => candidate.structure === base)?.id ?? base
+    return own.map((action) => {
+      const has = action.kind === "upgrade" ? fittings.includes(action.id) : action.kind === "mode" && modeIn(own, fittings, modeSet(action)) === action.id
+      return {
+        x: structure.anchor.x,
+        y: structure.anchor.y,
+        building,
+        name: titleOf(base),
+        action: action.id,
+        kind: action.kind,
+        label: action.label,
+        cost: action.cost ?? 0,
+        ...(has ? { has: true as const } : {}),
+      }
+    })
   })
   const hand = handOf(state, side).map((power, index) => cardOf(power, index + 1))
   const ours = state.carried === null ? [] : state.carried.entities.filter((entity) => entity.player === side)
@@ -218,6 +257,7 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
     nexus: nexusHealth(side),
     hand,
     buildings,
+    actions,
     kept: state.sides[side].kept.flatMap((id) => powerOf(army, id)?.name ?? []),
     yours: { buildings: standing.map((structure) => `${titleOf(structure.contentId)} at ${structure.anchor.x},${structure.anchor.y}`), units: unitsOf(side) },
     zones,
@@ -268,6 +308,17 @@ export function briefText(data: BriefData, strategies?: string): string {
     lines.push(`- ${building.id}: ${building.name}, ${building.cost} credits, tier ${building.tier}${does === "" ? "" : `, ${does}`}.${locked}${worth} ${building.about}${building.skills.map((skill) => ` ${skill}`).join("")}`)
   }
   lines.push("")
+  if (data.actions.length > 0) {
+    lines.push("## What your buildings can do (by x, y and action id)")
+    lines.push("An upgrade is bought with credits and kept by that one building for the rest of the duel; a mode is a state it stays in until switched; an order is for this round only.")
+    const at = new Map<string, BriefAction[]>()
+    for (const action of data.actions) at.set(`${action.x},${action.y}`, [...(at.get(`${action.x},${action.y}`) ?? []), action])
+    for (const [where, own] of at) {
+      const said = own.map((action) => `${action.action} (${action.kind}, ${action.label}${action.cost > 0 ? `, ${action.cost} credits` : ""}${action.has === true ? (action.kind === "mode" ? ", in force" : ", has it") : ""})`)
+      lines.push(`- ${own[0]?.name} at ${where}: ${said.join("; ")}`)
+    }
+    lines.push("")
+  }
   lines.push("## The map (your things lower case, theirs upper case; # rock, . open ground)")
   lines.push("```")
   lines.push(...data.map)
@@ -311,6 +362,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push(
     `- "formation" (you may leave it out): "block" sets every building you build this round that trains units touching another, round where you ask for the first of them; "apart" sets each at least ${APART_GAP} from the others (a row counting two columns), as near there as that allows; "zones", or none, puts each where its own "at" or "x" and "y" says. Buildings that train nothing always go where they say. One of ${FORMATIONS.map((name) => `"${name}"`).join(", ")}.`,
   )
+  lines.push(`- "actions" (you may leave it out): what your buildings do this round, each { "x", "y", "action" } naming a building of yours by its anchor and one of its actions by id, as listed above; taken after your buildings are placed, from the credits they leave.`)
   lines.push(`- "stance": ${STANCES.map((stance) => `"${stance}"`).join(" or ")}: your troops march on their Nexus, or hold the ground in front of yours. Units that survive come home and fight again next round.`)
   return lines.join("\n")
 }

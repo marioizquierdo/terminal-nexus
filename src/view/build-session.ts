@@ -611,7 +611,9 @@ export class BuildSession {
     return buildMouseCommand(mouse, camera ?? state.camera, layout, this.context.catalog, {
       ...(spec === null ? {} : { popup: placePopup(layout, spec) }),
       card: cardEntry(state),
-      ...(actions.length === 0 ? {} : { actions: actions.map((row) => ({ row, command: { kind: "building-action", action: "hold" } as const })) }),
+      ...(actions.length === 0
+        ? {}
+        : { actions: actions.map((row, index) => ({ row, command: { kind: "building-action", key: card?.actions?.[index]?.hotkey ?? "" } as const })) }),
       escLabel: escLabel(state),
       pulse: this.presenter !== null,
       pulseOver: this.presenter?.phase() === "home",

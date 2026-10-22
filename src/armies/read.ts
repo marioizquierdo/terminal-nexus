@@ -16,6 +16,7 @@ import { LEANS } from "./curve.ts"
 import { effectShape } from "./effects.ts"
 import type {
   ArmyManifest,
+  BuildingActionCard,
   BuildingCard,
   BuildingSpawns,
   CampaignManifest,
@@ -29,7 +30,7 @@ import type {
   ScheduleSlot,
   Unlocks,
 } from "./types.ts"
-import { RARITIES, ROLES } from "./types.ts"
+import { ACTION_KINDS, RARITIES, ROLES } from "./types.ts"
 
 // --- The shapes of an army's parts ---------------------------------------------------------------------------
 
@@ -38,7 +39,23 @@ const buildingSpawns = record<BuildingSpawns>(
   { unit: text, perWave: positiveWholeNumber, waves: positiveWholeNumber, secondsBetween: positiveWholeNumber },
   {},
 )
-const buildingCard = record<BuildingCard>({ id: text, structure: text, cost: wholeNumber }, { spawns: buildingSpawns, tier: positiveWholeNumber, requires: list(text), notes: text })
+/** One of a building's actions: what it is, its row's words, and, as its kind needs, its price, its set of modes, what
+ *  it requires, what it changes and the order it gives. What each kind must and may not have is the loader's to say. */
+const buildingAction = record<BuildingActionCard>(
+  { id: text, kind: literal(...ACTION_KINDS), label: text },
+  {
+    cost: wholeNumber,
+    set: text,
+    requires: record<NonNullable<BuildingActionCard["requires"]>>({}, { actions: list(text), buildings: list(text) }),
+    effects: list(effectShape),
+    order: text,
+    notes: text,
+  },
+)
+const buildingCard = record<BuildingCard>(
+  { id: text, structure: text, cost: wholeNumber },
+  { spawns: buildingSpawns, tier: positiveWholeNumber, requires: list(text), actions: list(buildingAction), notes: text },
+)
 const rarity = literal(...RARITIES)
 /** A power's chance raised for some rounds: from a round, to a later one or the end, so many times as likely. */
 const chanceModifier = record<ChanceModifier>({ from: positiveWholeNumber, times: positiveWholeNumber }, { to: positiveWholeNumber })

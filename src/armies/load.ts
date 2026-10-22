@@ -16,7 +16,7 @@
 // the content registry and the map table are arguments (`src/armies/index.ts` passes the game's).
 
 import type { ContentRegistry } from "../content/index.ts"
-import { createRegistry } from "../content/index.ts"
+import { createRegistry, withFitter } from "../content/index.ts"
 import { definitionOf } from "../content/data.ts"
 import type { MissionDefinition, TriggerAction } from "../mission/types.ts"
 import { MissionError } from "../mission/types.ts"
@@ -25,12 +25,13 @@ import { missionShape } from "./mission-shape.ts"
 import type { BarkMoment } from "./barks.ts"
 import { BARK_MOMENTS, barkProblem } from "./barks.ts"
 import { EARLIEST_ROUND, LEANS, MAX_LEANS, MAX_TIER } from "./curve.ts"
-import type { EffectSight } from "./effects.ts"
-import { addsOf, effectParts } from "./effects.ts"
+import { ACTION_KEYS, ACTION_LABEL_MAX, ORDERS, fitterOf, modeSet } from "./actions.ts"
+import type { EffectKind, EffectSight } from "./effects.ts"
+import { EFFECTS, addsOf, effectParts } from "./effects.ts"
 import { wholeLevels, withCommander } from "./levels.ts"
 import type { ReadArmy, ReadCampaign } from "./read.ts"
 import { readArmy, readCampaign } from "./read.ts"
-import type { Armies, BuildingCard, Campaign, Commander, CommanderEntry, Level, LevelEntry, LevelMap, PowerCard, Schedule } from "./types.ts"
+import type { Armies, BuildingActionCard, BuildingCard, Campaign, Commander, CommanderEntry, Level, LevelEntry, LevelMap, PowerCard, Schedule } from "./types.ts"
 import { ArmyError, COMMANDER_PLACEHOLDER, PORTRAIT_ROWS, PORTRAIT_WIDTH } from "./types.ts"
 
 // --- Requires: what each file sees, and the circles ----------------------------------------------------------
@@ -329,6 +330,84 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     return said
   }
 
+  /**
+   * What is wrong with a building's actions (`actions.ts`), each said after its name: an id that is not lower case,
+   * digits and dashes, or one given twice; a label empty or too long for its row; more upgrades and modes than there are
+   * keys for them; an upgrade with no price or nothing it changes; a set of modes of one alone, whose first changes
+   * something or costs, or whose later ones change nothing; an order the game does not have, given twice, or on a
+   * building it cannot be given to; what one changes said by a kind a building's action cannot carry, or naming another
+   * building, or what that kind refuses itself; and what one requires that the card or the army does not have.
+   */
+  const actionProblems = (viewer: Viewer, card: BuildingCard): string[] => {
+    const actions = card.actions ?? []
+    const said: string[] = []
+    const ids = new Set<string>()
+    for (const action of actions) {
+      const what = `action "${action.id}"`
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(action.id)) said.push(`has the ${what}: an action's id is lower case, digits and dashes`)
+      if (ids.has(action.id)) said.push(`has the ${what} twice`)
+      ids.add(action.id)
+      const label = action.label.trim()
+      if (label === "") said.push(`has the ${what} with no label`)
+      else if (label.length > ACTION_LABEL_MAX) said.push(`has the ${what} labelled "${label}", ${label.length} glyphs: a card's row has room for ${ACTION_LABEL_MAX}`)
+      const stray = (field: string, kinds: string): void => {
+        said.push(`has the ${action.kind} ${what} with a ${field}, which only ${kinds} has`)
+      }
+      if (action.kind !== "mode" && action.set !== undefined) stray("set", "a mode")
+      if (action.kind !== "order" && action.order !== undefined) stray("order", "an order")
+      if (action.kind === "order" && (action.effects ?? []).length > 0) stray("list of effects", "an upgrade or a mode")
+      if (action.kind === "order" && action.cost !== undefined) stray("cost", "an upgrade or a mode")
+      if (action.kind === "upgrade") {
+        if (action.cost === undefined) said.push(`has the upgrade ${what} with no cost: an upgrade is bought with credits`)
+        if ((action.effects ?? []).length === 0) said.push(`has the upgrade ${what}, which changes nothing`)
+      }
+      if (action.kind === "order") {
+        const order = action.order === undefined ? undefined : ORDERS[action.order]
+        if (order === undefined) said.push(`has the order ${what}, which gives ${action.order === undefined ? "no order" : `"${action.order}"`}: the game's orders are ${Object.keys(ORDERS).map((name) => `"${name}"`).join(", ")}`)
+        else if (order.needsSpawns && card.spawns === undefined) said.push(`has the order ${what}, "${action.order}", and makes no units for it to hold`)
+        if (actions.some((other) => other !== action && other.kind === "order" && other.order === action.order && actions.indexOf(other) < actions.indexOf(action))) said.push(`gives the order "${action.order}" twice`)
+      }
+      for (const effect of action.effects ?? []) {
+        const { name, kind, params } = effectParts(effect)
+        const named = kind.names?.(params)
+        if (named === undefined || kind.refit === undefined) {
+          said.push(`has the ${what} changing it by "${name}", which a building's action cannot: ${Object.entries(EFFECTS).filter(([, each]) => (each as EffectKind<unknown>).refit !== undefined).map(([each]) => `"${each}"`).join(", ")} can`)
+          continue
+        }
+        const target = named.building ?? named.content
+        if (named.building !== undefined ? named.building !== card.id : named.content !== card.structure) {
+          said.push(`has the ${what} changing "${target}": a building's action changes that building alone, "${named.building !== undefined ? card.id : card.structure}"`)
+          continue
+        }
+        for (const problem of kind.problems(params, sightFor(viewer))) said.push(`has the ${what}, which ${problem}`)
+      }
+      for (const id of action.requires?.actions ?? []) {
+        const required = actions.find((other) => other.id === id)
+        if (id === action.id) said.push(`has the ${what} requiring itself, so it is never taken`)
+        else if (required === undefined) said.push(`has the ${what} requiring "${id}", which is not one of its actions`)
+        else if (required.kind !== "upgrade") said.push(`has the ${what} requiring "${id}", a ${required.kind}: an action requires the building's upgrades`)
+      }
+      for (const id of action.requires?.buildings ?? []) {
+        const unseen = unseenCard(viewer, "building", id)
+        if (unseen !== null) said.push(`has the ${what} requiring ${unseen}`)
+      }
+    }
+    // Its modes, set by set: the first is the building as it is written, so it changes nothing and costs nothing, and
+    // every other changes something; a set of one is not a choice.
+    const sets = new Map<string, BuildingActionCard[]>()
+    for (const action of actions) if (action.kind === "mode") sets.set(modeSet(action), [...(sets.get(modeSet(action)) ?? []), action])
+    for (const [set, modes] of sets) {
+      const [first, ...rest] = modes
+      if (first === undefined) continue
+      if (rest.length === 0) said.push(`has one mode in the set "${set}", "${first.id}": a set of modes has two or more`)
+      if ((first.effects ?? []).length > 0 || (first.cost ?? 0) > 0) said.push(`has "${first.id}" first in the set of modes "${set}", which changes or costs something: the first is the building as it is written`)
+      for (const mode of rest) if ((mode.effects ?? []).length === 0) said.push(`has the mode "${mode.id}", which changes nothing`)
+    }
+    const keyed = actions.filter((action) => action.kind !== "order").length
+    if (keyed > ACTION_KEYS.length) said.push(`has ${keyed} upgrades and modes: a building has keys for ${ACTION_KEYS.length}`)
+    return said
+  }
+
   /** What an effect may ask of the power's army (`effects.ts`). */
   const sightFor = (viewer: Viewer): EffectSight => ({
     unit: (id) => {
@@ -432,6 +511,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       if (unseen !== null) say(`the building "${card.id}" names ${unseen}`)
       else if (registry.get(card.structure).layer !== "obstacles") say(`the building "${card.id}" names "${card.structure}", which is not a building`)
       for (const problem of treeProblems(viewer, card)) say(`the building "${card.id}" ${problem}`)
+      for (const problem of actionProblems(viewer, card)) say(`the building "${card.id}" ${problem}`)
       if (card.spawns === undefined) continue
       const unit = card.spawns.unit
       const unseenUnit = unseenContent(viewer, unit)
@@ -471,6 +551,15 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
         for (const problem of scheduleProblems(entry.schedule, offered)) say(`the Commander "${entry.id}" ${problem}`)
       }
     }
+  }
+
+  // A building's actions are its structure's, wherever it is offered: one card says them.
+  const actionsOn = new Map<string, string>()
+  for (const { card } of buildingsBy.values()) {
+    if ((card.actions ?? []).length === 0) continue
+    const first = actionsOn.get(card.structure)
+    if (first === undefined) actionsOn.set(card.structure, card.id)
+    else problems.push(`the buildings "${first}" and "${card.id}" both give "${card.structure}" actions; one card says what a building can do`)
   }
 
   // 4b. Campaigns: a Commander they see, levels made whole, and each level's map, unlocks and mission.
@@ -655,6 +744,8 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
         ]
       }),
     ),
-    registry,
+    // A building that carries an upgrade or a mode has a content id of its own, which the registry resolves from its
+    // card's actions (`actions.ts`): every registry made from this one does too.
+    registry: withFitter(registry, fitterOf([...buildingsBy.values()].map((owned) => owned.card))),
   })
 }

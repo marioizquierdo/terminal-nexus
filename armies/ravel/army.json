@@ -102,6 +102,7 @@
       "structure": "structure.ravel.den",
       "cost": 35,
       "spawns": {"unit": "unit.ravel.runner", "perWave": 5, "waves": 1, "secondsBetween": 10},
+      "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
       "notes": "The Ravel Barracks: five runners a wave for a little less than a Barracks's four troopers. A runner is two fifths of a trooper in health and bursts when it falls, so a Den's wave is cheaper and more fragile, and hurts what it dies against."
     },
     {
@@ -109,6 +110,7 @@
       "structure": "structure.ravel.slingpit",
       "cost": 45,
       "spawns": {"unit": "unit.ravel.slinger", "perWave": 3, "waves": 1, "secondsBetween": 10},
+      "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
       "notes": "Three slingers a wave: thrown range, at the price of a Barracks and a bit."
     },
     {
@@ -124,6 +126,7 @@
       "tier": 2,
       "requires": ["den"],
       "spawns": {"unit": "unit.ravel.raider", "perWave": 3, "waves": 1, "secondsBetween": 10},
+      "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
       "notes": "Three raiders a wave once a Den stands: the Garrison's mirror, a little cheaper and a little fewer."
     },
     {
@@ -133,6 +136,7 @@
       "tier": 2,
       "requires": ["den"],
       "spawns": {"unit": "unit.ravel.bomber", "perWave": 2, "waves": 1, "secondsBetween": 10},
+      "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
       "notes": "Two bombers a wave once a Den stands, for a little more than a Den. A bomber has no weapon, so the duel's measure of strength (health times damage a second) counts it as none and no scripted player picks it yet: a player chooses it against a tight army. First numbers, to be measured."
     }
   ],

@@ -7,11 +7,13 @@ import { supplyOf } from "../content/supply.ts"
 import type { LogEntry } from "../log/logger.ts"
 import { footprintCentre, footprintExtent, inBounds, tilesOf } from "../grid/coords.ts"
 import type { ContentRegistry } from "../content/index.ts"
+import { baseContentId, fittedId, fittingsOf } from "../content/fitted.ts"
 import { stepListIndex } from "../terminal/list-keys.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { TERRAIN } from "../grid/types.ts"
 import type { MatchState } from "../state/types.ts"
-import type { BuildingCard, PowerCard, Schedule } from "../armies/types.ts"
+import type { BuildingActionCard, BuildingCard, PowerCard, Schedule } from "../armies/types.ts"
+import { ORDERS, actionKey, fittingsWith, modeIn, modeSet } from "../armies/actions.ts"
 import { lasts as effectLasts } from "../armies/effects.ts"
 import type { StatusMessage } from "./status.ts"
 import { NO_STATUS, status } from "./status.ts"
@@ -40,7 +42,7 @@ import {
 import { formatSettingsExport } from "./settings-export.ts"
 import type { Territory } from "./territory.ts"
 import { anyInside, territoryOf } from "./territory.ts"
-import { CARD_TEXT } from "../content/cards.ts"
+import { cardTextFor } from "../content/cards.ts"
 import type { ActivitySource } from "./activity.ts"
 import {
   ACTIVITY_EXPORT_ROW,
@@ -311,6 +313,14 @@ export type BuildState = Readonly<{
    *  production (the owner, 2026-10-16: "Pause production, that stops producing units for the next round"). The
    *  round's Battle Round opens them with every wave already sent; the next Build Phase starts with none held. */
   held: readonly string[]
+  /**
+   * The upgrades bought and the modes switched this Build Phase, in the order taken: each a building of the player's,
+   * by anchor (`x,y`), and the action by its card's id. Each spends its price at once (`spent`) and can be undone until
+   * the Battle Round starts, as a placed building can — an upgrade by its own key again, a mode by switching back —
+   * and a building removed takes its own with it. The Battle Round starts each building on the content they make it
+   * (`fittedContentOf`), which Recall and every round after carry; the next Build Phase starts with none taken.
+   */
+  fitted: readonly Readonly<{ anchor: string; action: string }>[]
   /** The last command's answer, which the bottom line shows: what just happened, or why it did not.
    *  It lapses at the next command that says nothing (`lapseStatus`); a refused placement names its
    *  tile (`status.tile`). */
@@ -392,7 +402,7 @@ export function nexusTile(context: Pick<BuildContext, "registry" | "standing">):
  * hide until someone counted.
  */
 export function spent(context: BuildContext, state: BuildState): number {
-  return state.planned.reduce((total, placement) => total + costOf(context, placement.contentId), 0)
+  return state.planned.reduce((total, placement) => total + costOf(context, placement.contentId), 0) + fittedCost(context, state)
 }
 
 /** What is left to spend. Never negative, because nothing can be placed that costs more than this. */
@@ -441,6 +451,7 @@ export function createBuildState(
     dialog: null,
     planned: [],
     held: [],
+    fitted: [],
     status: context.openingStatus ?? NO_STATUS,
     nextOrdinal: 1,
     nexusPick: null,
@@ -700,13 +711,13 @@ export function shortName(context: BuildContext, contentId: string): string {
 /** The menu's row for a content id, or `undefined` for content the menu does not sell (the standing
  *  structures). The one catalog lookup by content. */
 export function catalogItem(context: Pick<BuildContext, "catalog">, contentId: string): ConstructItem | undefined {
-  return context.catalog.find((row) => row.contentId === contentId)
+  return context.catalog.find((row) => row.contentId === baseContentId(contentId))
 }
 
 /** A structure's name as the menu writes it ("Barracks"), for a sentence that starts with it; for anything
  *  the menu does not sell, its card's title ("Citizen Nexus"), or its short name when it has no card. */
 export function displayName(context: BuildContext, contentId: string): string {
-  return catalogItem(context, contentId)?.label ?? CARD_TEXT[contentId]?.title ?? shortName(context, contentId)
+  return catalogItem(context, contentId)?.label ?? cardTextFor(contentId)?.title ?? shortName(context, contentId)
 }
 
 /**
@@ -715,7 +726,7 @@ export function displayName(context: BuildContext, contentId: string): string {
  * what it leads to next round, once it stands — so a row is locked or open for the whole phase.
  */
 export function missingFor(context: Pick<BuildContext, "standing">, item: ConstructItem): string[] {
-  const standing = new Set(context.standing.map((structure) => structure.contentId))
+  const standing = new Set(context.standing.map((structure) => baseContentId(structure.contentId)))
   return (item.needs ?? []).filter((contentId) => !standing.has(contentId))
 }
 
@@ -744,18 +755,143 @@ export function buildSupply(context: BuildContext, state: Pick<BuildState, "plan
 /** A building's place, as the held list keys it: `x,y` of its anchor. */
 export const anchorKey = (anchor: Coord): string => `${anchor.x},${anchor.y}`
 
-/** One thing a building lets the player do, under its own key: what Explore Map's card lists for a building of
- *  the player's (the owner, 2026-10-16: "When a building is selected ... it should show the available actions, with
- *  hotkeys as usual"). Only Hold production is built; an upgrade, a defender inside and a worker slot are designed
- *  as actions of the same kind. */
-export type BuildingAction = Readonly<{ action: "hold"; hotkey: string; label: string }>
+/**
+ * One thing a building lets the player do, under its own key: what Explore Map's card lists for a building of the
+ * player's (the owner, 2026-10-16: "When a building is selected ... it should show the available actions, with
+ * hotkeys as usual"; 2026-10-22: "in that panel you can see a button to add a new feature to the building"). Its
+ * card's own action (`BuildingActionCard`), as its row says it now: its label, and at its right end its price, `on`
+ * for the mode in force, or `undo` for an upgrade bought this Build Phase — with why taking it now is refused, when it
+ * is (its row is drawn dim).
+ */
+export type BuildingAction = Readonly<{
+  action: BuildingActionCard
+  hotkey: string
+  label: string
+  value?: string
+  refusal?: string
+}>
 
-/** The actions a building of the player's offers now: Hold production for one that makes units, or Resume once
- *  held. None for anything else. */
-export function buildingActions(context: BuildContext, state: Pick<BuildState, "held">, structure: Readonly<{ contentId: string; anchor: Coord }>): BuildingAction[] {
-  if (catalogItem(context, structure.contentId)?.spawns === undefined) return []
-  const held = state.held.includes(anchorKey(structure.anchor))
-  return [{ action: "hold", hotkey: "z", label: held ? "Resume production" : "Hold production" }]
+/** A building's actions as its card lists them, by its content id — what it carries or not: its base's. */
+export function actionsOf(context: Pick<BuildContext, "catalog">, contentId: string): readonly BuildingActionCard[] {
+  return catalogItem(context, baseContentId(contentId))?.actions ?? []
+}
+
+/** The building of the player's, standing or planned, whose anchor is `key` (`anchorKey`). */
+function structureAt(context: BuildContext, planned: readonly PlannedPlacement[], key: string): Readonly<{ contentId: string; anchor: Coord }> | undefined {
+  return [...planned, ...context.standing].find((structure) => anchorKey(structure.anchor) === key)
+}
+
+/** What a building carries as this Build Phase leaves it: what it carried as the phase opened (its content id), with
+ *  every upgrade and mode taken on it since, in its card's order (`fittingsWith`). */
+function fittingsNow(context: BuildContext, state: Pick<BuildState, "fitted">, structure: Readonly<{ contentId: string; anchor: Coord }>): string[] {
+  const actions = actionsOf(context, structure.contentId)
+  const key = anchorKey(structure.anchor)
+  let fittings = fittingsOf(structure.contentId)
+  for (const taken of state.fitted) {
+    const action = taken.anchor === key ? actions.find((each) => each.id === taken.action) : undefined
+    if (action !== undefined) fittings = fittingsWith(actions, fittings, action)
+  }
+  return fittings
+}
+
+/**
+ * **The content id a building of the player's starts the Battle Round with**: its base's, carrying every upgrade it has
+ * and the mode it is in once this Build Phase's are taken (`fittedId`, `src/content/fitted.ts`) — its own id for one
+ * that carries nothing, so a plan that takes no action starts every building exactly as before.
+ */
+export function fittedContentOf(context: BuildContext, state: Pick<BuildState, "fitted">, structure: Readonly<{ contentId: string; anchor: Coord }>): string {
+  return fittedId(baseContentId(structure.contentId), fittingsNow(context, state, structure))
+}
+
+/** Every building of the player's whose content this Build Phase changes — an upgrade bought on it, its mode switched
+ *  — and the content id it starts the Battle Round with: what the opening gives it (`refits`, `src/match/opening.ts`). */
+export function refitsOf(context: BuildContext, state: Pick<BuildState, "fitted" | "planned">): Readonly<{ anchor: Coord; contentId: string }>[] {
+  const keys = new Set(state.fitted.map((taken) => taken.anchor))
+  return [...context.standing, ...state.planned].flatMap((structure) => {
+    if (!keys.has(anchorKey(structure.anchor))) return []
+    const contentId = fittedContentOf(context, state, structure)
+    return contentId === structure.contentId ? [] : [{ anchor: structure.anchor, contentId }]
+  })
+}
+
+/** What the upgrades bought and the modes switched this Build Phase cost, together. */
+function fittedCost(context: BuildContext, state: Pick<BuildState, "fitted" | "planned">): number {
+  return state.fitted.reduce((total, taken) => {
+    const structure = structureAt(context, state.planned, taken.anchor)
+    const action = structure === undefined ? undefined : actionsOf(context, structure.contentId).find((each) => each.id === taken.action)
+    return total + (action?.cost ?? 0)
+  }, 0)
+}
+
+/** Why `action` cannot be taken on a building carrying `fittings` now, or `null`: an upgrade it needs not yet taken, a
+ *  building it needs not standing as the Build Phase opened, or its price past what is left. */
+function actionRefusal(context: BuildContext, state: BuildState, actions: readonly BuildingActionCard[], fittings: readonly string[], action: BuildingActionCard): string | null {
+  const needed = (action.requires?.actions ?? []).filter((id) => !fittings.includes(id))
+  if (needed.length > 0) return `${action.label} needs ${needed.map((id) => actions.find((each) => each.id === id)?.label ?? id).join(" and ")} first.`
+  const cards = context.buildingCards ?? []
+  const missing = (action.requires?.buildings ?? []).flatMap((id) => cards.find((card) => card.id === id)?.structure ?? []).filter(
+    (structure) => !context.standing.some((standing) => baseContentId(standing.contentId) === structure),
+  )
+  if (missing.length > 0) return `${action.label} needs ${needsText(context, missing)}.`
+  const left = remaining(context, state)
+  const cost = action.cost ?? 0
+  return cost > left ? `${action.label} costs ${cost}, ${left} left.` : null
+}
+
+/**
+ * **The actions a building of the player's offers now**, each under its key, in its card's order: an order given or
+ * not (Hold production, or Resume once held); each upgrade it does not yet carry for good — bought this Build Phase,
+ * it says `undo` — and each of its modes, the one in force saying `on`. An upgrade bought in an earlier round is not
+ * offered again: its card says it carries it. None for a building whose card lists none.
+ */
+export function buildingActions(context: BuildContext, state: BuildState, structure: Readonly<{ contentId: string; anchor: Coord }>): BuildingAction[] {
+  const actions = actionsOf(context, structure.contentId)
+  const key = anchorKey(structure.anchor)
+  const carried = fittingsOf(structure.contentId)
+  const now = fittingsNow(context, state, structure)
+  const rows: BuildingAction[] = []
+  for (const action of actions) {
+    const hotkey = actionKey(actions, action)
+    if (hotkey === undefined) continue
+    if (action.kind === "order") {
+      const order = ORDERS[action.order ?? ""]
+      const given = state.held.includes(key)
+      rows.push({ action, hotkey, label: given && order !== undefined ? order.undoLabel : action.label })
+      continue
+    }
+    if (action.kind === "upgrade") {
+      if (carried.includes(action.id)) continue
+      if (now.includes(action.id)) {
+        rows.push({ action, hotkey, label: action.label, value: "undo" })
+        continue
+      }
+      const refusal = actionRefusal(context, state, actions, now, action)
+      rows.push({ action, hotkey, label: action.label, value: String(action.cost ?? 0), ...(refusal === null ? {} : { refusal }) })
+      continue
+    }
+    // A mode: the one in force says so; another says its price, when switching to it costs.
+    if (modeIn(actions, now, modeSet(action)) === action.id) {
+      rows.push({ action, hotkey, label: action.label, value: "on" })
+      continue
+    }
+    const cost = action.cost ?? 0
+    const refusal = modeIn(actions, carried, modeSet(action)) === action.id ? null : actionRefusal(context, state, actions, now, action)
+    rows.push({ action, hotkey, label: action.label, ...(cost === 0 ? {} : { value: String(cost) }), ...(refusal === null ? {} : { refusal }) })
+  }
+  return rows
+}
+
+/**
+ * What the upgrades a building carries for good say on its card, a row each after its numbers: `UPGRADE  Production
+ * line` — one bought in an earlier round, which its actions no longer list. One bought this Build Phase is said by its
+ * own row, `[c] Production line  undo`, and the mode in force by its row's `on`, so a card says each once and the
+ * tallest still fits the panel at 80 x 24.
+ */
+export function carriedStats(context: BuildContext, structure: Readonly<{ contentId: string }>): Readonly<{ label: string; value: string }>[] {
+  const carried = fittingsOf(structure.contentId)
+  return actionsOf(context, structure.contentId)
+    .filter((action) => action.kind === "upgrade" && carried.includes(action.id))
+    .map((action) => ({ label: "UPGRADE", value: action.label }))
 }
 
 /** What a catalog row costs, or 0 for content the catalog does not sell (the standing structures). */
@@ -1727,41 +1863,31 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (mapMode(state) === "menu") return refuseOnMenu(state)
       const target = plannedAt(context, state.planned, state.cursor)
       if (target === null) return { ...state, status: status("Nothing planned under the cursor.", "warning") }
-      // Nothing planned gives build range this phase, so no other building ever needs the one removed.
+      // Nothing planned gives build range this phase, so no other building ever needs the one removed. What was taken
+      // on it goes with it, its upgrades refunded.
+      const gone = takenOn(context, state, target)
       return {
         ...state,
+        ...gone.state,
         planned: state.planned.filter((placement) => placement.ordinal !== target.ordinal),
-        status: status(`${displayName(context, target.contentId)} removed, ${costOf(context, target.contentId)} refunded.`),
+        status: status(`${displayName(context, target.contentId)} removed, ${costOf(context, target.contentId) + gone.refund} refunded.`),
       }
     }
 
-    case "building-action": {
-      const lock = editLock(state)
-      if (lock !== null) return { ...state, status: lock }
-      const target = mapMode(state) === "explore" ? structureAtTile(context, state.planned, state.cursor) : null
-      const action = target === null ? undefined : buildingActions(context, state, target).find((each) => each.action === command.action)
-      if (target === null || action === undefined) {
-        return { ...state, status: status("Explore Map ([e]) onto a building of yours to use its actions.", "warning") }
-      }
-      const key = anchorKey(target.anchor)
-      const holding = state.held.includes(key)
-      const name = displayName(context, target.contentId)
-      return {
-        ...state,
-        held: holding ? state.held.filter((each) => each !== key) : [...state.held, key],
-        status: status(holding ? `${name} trains its wave this round again.` : `${name} holds its wave this round: it trains again the round after.`),
-      }
-    }
+    case "building-action":
+      return buildingAction(context, state, command.key)
 
     case "undo": {
       const lock = editLock(state)
       if (lock !== null) return { ...state, status: lock }
       const last = state.planned[state.planned.length - 1]
       if (last === undefined) return { ...state, status: status("Nothing to undo.", "warning") }
+      const gone = takenOn(context, state, last)
       return {
         ...state,
+        ...gone.state,
         planned: state.planned.slice(0, -1),
-        status: status(`${displayName(context, last.contentId)} undone, ${costOf(context, last.contentId)} refunded.`),
+        status: status(`${displayName(context, last.contentId)} undone, ${costOf(context, last.contentId) + gone.refund} refunded.`),
       }
     }
 
@@ -1881,6 +2007,71 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     default:
       return state
   }
+}
+
+/** What was taken on a planned building that is going — its order given, its upgrades bought and its modes switched
+ *  this Build Phase — gone with it: the state without them, and what they cost, refunded. */
+function takenOn(context: BuildContext, state: BuildState, structure: Readonly<{ anchor: Coord }>): Readonly<{ state: Pick<BuildState, "held" | "fitted">; refund: number }> {
+  const key = anchorKey(structure.anchor)
+  const fitted = state.fitted.filter((taken) => taken.anchor !== key)
+  return { state: { held: state.held.filter((each) => each !== key), fitted }, refund: fittedCost(context, state) - fittedCost(context, { ...state, fitted }) }
+}
+
+/**
+ * **A building's action, by its key** (`building-action`), on the building of the player's Explore Map is on: an order
+ * given, or taken back (Hold production, Resume production); an upgrade bought, spending its price at once, or — bought
+ * this Build Phase — undone and refunded; a mode switched to, its price spent, and switching back to the mode the
+ * building opened the phase in refunds it. Refused, saying why, away from a building of the player's, for a key its
+ * card does not list, for an upgrade or a mode it cannot afford or whose requirement is not met, and for the mode
+ * already in force.
+ */
+function buildingAction(context: BuildContext, state: BuildState, hotkey: string): BuildState {
+  const lock = editLock(state)
+  if (lock !== null) return { ...state, status: lock }
+  const target = mapMode(state) === "explore" ? structureAtTile(context, state.planned, state.cursor) : null
+  const row = target === null ? undefined : buildingActions(context, state, target).find((each) => each.hotkey === hotkey)
+  if (target === null || row === undefined) {
+    return { ...state, status: status("Explore Map ([e]) onto a building of yours to use its actions.", "warning") }
+  }
+  const key = anchorKey(target.anchor)
+  const name = displayName(context, target.contentId)
+  const { action } = row
+  if (action.kind === "order") {
+    const order = ORDERS[action.order ?? ""]
+    const given = state.held.includes(key)
+    return {
+      ...state,
+      held: given ? state.held.filter((each) => each !== key) : [...state.held, key],
+      status: status(order === undefined ? "" : given ? order.undone(name) : order.given(name)),
+    }
+  }
+  const actions = actionsOf(context, target.contentId)
+  const mine = (taken: Readonly<{ anchor: string; action: string }>): boolean => taken.anchor === key
+  if (action.kind === "upgrade" && row.value === "undo") {
+    // Bought this Build Phase: undone, as a placed building is, and what was bought on top of it goes with it.
+    const needs = (id: string): readonly string[] => actions.find((each) => each.id === id)?.requires?.actions ?? []
+    const fitted = state.fitted.filter((taken) => !(mine(taken) && (taken.action === action.id || needs(taken.action).includes(action.id))))
+    const refund = fittedCost(context, state) - fittedCost(context, { ...state, fitted })
+    return { ...state, fitted, status: status(`${name}: ${action.label} undone, ${refund} refunded.`) }
+  }
+  if (row.value === "on") return { ...state, status: status(`${name} is already set to ${action.label}.`, "warning") }
+  if (row.refusal !== undefined) return { ...state, status: status(row.refusal, "warning") }
+  if (action.kind === "upgrade") {
+    return {
+      ...state,
+      fitted: [...state.fitted, { anchor: key, action: action.id }],
+      status: status(`${name}: ${action.label}, ${action.cost ?? 0} spent. It keeps it for the rest of the match.`),
+    }
+  }
+  // A mode: in place of whatever mode of its set was switched to this Build Phase — and nothing at all for the mode
+  // the building opened the phase in, back where it was and refunded.
+  const set = modeSet(action)
+  const ofSet = (taken: Readonly<{ anchor: string; action: string }>): boolean =>
+    mine(taken) && actions.some((each) => each.id === taken.action && each.kind === "mode" && modeSet(each) === set)
+  const opened = modeIn(actions, fittingsOf(target.contentId), set) === action.id
+  const fitted = [...state.fitted.filter((taken) => !ofSet(taken)), ...(opened ? [] : [{ anchor: key, action: action.id }])]
+  const cost = action.cost ?? 0
+  return { ...state, fitted, status: status(`${name} set to ${action.label}${opened || cost === 0 ? "" : `, ${cost} spent`}. It stays so until switched again.`) }
 }
 
 /** The structure covering a tile, standing or planned, or `null` — what Explore Map's card shows. */

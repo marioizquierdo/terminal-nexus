@@ -12,7 +12,7 @@ import { CARD_FIRST_ROW, CARD_HEADER_ROW, CARD_SEPARATOR_ROW, menuEntryRow, menu
 import { wrapWords } from "./draw.ts"
 import { cardEntry, menuEntries } from "../build/state.ts"
 import { abilityLines } from "../abilities/index.ts"
-import { CONTENT_ART } from "../content/art.ts"
+import { artFor } from "../content/art.ts"
 import type { BandCell } from "./frame.ts"
 import { BANDS } from "./frame.ts"
 import { put, text } from "./draw.ts"
@@ -242,8 +242,14 @@ function drawCardBody(
   for (const action of actions) {
     if (row > floor) return
     const key = `[${action.hotkey}]`
+    // What it says now at the row's right end, as a number is: its price, `on` for the mode in force, `undo` for an
+    // upgrade bought this Build Phase. A row that would be refused now is dim, as a menu row the player cannot
+    // afford is, and still answers its key with why.
+    const said = action.value ?? ""
+    const words = action.dim === true ? "chrome.muted" : "chrome.value"
     text(cells, band, column, row, key, "chrome.hotkey", { bold: true, limit })
-    text(cells, band, column + key.length + 1, row, look.typed(action.label), "chrome.value", { limit: limit - key.length - 1 })
+    text(cells, band, column + key.length + 1, row, look.typed(action.label), words, { limit: limit - key.length - 1 - (said === "" ? 0 : said.length + 1) })
+    if (said !== "") rightAlign(cells, layout, row, said, words)
     row += 1
   }
 
@@ -289,7 +295,7 @@ export function cardActionRows(input: Pick<BuildCompositionInput, "context" | "s
   if (actions.length === 0 || card.icon.kind !== "entity") return []
   const { layout } = input
   const definition = input.context.registry.get(card.icon.contentId)
-  const art = CONTENT_ART[card.icon.contentId] ?? [definition.short.charAt(0)]
+  const art = artFor(card.icon.contentId) ?? [definition.short.charAt(0)]
   const icon = { width: Math.max(...art.map((line) => line.length)), height: art.length }
   const top = layout.panelRow + CARD_FIRST_ROW
   const textLimit = layout.panelColumn + layout.panelLimit - (layout.panelColumn + icon.width + 2)
@@ -356,7 +362,7 @@ function drawCardIcon(
     fadeFrom(cells, from, look.hidden, look.colors)
     return { width: Math.max(...portrait.map((line) => line.length)), height: portrait.length }
   }
-  const art = CONTENT_ART[contentId] ?? [definition.short.charAt(0)]
+  const art = artFor(contentId) ?? [definition.short.charAt(0)]
   // Only a building rises through placement frames as its card opens; a unit's icon is simply itself.
   const rising =
     look.icon === null || definition.layer !== "obstacles"

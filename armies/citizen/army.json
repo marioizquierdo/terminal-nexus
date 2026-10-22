@@ -106,6 +106,17 @@
       "structure": "structure.citizen.barracks",
       "cost": 40,
       "spawns": {"unit": "unit.citizen.trooper", "perWave": 4, "waves": 1, "secondsBetween": 10},
+      "actions": [
+        {"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"},
+        {
+          "id": "production-line",
+          "kind": "upgrade",
+          "label": "Production line",
+          "cost": 15,
+          "effects": [{"addPerWave": {"building": "barracks", "perWave": 1}}],
+          "notes": "One more trooper a wave, this Barracks's alone and kept for the match. Fifteen credits for a trooper a round, where a Barracks's own troopers cost ten each (forty for four): half again the price, paid for a wave that needs no new ground, no build range and no second building to guard. A first guess, to measure."
+        }
+      ],
       "notes": "Four troopers in one wave a round, the owner's numbers (2026-10-05: 'Barraks could spawn 4 troops per round and that's is for now'). secondsBetween is unused while there is one wave; it is here for the day a Nexus power gives the Barracks a second and third wave."
     },
     {
@@ -121,6 +132,7 @@
       "tier": 2,
       "requires": ["barracks"],
       "spawns": {"unit": "unit.citizen.pikeman", "perWave": 4, "waves": 1, "secondsBetween": 10},
+      "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
       "notes": "The tech tree's first second tier: it can be built once a Barracks stands as the Build Phase opens, so a Barracks placed this round unlocks it next round. Four pikemen a wave, as a Barracks sends four troopers, each about three troopers in health times damage, for two and a half times a Barracks's cost: a fifth better per credit, the power curve's guidance for a higher tier (commander-armies.md). First guesses, no balance claim."
     },
     {
@@ -130,6 +142,7 @@
       "tier": 2,
       "requires": ["barracks"],
       "spawns": {"unit": "unit.citizen.mortar", "perWave": 2, "waves": 1, "secondsBetween": 10},
+      "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
       "notes": "Two mortars a wave once a Barracks stands, for a little more than a Barracks. A mortar's strength by the duel's measure (health times damage a second) is small, since most of its harm is the fire it leaves, so no scripted player picks it yet: a player chooses it against a tight army. First numbers, to be measured."
     }
   ],

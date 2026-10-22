@@ -254,11 +254,18 @@ export function sidePlanOf(context: BuildContext, state: BuildState): SidePlan {
     const [x = 0, y = 0] = key.split(",").map(Number)
     return { x, y }
   })
+  // The upgrades bought and the modes switched, in the order taken, each on its building by anchor: the duel takes them
+  // after the buildings are placed, as the Build Phase spent for them, so each building carries what it carries here.
+  const actions = state.fitted.map((taken) => {
+    const [x = 0, y = 0] = taken.anchor.split(",").map(Number)
+    return { x, y, action: taken.action }
+  })
   return {
     ...(state.nexusPick === null ? {} : { power: state.nexusPick + 1 }),
     build: state.planned.map((placement) => ({ building: cardIdOf(duel, placement.contentId), x: placement.anchor.x, y: placement.anchor.y })),
     stance: "attack",
     ...(hold.length === 0 ? {} : { hold }),
+    ...(actions.length === 0 ? {} : { actions }),
   }
 }
 
