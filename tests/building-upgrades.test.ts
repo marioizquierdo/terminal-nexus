@@ -24,6 +24,8 @@ import { contextFor, stepTick } from "../src/pulse/index.ts"
 import type { MatchState } from "../src/state/types.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { buildSide, clickCell, compose, keys } from "./build-helpers.ts"
+import { parseKeyScript } from "../src/playtest/keys.ts"
+import { runBuildPlaytest } from "../src/playtest/build.ts"
 
 const BARRACKS = "structure.citizen.barracks"
 const TURRET = "structure.bench.beamturret"
@@ -237,6 +239,27 @@ test("a mode switched on the screen stays switched the round after, and switchin
   assert.ok(later?.timeline.states[0]?.entities.some((entity) => entity.contentId === `${TURRET}+units-first`))
   const explored = currentCard(next, { ...round2, exploreMap: true, focus: "grid" })
   assert.deepEqual(explored?.actions?.slice(1), [{ hotkey: "v", label: "Nearest first" }, { hotkey: "b", label: "Units first", value: "on" }])
+})
+
+test("a scripted playtest: Explore Map onto the Barracks, buy its production line, watch its wave of five, and read it on its card the round after", { timeout: 120_000 }, () => {
+  const run = runBuildPlaytest({ scenes: false, steps: parseKeyScript("e Right*4 c s s wait~1000*30 Enter click:26,10 Enter") })
+  const texts = run.frames.map((frame) => frameToText(frame.frame))
+  const bought = texts[6] ?? ""
+  assert.match(bought, /\[c\] Production line +undo/u)
+  assert.match(bought, /WAVE +5 troopers at 5s/u)
+  assert.match(bought, /Barracks: Production line, 15 spent\./u)
+  // In the Battle Round the player's count grows by the Barracks's wave: five at once.
+  const yours = texts.map((text) => /(\d+) of yours/u.exec(text)?.[1]).map((count) => (count === undefined ? null : Number(count)))
+  const grew = yours.flatMap((count, index) => {
+    const before = yours[index - 1]
+    return count !== null && before !== null && before !== undefined && count > before ? [count - before] : []
+  })
+  assert.deepEqual(grew, [5], `the wave did not come as five: ${JSON.stringify(yours)}`)
+  // Round 2: the standing Barracks's card says what it carries.
+  const last = texts[texts.length - 1] ?? ""
+  assert.match(last, /round 2 of 3/u)
+  assert.match(last, /UPGRADE +Production line/u)
+  assert.match(last, /WAVE +5 troopers at 5s/u)
 })
 
 // --- The content: a fitted id ---------------------------------------------------------------------------------
