@@ -61,7 +61,16 @@ export const APART_GAP = 10
  * the buildings that train units (`formation`; absent, each goes where its placement says), and the stance.
  * `note` is the player's own words on why, kept in the record and shown to nobody else during the duel.
  */
-export type SidePlan = Readonly<{ power?: number; build: readonly Placement[]; formation?: Formation; stance: Stance; note?: string }>
+export type SidePlan = Readonly<{
+  power?: number
+  build: readonly Placement[]
+  formation?: Formation
+  stance: Stance
+  /** The side's buildings standing as the round opens, by anchor, that hold their waves this round (Hold production,
+   *  the Build Phase's building action): they send none. Absent: none held, as every script plays. */
+  hold?: readonly Readonly<{ x: number; y: number }>[]
+  note?: string
+}>
 
 /** A side between rounds: its Commander, what it has to spend, the powers it kept (by id, in the order kept), and its
  *  Commander's absence when she is out. */
