@@ -40,7 +40,9 @@ const AIR_UNIT_COLLISIONS = ["air"] as const
 
 export const RAVEL_CONTENT: readonly ContentDef[] = [
   {
-    // Fast, fragile, first. It dies to anything that connects and it usually connects first.
+    // Fast, fragile, first. It dies to anything that connects and it usually connects first. In the melee line: as a
+    // backliner, every runner of Dob's army ran past the enemy's troopers for what stood behind them, leaving his front
+    // empty, and his Nexus fell in round 1 or 2 in 20 of 24 rush duels (1 of the same 24 as melee).
     id: "unit.ravel.runner",
     short: "runner",
     layer: "units",

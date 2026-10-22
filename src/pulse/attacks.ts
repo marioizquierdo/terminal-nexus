@@ -22,6 +22,8 @@ type SplashImpact = {
   radius: number
   damage: number
   source: Actor
+  /** `"enemies"`: the burst passes over the shooter's own side (`AreaDamage.hits`). */
+  hits: "enemies" | undefined
 }
 
 export function attacks(context: TickContext): void {
@@ -132,6 +134,7 @@ export function attacks(context: TickContext): void {
           radius: attack.splash.radius,
           damage: amount,
           source: actor,
+          hits: attack.splash.hits,
         })
         continue
       }
@@ -169,10 +172,12 @@ export function attacks(context: TickContext): void {
     // dying entity's own blast - found by actually running `bench-siegecrawler-windup.map.json`: a
     // target that closed inside the attacker's own splash radius before the shot landed (the whole
     // point of a target still approaching during windup) caught the shooter in its own blast, which
-    // no earlier reasoning about "splash is smaller than range" had ruled out.
+    // no earlier reasoning about "splash is smaller than range" had ruled out. A burst that `hits: "enemies"` (the
+    // Citizen mortar's shell) also passes over everyone of the shooter's own side; one without hurts friend and foe.
     const splashTally = new Map<number, Tally>()
     for (const impact of splashes) {
       for (const victim of actorsWithin(context, impact.anchor, impact.footprint, impact.radius, impact.source)) {
+        if (impact.hits === "enemies" && victim.player === impact.source.player) continue
         const existing = splashTally.get(victim.ordinal)
         if (existing === undefined) splashTally.set(victim.ordinal, { total: impact.damage, source: impact.source })
         else existing.total += impact.damage

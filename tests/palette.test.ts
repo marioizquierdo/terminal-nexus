@@ -9,9 +9,9 @@ import type { StyleRole } from "../src/view/roles.ts"
 import { chroma, contrast, deltaE, hue, hueGap, nearest256, rgbFor, seenWith, xterm256 } from "./color-helpers.ts"
 
 /** The marks the map is meant to keep quiet: a dot of featureless floor, the map's edge, a bullet's
- *  trail; and burning ground's scorched fill, which is only ever a cell's fill, never a glyph's colour. Every other
+ *  trail; and burning ground's scorch and glow, which are only ever a cell's fill, never a glyph's colour. Every other
  *  role is something to read. */
-const QUIET: readonly StyleRole[] = ["terrain.plain", "chrome.edge", "fx.trail", "fx.fire.ground"]
+const QUIET: readonly StyleRole[] = ["terrain.plain", "chrome.edge", "fx.trail", "fx.fire.ground", "fx.fire.glow"]
 
 test("every role to be read clears 3:1 against its own background, in both themes", () => {
   for (const theme of THEMES) {
@@ -71,14 +71,25 @@ test("the two sides are two colours that each read as their own, and stay apart 
   }
 })
 
-test("on burning ground's scorched fill both sides' letters and the flame still clear 3:1, in both themes", () => {
-  // A unit standing in the fire keeps its own colour on the fill (src/view/burning.ts), so the fill is chosen to
-  // leave it readable.
+test("on burning ground's scorch both sides' letters and the flames still clear 3:1, and a tall flame on its glow, in both themes", () => {
+  // A unit standing in the fire keeps its own colour on the scorch (src/view/burning.ts), so the scorch is chosen to
+  // leave it readable; a tall flame is drawn on the glow, and only it.
   for (const theme of THEMES) {
     const fill = rgbFor("fx.fire.ground", "truecolor", theme)
-    for (const role of ["player.a", "player.b", "fx.fire"] as const) {
+    for (const role of ["player.a", "player.b", "fx.fire", "fx.fire.tall"] as const) {
       const ratio = contrast(rgbFor(role, "truecolor", theme), fill)
-      assert.ok(ratio >= 3, `${role} on the fill/${theme}: ${ratio.toFixed(2)}:1`)
+      assert.ok(ratio >= 3, `${role} on the scorch/${theme}: ${ratio.toFixed(2)}:1`)
     }
+    const glow = contrast(rgbFor("fx.fire.tall", "truecolor", theme), rgbFor("fx.fire.glow", "truecolor", theme))
+    assert.ok(glow >= 3, `a tall flame on its glow/${theme}: ${glow.toFixed(2)}:1`)
+  }
+})
+
+test("burning ground's scorch is mostly the ground: nearer the background than any flame or glow, in both themes", () => {
+  // Mario: "that red seems too intense and will be part of many battles ... more transparent".
+  for (const theme of THEMES) {
+    const scorch = deltaE(rgbFor("fx.fire.ground", "truecolor", theme), BACKGROUND_RGB[theme])
+    assert.ok(scorch <= 15, `the scorch is Delta E ${scorch.toFixed(1)} from the ground/${theme}`)
+    assert.ok(scorch < deltaE(rgbFor("fx.fire.glow", "truecolor", theme), BACKGROUND_RGB[theme]))
   }
 })

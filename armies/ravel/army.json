@@ -86,13 +86,14 @@
       "detonation": {"radius": 4, "damage": 36, "triggerRange": 1},
       "aim": "crowd",
       "targetLayers": ["units", "workers"],
+      "line": "backliner",
       "card": {
         "title": "Bomber",
         "subtitle": "From your Fuse Shed",
         "description": "Runs at the thickest knot of enemy troops it can reach and bursts there, hurting everything round it, yours too. Never goes for a building."
       },
       "glyph": ["o"],
-      "notes": "The owner's yes, 2026-10-21: it runs at the thickest knot of enemies and bursts there. As fast as a runner and as frail (20 health, a runner's speed and initiative), with no weapon: touching its target, it bursts (a contact detonation, triggerRange 1), and it bursts the same way if it is killed first. Radius 4 reaches 4 columns across and 2 rows up and down. 36 damage, where the proposal said about 30: a trooper (40) survives one burst and a runner (16) or a slinger (18) does not, so a block of troopers is hurt all over and a second bomber finishes it, and a loose line loses one or two. It aims at the enemy with the most of its side round it, not the nearest (aim: crowd), and hunts units and workers, never a building. First numbers, to be measured."
+      "notes": "The owner's yes, 2026-10-21: it runs at the thickest knot of enemies and bursts there. As fast as a runner and as frail (20 health, a runner's speed and initiative), with no weapon: touching its target, it bursts (a contact detonation, triggerRange 1), and it bursts the same way if it is killed first. Radius 4 reaches 4 columns across and 2 rows up and down. 36 damage, where the proposal said about 30: a trooper (40) survives one burst and a runner (16) or a slinger (18) does not, so a block of troopers is hurt all over and a second bomber finishes it, and a loose line loses one or two. It aims at the enemy with the most of its side round it, not the nearest (aim: crowd), and hunts units and workers, never a building. A backliner in the march (the owner, 2026-10-21): it runs ahead at its own pace, waits on no line, and keeps its aim at the thickest knot. First numbers, to be measured."
     }
   ],
   "buildings": [

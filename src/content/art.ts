@@ -127,6 +127,8 @@ const BUILT_IN_ART: Readonly<Record<string, UnitArt>> = {
   "unit.bench.medic": ["+"],
   /** A shield square to the front: what stands and pushes back. */
   "unit.bench.bulwark": ["#"],
+  /** The runner's own `x`, kept a letter of its own: the runner that goes beyond the line. */
+  "unit.bench.flanker": ["k"],
   /** An egg sac, split down the middle - a diamond hull built to open, not to fight. */
   "structure.bench.hatchery": ["/\\", "\\/"],
   /** The Citizen Nexus's own shape: the bench's passive one is a target for the kernel's scenarios, not a new look. */

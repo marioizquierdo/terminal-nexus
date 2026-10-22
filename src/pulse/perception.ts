@@ -1,6 +1,7 @@
 // 3. Perception (phase order in pulse.md). Who each actor sees, and who it decides to fight or flee.
 
 import type { ContentDef } from "../content/types.ts"
+import { lineOf } from "../content/types.ts"
 import { directionOf, ROW_DISTANCE } from "../grid/coords.ts"
 import { wholeRows } from "../grid/reach.ts"
 import type { Actor, TickContext } from "./shared.ts"
@@ -9,6 +10,7 @@ import { engageRange, followsTarget, targetFor } from "./target.ts"
 import { purposeOf, reachOf, TickRoutes } from "./routes.ts"
 import { UNREACHABLE } from "../routing/index.ts"
 import { burnsOn } from "./burning.ts"
+import { marchOf } from "./march.ts"
 
 export function hostilesOf(context: TickContext, actor: Actor): Actor[] {
   return context.actors.filter((other) => other.player !== actor.player && !other.pendingDead)
@@ -134,7 +136,14 @@ function thickestOf(context: TickContext, actor: Actor, candidates: readonly Act
 
 /** One actor's choice this tick, before it is applied: its candidates, and the one it chose, if any (with the crowd
  *  round it, for a unit that aims at one). */
-type Choice = { actor: Actor; candidates: readonly Actor[]; selection: { target: Actor; distance: number; crowd?: number } | null }
+type Choice = {
+  actor: Actor
+  candidates: readonly Actor[]
+  selection: { target: Actor; distance: number; crowd?: number } | null
+  /** For a backliner that found enemies beyond the melee line (`beyondTheLine`): every enemy it could choose from, to
+   *  fall back on when it can walk to none of those. */
+  wider?: readonly Actor[]
+}
 
 export function perception(context: TickContext): void {
   // Each actor chooses among what it can see (the nearest, then the one it holds, the weakest, a draw).
@@ -184,7 +193,9 @@ export function perception(context: TickContext): void {
         candidates = eligibleTargets(actor, hostiles)
       }
     }
-    choices.push({ actor, candidates, selection: selectTarget(context, actor, candidates) })
+    const beyond = beyondTheLine(actor, candidates)
+    if (beyond === null) choices.push({ actor, candidates, selection: selectTarget(context, actor, candidates) })
+    else choices.push({ actor, candidates: beyond, selection: selectTarget(context, actor, beyond), wider: candidates })
   }
 
   // Who walks with those choices, and so who stands and is a wall to everyone's routes this tick (`routes.ts`).
@@ -234,12 +245,41 @@ export function perception(context: TickContext): void {
       })
     }
   }
+
+  // Every target set: who marches for its side's goal this tick, and who yields to its army (`march.ts`).
+  context.march = marchOf(context)
+}
+
+/**
+ * **A backliner goes beyond the enemy's line** (the owner, 2026-10-21: "backliner (tries to go beyond the enemy
+ * line)"): among the enemies `actor` could choose from, the ones within its engage reach that are not in the melee line
+ * — a unit of the short or long range or a backliner, or a building that shoots — for it to choose among first, the
+ * nearest as every unit chooses; `null` when it is no backliner, aims at a crowd (the bomber keeps its aim), or no such
+ * enemy is near, and it chooses as every unit does. A worker and a building that does not shoot are in no line.
+ */
+function beyondTheLine(actor: Actor, candidates: readonly Actor[]): readonly Actor[] | null {
+  if (lineOf(actor.definition) !== "backliner" || actor.definition.aim === "crowd" || actor.definition.behavior !== "advance") return null
+  const reach = engageRange(actor.definition)
+  const beyond = candidates.filter((other) => {
+    const line = lineOf(other.definition)
+    if (line === null || line === "melee") return false
+    if (other.definition.layer === "obstacles" && other.definition.attack?.kind === "heal") return false
+    return within(actor, other, reach)
+  })
+  return beyond.length > 0 ? beyond : null
 }
 
 /** How far `actor` walks to where its attack reaches `target`, round what stands this tick: `UNREACHABLE` when it
- *  cannot. */
-function walkTo(routes: TickRoutes, actor: Actor, target: Actor): number {
-  return routes.fieldOf(actor, { kind: "unit", target, reach: reachOf(actor) }).distanceAt(actor.anchor)
+ *  cannot, or when the walk is longer than `limit` — a walk that could not beat the best found so far need not be
+ *  worked out to the end. */
+function walkTo(routes: TickRoutes, actor: Actor, target: Actor, limit = UNREACHABLE): number {
+  return routes.fieldOf(actor, { kind: "unit", target, reach: reachOf(actor) }).distanceWithin(actor.anchor, limit)
+}
+
+/** Whether `actor` can walk to where its attack reaches `target` at all, round what stands this tick: known from the
+ *  patch it stands on, without working out how far (`DistanceField.reaches`). */
+function canWalkTo(routes: TickRoutes, actor: Actor, target: Actor): boolean {
+  return routes.fieldOf(actor, { kind: "unit", target, reach: reachOf(actor) }).reaches(actor.anchor)
 }
 
 /**
@@ -252,14 +292,22 @@ function walkTo(routes: TickRoutes, actor: Actor, target: Actor): number {
  * near as it can get (`intents.ts`).
  */
 function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice): Choice["selection"] {
-  const { actor, candidates, selection } = choice
+  const { actor, candidates, selection, wider } = choice
   if (selection === null) return null
+  if (wider !== undefined) {
+    // A backliner goes for the nearest enemy beyond the line it can walk to — nearest to walk to for a melee one, by
+    // range for any other — and, with none it can walk to, chooses among them all as every unit does.
+    const reachable = candidates.filter((candidate) => walkTo(routes, actor, candidate) !== UNREACHABLE)
+    if (reachable.length === 0) return chooseByRoute(context, routes, { actor, candidates: wider, selection: selectTarget(context, actor, wider) })
+    if (actor.definition.attack?.kind !== "melee") return reachable.includes(selection.target) ? selection : selectTarget(context, actor, reachable)
+    return nearestToWalk(context, routes, actor, reachable)
+  }
   const heading = targetFor(context, actor) === null && headsForNexus(actor, candidates)
   // A unit that aims at a crowd keeps the crowd it chose, as a shot keeps the nearest: by range, passing over one it
   // cannot reach for the thickest it can.
   if (actor.definition.attack?.kind !== "melee" || actor.definition.aim === "crowd") {
-    if (walkTo(routes, actor, selection.target) !== UNREACHABLE) return selection
-    const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && walkTo(routes, actor, candidate) !== UNREACHABLE)
+    if (canWalkTo(routes, actor, selection.target)) return selection
+    const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && canWalkTo(routes, actor, candidate))
     return reachableOnes.length > 0 ? selectTarget(context, actor, reachableOnes) : (breach(routes, actor, selection.target) ?? selection)
   }
   // Nearest by range first: a walk is never shorter than the range less a row (a tile beside a target is at most two
@@ -269,7 +317,8 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   let nearest: Actor[] = []
   for (const { candidate, range } of byRange) {
     if (range - ROW_DISTANCE > best) break
-    const walk = walkTo(routes, actor, candidate)
+    // Only a walk as short as the best so far can change the choice, so none is worked out further than that.
+    const walk = walkTo(routes, actor, candidate, best)
     if (walk < best) {
       best = walk
       nearest = [candidate]
@@ -288,6 +337,24 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   const least = Math.min(...nearest.map((candidate) => candidate.hp))
   const target = held ?? drawAmong(context, nearest.filter((candidate) => candidate.hp === least))
   return target === undefined ? selection : { target, distance: distanceBetween(actor, target) }
+}
+
+/** Among `candidates`, every one of which `actor` can walk to, the nearest to walk to; then the one it holds, the
+ *  weakest, a draw. */
+function nearestToWalk(context: TickContext, routes: TickRoutes, actor: Actor, candidates: readonly Actor[]): Choice["selection"] {
+  let best = UNREACHABLE
+  let nearest: Actor[] = []
+  for (const candidate of candidates) {
+    const walk = walkTo(routes, actor, candidate)
+    if (walk < best) {
+      best = walk
+      nearest = [candidate]
+    } else if (walk === best) nearest.push(candidate)
+  }
+  const held = nearest.find((candidate) => candidate.ordinal === actor.targetOrdinal)
+  const least = Math.min(...nearest.map((candidate) => candidate.hp))
+  const target = held ?? drawAmong(context, nearest.filter((candidate) => candidate.hp === least))
+  return target === undefined ? null : { target, distance: distanceBetween(actor, target) }
 }
 
 /**

@@ -73,6 +73,24 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     targetLayers: GROUND_ONLY_TARGETS,
   },
   {
+    // A backliner on the bench (`ContentDef.line`, movement.md, the march): a Ravel runner that goes beyond the enemy's
+    // line, marching ahead of everyone's pace and choosing the shooters behind the front before it. No army fields one
+    // yet — the runner itself is melee, since a whole army of runners as backliners left its front empty — so the
+    // march's tests and scenarios show the line with this.
+    id: "unit.bench.flanker",
+    short: "flanker",
+    layer: "units",
+    footprint: rectFootprint(1, 1),
+    maxHp: 16,
+    movementRate: { numerator: 4, denominator: 1 },
+    speedTier: 1,
+    attack: { kind: "melee", range: 1, damage: 5, cooldownTicks: 8 },
+    collidesWith: GROUND_UNIT_COLLISIONS,
+    behavior: "advance",
+    salvage: 8,
+    line: "backliner",
+  },
+  {
     // The counter, and proof `targetLayers` is a real choice rather than a hardcoded law: this is an
     // otherwise ordinary ranged trooper, `targetLayers` left undefined (its default is "every layer"),
     // so it can already hit the skyraider with no new content field at all.

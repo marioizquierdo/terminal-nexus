@@ -11,7 +11,6 @@
 import { footprintBox, footprintSteps, footprintWithin } from "../grid/coords.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import type { Ground } from "./ground.ts"
-import { canStand } from "./ground.ts"
 
 /** What a body must do to its goal: touch it within `steps` steps along the Grid's sides (melee), or stand within a
  *  reach of `radius` of it, measured as range is (a shot, a heal). */
@@ -29,6 +28,12 @@ function searchBox(target: Coord, targetBody: Footprint, body: Footprint, margin
   }
 }
 
+/** `canStand` for an anchor given as two numbers: asked of every anchor round a goal, and in a crowd most of them are
+ *  taken, so an anchor is made only for one a body may stand on. */
+function standsAt(ground: Ground, x: number, y: number): boolean {
+  return x >= 0 && y >= 0 && x < ground.width && y < ground.height && ground.open[y * ground.width + x] === 1
+}
+
 /**
  * Every anchor from which `body` reaches a target standing at `target` with `targetBody`, by `reach`, that the body
  * may stand on. The body never overlaps the target: a tile it shares with it is not a place to stand.
@@ -39,8 +44,8 @@ export function goalsNear(ground: Ground, body: Footprint, target: Coord, target
   const goals: Coord[] = []
   for (let y = box.top; y <= box.bottom; y += 1) {
     for (let x = box.left; x <= box.right; x += 1) {
+      if (!standsAt(ground, x, y)) continue
       const anchor = { x, y }
-      if (!canStand(ground, anchor)) continue
       const steps = footprintSteps(anchor, body, target, targetBody)
       if (steps === 0) continue
       const reaches = reach.kind === "touch" ? steps <= reach.steps : footprintWithin(anchor, body, target, targetBody, reach.radius)
@@ -59,8 +64,8 @@ export function goalsInside(ground: Ground, body: Footprint, area: Area): Coord[
   const goals: Coord[] = []
   for (let y = area.y - own.bottom; y <= area.y + area.height - 1 - own.top; y += 1) {
     for (let x = area.x - own.right; x <= area.x + area.width - 1 - own.left; x += 1) {
+      if (!standsAt(ground, x, y)) continue
       const anchor = { x, y }
-      if (!canStand(ground, anchor)) continue
       const inside = body.some((offset) => {
         const tx = x + offset.x
         const ty = y + offset.y

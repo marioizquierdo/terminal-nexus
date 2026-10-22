@@ -582,3 +582,34 @@ while only terrain weighed ground. The first weight that belonged to a route alo
 ground) made a step cost more than credit can ever hold, and units froze inside the fire with no event to say so. A
 step's credit now comes from the terrain; a field may weigh ground dearer than walking it costs. When a new thing
 makes ground dear to a route, ask separately what it costs to walk.
+
+### Count what a structure costs to make, and time ticks by the wall clock
+
+On Node, making a typed array costs microseconds whatever its size, so a structure made dozens of times a tick (a
+distance field made five of them) should make as few as it can; and `process.cpuUsage` is a system call that can cost
+as much as a small tick in a sandbox, so time ticks by `performance.now`. Wall-clock budget tests fail under parallel
+load at the base commit too: when one fails while agents build side by side, run it on the base before suspecting the
+change. (The pathfinding wrap-up, 2026-10-21: routes made a fifth faster with every battle's events byte for byte the
+same, `scripts/profile-routes.ts`.)
+
+### Commit nothing while a measurement plays
+
+`measure run --jobs` plays its parts as processes of their own, each reading the build as it starts; a commit made
+while it played (documents only) gave its parts two builds, and `merge` refused them at the end, half an hour later.
+Write the report and the documents in the scratchpad while it plays, and commit after. (The pathfinding wrap-up,
+2026-10-21.)
+
+### The quick spec cannot see what only one kind of player does
+
+The march was measured on the quick spec, which plays the balanced player alone, and looked fine; the full spec's rush
+duels showed Dob's Nexus falling in round 1 or 2 in 20 of 24, because every runner had been made a backliner and a
+rush is all runners. A change to how a common unit chooses or moves is measured with every player, the full spec's
+duels at least. And a role meant for a special unit (going beyond the line) empties an army when its mainstay takes it.
+
+### A rule that moves units needs somewhere for them to go
+
+Making way for a wave sent every unit on a base's roofs down to the nearest ground, even where the ground round a
+crowded base was full and even for a wave the army had no place for. The units walked and never moved, everyone routed
+through them, and the curve level stood blocked ten times as long. The fix was at the source: Recall keeps a wave's room
+on each roof, so the rule rarely has to move anyone, and it moves units only for a wave that can come out. When a rule
+sends units somewhere, ask what happens when there is nowhere, and measure the most crowded level, not the first.

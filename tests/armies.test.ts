@@ -597,7 +597,7 @@ test("a unit an army defines as data is checked by path: its numbers, its glyph 
   })
   assert.deepEqual(problems, [
     'army "data": content[unit.test.heavy].maxHp should be a whole number above zero, not 0',
-    'army "data": content[unit.test.heavy] has "speed", which is not one of its fields ("id", "layer", "size", "maxHp", "card", "glyph", "short", "movementRate", "speedTier", "attack", "collidesWith", "behavior", "salvage", "detonation", "nexus", "commander", "roundsOut", "engageRange", "targetLayers", "targetPreference", "aim", "spawn", "splitOnDeath", "constructionRadius", "supplyProvided", "mends", "supplyCost", "abilities", "notes")',
+    'army "data": content[unit.test.heavy] has "speed", which is not one of its fields ("id", "layer", "size", "maxHp", "card", "glyph", "short", "movementRate", "speedTier", "attack", "collidesWith", "behavior", "salvage", "detonation", "nexus", "commander", "roundsOut", "engageRange", "targetLayers", "targetPreference", "aim", "line", "spawn", "splitOnDeath", "constructionRadius", "supplyProvided", "mends", "supplyCost", "abilities", "notes")',
     'army "data": the content "unit.test.wide" is 2 wide and its glyph\'s row 1 is 1',
     'army "data": the content "unit.test.leader" is a Commander, and its card needs pronouns',
     'army "data": the content "unit.test.sitter" sits rounds out, and only a Commander does',

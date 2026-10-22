@@ -92,10 +92,11 @@ over entities can never decide an outcome:
    already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw; a unit that
    aims at a crowd first takes the enemies with the most of their side round them (below). Then the
    tick's routes are built from who walks and who stands (section 1.6), and a unit that would walk chooses again by
-   what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all.
+   what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all. Every target set,
+   who marches and who of them yields (the march, section 1.6).
 4. **Intents.** Each actor with movement credit declares one destination tile: the best step of its route it
    fits now. A unit held up behind allies that are stuck walks round them; two allies that want each other's tile
-   swap.
+   swap. A marcher that yields declares no step; an ally held up behind it swaps with it, or releases it.
 5. **Arbitration** (`src/pulse/arbitration.ts`). Group intents by destination *within a layer*.
    Contested claims resolve by speed tier — **tier 1 outranks tier 2** — with any remaining tie
    broken by one draw from the seeded stream. Entity id orders iteration and event emission, never
@@ -133,7 +134,8 @@ arbitration's progress measure simple.
 **Death can be contagious, and step 8 is a queue rather than a pass** (RULE —
 `tests/ravel.test.ts`). Where content detonates on death — Ravel volatile munitions are the first
 such rule, and they sit in the bench rosters — the blast damages everything inside its
-radius, friend and foe, and anything reduced to zero joins the queue. **The chain is bounded because
+radius, friend and foe — or only the other side's, where the content says it hits enemies alone — and anything
+reduced to zero joins the queue. **The chain is bounded because
 an entity can only die once**, so the queue drains after at most one round per entity and the whole
 cascade settles inside the tick that started it. Order is entity order throughout.
 
@@ -198,7 +200,10 @@ blow the shooter strikes where it stands. A kill by fire is the shooter's, named
 not, and gives no killer's pause. A patch whose time is up goes out after it burns its last (`ground.lit`,
 `ground.burned`, `ground.out`). The state carries `burning` only while something burns, so a state without fire hashes
 as it did before fire existed. Routes weigh it while it burns (section 1.6), and Recall puts it out (section 2). The
-Citizen mortar's shell is the first that burns.
+Citizen mortar's shell is the first that burns, and it has two jobs (the owner, 2026-10-21): its burst, 12 within 2,
+hurts only the enemy (an area's `hits: "enemies"`, which a splash and a death's blast both read; without it an area
+hurts friend and foe), and the fire it leaves, 8 a second within 4 for four seconds (48 ticks), hurts everyone on it,
+either side.
 
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
 `src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
@@ -232,6 +237,9 @@ balanced one.
   unit that aims at a crowd counts each candidate's crowd from where bodies stand and whose they are, never an order,
   and breaks a tie between equal crowds the same way.
 - **A wide unit measures its walk from its nose**: its tile nearest the goal, and the enemy tile nearest it.
+- **The march** reads only where bodies stand and whose they are: progress and the band are distances, the guide line
+  is drawn alike from either end (a point exactly between two tiles takes both), and two allies that would swap with
+  one yielder are drawn between; a mirrored march stays a mirror tick for tick (`march-mirror`).
 - **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, Recall's homes and
   tiles, a Commander's return and a mission's arrivals break a tie toward the enemy's Grid Nexus
   (`enemyNexusMiddle`), and Recall sets its survivors down nearest home first, then nearest the enemy. Forces whose
@@ -351,6 +359,19 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   route, or in a ring of units each waiting on the next — walks round them by a field of its own that counts them as
   walls; one that only waits behind a walker that will step on soon waits, since walking round a queue and back would
   pace. Two allies of one tile each that want each other's tile swap, together.
+- **The march** (the owner, 2026-10-21; `src/pulse/march.ts`, `tests/march.test.ts`, how it reads in
+  [`movement.md`](movement.md), section 5). A unit marches when it walks for its side's goal — its target, or the
+  enemy's Grid Nexus while that is beyond its engage reach; one walking to an enemy within reach is engaged and fights
+  as before. Once perception has set every target, a marcher's progress is its walk, for one tile, to its side's goal
+  over rock and the enemy's standing buildings. A marcher with a line (`lineOf`; a backliner, a flyer, a unit with no
+  attack and a unit on its own roof keep none) yields — declares no step — when it is further forward than its line's
+  place behind its side's Commander while she marches (melee 2 ahead, short 4 behind, long 8 behind), or, in the short
+  or long line, when a marching ally of a line ahead within 12 columns is not 4 columns of progress ahead per line
+  between them; never with an enemy within 12 columns of it. A yielder is a walker to the routes, not a wall: a held
+  ally of one tile on its layer swaps with it when both can pay, and a bigger one releases it to take its own best step
+  (`march.made-way`). A marcher more than 6 columns off its side's guide line — from the Commander, or its Nexus
+  without her, to its goal — breaks a tie between equally good steps toward the line. A backliner chooses first among
+  the enemies within its reach that are not in the melee line, the nearest it can walk to.
 - **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
   a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
   from where a unit stands, so it can save up for a step onto scrub ([`grid.md`](grid.md), terrain).
@@ -373,7 +394,8 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   field walked downhill over the terrain and the buildings, ending beside what the raid goes for.
 
 What a tick's routes cost is measured in `tests/routing.test.ts`: twelve fields worked out over the whole starter
-map take a third of a frame at most, and a battle's stop far sooner.
+map take a third of a frame at most, and a battle's stop far sooner. A whole tick's is profiled by
+`scripts/profile-routes.ts` ([`movement.md`](movement.md), the general path).
 
 ## 2. Match structure
 
@@ -412,10 +434,18 @@ At Pulse start plans reveal together and valid construction becomes operational.
 producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
 result (RULE — `tests/pulse-run.test.ts`).
 
-At Pulse end survivors regroup near home producers — the nearest of their side's buildings that trains or
-spawns their kind, nearest by the Grid's distance. Orphans are adopted by the nearest compatible producer or
-regroup near the Grid Nexus. Each survivor is set down on the nearest free tile, searched one ring of the Grid's
-distance at a time, so a group comes home round on screen ([`grid.md`](grid.md), setting a group down). A
+At Pulse end a survivor goes home to the building that trained it while it stands; else to the nearest of its side's
+buildings that trains or spawns its kind; else, an orphan or a Commander, to the Grid Nexus. A survivor whose home
+makes units is set down on that building's roof, wholly on its tiles, as near the tile it came out on as there is room
+(the owner, 2026-10-21: "piling on the roof as close to original position as possible"), **keeping room there for one
+of its waves**: a roof takes as many survivors as its tiles hold less the units of a wave (a Barracks's six tiles and
+four troopers a wave: two), so the next round's first wave never waits behind the units that came home. A roof that is
+full, a body
+too wide for it, and a unit in the air go to the nearest free ground round it, searched one ring of the Grid's
+distance at a time ([`grid.md`](grid.md), setting a group down), kept off the ground touching any building of its side
+that makes units while there is room elsewhere, so a roof can always empty. The Grid Nexus is never stood on: its
+survivors are set down beside it. A carried unit opens the next Pulse where Recall left it, on its roof included; a
+building planned on it moves it (RULE — `tests/recall-home.test.ts`). A
 producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`). **Recall puts out burning ground**
@@ -508,7 +538,12 @@ where they head (section 1.3a), so it stands together on the side facing the fig
 formation"). The recipe says
 how many a wave, how many waves a Pulse, when the first comes and the gap to the next; the schedule never
 slips. A building short of room never spawns fewer: what fits on its roof comes out on the wave's tick, and the
-rest on the first tick there is room, as the first walk off.
+rest on the first tick there is room, as the first walk off. While any of its side's buildings owes units its army has
+room for, a unit on its side's roofs steps down to the nearest ground first and then carries on, unless it is part way
+through its windup (`src/pulse/make-way.ts`), so a roof that units stand on empties for the wave. A wave its side's
+supply holds back waits for a place in the army, not for the roof, and moves nobody: sending everyone on the roofs down
+for it jammed a crowded base round its own target (the curve level, measured 2026-10-21). A unit a building trains
+remembers that building and the tile it came out on (`EntityState.home`, `homeAt`).
 
 **Units walk out over the roofs** (RULE — `src/pulse/spawn.ts`, `src/pulse/shared.ts` `onRoof`, `tests/roofs.test.ts`;
 the owner, 2026-10-20: "they will just keep walking on the rooftops on the natural direction where their destination

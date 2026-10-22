@@ -80,12 +80,12 @@
       "attack": {
         "kind": "ranged",
         "range": 10,
-        "damage": 8,
+        "damage": 12,
         "cooldownTicks": 54,
         "projectileTilesPerTick": 2,
         "windupTicks": 12,
-        "splash": {"radius": 2, "damage": 8},
-        "burn": {"radius": 4, "damage": 4, "everyTicks": 12, "ticks": 72}
+        "splash": {"radius": 2, "damage": 12, "hits": "enemies"},
+        "burn": {"radius": 4, "damage": 8, "everyTicks": 12, "ticks": 48}
       },
       "aim": "crowd",
       "targetLayers": ["units", "workers"],
@@ -94,10 +94,10 @@
       "card": {
         "title": "Mortar",
         "subtitle": "From your Battery",
-        "description": "Slow artillery. Lobs a shell at the thickest knot of enemy troops in a long reach; the ground there burns for six seconds, hurting anyone on it, yours too. Never aims at a flyer or a building."
+        "description": "Slow artillery. Lobs a shell at the thickest knot of enemy troops in a long reach. The blast hurts only the enemy; the ground there then burns for four seconds, hurting anyone on it, yours too. Never aims at a flyer or a building."
       },
       "glyph": ["u"],
-      "notes": "The owner's yes, 2026-10-21: it stands back and lobs a shell at the thickest knot within a long reach. Half a trooper's pace (5/3), 30 health. Range 10: ten columns across, five rows up and down. One shell every 54 ticks (4.5 seconds at 12 a second), after a second's windup the first time, flying 2 columns a tick (5 ticks at full reach). The shell bursts for 8 within 2 and leaves the ground burning: 4 to every unit and worker within 4 of the impact, of either side, every second for six seconds (72 ticks), so a unit that stands in it all that time takes 24 and 32 with the burst, short of a trooper's 40. Routes weigh burning ground four times its ground, so a loose army walks round it. It aims at the enemy with the most of its side round it (aim: crowd), counted within the burn's radius. Two places of supply, as a pikeman. First numbers, to be measured."
+      "notes": "The owner's yes, 2026-10-21: it stands back and lobs a shell at the thickest knot within a long reach. Half a trooper's pace (5/3), 30 health. Range 10: ten columns across, five rows up and down. One shell every 54 ticks (4.5 seconds at 12 a second), after a second's windup the first time, flying 2 columns a tick (5 ticks at full reach). Two jobs, the owner's words of 2026-10-21: an explosion and a fire. The shell bursts for 12 within 2, to the enemy only (hits: enemies), and leaves the ground burning: 8 to every unit and worker within 4 of the impact, of either side, every second for four seconds (48 ticks), so an enemy that stands in it all that time takes 32 and 44 with the burst, past a trooper's 40; one of its own side caught in it takes the fire's 32 alone. attack.damage is the burst's 12, for the card; the rule reads the splash. Routes weigh burning ground four times its ground, so a loose army walks round it. It aims at the enemy with the most of its side round it (aim: crowd), counted within the burn's radius. Two places of supply, as a pikeman. First numbers, to be measured."
     }
   ],
   "buildings": [

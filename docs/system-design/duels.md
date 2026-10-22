@@ -78,6 +78,11 @@ wins and loses, and lists what the enemy's buildings can train with what those u
 said as one (a splash, burning ground, a burst, aiming at the thickest knot), so a player can weigh a formation
 against the army it faces.
 
+**A player that reads words also gets the play strategies** ([`play-strategies.md`](../game-design/play-strategies.md)):
+what duels have taught so far, as advice with its measurement, just before the plan it is asked for. The page is read
+when the brief is written (`playStrategies`, `src/cli/duel.ts`), from its marker to its end, so an entry added there is
+in the next duel's brief; a script reads the brief's data, which carries none.
+
 ## 4. How tight an army fights: formations
 
 Units come out on the roofs of the buildings that made them, so where a side builds decides how tight its army fights

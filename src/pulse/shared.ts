@@ -14,6 +14,7 @@ import type { BurningGround, EntityState, GroundItem, PlayerId, TargetArea } fro
 import { boostedAmount, guardedAmount } from "../abilities/index.ts"
 import type { PulseContext } from "./context.ts"
 import type { TickRoutes } from "./routes.ts"
+import type { March } from "./march.ts"
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] }
 
@@ -91,6 +92,10 @@ export type TickContext = {
   /** The tick's routes (`routes.ts`): built by perception once every actor has chosen, from who walks and who
    *  stands, and walked by intents. Absent until then. */
   routes?: TickRoutes
+  /** The tick's march (`march.ts`): who marches for its side's goal and who yields to its army, worked out by
+   *  perception once every target is set, and read by intents. Absent until then, and for a tick driven without
+   *  perception. */
+  march?: March
   /**
    * The ground burning (`BurningGround`, `burning.ts`): the state's as the tick began, a patch added as each hit of an
    * attack that `burn`s lands (`attacks.ts`), and the patches whose time is up dropped once the tick's fire has burnt.

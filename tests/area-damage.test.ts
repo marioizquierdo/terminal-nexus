@@ -123,8 +123,12 @@ test("the bomber and the mortar are their factions' data: frail and fast, slow a
   assert.ok(rate(mortar) < rate(FIXTURE_REGISTRY.get(TROOPER)), "slower than a trooper")
   assert.equal(mortar.attack?.range, 10)
   assert.equal(mortar.attack?.cooldownTicks, 54)
-  assert.deepEqual(mortar.attack?.splash, { radius: 2, damage: 8 })
-  assert.deepEqual(mortar.attack?.burn, { radius: 4, damage: 4, everyTicks: 12, ticks: 72 })
+  // Two jobs (the owner, 2026-10-21): a burst for the enemy alone, then a fire for four seconds that hurts everyone.
+  assert.deepEqual(mortar.attack?.splash, { radius: 2, damage: 12, hits: "enemies" })
+  assert.equal(mortar.attack?.damage, 12, "the card's damage is the burst's")
+  assert.deepEqual(mortar.attack?.burn, { radius: 4, damage: 8, everyTicks: 12, ticks: 48 })
+  // Standing in it all that time, an enemy takes the burst and four burns, past a trooper's health.
+  assert.ok(12 + 4 * 8 > (FIXTURE_REGISTRY.get(TROOPER).maxHp ?? 0))
   assert.equal(mortar.aim, "crowd")
   assert.deepEqual(mortar.targetLayers, ["units", "workers"])
 
@@ -217,10 +221,55 @@ test("a mortar's landing shell lights the ground at its target's tile, the tick 
   assert.ok(shot?.kind === "attack.launched" && lit?.kind === "ground.lit")
   assert.equal(lit.tick, shot.tick)
   assert.deepEqual(lit.centre, { x: 15, y: 10 })
-  assert.deepEqual([lit.radius, lit.damage, lit.everyTicks, lit.untilTick], [4, 4, 12, shot.tick + 72])
+  assert.deepEqual([lit.radius, lit.damage, lit.everyTicks, lit.untilTick], [4, 8, 12, shot.tick + 48])
   assert.equal(lit.source, shot.attacker)
   const burns = events.filter((event) => event.kind === "ground.burned").map((event) => event.tick)
   assert.equal(burns[0], shot.tick + 12, "fire first burns a beat after it is lit")
+})
+
+test("a mortar's burst hurts only the enemy round its target, and the fire it leaves burns both sides for four seconds", () => {
+  // Two enemy posts and two of the mortar's own side, all within the burst's 2 and the fire's 4 of the target.
+  const state = field(
+    { A: [[5, 10, MORTAR], [17, 10, "unit.test.post"], [15, 11, "unit.test.post"]], B: [[15, 10, "unit.test.post"], [13, 10, "unit.test.post"]] },
+    { registry: STILL_REGISTRY },
+  )
+  const { states, events } = play(state, 120, STILL_REGISTRY)
+  const shot = events.find((event) => event.kind === "attack.launched")
+  assert.ok(shot?.kind === "attack.launched")
+  const hp = (tick: number, x: number, y: number): number => at(states[tick - 1] as MatchState, x, y).hp
+  // The burst, the tick the shell lands: 12 to each enemy, nothing to its own.
+  assert.deepEqual([hp(shot.tick, 15, 10), hp(shot.tick, 13, 10)], [88, 88])
+  assert.deepEqual([hp(shot.tick, 17, 10), hp(shot.tick, 15, 11)], [100, 100], "the burst hurt the mortar's own side")
+  // The fire: 8 a second to everyone on it, either side, four times, and out 48 ticks after it was lit.
+  const burns = events.filter((event) => event.kind === "ground.burned" && event.tick <= shot.tick + 48).map((event) => event.tick)
+  assert.deepEqual(burns, [12, 24, 36, 48].map((beat) => shot.tick + beat))
+  const out = events.find((event) => event.kind === "ground.out")
+  assert.equal(out?.tick, shot.tick + 48)
+  const after = shot.tick + 50
+  assert.ok(after < shot.tick + 54, "the mortar fired again before the fire was counted")
+  assert.deepEqual([hp(after, 15, 10), hp(after, 13, 10)], [56, 56])
+  assert.deepEqual([hp(after, 17, 10), hp(after, 15, 11)], [68, 68], "the fire spared the mortar's own side")
+})
+
+test("a death's blast that hits only enemies passes over its own side; without, it hurts both", () => {
+  const blast = (hits: boolean): readonly number[] => {
+    const bomb: ContentDef = {
+      id: "unit.test.bomb", short: "bomb", layer: "units", footprint: rectFootprint(1, 1), maxHp: 10, speedTier: 2, collidesWith: ["obstacles", "units"],
+      behavior: "static", salvage: 0, detonation: { radius: 4, damage: 30, ...(hits ? { hits: "enemies" as const } : {}) },
+    }
+    const registry = createRegistry([...STILL_REGISTRY.ids().map((id) => STILL_REGISTRY.get(id)), bomb])
+    // The bomb (side A) between a post of its own and one of the enemy's, each 4 columns off; a fire of one tile's
+    // reach on the bomb alone sets it off.
+    const state: MatchState = {
+      ...field({ A: [[20, 10, "unit.test.bomb"], [24, 10, "unit.test.post"]], B: [[16, 10, "unit.test.post"]] }, { registry }),
+      burning: [patch({ x: 20, y: 10 }, { radius: 1, damage: 50 })],
+    }
+    const { states } = play(state, 13, registry)
+    const last = states[states.length - 1] as MatchState
+    return [at(last, 24, 10).hp, at(last, 16, 10).hp]
+  }
+  assert.deepEqual(blast(true), [100, 70], "its own post caught, or the enemy's spared")
+  assert.deepEqual(blast(false), [70, 70])
 })
 
 test("burning ground burns every unit and worker on it, of either side, each beat until its time is up, then goes out; never a flyer or a building", () => {
@@ -324,10 +373,11 @@ test("a state without fire hashes as it did before fire existed; one with fire h
 
 test("battles with a bomber and with burning ground resolve to the same hashes on every run and on both runtimes", async () => {
   // Pinned when the bomber and the mortar came (step 16K): the suite runs on Node and on Bun, so the one pin holds
-  // both to these bytes.
+  // both to these bytes. The mortar's re-pinned when its shell came to hurt only the enemy and its fire to burn
+  // harder and shorter (step 16L), its walker moved up to meet the shorter fire: the block now falls by tick 229.
   const pins: Readonly<Record<string, readonly [string, string, number]>> = {
     "bomber-crowd.map.json": ["c3781f3364d5a500fefaff3673ac35e09d7de060976cdbdda96e76dd56b31bd9", "62222566f981d7427eaa6b99edb1b71b6f5912e519be7a3b8bd546bffbf3aa5a", 39],
-    "mortar-burning-ground.map.json": ["fa40a538c06ebaf8bef6dbf1192959f67fb15e9c1c57ef8f5d57e6ea051c9281", "195998e095f4b810e8c9c7547ad14d92b9d7e27aa978b1bafda6de7a38eb89a1", 240],
+    "mortar-burning-ground.map.json": ["5f93fc76f39beac04707c21398a23bc69f23e50015533a541028331549fd41fb", "c3446d6f8e3b34eb5a50e72a11204fb3bff688cefb367c5603bc845656c1619d", 229],
   }
   for (const [name, [stateHash, eventsHash, ticks]] of Object.entries(pins)) {
     const first = await resolveScenario(name)

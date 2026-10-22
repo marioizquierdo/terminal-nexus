@@ -1,5 +1,7 @@
 # The Nexus fights back, measured
 
+_Superseded on 2026-10-21 by the pathfinding milestone's wrap-up (the march, survivors home, the mortar's numbers): [the march, measured](2026-10-21-the-march.md)._
+
 _2026-10-21. The whole spec ([`measurement.md`](../../system-design/measurement.md)) played again once every Grid
 Nexus shoots and mends, beside the measurement the pathfinding milestone ended on. The result is
 [`2026-10-21-nexus-fights-back.json`](../measurements/2026-10-21-nexus-fights-back.json); compare it with

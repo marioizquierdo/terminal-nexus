@@ -24,6 +24,23 @@ import { briefOf, newDuel, playRound, readPlan, scriptedNames, scriptedPlayer, S
 
 type Options = Readonly<Record<string, string>>
 
+/** Where the play strategies are kept, and the line after which the page is written to a player. */
+const STRATEGIES = new URL("../../docs/game-design/play-strategies.md", import.meta.url)
+const STRATEGIES_START = "<!-- The brief reads from here to the end of the page"
+
+/**
+ * What duels have taught so far (`docs/game-design/play-strategies.md`), from the page's marker to its end: what a
+ * player that reads words finds in its brief. Empty when the page is not there, as in a copy of the game without its
+ * documents: the brief is whole without it.
+ */
+export function playStrategies(): string {
+  if (!existsSync(STRATEGIES)) return ""
+  const page = readFileSync(STRATEGIES, "utf8")
+  const start = page.indexOf(STRATEGIES_START)
+  if (start === -1) return ""
+  return page.slice(page.indexOf("\n", start) + 1).trim()
+}
+
 /** `--name value` pairs and the command, from the arguments. */
 function parse(args: readonly string[]): Readonly<{ command: string; options: Options }> {
   const [command = "help", ...rest] = args
@@ -66,7 +83,7 @@ function playerOf(name: string): Player {
 
 /** A side's plan for the round: a script's from the brief's data, a command's from the brief's text on its input. */
 function planFrom(name: string, state: DuelState, side: Side): Readonly<{ plan: SidePlan; problems: readonly string[] }> {
-  const brief = briefOf(state, side)
+  const brief = briefOf(state, side, playStrategies())
   if (!name.startsWith("cmd:")) return { plan: playerOf(name)(brief.data), problems: [] }
   const output = execSync(name.slice("cmd:".length), { input: brief.text, encoding: "utf8", maxBuffer: 1 << 20, timeout: 600_000 })
   return readPlan(output)
@@ -113,7 +130,7 @@ function save(dir: string, state: DuelState): void {
     return
   }
   for (const side of SIDES) {
-    const brief = briefOf(state, side)
+    const brief = briefOf(state, side, playStrategies())
     writeFileSync(briefPath(dir, side, state.round, "md"), `${brief.text}\n`)
     writeFileSync(briefPath(dir, side, state.round, "json"), `${JSON.stringify(brief.data, null, 1)}\n`)
   }
@@ -156,7 +173,7 @@ function play(options: Options, write: (line: string) => void): number {
   while (state.result === null) {
     const planned = { A: planFrom(players.A, state, "A"), B: planFrom(players.B, state, "B") }
     for (const side of SIDES) for (const problem of planned[side].problems) write(`  ${side}'s plan: ${problem}`)
-    if (out !== undefined) for (const side of SIDES) writeFileSync(briefPath(out, side, state.round, "md"), `${briefOf(state, side).text}\n`)
+    if (out !== undefined) for (const side of SIDES) writeFileSync(briefPath(out, side, state.round, "md"), `${briefOf(state, side, playStrategies()).text}\n`)
     const { state: next, report } = playRound(state, { A: planned.A.plan, B: planned.B.plan })
     state = next
     for (const line of roundLines(report)) write(line)

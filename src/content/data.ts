@@ -20,7 +20,7 @@ import type { EntityLayer } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { Say, Shape } from "./shape.ts"
 import { dictionary, fieldAt, list, literal, positiveWholeNumber, record, text, wholeNumber } from "./shape.ts"
-import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, MovementRate } from "./types.ts"
+import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, FormationLine, MovementRate } from "./types.ts"
 import { rectFootprint } from "./types.ts"
 import { abilityProblems } from "../abilities/index.ts"
 import type { CardText } from "./cards.ts"
@@ -61,6 +61,7 @@ export type ContentEntry = Readonly<{
   targetLayers?: readonly EntityLayer[]
   targetPreference?: readonly EntityLayer[]
   aim?: "crowd"
+  line?: FormationLine
   spawn?: NonNullable<ContentDef["spawn"]>
   splitOnDeath?: NonNullable<ContentDef["splitOnDeath"]>
   constructionRadius?: number
@@ -84,7 +85,7 @@ export const DEFAULT_COLLISIONS: Readonly<Record<EntityLayer, readonly EntityLay
 
 const layer = literal(...ENTITY_LAYERS)
 const movementRate = record<MovementRate>({ numerator: positiveWholeNumber, denominator: positiveWholeNumber }, {})
-const areaDamage = record<AreaDamage>({ radius: positiveWholeNumber, damage: positiveWholeNumber }, {})
+const areaDamage = record<AreaDamage>({ radius: positiveWholeNumber, damage: positiveWholeNumber }, { hits: literal("enemies") })
 const attack = record<AttackDef>(
   { kind: literal("melee", "ranged", "heal"), range: positiveWholeNumber, damage: wholeNumber, cooldownTicks: positiveWholeNumber },
   {
@@ -95,7 +96,7 @@ const attack = record<AttackDef>(
     focusRamp: record<Readonly<{ perHitPercent: number; maxPercent: number }>>({ perHitPercent: positiveWholeNumber, maxPercent: positiveWholeNumber }, {}),
   },
 )
-const detonation = record<Detonation>({ radius: positiveWholeNumber, damage: positiveWholeNumber }, { triggerRange: positiveWholeNumber })
+const detonation = record<Detonation>({ radius: positiveWholeNumber, damage: positiveWholeNumber }, { hits: literal("enemies"), triggerRange: positiveWholeNumber })
 /** An ability as content names it: its kind and its own numbers, checked by its kind (`src/abilities/`). */
 const abilityUse: Shape<AbilityUse> = {
   check(value: unknown, at: string, say: Say): value is AbilityUse {
@@ -138,6 +139,7 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     targetLayers: list(layer),
     targetPreference: list(layer),
     aim: literal("crowd"),
+    line: literal("backliner", "melee", "short", "long"),
     spawn: record<NonNullable<ContentDef["spawn"]>>({ contentId: text, intervalTicks: positiveWholeNumber, maxAlive: positiveWholeNumber }, {}),
     splitOnDeath: record<NonNullable<ContentDef["splitOnDeath"]>>({ contentId: text, count: positiveWholeNumber }, {}),
     constructionRadius: positiveWholeNumber,

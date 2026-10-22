@@ -314,25 +314,26 @@ reach).
 **Burning ground is drawn on its own ground, under what stands on it** (RULE — `tests/burning-ground.test.ts`). A
 patch a mortar's shell sets alight (`MatchState.burning`) is every tile within its radius of its centre by the Grid's
 own test (`tilesWithin`, which is the kernel's `withinArea`), so the patch drawn and the patch that burns cannot
-disagree, and it is drawn in the state of the tick shown, from the tick it was lit to its last. It has two roles of its
-own: **`fx.fire`**, a flame's colour (a red-orange in the dark theme, apart from the blast's orange and the critical's
-gold; a red in the light one, apart from the Citizens' orange), and **`fx.fire.ground`**, the scorched fill every
-burning tile takes where colours are drawn (a deep ember on the dark background, a pale peach on the light one; a
-fill only, never a glyph's colour, chosen so both sides' letters and the flame clear 3:1 on it). On open ground a
-tile shows a flame on the fill: `^` a tall one, bold, and `~` a low one (the Unicode pack's tall flame is `▴`),
-glyphs nothing else on a Battle Round's Grid uses; a tile with no flame at that instant shows its own ground on the
-fill, and rock and deposits keep their glyphs. **Under a unit, a building, a corpse still drawn or salvage** the fill
-alone is laid, a glyphless write that keeps its glyph and every colour of its own, so a unit standing in the fire is
-seen standing in it (a fill rather than a see-through wash, which would pull the glyph's colour and change its hue at
-256 colours). Effects draw over it. **It flickers by cosmetic randomness only**: each tile changes its look once a
-beat (170 ms), its beats offset from its neighbours' by a hash, the look a hash of the cosmetic seed, the patch's
-identity (when it was lit, by whom, where), the tile and the beat — a pure function of presentation time
-(`fireAt`, `src/view/burning.ts`). About four tiles in five are alight at any instant, nearly half in a tall flame.
-**It dies down in its last second**: low flames only, dim, two tiles in five, so the end reads before it comes; the
-fill holds to the end, since the ground still hurts. Ground still burning when the fight ends is put out once
-everything in flight has landed, as Recall puts it out in the rules. **Reduced motion** holds each tile's look still
-(the dying down stays: it is the patch's state, not decoration). **In monochrome** the fill is not drawn and the
-flames carry the patch alone, by their glyphs. Both Pulse views draw it from one list worked out with the rest of a
+disagree, and it is drawn in the state of the tick shown, from the tick it was lit to its last. It has four roles of its own, red and
+yellow (the owner, 2026-10-21: "that red seems too intense ... red and yellow, more transparent and use flashing
+effect instead of constant color"): **`fx.fire.ground`**, the faint scorch every burning tile takes where colours are
+drawn — the ground's own colour barely warmed, a fill only, chosen so both sides' letters and the flames clear 3:1 on
+it; **`fx.fire`**, a low flame's red; **`fx.fire.tall`**, a tall flame's yellow; and **`fx.fire.glow`**, the red fill
+a tile flashes under a tall flame. At any instant most of a patch shows the ground itself on the scorch; on open
+ground about a quarter of its tiles show a low flame `~` in red on the scorch and about one in six flashes a tall
+flame `^` (the Unicode pack's `▴`), bold yellow on the glow — glyphs nothing else on a Battle Round's Grid uses; rock
+and deposits keep their glyphs. **Under a unit, a building, a corpse still drawn or salvage** the scorch alone is
+laid, a glyphless write that keeps its glyph and every colour of its own, so a unit standing in the fire is seen
+standing in it. Effects draw over it. **It flickers by cosmetic randomness only**: each tile rolls its look again once
+a beat (170 ms), its beats offset from its neighbours' by a hash, the look a hash of the cosmetic seed, the patch's
+identity (when it was lit, by whom, where), the tile and the beat — a pure function of presentation time (`fireAt`,
+`src/view/burning.ts`) — so the patch reads as fire alive on the ground rather than a red carpet over it, and over a
+second nearly every tile has flared. **It dies down in its last second**: low flames only, dim, one tile in five, so
+the end reads before it comes; the scorch holds to the end, since the ground still hurts. Ground still burning when
+the fight ends is put out once everything in flight has landed, as Recall puts it out in the rules. **Reduced
+motion** holds each tile's look still (the dying down stays: it is the patch's state, not decoration). **In
+monochrome** no fill is drawn and the flames carry the patch alone, by their glyphs: under half its tiles at any
+instant, flaring in turn across it, so its shape is drawn over a second. Both Pulse views draw it from one list worked out with the rest of a
 presentation instant (`PulseSample.fire`): the engine tool's and the Build Phase screen's, the live Battle Round and
 the replay of the last round alike, and with them the browser page.
 

@@ -1,0 +1,71 @@
+{
+  "id": "march-mirror",
+  "name": "March: two mirrored armies march one corridor at each other, a mirror tick for tick",
+  "notes": "One corridor, one row tall, with each side's Grid Nexus at its end and the same army before it - two marksmen ahead of two troopers - the east the west's reflection. Each side's shooters yield to its troopers as they march; nothing is tied, so nothing is drawn, and the battle stays a mirror. Done when both sides' lines arrive as mirror images.",
+  "grid": {
+    "width": 48,
+    "height": 5
+  },
+  "seed": 1,
+  "pulseTicks": 400,
+  "terrain": [
+    "################################################",
+    "....########################################....",
+    "................................................",
+    "....########################################....",
+    "################################################"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 2,
+        "y": 2
+      },
+      "rows": [
+        "n    tt m  m"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "m": {
+          "content": "unit.citizen.marksman"
+        },
+        "u": {
+          "content": "unit.citizen.mortar"
+        },
+        "n": {
+          "content": "structure.bench.nexus"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 34,
+        "y": 2
+      },
+      "rows": [
+        "m  m tt    n"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        },
+        "m": {
+          "content": "unit.citizen.marksman"
+        },
+        "u": {
+          "content": "unit.citizen.mortar"
+        },
+        "n": {
+          "content": "structure.bench.nexus"
+        }
+      }
+    }
+  }
+}

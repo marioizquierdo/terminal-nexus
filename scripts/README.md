@@ -9,6 +9,9 @@ Tools for checking the repository and for seeing a change. Anything they write l
 - `run-tests.sh` - the test suite on one runtime; `./scripts/run-tests.sh` (Node) or `./scripts/run-tests.sh bun`.
 - `grid-pictures.ts` - the grid design's pictures of distance, reach and walking, drawn by the rules' own code; `node scripts/grid-pictures.ts` prints them, `--write` redraws them in `docs/system-design/grid.md`, and `tests/grid-pictures.test.ts` fails when one drifts.
 
+**Measuring a tick**
+- `profile-routes.ts` - plays every map and a run of duels, prints a fingerprint of each battle's events and last state and what a tick cost by how many entities stood in it; `node scripts/profile-routes.ts --duels 3 --maps route`, `--out <file>` to diff the fingerprints before and after a change that must move no outcome, `--detail` to time each route question.
+
 **Seeing a change**
 - `playtest.mjs` - press keys on the Build Phase without a terminal; text, PNGs and a GIF in `.playtest/`; `--keys "Down Space"`.
 - `capture-build-phase-screenshots.mjs` - every Build Phase screenshot and GIF, in-process or through tmux; `--only <name>`, `--force`.

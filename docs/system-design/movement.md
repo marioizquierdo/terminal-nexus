@@ -39,8 +39,13 @@ field" of crowd games (Supreme Commander 2 made it known), and the "Dijkstra map
 
 Why every tick and not once: the Grid changes under a battle — buildings fall, crowds form and break — and a field is
 cheap. It is worked out lazily, from the goal outward, only as far as the furthest unit asking needs, with a bucket for
-each distance since steps cost small whole numbers. A tick with 30 units costs under a millisecond; with 200 units in
-an eighth-round duel about 14 ms ([the measurement](../history/reports/2026-10-20-pathfinding-measured.md), before the Nexus fought back and before breaching; not measured since).
+each distance since steps cost small whole numbers — or no further than the best walk already found when a unit only
+compares walks — and it says at once, from the patch of ground a unit stands on, whether it can reach the goal at all.
+A tick with 30 units costs about half a millisecond; with about 200 units and buildings in an eighth-round duel, about
+5½ ms ([`scripts/profile-routes.ts`](../../scripts/profile-routes.ts) on the Crossing, Vasse against Averno with the
+balanced player, seed 1, wall clock on a shared four-core machine, 2026-10-21, after the Nexus fought back and
+breaching; 7 ms before the routes were tuned that day). The same script fingerprints every battle it plays, so a
+change meant to make routes faster is proved to change no outcome.
 
 ## 3. The building blocks
 
@@ -85,9 +90,82 @@ movement credit, so a unit's speed and the ground's weight decide how often it s
 4. **Choosing again by what can be reached**: a sword fights the enemy nearest *to walk to*, not the nearest across a
    wall; a gun passes over a target it cannot get in range of for one it can.
 5. **Walls of buildings are broken, walls of rock are not** (below).
-6. **Steps**: each walker ranks its steps on its field; arbitration settles them; credit is spent.
+6. **The march** (next section): every target set, who marches, and who of them yields its step to keep its place.
+7. **Steps**: each walker ranks its steps on its field; arbitration settles them; credit is spent. A yielder takes no
+   step of its own, and makes way for an ally held up behind it.
 
-## 5. When the goal cannot be reached
+## 5. What a unit does by default: its states, and the army's march
+
+The owner, 2026-10-21: "Is it possible we make that line the commander? or at least when the commander is in battle,
+the other units can use that as reference. When the commander is not in battle, then a line from nexus to nexus", and
+"rangers would defer to melee units while moving through the map so when they arrive at the enemy they are more or
+less already prepared in formation ... Movement has many states and we should take advantage of that."
+
+**A unit is always in one of six states**, worked out every tick from what it chose to do (`MoveState`,
+`src/pulse/march.ts`); nothing about it is remembered from one tick to the next. These are what a unit does when
+nobody tells it anything, which is always, until orders exist:
+
+| State | When | What it does |
+| --- | --- | --- |
+| Leaving the roof | It stands on its own side's building: just trained, or home from the last round | Walks to the nearest ground first, or along the roofs (the "Way off the roof" Experiment); also to make way for a wave its side owes |
+| Marching | It walks for its side's goal: the level's target, or the enemy's Grid Nexus while that is beyond its engage reach (6 columns; 12 for a Commander who charges) | Walks its route, keeping its place in the formation |
+| Yielding | A marcher further forward than its place this tick | Takes no step of its own; makes way for an ally held up behind it |
+| Engaged | It walks to an enemy within its engage reach | Walks to where its attack reaches, as always; the formation no longer holds it |
+| Standing | Its attack reaches its target, it is gathered at its side's target, or it has nothing to do | Fights or holds; it is a wall to everyone's routes |
+| Fleeing | A worker with a threat near | Walks its flight map, away from every threat |
+
+Only marchers keep the formation. A unit with no attack keeps no line, a flyer passes over the ranks, and a unit
+still on its own roof keeps no place until it has stepped off.
+
+**Progress.** Each side has one march field a tick: the walk, for a body of one tile, to its march goal over rock and
+the enemy's buildings that stand; units are not walls to it, and the side's own buildings are open. A marcher's
+progress is its walk on that field: smaller is further forward.
+
+**Its line.** Each unit has a line in its army's formation (`ContentDef.line`; from its attack when the content does
+not say):
+
+| Line | Comes from | Its place behind the Commander | Waits for |
+| --- | --- | --- | --- |
+| Backliner | The content says so (the Ravel bomber; the bench's flanker) | Anywhere: never yields, never waited on | Nobody |
+| Melee | A melee attack | Up to 2 columns ahead of her | Nobody but her |
+| Short range | A heal, or a range up to 4 (Vasse, a slinger, a medic) | 4 columns behind her | Melee 4 columns ahead of it |
+| Long range | A range over 4 (a marksman, the mortar) | 8 columns behind her | Melee 8 ahead, short range 4 ahead |
+
+**The Commander is the guide.** While a side's Commander stands on the Grid she is its guide, and while she marches
+herself no marcher but a backliner goes further forward than its line's place behind her. Once she fights or stands,
+her army comes up to fight beside her.
+
+**The band.** The guide line runs from her to the middle of the side's goal, or, without her, from the side's own
+Nexus. A marcher more than 6 columns off it (a row counting two) takes, among its equally good steps, the one landing
+nearest the line, before the turn and the draw. It never takes a longer way to stay in the band: the band gathers an
+army spread across the map into a column along its way, and leaves one already in it alone.
+
+**Formation lines.** A short- or long-range marcher yields while a marching ally of a line ahead of it, within 12
+columns, is not 4 columns of progress ahead of it for each line between them: a marksman waits until a trooper is 8
+ahead of it, and until a slinger is 4 ahead. Waiting goes only toward the front and the guide never waits, so no ring
+of units can wait on itself.
+
+**Closing.** The formation is for the way there. A marcher with any enemy within 12 columns of it yields no more, so a
+shooter walks up into its range behind a front that has stopped to fight; that is where a line forms on its own, as
+melee closes and guns stop at their reach.
+
+**Yielding never jams a gap.** A yielder still counts as walking for the routes, so it is no wall. An ally of one tile
+held up behind it swaps tiles with it — the ally forward, the yielder back — when both can pay and the yielder may
+stand there; an ally too big to swap releases it, to take its own best step forward; on open ground an ally simply
+steps round it. The log says when a yielder makes way (`march.made-way`), never for the ticks it waits.
+
+**Backliners go beyond the enemy's line.** A backliner chooses first among the enemies within its reach that are not
+in the melee line — a shooter, another backliner, a building that shoots — the nearest it can walk to; with none, it
+chooses as every unit does. The bomber keeps its aim at the thickest crowd. **A backliner is a special unit, not an
+army's mainstay**: the Ravel runner was one at first, and with every runner of Dob's army going beyond the line his front
+was empty — his Nexus fell in round 1 or 2 in 20 of 24 rush duels, against 1 of the same 24 with the runner in the
+melee line, where it now is.
+
+**Fairness.** Everything is read from the state the tick began with, in whole numbers; the line is drawn alike from
+either end of a map (a point exactly between two tiles takes both); two allies that would swap with one yielder are
+drawn between. Shown by `march-lines`, `march-guide`, `march-narrow-gap` and `march-mirror` (`tests/march.test.ts`).
+
+## 6. When the goal cannot be reached
 
 - **Rock closes the way**: the unit walks to the tiles it *can* reach that are nearest the goal, and stands there,
   saying so (`move.blocked`, no route). A body too wide for a gap stands before it.
@@ -100,7 +178,7 @@ movement credit, so a unit's speed and the ground's weight decide how often it s
   strike a building walks as near as it can get.
 - **Its own crowd is in the way**: it waits for a walker ahead, and walks round allies who are stuck (the detour).
 
-## 6. Other ways of moving, on the same parts
+## 7. Other ways of moving, on the same parts
 
 Every way a unit moves is one of three things: **a new goal** for the same field machinery, **a different field**, or
 **a move that is not a step**. Nothing below has a pathfinder of its own.
@@ -110,12 +188,14 @@ Every way a unit moves is one of three things: **a new goal** for the same field
 | Heading for the enemy Nexus | A goal: the Nexus | Yes |
 | Heading for a level's target | A goal: the target's tiles | Yes |
 | Leaving a roof | A goal: the nearest ground off its side's roofs, or its route along them (the "Way off the roof" Experiment) | Yes |
+| Making way for a wave | The same goal, the nearest ground off its side's roofs, while a building of its side owes units it has no room for (`make-way.ts`) | Yes |
 | Fleeing | A different field: the walk from every threat, turned into a "safety map" and walked downhill, so it runs from all threats into open ground, not into a corner | Yes (workers) |
 | Pushed or pulled | Not a step: moved a tile at a time while its body fits, its credit untouched (`displace`) | Yes (the bulwark's Shove) |
 | Going round burning ground | A weight: an anchor whose body covers a burning tile weighs four times its ground in the field, while it burns; a step's credit is the ground's own | Yes (the mortar's fire) |
 | The raid's trail in the Build Phase | The same field, walked ahead of time over the plan | Yes |
+| Marching in formation | The march field ranks who is ahead, the guide line breaks ties, a yielder takes no step (section 5) | Yes |
 
-## 7. Where modifiers plug in
+## 8. Where modifiers plug in
 
 The modifiers the owner named, and the ones the design already expects, each touch one building block. **IDEA**: none
 is built; this is where each would go, so that adding one is small.
@@ -132,7 +212,7 @@ is built; this is where each would go, so that adding one is small.
   unit steps; an aura or a power that hastes changes the rate.
 - **Ground that costs more** (mud, a power's slowing field): a *weight*. A step onto it costs more in credit and in
   the field, so routes go round it when that is quicker and cross it when it is not — scrub already works this way.
-  Burning ground is built, as a weight in the field alone (section 6): a route goes round fire, and a unit that
+  Burning ground is built, as a weight in the field alone (section 7): a route goes round fire, and a unit that
   crosses it does so at its own pace.
 - **Ground no one may cross** (a power's wall): a *wall* in the ground for the ticks it lasts.
 - **Gathering before marching** (a beacon, the backlog's idea): a *goal* — the beacon's tiles — held until enough of
@@ -140,7 +220,7 @@ is built; this is where each would go, so that adding one is small.
 - **Targeting that goes for a building first** (a siege unit, a breach-minded raider): a *perception* rule, which
   layers it prefers; the field toward that building is the same machinery.
 
-## 8. What keeps it fair and the same everywhere
+## 9. What keeps it fair and the same everywhere
 
 - **Pure**: built from the tick's state, never kept from one tick to the next, the same on Node and Bun.
 - **Mirror-fair**: a tie between steps goes by facing, then by the seeded draw, so neither end of a map is favoured

@@ -52,6 +52,14 @@ export type EntityState = Readonly<{
   productionCooldown?: number
   produced?: number
   owed?: number
+  /**
+   * For a unit a building trained: that building's ordinal, and the tile it came out on (its anchor as it was set
+   * down on the roof). Recall sends it home there (`src/match/recall.ts`): onto the roof of the building that made it,
+   * as near that tile as there is room. Absent on everything no building trained, so a state with none hashes as it
+   * did before; and a building's ordinal is never reused, so a fallen home is simply not found.
+   */
+  home?: number
+  homeAt?: Coord
 }>
 
 export type GroundItem = Readonly<{

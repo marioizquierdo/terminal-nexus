@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { main } from "../src/cli/duel.ts"
+import { main, playStrategies } from "../src/cli/duel.ts"
 import type { DuelSetup, DuelState, SidePlan } from "../src/duel/index.ts"
 import { briefOf, duelArmy, handOf, loadoutOf, newDuel, playDuel, playRound, readPlan, SCRIPTED } from "../src/duel/index.ts"
 import { hashOf } from "../src/state/canonical.ts"
@@ -121,6 +121,16 @@ test("the brief says what a player needs: the round, the Commander and her skill
   }
   // The map: his Nexus in lower case on the west, hers in upper case on the east.
   assert.ok(brief.data.map.some((row) => row.includes("/n\\")) && brief.data.map.some((row) => row.includes("[=]")))
+})
+
+test("a player that reads words finds the play strategies in its brief, just before the plan it is asked for", () => {
+  const strategies = playStrategies()
+  assert.ok(strategies.startsWith("## What duels have taught so far"), "the brief takes the page from its marker on, the advice alone")
+  const text = briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A", strategies).text
+  const taught = text.indexOf("## What duels have taught so far")
+  assert.ok(taught > 0 && taught < text.indexOf("## Your plan"), "the strategies come before the plan")
+  // A script reads the data, which carries no strategies: the brief without them is whole.
+  assert.ok(!briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A").text.includes("What duels have taught"))
 })
 
 test("the file protocol: a round plays once both sides have handed in a plan, and each side's next brief is written", () => {
