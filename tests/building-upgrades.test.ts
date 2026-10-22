@@ -26,6 +26,7 @@ import { frameToText } from "../src/view/frame.ts"
 import { buildSide, clickCell, compose, keys } from "./build-helpers.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runBuildPlaytest } from "../src/playtest/build.ts"
+import { ACTIVITY_EVENTS, entryProblems } from "../src/log/index.ts"
 
 const BARRACKS = "structure.citizen.barracks"
 const TURRET = "structure.bench.beamturret"
@@ -76,6 +77,21 @@ test("c on a Barracks buys its production line at once: 15 spent, its card says 
   assert.equal(remaining(side.build.round, side.build.state), before)
   assert.equal(side.build.state.status.text, "Barracks: Production line undone, 15 refunded.")
   assert.equal(currentCard(side.build.round, side.build.state)?.stats.find((stat) => stat.label === "WAVE")?.value, "4 troopers at 5s")
+})
+
+test("the Activity logs record each action taken and taken back, by building, label and kind, with what is left", () => {
+  const side = onBarracks()
+  keys(side, "c", "c", "z")
+  const logged = side.activity.entries().filter((entry) => entry.event === "build.action")
+  for (const entry of logged) assert.deepEqual(entryProblems(ACTIVITY_EVENTS, entry), [])
+  assert.deepEqual(
+    logged.map((entry) => [entry.props["action"], entry.props["kind"], entry.props["taken"], entry.props["credits"]]),
+    [
+      ["Production line", "upgrade", true, 85],
+      ["Production line", "upgrade", false, 100],
+      ["Hold production", "order", true, 100],
+    ],
+  )
 })
 
 test("an upgrade the credits cannot pay for is dim on the card and refused with why, as a building the menu cannot sell", () => {

@@ -248,7 +248,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
   // A building's actions, on the building Explore Map is on, each listed on its card under its key: `z` its order
-  // (Hold production; not `h`, which is an arrow, h j k l), `c` `v` `b` `f` `t` its upgrades and modes in its card's
+  // (Hold production; not `h`, which is an arrow, h j k l), `c` `v` `b` `f` its upgrades and modes in its card's
   // order.
   if (BUILDING_ACTION_KEYS.has(key)) return { kind: "building-action", key }
   if (key === "n") return { kind: "open-nexus-powers" }
