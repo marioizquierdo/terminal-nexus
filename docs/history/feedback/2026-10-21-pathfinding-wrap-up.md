@@ -89,3 +89,13 @@ side's Nexus to its goal.
 of it, swapping places with one held up behind it, so it arrives in order; once an enemy is near, the lines close up
 to fight. The bomber is a backliner. The runner was one at first and emptied Dob's front, so it stays melee, and which
 unit is an army's first backliner is his to say.
+
+### F207 — The milestone closed; a basic game loop next
+
+> don't worry about the next backliner, perimeter balancing or march's nimbers. We will correct that when I start
+> playing. For now, we want to fovus on building a basic game loop. Let's move into the next most important milestone
+
+**Built.** Pathfinding is closed. The next in the build order, Challenge Mode: Runs, is current: a run is the loop a
+player plays from the title screen to its end and starts again, its battles duels against a Commander Army played on
+the Build Phase screen. The three things he set aside (the next backliner, PERIMETER's balance with nothing built, the
+march's numbers) wait for his playing, and the waiting list no longer asks them.

@@ -7,7 +7,7 @@
 > **CLOSED, 2026-10-20.** Mario: "Let's close the commander milestone, the new commander army design is excellent, we
 > will iterate on the armies later" ([his words](../feedback/2026-10-13-commander-armies.md)). Its last step, the
 > catch-up measure, is measured on the new routes as part of the pathfinding milestone's last step
-> ([Pathfinding](../../milestones/milestone-16-pathfinding.md)), with the checks this milestone left for him to play.
+> ([Pathfinding](milestone-16-pathfinding.md)), with the checks this milestone left for him to play.
 
 Made current by Mario on 2026-10-15: "let's move to next milestone", then, with the plan in front of him, "Go ahead
 please".
