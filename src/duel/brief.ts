@@ -154,7 +154,7 @@ function reportLine(label: string, report: SideReport): string {
       .map(([name, count]) => `${count} ${name}`)
       .join(", ") || "none"
   return [
-    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.refused.length === 0 ? "" : `; refused ${report.refused.join("; ")}`}; stance ${report.stance}.`,
+    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${report.refused.length === 0 ? "" : `; refused ${report.refused.join("; ")}`}; stance ${report.stance}.`,
     `  fielded ${counts(report.fielded)}; trained ${counts(report.trained)}; lost ${counts(report.lost)}.`,
     `  dealt ${report.dealt.units} to units, ${report.dealt.buildings} to buildings, ${report.dealt.nexus} to the Nexus; Nexus ${report.nexus.before} -> ${report.nexus.after} of ${report.nexus.most}${report.commanderFell ? "; the Commander fell" : ""}${report.earned > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(report.abilities).length === 0 ? "" : `; abilities ${counts(report.abilities)}`}.`,
   ].join("\n")
