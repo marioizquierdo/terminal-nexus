@@ -263,6 +263,20 @@ function placeAll(
   return { planned, spent, built, refused }
 }
 
+/**
+ * Where a side's plan puts its buildings this round, by the Build Phase's rules, as `playRound` places them before the
+ * other side's plan is revealed (a clash with it is settled only once both are): each building's card and anchor, in
+ * order. For a driver that plays a side through the Build Phase's own functions, which take a plan as placed buildings.
+ */
+export function placementsOf(state: DuelState, side: Side, plan: SidePlan): PlannedPlacement[] {
+  const army = duelArmy(state.sides[side].commander)
+  const hand = handOf(state, side)
+  const pick = plan.power !== undefined && plan.power >= 1 ? (hand[plan.power - 1] ?? null) : null
+  const loadout = loadoutOf(army, { kept: pick === null ? state.sides[side].kept : [...state.sides[side].kept, pick.id] })
+  const credits = state.sides[side].credits + (pick === null ? 0 : creditsOf(pick.effect))
+  return placeAll(state, side, plan, loadout.catalog, loadout.registry, credits).planned
+}
+
 /** A building card's id for its menu row. */
 const buildingIdOf = (army: DuelArmy, item: ConstructItem): string => army.buildings.find((card) => card.structure === item.contentId)?.id ?? item.contentId
 
@@ -364,6 +378,7 @@ export function playRound(
     structures,
     setup: { seed: state.setup.seed, pulseTicks: state.setup.pulseTicks, forces },
     ...(restored === null ? {} : { carried: restored.state }),
+    ...heldBy(state, plans),
   }).state
   const targets: Record<Side, TargetArea> = { A: targetOf(state, "A", plans.A.stance, sides), B: targetOf(state, "B", plans.B.stance, sides) }
   const start: MatchState = { ...opened, targets }
@@ -445,8 +460,18 @@ function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>
   return { A: settled("A"), B: settled("B") }
 }
 
+/** The buildings both plans hold this round (Hold production), each a building of its own side standing as the round
+ *  opens: what the opening holds. Nothing when neither plan holds any, as every script plays. */
+function heldBy(state: DuelState, plans: Readonly<Record<Side, SidePlan>>): Readonly<{ held?: readonly Coord[] }> {
+  const held = SIDES.flatMap((side) => {
+    const own = standingOf(state, side)
+    return (plans[side].hold ?? []).filter((anchor) => own.some((structure) => structure.anchor.x === anchor.x && structure.anchor.y === anchor.y))
+  })
+  return held.length === 0 ? {} : { held: held.map(({ x, y }) => ({ x, y })) }
+}
+
 /** Where a side's arriving units gather: in front of its Nexus, toward the enemy. */
-function musterOf(state: DuelState, side: Side, registry: ContentRegistry): Coord {
+export function musterOf(state: DuelState, side: Side, registry: ContentRegistry): Coord {
   const map = mapOf(state)
   const centre = centreTile(map.nexus[side], registry.get(duelArmy(state.sides[side].commander).nexus).footprint)
   return { x: centre.x + facing(map, side) * 4, y: centre.y }

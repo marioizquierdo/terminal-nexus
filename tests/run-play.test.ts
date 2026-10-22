@@ -1,0 +1,263 @@
+// A Challenge run played on the Build Phase screen (src/cli/run-play.ts): a run battle is a duel, side A planned on
+// the screen and side B by a scripted duel player. Its rounds open as Build Phases on the duel map, a plan's buildings
+// are placed exactly where the player put them, the next round carries what Recall left, a battle's end opens the
+// next battle, and the run's end opens a new run on its summary. The driver plays a whole run through the same
+// functions, and the same seed and script give the same run on Node and Bun.
+
+import { test } from "node:test"
+import assert from "node:assert/strict"
+import { buildLayout } from "../src/build/layout.ts"
+import type { BuildContext, BuildState } from "../src/build/state.ts"
+import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts"
+import type { Player } from "../src/duel/index.ts"
+import { briefOf, duelArmy, handOf, mapOf, newDuel, placementsOf, playRound, scriptedPlayer } from "../src/duel/index.ts"
+import { RUN_PLAY, driveRun, playedOf, positionOf, runLevel, scriptedRound, sidePlanOf } from "../src/cli/run-play.ts"
+import { roundIncome } from "../src/armies/curve.ts"
+import { summaryLines } from "../src/run/index.ts"
+import type { ResolvedPulse } from "../src/view/pulse-live.ts"
+import { parseKeyScript } from "../src/playtest/keys.ts"
+import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
+import { frameToText } from "../src/view/frame.ts"
+
+const SETUP = { seed: 1, commander: "vasse" } as const
+
+/** A player that builds nothing and keeps no power: it loses the first battle. */
+const idle: Player = () => ({ build: [], stance: "attack" })
+const balanced = scriptedPlayer("balanced") as Player
+
+const first = (): BuildContext => withoutScene(runLevel(SETUP).firstRound())
+
+/** A Build Phase state on `context` with `planned` placed and the hand's card `pick` picked. */
+function planOn(context: BuildContext, planned: BuildState["planned"], pick: number | null = null): BuildState {
+  const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
+  const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
+  return { ...opened, planned, nextOrdinal: planned.length, nexusPick: pick, bonusAllotment: pick === null ? 0 : (context.nexusDraft[pick]?.bonusAllotment ?? 0) }
+}
+
+/** A round's Pulse, started, with what it left. */
+function started(context: BuildContext, state: BuildState): Readonly<{ resolved: ResolvedPulse; played: NonNullable<ReturnType<typeof playedOf>> }> {
+  const resolved = RUN_PLAY.startPulse(context, state)
+  assert.ok(resolved !== null, "the round did not start")
+  const played = playedOf(resolved)
+  assert.ok(played !== undefined, "the round left nothing for the next")
+  return { resolved, played }
+}
+
+test("a run opens on its first battle's first round: side A's Build Phase on the duel map, with the duel's hand", { timeout: 60_000 }, () => {
+  const opened = runLevel(SETUP).firstRound()
+  const { run, duel } = positionOf(opened)
+  assert.equal(run.played.length, 0)
+  assert.equal(duel.round, 1)
+  assert.deepEqual(opened.round, { number: 1, of: 6, stage: "battle 1 of 3" })
+  const map = mapOf(duel)
+  assert.equal(opened.grid.width, map.rows[0]?.length)
+  assert.equal(opened.grid.height, map.rows.length)
+  // Its own Nexus stands; the enemy's is the field, whole.
+  assert.deepEqual(opened.standing, [{ contentId: duelArmy("vasse").nexus, anchor: map.nexus.A }])
+  assert.deepEqual(
+    opened.field?.map((entity) => [entity.contentId, entity.player, entity.anchor]),
+    [[duelArmy("dob").nexus, "B", map.nexus.B]],
+  )
+  assert.equal(opened.allotment, roundIncome(1))
+  assert.deepEqual(
+    opened.nexusDraft.map((option) => option.card.id),
+    handOf(duel, "A").map((card) => card.id),
+    "the hand on screen is not the hand the duel deals",
+  )
+  assert.equal(opened.commander?.name, "Edda Vasse")
+  // Her and her starting package, and Dob Hunter's, arrive as the round starts: drawn where they will.
+  assert.ok(opened.incoming?.some((entity) => entity.player === "A" && entity.contentId === duelArmy("vasse").commander.unit))
+  assert.ok(opened.incoming?.some((entity) => entity.player === "B" && entity.contentId === duelArmy("dob").commander.unit))
+  // It opens on the run's words: the seed, and the battle.
+  assert.deepEqual(
+    opened.scene?.map((line) => line.text),
+    [
+      "A Challenge run: 3 battles with Edda Vasse, seed 1. A lost battle ends the run.",
+      "Battle 1 of 3: against Dob Hunter on The Crossing. Destroy the enemy Nexus within 6 rounds, or have the healthier Nexus when they run out.",
+      "Dob Hunter's army rushes: its cheapest units, all forward, attacking every round.",
+    ],
+  )
+  // No raid comes: the enemy plans in secret.
+  assert.deepEqual(RUN_PLAY.foresee(opened, planOn(withoutScene(opened), [])), [])
+})
+
+test("a round played from a Build Phase places exactly the buildings the player placed, and keeps the power picked", { timeout: 60_000 }, () => {
+  const context = first()
+  const { duel } = positionOf(context)
+  // Two legal spots the player could have put a Barracks and a Turret on.
+  const spots = placementsOf(duel, "A", { build: [{ building: "barracks", at: "forward" }, { building: "turret", at: "north" }], stance: "attack" })
+  assert.equal(spots.length, 2)
+  const kept = RUN_PLAY.keep(context, (context.nexusDraft[0] as BuildContext["nexusDraft"][number]).card)
+  const state = planOn(kept, spots, 0)
+  const { resolved, played } = started(kept, state)
+  const opening = resolved.timeline.states[0]
+  assert.ok(opening !== undefined)
+  const standing = opening.entities
+    .filter((entity) => entity.player === "A" && resolved.timeline.registry.get(entity.contentId).layer === "obstacles")
+    .map((entity) => `${entity.contentId} ${entity.anchor.x},${entity.anchor.y}`)
+    .sort()
+  const expected = [`${duelArmy("vasse").nexus} ${mapOf(duel).nexus.A.x},${mapOf(duel).nexus.A.y}`, ...spots.map((spot) => `${spot.contentId} ${spot.anchor.x},${spot.anchor.y}`)].sort()
+  assert.deepEqual(standing, expected)
+  assert.deepEqual(played.report.sides.A.refused, [])
+  assert.equal(played.report.sides.A.kept, context.nexusDraft[0]?.name)
+  assert.equal(played.report.sides.A.stance, "attack", "the troops march on the enemy's Nexus")
+  assert.equal(resolved.mission?.round, 1)
+  assert.equal(resolved.mission?.of, 6)
+  assert.equal(resolved.enemy, "enemy")
+})
+
+test("side B's plan comes from the battle's scripted player: the round is the duel's own", { timeout: 60_000 }, () => {
+  const context = first()
+  const { run, duel } = positionOf(context)
+  const policy = run.definition.battles[0]?.policy as string
+  const state = planOn(context, placementsOf(duel, "A", { build: [{ building: "barracks", at: "forward" }], stance: "attack" }))
+  const { played } = started(context, state)
+  // The same round, played by the duel itself with the scripted player's plan for B.
+  const plans = { A: sidePlanOf(context, state), B: (scriptedPlayer(policy) as Player)(briefOf(duel, "B").data) }
+  const duelRound = playRound(duel, plans)
+  assert.deepEqual(played.report, duelRound.report)
+  assert.deepEqual(played.duel, duelRound.state)
+})
+
+test("the next round carries what Recall left: the player's buildings standing, the rest as the field, the credits", { timeout: 60_000 }, () => {
+  const context = first()
+  const { duel } = positionOf(context)
+  const turret = placementsOf(duel, "A", { build: [{ building: "turret", at: "back" }], stance: "attack" })
+  const state = planOn(context, turret)
+  const { resolved, played } = started(context, state)
+  assert.equal(played.duel.result, null, "the battle ended in its first round; this test wants a second")
+  const next = RUN_PLAY.nextRound(context, state, resolved)
+  assert.ok(next !== null)
+  const after = positionOf(next)
+  assert.equal(after.duel, played.duel)
+  assert.deepEqual(next.round, { number: 2, of: 6, stage: "battle 1 of 3" })
+  assert.equal(next.allotment, played.duel.sides.A.credits)
+  const cost = context.catalog.find((item) => item.contentId === turret[0]?.contentId)?.cost ?? 0
+  assert.equal(next.allotment, roundIncome(1) - cost + roundIncome(2) + played.report.sides.A.earned)
+  assert.ok(
+    next.standing.some((structure) => structure.anchor.x === turret[0]?.anchor.x && structure.anchor.y === turret[0]?.anchor.y),
+    "the Turret built last round is not standing",
+  )
+  // Everything not the player's building is the field: the enemy's Nexus and buildings, and every survivor.
+  const carried = played.duel.carried
+  assert.ok(carried !== null)
+  const fieldIds = new Set(next.field?.map((entity) => `${entity.contentId} ${entity.anchor.x},${entity.anchor.y}`))
+  for (const entity of carried.entities) {
+    const own = entity.player === "A" && next.registry.get(entity.contentId).layer === "obstacles"
+    if (!own) assert.ok(fieldIds.has(`${entity.contentId} ${entity.anchor.x},${entity.anchor.y}`), `${entity.contentId} is missing from the field`)
+  }
+  assert.deepEqual(
+    next.nexusDraft.map((option) => option.card.id),
+    handOf(played.duel, "A").map((card) => card.id),
+  )
+  assert.equal(next.openingStatus?.text, "Round 1: time's up. The Nexus Pulse deals a new hand: [n].")
+})
+
+test("a battle's end opens the next battle's first round, saying how the last one ended", { timeout: 60_000 }, () => {
+  // Battle 1 of seed 1 is against the rush; the balanced script's army, marching every round, takes his Nexus in round 1.
+  const planned = scriptedRound(first(), balanced)
+  const { resolved, played } = started(planned.context, planned.state)
+  assert.notEqual(played.duel.result, null, "battle 1 did not end in its first round")
+  assert.equal(resolved.mission?.verdict.kind, "won")
+  assert.deepEqual(resolved.mission?.ending, { headline: "BATTLE WON", reason: "Dob Hunter's Nexus fell.", tone: "success", goOn: "Next battle" })
+  const next = RUN_PLAY.nextRound(planned.context, planned.state, resolved)
+  assert.ok(next !== null)
+  const { run, duel } = positionOf(next)
+  assert.equal(run.played.length, 1)
+  assert.equal(duel.carried, null, "the next battle starts from a fresh Grid")
+  assert.equal(duel.setup.seed, run.definition.battles[1]?.duel.seed)
+  assert.deepEqual(next.round, { number: 1, of: 6, stage: "battle 2 of 3" })
+  assert.equal(next.allotment, roundIncome(1))
+  assert.equal(next.kept?.length, 0, "a battle starts with no power kept")
+  assert.deepEqual(next.scene?.[0]?.text, "Battle 1 of 3: won in round 1. Dob Hunter's Nexus fell.")
+  assert.match(next.scene?.[1]?.text ?? "", /^Battle 2 of 3: against Dob Hunter/)
+})
+
+test("a lost battle ends the run, and the next round is a new run's, opening on the summary", { timeout: 60_000 }, () => {
+  let context = first()
+  let ended: Readonly<{ resolved: ResolvedPulse; state: BuildState; context: BuildContext }> | null = null
+  for (let round = 0; round < 6 && ended === null; round += 1) {
+    const planned = scriptedRound(context, idle)
+    const { resolved, played } = started(planned.context, planned.state)
+    if (played.run.over) ended = { resolved, state: planned.state, context: planned.context }
+    else context = RUN_PLAY.nextRound(planned.context, planned.state, resolved) as BuildContext
+  }
+  assert.ok(ended !== null, "a player who builds nothing never lost")
+  assert.equal(ended.resolved.mission?.verdict.kind, "lost")
+  assert.equal(ended.resolved.mission?.ending?.headline, "BATTLE LOST")
+  assert.equal(ended.resolved.mission?.ending?.goOn, "Run summary")
+  const last = playedOf(ended.resolved)?.run
+  assert.ok(last !== undefined)
+  const next = RUN_PLAY.nextRound(ended.context, ended.state, ended.resolved)
+  assert.ok(next !== null)
+  const fresh = positionOf(next)
+  assert.equal(fresh.run.definition.setup.seed, last.definition.nextSeed, "a new run takes the seed the last one named")
+  assert.equal(fresh.run.definition.setup.commander, "vasse")
+  assert.equal(fresh.run.played.length, 0)
+  assert.equal(next.scene?.[0]?.text, summaryLines(last).join("\n"), "the new run does not open on the last one's summary")
+  assert.equal(next.openingStatus?.text, `A new run, seed ${last.definition.nextSeed}. The last run, seed 1: 0 of 3 battles won.`)
+})
+
+test("a building held this round trains nothing (Hold production)", { timeout: 60_000 }, () => {
+  // Round 1: a Barracks, nobody attacking; round 2 the same duel, the Barracks held or not.
+  const duel = newDuel({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } })
+  const quiet = { build: [], stance: "hold" } as const
+  const one = playRound(duel, { A: { build: [{ building: "barracks", at: "back" }], stance: "hold" }, B: quiet }).state
+  const barracks = one.carried?.entities.find((entity) => entity.player === "A" && entity.contentId === "structure.citizen.barracks")
+  assert.ok(barracks !== undefined, "the Barracks did not stand")
+  const free = playRound(one, { A: quiet, B: quiet }).report.sides.A.trained
+  const held = playRound(one, { A: { ...quiet, hold: [barracks.anchor] }, B: quiet }).report.sides.A.trained
+  assert.ok(Object.values(free).reduce((sum, count) => sum + count, 0) > 0, "the Barracks trained nothing even unheld")
+  assert.deepEqual(held, {})
+})
+
+test("a run's battle plays on the Build Phase screen: place a building, start the Battle Round, reach the next round", { timeout: 60_000 }, () => {
+  // From the route, as the game, the page and `scripts/playtest.mjs --at 'challenge?seed=1'` open it: the run's words
+  // skipped, the first power picked, a Turret armed and placed, the Battle Round started and watched to its end.
+  const steps = parseKeyScript("Esc n 1 2 Enter s s wait~1000*62 Enter")
+  const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "challenge?seed=1" }).at })
+  const first = frameToText(run.frames[0]!.frame)
+  assert.match(first, /build phase - battle 1 of 3 - round 1 of 6/u)
+  assert.match(first, /A Challenge run: 3 battles with Edda/u)
+  const placed = run.frames[5]!.state
+  assert.equal(placed.planned.length, 1, "Enter did not place the Turret")
+  const turret = placed.planned[0]!
+  const result = frameToText(run.frames[run.frames.length - 2]!.frame)
+  assert.match(result, /\[enter\] Next round/u)
+  assert.match(result, /ENEMY/u)
+  const last = run.frames[run.frames.length - 1]!
+  assert.match(frameToText(last.frame), /build phase - battle 1 of 3 - round 2 of 6/u)
+  assert.ok(
+    run.context.standing.some((structure) => structure.contentId === turret.contentId && structure.anchor.x === turret.anchor.x && structure.anchor.y === turret.anchor.y),
+    "the Turret placed on the screen is not standing in round 2",
+  )
+})
+
+test("the driver plays a run end to end, and the same seed and script give the same run", { timeout: 120_000 }, () => {
+  const once = driveRun(SETUP, balanced)
+  const again = driveRun(SETUP, balanced)
+  const shape = (driven: typeof once): string[] => driven.rounds.map(({ battle, report }) => `${battle}.${report.round} ${report.ended}@${report.ticks}`)
+  assert.deepEqual(shape(again), shape(once))
+  assert.deepEqual(summaryLines(again.run), summaryLines(once.run))
+  assert.equal(once.run.over, true)
+  // Pinned, on Node and on Bun: a change to a rule, the scripts or the armies moves it, and says so.
+  assert.deepEqual(summaryLines(once.run), [
+    "The run is won: all 3 battles won.",
+    "Edda Vasse, seed 1.",
+    "Battle 1 against Dob Hunter (rush): won in round 1. Dob Hunter's Nexus fell.",
+    "Battle 2 against Dob Hunter (turtle): won in round 6. Dob Hunter's Nexus fell.",
+    "Battle 3 against Dob Hunter (balanced): won in round 3. Dob Hunter's Nexus fell.",
+  ])
+  assert.deepEqual(shape(once), [
+    "1.1 nexus@474",
+    "2.1 time@600",
+    "2.2 time@600",
+    "2.3 time@600",
+    "2.4 time@600",
+    "2.5 time@600",
+    "2.6 nexus@527",
+    "3.1 time@600",
+    "3.2 time@600",
+    "3.3 nexus@456",
+  ])
+})

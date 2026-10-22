@@ -46,7 +46,7 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | --- | --- |
 | `menu`, or nothing | the title menu: Campaign, Challenge, Settings, About, Exit |
 | `campaign` | the title menu's Campaign screen, a placeholder until the campaign menu is built |
-| `challenge` | the title menu with Challenge's "not built yet" notice, as choosing its row shows it |
+| `challenge` | a Challenge run's first Build Phase, on a seed from the clock, as choosing its row opens it; `challenge?seed=<n>&commander=<id>` a chosen run (Vasse unless named) |
 | `settings` | the title menu's Settings screen |
 | `about` | the title menu's About screen |
 | `campaign?level=vasse-test-1` | PERIMETER's Build Phase, round 1 |

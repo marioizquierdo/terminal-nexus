@@ -44,6 +44,10 @@ test("each route parses to the place it names", () => {
     ["campaign?round=3&level=vasse-test-1", "level vasse-test-1 round 3"],
     ["CAMPAIGN?Level=vasse-test-1&ROUND=2", "level vasse-test-1 round 2"],
     ["campaign?level=vasse%2Dtest%2D1&round=%32", "level vasse-test-1 round 2"],
+    // Challenge: with a seed, that run's first battle; without one, the title menu's place, which picks a seed.
+    ["challenge?seed=1234", "level challenge-1234 round 1"],
+    ["challenge?seed=1234&commander=Dob", "level challenge-1234 round 1"],
+    ["challenge?commander=averno", "title challenge"],
   ]
   for (const [route, expected] of cases) assert.equal(plain(parseRoute(route)), expected, `"${route}"`)
 })
@@ -81,7 +85,8 @@ test("every route the game has reads back to itself, and each place lists the ro
   // A title place's route is its name, and opens itself.
   for (const name of PLACE_NAMES) {
     const destination = parseRoute(name)
-    if (name !== "campaign") assert.deepEqual(PLACES[name]?.routes(), [name])
+    // The Campaign names its levels' rounds too, and Challenge a run of each Commander.
+    if (name !== "campaign" && name !== "challenge") assert.deepEqual(PLACES[name]?.routes(), [name])
     assert.equal(destination.kind, "title")
   }
 })
@@ -110,6 +115,15 @@ test("a broken route is refused whole: every problem at once, each naming what e
     ["campaign?=3", ['"=3" has no name before its =']],
     ["campaign?level=vasse-test-1&level=vasse-test-1", ["level is given twice"]],
     ["campaign?level=%zz", ['"%zz" is not readable: a % must start an escape like %20']],
+    [
+      "challenge?seed=lots&commander=nobody&round=2",
+      [
+        "challenge takes no round: it reads seed and commander",
+        'no Commander "nobody" for a run: the Commanders are vasse, averno and dob',
+        'seed must be a whole number from 0 to 999999, not "lots"',
+      ],
+    ],
+    ["challenge?seed=1000000", ['seed must be a whole number from 0 to 999999, not "1000000"']],
   ]
   for (const [route, expected] of cases) assert.deepEqual(problemsOf(route), expected, `"${route}"`)
   // The message says the route and every problem, for a command line that shows only the message.
@@ -134,4 +148,18 @@ test("each title menu row that opens a place names its route, the route of the p
   for (const name of PLACE_NAMES.filter((place) => place !== "menu")) {
     assert.equal(routes.filter((route) => route === name).length, 1, `${name} is named by ${routes.filter((route) => route === name).length} rows`)
   }
+})
+
+test("a Challenge route names a run by its seed and its Commander, and reads back to itself", () => {
+  const run = parseRoute("challenge?seed=1234&commander=dob")
+  assert.ok(run.kind === "level")
+  assert.equal(run.level.campaign, "challenge")
+  assert.equal(run.round, 1)
+  assert.equal(formatRoute(run), "challenge?seed=1234&commander=dob")
+  // Vasse is the run's Commander unless one is named, and her route leaves her unsaid.
+  assert.equal(formatRoute(parseRoute("challenge?seed=7&commander=vasse")), "challenge?seed=7")
+  // With no seed, the title menu's Challenge, which picks one; the Commander named goes with it.
+  assert.deepEqual(parseRoute("challenge"), { kind: "title", place: "challenge" })
+  assert.deepEqual(parseRoute("challenge?commander=Averno"), { kind: "title", place: "challenge", commander: "averno" })
+  assert.equal(formatRoute(parseRoute("challenge?commander=averno")), "challenge?commander=averno")
 })

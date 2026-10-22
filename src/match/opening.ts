@@ -46,8 +46,9 @@ export type OpeningInput = Readonly<{
   /** The state the last Pulse of a mission left, after Recall — absent for a first Pulse. Its seed,
    *  clock and ground items carry on; `setup.seed` is then not read. */
   carried?: MatchState
-  /** The player's buildings, by anchor, that hold their wave this Pulse (Hold production): they open with every wave
-   *  of the Pulse already sent, so they send none. Absent: none. */
+  /** The buildings, by anchor, that hold their wave this Pulse (Hold production): they open with every wave of the
+   *  Pulse already sent, so they send none. Whichever side's they are (a duel's sides may each hold some); no two
+   *  buildings share an anchor. Absent: none. */
   held?: readonly Coord[]
 }>
 
@@ -226,8 +227,7 @@ export function opening(input: OpeningInput): Opening {
       return { ...entity, hp: Math.min(entity.hp, entry.definition.maxHp), anchor: entry.anchor, ...productionFields(entry.definition) }
     })
   const held = input.held ?? []
-  const holding = (entity: EntityState): boolean =>
-    entity.player === "A" && held.some((anchor) => anchor.x === entity.anchor.x && anchor.y === entity.anchor.y)
+  const holding = (entity: EntityState): boolean => held.some((anchor) => anchor.x === entity.anchor.x && anchor.y === entity.anchor.y)
   const entities = [...kept, ...born]
     .map((entity) => {
       // A building held this Pulse opens with every wave already sent (a building's action, Hold production).

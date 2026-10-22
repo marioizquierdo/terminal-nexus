@@ -225,6 +225,13 @@ async function switchTo(screen: Screen, route: string | null, notes: readonly st
     await running
     switching = false
   }
+  showScreen(screen, route)
+  status.textContent = notes.join(" · ")
+}
+
+/** `screen` as the one shown: its mode button pressed and its keys on the bar. `route` is where a place in the game
+ *  opened. */
+function showScreen(screen: Screen, route: string | null): void {
   shown = route === null ? { screen } : { screen, route }
   document.body.dataset["mode"] = screen
   for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at], [data-pulse]")) {
@@ -233,7 +240,6 @@ async function switchTo(screen: Screen, route: string | null, notes: readonly st
     button.setAttribute("aria-pressed", String(own === screen))
   }
   renderKeyBar()
-  status.textContent = notes.join(" · ")
 }
 
 /** The settings saved in this browser, or a first visit's, in truecolour: a browser always has it. */
@@ -317,7 +323,12 @@ async function startAt(at: string | undefined, from: string, demo?: Demo): Promi
   status.textContent = notes.join(" · ")
   const common = { ...pageTerminal, backend: canvasFor(settings), settings, settingsStore, buildId: __TN_BUILD__.commit, hostName: "web" } as const
   if (destination.kind === "title") {
-    track(runMenu({ ...common, at: destination }))
+    // Challenge on the menu hands the page to a run's Build Phase: its keys on the bar, its route said.
+    const open = (at: Extract<Destination, { kind: "level" }>, settings: Settings): Promise<number> => {
+      showScreen("build", formatRoute(at))
+      return runBuildPhase({ ...common, settings, at, exporter })
+    }
+    track(runMenu({ ...common, at: destination, open }))
     return
   }
   const { keys } = launch

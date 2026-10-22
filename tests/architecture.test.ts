@@ -91,6 +91,12 @@ test("src/match never reaches the view, the report, the shell, or the Build Phas
   assertNoDependencyOn("match", ["view", "report", "cli", "build"])
 })
 
+test("src/run is a mode, pure: it never reaches the view, the shell or the browser page", () => {
+  // A run decides which duels are played, against whom and in what order, from its seed; playing one on the Build
+  // Phase screen is the shell's (src/cli/run-play.ts), so nothing below the mode knows it serves a run.
+  assertNoDependencyOn("run", ["view", "cli", "web"])
+})
+
 test("src/mission is data: it never reaches the kernel's tick, the rules layer, the view, the shell or the Build Phase", () => {
   // A mission is typed literals and the checks on them. The Build Phase and the view may read its
   // shapes, so it must not bring the kernel along with it; the runner that steps the kernel is src/match's.
@@ -170,7 +176,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "armies", "abilities", "duel"]
+  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "armies", "abilities", "duel", "run"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,

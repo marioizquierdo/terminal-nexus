@@ -17,18 +17,25 @@ import type { MissionPlay } from "./pulse-run.ts"
 import { missionPlay } from "./pulse-run.ts"
 import { levelContext } from "./starter.ts"
 
-/** A level the game can open. */
+/** What the Build Phase screen is handed to play a level's rounds (`BuildSession`): starting a round's Pulse, the
+ *  round after it, the raid foreseen, a Nexus power kept — and, for a campaign mission, the mission itself. */
+export type LevelPlay = Pick<MissionPlay, "startPulse" | "nextRound" | "foresee" | "keep"> & Partial<Pick<MissionPlay, "mission">>
+
+/** A level the game can open: a campaign's mission, or a Challenge run, whose battles the same screen plays. */
 export type PlayableLevel = Readonly<{
   /** The id a route names: `campaign?level=vasse-test-1`. */
   id: string
-  /** The campaign it belongs to. */
+  /** The campaign it belongs to, or `challenge` for a run. */
   campaign: string
   /** What the player reads: the mission's name. */
   title: string
-  /** How many rounds it plays. */
+  /** How many rounds it plays: a run's, how many each battle may last. */
   rounds: number
-  /** Its mission's connection to the Build Phase: starting a round's Pulse, the round after it, the raid foreseen. */
-  play: MissionPlay
+  /** The route that opens it, when it is not a campaign level's (`campaign?level=<id>`): a run's,
+   *  `challenge?seed=1234`. */
+  route?: string
+  /** Its connection to the Build Phase: starting a round's Pulse, the round after it, the raid foreseen. */
+  play: LevelPlay
   /** Round 1's Build Phase, with what the level offers, on its map. */
   firstRound: (scrollMargin?: number, extra?: Partial<BuildContext>) => BuildContext
 }>

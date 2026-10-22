@@ -357,7 +357,7 @@ the duels' units stand blocked a twelfth as long ([what was measured](../reports
 **Scheduled** at first. Before it, the cause of the stuck raiders was found by playing PERIMETER headless: there is no
 pathfinding, a unit only takes a step that brings it strictly closer, so a slinger directly above the Grid Nexus with
 the north-west wall between them stands there for good and the raiders behind it queue. The milestone
-([`milestone-16-pathfinding.md`](../../milestones/milestone-16-pathfinding.md)) has that, the research (A\*, distance
+([`milestone-16-pathfinding.md`](../milestones/milestone-16-pathfinding.md)) has that, the research (A\*, distance
 fields and flow fields, hierarchy, clearance for unit sizes, local avoidance, cooperative pathfinding, weighted
 terrain, what auto-battlers do), each of his needs set against it, and six steps: a bench and a measure, routes round
 the map, crowds, a Grid that changes mid-round, terrain and who passes whom, and goals with banners. When a banner is set,

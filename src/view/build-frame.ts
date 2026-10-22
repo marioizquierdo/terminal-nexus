@@ -186,7 +186,8 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   // A mission's round, when there is one: its goal is about rounds, so the header counts them
   // (`docs/game-design/campaigns.md`: a Pulse counter "only when the goal is itself about Pulses").
   const round = context.round
-  const phase = round === undefined ? "build phase" : `build phase - round ${round.number} of ${round.of}`
+  const stage = round?.stage === undefined ? "" : `${round.stage} - `
+  const phase = round === undefined ? "build phase" : `build phase - ${stage}round ${round.number} of ${round.of}`
   const subtitle = input.pulse === undefined ? phase : pulseSubtitle(input.pulse)
   text(cells, band, left + 15, headerRow, subtitle, "chrome.muted", { limit: limit - 15 })
   // What Esc does right now, right-aligned: "menu [esc]", "back [esc]", "close [esc]" —

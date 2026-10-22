@@ -1,12 +1,17 @@
 # Milestone 16 — Pathfinding
 
-**Status:** CURRENT
-**Current step:** 16L — the wrap-up: the mortar, survivors home, the Commander as guide, formation lines.
+**Status:** COMPLETE
+**Current step:** none — steps 16A to 16L are built; closed by Mario on 2026-10-22
 **Depends on:** nothing new. It builds on the kernel's tick order, its collision masks and the rule that no side
 wins by where it stands, all built. Commander Armies is closed, and its last step, the catch-up measure, is measured here at the end.
 
+> **CLOSED, 2026-10-22.** Mario, after the wrap-up merged: "don't worry about the next backliner, perimeter balancing
+> or march's numbers. We will correct that when I start playing. For now, we want to focus on building a basic game
+> loop. Let's move into the next most important milestone" ([his words](../feedback/2026-10-21-pathfinding-wrap-up.md)).
+> The next is [Challenge Mode: Runs](../../milestones/milestone-11-challenge-runs.md).
+
 On 2026-10-19 the owner watched raiders stand behind rocks in PERIMETER and asked for this milestone
-([his words](../history/feedback/2026-10-13-commander-armies.md)): "This is a solved problem in many videogames,
+([his words](../feedback/2026-10-13-commander-armies.md)): "This is a solved problem in many videogames,
 please do some initial research to identify the typical situations and algorithms. Then contrast with our specific
 situation." He named what units must do: move toward a target, dodge obstacles, notice enemies within sight, get a
 crowd through a narrow passage, cope with a Grid that changes mid-round (a unit pushed by a blast or pulled by a
@@ -171,7 +176,7 @@ what is better than what once units find their way.
 - [x] **A baseline**: the spec run once on today's step rule, kept only to compare each later step with: the ticks
   each unit stands blocked, the longest walk against its shortest route, and the time a tick takes.
 - [x] **The tests that pin a battle's outcome or hash** listed with what each claims, so the steps that change
-  routes re-pin them knowingly and drop a claim that only held for the old rule ([the list](../system-design/measurement.md)).
+  routes re-pin them knowingly and drop a claim that only held for the old rule ([the list](../../system-design/measurement.md)).
 
 ### Step 16B — The parts, each tested alone
 
@@ -293,7 +298,7 @@ make good unit formations that can foster interesting strategies"):
 - [x] **The test he set: formations in a simulated game.** Using the spec from the first step, sides built three ways
   (a block of four Barracks side by side, four set apart, a long line of them) are played against each other and
   against a blast that hits an area, over many seeds (`node bin/measure.ts formations`,
-  [the report](../history/reports/2026-10-20-formations.md)). Where a player builds decides how tight the army meets
+  [the report](../reports/2026-10-20-formations.md)). Where a player builds decides how tight the army meets
   the enemy: a block about 3 columns from its middle, a line 4, set apart 14. A block and a line each beat an army set
   apart (10 to 2, 12 to 0), which reaches the fight a wave at a time, and are close to each other (5 to 7). Set apart
   beats nothing yet: the bench's only area attack does not punish a tight army enough to change who wins. That is a
@@ -314,8 +319,8 @@ validation at the end". The checks Commander Armies left are measured here, on t
 - [x] **The whole spec run on the new routes**: every Commander against every other from both ends of the map,
   drafting from their whole decks over many seeds; the bench; every campaign level with its plans. Written down as
   the spec says: the first results under the new rules
-  ([the result](../history/measurements/2026-10-20-routes-and-roofs.json),
-  [what it says](../history/reports/2026-10-20-pathfinding-measured.md)). Every route scenario walked; a twelfth of
+  ([the result](../measurements/2026-10-20-routes-and-roofs.json),
+  [what it says](../reports/2026-10-20-pathfinding-measured.md)). Every route scenario walked; a twelfth of
   the blocking; mirrors 28 to 26; 90 of 162 duels ended by a Nexus falling, where 23 did. A tick costs about 14 ms
   at 200 units, so a duel's last rounds take a few seconds to resolve.
 - [x] **The catch-up measure** (Commander Armies' last step): how often a lucky early hand predicts the winner, over
@@ -333,7 +338,7 @@ validation at the end". The checks Commander Armies left are measured here, on t
 
 ### Step 16J — After the merge: the Nexus fights back, breaching, and the chapter on how things move
 
-Mario's round after the milestone merged ([his words](../history/feedback/2026-10-21-pathfinding.md)): the duels'
+Mario's round after the milestone merged ([his words](../feedback/2026-10-21-pathfinding.md)): the duels'
 early lead answered by the Nexus itself, the difference between rock and a building in the way, and the pathfinding
 design written as a chapter of the grid's architecture.
 
@@ -354,7 +359,7 @@ design written as a chapter of the grid's architecture.
 
 ### Step 16K — Area damage against a tight army: the bomber, the mortar and burning ground
 
-Mario's yes to the proposal ([his words](../history/feedback/2026-10-21-pathfinding.md)): "implement those to test
+Mario's yes to the proposal ([his words](../feedback/2026-10-21-pathfinding.md)): "implement those to test
 differences in formations with units", and "let's start testing area of damage versus clamping", with scripted and
 model players able to choose one strategy or another.
 
@@ -375,7 +380,7 @@ model players able to choose one strategy or another.
 
 ### Step 16L — The wrap-up: the mortar, survivors home, the Commander as guide, formation lines
 
-Mario's last round on the milestone ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)), "a polish
+Mario's last round on the milestone ([his words](../feedback/2026-10-21-pathfinding-wrap-up.md)), "a polish
 PR, but actually a pretty difficult one".
 
 - [x] **The mortar's two parts**: its shell bursts harder, and hurts only the enemy; its fire is shorter (four seconds)

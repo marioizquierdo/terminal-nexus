@@ -136,16 +136,40 @@ test("activating the menu's own Exit item — by its hotkey — reaches the same
   assert.ok(stdout.written.includes(MOUSE_REPORTING_OFF))
 })
 
-test("activating Challenge, a dimmed stub, shows a notice and does not quit or change screen", async () => {
+test("activating Challenge leaves the menu without quitting and opens a run, on a seed from the clock", async () => {
   const challenge = TOP_LEVEL_ITEMS.find((item) => item.id === "challenge")
   assert.ok(challenge)
-  assert.equal(challenge!.disabled, true, "Challenge is no longer marked disabled")
-  const { stdout, exits } = await menuSession((input) => {
-    input.emit("data", Buffer.from(challenge!.hotkey))
+  assert.notEqual(challenge!.disabled, true, "Challenge is still a dimmed stub")
+  assert.equal(challenge!.label, "Challenge")
+  const { stdout, stdin } = fakes()
+  const exits: number[] = []
+  const opened: string[] = []
+  const session = runMenu({
+    settings: TEST_SETTINGS,
+    settingsStore: noopSettingsStore(),
+    backend: "ansi",
+    stdout: stdout as unknown as NodeJS.WriteStream,
+    stdin: stdin as unknown as NodeJS.ReadStream,
+    exit: (code) => {
+      exits.push(code)
+    },
+    // A clock at 1,234,567,890 ms: the run's seed is its last six digits.
+    now: () => 1_234_567_890,
+    open: async (at) => {
+      opened.push(at.level.route ?? at.level.id)
+      return 7
+    },
   })
-  assert.deepEqual(exits, [], "a stub option should not exit the application")
-  assert.ok(stdout.written.includes("not built yet"), "no honest stub notice was ever drawn")
-  assert.ok(stdout.written.includes("main menu"), "activating a dimmed stub left the main menu")
+  await new Promise((resolve) => setTimeout(resolve, 30))
+  stdin.emit("data", Buffer.from(challenge!.hotkey))
+  // What the run's screen returns is what the menu returns.
+  assert.equal(await session, 7)
+  assert.deepEqual(opened, ["challenge?seed=567890"])
+  assert.deepEqual(exits, [], "choosing Challenge exited the application")
+  // The menu's own disposer ran before the run opened: raw mode, the alternate screen and mouse reporting all off.
+  assert.equal(stdin.raw, false)
+  assert.ok(stdout.written.includes(`${ESC}[?1049l`), "the menu never left the alternate screen")
+  assert.ok(stdout.written.includes(MOUSE_REPORTING_OFF), "the menu left mouse reporting on")
 })
 
 test("activating Campaign leaves the top-level menu for its own placeholder screen", async () => {

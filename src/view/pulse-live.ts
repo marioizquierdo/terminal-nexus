@@ -51,6 +51,9 @@ export type ResolvedPulse = Readonly<{
   /** How the mission stands after this Pulse: which round it was, and whether the mission goes
    *  on or a trigger ended it. Absent for a Pulse with no mission. */
   mission?: MissionRound
+  /** What the Battle Round calls the other side, in its force bar, its bottom line and its result: "raid" unless the
+   *  mode names it — a Challenge run's "enemy", a Commander's army rather than a raid. */
+  enemy?: string
 }>
 
 /** A mission's round, as the result reads it. */
@@ -62,7 +65,14 @@ export type MissionRound = Readonly<{
   endText?: Readonly<{ won: string; lost: string }>
   /** The Commanders who fell this round, and the round each is back for (`src/match/commander.ts`). */
   fell?: readonly CommanderAbsence[]
+  /** The words for a round that ends its match, when the mode has its own rather than a mission's: a Challenge
+   *  run's battle won, lost or drawn (`MissionEnding`). Absent: "MISSION COMPLETE" and "Play again". */
+  ending?: MissionEnding
 }>
+
+/** How a match's last round reads when the mode says it in its own words: the headline, the line under it, its
+ *  tone, and what the result's row goes on to ("BATTLE WON", "Dob Hunter's Nexus fell.", "Next battle"). */
+export type MissionEnding = Readonly<{ headline: string; reason: string; tone: "success" | "danger" | "neutral"; goOn: string }>
 
 /** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */
 const STEP_FRAMES_PER_SECOND = 30
@@ -139,7 +149,7 @@ export class PulsePresenter {
     this.autoNextMs = options.autoNextMs ?? null
     this.view = createView(resolved.timeline, presentation)
     this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs)
-    this.result = missionResultOf(resultOf(outcomeOf(resolved.timeline)), resolved.mission)
+    this.result = missionResultOf(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), resolved.mission)
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.recall.state.entities.filter(
       (entity) => entity.player === "A" && isMobile(resolved.timeline, entity.contentId),
@@ -327,6 +337,7 @@ export class PulsePresenter {
       result: this.result,
       forces,
       home: this.home,
+      ...(this.resolved.enemy === undefined ? {} : { enemy: this.resolved.enemy }),
     }
   }
 

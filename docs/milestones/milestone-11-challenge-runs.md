@@ -1,7 +1,15 @@
 # Milestone 11 — Challenge Mode: Runs
 
-**Status:** PLANNED
+**Status:** CURRENT
+**Current step:** 11A — the run skeleton: three battles from a seed, each a duel against a Commander Army played on the Build Phase screen.
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Battle Round loop and a result), Milestone 8 (a Commander exists and the Nexus Pulse deals from an army's pool); Milestone 3's mode select hands off here
+
+Made current on 2026-10-22, when the owner closed Pathfinding: "For now, we want to focus on building a basic game
+loop. Let's move into the next most important milestone" ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)).
+Since this plan was written, duels were built (`src/duel/`, [`duels.md`](../system-design/duels.md)): two Commander
+Armies fought round by round, each planned by a script or a model under the Build Phase's own rules. **A run's battle
+is a duel**: the player plans one side on the Build Phase screen, a scripted player plans the Commander Army on the
+other. That is the "heuristic policy driving a Commander Army" the design names, already built and measured.
 
 This is the replayable mode, and the one that needs no writing. Mario's brief: "implementing 'runs',
 where each battle ends on a new draft upgrade or removals that further polish the build for the next
@@ -26,15 +34,16 @@ Small, in order, each finishable on its own.
 
 ### Step 11A — Run skeleton
 
-- [ ] A `RunDefinition` holds the `seed`, the Commander chosen at run start from Challenge's own
-      unlocked roster (basic packages from the outset, more unlocked by playing Challenge itself; Q46),
-      the acts, and the battle list generated from the seed.
-- [ ] Three battles on existing fixture maps against the Ravel fixture army, under a static or simple
-      heuristic policy.
-- [ ] A plain "next battle" screen between battles, and a run summary at the end.
-- [ ] The driver plays the run end to end.
-- [ ] Seed determinism is asserted: the same seed and driver script give the same battles, outcomes and
-      summary.
+- [x] A run's definition from its seed: the player's Commander, and three battles, each against Dob Hunter's Ravel
+      army (the "Ravel fixture army" this step first named) on a duel map, with a battle seed of its own.
+- [x] **A run battle is a duel played on the Build Phase screen**: the player plans one side as in a campaign level
+      (the menu, the Nexus Pulse's hand, the Battle Round), a scripted duel player plans the Commander Army on the
+      other; plans reveal together; the battle goes round by round until a Nexus falls or its rounds run out.
+- [x] A plain "next battle" screen between battles, and a run summary at the end; a lost battle ends the run.
+- [x] The title menu's Challenge row starts a run, its seed shown; `challenge?seed=<n>` opens one from the command
+      line, the scripted playtest and the browser page.
+- [x] The driver plays the run end to end, headless, through the same functions the screen uses.
+- [x] Seed determinism is asserted: the same seed and driver script give the same battles, outcomes and summary.
 
 ### Step 11B — The run draft
 

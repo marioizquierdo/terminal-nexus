@@ -591,7 +591,7 @@ function linesOf(entry: PopupRow, textLimit: number): readonly (string | undefin
     // A line break starts a new paragraph on a line of its own: an Activity logs entry's line, then
     // what its event means.
     const wrapped = entry.text.split("\n").flatMap((paragraph) => wrapWords(paragraph, textLimit))
-    const room = (entry.room ?? []).map((text) => wrapWords(text, textLimit).length)
+    const room = (entry.room ?? []).map((text) => text.split("\n").flatMap((paragraph) => wrapWords(paragraph, textLimit)).length)
     return Array.from({ length: entry.lines ?? Math.max(1, wrapped.length, ...room) }, (_, index) => wrapped[index] ?? "")
   }
   return [undefined]

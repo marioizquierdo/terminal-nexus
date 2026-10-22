@@ -319,7 +319,7 @@ always did. The named scenario is `target-head-engage-stand`.
 ### 1.6 Routes — RULE — `src/routing/`, `src/pulse/routes.ts`, `tests/routing.test.ts`, `tests/route-scenarios.test.ts`
 
 The owner, 2026-10-19, watching raiders stand behind rocks: units must get where they are going, round obstacles,
-through crowds and narrow gaps, on a Grid that changes ([the milestone](../milestones/milestone-16-pathfinding.md)).
+through crowds and narrow gaps, on a Grid that changes ([the milestone](../history/milestones/milestone-16-pathfinding.md)).
 Routes are built from small parts, each tested alone (`src/routing/`): where a body of a given shape may stand, the
 anchors from which it reaches a goal, a distance field from a goal outward, and the ranking of a unit's four steps.
 How they fit together, in plain words, and where a new way of moving plugs in, is [`movement.md`](movement.md).

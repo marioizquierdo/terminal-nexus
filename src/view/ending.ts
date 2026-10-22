@@ -283,6 +283,7 @@ type Round = Readonly<{
   of: number
   endText?: Readonly<{ won: string; lost: string }>
   fell?: readonly CommanderAbsence[]
+  ending?: Readonly<{ headline: string; reason: string; tone: "success" | "danger" | "neutral"; goOn: string }>
 }>
 
 /**
@@ -320,6 +321,11 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
   const last = `Round ${round.round} of ${round.of}: ${fight.headline.toLowerCase()}. ${fight.reason}`
   const line = commanderLine(round)
   const commander = line === undefined ? {} : { commander: line }
+  // A mode's own words for the round that ends its match (a Challenge run's battle), over a mission's.
+  const { ending } = round
+  if (ending !== undefined && round.verdict.kind !== "continue") {
+    return { headline: ending.headline, reason: ending.reason, tone: ending.tone, mission: last, goOn: ending.goOn, line: `${ending.headline} - ${ending.reason}`, ...commander }
+  }
   switch (round.verdict.kind) {
     case "won": {
       const reason = round.endText?.won ?? "The mission's goal is met."
@@ -344,9 +350,10 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
  * The result for the player, side A. The kernel's own three endings (`pulse.md`) — a Nexus destroyed,
  * a force wiped out, the tick limit — and both sides' luck at once. A time-out is a draw here, as the
  * kernel has it: whether "still standing when the raid's schedule ends" should read as a win is a
- * mission's question, not this view's.
+ * mission's question, not this view's. `enemy` is what the other side is called: a mission's "raid", a Challenge
+ * run's "enemy".
  */
-export function resultOf(outcome: Outcome, player: PlayerId = "A"): PulseResult {
+export function resultOf(outcome: Outcome, player: PlayerId = "A", enemy = "raid"): PulseResult {
   if (outcome.winner === null) {
     if (outcome.reason === "tick-limit") {
       return { headline: "TIME'S UP", reason: "The time ran out before either side won.", tone: "neutral" }
@@ -360,10 +367,10 @@ export function resultOf(outcome: Outcome, player: PlayerId = "A"): PulseResult 
   const won = outcome.winner === player
   if (outcome.reason === "nexus-destroyed") {
     return won
-      ? { headline: "VICTORY", reason: "The raid's Nexus was destroyed.", tone: "success" }
+      ? { headline: "VICTORY", reason: `The ${enemy}'s Nexus was destroyed.`, tone: "success" }
       : { headline: "DEFEAT", reason: "Your Nexus was destroyed.", tone: "danger" }
   }
   return won
-    ? { headline: "VICTORY", reason: "The raid was wiped out.", tone: "success" }
+    ? { headline: "VICTORY", reason: `The ${enemy} was wiped out.`, tone: "success" }
     : { headline: "DEFEAT", reason: "Your force was wiped out.", tone: "danger" }
 }

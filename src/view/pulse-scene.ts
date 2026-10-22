@@ -63,6 +63,8 @@ export type PulseFrame = Readonly<{
   result: PulseResult
   /** What each side has in the field right now: its mobile units and their health, structures excluded. */
   forces: Readonly<Record<PlayerId, Readonly<{ units: number; hp: number }>>>
+  /** What the other side is called: "raid" unless the Pulse names it (`ResolvedPulse.enemy`). */
+  enemy?: string
   /** After Recall: how many mobile units the player has, standing where the next Build Phase finds them. */
   home: number
   /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
@@ -333,7 +335,7 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
     case "home":
       return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
     default:
-      return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the raid.`)
+      return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the ${pulse.enemy ?? SIDE.B}.`)
   }
 }
 
@@ -341,7 +343,8 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
 function forceLine(pulse: PulseFrame, player: PlayerId): string {
   const { units, hp } = pulse.forces[player]
   const bar = forceBar(hp, pulse.openingHealth.get(player) ?? 0)
-  return `${SIDE[player].toUpperCase().padEnd(5)}${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
+  const side = player === "B" ? (pulse.enemy ?? SIDE.B) : SIDE[player]
+  return `${side.toUpperCase().padEnd(5)}${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
 }
 
 /** How many units `player`'s buildings owe of the waves that have come (`EntityState.owed`, `src/pulse/production.ts`):
