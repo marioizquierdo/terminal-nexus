@@ -159,7 +159,7 @@ const firstWaveTicks = (state: BuildState): number => setting(state, "firstWave"
 /** What the next Build Phase's first line says of the player's Commander — restored beside the Nexus by the Nexus
  *  Pulse that opens the round, or out this round and, when the mission lasts that long, the round she is back for — or `null` when there is
  *  nothing to say. */
-function commanderNews(restored: readonly Restoration[], absent: readonly CommanderAbsence[], round: number, of: number): string | null {
+export function commanderNews(restored: readonly Restoration[], absent: readonly CommanderAbsence[], round: number, of: number): string | null {
   const back = restored.find((restoration) => restoration.player === "A")
   if (back !== undefined) return `The Nexus Pulse restores ${commanderName(back.contentId)} beside the Nexus.`
   const out = absent.find((absence) => absence.player === "A")

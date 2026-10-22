@@ -10,6 +10,9 @@
 //   duel wait   --dir <dir> --side A [--timeout 900]   blocks until side A has a brief to answer, and prints it
 //   duel submit --dir <dir> --side A --plan <file|->   hands in A's plan; the second side's plan plays the round
 //   duel status --dir <dir>                            how the duel stands
+//   duel run    [--seed 1] [--commander vasse] [--player script:balanced]
+//              a whole Challenge run headless: side A played by the script through the Build Phase's own functions
+//              (its troops always attack: the Build Phase has no stance), battle after battle, to the run's summary
 //
 // A player is `script:<name>` (`balanced`, `rush`, `turtle`, each also by a formation: `rush-block`, `rush-apart`,
 // `rush-zones`), or `cmd:<command>`: the command is run once a round with the brief's text on its standard input, and
@@ -21,6 +24,8 @@ import { join } from "node:path"
 import { ARMIES } from "../armies/index.ts"
 import type { DuelSetup, DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
 import { briefOf, newDuel, playRound, readPlan, scriptedNames, scriptedPlayer, SIDES } from "../duel/index.ts"
+import { DEFAULT_RUN_COMMANDER, summaryLines } from "../run/index.ts"
+import { driveRun } from "./run-play.ts"
 
 type Options = Readonly<Record<string, string>>
 
@@ -309,6 +314,25 @@ function status(options: Options, write: (line: string) => void): number {
   return 0
 }
 
+/** A whole Challenge run, side A by a script through the Build Phase's functions (`driveRun`): every round, then the
+ *  summary. */
+function run(options: Options, write: (line: string) => void): number {
+  const name = options["player"] ?? "script:balanced"
+  if (name.startsWith("cmd:")) throw new Error("duel run plays side A by a script: --player script:<name>")
+  const driven = driveRun({ seed: number(options, "seed", 1), commander: options["commander"] ?? DEFAULT_RUN_COMMANDER }, playerOf(name))
+  let battle = 0
+  for (const round of driven.rounds) {
+    if (round.battle !== battle) {
+      battle = round.battle
+      const opponent = driven.run.definition.battles[battle - 1]
+      write(`battle ${battle}: against ${opponent?.opponent ?? "?"} (${opponent?.policy ?? "?"}), seed ${opponent?.duel.seed ?? "?"}`)
+    }
+    for (const line of roundLines(round.report)) write(`  ${line}`)
+  }
+  for (const line of summaryLines(driven.run)) write(line)
+  return 0
+}
+
 /** The comment this file opens with: what `duel help` prints. */
 function usage(): string {
   const lines = readFileSync(new URL(import.meta.url), "utf8").split("\n")
@@ -332,6 +356,8 @@ export function main(args: readonly string[], write: (line: string) => void = (l
       return submit(options, write)
     case "status":
       return status(options, write)
+    case "run":
+      return run(options, write)
     default:
       write(usage())
       return command === "help" ? 0 : 1

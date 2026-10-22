@@ -45,6 +45,8 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        "campaign?level=vasse-test-1&round=3" (round counts Battle Rounds from
                        1, as the screen does). Round 1 of vasse-test-1 unless given;
                        a later round is reached as a player who builds nothing reaches it.
+                       "challenge?seed=1" opens that Challenge run's first battle
+                       (&commander=averno or dob for another Commander than Vasse).
                        With --at, the keys may be left out: the screen as it opens
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, and a larger one centres it)
   --colors <depth>     truecolor (default), color256, monochrome

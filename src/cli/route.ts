@@ -5,7 +5,9 @@
 //
 //   menu                                  the title menu; an empty route is this one
 //   settings   about   campaign           the title menu's own screens
-//   challenge                             the title menu, saying Challenge is not built yet, as its row does
+//   challenge                             a Challenge run, on a seed the game chooses, as its title menu row starts one
+//   challenge?seed=1234                   the run of that seed, at its first battle's first round
+//   challenge?seed=1234&commander=dob     ... with another Commander than Vasse
 //   campaign?level=vasse-test-1           that level's Build Phase, at its first round
 //   campaign?level=vasse-test-1&round=3   ... at round 3: a Battle Round, counted from 1 as the screen counts
 //
@@ -26,13 +28,18 @@
 
 import type { PlayableLevel } from "./levels.ts"
 import { DEFAULT_LEVEL, LEVELS, levelById } from "./levels.ts"
+import { DEFAULT_RUN_COMMANDER, RUN_COMMANDERS, RUN_SEED_LIMIT, isRunSeed } from "../run/index.ts"
+import { runLevel } from "./run-play.ts"
 
 /** The title menu's places: each opens one of its screens, or (Challenge) does what its row does. */
 export type TitlePlace = "menu" | "campaign" | "challenge" | "settings" | "about"
 
-/** Where a route leads: a place on the title menu, or a level's Build Phase at one of its rounds. */
+/** Where a route leads: a place on the title menu, or a level's Build Phase at one of its rounds — a campaign
+ *  level's, or a Challenge run's. Challenge with no seed is the title menu's place: the game chooses the seed, from
+ *  the clock, which a route never reads; `commander` is the Commander the run is played with, when the route
+ *  names one. */
 export type Destination =
-  | Readonly<{ kind: "title"; place: TitlePlace }>
+  | Readonly<{ kind: "title"; place: TitlePlace; commander?: string }>
   | Readonly<{ kind: "level"; level: PlayableLevel; round: number }>
 
 export type TitleDestination = Extract<Destination, { kind: "title" }>
@@ -104,6 +111,23 @@ function campaign(query: Query, problems: string[]): Destination | null {
   return { kind: "level", level, round: counted }
 }
 
+/** `challenge`: a run — of the seed given, at its first battle's first round, or, with none, on a seed the game
+ *  chooses (the title menu's place); played with the Commander given, Vasse unless one is. */
+function challenge(query: Query, problems: string[]): Destination | null {
+  const seed = query.get("seed")
+  const commander = query.get("commander")?.toLowerCase()
+  const before = problems.length
+  if (commander !== undefined && !RUN_COMMANDERS.includes(commander)) {
+    problems.push(`no Commander "${commander}" for a run: the Commanders are ${listed(RUN_COMMANDERS)}`)
+  }
+  if (seed !== undefined && (!/^\d+$/u.test(seed) || !isRunSeed(Number(seed)))) {
+    problems.push(`seed must be a whole number from 0 to ${RUN_SEED_LIMIT - 1}, not "${seed}"`)
+  }
+  if (problems.length > before) return null
+  if (seed === undefined) return { kind: "title", place: "challenge", ...(commander === undefined ? {} : { commander }) }
+  return { kind: "level", level: runLevel({ seed: Number(seed), commander: commander ?? DEFAULT_RUN_COMMANDER }), round: 1 }
+}
+
 /**
  * Every place a route can name, in the title menu's order after the menu itself. **Adding a place is one entry
  * here.**
@@ -122,7 +146,15 @@ export const PLACES: Readonly<Record<string, Place>> = {
       ...LEVELS.flatMap((level) => Array.from({ length: level.rounds }, (_, index) => formatRoute({ kind: "level", level, round: index + 1 }))),
     ],
   },
-  challenge: titlePlace("challenge", "the title menu, saying Challenge is not built yet, as its row does"),
+  challenge: {
+    opens: "the Challenge: a run on a seed the game chooses, or with a seed, that run's first battle",
+    query: {
+      seed: `the run's seed, a whole number from 0 to ${RUN_SEED_LIMIT - 1}; one the game chooses unless given`,
+      commander: `the Commander the run is played with: ${listed(RUN_COMMANDERS)}; ${DEFAULT_RUN_COMMANDER} unless given`,
+    },
+    resolve: challenge,
+    routes: () => ["challenge", ...RUN_COMMANDERS.map((commander) => formatRoute({ kind: "level", level: runLevel({ seed: 1, commander }), round: 1 }))],
+  },
   settings: titlePlace("settings", "the title menu's Settings screen"),
   about: titlePlace("about", "the title menu's About screen: who made the game, and which build this is"),
 }
@@ -167,8 +199,9 @@ function readQuery(text: string, problems: string[]): Map<string, string> {
 }
 
 /** "a, b and c". */
-const listed = (names: readonly string[]): string =>
-  names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1] ?? ""}`
+function listed(names: readonly string[]): string {
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1] ?? ""}`
+}
 
 /**
  * Where `text` leads. Throws a `RouteError` with every problem at once when it is not a place in the game: an
@@ -200,7 +233,9 @@ export function parseRoute(text: string): Destination {
 
 /** A destination's route as the game writes it: the shortest that leads there (round 1 is left unsaid). */
 export function formatRoute(destination: Destination): string {
-  if (destination.kind === "title") return destination.place
+  if (destination.kind === "title") return destination.commander === undefined ? destination.place : `${destination.place}?commander=${destination.commander}`
+  // A run names its own route: its seed and its Commander.
+  if (destination.level.route !== undefined) return destination.level.route
   const round = destination.round === 1 ? "" : `&round=${destination.round}`
   return `campaign?level=${destination.level.id}${round}`
 }

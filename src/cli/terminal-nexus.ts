@@ -63,6 +63,8 @@ ${example("settings", "the title menu's Settings screen")}
 ${example(DEFAULT_LEVEL_ROUTE, `${DEFAULT_LEVEL.title}'s Build Phase, round 1`)}
 ${example(`${DEFAULT_LEVEL_ROUTE}&round=3`, "its round 3, reached as a player who")}
 ${"".padEnd(54)}builds nothing reaches it
+${example("challenge?seed=1234", "the Challenge run of seed 1234, with Vasse")}
+${example("challenge?seed=1234&commander=dob", "... with Dob Hunter")}
       round counts Battle Rounds from 1, as the screen does. The levels:
 ${levels}
 
@@ -194,8 +196,9 @@ export async function main(argv: readonly string[]): Promise<number> {
     ...(buildId === undefined ? {} : { buildId }),
   }
 
-  // A place on the title menu: the menu, opened where the route says.
-  if (destination.kind === "title") return runMenu({ ...common, at: destination })
+  // A place on the title menu: the menu, opened where the route says; Challenge hands the terminal to a run's Build
+  // Phase, which exports as a level's does.
+  if (destination.kind === "title") return runMenu({ ...common, at: destination, exporter: terminalExporter(process.stdout, exportPath()) })
 
   // A campaign level: its Build Phase, at the round the route names.
   const margin = args.options.get("scroll-margin")

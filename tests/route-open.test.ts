@@ -49,10 +49,11 @@ async function until(ready: () => boolean, what: string): Promise<void> {
   }
 }
 
-/** The title menu opened at `at` (or at the top), with `keys` pressed one at a time: the last frame. */
+/** The title menu opened at `at` (or at the top), with `keys` pressed one at a time: the last frame. Its clock stands
+ *  still, so Challenge's run takes the same seed (0) however it is reached. */
 async function menuAt(at: TitleDestination | undefined, keys: readonly string[] = []): Promise<ReadonlyCellFrame> {
   const { stdout, stdin, frames, backend } = standIn()
-  const running = runMenu({ settings: SETTINGS, settingsStore: STORE, backend, stdout, stdin, host: HOST, ...(at === undefined ? {} : { at }) })
+  const running = runMenu({ settings: SETTINGS, settingsStore: STORE, backend, stdout, stdin, host: HOST, now: () => 0, ...(at === undefined ? {} : { at }) })
   await until(() => frames.length > 0, "drew the title menu")
   for (const key of keys) {
     const before = frames.length
@@ -88,7 +89,8 @@ async function buildAt(at: LevelDestination | undefined): Promise<ReadonlyCellFr
 const TITLE_SCREENS: Readonly<Record<TitleDestination["place"], readonly RegExp[]>> = {
   menu: [/main menu/u, /\[5\] Exit/u],
   campaign: [/campaign/u, /Campaign is not built yet/u, /\[1\] Back/u],
-  challenge: [/main menu/u, /Challenge is not built yet/u],
+  // Challenge starts a run: its first battle's Build Phase, on a seed the game chose, said as it opens.
+  challenge: [/build phase - battle 1 of 3 - round 1 of 6/u, /seed 0\./u],
   settings: [/settings/u, /Colours/u, /\[5\] Back/u],
   about: [/about/u, /Contributions/u, /\[1\] Back/u],
 }
@@ -105,7 +107,8 @@ test("every route opens where it says: each title menu place on the title menu, 
     } else {
       const text = frameToText(await buildAt(destination))
       const { level, round } = destination
-      assert.match(text, new RegExp(`build phase - round ${round} of ${level.rounds}`, "u"), `${route} opened another round`)
+      // A run's round says its battle first: "build phase - battle 1 of 3 - round 1 of 6".
+      assert.match(text, new RegExp(`build phase - (battle \\d+ of \\d+ - )?round ${round} of ${level.rounds}`, "u"), `${route} opened another round`)
     }
   }
 })

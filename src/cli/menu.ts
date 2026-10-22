@@ -1,8 +1,8 @@
 // `terminal-nexus`'s menu screens: the top-level menu and the three input adapters, plus Settings as
 // a real second screen that reuses the same list shape rather than inventing anything new. Campaign
-// has its own placeholder screen (the same reuse again) because the campaign menu isn't built yet,
-// and Challenge is dimmed in place on the top-level menu because the run screen isn't either;
-// Settings and Exit are real. About is the same reuse once more: who made the game, where its code
+// has its own placeholder screen (the same reuse again) because the campaign menu isn't built yet;
+// Challenge starts a run, handing the terminal to the Build Phase (`runBuildPhase`) on a seed the game
+// chooses; Settings and Exit are real. About is the same reuse once more: who made the game, where its code
 // lives, how to contribute, and which build this is.
 //
 // The event loop here is deliberately unlike `watch.ts`'s: a menu has no ticks and nothing animates,
@@ -35,16 +35,19 @@ import { nextColorDepth, nextGlyphPack, nextTheme, toggleReducedMotion } from ".
 import type { Settings, SettingsStore } from "../settings/index.ts"
 import { formatRoute, parseRoute } from "./route.ts"
 import { shownSetting } from "../build/all-settings.ts"
-import type { TitleDestination, TitlePlace } from "./route.ts"
+import type { LevelDestination, TitleDestination, TitlePlace } from "./route.ts"
+import { runBuildPhase } from "./build-phase.ts"
+import type { Exporter } from "./build-phase.ts"
+import { DEFAULT_RUN_COMMANDER } from "../run/index.ts"
+import { clockSeed, runLevel } from "./run-play.ts"
 
 /** Five rows; a sixth, choosing a Commander upfront, was considered and rejected: a new player starts the
  *  first mission directly. About sits above Exit, so Exit's digit is 5 — the digits stay one sequence in
  *  walking order, and `q` still leaves from every title screen. Each row but Exit names the route it opens. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
   { id: "campaign", hotkey: "1", label: "Campaign", route: "campaign" },
-  // Dimmed and already saying why: the run screen hasn't landed, and a disabled item shows its
-  // reason in the label a player sees before ever pressing anything, not only after.
-  { id: "challenge", hotkey: "2", label: "Challenge (coming soon)", disabled: true, route: "challenge" },
+  // A run of three battles, on a seed the game chooses and shows as the run opens.
+  { id: "challenge", hotkey: "2", label: "Challenge", route: "challenge" },
   { id: "settings", hotkey: "3", label: "Settings", route: "settings" },
   { id: "about", hotkey: "4", label: "About", route: "about" },
   { id: "exit", hotkey: "5", label: "Exit" },
@@ -115,9 +118,19 @@ export type MenuOptions = Readonly<{
   /**
    * Where to open (`--at settings`, a title menu route): the top-level menu unless given. Opening at a place
    * follows its route exactly as choosing the row that names it does, and leaves that row highlighted, so Esc
-   * comes back to it as it would for a player who had chosen it.
+   * comes back to it as it would for a player who had chosen it — or, for Challenge, starts a run at once.
    */
   at?: TitleDestination
+  /** The clock a new run's seed is chosen from, in milliseconds: `Date.now` unless a test injects one. */
+  now?: () => number
+  /** What an export does in the Build Phase a run opens on (`runBuildPhase`'s `exporter`). */
+  exporter?: Exporter
+  /**
+   * What opens a run once the menu has handed the terminal back: the Build Phase on the run's first round, with this
+   * session's settings, backend and terminal (`runBuildPhase`) unless a host opens it its own way — the browser page,
+   * which shows the Build Phase's keys under the screen. What it returns is what the menu returns.
+   */
+  open?: (at: LevelDestination, settings: Settings) => Promise<number>
 }>
 
 type Screen = "top" | "settings" | "campaign" | "about"
@@ -134,13 +147,14 @@ const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack
 /**
  * The screen each title menu place opens, and the line it says there. Stub honestly rather than half-build: an
  * option not built yet says plainly what it is waiting on, rather than silently doing nothing — Campaign on a
- * placeholder screen of its own, Challenge on the top-level menu, on top of its row's label already saying why,
- * whether its row was chosen or its route followed.
+ * placeholder screen of its own, whether its row was chosen or its route followed. Challenge opens no screen here:
+ * it starts a run.
  */
 const PLACE_SCREENS: Readonly<Record<TitlePlace, Readonly<{ screen: Screen; notice?: string }>>> = {
   menu: { screen: "top" },
   campaign: { screen: "campaign", notice: "Campaign is not built yet - its menu is coming soon." },
-  challenge: { screen: "top", notice: "Challenge is not built yet - it is coming soon." },
+  // Not a screen of the menu's: following it starts a run (`startRun`), and the menu hands the terminal over.
+  challenge: { screen: "top" },
   settings: { screen: "settings" },
   about: { screen: "about" },
 }
@@ -163,6 +177,8 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     stdout.write("terminal-nexus needs an interactive terminal for its menu.\n")
     return 0
   }
+  // Opening at Challenge starts its run at once: there is no menu to show first.
+  if (options.at?.place === "challenge") return openRun(runLevelAt(options.at), options.settings)
 
   const backend = await selectBackend(options.backend, {
     stdout,
@@ -181,6 +197,8 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   let leaving = false
   let failure: unknown = null
   let settleSession: (() => void) | null = null
+  /** The run the menu is handing the terminal to (Challenge), once one is chosen: opened when the menu has gone. */
+  let handoff: LevelDestination | null = null
   // The tail of every settings write so far, chained rather than fired independently — awaited by
   // the disposer so the last thing a player changed is genuinely on disk before the process actually
   // exits, not just requested. Chaining (not just tracking the latest promise) matters: two changes
@@ -235,9 +253,26 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     }
   }
 
+  /**
+   * **Challenge**: a run on a seed the game chooses from the clock (`clockSeed`), shown as the run opens so it can be
+   * shared and played again (`--at 'challenge?seed=<n>'`), with the Commander the route named or Vasse. The menu
+   * leaves without exiting, and the run's Build Phase opens on the same terminal.
+   */
+  function startRun(commander: string | undefined): void {
+    if (leaving) return
+    const seed = clockSeed((options.now ?? Date.now)())
+    handoff = { kind: "level", level: runLevel({ seed, commander: commander ?? DEFAULT_RUN_COMMANDER }), round: 1 }
+    leaving = true
+    void dispose().then(() => settleSession?.())
+  }
+
   /** Where a title menu route leads: the one way a chosen row and an opening `--at` both change screen. Draws
    *  nothing; the caller does once it has finished. */
-  function follow(place: TitlePlace): void {
+  function follow(place: TitlePlace, commander?: string): void {
+    if (place === "challenge") {
+      startRun(commander)
+      return
+    }
     const opens = PLACE_SCREENS[place]
     screen = opens.screen
     notice = opens.notice ?? null
@@ -262,8 +297,6 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     items: TOP_LEVEL_ITEMS,
     onActivate: picked("top", (item) => {
       if (item.route !== undefined) {
-        // Challenge too: a dimmed, disabled row that already says why in its own label, still activatable
-        // (`input.md`: a displayed hotkey always works), whose route shows the fuller notice.
         follow(placeOf(item.route))
         render()
         return
@@ -410,7 +443,32 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     host.reportError(`terminal-nexus failed: ${String(failure)}\n`)
     return 1
   }
-  return 0
+  return handoff === null ? 0 : openRun(handoff, settings)
+
+  /** The run's Build Phase, on this terminal, with the settings as the menu leaves them. */
+  function openRun(at: LevelDestination, settings: Settings): Promise<number> {
+    if (options.open !== undefined) return options.open(at, settings)
+    return runBuildPhase({
+      settings,
+      settingsStore: options.settingsStore,
+      backend: options.backend,
+      stdout,
+      stdin,
+      ...(options.host === undefined ? {} : { host: options.host }),
+      ...(options.exit === undefined ? {} : { exit: options.exit }),
+      ...(options.buildId === undefined ? {} : { buildId: options.buildId }),
+      ...(options.hostName === undefined ? {} : { hostName: options.hostName }),
+      ...(options.activity === undefined ? {} : { activity: options.activity }),
+      ...(options.exporter === undefined ? {} : { exporter: options.exporter }),
+      at,
+    })
+  }
+
+  /** The run an opening `--at challenge` starts: on a seed from the clock, with the Commander it names. */
+  function runLevelAt(at: TitleDestination): LevelDestination {
+    const seed = clockSeed((options.now ?? Date.now)())
+    return { kind: "level", level: runLevel({ seed, commander: at.commander ?? DEFAULT_RUN_COMMANDER }), round: 1 }
+  }
 }
 
 /** An error's own message, for a log entry. */
