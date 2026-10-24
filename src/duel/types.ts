@@ -12,8 +12,19 @@ import type { MatchState, PlayerId } from "../state/types.ts"
 export type Side = PlayerId
 export const SIDES: readonly Side[] = ["A", "B"]
 
+/**
+ * What a side brings to a duel when it is not its Commander's whole army (a run's army, runs.md): the building cards on
+ * its build menu and the Nexus powers in the pool its Nexus Pulse deals from, by id, and the Doctrines kept from the
+ * first round. Everything else the army could field is left out, as if the army never had it.
+ */
+export type Roster = Readonly<{
+  buildings: readonly string[]
+  powers: readonly string[]
+  doctrines: readonly string[]
+}>
+
 /** What a duel is: the map, the gameplay seed, how many rounds at most, how long each Battle Round may last, and the
- *  Commander each side plays. */
+ *  Commander each side plays; and, for a side that is not its Commander's whole army, its roster. */
 export type DuelSetup = Readonly<{
   map: string
   seed: number
@@ -21,6 +32,7 @@ export type DuelSetup = Readonly<{
   /** Ticks a Battle Round lasts at most (12 a second). */
   pulseTicks: number
   commanders: Readonly<Record<Side, string>>
+  rosters?: Readonly<Partial<Record<Side, Roster>>>
 }>
 
 /** Where a building should go, as a plan names it: a place relative to the side's own base, or a tile. A named place
@@ -87,6 +99,8 @@ export type BuildingOrder = Readonly<{ x: number; y: number; action: string }>
  *  Commander's absence when she is out. */
 export type SideState = Readonly<{
   commander: string
+  /** Its roster, when it is not its Commander's whole army. */
+  roster?: Roster
   credits: number
   kept: readonly string[]
   absent: readonly Absence[]

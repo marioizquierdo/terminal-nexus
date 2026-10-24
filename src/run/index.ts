@@ -4,3 +4,5 @@
 
 export * from "./types.ts"
 export * from "./run.ts"
+export * from "./army.ts"
+export * from "./draft.ts"

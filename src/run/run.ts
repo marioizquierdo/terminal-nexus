@@ -10,9 +10,13 @@
 // in later steps; each is a change to `runDefinition` and to what happens between battles, not to the battle itself.
 
 import { ARMIES } from "../armies/index.ts"
-import type { DuelResult } from "../duel/index.ts"
+import type { DuelResult, DuelSetup } from "../duel/index.ts"
 import { DUEL_MAPS, duelArmy } from "../duel/index.ts"
 import { Pcg32, STREAM_RUN } from "../rng/pcg32.ts"
+import type { DraftChoice } from "./draft.ts"
+import { REQUISITION_FOR_SKIPPING, choose, dealDraft } from "./draft.ts"
+import type { DraftRecord } from "./draft.ts"
+import { KIND_WORDS, cardByKey, keyOf, ownedCards, startingRoster } from "./army.ts"
 import type { BattleOutcome, BattleRecord, RunAct, RunBattle, RunDefinition, RunSetup, RunState, RunSummary } from "./types.ts"
 
 /** How many battles a run has: one act of three, the step's "three battles". The design's 6–9 in 2–3 acts waits
@@ -94,8 +98,17 @@ export function runDefinition(setup: RunSetup): RunDefinition {
 
 /** A run before its first battle. */
 export function newRun(setup: RunSetup): RunState {
-  return { definition: runDefinition(setup), played: [], over: false }
+  return { definition: runDefinition(setup), played: [], over: false, army: startingRoster(setup.commander), requisition: 0, pity: 0, drafts: [], draft: null }
 }
+
+/** The duel a battle is, as the run plays it now: the battle's own setup, with the army the run holds on the
+ *  player's side (the opponent's is its Commander's whole army). */
+export function duelFor(run: RunState, battle: RunBattle): DuelSetup {
+  return { ...battle.duel, rosters: { A: run.army } }
+}
+
+/** Whether the next battle waits for a draft. */
+export const awaitingDraft = (run: RunState): boolean => !run.over && run.draft !== null
 
 /** The battle to play next, or `null` once the run is over. */
 export function currentBattle(run: RunState): RunBattle | null {
@@ -111,15 +124,31 @@ export function outcomeFor(result: DuelResult): BattleOutcome {
 
 /**
  * The run after its current battle ended with `result`: the battle recorded, and the run over when the battle was
- * lost (a lost battle ends the run) or was its last. A drawn battle is not lost: the run goes on. Throws for a run
- * already over.
+ * lost (a lost battle ends the run) or was its last. A drawn battle is not lost: the run goes on, and so does a won
+ * one — to a draft, dealt now, that the next battle waits for (`drafted`). Throws for a run already over, or one
+ * whose draft is still waiting.
  */
 export function battleEnded(run: RunState, result: DuelResult): RunState {
   const battle = currentBattle(run)
   if (battle === null) throw new Error("the run is over")
+  if (run.draft !== null) throw new Error("the run is waiting for its draft")
   const record: BattleRecord = { battle: battle.number, outcome: outcomeFor(result), by: result.by, round: result.round }
   const played = [...run.played, record]
-  return { ...run, played, over: record.outcome === "lost" || played.length >= run.definition.battles.length }
+  const over = record.outcome === "lost" || played.length >= run.definition.battles.length
+  if (over) return { ...run, played, over }
+  const { offer, pity } = dealDraft({ commander: run.definition.setup.commander, roster: run.army, seed: run.definition.setup.seed, battle: record.battle + 1, pity: run.pity })
+  return { ...run, played, over, pity, draft: offer }
+}
+
+/** The run after the draft on offer was settled by `choice`: the army changed or the requisition taken, the draft kept in
+ *  the run's record, and the next battle free to start. Throws for a run with no draft, or a choice it does not offer. */
+export function drafted(run: RunState, choice: DraftChoice): RunState {
+  const offer = run.draft
+  if (offer === null) throw new Error("the run has no draft to settle")
+  const made = choose(run.army, offer, choice)
+  if (typeof made === "string") throw new Error(made)
+  const record = { battle: offer.battle, offered: offer.cards.map(keyOf), choice }
+  return { ...run, army: made.roster, requisition: run.requisition + made.requisition, drafts: [...run.drafts, record], draft: null }
 }
 
 /** A Commander's name, as her army writes it. */
@@ -176,6 +205,25 @@ export function battleEndedLine(run: RunState, record: BattleRecord): string {
   return `${battleCount(run, record.battle)}: ${endedWords(record, commanderNameOf(battleOf(run, record.battle).opponent))}`
 }
 
+/** What a draft was, in words after the battle it follows: "took Garrison (Structure, uncommon)", "removed Drill
+ *  Schedule", "took 15 requisition". */
+export function draftWords(run: RunState, record: DraftRecord): string {
+  const commander = run.definition.setup.commander
+  const named = (key: string): string => {
+    const card = cardByKey(commander, key)
+    return card === undefined ? key : `${card.name} (${KIND_WORDS[card.kind]}, ${card.rarity})`
+  }
+  const after = `After battle ${record.battle - 1}: `
+  switch (record.choice.kind) {
+    case "take":
+      return `${after}took ${named(record.choice.card)}.`
+    case "remove":
+      return `${after}removed ${named(record.choice.card)}.`
+    case "requisition":
+      return `${after}took ${REQUISITION_FOR_SKIPPING} requisition.`
+  }
+}
+
 /** A run's summary, as data. */
 export function runSummary(run: RunState): RunSummary {
   const { setup } = run.definition
@@ -186,6 +234,9 @@ export function runSummary(run: RunState): RunSummary {
     won: run.played.filter((record) => record.outcome === "won").length,
     of: run.definition.battles.length,
     over: run.over,
+    army: ownedCards(setup.commander, run.army).map((card) => card.name),
+    requisition: run.requisition,
+    drafts: run.drafts.map((record) => draftWords(run, record)),
     battles: run.definition.battles.map((battle) => ({
       number: battle.number,
       opponent: battle.opponent,
@@ -221,5 +272,7 @@ export function summaryLines(run: RunState): string[] {
       (battle) =>
         `Battle ${battle.number} against ${battle.opponentName} (${battle.policy}): ${battle.record === null ? "not played." : endedWords(battle.record, battle.opponentName)}`,
     ),
+    ...summary.drafts,
+    `The army: ${summary.army.join(", ")}.${summary.requisition > 0 ? ` Requisition: ${summary.requisition}.` : ""}`,
   ]
 }

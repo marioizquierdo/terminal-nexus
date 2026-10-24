@@ -74,6 +74,7 @@ import type {
   PopupMessage,
   StandingStructure,
   DialogLine,
+  RunDraft,
 } from "./types.ts"
 
 /** Everything about the screen that never changes while it is open. Split from the state proper so
@@ -183,6 +184,12 @@ export type BuildContext = Readonly<{
    * that does not play scenes (one a test builds) never passes one on (`withoutScene`).
    */
   scene?: readonly DialogLine[]
+  /**
+   * **A run's draft** waiting on this round (`RunDraft`): the round opens on its popup, which holds the keyboard and the mouse
+   * until the player chooses (the choice is handed to the session's `draft`, which returns the round to play: the same
+   * battle's first round, with the army the choice made). Absent: none.
+   */
+  runDraft?: RunDraft
   /**
    * What the Battle Round confirmation announces for round *n*, keyed by its number ("campaign missions may
    * inject pulse-n text here", the owner). A round with no entry says

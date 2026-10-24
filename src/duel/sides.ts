@@ -12,7 +12,7 @@ import { ARMIES, addsOf, applyEffect } from "../armies/index.ts"
 import { constructItem } from "../build/catalog.ts"
 import type { ConstructItem } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import type { SideState } from "./types.ts"
+import type { Roster, SideState } from "./types.ts"
 
 /** A side's army: its Commander, the building cards and Nexus powers it can be offered, and its faction's Nexus. */
 export type DuelArmy = Readonly<{
@@ -37,6 +37,24 @@ export function duelArmy(id: string, armies: Armies = ARMIES): DuelArmy {
   const nexus = (faction?.content ?? []).flatMap((entry) => (typeof entry === "string" ? entry : entry.id)).find((contentId) => armies.registry.has(contentId) && armies.registry.get(contentId).nexus === true)
   if (nexus === undefined) throw new Error(`the Commander "${id}"'s army sees no Grid Nexus to build from`)
   return { commander, buildings: arsenal.buildings, powers: arsenal.powers.filter((card) => card.always !== true), nexus }
+}
+
+/**
+ * An army cut down to a roster: only the building cards the roster lists, and the buildings its Nexus powers add; only
+ * the Nexus powers in the pool and the Doctrines it keeps (a Doctrine is looked up to be kept, never dealt). What was
+ * left out cannot be built, dealt or kept.
+ */
+export function restrictedTo(army: DuelArmy, roster: Roster | undefined): DuelArmy {
+  if (roster === undefined) return army
+  const powers = army.powers.filter((card) => roster.powers.includes(card.id) || roster.doctrines.includes(card.id))
+  const added = new Set(powers.flatMap((card) => addsOf(card.effect) ?? []))
+  const buildings = army.buildings.filter((card) => roster.buildings.includes(card.id) || added.has(card.id))
+  return { ...army, buildings, powers }
+}
+
+/** A side's army as the duel plays it: its Commander's, cut down to its roster when it has one. */
+export function armyOf(state: Readonly<{ sides: Readonly<Record<"A" | "B", Pick<SideState, "commander" | "roster">>> }>, side: "A" | "B"): DuelArmy {
+  return restrictedTo(duelArmy(state.sides[side].commander), state.sides[side].roster)
 }
 
 /** The build menu an army starts with: every building card it can be offered but the ones only a power adds, tier by

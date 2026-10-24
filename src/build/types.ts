@@ -312,6 +312,35 @@ export type DialogLine = Readonly<{
   focus: DialogFocus | null
 }>
 
+/** A card on a run's draft, as the screen reads it: plain words, from the run (docs/game-design/runs.md). `key` names it to the
+ *  run (`structure:turret`); `family` is its kind in a player's words ("Structure", "Nexus power", "Doctrine"). */
+export type RunDraftCard = Readonly<{ key: string; name: string; family: string; rarity: string; role: string; line: string }>
+
+/**
+ * **A run's draft**, waiting at the start of a battle's first round (docs/game-design/runs.md, the army): three cards to take
+ * one of, the cards the army holds that it could remove instead, and the requisition to take instead of either. The round
+ * opens on it and does not close until the player has chosen, because what is chosen changes the army the round is
+ * played with. Plain data: the run (`src/run/`) deals it, the screen only reads it.
+ */
+export type RunDraft = Readonly<{
+  /** The popup's title: "Draft after battle 1". */
+  title: string
+  /** Lines above the cards: how the last battle ended, and what the draft is for. */
+  intro: readonly string[]
+  cards: readonly RunDraftCard[]
+  removable: readonly RunDraftCard[]
+  /** The requisition for taking neither. */
+  requisition: number
+  /** The army as it stands, by card name, family by family: what the draft adds to or takes from. */
+  army: readonly Readonly<{ family: string; names: readonly string[] }>[]
+}>
+
+/** What the player chose from a run's draft: the key of a card to take, the key of a card to remove, or the requisition. */
+export type RunDraftChoice =
+  | Readonly<{ kind: "take"; key: string }>
+  | Readonly<{ kind: "remove"; key: string }>
+  | Readonly<{ kind: "requisition" }>
+
 /**
  * Which export a text is, so the shell that copies it out knows where it goes: the settings and
  * Experiments, or the Activity Logs. The terminal writes each to its own file beside the settings; the

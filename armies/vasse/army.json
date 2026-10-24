@@ -89,6 +89,7 @@
       {"unit": "unit.citizen.trooper", "count": 3},
       {"unit": "unit.citizen.marksman", "count": 2}
     ],
+    "run": {"buildings": ["barracks", "depot", "turret"], "powers": ["reserve-callup", "drill-schedule"]},
     "portrait": [" _@_ ", "(-_-)", "/|@|\\"],
     "portraitFalls": [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]],
     "barks": {
