@@ -10,6 +10,7 @@ version of the design beyond git.
 - [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a match works, the promise.
 - [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language.
 - [`game-modes.md`](game-design/game-modes.md) — Campaign and Challenge, and the vocabulary they share.
+- [`runs.md`](game-design/runs.md) — Challenge runs as a whole game: the route, the stops, the drafted army, the opponents and the rewards.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
 - [`campaigns.md`](game-design/campaigns.md) — missions, the Citizen opening, PERIMETER, cutscenes.
 - [`play-strategies.md`](game-design/play-strategies.md) — what duels have taught about playing a Build Phase well, as advice a model player reads in its brief.
