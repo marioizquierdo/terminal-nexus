@@ -35,6 +35,8 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (campaign menu) |
 | [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Mario, now |
 | [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
+| [Q84](#q84--is-requisition-the-runs-second-currency-and-does-the-nexuss-health-carry) | Is requisition the run's currency, and does the Nexus's health carry between battles? | OPEN | Mario's playing of a run (milestone 11) |
+| [Q85](#q85--how-long-is-a-run) | How long is a run? | OPEN | Mario's playing of a run (milestone 11) |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
@@ -320,6 +322,41 @@ is stated for the Battle Rounds of one match; carrying it across battles would b
 
 **Recommendation: A for the first step, with B made observable as a toggle in the second if it is cheap, and
 judged by playing both.** C waits for an economy to carry.
+
+### Q84 — Is requisition the run's currency, and does the Nexus's health carry?
+
+**Status:** OPEN — proceeds under the recommendation. Raised with the whole run's design ([`runs.md`](../game-design/runs.md)).
+
+A run needs two things the match does not have. **Something that makes the route a spending:** the Nexus's health carried
+from one battle into the next, so a hard path costs health and a mend has to be paid for or found. And **something to buy
+with** at an Exchange: a currency of the run, which this design calls requisition. The earlier rule is "one resource" for a
+match, and requisition never appears in a battle, only on the route; but it is a second number a player holds.
+
+| Option | Cost |
+| --- | --- |
+| A. **Nexus health carries; requisition buys cards on the route** | The roguelike core (health as attrition, a currency worth saving); a second number to explain, and a Nexus that starts a battle hurt |
+| B. **Nexus health carries; no currency.** Stops give cards and mends, nothing is bought | One fewer number; loses the Exchange and the choice between a card and a mend that a currency makes |
+| C. **Neither carries.** Every battle is fresh, a lost battle ends the run, the route is only a choice of fights and rewards | The smallest run; the route has nothing to spend, so choosing a path is choosing a reward and nothing more |
+
+**Recommendation: A.** Navigating a dynamic environment needs a scarce thing the environment takes from you; health is the
+one every reference game uses, and it is already in the game as the Nexus's. The currency is what makes a draft a trade
+rather than a gift. Built that way, both can be switched off by the data if he finds the numbers heavy.
+
+### Q85 — How long is a run?
+
+**Status:** OPEN — proceeds under the recommendation.
+
+[`game-modes.md`](../game-design/game-modes.md) says six to nine battles in two or three acts, a run of an hour. With stops
+that are not battles (an Exchange, a Workshop, a Signal), three acts of three steps and a boss are about ten battles and nine
+other stops.
+
+| Option | Cost |
+| --- | --- |
+| A. **Three acts, and a short run of one act** | An hour or a little more for a full run, a quarter to half an hour for the short one he can playtest in a sitting |
+| B. **Two acts** | About forty minutes; less room for a build to become something |
+| C. **One act only, until content grows** | Fastest to play and test; a run that cannot tell a story of a build over time |
+
+**Recommendation: A**, played short first: the short run is what a playtest uses until the cards exist to fill three acts.
 
 ### Q51 — When should the game get a real accent-colour palette, with variations per faction?
 

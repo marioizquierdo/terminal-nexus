@@ -16,7 +16,7 @@ export type { ReadPlan } from "./plan.ts"
 export { inFormation, SCRIPTED, scriptedName, scriptedNames, scriptedPlayer } from "./players.ts"
 export type { Player } from "./players.ts"
 export { handOf, mapOf, musterOf, newDuel, placementsOf, playRound, standingOf, titleOf, zonePoint } from "./round.ts"
-export { duelArmy, loadoutOf } from "./sides.ts"
+export { armyOf, duelArmy, loadoutOf, restrictedTo } from "./sides.ts"
 export type { DuelArmy } from "./sides.ts"
 
 /** A whole duel, each side's plans from its player, round by round until it ends. */

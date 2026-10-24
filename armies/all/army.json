@@ -8,6 +8,8 @@
     {
       "id": "hatchery",
       "structure": "structure.bench.hatchery",
+      "rarity": "common",
+      "role": "troops",
       "cost": 30,
       "spawns": {"unit": "unit.bench.spawnling", "perWave": 3, "waves": 1, "secondsBetween": 10},
       "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
@@ -16,6 +18,8 @@
     {
       "id": "turret",
       "structure": "structure.bench.beamturret",
+      "rarity": "common",
+      "role": "defense",
       "cost": 15,
       "actions": [
         {

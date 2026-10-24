@@ -233,6 +233,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     nextRound: play.nextRound,
     foresee: play.foresee,
     keep: play.keep,
+    ...(play.draft === undefined ? {} : { draft: play.draft }),
     scenes: options.scenes ?? true,
   })
 

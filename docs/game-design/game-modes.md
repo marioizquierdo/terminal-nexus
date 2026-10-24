@@ -109,18 +109,18 @@ narrowed, battle by battle, and the last battle is fought with an army that did 
 first. The structure is the one that has proven itself across a decade of roguelike deckbuilders and
 autobattlers (see the references below), taken at the size Terminal Nexus's 5–12-minute match affords.
 
-**Shape.** The table below is GUIDANCE, and its numbers are a starting guess to be retuned once runs are played:
+**The whole run is designed in [`runs.md`](runs.md)**: the route the player chooses a path through, the stops on it, the army that is drafted, the opponents and the rewards. The table below is the shape that design builds on, GUIDANCE, and its numbers are a starting guess to be retuned once runs are played:
 
 | Element | Starting value | Why this and not another |
 | --- | --- | --- |
-| Battles per run | **6–9**, in **2–3 acts** | A match is 5–12 minutes; a run under an hour is one sitting, and a run over two is a different product. Three acts of three is the roguelike-deckbuilder default; two acts of three is the fallback if battles run long |
+| Battles per run | **About ten**, in **3 acts** of three steps and a boss (a short run is one act) | A match is 5–12 minutes; a run under an hour is one sitting, and a run over two is a different product. Three acts of three is the roguelike-deckbuilder default; two acts of three is the fallback if battles run long |
 | Starting army | **RULE: Challenge keeps its own progression, and the two modes are uncorrelated by design.** A run starts from one of the faction's basic Commander packages, unlocked from the beginning; playing Challenge itself unlocks more — more Commanders, more army structures, more Nexus powers — the same way Slay the Spire's own meta-progression works. The Campaign's bonus goals may unlock a few of the same things, but only ones Challenge has not already unlocked; neither mode gates or waits on the other. Opening Challenge before the Campaign shows a dismissible recommendation, never a block | A player who dislikes the Campaign is never locked out of content, and a player who plays both is never made to unlock the same thing twice. The one soft nudge is the dismissible "we recommend the Campaign first" message |
 | Between battles | **one run draft**: add one of three offered cards, **or** remove one card, **or** upgrade one card (a building has no levels; what a run draft's upgrade offers — a building's action opened for the run, say — is decided with the draft, [`commander-armies.md`](commander-armies.md), what changes between rounds) | Add/remove/upgrade is the minimum set every reference game converged on. Removal's *reason* differs by what's offered: an army structure costs supply and board space, so trimming one is a real trade-off; a Nexus power is close to strictly good so removing one is about deck focus and role variety, not chasing better odds the way a Slay the Spire deck-thin does |
 | Offer dealing | three cards, weighted by **rarity**, gated by **tier** against the battle index; a **pity offset** raises the rare chance each time no rare is offered and resets when one is | Slay the Spire's mechanism, verbatim in spirit: fair variance without a dead run |
 | Tier schedule | tier *t* becomes available at battle **2t − 1**: tier 1 from battle 1, tier 2 from battle 3, tier 3 from battle 5 | Super Auto Pets' schedule, which makes the run's early third about fundamentals and its last third about combinations |
 | Opponents | **another Commander Army with a heuristic policy**, escalating by act; each act ends in a **named Commander** as its boss | Reuses the army shape and the opponent tiers [`campaigns.md`](campaigns.md) already names. A boss is an army with a signature, not a stat multiplier |
 | Between runs | **unlocks into Challenge's own pool** only, primarily through Challenge play itself, with the Campaign's bonus goals adding a few more; no permanent stat buffs | Into the Breach and Hades both persist *options* across runs; persisting *power* would break "understand why the battle unfolded" ([`concept.md`](concept.md)) |
-| Within a run | **the army and the Commander persist; the Grid, structures, and units do not** (open question Q40) | Each battle starts from a fresh Grid with the army's starting package. The alternative — veterans carrying over — is registered as the observable experiment it is, not assumed |
+| Within a run | **the army, the Commander, the Nexus's health and the run's requisition persist; the Grid, structures, and units do not** (open question Q40) | Each battle starts from a fresh Grid with the army's starting package, and the Nexus as damaged as the last battle left it, so the route is a spending of health. Veterans carrying over stays the observable experiment it is, not assumed |
 | Seed | shown, shareable, replayable | A run is a match's determinism at the next scale up: same seed, same run — the daily-run and "try my seed" modes fall out for free |
 | Failure | a lost battle ends the run; the summary shows the army, the seed, and every draft taken | Reading a lost run is how the mode teaches; the summary is the mode's report |
 
@@ -144,14 +144,13 @@ autobattlers (see the references below), taken at the size Terminal Nexus's 5–
   the interface's own voice (the system-text exemplars in [`lore.md`](lore.md)) and Commander barks — nothing
   authored per run.
 
-**What is built** (RULE — `src/run/`, `src/cli/run-play.ts`, `tests/run.test.ts`, `tests/run-play.test.ts`). **A run
+**What is built** (RULE — `src/run/`, `src/cli/run-play.ts`, `tests/run.test.ts`, `tests/run-play.test.ts`; the army and its draft, [`runs.md`](runs.md)). **A run
 battle is a duel** ([`duels.md`](../system-design/duels.md)): the player plans one side on the Build Phase screen — the
 same screen, keys, Nexus Pulse and Battle Round as a campaign level — and the opponent's Commander Army is planned by a
 scripted duel player from its brief, the two plans revealed together. The first run is one act of three battles
 against Dob Hunter's army on the Crossing, six rounds each at most (a battle about four to ten minutes), each battle
 played by a different scripted player (rushing, digging in, balanced) in an order the seed shuffles. A lost battle
-ends the run; a drawn one goes on and is not a win. The army is the Commander's duel package every battle, until the
-run draft changes it. The seed is shown as the run opens and at its end, and a run that ends opens the next on a seed
+ends the run; a drawn one goes on and is not a win. The army is the Commander's small starting army every battle, and the run draft after each won battle changes it. The seed is shown as the run opens and at its end, and a run that ends opens the next on a seed
 it names, so a chain of runs replays from its first seed. The title menu's Challenge row starts one on a seed from the
 clock; `challenge?seed=<n>&commander=<id>` opens a chosen one. Between battles and at the end, a round opens on the
 game's own dialog: how the last battle ended, then the next battle's opponent and rounds; at the end, the whole

@@ -15,6 +15,7 @@ import { BuildSession } from "../src/view/build-session.ts"
 import type { GameMenuRow } from "../src/build/settings.ts"
 import { GAME_MENU_ROWS, settingRow } from "../src/build/settings.ts"
 import type { BuildContext } from "../src/build/state.ts"
+import type { RunDraft } from "../src/build/types.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { BuildCompositionInput } from "../src/view/build.ts"
@@ -76,7 +77,7 @@ export type SideOptions = Readonly<{
   cursor?: Coord
   terminal?: Readonly<{ columns: number; rows: number }>
 }> &
-  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "foresee" | "keep" | "activity" | "barksOf">
+  Pick<BuildSessionOptions, "onQuit" | "onExport" | "onSettingsChange" | "startPulse" | "nextRound" | "foresee" | "keep" | "draft" | "scenes" | "activity" | "barksOf">
 
 /** An Activity Logs of a test's own, on `now` — a clock standing still at 0 unless
  *  the test passes one — so nothing a test logs reaches the game's global log, or another test's. */
@@ -255,4 +256,38 @@ export function changedCells(frame: ReadonlyCellFrame, before: ReadonlyCellFrame
     }
   }
   return cells
+}
+
+// --- A run's draft ---------------------------------------------------------------------------------
+
+/** A run's draft as the run would deal it after a won battle: three cards, four the army could give up, the requisition and the
+ *  army as it stands. Hand-made plain data, because the run (`src/run/`) is not the screen's. */
+export function runDraft(overrides: Partial<RunDraft> = {}): RunDraft {
+  return {
+    title: "Draft after battle 1",
+    intro: ["Battle 1 won. Take a card, remove one,", "or take requisition instead."],
+    cards: [
+      { key: "structure:turret", name: "Turret", family: "Structure", rarity: "common", role: "Defence", line: "Shoots what comes near." },
+      { key: "power:war-drums", name: "War Drums", family: "Nexus power", rarity: "uncommon", role: "Offence", line: "Units hit harder this round." },
+      { key: "doctrine:hold-the-line", name: "Hold the Line", family: "Doctrine", rarity: "rare", role: "Defence", line: "Garrisoned units take less damage." },
+    ],
+    removable: [
+      { key: "structure:barracks", name: "Barracks", family: "Structure", rarity: "common", role: "Offence", line: "Trains Riflemen." },
+      { key: "structure:wall", name: "Wall", family: "Structure", rarity: "common", role: "Defence", line: "Blocks the way." },
+      { key: "power:war-chest", name: "War Chest", family: "Nexus power", rarity: "common", role: "Economy", line: "More credits." },
+      { key: "power:flare", name: "Flare", family: "Nexus power", rarity: "uncommon", role: "Support", line: "Lights the dark." },
+    ],
+    requisition: 15,
+    army: [
+      { family: "Structures", names: ["Barracks", "Wall"] },
+      { family: "Nexus powers", names: ["War Chest", "Flare"] },
+      { family: "Doctrines", names: [] },
+    ],
+    ...overrides,
+  }
+}
+
+/** The starter map's round with a run's draft waiting on it. */
+export function draftContext(draft: RunDraft = runDraft()): BuildContext {
+  return { ...starterContext(), runDraft: draft }
 }

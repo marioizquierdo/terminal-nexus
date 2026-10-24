@@ -98,6 +98,7 @@ range — a reach of R covers R / 2 rows, so an odd reach above 1 buys a column 
 | --- | --- |
 | `lean` | One or two of `units`, `nexus`, `structures`, `commander`, `economy`: what the build leans on (commander-armies.md). |
 | `start` | Her starting package: units that walk out with her where a mode scripts none (a duel's first round). |
+| `run` | What a Challenge run starts her army with: `buildings` (card ids on the build menu) and `powers` (Nexus power ids in the pool). Everything else her army can field waits in the run's draft. Absent: the whole of her army (`docs/game-design/runs.md`). |
 | `schedule` | How her army bends the Nexus Pulse, in every mode (Averno's: a card from the Ravel Nexus in rounds 2 and 4). A level's own schedule replaces it. |
 | `barks`, `portrait`, `portraitFalls` | Her voice in battle and her face (`src/armies/barks.ts`, `src/view/commander-moments.ts`), checked to fit the panel at 80 x 24. |
 
@@ -109,6 +110,8 @@ A building card names a structure, its cost, and what it spawns each Battle Roun
 many a wave, how many waves, the seconds between). `tier` and `requires` place it in the tech tree: a building above
 tier 1 requires one of the tier below, standing as the Build Phase opens. Every mode offers the same cards by the same
 rule; a mode decides only which.
+
+**To be dealt by a run's draft** a building card also carries `rarity` and `role`, both or neither (the loader checks); its `tier` is the tech tree's, and a run's draft deals tier *t* from the battle 2*t* − 1. A card with neither is part of an army from its start but never offered.
 
 **A building's actions** (`actions`, `src/armies/actions.ts`; the rule is
 [`commander-armies.md`](../game-design/commander-armies.md), what changes between rounds). A building card may list
@@ -131,7 +134,7 @@ most four upgrades and modes. One card gives a structure its actions.
 
 ## 3. Nexus powers: a table of effects
 
-A power is a name, one line of description, a rarity and a role for the dealer, and **one effect**. Each kind of
+A power is a name, one line of description, a rarity and a role for the dealer, and **one effect**. A power with `"doctrine": true` is a **Doctrine**, a standing order: the Nexus Pulse never deals it, a run's draft offers it, and once taken it is kept from the first round of every battle of the run (so it cannot also be offered beside every hand, from another Nexus, an upgrade, or dealt by chance or requirements). `tier` (1 to 3, default 1) is the earliest tier of a run it is offered in. Each kind of
 effect is one entry of `EFFECTS` (`src/armies/effects.ts`) that says everything about it: its JSON shape, what the
 loader refuses, what keeping it changes in a side's loadout, whether it stays kept, and the credits it adds. **No
 reader branches on an effect's kind**: the campaign keeps a power with `applyEffect`, the duel with the same function.

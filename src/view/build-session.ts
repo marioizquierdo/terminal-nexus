@@ -44,7 +44,7 @@ import { cardActionRows } from "./build-card.ts"
 import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
 import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCommand, ExportKind, RaidForecast } from "../build/types.ts"
+import type { BuildCommand, ExportKind, RaidForecast, RunDraftChoice } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
 
@@ -95,6 +95,14 @@ export type BuildSessionOptions = Readonly<{
    * `startPulse`. Absent: the power is only recorded as kept.
    */
   keep?: (context: BuildContext, card: PowerCard) => BuildContext
+  /**
+   * The round once a run's draft (`BuildContext.runDraft`) is settled: asked the moment the player chooses, with the round the
+   * draft opened and the choice made, it returns the same battle's first round with the army the choice made, and the screen
+   * moves on to it as it moves on to a next round — a fresh Build Phase, the settings and Experiments carried over, a scene
+   * played when the session plays scenes. Injected for the same reason as `startPulse`: the run is the shell's. Absent: the
+   * choice only closes the popup, and the round stays as it is.
+   */
+  draft?: (context: BuildContext, choice: RunDraftChoice) => BuildContext
   /**
    * Whether a round that opens with a scene (`BuildContext.scene`: the mission's lines, a Commander's
    * return) plays it in the dialog before the player has the keyboard: on in the game, the browser page and
@@ -159,6 +167,7 @@ export class BuildSession {
   private now: number | undefined
   private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
   private readonly keep: (context: BuildContext, card: PowerCard) => BuildContext
+  private readonly draft: ((context: BuildContext, choice: RunDraftChoice) => BuildContext) | null
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
@@ -180,6 +189,8 @@ export class BuildSession {
       const next = nextRound(context, state, resolved)
       return next === null ? null : staged(next)
     }
+    const draft = options.draft
+    this.draft = draft === undefined ? null : (context, choice) => staged(draft(context, choice))
     this.foresee = options.foresee ?? null
     this.keep = options.keep ?? ((context, card) => ({ ...context, kept: [...(context.kept ?? []), card] }))
     this.barksOf = options.barksOf
@@ -293,6 +304,9 @@ export class BuildSession {
     // The plan was just committed: the Battle Round starts. Or the Build Phase started over: it is gone.
     if (!before.committed && this.buildState.committed) this.beginPulse()
     else if (before.committed && !this.buildState.committed) this.presenter = null
+    // A run's draft was just settled: the round it opened is played with the army the choice made.
+    const choice = this.buildState.draftChoice
+    if (before.draftChoice === null && choice !== null && this.draft !== null) this.startRound(this.draft(this.context, choice))
   }
 
   /**
@@ -321,6 +335,11 @@ export class BuildSession {
       if (command.kind !== "restart" && after.planned !== before.planned) this.recordPlan(before, after)
       if (command.kind === "building-action" && (after.fitted !== before.fitted || after.held !== before.held)) this.recordAction(before, after, command.key)
       if (after.popup !== null && opened(before, after)) log.log("popup.open", { popup: after.popup })
+      if (before.draftChoice === null && after.draftChoice !== null) {
+        const { draftChoice } = after
+        const title = this.context.runDraft?.title ?? ""
+        log.log("run.draft", { draft: title, choice: draftChoice.kind, ...(draftChoice.kind === "requisition" ? {} : { key: draftChoice.key }) })
+      }
       if (after.settings !== before.settings || after.experiments !== before.experiments) {
         for (const spec of SHOWN_SETTINGS) {
           const value = setting(after, spec.field)
@@ -455,14 +474,20 @@ export class BuildSession {
     if (presenter === null || presenter.phase() !== "home") return
     const next = this.nextRound(this.context, this.buildState, presenter.resolved)
     if (next === null && presenter.resolved.mission === undefined) return
+    this.startRound(next ?? this.firstContext)
+    this.noteCommander()
+  }
+
+  /** The screen moves on to `context`: a fresh Build Phase on it, the settings, the Experiments and the view carried over, the
+   *  cursor on the Grid Nexus, and no Pulse. A next round's way in, and a settled draft's. */
+  private startRound(context: BuildContext): void {
     const before = this.buildState
-    this.context = next ?? this.firstContext
+    this.context = context
     const cursor = nexusTile(this.context) ?? before.startCursor
     const fresh = createBuildState(this.context, cursor, before.viewport, before.experiments, before.settings)
     // The sequences keep counting up, so the live loop never mistakes a new one for one it has shown.
     this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
     this.presenter = null
-    this.noteCommander()
     this.recordDialog(null)
   }
 

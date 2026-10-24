@@ -88,6 +88,7 @@
     "faction": "ravel",
     "lean": ["economy", "commander"],
     "start": [{"unit": "unit.ravel.runner", "count": 5}, {"unit": "unit.ravel.slinger", "count": 2}],
+    "run": {"buildings": ["den", "stash", "turret"], "powers": ["scrap-rush", "hot-shift"]},
     "portrait": [" ,$, ", "(^_~)", "/{$}\\"],
     "portraitFalls": [[" ,$, ", "(O_O)", "/{$}\\"], [" *$* ", "(x_x)", "/{$}\\"]],
     "barks": {

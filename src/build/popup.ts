@@ -40,7 +40,7 @@ import {
 } from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
 import { exportText, nexusPowers, pendingPicks } from "./state.ts"
-import type { BuildCommand, DialogLine, PopupMessage } from "./types.ts"
+import type { BuildCommand, DialogLine, PopupMessage, RunDraftCard } from "./types.ts"
 
 export type PopupRow =
   | Readonly<{ kind: "blank" }>
@@ -70,6 +70,9 @@ export type PopupRow =
       highlighted?: boolean
       description?: string
       tag?: string
+      /** Drawn quietly, as a row that is there but has nothing to do now (the draft's Remove with nothing to remove);
+       *  its hotkey and click still send the command, which says why it is refused. */
+      muted?: boolean
     }>
   /**
    * A setting: its name and its value between `<` and `>` (no "now"/"restart" column —
@@ -430,6 +433,74 @@ export function dialogSpec(context: BuildContext, state: BuildState): PopupSpec 
   }
 }
 
+/** The hotkeys of a list of choices past nine: a to z, without `q` (the game menu) and `x` (back), which are never a row's. */
+const LIST_HOTKEYS = "123456789abcdefghijklmnoprstuvwyz"
+
+/** A run's draft card as an option: its name, its rarity at the end of the row, and under it what family and role it is of and
+ *  what it does. */
+function cardOption(card: RunDraftCard, hotkey: string, command: BuildCommand, highlighted: boolean): PopupRow {
+  return {
+    kind: "option",
+    hotkey,
+    label: card.name,
+    command,
+    highlighted,
+    description: `${card.family} · ${card.role}: ${card.line}`,
+    tag: card.rarity,
+  }
+}
+
+/** The army as the draft popup ends with it: a line for each family — "Structures: Barracks, Turret". */
+function armyLines(context: BuildContext): readonly PopupRow[] {
+  const army = context.runDraft?.army ?? []
+  return army.map((each): PopupRow => ({ kind: "text", text: `${each.family}: ${each.names.length === 0 ? "none" : each.names.join(", ")}`, muted: true }))
+}
+
+/**
+ * **A run's draft**, in the one popup shape: the intro as text, the three cards as options on `1` `2` `3`, then `[r] Remove a
+ * card` and `[t] Take <n> requisition`, always present, and the army as it stands under a heading. Fewer than three cards
+ * means fewer rows, the keys still counting from 1. It has no close: the top bar offers none, and Esc, `x`, a right click
+ * and a click outside say what to do (`DRAFT_HOLD`). The army is its one run that scrolls, should a small terminal leave it too little room.
+ */
+export function runDraftSpec(context: BuildContext, state: BuildState): PopupSpec | null {
+  const draft = context.runDraft
+  if (draft === undefined) return null
+  const on = (row: number): boolean => row === state.popupHighlight
+  const cards = draft.cards.length
+  const rows: PopupRow[] = [
+    ...draft.intro.map((text): PopupRow => ({ kind: "note", text })),
+    ...draft.cards.map((card, index) => cardOption(card, String(index + 1), { kind: "draft-take", index }, on(index))),
+    {
+      kind: "option",
+      hotkey: "r",
+      label: "Remove a card",
+      command: { kind: "draft-open-remove" },
+      highlighted: on(cards),
+      ...(draft.removable.length === 0 ? { muted: true, tag: "none" } : {}),
+    },
+    { kind: "option", hotkey: "t", label: `Take ${draft.requisition} requisition`, command: { kind: "draft-requisition" }, highlighted: on(cards + 1) },
+    { kind: "heading", text: "ARMY" },
+  ]
+  const from = rows.length
+  rows.push(...armyLines(context))
+  if (rows.length === from) return { title: draft.title, rows }
+  return { title: draft.title, rows, scroll: { from, to: rows.length, highlight: from, select: (): BuildCommand => ({ kind: "select-row", row: state.popupHighlight }) } }
+}
+
+/** The list of cards the draft could remove instead, over it: one option each, on `1` to `9` and then letters, scrolling when
+ *  the army holds more than fit. Choosing one settles the draft; Esc and `x` go back to it. */
+export function runDraftRemoveSpec(context: BuildContext, state: BuildState): PopupSpec | null {
+  const draft = context.runDraft
+  if (draft === undefined) return null
+  const rows = draft.removable.map((card, index) => cardOption(card, LIST_HOTKEYS[index] ?? "", { kind: "draft-remove", index }, index === state.popupHighlight))
+  if (rows.length === 0) return { title: "REMOVE A CARD", rows }
+  return {
+    title: "REMOVE A CARD",
+    rows,
+    scroll: { from: 0, to: rows.length, highlight: state.popupHighlight, select: (row): BuildCommand => ({ kind: "select-row", row }) },
+  }
+}
+
 /** What the Battle Round confirmation announces when a mission has nothing of its own to say. */
 export const DEFAULT_ROUND_TEXT = "Activate Nexus. Collect Resources. Spawn Units."
 
@@ -545,6 +616,10 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return activitySpec(context, state)
     case "dialog":
       return dialogSpec(context, state)
+    case "run-draft":
+      return runDraftSpec(context, state)
+    case "run-draft-remove":
+      return runDraftRemoveSpec(context, state)
     default:
       return null
   }

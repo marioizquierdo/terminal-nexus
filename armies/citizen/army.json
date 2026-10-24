@@ -104,6 +104,8 @@
     {
       "id": "barracks",
       "structure": "structure.citizen.barracks",
+      "rarity": "common",
+      "role": "troops",
       "cost": 40,
       "spawns": {"unit": "unit.citizen.trooper", "perWave": 4, "waves": 1, "secondsBetween": 10},
       "actions": [
@@ -122,12 +124,16 @@
     {
       "id": "depot",
       "structure": "structure.citizen.depot",
+      "rarity": "common",
+      "role": "economy",
       "cost": 30,
       "notes": "Supply as a building: eight more units the army may field at once, where the Grid Nexus alone gives twelve. A building whose next unit would go past the supply waits, so once the army is full a new unit comes only as an old one falls (the power curve: survivors are outgrown). First guesses, no balance claim."
     },
     {
       "id": "garrison",
       "structure": "structure.citizen.garrison",
+      "rarity": "uncommon",
+      "role": "troops",
       "cost": 100,
       "tier": 2,
       "requires": ["barracks"],
@@ -138,6 +144,8 @@
     {
       "id": "battery",
       "structure": "structure.citizen.battery",
+      "rarity": "uncommon",
+      "role": "offense",
       "cost": 50,
       "tier": 2,
       "requires": ["barracks"],
@@ -147,6 +155,39 @@
     }
   ],
   "powers": [
+    {
+      "id": "heavy-rounds-standard",
+      "name": "Standard Heavy Rounds",
+      "description": "Every Turret hits harder.",
+      "effect": {"modifyAttack": {"content": "structure.bench.beamturret", "add": {"damage": 3}}},
+      "rarity": "common",
+      "role": "defense",
+      "doctrine": true,
+      "tier": 1,
+      "notes": "A Doctrine, a run's standing order: the Turret's heavy rounds, issued to every Turret the army builds, so no Turret buys them. The same three damage as the one Turret's upgrade, on all of them."
+    },
+    {
+      "id": "long-barrels",
+      "name": "Long Barrels",
+      "description": "Marksmen reach two tiles further.",
+      "effect": {"modifyAttack": {"content": "unit.citizen.marksman", "add": {"range": 2}}},
+      "rarity": "uncommon",
+      "role": "offense",
+      "doctrine": true,
+      "tier": 1,
+      "notes": "A Doctrine: the marksman's range, two more (a reach is 1 or even), in every battle of the run. A first guess."
+    },
+    {
+      "id": "production-line-standard",
+      "name": "Standard Production Line",
+      "description": "Every Barracks sends one more trooper a wave.",
+      "effect": {"addPerWave": {"building": "barracks", "perWave": 1}},
+      "rarity": "uncommon",
+      "role": "production",
+      "doctrine": true,
+      "tier": 2,
+      "notes": "A Doctrine: the Barracks's production line, issued to every Barracks the army builds. The upgrade of the one Barracks costs 15 credits each battle; this is the same trooper on all of them for the run."
+    },
     {
       "id": "reserve-callup",
       "name": "Reserve Callup",

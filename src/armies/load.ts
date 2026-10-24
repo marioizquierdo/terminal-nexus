@@ -308,6 +308,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     const said: string[] = []
     const tier = card.tier ?? 1
     if (tier > MAX_TIER) said.push(`is of tier ${tier}: the tree has tiers 1 to ${MAX_TIER}`)
+    if ((card.rarity === undefined) !== (card.role === undefined)) said.push(`has ${card.rarity === undefined ? "a role but no rarity" : "a rarity but no role"}: a run's draft needs both`)
     const tiers: number[] = []
     for (const id of card.requires ?? []) {
       if (id === card.id) {
@@ -426,6 +427,12 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
    *  an upgrade of a power the army does not see, of itself, or of one offered beside every hand. */
   const dealProblems = (viewer: Viewer, card: PowerCard): string[] => {
     const said: string[] = []
+    if (card.tier !== undefined && card.tier > MAX_TIER) said.push(`is of tier ${card.tier}: a run has tiers 1 to ${MAX_TIER}`)
+    if (card.doctrine === true) {
+      for (const [field, present] of [["offered beside every hand", card.always === true], ["from another Nexus", card.from !== undefined], ["an upgrade of a power", card.upgrades !== undefined], ["dealt by chance", card.chance !== undefined], ["dealt on requirements", card.requires !== undefined]] as const) {
+        if (present) said.push(`is a Doctrine, a standing order a run's draft offers, and is also ${field}: the Nexus Pulse never deals it`)
+      }
+    }
     for (const modifier of card.chance ?? []) {
       if (modifier.times === 1) said.push(`has a chance ${modifier.times} times as likely, which changes nothing`)
       if (modifier.to !== undefined && modifier.to < modifier.from) said.push(`has a chance from round ${modifier.from} to round ${modifier.to}, which ends before it starts`)
@@ -544,6 +551,17 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       for (const { unit } of entry.start ?? []) {
         const problem = sightFor(viewer).unit(unit)
         if (problem !== null) say(`the Commander "${entry.id}" starts with ${problem}`)
+      }
+      // What a run starts her army with: cards her army sees, a building and a Nexus power each.
+      for (const [kind, ids] of [["building", entry.run?.buildings ?? []], ["Nexus power", entry.run?.powers ?? []]] as const) {
+        const seen = new Set<string>()
+        for (const id of ids) {
+          const unseen = unseenCard(viewer, kind, id)
+          if (unseen !== null) say(`the Commander "${entry.id}" starts a run with ${unseen}`)
+          else if (kind === "Nexus power" && powersBy.get(id)?.card.doctrine === true) say(`the Commander "${entry.id}" starts a run with the Doctrine "${id}": a Doctrine is drafted, never started with`)
+          if (seen.has(id)) say(`the Commander "${entry.id}" starts a run with the ${kind} "${id}" twice`)
+          seen.add(id)
+        }
       }
       // Her army's schedule, against every power her army can offer.
       if (entry.schedule !== undefined) {
@@ -685,6 +703,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       faction: entry.faction,
       lean: entry.lean,
       start: entry.start ?? [],
+      ...(entry.run === undefined ? {} : { run: entry.run }),
       ...(entry.schedule === undefined ? {} : { schedule: entry.schedule }),
       barks: entry.barks ?? {},
       portrait: entry.portrait ?? [],

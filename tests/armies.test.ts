@@ -84,7 +84,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ],
   )
   assert.deepEqual(
-    ARMIES.commanders.map(({ barks: _barks, portraitFalls: _falls, start: _start, schedule: _schedule, faction: _faction, ...commander }) => commander),
+    ARMIES.commanders.map(({ barks: _barks, portraitFalls: _falls, start: _start, schedule: _schedule, faction: _faction, run: _run, ...commander }) => commander),
     [
       { id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", lean: ["structures", "commander"], portrait: [" _@_ ", "(-_-)", "/|@|\\"] },
       { id: "averno", army: "averno", name: "Marshal Averno", unit: "unit.citizen.averno", lean: ["units", "nexus"], portrait: [" _&_ ", "(o_-)", "/[&]\\"] },
@@ -97,6 +97,15 @@ test("the game ships the shared army, two factions and three Commanders on top o
   assert.deepEqual(
     ARMIES.commanders.map((commander) => commander.start.map(({ unit, count }) => `${count} ${unit}`).join(", ")),
     ["3 unit.citizen.trooper, 2 unit.citizen.marksman", "3 unit.citizen.trooper, 2 unit.citizen.marksman", "5 unit.ravel.runner, 2 unit.ravel.slinger"],
+  )
+  // A run starts each with a small army (runs.md): a few buildings and two commons, the rest left to the draft.
+  assert.deepEqual(
+    ARMIES.commanders.map((commander) => [commander.id, commander.run?.buildings.join(" "), commander.run?.powers.join(" ")]),
+    [
+      ["vasse", "barracks depot turret", "reserve-callup drill-schedule"],
+      ["averno", "barracks depot turret", "reserve-callup drill-schedule"],
+      ["dob", "den stash turret", "scrap-rush hot-shift"],
+    ],
   )
   assert.deepEqual(
     ARMIES.commanders[1]?.schedule?.flatMap((entry) => entry.deal.filter((slot) => typeof slot !== "string" && "from" in slot).map(() => entry.round)),
@@ -134,6 +143,9 @@ test("the game ships the shared army, two factions and three Commanders on top o
   ])
   assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [["War Chest", "Adds 2000 resources to spend.", "+2000"]])
   assert.deepEqual(citizens?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
+    ["Standard Heavy Rounds", "Every Turret hits harder.", "modifyAttack"],
+    ["Long Barrels", "Marksmen reach two tiles further.", "modifyAttack"],
+    ["Standard Production Line", "Every Barracks sends one more trooper a wave.", "addPerWave"],
     ["Reserve Callup", "Two troopers join at your Nexus.", "spawnUnits"],
     ["Drill Schedule", "Barracks send a second wave.", "addWaves"],
     ["Drill Schedule II", "Barracks send a third wave.", "addWaves"],
@@ -142,6 +154,9 @@ test("the game ships the shared army, two factions and three Commanders on top o
   assert.deepEqual(
     [...(citizens?.powers ?? []), ...(shared?.powers ?? []), ...(hers?.powers ?? [])].map((card) => `${card.id} ${card.rarity} ${card.role}`),
     [
+      "heavy-rounds-standard common defense",
+      "long-barrels uncommon offense",
+      "production-line-standard uncommon production",
       "reserve-callup common troops",
       "drill-schedule common production",
       "drill-schedule-ii uncommon production",
@@ -179,20 +194,20 @@ test("a Commander army defines its Commander as data: her unit's numbers, her ca
   )
   assert.deepEqual(
     ARMIES.arsenals["averno"]?.powers.map((card) => card.id),
-    ["war-chest", "reserve-callup", "drill-schedule", "drill-schedule-ii", "scrap-rush", "hot-shift", "short-fuses", "forward-drill", "unfiled-ordnance", "raider-contract", "runner-crew"],
+    ["war-chest", "heavy-rounds-standard", "long-barrels", "production-line-standard", "reserve-callup", "drill-schedule", "drill-schedule-ii", "sharpened-scrap", "crowded-dens", "scrap-rush", "hot-shift", "short-fuses", "forward-drill", "unfiled-ordnance", "raider-contract", "runner-crew"],
   )
   // Averno sees the Ravel faction only for the cards that leak to him: its buildings are not his, and its powers are
   // foreign to him, marked from the Ravel Nexus, so only a slot that asks for that Nexus deals them.
   assert.ok(!(ARMIES.arsenals["averno"]?.buildings ?? []).some((card) => card.id === "den"))
   assert.deepEqual(
     (ARMIES.arsenals["averno"]?.powers ?? []).filter((card) => card.from !== undefined).map((card) => `${card.id} ${card.from}`),
-    ["scrap-rush ravel", "hot-shift ravel", "short-fuses ravel", "raider-contract ravel", "runner-crew ravel"],
+    ["sharpened-scrap ravel", "crowded-dens ravel", "scrap-rush ravel", "hot-shift ravel", "short-fuses ravel", "raider-contract ravel", "runner-crew ravel"],
   )
   assert.ok((ARMIES.arsenals["dob"]?.powers ?? []).every((card) => card.from === undefined), "Dob's own faction's cards are foreign to him")
   assert.deepEqual(ARMIES.arsenals["dob"]?.buildings.map((card) => card.id), ["hatchery", "turret", "den", "sling-pit", "stash", "chop-shop", "fuse-shed"])
   assert.deepEqual(
     ARMIES.arsenals["dob"]?.powers.map((card) => card.id),
-    ["war-chest", "scrap-rush", "hot-shift", "short-fuses", "rigged-charges", "lucky-scrap", "hot-dice", "hired-guns"],
+    ["war-chest", "sharpened-scrap", "crowded-dens", "scrap-rush", "hot-shift", "short-fuses", "rigged-charges", "lucky-scrap", "hot-dice", "hired-guns"],
   )
 })
 

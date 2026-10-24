@@ -18,6 +18,7 @@ import { nexusTile } from "../build/state.ts"
 import type { MissionPlay } from "../cli/pulse-run.ts"
 import { readLaunch } from "../cli/launch.ts"
 import type { LaunchText } from "../cli/launch.ts"
+import type { LevelPlay } from "../cli/levels.ts"
 import { DEFAULT_LEVEL, openRound } from "../cli/levels.ts"
 import { DEFAULT_LEVEL_ROUTE, RouteError, formatRoute } from "../cli/route.ts"
 import type { LevelDestination } from "../cli/route.ts"
@@ -60,7 +61,7 @@ export type BuildPlaytestOptions = Readonly<{
   /** The mission the rounds are played on, when it is not the level's own: another mission's or a test
    *  map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`), with
    *  `context` its first round. */
-  play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee" | "keep">>
+  play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee" | "keep">> & Partial<Pick<LevelPlay, "draft">>
   cursor?: Coord
   /**
    * Play a terminal that reports key presses, repeats and releases (the kitty keyboard protocol, which
@@ -163,6 +164,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     activity,
     nextRound: play.nextRound,
     ...(play.keep === undefined ? {} : { keep: play.keep }),
+    ...(play.draft === undefined ? {} : { draft: play.draft }),
     // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
     ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
     scenes: options.scenes ?? true,

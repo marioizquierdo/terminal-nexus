@@ -18,6 +18,7 @@ import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
+import { BuildSession } from "../src/view/build-session.ts"
 
 const SETUP = { seed: 1, commander: "vasse" } as const
 
@@ -153,24 +154,45 @@ test("the next round carries what Recall left: the player's buildings standing, 
   assert.equal(next.openingStatus?.text, "Round 1: time's up. The Nexus Pulse deals a new hand: [n].")
 })
 
-test("a battle's end opens the next battle's first round, saying how the last one ended", { timeout: 60_000 }, () => {
+test("a battle's end opens the draft it earned, and the choice opens the next battle's first round on the army it leaves", { timeout: 60_000 }, () => {
   // Battle 1 of seed 1 is against the rush; the balanced script's army, marching every round, takes his Nexus in round 1.
   const planned = scriptedRound(first(), balanced)
   const { resolved, played } = started(planned.context, planned.state)
   assert.notEqual(played.duel.result, null, "battle 1 did not end in its first round")
   assert.equal(resolved.mission?.verdict.kind, "won")
   assert.deepEqual(resolved.mission?.ending, { headline: "BATTLE WON", reason: "Dob Hunter's Nexus fell.", tone: "success", goOn: "Next battle" })
-  const next = RUN_PLAY.nextRound(planned.context, planned.state, resolved)
-  assert.ok(next !== null)
+  const waiting = RUN_PLAY.nextRound(planned.context, planned.state, resolved)
+  assert.ok(waiting !== null)
+  // The round that opens is behind a draft: three cards, the cards that could go, and the requisition.
+  const draft = waiting.runDraft
+  assert.ok(draft !== undefined, "a won battle opens on its draft")
+  assert.equal(draft.title, "Draft after battle 1")
+  assert.equal(draft.cards.length, 3)
+  assert.equal(draft.requisition, 15)
+  // The Barracks is the last building that trains units: it cannot go, or the army could field nothing.
+  assert.deepEqual(draft.removable.map((card) => card.key), ["structure:depot", "structure:turret", "power:reserve-callup", "power:drill-schedule"])
+  assert.equal(draft.intro[0], "Battle 1 of 3: won in round 1. Dob Hunter's Nexus fell.")
+  assert.deepEqual(draft.army.map((family) => [family.family, family.names.join(", ")]), [
+    ["Structures", "Barracks, Supply Depot, Turret"],
+    ["Nexus powers", "Reserve Callup, Drill Schedule"],
+    ["Doctrines", ""],
+  ])
+  assert.deepEqual(positionOf(waiting).run.played.length, 1)
+  // The card taken is in the army the next battle's first round is played on.
+  const card = draft.cards[0]!
+  const next = (RUN_PLAY.draft as NonNullable<typeof RUN_PLAY.draft>)(waiting, { kind: "take", key: card.key })
+  assert.equal(next.runDraft, undefined, "the draft is settled")
   const { run, duel } = positionOf(next)
-  assert.equal(run.played.length, 1)
+  assert.equal(run.drafts.length, 1)
   assert.equal(duel.carried, null, "the next battle starts from a fresh Grid")
   assert.equal(duel.setup.seed, run.definition.battles[1]?.duel.seed)
+  assert.ok([...(duel.sides.A.roster?.buildings ?? []), ...(duel.sides.A.roster?.powers ?? []), ...(duel.sides.A.roster?.doctrines ?? [])].includes(card.key.split(":")[1] as string))
   assert.deepEqual(next.round, { number: 1, of: 6, stage: "battle 2 of 3" })
   assert.equal(next.allotment, roundIncome(1))
-  assert.equal(next.kept?.length, 0, "a battle starts with no power kept")
-  assert.deepEqual(next.scene?.[0]?.text, "Battle 1 of 3: won in round 1. Dob Hunter's Nexus fell.")
+  assert.equal(next.kept?.length, card.key.startsWith("doctrine:") ? 1 : 0, "a Doctrine is kept from round one; nothing else is")
+  assert.match(next.scene?.[0]?.text ?? "", /^After battle 1: took /)
   assert.match(next.scene?.[1]?.text ?? "", /^Battle 2 of 3: against Dob Hunter/)
+  assert.throws(() => (RUN_PLAY.draft as NonNullable<typeof RUN_PLAY.draft>)(next, { kind: "requisition" }), /no draft/)
 })
 
 test("a lost battle ends the run, and the next round is a new run's, opening on the summary", { timeout: 60_000 }, () => {
@@ -213,8 +235,8 @@ test("a building held this round trains nothing (Hold production)", { timeout: 6
 
 test("a run's battle plays on the Build Phase screen: place a building, start the Battle Round, reach the next round", { timeout: 60_000 }, () => {
   // From the route, as the game, the page and `scripts/playtest.mjs --at 'challenge?seed=1'` open it: the run's words
-  // skipped, the first power picked, a Turret armed and placed, the Battle Round started and watched to its end.
-  const steps = parseKeyScript("Esc n 1 2 Enter s s wait~1000*62 Enter")
+  // skipped, the first power picked, a Turret (the menu's first row in a run's small army) armed and placed, the Battle Round started and watched to its end.
+  const steps = parseKeyScript("Esc n 1 1 Enter s s wait~1000*62 Enter")
   const run = runBuildPlaytest({ steps, at: playtestOpening({ at: "challenge?seed=1" }).at })
   const first = frameToText(run.frames[0]!.frame)
   assert.match(first, /build phase - battle 1 of 3 - round 1 of 6/u)
@@ -240,24 +262,34 @@ test("the driver plays a run end to end, and the same seed and script give the s
   assert.deepEqual(shape(again), shape(once))
   assert.deepEqual(summaryLines(again.run), summaryLines(once.run))
   assert.equal(once.run.over, true)
-  // Pinned, on Node and on Bun: a change to a rule, the scripts or the armies moves it, and says so.
+  // Pinned, on Node and on Bun: a change to a rule, the scripts, the armies or the dealer moves it, and says so. The
+  // driver takes the first card each draft offers.
   assert.deepEqual(summaryLines(once.run), [
     "The run is won: all 3 battles won.",
     "Edda Vasse, seed 1.",
     "Battle 1 against Dob Hunter (rush): won in round 1. Dob Hunter's Nexus fell.",
-    "Battle 2 against Dob Hunter (turtle): won in round 6. Dob Hunter's Nexus fell.",
+    "Battle 2 against Dob Hunter (turtle): won in round 4. Dob Hunter's Nexus fell.",
     "Battle 3 against Dob Hunter (balanced): won in round 3. Dob Hunter's Nexus fell.",
+    "After battle 1: took Standard Heavy Rounds (Doctrine, common).",
+    "After battle 2: took Hatchery (Structure, common).",
+    "The army: Barracks, Supply Depot, Turret, Hatchery, Reserve Callup, Drill Schedule, Standard Heavy Rounds.",
   ])
-  assert.deepEqual(shape(once), [
-    "1.1 nexus@474",
-    "2.1 time@600",
-    "2.2 time@600",
-    "2.3 time@600",
-    "2.4 time@600",
-    "2.5 time@600",
-    "2.6 nexus@527",
-    "3.1 time@600",
-    "3.2 time@600",
-    "3.3 nexus@456",
-  ])
+  assert.deepEqual(shape(once), ["1.1 nexus@487", "2.1 time@600", "2.2 time@600", "2.3 time@600", "2.4 nexus@568", "3.1 time@600", "3.2 time@600", "3.3 nexus@512"])
+})
+
+test("on the screen, a won battle opens on the draft, the choice settles it, and the session moves to the round it makes", { timeout: 60_000 }, () => {
+  const planned = scriptedRound(first(), balanced)
+  const { resolved } = started(planned.context, planned.state)
+  const waiting = RUN_PLAY.nextRound(planned.context, planned.state, resolved)
+  assert.ok(waiting?.runDraft !== undefined)
+  const viewport = buildLayout({ columns: 80, rows: 24 }, waiting.grid).viewport
+  const session = new BuildSession({ context: waiting, cursor: nexusTile(waiting) ?? { x: 0, y: 0 }, viewport, draft: RUN_PLAY.draft as NonNullable<typeof RUN_PLAY.draft>, keep: RUN_PLAY.keep, scenes: true })
+  assert.equal(session.state.popup, "run-draft", "the round opens on the draft")
+  session.dispatch({ kind: "cancel" })
+  assert.equal(session.state.popup, "run-draft", "it cannot be dismissed")
+  session.dispatch({ kind: "draft-requisition" })
+  assert.equal(session.round.runDraft, undefined, "the session moved on to the round the choice makes")
+  assert.equal(positionOf(session.round).run.requisition, 15)
+  assert.deepEqual(session.round.round, { number: 1, of: 6, stage: "battle 2 of 3" })
+  assert.notEqual(session.state.popup, "run-draft")
 })

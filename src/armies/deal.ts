@@ -64,7 +64,7 @@ export function dealable(pool: readonly PowerCard[], kept: readonly PowerCard[],
   const keptIds = new Set(kept.map((card) => card.id))
   const once = new Set(kept.filter((card) => card.repeatable !== true).map((card) => card.id))
   return pool.filter((card) => {
-    if (card.always === true || once.has(card.id)) return false
+    if (card.always === true || card.doctrine === true || once.has(card.id)) return false
     if (card.upgrades !== undefined && !keptIds.has(card.upgrades)) return false
     const requires = card.requires
     if (requires === undefined) return true

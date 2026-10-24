@@ -54,7 +54,7 @@ const buildingAction = record<BuildingActionCard>(
 )
 const buildingCard = record<BuildingCard>(
   { id: text, structure: text, cost: wholeNumber },
-  { spawns: buildingSpawns, tier: positiveWholeNumber, requires: list(text), actions: list(buildingAction), notes: text },
+  { spawns: buildingSpawns, tier: positiveWholeNumber, rarity: literal(...RARITIES), role: literal(...ROLES), requires: list(text), actions: list(buildingAction), notes: text },
 )
 const rarity = literal(...RARITIES)
 /** A power's chance raised for some rounds: from a round, to a later one or the end, so many times as likely. */
@@ -65,6 +65,8 @@ const powerCard = record<PowerCard>(
   {
     repeatable: literal(true, false),
     always: literal(true, false),
+    doctrine: literal(true, false),
+    tier: positiveWholeNumber,
     chance: list(chanceModifier),
     requires: powerRequirements,
     upgrades: text,
@@ -94,6 +96,7 @@ const commanderEntry = record<CommanderEntry>(
     portrait: list(text),
     portraitFalls: list(list(text)),
     start: list(record<Readonly<{ unit: string; count: number }>>({ unit: text, count: positiveWholeNumber }, {})),
+    run: record<NonNullable<CommanderEntry["run"]>>({ buildings: list(text), powers: list(text) }, {}),
     schedule: scheduleShape,
   },
 )

@@ -119,7 +119,16 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A popup opened over the Build Phase.",
     props: {
-      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog." },
+      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog, run-draft, run-draft-remove." },
+    },
+  },
+  "run.draft": {
+    defaultLevel: "info",
+    description: "A run's draft was settled: a card taken, a card of the army removed, or the requisition taken instead.",
+    props: {
+      draft: { type: "string", description: "Which draft, by its title: Draft after battle 1." },
+      choice: { type: "string", description: "take, remove or requisition." },
+      key: { type: "string", description: "The card taken or removed, by its key: structure:turret. None for the requisition.", optional: true },
     },
   },
   "setting.change": {

@@ -165,6 +165,9 @@ export const ESC_KEY = "[esc]"
  * it — "menu [esc]" — the way a way-back is read, hotkey on the right.
  */
 export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed" | "armed" | "exploreMap">): string {
+  // A run's draft cannot be closed, so its top bar offers nothing; the remove list over it goes back.
+  if (state.popup === "run-draft") return ""
+  if (state.popup === "run-draft-remove") return `back ${ESC_KEY}`
   const action = state.popup !== null ? "close" : state.committed || mapMode(state) === "menu" ? "menu" : "back"
   return `${action} ${ESC_KEY}`
 }

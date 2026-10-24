@@ -79,6 +79,7 @@
       {"unit": "unit.citizen.trooper", "count": 3},
       {"unit": "unit.citizen.marksman", "count": 2}
     ],
+    "run": {"buildings": ["barracks", "depot", "turret"], "powers": ["reserve-callup", "drill-schedule"]},
     "schedule": [
       {"round": 1, "deal": ["common", "common", "uncommon"]},
       {"round": 2, "deal": ["common", "uncommon", {"from": "ravel"}]},

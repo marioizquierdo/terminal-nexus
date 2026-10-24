@@ -10,6 +10,7 @@
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
+import type { RunDraftChoice } from "../build/types.ts"
 import { createBuildState, withoutScene } from "../build/state.ts"
 import type { Level } from "../armies/index.ts"
 import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
@@ -19,7 +20,11 @@ import { levelContext } from "./starter.ts"
 
 /** What the Build Phase screen is handed to play a level's rounds (`BuildSession`): starting a round's Pulse, the
  *  round after it, the raid foreseen, a Nexus power kept — and, for a campaign mission, the mission itself. */
-export type LevelPlay = Pick<MissionPlay, "startPulse" | "nextRound" | "foresee" | "keep"> & Partial<Pick<MissionPlay, "mission">>
+export type LevelPlay = Pick<MissionPlay, "startPulse" | "nextRound" | "foresee" | "keep"> &
+  Partial<Pick<MissionPlay, "mission">> & {
+    /** A run's draft settled (`RunDraftChoice`): the round to play instead of the one that waited on it. Only a run has one. */
+    draft?: (context: BuildContext, choice: RunDraftChoice) => BuildContext
+  }
 
 /** A level the game can open: a campaign's mission, or a Challenge run, whose battles the same screen plays. */
 export type PlayableLevel = Readonly<{

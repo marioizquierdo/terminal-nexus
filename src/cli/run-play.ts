@@ -23,19 +23,21 @@ import type { BuildContext, BuildState } from "../build/state.ts"
 import { createBuildState, nexusTile, withoutScene } from "../build/state.ts"
 import { STARTER_START_CURSOR, nexusDraftOf } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
-import type { DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
+import type { DialogLine, FieldEntity, IncomingEntity, RunDraft, RunDraftChoice, StandingStructure } from "../build/types.ts"
 import { status } from "../build/status.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
-import { SIDES, briefOf, duelArmy, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, playRound, scriptedPlayer, standingOf } from "../duel/index.ts"
+import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, playRound, scriptedPlayer, standingOf } from "../duel/index.ts"
 import type { Force, Restoration } from "../match/index.ts"
 import { centreTile, opening, recall, restoreCommanders } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
-import type { BattleRecord, RunBattle, RunSetup, RunState } from "../run/index.ts"
+import type { BattleRecord, DraftChoice, RunBattle, RunSetup, RunState } from "../run/index.ts"
 import {
+  CARD_KINDS,
   DEFAULT_RUN_COMMANDER,
+  KIND_WORDS,
   RUN_ROUNDS,
   RUN_SEED_LIMIT,
   battleCount,
@@ -44,7 +46,11 @@ import {
   battleIntroLines,
   commanderNameOf,
   currentBattle,
+  draftWords,
+  drafted,
+  duelFor,
   newRun,
+  ownedCards,
   reasonWords,
   summaryLines,
 } from "../run/index.ts"
@@ -69,8 +75,8 @@ export function positionOf(context: Pick<BuildContext, "mode">): RunPosition {
 /** Each side's content as its kept powers leave it: what the Build Phase draws and places by. */
 function contentOf(duel: DuelState): Record<Side, ContentRegistry> {
   return {
-    A: loadoutOf(duelArmy(duel.sides.A.commander), duel.sides.A).registry,
-    B: loadoutOf(duelArmy(duel.sides.B.commander), duel.sides.B).registry,
+    A: loadoutOf(armyOf(duel, "A"), duel.sides.A).registry,
+    B: loadoutOf(armyOf(duel, "B"), duel.sides.B).registry,
   }
 }
 
@@ -93,7 +99,7 @@ function arrivalsOf(duel: DuelState, callups: BuildContext["callups"]): Incoming
   for (const side of SIDES) {
     const units: string[] = []
     if (duel.carried === null) {
-      const { commander } = duelArmy(duel.sides[side].commander)
+      const { commander } = armyOf(duel, side)
       units.push(commander.unit)
       for (const { unit, count } of commander.start) for (let n = 0; n < count; n += 1) units.push(unit)
     }
@@ -122,7 +128,7 @@ function arrivalsOf(duel: DuelState, callups: BuildContext["callups"]): Incoming
 
 /** The enemy's Grid Nexus as a dialog line looks at it. */
 function enemyNexusFocus(duel: DuelState): DialogLine["focus"] {
-  const nexus = duelArmy(duel.sides.B.commander).nexus
+  const nexus = armyOf(duel, "B").nexus
   const anchor = mapOf(duel).nexus.B
   const footprint = contentOf(duel).B.get(nexus).footprint
   return { tile: centreTile(anchor, footprint), own: tilesOf(anchor, footprint) }
@@ -153,11 +159,11 @@ function carriedOver(context: Partial<BuildContext>): Partial<BuildContext> {
  * and everything else on the Grid as the field, every Commander due back already beside her Nexus. The round opens
  * on `scene` and says `opening` on the bottom line.
  */
-function roundContext(position: RunPosition, previous: Partial<BuildContext>, scene: readonly DialogLine[], opening: string): BuildContext {
+function roundContext(position: RunPosition, previous: Partial<BuildContext>, scene: readonly DialogLine[], opening: string, runDraft?: RunDraft): BuildContext {
   const { run, duel } = position
   const battle = currentBattle(run)
   if (battle === null) throw new Error("the run is over: there is no round to open")
-  const army = duelArmy(duel.sides.A.commander)
+  const army = armyOf(duel, "A")
   const loadout = loadoutOf(army, duel.sides.A)
   const content = contentOf(duel)
   const map = mapOf(duel)
@@ -166,7 +172,7 @@ function roundContext(position: RunPosition, previous: Partial<BuildContext>, sc
   const field: FieldEntity[] = []
   if (restored === null) {
     standing.push(...standingOf(duel, "A").map(({ contentId, anchor }) => ({ contentId, anchor })))
-    const nexus = duelArmy(duel.sides.B.commander).nexus
+    const nexus = armyOf(duel, "B").nexus
     field.push({ contentId: nexus, anchor: map.nexus.B, player: "B", hp: content.B.get(nexus).maxHp })
   } else {
     for (const entity of restored.state.entities) {
@@ -195,6 +201,7 @@ function roundContext(position: RunPosition, previous: Partial<BuildContext>, sc
     roundText: {},
     mode: position,
     openingStatus: status(opening, "hint"),
+    ...(runDraft === undefined ? {} : { runDraft }),
   }
   return scene.length === 0 ? context : { ...context, scene }
 }
@@ -203,7 +210,7 @@ function roundContext(position: RunPosition, previous: Partial<BuildContext>, sc
 function firstRunRound(setup: RunSetup, extra: Partial<BuildContext>): BuildContext {
   const run = newRun(setup)
   const battle = currentBattle(run) as RunBattle
-  const duel = newDuel(battle.duel)
+  const duel = newDuel(duelFor(run, battle))
   const name = commanderNameOf(setup.commander)
   const opponent = commanderNameOf(battle.opponent)
   const scene = [
@@ -240,7 +247,7 @@ export const playedOf = (resolved: ResolvedPulse): Played | undefined => PLAYED.
 
 /** The card id of the building a structure is, for a duel plan. */
 function cardIdOf(duel: DuelState, contentId: string): string {
-  return duelArmy(duel.sides.A.commander).buildings.find((card) => card.structure === contentId)?.id ?? contentId
+  return armyOf(duel, "A").buildings.find((card) => card.structure === contentId)?.id ?? contentId
 }
 
 /**
@@ -287,13 +294,12 @@ function nextAfter(played: Played, previous: BuildContext, resolved: ResolvedPul
     return { ...withoutScene(opened), ...(scene.length === 0 ? {} : { scene }), openingStatus: status(`${last} The Nexus Pulse deals a new hand: [n].`, "hint") }
   }
   const record = run.played.at(-1) as BattleRecord
-  // The battle is over and the run goes on: the next battle's first round.
+  // The battle is over and the run goes on: the draft the battle earned, which the next battle waits for; the round
+  // that opens behind it is the next battle's first, on the army as it stands, and the choice replaces it (`draft`).
   if (!run.over) {
     const battle = currentBattle(run) as RunBattle
-    const next = newDuel(battle.duel)
-    const scene = [said(battleEndedLine(run, record)), ...battleIntroLines(run, battle).map((line) => said(line, enemyNexusFocus(next)))]
-    const opponent = commanderNameOf(battle.opponent)
-    return roundContext({ kind: "run", run, duel: next }, previous, scene, `${battleCount(run, battle.number)} against ${opponent}. The Nexus Pulse deals: [n].`)
+    const next = newDuel(duelFor(run, battle))
+    return roundContext({ kind: "run", run, duel: next }, previous, [], `${battleEndedLine(run, record)} Choose the army's draft.`, draftViewOf(run, record))
   }
   // The run is over: its summary, then a new run's first round, on the seed the run named for the next.
   const { setup, nextSeed } = run.definition
@@ -307,6 +313,28 @@ function nextAfter(played: Played, previous: BuildContext, resolved: ResolvedPul
     openingStatus: status(`A new run, seed ${nextSeed}. The last run, seed ${setup.seed}: ${won} of ${run.definition.battles.length} battles won.`, "hint"),
   }
 }
+
+/** The draft the run waits on, as the Build Phase reads it: plain words (`RunDraft`). */
+function draftViewOf(run: RunState, record: BattleRecord): RunDraft {
+  const offer = run.draft
+  if (offer === null) throw new Error("the run has no draft to show")
+  const commander = run.definition.setup.commander
+  const view = (card: (typeof offer.cards)[number]): RunDraft["cards"][number] => ({ key: keyOfCard(card), name: card.name, family: KIND_WORDS[card.kind], rarity: card.rarity, role: card.role, line: card.line })
+  const held = ownedCards(commander, run.army)
+  return {
+    title: `Draft after battle ${record.battle}`,
+    intro: [battleEndedLine(run, record), "Take one card for the army, or remove one it holds, or take the requisition instead. The choice lasts the rest of the run."],
+    cards: offer.cards.map(view),
+    removable: offer.removable.map(view),
+    requisition: offer.requisition,
+    army: CARD_KINDS.map((kind) => ({ family: `${KIND_WORDS[kind]}s`, names: held.filter((card) => card.kind === kind).map((card) => card.name) })),
+  }
+}
+
+const keyOfCard = (card: Readonly<{ kind: string; id: string }>): string => `${card.kind}:${card.id}`
+
+/** What the Build Phase's choice is, as the run settles it. */
+const draftChoiceOf = (choice: RunDraftChoice): DraftChoice => (choice.kind === "requisition" ? { kind: "requisition" } : { kind: choice.kind, card: choice.key })
 
 /** The player's Grid Nexus as a dialog line looks at it. */
 function nexusFocus(context: BuildContext): DialogLine["focus"] {
@@ -379,6 +407,21 @@ function runPlay(): LevelPlay {
       const played = playedOf(resolved)
       return played === undefined ? null : nextAfter(played, context, resolved)
     },
+
+    // The draft is settled: the army it leaves, and the next battle's first round on it, opening on how it begins.
+    draft(context, choice) {
+      const { run } = positionOf(context)
+      const settled = drafted(run, draftChoiceOf(choice))
+      const battle = currentBattle(settled) as RunBattle
+      const duel = newDuel(duelFor(settled, battle))
+      const record = settled.drafts.at(-1)
+      const opponent = commanderNameOf(battle.opponent)
+      const scene = [
+        ...(record === undefined ? [] : [said(draftWords(settled, record))]),
+        ...battleIntroLines(settled, battle).map((line) => said(line, enemyNexusFocus(duel))),
+      ]
+      return roundContext({ kind: "run", run: settled, duel }, context, scene, `${battleCount(settled, battle.number)} against ${opponent}. The Nexus Pulse deals: [n].`)
+    },
   }
 }
 
@@ -433,12 +476,18 @@ export function scriptedRound(context: BuildContext, player: Player): Readonly<{
   }
 }
 
+/** What settles a draft for the driver: the choice it makes from the draft the screen would show. */
+export type Drafter = (draft: RunDraft) => RunDraftChoice
+
+/** The driver's default draft: the first card on offer, or the requisition when there is none. */
+export const takeFirst: Drafter = (draft) => (draft.cards[0] === undefined ? { kind: "requisition" } : { kind: "take", key: draft.cards[0].key })
+
 /**
  * **The driver plays a run end to end**, through the very functions the screen is handed (`RUN_PLAY`): each round
  * planned by `player` as a Build Phase (`scriptedRound`), its Pulse started from it and the next round opened from
- * that, battle after battle, until the run is over. The same setup and player give the same run, every time.
+ * that, battle after battle, until the run is over; each draft the battles earn is settled by `drafter`. The same setup and player give the same run, every time.
  */
-export function driveRun(setup: RunSetup, player: Player): DrivenRun {
+export function driveRun(setup: RunSetup, player: Player, drafter: Drafter = takeFirst): DrivenRun {
   let context = runLevel(setup).firstRound()
   const rounds: { battle: number; report: RoundReport }[] = []
   for (;;) {
@@ -452,6 +501,7 @@ export function driveRun(setup: RunSetup, player: Player): DrivenRun {
     if (played.run.over) return { run: played.run, rounds }
     const next = RUN_PLAY.nextRound(planned.context, planned.state, resolved)
     if (next === null) throw new Error("a run's round led nowhere")
-    context = next
+    // A draft waits behind the battle that was won: settled by the drafter, as a player settles it on screen.
+    context = next.runDraft === undefined ? next : (RUN_PLAY.draft as NonNullable<LevelPlay["draft"]>)(next, drafter(next.runDraft))
   }
 }

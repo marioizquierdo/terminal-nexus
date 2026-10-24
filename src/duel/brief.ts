@@ -17,7 +17,7 @@ import { supplyOf } from "../content/supply.ts"
 import { tilesOf } from "../grid/coords.ts"
 import { duelGrid } from "./maps.ts"
 import type { DuelArmy } from "./sides.ts"
-import { duelArmy, loadoutOf, powerOf } from "./sides.ts"
+import { armyOf, loadoutOf, powerOf } from "./sides.ts"
 import { handOf, mapOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
 import type { DuelState, RoundReport, Side, SideReport } from "./types.ts"
 import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
@@ -164,8 +164,8 @@ function reportLine(label: string, report: SideReport): string {
  *  taught so far (`docs/game-design/play-strategies.md`), for a player that reads words: the text carries it. */
 export function briefOf(state: DuelState, side: Side, strategies?: string): Brief {
   const enemy = other(side)
-  const army: DuelArmy = duelArmy(state.sides[side].commander)
-  const enemyArmy: DuelArmy = duelArmy(state.sides[enemy].commander)
+  const army: DuelArmy = armyOf(state, side)
+  const enemyArmy: DuelArmy = armyOf(state, enemy)
   const loadout = loadoutOf(army, state.sides[side])
   const enemyLoadout = loadoutOf(enemyArmy, state.sides[enemy])
   const registryOf = (who: Side): ContentRegistry => (who === side ? loadout.registry : enemyLoadout.registry)
@@ -225,7 +225,7 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
   const supply = supplyOf([...ours.map((entity) => loadout.registry.get(entity.contentId)), ...(state.carried === null ? standing.map((structure) => loadout.registry.get(structure.contentId)) : [])])
   const nexusEntity = (who: Side) => (state.carried === null ? undefined : state.carried.entities.find((entity) => entity.player === who && registryOf(who).get(entity.contentId).nexus === true))
   const nexusHealth = (who: Side): Readonly<{ health: number; most: number }> => {
-    const most = registryOf(who).get(duelArmy(state.sides[who].commander).nexus).maxHp
+    const most = registryOf(who).get(armyOf(state, who).nexus).maxHp
     return { health: state.carried === null ? most : (nexusEntity(who)?.hp ?? 0), most }
   }
   const unitsOf = (who: Side): Record<string, number> => {

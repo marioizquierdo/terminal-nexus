@@ -5,7 +5,8 @@
 // A run battle is a duel (`src/duel/`): the player's Commander Army on side A, an opponent's on side B played by a
 // scripted duel player, round after round until a Nexus falls or the rounds run out.
 
-import type { DuelResult, DuelSetup } from "../duel/index.ts"
+import type { DuelResult, DuelSetup, Roster } from "../duel/index.ts"
+import type { DraftOffer, DraftRecord } from "./draft.ts"
 
 /** What a run starts from: its seed, and the Commander the player chose (a duel army's: `vasse`, `averno`, `dob`). */
 export type RunSetup = Readonly<{ seed: number; commander: string }>
@@ -46,11 +47,18 @@ export type BattleRecord = Readonly<{
 }>
 
 /** A run in play: its definition, the battles played so far, and whether it is over — a lost battle ends it, and so
- *  does its last battle. */
+ *  does its last battle. And what the run is made of between them: the army it holds (a roster the next battle plays
+ *  on), the requisition it has taken, the pity offset the draft dealer carries, every draft taken, and the draft on
+ *  offer — after a battle that was not lost and was not the last, the next battle waits for it. */
 export type RunState = Readonly<{
   definition: RunDefinition
   played: readonly BattleRecord[]
   over: boolean
+  army: Roster
+  requisition: number
+  pity: number
+  drafts: readonly DraftRecord[]
+  draft: DraftOffer | null
 }>
 
 /** A run's summary as data: the Commander, the seed, how many battles were won, and each battle with its opponent and
@@ -63,4 +71,8 @@ export type RunSummary = Readonly<{
   of: number
   over: boolean
   battles: readonly Readonly<{ number: number; opponent: string; opponentName: string; policy: string; record: BattleRecord | null }>[]
+  /** The army the run ended with, as card names; the requisition it took; every draft taken, in words. */
+  army: readonly string[]
+  requisition: number
+  drafts: readonly string[]
 }>

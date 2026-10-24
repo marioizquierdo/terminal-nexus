@@ -27,6 +27,7 @@ For any agent or person about to build or change a screen, a menu, a popup, an e
 - [ ] The bottom line has a hint for every situation the screen can be in.
 - [ ] Lists stop at their ends; taps and holds move them as they move the map cursor; Shift, PageUp/PageDown and Home/End jump to the ends.
 - [ ] Motion explains a change, then the screen is still.
+- [ ] If a popup must be answered, say so in three places: the top bar offers no close, the bottom line says what to do, and Esc says it again instead of closing.
 - [ ] It works under reduced motion, in monochrome, in ASCII, and at 80 × 24.
 - [ ] Anything the owner should feel rather than read about is an Experiment; an interaction you want
       reports on logs an event (section 15).
@@ -517,6 +518,10 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
   the cursor where the round put it, the bottom line the round's own.
 - **Recorded**: every line shown and every skip is an Activity Logs event (the **Intro** filter), so a
   playtest export says whether the intro was read.
+
+### 10.5 A choice that must be made
+
+The run's draft is the second popup the player does not open. A round that has a draft waiting opens on it, behind its scene when it has one. It has the one popup shape: the intro as text, the three cards as options on 1, 2 and 3 with their rarity at the end of the row and their family and role under the name, then Remove a card on `r` and the requisition on `t`, and the army as it stands under a heading. It cannot be dismissed, because what is chosen changes the army the round is built from: Esc, `x`, a right click and a click outside only say what to do, and the top bar offers no close key. Only the game menu (`q`) opens over it, and closing the game menu comes back to the draft as it was. Remove opens a list of the cards the army holds; Esc, `x` and a right click go back to the draft, and a card chosen there settles it. With nothing to remove the Remove row is quiet and says so when pressed. Choosing records the choice, and the screen moves on to the round that choice makes. (RULE — `tests/run-draft-popup.test.ts`, `tests/run-play.test.ts`)
 
 ## 11. The bottom line
 

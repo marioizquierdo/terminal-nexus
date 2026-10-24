@@ -196,8 +196,11 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const escText = escLabel(state)
   const hint = escLabelSpan(layout, escText)
   const name = escText.slice(0, escText.length - ESC_KEY.length)
-  text(cells, band, hint.from, hint.row, name, "chrome.muted")
-  text(cells, band, hint.from + name.length, hint.row, ESC_KEY, "chrome.hotkey", { bold: true })
+  // A popup that cannot be closed (a run's draft) offers no Esc at all.
+  if (escText !== "") {
+    text(cells, band, hint.from, hint.row, name, "chrome.muted")
+    text(cells, band, hint.from + name.length, hint.row, ESC_KEY, "chrome.hotkey", { bold: true })
+  }
 
   // The contextual line. A popup over a Pulse holds the keyboard, so its answer or hint is what the
   // line says; otherwise the Pulse says what it is doing.

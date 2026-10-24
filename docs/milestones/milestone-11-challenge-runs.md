@@ -1,7 +1,7 @@
 # Milestone 11 — Challenge Mode: Runs
 
 **Status:** CURRENT
-**Current step:** 11B — building actions: upgrades, modes and orders, each building's own.
+**Current step:** 11C — the run army and the draft.
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Battle Round loop and a result), Milestone 8 (a Commander exists and the Nexus Pulse deals from an army's pool); Milestone 3's mode select hands off here
 
 Made current on 2026-10-22, when the owner closed Pathfinding: "For now, we want to focus on building a basic game
@@ -64,30 +64,48 @@ rounds.
 - [x] First content, to prove it: a Barracks upgrade (its production line: one more trooper a wave) and a Turret
       upgrade, each this building's alone; the Turret's two firing modes (it is the bench's own turret, so the modes show in the game).
 
-### Step 11C — The run draft
+### Step 11C — The run army and the draft
 
-- [ ] The between-battle screen offers add one of three, remove one, or upgrade one (no building has levels: what an
-      upgrade offers is decided here, on step 11B's building actions).
-- [ ] The dealer follows the game-modes design: rarity weights, the tier schedule against the battle
-      index, the pity offset, and role variety before rarity.
-- [ ] Every card on the bench carries its `rarity`, `tier` and `role` tags.
-- [ ] A test deals many hands from a fixed seed and checks the distribution against the declared
-      weights.
+The owner, 2026-10-24 ([his words](../history/feedback/2026-10-24-runs-gameplay.md)): "Runs are very exciting! I think
+here is where we can start building proper gameplay ... define a full game where I could playtest my ability to
+strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../game-design/runs.md); steps 11C
+to 11H build it, each playable on its own.
 
-### Step 11D — Escalation and bosses
+- [x] The run army: a run starts with a small army (Vasse: Barracks, Supply Depot and Turret; Reserve Callup and Drill
+      Schedule in the pool) and the battle plays on it, so what is drafted changes what can be built and dealt.
+- [x] Every card a run can offer carries `rarity`, `tier` and `role`: the buildings too (the loader checks them), and the
+      first Doctrines, written from effects that exist.
+- [x] The dealer: three cards by rarity weight, the tier schedule against the battle's place in the run, the pity offset,
+      and a family or role the offer lacks before rarity. A test deals many hands from a fixed seed against the weights.
+- [x] After a won battle the player drafts: take one of three, or remove a card, or take 15 requisition. The army carries
+      into the next battle; the driver drafts through the same functions the screen uses.
+- [x] Seed determinism: the same seed and the same drafts give the same run.
 
-- [ ] Opponents strengthen by act, and each act ends in a named Commander's army (Milestone 8's
-      Commander mechanic, used a second time).
-- [ ] The rule that commons can win at base difficulty is checked by a driver-played run that only ever
-      picks commons. Either it passes, or the finding is recorded and the tuning changed.
+### Step 11D — The route
 
-### Step 11E — Run shell
+- [ ] The route from the seed: three acts of three steps and a boss, stops by kind, intel one step ahead, every offer from
+      a stream of its own so a path never moves what another would have offered.
+- [ ] The Nexus's health carries from battle to battle; requisition is earned and spent.
+- [ ] The route screen: choose the next stop with the keys, the mouse and the driver; every stop's kind and reward shown.
+- [ ] Exchange and Workshop stops, built on the draft's cards and the Nexus's health.
 
-- [ ] The run map (acts and battles ahead).
-- [ ] The summary: army, seed, every draft taken, and the losing battle's report.
-- [ ] Seed entry when starting a run.
-- [ ] Every item works by hotkey, click and driver, and adapts across the viewport range like every
-      other screen.
+### Step 11E — Opponents, bosses and signals
+
+- [ ] An enemy's kit (plan, cards kept, credits) by act, a Stronghold's and a boss's; each act ends in a named Commander.
+- [ ] Signals: the three templates, in the interface's own voice.
+- [ ] A driver-played run that only takes commons either wins at the base difficulty or the finding is recorded and the
+      tuning changed.
+
+### Step 11F — The run shell
+
+- [ ] The summary: the route taken, every draft taken and refused, the Nexus's health battle by battle, and the lost
+      battle's report. Seed entry when starting a run, and a short run of one act.
+- [ ] Every item works by hotkey, click and driver, and adapts across the viewport range like every other screen.
+
+### Step 11G — Playing it
+
+- [ ] Mario plays runs and his notes become a feedback round; the numbers in `runs.md` move to what was played, and
+      the tuning table says why.
 
 ## Out of scope
 
@@ -110,7 +128,7 @@ reason to exist.
 
 ## Done when
 
-- [ ] Steps 11A through 11E are built and tested.
+- [ ] Steps 11A through 11G are built and tested.
 - [ ] The tuning table in the game-modes design shows the numbers the run was actually tuned to, and
       why they moved.
 - [ ] Q40 and Q41 are either answered by Mario or proceeded under their recommendation, and the pull

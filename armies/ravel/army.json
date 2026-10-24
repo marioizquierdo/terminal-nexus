@@ -100,6 +100,8 @@
     {
       "id": "den",
       "structure": "structure.ravel.den",
+      "rarity": "common",
+      "role": "troops",
       "cost": 35,
       "spawns": {"unit": "unit.ravel.runner", "perWave": 5, "waves": 1, "secondsBetween": 10},
       "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
@@ -108,6 +110,8 @@
     {
       "id": "sling-pit",
       "structure": "structure.ravel.slingpit",
+      "rarity": "common",
+      "role": "offense",
       "cost": 45,
       "spawns": {"unit": "unit.ravel.slinger", "perWave": 3, "waves": 1, "secondsBetween": 10},
       "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
@@ -116,12 +120,16 @@
     {
       "id": "stash",
       "structure": "structure.ravel.stash",
+      "rarity": "common",
+      "role": "economy",
       "cost": 30,
       "notes": "The Supply Depot's mirror, at its price."
     },
     {
       "id": "chop-shop",
       "structure": "structure.ravel.chopshop",
+      "rarity": "uncommon",
+      "role": "troops",
       "cost": 95,
       "tier": 2,
       "requires": ["den"],
@@ -132,6 +140,8 @@
     {
       "id": "fuse-shed",
       "structure": "structure.ravel.fuseshed",
+      "rarity": "uncommon",
+      "role": "offense",
       "cost": 40,
       "tier": 2,
       "requires": ["den"],
@@ -141,6 +151,28 @@
     }
   ],
   "powers": [
+    {
+      "id": "sharpened-scrap",
+      "name": "Sharpened Scrap",
+      "description": "Runners hit harder.",
+      "effect": {"modifyAttack": {"content": "unit.ravel.runner", "add": {"damage": 2}}},
+      "rarity": "common",
+      "role": "offense",
+      "doctrine": true,
+      "tier": 1,
+      "notes": "A Doctrine: the runners' damage, two more, in every battle of the run. A first guess."
+    },
+    {
+      "id": "crowded-dens",
+      "name": "Crowded Dens",
+      "description": "Every Den sends one more runner a wave.",
+      "effect": {"addPerWave": {"building": "den", "perWave": 1}},
+      "rarity": "uncommon",
+      "role": "production",
+      "doctrine": true,
+      "tier": 2,
+      "notes": "A Doctrine: one more runner from every Den the army builds, for the run."
+    },
     {
       "id": "scrap-rush",
       "name": "Scrap Rush",
