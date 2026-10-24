@@ -107,6 +107,8 @@ removal and requisition always stand.
 army file beside the Nexus powers. **Commons must be enough to win**: a run that only ever takes commons is winnable at the
 base difficulty, and the milestone checks it with a driver-played run.
 
+**What is built** (RULE — `src/run/army.ts`, `src/run/draft.ts`, `src/cli/run-play.ts`, `tests/run-draft.test.ts`). A Commander's army file lists what a run starts her with (`run`); a building card carries `rarity` and `role` to be dealt; a power with `doctrine` is a Doctrine. The duel plays a side on a **roster** (`src/duel/sides.ts`): the build menu and the Nexus power pool cut down to the run's army, and its Doctrines kept from round one, with the opponent's army whole. After a won or drawn battle that is not the last the run deals a draft (three cards by rarity weight 60/37/3, the tier schedule, the pity offset, a family or role the offer lacks before rarity), and the next battle waits behind it: the battle's first round opens on the draft's popup, and the choice makes the round that is played. A card cannot be removed if something the army holds needs it: the last building that trains units, a building another building's tech tree needs, a power another upgrades. The requisition is kept and shown in the summary; nothing spends it before the Exchange.
+
 **Content is thin, on purpose and for now.** The Citizens' pool today holds three more structures, three Nexus powers and no
 Doctrine, so a short run drafts nearly all of it. The first Doctrines are written from effects that exist; the real rosters
 are the content milestone's work. The pull request says the run plays on bench content so nobody takes it for a judgement of

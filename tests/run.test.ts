@@ -10,8 +10,10 @@ import {
   RUN_BATTLES,
   RUN_POLICIES,
   RUN_ROUNDS,
+  awaitingDraft,
   battleEnded,
   currentBattle,
+  drafted,
   newRun,
   runDefinition,
   runSummary,
@@ -20,6 +22,9 @@ import {
 
 const won = (round: number): DuelResult => ({ winner: "A", by: "nexus", round })
 const lost = (round: number): DuelResult => ({ winner: "B", by: "nexus", round })
+
+/** The run with the draft its last battle earned taken as the requisition, so the next battle may start. */
+const settled = (run: RunState): RunState => drafted(run, { kind: "requisition" })
 
 test("a run's definition comes from its seed alone: three battles against Dob Hunter on the Crossing, each its own seed", () => {
   const definition = runDefinition({ seed: 1, commander: "vasse" })
@@ -73,10 +78,16 @@ test("a won battle moves the run on to the next, and the last one ends it", () =
   run = battleEnded(run, won(3))
   assert.equal(run.over, false)
   assert.equal(currentBattle(run)?.number, 2)
+  assert.equal(awaitingDraft(run), true, "a won battle earns a draft, which the next waits for")
+  assert.throws(() => battleEnded(run, won(1)), /waiting for its draft/)
+  run = settled(run)
+  assert.equal(awaitingDraft(run), false)
   run = battleEnded(run, { winner: null, by: "draw", round: 6 })
   assert.equal(run.over, false, "a drawn battle is not lost: the run goes on")
+  run = settled(run)
   run = battleEnded(run, won(4))
   assert.equal(run.over, true, "the last battle ends the run")
+  assert.equal(awaitingDraft(run), false, "and there is no draft after it")
   assert.equal(currentBattle(run), null)
   assert.deepEqual(
     run.played.map((record) => record.outcome),
@@ -87,9 +98,10 @@ test("a won battle moves the run on to the next, and the last one ends it", () =
 
 test("a lost battle ends the run, with the battles after it never played", () => {
   let run = newRun({ seed: 1, commander: "vasse" })
-  run = battleEnded(run, won(2))
+  run = settled(battleEnded(run, won(2)))
   run = battleEnded(run, lost(5))
   assert.equal(run.over, true)
+  assert.equal(awaitingDraft(run), false, "a lost battle earns no draft")
   assert.equal(currentBattle(run), null)
   const summary = runSummary(run)
   assert.equal(summary.won, 1)
@@ -102,7 +114,7 @@ test("a lost battle ends the run, with the battles after it never played", () =>
 
 test("the summary says the Commander, the seed, and each battle's opponent and result", () => {
   let run = newRun({ seed: 1, commander: "vasse" })
-  run = battleEnded(run, won(3))
+  run = settled(battleEnded(run, won(3)))
   run = battleEnded(run, { winner: "B", by: "health", round: 6 })
   assert.deepEqual(summaryLines(run), [
     "The run is over: 1 of 3 battles won. Battle 2 was lost.",
@@ -110,9 +122,12 @@ test("the summary says the Commander, the seed, and each battle's opponent and r
     "Battle 1 against Dob Hunter (rush): won in round 3. Dob Hunter's Nexus fell.",
     "Battle 2 against Dob Hunter (turtle): lost in round 6. The rounds ran out, and Dob Hunter's Nexus kept more of its health.",
     "Battle 3 against Dob Hunter (balanced): not played.",
+    "After battle 1: took 15 requisition.",
+    "The army: Barracks, Supply Depot, Turret, Reserve Callup, Drill Schedule. Requisition: 15.",
   ])
   let all = newRun({ seed: 1, commander: "averno" })
-  for (const round of [1, 2, 3]) all = battleEnded(all, won(round))
+  for (const round of [1, 2]) all = settled(battleEnded(all, won(round)))
+  all = battleEnded(all, won(3))
   assert.equal(summaryLines(all)[0], "The run is won: all 3 battles won.")
   assert.equal(summaryLines(all)[1], "Marshal Averno, seed 1.")
 })

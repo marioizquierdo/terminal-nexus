@@ -41,6 +41,18 @@ export type DraftChoice =
 /** A draft as the run keeps it: what was offered, and what was chosen. */
 export type DraftRecord = Readonly<{ battle: number; offered: readonly string[]; choice: DraftChoice }>
 
+/**
+ * What each rarity of `present` weighs in a slot after `pity`: a rare's weight rises by the pity offset and a common's falls
+ * by it (never below one), an uncommon's stays. A rarity not present weighs nothing and is left out.
+ */
+export function rarityWeights(present: ReadonlySet<Rarity>, pity: number): readonly Readonly<{ rarity: Rarity; weight: number }>[] {
+  return (["common", "uncommon", "rare"] as const).flatMap((rarity) => {
+    if (!present.has(rarity)) return []
+    const base = RARITY_WEIGHTS[rarity]
+    return [{ rarity, weight: rarity === "rare" ? base + pity : rarity === "common" ? Math.max(1, base - pity) : base }]
+  })
+}
+
 /** What the pity offset adds to a rare's weight for each card dealt that was not rare, and takes from a common's. */
 const PITY_STEP = 1
 
@@ -61,12 +73,7 @@ export function dealDraft(input: Readonly<{ commander: string; roster: Roster; s
     const unseenKind = left.filter((card) => !kinds.has(card.kind))
     const unseenRole = left.filter((card) => !roles.has(card.role))
     const pool = unseenKind.length > 0 ? unseenKind : unseenRole.length > 0 ? unseenRole : left
-    const weighted = (["common", "uncommon", "rare"] as const).flatMap((rarity) => {
-      if (!pool.some((card) => card.rarity === rarity)) return []
-      const base = RARITY_WEIGHTS[rarity]
-      const weight = rarity === "rare" ? base + pity : rarity === "common" ? Math.max(1, base - pity) : base
-      return [{ rarity, weight }]
-    })
+    const weighted = rarityWeights(new Set(pool.map((card) => card.rarity)), pity)
     // A legendary is never dealt; a pool of nothing else deals nothing.
     if (weighted.length === 0) break
     let roll = rng.nextBelow(weighted.reduce((sum, entry) => sum + entry.weight, 0))
