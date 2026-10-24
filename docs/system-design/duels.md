@@ -126,7 +126,9 @@ lines say `built 3 (block)`, and a measurement names each side's player with it 
 `rush-apart`), so a summary can say who won by formation ([`measurement.md`](measurement.md)).
 
 **A duel side can be played from the Build Phase screen** (`src/cli/run-play.ts`, a Challenge run's battle): the
-plan's buildings at their exact anchors, the power picked, the buildings held (`hold`, Hold production), and the
+plan's buildings at their exact anchors, the power picked, the buildings held (`hold`, Hold production), the actions
+taken on its buildings (`actions`: `{x, y, action}`, taken after its buildings are placed, from the credits they leave,
+and said in its report; the `-upgrade` scripts buy them), and the
 troops attacking, since the Build Phase has no stance. `placementsOf` says where a scripted plan's buildings would
 go, so a driver plays a side through the Build Phase's own functions (`duel run`).
 

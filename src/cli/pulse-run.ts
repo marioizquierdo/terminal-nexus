@@ -18,10 +18,10 @@
 //   absence and set down beside the Nexus again when her absence is over (`src/match/commander.ts`).
 
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { nexusTile, remaining, withoutScene } from "../build/state.ts"
+import { anchorKey, fittedContentOf, nexusTile, refitsOf, remaining, withoutScene } from "../build/state.ts"
 import type { CommanderAbsence, DialogFocus, DialogLine, FieldEntity, IncomingEntity, StandingStructure } from "../build/types.ts"
 import type { ContentRegistry } from "../content/index.ts"
-import { createRegistry } from "../content/index.ts"
+import { baseContentId, createRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
 import { roundIncome } from "../armies/curve.ts"
 export { roundIncome } from "../armies/curve.ts"
@@ -80,9 +80,19 @@ const isStructure = (registry: ContentRegistry, contentId: string): boolean => r
 /** The player's buildings newly standing when the round's Pulse starts: the map's own in round 1 (after
  *  that they are in the carried state), and whatever the plan added. */
 function newStructures(context: BuildContext, state: BuildState): MissionPulseInput["structures"] {
-  const planned = state.planned.map((placement) => ({ contentId: placement.contentId, anchor: placement.anchor }))
-  const standing = context.carried == null ? context.standing.map((structure) => ({ contentId: structure.contentId, anchor: structure.anchor })) : []
+  // Each as the Battle Round starts it: with what the Build Phase's upgrades and modes made it (`fittedContentOf`).
+  const planned = state.planned.map((placement) => ({ contentId: fittedContentOf(context, state, placement), anchor: placement.anchor }))
+  const standing = context.carried == null ? context.standing.map((structure) => ({ contentId: fittedContentOf(context, state, structure), anchor: structure.anchor })) : []
   return [...standing, ...planned]
+}
+
+/** The carried buildings the Build Phase's upgrades and modes changed, as the opening sets them down
+ *  (`OpeningInput.refits`): none in a first round, whose buildings are all new. */
+function refitsFor(context: BuildContext, state: BuildState | undefined): Pick<MissionPulseInput, "refits"> {
+  if (state === undefined || context.carried == null) return {}
+  const planned = new Set(state.planned.map((placement) => anchorKey(placement.anchor)))
+  const refits = refitsOf(context, state).filter((refit) => !planned.has(anchorKey(refit.anchor)))
+  return refits.length === 0 ? {} : { refits }
 }
 
 const incomingOf = (arrivals: readonly Arrival[]): IncomingEntity[] =>
@@ -329,7 +339,7 @@ function dealtDraft(mission: MissionDefinition, context: BuildContext, round: nu
   if (context.powerPool === undefined) return context.nexusDraft
   // The buildings standing for the player as the round opens, by card: what a power that requires one reads.
   const standing = new Set(
-    (context.buildingCards ?? []).filter((card) => context.standing.some((structure) => structure.contentId === card.structure)).map((card) => card.id),
+    (context.buildingCards ?? []).filter((card) => context.standing.some((structure) => baseContentId(structure.contentId) === card.structure)).map((card) => card.id),
   )
   return nexusDraftOf({
     powers: dealHand({
@@ -357,6 +367,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       const [x = 0, y = 0] = key.split(",").map(Number)
       return { x, y }
     }),
+    ...refitsFor(context, state),
   })
 
   /** What the round's triggers bring, set down against the round's opening without a plan — a forecast:

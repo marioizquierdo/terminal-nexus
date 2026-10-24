@@ -9,7 +9,8 @@
 // - **turtle**: builds two Turrets forward and its strongest producers behind them, and holds until the last two rounds.
 //
 // Each also plays with area damage (`rush-area`): one building whose units hit an area bought first each round
-// (`withArea`).
+// (`withArea`); and upgrading its buildings (`balanced-upgrade`): what its plan leaves spent on its standing
+// buildings' upgrades, the Barracks's production line first (`withUpgrades`).
 //
 // Each plays by a formation too (`rush-block`, `rush-apart`, `balanced-block` ...): the same plan, with every building
 // that trains units set touching the others or set apart (`Formation`, `types.ts`), round where the plan puts its
@@ -18,7 +19,7 @@
 // Pure: a plan is a function of the brief.
 
 import type { BriefBuilding, BriefCard, BriefData } from "./brief.ts"
-import type { Formation, Placement, SidePlan, Zone } from "./types.ts"
+import type { BuildingOrder, Formation, Placement, SidePlan, Zone } from "./types.ts"
 import { FORMATIONS } from "./types.ts"
 
 /** A player: a plan from a brief. */
@@ -121,7 +122,33 @@ export function withArea(player: Player): Player {
   }
 }
 
-/** Every scripted player, by name: each script, and each with area damage (`rush-area`). */
+/**
+ * A player that plays `player`'s plan and then upgrades its buildings with what the plan leaves (`balanced-upgrade`):
+ * after its buildings are paid for, each upgrade its standing buildings offer and do not carry yet, cheapest first and
+ * then in the order its buildings stand, while the credits last — the Barracks's production line, a Turret's heavy
+ * rounds. A building's upgrade is its alone (commander-armies.md, a building's actions), so a script that never buys one
+ * leaves a part of the power curve unplayed; this is the one that plays it.
+ */
+export function withUpgrades(player: Player): Player {
+  return (brief) => {
+    const plan = player(brief)
+    const costOf = (id: string): number => brief.buildings.find((building) => building.id === id)?.cost ?? 0
+    let left = brief.credits - plan.build.reduce((sum, placement) => sum + costOf(placement.building), 0)
+    const offered = brief.actions.filter((action) => action.kind === "upgrade" && action.has !== true).sort((a, b) => a.cost - b.cost)
+    const bought: BuildingOrder[] = []
+    for (const action of offered) {
+      if (action.cost > left) continue
+      left -= action.cost
+      bought.push({ x: action.x, y: action.y, action: action.action })
+    }
+    if (bought.length === 0) return plan
+    const words = `then ${bought.length} upgrade${bought.length === 1 ? "" : "s"} with what was left`
+    return { ...plan, actions: [...(plan.actions ?? []), ...bought], note: plan.note === undefined ? words : `${plan.note}; ${words}` }
+  }
+}
+
+/** Every scripted player, by name: each script, each with area damage (`rush-area`), and each upgrading its buildings
+ *  with what is left (`balanced-upgrade`). */
 export const SCRIPTED: Readonly<Record<string, Player>> = {
   balanced,
   rush,
@@ -129,6 +156,9 @@ export const SCRIPTED: Readonly<Record<string, Player>> = {
   "balanced-area": withArea(balanced),
   "rush-area": withArea(rush),
   "turtle-area": withArea(turtle),
+  "balanced-upgrade": withUpgrades(balanced),
+  "rush-upgrade": withUpgrades(rush),
+  "turtle-upgrade": withUpgrades(turtle),
 }
 
 /** A player that plays `player`'s plan by `formation`. */

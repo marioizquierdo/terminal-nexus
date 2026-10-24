@@ -71,6 +71,9 @@ export type MissionPulseInput = Readonly<{
   /** The player's buildings, by anchor, that hold their wave this Pulse (a building's action, Hold production): they
    *  open with every wave of the Pulse already sent. Absent: none. */
   held?: readonly Coord[]
+  /** The player's carried buildings whose content the Build Phase changed — an upgrade, a mode — and the content id
+   *  each starts the Pulse with (`OpeningInput.refits`). Absent: none. */
+  refits?: readonly Readonly<{ anchor: Coord; contentId: string }>[]
 }>
 
 /** A unit that arrived by a mission's `spawn`, and what it came with — the group and its line of intention.
@@ -243,6 +246,7 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
     setup: { seed: mission.seed, pulseTicks: mission.pulseTicks, forces },
     ...(carried === null ? {} : { carried }),
     ...(input.held === undefined || input.held.length === 0 ? {} : { held: input.held }),
+    ...(input.refits === undefined || input.refits.length === 0 ? {} : { refits: input.refits }),
   })
   const arrivals: Arrival[] = []
   for (const entity of result.state.entities) {

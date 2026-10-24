@@ -102,6 +102,19 @@ export const ACTIVITY_EVENTS = {
       credits: { type: "number", description: "Credits left to spend after it." },
     },
   },
+  "build.action": {
+    defaultLevel: "info",
+    description: "A building's action was taken in the Build Phase — an upgrade bought, a mode switched, an order given — or taken back.",
+    props: {
+      building: { type: "string", description: "The building's name." },
+      action: { type: "string", description: "The action's label, as its card says it." },
+      kind: { type: "string", description: "upgrade, mode or order." },
+      taken: { type: "boolean", description: "Whether it was taken (true) or taken back (false)." },
+      x: { type: "number", description: "The building's tile: column." },
+      y: { type: "number", description: "The building's tile: row." },
+      credits: { type: "number", description: "Credits left to spend after it." },
+    },
+  },
   "popup.open": {
     defaultLevel: "info",
     description: "A popup opened over the Build Phase.",

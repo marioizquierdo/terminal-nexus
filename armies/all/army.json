@@ -10,9 +10,33 @@
       "structure": "structure.bench.hatchery",
       "cost": 30,
       "spawns": {"unit": "unit.bench.spawnling", "perWave": 3, "waves": 1, "secondsBetween": 10},
+      "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
       "notes": "Three swarmers in one wave a round: every building the player places that makes units spawns in waves, the same rule as the Barracks. Before, it bred one every few seconds, three alive at most (its own spawner, which a grid scenario's Hatchery still has)."
     },
-    {"id": "turret", "structure": "structure.bench.beamturret", "cost": 15}
+    {
+      "id": "turret",
+      "structure": "structure.bench.beamturret",
+      "cost": 15,
+      "actions": [
+        {
+          "id": "heavy-rounds",
+          "kind": "upgrade",
+          "label": "Heavy rounds",
+          "cost": 10,
+          "effects": [{"modifyAttack": {"content": "structure.bench.beamturret", "add": {"damage": 3}}}],
+          "notes": "A better gun, this Turret's alone: each shot hits for 9, not 6, and its lock-on ramp grows from 9. Half again its damage for two thirds of a Turret's price, with no more health and no new ground: a little worse value a credit than a second Turret (15 for a second gun and 60 health), by design, since what it buys is one spot made to hold. A first guess, to measure."
+        },
+        {"id": "nearest-first", "kind": "mode", "set": "aim", "label": "Nearest first", "notes": "The Turret as it is written: it fires at the nearest enemy, building or unit."},
+        {
+          "id": "units-first",
+          "kind": "mode",
+          "set": "aim",
+          "label": "Units first",
+          "effects": [{"setTargetPreference": {"content": "structure.bench.beamturret", "prefer": ["units", "air", "workers"]}}],
+          "notes": "Fires at the units in reach before a building, nearest first among them: a Turret that would spend a round on the enemy's wall shoots the wave walking past it instead. Free to switch, between rounds. A mode on bench content until a real building needs one."
+        }
+      ]
+    }
   ],
   "powers": [
     {

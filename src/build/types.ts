@@ -5,7 +5,7 @@
 // terminal cell. That is what makes "the same plan, entered by hotkeys or by clicks, is the same
 // plan" assertable.
 
-import type { BuildingSpawns, PowerCard } from "../armies/types.ts"
+import type { BuildingActionCard, BuildingSpawns, PowerCard } from "../armies/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
 import type { ShownName } from "./all-settings.ts"
@@ -29,6 +29,9 @@ export type ConstructItem = Readonly<{
   /** The structures, by content id, that must stand for the player as the Build Phase opens before it can be built:
    *  its place in the tech tree (`requires` on its card). Absent: none, open from the start. */
   needs?: readonly string[]
+  /** What a building of it lets the player do once it is planned or stands, selected in Explore Map, as its army's card
+   *  lists them (`BuildingActionCard`): its upgrades, modes and orders (`buildingActions`, `state.ts`). Absent: none. */
+  actions?: readonly BuildingActionCard[]
   // What it is *for* is not here: a building's card words — title, subtitle, description — are written
   // with the content (`src/content/cards.ts`) and read through `cardText` (`card.ts`).
 }>
@@ -89,8 +92,13 @@ export type BuildCommand =
    *  menu, where the cursor is hidden, with the flicker of a key that had nothing to do there. */
   | Readonly<{ kind: "remove" }>
   | Readonly<{ kind: "undo" }>
-  /** A building's action, on the building Explore Map is on (`buildingActions`): Hold production, `z`. */
-  | Readonly<{ kind: "building-action"; action: "hold" }>
+  /**
+   * The action under `key` on the building Explore Map is on (`buildingActions`): its card lists each under its own
+   * key, the same on every building — Hold production `z`, its upgrades and modes `c`, `v`, `b` ... in its card's order
+   * — so a key, a click on its row and a driver all name it by the key the card shows. An upgrade is bought, or undone
+   * the same Build Phase; a mode is switched to; an order given, or taken back.
+   */
+  | Readonly<{ kind: "building-action"; key: string }>
   /**
    * Esc, and a click on the top bar's `menu [esc]`: step back one level — close a popup (Settings
    * opened from the game menu goes back to it), stop placing or close Explore Map (to where it was

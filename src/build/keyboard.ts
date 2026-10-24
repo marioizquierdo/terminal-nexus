@@ -5,6 +5,7 @@
 // (`src/build/help.ts`) lists every one of them; the bottom line never did, on the owner's own call:
 // "leave pgup/home keys out, people will figure that out just fine".
 
+import { ACTION_KEYS, ORDERS } from "../armies/actions.ts"
 import type { CursorKey } from "../terminal/list-keys.ts"
 import { cursorKeyOf, listKeyOf } from "../terminal/list-keys.ts"
 import type { PlaybackControl } from "../terminal/playback.ts"
@@ -33,6 +34,9 @@ const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {
 }
 
 const TAB = "\t"
+
+/** Every key a building's action can be under: each order's own, and the keys of a card's upgrades and modes. */
+const BUILDING_ACTION_KEYS: ReadonlySet<string> = new Set([...Object.values(ORDERS).map((order) => order.hotkey), ...ACTION_KEYS])
 
 /** A plain Left (`-1`) or Right (`+1`) — what changes a setting's value, and what the menu refuses — or
  *  `0` for any other key, a modified arrow included. */
@@ -243,9 +247,10 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (key === "q") return { kind: "open-game-menu" }
   if (key === TAB) return { kind: "focus", target: focus === "grid" ? "menu" : "grid" }
   if (key === "u") return { kind: "undo" }
-  // `z`: the building Explore Map is on holds its wave this round, or trains it again (its action, listed on its
-  // card). Not `h`, which is an arrow (h j k l).
-  if (key === "z") return { kind: "building-action", action: "hold" }
+  // A building's actions, on the building Explore Map is on, each listed on its card under its key: `z` its order
+  // (Hold production; not `h`, which is an arrow, h j k l), `c` `v` `b` `f` its upgrades and modes in its card's
+  // order.
+  if (BUILDING_ACTION_KEYS.has(key)) return { kind: "building-action", key }
   if (key === "n") return { kind: "open-nexus-powers" }
   if (key === "e") return { kind: "explore" }
   // `g`: go to the player's Nexus, from either focus.

@@ -12,7 +12,7 @@ import { MAPS } from "../build/maps.ts"
 import type { BuildContext } from "../build/state.ts"
 import type { Level } from "../armies/index.ts"
 import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
-import { FIXTURE_REGISTRY } from "../content/index.ts"
+
 import { missionPlay } from "./pulse-run.ts"
 
 /** Round 1 of the default level (PERIMETER, Vasse's first), on the starter map, with what it offers. */
@@ -28,7 +28,8 @@ export function levelContext(level: Level, scrollMargin?: number, extra: Partial
   if (map === undefined) throw new Error(`level "${level.id}" is played on the map "${level.map}", which the game does not have`)
   return missionPlay(level.mission).firstRound({
     grid: map.grid(),
-    registry: FIXTURE_REGISTRY,
+    // The armies' content: what a building that carries an upgrade or a mode resolves by (`fittedId`).
+    registry: ARMIES.registry,
     catalog: constructMenu(level.offer),
     standing: map.standing,
     allotment: level.offer.credits,

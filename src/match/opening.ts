@@ -50,6 +50,11 @@ export type OpeningInput = Readonly<{
    *  Pulse already sent, so they send none. Whichever side's they are (a duel's sides may each hold some); no two
    *  buildings share an anchor. Absent: none. */
   held?: readonly Coord[]
+  /** The carried buildings, by anchor, whose content the Build Phase changed — an upgrade bought on one, its mode
+   *  switched — and the content id each starts this Pulse with (`fittedId`, `src/content/fitted.ts`): what still
+   *  stands is set down as that, its health and its place its own. Absent: none. A new building already carries its
+   *  own in `structures`. */
+  refits?: readonly Readonly<{ anchor: Coord; contentId: string }>[]
 }>
 
 type Placed = Readonly<{
@@ -66,6 +71,18 @@ type Placed = Readonly<{
  *  trigger runner reads to know which group, and which line of intention, a unit belongs to. */
 export type Opening = Readonly<{ state: MatchState; forceOf: ReadonlyMap<number, number> }>
 
+/** `carried` with each building a refit names set down as the content id it names — the start-of-Pulse rule: what the
+ *  Build Phase changed of a building becomes operational as the Pulse starts. The same state, untouched, for none. */
+function refitted(input: OpeningInput): MatchState | undefined {
+  const { carried, refits = [] } = input
+  if (carried === undefined || refits.length === 0) return carried
+  // A building's, never a unit's standing on its roof at the same tile.
+  const building = (entity: EntityState): boolean => (input.sides?.[entity.player] ?? input.registry).get(entity.contentId).layer === "obstacles"
+  const contentAt = (entity: EntityState): string | undefined =>
+    building(entity) ? refits.find((refit) => refit.anchor.x === entity.anchor.x && refit.anchor.y === entity.anchor.y)?.contentId : undefined
+  return { ...carried, entities: carried.entities.map((entity) => ({ ...entity, contentId: contentAt(entity) ?? entity.contentId })) }
+}
+
 /**
  * The opening `MatchState` for a Pulse. Throws `PulseSetupError`, naming what is wrong, for anything
  * the scenario loader would refuse too: an unknown content id, a footprint off the Grid, a ground
@@ -77,7 +94,8 @@ export function openingState(input: OpeningInput): MatchState {
 
 /** `openingState`, with which force each new unit came from. */
 export function opening(input: OpeningInput): Opening {
-  const { grid, structures, setup, carried } = input
+  const { grid, structures, setup } = input
+  const carried = refitted(input)
   /** The content `player`'s things are defined by. */
   const contentFor = (player: PlayerId): ContentRegistry => input.sides?.[player] ?? input.registry
   if (!Number.isInteger(setup.seed)) throw new PulseSetupError(`seed must be an integer, received ${setup.seed}`)

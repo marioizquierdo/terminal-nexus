@@ -38,7 +38,7 @@ import { KeyMotion, listTuning, moveTuning, pressTiles } from "../build/motion.t
 import type { MouseEvent } from "../build/mouse.ts"
 import { buildMouseCommand, parseMouseEvent } from "../build/mouse.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
-import { applyBuildCommand, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, withViewport, withoutScene } from "../build/state.ts"
+import { applyBuildCommand, buildingActions, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, structureAtTile, withViewport, withoutScene } from "../build/state.ts"
 import { currentCard } from "../build/card.ts"
 import { cardActionRows } from "./build-card.ts"
 import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
@@ -319,6 +319,7 @@ export class BuildSession {
       }
       if (command.kind === "pulse-failed") log.log("session.error", { where: "pulse", message: command.reason })
       if (command.kind !== "restart" && after.planned !== before.planned) this.recordPlan(before, after)
+      if (command.kind === "building-action" && (after.fitted !== before.fitted || after.held !== before.held)) this.recordAction(before, after, command.key)
       if (after.popup !== null && opened(before, after)) log.log("popup.open", { popup: after.popup })
       if (after.settings !== before.settings || after.experiments !== before.experiments) {
         for (const spec of SHOWN_SETTINGS) {
@@ -357,6 +358,25 @@ export class BuildSession {
     } catch {
       // A log that could break the game would not be worth having.
     }
+  }
+
+  /** A building's action that changed the plan (`build.action`): the row its key was on before it, and whether it was
+   *  taken or taken back — an upgrade bought this phase undone, an order given withdrawn. */
+  private recordAction(before: BuildState, after: BuildState, key: string): void {
+    const structure = structureAtTile(this.context, before.planned, before.cursor)
+    const row = structure === null ? undefined : buildingActions(this.context, before, structure).find((each) => each.hotkey === key)
+    if (structure === null || row === undefined) return
+    const tile = loggedTile(structure.anchor, this.context.registry.get(structure.contentId).footprint)
+    const back = row.value === "undo" || (row.action.kind === "order" && before.held.length > after.held.length)
+    this.log.log("build.action", {
+      building: displayName(this.context, structure.contentId),
+      action: row.action.label,
+      kind: row.action.kind,
+      taken: !back,
+      x: tile.x,
+      y: tile.y,
+      credits: remaining(this.context, after),
+    })
   }
 
   /** The plan's difference, as buildings placed and taken off it, each with its tile and what is left. */
@@ -611,7 +631,9 @@ export class BuildSession {
     return buildMouseCommand(mouse, camera ?? state.camera, layout, this.context.catalog, {
       ...(spec === null ? {} : { popup: placePopup(layout, spec) }),
       card: cardEntry(state),
-      ...(actions.length === 0 ? {} : { actions: actions.map((row) => ({ row, command: { kind: "building-action", action: "hold" } as const })) }),
+      ...(actions.length === 0
+        ? {}
+        : { actions: actions.map((row, index) => ({ row, command: { kind: "building-action", key: card?.actions?.[index]?.hotkey ?? "" } as const })) }),
       escLabel: escLabel(state),
       pulse: this.presenter !== null,
       pulseOver: this.presenter?.phase() === "home",

@@ -14,10 +14,12 @@ import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"
 import type { FieldEntity, IncomingEntity } from "./types.ts"
 import type { Coord, TerrainId } from "../grid/types.ts"
-import { CARD_TEXT } from "../content/cards.ts"
+import { CARD_TEXT, cardTextFor } from "../content/cards.ts"
 import type { CardText } from "../content/cards.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { anchorKey, buildRange, buildingActions, structureAtTile } from "./state.ts"
+import { anchorKey, buildRange, buildingActions, carriedStats, fittedContentOf, structureAtTile } from "./state.ts"
+import type { BuildingSpawns } from "../armies/types.ts"
+import { baseContentId, fittingsOf, refitted } from "../content/index.ts"
 import { constructionRadiusOf } from "./territory.ts"
 
 /** What a card's icon is: a thing's own glyphs, or a bare tile's. The view resolves either to glyphs. */
@@ -44,13 +46,17 @@ export type Card = Readonly<{
   stats: readonly CardStat[]
   /** What the player can do with it, each under its own key: a building's actions (`buildingActions`), shown while
    *  Explore Map is on a building of theirs. Absent: none. */
-  actions?: readonly Readonly<{ hotkey: string; label: string }>[]
+  actions?: readonly CardAction[]
 }>
+
+/** A row of a building's actions on its card: `[c] Production line   15` — its key, its label, and at its right end
+ *  what it says now (a price, `on`, `undo`), dim when taking it now is refused. */
+export type CardAction = Readonly<{ hotkey: string; label: string; value?: string; dim?: true }>
 
 /** A thing's words, or — for content nobody has written a card for yet — its short name and nothing
  *  more, so a new piece of content still shows a card rather than breaking one. */
 export function cardText(context: Pick<BuildContext, "registry">, id: string): CardText {
-  const written = CARD_TEXT[id]
+  const written = cardTextFor(id)
   if (written !== undefined) return written
   const short = context.registry.get(id).short
   return { title: short.charAt(0).toUpperCase() + short.slice(1), subtitle: "", description: "" }
@@ -68,12 +74,18 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
   }
   const structure = structureAtTile(context, state.planned, state.cursor)
   if (structure !== null) {
-    const actions = buildingActions(context, state, structure).map(({ hotkey, label }) => ({ hotkey, label }))
-    const entity = entityCard(context, structure.contentId, state)
+    const actions = buildingActions(context, state, structure).map(({ hotkey, label, value, refusal }) => ({
+      hotkey,
+      label,
+      ...(value === undefined ? {} : { value }),
+      ...(refusal === undefined ? {} : { dim: true as const }),
+    }))
+    // Its numbers are what it will fight with: what it carries, this Build Phase's upgrades and mode included.
+    const entity = entityCard(context, fittedContentOf(context, state, structure), state)
     // A building holding its wave says so where its wave is written.
     const held = state.held.includes(anchorKey(structure.anchor))
     const stats = held ? entity.stats.map((stat) => (stat.label === "WAVE" ? { ...stat, value: "held this round" } : stat)) : entity.stats
-    const card = { ...entity, stats: [...stats, ...onItsRoof(context, structure)], ...(actions.length === 0 ? {} : { actions }) }
+    const card = { ...entity, stats: [...stats, ...carriedStats(context, structure), ...onItsRoof(context, structure)], ...(actions.length === 0 ? {} : { actions }) }
     if (structure.planned) return rangeSays(card, nextRound)
     return linkedHere(context, state, structure) ? card : rangeSays(card, cutOff)
   }
@@ -163,12 +175,27 @@ export function counted(context: Pick<BuildContext, "registry">, contentId: stri
  * 5s, 15s, 25s"). When the first comes is the tuned `firstWave`, the same for every building.
  */
 export function wavesStat(context: Pick<BuildContext, "registry" | "catalog">, contentId: string, state: SettingSource): CardStat | null {
-  const spawns = context.catalog.find((item) => item.contentId === contentId)?.spawns
+  const spawns = fittedSpawns(context, contentId)
   if (spawns === undefined) return null
   const first = setting(state, "firstWave")
   if (spawns.waves === 1) return { label: "WAVE", value: `${counted(context, spawns.unit, spawns.perWave)} at ${first}s` }
   const times = Array.from({ length: spawns.waves }, (_, wave) => `${first + wave * spawns.secondsBetween}s`)
   return { label: "WAVES", value: `${spawns.perWave} at ${times.join(", ")}` }
+}
+
+/**
+ * What a building spawns in a battle, carrying what its content id says it carries (`fittedId`): its card's waves,
+ * with each upgrade and mode it carries applied to the recipe they become in a battle — a Barracks with its production
+ * line sends five troopers a wave, not four. `undefined` for one that spawns nothing.
+ */
+export function fittedSpawns(context: Pick<BuildContext, "registry" | "catalog">, contentId: string): BuildingSpawns | undefined {
+  const base = baseContentId(contentId)
+  const spawns = context.catalog.find((item) => item.contentId === base)?.spawns
+  const fittings = fittingsOf(contentId)
+  if (spawns === undefined || fittings.length === 0) return spawns
+  const recipe = { output: spawns.unit, perWave: spawns.perWave, waves: spawns.waves, firstTicks: 1, intervalTicks: spawns.secondsBetween * TICKS_PER_SECOND }
+  const made = refitted(context.registry, { ...context.registry.get(base), production: recipe }, fittings)?.production ?? recipe
+  return { unit: made.output, perWave: made.perWave, waves: made.waves, secondsBetween: made.intervalTicks / TICKS_PER_SECOND }
 }
 
 /** The label of the number a building that projects a build range shows. */
@@ -213,7 +240,7 @@ export function entityCard(
   state?: SettingSource,
 ): Card {
   const definition = context.registry.get(contentId)
-  const item = context.catalog.find((candidate) => candidate.contentId === contentId)
+  const item = context.catalog.find((candidate) => candidate.contentId === baseContentId(contentId))
   const size = footprintExtent(definition.footprint)
   const stats: CardStat[] = []
   if (item !== undefined) stats.push({ label: "COST", value: String(item.cost) })
@@ -223,7 +250,7 @@ export function entityCard(
   if (waves !== null) stats.push(waves)
   const range = buildRangeStat(context, contentId, state)
   if (range !== null) stats.push(range)
-  return { icon: { kind: "entity", contentId }, ...cardText(context, contentId), stats }
+  return { icon: { kind: "entity", contentId: baseContentId(contentId) }, ...cardText(context, contentId), stats }
 }
 
 /** A bare tile's card: what the ground is, and where. */

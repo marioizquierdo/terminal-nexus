@@ -34,6 +34,7 @@ export function constructItem(card: BuildingCard, index: number, cards: readonly
     cost: card.cost,
     ...(card.spawns === undefined ? {} : { spawns: card.spawns }),
     ...(needs.length === 0 ? {} : { needs }),
+    ...((card.actions ?? []).length === 0 ? {} : { actions: card.actions }),
   }
 }
 

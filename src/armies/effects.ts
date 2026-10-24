@@ -15,7 +15,9 @@
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { createRegistry } from "../content/index.ts"
 import type { Say, Shape } from "../content/shape.ts"
-import { dictionary, isObject, number, positiveWholeNumber, record, shown, text, wholeNumber } from "../content/shape.ts"
+import { dictionary, isObject, list, literal, number, positiveWholeNumber, record, shown, text, wholeNumber } from "../content/shape.ts"
+import type { EntityLayer } from "../grid/types.ts"
+import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { AbilityUse } from "../content/types.ts"
 import { abilityProblems } from "../abilities/index.ts"
 import type { BuildingCard, BuildingSpawns, PowerEffect } from "./types.ts"
@@ -60,6 +62,14 @@ export type EffectKind<P> = Readonly<{
   credits?: (params: P) => number
   /** The building card it adds to the build menu, by id, for one that adds one: what a level offering it can add. */
   adds?: (params: P) => string
+  /**
+   * **For a kind a building's own action may carry** (an upgrade, a mode: `BuildingActionCard`): what it names — a
+   * building card by id, or a content id — so the loader can hold an action to naming its own building; and what it
+   * changes of that one building's definition, which is the same change `apply` makes to every one of its kind. A kind
+   * without these is a power's alone.
+   */
+  names?: (params: P) => Readonly<{ building?: string; content?: string }>
+  refit?: (definition: ContentDef, params: P) => ContentDef
 }>
 
 /** `registry` with every definition `change` returns in place of the one it was given: the same registry, untouched,
@@ -67,7 +77,8 @@ export type EffectKind<P> = Readonly<{
 function changedRegistry(registry: ContentRegistry, change: (definition: ContentDef) => ContentDef): ContentRegistry {
   const ids = registry.ids()
   const changed = ids.map((id) => change(registry.get(id)))
-  return changed.every((definition, index) => definition === registry.get(ids[index] as string)) ? registry : createRegistry(changed)
+  // What a building carries is resolved from its base as changed, so a power and a building's own upgrade add up.
+  return changed.every((definition, index) => definition === registry.get(ids[index] as string)) ? registry : createRegistry(changed, registry.fitter)
 }
 
 /** Why `unit` is not a unit the power can name, after what the power does to it (`calls up`). */
@@ -99,6 +110,94 @@ const addWaves: EffectKind<Readonly<{ building: string; waves: number }>> = {
     }
   },
   lasts: true,
+  names: ({ building }) => ({ building }),
+  refit: (definition, { waves }) =>
+    definition.production === undefined ? definition : { ...definition, production: { ...definition.production, waves: definition.production.waves + waves } },
+}
+
+/** Units a wave: the Barracks's production line, as one Barracks's upgrade; as a power, every Barracks's. */
+const addPerWave: EffectKind<Readonly<{ building: string; perWave: number }>> = {
+  shape: record({ building: text, perWave: positiveWholeNumber }, {}),
+  problems: ({ building }, sight) => {
+    const unseen = sight.building(building)
+    if (unseen !== null) return [`names ${unseen}`]
+    return sight.spawns(building) ? [] : [`adds units a wave to the building "${building}", which spawns nothing`]
+  },
+  apply: (loadout, { building, perWave }) => {
+    const structure = loadout.cards.find((card) => card.id === building)?.structure
+    return {
+      catalog: loadout.catalog.map((row) =>
+        row.contentId === structure && row.spawns !== undefined ? { ...row, spawns: { ...row.spawns, perWave: row.spawns.perWave + perWave } } : row,
+      ),
+    }
+  },
+  lasts: true,
+  names: ({ building }) => ({ building }),
+  refit: (definition, { perWave }) =>
+    definition.production === undefined ? definition : { ...definition, production: { ...definition.production, perWave: definition.production.perWave + perWave } },
+}
+
+/** The numbers of an attack an effect may add to. */
+const ATTACK_NUMBERS = ["damage", "range", "cooldownTicks"] as const
+
+/** `attack` with `add` added to its numbers. */
+const attackAdded = (attack: NonNullable<ContentDef["attack"]>, add: Readonly<Record<string, number>>): NonNullable<ContentDef["attack"]> =>
+  ({ ...attack, ...Object.fromEntries(Object.entries(add).map(([key, more]) => [key, (attack[key as (typeof ATTACK_NUMBERS)[number]] ?? 0) + more])) })
+
+/** A better gun: a Turret's upgrade, as one Turret's; as a power, every one of its kind's. */
+const modifyAttack: EffectKind<Readonly<{ content: string; add: Readonly<Record<string, number>> }>> = {
+  shape: record({ content: text, add: dictionary(number) }, {}),
+  problems: ({ content, add }, sight) => {
+    const unseen = sight.content(content)
+    if (unseen !== null) return [`changes ${unseen}`]
+    const attack = sight.registry.get(content).attack
+    if (attack === undefined) return [`changes the attack of "${content}", which has none`]
+    const said: string[] = []
+    for (const [key, more] of Object.entries(add)) {
+      if (!(ATTACK_NUMBERS as readonly string[]).includes(key)) said.push(`adds to "${key}", which is not one of an attack's ${ATTACK_NUMBERS.map((name) => `"${name}"`).join(", ")}`)
+      else if (!Number.isInteger(more) || more === 0) said.push(`adds ${more} to "${key}": a whole number, never 0`)
+    }
+    if (said.length > 0) return said
+    // What it makes must still be an attack: something dealt, a cooldown, and a reach of a whole number of rows — 1,
+    // touching (a melee attack's always), or even (grid.md).
+    const made = attackAdded(attack, add)
+    if (made.damage <= 0) said.push(`leaves the attack of "${content}" dealing ${made.damage}`)
+    if (made.cooldownTicks <= 0) said.push(`leaves the attack of "${content}" a cooldown of ${made.cooldownTicks}`)
+    if (attack.kind === "melee" && made.range !== 1) said.push(`makes the melee attack of "${content}" reach ${made.range}: melee reaches 1`)
+    else if (made.range !== 1 && (made.range <= 0 || made.range % 2 !== 0)) said.push(`makes the attack of "${content}" reach ${made.range}: a reach is 1 or even`)
+    return said
+  },
+  apply: (loadout, { content, add }) => ({
+    registry: changedRegistry(loadout.registry, (definition) =>
+      definition.id !== content || definition.attack === undefined ? definition : { ...definition, attack: attackAdded(definition.attack, add) },
+    ),
+  }),
+  lasts: true,
+  names: ({ content }) => ({ content }),
+  refit: (definition, { add }) => (definition.attack === undefined ? definition : { ...definition, attack: attackAdded(definition.attack, add) }),
+}
+
+/** What a unit or a building fires at first: a Turret's mode, units first, as one Turret's. `prefer` empty is the
+ *  nearest of any. */
+const setTargetPreference: EffectKind<Readonly<{ content: string; prefer: readonly string[] }>> = {
+  shape: record({ content: text, prefer: list(literal(...ENTITY_LAYERS)) }, {}),
+  problems: ({ content }, sight) => {
+    const unseen = sight.content(content)
+    if (unseen !== null) return [`changes ${unseen}`]
+    return sight.registry.get(content).attack === undefined ? [`changes what "${content}" fires at first, and it has no attack`] : []
+  },
+  apply: (loadout, params) => ({
+    registry: changedRegistry(loadout.registry, (definition) => (definition.id === params.content ? preferring(definition, params.prefer) : definition)),
+  }),
+  lasts: true,
+  names: ({ content }) => ({ content }),
+  refit: (definition, { prefer }) => preferring(definition, prefer),
+}
+
+/** `definition` preferring targets on `prefer`, or none. */
+function preferring(definition: ContentDef, prefer: readonly string[]): ContentDef {
+  const { targetPreference: _before, ...rest } = definition
+  return prefer.length === 0 ? rest : { ...rest, targetPreference: prefer as readonly EntityLayer[] }
 }
 
 const addBuilding: EffectKind<Readonly<{ building: string }>> = {
@@ -155,13 +254,16 @@ const modifyAbility: EffectKind<Readonly<{ content: string; kind: string; add: A
     })
   },
   apply: (loadout, { content: unit, kind, add }) => ({
-    registry: changedRegistry(loadout.registry, (definition) =>
-      definition.id !== unit || definition.abilities === undefined
-        ? definition
-        : { ...definition, abilities: definition.abilities.map((use) => (use.kind === kind ? added(use, add) : use)) },
-    ),
+    registry: changedRegistry(loadout.registry, (definition) => (definition.id !== unit ? definition : abilityAdded(definition, kind, add))),
   }),
   lasts: true,
+  names: ({ content }) => ({ content }),
+  refit: (definition, { kind, add }) => abilityAdded(definition, kind, add),
+}
+
+/** `definition` with its abilities of `kind` given `add`. */
+function abilityAdded(definition: ContentDef, kind: string, add: Addition): ContentDef {
+  return definition.abilities === undefined ? definition : { ...definition, abilities: definition.abilities.map((use) => (use.kind === kind ? added(use, add) : use)) }
 }
 
 const credits: EffectKind<number> = {
@@ -173,7 +275,7 @@ const credits: EffectKind<number> = {
 }
 
 /** Every kind of effect, by the key that names it in a power's JSON. */
-export const EFFECTS = { spawnUnits, addWaves, addBuilding, setDetonation, modifyAbility, credits } as const
+export const EFFECTS = { spawnUnits, addWaves, addPerWave, addBuilding, setDetonation, modifyAbility, modifyAttack, setTargetPreference, credits } as const
 
 export type EffectName = keyof typeof EFFECTS
 

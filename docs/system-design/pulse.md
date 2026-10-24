@@ -444,8 +444,9 @@ full, a body
 too wide for it, and a unit in the air go to the nearest free ground round it, searched one ring of the Grid's
 distance at a time ([`grid.md`](grid.md), setting a group down), kept off the ground touching any building of its side
 that makes units while there is room elsewhere, so a roof can always empty. The Grid Nexus is never stood on: its
-survivors are set down beside it. A carried unit opens the next Pulse where Recall left it, on its roof included; a
-building planned on it moves it (RULE — `tests/recall-home.test.ts`). A
+survivors are set down beside it. A carried building that the Build Phase upgraded or switched opens the Pulse as its
+new content id (`refits`, [`content.md`](content.md)); its health and place are its own. A carried unit opens the next
+Pulse where Recall left it, on its roof included; a building planned on it moves it (RULE — `tests/recall-home.test.ts`). A
 producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
 producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
 `src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`). **Recall puts out burning ground**
@@ -591,7 +592,9 @@ unlocks, and what it adds the tree does not hold. The tree is limited entirely b
 never by a second resource (the one-resource rule in the economy below is untouched).
 
 The Grid Nexus also offers a small draft of upgrades; research facilities modify that draft's tier,
-breadth, redraws, weighting, or visibility. Structures may reach levels 1–3. Nexus powers are
+breadth, redraws, weighting, or visibility. A structure has no levels: it has actions of its own — an upgrade kept by
+that building alone, a mode, an order for one round ([`commander-armies.md`](../game-design/commander-armies.md), what
+changes between rounds). Nexus powers are
 content-defined legal actions or passive rules that execute through validated kernel commands.
 
 **The Nexus Pulse** (RULE — `src/armies/deal.ts`, `src/cli/pulse-run.ts`, `tests/nexus-draft.test.ts`): the

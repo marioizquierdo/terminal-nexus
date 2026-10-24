@@ -4,7 +4,7 @@
 // none, each building where its placement says. What the round then refuses (a
 // building it cannot afford, a card number past the hand) is the round's to say (`playRound`).
 
-import type { Formation, Placement, SidePlan, Stance, Zone } from "./types.ts"
+import type { BuildingOrder, Formation, Placement, SidePlan, Stance, Zone } from "./types.ts"
 import { FORMATIONS, STANCES, ZONES } from "./types.ts"
 
 /** A plan read from text, and every problem found reading it. */
@@ -83,6 +83,29 @@ export function readPlan(given: string | unknown): ReadPlan {
   if (formationGiven !== undefined && formationGiven !== null && formation === undefined) {
     problems.push(`"formation" should be ${FORMATIONS.map((name) => `"${name}"`).join(", ")}; each building goes where its "at" says`)
   }
+  const actions: BuildingOrder[] = []
+  const acting = raw["actions"]
+  if (acting !== undefined && acting !== null && !Array.isArray(acting)) problems.push(`"actions" should be a list`)
+  if (Array.isArray(acting)) {
+    acting.forEach((item: unknown, index) => {
+      const fields = item !== null && typeof item === "object" ? (item as Record<string, unknown>) : {}
+      const { x, y, action } = fields
+      if (typeof x !== "number" || typeof y !== "number" || !Number.isInteger(x) || !Number.isInteger(y) || typeof action !== "string") {
+        return problems.push(`action ${index + 1} should be { "x", "y", "action" }: a building of yours by its anchor, and one of its actions by id`)
+      }
+      actions.push({ x, y, action })
+    })
+  }
   const note = typeof raw["note"] === "string" ? raw["note"].slice(0, 300) : undefined
-  return { plan: { ...(power === undefined ? {} : { power }), build, ...(formation === undefined ? {} : { formation }), stance, ...(note === undefined ? {} : { note }) }, problems }
+  return {
+    plan: {
+      ...(power === undefined ? {} : { power }),
+      build,
+      ...(formation === undefined ? {} : { formation }),
+      stance,
+      ...(actions.length === 0 ? {} : { actions }),
+      ...(note === undefined ? {} : { note }),
+    },
+    problems,
+  }
 }

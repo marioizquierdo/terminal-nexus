@@ -5,6 +5,9 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Try a building's actions** (his rule of 2026-10-22): in any Build Phase, `e` for Explore Map, onto a Barracks:
+  `c` buys its production line (15 credits, one more trooper a wave), `c` again undoes it; onto a Turret, `c` heavy
+  rounds, `v` and `b` its two firing modes. The look is for his UX passes.
 - **Play a Challenge run** (the runs milestone's first step): `./bin/terminal-nexus.ts`, then `2` for Challenge, or
   `./bin/terminal-nexus.ts --at 'challenge?seed=1'` for a chosen seed. Three battles against Dob Hunter's army on the
   Crossing, each a duel of up to six rounds; a lost battle ends the run on its summary, and the next run begins.

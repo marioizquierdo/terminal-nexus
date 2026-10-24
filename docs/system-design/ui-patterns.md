@@ -182,9 +182,15 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   player's lists, after its description, what it lets the player do, each as `[key] Label`; the key, a click on the
   row and a driver's `building-action` command are one command. Built: Hold production, `z`, on a building that
   makes units: it sends no wave this round's Battle Round, its WAVE row reads "held this round", the row turns to
-  Resume production, and the bottom line says it trains again the round after. Not `h`, an arrow (h j k l). Every
-  later action — a building's upgrade, a defender inside, a worker slot — is a row of the same kind.
-  (RULE — `tests/building-actions.test.ts`)
+  Resume production, and the bottom line says it trains again the round after. Not `h`, an arrow (h j k l). Its
+  upgrades and modes follow (the owner, 2026-10-22, [`commander-armies.md`](../game-design/commander-armies.md), what
+  changes between rounds), each as `[key] Label` with what it says at the right end: a price, `on` for the mode in
+  force, `undo` for an upgrade bought this Build Phase. A row the player cannot take now is dim, and pressing it says
+  why (`Production line costs 15, 5 left.`). Taking one spends at once and can be undone before the Battle Round, as
+  a placed building can; an upgrade carried from an earlier round is said as `UPGRADE  Production line` among the
+  numbers, and the mode stays as switched. Keys: `z` the order, `c v b f` its upgrades and modes in its card's order
+  (never `t`, retired). A unit has no actions. (RULE — `tests/building-actions.test.ts`,
+  `tests/building-upgrades.test.ts`)
 - **The army's supply is on the credits line's left**, `units 5/12`, and bold once full, when a building waits for
   a place ([`pulse.md`](pulse.md), supply). (RULE — `tests/build-menu.test.ts`)
 - **A building the tech tree has not reached is in the build menu, dimmed**, under its own digit like any other,

@@ -59,6 +59,44 @@ export type BuildingCard = Readonly<{
    *  the tech tree. Each is of a lower tier, and a building above tier 1 requires one of the tier below it. Absent:
    *  none. The same in every mode; a mode decides only which cards it offers. */
   requires?: readonly string[]
+  /** What a building of this card lets its player do in a Build Phase, selected in Explore Map, in the order its card
+   *  lists them (`BuildingActionCard`). Absent: nothing. */
+  actions?: readonly BuildingActionCard[]
+  notes?: string
+}>
+
+/**
+ * The three kinds of a building's action (commander-armies.md, what changes between rounds): an **upgrade**, bought
+ * with credits and kept by that one building for the rest of the match; a **mode**, one of the building's named states,
+ * switched between rounds and kept until switched again; an **order**, for the coming Battle Round only.
+ */
+export const ACTION_KINDS = ["upgrade", "mode", "order"] as const
+export type ActionKind = (typeof ACTION_KINDS)[number]
+
+/**
+ * One thing a building lets its player do in a Build Phase, declared with the building on its card. What an upgrade
+ * or a mode changes is written in the Nexus powers' own words (`PowerEffect`), naming this building — the same effect a
+ * power would apply to every building of its kind — and applies to this one building alone (`fittedId`, `src/content`).
+ */
+export type BuildingActionCard = Readonly<{
+  /** Its name in data, in a building's content id and in a duel plan: lower case, digits and dashes, unique on its
+   *  card. */
+  id: string
+  kind: ActionKind
+  /** What its row says on the card, in the game's own plain words: "Production line". */
+  label: string
+  /** The credits taking it spends, at once. Absent: none. An upgrade always says. */
+  cost?: number
+  /** The set of the building's modes this one belongs to: one of a set is in force at a time, and the first of a set
+   *  the card lists is the building as it is written. Absent: `"mode"`. A mode's only. */
+  set?: string
+  /** What must be true before it can be taken: the building's own actions taken first (an upgrade it improves on), and
+   *  buildings standing for the player as the Build Phase opens, by card id. Absent: nothing. */
+  requires?: Readonly<{ actions?: readonly string[]; buildings?: readonly string[] }>
+  /** What it changes of this building, as a Nexus power's effects name it: an upgrade's and a mode's. */
+  effects?: readonly PowerEffect[]
+  /** The order it gives, by the game's name for it (`ORDERS`, `src/armies/actions.ts`): an order's only. */
+  order?: string
   notes?: string
 }>
 
@@ -78,7 +116,16 @@ export type BuildingCard = Readonly<{
  * - `modifyAbility`: a unit's or a building's ability of a kind gains so much of its numbers, for the rest of the
  *   mission (Standing Order: By the Book reaches 4 further; Lucky Scrap: Dob's Bounty pays more). `content` is its
  *   content id; `add` a number to add to each named number.
+ * - `addPerWave`: a building that spawns sends so many more units a wave. `building` is a building card's id.
+ * - `modifyAttack`: a unit's or a building's attack gains so much of its `damage`, `range` or `cooldownTicks`.
+ *   `content` is its content id.
+ * - `setTargetPreference`: a unit or a building prefers, among the enemies it could target, those on these layers
+ *   (`ContentDef.targetPreference`); none, to go back to the nearest of any. `content` is its content id.
  * - `credits`: so many credits to spend this Build Phase (War Chest).
+ *
+ * The kinds that change a building's own content (`addWaves`, `addPerWave`, `modifyAttack`, `modifyAbility`,
+ * `setTargetPreference`) are also what a building's upgrade or mode changes, naming that building: as a power they
+ * change every building of the kind, as a building's action that one building alone (`BuildingActionCard`).
  *
  * Each kind is one entry of `EFFECTS` (`effects.ts`), which says what it holds, what the loader refuses and what it
  * changes: no reader branches on a kind.
@@ -89,6 +136,9 @@ export type PowerEffect =
   | Readonly<{ addBuilding: Readonly<{ building: string }> }>
   | Readonly<{ setDetonation: Readonly<{ unit: string; detonation: Readonly<{ radius: number; damage: number }> }> }>
   | Readonly<{ modifyAbility: Readonly<{ content: string; kind: string; add: Readonly<Record<string, number>> }> }>
+  | Readonly<{ addPerWave: Readonly<{ building: string; perWave: number }> }>
+  | Readonly<{ modifyAttack: Readonly<{ content: string; add: Readonly<Record<string, number>> }> }>
+  | Readonly<{ setTargetPreference: Readonly<{ content: string; prefer: readonly string[] }> }>
   | Readonly<{ credits: number }>
 
 /**
