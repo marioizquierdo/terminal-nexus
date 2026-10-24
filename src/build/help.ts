@@ -57,6 +57,8 @@ export type HintSituation =
   | "controls"
   | "activity-logs"
   | "dialog"
+  | "run-draft"
+  | "run-draft-remove"
   | "committed"
   | "menu-mouse"
   | "menu-explore"
@@ -79,6 +81,8 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "activity-logs":
     case "game-menu":
     case "dialog":
+    case "run-draft":
+    case "run-draft-remove":
       return state.popup
     default:
       break
@@ -146,6 +150,13 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     if (of <= 1) return "[enter] or [esc] closes it."
     return line < of ? `Line ${line} of ${of}. [enter] next line, [esc] skips the rest.` : `Line ${line} of ${of}. [enter] or [esc] closes it.`
   },
+
+  // A run's draft cannot be closed, so its line says what to do instead; with nothing to remove it says that too.
+  "run-draft": (context) =>
+    (context.runDraft?.removable.length ?? 0) > 0
+      ? "Number or [enter] takes a card, [r] removes one, [t] takes the requisition."
+      : "Number or [enter] takes a card, [t] takes requisition. Nothing to remove.",
+  "run-draft-remove": () => "Number or [enter] removes that card for good. [esc] back to the draft.",
 
   // --- A committed plan with no Pulse on screen (a Pulse says its own line) ---
   committed: () => "The plan is locked in. [esc] opens the menu.",
@@ -357,6 +368,29 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "enter/space", text: "the next line" },
         { keys: "click", text: "the next line, anywhere" },
         { keys: "esc/x", text: "skip the rest" },
+      ],
+    },
+    {
+      // A run's draft, as a battle's first round opens on it: nothing closes it.
+      heading: "THE DRAFT",
+      lines: [
+        { keys: "1 2 3", text: "take that card" },
+        { keys: "r", text: "remove a card instead" },
+        { keys: "t", text: "take the requisition" },
+        { keys: "up/down", text: "choose a row" },
+        { keys: "enter/space", text: "press the chosen row" },
+        { keys: "click a row", text: "press it" },
+        { keys: "esc/x", text: "nothing: choose first" },
+        { keys: "q", text: "the game menu, then back" },
+      ],
+    },
+    {
+      heading: "THE REMOVE LIST",
+      lines: [
+        { keys: "1-9 a-z", text: "remove that card" },
+        { keys: "up/down", text: "choose a card; scrolls" },
+        { keys: "enter/space", text: "remove the chosen card" },
+        { keys: "esc/x", text: "back to the draft" },
       ],
     },
     {

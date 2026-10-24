@@ -122,6 +122,18 @@ export type BuildCommand =
   | Readonly<{ kind: "open-game-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus Pulse popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
+  /**
+   * **A run's draft** (`BuildContext.runDraft`), settled one of three ways. Take card *n* of the three dealt — a digit, Enter on
+   * its row or a click while the draft popup is open — or take the requisition instead (`t`). Both record the choice
+   * (`BuildState.draftChoice`) and close the popup; the session hands it on (`BuildSessionOptions.draft`).
+   */
+  | Readonly<{ kind: "draft-take"; index: number }>
+  | Readonly<{ kind: "draft-requisition" }>
+  /** `r` on the draft popup, or its row: open the list of cards the army holds that could be removed instead. Refused,
+   *  saying so, when none can be. */
+  | Readonly<{ kind: "draft-open-remove" }>
+  /** Remove card *n* of that list (`RunDraft.removable`) — a digit, a letter, Enter or a click on its row: the draft is settled. */
+  | Readonly<{ kind: "draft-remove"; index: number }>
   /** `s` (or `p`), or the menu's last row, `[s] Start Battle Round` — open the Battle Round confirmation.
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
    *  while a building is armed. */
@@ -278,7 +290,9 @@ export type MenuEntry =
  *  Quit), Settings, the export, a message — `BuildState.message`, a title and text with nothing to
  *  choose — the Controls and hotkeys page, the Activity logs window, and **the dialog**: a round's scene,
  *  a line at a time, docked at the bottom of the map — the one popup the player does not open
- *  (`BuildState.dialog`). */
+ *  (`BuildState.dialog`) — and **a run's draft**, with the list of cards it can remove: a round whose context
+ *  carries one opens on it, and it cannot be closed without choosing (`BuildState.draftChoice`), the second popup
+ *  the player does not open. */
 export type Popup =
   | "nexus-powers"
   | "battle-round"
@@ -289,6 +303,8 @@ export type Popup =
   | "controls"
   | "activity-logs"
   | "dialog"
+  | "run-draft"
+  | "run-draft-remove"
 
 /**
  * Where a line of dialog looks, on this round's map: the tile the camera centres on, and the focus's own

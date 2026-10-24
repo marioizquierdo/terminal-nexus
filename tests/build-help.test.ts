@@ -167,6 +167,10 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 0, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 1 of 4\. \[enter\] next line, \[esc\] skips the rest\.$/],
     [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 3, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 4 of 4\. \[enter\] or \[esc\] closes it\.$/],
   ],
+  // A run's draft is put up by hand, as the dialog is: these sessions are on the starter map, which holds none, so its hint is
+  // the one for a draft with nothing to remove (tests/run-draft-popup.test.ts reads the other against a real one).
+  "run-draft": [[(side) => ({ ...side.build.state, popup: "run-draft" }), /^Number or \[enter\] takes a card, \[t\] takes requisition\. Nothing to remove\.$/]],
+  "run-draft-remove": [[(side) => ({ ...side.build.state, popup: "run-draft-remove" }), /^Number or \[enter\] removes that card for good\. \[esc\] back to the draft\.$/]],
   committed: [[(side) => keys(side, "n", "1", "s", "s"), /^The plan is locked in\. \[esc\] opens the menu\.$/]],
   "menu-mouse": [
     [
@@ -342,7 +346,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "THE DRAFT", "THE REMOVE LIST", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = buildSide({ terminal: size })

@@ -150,6 +150,8 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   "activity-logs": null,
   message: null,
   dialog: null,
+  "run-draft": null,
+  "run-draft-remove": null,
 }
 
 /**

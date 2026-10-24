@@ -230,7 +230,7 @@ export function drawPopup(cells: BandCell[], input: BuildCompositionInput, pack:
         const tag = entry.tag ?? ""
         const labelLimit = textLimit - hotkey.length - 1 - (tag === "" ? 0 : tag.length + 1)
         part(textColumn, hotkey, "chrome.hotkey", { bold: true, limit: textLimit })
-        part(textColumn + hotkey.length + 1, entry.label, "chrome.value", { limit: labelLimit })
+        part(textColumn + hotkey.length + 1, entry.label, entry.muted === true ? "chrome.muted" : "chrome.value", { limit: labelLimit })
         if (tag !== "") part(textColumn + textLimit - tag.length, tag, "chrome.muted", { limit: tag.length })
         break
       }
