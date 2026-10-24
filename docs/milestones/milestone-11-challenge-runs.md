@@ -71,15 +71,15 @@ here is where we can start building proper gameplay ... define a full game where
 strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../game-design/runs.md); steps 11C
 to 11H build it, each playable on its own.
 
-- [ ] The run army: a run starts with a small army (Vasse: Barracks, Supply Depot and Turret; Reserve Callup and Drill
+- [x] The run army: a run starts with a small army (Vasse: Barracks, Supply Depot and Turret; Reserve Callup and Drill
       Schedule in the pool) and the battle plays on it, so what is drafted changes what can be built and dealt.
-- [ ] Every card a run can offer carries `rarity`, `tier` and `role`: the buildings too (the loader checks them), and the
+- [x] Every card a run can offer carries `rarity`, `tier` and `role`: the buildings too (the loader checks them), and the
       first Doctrines, written from effects that exist.
-- [ ] The dealer: three cards by rarity weight, the tier schedule against the battle's place in the run, the pity offset,
+- [x] The dealer: three cards by rarity weight, the tier schedule against the battle's place in the run, the pity offset,
       and a family or role the offer lacks before rarity. A test deals many hands from a fixed seed against the weights.
-- [ ] After a won battle the player drafts: take one of three, or remove a card, or take 15 requisition. The army carries
+- [x] After a won battle the player drafts: take one of three, or remove a card, or take 15 requisition. The army carries
       into the next battle; the driver drafts through the same functions the screen uses.
-- [ ] Seed determinism: the same seed and the same drafts give the same run.
+- [x] Seed determinism: the same seed and the same drafts give the same run.
 
 ### Step 11D — The route
 

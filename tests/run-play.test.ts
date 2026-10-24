@@ -18,6 +18,7 @@ import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
+import { BuildSession } from "../src/view/build-session.ts"
 
 const SETUP = { seed: 1, commander: "vasse" } as const
 
@@ -274,4 +275,21 @@ test("the driver plays a run end to end, and the same seed and script give the s
     "The army: Barracks, Supply Depot, Turret, Hatchery, Reserve Callup, Drill Schedule, Standard Heavy Rounds.",
   ])
   assert.deepEqual(shape(once), ["1.1 nexus@487", "2.1 time@600", "2.2 time@600", "2.3 time@600", "2.4 nexus@568", "3.1 time@600", "3.2 time@600", "3.3 nexus@512"])
+})
+
+test("on the screen, a won battle opens on the draft, the choice settles it, and the session moves to the round it makes", { timeout: 60_000 }, () => {
+  const planned = scriptedRound(first(), balanced)
+  const { resolved } = started(planned.context, planned.state)
+  const waiting = RUN_PLAY.nextRound(planned.context, planned.state, resolved)
+  assert.ok(waiting?.runDraft !== undefined)
+  const viewport = buildLayout({ columns: 80, rows: 24 }, waiting.grid).viewport
+  const session = new BuildSession({ context: waiting, cursor: nexusTile(waiting) ?? { x: 0, y: 0 }, viewport, draft: RUN_PLAY.draft as NonNullable<typeof RUN_PLAY.draft>, keep: RUN_PLAY.keep, scenes: true })
+  assert.equal(session.state.popup, "run-draft", "the round opens on the draft")
+  session.dispatch({ kind: "cancel" })
+  assert.equal(session.state.popup, "run-draft", "it cannot be dismissed")
+  session.dispatch({ kind: "draft-requisition" })
+  assert.equal(session.round.runDraft, undefined, "the session moved on to the round the choice makes")
+  assert.equal(positionOf(session.round).run.requisition, 15)
+  assert.deepEqual(session.round.round, { number: 1, of: 6, stage: "battle 2 of 3" })
+  assert.notEqual(session.state.popup, "run-draft")
 })
