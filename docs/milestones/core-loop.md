@@ -1,8 +1,37 @@
-# Terminal Nexus — the core loop, open
+# Terminal Nexus — the core loop
 
-_Planning notes, not a decision. What happens to an army between Battle Rounds, what a player can order in the Build Phase, and how the march is shown: the ideas on the table, a measured experiment, and what each choice would change in the milestones ahead. The owner settles it by playing (his words: "a deep dive gameplay to settle the core game mechanics"); these notes are what that deep dive starts from. Logged from [his note of 2026-10-26](../history/feedback/2026-10-26-core-loop.md)._
+_Planning notes. What happens to an army between Battle Rounds, what a player orders in the Build Phase, and how the
+march is shown. **Decided on 2026-10-26** ([his note](../history/feedback/2026-10-26-core-loop.md)): the front stays.
+The decision is first; the question, the measured experiment and the thinking that led to it follow, as they were
+written before he chose. Each rule moves into the design documents as the step that builds it lands._
 
-## 1. The question
+## The decision
+
+The owner, after the experiment: "This is fantastic data. I am also leaning into double down the RTS style, leaving
+troops on the map, so they can keep moving forward." With it, the movement it needs: troops that "self-arrange in useful
+formations", "a better way to define aggressive vs defensive stance, clear movement and pathfinding algorithms, and
+predictable spawning schedules. With all that, we can safely leave the units on the map."
+
+- **Battle Rounds of 30 seconds.**
+- **The front stays, with a regroup.** After a round, survivors in a fight stop targeting, step back for 2 seconds and
+  form up for 6, 10 seconds in all (his numbers; the last 2 seconds the army stands formed, room for the slowest to
+  arrive). It plays during the Build Phase.
+- **Troops move during the Build Phase**, forming up and stepping out from under a building placed on them, and all of
+  it deterministic: the regroup is worked out from the round's end alone, so a scripted battle plays the same.
+- **Orders, from simple to rich** — each a step, built in order:
+
+| Level | What the player sets | What it allows |
+| --- | --- | --- |
+| None (today) | Nothing: troops always march on the enemy Nexus; a campaign level sets an automatic target | The simplest; little room for tactics |
+| **Stance** | One setting for the army: aggressive, hold the line, or defensive | Much more dynamism for one row |
+| **Banner** | A banner on the map, aggressive or defensive; by default on the enemy Nexus, aggressive | Aggressive elsewhere: the army goes there first, then on to the enemy Nexus, so it sets a route. Defensive: the army holds the line there, for map control or the base |
+| **Two banners** | The Commander follows the main banner; a building can be set to send its units after the secondary one | Split armies, which matter once the map holds resources and bonuses; needs more UX. To test eventually, built towards step by step |
+
+Where it sits: the runs milestone gains three steps before the route — the kept front, the stance, the banner. Two
+banners wait until the map has something worth splitting an army for. The campaign's missions keep sending survivors
+home until they are revisited.
+
+## 1. The question (as it was asked)
 
 Today a round is: a Nexus Pulse, a Build Phase, then a Battle Round of up to 50 seconds; then **Recall** sends every
 survivor home, onto the roof of the building that trained it or beside the Grid Nexus, and the next Build Phase opens on
