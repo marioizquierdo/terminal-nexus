@@ -22,6 +22,7 @@ import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
 import type { Camera, Viewport, VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
+import { TUNING } from "../build/tuning.ts"
 import type { Coord } from "../grid/types.ts"
 import type { RecallResult } from "../match/types.ts"
 import type { MissionVerdict } from "../mission/types.ts"
@@ -54,6 +55,10 @@ export type ResolvedPulse = Readonly<{
   /** What the Battle Round calls the other side, in its force bar, its bottom line and its result: "raid" unless the
    *  mode names it — a Challenge run's "enemy", a Commander's army rather than a raid. */
   enemy?: string
+  /** What the survivors do once the shooting stops: walk home (Recall, a campaign's missions: the walk plays here, and
+   *  `recall` is where it ends), or stay where they stand and regroup (a Challenge run: `recall` is where they stand,
+   *  and the regroup plays in the next Build Phase). Absent: home. */
+  between?: "home" | "regroup"
 }>
 
 /** A mission's round, as the result reads it. */
@@ -148,7 +153,8 @@ export class PulsePresenter {
     this.resolved = resolved
     this.autoNextMs = options.autoNextMs ?? null
     this.view = createView(resolved.timeline, presentation)
-    this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs)
+    // Survivors who regroup in the Build Phase take no walk here: the result follows the pause after the stop.
+    this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, resolved.between === "regroup" ? { ...TUNING, endWalkMs: 0 } : TUNING)
     this.result = missionResultOf(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), resolved.mission)
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.recall.state.entities.filter(
@@ -337,6 +343,7 @@ export class PulsePresenter {
       result: this.result,
       forces,
       home: this.home,
+      ...(this.resolved.between === undefined ? {} : { between: this.resolved.between }),
       ...(this.resolved.enemy === undefined ? {} : { enemy: this.resolved.enemy }),
     }
   }

@@ -11,7 +11,8 @@
 // - **starting a round's Pulse** turns the plan (the buildings placed, at their exact anchors; the power kept; the
 //   buildings held) into side A's duel plan, asks the scripted player for side B's, and plays the round with the
 //   duel's own `playRound`, every state and event kept for the Battle Round on screen;
-// - **the next round** is the battle's next, from what Recall left; or, once the battle is over, the next battle's
+// - **the next round** is the battle's next, from where the survivors regrouped (`src/match/regroup.ts`), their walk
+//   played on the map over the Build Phase's first seconds; or, once the battle is over, the next battle's
 //   first, opening on a scene that says how the last one ended and what comes; or, once the run is over, a new run's
 //   first, opening on the summary of the one that ended.
 //
@@ -30,8 +31,8 @@ import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
 import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, playRound, scriptedPlayer, standingOf } from "../duel/index.ts"
-import type { Force, Restoration } from "../match/index.ts"
-import { centreTile, opening, recall, restoreCommanders } from "../match/index.ts"
+import type { Force, RegroupResult, Restoration } from "../match/index.ts"
+import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
 import type { BattleRecord, DraftChoice, RunBattle, RunSetup, RunState } from "../run/index.ts"
 import {
@@ -80,7 +81,7 @@ function contentOf(duel: DuelState): Record<Side, ContentRegistry> {
   }
 }
 
-/** The Grid as the Battle Round will open on it before any plan: what Recall left, with every Commander due back set
+/** The Grid as the Battle Round will open on it before any plan: where the regroup left everyone, with every Commander due back set
  *  down beside her Nexus (as `playRound` will), and who was set down — `null` before a battle's first round. */
 function restoredOf(duel: DuelState, content: Readonly<Record<Side, ContentRegistry>>): Readonly<{ state: MatchState; restored: Restoration[]; absent: DuelState["sides"]["A"]["absent"] }> | null {
   if (duel.carried === null) return null
@@ -156,10 +157,11 @@ function carriedOver(context: Partial<BuildContext>): Partial<BuildContext> {
  * **A run's round, ready for the Build Phase**: side A's view of the duel in play. Its build menu and content are its
  * Commander's army with every power it kept applied (`loadoutOf`, as the duel reads it); its credits the duel's; its
  * hand the one the duel deals it (`handOf`), so the card picked is the card the round keeps; its buildings standing,
- * and everything else on the Grid as the field, every Commander due back already beside her Nexus. The round opens
- * on `scene` and says `opening` on the bottom line.
+ * and everything else on the Grid as the field, every Commander due back already beside her Nexus — each survivor with
+ * the walk that brought it there when `regroup` is the one the last round ended in. The round opens on `scene` and says
+ * `opening` on the bottom line.
  */
-function roundContext(position: RunPosition, previous: Partial<BuildContext>, scene: readonly DialogLine[], opening: string, runDraft?: RunDraft): BuildContext {
+function roundContext(position: RunPosition, previous: Partial<BuildContext>, scene: readonly DialogLine[], opening: string, runDraft?: RunDraft, regroup?: RegroupResult | null): BuildContext {
   const { run, duel } = position
   const battle = currentBattle(run)
   if (battle === null) throw new Error("the run is over: there is no round to open")
@@ -175,9 +177,20 @@ function roundContext(position: RunPosition, previous: Partial<BuildContext>, sc
     const nexus = armyOf(duel, "B").nexus
     field.push({ contentId: nexus, anchor: map.nexus.B, player: "B", hp: content.B.get(nexus).maxHp })
   } else {
+    const walks = new Map((regroup?.paths ?? []).map((path) => [path.ordinal, path] as const))
     for (const entity of restored.state.entities) {
-      if (entity.player === "A" && content.A.get(entity.contentId).layer === "obstacles") standing.push({ contentId: entity.contentId, anchor: entity.anchor })
-      else field.push({ contentId: entity.contentId, anchor: entity.anchor, player: entity.player, hp: entity.hp })
+      if (entity.player === "A" && content.A.get(entity.contentId).layer === "obstacles") {
+        standing.push({ contentId: entity.contentId, anchor: entity.anchor })
+        continue
+      }
+      const walk = walks.get(entity.ordinal)
+      field.push({
+        contentId: entity.contentId,
+        anchor: entity.anchor,
+        player: entity.player,
+        hp: entity.hp,
+        ...(walk === undefined || walk.steps.length === 0 ? {} : { walk: { from: walk.from, steps: walk.steps } }),
+      })
     }
   }
   const context: BuildContext = {
@@ -235,8 +248,9 @@ function endingOf(run: RunState, record: BattleRecord): MissionEnding {
   }
 }
 
-/** What a played round leaves for the next: the run and its duel after it, and the round's report. */
-export type Played = Readonly<{ run: RunState; duel: DuelState; report: RoundReport }>
+/** What a played round leaves for the next: the run and its duel after it, the round's report, and the survivors'
+ *  regroup (`null` once the battle is over). */
+export type Played = Readonly<{ run: RunState; duel: DuelState; report: RoundReport; regroup: RegroupResult | null }>
 
 /** Every round played, by the Pulse it resolved: the screen hands that Pulse back to open the next round
  *  (`BuildSession.moveOn`), so what the round left is found by it. Held weakly: a Pulse nobody holds is let go. */
@@ -279,11 +293,11 @@ export function sidePlanOf(context: BuildContext, state: BuildState): SidePlan {
 /** The round after a played one, by what it left. */
 function nextAfter(played: Played, previous: BuildContext, resolved: ResolvedPulse): BuildContext {
   const { run, duel, report } = played
-  // The battle goes on: its next round, from what Recall left.
+  // The battle goes on: its next round, from where the survivors regrouped, their walk played as it opens.
   if (duel.result === null) {
     const last = `Round ${report.round}: ${resultOf(outcomeOf(resolved.timeline)).headline.toLowerCase()}.`
     const position: RunPosition = { kind: "run", run, duel }
-    const opened = roundContext(position, previous, [], "")
+    const opened = roundContext(position, previous, [], "", undefined, played.regroup)
     const back = restoredOf(duel, contentOf(duel))
     const news = back === null ? null : commanderNews(back.restored, back.absent, duel.round, duel.setup.rounds)
     const refused = report.sides.A.refused
@@ -398,8 +412,9 @@ function runPlay(): LevelPlay {
         ...(fell.length === 0 ? {} : { fell }),
         ...(record === null ? {} : { ending: endingOf(ran, record) }),
       }
-      const resolved: ResolvedPulse = { timeline, recall: recall(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy" }
-      PLAYED.set(resolved, { run: ran, duel: next, report: played.report })
+      // Nobody walks home: the survivors stand where the shooting stopped, and regroup in the next Build Phase.
+      const resolved: ResolvedPulse = { timeline, recall: standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy", between: "regroup" }
+      PLAYED.set(resolved, { run: ran, duel: next, report: played.report, regroup: played.regroup })
       return resolved
     },
 

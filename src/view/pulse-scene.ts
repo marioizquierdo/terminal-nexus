@@ -67,6 +67,9 @@ export type PulseFrame = Readonly<{
   enemy?: string
   /** After Recall: how many mobile units the player has, standing where the next Build Phase finds them. */
   home: number
+  /** What the survivors do now the shooting has stopped: walk home (Recall), or stay and regroup in the next Build
+   *  Phase (a Challenge run, `ResolvedPulse.between`). Absent: home. */
+  between?: "home" | "regroup"
   /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
   aura?: AuraFrame
   /** What she is saying at this instant, and where: beside her, or in the panel while she is out of view.
@@ -319,8 +322,16 @@ export function pulseSubtitle(pulse: PulseFrame): string {
 
 const secondsOf = (pulse: PulseFrame, tick: number): string => (tick / pulse.ticksPerSecond).toFixed(1)
 
-/** What Recall did, for the player's own side: "3 of yours came home." or, when nobody is left, "None of yours came home." */
-const cameHome = (count: number): string => (count === 0 ? "None of yours came home." : `${count} of yours came home.`)
+/** What Recall did, for the player's own side: "3 of yours came home." or, when nobody is left, "None of yours came home."
+ *  Where the survivors stay and regroup instead: "3 of yours hold the field." or "None of yours is left." */
+const cameHome = (count: number, between: PulseFrame["between"] = "home"): string =>
+  between === "regroup"
+    ? count === 0
+      ? "None of yours is left."
+      : `${count} of yours hold the field.`
+    : count === 0
+      ? "None of yours came home."
+      : `${count} of yours came home.`
 
 /** The one line under the map: what the Pulse is doing now, or how it ended, in plain words. */
 export function pulseStatus(pulse: PulseFrame): StatusMessage {
@@ -333,7 +344,7 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
     case "walking":
       return status(`${held}Recall - the survivors are heading home.`)
     case "home":
-      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
+      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home, pulse.between)}`, pulse.result.tone)
     default:
       return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the ${pulse.enemy ?? SIDE.B}.`)
   }
@@ -535,8 +546,9 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   else gap()
 
   if (pulse.phase === "home") {
-    line("RECALL", "chrome.label")
-    line(cameHome(pulse.home), "chrome.value")
+    line(pulse.between === "regroup" ? "REGROUP" : "RECALL", "chrome.label")
+    line(cameHome(pulse.home, pulse.between), "chrome.value")
+    if (pulse.between === "regroup" && pulse.home > 0) for (const words of wrapWords("They form up as the Build Phase opens.", limit - 1)) line(words, "chrome.muted")
     for (const words of wrapWords(pulse.result.commander ?? "", limit - 1)) line(words, "chrome.value")
     // A Pulse with no mission goes nowhere: the game menu's Restart is the way back.
     if (pulse.result.goOn === undefined) {

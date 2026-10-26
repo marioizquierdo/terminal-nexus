@@ -11,7 +11,7 @@
 
 import { ARMIES } from "../armies/index.ts"
 import type { DuelResult, DuelSetup } from "../duel/index.ts"
-import { DUEL_MAPS, duelArmy } from "../duel/index.ts"
+import { DUEL_MAPS, DUEL_PULSE_TICKS, duelArmy } from "../duel/index.ts"
 import { Pcg32, STREAM_RUN } from "../rng/pcg32.ts"
 import type { DraftChoice } from "./draft.ts"
 import { REQUISITION_FOR_SKIPPING, choose, dealDraft } from "./draft.ts"
@@ -37,13 +37,11 @@ export const RUN_OPPONENT = "dob"
 export const RUN_MAP = "crossing"
 
 /**
- * **Rounds a battle lasts at most: 6**, each Battle Round at most 600 ticks (50 seconds), the duel's own length.
- * Scripted duels on the Crossing end with a Nexus falling in round 3 to 5; with a Build Phase of half a minute to a
- * minute between Battle Rounds, a battle of 3 to 6 rounds is about 4 to 10 minutes, inside the design's 5–12 for a
- * match, and the duel default of 8 could reach 13.
+ * **Rounds a battle lasts at most: RUN_ROUNDS_PLACEHOLDER**
  */
 export const RUN_ROUNDS = 6
-export const RUN_PULSE_TICKS = 600
+/** A run's Battle Round is a duel's: 30 seconds (`DUEL_PULSE_TICKS`). */
+export const RUN_PULSE_TICKS = DUEL_PULSE_TICKS
 
 /** The scripted duel players that plan the opponent's side: each battle of a run gets a different one, in an order
  *  the seed shuffles, so the three battles of a run are three different plans. */

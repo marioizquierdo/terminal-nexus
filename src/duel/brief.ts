@@ -78,7 +78,7 @@ export type BriefData = Readonly<{
   /** What its buildings standing as the round opens can do this round: each one's upgrades, modes and orders. */
   actions: readonly BriefAction[]
   kept: readonly string[]
-  /** What stands for it as the round opens, and its units home after the last round, by name. */
+  /** What stands for it as the round opens, and its units on the Grid after the last round, by name. */
   yours: Readonly<{ buildings: readonly string[]; units: Readonly<Record<string, number>> }>
   zones: Readonly<Record<string, Readonly<{ x: number; y: number }>>>
   enemy: Readonly<{
@@ -292,7 +292,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   for (const skill of data.commander.skills) lines.push(`- ${skill}`)
   lines.push(`Your Commander is ${data.commander.status}.`)
   lines.push("")
-  lines.push(`Your buildings: ${data.yours.buildings.join(", ")}. Your units home: ${Object.entries(data.yours.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}.`)
+  lines.push(`Your buildings: ${data.yours.buildings.join(", ")}. Your units on the Grid: ${Object.entries(data.yours.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}.`)
   lines.push(`Credits to spend: ${data.credits}. Supply: ${data.supply.used} of ${data.supply.cap ?? "unlimited"} places used (a building stops training while the army is full).`)
   lines.push(`Your Nexus: ${data.nexus.health} of ${data.nexus.most}. Theirs (${data.enemy.commander}): ${data.enemy.nexus.health} of ${data.enemy.nexus.most}. A side whose Nexus falls loses.`)
   lines.push("")
@@ -333,7 +333,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push("What the enemy's buildings train, and whether any of it hits an area, is under The enemy, below.")
   lines.push("")
   lines.push("## The enemy")
-  lines.push(`${data.enemy.commander}. Buildings: ${data.enemy.buildings.join(", ") || "none"}. Units home after the last round: ${Object.entries(data.enemy.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}. Powers kept: ${data.enemy.kept.join(", ") || "none"}.`)
+  lines.push(`${data.enemy.commander}. Buildings: ${data.enemy.buildings.join(", ") || "none"}. Units on the Grid after the last round: ${Object.entries(data.enemy.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}. Powers kept: ${data.enemy.kept.join(", ") || "none"}.`)
   if (data.enemy.trains.length > 0) lines.push(`What their buildings can train: ${data.enemy.trains.join("; ")}.`)
   if (data.last !== null) {
     lines.push("")
@@ -363,6 +363,6 @@ export function briefText(data: BriefData, strategies?: string): string {
     `- "formation" (you may leave it out): "block" sets every building you build this round that trains units touching another, round where you ask for the first of them; "apart" sets each at least ${APART_GAP} from the others (a row counting two columns), as near there as that allows; "zones", or none, puts each where its own "at" or "x" and "y" says. Buildings that train nothing always go where they say. One of ${FORMATIONS.map((name) => `"${name}"`).join(", ")}.`,
   )
   lines.push(`- "actions" (you may leave it out): what your buildings do this round, each { "x", "y", "action" } naming a building of yours by its anchor and one of its actions by id, as listed above; taken after your buildings are placed, from the credits they leave.`)
-  lines.push(`- "stance": ${STANCES.map((stance) => `"${stance}"`).join(" or ")}: your troops march on their Nexus, or hold the ground in front of yours. Units that survive come home and fight again next round.`)
+  lines.push(`- "stance": ${STANCES.map((stance) => `"${stance}"`).join(" or ")}: your troops march on their Nexus, or hold the ground in front of yours. Units that survive stay where the round left them, step back and form up across the line between the Nexuses, and fight again next round from there. You may build on your own units (they step aside as the round begins), never on the enemy's.`)
   return lines.join("\n")
 }

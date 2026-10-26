@@ -140,6 +140,13 @@ export type BuildCompositionInput = Readonly<{
    * says her line). The live loop supplies it; absent — every still frame — she stands where she is, her line said.
    */
   roundElapsed?: Readonly<{ elapsedMs: number }>
+  /**
+   * **The regroup's clock**: how far into the survivors' regroup the Build Phase is, from the first frame that drew the
+   * round (`RegroupClock`, `src/view/build-live.ts` — the live loop's, or a scripted playtest's on the script's clock).
+   * Each survivor with a walk (`FieldEntity.walk`) is drawn where its walk has it at that instant. Absent — every still
+   * frame, reduced motion, once the regroup has played — each stands where the walk ends, where the round finds it.
+   */
+  regroup?: Readonly<{ elapsedMs: number }>
   /** Draw no Commander on the map this frame: she is still to appear (`commanderHidden`). Set by the composer. */
   commanderHidden?: boolean
 }>

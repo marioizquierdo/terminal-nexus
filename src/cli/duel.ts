@@ -23,7 +23,7 @@ import { existsSync, mkdirSync, readFileSync, rmdirSync, writeFileSync } from "n
 import { join } from "node:path"
 import { ARMIES } from "../armies/index.ts"
 import type { DuelSetup, DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
-import { briefOf, newDuel, playRound, readPlan, scriptedNames, scriptedPlayer, SIDES } from "../duel/index.ts"
+import { DUEL_PULSE_TICKS, DUEL_ROUNDS, briefOf, newDuel, playRound, readPlan, scriptedNames, scriptedPlayer, SIDES } from "../duel/index.ts"
 import { DEFAULT_RUN_COMMANDER, summaryLines } from "../run/index.ts"
 import { driveRun } from "./run-play.ts"
 
@@ -72,7 +72,7 @@ function number(options: Options, name: string, fallback: number): number {
 
 /** The setup the options describe. */
 function setupOf(options: Options, a: string, b: string, seed: number): DuelSetup {
-  return { map: options["map"] ?? "crossing", seed, rounds: number(options, "rounds", 8), pulseTicks: number(options, "ticks", 600), commanders: { A: a, B: b } }
+  return { map: options["map"] ?? "crossing", seed, rounds: number(options, "rounds", DUEL_ROUNDS), pulseTicks: number(options, "ticks", DUEL_PULSE_TICKS), commanders: { A: a, B: b } }
 }
 
 /** A player by its name: a script, or a command run each round. */

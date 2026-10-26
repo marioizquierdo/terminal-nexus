@@ -29,6 +29,8 @@ import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
 import { drawBuildRange, drawReach } from "./build-areas.ts"
 import { drawTroopsPost } from "./troops-post.ts"
+import { regroupAt } from "../match/regroup.ts"
+import { TICKS_PER_SECOND } from "../scenario/load.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"
@@ -99,7 +101,7 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   for (const structure of context.standing) drawStructure(structure.contentId, structure.anchor, undefined)
   for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, animating.get(placement.ordinal))
 
-  // What else is on the map after a round: survivors of both sides where Recall left them, and a
+  // What else is on the map after a round: survivors of both sides where Recall or the regroup left them, and a
   // scripted side's structures, each in its side's colour. Then what the next round brings, always (the
   // owner: "the enemy units should be visible"), in the incoming look — see-through, "not here yet".
   // A unit steps aside for a building when the Pulse starts — a survivor or an arrival alike — so neither
@@ -137,7 +139,11 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
       cells.push({ band, x: cell.x, y: cell.y, cell: { glyph: entityGlyph(entity.contentId, entity.player, offset), style } })
     }
   }
-  for (const entity of context.field ?? []) drawEntity(entity, false)
+  // A survivor that regrouped as the round opened is drawn where its walk has it, while the regroup plays.
+  const regroupTick = input.regroup === undefined ? null : Math.floor((input.regroup.elapsedMs * TICKS_PER_SECOND) / 1000)
+  for (const entity of context.field ?? []) {
+    drawEntity(entity.walk === undefined || regroupTick === null ? entity : { ...entity, anchor: regroupAt(entity.walk, regroupTick) }, false)
+  }
   for (const entity of context.incoming ?? []) drawEntity(entity, true)
   // While a building is armed, where it may go. Its dots give way along the raid's trail's whole way, as a reach
   // and a room do, so they never flicker as the arrows pass and never call a tile of a room open ground.
