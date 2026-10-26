@@ -5,6 +5,11 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Read how troops move, and answer four questions** ([the review](../history/reports/2026-10-26-troop-movement-review.md),
+  [the chapter](../system-design/movement.md)): draw both sides' march routes on the Build Phase and make the route
+  the line the army keeps to; keep a target once in reach (lock-on, as an Experiment); bring banners in three stages,
+  the attack-or-hold stance first; call the backliner a flanker. Each has a recommendation in the open questions. To
+  watch the parts move: `./bin/grid.ts scenarios/march-lines`, `scenarios/march-guide`, `scenarios/route-breach`.
 - **Try a building's actions** (his rule of 2026-10-22): in any Build Phase, `e` for Explore Map, onto a Barracks:
   `c` buys its production line (15 credits, one more trooper a wave), `c` again undoes it; onto a Turret, `c` heavy
   rounds, `v` and `b` its two firing modes. The look is for his UX passes.

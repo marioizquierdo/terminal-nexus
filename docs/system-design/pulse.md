@@ -360,7 +360,7 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   walls; one that only waits behind a walker that will step on soon waits, since walking round a queue and back would
   pace. Two allies of one tile each that want each other's tile swap, together.
 - **The march** (the owner, 2026-10-21; `src/pulse/march.ts`, `tests/march.test.ts`, how it reads in
-  [`movement.md`](movement.md), section 5). A unit marches when it walks for its side's goal — its target, or the
+  [`movement.md`](movement.md), troop formation). A unit marches when it walks for its side's goal — its target, or the
   enemy's Grid Nexus while that is beyond its engage reach; one walking to an enemy within reach is engaged and fights
   as before. Once perception has set every target, a marcher's progress is its walk, for one tile, to its side's goal
   over rock and the enemy's standing buildings. A marcher with a line (`lineOf`; a backliner, a flyer, a unit with no

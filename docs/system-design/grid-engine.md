@@ -220,12 +220,20 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **see-through style** — a glyphless cell write that blends a colour into whatever is under it at a given opacity; the cursor uses it.
 - **resize gate** — the TERMINAL TOO SMALL screen shown below the minimum size instead of a cropped Grid.
 
-## 5. How a unit moves: pathfinding
+## 5. How troops move
 
 The owner, 2026-10-21: "Make sure we have a dedicated section on the grid architecture spec about pathfinding ... is
-it defined in a way that can explain the default units behavior?" This section is the summary; the chapter, with
-every number and its pictures, is [`movement.md`](movement.md), and the rules with their tests are in
+it defined in a way that can explain the default units behavior?" And 2026-10-26: "in this game 'pathfinding' is more
+than just moving, it is 'troops movement'". This section is the summary; the chapter, with what a player should be
+able to predict, every number and its pictures, is [`movement.md`](movement.md), and the rules with their tests are in
 [`pulse.md`](pulse.md), routes. GUIDANCE unless marked.
+
+**What a player should be able to predict** is seven rules: troops move only in a Battle Round; the army marches on the
+enemy Nexus by the shortest walk; the Commander leads, melee beside her and guns behind; a troop fights anything within
+6 columns of it, building or unit, the nearest first; it walks until its attack reaches, then stands, and a standing
+fight is a wall; buildings are walked round until there is no way round, then the fewest are broken; workers run.
+Building placement is both halves of the game: a building near the enemy's way bends it or baits it, and where a
+producer stands decides how soon its wave joins the fight.
 
 **What a unit does when nobody tells it anything** — which is always, until orders exist — is one of six states,
 worked out fresh every tick from what it chose (RULE — `MoveState`, `src/pulse/march.ts`):
@@ -263,7 +271,7 @@ This document is the overview. The design is in its parts, one document each:
 
 - [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
 - [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, routes, match structure, economy, events.
-- [`movement.md`](movement.md) — how things move: the pathfinding chapter, what a unit does by default (its states and the army's march), its building blocks, the shared field as the general path, breaching, and where modifiers plug in.
+- [`movement.md`](movement.md) — troop movement: what a player should be able to predict, the Build Phase and the Battle Round, where an army goes, banners (an idea), spawning, formation, targeting and attacking, workers, and the machinery underneath (the shared field, breaching, where modifiers plug in).
 - [`measurement.md`](measurement.md) — how a battle is measured, so results before and after a rule change compare.
 - [`content.md`](content.md) — content interfaces.
 - [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.

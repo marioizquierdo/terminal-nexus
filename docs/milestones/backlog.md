@@ -15,7 +15,9 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
 - **Banners.** A rally point a player plants for their troops to head for before the enemy's Grid Nexus. The owner,
   2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
   screen; until then there is no banner. The pathfinding milestone leaves the goal a banner would be: one more place
-  a side heads for, like a campaign level's target.
+  a side heads for, like a campaign level's target. The owner, 2026-10-26, added attack and hold banners, the
+  Commander always following the primary, and skirmish banners on buildings; designed as an idea in
+  [`movement.md`](../system-design/movement.md), banners, with how they should arrive an open question.
 - **The units to come.** The owner, 2026-10-21: "Every unit in the games will have its own personality ... special
   units are what make this game fun, especially looking for things that will create complex entropy ... things that
   will create chain effects from little differences." Each to find its army, "in the most thematic possible way", in

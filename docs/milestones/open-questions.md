@@ -17,7 +17,7 @@ when it is genuinely his call, state the assumption you proceed under, then keep
 
 ## Index
 
-Two are ready for Mario to decide now ("Mario, now"); every other question is parked until the
+Six are ready for Mario to decide now ("Mario, now"); every other question is parked until the
 milestone or backlog entry named, and nothing in the current milestone is blocked by any of them.
 
 | Id | Question | Status | Waits on |
@@ -37,6 +37,10 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
 | [Q84](#q84--is-requisition-the-runs-second-currency-and-does-the-nexuss-health-carry) | Is requisition the run's currency, and does the Nexus's health carry between battles? | OPEN | Mario's playing of a run (milestone 11) |
 | [Q85](#q85--how-long-is-a-run) | How long is a run? | OPEN | Mario's playing of a run (milestone 11) |
+| [Q86](#q86--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to) | Should the march route be drawn on the Build Phase, and be the line the army keeps to? | OPEN | Mario, now |
+| [Q87](#q87--should-a-unit-keep-its-target-once-its-attack-reaches-it) | Should a unit keep its target once its attack reaches it? | OPEN | Mario, now |
+| [Q88](#q88--how-should-banners-arrive) | How should banners arrive? | OPEN | Mario, now |
+| [Q89](#q89--what-is-the-line-that-goes-behind-the-enemys-front-called) | What is the line that goes behind the enemy's front called? | OPEN | Mario, now |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
@@ -357,6 +361,82 @@ other stops.
 | C. **One act only, until content grows** | Fastest to play and test; a run that cannot tell a story of a build over time |
 
 **Recommendation: A**, played short first: the short run is what a playtest uses until the cards exist to fill three acts.
+
+### Q86 — Should the march route be drawn on the Build Phase, and be the line the army keeps to?
+
+**Status:** OPEN — registered 2026-10-26 by [the troop movement review](../history/reports/2026-10-26-troop-movement-review.md).
+
+Mario pictures "a central A\* path that goes from your Nexus to the enemy Nexus". What is built is a distance field
+every unit walks downhill, and a straight **guide line** from the Commander (or the Nexus) to the goal that only breaks
+ties between equally good steps; it runs through rock when rock is in the way, and nothing on screen shows either. A
+player who places a building to bend the enemy's way cannot see whether it did. The **march route** would be the
+side's march field walked downhill from the Commander (or the Nexus) to the goal, over rock and buildings, units
+ignored: one line, the same at the start of the round as the kernel's own field.
+
+| Option | Cost |
+| --- | --- |
+| A. **Draw both sides' march routes on the Build Phase, and make the route the guide** (the band measured to the route, not the straight line) | The kernel change is small, since the march field exists, and moves the guide off rock; it changes battles a little, so it is measured before and after. The drawing is a new layer on the map, redrawn as a building is placed, and needs a look that does not bury the base |
+| B. **Draw the routes only; keep the straight guide** | No kernel change; the line drawn and the line the army keeps to then differ wherever rock stands between |
+| C. **Neither, until banners** | Free; placement stays a guess |
+
+**Recommendation: A.** It is his central path, it makes "buildings bend the way" visible, and it is the line a banner
+will bend. The enemy's route is public information: it is worked out from the Grid both players see.
+
+### Q87 — Should a unit keep its target once its attack reaches it?
+
+**Status:** OPEN — registered 2026-10-26 by [the troop movement review](../history/reports/2026-10-26-troop-movement-review.md).
+
+Mario's picture: a unit chooses a target "and attacks until the target is eliminated". Today a unit chooses again
+every tick and keeps its target only while nothing is strictly nearer. On 12 scripted duels on the Crossing, troopers
+changed target 6,818 times against 4,316 hits, 741 times turning from a living enemy they were touching; marksmen
+dropped a target they could still shoot 82 times in 701 shots.
+
+| Option | Cost |
+| --- | --- |
+| A. **Lock-on once in reach**: a unit whose attack reaches its target keeps it until it falls or leaves reach; while walking it still chooses the nearest | Fights read as "each one finishes what it started"; bait and tanking hold, as in Clash Royale. A gun no longer turns to the runner at its feet, so a dive on the shooters pays more. A rule change: measured, and the Commander duels' numbers move |
+| B. **Hysteresis**: change only for a target nearer by 2 or more | Fewer changes, the same rule in spirit; still a number a player cannot see |
+| C. **As now** | Free and reactive; a fight is harder to read, and bait holds a unit only until something closer walks past |
+
+**Recommendation: A, behind a "Lock-on" Experiment** (off, on), so Mario can watch the same battle both ways before it
+becomes the rule.
+
+### Q88 — How should banners arrive?
+
+**Status:** OPEN — registered 2026-10-26; the design is in [`movement.md`](../system-design/movement.md), banners.
+
+Mario's banners: a primary banner, attack or hold, that the Commander always follows (by default, attack on the enemy
+Nexus), and skirmish banners on buildings for their waves, experimental because they "could make very dynamic and
+strategic battles, but also complicate the UI". The machinery is ready: hold is a side's target, built for campaign
+levels and the duel's stance; attack is a waypoint that needs no memory (a unit heads for the banner until it stands as
+near the enemy Nexus as the banner does). What is not ready is the screen. It also settles most of the hold half of
+[Q69](#q69--should-units-be-able-to-hold-withdraw-or-head-for-a-place-so-a-scripted-group-can-follow-an-order).
+
+| Option | Cost |
+| --- | --- |
+| A. **In three stages, each behind a "Banners" Experiment**: the stance first (attack, or hold before the Nexus: one key in a run's Build Phase, as duels have it); then a primary banner placed on the map; then skirmish banners | Each stage is small and playable on its own; the stance alone gives a run the defender's choice duels found real |
+| B. **Primary and skirmish banners together** | The whole idea at once; the most to read on screen before anyone has played one banner |
+| C. **Wait** until the march route (Q86) is on screen | A banner is easiest to read when the line it bends is drawn; delays a choice duels already showed matters |
+
+**Recommendation: A**, with the march route (Q86) built first or with the second stage, so a placed banner is shown
+bending a drawn route.
+
+### Q89 — What is the line that goes behind the enemy's front called?
+
+**Status:** OPEN — registered 2026-10-26.
+
+The formation's lines are melee, short range, long range, and a fourth for units that go for what stands behind the
+enemy's front (the Ravel bomber). The code calls it "backliner", which reads as a unit that keeps to the back, the
+opposite of what it does. Mario asked for "the best name for the idea of trying to move behind the enemy line".
+
+| Option | Cost |
+| --- | --- |
+| A. **Flanker** | Says it goes round the front; plain to anyone who plays strategy games. The bench already has a unit called the flanker, which would become an example of its line |
+| B. **Diver** | The word MOBA players use for going for the back line; less plain to anyone else |
+| C. **Infiltrator** | Says the goal, not the motion; long on a card |
+| D. **Backliner** (as now) | Free; reads backwards |
+
+**Recommendation: A, flanker**, in what a player reads first (cards, the play strategies, the chapter) and in the code
+when the code is next touched.
 
 ### Q51 — When should the game get a real accent-colour palette, with variations per faction?
 
