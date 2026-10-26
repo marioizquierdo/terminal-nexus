@@ -33,6 +33,9 @@ export type DuelSetup = Readonly<{
   pulseTicks: number
   commanders: Readonly<Record<Side, string>>
   rosters?: Readonly<Partial<Record<Side, Roster>>>
+  /** EXPERIMENT ONLY: what happens to survivors between rounds (`recallBy`, `src/match/recall-variants.ts`). Absent:
+   *  `home`, today's Recall. */
+  recall?: "home" | "fallback" | "stay"
 }>
 
 /** Where a building should go, as a plan names it: a place relative to the side's own base, or a tile. A named place

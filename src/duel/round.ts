@@ -23,6 +23,7 @@ import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../
 import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 import { centreTile, creditsEarned, fallen, opening, recall, restoreCommanders, spawningRegistry } from "../match/index.ts"
 import type { Force, StructurePlacement } from "../match/index.ts"
+import { recallBy } from "../match/recall-variants.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
@@ -499,7 +500,7 @@ export function playRound(
 
   // After it: who fell, what each side earned, what the next round starts from.
   const fell = fallen(events, sides.A, round)
-  const recalled = recall(current, sides.A, sides).state
+  const recalled = (state.setup.recall === undefined ? recall(current, sides.A, sides) : recallBy(state.setup.recall, current, sides.A, sides)).state
   const next: Record<Side, SideState> = { A: phases.A.side, B: phases.B.side }
   const reports = {} as Record<Side, SideReport>
   for (const side of SIDES) {
