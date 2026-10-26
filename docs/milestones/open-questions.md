@@ -37,6 +37,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
 | [Q84](#q84--is-requisition-the-runs-second-currency-and-does-the-nexuss-health-carry) | Is requisition the run's currency, and does the Nexus's health carry between battles? | OPEN | Mario's playing of a run (milestone 11) |
 | [Q85](#q85--how-long-is-a-run) | How long is a run? | OPEN | Mario's playing of a run (milestone 11) |
+| [Q86](#q86--what-does-an-army-do-between-battle-rounds) | What does an army do between Battle Rounds: go home, fall back, or stay? | OPEN | Mario's deep dive on the core loop |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
@@ -357,6 +358,24 @@ other stops.
 | C. **One act only, until content grows** | Fastest to play and test; a run that cannot tell a story of a build over time |
 
 **Recommendation: A**, played short first: the short run is what a playtest uses until the cards exist to fill three acts.
+
+### Q86 — What does an army do between Battle Rounds?
+
+**Status:** OPEN — the notes and a measured experiment are [`core-loop.md`](core-loop.md); nothing changes until he plays it.
+
+Today every survivor goes home between rounds (Recall). The owner is weighing a short retreat, or staying where the
+round left them — "an RTS autobattler with timed build phases" — with orders given in the Build Phase and the march line
+shown.
+
+| Option | Cost |
+| --- | --- |
+| A. **Home**, as today | Every round starts from the bases; a round must be long enough to cross the Grid. At 30 seconds two thirds of scripted duels never touch a Nexus |
+| B. **Fall back** a short way | The front keeps its place with a gap between the armies; short rounds stay decisive. One more rule to explain |
+| C. **Stay** where the round left them | The purest autobattler and the most decisive short rounds; a Build Phase can open with the enemy at your Nexus, and the snowball may come back once players adapt |
+
+**Recommendation: B as the default with C to try against it, both with Battle Rounds of 30 to 40 seconds, the round's
+order (advance, hold, fall back to base) in the Build Phase, and the march line drawn** — all as Experiments in a run
+first, so the answer comes from playing.
 
 ### Q51 — When should the game get a real accent-colour palette, with variations per faction?
 

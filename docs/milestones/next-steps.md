@@ -5,6 +5,9 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Read the core loop notes** ([`core-loop.md`](core-loop.md)): home, fall back or stay between rounds, orders in the
+  Build Phase, the march line shown, measured in 3888 scripted duels. The recommendation is a short step before the
+  run's route that puts each idea on trial as an Experiment inside a run; nothing is re-cut until he says.
 - **Try a building's actions** (his rule of 2026-10-22): in any Build Phase, `e` for Explore Map, onto a Barracks:
   `c` buys its production line (15 credits, one more trooper a wave), `c` again undoes it; onto a Turret, `c` heavy
   rounds, `v` and `b` its two firing modes. The look is for his UX passes.

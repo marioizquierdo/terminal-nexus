@@ -1,5 +1,5 @@
 // EXPERIMENT: one duel under a recall rule, the map as each Build Phase opens (side A's brief picture) and each round's
-// numbers. node tmp/recall-experiment/watch.ts <rule> <ticks> <a> <playerA> <b> <playerB> <seed>
+// numbers. node scripts/recall-experiment/watch.ts <rule> <ticks> <a> <playerA> <b> <playerB> <seed>
 import { briefOf, newDuel, playRound } from "../../src/duel/index.ts"
 import { scriptedPlayer } from "../../src/duel/players.ts"
 

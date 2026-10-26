@@ -1,4 +1,4 @@
-// EXPERIMENT: summarize tmp/recall-experiment/out/*.jsonl into compact tables. node tmp/recall-experiment/summarize.ts
+// EXPERIMENT: summarize tmp/recall-experiment/out/*.jsonl into compact tables. node scripts/recall-experiment/summarize.ts
 import { readdirSync, readFileSync } from "node:fs"
 
 type Round = {

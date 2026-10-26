@@ -24,8 +24,8 @@ With it come three ideas that stand on their own:
 - **The march line, shown.** The Commander's line to the enemy Nexus is the line every other unit marches by; it is
   drawn on the Build Phase map so the player sees the way the army will go. Without her on the Grid it is the line
   from Nexus to Nexus; later, the line to a banner or an outpost.
-- **The genre.** "Lean into the RTS genre": an army that lives on the battlefield, built in timed phases instead of
-  in real time, and told in ASCII.
+- **The genre.** "Lean into the RTS genre": an army that lives on the Grid between rounds, built in timed phases
+  instead of in real time, and told in ASCII.
 
 ## 2. What already exists
 
@@ -46,16 +46,77 @@ So a decision here is mostly about rules, not new machinery:
 
 ## 3. The experiment
 
-The three rules were built as an experiment-only option on the duel (nothing in the game changed) and measured: the
-three Commanders against each other, both sides, three scripted players, on the Crossing, under each rule, with Battle
-Rounds of 30, 50 and 75 seconds.
+The three rules were built as an experiment-only option on the duel (nothing in the game changed) and measured: 3888
+scripted duels on the Crossing, the three Commanders against each other, with Battle Rounds of 30, 50 and 75 seconds
+([the report, with every table](../history/reports/2026-10-26-between-rounds.md)).
 
-_Results are added below when the measurement finishes._
+| Battle Round | A Nexus falls: home / fall back / stay | The front as the Build Phase opens (distance to the enemy Nexus): home / fall back / stay |
+| --- | --- | --- |
+| 30 s | 23% / 36% / 43% of duels | 51 / 40 / 32 |
+| 50 s (today) | 49% / 48% / 50% | 53 / 41 / 33 |
+| 75 s | 65% / 66% / 66% | 58 / 46 / 39 |
+
+- **At today's 50 seconds the rule hardly changes who wins or when.** An army crosses the Crossing within a round
+  anyway, and under every rule the attack stalls at the same line, about 31 from the enemy Nexus, where the defender's
+  fresh waves and Turrets hold.
+- **The rule is what lets rounds be short.** At 30 seconds home rounds mostly end before anyone reaches a Nexus; with
+  the front kept, a 30-second round is as decisive as a 50-second one is today.
+- **The snowball may soften when the front is kept** (the side ahead after round 2 won 82% under home, 69% under fall
+  back, 74% under stay), but on about 50 duels: a hint, not a finding.
+- **Under stay a Build Phase can open with the enemy at your Nexus.** Fall back keeps the front's place but always
+  leaves a gap.
+- **The scripts never retreat, hold when beaten, or answer a camped army**, so the numbers measure script against
+  script. Whether an army at your door feels like pressure or like a lost game only a player can say.
 
 ## 4. Thoughts
 
-_Written with the results._
+**Lean into the genre, and keep the front.** An army that stays where it fought is the concept's own promise —
+"persistent armies", "survivors matter" — made visible: the Build Phase stops being a fresh start and becomes a reading
+of a live situation, where the line is, what is thin, what reached the Turrets. It frees the map's size from the
+round's length, which home never can, and it is what gives a run's battles the texture of a dynamic environment rather
+than a series of raids. The measurement agrees on the one thing it can show: keeping the front is what makes short,
+decisive rounds possible.
+
+**Fall back as the default, stay as the bold setting.** Fall back keeps the RTS feel — the front's place, the army's
+shape, the march resumed each round — but never opens a Build Phase with enemy troops on your roofs, which is the moment
+most likely to feel decided rather than tense. Stay is the purer autobattler and the one to try against it.
+
+**Orders are the other half, and they are cheap.** With the front kept, the decision a player most wants is the army's:
+press on, hold the line, or pull back to the base — the round's order, given in the Build Phase and carried out in the
+Battle Round, exactly as a building's order is. Fall back to base is today's Recall turned into a choice. Banners and
+outposts come later as places to hold or gather, and the guide line runs to them. The duel's stance already holds
+`attack` and `hold`; the Build Phase only needs the row.
+
+**Show the line.** The guide line exists in the march; drawing it on the Build Phase map — from the Commander to the
+enemy Nexus, or Nexus to Nexus while she is out — tells the player where the army will go before they commit, which is
+the "see it before you commit" rule applied to movement.
+
+**Shorter rounds with it.** About 30 to 40 seconds a Battle Round instead of 50: the agent's numbers say fall back or stay
+keeps them decisive, and a run of eight short rounds a battle is closer to the 5–12 minutes a match is meant to be.
+
+**What to watch.** Reinforcements walking out behind a forward line (an army that arrives in two pieces); a stalemate at a
+choke where both fronts sit at each other's Turrets; the snowball once players adapt; the Build Phase drawing many units
+mid-Grid at 80 × 24; enemy units inside your build range (placement refuses occupied ground, but nothing else changes).
 
 ## 5. Against the milestone plan
 
-_Written with the results._
+| Where | What the choice changes |
+| --- | --- |
+| **Runs (current)** — the route, the opponents, the shell | Little in the route itself. The run's numbers do move: rounds per battle and their length, how much a battle costs the Nexus. The scripted opponents need to hold and fall back when beaten, or a kept front is unanswerable — the experiment's biggest caveat, and already the opponents' step's work |
+| **Runs — playing it** | This is where the deep dive belongs: a run is the loop, played end to end. Each rule an Experiment in Settings, felt over a run |
+| **Worker economy** | Workers out on a kept front are natural RTS; under home they shuttle. The economy's timing waits on the round's length either way |
+| **First and second missions** | PERIMETER's raids were written for home: under fall back or stay a raid's survivors linger near the base into the next Build Phase, which changes what the mission teaches. A mission may fix its own rule |
+| **Content and balance** | Units' roles shift: speed and reinforcement matter more with a kept front, a Garrison that holds the line is worth more |
+| **The register** | Answers part of how an army reaches its first fight faster; makes the hold and withdraw orders (asked once for missions) a player's choice too; feeds how long a match is |
+
+**Recommendation for the order: a short step before the route.** Put the core loop on trial inside the run, as
+Experiments he plays rather than rules decided on paper:
+
+1. **Between rounds** — home, fall back, stay (the rule measured here, behind a setting; home by default until he says).
+2. **Battle Round length** — 30, 40 or 50 seconds.
+3. **The round's order** — a Build Phase row: advance, hold the line, fall back to base.
+4. **The march line** drawn on the Build Phase map.
+5. **The scripted opponent holds or falls back** when its front is broken, so a kept front has an answer.
+
+Then the route, the opponents and the shell go on as planned, on numbers the deep dive settled. The register holds the
+question with this recommendation; nothing in the milestone is re-cut until he says.

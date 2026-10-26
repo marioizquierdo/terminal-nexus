@@ -1,5 +1,5 @@
 // EXPERIMENT: the bench under each recall rule. Usage:
-//   node tmp/recall-experiment/run.ts --rule stay --ticks 600 --seeds 1-12 --out tmp/recall-experiment/out/stay-600.jsonl
+//   node scripts/recall-experiment/run.ts --rule stay --ticks 600 --seeds 1-12 --out tmp/recall-experiment/out/stay-600.jsonl
 // One JSON line per duel: the setup, the result, and per round how it ended, the Nexus damage each side dealt, and how
 // far each side's units stood from the enemy Nexus when the battle ended (and after the between-rounds rule).
 import { appendFileSync, mkdirSync, writeFileSync } from "node:fs"
