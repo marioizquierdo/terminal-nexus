@@ -13,11 +13,21 @@ formations", "a better way to define aggressive vs defensive stance, clear movem
 predictable spawning schedules. With all that, we can safely leave the units on the map."
 
 - **Battle Rounds of 30 seconds.**
-- **The front stays, with a regroup.** After a round, survivors in a fight stop targeting, step back for 2 seconds and
-  form up for 6, 10 seconds in all (his numbers; the last 2 seconds the army stands formed, room for the slowest to
-  arrive). It plays during the Build Phase.
-- **Troops move during the Build Phase**, forming up and stepping out from under a building placed on them, and all of
-  it deterministic: the regroup is worked out from the round's end alone, so a scripted battle plays the same.
+- **The front stays, with a regroup — the idea, not the numbers.** "The Nexus announces a pause and troops must respect
+  the will of the Nexus, but they would still move and prepare for next round": survivors disengage, step back and
+  re-form facing the enemy, ready to re-target. It is subtle, intuitive and thematic, about 10 seconds played during
+  the Build Phase, and some units survive thanks to it, so the 30-second timing becomes a tactical skill. Candidates
+  he named: only stepping back for about 5 seconds, favouring a formation that faces the enemy; or 2 seconds back,
+  then about 8 seconds of a defensive arrangement as if no enemy were in sight. The numbers are found by playing.
+- **Troops move during the Build Phase**, and all of it deterministic: the regroup is worked out from the round's end
+  alone, so a scripted battle plays the same.
+- **A building placed on troops pushes them out** — friendly or enemy — along the ground by the pathfinding, the same
+  way every time; on screen they move smoothly to their new places and may push the troops round them on, in a
+  ripple.
+- **One mechanism for every mode.** No mode sends troops home any more. A story level differs only in its enemies and
+  cut-scenes: its enemies may have no Nexus and more elaborate scripting, but the gameplay is the same. For now its
+  side takes the level's automatic target, or a defensive stand; later stances and banners come into it by phase
+  conditions (a tutorial asking the player to place the banner).
 - **Orders, from simple to rich** — each a step, built in order:
 
 | Level | What the player sets | What it allows |
@@ -28,8 +38,15 @@ predictable spawning schedules. With all that, we can safely leave the units on 
 | **Two banners** | The Commander follows the main banner; a building can be set to send its units after the secondary one | Split armies, which matter once the map holds resources and bonuses; needs more UX. To test eventually, built towards step by step |
 
 Where it sits: the runs milestone gains three steps before the route — the kept front, the stance, the banner. Two
-banners wait until the map has something worth splitting an army for. The campaign's missions keep sending survivors
-home until they are revisited.
+banners wait until the map has something worth splitting an army for.
+
+**The game modes, named precisely** (the rename is the next pull request's, not this one's):
+
+| Today | Becomes | What it is |
+| --- | --- | --- |
+| Campaign | **Story** | A tutorial for each Commander, with intros and cut-scenes |
+| Challenge run | **Rogue** | A standard progression of maps with upgrades between them |
+| Duel (player against player) | **Versus** | Nexus against Nexus: two Commanders with the competitive build unlocked |
 
 ## 1. The question (as it was asked)
 

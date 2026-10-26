@@ -85,19 +85,22 @@ from 11C on build it, each playable on its own.
 
 The owner, 2026-10-26 ([his words](../history/feedback/2026-10-26-core-loop.md)), after the measured experiment in
 [`core-loop.md`](core-loop.md): "double down the RTS style, leaving troops on the map, so they can keep moving forward."
-Duels and runs play by it; the campaign's missions keep sending survivors home until they are revisited.
+Every mode plays by it ([his next note](../history/feedback/2026-10-26-core-loop.md)): nothing is sent home any more, the
+campaign's missions included.
 
-- [ ] **Battle Rounds of 30 seconds** in duels and runs, and the number of rounds a battle lasts measured again for it.
-- [ ] **The regroup.** When a Battle Round ends, survivors stay on the Grid: they stop targeting, step back toward their
-      own Nexus for 2 seconds, then form up for 6 seconds, 10 seconds in all. It is worked out by the rules from the
-      round's last state alone, the same whatever the player does in the Build Phase, so a scripted battle stays
-      deterministic.
+- [ ] **Battle Rounds of 30 seconds**, and the number of rounds a battle lasts measured again for it.
+- [ ] **The regroup.** When a Battle Round ends, survivors stay on the Grid: they disengage, step back and re-form facing
+      the enemy, about 10 seconds in all (the idea is the owner's; the numbers are a starting point). It is worked out
+      by the rules from the round's last state alone, the same whatever the player does in the Build Phase, so a
+      scripted battle stays deterministic.
 - [ ] **A formation**: each side's survivors form up across its march line, melee in front and ranged behind, the
       Commander in it; reinforcements walk out to it in the next round.
 - [ ] **Played during the Build Phase**: the regroup is the Build Phase's first 10 seconds on the map, while the player
       builds; placement reads where the troops will stand.
-- [ ] **A building placed on the player's own troops** is allowed: they step out to the nearest free ground when the
-      round begins, the same way every time. Ground an enemy stands on is refused.
+- [ ] **A building placed on troops**, friendly or enemy, pushes them out along the ground, the same way every time; on
+      screen they move smoothly and may push the troops round them on.
+- [ ] **One mechanism for every mode**: the walk home is removed; campaign levels play the kept front, their side on the
+      level's automatic target or a defensive stand, and their tests are re-pinned to it.
 - [ ] Duels, the duel scripts and runs play it; the measurement is run again and the snowball read.
 
 ### Step 11E — The stance
