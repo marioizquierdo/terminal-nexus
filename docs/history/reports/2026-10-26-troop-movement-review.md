@@ -7,6 +7,12 @@ movement". His words are in [`2026-10-26-troop-movement.md`](../feedback/2026-10
 itself now lives in [`movement.md`](../../system-design/movement.md), restructured as a chapter on troop movement;
 this report is the reasoning behind it and the evaluation. No rule was changed._
 
+_Mario's answers, the next day ([F223 to F230](../feedback/2026-10-26-troop-movement.md)), changed three things this
+report assumed: the Commander does not lead (she is a regular troop, and the central path runs from the Nexus); the
+formation is a priority list with one half-speed rule rather than places and waiting; and troops are no longer
+recalled (the kept front). Lock-on, banners in stages and "flanker" were agreed; drawing the march route waits. The
+chapter is written on his answers; this report stays as it was written._
+
 ## How troops move, from the top down
 
 **In one sentence**: each round the army walks from its base to the enemy's Grid Nexus, the Commander at its head and
