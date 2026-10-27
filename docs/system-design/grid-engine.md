@@ -228,27 +228,24 @@ than just moving, it is 'troops movement'". This section is the summary; the cha
 able to predict, every number and its pictures, is [`movement.md`](movement.md), and the rules with their tests are in
 [`pulse.md`](pulse.md), routes. GUIDANCE unless marked.
 
-**What a player should be able to predict** is seven rules: troops move only in a Battle Round; the army marches on the
-enemy Nexus by the shortest walk; the Commander leads, melee beside her and guns behind; a troop fights anything within
-6 columns of it, building or unit, the nearest first; it walks until its attack reaches, then stands, and a standing
-fight is a wall; buildings are walked round until there is no way round, then the fewest are broken; workers run.
-Building placement is both halves of the game: a building near the enemy's way bends it or baits it, and where a
-producer stands decides how soon its wave joins the fight.
+**What a player should be able to predict** is seven rules: troops fight only in a Battle Round and regroup where they
+fought between rounds; the army marches on the enemy Nexus by the shortest walk; a troop marches, fights or retreats;
+its vision is 6 columns by default and sees buildings too, the nearest first; it commits to its target until it falls
+or it has gone 2½ seconds unable to strike it; the formation sorts itself on the march, flankers, melee, then ranged by
+range, a troop walking at half speed while one that should be ahead of it is in its vision; buildings are walked round
+until there is none, then the troops breach the fewest; workers run. Building placement is both halves of the game: a
+building near the enemy's way bends it or baits it, and where a producer stands decides how soon its wave joins the
+front.
 
-**What a unit does when nobody tells it anything** — which is always, until orders exist — is one of six states,
-worked out fresh every tick from what it chose (RULE — `MoveState`, `src/pulse/march.ts`):
+**A unit is in one of three states**, worked out fresh every tick (`MoveState`, `src/pulse/march.ts`):
 
-1. **Leaving the roof.** A unit a building trains comes out on its roof, and survivors come home onto it; standing on
-   its own building, it walks to the nearest ground first (or along the roofs, the "Way off the roof" Experiment), and
-   does so too when its side's building owes a wave it has no room for.
-2. **Marching.** With no enemy within its engage reach (6 columns), it walks for its side's goal: the level's target,
-   or the enemy's Grid Nexus. It keeps its place in the army's formation: melee in front, short range behind it, long
-   range behind that, backliners anywhere, and nobody but a backliner ahead of its Commander while she marches.
-3. **Yielding.** A marcher ahead of its place takes no step this tick and lets an ally behind it pass.
-4. **Engaged.** An enemy came within its engage reach: it walks to where its attack reaches that enemy.
-5. **Standing.** Its attack reaches, or it is gathered at its side's target, or it has nothing to do: it fights or
-   holds, and is a wall to everyone's routes.
-6. **Fleeing.** A worker with a threat near runs from every threat at once into open ground.
+1. **March.** No enemy in its vision: it walks for its side's goal (the level's target, or the enemy's Grid Nexus),
+   stepping off its roof first, keeping its place in the formation by the half-speed rule, and holding once it has
+   arrived at its side's target.
+2. **Battle.** An enemy in its vision, or a target it is committed to: it walks to where its attack reaches, then
+   stands and strikes, and is a wall to everyone's routes.
+3. **Retreat.** The rules pull it back: a worker from every threat, every survivor in a fight during the regroup's step
+   back.
 
 **How it gets there** is five building blocks, each tested alone (`src/routing/`): *ground* (where a body may stand:
 rock and whatever stands still are walls, a walker is not), *goals* (where the walk ends: where its attack reaches, or
@@ -258,8 +255,8 @@ turn and then a seeded draw), and *arbitration* (who gets a tile two want, and a
 unit heading for the same goal with the same body, worked out every tick from that tick's Grid and only as far as
 asked, so a fallen building or a moved crowd is in the next tick's routes with nothing kept up to date.
 
-**What makes it the game's**: the general path is the field, not a line; the Commander is the line an army keeps to
-while she leads (without her, the line from its Nexus to its goal); rock is never broken but an enemy building in the
+**What makes it the game's**: the general path is the field, not a line; the central path an army keeps to is the line
+from its own Nexus to its goal, and the Commander is a troop like any other; rock is never broken but an enemy building in the
 only way is; and every tie is broken by what a unit faces and then the seeded stream, never by reading order, so a
 mirrored battle stays a mirror (RULE — [`pulse.md`](pulse.md), no side wins by where it stands). A new way of
 moving — stepping back from damage, leaping forward, a beacon to gather at — is a new goal, a new field or a move that
@@ -271,7 +268,7 @@ This document is the overview. The design is in its parts, one document each:
 
 - [`grid.md`](grid.md) — the Grid: size and shape, orientation, viewport and scrolling, layers and collision masks, placement and footprints, distance.
 - [`pulse.md`](pulse.md) — the Pulse: logical time, movement credit, tick order, determinism and replay, routes, match structure, economy, events.
-- [`movement.md`](movement.md) — troop movement: what a player should be able to predict, the Build Phase and the Battle Round, where an army goes, banners (an idea), spawning, formation, targeting and attacking, workers, and the machinery underneath (the shared field, breaching, where modifiers plug in).
+- [`movement.md`](movement.md) — troop movement: what a player should be able to predict, the Build Phase and the Battle Round, where an army goes, banners (an idea), spawning, the three states, formation, targeting and attacking, breaching, workers, the machinery underneath, what is still to smooth, and strategies.
 - [`measurement.md`](measurement.md) — how a battle is measured, so results before and after a rule change compare.
 - [`content.md`](content.md) — content interfaces.
 - [`presentation.md`](presentation.md) — the cell frame, composition, the tile, bands, effects, accessibility.
