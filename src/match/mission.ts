@@ -60,7 +60,7 @@ export type MissionPulseInput = Readonly<{
   registry: ContentRegistry
   /** Which Pulse of the mission, from 1. */
   pulse: number
-  /** What the last Pulse left, after Recall — `null` for the mission's first Pulse. */
+  /** What the last Pulse left, after the regroup — `null` for the mission's first Pulse. */
   carried: MatchState | null
   /** The player's buildings newly standing this Pulse: for the first, the map's own and the plan's; for
    *  a later one, only what the plan added (the rest is in `carried`). */

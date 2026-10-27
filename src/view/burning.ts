@@ -84,8 +84,8 @@ export type FireInput = Readonly<{
   /** Absolute presentation time. */
   timeMs: number
   tickDurationMs: number
-  /** When everything in the fight has landed and Recall may begin (`PulseView.effectsEndMs`, at least the last
-   *  tick's end): the fire is put out by then whatever its own end, as Recall puts it out in the rules. */
+  /** When everything in the fight has landed and the result may show (`PulseView.effectsEndMs`, at least the last
+   *  tick's end): the fire is put out by then whatever its own end, as the regroup puts it out in the rules. */
   outMs: number
   reducedMotion: boolean
   cosmeticSeed: number

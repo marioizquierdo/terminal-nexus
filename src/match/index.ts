@@ -1,6 +1,7 @@
 export * from "./types.ts"
 export * from "./opening.ts"
-export * from "./recall.ts"
+export * from "./regroup.ts"
+export * from "./make-room.ts"
 export { centreTile, nearestFit } from "./placement.ts"
 export * from "./mission.ts"
 export * from "./training.ts"

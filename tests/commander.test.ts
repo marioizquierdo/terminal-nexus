@@ -16,7 +16,7 @@ import { footprintSteps } from "../src/grid/coords.ts"
 import {
   fallen,
   openingState,
-  recall,
+  regroup,
   resolveMissionPulse,
   restoreCommanders,
   roundsOutOf,
@@ -36,7 +36,7 @@ const NEXUS = "structure.citizen.nexus"
 
 type Round = Readonly<{ pulse: MissionPulse; restored: readonly Restoration[]; absent: readonly Absence[] }>
 
-/** A mission played round by round as the screen plays it: Recall between rounds, the Commanders who fell
+/** A mission played round by round as the screen plays it: the regroup between rounds, the Commanders who fell
  *  counted, and whoever is due set down beside the Nexus before the next round opens. `absent` is who is
  *  out when the round's Pulse has ended. */
 function playWithCommanders(
@@ -60,7 +60,7 @@ function playWithCommanders(
     absent = [...absent, ...fallen(pulse.events, registry, number)]
     rounds.push({ pulse, restored, absent })
     if (pulse.verdict.kind !== "continue") break
-    carried = recall(pulse.final, registry).state
+    carried = regroup(pulse.final, registry).state
   }
   return rounds
 }
@@ -96,8 +96,8 @@ test("Vasse is a Commander: a persistent @ on the units layer, and PERIMETER bri
   const [again] = vasseIn(round2.pulse.states[0] as MatchState)
   assert.ok(again !== undefined)
   assert.deepEqual([again.id, again.ordinal, again.hp], [first.id, first.ordinal, survived.hp])
-  const move = recall(round1.pulse.final, registry).moves.find((entry) => entry.ordinal === first.ordinal)
-  assert.equal(move?.home, "nexus", "she has no building that makes her: the Grid Nexus is her home")
+  // Between the rounds she stays on the Grid and regroups with her army, the same unit (no walk home any more).
+  assert.ok(regroup(round1.pulse.final, registry).paths.some((path) => path.ordinal === first.ordinal))
 })
 
 test("a mission brings its Commander once: two of her, or a second arrival, is refused by name", () => {
@@ -194,7 +194,7 @@ test("a Commander who sits two rounds out is out for the rest of the three-round
   }
   // Had the mission a fourth round, it would open with her: due in round 4, the Nexus sets her down as it opens. (From
   // round 2's end, where her Nexus still stands; with her out two rounds this empty base does not hold round 3.)
-  const fourth = restoreCommanders(recall(round2.pulse.final, registry).state, round2.absent, 4, registry)
+  const fourth = restoreCommanders(regroup(round2.pulse.final, registry).state, round2.absent, 4, registry)
   assert.equal(fourth.restored.length, 1)
   assert.deepEqual(fourth.absent, [])
 })
@@ -220,20 +220,21 @@ test("the named scenario is the same every run, and on both runtimes, whatever s
 // The three rounds as the rules play them: By the Book guarding her and the troopers beside her, the ambush's two
 // runners making sure she falls in round 1, a row counting two columns in every distance and step, and every step
 // taking whole beats, one across and two up or down. Round 1 is the same whatever she sits out; from round 2 on,
-// Vasse, back beside the Nexus, fights in it.
+// Vasse, back beside the Nexus, fights in it. Rounds 2 and 3 pinned again when the survivors came to stay on the Grid and
+// regroup between rounds rather than walk home (2026-10-26).
 const PINNED_ROUNDS = [
   "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
-  "a77f8ba8161e9c05f30ad4f6e30ef7e72d7c3125dfd8d38b923d5eacd950e148",
-  "2341933382f9101ba34c9d7105853a860cafadfbb3966bc00ee36cee1ea29899",
+  "86be80c8fa8f41c517fa9aebe4b2492ba433402a57063bbb1993438d3e71d958",
+  "0802c24e2939033c13db08ec27a01f252dc4be1976b543f375e60455ea3e5b9b",
 ]
 
 // The same three rounds with a test-only Vasse who sits one round out: the rule as it stood before Vasse came back at
 // once. Both sets pinned again when every tie came to go by what a unit faces, then a draw (no side wins by where it
-// stands), and when units came to walk by routes.
+// stands), and when units came to walk by routes; and rounds 2 and 3 when the survivors came to regroup between rounds (2026-10-26).
 const PINNED_SITTING_OUT = [
   "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
-  "514a6ea0e399d6c4fab50a87ab3429c1edcc28451f75e5186fcd06236ed4a9b3",
-  "444c6f2b73ea314a1972c1564777935f759e7b854bd3fedccc6001ca37b6725a",
+  "6e0cf9eb3284a26bc53d4d6cea2baaff0bfdbb6aec951158fb3e714e5f2ad003",
+  "d7a405d9afb6220854ccb7253bebaa827ca7171d84a7ae36ebe36a6360bc576f",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

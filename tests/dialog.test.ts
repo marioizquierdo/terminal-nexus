@@ -37,7 +37,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { ROW_DISTANCE, tilesOf } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { ACTIVITY_FILTERS, filteredEntries } from "../src/log/activity.ts"
-import { recall, resolveMissionPulse } from "../src/match/index.ts"
+import { regroup, resolveMissionPulse } from "../src/match/index.ts"
 import type { MissionPulse } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, SAY_COLUMNS, SAY_LINES, sayLines, sceneOf, validateMission } from "../src/mission/index.ts"
@@ -231,7 +231,7 @@ test("validation refuses every broken line by name, and reports them all at once
   assert.deepEqual(problemsOf(withTriggers({ id: "t", when: at(1), do: [say("Corvane", "You.", { group: "probe" }), say(VASSE, "Me.", { unit: VASSE })] })), [])
 })
 
-/** A whole mission, round by round, with Recall between them: nothing planned, as the hash test in
+/** A whole mission, round by round, with the regroup between them: nothing planned, as the hash test in
  *  tests/mission.test.ts plays it. */
 function playMission(mission: MissionDefinition): MissionPulse[] {
   const pulses: MissionPulse[] = []
@@ -240,7 +240,7 @@ function playMission(mission: MissionDefinition): MissionPulse[] {
     const run = resolveMissionPulse({ mission, grid, registry, pulse, carried, structures: pulse === 1 ? STARTER_STANDING : [] })
     pulses.push(run)
     if (run.verdict.kind !== "continue") break
-    carried = recall(run.final, registry).state
+    carried = regroup(run.final, registry).state
   }
   return pulses
 }

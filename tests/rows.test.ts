@@ -35,7 +35,7 @@ import {
   wholeRows,
 } from "../src/grid/index.ts"
 import type { Coord, Direction, Footprint, GridTerrain } from "../src/grid/index.ts"
-import { foreseeIntents, recall, resolveMissionPulse } from "../src/match/index.ts"
+import { foreseeIntents, regroup, resolveMissionPulse } from "../src/match/index.ts"
 import type { MissionPulseInput } from "../src/match/index.ts"
 import type { MissionDefinition } from "../src/mission/index.ts"
 import { validateMission } from "../src/mission/index.ts"
@@ -620,22 +620,6 @@ test("the forecast's way ends touching what it goes for, straight above or below
   // From the north, the way ends on the tile straight above the player's trooper; from the south, straight below.
   assert.deepEqual(endOfWay({ x: 20, y: 9 }, { x: 20, y: 12 }), { x: 20, y: 11 })
   assert.deepEqual(endOfWay({ x: 20, y: 15 }, { x: 20, y: 12 }), { x: 20, y: 13 })
-})
-
-test("Recall sends a survivor to the home nearest by the rule: a Nexus four columns beside it, not one three rows above", () => {
-  // Two Grid Nexuses of the player's: one whose nearest tile is three rows above the trooper (six away), one whose
-  // nearest is four columns beside it (four away). A placement block puts a building by its centre tile.
-  const home = recall(field({ A: [[20, 6, NEXUS], [25, 10, NEXUS], [20, 10, TROOPER]] }), FIXTURE_REGISTRY).moves[0]?.to
-  assert.deepEqual(home, { x: 23, y: 10 }, "beside the Nexus four columns across")
-})
-
-test("Recall sets a survivor down on the side of its home it came from: below the Nexus when it stood below it", () => {
-  // A placement block puts a building by its centre tile, so the Nexus covers columns 19 to 21 of rows 10 and 11. Its
-  // tile nearest a trooper below it is 20,11, and the free tiles nearest that, two away, are 18,11 and 22,11 beside
-  // the Nexus and 20,12 below it: the one on the trooper's own side. From above, it is 20,9.
-  const homeFrom = (at: Coord): Coord | undefined => recall(field({ A: [[20, 10, NEXUS], [at.x, at.y, TROOPER]] }), FIXTURE_REGISTRY).moves[0]?.to
-  assert.deepEqual(homeFrom({ x: 20, y: 16 }), { x: 20, y: 12 }, "it came home beside the Nexus, not below it")
-  assert.deepEqual(homeFrom({ x: 20, y: 4 }), { x: 20, y: 9 })
 })
 
 test("the battle with the most rules in it resolves the same way on every run, and on Node and Bun alike", async () => {

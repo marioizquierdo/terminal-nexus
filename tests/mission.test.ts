@@ -8,7 +8,7 @@ import { STARTER_STANDING, starterGrid } from "../src/build/catalog.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { tilesOf } from "../src/grid/coords.ts"
-import { missionOpening, recall, resolveMissionPulse, targetRegionsAt, targetsAt } from "../src/match/index.ts"
+import { missionOpening, regroup, resolveMissionPulse, targetRegionsAt, targetsAt } from "../src/match/index.ts"
 import type { MissionPulse } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
 import { MissionError, validateMission } from "../src/mission/index.ts"
@@ -37,7 +37,7 @@ const STRONG: readonly (readonly Placement[])[] = [
 ]
 const NOTHING: readonly (readonly Placement[])[] = [[], [], []]
 
-/** A whole mission, round by round, with Recall between rounds — exactly what the screen does. */
+/** A whole mission, round by round, with the regroup between rounds — exactly what the screen does. */
 function playMission(mission: MissionDefinition, plans: readonly (readonly Placement[])[]): MissionPulse[] {
   const pulses: MissionPulse[] = []
   let carried: MatchState | null = null
@@ -46,7 +46,7 @@ function playMission(mission: MissionDefinition, plans: readonly (readonly Place
     const run = resolveMissionPulse({ mission, grid, registry, pulse, carried, structures })
     pulses.push(run)
     if (run.verdict.kind !== "continue") break
-    carried = recall(run.final, registry).state
+    carried = regroup(run.final, registry).state
   }
   return pulses
 }
@@ -222,7 +222,7 @@ test("a target holds round after round until another moves it, and one set betwe
 test("a survivor is the same unit next round: its id, its ordinal and its health carry over", () => {
   const [round1, round2] = playMission(PERIMETER, STRONG)
   assert.ok(round1 !== undefined && round2 !== undefined)
-  const recalled = recall(round1.final, registry).state
+  const recalled = regroup(round1.final, registry).state
   const opening2 = round2.states[0] as MatchState
   for (const survivor of recalled.entities) {
     const again = opening2.entities.find((entity) => entity.ordinal === survivor.ordinal)
@@ -248,7 +248,7 @@ test("what the raid destroyed stays destroyed", () => {
 test("a building planned where a survivor stands moves the survivor aside, and nobody shares a tile but a survivor its own side's roof", () => {
   const [round1] = playMission(PERIMETER, STRONG)
   assert.ok(round1 !== undefined)
-  const carried = recall(round1.final, registry).state
+  const carried = regroup(round1.final, registry).state
   const survivor = carried.entities.find((entity) => entity.player === "A" && registry.get(entity.contentId).layer === "units")
   assert.ok(survivor !== undefined, "no survivor to build on")
   const opening = missionOpening({ mission: PERIMETER, grid, registry, pulse: 2, carried, structures: [{ contentId: TURRET, anchor: survivor.anchor }] }).state
@@ -256,7 +256,7 @@ test("a building planned where a survivor stands moves the survivor aside, and n
   assert.ok(moved !== undefined)
   assert.notDeepEqual(moved.anchor, survivor.anchor, "the survivor stayed under the Turret")
   // Two buildings never share a tile, nor two units; a unit stands on a building only when it is its own side's, as
-  // Recall brings a survivor home onto the roof of the building that trained it.
+  // a wave that never walked off stands on the roof of the building that trained it.
   const buildings = new Map<string, string>()
   const units = new Set<string>()
   const structure = (entity: MatchState["entities"][number]): boolean => registry.get(entity.contentId).layer === "obstacles"

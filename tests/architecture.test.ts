@@ -69,7 +69,7 @@ function assertNoDependencyOn(from: string, forbidden: readonly string[]): void 
 }
 
 test("src/pulse never reaches the view, the report, the shell, or the match layer", () => {
-  // The match layer (the opening state and Recall) sits beside the tick kernel and is never
+  // The match layer (the opening state and the regroup) sits beside the tick kernel and is never
   // called from inside it, so no Pulse's hashes can depend on it.
   assertNoDependencyOn("pulse", ["view", "report", "cli", "match"])
 })

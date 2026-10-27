@@ -580,11 +580,13 @@ The run's draft is the second popup the player does not open. A round that has a
   Battle Round — nothing planned gives build range, so no building ever needs another. A refused try flashes the
   footprint in the danger colour as the bottom line says why. (RULE for the flash —
   `tests/build-motion.test.ts`)
-- **What else is on the map**: after a round, every survivor stands where Recall put it — the
-  player's own and the raid's — and the raid's own structures stand where its plan put them, each in its
-  side's colour. A structure of the raid's refuses a placement like the player's own; a unit does not,
-  because **a unit steps aside for a building when the Battle Round starts**, so a unit is never drawn over a
-  planned building either. Explore Map's card reads any of them: its words, whose it is, its health now.
+- **What else is on the map**: after a round, every survivor stands where the regroup leaves it — the
+  player's own and the enemy's — walking there over the Build Phase's first 10 seconds (reduced motion shows
+  them there at once), and the enemy's own structures stand where its plan put them, each in its side's
+  colour. Placement reads where the troops will stand. A structure of the enemy's refuses a placement like the
+  player's own; a unit does not, whoever's it is: **a building placed on units pushes them out**, and they walk
+  from under it to the nearest free ground as it is placed, pushing those in their way on, so a unit is never
+  drawn over a planned building. (RULE — `tests/kept-front.test.ts`) Explore Map's card reads any of them: its words, whose it is, its health now.
   (RULE — `tests/mission-loop.test.ts`)
 - ***The incoming raid*** (a named pattern: the owner's "explore the map and see what is coming", and
   "the enemy units should be visible without nexus powers"): what the next round's triggers bring is
@@ -687,17 +689,17 @@ The run's draft is the second popup the player does not open. A round that has a
   page. (RULE — `tests/pulse-screen.test.ts`)
 - **The ending is four beats, in order**: the **last seconds** — only the title's timer flashes, slowly,
   and a soft light sweeps the border like a lighthouse (colour, never a glyph; in monochrome the timer
-  reverses and the border goes bold) — then **cease fire**, **Recall** (survivors walk home) and the
-  **result** (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`, why, and how many came home) — words first, on
+  reverses and the border goes bold) — then **cease fire** and the
+  **result** (`VICTORY`, `DEFEAT`, `DRAW` or `TIME'S UP`, why, and under **Regroup** how many of yours hold the field) — words first, on
   the panel and again on the bottom line, colour second. Reduced motion holds the timer lit and the light
-  steady, and puts everyone home at once. (RULE — `tests/ending.test.ts`, `tests/pulse-screen.test.ts`)
+  steady. (RULE — `tests/ending.test.ts`, `tests/pulse-screen.test.ts`)
 - **Nothing the player does changes what the battle did**: it was resolved before the first frame, so
   Replay only restarts the clock; centring on the Nexus is the same named command a key sends.
   (RULE — `tests/pulse-screen.test.ts`)
 - ***The loop***: in a mission, the result says the fight first — `VICTORY`, `DEFEAT`, `DRAW` or
   `TIME'S UP`, and why — then where the mission stands ("Round 1 of 3 is over. The Nexus stands."), and
   the row where Pause was becomes **`[enter] Next round`**: Enter, Space, `n` or a click open the next
-  round's Build Phase on what the last one left — the player's buildings standing, the survivors home,
+  round's Build Phase on what the last one left — the player's buildings standing, the survivors regrouping where they fought,
   the credits not spent, a new Nexus power dealt, the cursor on the Nexus, and the bottom line saying how
   the last round went. **Nothing moves on before the result stands**: a key must never skip the ending.
   (The Next round Experiment can begin it on its own a moment after the result instead.) When a trigger
@@ -707,7 +709,7 @@ The run's draft is the second popup the player does not open. A round that has a
   (RULE — `tests/mission-loop.test.ts`)
 - ***A Commander's absence is said where the player is looking.*** On the map she is the one `@`, never a
   letter, in her side's colour. The feed names her and says she **falls** (`5.9s Vasse falls`), not that a
-  unit dies. The result says it under Recall: `Vasse fell: back next round.` for a Commander who sits no round
+  unit dies. The result says it under Regroup: `Vasse fell: back next round.` for a Commander who sits no round
   out, the round she is out for and the round she is back for for one who does (`Vasse fell: out for round 2,
   back for round 3.`), only that she fell once there is no next round. **Her return is the Nexus Pulse's act**:
   the round she comes back, the dialog opens on `The Nexus Pulse restores Vasse beside the Nexus.`, looking at

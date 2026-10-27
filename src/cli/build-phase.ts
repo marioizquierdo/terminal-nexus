@@ -304,6 +304,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
           footprintOf: (contentId) => context.registry.get(contentId).footprint,
           raidTrail: hasTrail(raid, visibleRange(build.state.camera, build.state.viewport)),
           ...(options.scenes === false ? {} : appearsFor(build.round)),
+          ...(build.round.field === undefined ? {} : { regroupOf: build.round.field }),
         })
     const pulse = gated ? undefined : build.pulseFrame()
     const frame =

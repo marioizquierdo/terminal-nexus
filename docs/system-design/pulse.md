@@ -199,7 +199,7 @@ then by the shooter's ordinal). A guard still softens it; a boost round the shoo
 blow the shooter strikes where it stands. A kill by fire is the shooter's, named by its id whether it still stands or
 not, and gives no killer's pause. A patch whose time is up goes out after it burns its last (`ground.lit`,
 `ground.burned`, `ground.out`). The state carries `burning` only while something burns, so a state without fire hashes
-as it did before fire existed. Routes weigh it while it burns (section 1.6), and Recall puts it out (section 2). The
+as it did before fire existed. Routes weigh it while it burns (section 1.6), and it is put out between rounds (section 2). The
 Citizen mortar's shell is the first that burns, and it has two jobs (the owner, 2026-10-21): its burst, 12 within 2,
 hurts only the enemy (an area's `hits: "enemies"`, which a splash and a death's blast both read; without it an area
 hurts friend and foe), and the fire it leaves, 8 a second within 4 for four seconds (48 ticks), hurts everyone on it,
@@ -240,9 +240,9 @@ balanced one.
 - **The march** reads only where bodies stand and whose they are: progress and the band are distances, the guide line
   is drawn alike from either end (a point exactly between two tiles takes both), and two allies that would swap with
   one yielder are drawn between; a mirrored march stays a mirror tick for tick (`march-mirror`).
-- **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, Recall's homes and
-  tiles, a Commander's return and a mission's arrivals break a tie toward the enemy's Grid Nexus
-  (`enemyNexusMiddle`), and Recall sets its survivors down nearest home first, then nearest the enemy. Forces whose
+- **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, a Commander's return and a mission's
+  arrivals break a tie toward the enemy's Grid Nexus (`enemyNexusMiddle`); the regroup's slots and the order units make
+  room for a building go by what a side faces, and the sides alternate. Forces whose
   musters meet are set down in turns, a unit of each at a time, the order reversed each turn, so the first listed does
   not take all the ground between them. A duel places a building by its footprint's middle, not its north-west
   corner.
@@ -434,29 +434,38 @@ At Pulse start plans reveal together and valid construction becomes operational.
 producers attempt recipes, actors move and fight automatically. Playback controls cannot change the
 result (RULE — `tests/pulse-run.test.ts`).
 
-At Pulse end a survivor goes home to the building that trained it while it stands; else to the nearest of its side's
-buildings that trains or spawns its kind; else, an orphan or a Commander, to the Grid Nexus. A survivor whose home
-makes units is set down on that building's roof, wholly on its tiles, as near the tile it came out on as there is room
-(the owner, 2026-10-21: "piling on the roof as close to original position as possible"), **keeping room there for one
-of its waves**: a roof takes as many survivors as its tiles hold less the units of a wave (a Barracks's six tiles and
-four troopers a wave: two), so the next round's first wave never waits behind the units that came home. A roof that is
-full, a body
-too wide for it, and a unit in the air go to the nearest free ground round it, searched one ring of the Grid's
-distance at a time ([`grid.md`](grid.md), setting a group down), kept off the ground touching any building of its side
-that makes units while there is room elsewhere, so a roof can always empty. The Grid Nexus is never stood on: its
-survivors are set down beside it. A carried building that the Build Phase upgraded or switched opens the Pulse as its
-new content id (`refits`, [`content.md`](content.md)); its health and place are its own. A carried unit opens the next
-Pulse where Recall left it, on its roof included; a building planned on it moves it (RULE — `tests/recall-home.test.ts`). A
-producer's waves start afresh (its first wave its recipe's delay away, none come yet, nothing owed), and a
-producer carried into the next Pulse starts on the recipe that Pulse runs (RULE — `src/match/recall.ts`,
-`src/match/opening.ts`, `tests/match.test.ts`, `tests/production.test.ts`). **Recall puts out burning ground**
-(RULE — `src/match/recall.ts`, `tests/area-damage.test.ts`): the next Pulse opens with nothing burning.
+**At Pulse end every survivor stays on the Grid and regroups** (RULE — the owner, 2026-10-26: "double down the RTS
+style, leaving troops on the map"; `src/match/regroup.ts`, `tests/regroup.test.ts`, `tests/kept-front.test.ts`). The
+Nexus announces a pause and the troops respect it: nothing attacks or trains, and for 10 seconds (120 ticks, the
+Build Phase's first 10 seconds on screen) they move. For 2 seconds those within 12 of an enemy step back toward their
+own Grid Nexus; for 6 more each side forms up in ranks across its march line — from its Commander, or its own Nexus
+while she is out, toward its level's target, else the enemy Nexus — melee in front, the Commander in the middle of her
+rank, short range, then long range, then what does not fight; the last 2 seconds let the slowest arrive. Survivors more
+than 24 columns behind the front form their own group where they stand; facing fronts are held at least 6 columns
+apart. A side with neither a Commander nor a Nexus (a mission's raid) stands where it is. Units walk on the routes'
+distance fields at their own pace, never through one another, rock or an enemy's building; the sides alternate who
+moves and who claims a slot first, and ties go by what a side faces, so a mirrored end gives a mirrored regroup. It is
+worked out from the round's last state and the content alone, never from the Build Phase, so a scripted battle plays
+the same every time. The numbers are a starting point (the owner: "the idea is what matters right now"), named in
+`src/match/types.ts`. Every mode plays by it; nothing is sent home.
+
+**A building placed where units stand pushes them out** (RULE — the owner, 2026-10-26; `src/match/make-room.ts`,
+`tests/kept-front.test.ts`), the player's or the enemy's alike; a flyer stays put. As a round opens, each planned
+building in turn (a duel's two sides interleaved) sends the units under it, nearest its middle first, the shortest way
+to the nearest free tile off every building; a unit standing there is pushed on as the pusher arrives, a ripple. The
+Build Phase draws those walks for the player's own plan as it is placed. A carried building that the Build Phase
+upgraded or switched opens the Pulse as its new content id (`refits`, [`content.md`](content.md)); its health and place
+are its own. A carried unit opens the next Pulse where the regroup left it. A producer's waves start afresh (its first
+wave its recipe's delay away, none come yet, nothing owed), and a producer carried into the next Pulse starts on the
+recipe that Pulse runs (RULE — `src/match/regroup.ts`, `src/match/opening.ts`, `tests/match.test.ts`,
+`tests/production.test.ts`). **Burning ground is put out between rounds** (RULE — `src/match/regroup.ts`,
+`tests/area-damage.test.ts`): the next Pulse opens with nothing burning.
 
 **The Grid Nexus mends between rounds** (RULE — the owner, 2026-10-21: "perhaps we add like a little bit of
-self-healing"; `ContentDef.mends`, `src/match/recall.ts`, `tests/match.test.ts`). At Recall a structure whose
+self-healing"; `ContentDef.mends`, `src/match/regroup.ts`, `tests/match.test.ts`). Between rounds a structure whose
 definition `mends` regains that much health, never past its full: the Citizen and the Ravel Grid Nexus 40 of their
-400, so an early raid that hurt the Nexus is not a wound it carries all match. Nothing else mends at Recall; a
-building or a unit comes home as hurt as it was. How much a Nexus mends may differ by faction and be raised by a
+400, so an early raid that hurt the Nexus is not a wound it carries all match. Nothing else mends between rounds; a
+building or a unit stays as hurt as it was. How much a Nexus mends may differ by faction and be raised by a
 Nexus power, later.
 
 **Destroying the enemy Grid Nexus wins** (RULE — `src/pulse/victory.ts`,
@@ -497,12 +506,12 @@ What is built is that cadence, for the Commanders in `armies/` (Vasse, Averno an
 Commander by a flag on its content (`commander`), which only the rules between rounds read: the kernel
 sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her
 back. When she falls, the round loop carries an absence beside the state — whose, which, the round she fell
-in and the round she is due — and as that round begins, after Recall and before its Build Phase, the
+in and the round she is due — and as that round begins, after the regroup and before its Build Phase, the
 Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body, at full health, standing
 there through the Build Phase like any survivor. "May replicate" is taken as "does", as the campaign's
 third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to
-restore her to, so her absence goes on until it has one. At a Pulse's end Recall sends her home to the
-Grid Nexus, since no building makes her. A mission brings its Commander once (`src/mission/validate.ts`
+restore her to, so her absence goes on until it has one. At a Pulse's end she regroups with her army, in the
+middle of her rank. A mission brings its Commander once (`src/mission/validate.ts`
 refuses a second arrival, or two of her), and the Commander it brings for the player is its campaign's
 (`src/armies/load.ts` refuses another). How much she can take is her army's data, settled at 80 for Vasse. Her skill, By the Book, is an ability the kernel
 keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names

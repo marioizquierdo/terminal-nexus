@@ -40,7 +40,7 @@ If that is empty too, say so and stop; never start the next step to fill the tim
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) is the practices manual: the toolchain, the tests, how to see a
 change, how milestones and spikes work, the feedback loop with Mario, how a design change lands. The
-project's own words (Nexus Pulse, Battle Round, mission, group, Recall, Experiment, starter map, bench roster, army file)
+project's own words (Nexus Pulse, Battle Round, mission, group, regroup, Experiment, starter map, bench roster, army file)
 are defined once, in the engine overview's [vocabulary](docs/system-design/grid-engine.md).
 
 ## How we work
@@ -104,7 +104,7 @@ IDEA (a sketch). The ones every session needs:
 | `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: scenarios, duels, campaign levels (`docs/system-design/measurement.md`). |
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format and the checked-in maps. |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
-| `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, Recall, missions and their trigger runner. |
+| `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, the regroup, missions and their trigger runner. |
 | `src/build/`, `src/title-menu/`, `src/settings/` | The Build Phase reducer and adapters, the title screen's list reducer and adapters, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |
 | `src/terminal/` | What every screen shares with the terminal: key events and reading, playback control, the list key table, the colour depth, theme and glyph-pack choices. Imports nothing from the view. |
 | `src/log/` | The structured logger and the Activity Logs' declared events and filters. |

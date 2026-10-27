@@ -1,7 +1,7 @@
 # Milestone 11 — Challenge Mode: Runs
 
 **Status:** CURRENT
-**Current step:** 11C — the run army and the draft.
+**Current step:** 11D — the kept front.
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Battle Round loop and a result), Milestone 8 (a Commander exists and the Nexus Pulse deals from an army's pool); Milestone 3's mode select hands off here
 
 Made current on 2026-10-22, when the owner closed Pathfinding: "For now, we want to focus on building a basic game
@@ -68,8 +68,8 @@ rounds.
 
 The owner, 2026-10-24 ([his words](../history/feedback/2026-10-24-runs-gameplay.md)): "Runs are very exciting! I think
 here is where we can start building proper gameplay ... define a full game where I could playtest my ability to
-strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../game-design/runs.md); steps 11C
-to 11H build it, each playable on its own.
+strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../game-design/runs.md); the steps
+from 11C on build it, each playable on its own.
 
 - [x] The run army: a run starts with a small army (Vasse: Barracks, Supply Depot and Turret; Reserve Callup and Drill
       Schedule in the pool) and the battle plays on it, so what is drafted changes what can be built and dealt.
@@ -81,7 +81,50 @@ to 11H build it, each playable on its own.
       into the next battle; the driver drafts through the same functions the screen uses.
 - [x] Seed determinism: the same seed and the same drafts give the same run.
 
-### Step 11D — The route
+### Step 11D — The kept front
+
+The owner, 2026-10-26 ([his words](../history/feedback/2026-10-26-core-loop.md)), after the measured experiment in
+[`core-loop.md`](core-loop.md): "double down the RTS style, leaving troops on the map, so they can keep moving forward."
+Every mode plays by it ([his next note](../history/feedback/2026-10-26-core-loop.md)): nothing is sent home any more, the
+campaign's missions included.
+
+- [x] **Battle Rounds of 30 seconds**, and the number of rounds a battle lasts measured again for it.
+- [x] **The regroup.** When a Battle Round ends, survivors stay on the Grid: they disengage, step back and re-form facing
+      the enemy, about 10 seconds in all (the idea is the owner's; the numbers are a starting point). It is worked out
+      by the rules from the round's last state alone, the same whatever the player does in the Build Phase, so a
+      scripted battle stays deterministic.
+- [x] **A formation**: each side's survivors form up across its march line, melee in front and ranged behind, the
+      Commander in it; reinforcements walk out to it in the next round.
+- [x] **Played during the Build Phase**: the regroup is the Build Phase's first 10 seconds on the map, while the player
+      builds; placement reads where the troops will stand.
+- [x] **A building placed on troops**, friendly or enemy, pushes them out along the ground, the same way every time; on
+      screen they move smoothly and may push the troops round them on.
+- [x] **One mechanism for every mode**: the walk home is removed; campaign levels play the kept front, their side on the
+      level's automatic target or a defensive stand, and their tests are re-pinned to it.
+- [x] Duels, the duel scripts and runs play it; the measurement is run again and the snowball read.
+
+### Step 11E — The stance
+
+- [ ] A Build Phase row for the army's stance for the coming round: **aggressive** (march on the enemy Nexus, as today),
+      **hold the line** (stand in formation where the regroup left them and fight what comes in reach), **defensive**
+      (fall back to the base and defend it). Carried out in the Battle Round like a building's order.
+- [ ] **The march line drawn** on the Build Phase map: from the Commander to where the stance sends the army, Nexus to
+      Nexus while she is out.
+- [ ] The duel scripts choose a stance (hold or fall back when their front is beaten), so a kept front has an answer.
+- [ ] Campaign levels keep their automatic target.
+
+### Step 11F — The banner
+
+- [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
+      Aggressive elsewhere: the army goes there first, then on to the enemy Nexus (a route). Defensive: it holds the line
+      there (map control, or the base defended). It replaces the stance row.
+- [ ] The march line runs to the banner; the duel scripts place one.
+
+Two banners — the Commander following the main one, buildings set to send their units after a second — are the
+direction after this ([`core-loop.md`](core-loop.md)); they wait until the map holds resources and bonuses worth
+splitting an army for.
+
+### Step 11G — The route
 
 - [ ] The route from the seed: three acts of three steps and a boss, stops by kind, intel one step ahead, every offer from
       a stream of its own so a path never moves what another would have offered.
@@ -89,20 +132,20 @@ to 11H build it, each playable on its own.
 - [ ] The route screen: choose the next stop with the keys, the mouse and the driver; every stop's kind and reward shown.
 - [ ] Exchange and Workshop stops, built on the draft's cards and the Nexus's health.
 
-### Step 11E — Opponents, bosses and signals
+### Step 11H — Opponents, bosses and signals
 
 - [ ] An enemy's kit (plan, cards kept, credits) by act, a Stronghold's and a boss's; each act ends in a named Commander.
 - [ ] Signals: the three templates, in the interface's own voice.
 - [ ] A driver-played run that only takes commons either wins at the base difficulty or the finding is recorded and the
       tuning changed.
 
-### Step 11F — The run shell
+### Step 11I — The run shell
 
 - [ ] The summary: the route taken, every draft taken and refused, the Nexus's health battle by battle, and the lost
       battle's report. Seed entry when starting a run, and a short run of one act.
 - [ ] Every item works by hotkey, click and driver, and adapts across the viewport range like every other screen.
 
-### Step 11G — Playing it
+### Step 11J — Playing it
 
 - [ ] Mario plays runs and his notes become a feedback round; the numbers in `runs.md` move to what was played, and
       the tuning table says why.
@@ -120,7 +163,7 @@ to 11H build it, each playable on its own.
 ## How it is judged
 
 Automated: step 11A's seed determinism across runs and both runtimes; step 11C's dealer distribution
-within tolerance; step 11D's commons-only run recorded either way; every run screen at every colour depth; the driver plays a whole run with no terminal.
+within tolerance; step 11H's commons-only run recorded either way; every run screen at every colour depth; the driver plays a whole run with no terminal.
 
 Human, and this is the real test: Mario plays a run, can say afterwards why he won or lost from the
 summary alone, and wants to start another. The second half of that sentence is the mode's entire
@@ -128,7 +171,7 @@ reason to exist.
 
 ## Done when
 
-- [ ] Steps 11A through 11G are built and tested.
+- [ ] Steps 11A through 11J are built and tested.
 - [ ] The tuning table in the game-modes design shows the numbers the run was actually tuned to, and
       why they moved.
 - [ ] Q40 and Q41 are either answered by Mario or proceeded under their recommendation, and the pull

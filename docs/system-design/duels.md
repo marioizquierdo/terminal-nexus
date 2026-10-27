@@ -19,7 +19,7 @@ format any player can use, and a command (`bin/duel.ts`). Armies are written by 
 3. **The Battle Round**: each side's troops take its stance — `attack` marches on the enemy Nexus, `hold` gathers in
    front of its own — and the kernel runs it, **each side on its own content** (`PulseContext.sides`): what one side's
    powers changed is that side's alone, though both may field troopers.
-4. **Between rounds**: Recall brings survivors home, a Commander who fell is out by her own rule, credits carry over,
+4. **Between rounds**: survivors stay on the Grid and regroup across their march line (`src/match/regroup.ts`), a Commander who fell is out by her own rule, credits carry over,
    and each side adds the curve's credits for the round and what its abilities earned (Dob's bounty).
 
 **A duel ends** when a Nexus falls, or after its last round: then the side whose Nexus kept the larger share of its
@@ -36,7 +36,7 @@ gap) and the Pocket (22 by 12, the bases close enough that their build ranges me
 ```text
 node bin/duel.ts play  --a vasse --b dob [--player-a script:balanced] [--player-b script:rush] [--seed 1] [--rounds 8] [--out dir]
 node bin/duel.ts bench [--commanders vasse,dob] [--players balanced,rush,turtle] [--seeds 1-6] [--rounds 8] [--out file.json]
-node bin/duel.ts new    --dir D --a vasse --b dob [--seed 1] [--rounds 6]
+node bin/duel.ts new    --dir D --a vasse --b dob [--seed 1] [--rounds 8]
 node bin/duel.ts wait   --dir D --side A [--timeout 100]
 node bin/duel.ts submit --dir D --side A --plan plan.json
 node bin/duel.ts status --dir D
@@ -139,7 +139,7 @@ go, so a driver plays a side through the Build Phase's own functions (`duel run`
 A cheap model plays a side well enough to put an army through its paces. The recipe this repository has run (from a
 Claude Code session; any agent that can run a shell command works):
 
-1. `node bin/duel.ts new --dir <D> --a vasse --b dob --seed 11 --rounds 6`.
+1. `node bin/duel.ts new --dir <D> --a vasse --b dob --seed 11 --rounds 8`.
 2. Start one agent per side, in the background, on a small model, each with this task (its side and directory filled
    in): _"Repeat until the duel is over: run `node bin/duel.ts wait --dir <D> --side <S> --timeout 100` (run it again
    if it says still waiting; stop if it says THE DUEL IS OVER); decide a plan from the brief; write it as one JSON

@@ -1,7 +1,7 @@
 // A duel side's building actions (`SidePlan.actions`, `src/duel/round.ts`): a plan names a building of its own by its
 // anchor and one of its card's actions — an upgrade bought, a mode switched to, an order given — taken by the Build
 // Phase's own rules after its buildings are placed, from the credits they leave; the battle runs on what each building
-// carries, and Recall carries it into the next round. A run's battle hands the screen's actions to its duel the same
+// carries, and the regroup carries it into the next round. A run's battle hands the screen's actions to its duel the same
 // way, and one scripted player (`balanced-upgrade`) spends what its plan leaves on its buildings' upgrades.
 
 import { test } from "node:test"
@@ -27,7 +27,7 @@ function withBarracks(): Readonly<{ duel: DuelState; at: Readonly<{ x: number; y
   return { duel: playRound(newDuel(setup()), { A: plan, B: hold }).state, at }
 }
 
-test("a duel round with a production line: bought from what is left, the Barracks sends five a wave, and Recall carries it", { timeout: 60_000 }, () => {
+test("a duel round with a production line: bought from what is left, the Barracks sends five a wave, and the regroup carries it", { timeout: 60_000 }, () => {
   const { duel, at } = withBarracks()
   const bought = playRound(duel, { A: { ...hold, actions: [{ ...at, action: "production-line" }] }, B: hold })
   const plain = playRound(duel, { A: hold, B: hold })

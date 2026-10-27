@@ -4,8 +4,8 @@
 // machine; nothing here reads a clock, a screen or a model — plans are handed in (`src/duel/players.ts` makes them).
 //
 // What it reuses rather than restates: the dealer (`dealHand`), the effect table (`applyEffect`, through each side's
-// loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a
-// player's cursor is held to), the opening and Recall (`src/match`), the Commander's absence and return, and the kernel
+// loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a player's cursor
+// is held to), the opening and the regroup between rounds (`src/match`), the Commander's absence and return, and the kernel
 // itself, each side on its own content (`PulseContext.sides`).
 
 import type { PowerCard } from "../armies/index.ts"
@@ -21,8 +21,8 @@ import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { footprintDistance, footprintExtent, footprintSteps, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
-import { centreTile, creditsEarned, fallen, opening, recall, restoreCommanders, spawningRegistry } from "../match/index.ts"
-import type { Force, StructurePlacement } from "../match/index.ts"
+import { centreTile, creditsEarned, fallen, opening, regroup, restoreCommanders, spawningRegistry, standDown } from "../match/index.ts"
+import type { Force, RegroupResult, StructurePlacement } from "../match/index.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
@@ -395,9 +395,11 @@ function tally(contentIds: readonly string[]): Record<string, number> {
 
 /**
  * **One round of the duel.** Each side keeps the card its plan names from its hand, builds what its plan asks for that
- * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; Recall
- * brings the survivors home; a Commander who fell is out by her own rule; credits carry over, the next round adds the
- * curve's and each side's battle earnings. Returns the duel after the round, and what happened in it. `watch`, when
+ * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; the
+ * survivors stay on the Grid and regroup (`regroup`, `src/match/regroup.ts`): a step back, then a formation across each
+ * side's march line, which the next round opens from; a Commander who fell is out by her own rule; credits carry over,
+ * the next round adds the curve's and each side's battle earnings. Returns the duel after the round, what happened in
+ * it, and the regroup's walks (`null` once the duel is over: nothing regroups after the last round). `watch`, when
  * given, sees every state of the battle from its opening on, and each tick's events, with side A's content to draw it by and
  * each side's own: for a picture, a viewer or a measure, never read back.
  */
@@ -405,7 +407,7 @@ export function playRound(
   state: DuelState,
   plans: Readonly<Record<Side, SidePlan>>,
   watch?: (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry, sides: Readonly<Record<Side, ContentRegistry>>) => void,
-): Readonly<{ state: DuelState; report: RoundReport }> {
+): Readonly<{ state: DuelState; report: RoundReport; regroup: RegroupResult | null }> {
   if (state.result !== null) throw new Error("the duel is over")
   const map = mapOf(state)
   const grid = duelGrid(map)
@@ -453,14 +455,22 @@ export function playRound(
   const sides = { A: planned.A.registry, B: planned.B.registry }
   const phases = clashesSettled(planned, sides)
 
-  // The Battle Round's opening: what Recall left, with every Commander due back set down beside her Nexus; both
+  // The Battle Round's opening: what the regroup left, with every Commander due back set down beside her Nexus; both
   // plans revealed together; the first round's Nexuses, Commanders and starting packages; this round's call-ups.
   const restored = state.carried === null
     ? null
     : restoreCommanders(state.carried, [...state.sides.A.absent, ...state.sides.B.absent], round, sides.A, sides)
   const structures: StructurePlacement[] = []
   if (state.carried === null) for (const side of SIDES) structures.push(...standingOf(state, side))
-  for (const side of SIDES) for (const placed of phases[side].placed.planned) structures.push({ contentId: placed.contentId, player: side, anchor: placed.anchor })
+  // The two plans' buildings in turns, a building of each side at a time, the side going first alternating, so neither
+  // side's buildings make room (`makeRoom`) before the other's by a rule of order.
+  const longest = Math.max(phases.A.placed.planned.length, phases.B.placed.planned.length)
+  for (let index = 0; index < longest; index += 1) {
+    for (const side of index % 2 === 0 ? SIDES : [...SIDES].reverse()) {
+      const placed = phases[side].placed.planned[index]
+      if (placed !== undefined) structures.push({ contentId: placed.contentId, player: side, anchor: placed.anchor })
+    }
+  }
   const forces: Force[] = []
   for (const side of SIDES) {
     const muster = musterOf(state, side, sides[side])
@@ -499,7 +509,6 @@ export function playRound(
 
   // After it: who fell, what each side earned, what the next round starts from.
   const fell = fallen(events, sides.A, round)
-  const recalled = recall(current, sides.A, sides).state
   const next: Record<Side, SideState> = { A: phases.A.side, B: phases.B.side }
   const reports = {} as Record<Side, SideReport>
   for (const side of SIDES) {
@@ -520,9 +529,13 @@ export function playRound(
       : round >= state.setup.rounds
         ? judged([...state.history, report], round)
         : null
+  // Between rounds the survivors regroup where they fought; once the duel is over they stand where it left them.
+  const between = result === null ? regroup(current, sides.A, sides) : null
+  const carried = (between ?? standDown(current, sides.A, sides)).state
   return {
-    state: { setup: state.setup, round: round + 1, carried: recalled, sides: next, history: [...state.history, report], result },
+    state: { setup: state.setup, round: round + 1, carried, sides: next, history: [...state.history, report], result },
     report,
+    regroup: between,
   }
 }
 

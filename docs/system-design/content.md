@@ -17,7 +17,7 @@ and bounded rule shapes on the record, never from code written per unit.
 `tests/building-upgrades.test.ts`): its base and what it carries, in its card's order
 (`structure.citizen.barracks+production-line`). Its side's registry resolves it from the base with those actions'
 effects applied, and keeps it (`ContentRegistry.fitter`, made by the army loader from the cards). So the kernel, the
-hash, Recall and the opening carry it as any content id, and nothing in the kernel knows a building was upgraded;
+hash, the regroup and the opening carry it as any content id, and nothing in the kernel knows a building was upgraded;
 a building that carries nothing keeps its base id, and a state holds the bytes it always did. Art, card words and the
 build menu read the base.
 

@@ -2,7 +2,7 @@
 // production line ... and that could be per barracks. So it's not a general upgrade where all barracks get an upgrade";
 // "Buildings can also have a state change ... you can select the building to change the mode"). Selected in Explore
 // Map, a building of the player's lists its card's actions under their keys; an upgrade is bought at once, kept by that
-// building alone for the rest of the match, and carried by Recall into every round after; a mode is switched between
+// building alone for the rest of the match, and carried by the regroup into every round after; a mode is switched between
 // rounds and stays switched. The kernel sees a building that carries any as a content id of its own
 // (`structure.citizen.barracks+production-line`), which its side's registry resolves.
 
@@ -148,9 +148,9 @@ test("a production line on one Barracks makes its wave five, and a Barracks besi
   const counts = trainedBy(resolved.timeline.events)
   assert.equal(counts.get(lined?.id ?? ""), 5)
   assert.equal(counts.get(plain?.id ?? ""), 4)
-  // Recall carries it, and the next round's Build Phase reads it on the standing Barracks: its card says it carries the
+  // The regroup carries it, and the next round's Build Phase reads it on the standing Barracks: its card says it carries the
   // upgrade, offers it no more, and the Barracks sends five again.
-  assert.ok(resolved.recall.state.entities.some((entity) => entity.contentId === `${BARRACKS}+production-line`))
+  assert.ok(resolved.regroup.state.entities.some((entity) => entity.contentId === `${BARRACKS}+production-line`))
   const next = DEFAULT_LEVEL.play.nextRound(context, state, resolved)
   assert.ok(next !== null)
   const standing = next.standing.find((structure) => structure.anchor.x === 25 && structure.anchor.y === 10)

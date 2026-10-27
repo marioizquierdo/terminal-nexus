@@ -37,7 +37,7 @@ loses.
 
 ## 3. Model against model (about a minute and 75 thousand small-model tokens a side)
 
-1. `npm run duel -- new --dir .playtest/<name> --a <commander> --b <commander> --seed <n> --rounds 6`
+1. `npm run duel -- new --dir .playtest/<name> --a <commander> --b <commander> --seed <n> --rounds 8`
 2. Start **two background agents on a small, cheap model**, one a side, with the task in duels.md's "Model against
    model" (fill in the side and the directory). Name the only commands they may run and tell them to call no
    other tool: small agents wander.

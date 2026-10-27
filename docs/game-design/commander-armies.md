@@ -256,7 +256,7 @@ Over nine rounds that is 2,080 credits: the opening brings about a sixth of it, 
 
 **Each tier is much stronger than the last, and a little better value** (GUIDANCE; the tree's tiers are the next step's). A unit of the second tier is about as strong as three of the first and costs about two and a half times as much; a unit of the third, about eight for six. A tier's units can first fight about the act its number names: the first from round 1, the second from round 4 (its building placed in round 3 unlocks it once it stands, section 2.1), the third from round 7. "Much stronger" is per unit, as the owner asked; "a little better value" is per credit, and it is the second thing that devalues an early lead: what the opening bought is outclassed, not only outnumbered.
 
-**Survivors stack, and are expected to be outgrown** (GUIDANCE; measured on the new routes: not yet). Units that live come home with Recall and fight again beside the new ones, as they do now. By the closing, what the opening bought should be at most about a fifth of the army that fights the last round: enough that keeping units alive matters every round, never so much that the first round's luck is still fighting the last.
+**Survivors stack, and are expected to be outgrown** (GUIDANCE; measured on the new routes: not yet). Units that live stay on the Grid, regroup at the front and fight again beside the new ones, as they do now. By the closing, what the opening bought should be at most about a fifth of the army that fights the last round: enough that keeping units alive matters every round, never so much that the first round's luck is still fighting the last.
 
 **How it is measured** (`src/cli/curve-measure.ts`, `tests/curve-level.test.ts`; the curve's test level, `campaign?level=vasse-test-3`): a scripted player that climbs the tree — Barracks in round 1, Garrisons from round 2 — against one that stays on Barracks, each army counted by the round that bought each of its units: a unit counts for the round its building was bought, so a building bought in round 1 that sends its wave every round after counts for round 1. What the first three rounds bought, against the last round's army, is the number to watch. On the routes the pathfinding milestone built ([the report](../history/reports/2026-10-20-pathfinding-measured.md)), what the first three rounds bought is 0.55 of the last army climbing the tree and 0.56 on Barracks alone, and the tree's last army is 1.13 times the first tier's: on this level early units mostly live, so the opening is far more than the fifth the curve expects. These were measured before the Grid Nexus fought back, and wait to be measured again. The numbers before routes are in [the history](../history/reports/2026-10-20-measured-before-routing.md).
 
@@ -276,7 +276,7 @@ Round, and only in these ways:
   - **an upgrade** — permanent, and **this building's alone**: one Barracks's production line, not every Barracks's
     ("it's not a general upgrade where all barracks get an upgrade. This will be the building itself gets an
     upgrade"); a Turret made better, "just like any other turret game". Bought with credits, kept for the rest of the
-    match, carried by Recall, and said on the building's card;
+    match, carried between rounds, and said on the building's card;
   - **a mode** — a state the building is in, switched between rounds and kept until switched again, each mode
     changing what it does: "a banner that attracts units towards that, but then you can deactivate it";
   - **an order** — for the coming Battle Round only: **Hold production**, which keeps a building's wave home for one
@@ -337,7 +337,7 @@ The owner, 2026-10-13: "start thinking about catch-up mechanics (specially for m
 - **The schedule deals commons first.** No rare before round 4, no legendary before round 7 (the loader holds it), so the luckiest opening hand is still commons and uncommons, and commons must be enough to win with ([`game-modes.md`](game-modes.md)).
 - **The answers are in the tree.** Hard counters are tree buildings every player can reach by building (section 3), so no hand denies the answer to a threat.
 - **What is kept is public.** Each side's kept powers are shown to the other once the Battle Round starts, as its buildings are; and when two players meet they are dealt the same hand (section 3). A lucky hand can be read and answered a round later.
-- **The defender's ground.** A side fighting near its own Grid Nexus walks less, builds in range, mends at its Aid Station and is home for Recall at once; an attack spends a round of travel the defence does not.
+- **The defender's ground.** A side fighting near its own Grid Nexus walks less, builds in range, mends at its Aid Station and regroups beside its own buildings; an attack spends a round of travel the defence does not.
 - **The Commander comes back.** A Commander who falls is restored by the Nexus Pulse, the round after for most; an early win does not take her off the board for long.
 
 **What an army must not do:**
@@ -590,7 +590,7 @@ Three Commanders open the game, and a player may keep more than one campaign in 
 | --- | --- | --- | --- | --- |
 | *Aid Station Permit* (built) | "Adds building: Aid Station." | `addBuilding` | uncommon | The Aid Station heals the units near it each Battle Round: damage undone, placed where the line will stand (built: one tile, 4 health every second and a half to the nearest wounded unit of hers within range 2, never a building or the raid) |
 | *Mutual Support Standard* | "Buildings in a line mend each other." | `modifyRule` | uncommon | Her synergy, repair × adjacency: geometry that compounds |
-| *Field Triage* | "Survivors come home fully healed." | `modifyRule` | uncommon | Recall heals; damage is reversible, as her doctrine promises |
+| *Field Triage* | "Survivors regroup fully healed." | `modifyRule` | uncommon | The regroup heals; damage is reversible, as her doctrine promises |
 | *Plating Revision* | "Your buildings take 25% less damage." | a content change | uncommon | A line drawn well is worth more than a line drawn wide |
 | *Standing Order* (built) | "By the Book reaches twice as far." | `modifyAbility` | uncommon | Her skill, wider. (It once read "Units beside Vasse take less damage while holding position", which By the Book now does by itself) |
 | *Countersigned* | "By the Book covers your buildings." | `modifyAbility` | rare: Standing Order's upgrade | Her skill, onto the architecture the Citizens defend; dealt only once Standing Order is kept, and keeping it replaces Standing Order, its reach doubled as well |

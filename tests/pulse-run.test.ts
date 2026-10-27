@@ -1,5 +1,5 @@
 // Starting a Battle Round from a committed Build Phase, the shell's half: the plan becomes the
-// kernel's opening state, the *unmodified* kernel resolves it, and Recall is worked out from where it
+// kernel's opening state, the *unmodified* kernel resolves it, and the regroup is worked out from where it
 // ended. What these check is the connection — that every ending the kernel has is reachable from the
 // starter map's own data, that the same plan is the same Pulse on every run, and that nothing about how it is
 // watched can change it — because the kernel's own rules have their own suite (rules.test.ts and
@@ -62,7 +62,7 @@ test("the same plan is the same Pulse: hashes stable across runs, and identical 
     const again = play({ plan: DEFENCE }).pulse
     assert.equal(again.timeline.stateHash, first.timeline.stateHash, "state hash drifted")
     assert.equal(again.timeline.eventsHash, first.timeline.eventsHash, "event hash drifted")
-    assert.equal(hashState(again.recall.state), hashState(first.recall.state), "Recall drifted")
+    assert.equal(hashState(again.regroup.state), hashState(first.regroup.state), "the regroup drifted")
   }
   // The shell adds nothing to the kernel's own answer: resolving the same opening state with
   // `resolvePulse` gives the same two hashes.
@@ -99,15 +99,15 @@ test("what the player built is what the Pulse resolves: a different plan is a di
   assert.ok(raiders.every((entity) => entity.anchor.x > 38), "the raid does not start at the far edge")
 })
 
-test("the timeline runs to the outcome and no further; Recall hands the next Build Phase a clean, legal state", () => {
+test("the timeline runs to the outcome and no further; the regroup hands the next Build Phase a clean, legal state", () => {
   for (const scenario of [{}, { plan: DEFENCE }, { raid: "none" }] as const) {
-    const { timeline, recall } = play(scenario).pulse
+    const { timeline, regroup: recall } = play(scenario).pulse
     const last = timeline.states[timeline.states.length - 1] as NonNullable<(typeof timeline.states)[number]>
     assert.ok(last.outcome !== null, "the timeline stopped without an outcome")
     assert.equal(timeline.states.length - 1, last.outcome.tick, "the timeline ran past its own ending")
     assert.equal(recall.state.tick, 0)
     assert.equal(recall.state.outcome, null)
-    // Nobody is on top of anybody — but a survivor home on its own side's roof — and nothing left the Grid.
+    // Nobody is on top of anybody — but a survivor on its own side's roof — and nothing left the Grid.
     const buildings = new Map<string, string>()
     const units = new Set<string>()
     for (const entity of recall.state.entities) {
@@ -116,7 +116,7 @@ test("the timeline runs to the outcome and no further; Recall hands the next Bui
         assert.ok(inBounds(timeline.grid, tile))
         const key = `${tile.x},${tile.y}`
         const held = structure ? buildings.has(key) : units.has(key)
-        assert.ok(!held, `${key} is covered twice after Recall`)
+        assert.ok(!held, `${key} is covered twice after the regroup`)
         if (structure) buildings.set(key, entity.player)
         else units.add(key)
       }
@@ -131,7 +131,7 @@ test("the timeline runs to the outcome and no further; Recall hands the next Bui
     // The survivors are exactly the mobile units alive when the Pulse ended.
     const mobile = (entity: EntityState): boolean => FIXTURE_REGISTRY.get(entity.contentId).layer !== "obstacles"
     assert.deepEqual(
-      recall.moves.map((move) => move.ordinal),
+      recall.paths.map((path) => path.ordinal),
       last.entities.filter(mobile).map((entity) => entity.ordinal),
     )
   }

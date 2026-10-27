@@ -14,7 +14,7 @@ import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import { hasRoom, supplyCostOf, supplyOf } from "../src/content/supply.ts"
 import type { ProductionRecipe } from "../src/content/index.ts"
 import { footprintRing, tilesOf } from "../src/grid/coords.ts"
-import { openingState, recall, resolveMissionPulse, spawnRecipe, spawningRegistry } from "../src/match/index.ts"
+import { openingState, regroup, resolveMissionPulse, spawnRecipe, spawningRegistry } from "../src/match/index.ts"
 import type { Force, MissionPulse } from "../src/match/index.ts"
 import { PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import type { BuildingSpawns } from "../src/armies/index.ts"
@@ -306,20 +306,19 @@ test("supply's arithmetic: a unit takes 1 unless it says, a Commander none, a st
   assert.equal(hasRoom({ used: 99, cap: null }, pikeman), true)
 })
 
-test("a wave's survivors come home to their building; Recall and the next opening start its counters afresh, on the recipe that round runs", () => {
+test("a wave's survivors stay on the Grid; the regroup and the next opening start its counters afresh, on the recipe that round runs", () => {
   // A Turret north of the Barracks, facing the raid's way in, so some of the wave live to come home: with nothing
   // built, the raid's raiders outlast all four.
   const first = round(1, null, [{ contentId: "structure.bench.beamturret", anchor: { x: 25, y: 7 } }])
   const trained = trainedEvents(first.events)
   assert.equal(trained.length, 4, "round 1 did not train its wave")
-  const back = recall(first.final, campaignRegistry)
+  const back = regroup(first.final, campaignRegistry)
   const barracks = back.state.entities.find((entity) => entity.contentId === BARRACKS)
   assert.ok(barracks !== undefined)
   assert.deepEqual([barracks.productionCooldown, barracks.produced, barracks.owed], [FIRST_WAVE, 0, 0])
   const ordinals = new Set(trained.map((event) => (event.kind === "entity.spawned" ? event.ordinal : -1)))
-  const home = back.moves.filter((move) => ordinals.has(move.ordinal))
-  assert.ok(home.length > 0, "no trooper of the wave survived round 1 to come home")
-  for (const move of home) assert.equal(move.home, "producer", `trooper #${move.ordinal + 1} did not go home to a Barracks`)
+  const kept = back.paths.filter((path) => ordinals.has(path.ordinal))
+  assert.ok(kept.length > 0, "no trooper of the wave survived round 1 to stay on the Grid")
 
   // A building given a second wave between rounds (what a Nexus power may one day do) raises `waves` and
   // nothing else: the carried Barracks sends both from the next round, ten seconds apart.

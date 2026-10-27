@@ -312,7 +312,7 @@ test("the live loop plays a Battle Round on its own clock: timer, last seconds, 
   t += 9_000
   await sleep(80)
   assert.match(stdout.lastWrite, /VICTORY/)
-  assert.match(stdout.lastWrite, /came home/)
+  assert.match(stdout.lastWrite, /hold the field/)
 
   // And the screen goes idle: a standing result draws nothing more, so the terminal is left alone.
   const size = stdout.written.length

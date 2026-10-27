@@ -402,10 +402,21 @@ export type StandingStructure = Readonly<{
  */
 export type FieldEntity = Readonly<{
   contentId: string
+  /** Where it stands: where the next round finds it, what placement reads. */
   anchor: Coord
+  /** Its ordinal in the state the round carries (`BuildContext.carried`), when it has one: how the view finds the walk a
+   *  building planned on it makes it take (`makeRoom`, `src/match/make-room.ts`). */
+  ordinal?: number
   player: "A" | "B"
   hp: number
+  /** The walk that brought it there, when the survivors regrouped as the round ended (a duel's, a run's:
+   *  `src/match/regroup.ts`): where it stood when the last Battle Round ended, and each step, by the tick of the regroup
+   *  it lands on (12 a second). The Build Phase plays it over its first seconds; nothing reads it but the picture. */
+  walk?: FieldWalk
 }>
+
+/** A survivor's regroup, as the Build Phase draws it (`FieldEntity.walk`). */
+export type FieldWalk = Readonly<{ from: Coord; steps: readonly Readonly<{ tick: number; to: Coord }>[] }>
 
 /**
  * A unit the next round's triggers will bring (the owner's "see what is coming"): where it will

@@ -97,8 +97,8 @@ export function currentCard(context: BuildContext, state: BuildState): Card | nu
 }
 
 /**
- * A standing building's row for the survivors home on its roof (Recall brings a unit home onto the roof of the building
- * that trained it, `src/match/recall.ts`): how many of yours stand there, which the map draws over the building. They
+ * A standing building's row for the survivors home on its roof (a wave that never walked off, or a survivor that
+ * regrouped there, `src/match/regroup.ts`): how many of yours stand there, which the map draws over the building. They
  * step down to make way for its wave (`src/pulse/make-way.ts`). None for a planned building, or an empty roof.
  */
 function onItsRoof(context: BuildContext, structure: Readonly<{ contentId: string; anchor: Coord; planned: boolean }>): CardStat[] {

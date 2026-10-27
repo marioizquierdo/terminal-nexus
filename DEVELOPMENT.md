@@ -217,7 +217,7 @@ see how an army spends its power curve, never as a verdict on balance.
 ```bash
 npm run duel -- bench --seeds 1-6 --rounds 8                          # every Commander, every script, both sides
 npm run duel -- play --a vasse --b dob --player-a script:rush --seed 2 --out .playtest/duel
-npm run duel -- new --dir .playtest/d1 --a averno --b dob --seed 11 --rounds 6   # then one model agent a side:
+npm run duel -- new --dir .playtest/d1 --a averno --b dob --seed 11 --rounds 8   # then one model agent a side:
 npm run duel -- wait --dir .playtest/d1 --side A     # prints the brief; the agent writes a plan, then
 npm run duel -- submit --dir .playtest/d1 --side A --plan .playtest/d1/plan-A.json
 ```
@@ -395,7 +395,7 @@ He does not have section numbers, question ids or feedback item numbers memorise
 have to; those index things for the next agent, and a reply that says "item 87" has failed. A sentence he
 has to look up before he can judge it has failed. Name the rule, decision or idea in plain English;
 if the source matters, put it in parentheses after the idea. Define a project word (milestone step,
-Experiment, Recall) the first time it appears in anything he reads, or use an ordinary word. Say what
+Experiment, regroup) the first time it appears in anything he reads, or use an ordinary word. Say what
 no person has tried yet and what is known to be broken. Internal shorthand is fine where the audience
 is the next agent: a note in a design document for the next session, a code comment.
 

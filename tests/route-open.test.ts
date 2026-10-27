@@ -90,7 +90,7 @@ const TITLE_SCREENS: Readonly<Record<TitleDestination["place"], readonly RegExp[
   menu: [/main menu/u, /\[5\] Exit/u],
   campaign: [/campaign/u, /Campaign is not built yet/u, /\[1\] Back/u],
   // Challenge starts a run: its first battle's Build Phase, on a seed the game chose, said as it opens.
-  challenge: [/build phase - battle 1 of 3 - round 1 of 6/u, /seed 0\./u],
+  challenge: [/build phase - battle 1 of 3 - round 1 of 8/u, /seed 0\./u],
   settings: [/settings/u, /Colours/u, /\[5\] Back/u],
   about: [/about/u, /Contributions/u, /\[1\] Back/u],
 }
@@ -107,7 +107,7 @@ test("every route opens where it says: each title menu place on the title menu, 
     } else {
       const text = frameToText(await buildAt(destination))
       const { level, round } = destination
-      // A run's round says its battle first: "build phase - battle 1 of 3 - round 1 of 6".
+      // A run's round says its battle first: "build phase - battle 1 of 3 - round 1 of 8".
       assert.match(text, new RegExp(`build phase - (battle \\d+ of \\d+ - )?round ${round} of ${level.rounds}`, "u"), `${route} opened another round`)
     }
   }

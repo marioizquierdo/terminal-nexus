@@ -38,6 +38,7 @@ version of the design beyond git.
 - `milestone-NN-*.md` — the current milestone and the planned ones, each with its question, what it depends on and its steps; [`completed/`](history/milestones) holds the finished ones.
 - [`next-steps.md`](milestones/next-steps.md) — what waits on Mario, carry-over, the cleanup queue.
 - [`open-questions.md`](milestones/open-questions.md) — decisions waiting on Mario, each with options and a recommendation.
+- [`core-loop.md`](milestones/core-loop.md) — the core loop, decided: the front stays between rounds with a regroup, 30-second rounds, orders from a stance to banners; the experiment behind it.
 - [`backlog.md`](milestones/backlog.md) — work no milestone owns yet.
 
 ## History — what happened (`history/`)
