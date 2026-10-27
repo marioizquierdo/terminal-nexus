@@ -1,4 +1,4 @@
-// The match layer's data — what a Battle Round starts from and what is true after Recall.
+// The match layer's data — what a Battle Round starts from.
 //
 // `src/match/` is the rules layer *around* the tick kernel (the "scenario runtime" of grid-engine.md):
 // it builds the state a Pulse starts from out of what the Build Phase committed, and it does what
@@ -47,26 +47,52 @@ export type PulseSetup = Readonly<{
   forces: readonly Force[]
 }>
 
-/** Where one survivor stands at the end of a Pulse and where Recall puts it. */
-export type RecallMove = Readonly<{
+// ---------------------------------------------------------------------------------------------
+// The regroup between rounds (`regroup.ts`): its timing and its walks, here so the view may read them without
+// reaching the rules that work them out.
+// ---------------------------------------------------------------------------------------------
+
+/** The regroup's three parts, in ticks at 12 a second: the step back (2 s), forming up (6 s), standing formed (2 s). */
+export const STEP_BACK_TICKS = 24
+export const FORM_TICKS = 72
+export const STAND_TICKS = 24
+/** The whole regroup: 10 seconds. */
+export const REGROUP_TICKS = STEP_BACK_TICKS + FORM_TICKS + STAND_TICKS
+
+/** One step of a survivor's walk: the tick of the regroup it lands on (1 to `REGROUP_TICKS`), and where. */
+export type RegroupStep = Readonly<{ tick: number; to: Coord }>
+
+/** A survivor's whole walk: where it stood as the round ended, every step it took, where it ends, and the slot it was
+ *  given in its side's formation (`null` for none: no line to form on, or no room). */
+export type RegroupPath = Readonly<{
   ordinal: number
   player: PlayerId
   contentId: string
-  /** Its anchor when the Pulse ended. */
   from: Coord
-  /** Its anchor after Recall — the same as `from` when it has no home to go to, or is already home. */
   to: Coord
-  /** What it went home to: a producer that makes units like it, the Grid Nexus, or nothing. */
-  home: "producer" | "nexus" | "none"
+  steps: readonly RegroupStep[]
+  slot: Coord | null
 }>
 
-export type RecallResult = Readonly<{
-  /** The state the next Build Phase starts from: survivors regrouped, cooldowns reset, the Pulse's
-   *  clock and outcome cleared. */
+export type RegroupResult = Readonly<{
+  /** The state the next Build Phase and Battle Round start from: survivors where the regroup leaves them, transient
+   *  fields reset, the clock, outcome, cooling tiles and fire cleared. */
   state: MatchState
-  /** One entry per surviving mobile unit, in ordinal order — what the walk home animates. */
-  moves: readonly RecallMove[]
+  /** One per survivor, in ordinal order: what the Build Phase plays. */
+  paths: readonly RegroupPath[]
+  /** How long the regroup lasts, in ticks. */
+  ticks: number
 }>
+
+/** Where a survivor stands at a tick of its walk (0: as the round ended). */
+export function regroupAt(path: Pick<RegroupPath, "from" | "steps">, tick: number): Coord {
+  let at = path.from
+  for (const each of path.steps) {
+    if (each.tick > tick) break
+    at = each.to
+  }
+  return at
+}
 
 /** A setup or a plan the kernel could not start from: named, so the caller can say why. */
 export class PulseSetupError extends Error {}

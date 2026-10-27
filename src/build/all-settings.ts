@@ -331,10 +331,9 @@ export const ALL_SETTINGS = {
   /** How long before the fight is seen to stop its timer flashes and a light sweeps the border; the
    *  owner's "the last 3 seconds". */
   endWarnMs: { tier: "tuned", default: 3000 },
-  /** How long after the fight stops the survivors wait before walking home; the owner's settings export. */
+  /** How long after the fight stops the result shows; the owner's settings export (once the pause before the walk home,
+   *  which is gone: the survivors regroup in the Build Phase, `src/match/regroup.ts`). */
   endWalkPauseMs: { tier: "tuned", default: 500 },
-  /** How long the walk home takes; the result shows when it ends; the owner's settings export. */
-  endWalkMs: { tier: "tuned", default: 1000 },
 
   // --- The mission's loop ------------------------------------------------------------------
   // Settings opens at the first of them while a Pulse is on screen (`d`). The placeholder Pulse's Raid

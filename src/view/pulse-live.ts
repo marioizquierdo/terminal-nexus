@@ -22,11 +22,12 @@ import type { Barks } from "../armies/barks.ts"
 import type { BuildCommand, CommanderAbsence } from "../build/types.ts"
 import type { Camera, Viewport, VisibleRange } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
+import { TUNING } from "../build/tuning.ts"
 import type { Coord } from "../grid/types.ts"
-import type { RecallResult } from "../match/types.ts"
+import type { RegroupResult } from "../match/types.ts"
 import type { MissionVerdict } from "../mission/types.ts"
 import type { Outcome, PlayerId } from "../state/types.ts"
-import { endingTimes, missionResultOf, nexusStrain, phaseAt, redAlert, resultOf, walkPositions } from "./ending.ts"
+import { endingTimes, missionResultOf, nexusStrain, phaseAt, redAlert, resultOf } from "./ending.ts"
 import type { EndingPhase, EndingTimes, NexusStrain, PulseResult } from "./ending.ts"
 import type { ColorDepth } from "./roles.ts"
 import { FRAME_MS } from "./build-live.ts"
@@ -40,11 +41,14 @@ import { VOICE, commanderOf, labelPlace, planVoice, shippedBarks, speakerOf, voi
 import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
-/** A Pulse the kernel has resolved, and what Recall does at the end of it — everything the screen needs
- *  to play it, built by the application shell (`src/cli/pulse-run.ts`) and never by the view. */
+/** A Pulse the kernel has resolved, and the regroup that follows it — everything the screen needs to play it, built by
+ *  the application shell (`src/cli/pulse-run.ts`, `src/cli/run-play.ts`) and never by the view. */
 export type ResolvedPulse = Readonly<{
   timeline: PulseTimeline
-  recall: RecallResult
+  /** The survivors' regroup after it (`src/match/regroup.ts`): where the next Build Phase finds them, and their walk
+   *  there, which that Build Phase plays. Nothing walks on the Battle Round's own screen: once the shooting stops the
+   *  survivors stand where the fight left them. */
+  regroup: RegroupResult
   /** The tile the player's Grid Nexus stands on, where the view looks at the start and the end; `null`
    *  for a map with none. */
   nexus: Coord | null
@@ -118,7 +122,7 @@ export class PulsePresenter {
   private readonly result: PulseResult
   /** What happened to the player's Nexus, read once: the red flashes are timed from it. */
   private readonly strain: NexusStrain
-  /** How many mobile units the player has once Recall is done. It never changes, so it is counted once. */
+  /** How many mobile units the player has once the fight is over. It never changes, so it is counted once. */
   private readonly home: number
   /** The ending's moments: when the warning starts, the fight stops, the walk home starts and ends. The
    *  timings are the owner's tuned ones and fixed for a Pulse, so they are worked out once. */
@@ -148,10 +152,10 @@ export class PulsePresenter {
     this.resolved = resolved
     this.autoNextMs = options.autoNextMs ?? null
     this.view = createView(resolved.timeline, presentation)
-    this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs)
+    this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, TUNING)
     this.result = missionResultOf(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), resolved.mission)
     this.strain = nexusStrain(resolved.timeline)
-    this.home = resolved.recall.state.entities.filter(
+    this.home = resolved.regroup.state.entities.filter(
       (entity) => entity.player === "A" && isMobile(resolved.timeline, entity.contentId),
     ).length
     this.playback = new Playback({
@@ -206,12 +210,11 @@ export class PulsePresenter {
     return standing?.anchor ?? voice.fellAt
   }
 
-  /** What stands where at a presentation instant, by the resolved states: the fight's state at that tick, and
-   *  once the walk home has begun, where Recall puts everyone. */
+  /** What stands where at a presentation instant, by the resolved states: the fight's state at that tick, its last
+   *  once it has stopped. */
   private stateAt(timeMs: number): PulseTimeline["states"][number] {
-    if (timeMs >= this.times.walkMs) return this.resolved.recall.state
     const { states } = this.resolved.timeline
-    return states[Math.max(0, Math.min(this.view.lastTick, Math.floor(timeMs / this.view.tickDurationMs)))] ?? this.resolved.recall.state
+    return states[Math.max(0, Math.min(this.view.lastTick, Math.floor(timeMs / this.view.tickDurationMs)))] ?? this.resolved.regroup.state
   }
 
   /** Where in the Pulse the screen is, in presentation milliseconds. */
@@ -304,8 +307,7 @@ export class PulsePresenter {
     const timeMs = this.timeMs
     const times = this.times
     const drawn = this.view.sampleAt(timeMs, colors, reducedMotion)
-    const walk = walkPositions(this.resolved.recall.moves, times, timeMs, reducedMotion)
-    const positions = walk.size === 0 ? drawn.positions : new Map([...drawn.positions, ...walk])
+    const positions = drawn.positions
     const forces = { A: { units: 0, hp: 0 }, B: { units: 0, hp: 0 } }
     for (const entity of drawn.state.entities) {
       if (!isMobile(this.resolved.timeline, entity.contentId)) continue
@@ -402,10 +404,9 @@ export class PulsePresenter {
     const known = voice.places.get(line)
     if (known !== undefined) return known
     const { timeline } = this.resolved
-    // Everything the line is shown over: the fight's states from its start to its end — or, once the walk home
-    // has begun, everyone where Recall puts them.
+    // Everything the line is shown over: the fight's states from its start to its end.
     const tickOf = (ms: number): number => Math.max(0, Math.min(this.view.lastTick, Math.floor(ms / this.view.tickDurationMs)))
-    const over = line.startMs >= this.times.walkMs ? [this.resolved.recall.state] : timeline.states.slice(tickOf(line.startMs), tickOf(line.endMs) + 1)
+    const over = timeline.states.slice(tickOf(line.startMs), tickOf(line.endMs) + 1)
     const her = this.speakerTileAt(line.startMs)
     const opening = timeline.states[0]
     if (her === null || opening === undefined) return null

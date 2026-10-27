@@ -1,21 +1,19 @@
-// Survivors come home to the roof of the building that made them (the owner, 2026-10-21: "survivors should return to
-// their building piling on the roof as close to original position as possible (test with larger armies, they will
-// spread around)"), and a wave owed onto a crowded roof comes out because the units on it make way ("We should also
-// solve how to "queue" a unit that spawned but has no space yet because there are other units on top").
+// A unit's home, and its building's roof. A unit a building trains remembers the building and the tile it came out on;
+// a wave owed onto a crowded roof comes out because the units on it make way (the owner: "We should also solve how to
+// "queue" a unit that spawned but has no space yet because there are other units on top"); the next round opens with a
+// unit where it stood, a roof included, and a building planned on it moves it.
 //
-// What is held here: a trained unit remembers its building and the tile it came out on; Recall puts it back on that
-// roof, as near that tile as there is room, and the rest on the ground round it, leaving the ground touching the
-// building clear; two buildings side by side each take their own back; a fallen home sends its units to the nearest
-// building that makes them; the Grid Nexus is never stood on; a mirrored state comes home mirrored; the next round's
-// opening keeps a unit on its roof; and a wave owed onto a roof of standing allies comes out within a few ticks.
+// Survivors once came home to their building's roof between rounds (Recall); since 2026-10-26 they stay on the Grid and
+// regroup (src/match/regroup.ts, tests/regroup.test.ts), and the tests of the walk home went with it. The file keeps
+// its name while the design documents cite it.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY, withProduction } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
-import { gridDistance, tilesOf } from "../src/grid/coords.ts"
+import { tilesOf } from "../src/grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
-import { centreTile, openingState, recall } from "../src/match/index.ts"
+import { openingState, standDown } from "../src/match/index.ts"
 import type { Force, StructurePlacement } from "../src/match/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { OccupancyIndex } from "../src/grid/occupancy.ts"
@@ -35,13 +33,10 @@ const NEXUS = "structure.citizen.nexus"
 const ENEMY_NEXUS = "structure.ravel.nexus"
 const BARRACKS = "structure.citizen.barracks"
 const TROOPER = "unit.citizen.trooper"
-const VASSE = "unit.citizen.vasse"
 const CRAWLER = "unit.bench.siegecrawler"
 
 const RECIPE = { output: TROOPER, perWave: 4, waves: 1, firstTicks: 12, intervalTicks: 24 }
 const registry = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: RECIPE })
-/** How many survivors a Barracks's roof takes: its six tiles, less the four of a wave, so the next wave has room. */
-const ROOF_ROOM = registry.get(BARRACKS).footprint.length - RECIPE.perWave
 
 const WIDTH = 40
 const OPEN: GridTerrain = { width: WIDTH, height: 24, tiles: Array.from({ length: WIDTH * 24 }, () => "terrain.plain" as TerrainId) }
@@ -89,16 +84,6 @@ function trainedBy(state: MatchState, ordinals: readonly number[], home: number,
   }
 }
 
-/** The ground touching a building, corners included. */
-function doorstepOf(building: EntityState): Set<string> {
-  const own = roofOf(building)
-  const step = new Set<string>()
-  for (const tile of tilesOfEntity(building)) {
-    for (let dy = -1; dy <= 1; dy += 1) for (let dx = -1; dx <= 1; dx += 1) if (!own.has(key({ x: tile.x + dx, y: tile.y + dy }))) step.add(key({ x: tile.x + dx, y: tile.y + dy }))
-  }
-  return step
-}
-
 // --- Remembering the home ---------------------------------------------------------------------------
 
 test("a unit a building trains remembers the building and the tile it came out on; nothing else remembers a home", () => {
@@ -125,173 +110,26 @@ test("a unit a building trains remembers the building and the tile it came out o
 
 // --- Recall onto the roof ---------------------------------------------------------------------------
 
-test("a survivor comes home onto its building's roof, on the very tile it came out on when that tile is free", () => {
-  // As many as the roof takes while it keeps room for the next wave.
-  const before = open(
-    [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }, { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } }],
-    [{ player: "A", muster: { x: 26, y: 4 }, units: Array.from({ length: ROOF_ROOM }, () => TROOPER) }],
-  )
-  const barracks = find(before, BARRACKS)[0] as EntityState
-  const troopers = find(before, TROOPER)
-  // Every roof tile, in an order unlike the order they stand in.
-  const roof = tilesOfEntity(barracks).reverse()
-  const state = trainedBy(before, troopers.map((unit) => unit.ordinal), barracks.ordinal, roof)
-  const back = recall(state, registry)
-  assertHomeIsLegal(back.state, "a roof's worth home")
-  for (const unit of find(back.state, TROOPER)) assert.deepEqual(unit.anchor, unit.homeAt, `${unit.id} did not come back to its own tile`)
-  // The walk home goes from where each stood to its tile on the roof; a building is its home.
-  for (const move of back.moves) assert.equal(move.home, "producer")
-})
-
-test("a big army piles onto its building's roof, keeping room there for the next wave, and spreads round it, leaving the ground touching it clear", () => {
-  const before = open(
-    [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }, { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } }],
-    [
-      { player: "A", muster: { x: 28, y: 4 }, units: Array.from({ length: 14 }, () => TROOPER) },
-      { player: "A", muster: { x: 28, y: 18 }, units: Array.from({ length: 12 }, () => TROOPER) },
-    ],
-  )
-  const barracks = find(before, BARRACKS)[0] as EntityState
-  const troopers = find(before, TROOPER)
-  assert.equal(troopers.length, 26)
-  // Four waves' worth came out on the same six tiles: a tile remembered by four or five of them.
-  const state = trainedBy(before, troopers.map((unit) => unit.ordinal), barracks.ordinal, tilesOfEntity(barracks))
-  const back = recall(state, registry)
-  assertHomeIsLegal(back.state, "twenty-six home")
-  const home = find(back.state, TROOPER)
-  const roof = roofOf(barracks)
-  const onRoof = home.filter((unit) => roof.has(key(unit.anchor)))
-  assert.equal(onRoof.length, ROOF_ROOM, "the roof does not take as many as it has room for, less a wave")
-  // The rest round it, near, off its doorstep: the units on the roof can always step down.
-  const doorstep = doorstepOf(barracks)
-  const centre = centreTile(barracks.anchor, footprintOf(barracks))
-  for (const unit of home.filter((candidate) => !roof.has(key(candidate.anchor)))) {
-    assert.ok(!doorstep.has(key(unit.anchor)), `${unit.id} stands on the Barracks's doorstep, at ${key(unit.anchor)}`)
-    assert.ok(gridDistance(unit.anchor, centre) <= 10, `${unit.id} is far from home, at ${key(unit.anchor)}`)
-  }
-  // The same every run, and a second Recall leaves the roof as it is.
-  const again = recall(back.state, registry)
-  assert.deepEqual(find(again.state, TROOPER).filter((unit) => roof.has(key(unit.anchor))).map((unit) => unit.ordinal), onRoof.map((unit) => unit.ordinal))
-  assertHomeIsLegal(again.state, "recalled twice")
-})
-
-test("two Barracks side by side each take their own back, even a unit standing beside the other", () => {
-  const before = open(
-    [
-      { contentId: NEXUS, anchor: { x: 2, y: 10 } },
-      { contentId: BARRACKS, anchor: { x: 14, y: 10 } },
-      { contentId: BARRACKS, anchor: { x: 17, y: 10 } },
-      { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } },
-    ],
-    [
-      // The west Barracks's troopers wait east of the east one, the east one's west of the west one: as many each as a
-      // roof takes while it keeps room for a wave.
-      { player: "A", muster: { x: 23, y: 11 }, units: Array.from({ length: ROOF_ROOM }, () => TROOPER) },
-      { player: "A", muster: { x: 9, y: 11 }, units: Array.from({ length: ROOF_ROOM }, () => TROOPER) },
-    ],
-  )
-  const [west, east] = find(before, BARRACKS).sort((a, b) => a.anchor.x - b.anchor.x) as [EntityState, EntityState]
-  const troopers = find(before, TROOPER)
-  const eastOfAll = troopers.filter((unit) => unit.anchor.x > 20).map((unit) => unit.ordinal)
-  const westOfAll = troopers.filter((unit) => unit.anchor.x < 12).map((unit) => unit.ordinal)
-  let state = trainedBy(before, eastOfAll, west.ordinal, tilesOfEntity(west))
-  state = trainedBy(state, westOfAll, east.ordinal, tilesOfEntity(east))
-  const back = recall(state, registry)
-  assertHomeIsLegal(back.state, "two Barracks")
-  for (const unit of find(back.state, TROOPER)) {
-    const home = unit.home === west.ordinal ? west : east
-    assert.ok(roofOf(home).has(key(unit.anchor)), `${unit.id} did not come home to its own Barracks`)
-    assert.deepEqual(unit.anchor, unit.homeAt)
-  }
-})
-
-test("a unit whose building fell goes to the nearest that makes it, onto its roof; with none, beside the Nexus, never on it", () => {
-  const before = open(
-    [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }, { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } }],
-    [{ player: "A", muster: { x: 26, y: 12 }, units: [TROOPER, TROOPER] }],
-  )
-  const barracks = find(before, BARRACKS)[0] as EntityState
-  // A home that is no longer on the Grid: an ordinal nothing has.
-  const fallen = trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), 999, [{ x: 30, y: 2 }])
-  const back = recall(fallen, registry)
-  assertHomeIsLegal(back.state, "adopted")
-  for (const unit of find(back.state, TROOPER)) {
-    assert.ok(roofOf(barracks).has(key(unit.anchor)), `${unit.id} was not adopted onto the standing Barracks's roof`)
-  }
-  // With no building that makes troopers, the Nexus takes them in — on the ground beside it.
-  const orphans = recall(fallen, FIXTURE_REGISTRY)
-  const nexus = find(orphans.state, NEXUS)[0] as EntityState
-  for (const unit of find(orphans.state, TROOPER)) assert.ok(!roofOf(nexus).has(key(unit.anchor)), `${unit.id} stands on the Nexus`)
-  for (const move of orphans.moves) assert.equal(move.home, "nexus")
-})
-
-test("a Commander goes home beside her Nexus, never onto it, whatever roofs stand", () => {
-  const before = open(
-    [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }, { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } }],
-    [{ player: "A", muster: { x: 26, y: 12 }, units: [VASSE] }],
-  )
-  const back = recall(before, registry)
-  const vasse = find(back.state, VASSE)[0] as EntityState
-  const nexus = find(back.state, NEXUS)[0] as EntityState
-  assert.ok(!roofOf(nexus).has(key(vasse.anchor)))
-  assert.ok(gridDistance(vasse.anchor, centreTile(nexus.anchor, footprintOf(nexus))) <= 4, "she is not beside the Nexus")
-  assert.equal(back.moves[0]?.home, "nexus")
-})
-
-test("a mirrored state comes home mirrored: no side wins a roof tile by where it stands", () => {
-  const westSide = open(
-    [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 11, y: 10 } }],
-    [
-      { player: "A", muster: { x: 16, y: 6 }, units: Array.from({ length: 6 }, () => TROOPER) },
-      { player: "A", muster: { x: 17, y: 15 }, units: Array.from({ length: 6 }, () => TROOPER) },
-    ],
-  )
-  const barracks = find(westSide, BARRACKS)[0] as EntityState
-  const trained = trainedBy(westSide, find(westSide, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, tilesOfEntity(barracks))
-  // The east side is the west side seen in a mirror: every anchor and remembered tile reflected, side B, the
-  // ordinals after the west's — so a tie the ordinals or reading order broke would favour one side and show here.
-  const width = (entity: EntityState): number => Math.max(...footprintOf(entity).map((offset) => offset.x)) + 1
-  const mirrorX = (entity: EntityState): number => WIDTH - entity.anchor.x - width(entity)
-  const offset = trained.nextOrdinal
-  const homeOrdinal = (ordinal: number | undefined): number | undefined => (ordinal === undefined ? undefined : ordinal + offset)
-  const mirrored: EntityState[] = trained.entities.map((entity) => ({
-    ...entity,
-    ordinal: entity.ordinal + offset,
-    id: `B:${entity.id.slice(2)}`,
-    player: "B",
-    contentId: entity.contentId === NEXUS ? ENEMY_NEXUS : entity.contentId,
-    anchor: { x: mirrorX(entity), y: entity.anchor.y },
-    facing: "w",
-    ...(entity.home === undefined ? {} : { home: homeOrdinal(entity.home) as number }),
-    ...(entity.homeAt === undefined ? {} : { homeAt: { x: WIDTH - 1 - entity.homeAt.x, y: entity.homeAt.y } }),
-  }))
-  const both: MatchState = { ...trained, entities: [...trained.entities, ...mirrored], nextOrdinal: offset * 2 }
-  const back = recall(both, registry)
-  assertHomeIsLegal(back.state, "both sides")
-  const at = new Map(back.state.entities.map((entity) => [entity.ordinal, entity]))
-  for (const entity of back.state.entities.filter((candidate) => candidate.player === "A")) {
-    const twin = at.get(entity.ordinal + offset) as EntityState
-    assert.deepEqual(twin.anchor, { x: mirrorX(entity), y: entity.anchor.y }, `${entity.id} and its mirror ${twin.id} did not come home mirrored`)
-  }
-})
-
-test("the next round opens with a unit where Recall left it on its roof; a building planned on it moves it", () => {
+test("the next round opens with a unit where it stood, on its own building's roof too; a building planned on one moves it", () => {
   const before = open(
     [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }, { contentId: ENEMY_NEXUS, player: "B", anchor: { x: 35, y: 10 } }],
     [{ player: "A", muster: { x: 26, y: 4 }, units: Array.from({ length: 9 }, () => TROOPER) }],
   )
   const barracks = find(before, BARRACKS)[0] as EntityState
-  const back = recall(trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, tilesOfEntity(barracks)), registry).state
+  // Two of them on the Barracks's roof, as a wave that never walked off leaves them; the rest out on the ground.
+  const roofTiles = tilesOfEntity(barracks)
+  const trained = trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, roofTiles)
+  const onRoof = new Set(find(trained, TROOPER).slice(0, 2).map((unit) => unit.ordinal))
+  const back: MatchState = { ...trained, entities: trained.entities.map((entity) => (onRoof.has(entity.ordinal) ? { ...entity, anchor: entity.homeAt as Coord } : entity)) }
   const next = openingState({ grid: OPEN, registry, structures: [], carried: back, setup: { seed: 7, pulseTicks: 240, forces: [] } })
   for (const unit of find(back, TROOPER)) {
     const opened = next.entities.find((entity) => entity.ordinal === unit.ordinal) as EntityState
-    assert.deepEqual(opened.anchor, unit.anchor, `${unit.id} was moved off where Recall left it`)
+    assert.deepEqual(opened.anchor, unit.anchor, `${unit.id} was moved off where it stood`)
     assert.deepEqual([opened.home, opened.homeAt], [unit.home, unit.homeAt], "a carried unit forgot its home")
   }
   assertHomeIsLegal(next, "round 2 opens")
-  // A Barracks planned on a trooper standing beside home moves the trooper, as it always has.
-  const clear = (unit: EntityState): boolean => tilesOf(unit.anchor, footprintOf(barracks)).every((tile) => !roofOf(barracks).has(key(tile)))
-  const beside = find(back, TROOPER).find((unit) => !roofOf(barracks).has(key(unit.anchor)) && clear(unit)) as EntityState
+  // A Barracks planned on a trooper out on the ground moves the trooper: it walks out from under it (makeRoom).
+  const beside = find(back, TROOPER).find((unit) => !onRoof.has(unit.ordinal)) as EntityState
   const planned = openingState({ grid: OPEN, registry, structures: [{ contentId: BARRACKS, anchor: beside.anchor }], carried: back, setup: { seed: 7, pulseTicks: 240, forces: [] } })
   const moved = planned.entities.find((entity) => entity.ordinal === beside.ordinal) as EntityState
   assert.notDeepEqual(moved.anchor, beside.anchor)
@@ -302,15 +140,15 @@ test("the next round opens with a unit where Recall left it on its roof; a build
 
 test("a wave owed onto a roof full of standing allies comes out within a few ticks, as they make way; none is lost", () => {
   // Six allies standing on the roof, nothing to fight (the enemy's Nexus far off, out of reach and with no target to
-  // head for, they stand): the wave of four comes due with no room on the roof. Recall never fills a roof so (it keeps
-  // a wave's room), so the six are set on it by hand: what a wave that never walked off would leave.
+  // head for, they stand): the wave of four comes due with no room on the roof. The six are set on it by hand: what a
+  // wave that never walked off would leave.
   const before = open(
     [{ contentId: NEXUS, anchor: { x: 2, y: 10 } }, { contentId: BARRACKS, anchor: { x: 15, y: 10 } }],
     [{ player: "A", muster: { x: 26, y: 4 }, units: Array.from({ length: 6 }, () => TROOPER) }],
   )
   const barracks = find(before, BARRACKS)[0] as EntityState
   const roofTiles = tilesOfEntity(barracks)
-  const recalled = recall(trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, roofTiles), registry).state
+  const recalled = standDown(trainedBy(before, find(before, TROOPER).map((unit) => unit.ordinal), barracks.ordinal, roofTiles), registry).state
   const carried: MatchState = {
     ...recalled,
     entities: recalled.entities.map((entity) => (entity.contentId === TROOPER ? { ...entity, anchor: entity.homeAt as Coord } : entity)),

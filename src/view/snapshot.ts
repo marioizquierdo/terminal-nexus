@@ -91,7 +91,7 @@ export type PulseView = Readonly<{
   /** Each side's health at tick zero, structures excluded — what a force bar is measured against. */
   openingHealth: ReadonlyMap<PlayerId, number>
   /** When the last effect finishes: everything still "in flight" at the end of the fight has landed by
-   *  then — the Pulse's ending waits for it before Recall plays. At least the
+   *  then — the Pulse's ending waits for it before the result shows. At least the
    *  last tick's own time. */
   effectsEndMs: number
   /** The drawable data at a presentation time. `reducedMotion` overrides the view's own — a player who
@@ -134,7 +134,7 @@ export function createView(
     lastTick * tickDurationMs,
   )
 
-  // Ground still burning in the last state is put out once everything in flight has landed, when Recall may begin.
+  // Ground still burning in the last state is put out once everything in flight has landed, when the result may show.
   const fireOutMs = Math.max(effectsEndMs, (lastTick + 1) * tickDurationMs)
 
   const clampTick = (tick: number): number => Math.max(0, Math.min(lastTick, tick))

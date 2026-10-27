@@ -148,7 +148,7 @@ autobattlers (see the references below), taken at the size Terminal Nexus's 5–
 battle is a duel** ([`duels.md`](../system-design/duels.md)): the player plans one side on the Build Phase screen — the
 same screen, keys, Nexus Pulse and Battle Round as a campaign level — and the opponent's Commander Army is planned by a
 scripted duel player from its brief, the two plans revealed together. The first run is one act of three battles
-against Dob Hunter's army on the Crossing, six rounds each at most (a battle about four to ten minutes), each battle
+against Dob Hunter's army on the Crossing, eight rounds of 30 seconds each at most (a battle about seven to twelve minutes), each battle
 played by a different scripted player (rushing, digging in, balanced) in an order the seed shuffles. A lost battle
 ends the run; a drawn one goes on and is not a win. The army is the Commander's small starting army every battle, and the run draft after each won battle changes it. The seed is shown as the run opens and at its end, and a run that ends opens the next on a seed
 it names, so a chain of runs replays from its first seed. The title menu's Challenge row starts one on a seed from the

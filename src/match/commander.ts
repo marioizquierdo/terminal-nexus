@@ -2,7 +2,7 @@
 // whole rounds after it as her definition says (`roundsOut`: none for Vasse), then the Prime Nexus replicates
 // her again.
 //
-// **Beside the kernel's tick and never inside it**, like Recall. The kernel sees a Commander as a unit like
+// **Beside the kernel's tick and never inside it**, like the regroup. The kernel sees a Commander as a unit like
 // any other: she fights, she dies, and a dead entity is gone from the state, so nothing in a Pulse brings
 // her back and her death decides nothing (the victory check never reads the `commander` flag). What the
 // state cannot hold is the memory that she fell, and when; that is an `Absence`, which the round loop
@@ -12,7 +12,7 @@
 // - `fallen` reads a round's events for the Commanders that died in it: each is absent for the rest of
 //   that Pulse (she is dead) and for the `roundsOut` whole rounds after it, and is due back at the start of
 //   the round after those (with none to sit out, the very next one);
-// - `restoreCommanders` runs where one round hands over to the next, after Recall: every Commander due back
+// - `restoreCommanders` runs where one round hands over to the next, after the regroup: every Commander due back
 //   by then is set down on the free tile nearest her side's Grid Nexus, a new entity at full health (the
 //   Prime Nexus replicating its Symbol onto the Grid again), and stands there through the round's Build
 //   Phase like any survivor. A side with no Grid Nexus standing has nowhere to restore her to, so her
@@ -64,7 +64,7 @@ export function fallen(events: readonly DomainEvent[], registry: ContentRegistry
 }
 
 /**
- * The state round `round` starts from: `state` (what the last round left, after Recall) with every
+ * The state round `round` starts from: `state` (what the last round left, after the regroup) with every
  * Commander whose absence is over set down beside her side's Grid Nexus, and the absences that go on.
  */
 export function restoreCommanders(

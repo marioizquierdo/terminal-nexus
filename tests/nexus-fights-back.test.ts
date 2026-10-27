@@ -1,6 +1,6 @@
 // The Grid Nexus fights back (the owner, 2026-10-21: "the Nexus have a single attack that deals enough damage to kill a
 // trooper"): one shot every three seconds at a unit within a marksman's reach, never at a building, and a trooper or a
-// runner falls to it where it stands. Its mending between rounds is Recall's, tested in tests/match.test.ts.
+// runner falls to it where it stands. Its mending between rounds is the regroup's, tested in tests/match.test.ts.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"

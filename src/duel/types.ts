@@ -35,6 +35,15 @@ export type DuelSetup = Readonly<{
   rosters?: Readonly<Partial<Record<Side, Roster>>>
 }>
 
+/** **A duel's Battle Round: 30 seconds**, 360 ticks at 12 a second (the owner, 2026-10-26: "Shorter rounds: 30
+ *  seconds"), with the front kept between rounds (`src/match/regroup.ts`). What a duel plays when it is not told
+ *  otherwise, a run's battles and the measure spec's duels. */
+export const DUEL_PULSE_TICKS = 360
+
+/** **Rounds a duel lasts at most when it is not told otherwise: 8**, a run battle's too — measured for 30-second rounds
+ *  with the front kept (`RUN_ROUNDS`, `src/run/run.ts`, says how). */
+export const DUEL_ROUNDS = 8
+
 /** Where a building should go, as a plan names it: a place relative to the side's own base, or a tile. A named place
  *  is the legal spot nearest it (`zonePoint`, `round.ts`). */
 export const ZONES = ["nexus", "forward", "back", "north", "south"] as const
@@ -160,7 +169,7 @@ export type DuelResult = Readonly<{
   round: number
 }>
 
-/** A duel between rounds: what it is, the round to play next, what the last round left on the Grid (after Recall), each
+/** A duel between rounds: what it is, the round to play next, what the last round left on the Grid (after the regroup), each
  *  side, every round so far, and how it ended once it has. */
 export type DuelState = Readonly<{
   setup: DuelSetup

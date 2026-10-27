@@ -9,7 +9,7 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0. Unma
 A run is one Commander's campaign across the Grid, from a seed. The Grid is a **route**: three acts, each a small map of stops
 the player chooses a path through, ending in a named Commander. A stop is a battle, a harder battle, a place to trade, a place
 to mend, or a signal that offers a bargain. A battle is a duel the game already plays (the Build Phase, the Nexus Pulse, the
-Battle Round, up to six rounds against a scripted Commander Army). What a battle leaves behind is what the run is made of: the
+Battle Round, up to eight rounds of 30 seconds against a scripted Commander Army). What a battle leaves behind is what the run is made of: the
 **Nexus's health**, which does not come back for free; **requisition**, which buys cards; and a **draft** of new structures,
 doctrines and Nexus powers that the army keeps. The player wins by reaching the last Commander with a Nexus still standing,
 and the question each stop asks is the same: *what does this cost me, and what will I need next?*
@@ -32,7 +32,7 @@ and the question each stop asks is the same: *what does this cost me, and what w
 | --- | --- | --- | --- |
 | **The route** | Which stop next; whether to take a hard path for a rich reward; when to mend and when to spend | The run | This document |
 | **The army** | Which card to take, which to refuse, which to remove; what to buy | The run | The Commander Army (`commander-armies.md`), the draft |
-| **The battle** | Where to build, what to build, which Nexus power to keep, what to buy for a building | One duel of up to six rounds | The Build Phase, the Nexus Pulse and the Battle Round, unchanged |
+| **The battle** | Where to build, what to build, which Nexus power to keep, what to buy for a building | One duel of up to eight rounds of 30 seconds | The Build Phase, the Nexus Pulse and the Battle Round, unchanged |
 
 **RULE: nothing below the run knows it is serving a run.** A battle is a duel; its army is a Commander Army with some powers
 already kept and some cards left out; its Nexus may start hurt. Those three are all a run hands a battle, and each is data
@@ -134,7 +134,7 @@ aura. A player who has read the intel brings the answer.
 
 | Thing | Starting value |
 | --- | --- |
-| Requisition for a won battle | Skirmish 20, Stronghold 35, boss 50; **plus 10** when the Nexus was never hit, **plus 5** for each round the battle did not need (of six) |
+| Requisition for a won battle | Skirmish 20, Stronghold 35, boss 50; **plus 10** when the Nexus was never hit, **plus 5** for each round the battle did not need (of eight) |
 | A card at the Exchange | Common 25, uncommon 40, rare 65 |
 | Remove a card | 20 at the Exchange, **plus 10** each time within a run; free as a draft's choice |
 | Mend a quarter of the Nexus | 30 at the Exchange |

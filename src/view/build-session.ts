@@ -77,7 +77,7 @@ export type BuildSessionOptions = Readonly<{
    */
   startPulse?: (context: BuildContext, state: BuildState) => ResolvedPulse | null
   /**
-   * The Build Phase that follows a round the mission goes on from: the map Recall left, the
+   * The Build Phase that follows a round the mission goes on from: the map the regroup left, the
    * credits not spent, the next round's arrivals — or `null` when the mission is over. Injected for the
    * same reason as `startPulse`. Absent: a round's result is where the screen stops.
    */
@@ -756,7 +756,7 @@ function directionOf(key: CursorKey): string {
 
 /** What the player's buildings spawned in a resolved Pulse, read from its events and its states as the
  *  `pulse.trained` entry records it: how many buildings could spawn, how many units their waves brought, the
- *  second the first came, how many of them Recall brought home, and the second the fighting stopped. */
+ *  second the first came, how many of them are left to regroup, and the second the fighting stopped. */
 function trainedIn(resolved: ResolvedPulse): Readonly<{ buildings: number; trained: number; first?: number; home: number; ended: number }> {
   const { timeline } = resolved
   const opening = timeline.states[0]
@@ -766,7 +766,7 @@ function trainedIn(resolved: ResolvedPulse): Readonly<{ buildings: number; train
   ).length
   const trained = timeline.events.filter((event) => event.kind === "entity.spawned" && event.trainedBy !== undefined && event.player === "A")
   const ordinals = new Set(trained.map((event) => (event.kind === "entity.spawned" ? event.ordinal : -1)))
-  const home = resolved.recall.moves.filter((move) => ordinals.has(move.ordinal)).length
+  const home = resolved.regroup.paths.filter((path) => ordinals.has(path.ordinal)).length
   const seconds = (tick: number): number => Math.round(tick / timeline.ticksPerSecond)
   const first = trained[0]
   return {

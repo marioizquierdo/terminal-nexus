@@ -103,7 +103,7 @@ test("a scripted playtest plays a Battle Round on the script's own clock and sho
   const first = run.frames[started]!.state
   assert.deepEqual(first.cursor, { x: 18, y: 10 })
   assert.equal(first.camera.y, first.cursor.y - Math.floor((first.viewport.height - 1) / 2))
-  const seen = [/^\| BATTLE ROUND /m, /The battle is about to end\./, /^\| CEASE FIRE /m, /^\| RECALL /m, /^\| VICTORY /m].map((phase) =>
+  const seen = [/^\| BATTLE ROUND /m, /The battle is about to end\./, /^\| CEASE FIRE /m, /^\| VICTORY /m].map((phase) =>
     texts.findIndex((text) => phase.test(text)),
   )
   assert.ok(seen.every((index) => index >= 0), `a phase never appeared: ${JSON.stringify(seen)}`)

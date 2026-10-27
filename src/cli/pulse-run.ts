@@ -6,14 +6,16 @@
 // start a Pulse or work out what the next round looks like: they are handed the two functions here
 // (`BuildSession`'s `startPulse` and `nextRound`) and get back a Pulse to play and the next Build Phase to
 // open. Both are pure functions of the mission and of what the round's context carries — the state the
-// last round left, after Recall — so the same plans give the same mission on every machine, and nothing
+// last round left, after the survivors regrouped — so the same plans give the same mission on every machine, and nothing
 // about how it is watched can change it:
 //
 // - **starting a round's Pulse**: the plan and the carried state go to the trigger runner
 //   (`src/match/mission.ts`), which resolves the Pulse on the unmodified kernel and says how the mission
-//   stands; Recall is worked out from the state it ended in (`src/match/recall.ts`);
-// - **the next round**: a Build Phase whose map is what Recall left — the player's buildings as standing
-//   structures, every surviving unit and the raid's structures as the field — with the credits the last
+//   stands; the survivors' regroup is worked out from the state it ended in (`src/match/regroup.ts`): nobody goes home,
+//   they step back and form up where they fought;
+// - **the next round**: a Build Phase whose map is where the regroup left everyone — the player's buildings as
+//   standing structures, every surviving unit (with its walk there, which the Build Phase plays as it opens) and the
+//   raid's structures as the field — with the credits the last
 //   one did not spend, and the next round's arrivals as incoming. A Commander who fell is carried as an
 //   absence and set down beside the Nexus again when her absence is over (`src/match/commander.ts`).
 
@@ -33,12 +35,13 @@ import {
   fallen,
   laterArrivals,
   missionOpening,
-  recall,
+  regroup,
   resolveMissionPulse,
   restoreCommanders,
   spawningRegistry,
+  standDown,
 } from "../match/index.ts"
-import type { Arrival, Force, MissionPulseInput, Restoration } from "../match/index.ts"
+import type { Arrival, Force, MissionPulseInput, RegroupResult, Restoration } from "../match/index.ts"
 import type { BuildingSpawns, Loadout, PowerCard } from "../armies/index.ts"
 import { applyEffect, dealHand } from "../armies/index.ts"
 import type { ConstructItem } from "../build/types.ts"
@@ -141,14 +144,24 @@ const troopsGroupOf = (troops: TroopsIntent | null): TroopsGroup[] => {
 
 /** The map a round's Build Phase opens on, split the way the Build Phase draws it: the player's own
  *  buildings, which it plans around, and everything else. */
-function mapOf(registry: ContentRegistry, carried: MatchState): Readonly<{ standing: StandingStructure[]; field: FieldEntity[] }> {
+function mapOf(registry: ContentRegistry, carried: MatchState, regrouped?: RegroupResult): Readonly<{ standing: StandingStructure[]; field: FieldEntity[] }> {
   const standing: StandingStructure[] = []
   const field: FieldEntity[] = []
+  const walks = new Map((regrouped?.paths ?? []).map((path) => [path.ordinal, path] as const))
   for (const entity of carried.entities) {
     if (entity.player === "A" && isStructure(registry, entity.contentId)) {
       standing.push({ contentId: entity.contentId, anchor: entity.anchor })
     } else {
-      field.push({ contentId: entity.contentId, anchor: entity.anchor, player: entity.player, hp: entity.hp })
+      // A survivor walks to where it stands as the Build Phase opens: its regroup, played on the map.
+      const walk = walks.get(entity.ordinal)
+      field.push({
+        contentId: entity.contentId,
+        anchor: entity.anchor,
+        ordinal: entity.ordinal,
+        player: entity.player,
+        hp: entity.hp,
+        ...(walk === undefined || walk.steps.length === 0 ? {} : { walk: { from: walk.from, steps: walk.steps } }),
+      })
     }
   }
   return { standing, field }
@@ -427,7 +440,8 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       const fell = fallen(run.events, registry, pulse)
       return {
         timeline,
-        recall: recall(run.final, registry),
+        // The survivors regroup where they fought while the mission goes on; once it is over they stand.
+        regroup: run.verdict.kind === "continue" ? regroup(run.final, registry) : standDown(run.final, registry),
         nexus: nexusTile(context),
         mission: {
           verdict: run.verdict,
@@ -445,9 +459,9 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       // The Commanders who fell last round join the ones already out; whoever is due is set down beside the
       // Nexus before the Build Phase opens.
       const absent = [...(context.absent ?? []), ...(resolved.mission.fell ?? [])]
-      const back = restoreCommanders(resolved.recall.state, absent, number, context.registry)
+      const back = restoreCommanders(resolved.regroup.state, absent, number, context.registry)
       const carried = back.state
-      const { standing, field } = mapOf(context.registry, carried)
+      const { standing, field } = mapOf(context.registry, carried, resolved.regroup)
       const income = roundIncome(number)
       const last = `Round ${number - 1}: ${resultOf(outcomeOf(resolved.timeline)).headline.toLowerCase()}.`
       const news = commanderNews(back.restored, back.absent, number, mission.pulses)

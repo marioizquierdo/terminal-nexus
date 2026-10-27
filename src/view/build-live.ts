@@ -78,6 +78,9 @@
 import type { Camera } from "../build/camera.ts"
 import type { Coord } from "../grid/types.ts"
 import type { BuildState } from "../build/state.ts"
+import type { FieldEntity } from "../build/types.ts"
+import { REGROUP_TICKS } from "../match/types.ts"
+import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import { cardEntry } from "../build/state.ts"
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
@@ -114,6 +117,8 @@ export type LivePresentation = Pick<
   | "dialogLight"
   | "raidTrail"
   | "roundElapsed"
+  | "regroup"
+  | "room"
 >
 
 /** Everything time-dependent the frame at one instant shows — always a camera and a cursor, the state's
@@ -233,7 +238,70 @@ export type LiveOptions = Readonly<{
    *  (`appearanceLengthMs`, `commander-moments.ts`), or absent when she does not appear this round: only then is the
    *  round's clock handed to the view, and frames asked for until it has run. */
   appearsForMs?: number
+  /** This round's survivors, when they regroup as it opens (`BuildContext.field`, its walks): their regroup plays from
+   *  the first frame that shows them, and frames are asked for until it has played (`RegroupClock`). Absent: none. */
+  regroupOf?: readonly FieldEntity[]
 }>
+
+/** How long after a building is planned the units it stands on may still be walking out from under it, at most: the
+ *  room clock forgets a placement after it (a walk out is a few steps; a long ripple, a few seconds). */
+export const ROOM_MS = 6000
+
+/**
+ * **The room clock**: when each building of the plan was first drawn, so the units it stands on walk out from under it
+ * from that moment (`makeRoom`, `src/match/make-room.ts`; the view works out the walks from the plan). A placement
+ * undone and placed again starts again. Presentation only, like the regroup's clock; the live loop keeps one, a scripted
+ * playtest its own on the script's clock. Under reduced motion, none: the units stand where they end.
+ */
+export class RoomClock {
+  private seen = new Map<number, Readonly<{ key: string; at: number }>>()
+
+  /** Each planned building's ordinal and how long ago it was first drawn, while its walks may still run. */
+  at(planned: BuildState["planned"], now: number, reducedMotion: boolean): readonly Readonly<{ ordinal: number; elapsedMs: number }>[] {
+    const next = new Map<number, Readonly<{ key: string; at: number }>>()
+    for (const placement of planned) {
+      const key = `${placement.contentId}@${placement.anchor.x},${placement.anchor.y}`
+      const known = this.seen.get(placement.ordinal)
+      next.set(placement.ordinal, known !== undefined && known.key === key ? known : { key, at: now })
+    }
+    this.seen = next
+    if (reducedMotion) return []
+    return [...next.entries()].filter(([, entry]) => now - entry.at < ROOM_MS).map(([ordinal, entry]) => ({ ordinal, elapsedMs: now - entry.at }))
+  }
+}
+
+/** How long the survivors' regroup plays as a Build Phase opens: its ticks, at the Battle Round's own pace — 10 seconds
+ *  (`REGROUP_TICKS`, `src/match/regroup.ts`). */
+export const REGROUP_MS = (REGROUP_TICKS * 1000) / TICKS_PER_SECOND
+
+/** Whether any of `field` walks as the round opens. */
+export const regroups = (field: readonly FieldEntity[] | undefined): boolean => (field ?? []).some((entity) => entity.walk !== undefined)
+
+/**
+ * **The regroup's own clock.** The survivors of the last Battle Round walk to their formation over the first
+ * `REGROUP_MS` of the Build Phase (`FieldEntity.walk`): timed from the first frame that showed this round's field — a new
+ * round's field is a new list, so each round plays its own once — and gone once it has played, or at once under reduced
+ * motion, when the survivors simply stand where the walk ends. Presentation only: the round already holds them there,
+ * and a placement reads where they end. Watched, not recorded. The live loop keeps one (`BuildAnimation`); a scripted
+ * playtest keeps its own on the script's clock, so `wait` steps show it.
+ */
+export class RegroupClock {
+  private seen: Readonly<{ field: readonly FieldEntity[] | undefined; at: number }> | null = null
+
+  /** How far into the regroup the frame at `now` is, or `null` when nothing walks. */
+  at(field: readonly FieldEntity[] | undefined, now: number, reducedMotion: boolean): Readonly<{ elapsedMs: number }> | null {
+    const seen = this.seen?.field === field && this.seen !== null ? this.seen : { field, at: now }
+    this.seen = seen
+    if (reducedMotion || !regroups(field)) return null
+    const elapsedMs = Math.max(0, now - seen.at)
+    return elapsedMs < REGROUP_MS ? { elapsedMs } : null
+  }
+
+  /** When the regroup under way ends, on the clock `at` is read on, or `null` with none. */
+  endsAt(): number | null {
+    return this.seen === null ? null : this.seen.at + REGROUP_MS
+  }
+}
 
 /**
  * **The raid's trail's own clock.** The trail moves while it is in view and nothing holds it still; it holds
@@ -315,6 +383,10 @@ export class BuildAnimation {
   /** The round whose Build Phase the last frame showed, and the first frame that showed it: what the Commander's
    *  appearance is timed from. Watched, not recorded. */
   private seenRound: Readonly<{ round: number; at: number }> | null = null
+  /** The survivors' regroup as the round opens. */
+  private readonly regroupClock = new RegroupClock()
+  /** The units walking out from under the buildings planned. */
+  private readonly roomClock = new RoomClock()
   /**
    * Each planned ordinal's animation track (`animation.ts`), by the one thing about it that varies:
    * when its `play` was requested — the first frame that drew it — or `null` for what was already
@@ -543,6 +615,14 @@ export class BuildAnimation {
       ends.push(this.seenRound.at + options.appearsForMs)
     }
 
+    // The survivors' regroup: drawn every frame until it has played.
+    const regroup = this.regroupClock.at(options.regroupOf, now, options.reducedMotion === true)
+    const regroupEnd = this.regroupClock.endsAt()
+    if (regroup !== null && regroupEnd !== null) ends.push(regroupEnd)
+    // The units walking out from under a building just planned: drawn every frame while any may still walk.
+    const room = options.regroupOf === undefined ? [] : this.roomClock.at(state.planned, now, options.reducedMotion === true)
+    if (room.length > 0) ends.push(now - Math.min(...room.map((each) => each.elapsedMs)) + ROOM_MS)
+
     // The raid's trail, timed from the first frame that drew it moving. It never settles either, so it asks for
     // a frame only when it next looks different — never every frame — and none at all while it holds still.
     const raidTrail = this.trail.at(state, now, options)
@@ -570,6 +650,8 @@ export class BuildAnimation {
       ...(dialogLight === undefined ? {} : { dialogLight }),
       ...(raidTrail === null ? {} : { raidTrail }),
       ...(roundElapsed === undefined ? {} : { roundElapsed }),
+      ...(regroup === null ? {} : { regroup }),
+      ...(room.length === 0 ? {} : { room }),
       busyUntil: slowOnly ? slowUntil : ends.length === 0 ? null : Math.max(...ends),
       ...(slowOnly && slowUntil !== null ? { frameMs: slowUntil - now } : {}),
     }

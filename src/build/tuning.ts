@@ -61,9 +61,10 @@ const SETTLED_CHOICES = [
 
 /** Tuned values since retired, because the rule they tuned is gone: the held-key ramp's hold step,
  *  fast step and ramp time (2 tiles a repeat, then 4), replaced by counting taps and a hold cadence (the
- *  owner reported the old ramp felt wrong); and `holdFirstStep`, a held arrow's step, which is the arrow's
- *  own step now (`tapStep`). An old export may still name them (the first three were Experiments once). */
-const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs", "holdFirstStep"] as const
+ *  owner reported the old ramp felt wrong); `holdFirstStep`, a held arrow's step, which is the arrow's
+ *  own step now (`tapStep`); and `endWalkMs`, the walk home at a Battle Round's end, gone with Recall (the
+ *  survivors regroup in the Build Phase). An old export may still name them (the first three were Experiments once). */
+const RETIRED_TUNING = ["holdStep", "fastStep", "rampMs", "holdFirstStep", "endWalkMs"] as const
 
 /** Experiments retired because what they chose became data, or because the rule they tuned is gone: the placeholder Pulse's Raid and Your units,
  *  replaced by PERIMETER's raid and starting squads (`armies/vasse/army.json`); and the Barracks's pace — how

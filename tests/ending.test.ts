@@ -1,15 +1,14 @@
 // The Battle Round's ending — the owner's sketch of it and his answer to its
 // first build. Every moment of it is a pure function of presentation time, so the tests
 // are arithmetic: the moments, their order at every timing they could be given, the timer and its flash,
-// the light that sweeps the border, the red that means the Nexus is hurt, the walk home, and the words of
-// the result.
+// the light that sweeps the border, the red that means the Nexus is hurt, and the words of the result. (The walk home
+// is gone: the survivors stand, and regroup in the next Build Phase.)
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { EXPERIMENT_FIELDS } from "../src/build/experiments.ts"
 import type { Experiments } from "../src/build/experiments.ts"
 import { TUNING } from "../src/build/tuning.ts"
-import type { RecallMove } from "../src/match/index.ts"
 import type { Outcome } from "../src/state/types.ts"
 import {
   BEAM_FADE_MS,
@@ -34,39 +33,35 @@ import {
   resultOf,
   timerLit,
   timerSeconds,
-  walkPositions,
 } from "../src/view/ending.ts"
 import type { EndingPhase, EndingTuning, NexusStrain } from "../src/view/ending.ts"
 import { DEFENCE, play } from "./pulse-helpers.ts"
 
 /** The owner's first sketch of the ending (2026-09-17): a fixture for the arithmetic below, with round
  *  numbers. The game plays his tuned timings (`TUNING`), the next test's. */
-const SKETCH: EndingTuning = { endWarnMs: 3000, endWalkPauseMs: 1000, endWalkMs: 2000 }
+const SKETCH: EndingTuning = { endWarnMs: 3000, endWalkPauseMs: 1000 }
 
-test("the ending is the owner's: a warning in the last 3 s, half a second to the walk, one second of walking", () => {
+test("the ending is the owner's: a warning in the last 3 s, the result half a second after the stop", () => {
   // "some visual warning ... then after 3-5 seconds, the units stop shooting, 1 second later they start
-  // walking back, 2 seconds later the build phase begins" (owner, 2026-09-17), "the last 3 seconds"
-  // (2026-09-29), and the pause and the walk halved in his settings export (2026-09-30).
-  const { endWarnMs, endWalkPauseMs, endWalkMs } = TUNING
-  assert.deepEqual({ endWarnMs, endWalkPauseMs, endWalkMs }, { endWarnMs: 3000, endWalkPauseMs: 500, endWalkMs: 1000 })
+  // walking back" (owner, 2026-09-17), "the last 3 seconds" (2026-09-29), and the pause halved in his settings export
+  // (2026-09-30). The walk back is gone (2026-10-26: "no more sending troops back to their origin base anywhere").
+  const { endWarnMs, endWalkPauseMs } = TUNING
+  assert.deepEqual({ endWarnMs, endWalkPauseMs }, { endWarnMs: 3000, endWalkPauseMs: 500 })
   const times = endingTimes(20_000, 20_400)
   assert.equal(times.stopMs, 20_000)
   assert.equal(times.warnMs, 17_000, "the warning starts three seconds before the shooting stops")
-  assert.equal(times.walkMs, 20_500, "the walk starts half a second after it stops")
-  assert.equal(times.homeMs, 21_500, "and takes one second")
+  assert.equal(times.homeMs, 20_500, "the result shows half a second after it stops")
 })
 
-test("the walk waits for every effect in flight to land, and never starts before the pause is up", () => {
-  // "effects already in flight finish their own authored windows... then Recall plays".
-  assert.equal(endingTimes(20_000, 22_500, SKETCH).walkMs, 22_500)
-  assert.equal(endingTimes(20_000, 20_300, SKETCH).walkMs, 21_000)
-  assert.equal(endingTimes(20_000, 20_300, { ...SKETCH, endWalkPauseMs: 0 }).walkMs, 20_300)
+test("the result waits for every effect in flight to land, and never comes before the pause is up", () => {
+  assert.equal(endingTimes(20_000, 22_500, SKETCH).homeMs, 22_500)
+  assert.equal(endingTimes(20_000, 20_300, SKETCH).homeMs, 21_000)
+  assert.equal(endingTimes(20_000, 20_300, { ...SKETCH, endWalkPauseMs: 0 }).homeMs, 20_300)
 })
 
 test("no warning means none, and a short Pulse's warning cannot start before the Pulse does", () => {
   assert.equal(endingTimes(20_000, 20_000, { ...SKETCH, endWarnMs: 0 }).warnMs, null)
   assert.equal(endingTimes(2_500, 2_500, SKETCH).warnMs, 0, "the warning was scheduled before time zero")
-  assert.equal(endingTimes(20_000, 20_000, { ...SKETCH, endWalkMs: 0 }).homeMs, 21_000, "no walk: home the moment it starts")
 })
 
 test("the phases come in order and never go backwards, at every value the ending's timings were tried at", () => {
@@ -74,19 +69,18 @@ test("the phases come in order and never go backwards, at every value the ending
   const tried: Readonly<Record<keyof EndingTuning, readonly number[]>> = {
     endWarnMs: [0, 1000, 2000, 3000, 4000, 5000, 6000, 8000],
     endWalkPauseMs: [0, 500, 1000, 1500, 2000, 3000],
-    endWalkMs: [0, 1000, 2000, 3000, 4000, 6000],
   }
   const values = (field: keyof EndingTuning): readonly number[] => tried[field]
-  const order: readonly EndingPhase[] = ["fighting", "final", "halted", "walking", "home"]
+  const order: readonly EndingPhase[] = ["fighting", "final", "halted", "home"]
   let combinations = 0
   for (const endWarnMs of values("endWarnMs")) {
     for (const endWalkPauseMs of values("endWalkPauseMs")) {
-      for (const endWalkMs of values("endWalkMs")) {
+      {
         for (const [stop, effectsEnd] of [[600, 600], [9_000, 9_500], [20_000, 23_000], [30_000, 30_100]] as const) {
-          const flags = { endWarnMs, endWalkPauseMs, endWalkMs }
+          const flags = { endWarnMs, endWalkPauseMs }
           const times = endingTimes(stop, effectsEnd, flags)
           assert.ok((times.warnMs ?? 0) <= times.stopMs, "the warning starts after the fight stops")
-          assert.ok(times.stopMs <= times.walkMs && times.walkMs <= times.homeMs, "the moments are out of order")
+          assert.ok(times.stopMs <= times.homeMs, "the moments are out of order")
           let last = -1
           for (let t = 0; t <= times.homeMs + 500; t += 50) {
             const index = order.indexOf(phaseAt(times, t))
@@ -95,13 +89,13 @@ test("the phases come in order and never go backwards, at every value the ending
           }
           assert.equal(phaseAt(times, 0), times.warnMs === 0 ? "final" : "fighting")
           assert.equal(phaseAt(times, times.homeMs + 1), "home")
-          assert.equal(phaseAt(times, times.stopMs), times.walkMs === times.stopMs ? (times.homeMs === times.walkMs ? "home" : "walking") : "halted")
+          assert.equal(phaseAt(times, times.stopMs), times.homeMs === times.stopMs ? "home" : "halted")
           combinations += 1
         }
       }
     }
   }
-  assert.ok(combinations > 500, "the sweep did not cover the timings")
+  assert.ok(combinations > 150, "the sweep did not cover the timings")
 })
 
 test("the timer counts down to the stop in whole seconds, and reads 0:00 once it has", () => {
@@ -212,40 +206,6 @@ test("the strain on a Nexus is read from the Pulse: its first hit, when it was n
   if (held.lowMs !== null) assert.ok(held.hitMs !== null && held.hitMs <= held.lowMs)
   // The other side's Nexus is not the player's: side B has none on the starter map.
   assert.deepEqual(nexusStrain(lost, "B"), { hitMs: null, lowMs: null, fallMs: null })
-})
-
-const MOVES: readonly RecallMove[] = [
-  { ordinal: 3, player: "A", contentId: "unit.citizen.trooper", from: { x: 40, y: 10 }, to: { x: 20, y: 12 }, home: "nexus" },
-  { ordinal: 5, player: "A", contentId: "unit.citizen.marksman", from: { x: 30, y: 4 }, to: { x: 30, y: 4 }, home: "none" },
-]
-
-test("the walk home runs from where the fight left each survivor to the tile Recall gave it", () => {
-  const times = endingTimes(10_000, 10_000, SKETCH) // walks 11 000 -> 13 000
-  assert.equal(walkPositions(MOVES, times, 10_999, false).size, 0, "a survivor moved before the walk began")
-  const start = walkPositions(MOVES, times, 11_000, false)
-  assert.deepEqual(start.get(3), { x: 40, y: 10 })
-  const end = walkPositions(MOVES, times, 13_000, false)
-  assert.deepEqual(end.get(3), { x: 20, y: 12 }, "the survivor is not home when the walk ends")
-  assert.deepEqual(end.get(5), { x: 30, y: 4 })
-  assert.deepEqual(walkPositions(MOVES, times, 99_000, false).get(3), { x: 20, y: 12 }, "and it stays there")
-  // On the way, never further from home than it was, and always on a whole tile.
-  let previous = Number.POSITIVE_INFINITY
-  for (let t = 11_000; t <= 13_000; t += 100) {
-    const at = walkPositions(MOVES, times, t, false).get(3) as { x: number; y: number }
-    assert.ok(Number.isInteger(at.x) && Number.isInteger(at.y), "a half tile")
-    const left = Math.abs(at.x - 20) + Math.abs(at.y - 12)
-    assert.ok(left <= previous, `the survivor went backwards at ${t} ms`)
-    previous = left
-  }
-  const halfway = walkPositions(MOVES, times, 12_000, false).get(3) as { x: number; y: number }
-  assert.ok(halfway.x < 40 && halfway.x > 20, "halfway through the walk it is neither at the start nor home")
-})
-
-test("a walk of no time, and reduced motion, put everyone home the moment the walk would begin", () => {
-  const instant = endingTimes(10_000, 10_000, { ...SKETCH, endWalkMs: 0 })
-  assert.deepEqual(walkPositions(MOVES, instant, instant.walkMs, false).get(3), { x: 20, y: 12 })
-  const times = endingTimes(10_000, 10_000, SKETCH)
-  assert.deepEqual(walkPositions(MOVES, times, times.walkMs, true).get(3), { x: 20, y: 12 }, "reduced motion walked")
 })
 
 function outcome(winner: Outcome["winner"], reason: Outcome["reason"]): Outcome {

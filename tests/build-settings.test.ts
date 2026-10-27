@@ -446,7 +446,9 @@ test("the owner's export of 2026-09-30 is this build: its settled numbers are th
     assert.equal(defaultValue(name), Number(value), `${name} is not his ${value}`)
     checked += 1
   }
-  assert.equal(checked, 17, "every number of his that is still a setting was compared")
+  // Sixteen since the walk home went with Recall (2026-10-26): his walk time (`endWalkMs`) is retired, skipped quietly.
+  assert.equal(checked, 16, "every number of his that is still a setting was compared")
+  assert.ok(!("endWalkMs" in TUNING) && SETTLED_EXPERIMENTS.has("endWalkMs"), "endWalkMs")
   for (const retired of ["holdStep", "fastStep", "rampMs"]) assert.ok(!(retired in TUNING) && SETTLED_EXPERIMENTS.has(retired), retired)
   // And each default is a value its Experiment's list holds, so Left/Right step from it exactly.
   for (const spec of EXPERIMENT_FIELDS) {

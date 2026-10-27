@@ -1,6 +1,7 @@
 // What a measurement plays, and what it writes down (docs/system-design/measurement.md). One spec, so a result
 // measured before a rule changed and one measured after it compare like with like.
 
+import { DUEL_PULSE_TICKS, DUEL_ROUNDS } from "../duel/types.ts"
 import type { DuelMeasure, LevelMeasure, LevelPlan, ScenarioMeasure } from "./suites.ts"
 
 export type MeasureSpec = Readonly<{
@@ -69,7 +70,7 @@ export const FULL_SPEC: MeasureSpec = {
   name: "full",
   seeds: [1, 2, 3, 4, 5, 6],
   scenarios: "all",
-  duels: { map: "crossing", rounds: 8, pulseTicks: 600, commanders: ["vasse", "averno", "dob"], players: ["balanced", "rush", "turtle"] },
+  duels: { map: "crossing", rounds: DUEL_ROUNDS, pulseTicks: DUEL_PULSE_TICKS, commanders: ["vasse", "averno", "dob"], players: ["balanced", "rush", "turtle"] },
   levels: [],
   plans: LEVEL_PLANS,
 }

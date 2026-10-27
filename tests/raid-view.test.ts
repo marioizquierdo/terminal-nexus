@@ -235,7 +235,7 @@ test("the coming raid is see-through in its own colour where colours blend, full
       assert.equal(seeThroughColours(cell, colors), null, `at ${colors} the raid is not at full strength`)
     }
   }
-  // Round 1: she arrives with the squads; round 2: she stands where Recall put her. Both bold, never dim,
+  // Round 1: she arrives with the squads; round 2: she stands where the regroup left her. Both bold, never dim,
   // faded or washed, in her side's colour.
   const arriving = (first as BuildSide).build.round.incoming?.find((entity) => entity.contentId === VASSE)
   const standing = (second as BuildSide).build.round.field?.find((entity) => entity.contentId === VASSE)

@@ -54,9 +54,10 @@ export type EntityState = Readonly<{
   owed?: number
   /**
    * For a unit a building trained: that building's ordinal, and the tile it came out on (its anchor as it was set
-   * down on the roof). Recall sends it home there (`src/match/recall.ts`): onto the roof of the building that made it,
-   * as near that tile as there is room. Absent on everything no building trained, so a state with none hashes as it
-   * did before; and a building's ordinal is never reused, so a fallen home is simply not found.
+   * down on the roof). Recall once sent it home there, onto the roof of the building that made it; since survivors stay
+   * on the Grid and regroup (`src/match/regroup.ts`) no rule reads it, and it is kept for one that may. Absent on
+   * everything no building trained, so a state with none hashes as it did before; and a building's ordinal is never
+   * reused, so a fallen home is simply not found.
    */
   home?: number
   homeAt?: Coord
@@ -134,7 +135,7 @@ export type MatchState = Readonly<{
   targets?: Readonly<Partial<Record<PlayerId, TargetArea>>>
   /**
    * The ground burning now (`BurningGround`): lit by a landing hit, put out when its time ends, and put out by
-   * Recall between rounds. Absent, never empty, when nothing burns, so a state without fire hashes byte for byte as
+   * the regroup between rounds. Absent, never empty, when nothing burns, so a state without fire hashes byte for byte as
    * it did before fire existed, as `targets` and the production timers did.
    */
   burning?: readonly BurningGround[]
