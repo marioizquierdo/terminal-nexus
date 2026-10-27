@@ -107,7 +107,7 @@ nobody tells it anything, which is always, until orders exist:
 
 | State | When | What it does |
 | --- | --- | --- |
-| Leaving the roof | It stands on its own side's building: just trained, or home from the last round | Walks to the nearest ground first, or along the roofs (the "Way off the roof" Experiment); also to make way for a wave its side owes |
+| Leaving the roof | It stands on its own side's building: just trained, or a survivor of the last round standing on it | Walks to the nearest ground first, or along the roofs (the "Way off the roof" Experiment); also to make way for a wave its side owes |
 | Marching | It walks for its side's goal: the level's target, or the enemy's Grid Nexus while that is beyond its engage reach (6 columns; 12 for a Commander who charges) | Walks its route, keeping its place in the formation |
 | Yielding | A marcher further forward than its place this tick | Takes no step of its own; makes way for an ally held up behind it |
 | Engaged | It walks to an enemy within its engage reach | Walks to where its attack reaches, as always; the formation no longer holds it |
@@ -194,6 +194,8 @@ Every way a unit moves is one of three things: **a new goal** for the same field
 | Going round burning ground | A weight: an anchor whose body covers a burning tile weighs four times its ground in the field, while it burns; a step's credit is the ground's own | Yes (the mortar's fire) |
 | The raid's trail in the Build Phase | The same field, walked ahead of time over the plan | Yes |
 | Marching in formation | The march field ranks who is ahead, the guide line breaks ties, a yielder takes no step (section 5) | Yes |
+| Regrouping between rounds | A goal per unit, its slot in its side's formation across the march line, walked on the same fields beside the kernel's tick (`src/match/regroup.ts`) | Yes |
+| Making room for a building | The walk to the nearest free ground off every building, pushing on whoever stands there in turn, as a round opens (`src/match/make-room.ts`) | Yes |
 
 ## 8. Where modifiers plug in
 

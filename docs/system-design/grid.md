@@ -536,9 +536,9 @@ fronts match both ways, at the cost of two-character art for every unit and half
 ### 7.5 Setting a group down
 
 **A group set down round a point fills the rings of the Grid's own distance**, nearest first and, within a ring,
-nearest the side a unit comes from (Recall), then in reading order (RULE — `nearestFit` in
+nearest the side a unit comes from, then in reading order (RULE — `nearestFit` in
 `src/match/placement.ts`, `ringOffsets`; `tests/match.test.ts`), so it comes out round on screen. The opening's
-musters, the forecast of them, a mission's arrivals, Recall's regrouping and a Commander's return all search the
+musters, the forecast of them, a mission's arrivals and a Commander's return all search the
 same rings. The first thirteen places on open ground, `a` first, each unit claiming its tile before the next looks:
 
 <!-- grid-picture: rings -->

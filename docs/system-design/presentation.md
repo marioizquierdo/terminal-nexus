@@ -330,7 +330,7 @@ identity (when it was lit, by whom, where), the tile and the beat — a pure fun
 `src/view/burning.ts`) — so the patch reads as fire alive on the ground rather than a red carpet over it, and over a
 second nearly every tile has flared. **It dies down in its last second**: low flames only, dim, one tile in five, so
 the end reads before it comes; the scorch holds to the end, since the ground still hurts. Ground still burning when
-the fight ends is put out once everything in flight has landed, as Recall puts it out in the rules. **Reduced
+the fight ends is put out once everything in flight has landed, as the regroup puts it out in the rules. **Reduced
 motion** holds each tile's look still (the dying down stays: it is the patch's state, not decoration). **In
 monochrome** no fill is drawn and the flames carry the patch alone, by their glyphs: under half its tiles at any
 instant, flaring in turn across it, so its shape is drawn over a second. Both Pulse views draw it from one list worked out with the rest of a

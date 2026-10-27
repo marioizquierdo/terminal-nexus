@@ -105,6 +105,7 @@ _The dated record of the project, oldest first; never required reading. The pull
 | 2026-10-22 | Buildings have actions, not levels: an upgrade kept by one building alone, a mode switched between rounds, an order for one round, listed on its card when selected in the Build Phase; units are never changed one at a time. First: the Barracks's production line, the Turret's heavy rounds and its two firing modes | [log](feedback/2026-10-22-runs.md) |
 | 2026-10-24 | Runs designed as a whole game (a route of stops, a drafted army, a Nexus whose health has to last) and its first part built: a run starts with a small army and drafts after each won battle — a structure, a Nexus power or a new Doctrine, or a removal, or requisition | [log](feedback/2026-10-24-runs-gameplay.md), [#86](https://github.com/marioizquierdo/terminal-nexus/pull/86) |
 | 2026-10-26 | The core loop opened: what an army does between rounds (home, fall back, stay), orders in the Build Phase and the march line shown, measured in 3888 scripted duels | [log](feedback/2026-10-26-core-loop.md), [report](reports/2026-10-26-between-rounds.md), [notes](../milestones/core-loop.md) |
+| 2026-10-27 | The kept front: survivors stay and regroup between rounds in every mode, the walk home removed, 30-second rounds and eight to a battle, buildings push troops aside | [log](feedback/2026-10-26-core-loop.md), [notes](../milestones/core-loop.md) |
 
 ## Where the detail is
 

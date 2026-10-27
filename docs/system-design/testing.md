@@ -49,7 +49,7 @@ shown on a small map has a checked-in, runnable scenario file named for what it 
 and the rest of `scenarios/`), and every file loads with an id that matches its name. A scenario asserts the
 rule through events and hashes, and `grid <map> --verify` (see [`runtime.md`](runtime.md)) re-resolves
 it ten times from the command line.
-The rules layer above the kernel (openings, Recall, missions) is held the same way by
+The rules layer above the kernel (openings, the regroup, missions) is held the same way by
 `tests/match.test.ts` and `tests/mission.test.ts`. The route scenarios (`route-*`) each show one shape a route must
 manage and are played on several seeds (`tests/route-scenarios.test.ts`); routing's own parts are tested alone on
 small Grids and mazes, against a plain search (`tests/routing.test.ts`).
