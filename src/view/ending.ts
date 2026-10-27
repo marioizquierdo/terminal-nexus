@@ -3,11 +3,10 @@
 //
 //   the fight is shown as it happened ............................ "fighting"
 //   the last seconds: the timer flashes, a light sweeps the border  "final"       (`endWarnMs`)
-//   the last tick is shown and nothing shoots any more ........... "halted"      (effects in flight land)
-//   the survivors walk home ...................................... "walking"     (`endWalkPauseMs`, `endWalkMs`)
-//   everyone is home; the result stands .......................... "home"
+//   the last tick is shown and nothing shoots any more ........... "halted"      (effects in flight land, `endWalkPauseMs`)
+//   the result stands, the survivors where the fight left them ... "home"
 //
-// The three timings are the owner's tuned values (`src/build/tuning.ts`); `endingTimes` takes them as a
+// The two timings are the owner's tuned values (`src/build/tuning.ts`); `endingTimes` takes them as a
 // parameter so a test can try any.
 //
 // **The kernel decided the ending long before any of this plays**: the timeline is resolved whole before
@@ -21,21 +20,19 @@
 // a lighthouse calling, not an alarm; and **red is kept for the player's Nexus being hurt** — its first
 // hit, its health very low, a lost Pulse — brief and faint.
 //
-// **Recall's state change is instant** (`docs/system-design/pulse.md`), and belongs to `src/match/recall.ts`. What
-// is drawn here is the walk home on top of it: presentation only, from where the fight left each survivor
-// to the tile Recall gave it. Nothing in this file can change a state, an event or a hash.
+// **Nobody walks home any more** (the owner, 2026-10-26: "no more sending troops back to their origin base anywhere"):
+// the survivors stand where the fight left them, and regroup as the next Build Phase opens (`src/match/regroup.ts`,
+// played by the Build Phase's view). Nothing in this file can change a state, an event or a hash.
 
 import type { Tuning } from "../build/tuning.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { Coord } from "../grid/types.ts"
-import type { RecallMove } from "../match/types.ts"
+
 import type { Outcome, PlayerId } from "../state/types.ts"
 import type { StatusTone } from "../build/status.ts"
 import type { CommanderAbsence } from "../build/types.ts"
 import { commanderName } from "../content/cards.ts"
 import { buildFlightHoldTicks, flightHoldTicks } from "./effects/derive.ts"
 import type { PulseTimeline } from "./snapshot.ts"
-import { tileAt } from "./tween.ts"
 
 /** The moments of one Pulse's ending, in presentation milliseconds from the Pulse's start. */
 export type EndingTimes = Readonly<{
@@ -44,33 +41,27 @@ export type EndingTimes = Readonly<{
   /** When the last seconds begin — the timer starts to flash and the light to sweep — or `null` for
    *  none (a warning of 0). Never before the Pulse starts. */
   warnMs: number | null
-  /** When the survivors start walking home: the pause after the stop, or later, once every effect in
-   *  flight has landed ("then Recall plays"). */
-  walkMs: number
-  /** When the walk ends and the result is shown — `walkMs` itself for a walk-back of no time. */
+  /** When the result is shown: the pause after the stop, or later, once every effect in flight has landed. */
   homeMs: number
 }>
 
-/** The ending's three timings, in milliseconds: how long the warning lasts before the stop, the pause
- *  before the walk home, and the walk. The game plays the owner's (`TUNING`); a test may hand in others. */
-export type EndingTuning = Pick<Tuning, "endWarnMs" | "endWalkPauseMs" | "endWalkMs">
+/** The ending's two timings, in milliseconds: how long the warning lasts before the stop, and the pause before the
+ *  result. The game plays the owner's (`TUNING`); a test may hand in others. */
+export type EndingTuning = Pick<Tuning, "endWarnMs" | "endWalkPauseMs">
 
 export function endingTimes(lastTickMs: number, effectsEndMs: number, tuning: EndingTuning = TUNING): EndingTimes {
   const stopMs = lastTickMs
-  const walkMs = Math.max(stopMs + tuning.endWalkPauseMs, effectsEndMs)
   return {
     stopMs,
     warnMs: tuning.endWarnMs > 0 ? Math.max(0, stopMs - tuning.endWarnMs) : null,
-    walkMs,
-    homeMs: walkMs + tuning.endWalkMs,
+    homeMs: Math.max(stopMs + tuning.endWalkPauseMs, effectsEndMs),
   }
 }
 
-export type EndingPhase = "fighting" | "final" | "halted" | "walking" | "home"
+export type EndingPhase = "fighting" | "final" | "halted" | "home"
 
 export function phaseAt(times: EndingTimes, timeMs: number): EndingPhase {
   if (timeMs >= times.homeMs) return "home"
-  if (timeMs >= times.walkMs) return "walking"
   if (timeMs >= times.stopMs) return "halted"
   if (times.warnMs !== null && timeMs >= times.warnMs) return "final"
   return "fighting"
@@ -230,30 +221,6 @@ export function redAlert(strain: NexusStrain, times: EndingTimes, defeated: bool
   }
   if (defeated) level = Math.max(level, fade(timeMs - times.homeMs, RED_DEFEAT_MS))
   return level * RED_PEAK
-}
-
-/**
- * Where each survivor is drawn while it walks home, by ordinal — and empty before the walk begins, when
- * the fight's own positions stand. Whole tiles along a straight line, easing out of and into the
- * walk; there is no routing to follow (a straight glide may cross rock, which a 2-second flourish can
- * afford). Reduced motion shows everyone home the moment the walk would begin.
- */
-export function walkPositions(
-  moves: readonly RecallMove[],
-  times: EndingTimes,
-  timeMs: number,
-  reducedMotion: boolean,
-): ReadonlyMap<number, Coord> {
-  const positions = new Map<number, Coord>()
-  if (timeMs < times.walkMs) return positions
-  const duration = reducedMotion ? 0 : times.homeMs - times.walkMs
-  for (const move of moves) {
-    positions.set(
-      move.ordinal,
-      tileAt({ from: move.from, to: move.to, startMs: times.walkMs, durationMs: duration, easing: "easeInOut" }, timeMs),
-    )
-  }
-  return positions
 }
 
 /** How a Pulse ended, in words a viewer can read without being told: the headline, why, and how it reads —

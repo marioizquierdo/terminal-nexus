@@ -11,7 +11,7 @@
 
 import { ARMIES } from "../armies/index.ts"
 import type { DuelResult, DuelSetup } from "../duel/index.ts"
-import { DUEL_MAPS, DUEL_PULSE_TICKS, duelArmy } from "../duel/index.ts"
+import { DUEL_MAPS, DUEL_PULSE_TICKS, DUEL_ROUNDS, duelArmy } from "../duel/index.ts"
 import { Pcg32, STREAM_RUN } from "../rng/pcg32.ts"
 import type { DraftChoice } from "./draft.ts"
 import { REQUISITION_FOR_SKIPPING, choose, dealDraft } from "./draft.ts"
@@ -37,9 +37,14 @@ export const RUN_OPPONENT = "dob"
 export const RUN_MAP = "crossing"
 
 /**
- * **Rounds a battle lasts at most: RUN_ROUNDS_PLACEHOLDER**
+ * **Rounds a battle lasts at most: 8**, each Battle Round 30 seconds with the front kept between rounds (step 11D). Measured
+ * on the between-rounds experiment's own matrix (the six pairings of different Commanders, every pairing of the three
+ * scripts, seeds 1–6, on the Crossing, played to 10 rounds): a Nexus fell by the end of round 6 in 36% of the duels, of
+ * round 8 in 46%, and in no more after round 9 (48%); the rest are the scripts' stalemates (rush or turtle against rush
+ * or turtle), which no limit ends. Eight takes in nineteen in twenty of the battles that end on a fallen Nexus at all, and
+ * a battle averages under seven rounds: with a Build Phase of half a minute to a minute, about 7 to 12 minutes.
  */
-export const RUN_ROUNDS = 6
+export const RUN_ROUNDS = DUEL_ROUNDS
 /** A run's Battle Round is a duel's: 30 seconds (`DUEL_PULSE_TICKS`). */
 export const RUN_PULSE_TICKS = DUEL_PULSE_TICKS
 

@@ -147,6 +147,13 @@ export type BuildCompositionInput = Readonly<{
    * frame, reduced motion, once the regroup has played — each stands where the walk ends, where the round finds it.
    */
   regroup?: Readonly<{ elapsedMs: number }>
+  /**
+   * **The room clock**: for each building of the plan whose units may still be walking out from under it, its ordinal
+   * and how long ago it was first drawn (`RoomClock`, `src/view/build-live.ts`). A unit a building stands on is drawn
+   * along its way out (`makeRoom`, `src/match/make-room.ts`) at that instant. Absent — every still frame, reduced motion
+   * — each stands where its walk ends.
+   */
+  room?: readonly Readonly<{ ordinal: number; elapsedMs: number }>[]
   /** Draw no Commander on the map this frame: she is still to appear (`commanderHidden`). Set by the composer. */
   commanderHidden?: boolean
 }>

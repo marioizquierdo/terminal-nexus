@@ -140,7 +140,7 @@ test("the regroup is a pure function of the round's end: the same state gives th
   const again = regroup(state, FIXTURE_REGISTRY)
   assert.deepEqual(again.paths, first.paths)
   assert.equal(hashState(again.state), hashState(first.state))
-  // What Recall resets, the regroup resets: the clock, the outcome, the cooling tiles, the fire, every target.
+  // Between rounds the regroup resets the clock, the outcome, the cooling tiles, the fire, every target.
   assert.equal(first.state.tick, 0)
   assert.equal(first.state.outcome, null)
   for (const entity of first.state.entities) assert.equal(entity.targetOrdinal, null)
@@ -225,14 +225,18 @@ test("the regroup of a played duel round is pinned, on Node and on Bun", { timeo
   const result = first?.regroup as RegroupResult
   // Pinned: the same end of round regroups into the same walks and the same state on every runtime; a change to the
   // regroup, the kernel, the scripts or the armies moves it, and says so.
-  assert.equal(pathsHash(result), "PIN_PATHS")
-  assert.equal(hashState(result.state), "a4832719957543cd35fdd0cc08b9ed0719f0abcb85002bacaf6d12a462480c56")
+  assert.equal(pathsHash(result), "b1ecdbbac7103c59")
+  assert.equal(hashState(result.state), "f73faf9c2ddd26ea8e11a5ab8bf63b3cd3d239179f7089bdec94912275255833")
 })
 
-test("the round's end settled where everyone stands: the regroup's first frame, as a run's Battle Round ends on it", () => {
+test("the round's end settled where everyone stands: the regroup's first frame, what a match that is over keeps", () => {
   const state = stateOf([{ player: "A", muster: { x: 30, y: 10 }, units: [TROOPER, MARKSMAN] }])
   const settled = standDown(state, FIXTURE_REGISTRY)
-  for (const move of settled.moves) assert.deepEqual(move.to, move.from)
+  assert.equal(settled.ticks, 0)
+  for (const path of settled.paths) {
+    assert.deepEqual(path.to, path.from)
+    assert.deepEqual(path.steps, [])
+  }
   const result = regroup(state, FIXTURE_REGISTRY)
   for (const path of result.paths) assert.deepEqual(regroupAt(path, 0), settled.state.entities.find((entity) => entity.ordinal === path.ordinal)?.anchor)
 })

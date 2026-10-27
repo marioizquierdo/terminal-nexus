@@ -483,7 +483,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   assert.equal(frame(byDriver), frame(byKeyboard))
 
   // The commit starts a Battle Round, and whichever adapter started it, it is the same Pulse —
-  // the kernel's own two hashes, the ending's Recall, and what each of them shows at the same instant.
+  // the kernel's own two hashes, the ending's regroup, and what each of them shows at the same instant.
   const pulseOf = (side: BuildSide) => {
     assert.ok(side.build.pulse !== null, "the commit did not start a Pulse")
     return side.build.pulse.resolved
@@ -492,7 +492,7 @@ test("the same pick-build-commit script produces an identical state by hotkeys, 
   for (const other of [byMouse, byDriver]) {
     assert.equal(pulseOf(other).timeline.stateHash, pulseOf(byKeyboard).timeline.stateHash)
     assert.equal(pulseOf(other).timeline.eventsHash, pulseOf(byKeyboard).timeline.eventsHash)
-    assert.deepEqual(pulseOf(other).recall.moves, pulseOf(byKeyboard).recall.moves)
+    assert.deepEqual(pulseOf(other).regroup.paths, pulseOf(byKeyboard).regroup.paths)
     assert.deepEqual(other.build.pulseFrame()?.sample.state, byKeyboard.build.pulseFrame()?.sample.state)
   }
 })

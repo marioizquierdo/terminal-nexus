@@ -8,7 +8,7 @@
 // building. Every patch's victims are added up and the damage applied at once, in ordinal order, as a splash's are, so
 // two patches that overlap are one hit and neither is applied first. A kill is the shooter's, named by its id whether
 // it still stands or not; a kill by fire is no blow, so it gives no killer's pause. Routes weigh the ground while it
-// burns (`TickRoutes.weightsOf`); Recall puts it out (`src/match/recall.ts`).
+// burns (`TickRoutes.weightsOf`); the regroup between rounds puts it out (`src/match/regroup.ts`).
 
 import type { Coord, EntityLayer } from "../grid/types.ts"
 import { footprintWithin } from "../grid/coords.ts"

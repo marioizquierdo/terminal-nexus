@@ -126,7 +126,7 @@ test("the view is centred on the player's Nexus when the Pulse starts, wherever 
   )
 })
 
-test("the ending says what is happening in words at every moment: the last seconds, cease fire, recall, the result", () => {
+test("the ending says what is happening in words at every moment: the last seconds, cease fire, the result", () => {
   const played = victorious()
   const moments = times(played)
   assert.ok(moments.warnMs !== null && moments.warnMs < moments.stopMs)
@@ -150,19 +150,15 @@ test("the ending says what is happening in words at every moment: the last secon
   assert.match(halted, /The shooting has stopped\./)
   assert.match(halted, /Cease fire\. The battle is over\./)
 
-  at(played, moments.walkMs + 20)
-  const walking = screenText(played)
-  assert.match(walking, /TERMINAL NEXUS recall/)
-  assert.match(walking, /^\| RECALL /m)
-  assert.match(walking, /The survivors walk home\./)
-  assert.match(walking, /Recall - the survivors are heading home\./)
+  // Nobody walks home: the result follows the cease fire.
+  assert.doesNotMatch(halted, /RECALL|walk home/)
 
   at(played, moments.homeMs + 20)
   const home = screenText(played)
   assert.match(home, /TERMINAL NEXUS battle round - victory/)
   assert.match(home, /^\| VICTORY /m)
   assert.match(home, /The raid was wiped out\./)
-  assert.match(home, /\d+ of yours came home\./)
+  assert.match(home, /\d+ of yours hold the field\./)
   // Where the mission stands, and the way on: the round is over, the Nexus stands, and the row
   // where Pause was goes to the next round.
   assert.match(home, /Round 1 of 2 is over\. The/)
@@ -187,7 +183,7 @@ test("the timer counts down the seconds left to the last shot, and its last seco
   assert.equal(clock(moments.stopMs - 1), "0:01", "the last second reads 0:01, not 0:00")
 })
 
-test("a lost Pulse and a timed-out one say so plainly, and a round with nobody left to walk home says that", () => {
+test("a lost Pulse and a timed-out one say so plainly, and a round with nobody of the player's left says that", () => {
   // Nothing built: the squads and the Nexus's own shots wipe the first raid out (the owner, 2026-10-21: the Nexus
   // fights back). A force wiped out with its Nexus standing playing on to the end is the mission's own test, with a
   // raid the Nexus cannot stop alone (tests/mission.test.ts).
@@ -195,12 +191,12 @@ test("a lost Pulse and a timed-out one say so plainly, and a round with nobody l
   atHome(nothing)
   assert.match(screenText(nothing), /^\| VICTORY /m)
   assert.match(screenText(nothing), /The raid was wiped out\./)
-  // Nobody left to walk home is said as that, not as "0 of yours".
+  // Nobody left is said as that, not as "0 of yours".
   const alone = play({ crew: "none" })
   atHome(alone)
   assert.doesNotMatch(screenText(alone), /Your force was wiped out\./)
-  assert.match(screenText(alone), /None of yours came home\./)
-  assert.doesNotMatch(screenText(alone), /\b0 of yours came home/)
+  assert.match(screenText(alone), /None of yours is left\./)
+  assert.doesNotMatch(screenText(alone), /\b0 of yours/)
 
   // A Nexus that falls ends the mission: the mission's verdict leads, and the fight's reason stays under it.
   const nexusFell = play({ crew: "none", raid: "heavy" })
@@ -259,29 +255,24 @@ function walkingHome(): Played {
   return played
 }
 
-test("the survivors are drawn walking home, and home when the walk ends", () => {
+test("nobody walks home: through the ending and the result the survivors stand where the fight left them", () => {
   const played = walkingHome()
   const moments = times(played)
-  const moves = played.pulse.recall.moves
-  assert.ok(moves.length > 0, "nobody survived to walk")
-  const drawn = (ms: number) => {
+  const paths = played.pulse.regroup.paths
+  assert.ok(paths.length > 0, "nobody survived; the test proves nothing")
+  const states = played.pulse.timeline.states
+  const last = states[states.length - 1] as NonNullable<(typeof states)[number]>
+  for (const ms of [moments.stopMs + 10, moments.homeMs + 10]) {
     at(played, ms)
-    const frame = played.build.pulseFrame()
-    assert.ok(frame !== undefined)
-    return frame.positions
+    const positions = played.build.pulseFrame()!.positions
+    for (const path of paths) {
+      const standing = last.entities.find((entity) => entity.ordinal === path.ordinal)
+      assert.deepEqual(positions.get(path.ordinal), standing?.anchor, `${path.ordinal} moved at ${ms} ms`)
+    }
   }
-  // The longest walk on screen, by the Grid's own distance: long enough that its middle is neither end.
-  const far = [...moves].sort((a, b) => gridDistance(b.from, b.to) - gridDistance(a.from, a.to))[0]
-  assert.ok(far !== undefined && gridDistance(far.from, far.to) >= 5, "every survivor was already home; the test proves nothing")
-  assert.deepEqual(drawn(moments.walkMs - 50).get(far.ordinal) ?? far.from, far.from, "it walked before the walk began")
-  const middle = drawn((moments.walkMs + moments.homeMs) / 2).get(far.ordinal)
-  assert.ok(middle !== undefined)
-  assert.notDeepEqual(middle, far.from)
-  assert.notDeepEqual(middle, far.to, "it was home halfway through the walk")
-  for (const move of moves) assert.deepEqual(drawn(moments.homeMs + 10).get(move.ordinal), move.to, `${move.ordinal} did not come home`)
 })
 
-test("reduced motion holds the timer and the light steady and puts the survivors home the moment the walk begins", () => {
+test("reduced motion holds the timer and the light steady", () => {
   const played = walkingHome()
   played.build.dispatch({ kind: "setting-adjust", field: "reducedMotion", step: 1 })
   assert.equal(played.build.state.settings.reducedMotion, true)
@@ -297,16 +288,6 @@ test("reduced motion holds the timer and the light steady and puts the survivors
   for (let ms = moments.warnMs! + 500; ms < moments.stopMs - 50; ms += 173) {
     assert.equal(shown(ms), first, `the timer or the light moved at ${ms} ms`)
   }
-  at(played, moments.walkMs + 5)
-  const positions = played.build.pulseFrame()!.positions
-  for (const move of played.pulse.recall.moves) assert.deepEqual(positions.get(move.ordinal), move.to)
-  // With motion, the same instant is mid-walk.
-  const moving = walkingHome()
-  at(moving, moments.walkMs + 5)
-  assert.ok(moving.pulse.recall.moves.some((move) => {
-    const drawnAt = moving.build.pulseFrame()!.positions.get(move.ordinal)
-    return drawnAt !== undefined && (drawnAt.x !== move.to.x || drawnAt.y !== move.to.y)
-  }), "nothing was still walking with motion on")
 })
 
 test("the timer is the only thing that flashes: it goes inverse in the last seconds and nothing else on screen does", () => {
@@ -375,7 +356,7 @@ test("the ending is plain to see at every colour depth: monochrome uses bold and
     }
     const lit = ansiAt(moments.warnMs! + 20)
     const dark = ansiAt(moments.warnMs! + 20 + TIMER_HALF_PERIOD_MS)
-    const phases = { lit, dark, ceaseFire: ansiAt(moments.stopMs + 500), recall: ansiAt(moments.walkMs + 20), result: ansiAt(moments.homeMs + 20) }
+    const phases = { lit, dark, ceaseFire: ansiAt(moments.stopMs + 500), result: ansiAt(moments.homeMs + 20) }
     if (colors === "monochrome") {
       for (const [phase, ansi] of Object.entries(phases)) {
         assert.ok(!sgrCodes(ansi).some(isColourCode), `${phase}: monochrome emitted a colour code`)
@@ -385,7 +366,7 @@ test("the ending is plain to see at every colour depth: monochrome uses bold and
     assert.equal(sgrCodes(lit).includes(7), colors === "monochrome", `${colors}: the lit timer is not reversed video`)
     assert.notEqual(lit, dark, `${colors}: the timer's flash cannot be seen`)
     // The phases are told apart by their words as much as by anything drawn: each screen differs from the last.
-    assert.equal(new Set(Object.values(phases)).size, 5, `${colors}: two moments of the ending look the same`)
+    assert.equal(new Set(Object.values(phases)).size, 4, `${colors}: two moments of the ending look the same`)
   }
 })
 

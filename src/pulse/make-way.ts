@@ -2,7 +2,7 @@
 // a unit that spawned but has no space yet because there are other units on top").
 //
 // A building that has no room on its roof for its wave owes the rest (`production.ts`, `owed`) and sets each down the
-// first tick there is room. Survivors come home onto the roof of the building that trained them (Recall), so a round
+// first tick there is room. Survivors may stand on the roof of the building that trained them (a wave that never walked off), so a round
 // can open with the roof full and the first wave owed. A unit standing there with somewhere to go walks off the roof
 // on its way and frees it; one with nothing to walk for would stand on it for good, and the wave would never come.
 // So **a unit on its side's roofs while one of its side's buildings owes units, with nothing to walk for, makes way**:

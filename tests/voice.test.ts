@@ -437,12 +437,12 @@ test("a light on her marks the moment she speaks: the effect library's own, on h
   assert.equal(pulseFrameOf(silent).voice, undefined)
 })
 
-test("her voice changes nothing that resolves: the same round, the same states, events and Recall whether she speaks or not", () => {
+test("her voice changes nothing that resolves: the same round, the same states, events and regroup whether she speaks or not", () => {
   const sides = [perimeter(), perimeter({}, true)]
   const fingerprint = (side: BuildSide) => {
     const resolved = side.build.pulse?.resolved
     assert.ok(resolved !== undefined)
-    return [resolved.timeline.stateHash, resolved.timeline.eventsHash, hashState(resolved.recall.state)]
+    return [resolved.timeline.stateHash, resolved.timeline.eventsHash, hashState(resolved.regroup.state)]
   }
   const [heard, silent] = sides.map(fingerprint)
   assert.deepEqual(silent, heard)

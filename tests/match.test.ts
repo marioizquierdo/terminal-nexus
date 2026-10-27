@@ -1,5 +1,5 @@
-// The match layer. The opening state a Pulse starts from, and Recall, the rule at the other
-// end of it (docs/system-design/pulse.md, Recall). Both are deterministic rules-layer code beside the kernel, so the
+// The match layer. The opening state a Pulse starts from, and the rules at the other
+// end of it (the regroup, src/match/regroup.ts). Both are deterministic rules-layer code beside the kernel, so the
 // tests are the kernel's kind: exact states, exact hashes, no screen.
 
 import { test } from "node:test"
@@ -7,7 +7,7 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { gridDistance, tilesOf } from "../src/grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
-import { PulseSetupError, centreTile, openingState, recall } from "../src/match/index.ts"
+import { PulseSetupError, centreTile, openingState, regroup } from "../src/match/index.ts"
 import type { Force, PulseSetup, StructurePlacement } from "../src/match/index.ts"
 import { gameplayRng } from "../src/rng/pcg32.ts"
 import { loadScenario } from "../src/scenario/index.ts"
@@ -306,7 +306,7 @@ test("a setup the loader would refuse is refused, by name", () => {
 })
 
 // ---------------------------------------------------------------------------------------------
-// Recall
+// Between rounds (the regroup replaced Recall, the walk home; its own tests are in tests/regroup.test.ts)
 // ---------------------------------------------------------------------------------------------
 
 /** A Pulse's aftermath, drawn by hand: the player's Nexus at (6,10), troopers far out east, a raid
@@ -321,79 +321,7 @@ function afterwards(extra: readonly StructurePlacement[] = []): MatchState {
   )
 }
 
-test("survivors with no producer regroup beside the Grid Nexus, on the side they came from", () => {
-  const before = afterwards()
-  const { state, moves } = recall(before, FIXTURE_REGISTRY)
-  const nexus = state.entities.find((entity) => entity.contentId === NEXUS) as EntityState
-  const nexusTiles = tilesOf(nexus.anchor, definitionOf(nexus).footprint)
-  const mine = state.entities.filter((entity) => entity.player === "A" && definitionOf(entity).layer === "units")
-  assert.equal(mine.length, 3)
-  for (const unit of mine) {
-    const nearest = Math.min(...nexusTiles.map((tile) => distance(centreOf(unit), tile)))
-    assert.ok(nearest <= 3, `${unit.id} is ${nearest} tiles from the Nexus`)
-    assert.ok(centreOf(unit).x > nexus.anchor.x, `${unit.id} came home on the wrong side of the Nexus`)
-  }
-  assert.deepEqual(
-    moves.filter((move) => move.player === "A").map((move) => move.home),
-    ["nexus", "nexus", "nexus"],
-  )
-  assertNoTileShared(state, "recall")
-})
-
-test("a survivor with no home stays where it stands, and the others make room for it", () => {
-  const before = afterwards()
-  const { state, moves } = recall(before, FIXTURE_REGISTRY)
-  const runnerBefore = before.entities.find((entity) => entity.contentId === RUNNER) as EntityState
-  const runnerAfter = state.entities.find((entity) => entity.ordinal === runnerBefore.ordinal) as EntityState
-  assert.deepEqual(runnerAfter.anchor, runnerBefore.anchor)
-  assert.equal(moves.find((move) => move.ordinal === runnerBefore.ordinal)?.home, "none")
-  // Even when a returning unit's nearest tile is exactly the stranded one's.
-  const crowded = open(
-    [{ contentId: NEXUS, anchor: { x: 6, y: 10 } }],
-    [
-      { player: "A", muster: { x: 30, y: 11 }, units: [TROOPER] },
-      { player: "B", muster: { x: 9, y: 11 }, units: [RUNNER, RUNNER] },
-    ],
-  )
-  const result = recall(crowded, FIXTURE_REGISTRY)
-  assertNoTileShared(result.state, "recall beside a stranded raider")
-  for (const stranded of crowded.entities.filter((entity) => entity.player === "B")) {
-    const after = result.state.entities.find((entity) => entity.ordinal === stranded.ordinal) as EntityState
-    assert.deepEqual(after.anchor, stranded.anchor, "a survivor with no home was moved")
-  }
-})
-
-test("a unit goes back to a producer that makes units like it, not to the Nexus", () => {
-  const before = open(
-    [
-      { contentId: NEXUS, anchor: { x: 4, y: 4 } },
-      { contentId: HATCHERY, anchor: { x: 30, y: 18 } },
-    ],
-    [{ player: "A", muster: { x: 26, y: 12 }, units: [SPAWNLING, TROOPER] }],
-  )
-  const { state, moves } = recall(before, FIXTURE_REGISTRY)
-  const spawnling = state.entities.find((entity) => entity.contentId === SPAWNLING) as EntityState
-  const hatchery = state.entities.find((entity) => entity.contentId === HATCHERY) as EntityState
-  assert.ok(distance(centreOf(spawnling), centreOf(hatchery)) <= 4, "the spawnling did not go back to its hatchery")
-  assert.equal(moves.find((move) => move.contentId === SPAWNLING)?.home, "producer")
-  assert.equal(moves.find((move) => move.contentId === TROOPER)?.home, "nexus", "a trooper is an orphan of a hatchery")
-})
-
-test("the nearest compatible producer is the one a survivor goes to", () => {
-  const before = open(
-    [
-      { contentId: NEXUS, anchor: { x: 1, y: 1 } },
-      { contentId: HATCHERY, anchor: { x: 2, y: 18 } },
-      { contentId: HATCHERY, anchor: { x: 34, y: 18 } },
-    ],
-    [{ player: "A", muster: { x: 30, y: 10 }, units: [SPAWNLING] }],
-  )
-  const { state } = recall(before, FIXTURE_REGISTRY)
-  const spawnling = state.entities.find((entity) => entity.contentId === SPAWNLING) as EntityState
-  assert.ok(spawnling.anchor.x > 20, "it went to the far hatchery")
-})
-
-test("Recall resets what a Pulse leaves running and clears the Pulse's own bookkeeping", () => {
+test("the regroup between rounds resets what a Pulse leaves running and clears the Pulse's own bookkeeping", () => {
   const before = afterwards([{ contentId: HATCHERY, anchor: { x: 20, y: 3 } }])
   const worn: MatchState = {
     ...before,
@@ -410,7 +338,7 @@ test("Recall resets what a Pulse leaves running and clears the Pulse's own bookk
       spawnCooldown: definitionOf(entity).spawn === undefined ? 0 : 2,
     })),
   }
-  const { state } = recall(worn, FIXTURE_REGISTRY)
+  const { state } = regroup(worn, FIXTURE_REGISTRY)
   assert.equal(state.tick, 0)
   assert.equal(state.outcome, null)
   assert.deepEqual(state.vacatedTiles, [])
@@ -423,87 +351,15 @@ test("Recall resets what a Pulse leaves running and clears the Pulse's own bookk
   )
   for (const entity of state.entities) {
     const wornEntity = worn.entities.find((candidate) => candidate.ordinal === entity.ordinal) as EntityState
-    // Recall heals nothing but what mends, the Grid Nexus (`ContentDef.mends`), and never past full.
+    // Between rounds nothing heals but what mends, the Grid Nexus (`ContentDef.mends`), and never past full.
     const mends = definitionOf(entity).mends ?? 0
-    assert.equal(entity.hp, Math.min(definitionOf(entity).maxHp, wornEntity.hp + mends), "Recall heals only what mends")
+    assert.equal(entity.hp, Math.min(definitionOf(entity).maxHp, wornEntity.hp + mends), "only what mends heals")
     assert.equal(entity.cooldown, 0)
     assert.equal(entity.moveCredit, 0)
     assert.equal(entity.targetOrdinal, null)
     assert.equal(entity.focusStreak, 0)
     assert.equal(entity.spawnCooldown, definitionOf(entity).spawn?.intervalTicks ?? 0, "a producer's cooldown is a full interval")
   }
-})
-
-test("structures never move, and a survivor's move is reported from where the Pulse left it", () => {
-  const before = afterwards([{ contentId: BARRACKS, anchor: { x: 12, y: 3 } }])
-  const { state, moves } = recall(before, FIXTURE_REGISTRY)
-  for (const entity of before.entities.filter((candidate) => definitionOf(candidate).layer === "obstacles")) {
-    const after = state.entities.find((candidate) => candidate.ordinal === entity.ordinal) as EntityState
-    assert.deepEqual(after.anchor, entity.anchor)
-  }
-  const survivors = before.entities.filter((entity) => definitionOf(entity).layer !== "obstacles")
-  assert.deepEqual(
-    moves.map((move) => move.ordinal),
-    survivors.map((entity) => entity.ordinal),
-    "one move per survivor, in ordinal order",
-  )
-  for (const move of moves) {
-    const old = before.entities.find((entity) => entity.ordinal === move.ordinal) as EntityState
-    const now = state.entities.find((entity) => entity.ordinal === move.ordinal) as EntityState
-    assert.deepEqual(move.from, old.anchor)
-    assert.deepEqual(move.to, now.anchor)
-  }
-})
-
-test("a big army comes home without overlapping: the search widens until everyone has a tile", () => {
-  const before = open(
-    [{ contentId: NEXUS, anchor: { x: 6, y: 10 } }],
-    [
-      { player: "A", muster: { x: 30, y: 11 }, units: Array.from({ length: 40 }, () => TROOPER) },
-      { player: "A", muster: { x: 30, y: 4 }, units: [RAIDER, RAIDER] },
-    ],
-  )
-  const { state } = recall(before, FIXTURE_REGISTRY)
-  assertNoTileShared(state, "forty troopers")
-  const nexus = state.entities.find((entity) => entity.contentId === NEXUS) as EntityState
-  // By the Grid's own distance, the rings Recall's search widens by: everyone within twelve rows of the Nexus, or
-  // twenty-four columns.
-  for (const entity of state.entities.filter((candidate) => definitionOf(candidate).layer === "units")) {
-    assert.ok(distance(centreOf(entity), centreOf(nexus)) <= 24, `${entity.id} is too far from the Nexus`)
-  }
-})
-
-test("Recall is deterministic, and running it on its own output changes nothing but the walk", () => {
-  const before = afterwards([{ contentId: HATCHERY, anchor: { x: 20, y: 3 } }])
-  const first = recall(before, FIXTURE_REGISTRY)
-  for (let run = 0; run < 10; run += 1) {
-    assert.equal(hashState(recall(before, FIXTURE_REGISTRY).state), hashState(first.state))
-  }
-  // Everyone is home: a second Recall moves nobody far (the search is anchored where they stand).
-  const again = recall(first.state, FIXTURE_REGISTRY)
-  assertNoTileShared(again.state, "recall twice")
-})
-
-test("with nowhere free within reach, Recall says so rather than stacking units", () => {
-  // A walled room with eight free tiles beside the Nexus, eight troopers standing on them — and a worker
-  // sharing a trooper's tile, which the kernel allows across layers but Recall never leaves behind.
-  const room = gridOf(["#########", "#.......#", "#.......#", "#########"])
-  const crowded = open(
-    [{ contentId: NEXUS, anchor: { x: 1, y: 1 } }],
-    [{ player: "A", muster: { x: 5, y: 1 }, units: Array.from({ length: 8 }, () => TROOPER) }],
-    room,
-  )
-  assertNoTileShared(recall(crowded, FIXTURE_REGISTRY).state, "eight troopers fit")
-  const trooper = crowded.entities.find((entity) => entity.contentId === TROOPER) as EntityState
-  const withWorker: MatchState = {
-    ...crowded,
-    nextOrdinal: crowded.nextOrdinal + 1,
-    entities: [
-      ...crowded.entities,
-      { ...trooper, ordinal: crowded.nextOrdinal, id: `A:worker#${crowded.nextOrdinal + 1}`, contentId: "unit.citizen.worker" },
-    ],
-  }
-  assert.throws(() => recall(withWorker, FIXTURE_REGISTRY), /recall: no free tile/)
 })
 
 test("the Grid Nexus mends between rounds: what it lost, up to its mending, never past full; nothing else mends", () => {
@@ -518,7 +374,7 @@ test("the Grid Nexus mends between rounds: what it lost, up to its mending, neve
     entities: before.entities.map((entity) => ({ ...entity, hp: entity.contentId === NEXUS ? nexusHp : Math.max(1, entity.hp - 5) })),
   })
   const hpAfter = (state: MatchState, contentId: string): number | undefined =>
-    recall(state, FIXTURE_REGISTRY).state.entities.find((entity) => entity.contentId === contentId)?.hp
+    regroup(state, FIXTURE_REGISTRY).state.entities.find((entity) => entity.contentId === contentId)?.hp
   assert.equal(hpAfter(hurt(100), NEXUS), 140)
   assert.equal(hpAfter(hurt(390), NEXUS), nexus.maxHp, "it mended past full")
   // A wounded Hatchery and wounded troopers come home as hurt as they were.

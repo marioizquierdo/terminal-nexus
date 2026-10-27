@@ -29,7 +29,9 @@ import type { BuildCompositionInput } from "./build.ts"
 import { HIGHLIGHT_BAR, PRESSED_LOOK } from "./build-menu.ts"
 import { drawBuildRange, drawReach } from "./build-areas.ts"
 import { drawTroopsPost } from "./troops-post.ts"
-import { regroupAt } from "../match/regroup.ts"
+import { regroupAt } from "../match/types.ts"
+import { makeRoom } from "../match/make-room.ts"
+import type { FieldEntity } from "../build/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
@@ -101,12 +103,12 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
   for (const structure of context.standing) drawStructure(structure.contentId, structure.anchor, undefined)
   for (const placement of state.planned) drawStructure(placement.contentId, placement.anchor, animating.get(placement.ordinal))
 
-  // What else is on the map after a round: survivors of both sides where Recall or the regroup left them, and a
+  // What else is on the map after a round: survivors of both sides where the regroup left them, and a
   // scripted side's structures, each in its side's colour. Then what the next round brings, always (the
   // owner: "the enemy units should be visible"), in the incoming look — see-through, "not here yet".
   // A unit steps aside for a building when the Pulse starts — a survivor or an arrival alike — so neither
   // is drawn over one: a tile a building holds, planned or the other side's, shows the building. A survivor
-  // Recall brought home onto its own side's standing building stays on its roof (`src/match/recall.ts`), and
+  // on its own side's standing building (a wave that never walked off) stays on its roof, and
   // is drawn there, over the building, as a unit on a roof is in a Battle Round.
   const built = new Map<string, PlayerId | "planned">()
   const hold = (contentId: string, anchor: Coord, owner: PlayerId | "planned"): void => {
@@ -139,17 +141,44 @@ export function drawGrid(cells: BandCell[], input: BuildCompositionInput, pack: 
       cells.push({ band, x: cell.x, y: cell.y, cell: { glyph: entityGlyph(entity.contentId, entity.player, offset), style } })
     }
   }
-  // A survivor that regrouped as the round opened is drawn where its walk has it, while the regroup plays.
-  const regroupTick = input.regroup === undefined ? null : Math.floor((input.regroup.elapsedMs * TICKS_PER_SECOND) / 1000)
-  for (const entity of context.field ?? []) {
-    drawEntity(entity.walk === undefined || regroupTick === null ? entity : { ...entity, anchor: regroupAt(entity.walk, regroupTick) }, false)
-  }
+  const placeOf = fieldPlaces(input)
+  for (const entity of context.field ?? []) drawEntity({ ...entity, anchor: placeOf(entity) }, false)
   for (const entity of context.incoming ?? []) drawEntity(entity, true)
   // While a building is armed, where it may go. Its dots give way along the raid's trail's whole way, as a reach
   // and a room do, so they never flicker as the arrows pass and never call a tile of a room open ground.
   const open = takenTiles(context, state.planned)
   for (const tile of trailTiles(input)) open.add(tile)
   drawBuildRange(cells, input, pack, open)
+}
+
+/**
+ * Where each survivor on the field is drawn this frame: walking out from under a building the plan puts on it, along its
+ * way out while the room clock says it is walking (`makeRoom`, `src/match/make-room.ts`; worked out here from the round's
+ * state and the plan, as the opening will work it out), else where that walk ends; otherwise, while the regroup plays as
+ * the round opens, where its regroup has it; otherwise where it stands.
+ */
+function fieldPlaces(input: BuildCompositionInput): (entity: FieldEntity) => Coord {
+  const { context, state } = input
+  const regroupTick = input.regroup === undefined ? null : Math.floor((input.regroup.elapsedMs * TICKS_PER_SECOND) / 1000)
+  const moved = new Map<number, Coord>()
+  const carried = context.carried
+  if (carried !== null && carried !== undefined && state.planned.length > 0) {
+    const clocks = new Map((input.room ?? []).map((clock) => [clock.ordinal, clock.elapsedMs] as const))
+    let current = carried
+    for (const placement of state.planned) {
+      const made = makeRoom(current, [{ contentId: placement.contentId, player: "A", anchor: placement.anchor }], context.registry)
+      const elapsedMs = clocks.get(placement.ordinal)
+      for (const path of made.paths) {
+        moved.set(path.ordinal, elapsedMs === undefined ? path.to : regroupAt(path, Math.floor((elapsedMs * TICKS_PER_SECOND) / 1000)))
+      }
+      current = made.state
+    }
+  }
+  return (entity) => {
+    const out = entity.ordinal === undefined ? undefined : moved.get(entity.ordinal)
+    if (out !== undefined) return out
+    return entity.walk === undefined || regroupTick === null ? entity.anchor : regroupAt(entity.walk, regroupTick)
+  }
 }
 
 /**

@@ -4,8 +4,8 @@
 // machine; nothing here reads a clock, a screen or a model — plans are handed in (`src/duel/players.ts` makes them).
 //
 // What it reuses rather than restates: the dealer (`dealHand`), the effect table (`applyEffect`, through each side's
-// loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost, an enemy's ground — the rules
-// a player's cursor is held to), the opening and the regroup between rounds (`src/match`), the Commander's absence and return, and the kernel
+// loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a player's cursor
+// is held to), the opening and the regroup between rounds (`src/match`), the Commander's absence and return, and the kernel
 // itself, each side on its own content (`PulseContext.sides`).
 
 import type { PowerCard } from "../armies/index.ts"
@@ -104,7 +104,6 @@ function sideBuild(state: DuelState, side: Side, grid: GridTerrain, catalog: rea
     catalog,
     standing: standingOf(state, side).map(({ contentId, anchor }) => ({ contentId, anchor })),
     field,
-    side,
     allotment: credits,
     nexusDraft: [],
   }
@@ -463,7 +462,15 @@ export function playRound(
     : restoreCommanders(state.carried, [...state.sides.A.absent, ...state.sides.B.absent], round, sides.A, sides)
   const structures: StructurePlacement[] = []
   if (state.carried === null) for (const side of SIDES) structures.push(...standingOf(state, side))
-  for (const side of SIDES) for (const placed of phases[side].placed.planned) structures.push({ contentId: placed.contentId, player: side, anchor: placed.anchor })
+  // The two plans' buildings in turns, a building of each side at a time, the side going first alternating, so neither
+  // side's buildings make room (`makeRoom`) before the other's by a rule of order.
+  const longest = Math.max(phases.A.placed.planned.length, phases.B.placed.planned.length)
+  for (let index = 0; index < longest; index += 1) {
+    for (const side of index % 2 === 0 ? SIDES : [...SIDES].reverse()) {
+      const placed = phases[side].placed.planned[index]
+      if (placed !== undefined) structures.push({ contentId: placed.contentId, player: side, anchor: placed.anchor })
+    }
+  }
   const forces: Force[] = []
   for (const side of SIDES) {
     const muster = musterOf(state, side, sides[side])
@@ -524,7 +531,7 @@ export function playRound(
         : null
   // Between rounds the survivors regroup where they fought; once the duel is over they stand where it left them.
   const between = result === null ? regroup(current, sides.A, sides) : null
-  const carried = between === null ? standDown(current, sides.A, sides).state : between.state
+  const carried = (between ?? standDown(current, sides.A, sides)).state
   return {
     state: { setup: state.setup, round: round + 1, carried, sides: next, history: [...state.history, report], result },
     report,

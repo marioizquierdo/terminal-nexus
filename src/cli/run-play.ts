@@ -187,6 +187,7 @@ function roundContext(position: RunPosition, previous: Partial<BuildContext>, sc
       field.push({
         contentId: entity.contentId,
         anchor: entity.anchor,
+        ordinal: entity.ordinal,
         player: entity.player,
         hp: entity.hp,
         ...(walk === undefined || walk.steps.length === 0 ? {} : { walk: { from: walk.from, steps: walk.steps } }),
@@ -412,8 +413,9 @@ function runPlay(): LevelPlay {
         ...(fell.length === 0 ? {} : { fell }),
         ...(record === null ? {} : { ending: endingOf(ran, record) }),
       }
-      // Nobody walks home: the survivors stand where the shooting stopped, and regroup in the next Build Phase.
-      const resolved: ResolvedPulse = { timeline, recall: standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy", between: "regroup" }
+      // Nobody walks home: the survivors stand where the shooting stopped, and regroup in the next Build Phase. Once the
+      // battle is over nothing regroups; its end, settled where everyone stands, is what the result shows.
+      const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy" }
       PLAYED.set(resolved, { run: ran, duel: next, report: played.report, regroup: played.regroup })
       return resolved
     },

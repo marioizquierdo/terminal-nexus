@@ -12,7 +12,7 @@ import { foresee, nextRound, startPulse } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { footprintSteps } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
-import { foreseeIntents, foreseeRound, recall, resolveMissionPulse, restoreCommanders, spawningRegistry } from "../src/match/index.ts"
+import { foreseeIntents, foreseeRound, regroup, resolveMissionPulse, restoreCommanders, spawningRegistry } from "../src/match/index.ts"
 import type { Absence, Arrival, MissionPulseInput, StructurePlacement } from "../src/match/index.ts"
 import { fallen } from "../src/match/index.ts"
 import { PERIMETER } from "../src/armies/index.ts"
@@ -57,7 +57,7 @@ function majority(state: MatchState, units: readonly number[]): number | null {
   return order.find((target) => votes.get(target) === most) ?? null
 }
 
-/** PERIMETER's three rounds, each started from what the last left (Recall, and a fallen Commander's
+/** PERIMETER's three rounds, each started from what the last left (the regroup, and a fallen Commander's
  *  return), each with its own of `plan` built that round. */
 function rounds(plan: readonly (readonly StructurePlacement[])[]): MissionPulseInput[] {
   const inputs: MissionPulseInput[] = []
@@ -77,7 +77,7 @@ function rounds(plan: readonly (readonly StructurePlacement[])[]): MissionPulseI
     const run = resolveMissionPulse(input)
     if (run.verdict.kind !== "continue") break
     absent = [...absent, ...fallen(run.events, registry, pulse)]
-    carried = recall(run.final, registry).state
+    carried = regroup(run.final, registry).state
   }
   return inputs
 }

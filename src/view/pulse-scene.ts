@@ -58,18 +58,15 @@ export type PulseFrame = Readonly<{
   /** How red the map's border is at this instant, 0 (not at all) to a faint ceiling: the player's Nexus
    *  being hurt, and nothing else. */
   redAlert: number
-  /** Where every entity is drawn: the fight's own interpolated positions, then Recall's walk home. */
+  /** Where every entity is drawn: the fight's own interpolated positions. */
   positions: ReadonlyMap<number, Coord>
   result: PulseResult
   /** What each side has in the field right now: its mobile units and their health, structures excluded. */
   forces: Readonly<Record<PlayerId, Readonly<{ units: number; hp: number }>>>
   /** What the other side is called: "raid" unless the Pulse names it (`ResolvedPulse.enemy`). */
   enemy?: string
-  /** After Recall: how many mobile units the player has, standing where the next Build Phase finds them. */
+  /** How many mobile units the player has left, standing where the fight left them to regroup. */
   home: number
-  /** What the survivors do now the shooting has stopped: walk home (Recall), or stay and regroup in the next Build
-   *  Phase (a Challenge run, `ResolvedPulse.between`). Absent: home. */
-  between?: "home" | "regroup"
   /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
   aura?: AuraFrame
   /** What she is saying at this instant, and where: beside her, or in the panel while she is out of view.
@@ -311,8 +308,6 @@ export function pulseSubtitle(pulse: PulseFrame): string {
   switch (pulse.phase) {
     case "halted":
       return "cease fire"
-    case "walking":
-      return "recall"
     case "home":
       return `battle round - ${pulse.result.headline.toLowerCase()}`
     default:
@@ -322,16 +317,9 @@ export function pulseSubtitle(pulse: PulseFrame): string {
 
 const secondsOf = (pulse: PulseFrame, tick: number): string => (tick / pulse.ticksPerSecond).toFixed(1)
 
-/** What Recall did, for the player's own side: "3 of yours came home." or, when nobody is left, "None of yours came home."
- *  Where the survivors stay and regroup instead: "3 of yours hold the field." or "None of yours is left." */
-const cameHome = (count: number, between: PulseFrame["between"] = "home"): string =>
-  between === "regroup"
-    ? count === 0
-      ? "None of yours is left."
-      : `${count} of yours hold the field.`
-    : count === 0
-      ? "None of yours came home."
-      : `${count} of yours came home.`
+/** What is left of the player's own side, standing where the fight left it to regroup: "3 of yours hold the field.", or
+ *  "None of yours is left." */
+const cameHome = (count: number): string => (count === 0 ? "None of yours is left." : `${count} of yours hold the field.`)
 
 /** The one line under the map: what the Pulse is doing now, or how it ended, in plain words. */
 export function pulseStatus(pulse: PulseFrame): StatusMessage {
@@ -341,10 +329,8 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
       return status(`${held}The battle is about to end.`)
     case "halted":
       return status(`${held}Cease fire. The battle is over.`)
-    case "walking":
-      return status(`${held}Recall - the survivors are heading home.`)
     case "home":
-      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home, pulse.between)}`, pulse.result.tone)
+      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
     default:
       return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the ${pulse.enemy ?? SIDE.B}.`)
   }
@@ -484,7 +470,7 @@ function recentLines(pulse: PulseFrame): Array<NonNullable<ReturnType<typeof fee
  * The panel while a Pulse is on screen: what it is (and, at the end, how it ended), each side's force,
  * the last few things that happened, and the two clickable controls. Where the menu was — the Build
  * Phase's menu has nothing to offer once the plan is committed. Laid out down a running row, so the
- * phases that say more (the result, and what Recall did) push what follows them down together.
+ * phases that say more (the result, and who is left to regroup) push what follows them down together.
  */
 export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: PulseFrame, pulseNumber: number): void {
   const band = BANDS.chrome
@@ -507,10 +493,6 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
     case "halted":
       line("CEASE FIRE", "chrome.title", { bold: true })
       line("The shooting has stopped.", "chrome.label")
-      break
-    case "walking":
-      line("RECALL", "chrome.title", { bold: true })
-      line("The survivors walk home.", "chrome.label")
       break
     case "home":
       line(
@@ -546,9 +528,9 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
   else gap()
 
   if (pulse.phase === "home") {
-    line(pulse.between === "regroup" ? "REGROUP" : "RECALL", "chrome.label")
-    line(cameHome(pulse.home, pulse.between), "chrome.value")
-    if (pulse.between === "regroup" && pulse.home > 0) for (const words of wrapWords("They form up as the Build Phase opens.", limit - 1)) line(words, "chrome.muted")
+    line("REGROUP", "chrome.label")
+    line(cameHome(pulse.home), "chrome.value")
+    if (pulse.home > 0) for (const words of wrapWords("They form up as the Build Phase opens.", limit - 1)) line(words, "chrome.muted")
     for (const words of wrapWords(pulse.result.commander ?? "", limit - 1)) line(words, "chrome.value")
     // A Pulse with no mission goes nowhere: the game menu's Restart is the way back.
     if (pulse.result.goOn === undefined) {
@@ -560,7 +542,7 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
     for (const entry of recentLines(pulse)) line(entry.text, entry.role)
   }
 
-  // Her line, while she (or the row it sits on beside her) is out of view: under the feed — or under what Recall
+  // Her line, while she (or the row it sits on beside her) is out of view: under the feed — or under who is left to regroup
   // did, once the result stands — her glyph and name over it, as the dialog titles her, the words quoted and
   // typed in. Never into the controls: with too little room the name goes first, then the line (it is in the
   // Activity Logs).

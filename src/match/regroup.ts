@@ -1,8 +1,10 @@
-// The regroup — what a duel's and a run's survivors do between two Battle Rounds (the owner, 2026-10-26: "Keep units
-// on the map after a fight. If they are in battle, they stop targeting, move back for 2 seconds, and self-arrange in
-// formation for 6 seconds (10 seconds total)"). The campaign's missions keep Recall (`recall.ts`): home, onto the roofs.
+// The regroup — what every survivor does between two Battle Rounds, in a campaign's mission, a duel and a run alike
+// (the owner, 2026-10-26: "Keep units on the map after a fight. If they are in battle, they stop targeting, move back
+// for 2 seconds, and self-arrange in formation for 6 seconds (10 seconds total)"; and, the same day, "no more sending
+// troops back to their origin base anywhere": it replaced Recall, which walked every survivor home onto its roof).
+// When the Nexus announces the pause, troops respect it: they disengage, step back, and form up to start again.
 //
-// Like Recall it is a pure function of the state a Battle Round ended in and the content, worked out **beside the
+// Like Recall was, it is a pure function of the state a Battle Round ended in and the content, worked out **beside the
 // kernel's tick and never inside it** — `stepTick` does not call it, no Pulse's hash moves, and nothing the player
 // does in the Build Phase reaches it — so a scripted battle and a duel play the same on every machine. It returns the
 // state the next round opens from and every survivor's walk, tick by tick, which the Build Phase plays over its first
@@ -20,14 +22,17 @@
 //   else from its own Nexus, toward the enemy's Nexus (the guide line, movement.md) — in ranks across the line's main
 //   axis, the front rank where the side's front stands after stepping back (where its first rank's worth of units
 //   stands, so a straggler left forward does not pull the rest up to it): melee in front, the Commander next, the
-//   short range, the long range, backliners and units with no attack behind. Survivors more than `BEHIND` columns behind
+//   short range, the long range, backliners and units with no attack behind. A side whose level names a target for it
+//   (a campaign's automatic target) forms up on the line to that target instead, and one with no enemy Nexus to face
+//   on the line to the Grid's middle; a side with neither a Commander nor a Nexus of its own (a mission's raid) has no
+//   line, and its survivors stand where the round left them. Survivors more than `BEHIND` columns behind
 //   that front (units that never left the base) form a group of their own where their own front stands. Each slot is
 //   claimed on free ground (`nearestFit`), never within `KEEP_APART` of a slot the enemy claimed, and two facing fronts
 //   are held `FRONT_GAP` columns apart; a slot is given to the unit whose place across the line is nearest it, so the
 //   ranks form without crossing.
 // - **Mirror-fair**: every tie goes by what a side faces (forward, back, north, south), never by a compass order or an
 //   ordinal read in reading order; the sides claim slots and step in turns that alternate.
-// - What Recall resets, the regroup resets: every entity's transient fields (`freshEntityFields`), a structure that
+// - What a round's end resets, the regroup resets: every entity's transient fields (`freshEntityFields`), a structure that
 //   `mends` mends, the clock, the outcome, the cooling tiles and the fire.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
@@ -41,14 +46,8 @@ import type { DistanceField } from "../routing/index.ts"
 import { DistanceField as Field, UNREACHABLE, addWall, bodyKey, goalsNear, groundFor, wallsOf } from "../routing/index.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { centreTile, nearestFit } from "./placement.ts"
-import type { RecallMove, RecallResult } from "./types.ts"
-
-/** The regroup's three parts, in ticks at 12 a second: the step back (2 s), forming up (6 s), standing formed (2 s). */
-export const STEP_BACK_TICKS = 24
-export const FORM_TICKS = 72
-export const STAND_TICKS = 24
-/** The whole regroup: 10 seconds. */
-export const REGROUP_TICKS = STEP_BACK_TICKS + FORM_TICKS + STAND_TICKS
+import type { RegroupPath, RegroupResult, RegroupStep } from "./types.ts"
+import { REGROUP_TICKS, STEP_BACK_TICKS } from "./types.ts"
 
 /** A survivor with an enemy unit or building this near (the Grid's distance, a row counting two columns) is in a fight
  *  and steps back: the march's own "near" (movement.md, closing). */
@@ -67,41 +66,6 @@ const RANK_STEP = 2
 /** How far around its place a slot is looked for before the unit is left where it stands. */
 const SLOT_RADIUS = 24
 
-/** One step of a survivor's walk: the tick of the regroup it lands on (1 to `REGROUP_TICKS`), and where. */
-export type RegroupStep = Readonly<{ tick: number; to: Coord }>
-
-/** A survivor's whole walk: where it stood as the round ended, every step it took, where it ends, and the slot it was
- *  given in its side's formation (`null` for none: no line to form on, or no room). */
-export type RegroupPath = Readonly<{
-  ordinal: number
-  player: PlayerId
-  contentId: string
-  from: Coord
-  to: Coord
-  steps: readonly RegroupStep[]
-  slot: Coord | null
-}>
-
-export type RegroupResult = Readonly<{
-  /** The state the next Build Phase and Battle Round start from: survivors where the regroup leaves them, transient
-   *  fields reset, the clock, outcome, cooling tiles and fire cleared. */
-  state: MatchState
-  /** One per survivor, in ordinal order: what the Build Phase plays. */
-  paths: readonly RegroupPath[]
-  /** How long the regroup lasts, in ticks. */
-  ticks: number
-}>
-
-/** Where a survivor stands at a tick of its walk (0: as the round ended). */
-export function regroupAt(path: Pick<RegroupPath, "from" | "steps">, tick: number): Coord {
-  let at = path.from
-  for (const each of path.steps) {
-    if (each.tick > tick) break
-    at = each.to
-  }
-  return at
-}
-
 type Definitions = (entity: EntityState) => ContentDef
 
 function definitionsOf(state: MatchState, registry: ContentRegistry, sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>): Definitions {
@@ -110,8 +74,9 @@ function definitionsOf(state: MatchState, registry: ContentRegistry, sides?: Rea
   return (entity) => definitions.get(entity.ordinal) as ContentDef
 }
 
-/** The state between rounds with every survivor at `anchors` (or where it stands), facing as `facing` says: what
- *  Recall resets, reset. */
+/** The state between rounds with every survivor at `anchors` (or where it stands), facing as `facing` says: every
+ *  entity's transient fields fresh (a producer's waves start afresh, nobody holds a target), a structure that `mends`
+ *  mended, the clock, the outcome, the cooling tiles and the fire cleared. The gameplay stream carries on. */
 function settled(state: MatchState, definitionOf: Definitions, anchors: ReadonlyMap<number, Coord>, facing: ReadonlyMap<number, Direction> = new Map()): MatchState {
   const entities: EntityState[] = state.entities.map((entity) => {
     const definition = definitionOf(entity)
@@ -129,15 +94,15 @@ function settled(state: MatchState, definitionOf: Definitions, anchors: Readonly
 
 /**
  * **The round's end, settled where everyone stands**: the regroup's first frame — every survivor where the fight left
- * it, what Recall resets reset. What a run's Battle Round shows once the shooting stops (no walk home: the walk is the
- * regroup's, in the Build Phase), as Recall's shape (`RecallResult`), every move from where it stands to there.
+ * it, what the regroup resets reset — as a regroup in which nobody walks (`ticks` 0). What a match that is over keeps:
+ * nothing regroups after its last round.
  */
-export function standDown(state: MatchState, registry: ContentRegistry, sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>): RecallResult {
+export function standDown(state: MatchState, registry: ContentRegistry, sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>): RegroupResult {
   const definitionOf = definitionsOf(state, registry, sides)
-  const moves: RecallMove[] = state.entities
+  const paths: RegroupPath[] = state.entities
     .filter((entity) => definitionOf(entity).layer !== "obstacles")
-    .map((entity) => ({ ordinal: entity.ordinal, player: entity.player, contentId: entity.contentId, from: entity.anchor, to: entity.anchor, home: "none" as const }))
-  return { state: settled(state, definitionOf, new Map()), moves }
+    .map((entity) => ({ ordinal: entity.ordinal, player: entity.player, contentId: entity.contentId, from: entity.anchor, to: entity.anchor, steps: [], slot: null }))
+  return { state: settled(state, definitionOf, new Map()), paths, ticks: 0 }
 }
 
 /** A side's march line, as the formation reads it: its main axis, which way along it the side faces, and the line's
@@ -169,16 +134,24 @@ function lineAcross(line: Line, forward: number): number {
 }
 
 /** A side's line: from its Commander while she stands on the Grid (on the ground), else from its own Nexus, to the
- *  middle of the enemy's Nexus; along the axis it runs further on, a row counting two columns. `null` without both
- *  ends. */
+ *  middle of its target when its level names one (`MatchState.targets`), else of the enemy's Nexus, else (a mission's
+ *  raid has none) of the Grid, so an army with no enemy base to face forms up facing out from its own; along the axis it
+ *  runs further on, a row counting two columns. `null` for a side with neither a Commander nor a Nexus on the Grid. */
 function lineOfSide(state: MatchState, definitionOf: Definitions, player: PlayerId): Line | null {
   const commander = state.entities.find((entity) => entity.player === player && definitionOf(entity).commander === true && definitionOf(entity).layer !== "air")
   const own = state.entities.find((entity) => entity.player === player && definitionOf(entity).nexus === true)
   const enemy = state.entities.find((entity) => entity.player !== player && definitionOf(entity).nexus === true)
+  const area = state.targets?.[player]
   const start = commander ?? own
-  if (start === undefined || enemy === undefined) return null
+  if (start === undefined) return null
   const from = middleOf(start.anchor, definitionOf(start).footprint)
-  const to = middleOf(enemy.anchor, definitionOf(enemy).footprint)
+  const to =
+    area !== undefined
+      ? { x: 2 * area.x + area.width - 1, y: 2 * area.y + area.height - 1 }
+      : enemy !== undefined
+        ? middleOf(enemy.anchor, definitionOf(enemy).footprint)
+        : { x: state.grid.width - 1, y: state.grid.height - 1 }
+  if (to.x === from.x && to.y === from.y) return null
   const dx = to.x - from.x
   const dy = to.y - from.y
   // A row is two columns: the line runs along x while it covers as much ground across as down.

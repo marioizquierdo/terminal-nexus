@@ -155,15 +155,12 @@ export type BuildContext = Readonly<{
    */
   mode?: unknown
   /**
-   * The resolved state the last round left, after Recall — what the next Pulse starts from, handed back
+   * The resolved state the last round left, after the regroup — what the next Pulse starts from, handed back
    * to the shell untouched (the reducer never reads it). `null` or absent for a first round.
    */
   carried?: MatchState | null
   /** What else is on the map: survivors of both sides, and a scripted side's structures. */
   field?: readonly FieldEntity[]
-  /** Whose Build Phase this is: the side whose units a building may be placed on (they step out from under it as the
-   *  round begins) and whose enemy's units hold their ground against one. Absent: side A, the player's. */
-  side?: "A" | "B"
   /** The Commanders sitting this round out, and when each is back — handed on to the next round by the
    *  shell, and read by the Battle Round screen to say so. Absent: nobody is missing. */
   absent?: readonly CommanderAbsence[]
@@ -335,7 +332,7 @@ export type BuildState = Readonly<{
    * by anchor (`x,y`), and the action by its card's id. Each spends its price at once (`spent`) and can be undone until
    * the Battle Round starts, as a placed building can — an upgrade by its own key again, a mode by switching back —
    * and a building removed takes its own with it. The Battle Round starts each building on the content they make it
-   * (`fittedContentOf`), which Recall and every round after carry; the next Build Phase starts with none taken.
+   * (`fittedContentOf`), which the regroup and every round after carry; the next Build Phase starts with none taken.
    */
   fitted: readonly Readonly<{ anchor: string; action: string }>[]
   /** The last command's answer, which the bottom line shows: what just happened, or why it did not.
@@ -796,18 +793,11 @@ function claimedTiles(
   planned: readonly PlannedPlacement[],
 ): Map<string, string> {
   const claimed = new Map<string, string>()
-  // Every building on the map, a scripted side's included: it blocks a placement like the player's own. One of the
-  // player's own units steps aside for one when the Pulse starts, so it claims nothing here; an enemy's unit on the
-  // ground holds its ground (a flyer over it does not).
+  // Every building on the map, a scripted side's included: it blocks a placement like the player's own. A unit, the
+  // player's or the enemy's, walks out from under a new building as the Pulse starts (`makeRoom`, `src/match/make-room.ts`),
+  // so it claims nothing here.
   for (const { contentId, anchor } of buildingsOn(context, planned)) {
     for (const tile of tilesOf(anchor, context.registry.get(contentId).footprint)) claimed.set(`${tile.x},${tile.y}`, contentId)
-  }
-  const side = context.side ?? "A"
-  for (const entity of context.field ?? []) {
-    if (entity.player === side) continue
-    const definition = context.registry.has(entity.contentId) ? context.registry.get(entity.contentId) : undefined
-    if (definition === undefined || definition.layer === "obstacles" || definition.layer === "air") continue
-    for (const tile of tilesOf(entity.anchor, definition.footprint)) claimed.set(`${tile.x},${tile.y}`, entity.contentId)
   }
   return claimed
 }
@@ -1043,8 +1033,8 @@ export function buildingsOn(context: BuildContext, planned: readonly PlannedPlac
  * region, a rock or a building about one tile, so a ghost far from the range is sent toward the range
  * rather than off the rock it happens to sit on. One tile of the footprint inside it is enough
  * (`src/build/territory.ts`); when none is, the first of its tiles on the Grid is named. Then each tile's own
- * problem — off the Grid, rock, a building already there, an enemy's unit on the ground (the player's own step out from
- * under a building as the round begins). Buildings may touch: one that makes units sets them on its
+ * problem — off the Grid, rock, a building already there (a unit, anyone's, walks out from under a new building as the
+ * round begins). Buildings may touch: one that makes units sets them on its
  * roof (pulse.md), so it keeps no room round it. `radius` is the "Build range" Experiment's value — its default when
  * the caller has no state to read it from.
  */
@@ -1079,8 +1069,7 @@ export function legalityAt(
     }
     const occupant = claimed.get(`${tile.x},${tile.y}`)
     if (occupant !== undefined) {
-      const unit = context.registry.get(occupant).layer !== "obstacles"
-      return { ok: false, reason: unit ? `an enemy ${displayName(context, occupant)} stands here` : `the ${displayName(context, occupant)} is here`, tile }
+      return { ok: false, reason: `the ${displayName(context, occupant)} is here`, tile }
     }
   }
   return { ok: true }

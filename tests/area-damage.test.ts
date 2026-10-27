@@ -1,7 +1,7 @@
 // Area damage against a tight army (step 16K; the owner, 2026-10-21: "implement those to test differences in
 // formations with units"): aiming at a crowd (`ContentDef.aim`, the Ravel bomber and the Citizen mortar), burning ground
 // (`AttackDef.burn`, `MatchState.burning`: lit by a landing hit, burning every unit and worker on it of either side by
-// the kernel's own clock, weighed by the routes, put out by Recall), and the two units as their armies define them.
+// the kernel's own clock, weighed by the routes, put out by the regroup), and the two units as their armies define them.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -11,7 +11,7 @@ import { FIXTURE_REGISTRY, createRegistry, rectFootprint } from "../src/content/
 import type { ContentDef, ContentRegistry } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import type { Coord } from "../src/grid/index.ts"
-import { recall } from "../src/match/index.ts"
+import { regroup } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { BURNING_WEIGHT } from "../src/pulse/routes.ts"
 import { onPatch } from "../src/pulse/burning.ts"
@@ -357,9 +357,9 @@ test("a walker crossing fire steps as quickly as on open ground: a route weighs 
   assert.deepEqual(ticks([patch({ x: 20, y: 10 }, { untilTick: 400 })]), ticks([]))
 })
 
-test("Recall puts the fire out: the next round opens on ground with nothing burning", () => {
+test("The regroup puts the fire out: the next round opens on ground with nothing burning", () => {
   const state: MatchState = { ...field({ A: [[5, 10, TROOPER]], B: [[30, 10, TROOPER]] }), burning: [patch({ x: 20, y: 10 }, { untilTick: 400 })] }
-  const { state: recalled } = recall(state, FIXTURE_REGISTRY)
+  const { state: recalled } = regroup(state, FIXTURE_REGISTRY)
   assert.ok(!("burning" in recalled))
 })
 

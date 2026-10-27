@@ -1,5 +1,5 @@
 // Finding a free place for a unit — shared by the opening (units mustered around a point), a mission's arrivals,
-// Recall (units regrouped around a home building) and a Commander's return, which are the same question asked at
+// the regroup (a formation's slots) and a Commander's return, which are the same question asked at
 // different moments of a round: where is the nearest room for this footprint?
 //
 // Nearest by the Grid's own distance (`gridDistance`: a row counts two columns), searched outward one ring of it at
@@ -8,7 +8,7 @@
 //
 // Deterministic by construction: a fixed search order, no randomness, no clock. Nothing here decides an
 // outcome — it decides *where* something that has already been decided goes. The opening, the forecast of it and
-// Recall all search these same rings, so they agree.
+// the regroup all search these same rings, so they agree.
 
 import { footprintCentre, gridDistance } from "../grid/coords.ts"
 import { ringOffsets } from "../grid/reach.ts"
@@ -26,7 +26,7 @@ export function centreTile(anchor: Coord, footprint: Footprint): Coord {
 /**
  * The anchor for `footprint` whose **centre tile** is nearest `around` and whose whole footprint fits
  * the mask — `null` when nothing within `maxDistance` of it does. The mask is anything that says whether a footprint
- * fits an anchor: a collision mask, or one narrowed to a building's roof (Recall's `roofOf`).
+ * fits an anchor: a collision mask, or one narrowed to a building's roof (a building's roof).
  *
  * Candidates are tried one ring of the Grid's own distance at a time, outward from `around` (`ringOffsets`).
  * Within one ring they are tried nearest to `prefer` first (a unit coming home takes the side of the building it

@@ -404,6 +404,9 @@ export type FieldEntity = Readonly<{
   contentId: string
   /** Where it stands: where the next round finds it, what placement reads. */
   anchor: Coord
+  /** Its ordinal in the state the round carries (`BuildContext.carried`), when it has one: how the view finds the walk a
+   *  building planned on it makes it take (`makeRoom`, `src/match/make-room.ts`). */
+  ordinal?: number
   player: "A" | "B"
   hp: number
   /** The walk that brought it there, when the survivors regrouped as the round ended (a duel's, a run's:

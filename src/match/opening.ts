@@ -9,14 +9,15 @@
 // stores a placement) rather than by a centre tile in a character grid, and units mustered around a
 // point on whatever free tiles the plan left them.
 //
-// **A later Pulse of a mission starts from what the last one left**: the state after Recall is
+// **A later Pulse of a mission starts from what the last one left**: the state after the regroup is
 // `carried` in, and everything in it keeps its ordinal, id, health and place — a survivor is the same
 // unit it was — while the new plan's structures and whatever arrives at tick 0 are added after it, with
 // ordinals from where the last Pulse stopped (in Grid reading order among themselves). A carried unit may stand on
-// the roof of one of its side's standing buildings, as Recall leaves it; a building the player planned on a tile a
-// carried unit stands on moves the unit to the nearest free tile, the same rule a muster point already follows: the
-// plan is the player's, and a unit steps aside for it — after everyone who keeps their place, in a fixed order. (The
-// Build Phase lets a side build only on its own units, never on an enemy's: `legalityAt`, `src/build/state.ts`.)
+// the roof of one of its side's standing buildings, as a wave that never walked off leaves it. **A building planned
+// where units stand makes room first** (`makeRoom`, `src/match/make-room.ts`): every unit it covers, the player's or
+// the enemy's, walks out to the nearest free ground by the way, pushing those in its way on in turn, the walk the Build
+// Phase drew; the plan is the player's, and a unit steps aside for it. Anyone still without room after that (a Grid
+// packed full) steps aside to the nearest free tile, after everyone who keeps their place, in a fixed order.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { freshEntityFields, productionFields } from "../content/index.ts"
@@ -28,6 +29,7 @@ import { gameplayRng } from "../rng/pcg32.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { SCHEMA_VERSION } from "../state/types.ts"
+import { makeRoom } from "./make-room.ts"
 import { centreTile, enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { PulseSetup, StructurePlacement } from "./types.ts"
 import { PulseSetupError } from "./types.ts"
@@ -46,7 +48,7 @@ export type OpeningInput = Readonly<{
   /** Everything newly standing or committed for this Pulse, the player's and anyone else's. */
   structures: readonly StructurePlacement[]
   setup: PulseSetup
-  /** The state the last Pulse of a mission left, after Recall — absent for a first Pulse. Its seed,
+  /** The state the last Pulse of a mission left, after the regroup — absent for a first Pulse. Its seed,
    *  clock and ground items carry on; `setup.seed` is then not read. */
   carried?: MatchState
   /** The buildings, by anchor, that hold their wave this Pulse (Hold production): they open with every wave of the
@@ -98,7 +100,9 @@ export function openingState(input: OpeningInput): MatchState {
 /** `openingState`, with which force each new unit came from. */
 export function opening(input: OpeningInput): Opening {
   const { grid, structures, setup } = input
-  const carried = refitted(input)
+  // Room made for the new buildings first: every unit they stand on walks out, the same way the Build Phase drew it.
+  const before = refitted(input)
+  const carried = before === undefined || structures.length === 0 ? before : makeRoom(before, structures, input.registry, input.sides).state
   /** The content `player`'s things are defined by. */
   const contentFor = (player: PlayerId): ContentRegistry => input.sides?.[player] ?? input.registry
   if (!Number.isInteger(setup.seed)) throw new PulseSetupError(`seed must be an integer, received ${setup.seed}`)
@@ -166,7 +170,7 @@ export function opening(input: OpeningInput): Opening {
     )
   })
 
-  // Then the carried units: where they stood — on the roof of one of their side's standing buildings, where Recall
+  // Then the carried units: where they stood — on the roof of one of their side's standing buildings, where a wave
   // brings them home, too — or, a building planned on top of one, the nearest free tile to it.
   // Everyone who still has room where they stood goes down first; then, **in a fixed order**, each one a new building
   // stands on steps out to the nearest free ground: the one nearest the enemy's Nexus first, then the northern, then
@@ -256,7 +260,7 @@ export function opening(input: OpeningInput): Opening {
   })
   const kept: EntityState[] = placed
     .filter((entry) => entry.carried !== undefined)
-    // A carried producer starts the Pulse on the recipe this Pulse runs: Recall already set its first wave
+    // A carried producer starts the Pulse on the recipe this Pulse runs: the regroup already set its first wave
     // `firstTicks` away, and this keeps it so when the recipe itself changed between rounds — a building
     // given another wave, or none any more.
     .map((entry) => {

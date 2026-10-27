@@ -40,8 +40,8 @@ export type DuelSetup = Readonly<{
  *  otherwise, a run's battles and the measure spec's duels. */
 export const DUEL_PULSE_TICKS = 360
 
-/** **Rounds a duel lasts at most when it is not told otherwise**: measured for 30-second rounds with the front kept
- *  (see `RUN_ROUNDS`, `src/run/run.ts`, for the measurement). */
+/** **Rounds a duel lasts at most when it is not told otherwise: 8**, a run battle's too — measured for 30-second rounds
+ *  with the front kept (`RUN_ROUNDS`, `src/run/run.ts`, says how). */
 export const DUEL_ROUNDS = 8
 
 /** Where a building should go, as a plan names it: a place relative to the side's own base, or a tile. A named place

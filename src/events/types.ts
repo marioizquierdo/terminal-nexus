@@ -271,7 +271,7 @@ export type DomainEvent =
       }>)
   | (Base &
       Readonly<{
-        /** Burning ground went out: its time was up. What still burns as a Pulse ends is put out by Recall between
+        /** Burning ground went out: its time was up. What still burns as a Pulse ends is put out by the regroup between
          *  rounds, with no event. */
         kind: "ground.out"
         centre: Coord
