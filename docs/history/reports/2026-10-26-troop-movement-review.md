@@ -217,3 +217,22 @@ Each is a question in the register with a recommendation; none is built.
 
 What to keep as it is: the shared field rebuilt each tick, every round starting from the base, nothing about a unit
 remembered between ticks, and one engage reach for everyone. Each is part of why the seven rules are enough.
+
+## Addendum, 2026-10-28: why units changed target so often
+
+Mario asked "what's wrong with so much re-targeting". The same 12 duels were played again on the kept front and every
+change of target was classified by the step of target choice that dropped the old one (scratch scripts, not kept).
+
+- **Troopers held a living target a median of 4 ticks** (a third of a second); 3,389 of their 6,661 changes left a
+  target still alive, 500 of them while it was already in reach.
+- **The largest cause is a mismatch**: whether an enemy is within reach is measured by range, but a melee unit then
+  asks how far it is to *walk*, and drops the target when the walk is longer than the reach. A unit at the edge of its
+  reach dropped and picked again every few ticks: about 1,540 of the troopers' changes, and 298 times it dropped a
+  target and picked the same one again within a second.
+- **The second is taking the nearest afresh every tick**, by range and then by walk, with the old target only a
+  tie-break. It is almost all of the marksmen's changes, and the Nexus's gun re-aimed 864 times.
+- **Not causes**: switching between the march and an enemy (4 cases), breaching (under 100), flankers.
+
+A simulated rule — keep the target until it falls, or until 30 ticks pass without being able to strike it or closing
+on it — would have kept 99% of those changes from happening. That is the rule built, with the walk-too-long drop fixed
+at its root.
