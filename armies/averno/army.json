@@ -15,7 +15,7 @@
       "movementRate": {"numerator": 10, "denominator": 3},
       "speedTier": 1,
       "attack": {"kind": "melee", "range": 1, "damage": 9, "cooldownTicks": 12},
-      "engageRange": 12,
+      "vision": 12,
       "abilities": [{"kind": "aura", "name": "Forward Order", "radius": 4, "damageDealtPercent": 125}],
       "card": {
         "title": "Averno",

@@ -131,6 +131,8 @@ export function stepTick(state: MatchState, pulse: PulseContext): TickResult {
       windup: actor.windup,
       spawnCooldown: actor.spawnCooldown,
       focusStreak: actor.focusStreak,
+      ...(actor.commitGap === undefined ? {} : { commitGap: actor.commitGap }),
+      ...(actor.commitStall === undefined ? {} : { commitStall: actor.commitStall }),
       // Only a producer has these; leaving them off everything else keeps every other state's bytes.
       ...(actor.productionCooldown === undefined ? {} : { productionCooldown: actor.productionCooldown }),
       ...(actor.produced === undefined ? {} : { produced: actor.produced }),

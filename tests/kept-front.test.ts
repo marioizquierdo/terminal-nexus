@@ -271,7 +271,8 @@ test("a run's round ends without a walk home, and the next Build Phase holds the
 })
 
 test("a campaign's mission keeps the front too: its survivors regroup where they fought, nobody walks home", { timeout: 120_000 }, () => {
-  const played = play({ plan: [DEFENCE[0]!] })
+  // The Hatchery alone: once a unit keeps the target it holds (commitment) the first Turret alone leaves nobody to regroup.
+  const played = play({ plan: [DEFENCE[2]!] })
   const { regroup } = played.pulse
   assert.equal(played.pulse.mission?.verdict.kind, "continue")
   assert.ok(regroup.ticks > 0, "the mission goes on, so its survivors regroup")

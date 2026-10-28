@@ -193,15 +193,33 @@ The enemy Nexus is the march's goal wherever it stands, so a unit with nothing i
 falling, so a squad that meets a line fires into the same enemy; then a seeded draw. Never a reading order, which would
 favour a side by where it stands. Three refinements, from what a unit is for:
 
-- **A melee unit fights the nearest to walk to**, not the nearest across a wall.
+- **A melee unit fights the nearest to walk to**, not the nearest across a wall. An enemy in vision is not dropped
+  because the walk to it is longer than vision (that flickered at the edge of vision); only a walk more than twice
+  vision, a way round a wall, is not worth leaving the march for.
 - **A gun takes the nearest by range**, shooting over rock, but passes over an enemy it cannot get in range of.
 - **A unit that aims at a crowd** (the bomber, the mortar) first narrows to the enemies with the most of their side
   round them; a flanker first to the enemies behind the melee line; a healer chooses among wounded allies.
 
-**Commitment.** Once chosen, a target is kept until it falls, or until the unit has gone **2½ seconds without being able
-to strike it** (out of reach and not closing, walled off, or behind a crowd); then it chooses again. A nearer enemy
-walking past does not pull it off. A healer keeps its patient until it is mended or out of reach as long. Some units
-may be exceptions later; commitment is the default.
+**Commitment.** RULE (`keptTarget`, `COMMIT_TICKS` in `src/pulse/perception.ts`, `tests/commitment.test.ts`). Once
+chosen, a target is kept until it falls (or stops being one the unit may choose), or until the unit has gone **30 ticks
+(2½ seconds) unable to strike it**. "Unable" is counted tick by tick from where the unit stood as the tick began: the
+count starts again on every tick the target is within the unit's attack range, and on every tick the unit has come
+nearer to it than it has been since it chose it (so a long walk, or a walk round a wall, that keeps closing never runs
+out); any other tick adds one. At 30 it lets go and chooses afresh, among everything but the one it let go of; it takes
+that one again only when nothing else qualifies. While it holds a target it makes no choice at all: a nearer enemy walking
+past, a weaker one, a thicker crowd, a flanker's soft targets do not pull it off, and `chooseByRoute` is not asked. The
+enemy Nexus is the exception: while it is only the march's goal beyond vision it is not a target held, so the unit takes
+whatever comes into vision. A healer keeps its patient while it is wounded. A building that shoots cannot close on
+anything, so it takes only what its attack reaches (and lets go when it leaves). A target chosen to breach is held like
+any other. The count lives in the state (`commitGap`, `commitStall`), absent when a unit holds nothing, so a state with
+no fight in it hashes as it did. Some units may be exceptions later; commitment is the default.
+
+**Why units used to change target so often** (12 scripted duels on the Crossing: a trooper held a living target a median
+of 4 ticks, and changed away from a still-living one some 3,400 times). Three causes, all in perception: a unit chose
+afresh every tick, so the nearest enemy by range (a marksman's, the Nexus's gun) or by walk (a melee unit's) replaced
+the one it was already striking or walking to; a melee unit at the edge of its reach dropped a candidate whose walk was
+a little longer than its vision and took it up again as the walk crossed the line (about 1,500 cases, 300 of them the
+same target within 12 ticks); and it kept no memory of the old target beyond a tie-break.
 
 **Moving in battle.** A unit in battle walks to where its attack reaches its target, and its route ends exactly there:
 touching for a sword, within range for a gun, so the walk, the shot and the hold never disagree about "close enough".

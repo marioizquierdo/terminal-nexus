@@ -57,7 +57,7 @@ export type ContentEntry = Readonly<{
   nexus?: true
   commander?: true
   roundsOut?: number
-  engageRange?: number
+  vision?: number
   targetLayers?: readonly EntityLayer[]
   targetPreference?: readonly EntityLayer[]
   aim?: "crowd"
@@ -136,7 +136,7 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     nexus: literal(true),
     commander: literal(true),
     roundsOut: wholeNumber,
-    engageRange: positiveWholeNumber,
+    vision: positiveWholeNumber,
     targetLayers: list(layer),
     targetPreference: list(layer),
     aim: literal("crowd"),
@@ -178,7 +178,7 @@ export function entryProblems(entry: ContentEntry): string[] {
     "detonation radius": entry.detonation?.radius,
     "detonation trigger": entry.detonation?.triggerRange,
     "construction radius": entry.constructionRadius,
-    "engage range": entry.engageRange,
+    vision: entry.vision,
     ...Object.fromEntries((entry.abilities ?? []).map((ability, index) => [`ability ${index + 1}'s radius`, typeof ability["radius"] === "number" ? ability["radius"] : undefined])),
   }
   for (const [what, reach] of Object.entries(reaches)) {

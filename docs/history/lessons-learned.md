@@ -613,3 +613,13 @@ crowded base was full and even for a wave the army had no place for. The units w
 through them, and the curve level stood blocked ten times as long. The fix was at the source: Recall keeps a wave's room
 on each roof, so the rule rarely has to move anyone, and it moves units only for a wave that can come out. When a rule
 sends units somewhere, ask what happens when there is nowhere, and measure the most crowded level, not the first.
+
+### Count what a rule does before you design it
+
+"Units change target too often" was a feeling until twelve scripted duels were replayed and every `target.selected`
+counted: a trooper held a living target a median of four ticks, and the Nexus's gun re-aimed 724 times, almost all at
+targets it could not even reach. The causes were plain once counted (a fresh nearest-by-range pick every tick; a walk a
+little longer than vision dropping a candidate at the edge of sight). A rule written to the count (keep it until it falls
+or 30 ticks unable to strike) took the changes away from a living target from 2,453 to 164 for troopers. The count also
+showed what the rule alone would not fix: a building that cannot walk was cycling through far targets every 30 ticks, so a
+building takes only what its attack reaches. Replay the diagnosis after the fix; it finds the part the design missed.

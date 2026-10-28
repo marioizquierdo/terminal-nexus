@@ -113,8 +113,8 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] **The chapter**: troop movement as seven rules a player can predict, then each part, what is still to smooth, and
       the strategies it opens.
 - [ ] **Three states**: march, battle, retreat, in the code and the log as in the chapter.
-- [ ] **Vision**, 6 columns by default, set per unit in content (`vision`, where `engageRange` was).
-- [ ] **Commitment**: a unit keeps its target until it falls or it has gone 2½ seconds unable to strike it; what made
+- [x] **Vision**, 6 columns by default, set per unit in content (`vision`, where `engageRange` was).
+- [x] **Commitment**: a unit keeps its target until it falls or it has gone 2½ seconds unable to strike it; what made
       units change target so often is found and written down.
 - [x] **The formation's priority list** (flanker, melee, ranged; then range; then class) and its one rule: half speed on
       the march while an ally of higher priority is in vision. The Commander is a regular troop; the regroup forms the

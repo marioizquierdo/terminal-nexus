@@ -375,9 +375,10 @@ test("battles with a bomber and with burning ground resolve to the same hashes o
   // Pinned when the bomber and the mortar came (step 16K): the suite runs on Node and on Bun, so the one pin holds
   // both to these bytes. The mortar's re-pinned when its shell came to hurt only the enemy and its fire to burn
   // harder and shorter (step 16L), its walker moved up to meet the shorter fire: the block now falls by tick 229.
+  // The bomber pin moved when a unit came to keep the target it holds (commitment): the bomber block now falls by tick 37 and the mortar's by tick 240.
   const pins: Readonly<Record<string, readonly [string, string, number]>> = {
-    "bomber-crowd.map.json": ["c3781f3364d5a500fefaff3673ac35e09d7de060976cdbdda96e76dd56b31bd9", "62222566f981d7427eaa6b99edb1b71b6f5912e519be7a3b8bd546bffbf3aa5a", 39],
-    "mortar-burning-ground.map.json": ["5f93fc76f39beac04707c21398a23bc69f23e50015533a541028331549fd41fb", "c3446d6f8e3b34eb5a50e72a11204fb3bff688cefb367c5603bc845656c1619d", 229],
+    "bomber-crowd.map.json": ["ec099d5a9541da015af480af1878b2ecad724ea467b8c1f33aac46041f364238", "59e3c9dce74a09d76523e75ce8c518a0fdd033911f4ad4846ce55c8e4b8b09e6", 37],
+    "mortar-burning-ground.map.json": ["f8376755e708b35903a720b279285291bd70ca1ed31c9de4ce5fc63efc320437", "c63a319f13022ecc9b1917486145ca247c11b56c113d2dba384d2f788bf4e58a", 240],
   }
   for (const [name, [stateHash, eventsHash, ticks]] of Object.entries(pins)) {
     const first = await resolveScenario(name)

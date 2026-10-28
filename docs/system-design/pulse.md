@@ -123,7 +123,7 @@ step 8, the winning claimant may occupy the tile on the following tick.
 
 **Melee is touching** (RULE — `src/pulse/shared.ts`, `tests/rows.test.ts`): a melee attack reaches what is
 within its range in steps along the Grid's sides, so a trooper swings at an enemy straight above it as at one
-beside it. Everything else that reaches — a shot, a heal, an aura, a blast or splash, an engage reach, a worker's
+beside it. Everything else that reaches — a shot, a heal, an aura, a blast or splash, a vision, a worker's
 flight and a contact detonator's trigger — is measured as range is, to the nearest tile of each footprint, a row
 counting two columns, and a reach of one or more always includes what touches.
 
@@ -306,13 +306,13 @@ it is GUIDANCE and not built.
 A side may have a **target**: a rectangle of the map, kept in the state as `targets` and set only by the
 trigger runner, never by the kernel (the owner, 2026-10-04: "The campaign levels should have a target well
 defined so it is predictable where your troops are moving"). Every unit of that side that moves and fights heads
-for it. On the way it turns on an enemy within its engage range (6, six columns across and three rows up and
-down — 12 for a Commander who charges, content's `engageRange`, Averno's — or its own attack's range when longer, rounded up to whole rows; measured as range is) and fights it as
+for it. On the way it turns on an enemy within its vision (6, six columns across and three rows up and
+down — 12 for a Commander who charges, content's `vision`, Averno's — or its own attack's range when longer, rounded up to whole rows; measured as range is) and fights it as
 every unit does. When nothing is in range it walks on, and at the target
 it stands. Units fill the target first, each toward the nearest free tile of it; one that cannot get in stands
 beside one that did, or beside its own building in the target, and claims no tile. **A side with no target heads for
 the enemy's Grid Nexus** (the owner, 2026-10-20: "It's just going to be going to the enemy nexus"): its fighting units
-turn on an enemy within the same engage range on the way, a melee unit only on one it could walk to that near, and
+turn on an enemy within the same vision on the way, a melee unit only on one it could walk to without a long detour (twice its vision), and
 otherwise keep walking to the Nexus; a unit that cannot strike a Nexus, or a map with none, still engages the nearest
 enemy wherever it is (`headsForNexus`, `src/pulse/perception.ts`, `tests/heading.test.ts`). Workers that flee,
 healers and buildings never follow a target. `targets` is absent when no side has one, so such a state hashes as it
@@ -354,9 +354,19 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   enemy's, is never broken: a unit walled off by them walks as near as it can get, as above.
 - **Targeting knows what can be reached.** Once routes are built, a unit that would walk to its target chooses again:
   a melee unit fights the enemy nearest to walk to — by the walk to a tile beside it, then the one it holds, the
-  weakest, a draw — and, heading for its side's target, turns only to what it could walk to within its engage reach;
-  any other unit keeps the nearest by range, shots reaching over rock, but passes over one it cannot get within range
-  of for the nearest it can.
+  weakest, a draw — and, heading for its side's target, turns to what is within its vision by range and that it can
+  walk to without a detour of more than twice its vision (a walk a little longer than vision is no reason to drop an
+  enemy at the edge of it); any other unit keeps the nearest by range, shots reaching over rock, but passes over one it
+  cannot get within range of for the nearest it can.
+- **A unit holds its target** (`keptTarget`, `COMMIT_TICKS`, `tests/commitment.test.ts`; how it reads in
+  [`movement.md`](movement.md), Targeting and attacking). A unit with an enemy target keeps it until it falls or stops
+  being one the unit may choose, or until it has gone 30 ticks unable to strike it: the count starts again on every tick
+  the target is in attack range and every tick the unit comes nearer to it than ever since it chose it, and otherwise adds
+  one. While it holds, perception makes no choice for it (no `selectTarget`, no flanker's line, no crowd aim, no
+  `chooseByRoute`); at 30 it chooses afresh without the one it let go of, which it takes again only when nothing else
+  qualifies. The enemy Nexus as the march's goal beyond vision is not held; a healer holds its patient while it is
+  wounded; a building that shoots takes only what its attack reaches. The count is `commitGap` and `commitStall` in the
+  state, absent while nothing is held.
 - **Crowds.** An ally in the way is waited for while it walks. A unit held up behind allies that are stuck — with no
   route, or in a ring of units each waiting on the next — walks round them by a field of its own that counts them as
   walls; one that only waits behind a walker that will step on soon waits, since walking round a queue and back would
@@ -369,7 +379,7 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   its own roof, has a place in one priority list (`formationRank`, `src/content/types.ts`): its type (flanker, melee,
   ranged), then its attack's range, shorter first, then its class (tank, fighter, support, siege). **The one rule: a
   marching unit walks at half speed — it accrues its movement credit on every second tick only — while a marching ally
-  of strictly higher priority is within its vision** (`engageRange`, measured as range is). It slows and never stops,
+  of strictly higher priority is within its vision** (`vision`, measured as range is). It slows and never stops,
   equals never slow each other, and a unit in battle neither slows nor is slowed. An ally of higher priority held up
   behind a slower one swaps tiles with it (`march.made-way`), the slower stepping back onto its tile, so an army
   sorts itself on the march and a one-wide corridor never jams. The Commander is a regular troop: she leads nothing. A
