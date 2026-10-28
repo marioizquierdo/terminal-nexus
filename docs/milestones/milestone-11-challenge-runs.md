@@ -112,7 +112,8 @@ so how they move, sort themselves and choose what to fight is what a player read
 
 - [x] **The chapter**: troop movement as seven rules a player can predict, then each part, what is still to smooth, and
       the strategies it opens.
-- [ ] **Three states**: march, battle, retreat, in the code and the log as in the chapter.
+- [x] **Three states** in the code: march, battle, retreat (`moveStateOf`).
+- [ ] The three states in the log, so a filter can show a unit changing state (needs a new event kind).
 - [x] **Vision**, 6 columns by default, set per unit in content (`vision`, where `engageRange` was).
 - [x] **Commitment**: a unit keeps its target until it falls or it has gone 2½ seconds unable to strike it; what made
       units change target so often is found and written down.
@@ -120,8 +121,11 @@ so how they move, sort themselves and choose what to fight is what a player read
       the march while an ally of higher priority is in vision. The Commander is a regular troop; the regroup forms the
       same order.
 - [x] **"Flanker"** for the line that goes behind the enemy's front, in content and code.
-- [ ] Measured before and after on duels and the route and march scenarios; the tests that pin a battle are re-pinned,
-      never loosened.
+- [x] The tests that pin a battle are re-pinned with a reason each, never loosened; the quick spec measured before
+      and after each half (stalled units 274 → 528 with the formation, → 420 with commitment).
+- [ ] The full spec measured and kept in the history, as a change to how common units choose asks.
+- [ ] Troopers that queue in a column behind their own blocked troopers (most of the stalls left, one Vasse mirror
+      duel the worst): the crowd rule, not targeting.
 
 Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
 list), and the workers' jobs (Milestone 7).
