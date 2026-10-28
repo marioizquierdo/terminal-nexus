@@ -53,7 +53,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
   // so without this the stuck warning had nothing but the tile it could not enter to report — and a
   // tile an actor cannot enter is, very often, a rock.
   const where = new Map<number, Coord>()
-  /** Yielders that made way this tick (`march.made-way`): the step they take to do it is no sign of circling. */
+  /** Marchers that made way this tick (`march.made-way`): the step they take to do it is no sign of circling. */
   const madeWay = new Set<number>()
 
   const byTick = groupByTick(input.events)
@@ -120,7 +120,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
           break
 
         case "march.made-way":
-          // A yielder steps back or on to let an ally by: not a unit circling, so its watch for progress starts again.
+          // A marcher steps back to let an ally of higher priority by: not a unit circling, so its watch for progress starts again.
           tracks.delete(event.ordinal)
           madeWay.add(event.ordinal)
           emit({
@@ -129,7 +129,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             kind: "yield",
             subject: event.entity,
             object: event.ally,
-            detail: event.how === "swap" ? "swaps tiles to let it by" : "steps on out of its way",
+            detail: "swaps tiles to let it by",
           })
           break
 

@@ -62,6 +62,23 @@ function assertNoOverlap(state: MatchState, definition: (entity: EntityState) =>
 
 const pathsHash = (result: RegroupResult): string => createHash("sha256").update(JSON.stringify(result.paths)).digest("hex").slice(0, 16)
 
+test("the ranks follow the priority list front to back - flanker, melee, then ranged by range - and the Commander takes the place her attack gives her", () => {
+  const FLANKER = "unit.bench.flanker"
+  const MORTAR = "unit.citizen.mortar"
+  const forces: Force[] = [{ player: "A", muster: { x: 30, y: 10 }, units: [MORTAR, MARKSMAN, VASSE, TROOPER, FLANKER, MORTAR, MARKSMAN, VASSE, TROOPER, FLANKER] }]
+  const result = regroup(stateOf(forces), FIXTURE_REGISTRY)
+  const after = units(result.state, "A")
+  const column = (contentId: string): number[] => after.filter((entity) => entity.contentId === contentId).map((entity) => entity.anchor.x)
+  // East is forward: a flanker ahead of a trooper, a trooper ahead of Vasse (range 4), Vasse ahead of a marksman (6), a
+  // marksman ahead of a mortar (10) -- each of one kind wholly in front of every one of the next.
+  const order = [FLANKER, TROOPER, VASSE, MARKSMAN, MORTAR]
+  for (let index = 1; index < order.length; index += 1) {
+    const ahead = column(order[index - 1] as string)
+    const behind = column(order[index] as string)
+    assert.ok(Math.min(...ahead) >= Math.max(...behind), `${order[index - 1]} at ${ahead} is not ahead of ${order[index]} at ${behind}`)
+  }
+})
+
 test("the regroup lasts 10 seconds: a 2-second step back, 6 seconds forming up, 2 standing formed", () => {
   assert.equal(REGROUP_TICKS, 120)
   const result = regroup(stateOf([{ player: "A", muster: { x: 30, y: 10 }, units: [TROOPER, TROOPER, MARKSMAN] }]), FIXTURE_REGISTRY)
@@ -224,9 +241,10 @@ test("the regroup of a played duel round is pinned, on Node and on Bun", { timeo
   const [first] = duelRounds(1, { A: "vasse", B: "averno" }, { A: "balanced", B: "rush" }, 5)
   const result = first?.regroup as RegroupResult
   // Pinned: the same end of round regroups into the same walks and the same state on every runtime; a change to the
-  // regroup, the kernel, the scripts or the armies moves it, and says so.
-  assert.equal(pathsHash(result), "b1ecdbbac7103c59")
-  assert.equal(hashState(result.state), "f73faf9c2ddd26ea8e11a5ab8bf63b3cd3d239179f7089bdec94912275255833")
+  // regroup, the kernel, the scripts or the armies moves it, and says so. (Moved when an army came to sort itself on the
+  // march by half speed, the Commander a regular troop, and the regroup's ranks went by the same priority list.)
+  assert.equal(pathsHash(result), "6bc0fc1287bbe68f")
+  assert.equal(hashState(result.state), "68aa28b322733f5ce85fb058f17986767bcb4333ae803d429b57ddb628d4469a")
 })
 
 test("the round's end settled where everyone stands: the regroup's first frame, what a match that is over keeps", () => {

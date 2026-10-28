@@ -151,13 +151,16 @@ another unit with higher priority is in vision range."
    **siege**. Content may say the class (`class`); otherwise a healer is support, a unit whose attack hits an area is
    siege, and anything else a fighter.
 
-Units with no attack (workers) and flyers keep no place.
+Units with no attack (workers) and flyers keep no place; a unit with no attack whose content names a type, the Ravel
+bomber (a flanker that bursts instead of striking), has the place of its type, at range 0.
 
 **The rule, passive and only on the march**: a marching unit walks at **half speed** while a marching ally of higher
 priority is in its vision. Nothing else. A marksman near a trooper slows, the trooper walks on, and the marksman settles
 about its vision behind; a mortar settles behind the marksmen. Units of equal priority never slow each other. Because
 the rule only slows, never stops, an army sorts itself on the move instead of standing still while the front passes,
-and no unit can wait on itself.
+and no unit can wait on itself. In a lane one tile wide the slower unit cannot be stepped round: a unit held up by an
+ally of lower priority that marches in front of it **swaps tiles with it** (`march.made-way`), the slower stepping back
+onto the tile the other left. (A body too big to swap waits behind it, and the slower unit keeps walking at half speed.)
 
 **The Commander is a regular troop**: she takes the place her attack gives her (Vasse, with a short gun, is ranged;
 Averno, melee) and slows and is slowed like anyone. She does not lead the march.

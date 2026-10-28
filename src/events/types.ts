@@ -69,9 +69,8 @@ export type DomainEvent =
   | (Base &
       Readonly<{
         /**
-         * A marcher that was yielding to its army made way for an ally held up behind it (`march.ts`, `intents.ts`):
-         * it swaps tiles with the ally (`"swap"`), or, the ally too big to swap with, takes its own step forward out of
-         * the way (`"release"`). Said only when it makes way, never for the ticks it waits.
+         * A marcher walking at half speed made way for an ally of higher priority held up behind it (`march.ts`,
+         * `intents.ts`): they swap tiles, the ally forward and this one back. Said only when it makes way.
          */
         kind: "march.made-way"
         entity: string
@@ -79,7 +78,6 @@ export type DomainEvent =
         /** The ally it made way for. */
         ally: string
         allyOrdinal: number
-        how: "swap" | "release"
       }>)
   | (Base &
       Readonly<{

@@ -116,10 +116,10 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [ ] **Vision**, 6 columns by default, set per unit in content (`vision`, where `engageRange` was).
 - [ ] **Commitment**: a unit keeps its target until it falls or it has gone 2½ seconds unable to strike it; what made
       units change target so often is found and written down.
-- [ ] **The formation's priority list** (flanker, melee, ranged; then range; then class) and its one rule: half speed on
+- [x] **The formation's priority list** (flanker, melee, ranged; then range; then class) and its one rule: half speed on
       the march while an ally of higher priority is in vision. The Commander is a regular troop; the regroup forms the
       same order.
-- [ ] **"Flanker"** for the line that goes behind the enemy's front, in content and code.
+- [x] **"Flanker"** for the line that goes behind the enemy's front, in content and code.
 - [ ] Measured before and after on duels and the route and march scenarios; the tests that pin a battle are re-pinned,
       never loosened.
 

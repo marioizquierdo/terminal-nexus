@@ -53,6 +53,15 @@ export function accrueCredit(credit: number, rate: MovementRate, cap: number = s
   return Math.min(credit + rate.numerator, cap)
 }
 
+/**
+ * **Half speed** (movement.md, troop formation): a unit that walks slowly this tick accrues its credit on every second
+ * tick only, so it takes exactly twice as long for a step, whatever its rate and the ground, and never stops. Whole
+ * numbers: the same two ticks on either side of the map and in either runtime.
+ */
+export function accrueSlowedCredit(credit: number, rate: MovementRate, tick: number, cap: number = stepCost(rate)): number {
+  return tick % 2 === 0 ? accrueCredit(credit, rate, cap) : Math.min(credit, cap)
+}
+
 /** Whether an actor has the credit for a step at all: the cheapest, a step across. */
 export function canStep(credit: number, rate: MovementRate): boolean {
   return credit >= creditFor(rate, SHORTEST_STEP)

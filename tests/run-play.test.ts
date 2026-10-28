@@ -285,9 +285,11 @@ test("the driver plays a run end to end, and the same seed and script give the s
     "The army: Barracks, Supply Depot, Turret, Hatchery, Reserve Callup, Drill Schedule, Standard Heavy Rounds.",
   ])
   // Pinned again for the kept front (2026-10-26): 30-second rounds, the survivors regrouping between them, eight rounds a
-  // battle.
+  // battle. Pinned again for the troop formation (2026-10-27): an army sorts itself on the march and its Commander leads
+  // nothing, so battle 1's last round ends in its Nexus falling at tick 138 (was 150) and battle 2's at 152 (was 303); the
+  // same rounds are won and lost, with the same summary.
   const time = (battle: number, rounds: number): string[] => Array.from({ length: rounds }, (_, index) => `${battle}.${index + 1} time@360`)
-  assert.deepEqual(shape(once), [...time(1, 2), "1.3 nexus@150", ...time(2, 7), "2.8 nexus@303", ...time(3, 8)])
+  assert.deepEqual(shape(once), [...time(1, 2), "1.3 nexus@138", ...time(2, 7), "2.8 nexus@152", ...time(3, 8)])
 })
 
 test("on the screen, a won battle opens on the draft, the choice settles it, and the session moves to the round it makes", { timeout: 60_000 }, () => {

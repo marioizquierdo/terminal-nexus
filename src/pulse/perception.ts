@@ -140,7 +140,7 @@ type Choice = {
   actor: Actor
   candidates: readonly Actor[]
   selection: { target: Actor; distance: number; crowd?: number } | null
-  /** For a backliner that found enemies beyond the melee line (`beyondTheLine`): every enemy it could choose from, to
+  /** For a flanker that found enemies beyond the melee line (`beyondTheLine`): every enemy it could choose from, to
    *  fall back on when it can walk to none of those. */
   wider?: readonly Actor[]
 }
@@ -251,14 +251,14 @@ export function perception(context: TickContext): void {
 }
 
 /**
- * **A backliner goes beyond the enemy's line** (the owner, 2026-10-21: "backliner (tries to go beyond the enemy
+ * **A flanker goes beyond the enemy's line** (the owner, 2026-10-21: "backliner (tries to go beyond the enemy
  * line)"): among the enemies `actor` could choose from, the ones within its engage reach that are not in the melee line
- * — a unit of the short or long range or a backliner, or a building that shoots — for it to choose among first, the
- * nearest as every unit chooses; `null` when it is no backliner, aims at a crowd (the bomber keeps its aim), or no such
+ * — a ranged unit or a flanker, or a building that shoots — for it to choose among first, the
+ * nearest as every unit chooses; `null` when it is no flanker, aims at a crowd (the bomber keeps its aim), or no such
  * enemy is near, and it chooses as every unit does. A worker and a building that does not shoot are in no line.
  */
 function beyondTheLine(actor: Actor, candidates: readonly Actor[]): readonly Actor[] | null {
-  if (lineOf(actor.definition) !== "backliner" || actor.definition.aim === "crowd" || actor.definition.behavior !== "advance") return null
+  if (lineOf(actor.definition) !== "flanker" || actor.definition.aim === "crowd" || actor.definition.behavior !== "advance") return null
   const reach = engageRange(actor.definition)
   const beyond = candidates.filter((other) => {
     const line = lineOf(other.definition)
@@ -295,7 +295,7 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   const { actor, candidates, selection, wider } = choice
   if (selection === null) return null
   if (wider !== undefined) {
-    // A backliner goes for the nearest enemy beyond the line it can walk to — nearest to walk to for a melee one, by
+    // A flanker goes for the nearest enemy beyond the line it can walk to — nearest to walk to for a melee one, by
     // range for any other — and, with none it can walk to, chooses among them all as every unit does.
     const reachable = candidates.filter((candidate) => walkTo(routes, actor, candidate) !== UNREACHABLE)
     if (reachable.length === 0) return chooseByRoute(context, routes, { actor, candidates: wider, selection: selectTarget(context, actor, wider) })

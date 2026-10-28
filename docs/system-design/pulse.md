@@ -93,10 +93,11 @@ over entities can never decide an outcome:
    aims at a crowd first takes the enemies with the most of their side round them (below). Then the
    tick's routes are built from who walks and who stands (section 1.6), and a unit that would walk chooses again by
    what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all. Every target set,
-   who marches and who of them yields (the march, section 1.6).
+   who marches and who of them walks at half speed (the march, section 1.6).
 4. **Intents.** Each actor with movement credit declares one destination tile: the best step of its route it
    fits now. A unit held up behind allies that are stuck walks round them; two allies that want each other's tile
-   swap. A marcher that yields declares no step; an ally held up behind it swaps with it, or releases it.
+   swap. A marcher walking at half speed accrues its movement credit on every second tick only; an ally of higher priority
+   held up behind it swaps with it.
 5. **Arbitration** (`src/pulse/arbitration.ts`). Group intents by destination *within a layer*.
    Contested claims resolve by speed tier — **tier 1 outranks tier 2** — with any remaining tie
    broken by one draw from the seeded stream. Entity id orders iteration and event emission, never
@@ -237,9 +238,10 @@ balanced one.
   unit that aims at a crowd counts each candidate's crowd from where bodies stand and whose they are, never an order,
   and breaks a tie between equal crowds the same way.
 - **A wide unit measures its walk from its nose**: its tile nearest the goal, and the enemy tile nearest it.
-- **The march** reads only where bodies stand and whose they are: progress and the band are distances, the guide line
-  is drawn alike from either end (a point exactly between two tiles takes both), and two allies that would swap with
-  one yielder are drawn between; a mirrored march stays a mirror tick for tick (`march-mirror`).
+- **The march** reads only where bodies stand and whose they are: who is in whose sight and the band are distances, the
+  guide line is drawn alike from either end (a point exactly between two tiles takes both), half speed is credit on the
+  tick's parity (the same on either side), and two allies that would swap with one slower unit are drawn between; a
+  mirrored march stays a mirror tick for tick (`march-mirror`).
 - **Between rounds** (`src/match/`), where nothing is drawn: a group set down round a point, a Commander's return and a mission's
   arrivals break a tie toward the enemy's Grid Nexus (`enemyNexusMiddle`); the regroup's slots and the order units make
   room for a building go by what a side faces, and the sides alternate. Forces whose
@@ -359,19 +361,21 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   route, or in a ring of units each waiting on the next — walks round them by a field of its own that counts them as
   walls; one that only waits behind a walker that will step on soon waits, since walking round a queue and back would
   pace. Two allies of one tile each that want each other's tile swap, together.
-- **The march** (the owner, 2026-10-21; `src/pulse/march.ts`, `tests/march.test.ts`, how it reads in
-  [`movement.md`](movement.md), troop formation). A unit marches when it walks for its side's goal — its target, or the
-  enemy's Grid Nexus while that is beyond its engage reach; one walking to an enemy within reach is engaged and fights
-  as before. Once perception has set every target, a marcher's progress is its walk, for one tile, to its side's goal
-  over rock and the enemy's standing buildings. A marcher with a line (`lineOf`; a backliner, a flyer, a unit with no
-  attack and a unit on its own roof keep none) yields — declares no step — when it is further forward than its line's
-  place behind its side's Commander while she marches (melee 2 ahead, short 4 behind, long 8 behind), or, in the short
-  or long line, when a marching ally of a line ahead within 12 columns is not 4 columns of progress ahead per line
-  between them; never with an enemy within 12 columns of it. A yielder is a walker to the routes, not a wall: a held
-  ally of one tile on its layer swaps with it when both can pay, and a bigger one releases it to take its own best step
-  (`march.made-way`). A marcher more than 6 columns off its side's guide line — from the Commander, or its Nexus
-  without her, to its goal — breaks a tie between equally good steps toward the line. A backliner chooses first among
-  the enemies within its reach that are not in the melee line, the nearest it can walk to.
+- **The march** (the owner, 2026-10-21 and 2026-10-27; `src/pulse/march.ts`, `tests/march.test.ts`, how it reads in
+  [`movement.md`](movement.md), the three states and troop formation). A unit is in one of three states
+  (`MoveState`): it **marches** with no enemy to turn to (walking for its side's goal — its target, or the enemy's Grid
+  Nexus while that is beyond its vision — stepping off its roof, holding at its target), is in **battle** when it walks
+  to an enemy or fights one, and **retreats** when it runs. Every unit with an attack, other than a flyer and a unit on
+  its own roof, has a place in one priority list (`formationRank`, `src/content/types.ts`): its type (flanker, melee,
+  ranged), then its attack's range, shorter first, then its class (tank, fighter, support, siege). **The one rule: a
+  marching unit walks at half speed — it accrues its movement credit on every second tick only — while a marching ally
+  of strictly higher priority is within its vision** (`engageRange`, measured as range is). It slows and never stops,
+  equals never slow each other, and a unit in battle neither slows nor is slowed. An ally of higher priority held up
+  behind a slower one swaps tiles with it (`march.made-way`), the slower stepping back onto its tile, so an army
+  sorts itself on the march and a one-wide corridor never jams. The Commander is a regular troop: she leads nothing. A
+  marcher more than 6 columns off the line from its side's own Nexus to its goal breaks a tie between equally good steps
+  toward the line. A flanker chooses first among the enemies within its reach that are not melee, the nearest it can
+  walk to.
 - **Slow ground** (`TerrainKind.stepWeight`): a step onto scrub costs twice its length, in credit and in a route, so
   a unit crosses it at half pace and a route goes round it when that is quicker. Credit is capped at the dearest step
   from where a unit stands, so it can save up for a step onto scrub ([`grid.md`](grid.md), terrain).
@@ -439,8 +443,9 @@ style, leaving troops on the map"; `src/match/regroup.ts`, `tests/regroup.test.t
 Nexus announces a pause and the troops respect it: nothing attacks or trains, and for 10 seconds (120 ticks, the
 Build Phase's first 10 seconds on screen) they move. For 2 seconds those within 12 of an enemy step back toward their
 own Grid Nexus; for 6 more each side forms up in ranks across its march line — from its Commander, or its own Nexus
-while she is out, toward its level's target, else the enemy Nexus — melee in front, the Commander in the middle of her
-rank, short range, then long range, then what does not fight; the last 2 seconds let the slowest arrive. Survivors more
+while she is out, toward its level's target, else the enemy Nexus — in the formation's priority list, front to back:
+flankers, melee, then ranged by range, tank to siege within a range, then what does not fight (the Commander takes the
+place her attack gives her, in the middle of her rank); the last 2 seconds let the slowest arrive. Survivors more
 than 24 columns behind the front form their own group where they stand; facing fronts are held at least 6 columns
 apart. A side with neither a Commander nor a Nexus (a mission's raid) stands where it is. Units walk on the routes'
 distance fields at their own pace, never through one another, rock or an enemy's building; the sides alternate who

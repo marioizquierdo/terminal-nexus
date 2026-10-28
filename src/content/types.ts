@@ -6,11 +6,12 @@ export type MovementRate = Readonly<{ numerator: number; denominator: number }>
 
 export type AttackKind = "melee" | "ranged" | "heal"
 
-/** A unit's place in its army's formation while it marches (`ContentDef.line`, movement.md). */
-export type FormationLine = "backliner" | "melee" | "short" | "long"
+/** A unit's formation type (`ContentDef.line`, movement.md, troop formation): flankers go round the front for what
+ *  stands behind it, then melee, then ranged (guns and healers). */
+export type FormationLine = "flanker" | "melee" | "ranged"
 
-/** The range past which a ranged unit marches in the long line rather than the short (`lineOf`). */
-export const SHORT_RANGE = 4
+/** What a unit is for, the last word in the formation's priority list (`ContentDef.class`, movement.md). */
+export type UnitClass = "tank" | "fighter" | "support" | "siege"
 
 /**
  * Area damage centred on a point, hitting friend and foe alike unless it `hits: "enemies"` — the same `{radius, damage}` shape
@@ -203,14 +204,18 @@ export type ContentDef = Readonly<{
    */
   aim?: "crowd"
   /**
-   * Where this unit marches in its army's formation (movement.md, formation lines): `"melee"` at the front, `"short"`
-   * range behind it, `"long"` range behind that, each yielding to the line ahead while the army marches so it arrives
-   * in order; a `"backliner"` yields to no one and goes for what stands behind the enemy's front. Absent: from its
-   * attack (`lineOf`): a melee reach is `"melee"`, a heal or a range up to 4 `"short"`, a longer one `"long"`. The
-   * owner, 2026-10-21: "we could declare 4 preferred lines: backliner (tries to go beyond the enemy line), melee,
-   * short range and long range."
+   * This unit's formation type (movement.md, troop formation): a `"flanker"` goes round the front for what stands
+   * behind it and marches ahead of everyone, `"melee"` next, `"ranged"` behind them. Absent: from its attack
+   * (`lineOf`): a melee attack is `"melee"`, any other attack (a gun, a heal) `"ranged"`, none no place. The owner,
+   * 2026-10-27: "flankers, melee, and ranged."
    */
   line?: FormationLine
+  /**
+   * What this unit is for, among units of one type and range (`classOf`): `"tank"`, `"fighter"`, `"support"`, `"siege"`,
+   * in that order of priority. Absent: a heal is `"support"`, an attack that hits an area (a splash or a burn)
+   * `"siege"`, anything else `"fighter"`.
+   */
+  class?: UnitClass
   /**
    * While alive, every `intervalTicks` this entity attempts to create one more `contentId` for its
    * own player on a free adjacent tile, holding off whenever `maxAlive` of that content id already
@@ -332,15 +337,40 @@ export function productionFields(definition: ContentDef): Readonly<{ productionC
   return { productionCooldown: definition.production.firstTicks, produced: 0, owed: 0 }
 }
 
-/** Where `definition` marches in its army's formation: its own `line`, else from its attack — a melee reach is
- *  `"melee"`, a heal or a range up to `SHORT_RANGE` `"short"`, a longer one `"long"`; `null` for what has no attack
- *  (a worker, a building), which keeps to no line. */
+/** A unit's formation type: its own `line`, else from its attack — a melee attack is `"melee"`, any other attack
+ *  `"ranged"`; `null` for what has no attack (a worker, a building), which keeps to no place. */
 export function lineOf(definition: ContentDef): FormationLine | null {
   if (definition.line !== undefined) return definition.line
   const attack = definition.attack
   if (attack === undefined) return null
-  if (attack.kind === "melee") return "melee"
-  return attack.kind === "heal" || attack.range <= SHORT_RANGE ? "short" : "long"
+  return attack.kind === "melee" ? "melee" : "ranged"
+}
+
+/** A unit's class: its own `class`, else a heal is support, an attack that hits an area (a splash or a burn) is siege,
+ *  anything else a fighter. */
+export function classOf(definition: ContentDef): UnitClass {
+  if (definition.class !== undefined) return definition.class
+  const attack = definition.attack
+  if (attack?.kind === "heal") return "support"
+  if (attack?.splash !== undefined || attack?.burn !== undefined) return "siege"
+  return "fighter"
+}
+
+const TYPE_ORDER: Readonly<Record<FormationLine, number>> = { flanker: 0, melee: 1, ranged: 2 }
+const CLASS_ORDER: Readonly<Record<UnitClass, number>> = { tank: 0, fighter: 1, support: 2, siege: 3 }
+
+/**
+ * A unit's place in the formation's priority list (movement.md, troop formation), as one whole number, front first:
+ * its type (flanker, melee, ranged), then its attack's range, shorter first (a melee range counts as its range, 1),
+ * then its class (tank, fighter, support, siege). A smaller number is a higher priority; equal numbers are equal
+ * priority. `null` for what keeps no place: no attack (unless the content names a type), a flyer, a structure.
+ */
+export function formationRank(definition: ContentDef): number | null {
+  const line = lineOf(definition)
+  if (line === null || definition.layer === "air" || definition.layer === "obstacles") return null
+  // A range is a whole number of columns, well under 1000; a class is one of four. A flanker the content names that has
+  // no attack (the bomber bursts instead) has a place by its type, at range 0.
+  return TYPE_ORDER[line] * 100000 + (definition.attack?.range ?? 0) * 10 + CLASS_ORDER[classOf(definition)]
 }
 
 export function rectFootprint(width: number, height: number): Footprint {

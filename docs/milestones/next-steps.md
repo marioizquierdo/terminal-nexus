@@ -18,10 +18,10 @@ it is done.*
   Runs play on the armies as they are: they say nothing about balance yet.
 - **Play the pathfinding milestone's wrap-up** ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)):
   `./bin/grid.ts scenarios/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
-  troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/march-guide` (Vasse leads; only a backliner goes
-  ahead of her), `./bin/grid.ts scenarios/mortar-burning-ground` (the lighter fire), and PERIMETER's round 2 from
+  troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/march-commander` (Vasse is a regular troop; the troopers pass her
+  and nobody waits for her), `./bin/grid.ts scenarios/mortar-burning-ground` (the lighter fire), and PERIMETER's round 2 from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'`, where last round's troopers stand on and
-  beside their Barracks. The march's numbers, the next backliner and PERIMETER's balance with nothing built wait for
+  beside their Barracks. The march's numbers, the next flanker and PERIMETER's balance with nothing built wait for
   his playing (his words: "We will correct that when I start playing").
 - **Feel the Nexus fighting back** ([his words](../history/feedback/2026-10-21-pathfinding.md)), from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'`: start the round without building (`s`, `s`)

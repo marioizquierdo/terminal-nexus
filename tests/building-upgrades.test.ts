@@ -137,7 +137,10 @@ test("a production line on one Barracks makes its wave five, and a Barracks besi
   const opened = createBuildState(context, STARTER_START_CURSOR, viewport)
   // A second Barracks planned below the standing one, and the standing one given its production line.
   const second = { ordinal: 1, contentId: BARRACKS, anchor: { x: 25, y: 13 } }
-  const state: BuildState = { ...opened, planned: [second], fitted: [{ anchor: "25,10", action: "production-line" }] }
+  // And a Supply Depot, so the Nexus's 12 places do not hold the last trooper back: the battle plays differently since
+  // an army sorts itself on the march, nobody dies in time to make room, and this test is about a wave's size.
+  const depot = { ordinal: 2, contentId: "structure.citizen.depot", anchor: { x: 29, y: 12 } }
+  const state: BuildState = { ...opened, planned: [second, depot], fitted: [{ anchor: "25,10", action: "production-line" }] }
   const resolved = DEFAULT_LEVEL.play.startPulse(context, state)
   assert.ok(resolved !== null)
   const first = resolved.timeline.states[0]

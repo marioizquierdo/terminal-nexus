@@ -81,6 +81,8 @@ does), but:
 | `speedTier` | Initiative, lower first. Default: 2 for anything that moves, 9 for a structure. |
 | `collidesWith` | Default: what its layer collides with (a ground unit bumps buildings and units). |
 | `behavior` | Default: `advance` for anything that moves, `static` for a structure. |
+| `line` | The unit's formation type on the march (movement.md, troop formation): `flanker`, `melee` or `ranged`. Default: from its attack, a melee attack is `melee`, any other attack `ranged`, none no place. |
+| `class` | What it is for, the last word in the formation's priority list: `tank`, `fighter`, `support` or `siege`. Default: a heal is `support`, an attack that hits an area (a splash or a burn) `siege`, anything else `fighter`. |
 | `salvage` | Default: 0. |
 | `card` | `title`, `subtitle`, `description`; a Commander's also `pronouns`. |
 | `glyph` | Rows north to south, one character per tile, as wide and tall as `size`. Author lower case: side B is drawn upper case. |

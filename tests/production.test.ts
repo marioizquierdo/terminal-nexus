@@ -327,7 +327,10 @@ test("a wave's survivors stay on the Grid; the regroup and the next opening star
   const opened = second.states[0]?.entities.find((entity) => entity.contentId === BARRACKS)
   assert.deepEqual([opened?.productionCooldown, opened?.produced, opened?.owed], [FIRST_WAVE, 0, 0])
   assert.ok(second.final.tick >= 180, `round 2 ended at tick ${second.final.tick}, before a second wave could come`)
-  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 60, 180, 180, 180, 180])
+  // The fourth of each wave comes late: round 1 now leaves one more survivor (the army sorts itself on the march and its
+  // Commander leads nothing, so the fight is played differently), and the Nexus's 12 places hold the last trooper of each
+  // wave back until a unit of the army falls (a wave the army's supply holds back, above).
+  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 92, 180, 180, 180, 190])
 })
 
 test("PERIMETER's first round with the Barracks's wave hashes the same on every run and on both runtimes", () => {
@@ -345,5 +348,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // whatever of the raid comes within a marksman's reach of it — and each trooper the Barracks trained remembering it and
 // the tile it came out on (re-pinned for that alone: the round's events are byte for byte what they were). Pinned
 // again when an army came to march: its lines yielding in order and its marchers keeping to a band along the way to
-// the line it holds, and again when the raid's runners went back to the melee line.
-const PINNED_ROUND_1 = "094ad74ad4133fc29c65ffe1fcfaba820682fee83961b9b16c9771697817a9eb"
+// the line it holds, and again when the raid's runners went back to the melee line; and again when the army came to
+// sort itself on the march by half speed, the Commander a regular troop leading nothing.
+const PINNED_ROUND_1 = "e671b98b57b0ec8d0b339dfc4b0bed7949e35f9db74105c57c040cba9836f101"

@@ -20,7 +20,7 @@ import type { EntityLayer } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { Say, Shape } from "./shape.ts"
 import { dictionary, fieldAt, list, literal, positiveWholeNumber, record, text, wholeNumber } from "./shape.ts"
-import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, FormationLine, MovementRate } from "./types.ts"
+import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, FormationLine, MovementRate, UnitClass } from "./types.ts"
 import { rectFootprint } from "./types.ts"
 import { abilityProblems } from "../abilities/index.ts"
 import type { CardText } from "./cards.ts"
@@ -62,6 +62,7 @@ export type ContentEntry = Readonly<{
   targetPreference?: readonly EntityLayer[]
   aim?: "crowd"
   line?: FormationLine
+  class?: UnitClass
   spawn?: NonNullable<ContentDef["spawn"]>
   splitOnDeath?: NonNullable<ContentDef["splitOnDeath"]>
   constructionRadius?: number
@@ -139,7 +140,8 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     targetLayers: list(layer),
     targetPreference: list(layer),
     aim: literal("crowd"),
-    line: literal("backliner", "melee", "short", "long"),
+    line: literal("flanker", "melee", "ranged"),
+    class: literal("tank", "fighter", "support", "siege"),
     spawn: record<NonNullable<ContentDef["spawn"]>>({ contentId: text, intervalTicks: positiveWholeNumber, maxAlive: positiveWholeNumber }, {}),
     splitOnDeath: record<NonNullable<ContentDef["splitOnDeath"]>>({ contentId: text, count: positiveWholeNumber }, {}),
     constructionRadius: positiveWholeNumber,
