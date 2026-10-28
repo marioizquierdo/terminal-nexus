@@ -86,7 +86,7 @@
       "detonation": {"radius": 4, "damage": 36, "triggerRange": 1},
       "aim": "crowd",
       "targetLayers": ["units", "workers"],
-      "line": "backliner",
+      "line": "flanker",
       "card": {
         "title": "Bomber",
         "subtitle": "From your Fuse Shed",

@@ -1,7 +1,7 @@
 {
   "id": "march-lines",
-  "name": "March: a mixed army keeps its lines - ranged units in front at the start, behind the melee on arrival",
-  "notes": "An open field. Side A marches on its target, a banner by B's Nexus where four B troopers hold their own target. A's three marksmen and its mortar start ahead of its six troopers. While it marches, each line yields to the line ahead (melee, then short, then long range): the troopers pass the shooters, and the army arrives melee first, the marksmen and the mortar behind. No Commander, so no guide: the band follows the line from A's Nexus to the banner. Done when A's troopers strike first, ahead of the shooters.",
+  "name": "March: a mixed army sorts itself on the move - ranged units in front at the start, behind the melee on arrival",
+  "notes": "An open field. Side A marches on its target, a banner by B's Nexus where four B troopers hold their own target. A's three marksmen and its mortar start ahead of its six troopers. On the march a unit walks at half speed while an ally of higher priority marches in its sight (melee, then ranged by range: the marksmen at 6, the mortar at 10): the marksmen and the mortar slow as the troopers come up, the troopers walk through them, and the army arrives melee first, the marksmen behind, the mortar furthest back. No Commander leads: the band follows the line from A's Nexus to the banner. Done when A's troopers strike first, ahead of the shooters, and no unit ever stands still for good.",
   "grid": {
     "width": 48,
     "height": 16

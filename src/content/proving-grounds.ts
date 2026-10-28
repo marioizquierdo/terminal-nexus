@@ -73,9 +73,9 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     targetLayers: GROUND_ONLY_TARGETS,
   },
   {
-    // A backliner on the bench (`ContentDef.line`, movement.md, the march): a Ravel runner that goes beyond the enemy's
+    // A flanker on the bench (`ContentDef.line`, movement.md, the march): a Ravel runner that goes beyond the enemy's
     // line, marching ahead of everyone's pace and choosing the shooters behind the front before it. No army fields one
-    // yet — the runner itself is melee, since a whole army of runners as backliners left its front empty — so the
+    // yet — the runner itself is melee, since a whole army of runners as flankers left its front empty — so the
     // march's tests and scenarios show the line with this.
     id: "unit.bench.flanker",
     short: "flanker",
@@ -88,7 +88,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     collidesWith: GROUND_UNIT_COLLISIONS,
     behavior: "advance",
     salvage: 8,
-    line: "backliner",
+    line: "flanker",
   },
   {
     // The counter, and proof `targetLayers` is a real choice rather than a hardcoded law: this is an

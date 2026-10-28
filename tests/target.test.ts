@@ -10,7 +10,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { ENGAGE_RANGE, engageRange, followsTarget } from "../src/pulse/target.ts"
+import { VISION, visionOf, followsTarget } from "../src/pulse/target.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import { ScenarioError } from "../src/scenario/index.ts"
@@ -72,10 +72,10 @@ const inside = (area: TargetArea, x: number, y: number): boolean => x >= area.x 
 
 test("a unit turns from its side's target on what comes within its reach, and never less than its own attack's", () => {
   const trooper = FIXTURE_REGISTRY.get(TROOPER)
-  assert.equal(engageRange(trooper), ENGAGE_RANGE)
-  assert.equal(ENGAGE_RANGE, 6)
+  assert.equal(visionOf(trooper), VISION)
+  assert.equal(VISION, 6)
   const longGun: ContentDef = { ...trooper, attack: { kind: "ranged", range: 10, damage: 5, cooldownTicks: 12 } }
-  assert.equal(engageRange(longGun), 10, "a unit would walk past an enemy it could have shot")
+  assert.equal(visionOf(longGun), 10, "a unit would walk past an enemy it could have shot")
   // Only a unit that moves and fights follows a target: not a worker that flees, a healer, or a building.
   assert.ok(followsTarget(trooper))
   assert.ok(followsTarget(FIXTURE_REGISTRY.get("unit.citizen.vasse")))

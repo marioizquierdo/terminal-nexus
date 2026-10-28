@@ -37,6 +37,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
 | [Q84](#q84--is-requisition-the-runs-second-currency-and-does-the-nexuss-health-carry) | Is requisition the run's currency, and does the Nexus's health carry between battles? | OPEN | Mario's playing of a run (milestone 11) |
 | [Q85](#q85--how-long-is-a-run) | How long is a run? | OPEN | Mario's playing of a run (milestone 11) |
+| [Q87](#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to) | Should the march route be drawn on the Build Phase? | OPEN | After the stance and the banner |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
@@ -357,6 +358,26 @@ other stops.
 | C. **One act only, until content grows** | Fastest to play and test; a run that cannot tell a story of a build over time |
 
 **Recommendation: A**, played short first: the short run is what a playtest uses until the cards exist to fill three acts.
+
+### Q87 — Should the march route be drawn on the Build Phase, and be the line the army keeps to?
+
+**Status:** OPEN — parked; registered 2026-10-26 by [the troop movement review](../history/reports/2026-10-26-troop-movement-review.md).
+The owner, 2026-10-27: "not yet. I'm thinking in drawing from the commander, and perhaps using the commander as a
+re-grouping mechanism, but there are many other things to change and polish before this."
+
+A marcher keeps near a straight **central path** from its own Nexus to the goal, used only to break ties between
+equally good steps; it runs through rock when rock is in the way, and nothing on screen shows it. The **march route**
+would be the side's march field walked downhill to the goal, round rock and buildings: one line, the same at the start
+of the round as the kernel's own field.
+
+| Option | Cost |
+| --- | --- |
+| A. **Draw the march route from the Commander, and make it the central path**; perhaps the Commander also becomes the point the army regroups on | Shows placement bending the enemy's way; a small kernel change and a new layer on the map. Ties the army's line to a unit that can fall, so it needs a rule for when she is out |
+| B. **Draw the route from Nexus to goal; keep the central path straight** | No kernel change; the drawn line and the line the army keeps to differ wherever rock stands between |
+| C. **Neither, until the stance and the banner are built** | Free; placement stays read from the rules, not the screen |
+
+**Recommendation: C for now, then A**, as the owner said: the march route drawn from the Commander once the stance and
+the banner have settled what the army's line is for.
 
 ### Q51 — When should the game get a real accent-colour palette, with variations per faction?
 

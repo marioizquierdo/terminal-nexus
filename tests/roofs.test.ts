@@ -240,8 +240,10 @@ test("in PERIMETER's first round with the defence plan, every unit that walks ou
     registry,
     pulse: 1,
     carried: null,
-    structures: [...STARTER_STANDING, { contentId: BARRACKS, anchor: { x: 22, y: 10 } }, { contentId: BARRACKS, anchor: { x: 25, y: 12 } }],
+    structures: [...STARTER_STANDING, { contentId: BARRACKS, anchor: { x: 22, y: 10 } }, { contentId: BARRACKS, anchor: { x: 25, y: 12 } }, { contentId: "structure.citizen.depot", anchor: { x: 29, y: 12 } }],
   })
+  // (A Supply Depot beside them: the Nexus's 12 places hold a wave back, and a battle where an army sorts itself on the
+  // march kills nobody in time to make room. This test is about the roofs, not the supply.)
   assert.ok(trained(run.events).length >= 8, "the Barracks did not all send their waves")
   assert.deepEqual(neverClimbsBack({ registry, states: [...run.states], events: [...run.events] }), [])
 })

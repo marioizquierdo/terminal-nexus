@@ -1,7 +1,7 @@
 # Milestone 11 — Challenge Mode: Runs
 
 **Status:** CURRENT
-**Current step:** 11D — the kept front.
+**Current step:** 11E — troop movement.
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Battle Round loop and a result), Milestone 8 (a Commander exists and the Nexus Pulse deals from an army's pool); Milestone 3's mode select hands off here
 
 Made current on 2026-10-22, when the owner closed Pathfinding: "For now, we want to focus on building a basic game
@@ -103,7 +103,34 @@ campaign's missions included.
       level's automatic target or a defensive stand, and their tests are re-pinned to it.
 - [x] Duels, the duel scripts and runs play it; the measurement is run again and the snowball read.
 
-### Step 11E — The stance
+### Step 11E — Troop movement
+
+The owner, 2026-10-27 ([his words](../history/feedback/2026-10-26-troop-movement.md)), after the troop movement review:
+"Units should be smart enough, smooth, but even more important, predictable." The kept front leaves armies on the map,
+so how they move, sort themselves and choose what to fight is what a player reads in every Build Phase. The design is
+[`movement.md`](../system-design/movement.md).
+
+- [x] **The chapter**: troop movement as seven rules a player can predict, then each part, what is still to smooth, and
+      the strategies it opens.
+- [x] **Three states** in the code: march, battle, retreat (`moveStateOf`).
+- [ ] The three states in the log, so a filter can show a unit changing state (needs a new event kind).
+- [x] **Vision**, 6 columns by default, set per unit in content (`vision`, where `engageRange` was).
+- [x] **Commitment**: a unit keeps its target until it falls or it has gone 2½ seconds unable to strike it; what made
+      units change target so often is found and written down.
+- [x] **The formation's priority list** (flanker, melee, ranged; then range; then class) and its one rule: half speed on
+      the march while an ally of higher priority is in vision. The Commander is a regular troop; the regroup forms the
+      same order.
+- [x] **"Flanker"** for the line that goes behind the enemy's front, in content and code.
+- [x] The tests that pin a battle are re-pinned with a reason each, never loosened; the quick spec measured before
+      and after each half (stalled units 274 → 528 with the formation, → 420 with commitment).
+- [ ] The full spec measured and kept in the history, as a change to how common units choose asks.
+- [ ] Troopers that queue in a column behind their own blocked troopers (most of the stalls left, one Vasse mirror
+      duel the worst): the crowd rule, not targeting.
+
+Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
+list), and the workers' jobs (Milestone 7).
+
+### Step 11F — The stance
 
 - [ ] A Build Phase row for the army's stance for the coming round: **aggressive** (march on the enemy Nexus, as today),
       **hold the line** (stand in formation where the regroup left them and fight what comes in reach), **defensive**
@@ -113,7 +140,7 @@ campaign's missions included.
 - [ ] The duel scripts choose a stance (hold or fall back when their front is beaten), so a kept front has an answer.
 - [ ] Campaign levels keep their automatic target.
 
-### Step 11F — The banner
+### Step 11G — The banner
 
 - [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
       Aggressive elsewhere: the army goes there first, then on to the enemy Nexus (a route). Defensive: it holds the line
@@ -124,7 +151,7 @@ Two banners — the Commander following the main one, buildings set to send thei
 direction after this ([`core-loop.md`](core-loop.md)); they wait until the map holds resources and bonuses worth
 splitting an army for.
 
-### Step 11G — The route
+### Step 11H — The route
 
 - [ ] The route from the seed: three acts of three steps and a boss, stops by kind, intel one step ahead, every offer from
       a stream of its own so a path never moves what another would have offered.
@@ -132,20 +159,20 @@ splitting an army for.
 - [ ] The route screen: choose the next stop with the keys, the mouse and the driver; every stop's kind and reward shown.
 - [ ] Exchange and Workshop stops, built on the draft's cards and the Nexus's health.
 
-### Step 11H — Opponents, bosses and signals
+### Step 11I — Opponents, bosses and signals
 
 - [ ] An enemy's kit (plan, cards kept, credits) by act, a Stronghold's and a boss's; each act ends in a named Commander.
 - [ ] Signals: the three templates, in the interface's own voice.
 - [ ] A driver-played run that only takes commons either wins at the base difficulty or the finding is recorded and the
       tuning changed.
 
-### Step 11I — The run shell
+### Step 11J — The run shell
 
 - [ ] The summary: the route taken, every draft taken and refused, the Nexus's health battle by battle, and the lost
       battle's report. Seed entry when starting a run, and a short run of one act.
 - [ ] Every item works by hotkey, click and driver, and adapts across the viewport range like every other screen.
 
-### Step 11J — Playing it
+### Step 11K — Playing it
 
 - [ ] Mario plays runs and his notes become a feedback round; the numbers in `runs.md` move to what was played, and
       the tuning table says why.
@@ -163,7 +190,7 @@ splitting an army for.
 ## How it is judged
 
 Automated: step 11A's seed determinism across runs and both runtimes; step 11C's dealer distribution
-within tolerance; step 11H's commons-only run recorded either way; every run screen at every colour depth; the driver plays a whole run with no terminal.
+within tolerance; step 11I's commons-only run recorded either way; every run screen at every colour depth; the driver plays a whole run with no terminal.
 
 Human, and this is the real test: Mario plays a run, can say afterwards why he won or lost from the
 summary alone, and wants to start another. The second half of that sentence is the mode's entire
@@ -171,7 +198,7 @@ reason to exist.
 
 ## Done when
 
-- [ ] Steps 11A through 11J are built and tested.
+- [ ] Steps 11A through 11K are built and tested.
 - [ ] The tuning table in the game-modes design shows the numbers the run was actually tuned to, and
       why they moved.
 - [ ] Q40 and Q41 are either answered by Mario or proceeded under their recommendation, and the pull

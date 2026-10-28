@@ -395,7 +395,22 @@ test("a 3x3 and a 5x2 unit fight, range-gated by footprint distance, not anchor 
   // nobody watches every run: footprintDistance (grid/coords.ts) measures to the *nearest occupied
   // tile* of each footprint, not anchor to anchor, so two bodies this size should start trading
   // blows well before their anchors are within melee range of one another.
-  const resolved = await resolveScenario("heavies-clash.map.json")
+  // The two heavies alone: with their escorts about, each commits to the nearest small unit it meets (a unit keeps the
+  // target it holds) and the showcase's colossus falls to the runners before the two ever touch. The map keeps its
+  // escorts for the eye; the rule under test needs only the two bodies.
+  const showcase = await loadScenarioFile("heavies-clash.map.json")
+  const heavyOnly = (block: NonNullable<typeof showcase.placements.A>): typeof block => ({
+    ...block,
+    rows: block.rows.map((row) => [...row].map((symbol) => (block.legend[symbol]?.content.match(/colossus|leviathan/) === null ? " " : symbol)).join("")),
+  })
+  const alone = { ...showcase, placements: { A: heavyOnly(showcase.placements.A!), B: heavyOnly(showcase.placements.B!) } }
+  const { resolvePulse } = await import("../src/pulse/index.ts")
+  const loadedAlone = loadScenario(alone, { registry: FIXTURE_REGISTRY, seed: alone.seed })
+  const resolved = {
+    scenario: alone,
+    registry: loadedAlone.registry,
+    run: resolvePulse({ initialState: loadedAlone.state, registry: loadedAlone.registry, pulseTicks: alone.pulseTicks, seed: alone.seed }),
+  }
   const colossus = resolved.registry.get("unit.citizen.colossus")
   const leviathan = resolved.registry.get("unit.ravel.leviathan")
   assert.deepEqual(footprintExtent(colossus.footprint), { width: 3, height: 3 })

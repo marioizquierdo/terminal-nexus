@@ -20,7 +20,7 @@ import type { EntityLayer } from "../grid/types.ts"
 import { ENTITY_LAYERS } from "../grid/types.ts"
 import type { Say, Shape } from "./shape.ts"
 import { dictionary, fieldAt, list, literal, positiveWholeNumber, record, text, wholeNumber } from "./shape.ts"
-import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, FormationLine, MovementRate } from "./types.ts"
+import type { AbilityUse, AreaDamage, AttackDef, Behavior, Burn, ContentDef, Detonation, FormationLine, MovementRate, UnitClass } from "./types.ts"
 import { rectFootprint } from "./types.ts"
 import { abilityProblems } from "../abilities/index.ts"
 import type { CardText } from "./cards.ts"
@@ -57,11 +57,12 @@ export type ContentEntry = Readonly<{
   nexus?: true
   commander?: true
   roundsOut?: number
-  engageRange?: number
+  vision?: number
   targetLayers?: readonly EntityLayer[]
   targetPreference?: readonly EntityLayer[]
   aim?: "crowd"
   line?: FormationLine
+  class?: UnitClass
   spawn?: NonNullable<ContentDef["spawn"]>
   splitOnDeath?: NonNullable<ContentDef["splitOnDeath"]>
   constructionRadius?: number
@@ -135,11 +136,12 @@ export const contentEntry: Shape<ContentEntry> = record<ContentEntry>(
     nexus: literal(true),
     commander: literal(true),
     roundsOut: wholeNumber,
-    engageRange: positiveWholeNumber,
+    vision: positiveWholeNumber,
     targetLayers: list(layer),
     targetPreference: list(layer),
     aim: literal("crowd"),
-    line: literal("backliner", "melee", "short", "long"),
+    line: literal("flanker", "melee", "ranged"),
+    class: literal("tank", "fighter", "support", "siege"),
     spawn: record<NonNullable<ContentDef["spawn"]>>({ contentId: text, intervalTicks: positiveWholeNumber, maxAlive: positiveWholeNumber }, {}),
     splitOnDeath: record<NonNullable<ContentDef["splitOnDeath"]>>({ contentId: text, count: positiveWholeNumber }, {}),
     constructionRadius: positiveWholeNumber,
@@ -176,7 +178,7 @@ export function entryProblems(entry: ContentEntry): string[] {
     "detonation radius": entry.detonation?.radius,
     "detonation trigger": entry.detonation?.triggerRange,
     "construction radius": entry.constructionRadius,
-    "engage range": entry.engageRange,
+    vision: entry.vision,
     ...Object.fromEntries((entry.abilities ?? []).map((ability, index) => [`ability ${index + 1}'s radius`, typeof ability["radius"] === "number" ? ability["radius"] : undefined])),
   }
   for (const [what, reach] of Object.entries(reaches)) {

@@ -43,6 +43,14 @@ export type EntityState = Readonly<{
    * reset the instant perception reassigns a new target (including losing one). */
   focusStreak: number
   /**
+   * Commitment to a target (`COMMIT_TICKS`, `src/pulse/perception.ts`): the nearest this entity has come to the target
+   * it holds since it chose it (the Grid's distance), and the ticks since it last closed on it or had it in attack
+   * range. Absent when it holds no target, and `commitStall` absent at zero, so a state with no fight in it hashes as
+   * it did before commitment existed.
+   */
+  commitGap?: number | undefined
+  commitStall?: number | undefined
+  /**
    * A producer's recipe (`ContentDef.production`), counted: ticks remaining until its next wave comes, how
    * many of its waves have come this Pulse, and how many units of them it still owes — set down on the first
    * tick there is room beside it. Present only on a producer — absent, not zero, on everything else, so a

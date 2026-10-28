@@ -21,8 +21,9 @@
 //   slowest still walk in. Each side forms up across its march line — from its Commander while she stands on the Grid,
 //   else from its own Nexus, toward the enemy's Nexus (the guide line, movement.md) — in ranks across the line's main
 //   axis, the front rank where the side's front stands after stepping back (where its first rank's worth of units
-//   stands, so a straggler left forward does not pull the rest up to it): melee in front, the Commander next, the
-//   short range, the long range, backliners and units with no attack behind. A side whose level names a target for it
+//   stands, so a straggler left forward does not pull the rest up to it): by the formation's priority list (movement.md,
+//   troop formation) front to back — flankers, melee, ranged, shorter range first, tank to siege — and units with no
+//   attack behind; the Commander takes the place her attack gives her. A side whose level names a target for it
 //   (a campaign's automatic target) forms up on the line to that target instead, and one with no enemy Nexus to face
 //   on the line to the Grid's middle; a side with neither a Commander nor a Nexus of its own (a mission's raid) has no
 //   line, and its survivors stand where the round left them. Survivors more than `BEHIND` columns behind
@@ -36,7 +37,7 @@
 //   `mends` mends, the clock, the outcome, the cooling tiles and the fire.
 
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
-import { freshEntityFields, lineOf } from "../content/index.ts"
+import { formationRank, freshEntityFields } from "../content/index.ts"
 import { DIRECTIONS, footprintBox, footprintDistance, step, tilesOf } from "../grid/coords.ts"
 import { tilesWithin } from "../grid/reach.ts"
 import type { Coord, Direction, Footprint } from "../grid/types.ts"
@@ -159,22 +160,11 @@ function lineOfSide(state: MatchState, definitionOf: Definitions, player: Player
   return { axis: "y", way: dy >= 0 ? 1 : -1, from, to }
 }
 
-/** A unit's place in the formation's order: melee in front, the Commander, the short range, the long range, then
- *  backliners and units with no attack. */
+/** A unit's place in the formation's order, front first: the priority list (`formationRank`, movement.md, troop
+ *  formation) — flankers, melee, ranged; shorter range first; tank, fighter, support, siege — and units with no place
+ *  (no attack, a flyer) behind. The Commander has no rank of her own: she stands where her attack puts her. */
 function rankOrder(definition: ContentDef): number {
-  if (definition.commander === true) return 1
-  switch (lineOf(definition)) {
-    case "melee":
-      return 0
-    case "short":
-      return 2
-    case "long":
-      return 3
-    case "backliner":
-      return 4
-    default:
-      return 5
-  }
+  return formationRank(definition) ?? Number.MAX_SAFE_INTEGER
 }
 
 /** How many units a rank of a group of `count` holds: about twice as many ranks across as deep, at most `RANK_WIDTH`. */

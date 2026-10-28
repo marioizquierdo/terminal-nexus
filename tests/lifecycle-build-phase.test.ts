@@ -293,6 +293,8 @@ test("the live loop plays a Battle Round on its own clock: timer, last seconds, 
   await sleep(80)
   // Opened already in the Pulse the start keys committed, at its very beginning — however many seconds of
   // script clock the keys took, the live clock started the Pulse at zero.
+  // (14 seconds since the march sorts itself on the move and the Commander leads nothing: nobody waits for her; 15
+  // since a unit keeps the target it holds, a battle's last shot comes a second later.)
   assert.equal(timerAt(stdout.lastWrite), "0:15", "the Pulse did not open at zero")
   assert.match(stdout.lastWrite, /battle round/)
 

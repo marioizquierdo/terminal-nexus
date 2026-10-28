@@ -1,0 +1,189 @@
+# Troop movement (2026-10-26)
+
+Mario's request to explain, justify and evaluate how troops move, and to turn the pathfinding chapter into one on
+troop movement. These notes continue [`2026-10-26-core-loop.md`](2026-10-26-core-loop.md)'s numbering. His
+words are as he wrote them. Status values: **Built**, **Scheduled**, **Open**, **Contested**. The reasoning and the
+evaluation are in [the review](../reports/2026-10-26-troop-movement-review.md).
+
+### F213 — Explain how troops move, why, and whether the explanation holds up
+
+> Describe the full pathfinding process. If someone would to ask "how do troops move in Terminal Nexus?" then how
+> would you explain it, starting from the general idea, then moving into smaller details. After that, explain "why",
+> with references to similar games, and why certain algorithms work better than others. Then, evaluate the
+> explanation itself. Is is smooth? is it simple? can players use this knowledge to exploit different interesting
+> strategies? Does it feel intuitive when in motion? (at the end of the day, the explanation in text is not as
+> important as the actual game in movement).
+>
+> Focus on the goal: each build phase prepares the next round, or takes tradeoffs that pay off on later rounds. Being
+> able to understand how your troops and enemy troops behave is essential to take the right tradeoffs.
+
+**Built.** [The review](../reports/2026-10-26-troop-movement-review.md): the seven rules a player needs, the games and
+algorithms behind them, and the evaluation, with what was watched and measured on scripted duels.
+
+### F214 — Pathfinding is troop movement: re-purpose the chapter
+
+> Since we are making an RTS game where players only need to focus on the building phase, then building placement is
+> both defensive and offensive. Defensive because it disrupts the enemy path-finding towards the nexus or valuable
+> resources. Offensive because it initiates the troop formation which makes the troops more efficient.
+>
+> So, in this game "pathfinding" is more than just moving, it is "troops movement". And I think we should re-purpose
+> the spec and docs on pathfinding to be more generally troops movement.
+
+**Built.** [`movement.md`](../../system-design/movement.md) is now the troop movement chapter: what a player should be
+able to predict first, then one section for each part he listed, then the machinery that was the whole chapter before.
+
+### F215 — Build Phase and Battle Round
+
+> Build Phase vs Battle Round: it's worth covering the basics; units are idle during the build phase and only attack
+> during battle rounds. This is the will of the nexus.
+
+**Built** as the chapter's first section. Recall is gone since the kept front: survivors stay and regroup between rounds.
+
+### F216 — The enemy Nexus and the central path
+
+> Enemy Nexus: The general idea that the army goal is to reach and destroy the enemy nexus. The army follows a central
+> A* path that goes from your Nexus to the enemy Nexus.
+
+**Built** as a section; **Open** on drawing it. There is no A\* line: the army walks a distance field, and the line it
+keeps to is the central path, straight from its own Nexus to the goal. Drawing the march route waits (F230) ([the question](../../milestones/open-questions.md#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to)).
+
+### F217 — Target banners
+
+> Target Banners: this is still a concept, but the idea is that maybe we implement targeting with banners: placing a
+> checkpoint in the map in offensive or defensive mode that units prioritize. The default location is the enemy nexus
+> in offensive mode, but it could be changed to defend a base, or place the army in the center of the map, etc. I also
+> want to experiment with a secondary "skirmish" banner that could be used from some buildings to send spawned troops
+> to a different location. The commander always follows the primary banner. This could make very dynamic and strategic
+> battles, but also complicate the UI. So it will be experimental for now. Placing aggressive banners on the map is a
+> way to create a route, the units go to the banner location first, and from there they keep moving towards the enemy
+> nexus. Placing defensive banners hold strategic locations.
+
+**Scheduled.** Designed in the chapter as an IDEA on the existing machinery (hold is a side's target, built; attack is a
+waypoint that needs no memory); three stages agreed (F230), the stance and the banner steps of the runs milestone.
+
+### F218 — Troop spawning
+
+> Troop Spawning: explains how troops come out of buildings and start moving or attacking
+
+**Built** as a section. Measured on the way: a wave comes out 5 seconds in, about when the fronts first meet, so waves
+are reinforcements and where a building stands decides how soon its wave fights.
+
+### F219 — Troop formation, and a name for going behind the enemy's line
+
+> Troop Formation: explains how troops try to self arrange while moving, frontliners, ranged, long ranged, and
+> backliners (or find the best name for the idea of trying to move behind the enemy line).
+
+**Built** as a section; the formation itself is redesigned by F227, and the name is flanker (F230).
+
+### F220 — Targeting and attacking
+
+> Targeting and Attacking: explains how troops change from exploring mode into attack mode, the vision radius, how
+> they choose a target and attack until the target is eliminated, and how they move differently while in battle.
+
+**Built** as a section; commitment is the default (F228, F230).
+
+### F221 — Workers
+
+> Workers: explain the different rules for workers as they try to gather resources.
+
+**Built** as a section: what is built (they flee) and, as guidance for the worker economy, how they will walk to a job,
+flee with a margin and come back.
+
+### F222 — Smart, smooth, predictable
+
+> Units should be smart enough, smooth, but even more important, predictable. Please analyze the current design, and
+> think of ways to make it better. Use the text explanation complexity as a way to see if the system is intuitive
+> enough.
+
+**Built** as the review's evaluation and its six changes in order; his answers are the next round (F223 to F230).
+
+## His answers, 2026-10-27
+
+His reply on the pull request, before the kept front merged. As he wrote it.
+
+### F223 — Refocus: a recommendation first, then the docs, then build
+
+> Refocus the PR as a recommendation ... Rewrite Troops Movement -- yes that doc is better read like this, and our job
+> here is to significantly improve that doc, then cascade the changes to milestones and other resources, and we will
+> follow with implementation after that. ... Complete the docs, and then use sub-agents with Sonnet to implement as much
+> as possible. Any elaborate or significant changes can be addressed on the next PR.
+
+**Built.** [`movement.md`](../../system-design/movement.md) rewritten on his answers; the runs milestone gains a step,
+troop movement, before the stance.
+
+### F224 — The Commander is a regular troop
+
+> Commander -- it does not need to head the army. Sorry if I miss-explained. The commander is just another unit and it
+> should respect the formation rules. Maybe later when we implement banners we can experiment with defensive stands,
+> but for now is easier to just make it a refular troop. Since the commander spawns at the nexus, they will follow the
+> central path more closely, that's it.
+
+**Scheduled** (troop movement): she takes her attack's place in the formation; the central path runs from the Nexus.
+
+### F225 — Troops are not recalled
+
+> Troops only move in a Battle Round -- they are not recalled. That is only the current implementation and I am working
+> to remove that in favor of staying on the battlefield.
+
+**Built** by the kept front (pull request 87); the chapter says so.
+
+### F226 — States, vision, breaching
+
+> Army march -- no A*, i agree, using each tile's distance is much better. That is re-computed when obstacles are
+> destroyed, sounds good.
+> Troop vision 6: this should be configurable for some troops, but a default of 6 sounds good.
+> walk and attack -- we should explain and implement this as states: march (exploring and walking), in battle or
+> retreating.
+> breaking buildings on path -- yes, and that should be the default because troops attack buildings already.
+> Workers flee. Yes that sounds good.
+> Breaching -- yes and this is a good name. While this may happen automatically, the docs should mention this briefly
+> and specifically.
+
+**Scheduled** (troop movement): three states; vision, 6 by default, set per unit; breaching has its own short section.
+
+### F227 — Formation by priority, half speed on the march
+
+> Formation: Age of Empires is a great reference, but not exactly because this is an auto-battler. I wonder if we should
+> take into account the range of the unit for preference. Let's define Formation priority starting from 3 formation
+> types: flankers, melee, and ranged. When same type, pick priority by range, and then by class (e.g. tank, healer,
+> bomber, etc), that way we can make a clear priority list for the formation arrangements. The formation happens
+> passively during march state, here is an idea: half speed if another unit with higher priority is in vision range.
+> During combat engagements, there may be some special conditions by class too that affect the combat movement.
+
+**Scheduled** (troop movement): the priority list and the half-speed rule replace the places behind the Commander and
+the yielding. Special conditions by class in combat wait for units that need them.
+
+### F228 — Commit to a target
+
+> Targeting: Clash Royale is a great reference. But adding vision range in the mix (along with movement state). And
+> yes, our units should have simple targeting. We should find out what's wrong with so much re-targeting. It's ok to
+> re-target if a unit is unable to attack the target for 2-3 seconds but otherwise they should try to commit to their
+> own.
+
+**Scheduled** (troop movement): commitment, letting go after 2½ seconds unable to strike; the cause of the re-targeting
+found and written down.
+
+### F229 — Smoothing, waves, strategies
+
+> Simple -- Fantastic, this is gearing to be a great design. We will follow with implementation but not on this PR yet.
+> Smooth -- take notes, we will work on smoothing the movement as well later
+> Predictabe -- units should improve targeting. Waves are reinforcements, and that is fine. I think to improve this, we
+> will make shorter 30 seconds rounds where building production restarts and syncs at the beginning of the round.
+> Exploitable -- yes, fantastic. Perhaps we can add a section at the end of the movement doc to explore "strategies".
+> This will be useful both to coding agents and players.
+
+**Built** in the chapter: "To smooth later" and "Strategies" sections; waves as reinforcements, with 30-second rounds
+(the kept front) and production restarting each round.
+
+### F230 — The four questions
+
+> draw march routes: not yet. I'm thinking in drawing from the commander, and perhaps using the commander as a
+> re-grouping mechanism, but there are many ither thibgs to change and polish before this.
+> Lock-on: yes of course. Some units may be exceptions in the future, but this should be the default behavior.
+> banners in three stages -- agreed
+> rename flanker -- agreed
+
+**Answered**: lock-on (commitment), the banners' three stages and "flanker" are in the
+[answered questions](../answered-questions.md); the march route stays an
+[open question](../../milestones/open-questions.md#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to),
+parked.

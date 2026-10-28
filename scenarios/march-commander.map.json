@@ -1,7 +1,7 @@
 {
-  "id": "march-guide",
-  "name": "March: the Commander as the army's guide - nothing but a backliner marches ahead of her",
-  "notes": "Vasse marches from the north-west corner on the enemy's Grid Nexus in the south-east, the long way across the map, with four troopers behind her, two marksmen ahead of her and a flanker (the bench's backliner, a runner that goes beyond the line) behind her on a row of its own. She is the guide: the troopers may go up to two columns ahead of her, the marksmen wait until she is eight ahead of them, and only the flanker passes her and goes on. Done when the army reaches the Nexus with her at its head and it falls.",
+  "id": "march-commander",
+  "name": "March: the Commander is a regular troop - she walks in her place and nobody waits for her",
+  "notes": "Vasse marches from the north-west corner on the enemy's Grid Nexus in the south-east, the long way across the map, with four troopers behind her, two marksmen ahead of her and a flanker (the bench's runner that goes beyond the line) behind her on a row of its own. She is a ranged unit like any other, short of the marksmen: the troopers walk past her at full speed, she walks at half speed while they are in her sight, the marksmen settle behind her, and only the flanker, ahead of everyone in the list, is ahead of the troopers. Nothing waits for her, nothing is held back by her. Done when the army reaches the Nexus with its troopers ahead of her and its marksmen behind, and it falls.",
   "grid": {
     "width": 48,
     "height": 16

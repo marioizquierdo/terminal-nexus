@@ -14,7 +14,7 @@ import { measureCurve } from "../src/cli/curve-measure.ts"
 import { levelById, openRound } from "../src/cli/levels.ts"
 import { keepPower } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { ENGAGE_RANGE, engageRange } from "../src/pulse/target.ts"
+import { VISION, visionOf } from "../src/pulse/target.ts"
 import { buildSide, compose, keys, panelLines } from "./build-helpers.ts"
 
 const AVERNO = "unit.citizen.averno"
@@ -34,8 +34,9 @@ test("his level is hers with him in her place: her map, raids and seed, her firs
 test("he charges: he turns to fight from twice as far as every other unit, and his Forward Order makes hits harder", () => {
   const averno = FIXTURE_REGISTRY.get(AVERNO)
   assert.equal(averno.commander, true)
-  assert.equal(engageRange(averno), 2 * ENGAGE_RANGE)
-  assert.equal(engageRange(FIXTURE_REGISTRY.get("unit.citizen.vasse")), ENGAGE_RANGE)
+  assert.equal(visionOf(averno), 12, "Averno's army names its vision")
+  assert.equal(visionOf(averno), 2 * VISION)
+  assert.equal(visionOf(FIXTURE_REGISTRY.get("unit.citizen.vasse")), VISION)
   assert.deepEqual(averno.abilities, [{ kind: "aura", name: "Forward Order", radius: 4, damageDealtPercent: 125 }])
   // A round late: out for the round after the one he falls in, where she is back the next.
   assert.equal(averno.roundsOut, 1)

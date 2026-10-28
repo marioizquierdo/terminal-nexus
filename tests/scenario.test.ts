@@ -11,7 +11,7 @@ import { DEFAULT_PRESET, ScenarioError, TICKS_PER_SECOND, loadScenario, presetDi
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
-import { ENGAGE_RANGE } from "../src/pulse/target.ts"
+import { VISION } from "../src/pulse/target.ts"
 import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 import { creditsEarned } from "../src/match/index.ts"
 import { VIEWPORT_TILES } from "../src/view/compose.ts"
@@ -445,7 +445,7 @@ test("target-head-engage-stand: a side with a target heads for it, fights what c
   for (const event of turned) {
     if (event.kind !== "target.selected") continue
     assert.equal(event.target, "B:runner#1", `${event.entity} went for ${event.target}`)
-    assert.ok(event.distance <= ENGAGE_RANGE, `${event.entity} turned on it from ${event.distance} tiles`)
+    assert.ok(event.distance <= VISION, `${event.entity} turned on it from ${event.distance} tiles`)
   }
   const runnerDied = run.events.find((event) => event.kind === "entity.died" && event.entity === "B:runner#1")
   assert.ok(runnerDied !== undefined, "the runner lived")

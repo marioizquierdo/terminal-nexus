@@ -81,6 +81,8 @@ does), but:
 | `speedTier` | Initiative, lower first. Default: 2 for anything that moves, 9 for a structure. |
 | `collidesWith` | Default: what its layer collides with (a ground unit bumps buildings and units). |
 | `behavior` | Default: `advance` for anything that moves, `static` for a structure. |
+| `line` | The unit's formation type on the march (movement.md, troop formation): `flanker`, `melee` or `ranged`. Default: from its attack, a melee attack is `melee`, any other attack `ranged`, none no place. |
+| `class` | What it is for, the last word in the formation's priority list: `tank`, `fighter`, `support` or `siege`. Default: a heal is `support`, an attack that hits an area (a splash or a burn) `siege`, anything else `fighter`. |
 | `salvage` | Default: 0. |
 | `card` | `title`, `subtitle`, `description`; a Commander's also `pronouns`. |
 | `glyph` | Rows north to south, one character per tile, as wide and tall as `size`. Author lower case: side B is drawn upper case. |
@@ -88,7 +90,8 @@ does), but:
 **The loader holds an entry to the Grid's rules** (RULE — `tests/armies.test.ts`): every number a whole number; a
 glyph exactly its size, plain ASCII, no spaces; **every reach 1 or even** (an attack's range, a radius, a build
 range — a reach of R covers R / 2 rows, so an odd reach above 1 buys a column and no row, grid.md); a melee range of
-1; `roundsOut` only on a Commander; a structure never moves; every ability a kind the game has, with its numbers.
+1; `vision` (how far a unit sees, in columns, an even number or 1: 6 when it says nothing, Averno's 12; never less than its attack's
+range) held to the same rule; `roundsOut` only on a Commander; a structure never moves; every ability a kind the game has, with its numbers.
 
 ### The Commander
 

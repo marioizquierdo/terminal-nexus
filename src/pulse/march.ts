@@ -1,80 +1,49 @@
-// The march (pulse.md, routes; movement.md, the march): how an army walks for its side's goal as one, the Commander
-// at its head and its lines in order. The owner, 2026-10-21: "Is it possible we make that line the commander? ... When
-// the commander is not in battle, then a line from nexus to nexus (or target banner or campaign target marker)", and
-// "rangers would defer to melee units while moving through the map so when they arrive at the enemy they are more or
-// less already prepared in formation ... when marching next to other units they would yield and slowly
-// self-arrange. Movement has many states and we should take advantage of that."
+// The march (pulse.md, routes; movement.md, the three states and troop formation): how an army walks for its side's
+// goal, sorting itself into its formation on the way. The owner, 2026-10-27: "we should explain and implement this as
+// states: march (exploring and walking), in battle or retreating", and "Let's define Formation priority starting from 3
+// formation types: flankers, melee, and ranged. When same type, pick priority by range, and then by class ... The
+// formation happens passively during march state ... half speed if another unit with higher priority is in vision range."
 //
-// **What a unit is doing, in a word** (`MoveState`): a unit *marches* when it walks for its side's goal — its side's
-// target, or the enemy's Grid Nexus while that is beyond its engage reach — rather than for an enemy within its reach;
-// one walking to an enemy within its reach is *engaged*; one that stands is fighting, gathered or idle (*standing*);
-// one that runs is *fleeing*; one stepping off its own roofs the nearest way is *leaving the roof*; and a marcher that
-// waits this tick for its army to come up round it is *yielding*. Only marchers keep the formation; an engaged unit
-// fights as it always did.
+// **What a unit is doing, in a word** (`MoveState`): it *marches* when it has no enemy to turn to — it walks for its
+// side's goal (its target, or the enemy's Grid Nexus while that is beyond its vision), steps off its roof, makes way for
+// a wave, holds at its side's target or has nothing to do; it is in *battle* when it walks to an enemy or fights one; it
+// *retreats* when it runs (a worker from a threat).
 //
-// **Progress.** Each side has one march field a tick: the walk, for a body of one tile, to its march goal over the
-// Grid's rock and the enemy's buildings that stand (units ignored, its own buildings open), worked out only when a
-// yield is in question. A marcher's progress is its walk on it: smaller is further forward.
+// **The formation's one rule.** A unit that is marching, and walking, takes half speed while a marching and walking
+// ally of strictly higher priority (`formationRank`, content/types.ts: flanker, melee, ranged; shorter range first;
+// tank, fighter, support, siege) is within its vision (`vision`, for now): it accrues movement credit on every second
+// tick only (`accrueSlowedCredit`, movement.ts). Nothing else: it never stops, equal priority never slows, and a unit
+// in battle neither slows nor is slowed, so the ranged walk up into range at full speed behind a front that has stopped
+// to fight. Because it only slows, an army sorts itself on the move and no unit can wait on itself. The Commander is a
+// regular troop: she slows and is slowed by her own priority, and leads nothing.
 //
-// **The guide.** A side's Commander, while she stands on the Grid (on the ground), is its guide. The
-// guide line runs from her to the march goal — from the side's own Grid Nexus with no guide — and a marcher more than
+// **The band.** A side's guide line runs from its own Grid Nexus to the middle of its march goal, and a marcher more than
 // `BAND` columns off it takes, among its steps that are equally good, the one that brings it nearest the line
-// (`bandOrder`). While she marches herself, no marcher but a backliner goes further forward than its line's place
-// behind her (`PLACE`); once she fights, her army comes up to fight beside her.
-//
-// **Formation lines** (`lineOf`): a marcher of the short or the long line yields while a marching ally of a line ahead
-// of it (melee before short before long), within `NEAR` columns of it, is not at least `SPACING` columns of progress
-// ahead of it for each line between them. Backliners never yield and are never yielded to. Yielding goes one way, to a
-// line ahead or to the guide, and the guide never yields, so no ring of units waits on itself.
-//
-// **Closing.** The formation is for the way there: a marcher with an enemy within `NEAR` columns of it is closing on
-// the enemy, and yields no more, so a shooter walks up into its range behind a front that has stopped to fight rather
-// than waiting on the allies queued behind it.
+// (`bandOrder`).
 //
 // Worked out once a tick, after perception has set every target and before intents read them, from the state the tick
 // began with: positions, targets, distances and whole numbers only, so a mirrored map marches mirrored and the answer
-// is the same in whatever order units are read. A unit that yields still walks, as far as the tick's routes are
-// concerned (`purposeOf` is unchanged), so it is no wall: an ally behind it routes through it and swaps with it, or
-// releases it (`intents.ts`).
+// is the same in whatever order units are read. Half speed is credit, never a choice of step, so routes, swaps and
+// arbitration are as they were.
 
-import type { FormationLine } from "../content/types.ts"
-import { lineOf } from "../content/types.ts"
+import { formationRank } from "../content/types.ts"
 import { footprintBox, tilesOf } from "../grid/coords.ts"
 import type { Coord, Footprint } from "../grid/types.ts"
 import type { Ground, RankedStep } from "../routing/index.ts"
-import { addWall, DistanceField, goalsInside, goalsNear, groundFor, UNREACHABLE, wallsOf } from "../routing/index.ts"
+import { DistanceField, UNREACHABLE } from "../routing/index.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { Purpose } from "./routes.ts"
 import { purposeOf } from "./routes.ts"
 import type { Actor, TickContext } from "./shared.ts"
-import { distanceBetween, onRoof, resolveTarget, within } from "./shared.ts"
-import { engageRange } from "./target.ts"
+import { onRoof, resolveTarget, within } from "./shared.ts"
+import { visionOf } from "./target.ts"
 
-/** What a unit is doing this tick, as its movement goes: the states movement.md describes a unit's default behaviour
- *  by. */
-export type MoveState = "marching" | "engaged" | "standing" | "fleeing" | "leaving the roof" | "yielding"
-
-/** A line's place in the formation, front to back: a backliner first (it goes beyond the enemy's line, and keeps to
- *  none of its own), then melee, short range, long range. */
-const RANK: Readonly<Record<FormationLine, number>> = { backliner: 0, melee: 1, short: 2, long: 3 }
-
-/**
- * How far behind the guide each line marches, in columns of progress: the melee line may be up to 2 ahead of her,
- * the short range 4 behind her, the long range 8 behind. A marcher yields while it is further forward than that.
- */
-const PLACE: Readonly<Record<Exclude<FormationLine, "backliner">, number>> = { melee: -2, short: 4, long: 8 }
-
-/** How far apart, in progress, a line marches behind the line ahead of it, for each line between them. */
-export const SPACING = 4
-
-/** How near a marching ally of a line ahead must be for a unit to wait on it: 12 columns, measured as the Grid
- *  measures (a row counting two). */
-export const NEAR = 12
+/** What a unit is doing this tick, as its movement goes (movement.md, the three states): it marches when it has no enemy
+ *  to turn to, is in battle when it walks to an enemy or fights one, and retreats when it runs. */
+export type MoveState = "march" | "battle" | "retreat"
 
 /** The guide line's band, each side of it: a marcher further than 6 columns off it is drawn back toward it. */
 export const BAND = 6
-
-const ONE_TILE: Footprint = [{ x: 0, y: 0 }]
 
 /** Where a side marches: its target, or the enemy's Grid Nexus. */
 type MarchGoal = Readonly<{ kind: "area"; area: TargetArea }> | Readonly<{ kind: "nexus"; nexus: Actor }>
@@ -83,31 +52,40 @@ type MarchGoal = Readonly<{ kind: "area"; area: TargetArea }> | Readonly<{ kind:
 type SideMarch = {
   readonly player: PlayerId
   readonly goal: MarchGoal
-  /** The walk from every tile to the goal, for one tile, over rock and the enemy's buildings: worked out the first
-   *  time a yield is in question (`marchFieldOf`). */
-  field?: DistanceField
-  /** Its guide, while it has one: its Commander, on the Grid and on the ground. */
-  readonly guide: Actor | null
   /** The guide line's two ends, in half tiles (a tile's middle is twice its coordinates), or `null` with no line. */
   readonly ends: Readonly<{ from: Coord; to: Coord }> | null
   /** How far each tile is from the guide line, a row counting two columns: worked out the first time it is asked. */
   lane?: DistanceField
 }
 
-/** The march this tick, for every side: who marches, who yields, and each side's field and line. */
+/** The march this tick, for every side: who marches and who is slowed, and each side's line. */
 export class March {
   private readonly context: TickContext
   private readonly sides: ReadonlyMap<PlayerId, SideMarch>
-  /** The ordinals of the units that march this tick, yielders included. */
+  /** The ordinals of the units that walk for their side's goal this tick. */
   readonly marching: ReadonlySet<number>
-  /** The ordinals of the marchers that wait this tick for their army. */
-  readonly yielding: ReadonlySet<number>
+  /** The ordinals of the marchers that walk at half speed this tick: an ally of higher priority marches in their vision. */
+  readonly slowed: ReadonlySet<number>
+  /** The priority (`formationRank`) of each marcher with a place in the formation, by ordinal. */
+  private readonly ranks: ReadonlyMap<number, number>
 
-  constructor(context: TickContext, sides: ReadonlyMap<PlayerId, SideMarch>, marching: ReadonlySet<number>, yielding: ReadonlySet<number>) {
+  constructor(context: TickContext, sides: ReadonlyMap<PlayerId, SideMarch>, marching: ReadonlySet<number>, slowed: ReadonlySet<number>, ranks: ReadonlyMap<number, number>) {
     this.context = context
     this.sides = sides
     this.marching = marching
-    this.yielding = yielding
+    this.slowed = slowed
+    this.ranks = ranks
+  }
+
+  /**
+   * Whether `passer` has the right of way over `blocker`, an ally of its own side that stands in its way: both march
+   * with a place in the formation, and `passer` has the strictly higher priority. A slower, lower unit gives way by
+   * swapping tiles, so an army sorts itself on the move (`intents.ts`) instead of queueing behind its slowest.
+   */
+  passes(passer: Actor, blocker: Actor): boolean {
+    const first = this.ranks.get(passer.ordinal)
+    const second = this.ranks.get(blocker.ordinal)
+    return first !== undefined && second !== undefined && first < second && passer.player === blocker.player
   }
 
   /**
@@ -154,37 +132,30 @@ export class March {
   }
 }
 
-/** The state `actor` is in this tick, given its purpose (`purposeOf`) and the tick's march. */
-export function moveStateOf(context: TickContext, actor: Actor, purpose: Purpose): MoveState {
-  if (purpose.kind === "stand") return "standing"
-  if (purpose.kind === "flee") return "fleeing"
+/** The state `actor` is in this tick, given its purpose (`purposeOf`) and its target (`resolveTarget`). */
+export function moveStateOf(actor: Actor, purpose: Purpose, target: Actor | null): MoveState {
+  if (purpose.kind === "flee") return "retreat"
+  if (purpose.kind === "stand") return target !== null && actor.definition.behavior !== "flee" ? "battle" : "march"
   const goal = purpose.goal
-  if (goal.kind === "ground") return "leaving the roof"
-  if (goal.kind === "unit" && !marchesOn(actor, goal.target)) return "engaged"
-  return context.march?.yielding.has(actor.ordinal) === true ? "yielding" : "marching"
+  return goal.kind === "unit" && !marchesOn(actor, goal.target) ? "battle" : "march"
 }
 
 /** Whether a unit walking to `target` walks for its side's goal: the enemy's Grid Nexus, while it is beyond the
- *  unit's engage reach. */
-function marchesOn(actor: Actor, target: Actor): boolean {
-  return target.definition.nexus === true && target.player !== actor.player && !within(actor, target, engageRange(actor.definition))
+ *  unit's vision. */
+export function marchesOn(actor: Actor, target: Actor): boolean {
+  return target.definition.nexus === true && target.player !== actor.player && !within(actor, target, visionOf(actor.definition))
 }
 
-/** Whether a purpose is a march: a walk to its side's target, or to the enemy's Nexus while it is beyond reach. */
+/** Whether a purpose is a march on foot: a walk to its side's target, or to the enemy's Nexus while it is beyond sight. */
 function isMarch(actor: Actor, purpose: Purpose): boolean {
   if (purpose.kind !== "walk") return false
   const goal = purpose.goal
   return goal.kind === "area" || (goal.kind === "unit" && marchesOn(actor, goal.target))
 }
 
-/** A unit's line in the march: its own, on the ground; a flyer passes over the ranks and keeps none. */
-function keepsLine(actor: Actor): FormationLine | null {
-  return actor.definition.layer === "air" ? null : lineOf(actor.definition)
-}
-
 /**
- * The tick's march: who marches, and who yields. Read after perception has set every target (`perception.ts`), from
- * the state the tick began with; a side with nothing marching costs nothing.
+ * The tick's march: who walks for their side's goal, and who of them is slowed. Read after perception has set every
+ * target (`perception.ts`), from the state the tick began with; a side with nothing marching costs nothing.
  */
 export function marchOf(context: TickContext): March {
   const marching = new Set<number>()
@@ -198,45 +169,27 @@ export function marchOf(context: TickContext): March {
     else side.push(actor)
   }
   const sides = new Map<PlayerId, SideMarch>()
-  const yielding = new Set<number>()
+  const slowed = new Set<number>()
+  const ranks = new Map<number, number>()
   for (const [player, marchers] of bySide) {
     const side = sideMarchOf(context, player)
     if (side === null) continue
     sides.set(player, side)
-    const guideMarches = side.guide !== null && marching.has(side.guide.ordinal)
-    for (const ordinal of yieldersOf(context, side, marchers, guideMarches)) yielding.add(ordinal)
+    for (const ordinal of slowedAmong(context, marchers, ranks)) slowed.add(ordinal)
   }
-  return new March(context, sides, marching, yielding)
+  return new March(context, sides, marching, slowed, ranks)
 }
 
-/** One side's march goal, field, guide and line, or `null` when it has nowhere to march to. */
+/** One side's march goal and guide line, or `null` when it has nowhere to march to. */
 function sideMarchOf(context: TickContext, player: PlayerId): SideMarch | null {
   const area = context.targets[player]
   const nexus = area === undefined ? context.actors.find((other) => other.player !== player && !other.pendingDead && other.definition.nexus === true) : undefined
   const goal: MarchGoal | null = area !== undefined ? { kind: "area", area } : nexus !== undefined ? { kind: "nexus", nexus } : null
   if (goal === null) return null
-  // Her side's Commander, on the Grid and on the ground.
-  const guide = context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.commander === true && other.definition.layer !== "air") ?? null
   const to = goal.kind === "area" ? { x: 2 * goal.area.x + goal.area.width - 1, y: 2 * goal.area.y + goal.area.height - 1 } : middleOf(goal.nexus)
-  const home = guide ?? context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.nexus === true)
-  return { player, goal, guide, ends: home === undefined ? null : { from: middleOf(home), to } }
-}
-
-/** `side`'s march field: the walk to its goal for a body of one tile, over the Grid's rock and the enemy's buildings
- *  that stand (units are no walls to a march, and its own buildings are open). Worked out once a tick, when asked. */
-function marchFieldOf(context: TickContext, side: SideMarch): DistanceField {
-  if (side.field === undefined) {
-    const walls = wallsOf(context.index.grid, "impassable")
-    for (const other of context.actors) {
-      if (other.pendingDead || other.player === side.player || other.definition.layer !== "obstacles") continue
-      addWall(walls, other.anchor, other.definition.footprint)
-    }
-    const ground = groundFor(walls, ONE_TILE)
-    const goal = side.goal
-    const goals = goal.kind === "area" ? goalsInside(ground, ONE_TILE, goal.area) : goalsNear(ground, ONE_TILE, goal.nexus.anchor, goal.nexus.definition.footprint, { kind: "touch", steps: 1 })
-    side.field = new DistanceField(ground, goals)
-  }
-  return side.field
+  // The line starts at the side's own Grid Nexus: the Commander is a regular troop and leads nothing.
+  const home = context.actors.find((other) => other.player === player && !other.pendingDead && other.definition.nexus === true)
+  return { player, goal, ends: home === undefined ? null : { from: middleOf(home), to } }
 }
 
 /** The middle of an actor's body, in half tiles: twice its coordinates for a tile, between two tiles for an even
@@ -244,11 +197,6 @@ function marchFieldOf(context: TickContext, side: SideMarch): DistanceField {
 function middleOf(actor: Actor): Coord {
   const box = footprintBox(actor.anchor, actor.definition.footprint)
   return { x: box.left + box.right, y: box.top + box.bottom }
-}
-
-/** The walk to the field's goal from `actor`'s nearest tile. */
-function progressOn(field: DistanceField, actor: Actor): number {
-  return nearestOn(field, actor.anchor, actor.definition.footprint)
 }
 
 /** The least of `field` over the tiles of a body anchored at `anchor`: the same for a body and its mirror. */
@@ -259,69 +207,37 @@ function nearestOn(field: DistanceField, anchor: Coord, body: Footprint): number
 }
 
 /**
- * Which of a side's marchers yield this tick. A marcher with a line, other than a backliner and the guide, yields when
- * it is further forward than its line's place behind the guide while she marches (**pacing**), or, in the short or the
- * long line, when a marching ally of a line ahead of it within `NEAR` columns is not `SPACING` columns of progress ahead
- * of it for each line between them (**lines**); unless an enemy stands within `NEAR` columns of it (**closing**). Each
- * against the progress every one had as the tick began.
+ * Which of a side's marchers walk at half speed this tick: one with a place in the formation (`formationRank`: not a
+ * flyer, not a unit with no attack, not one still on its own roof, which steps off first) while a marching ally of strictly
+ * higher priority stands within its vision (`vision`, measured as range is: a row counting two columns). Each
+ * against the positions the tick began with. `ranks` is given each placed marcher's priority.
  */
-function yieldersOf(context: TickContext, side: SideMarch, marchers: readonly Actor[], guideMarches: boolean): number[] {
-  type Member = Readonly<{ actor: Actor; line: FormationLine; rank: number; progress: number }>
-  const placed: Array<Readonly<{ actor: Actor; line: FormationLine }>> = []
-  for (const actor of marchers) {
-    const line = keepsLine(actor)
-    // A unit still on its own roof keeps no place yet: it steps off first, so the building has room for the next.
-    if (line === null || onRoof(context, actor)) continue
-    placed.push({ actor, line })
-  }
-  // Nothing to work out when no one could yield: no guide marching ahead of anyone, and no line behind another.
-  const ranks = placed.filter((each) => each.line !== "backliner" && each.actor !== side.guide).map((each) => RANK[each.line])
-  const paced = guideMarches && ranks.length > 0
-  const lined = ranks.some((rank) => rank >= 2) && ranks.some((rank) => rank < Math.max(...ranks))
-  if (!paced && !lined) return []
-  const field = marchFieldOf(context, side)
-  const guideProgress = side.guide === null ? UNREACHABLE : progressOn(field, side.guide)
+function slowedAmong(context: TickContext, marchers: readonly Actor[], ranks: Map<number, number>): number[] {
+  type Member = Readonly<{ actor: Actor; rank: number; vision: number }>
   const members: Member[] = []
-  for (const { actor, line } of placed) {
-    const progress = progressOn(field, actor)
-    if (progress !== UNREACHABLE) members.push({ actor, line, rank: RANK[line], progress })
+  for (const actor of marchers) {
+    const rank = formationRank(actor.definition)
+    // A unit still on its own roof keeps no place yet: it steps off first, so the building has room for the next.
+    if (rank === null || onRoof(context, actor)) continue
+    members.push({ actor, rank, vision: visionOf(actor.definition) })
+    ranks.set(actor.ordinal, rank)
   }
-  // The lines ahead, for the short and long lines to look for: the melee and short lines' members.
-  const ahead = members.filter((member) => member.rank === 1 || member.rank === 2)
-  const enemies = context.actors.filter((other) => other.player !== side.player && !other.pendingDead)
-  const closing = (actor: Actor): boolean => closingOn(actor, enemies)
-  const yielders: number[] = []
+  if (members.length < 2) return []
+  const first = Math.min(...members.map((member) => member.rank))
+  const slowed: number[] = []
   for (const member of members) {
-    if (member.line === "backliner" || member.actor === side.guide) continue
-    if (guideMarches && guideProgress !== UNREACHABLE && member.progress < guideProgress + PLACE[member.line]) {
-      if (!closing(member.actor)) yielders.push(member.actor.ordinal)
-      continue
-    }
-    if (member.rank < 2) continue
-    const waits = ahead.some(
+    if (member.rank === first) continue
+    const sees = members.some(
       (ally) =>
         ally.rank < member.rank &&
-        ally.actor !== member.actor &&
-        ally.progress > member.progress - SPACING * (member.rank - ally.rank) &&
-        // Cheap first: two bodies far apart on the Grid are never near.
-        Math.abs(ally.actor.anchor.x - member.actor.anchor.x) <= NEAR + 8 &&
-        Math.abs(ally.actor.anchor.y - member.actor.anchor.y) <= NEAR / 2 + 8 &&
-        distanceBetween(ally.actor, member.actor) <= NEAR,
+        // Cheap first: two bodies far apart on the Grid are never within sight.
+        Math.abs(ally.actor.anchor.x - member.actor.anchor.x) <= member.vision + 8 &&
+        Math.abs(ally.actor.anchor.y - member.actor.anchor.y) <= member.vision / 2 + 8 &&
+        within(member.actor, ally.actor, member.vision),
     )
-    if (waits && !closing(member.actor)) yielders.push(member.actor.ordinal)
+    if (sees) slowed.push(member.actor.ordinal)
   }
-  return yielders
-}
-
-/** Whether an enemy of any kind stands within `NEAR` columns of `actor`, measured as `distanceBetween` measures (a row
- *  counting two columns): `enemies` are the other side's, as the tick began. */
-function closingOn(actor: Actor, enemies: readonly Actor[]): boolean {
-  for (const enemy of enemies) {
-    // Cheap first: a body far off on the Grid is never near.
-    if (Math.abs(enemy.anchor.x - actor.anchor.x) > NEAR + 8 || Math.abs(enemy.anchor.y - actor.anchor.y) > NEAR / 2 + 8) continue
-    if (distanceBetween(actor, enemy) <= NEAR) return true
-  }
-  return false
+  return slowed
 }
 
 /**

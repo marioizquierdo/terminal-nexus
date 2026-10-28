@@ -106,6 +106,7 @@ _The dated record of the project, oldest first; never required reading. The pull
 | 2026-10-24 | Runs designed as a whole game (a route of stops, a drafted army, a Nexus whose health has to last) and its first part built: a run starts with a small army and drafts after each won battle — a structure, a Nexus power or a new Doctrine, or a removal, or requisition | [log](feedback/2026-10-24-runs-gameplay.md), [#86](https://github.com/marioizquierdo/terminal-nexus/pull/86) |
 | 2026-10-26 | The core loop opened: what an army does between rounds (home, fall back, stay), orders in the Build Phase and the march line shown, measured in 3888 scripted duels | [log](feedback/2026-10-26-core-loop.md), [report](reports/2026-10-26-between-rounds.md), [notes](../milestones/core-loop.md) |
 | 2026-10-27 | The kept front: survivors stay and regroup between rounds in every mode, the walk home removed, 30-second rounds and eight to a battle, buildings push troops aside | [log](feedback/2026-10-26-core-loop.md), [notes](../milestones/core-loop.md) |
+| 2026-10-27 | Troop movement: the movement chapter re-purposed around what a player should predict, a review of why it works this way and how it plays, measured on scripted duels, and four questions (march route, lock-on, banners, flanker) | [#88](https://github.com/marioizquierdo/terminal-nexus/pull/88), [report](reports/2026-10-26-troop-movement-review.md), [feedback](feedback/2026-10-26-troop-movement.md) |
 
 ## Where the detail is
 

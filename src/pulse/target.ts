@@ -7,7 +7,7 @@
 // A side's **fighting units** (on the move, `advance` behaviour: not a worker that flees, not a healer, not
 // a structure) follow its target:
 //
-// - **they engage what comes within reach on the way**: the nearest enemy within `engageRange` of them, by
+// - **they engage what comes within reach on the way**: the nearest enemy within `vision` of them, by
 //   the ordinary scoring (`perception.ts`);
 // - **with nothing within reach they head for the target**: for its nearest tile they could stand on, by the
 //   ordinary step rule, so the ones who come later fill it rather than queue at its edge (`intents.ts`);
@@ -34,17 +34,17 @@ import { stepsBetween } from "./shared.ts"
 /**
  * How near an enemy must come before a unit heading for its side's target turns to fight it,
  * measured as range is (`within`): 6 columns either side, 3 rows up and down. One value for every unit but a Commander
- * who charges (`ContentDef.engageRange`), and never
+ * who charges (`ContentDef.vision`), and never
  * less than a unit's own attack range, so nothing walks past an enemy it could have shot. Six, a marksman's range:
  * a squad turns on what comes at it from the next few tiles, not on what stands half the map away.
  */
-export const ENGAGE_RANGE = 6
+export const VISION = 6
 
-/** How near an enemy must come before `definition` turns from its side's target to fight it: `ENGAGE_RANGE` (or the
- *  content's own `engageRange`, a charging Commander's), or its own attack's range when that is longer, in whole rows
+/** How near an enemy must come before `definition` turns from its side's target to fight it: `VISION` (or the
+ *  content's own `vision`, a charging Commander's), or its own attack's range when that is longer, in whole rows
  *  (`wholeRows`) whatever the content says. */
-export function engageRange(definition: ContentDef): number {
-  return wholeRows(Math.max(definition.engageRange ?? ENGAGE_RANGE, definition.attack?.range ?? 0))
+export function visionOf(definition: ContentDef): number {
+  return wholeRows(Math.max(definition.vision ?? VISION, definition.attack?.range ?? 0))
 }
 
 /** Whether a unit of this content follows its side's target: one that moves and fights (`advance`), not a
