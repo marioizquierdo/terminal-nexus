@@ -11,7 +11,7 @@
 //
 // **The formation's one rule.** A unit that is marching, and walking, takes half speed while a marching and walking
 // ally of strictly higher priority (`formationRank`, content/types.ts: flanker, melee, ranged; shorter range first;
-// tank, fighter, support, siege) is within its vision (`engageRange`, for now): it accrues movement credit on every second
+// tank, fighter, support, siege) is within its vision (`vision`, for now): it accrues movement credit on every second
 // tick only (`accrueSlowedCredit`, movement.ts). Nothing else: it never stops, equal priority never slows, and a unit
 // in battle neither slows nor is slowed, so the ranged walk up into range at full speed behind a front that has stopped
 // to fight. Because it only slows, an army sorts itself on the move and no unit can wait on itself. The Commander is a
@@ -36,7 +36,7 @@ import type { Purpose } from "./routes.ts"
 import { purposeOf } from "./routes.ts"
 import type { Actor, TickContext } from "./shared.ts"
 import { onRoof, resolveTarget, within } from "./shared.ts"
-import { engageRange } from "./target.ts"
+import { visionOf } from "./target.ts"
 
 /** What a unit is doing this tick, as its movement goes (movement.md, the three states): it marches when it has no enemy
  *  to turn to, is in battle when it walks to an enemy or fights one, and retreats when it runs. */
@@ -142,8 +142,8 @@ export function moveStateOf(actor: Actor, purpose: Purpose, target: Actor | null
 
 /** Whether a unit walking to `target` walks for its side's goal: the enemy's Grid Nexus, while it is beyond the
  *  unit's vision. */
-function marchesOn(actor: Actor, target: Actor): boolean {
-  return target.definition.nexus === true && target.player !== actor.player && !within(actor, target, engageRange(actor.definition))
+export function marchesOn(actor: Actor, target: Actor): boolean {
+  return target.definition.nexus === true && target.player !== actor.player && !within(actor, target, visionOf(actor.definition))
 }
 
 /** Whether a purpose is a march on foot: a walk to its side's target, or to the enemy's Nexus while it is beyond sight. */
@@ -209,7 +209,7 @@ function nearestOn(field: DistanceField, anchor: Coord, body: Footprint): number
 /**
  * Which of a side's marchers walk at half speed this tick: one with a place in the formation (`formationRank`: not a
  * flyer, not a unit with no attack, not one still on its own roof, which steps off first) while a marching ally of strictly
- * higher priority stands within its vision (`engageRange`, measured as range is: a row counting two columns). Each
+ * higher priority stands within its vision (`vision`, measured as range is: a row counting two columns). Each
  * against the positions the tick began with. `ranks` is given each placed marcher's priority.
  */
 function slowedAmong(context: TickContext, marchers: readonly Actor[], ranks: Map<number, number>): number[] {
@@ -219,7 +219,7 @@ function slowedAmong(context: TickContext, marchers: readonly Actor[], ranks: Ma
     const rank = formationRank(actor.definition)
     // A unit still on its own roof keeps no place yet: it steps off first, so the building has room for the next.
     if (rank === null || onRoof(context, actor)) continue
-    members.push({ actor, rank, vision: engageRange(actor.definition) })
+    members.push({ actor, rank, vision: visionOf(actor.definition) })
     ranks.set(actor.ordinal, rank)
   }
   if (members.length < 2) return []

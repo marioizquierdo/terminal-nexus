@@ -255,17 +255,21 @@ test("the bench medic, the one healer before buildings could heal, heals exactly
 })
 
 // Pinned again when the Grid Nexus came to fight back: its shots are among the battle's.
+// Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
+// (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 const PINNED_AID_STATION = [
-  "7fa0b15cba3e4212e29a64fc80250aba4abc348ebda82b0055c2f74e33292dad",
-  "cb90fedfe306c6bf3c974f6f6ff9bf85927adb41b6e76f7a2f85c05f4f8a35bf",
+  "81f2d4de6a136420014eafcff90baefcd47f30e47d39655c5f43a5e64be71af3",
+  "4f9602c34e41efda28e1407e2aab36d892197d01b5be69b9c81c264da4835a93",
 ]
 // Its state's hash was the one from before the Aid Station, its events' pinned again when a unit among equally near
 // enemies came to keep the one it holds, then take the weakest (no side wins by where it stands): the same battle,
 // told with other target events. Both pinned again when units came to walk by routes: the battle's walks changed,
 // not what the medic heals.
+// Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
+// (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 const PINNED_MEDIC = [
-  "cc003bb315d549ad8a09f2d6acf3e7ac3b2df2d2003d8a797df1885e649f3803",
-  "52f5bbd0dedde1bec4c8d216b51ba5716c80a760ff52cc0fc09f80f648b30acc",
+  "6491de8d9c2e2281055ac49771121e3bfd92897ee2405a5d5cae2eaf5f754be1",
+  "b09cc15c33fc2d3b437d45579e9bc53c09c76139d8ef7a8b3ee17cf5346f810a",
 ]
 
 // --- How a heal looks ----------------------------------------------------------------------------------

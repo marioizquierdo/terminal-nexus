@@ -264,7 +264,7 @@ export function opening(input: OpeningInput): Opening {
     // `firstTicks` away, and this keeps it so when the recipe itself changed between rounds — a building
     // given another wave, or none any more.
     .map((entry) => {
-      const { productionCooldown: _cooldown, produced: _produced, owed: _owed, ...entity } = entry.carried as EntityState
+      const { productionCooldown: _cooldown, produced: _produced, owed: _owed, commitGap: _gap, commitStall: _stall, ...entity } = entry.carried as EntityState
       // Never more health than its content now allows: a content changed between rounds may allow less.
       return { ...entity, hp: Math.min(entity.hp, entry.definition.maxHp), anchor: entry.anchor, ...productionFields(entry.definition) }
     })

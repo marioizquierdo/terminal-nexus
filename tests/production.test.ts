@@ -329,8 +329,9 @@ test("a wave's survivors stay on the Grid; the regroup and the next opening star
   assert.ok(second.final.tick >= 180, `round 2 ended at tick ${second.final.tick}, before a second wave could come`)
   // The fourth of each wave comes late: round 1 now leaves one more survivor (the army sorts itself on the march and its
   // Commander leads nothing, so the fight is played differently), and the Nexus's 12 places hold the last trooper of each
-  // wave back until a unit of the army falls (a wave the army's supply holds back, above).
-  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 92, 180, 180, 180, 190])
+  // wave back until a unit of the army falls (a wave the army's supply holds back, above). Where the fourth of each wave comes
+  // moved again (85 and 226) once a unit kept the target it holds to its fall: the army loses its units on other ticks.
+  assert.deepEqual(ticksOf(second.events), [60, 60, 60, 85, 180, 180, 180, 226])
 })
 
 test("PERIMETER's first round with the Barracks's wave hashes the same on every run and on both runtimes", () => {
@@ -350,4 +351,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // again when an army came to march: its lines yielding in order and its marchers keeping to a band along the way to
 // the line it holds, and again when the raid's runners went back to the melee line; and again when the army came to
 // sort itself on the march by half speed, the Commander a regular troop leading nothing.
-const PINNED_ROUND_1 = "e671b98b57b0ec8d0b339dfc4b0bed7949e35f9db74105c57c040cba9836f101"
+// Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
+// (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
+const PINNED_ROUND_1 = "c091635c566f3e6f98cfde83fe6dbb5f4e89658c728ef2585df0cd5071e40cc8"

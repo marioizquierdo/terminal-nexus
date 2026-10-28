@@ -41,7 +41,7 @@ import type { MissionDefinition } from "../src/mission/index.ts"
 import { validateMission } from "../src/mission/index.ts"
 import { contextFor, resolvePulse, stepCost, stepTick } from "../src/pulse/index.ts"
 import { fleeTrigger } from "../src/pulse/perception.ts"
-import { engageRange, followsTarget } from "../src/pulse/target.ts"
+import { visionOf, followsTarget } from "../src/pulse/target.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
@@ -640,7 +640,9 @@ test("the battle with the most rules in it resolves the same way on every run, a
 // head for the enemy's Nexus, turning only to what comes within its reach, when the Grid Nexus came to fight back,
 // and when an army came to march in its lines: the same losses, 7 of 10 and 9 of 11; and again when an army came to
 // sort itself on the march by half speed, the Commander a regular troop: the same losses still, 7 and 9).
-const PINNED_BATTLE = ["119f5fc6309ba6fb94a3221c6efb7b34b8847f7209cdf974ca2485417e7dc3b9", "2834dcd91055210477584ef149f431dfa36c4a5ca7bf3bf460a4755a4824cd88"] as const
+// Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
+// (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
+const PINNED_BATTLE = ["0d47933d019fc875c2f63500ef59befa482b5ff1068b1278f80958c88491bffe", "979be6f7659a0466feee9dc505760481aed9293a0849a6aeeaa94b78982e21a0"] as const
 
 test("every reach the content and the Experiments offer is a whole number of rows, 1, which is touching, or even, and so is every reach the rules work out from them", () => {
   // A reach of R covers R / 2 rows up and down, rounded down, so an odd reach above 1 buys a column at each end of
@@ -658,7 +660,7 @@ test("every reach the content and the Experiments offer is a whole number of row
       "construction radius": definition.constructionRadius,
       // Worked out from those: the reach a unit heading for its side's target turns to fight within, and how near
       // an attacker may come before a worker runs from it.
-      "engage reach": followsTarget(definition) ? engageRange(definition) : undefined,
+      "engage reach": followsTarget(definition) ? visionOf(definition) : undefined,
       "flight trigger": definition.attack === undefined ? undefined : fleeTrigger(definition),
     }
     for (const [what, reach] of Object.entries(reaches)) if (reach !== undefined && !whole(reach)) odd.push(`${id} ${what} ${reach}`)
@@ -672,5 +674,5 @@ test("every reach the content and the Experiments offer is a whole number of row
   assert.deepEqual(odd, [])
   // Whatever the content says: an attack that reached 7 would turn its unit at 8, and send a worker running at 10.
   const seven: ContentDef = { ...FIXTURE_REGISTRY.get(TROOPER), attack: { kind: "ranged", range: 7, damage: 1, cooldownTicks: 12 } }
-  assert.deepEqual([engageRange(seven), fleeTrigger(seven)], [8, 10])
+  assert.deepEqual([visionOf(seven), fleeTrigger(seven)], [8, 10])
 })

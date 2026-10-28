@@ -222,19 +222,22 @@ test("the named scenario is the same every run, and on both runtimes, whatever s
 // taking whole beats, one across and two up or down. Round 1 is the same whatever she sits out; from round 2 on,
 // Vasse, back beside the Nexus, fights in it. Rounds 2 and 3 pinned again when the survivors came to stay on the Grid and
 // regroup between rounds rather than walk home (2026-10-26).
+// Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
+// (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 const PINNED_ROUNDS = [
-  "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
-  "86be80c8fa8f41c517fa9aebe4b2492ba433402a57063bbb1993438d3e71d958",
-  "0802c24e2939033c13db08ec27a01f252dc4be1976b543f375e60455ea3e5b9b",
+  "6f7a8752013b21def2d83f95be11f413167f4b6820ce83e63c9bc3ccbb4d4fa9",
+  "1ee5ff1412c79fd5e789a2c77ea355b58776bb868a2d99fc7f506cbc8f848c1c",
+  "e6f1030ecfd5b93d07bf30c331483de71cef1eb63230666296263e3333c360e1",
 ]
 
 // The same three rounds with a test-only Vasse who sits one round out: the rule as it stood before Vasse came back at
 // once. Both sets pinned again when every tie came to go by what a unit faces, then a draw (no side wins by where it
 // stands), and when units came to walk by routes; and rounds 2 and 3 when the survivors came to regroup between rounds (2026-10-26).
+// Both sets pinned again for commitment (a unit keeps the target it holds), above.
 const PINNED_SITTING_OUT = [
-  "a1fcb4819094baac765e5ec929a87e942b4d7a955214fadcc723894d67ad8b86",
-  "6e0cf9eb3284a26bc53d4d6cea2baaff0bfdbb6aec951158fb3e714e5f2ad003",
-  "d7a405d9afb6220854ccb7253bebaa827ca7171d84a7ae36ebe36a6360bc576f",
+  "6f7a8752013b21def2d83f95be11f413167f4b6820ce83e63c9bc3ccbb4d4fa9",
+  "4ddb07c5f0a6bc72868244103b7d3ff6be8aaf621509cf7cc11e2121a6c3d5a1",
+  "26326fd49f4d6cdda43f8360f4509ce15efbe9371105e3e19def4e0747505a25",
 ]
 
 // --- The rule's edges --------------------------------------------------------------------------------

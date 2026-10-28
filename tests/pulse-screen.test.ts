@@ -245,12 +245,13 @@ test("at 80x24 the result's words are never cut off, whichever way the Pulse end
 })
 
 /**
- * A won Pulse whose survivors end far from home: the first of the defence's buildings alone. With the full defence, once
+ * A won Pulse whose survivors end far from home: the last of the defence's buildings alone, the Hatchery. With the full defence, once
  * the raid's runners went for what stands behind the front (the march's backliners), its one survivor ended at home,
- * with no walk to draw.
+ * with no walk to draw; and once a unit keeps the target it holds (commitment) the first Turret alone leaves no
+ * survivor at all, where the Hatchery alone leaves one.
  */
 function walkingHome(): Played {
-  const played = play({ plan: [DEFENCE[0]!] })
+  const played = play({ plan: [DEFENCE[2]!] })
   at(played, 0)
   return played
 }

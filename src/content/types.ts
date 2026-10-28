@@ -163,11 +163,11 @@ export type ContentDef = Readonly<{
    */
   roundsOut?: number
   /**
-   * How near an enemy must come before this unit turns from its side's target to fight it (`engageRange`,
+   * How near an enemy must come before this unit turns from its side's target to fight it (`vision`,
    * `src/pulse/target.ts`), when it is not the shared one: Averno's charge, a Commander who leaves the line for
    * what comes at it. Measured as range is; undefined for every other unit, which keeps the shared reach.
    */
-  engageRange?: number
+  vision?: number
   /**
    * What it does on its own besides fighting, each run by the code its `kind` names (`src/abilities/`): an aura, a
    * bounty on what dies near it, a lucky hit. The kernel calls each kind's hooks at the moments it declares
@@ -312,6 +312,8 @@ export function freshEntityFields(definition: ContentDef): Readonly<{
   windup: number
   spawnCooldown: number
   focusStreak: number
+  commitGap?: undefined
+  commitStall?: undefined
   productionCooldown?: number
   produced?: number
   owed?: number
@@ -323,6 +325,10 @@ export function freshEntityFields(definition: ContentDef): Readonly<{
     windup: definition.attack?.windupTicks ?? 0,
     spawnCooldown: definition.spawn?.intervalTicks ?? 0,
     focusStreak: 0,
+    // Holding no target yet: the keys are present as undefined so a spread over a carried entity clears them, and the
+    // canonical form skips them.
+    commitGap: undefined,
+    commitStall: undefined,
     ...productionFields(definition),
   }
 }
