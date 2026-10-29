@@ -8,8 +8,10 @@ it is done.*
 - **Watch troops move** ([the chapter](../system-design/movement.md)): a Challenge run, or
   `./bin/grid.ts scenarios/march-lines` and `scenarios/march-commander`. Ranged units now walk at half speed while a
   trooper is near and fall in behind on the move; Vasse is a regular troop; a unit keeps its target until it falls or it
-  has gone 2½ seconds unable to strike it. Battles run a little longer, and a unit no longer turns to a nearer attacker:
-  say whether that reads as commitment or as stubbornness.
+  has gone 2½ seconds unable to strike it, or at once if its enemy is walled in; then it takes one it can reach, or walks
+  on round the fight. Battles run a little longer, and a unit no longer turns to a nearer attacker: say whether that
+  reads as commitment or as stubbornness, and whether a fight on open ground, `./bin/grid.ts scenarios/route-crowd`,
+  reads as troops going round.
 - **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge run or any campaign level. Rounds are 30
   seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
   seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2

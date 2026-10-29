@@ -28,7 +28,8 @@ Everything below adds up to seven rules:
 4. **Vision is 6 columns** (3 rows) for most troops, and it sees buildings as well as units: whatever of the enemy's
    comes into it, it fights, the nearest first.
 5. **A troop commits to its target**: it fights it until it falls, and lets go only when it has not been able to strike
-   it for 2½ seconds.
+   it for 2½ seconds, or at once when the enemy is walled in and cannot be reached. Then it takes the nearest enemy it
+   can reach, and with none it walks on round the fight toward the enemy Nexus.
 6. **The formation sorts itself on the march**: flankers in front, then melee, then ranged, shorter range before longer.
    A troop that should be further back walks at half speed while one that should be ahead of it is in its vision.
 7. **Buildings are walked round until there is no way round; then the troops breach** the fewest buildings in the way.
@@ -38,6 +39,16 @@ Rules 4 and 7 are the defensive half of building placement: a building within 6 
 troops off the march to fight there, and a line of buildings bends the way they walk or, sealed, chooses where they
 breach. Rule 6 and where production stands are the offensive half: a building's wave comes out a few seconds into
 every round and walks up to the front, sorting itself into the formation as it goes.
+
+## A round, in plain words
+
+The Nexus calls the round. Your troops start where the last round left them, standing in ranks, and each building's wave
+steps out a few seconds in. Everyone walks toward the enemy Nexus by the shortest way round rock and buildings; the
+ranged slow down while blades are near, so the blades end up in front. Anything of the enemy's that comes within 6
+columns is fought, the nearest first, and a troop sticks to its enemy until it falls. A melee troop that cannot get at
+its enemy, because the fight is in the way, does not stand about: it lets that enemy go and takes another it can reach,
+or keeps walking round the fight toward the enemy Nexus. If buildings shut every way to the Nexus, the troops break the
+fewest. After 30 seconds the Nexus calls a pause: everyone steps back and forms up again, and the player builds.
 
 ## Build Phase and Battle Round — the will of the Nexus
 
@@ -200,9 +211,10 @@ favour a side by where it stands. Three refinements, from what a unit is for:
 - **A unit that aims at a crowd** (the bomber, the mortar) first narrows to the enemies with the most of their side
   round them; a flanker first to the enemies behind the melee line; a healer chooses among wounded allies.
 
-**Commitment.** RULE (`keptTarget`, `COMMIT_TICKS` in `src/pulse/perception.ts`, `tests/commitment.test.ts`). Once
-chosen, a target is kept until it falls (or stops being one the unit may choose), or until the unit has gone **30 ticks
-(2½ seconds) unable to strike it**. "Unable" is counted tick by tick from where the unit stood as the tick began: the
+**Commitment.** In a line: a troop sticks to its enemy until it falls, and gives up only after 2½ seconds of not being
+able to hit it. In detail, RULE (`keptTarget`, `COMMIT_TICKS` in `src/pulse/perception.ts`, `tests/commitment.test.ts`):
+once chosen, a target is kept until it falls (or stops being one the unit may choose), or until the unit has gone **30
+ticks (2½ seconds) unable to strike it**. "Unable" is counted tick by tick from where the unit stood as the tick began: the
 count starts again on every tick the target is within the unit's attack range, and on every tick the unit has come
 nearer to it than it has been since it chose it (so a long walk, or a walk round a wall, that keeps closing never runs
 out); any other tick adds one. At 30 it lets go and chooses afresh, among everything but the one it let go of; it takes
@@ -213,6 +225,19 @@ whatever comes into vision. A healer keeps its patient while it is wounded. A bu
 anything, so it takes only what its attack reaches (and lets go when it leaves). A target chosen to breach is held like
 any other. The count lives in the state (`commitGap`, `commitStall`), absent when a unit holds nothing, so a state with
 no fight in it hashes as it did. Some units may be exceptions later; commitment is the default.
+
+**When the enemy cannot be reached.** RULE (`walksToIt` and `marchOn` in `src/pulse/perception.ts`,
+`tests/commitment.test.ts`). A melee troop in the second rank of a fight often holds an enemy that fighters already
+surround: no tile from which it could strike is free. Holding it would mean standing beside the fight for 2½ seconds, a
+wall for everyone queued behind. So a unit that holds a target it can neither strike from where it stands nor walk to
+**lets it go at once** and chooses afresh among the enemies it can reach, the nearest to walk to. When there is none (and
+breaking a building would not open the way), a unit whose side has somewhere to march, a target or an enemy Nexus,
+**walks on, round the fight**, by the same field that leads it to its goal, and turns on an enemy again the moment a tile
+opens beside one. A unit with nowhere to march keeps its choice and stands as near as it can get, as before. This is
+the game's flanking: nothing sends a unit round the side; it is what is left to a unit that cannot reach anyone, and
+wherever the ground is open it goes round. Measured on 72 scripted duels a map (2026-10-29): ticks spent standing with
+no route fell by 37% on the Crossing and by 58% on the open Pocket, and on the movement scenarios the breach one's
+blocked unit-ticks went from 333 to 49, the corridor's from 622 to 194 and the falling building's from 394 to 8.
 
 **Why units used to change target so often** (12 scripted duels on the Crossing: a trooper held a living target a median
 of 4 ticks, and changed away from a still-living one some 3,400 times). Three causes, all in perception: a unit chose
@@ -332,7 +357,7 @@ ground's weight and the formation's half speed decide how often it steps.
 3. **The tick's fields** (`TickRoutes`): ground and fields, worked out as asked and shared by everyone with the same
    body, the same walls and the same goal.
 4. **Choosing again by what can be reached**: a sword fights the enemy nearest to walk to; a gun passes over a target
-   it cannot get in range of.
+   it cannot get in range of; a held target that is walled in is let go, and a unit that can reach none walks on.
 5. **Breaching**, when buildings close the way.
 6. **The march**: each unit's state, and who of the marchers walks at half speed.
 7. **Steps**: each walker ranks its steps on its field; arbitration settles them; credit is spent.
@@ -400,6 +425,18 @@ try, none of it built:
   least never lies.
 - **The draw at a tie**: two equally good steps are broken by facing and then the seeded stream, which is fair but can
   look like a unit hesitating.
+- **The queue behind a fight.** In rounds 5 to 8 of scripted duels on the Crossing about four units a round stand
+  blocked for five seconds or more (against none in rounds 1 to 4, and about one in ten rounds on the open Pocket).
+  Nearly all are melee troops blocked by troops of their own side, behind a front that is striking, and the head of the
+  queue is usually a unit with no route to anything. It is mostly geometry: the ridge's gap is eight rows wide, only so
+  many units strike along it, and the rest wait. The formation's half speed is not the cause (the same with it off).
+  Measured and **not** worth building: a shorter patience (12 ticks: slightly fewer stalls on the Crossing, within noise,
+  but 3.6 times as many on the open field), attackers spread over targets by how many of their side are on each (no
+  change), a 20% boost for the unit held up behind a slower one (none). What is left to try: a wider gap or more ways
+  round, and ranged and area units behind the front, which fire over the queue.
+- **Half speed that lasts**: a unit that stays within sight of a higher unit can be slowed for a long time (the median
+  slowdown is 0.3 seconds, one in a hundred lasts 12). A rule that slows only while the higher unit is not yet 4 columns
+  ahead, and a cap of 6 seconds, sorted the army as well as today's rule; neither is built yet.
 
 ## Strategies
 
@@ -421,5 +458,7 @@ What a player (and a model playing a duel) can do on purpose with these rules. T
   building on the enemy's troops to push them back.
 - **Chaff and flankers.** Nearest-first means cheap fast units soak the first volleys; flankers go round them for the
   shooters behind.
+- **The gap is the front.** Where a map has one gap, melee troops queue at it and only the first rank strikes: ranged and
+  area units behind them fire over the queue, and a mortar's fire on the gap lands on everything waiting there.
 - **Hold** (duels today, the stance next): a defender that holds in front of its Nexus, under its guns, lets the enemy
   come to it.

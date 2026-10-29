@@ -187,3 +187,29 @@ found and written down.
 [answered questions](../answered-questions.md); the march route stays an
 [open question](../../milestones/open-questions.md#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to),
 parked.
+
+## Stalls and targets, 2026-10-29
+
+### F231 — Balancing the formation against stalls; other ideas to test
+
+> any ideas about how to balance stalls with formations? Reducing half speed is just something I came out with, there
+> may be better options. Perhaps we could "approximate" the formation while marching, without having to let the melee
+> unit pass in front. What about letting pass being a temporal thing? perhaps speed can slow by half, then by quarter
+> 2-3 seconds later, and recover 3-4 seconds later, to original speed. Additionally, there may be something they can do
+> to let the back units pass, otherwise they may be slowing down and blocking. What about the back units gets a 20% speed
+> boost if it is marching and there are lower priority units in front? Any other ideas or experiments you can test?
+
+**Built** as measurements ([the report](../reports/2026-10-29-stalls-and-targets.md)): the timed ramp, the 20% boost and
+a gap rule, on 54 duels. The slowing is what sorts the army and is not what stalls it; the ramp sorts as well and caps
+the slowdown, the boost does nothing, and none is built.
+
+### F232 — Targeting is behind the stalls: tune flanking and finding new targets
+
+> I also think the stalling happens because of targeting changes. Tuning the ways units flank and find new targets will
+> keep the fight going. Please experiment, implement the best solution, and document new behavior while keeping the
+> whole troop movement explained in simple terms
+
+**Built.** Following who held up whom found the head of most queues: a unit with no route to the enemy it held. A held
+target that cannot be reached is now let go at once, and a unit that can reach none walks on round the fight; the
+chapter explains it in plain words, with a walkthrough of a round. A shorter patience and spreading attackers over
+targets were tried and are not built.

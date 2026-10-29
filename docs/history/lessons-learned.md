@@ -623,3 +623,14 @@ little longer than vision dropping a candidate at the edge of sight). A rule wri
 or 30 ticks unable to strike) took the changes away from a living target from 2,453 to 164 for troopers. The count also
 showed what the rule alone would not fix: a building that cannot walk was cycling through far targets every 30 ticks, so a
 building takes only what its attack reaches. Replay the diagnosis after the fix; it finds the part the design missed.
+
+### Find where the waiting is before you tune who waits
+
+Units stalled in the late rounds of scripted duels, and the first guess was the new half speed in the formation. Playing
+the same duels with the slowing off gave the same stalls (about 4.5 a round in rounds 5 to 8, none in rounds 1 to 4), so
+that was not it. Following who held up whom to the head of each queue found the cause: 60% ended at a unit with no route
+to the enemy it held, standing beside a fight that surrounded its target. Letting go of a target a unit cannot reach, and
+marching on when it can reach none, removed a third to a half of the no-route standing and a good part of the blocked
+time on the movement scenarios. Two cheap ideas looked right and were wrong: a shorter patience before choosing again
+cut stalls a little on the Crossing, within noise, and made them 3.6 times worse on the open field; spreading attackers
+over targets changed nothing. Measure on a map without the choke too, and on more than one seed, before a number moves.

@@ -181,7 +181,8 @@ test("a battle's end opens the draft it earned, and the choice opens the next ba
   assert.equal(draft.requisition, 15)
   // The Barracks is the last building that trains units: it cannot go, or the army could field nothing.
   assert.deepEqual(draft.removable.map((card) => card.key), ["structure:depot", "structure:turret", "power:reserve-callup", "power:drill-schedule"])
-  assert.equal(draft.intro[0], "Battle 1 of 3: won in round 2. Dob Hunter's Nexus fell.")
+  // Round 3 since a unit that cannot reach its target came to march on round the fight (it was round 2).
+  assert.equal(draft.intro[0], "Battle 1 of 3: won in round 3. Dob Hunter's Nexus fell.")
   assert.deepEqual(draft.army.map((family) => [family.family, family.names.join(", ")]), [
     ["Structures", "Barracks, Supply Depot, Turret"],
     ["Nexus powers", "Reserve Callup, Drill Schedule"],
@@ -277,8 +278,9 @@ test("the driver plays a run end to end, and the same seed and script give the s
   assert.deepEqual(summaryLines(once.run), [
     "The run is over: 2 of 3 battles won. Battle 3 was lost.",
     "Edda Vasse, seed 1.",
-    "Battle 1 against Dob Hunter (rush): won in round 2. Dob Hunter's Nexus fell.",
-    "Battle 2 against Dob Hunter (turtle): won in round 7. Dob Hunter's Nexus fell.",
+    // Rounds 3 and 6 (they were 2 and 7) since a unit that cannot reach its target came to march on round the fight.
+    "Battle 1 against Dob Hunter (rush): won in round 3. Dob Hunter's Nexus fell.",
+    "Battle 2 against Dob Hunter (turtle): won in round 6. Dob Hunter's Nexus fell.",
     "Battle 3 against Dob Hunter (balanced): lost in round 8. The rounds ran out with the Nexuses as healthy, and Dob Hunter dealt more damage.",
     "After battle 1: took Standard Heavy Rounds (Doctrine, common).",
     "After battle 2: took Hatchery (Structure, common).",
@@ -290,7 +292,9 @@ test("the driver plays a run end to end, and the same seed and script give the s
   // same rounds are won and lost, with the same summary. Pinned again when a unit came to keep the target it holds
   // (commitment): battle 1 is won a round sooner, in round 2 at tick 359, and battle 2 in round 7 at tick 309.
   const time = (battle: number, rounds: number): string[] => Array.from({ length: rounds }, (_, index) => `${battle}.${index + 1} time@360`)
-  assert.deepEqual(shape(once), [...time(1, 1), "1.2 nexus@359", ...time(2, 6), "2.7 nexus@309", ...time(3, 8)])
+  // Pinned again when a unit that cannot reach its target came to let it go and march on round the fight: battle 1 is won
+  // in round 3 at tick 136 (round 2 now runs out its time), and battle 2 in round 6 at tick 355; battle 3 is lost as before.
+  assert.deepEqual(shape(once), [...time(1, 2), "1.3 nexus@136", ...time(2, 5), "2.6 nexus@355", ...time(3, 8)])
 })
 
 test("on the screen, a won battle opens on the draft, the choice settles it, and the session moves to the round it makes", { timeout: 60_000 }, () => {

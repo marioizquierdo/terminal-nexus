@@ -124,8 +124,13 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] The tests that pin a battle are re-pinned with a reason each, never loosened; the quick spec measured before
       and after each half (stalled units 274 → 528 with the formation, → 420 with commitment).
 - [ ] The full spec measured and kept in the history, as a change to how common units choose asks.
-- [ ] Troopers that queue in a column behind their own blocked troopers (most of the stalls left, one Vasse mirror
-      duel the worst): the crowd rule, not targeting.
+- [x] **A target a unit cannot reach is let go at once**, and a unit with none it can reach marches on round the fight.
+      Measured against the queue behind a fight: no-route standing is 37% lower on the Crossing and 58% lower on the
+      open Pocket; the movement scenarios' blocked unit-ticks fall to a fraction (the breach one 333 to 49).
+- [ ] The queue that is left: melee troops waiting behind a striking front at the Crossing's gap, in rounds 5 to 8. Mostly
+      geometry, and tested: a shorter patience, spreading attackers over targets and a speed boost did not help
+      ([the chapter](../system-design/movement.md), "To smooth later"). A wider gap or more ways round are the next
+      thing to try.
 
 Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
 list), and the workers' jobs (Milestone 7).

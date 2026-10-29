@@ -194,6 +194,48 @@ function keptTarget(context: TickContext, actor: Actor): { kept: Actor | null; r
   return { kept: target, released: null }
 }
 
+/**
+ * A fresh choice for `actor`: what it can see, narrowed as every unit's is, and the one it makes among them. `released`
+ * is a target it has just let go of, chosen again only when nothing else qualifies.
+ */
+function freshChoice(context: TickContext, actor: Actor, released: number | null): Choice {
+  let candidates: readonly Actor[]
+  if (actor.definition.behavior === "support") {
+    // A healer's wounded allies, narrowed by its layers as an attacker's hostiles are (`eligibleTargets`). A
+    // building that heals never moves (`intents.ts`), so it mends the nearest of them once one is within reach.
+    candidates = eligibleTargets(actor, woundedAlliesOf(context, actor))
+  } else if (actor.definition.behavior === "flee") {
+    candidates = hostilesOf(context, actor).filter((other) => other.definition.attack !== undefined)
+  } else if (targetFor(context, actor) !== null) {
+    // A unit whose side has a target fights only what has come within its reach, measured as range is;
+    // with nothing there it heads for the target instead (`target.ts`, `intents.ts`).
+    const reach = visionOf(actor.definition)
+    candidates = eligibleTargets(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
+  } else {
+    // With no target of its side's, a fighting unit heads for the enemy's Grid Nexus (`headsForNexus`), fighting
+    // what comes within its reach on the way; one that cannot strike a Nexus, or on a map with none, still engages
+    // the nearest enemy wherever it is.
+    const hostiles = hostilesOf(context, actor)
+    if (headsForNexus(actor, hostiles)) {
+      const reach = visionOf(actor.definition)
+      candidates = eligibleTargets(actor, hostiles.filter((other) => other.definition.nexus === true || within(actor, other, reach)))
+    } else {
+      candidates = eligibleTargets(actor, hostiles)
+    }
+  }
+  // A building that shoots cannot walk to anything, so it takes only what its attack reaches.
+  const attack = actor.definition.attack
+  if (!isMobile(actor) && attack !== undefined) candidates = candidates.filter((other) => inAttackRange(actor, other, attack))
+  // One it has just let go of is chosen again only when nothing else qualifies.
+  if (released !== null) {
+    const others = candidates.filter((other) => other.ordinal !== released)
+    if (others.length > 0) candidates = others
+  }
+  const beyond = beyondTheLine(actor, candidates)
+  if (beyond === null) return { actor, candidates, selection: selectTarget(context, actor, candidates) }
+  return { actor, candidates: beyond, selection: selectTarget(context, actor, beyond), wider: candidates }
+}
+
 export function perception(context: TickContext): void {
   // Each actor chooses among what it can see (the nearest, then the one it holds, the weakest, a draw).
   const choices: Choice[] = []
@@ -224,41 +266,7 @@ export function perception(context: TickContext): void {
       continue
     }
 
-    let candidates: readonly Actor[]
-    if (actor.definition.behavior === "support") {
-      // A healer's wounded allies, narrowed by its layers as an attacker's hostiles are (`eligibleTargets`). A
-      // building that heals never moves (`intents.ts`), so it mends the nearest of them once one is within reach.
-      candidates = eligibleTargets(actor, woundedAlliesOf(context, actor))
-    } else if (actor.definition.behavior === "flee") {
-      candidates = hostilesOf(context, actor).filter((other) => other.definition.attack !== undefined)
-    } else if (targetFor(context, actor) !== null) {
-      // A unit whose side has a target fights only what has come within its reach, measured as range is;
-      // with nothing there it heads for the target instead (`target.ts`, `intents.ts`).
-      const reach = visionOf(actor.definition)
-      candidates = eligibleTargets(actor, hostilesOf(context, actor).filter((other) => within(actor, other, reach)))
-    } else {
-      // With no target of its side's, a fighting unit heads for the enemy's Grid Nexus (`headsForNexus`), fighting
-      // what comes within its reach on the way; one that cannot strike a Nexus, or on a map with none, still engages
-      // the nearest enemy wherever it is.
-      const hostiles = hostilesOf(context, actor)
-      if (headsForNexus(actor, hostiles)) {
-        const reach = visionOf(actor.definition)
-        candidates = eligibleTargets(actor, hostiles.filter((other) => other.definition.nexus === true || within(actor, other, reach)))
-      } else {
-        candidates = eligibleTargets(actor, hostiles)
-      }
-    }
-    // A building that shoots cannot walk to anything, so it takes only what its attack reaches.
-    const attack = actor.definition.attack
-    if (!isMobile(actor) && attack !== undefined) candidates = candidates.filter((other) => inAttackRange(actor, other, attack))
-    // One it has just let go of is chosen again only when nothing else qualifies.
-    if (released !== null) {
-      const others = candidates.filter((other) => other.ordinal !== released)
-      if (others.length > 0) candidates = others
-    }
-    const beyond = beyondTheLine(actor, candidates)
-    if (beyond === null) choices.push({ actor, candidates, selection: selectTarget(context, actor, candidates) })
-    else choices.push({ actor, candidates: beyond, selection: selectTarget(context, actor, beyond), wider: candidates })
+    choices.push(freshChoice(context, actor, released))
   }
 
   // Who walks with those choices, and so who stands and is a wall to everyone's routes this tick (`routes.ts`).
@@ -268,6 +276,15 @@ export function perception(context: TickContext): void {
   }
   const routes = new TickRoutes(context, walking)
   context.routes = routes
+
+  // A unit holding a target it can neither strike from where it stands nor walk to — walled in by the fight round it —
+  // lets it go at once, rather than stand beside it for `COMMIT_TICKS`, and chooses afresh by what it can reach.
+  for (let at = 0; at < choices.length; at += 1) {
+    const choice = choices[at] as Choice
+    const { actor, selection } = choice
+    if (choice.kept !== true || selection === null || !walksToIt(context, routes, actor, selection.target)) continue
+    choices[at] = freshChoice(context, actor, selection.target.ordinal)
+  }
 
   // A unit that would walk to its target chooses again by what it can reach (`chooseByRoute`).
   for (const choice of choices) {
@@ -346,6 +363,16 @@ function walkTo(routes: TickRoutes, actor: Actor, target: Actor, limit = UNREACH
   return routes.fieldOf(actor, { kind: "unit", target, reach: reachOf(actor) }).distanceWithin(actor.anchor, limit)
 }
 
+/** Whether `actor` walks to `target` this tick (a mover that fights, not a healer) from a place its attack does not
+ *  reach it from, and cannot get to where it does: the target is walled in. */
+function walksToIt(context: TickContext, routes: TickRoutes, actor: Actor, target: Actor): boolean {
+  const attack = actor.definition.attack
+  if (attack === undefined || !isMobile(actor) || actor.definition.behavior === "support" || actor.definition.behavior === "flee") return false
+  if (inAttackRange(actor, target, attack)) return false
+  const purpose = purposeOf(context, actor, target)
+  return purpose.kind === "walk" && purpose.goal.kind === "unit" && !canWalkTo(routes, actor, target)
+}
+
 /** Whether `actor` can walk to where its attack reaches `target` at all, round what stands this tick: known from the
  *  patch it stands on, without working out how far (`DistanceField.reaches`). */
 function canWalkTo(routes: TickRoutes, actor: Actor, target: Actor): boolean {
@@ -378,7 +405,7 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   if (actor.definition.attack?.kind !== "melee" || actor.definition.aim === "crowd") {
     if (canWalkTo(routes, actor, selection.target)) return selection
     const reachableOnes = candidates.filter((candidate) => candidate !== selection.target && canWalkTo(routes, actor, candidate))
-    return reachableOnes.length > 0 ? selectTarget(context, actor, reachableOnes) : (breach(routes, actor, selection.target) ?? selection)
+    return reachableOnes.length > 0 ? selectTarget(context, actor, reachableOnes) : (breach(routes, actor, selection.target) ?? marchOn(context, actor, selection))
   }
   // Nearest by range first: a walk is never shorter than the range less a row (a tile beside a target is at most two
   // columns from it), so once the range is that much past the best walk found, nothing further can beat it.
@@ -394,7 +421,7 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
       nearest = [candidate]
     } else if (walk === best && walk !== UNREACHABLE) nearest.push(candidate)
   }
-  if (nearest.length === 0) return breach(routes, actor, selection.target) ?? selection
+  if (nearest.length === 0) return breach(routes, actor, selection.target) ?? marchOn(context, actor, selection)
   // Heading for its side's target, it turns only to what it can get to without a detour: every candidate is already
   // within its sight by range, so a walk longer than its sight is no reason to drop one at the edge of it (the unit
   // would drop it and take it up again every few ticks as the walk crossed the line). Only a walk more than
@@ -410,6 +437,17 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
   const least = Math.min(...nearest.map((candidate) => candidate.hp))
   const target = held ?? drawAmong(context, nearest.filter((candidate) => candidate.hp === least))
   return target === undefined ? selection : { target, distance: distanceBetween(actor, target) }
+}
+
+/**
+ * What a unit does when nothing within its sight can be walked to and no building's breaking would open the way: a unit
+ * that has somewhere to march — its side's target, or an enemy Nexus — walks on, round the fight, by its field; one with
+ * nowhere keeps its choice and stands as near as it can get (`intents.ts`). Standing beside an enemy it cannot reach,
+ * in the middle of its own side's crowd, only blocks the ones behind it.
+ */
+function marchOn(context: TickContext, actor: Actor, selection: Choice["selection"]): Choice["selection"] {
+  const goal = targetFor(context, actor) !== null || context.actors.some((other) => other.player !== actor.player && !other.pendingDead && other.definition.nexus === true)
+  return followsTarget(actor.definition) && goal ? null : selection
 }
 
 /** The longest walk to an enemy within its sight that a marching unit turns aside for: twice its sight. */

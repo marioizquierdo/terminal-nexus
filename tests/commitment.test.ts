@@ -155,24 +155,51 @@ test("a healer keeps its patient while it is wounded, and chooses again once it 
 
 test("a unit goes COMMIT_TICKS unable to strike the one it holds, and then lets go", () => {
   assert.equal(COMMIT_TICKS, 30)
-  // A trooper holds a marksman behind a wall it cannot pass (the wall runs the Grid's height); a trooper of the
-  // enemy's on its own side is the other it could choose. The count is in the state, as it is spent.
-  const start = load({ A: [[4, 5, TROOPER]], B: [[8, 5, MARKSMAN], [3, 9, TROOPER]] }, { rock: wall(6), ticks: 120 })
-  const walled = byContent(start, MARKSMAN, "B")
+  // A trooper holds a marksman it can walk to but has not come nearer to than it once was (its closest gap is seeded
+  // below what the walk can reach: as if it were held up in a crowd); a trooper of the enemy's on its own side is the
+  // other it could choose. The count is in the state, as it is spent.
+  const start = load({ A: [[4, 5, TROOPER]], B: [[8, 5, MARKSMAN], [3, 9, TROOPER]] }, { ticks: 120 })
+  const slow = byContent(start, MARKSMAN, "B")
   const me = byContent(start, TROOPER, "A")
-  const held: EntityState = { ...me, targetOrdinal: walled.ordinal, commitGap: 1, commitStall: COMMIT_TICKS - 3 }
+  const held: EntityState = { ...me, targetOrdinal: slow.ordinal, commitGap: 1, commitStall: COMMIT_TICKS - 3 }
   const seeded = { ...start, entities: start.entities.map((candidate) => (candidate.ordinal === me.ordinal ? held : candidate)) }
   const { states } = play(seeded, 5)
   const targets = states.slice(1).map((state) => entity(state, me.id)?.targetOrdinal)
   assert.deepEqual(
     targets.slice(0, 2),
-    [walled.ordinal, walled.ordinal],
-    "still holding the one it cannot reach, two ticks short of the limit",
+    [slow.ordinal, slow.ordinal],
+    "still holding the one it cannot strike, two ticks short of the limit",
   )
   assert.equal(entity(states[2] as MatchState, me.id)?.commitStall, COMMIT_TICKS - 1)
   const free = byContent(start, TROOPER, "B")
   assert.equal(targets[2], free.ordinal, "at the limit it chooses afresh, and the one it let go of is not the choice")
   assert.equal(entity(states[3] as MatchState, me.id)?.commitStall, undefined)
+})
+
+test("a held target that is walled in is let go at once, for the nearest the unit can reach", () => {
+  // The wall runs the Grid's height, so the marksman behind it cannot be walked to, and the trooper is not in its range:
+  // holding it would be standing beside the wall for COMMIT_TICKS. The enemy trooper on its own side can be reached.
+  const start = load({ A: [[4, 5, TROOPER]], B: [[8, 5, MARKSMAN], [3, 9, TROOPER]] }, { rock: wall(6), ticks: 120 })
+  const walled = byContent(start, MARKSMAN, "B")
+  const me = byContent(start, TROOPER, "A")
+  const held: EntityState = { ...me, targetOrdinal: walled.ordinal, commitGap: 1 }
+  const seeded = { ...start, entities: start.entities.map((candidate) => (candidate.ordinal === me.ordinal ? held : candidate)) }
+  const { states } = play(seeded, 3)
+  const free = byContent(start, TROOPER, "B")
+  assert.equal(entity(states[1] as MatchState, me.id)?.targetOrdinal, free.ordinal, "it held the one it cannot reach")
+})
+
+test("with nothing it can reach, a unit marches on toward its side's goal instead of standing beside the enemy", () => {
+  // The only enemy stands in a ring of rock, so no walk gets to it. A's target lies east of the ring. Standing at the
+  // ring's near side would be a wall for everyone behind; the trooper walks on past it, into the target.
+  const ring: (readonly [number, number])[] = []
+  for (let x = 11; x <= 13; x += 1) for (let y = 4; y <= 6; y += 1) if (x !== 12 || y !== 5) ring.push([x, y])
+  const start = load({ A: [[4, 5, TROOPER]], B: [[12, 5, MARKSMAN]] }, { rock: ring, target: { x: 17, y: 3, width: 4, height: 5 }, ticks: 240 })
+  const me = byContent(start, TROOPER, "A")
+  const { states } = play(start, 200)
+  const end = entity(states[states.length - 1] as MatchState, me.id) as EntityState
+  assert.ok(end.anchor.x >= 17, `the trooper stopped at x=${end.anchor.x}, short of its target`)
+  assert.equal(end.targetOrdinal, null, "it still holds an enemy it cannot reach")
 })
 
 test("closing on a target, or having it in range, starts the count again", () => {

@@ -192,8 +192,10 @@ test("the first placeholder Pulse, written as a mission, resolves its winning pl
   // it: the plan still wipes the raid out, now at tick 206. Pinned again when the Grid Nexus came to fight back: its
   // events carry the Nexus's shots, and the raid is wiped out on the same tick, every unit where it would have been.
   // Pinned again when a unit came to keep the target it holds until it falls (commitment): the raid is wiped out at tick 214.
-  assert.ok(timeline.stateHash.startsWith("b22a758c"), `state hash ${timeline.stateHash}`)
-  assert.ok(timeline.eventsHash.startsWith("b1c7b1f3"), `events hash ${timeline.eventsHash}`)
-  assert.equal(timeline.states.length - 1, 214)
-  assert.deepEqual(timeline.states.at(-1)?.outcome, { winner: "A", reason: "annihilation", tick: 214 })
+  // Pinned again when a unit that cannot reach its target came to let it go, and to march on round the fight when it can
+  // reach none: the plan still wipes the raid out, at tick 202.
+  assert.ok(timeline.stateHash.startsWith("cd831ab4"), `state hash ${timeline.stateHash}`)
+  assert.ok(timeline.eventsHash.startsWith("bbe64075"), `events hash ${timeline.eventsHash}`)
+  assert.equal(timeline.states.length - 1, 202)
+  assert.deepEqual(timeline.states.at(-1)?.outcome, { winner: "A", reason: "annihilation", tick: 202 })
 })
