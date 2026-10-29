@@ -124,13 +124,18 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] The tests that pin a battle are re-pinned with a reason each, never loosened; the quick spec measured before
       and after each half (stalled units 274 → 528 with the formation, → 420 with commitment).
 - [ ] The full spec measured and kept in the history, as a change to how common units choose asks.
-- [x] **A target a unit cannot reach is let go at once**, and a unit with none it can reach marches on round the fight.
-      Measured against the queue behind a fight: no-route standing is 37% lower on the Crossing and 58% lower on the
-      open Pocket; the movement scenarios' blocked unit-ticks fall to a fraction (the breach one 333 to 49).
-- [ ] The queue that is left: melee troops waiting behind a striking front at the Crossing's gap, in rounds 5 to 8. Mostly
-      geometry, and tested: a shorter patience, spreading attackers over targets and a speed boost did not help
-      ([the chapter](../system-design/movement.md), "To smooth later"). A wider gap or more ways round are the next
-      thing to try.
+- [x] **A target a unit cannot reach is let go at once**, and a unit that can reach none in sight looks further afield
+      for one it can; with none it stands as near as it can get. Measured against holding it: no-route standing is 28%
+      lower on the Crossing's duels and 69% lower on the open Pocket's, and a fair battle through a narrow pass blocks
+      11% to 19% fewer unit-ticks. (Marching on past the fight was built and measured twice and left out: the same on
+      every measure.)
+- [x] **The engage scenarios**: six battles of the same armies on open ground, gaps, a corridor and lanes, to read speed and
+      how many units strike against ([`measurement.md`](../system-design/measurement.md)); and what was tried to speed
+      engagement up (the chapter's "To smooth later" lists it: nothing beyond 5%).
+- [ ] The queue that is left: melee troops waiting behind a striking front at a gap, mostly geometry, and tested ten ways
+      without a gain beyond noise ([the chapter](../system-design/movement.md), "To smooth later"). More ways round (a
+      map with more gaps), and what holds flyers back where the ground is tight, are the next things to settle.
+- [ ] Units pacing between two tiles at a door (about five a battle at a one- or two-row gap), the same before this step.
 
 Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
 list), and the workers' jobs (Milestone 7).

@@ -38,6 +38,7 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q84](#q84--is-requisition-the-runs-second-currency-and-does-the-nexuss-health-carry) | Is requisition the run's currency, and does the Nexus's health carry between battles? | OPEN | Mario's playing of a run (milestone 11) |
 | [Q85](#q85--how-long-is-a-run) | How long is a run? | OPEN | Mario's playing of a run (milestone 11) |
 | [Q87](#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to) | Should the march route be drawn on the Build Phase? | OPEN | After the stance and the banner |
+| [Q91](#q91--should-flyers-be-held-back-where-the-ground-is-tight) | Should flyers be held back where the ground is tight? | OPEN | The first real air roster (milestone 12) |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
@@ -378,6 +379,25 @@ of the round as the kernel's own field.
 
 **Recommendation: C for now, then A**, as the owner said: the march route drawn from the Commander once the stance and
 the banner have settled what the army's line is for.
+
+### Q91 — Should flyers be held back where the ground is tight?
+
+**Status:** OPEN — registered 2026-10-29 by [the stalls and targets report](../history/reports/2026-10-29-stalls-and-targets.md); decide with the first real air roster.
+
+Flyers cross rock, walk over the ground queue and collide only with other flyers. In the engage scenarios an army of nine
+troopers and nine flyers beats the mixed defender through a gap two rows wide in 92% of battles (by 23 points of health
+out of 100), where eighteen troopers lose it by 54; eighteen flyers beat it on every ground by 58 to 66. A player who
+learns that need never pick for the pass. The bench flyers are first fixtures, not a roster, so this may be a numbers
+question for a unit's cost, not a rule.
+
+| Option | Cost |
+| --- | --- |
+| A. **Leave it; price air by what it ignores** (cost, health, what it may strike) when the roster is built | No rule; the terrain stays one more thing that makes ground armies and air armies different, and balance is data |
+| B. **A cap on flyers a tile holds, and on how many may strike one ground unit** | Flyers then queue a little in a tight place too; a stack cap is a rule to teach, and nothing in the research found a game that does it |
+| C. **A stance that keeps flyers behind their own ground front** (they strike only what the front has engaged) | Clear to read; costs the air army its reach, which is the point of flying |
+
+**Recommendation: A**, measured again with the first real air units: it is a question of what air costs, and the engage
+scenarios are the bench to read it on.
 
 ### Q51 — When should the game get a real accent-colour palette, with variations per faction?
 

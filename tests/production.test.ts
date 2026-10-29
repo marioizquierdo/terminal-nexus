@@ -353,4 +353,6 @@ test("PERIMETER's first round with the Barracks's wave hashes the same on every 
 // sort itself on the march by half speed, the Commander a regular troop leading nothing.
 // Pinned again when a unit came to keep the target it holds until it falls, or goes 30 ticks unable to strike it
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
+// A unit that can reach no enemy came to look further afield for one it can, and to wait a second beside the fight before
+// it walks on round it: this round is byte for byte what it was.
 const PINNED_ROUND_1 = "c091635c566f3e6f98cfde83fe6dbb5f4e89658c728ef2585df0cd5071e40cc8"

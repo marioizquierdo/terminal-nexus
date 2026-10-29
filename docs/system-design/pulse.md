@@ -358,9 +358,9 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   walk to without a detour of more than twice its vision (a walk a little longer than vision is no reason to drop an
   enemy at the edge of it); any other unit keeps the nearest by range, shots reaching over rock, but passes over one it
   cannot get within range of for the nearest it can. When it can reach none of what it sees, and breaking a building
-  would not open the way, a unit whose side has a target or an enemy Nexus to march on walks on, round the fight
-  (`marchOn`), rather than standing beside an enemy it cannot get to; one with nowhere to march keeps its choice and
-  stands as near as it can get.
+  would not open the way, a unit looks for the nearest enemy up to four times its sight away that it can walk to
+  (`searchWider`, `SEARCH_SIGHTS`); with none it keeps its choice and stands as near as it can get, saying it has no
+  route.
 - **A unit holds its target** (`keptTarget`, `COMMIT_TICKS`, `tests/commitment.test.ts`; how it reads in
   [`movement.md`](movement.md), Targeting and attacking). A unit with an enemy target keeps it until it falls or stops
   being one the unit may choose, or until it has gone 30 ticks unable to strike it: the count starts again on every tick

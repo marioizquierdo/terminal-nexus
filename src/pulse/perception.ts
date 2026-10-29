@@ -145,8 +145,6 @@ type Choice = {
   wider?: readonly Actor[]
   /** The actor keeps the target it holds (`keptTarget`): no choice is made, and no route can change it. */
   kept?: true
-  /** The choice was already made knowing the routes (`chooseByRoute`), so it is not made again. */
-  routed?: true
 }
 
 /**
@@ -280,23 +278,18 @@ export function perception(context: TickContext): void {
   context.routes = routes
 
   // A unit holding a target it can neither strike from where it stands nor walk to — walled in by the fight round it —
-  // looks for another it can reach at once, in sight or further afield (`searchWider`), rather than stand beside it for
-  // `COMMIT_TICKS`. With none it keeps the one it has and waits beside the fight (the count of `commitStall` runs), and
-  // after `WAIT_TICKS` walks on round it (`waitOrMarch`).
+  // lets it go at once, rather than stand beside it for `COMMIT_TICKS`, and chooses afresh by what it can reach.
   for (let at = 0; at < choices.length; at += 1) {
     const choice = choices[at] as Choice
     const { actor, selection } = choice
     if (choice.kept !== true || selection === null || !walksToIt(context, routes, actor, selection.target)) continue
-    const fresh = freshChoice(context, actor, selection.target.ordinal)
-    const picked = chooseByRoute(context, routes, fresh)
-    if (picked !== null && canWalkTo(routes, actor, picked.target)) choices[at] = { ...fresh, selection: picked, routed: true }
-    else if (picked === null && waited(context, actor)) choices[at] = { actor, candidates: [], selection: null, routed: true }
+    choices[at] = freshChoice(context, actor, selection.target.ordinal)
   }
 
   // A unit that would walk to its target chooses again by what it can reach (`chooseByRoute`).
   for (const choice of choices) {
     const { actor, selection } = choice
-    if (selection === null || choice.kept === true || choice.routed === true || actor.definition.behavior === "flee") continue
+    if (selection === null || choice.kept === true || actor.definition.behavior === "flee") continue
     const purpose = purposeOf(context, actor, selection.target)
     if (purpose.kind !== "walk" || purpose.goal.kind !== "unit") continue
     choice.selection = chooseByRoute(context, routes, choice)
@@ -305,8 +298,7 @@ export function perception(context: TickContext): void {
   for (const { actor, selection, kept } of choices) {
     if (selection === null) {
       delete actor.commitGap
-      // A unit marching on past a fight it cannot reach keeps its count, so it goes on marching until it can reach one.
-      if ((actor.commitStall ?? 0) < WAIT_TICKS) delete actor.commitStall
+      delete actor.commitStall
       // Losing a target (or never finding one worth locking onto) also spends whatever focus streak
       // was building against the old one - attack.focusRamp's memory is about a *held* lock, not a
       // count that survives losing sight of the thing entirely.
@@ -450,7 +442,9 @@ function chooseByRoute(context: TickContext, routes: TickRoutes, choice: Choice)
 /**
  * What a unit does when nothing within its sight can be walked to and no building's breaking would open the way: it
  * **looks further afield**, for the nearest enemy up to `SEARCH_SIGHTS` times its sight away that it can walk to — the
- * other lane, the far side of a crowd — and goes for that one; with none, it waits and then walks on (`waitOrMarch`).
+ * other lane, the far side of a crowd — and goes for that one; with none, it keeps its choice and stands as near as it
+ * can get (`intents.ts`), ready to step in when a tile frees. It does not march on past the fight: a unit that does
+ * leaves the door to those who can reach someone, and it was measured to decide narrow-pass battles later.
  */
 function searchWider(context: TickContext, routes: TickRoutes, actor: Actor, selection: Choice["selection"]): Choice["selection"] {
   if (selection === null) return null
@@ -470,26 +464,8 @@ function searchWider(context: TickContext, routes: TickRoutes, actor: Actor, sel
       nearest = other
     }
   }
-  return nearest === null ? waitOrMarch(context, actor, selection) : { target: nearest, distance: distanceBetween(actor, nearest) }
+  return nearest === null ? selection : { target: nearest, distance: distanceBetween(actor, nearest) }
 }
-
-/**
- * With no enemy it can reach, in sight or further afield: a unit waits beside the fight, keeping its choice and standing as
- * near as it can get (`intents.ts`), ready to step in if a tile frees; once it has waited `WAIT_TICKS` it walks on round
- * the fight, if its side has somewhere to march (a target), by the same field that leads it there.
- */
-function waitOrMarch(context: TickContext, actor: Actor, selection: Choice["selection"]): Choice["selection"] {
-  return waited(context, actor) ? null : selection
-}
-
-/** Whether `actor` has waited `WAIT_TICKS` beside a fight it cannot reach and has somewhere to march on to: its side's
- *  target (a unit with none heads for the enemy's Nexus, which is always among what it may choose). */
-function waited(context: TickContext, actor: Actor): boolean {
-  return (actor.commitStall ?? 0) >= WAIT_TICKS && followsTarget(actor.definition) && targetFor(context, actor) !== null
-}
-
-/** How long (a second) a unit that can reach no enemy waits beside the fight before it walks on round it (`waitOrMarch`). */
-export const WAIT_TICKS = 12
 
 /** How many times its sight away a unit that can reach nothing within sight looks for an enemy it can (`searchWider`). */
 export const SEARCH_SIGHTS = 4

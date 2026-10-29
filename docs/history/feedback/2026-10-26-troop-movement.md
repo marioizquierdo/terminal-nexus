@@ -213,3 +213,32 @@ the slowdown, the boost does nothing, and none is built.
 target that cannot be reached is now let go at once, and a unit that can reach none walks on round the fight; the
 chapter explains it in plain words, with a walkthrough of a round. A shorter patience and spreading attackers over
 targets were tried and are not built.
+
+### F233 — A creative round: arenas, other games, the original targeting, new ways to engage
+
+> experiment with more ideas before closing, and try out more scenarios designed to test battle speed and troops ability
+> to engage.
+>
+> Check how other games solve this, see if the original targeting (before we modified it) had any advantages, think of
+> new ways to engage in battle (not just targeting, and the patience re-targeting may have alternatives), and better ways
+> to roam and flank when trying to find a target.
+>
+> Think that players will usually pick less melee units when there's a short pass or a queue, but still test what happens
+> if they don't pick the right units for the terrain type. Mix land and air units when there's not enough space, etc.
+>
+> This is a creative and exploratory round. Also re-read the troops movement spec to evaluate simplicity and clarity,
+> maybe some new idea that can be tested comes from there.
+
+**Built** ([the report](../reports/2026-10-29-stalls-and-targets.md)): six engage scenarios (open ground, gaps of six and
+two rows, a corridor, two lanes) as the bench for speed and for how many units strike; an arena of eight army mixes on
+eight grounds; twenty variants measured; a research pass on how other games do it. What held: the original targeting was
+no faster once the measurement was fair, and jams on open ground; nothing tried beats the rule built by more than 5%; the
+wrong army for a short pass loses by a wide margin whatever the rule; flyers do not queue (a question in the register);
+removing the band along the central path hurts. What did not hold, and was corrected in the same round: a first
+"march on" rule whose gains were idle units.
+
+### F234 — Re-read the spec for simplicity
+
+(Part of F233.) **Done**: rule five of the seven had grown to three behaviours and is now two short sentences; the
+chapter says the unreachable-enemy rule in one paragraph; and the simplest of the equivalent rules was kept, so a rule
+that did not earn its place (marching on past the fight) was removed instead of explained.
