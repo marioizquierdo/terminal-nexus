@@ -8,7 +8,7 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { COMMIT_TICKS } from "../src/pulse/perception.ts"
+import { COMMIT_TICKS, WAIT_TICKS } from "../src/pulse/perception.ts"
 import { visionOf } from "../src/pulse/target.ts"
 import { loadScenario } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
@@ -21,6 +21,7 @@ const TROOPER = "unit.citizen.trooper"
 const MARKSMAN = "unit.citizen.marksman"
 const NEXUS = "structure.citizen.nexus"
 const MEDIC = "unit.bench.medic"
+const WORKER = "unit.citizen.worker"
 
 function block(placed: readonly Placed[]): PlacementBlock {
   const symbols = "abcdefghijklmnopqrstuvwxyz"
@@ -189,15 +190,39 @@ test("a held target that is walled in is let go at once, for the nearest the uni
   assert.equal(entity(states[1] as MatchState, me.id)?.targetOrdinal, free.ordinal, "it held the one it cannot reach")
 })
 
-test("with nothing it can reach, a unit marches on toward its side's goal instead of standing beside the enemy", () => {
-  // The only enemy stands in a ring of rock, so no walk gets to it. A's target lies east of the ring. Standing at the
-  // ring's near side would be a wall for everyone behind; the trooper walks on past it, into the target.
-  const ring: (readonly [number, number])[] = []
-  for (let x = 11; x <= 13; x += 1) for (let y = 4; y <= 6; y += 1) if (x !== 12 || y !== 5) ring.push([x, y])
-  const start = load({ A: [[4, 5, TROOPER]], B: [[12, 5, MARKSMAN]] }, { rock: ring, target: { x: 17, y: 3, width: 4, height: 5 }, ticks: 240 })
+/** A ring of rock one tile out round (12, 5): the enemy inside it cannot be walked to. */
+const ring: (readonly [number, number])[] = []
+for (let x = 11; x <= 13; x += 1) for (let y = 4; y <= 6; y += 1) if (x !== 12 || y !== 5) ring.push([x, y])
+
+test("with nothing in sight it can reach, a unit looks further afield for an enemy it can, and goes for that one", () => {
+  // The worker in the ring is the only enemy in sight, and cannot be walked to; a trooper of the enemy's stands beyond
+  // its sight (the sight is 6 columns; the side has a target, so only what is in sight is a choice) but well within four
+  // times it, on open ground.
+  const start = load({ A: [[7, 5, TROOPER]], B: [[12, 5, WORKER], [16, 9, TROOPER]] }, { rock: ring, target: { x: 20, y: 2, width: 3, height: 3 }, ticks: 120 })
   const me = byContent(start, TROOPER, "A")
-  const { states } = play(start, 200)
-  const end = entity(states[states.length - 1] as MatchState, me.id) as EntityState
+  const far = byContent(start, TROOPER, "B")
+  const { states } = play(start, 3)
+  assert.equal(entity(states[1] as MatchState, me.id)?.targetOrdinal, far.ordinal, "it did not look past the ring")
+})
+
+test("with nothing it can reach anywhere, a unit waits beside the fight for WAIT_TICKS, and then walks on toward its side's target", () => {
+  // The only enemy is a worker in the ring, and the trooper's side has a target east of it. It walks to the ring and
+  // stands there, the enemy it chose still its target, saying it has no route, ready to step in if a tile ever opens;
+  // after a second of that it walks on, round the fight, into the target, and holds no enemy.
+  assert.equal(WAIT_TICKS, 12)
+  const start = load({ A: [[7, 5, TROOPER]], B: [[12, 5, WORKER]] }, { rock: ring, target: { x: 17, y: 3, width: 4, height: 5 }, ticks: 300 })
+  const me = byContent(start, TROOPER, "A")
+  const walledIn = byContent(start, WORKER, "B")
+  const { states, events } = play(start, 200)
+  const at = (tick: number): EntityState => entity(states[tick] as MatchState, me.id) as EntityState
+  const blocked = events.filter((event) => event.kind === "move.blocked" && event.entity === me.id && event.reason === "no-route")
+  assert.ok(blocked.length > 0, "it never said it had no route")
+  const first = (blocked[0] as DomainEvent).tick
+  // Standing by the ring, still holding the enemy it chose, for the wait.
+  assert.equal(at(first + 4).targetOrdinal, walledIn.ordinal)
+  assert.ok(at(first + 4).anchor.x <= 10, `it left the ring at x=${at(first + 4).anchor.x}`)
+  // Then on, past the ring, into the target.
+  const end = at(200)
   assert.ok(end.anchor.x >= 17, `the trooper stopped at x=${end.anchor.x}, short of its target`)
   assert.equal(end.targetOrdinal, null, "it still holds an enemy it cannot reach")
 })
