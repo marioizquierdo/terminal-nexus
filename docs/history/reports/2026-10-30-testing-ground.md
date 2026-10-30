@@ -60,7 +60,7 @@ counting target changes, loops over seeds, a wrapped kernel for timing. What was
 - **The spec rewritten as a playbook**: which tool answers which question, the loop a change goes through, a recipe for
   each kind of change, every measure and its expectation name, and the table of what was done by hand.
 
-The first look at the new counts found units at a two-row gap switching targets 67 times each a battle, against none
+The first look at the new counts found units at a two-row gap switching targets 69 times each a battle, against none
 on open ground, and building 9.3 distance fields a tick against 2.3: a unit whose target is walled in picks another
 walled-in one, then the first again, every tick. Measured with `--against HEAD`, letting go only when another enemy can
 be reached cut switches at the gap from 69 a unit to 2.8 and in the corridor from 15 to 1.5, with no outcome moving

@@ -19,7 +19,7 @@ it is done.*
   for the bench with what a tick costs, `--against origin/main` to set it beside main. Say what a session should
   measure that it does not yet show.
 - **Decide on the target flip-flop**: at a narrow pass a unit whose enemy is walled in picks another walled-in one,
-  then the first again, every tick (67 switches a unit a battle, four times open ground's route work). Letting go
+  then the first again, every tick (69 switches a unit a battle, four times open ground's route work). Letting go
   only when another enemy can be reached cut switches to 3 a unit with no outcome moving; it is measured, not built,
   since it changes how units choose. Say whether it goes in next.
 - **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge run or any campaign level. Rounds are 30

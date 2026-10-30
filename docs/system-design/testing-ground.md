@@ -247,7 +247,7 @@ And the lessons those rounds learned the hard way, which the tools now enforce o
   match found one end winning 27 battles to 7: a three-wide Nexus placed by its corner. `--swap` and a mirror army show it.
 - **Vary the opening and play enough.** A mirrored army with one layout turns on tie draws alone; play both ends and a
   dozen seeds before a few percent means anything.
-- **Read the whole row.** The first look at target switches found units at a narrow pass changing target 67 times each
+- **Read the whole row.** The first look at target switches found units at a narrow pass changing target 69 times each
   a battle, flipping between two walled-in enemies every tick and building four times the route fields of open ground,
   while their win rate gave no sign of it.
 
