@@ -1,13 +1,12 @@
 // Shared test scaffolding. Not a test file itself: the runners only pick up `*.test.ts`.
 
-import { readdirSync } from "node:fs"
 import { dirname, join, resolve as resolvePath } from "node:path"
 import { fileURLToPath } from "node:url"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import type { PulseRun } from "../src/pulse/index.ts"
-import { loadMapFile, loadScenario } from "../src/scenario/index.ts"
+import { loadMapFile, loadScenario, mapCatalog } from "../src/scenario/index.ts"
 import type { ScenarioDefinition } from "../src/scenario/index.ts"
 import type { ReportInput } from "../src/report/index.ts"
 
@@ -20,14 +19,14 @@ export const REPO_ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), ".
 export const RUNTIME_IS_BUN = (globalThis as { Bun?: unknown }).Bun !== undefined
 export const SCENARIO_DIR = join(REPO_ROOT, "scenarios")
 
+/** Every checked-in map's file name (`melee-kill.map.json`), from every folder under `scenarios/`, sorted. */
 export function scenarioFiles(): string[] {
-  return readdirSync(SCENARIO_DIR)
-    .filter((name) => name.endsWith(".map.json"))
-    .sort()
+  return mapCatalog(SCENARIO_DIR).map((entry) => `${entry.id}.map.json`)
 }
 
+/** A checked-in map by its file name, whichever folder it is in. */
 export async function loadScenarioFile(name: string): Promise<ScenarioDefinition> {
-  return loadMapFile(join(SCENARIO_DIR, name))
+  return loadMapFile(name)
 }
 
 export type Resolved = Readonly<{

@@ -12,13 +12,12 @@
 // outcome moved. The clock is read here, around `stepTick`, never inside the kernel.
 
 import { createHash } from "node:crypto"
-import { readdirSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { writeFileSync } from "node:fs"
 import { briefOf, newDuel, playRound, scriptedPlayer } from "../src/duel/index.ts"
 import type { DuelSetup, Side, SidePlan } from "../src/duel/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { loadScenario } from "../src/scenario/load.ts"
-import { loadMapFile } from "../src/scenario/load-map-file.ts"
+import { loadMapFile, mapCatalog } from "../src/scenario/load-map-file.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
@@ -113,9 +112,9 @@ class Fingerprint {
 }
 
 if (maps !== "none") {
-  const names = readdirSync("scenarios").filter((name) => name.endsWith(".map.json") && (maps === "all" || name.startsWith("route-"))).sort()
-  for (const name of names) {
-    const scenario = await loadMapFile(join("scenarios", name))
+  const entries = mapCatalog().filter((entry) => maps === "all" || entry.id.startsWith("route-"))
+  for (const entry of entries) {
+    const scenario = await loadMapFile(entry.path)
     for (const seed of seeds) {
       const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
       const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)

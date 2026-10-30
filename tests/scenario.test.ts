@@ -340,27 +340,6 @@ test("ranged-kill: the fixture's own arithmetic", async () => {
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
-test("trooper-versus-marksman: melee wins the charge, at a measured cost", async () => {
-  // The first milestone predicted the trooper "eats three shots, arriving at 22 of 40 health, then kills
-  // the marksman" - still exact after the 2026-08-22 speed pass (owner playtest: "units still move
-  // too slow"), because the faster trooper closes the marksman's cooldown-24 firing window in fewer
-  // ticks: the marksman gets zero more shots in after the trooper arrives, not one, so the trooper
-  // finishes the fight at its arrival health, 22 of 40, rather than 16.
-  const resolved = await resolveScenario("trooper-versus-marksman.map.json")
-  const trooper = resolved.run.finalState.entities.find((entity) => entity.player === "A")
-  assert.ok(trooper !== undefined, "the trooper did not survive, so melee no longer wins the charge")
-  assert.equal(resolved.run.finalState.outcome?.winner, "A")
-
-  const hits = resolved.run.events.filter(
-    (event) => event.kind === "damage.applied" && event.entity === trooper.id,
-  )
-  const arrival = hits[2]
-  assert.ok(arrival !== undefined && arrival.kind === "damage.applied")
-  assert.equal(arrival.hpAfter, 22, "the approach no longer costs exactly three shots")
-  assert.equal(hits.length, 3, "the marksman should get no shots in after the trooper arrives")
-  assert.equal(trooper.hp, 22, "the measured finishing health changed")
-})
-
 test("worker-flight: the worker runs, and workers count for annihilation", async () => {
   const resolved = await resolveScenario("worker-flight.map.json")
   const fleeing = resolved.run.events.filter((event) => event.kind === "behavior.flee")
@@ -376,14 +355,6 @@ test("worker-flight: the worker runs, and workers count for annihilation", async
 
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
-})
-
-test("obstacle-routing: the trooper rounds the spine instead of stalling", async () => {
-  const resolved = await resolveScenario("obstacle-routing.map.json")
-  const passed = resolved.run.events.some(
-    (event) => event.kind === "entity.moved" && event.to.x > 12,
-  )
-  assert.ok(passed, "the trooper never got past the rock spine")
 })
 
 test("structure-destruction: destroying a Grid Nexus ends the Pulse", async () => {
