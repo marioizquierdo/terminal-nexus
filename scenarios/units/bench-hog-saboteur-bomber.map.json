@@ -50,5 +50,6 @@
         "b": { "content": "structure.citizen.barracks" }
       }
     }
-  }
+  },
+  "targets": { "A": { "x": 22, "y": 3, "width": 3, "height": 4 }, "B": { "x": 2, "y": 4, "width": 1, "height": 3 } }
 }

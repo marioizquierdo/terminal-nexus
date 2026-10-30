@@ -7,7 +7,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/grid/index.ts"
-import { DEFAULT_PRESET, ScenarioError, TICKS_PER_SECOND, loadScenario, presetDimensions } from "../src/scenario/index.ts"
+import { DEFAULT_PRESET, ScenarioError, TICKS_PER_SECOND, loadScenario, presetDimensions, sidesWithoutGoal } from "../src/scenario/index.ts"
 import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
@@ -283,6 +283,18 @@ test("every scenario file loads, and its id matches its file name", async () => 
   }
 })
 
+test("every checked-in map gives each side that fights somewhere to go: its own target, or an enemy Nexus", async () => {
+  // The game never plays a battle where a side has neither; its units would fall back on the nearest enemy wherever it
+  // is, a rule no player ever sees. A map that tests a rule tests it as the game plays it.
+  const missing: string[] = []
+  for (const name of scenarioFiles()) {
+    const scenario = await loadScenarioFile(name)
+    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
+    for (const side of sidesWithoutGoal(loaded.state, loaded.registry)) missing.push(`${scenario.id} side ${side}`)
+  }
+  assert.deepEqual(missing, [], `no target and no enemy Nexus: ${missing.join("; ")}`)
+})
+
 test("every scenario file fits the engine tool's Grid pane, so no map is cut or drawn over the side panel", async () => {
   // The engine tool draws one fixed composition: a smaller Grid is centred in the pane, a bigger one is cut and its
   // columns past the pane drawn over the panel.
@@ -409,7 +421,8 @@ test("target-head-engage-stand: a side with a target heads for it, fights what c
   const { run } = resolved
   const area = run.initialState.targets?.A
   assert.deepEqual(area, { x: 15, y: 2, width: 3, height: 3 })
-  assert.equal(run.initialState.targets?.B, undefined)
+  // The runner's side heads for where the squad starts, as every side that fights has somewhere to go.
+  assert.deepEqual(run.initialState.targets?.B, { x: 1, y: 5, width: 2, height: 3 })
   // On the way: the runner comes within reach and the squad turns on it — never from further than that.
   const turned = run.events.filter((event) => event.kind === "target.selected" && event.entity.startsWith("A:"))
   assert.ok(turned.length >= 3, "the squad never turned on the runner")

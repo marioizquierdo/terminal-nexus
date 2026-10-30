@@ -46,5 +46,6 @@
         "w": { "content": "unit.bench.wallsegment" }
       }
     }
-  }
+  },
+  "targets": { "A": { "x": 10, "y": 8, "width": 4, "height": 1 } }
 }

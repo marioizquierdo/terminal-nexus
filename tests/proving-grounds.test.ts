@@ -96,12 +96,16 @@ test("targetPreference: a giant prefers a farther structure over a much closer s
   if (first === undefined || first.kind !== "target.selected") return
   assert.ok(first.target.includes(":barracks#"), `the ram's first target was ${first.target}, not the barracks`)
 
-  // It never fires on the trooper it is ignoring - targetPreference is a bias on *selection*, and
-  // nothing here should also need to touch attacks() to hold.
+  // It never fires on the trooper it is ignoring while the barracks stands - targetPreference is a bias on
+  // *selection*, and nothing here should also need to touch attacks() to hold. Once the barracks falls it turns on the
+  // trooper, by the preference's own fallback (the bench came within the ram's sight when every map came to give each
+  // side a goal, the barracks its target, so the battle now lasts that long).
+  const razed = events.find((event) => event.kind === "structure.destroyed")?.tick ?? Infinity
   const ramAttacks = events.filter(
-    (event) => event.kind === "attack.launched" && event.attacker.includes(":ram#"),
+    (event) => event.kind === "attack.launched" && event.attacker.includes(":ram#") && event.tick <= razed && !event.target.includes(":barracks#"),
   )
   assert.equal(ramAttacks.length, 0, "the ram fought back against the trooper it should be ignoring")
+  assert.ok(razed < Infinity, "the ram never razed the barracks")
 })
 
 test("support: a heal clamps at maxHp, raises hp, and reports as heal.applied, never damage.applied", async () => {

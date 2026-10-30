@@ -40,5 +40,6 @@
         "u": { "content": "structure.bench.beamturret" }
       }
     }
-  }
+  },
+  "targets": { "A": { "x": 21, "y": 4, "width": 1, "height": 1 } }
 }

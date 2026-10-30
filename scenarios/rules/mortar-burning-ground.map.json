@@ -1,7 +1,7 @@
 {
   "id": "mortar-burning-ground",
   "name": "A Citizen mortar shells a marching block, the ground burns, and a walker behind goes round the fire",
-  "notes": "Burning ground (AttackDef.burn, MatchState.burning; the owner's yes of 2026-10-21). A Citizen mortar walks a strip of ground behind a ridge of rock that no trooper can cross, and shoots over it. A block of ten troopers, five by two, marches west below the ridge to its side's target, too far from the mortar to turn on it (an engage reach of 6) and near enough to be shelled (a reach of 10). Its first shell, a second's windup after the block comes in reach, lands on the thickest of them (aim: crowd), bursts for 12 within 2 on the enemy alone, and lights the ground within 4 for four seconds, 8 a second to every unit and worker standing on it, of either side. The block walks out of the fire, the ones still on it burnt once. A lone trooper six columns behind arrives while the ground still burns and walks round the patch below it rather than along the ridge, since a route weighs burning ground four times its ground. At its target the block stands, and the mortar, following along its strip, shells it there: standing in the fire, it burns until it falls.",
+  "notes": "Burning ground (AttackDef.burn, MatchState.burning; the owner's yes of 2026-10-21). A Citizen mortar walks a strip of ground behind a ridge of rock that no trooper can cross, toward its target at the strip's west end, above the block's, and shoots over the ridge. A block of ten troopers, five by two, marches west below the ridge to its side's target, too far from the mortar to turn on it (an engage reach of 6) and near enough to be shelled (a reach of 10). Its first shell, a second's windup after the block comes in reach, lands on the thickest of them (aim: crowd), bursts for 12 within 2 on the enemy alone, and lights the ground within 4 for four seconds, 8 a second to every unit and worker standing on it, of either side. The block walks out of the fire, the ones still on it burnt once. A lone trooper four columns behind arrives while the ground still burns and walks round the patch below it rather than along the ridge, since a route weighs burning ground four times its ground. At its target the block stands, and the mortar, following along its strip, shells it there: standing in the fire, it burns until it falls.",
   "grid": {
     "width": 44,
     "height": 13
@@ -27,14 +27,7 @@
     ".": "terrain.plain",
     "#": "terrain.rock"
   },
-  "targets": {
-    "B": {
-      "x": 0,
-      "y": 6,
-      "width": 3,
-      "height": 2
-    }
-  },
+  "targets": { "A": { "x": 0, "y": 0, "width": 3, "height": 3 }, "B": { "x": 0, "y": 6, "width": 3, "height": 2 } },
   "placements": {
     "A": {
       "at": {
@@ -56,7 +49,7 @@
         "y": 6
       },
       "rows": [
-        "ttttt      t",
+        "ttttt    t",
         "ttttt       "
       ],
       "legend": {

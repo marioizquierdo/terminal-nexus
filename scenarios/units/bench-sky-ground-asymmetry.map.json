@@ -43,5 +43,6 @@
         "f": { "content": "unit.bench.flaktrooper" }
       }
     }
-  }
+  },
+  "targets": { "A": { "x": 4, "y": 4, "width": 1, "height": 2 }, "B": { "x": 18, "y": 5, "width": 1, "height": 1 } }
 }

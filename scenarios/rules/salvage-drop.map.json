@@ -56,5 +56,6 @@
         }
       }
     }
-  }
+  },
+  "targets": { "A": { "x": 13, "y": 5, "width": 1, "height": 1 }, "B": { "x": 10, "y": 5, "width": 1, "height": 2 } }
 }

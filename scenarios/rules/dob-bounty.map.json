@@ -5,7 +5,7 @@
   "grid": {
     "preset": "small-wide"
   },
-  "seed": 3,
+  "seed": 10,
   "pulseTicks": 480,
   "terrain": [
     "........................",
@@ -66,5 +66,6 @@
         }
       }
     }
-  }
+  },
+  "targets": { "A": { "x": 16, "y": 3, "width": 1, "height": 5 }, "B": { "x": 2, "y": 3, "width": 2, "height": 5 } }
 }

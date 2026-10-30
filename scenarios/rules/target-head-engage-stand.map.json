@@ -73,12 +73,5 @@
       }
     }
   },
-  "targets": {
-    "A": {
-      "x": 15,
-      "y": 2,
-      "width": 3,
-      "height": 3
-    }
-  }
+  "targets": { "A": { "x": 15, "y": 2, "width": 3, "height": 3 }, "B": { "x": 1, "y": 5, "width": 2, "height": 3 } }
 }

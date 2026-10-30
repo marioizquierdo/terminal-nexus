@@ -42,5 +42,6 @@
         "t": { "content": "unit.citizen.trooper" }
       }
     }
-  }
+  },
+  "targets": { "B": { "x": 4, "y": 5, "width": 2, "height": 2 } }
 }
