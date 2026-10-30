@@ -1,0 +1,17 @@
+{
+  "id": "pick-for-the-ground",
+  "question": "Does the army to field depend on the ground? Five armies against the same mixed one, on five grounds",
+  "notes": "Strategic breadth: if one army did best on every ground, the choice of army would be no choice. Side B is each map's own mixed army, six troopers and six marksmen. Side A's twelve one-tile places are filled front to back by each variant.",
+  "maps": ["engage-open-melee-vs-mix", "engage-gap6-mix-mirror", "engage-gap2-melee-vs-mix", "engage-corridor-melee-vs-mix", "engage-lanes-melee-vs-mix"],
+  "seeds": "1-12",
+  "swap": true,
+  "shuffle": true,
+  "variants": {
+    "melee": { "army": { "A": "trooper:12" } },
+    "mix": { "army": { "A": "trooper:6,marksman:6" } },
+    "ranged": { "army": { "A": "marksman:12" } },
+    "air mix": { "army": { "A": "trooper:6,skyraider:6" } },
+    "pikes": { "army": { "A": "pikeman:3,marksman:6" } },
+    "runners": { "army": { "A": "runner:12" } }
+  }
+}

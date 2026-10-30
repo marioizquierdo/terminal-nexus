@@ -16,9 +16,10 @@
     "grid": "node bin/grid.ts",
     "duel": "node bin/duel.ts",
     "terminal-nexus": "node bin/terminal-nexus.ts",
-    "maps": "ls scenarios/*.map.json",
+    "maps": "ls scenarios/*/*.map.json",
+    "trials": "ls scenarios/trials/*.trial.json",
     "test:all": "npm run typecheck && npm test && npm run test:bun",
-    "verify-maps": "for map in scenarios/*.map.json; do ./bin/grid.ts \"$map\" --verify --runs 20 || exit 1; done"
+    "verify-maps": "for map in scenarios/*/*.map.json; do ./bin/grid.ts \"$map\" --verify --runs 20 || exit 1; done"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

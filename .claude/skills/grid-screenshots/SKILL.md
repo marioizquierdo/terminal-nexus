@@ -24,7 +24,7 @@ node -e '
 const tl = await import("./src/cli/timeline.ts")
 const sc = await import("./src/scenario/index.ts")
 const v  = await import("./src/view/index.ts")
-const scenario = await sc.loadMapFile("scenarios/citizens-versus-ravels.map.json")
+const scenario = await sc.loadMapFile("scenarios/showcase/citizens-versus-ravels.map.json")
 const loaded = sc.loadScenario(scenario)
 const timeline = tl.buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
 const view = v.createView(timeline, { ...v.DEFAULT_PRESENTATION, glyphPack: "unicode" })
@@ -59,13 +59,13 @@ screenshot lands where you meant rather than wherever the wall clock reached. Fi
 shooting from the log first:
 
 ```bash
-./bin/grid.ts scenarios/ravel-cascade --headless | grep -E "blast|death"
+./bin/grid.ts scenarios/rules/ravel-cascade --headless | grep -E "blast|death"
 ```
 
 ## Driving it by hand
 
 ```bash
-tmux new-session -d -s nexus -x 80 -y 24 './bin/grid.ts scenarios/ravel-cascade'
+tmux new-session -d -s nexus -x 80 -y 24 './bin/grid.ts scenarios/rules/ravel-cascade'
 timeout 10 bash -c 'until tmux capture-pane -t nexus -p | grep -q "TERMINAL NEXUS"; do sleep 0.2; done'
 tmux send-keys -t nexus -l ' '          # pause
 tmux send-keys -t nexus -l ',,,,,,,,,,' # ten ticks forward
@@ -104,7 +104,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 ## Watching it yourself
 
 ```bash
-./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --colors truecolor
-./bin/grid.ts scenarios/ravel-cascade --colors monochrome --speed 0.5
-./bin/grid.ts scenarios/citizens-versus-ravels --reduced-motion
+./bin/grid.ts scenarios/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
+./bin/grid.ts scenarios/rules/ravel-cascade --colors monochrome --speed 0.5
+./bin/grid.ts scenarios/showcase/citizens-versus-ravels --reduced-motion
 ```

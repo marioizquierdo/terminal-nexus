@@ -6,12 +6,12 @@ it is done.*
 ## Waiting on Mario
 
 - **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge run, or
-  `./bin/grid.ts scenarios/march-lines` and `scenarios/march-commander`. Ranged units walk at half speed while a trooper
+  `./bin/grid.ts scenarios/movement/march-lines` and `scenarios/movement/march-commander`. Ranged units walk at half speed while a trooper
   is near and fall in behind on the move; Vasse is a regular troop; a unit keeps its target until it falls or it has
   gone 2½ seconds unable to strike it, or at once if its enemy is walled in, then takes one it can reach, further off than
   it sees if it must, and with none stands as near as it can get. New: six engage scenarios, the same armies on open
   ground, a gap six rows wide and two rows wide, a corridor and two lanes
-  (`./bin/grid.ts scenarios/engage-gap2-melee-vs-mix`, `engage-gap2-airmix-vs-mix`, `engage-lanes-melee-vs-mix`).
+  (`./bin/grid.ts scenarios/engage/engage-gap2-melee-vs-mix`, `engage-gap2-airmix-vs-mix`, `engage-lanes-melee-vs-mix`).
   Watch eighteen troopers lose at the two-row door while the same number with half in the air win; say whether that
   reads as good ground (a choice that matters) or as air being too strong where the ground is tight, and whether commitment
   reads as commitment or as stubbornness.
@@ -27,9 +27,9 @@ it is done.*
   Crossing, each a duel of up to six rounds; a lost battle ends the run on its summary, and the next run begins.
   Runs play on the armies as they are: they say nothing about balance yet.
 - **Play the pathfinding milestone's wrap-up** ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)):
-  `./bin/grid.ts scenarios/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
-  troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/march-commander` (Vasse is a regular troop; the troopers pass her
-  and nobody waits for her), `./bin/grid.ts scenarios/mortar-burning-ground` (the lighter fire), and PERIMETER's round 2 from
+  `./bin/grid.ts scenarios/movement/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
+  troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/movement/march-commander` (Vasse is a regular troop; the troopers pass her
+  and nobody waits for her), `./bin/grid.ts scenarios/rules/mortar-burning-ground` (the lighter fire), and PERIMETER's round 2 from
   `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'`, where last round's troopers stand on and
   beside their Barracks. The march's numbers, the next flanker and PERIMETER's balance with nothing built wait for
   his playing (his words: "We will correct that when I start playing").

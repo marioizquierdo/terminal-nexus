@@ -437,7 +437,7 @@ function captureGate(shot) {
   killSession(repoRoot, SESSION)
   const command = [
     "./bin/grid.ts",
-    `scenarios/${shot.scenario}.map.json`,
+    shot.scenario,
     ...extraArgsFor(shot),
   ].join(" ")
   tmux(repoRoot, [
@@ -457,7 +457,7 @@ function capture(shot) {
   startWatch(
     repoRoot,
     SESSION,
-    `scenarios/${shot.scenario}.map.json`,
+    shot.scenario,
     shot.cols,
     shot.rows,
     extraArgsFor(shot),

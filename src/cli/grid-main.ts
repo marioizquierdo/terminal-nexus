@@ -6,8 +6,8 @@
 //   grid <map> --verify [--runs 10]               # same hashes every run? (headless)
 //   grid <map> --turn 90                          # jump straight to a tick, in any of the above
 //
-// `<map>` is a path to a `.map.json` file; the suffix is optional (`grid scenarios/melee-kill` and
-// `grid scenarios/melee-kill.map.json` are the same file). There is no subcommand: the first
+// `<map>` is a path to a `.map.json` file; the suffix is optional (`grid scenarios/rules/melee-kill` and
+// `grid scenarios/rules/melee-kill.map.json` are the same file). There is no subcommand: the first
 // positional argument is always the map, and the default action is `watch`. A bare `grid` with no
 // map is reserved for the map editor — not built yet, so it is a usage error today.
 //
@@ -22,12 +22,15 @@ import { resolvePulse, resolvePulseAt } from "../pulse/index.ts"
 import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../report/index.ts"
 import type { ReportInput } from "../report/index.ts"
 import { hashState } from "../state/serialize.ts"
-import { loadMapFile, loadScenario } from "../scenario/index.ts"
+import { applyVariant, loadMapFile, loadScenario, mirrored, shuffled, sidesWithoutGoal } from "../scenario/index.ts"
+import type { ScenarioDefinition } from "../scenario/index.ts"
+import type { ContentRegistry } from "../content/index.ts"
 import { DEFAULT_PRESENTATION, parseColorDepth, parseGlyphPack, parseTheme } from "../view/index.ts"
 import type { ColorDepth, PresentationOptions } from "../view/index.ts"
 import { parseArgs, parseInteger, retiredOption } from "./args.ts"
 import type { ParsedArgs } from "./args.ts"
 import { buildTimeline } from "./timeline.ts"
+import { VARIANT_OPTIONS, adHocTrial, loadTrialFile, runTrial, trialPath, variantFromArgs } from "./trial.ts"
 import { watchPulse } from "./watch.ts"
 
 const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
@@ -46,7 +49,25 @@ const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay
   grid <map.map.json> --verify [--runs 10] [--seed] [--ticks] [--turn 90]
       re-resolves 10 times (default) and fails if any run's hashes disagree — also headless
 
-<map> is a path to a .map.json file; the .map.json suffix is optional. There is no subcommand.
+  grid <map.map.json> --seeds 1-12 [--swap] [--shuffle] [variant options] [--json] [--out battles.json]
+      a trial: plays the map on every seed (and, with --swap, mirrored with its sides swapped; with --shuffle, each
+      side's units shuffled among their places by the seed) and prints, for the map as built and for the variant the
+      options make of it, who won and how surely, how soon, how many units ever struck, stalled and fell
+
+  grid <trial.trial.json> [--seeds 1-12] [--json] [--out battles.json] [--baseline battles.json]
+      a trial file (scenarios/trials/): maps, seeds, variants and what it expects; fails when an expectation does not hold.
+      --baseline sets each row beside the same trial written down with --out before a change, marking what moved;
+      a round robin of armies prints each map's standings (--cells for every pairing's own row)
+
+Variant options, for every action (watch, --headless, --verify and a trial):
+  --set A.t=raider,B.m=sniper     a side's legend symbol (or every one of a content: A.trooper=raider) made another unit
+  --army-a trooper:6,skyraider:6  a side's one-tile units replaced, front to back (--army-b for side B)
+  --tune trooper.maxHp=60         a content's number changed (any field it has, or vision)
+  --terrain "#=scrub"             a terrain symbol made another terrain
+  --target-a x,y,w,h              a side's target moved (--target-b)
+  --swap, --shuffle               one battle mirrored with its sides swapped; its units shuffled by --seed
+
+<map> is a .map.json file, with or without the suffix, or a checked-in map's id (grid melee-kill). There is no subcommand.
 
 Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
 carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.
@@ -73,6 +94,25 @@ export function detectColorDepth(env: NodeJS.ProcessEnv = process.env): ColorDep
 }
 
 type RunOptions = Readonly<{ seed?: number; ticks?: number }>
+
+/**
+ * The map at `path` as the command line's variant makes it (`--set`, `--army-a`, `--tune`, `--terrain`, `--target-a`),
+ * its units shuffled by the seed with `--shuffle`, mirrored with its sides swapped with `--swap`; and the content it is
+ * played with. Warns, once, of a side that fights with nowhere to go.
+ */
+async function openMap(path: string, args: ParsedArgs, seed?: number): Promise<{ scenario: ScenarioDefinition; registry: ContentRegistry }> {
+  const loaded = await loadMapFile(path)
+  const variant = variantFromArgs(args)
+  const made = variant === null ? { scenario: loaded, registry: FIXTURE_REGISTRY } : applyVariant(loaded, FIXTURE_REGISTRY, variant)
+  let scenario = made.scenario
+  if (args.flags.has("shuffle")) scenario = shuffled(scenario, made.registry, seed ?? scenario.seed)
+  if (args.flags.has("swap")) scenario = mirrored(scenario, made.registry)
+  const state = loadScenario(scenario, { registry: made.registry }).state
+  for (const side of sidesWithoutGoal(state, made.registry)) {
+    process.stderr.write(`grid: side ${side} of ${scenario.id} fights with no target and no enemy Nexus, a battle the game never plays\n`)
+  }
+  return { scenario, registry: made.registry }
+}
 
 function optionsFrom(args: ParsedArgs): RunOptions {
   const seed = args.options.get("seed")
@@ -102,11 +142,11 @@ function fromTurn(lines: readonly string[], turn: number): string[] {
 }
 
 async function commandHeadless(path: string, args: ParsedArgs): Promise<number> {
-  const scenario = await loadMapFile(path)
   const overrides = optionsFrom(args)
+  const { scenario, registry } = await openMap(path, args, overrides.seed)
   const seed = overrides.seed ?? scenario.seed
   const pulseTicks = overrides.ticks ?? scenario.pulseTicks
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
+  const loaded = loadScenario(scenario, { registry, seed })
   const run = resolvePulse({
     initialState: loaded.state,
     registry: loaded.registry,
@@ -160,8 +200,8 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
 const DEFAULT_VERIFY_RUNS = 10
 
 async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
-  const scenario = await loadMapFile(path)
   const overrides = optionsFrom(args)
+  const { scenario, registry } = await openMap(path, args, overrides.seed)
   const seed = overrides.seed ?? scenario.seed
   const pulseTicks = overrides.ticks ?? scenario.pulseTicks
   const runs = parseInteger(args.options.get("runs") ?? String(DEFAULT_VERIFY_RUNS), "--runs")
@@ -177,7 +217,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   const snapshotTick = turn ?? -1
 
   for (let index = 0; index < runs; index += 1) {
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
+    const loaded = loadScenario(scenario, { registry, seed })
     const run = resolvePulseAt(
       { initialState: loaded.state, registry: loaded.registry, pulseTicks, seed },
       snapshotTick,
@@ -242,11 +282,11 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
 }
 
 async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
-  const scenario = await loadMapFile(path)
   const overrides = optionsFrom(args)
+  const { scenario, registry } = await openMap(path, args, overrides.seed)
   const seed = overrides.seed ?? scenario.seed
   const pulseTicks = overrides.ticks ?? scenario.pulseTicks
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
+  const loaded = loadScenario(scenario, { registry, seed })
   const timeline = buildTimeline(scenario, loaded.state, loaded.registry, pulseTicks, seed)
 
   const savePath = args.options.get("save-log")
@@ -291,7 +331,7 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
 
 /** Everything `grid` reads from its command line, besides the map; anything else is refused rather than ignored, as
  *  the game's own command line refuses it (`terminal-nexus.ts`). */
-const GRID_FLAGS: ReadonlySet<string> = new Set(["help", "headless", "verify", "json", "no-effects", "reduced-motion"])
+const GRID_FLAGS: ReadonlySet<string> = new Set(["help", "headless", "verify", "json", "no-effects", "reduced-motion", "swap", "shuffle", "cells"])
 const GRID_OPTIONS: ReadonlySet<string> = new Set([
   "seed",
   "ticks",
@@ -306,6 +346,10 @@ const GRID_OPTIONS: ReadonlySet<string> = new Set([
   "speed",
   "backend",
   "cosmetic-seed",
+  "seeds",
+  "out",
+  "baseline",
+  ...VARIANT_OPTIONS,
 ])
 
 /** What `grid` says for what it does not read: a retired option what changed (`RETIRED_OPTIONS`); anything else,
@@ -342,6 +386,12 @@ export async function main(argv: readonly string[]): Promise<number> {
     return 2
   }
 
+  const trial = trialPath(path)
+  if (trial !== null) return runTrial(await loadTrialFile(trial), args)
+  if (args.options.has("seeds")) {
+    const scenario = await loadMapFile(path)
+    return runTrial(adHocTrial(scenario, args), args, scenario)
+  }
   if (args.flags.has("verify")) return commandVerify(path, args)
   if (args.flags.has("headless")) return commandHeadless(path, args)
   return commandWatch(path, args)

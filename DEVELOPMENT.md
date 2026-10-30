@@ -22,12 +22,12 @@ npm run test:all    # typecheck, then both runtimes: what to run before every pu
 npm run verify-maps # every checked-in map resolves to the same hashes twenty times (CI runs this)
 
 # grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional.
-./bin/grid.ts scenarios/citizen-mirror-skirmish                       # watch (the default)
-./bin/grid.ts scenarios/citizens-versus-ravels --glyphs unicode --colors truecolor
-./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --log-level info --ticks 120
-./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --events events.jsonl --json
-./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
-./bin/grid.ts scenarios/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
+./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish                       # watch (the default)
+./bin/grid.ts scenarios/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
+./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
+./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
+./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
+./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
 npm run maps                                                          # every checked-in map
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).

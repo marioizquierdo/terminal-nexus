@@ -54,11 +54,11 @@ test("an argument the game does not read is refused before any screen, and a rem
   assert.equal(old.status, 2)
   assert.equal(old.stdout, "")
   assert.equal(old.stderr, "terminal-nexus: --build-phase is gone: --at 'campaign?level=vasse-test-1' opens its Build Phase.\nterminal-nexus --help lists every option.\n")
-  const several = runTerminalNexus(["--spike", "--fast", "scenarios/melee-kill.map.json"])
+  const several = runTerminalNexus(["--spike", "--fast", "scenarios/rules/melee-kill.map.json"])
   assert.equal(several.status, 2)
   assert.match(several.stderr, /--spike is gone: --at 'campaign\?level=vasse-test-1'/)
   assert.match(several.stderr, /unknown option --fast\./)
-  assert.match(several.stderr, /unexpected "scenarios\/melee-kill\.map\.json"\./)
+  assert.match(several.stderr, /unexpected "scenarios\/rules\/melee-kill\.map\.json"\./)
   // A retired option says what changed, its value refused with it.
   const retired = runTerminalNexus(["--tile-width", "2"])
   assert.equal(retired.status, 2)

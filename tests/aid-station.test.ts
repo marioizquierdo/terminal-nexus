@@ -1,6 +1,6 @@
 // The Aid Station: what Vasse's Aid Station Permit adds, a building that heals (commander-armies.md, her Nexus
 // powers: "The Aid Station repairs the units beside it each Battle Round"). The story is the named scenario
-// `scenarios/aid-station-repair.map.json`; here are the rule's edges, each on a few units placed to show one thing
+// `scenarios/rules/aid-station-repair.map.json`; here are the rule's edges, each on a few units placed to show one thing
 // (the kernel's healer on a building: `behavior: "support"`, a heal attack, its layers), how a heal looks on
 // screen, and its card at the 80 x 24 floor.
 

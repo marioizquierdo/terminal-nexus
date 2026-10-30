@@ -1,0 +1,31 @@
+{
+  "id": "engage-bench",
+  "question": "How fast are battles decided, and do units engage, on each ground, with the army it was drawn for?",
+  "notes": "The six engage maps as built: open ground, a gap six rows wide, a gap two rows wide (the wrong army for it, and troopers with flyers), a corridor and two lanes. Twelve units a side, each side's target the enemy Nexus. What it expects is what the bench was built to show: the melee army wins the open and the lanes and loses the narrow pass, flyers carry the narrow pass, a corridor costs time, and nearly every unit strikes wherever the army suits the ground.",
+  "maps": [
+    "engage-open-melee-vs-mix",
+    "engage-gap6-mix-mirror",
+    "engage-gap2-melee-vs-mix",
+    "engage-gap2-airmix-vs-mix",
+    "engage-corridor-melee-vs-mix",
+    "engage-lanes-melee-vs-mix"
+  ],
+  "seeds": "1-12",
+  "swap": true,
+  "shuffle": true,
+  "expect": [
+    {"map": "engage-open-melee-vs-mix", "measure": "winA", "atLeast": 0.9},
+    {"map": "engage-open-melee-vs-mix", "measure": "struckA", "atLeast": 0.95},
+    {"map": "engage-open-melee-vs-mix", "measure": "struckB", "atLeast": 0.95},
+    {"map": "engage-gap6-mix-mirror", "measure": "imbalance", "atMost": 0.2},
+    {"map": "engage-gap6-mix-mirror", "measure": "struckA", "atLeast": 0.95},
+    {"map": "engage-gap6-mix-mirror", "measure": "struckB", "atLeast": 0.95},
+    {"map": "engage-gap2-melee-vs-mix", "measure": "winB", "atLeast": 0.9},
+    {"map": "engage-gap2-melee-vs-mix", "measure": "struckA", "atMost": 0.85},
+    {"map": "engage-gap2-airmix-vs-mix", "measure": "winA", "atLeast": 0.8},
+    {"map": "engage-gap2-airmix-vs-mix", "measure": "struckA", "atLeast": 0.95},
+    {"map": "engage-corridor-melee-vs-mix", "measure": "decidedSeconds", "atLeast": 36},
+    {"map": "engage-lanes-melee-vs-mix", "measure": "winA", "atLeast": 0.6},
+    {"map": "engage-lanes-melee-vs-mix", "measure": "struckA", "atLeast": 0.95}
+  ]
+}

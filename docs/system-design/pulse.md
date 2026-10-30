@@ -493,7 +493,7 @@ Nexus power, later.
 terrain make practical outer layers; there is no hidden exposure meter.
 
 **The Grid Nexus fights back** (RULE — the owner, 2026-10-21: "the Nexus have a single attack that deals enough
-damage to kill a trooper"; `src/content/citizen.ts`, `src/content/ravel.ts`, `scenarios/nexus-fights-back.map.json`,
+damage to kill a trooper"; `src/content/citizen.ts`, `src/content/ravel.ts`, `scenarios/rules/nexus-fights-back.map.json`,
 `tests/nexus-fights-back.test.ts`). It is an ordinary ranged attack on its definition, so no rule knows a Nexus
 shoots: 40 damage every three seconds, at a marksman's reach of 6, at units, workers and flyers, never at a
 building. A trooper or a runner falls to one shot; a raider takes two. It matters most early, when a raid is a few
@@ -503,7 +503,7 @@ about routes and endings stand the bench's passive Grid Nexus (`structure.bench.
 was before, so a lone trooper sent round a wall is not shot on arrival.
 
 **A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/pulse/victory.ts`,
-`scenarios/nexus-stands.map.json`, `tests/scenario.test.ts`). Its Pulse goes on until the Nexus falls or
+`scenarios/rules/nexus-stands.map.json`, `tests/scenario.test.ts`). Its Pulse goes on until the Nexus falls or
 the time runs out, and a mission may add a losing condition of its own; a side with no Nexus, a raid, is
 still beaten by losing every unit. So a defence round no longer stops with the raid at the gate when the
 player's units fall: the raid comes on to the Nexus, and the round ends when it falls or the time is up.

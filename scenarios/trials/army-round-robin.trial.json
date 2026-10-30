@@ -1,0 +1,18 @@
+{
+  "id": "army-round-robin",
+  "question": "Does the best army depend on the ground? Every army against every other, twelve supply a side, on five grounds",
+  "notes": "Strategic breadth. Each army costs twelve supply (a pikeman takes two), filling a side's one-tile places front to back; every pair meets on every map from both ends. If one army led on every ground, picking an army would be no decision; if one beat nobody anywhere, it would never be worth fielding. The armies are the factions' own units: the Citizens' trooper, marksman and pikeman, the Ravels' runner, slinger and buzzard.",
+  "maps": ["engage-open-melee-vs-mix", "engage-gap6-mix-mirror", "engage-gap2-melee-vs-mix", "engage-corridor-melee-vs-mix", "engage-lanes-melee-vs-mix"],
+  "seeds": "1-6",
+  "swap": true,
+  "shuffle": true,
+  "armies": {
+    "melee": "trooper:12",
+    "mix": "trooper:6,marksman:6",
+    "ranged": "marksman:12",
+    "pikes": "pikeman:3,marksman:6",
+    "swarm": "runner:12",
+    "slingers": "trooper:6,slinger:6",
+    "air mix": "trooper:6,buzzard:6"
+  }
+}

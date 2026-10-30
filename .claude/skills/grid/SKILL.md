@@ -138,7 +138,7 @@ One placement block per player — `placements.A`, `placements.B`, a future play
 block's `at` is where its `rows[0][0]` sits, so `rows` only needs to cover the tiles that block
 actually places, not the whole Grid — write a tight box around one player's squad, not a
 Grid-sized overlay with everyone else blank. A placement symbol marks a unit's **centre tile**: for
-a 1×1 unit that's the only tile it has, but for a multi-tile unit (`scenarios/heavies-clash.map.json`
+a 1×1 unit that's the only tile it has, but for a multi-tile unit (`scenarios/showcase/heavies-clash.map.json`
 is the checked-in example, a 3×3 colossus and a 5×2 leviathan) the symbol sits on the footprint's
 middle tile and the loader derives the anchor from it (`footprintCentre`, `src/grid/coords.ts`). A
 legend entry is `{ "content": "..." }`, or `{ "content": "...", "hp": 12 }` to start that placement

@@ -154,7 +154,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     // already ignores terrain for anything on this layer (maskForActor, shared.ts) and the loader
     // already exempts it from the on-rock-at-spawn check (scenario/load.ts), so a walled rock room
     // no ground unit could ever leave is just a tile to this thing - see
-    // `scenarios/air-crossing.map.json`. Small, fragile, and it still detonates on death: the
+    // `scenarios/rules/air-crossing.map.json`. Small, fragile, and it still detonates on death: the
     // doctrine does not change because the wreckage falls from higher up.
     id: "unit.ravel.buzzard",
     short: "buzzard",

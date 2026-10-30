@@ -38,6 +38,9 @@ export type SideRecord = Readonly<{
   stalled: number
   /** Damage it dealt, to units, buildings and Nexus alike. */
   dealt: number
+  /** The tick each of its units that ever struck or shot first did, in order (a heal is not a strike): how many of
+   *  its units the battle ever engaged, and how soon. Absent from a record written before it was kept. */
+  firstStrikes?: readonly number[]
 }>
 
 export type BattleRecord = Readonly<{
@@ -60,6 +63,7 @@ type Tally = {
   longestBlocked: number
   stalled: Set<string>
   dealt: number
+  struck: Map<string, number>
 }
 
 const playerOf = (id: string): PlayerId | null => (id.startsWith("A:") ? "A" : id.startsWith("B:") ? "B" : null)
@@ -98,6 +102,7 @@ export class BattleRecorder {
       longestBlocked: 0,
       stalled: new Set(),
       dealt: 0,
+      struck: new Map(),
     })
     this.tallies = { A: tally(), B: tally() }
   }
@@ -122,7 +127,11 @@ export class BattleRecorder {
         if (run >= STALL_TICKS) tally.stalled.add(event.entity)
       } else if (event.kind === "attack.launched") {
         const player = playerOf(event.attacker)
-        if (player !== null && event.attackKind !== "heal" && this.tallies[player].firstContact === null && !contact.includes(player)) contact.push(player)
+        if (player !== null && event.attackKind !== "heal") {
+          const struck = this.tallies[player].struck
+          if (!struck.has(event.attacker)) struck.set(event.attacker, event.tick)
+          if (this.tallies[player].firstContact === null && !contact.includes(player)) contact.push(player)
+        }
       } else if (event.kind === "damage.applied") {
         const player = playerOf(event.source)
         if (player !== null && playerOf(event.entity) !== player) this.tallies[player].dealt += event.amount
@@ -163,6 +172,7 @@ export class BattleRecorder {
         longestBlocked: tally.longestBlocked,
         stalled: tally.stalled.size,
         dealt: tally.dealt,
+        firstStrikes: [...tally.struck].flatMap(([id, tick]) => (tally.fielded.has(id) ? [tick] : [])).sort((a, b) => a - b),
       }
     }
     return {

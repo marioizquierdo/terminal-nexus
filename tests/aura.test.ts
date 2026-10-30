@@ -1,6 +1,6 @@
 // A Commander's aura in the damage step (docs/system-design/pulse.md): Vasse's By the Book, the owner's
 // "Commanders ... should be like heroes on warcraft3 ... Vasse should provide boost to nearby units". The
-// story is the named scenario `scenarios/aura-by-the-book.map.json` (tests/scenario.test.ts); here are the
+// story is the named scenario `scenarios/rules/aura-by-the-book.map.json` (tests/scenario.test.ts); here are the
 // rule's edges, each on a few units placed to show one thing. An aura is an ability (`src/abilities/aura.ts`), named by
 // a unit's content as data: `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
 
