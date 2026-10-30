@@ -357,14 +357,19 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   weakest, a draw — and, heading for its side's target, turns to what is within its vision by range and that it can
   walk to without a detour of more than twice its vision (a walk a little longer than vision is no reason to drop an
   enemy at the edge of it); any other unit keeps the nearest by range, shots reaching over rock, but passes over one it
-  cannot get within range of for the nearest it can.
+  cannot get within range of for the nearest it can. When it can reach none of what it sees, and breaking a building
+  would not open the way, a unit looks for the nearest enemy up to four times its sight away that it can walk to
+  (`searchWider`, `SEARCH_SIGHTS`); with none it keeps its choice and stands as near as it can get, saying it has no
+  route.
 - **A unit holds its target** (`keptTarget`, `COMMIT_TICKS`, `tests/commitment.test.ts`; how it reads in
   [`movement.md`](movement.md), Targeting and attacking). A unit with an enemy target keeps it until it falls or stops
   being one the unit may choose, or until it has gone 30 ticks unable to strike it: the count starts again on every tick
   the target is in attack range and every tick the unit comes nearer to it than ever since it chose it, and otherwise adds
   one. While it holds, perception makes no choice for it (no `selectTarget`, no flanker's line, no crowd aim, no
   `chooseByRoute`); at 30 it chooses afresh without the one it let go of, which it takes again only when nothing else
-  qualifies. The enemy Nexus as the march's goal beyond vision is not held; a healer holds its patient while it is
+  qualifies. A held target the unit can neither strike from where it stands nor walk to — walled in by the fight round
+  it — is let go at once, not after 30 ticks (`walksToIt`), and the unit chooses afresh by what it can reach. The enemy
+  Nexus as the march's goal beyond vision is not held; a healer holds its patient while it is
   wounded; a building that shoots takes only what its attack reaches. The count is `commitGap` and `commitStall` in the
   state, absent while nothing is held.
 - **Crowds.** An ally in the way is waited for while it walks. A unit held up behind allies that are stuck — with no

@@ -623,3 +623,26 @@ little longer than vision dropping a candidate at the edge of sight). A rule wri
 or 30 ticks unable to strike) took the changes away from a living target from 2,453 to 164 for troopers. The count also
 showed what the rule alone would not fix: a building that cannot walk was cycling through far targets every 30 ticks, so a
 building takes only what its attack reaches. Replay the diagnosis after the fix; it finds the part the design missed.
+
+### Find where the waiting is before you tune who waits
+
+Units stalled in the late rounds of scripted duels, and the first guess was the new half speed in the formation. Playing
+the same duels with the slowing off gave the same stalls (about 4.5 a round in rounds 5 to 8, none in rounds 1 to 4), so
+that was not it. Following who held up whom to the head of each queue found a cause: 60% ended at a unit with no route
+to the enemy it held, standing beside a fight that surrounded its target. Letting go of a target a unit cannot reach, and
+looking further afield for one it can, took a third to two thirds of that standing away and a tenth to a fifth of the
+blocked time in a narrow pass. Cheap ideas that looked right were wrong or no gain: a shorter patience before choosing
+again made stalls 3.6 times worse on the open field, and spreading attackers, a speed boost, a charge and a higher cost
+for tiles of blocked allies changed nothing. The queue left is mostly geometry: a one-tile enemy has four faces.
+
+### A measurement must be set up as the game sets it up, and a count of waiting counts only units that try
+
+The same round reported, twice, that a rule helped. A scenario's blocked unit-ticks fell by nine tenths, and a new arena
+decided battles nine points sooner. Both were units standing idle: told to march on with nowhere to march (the scenarios
+and the arena gave no side a target, which the game always does), a unit stands, and a standing unit is never "blocked".
+What caught it was reading one battle's log and asking why a measure moved so much for so small a rule, then giving each
+side the enemy Nexus as its target as a duel's attack stance does and rerunning: every variant came out within 5%. Give a
+harness what the game gives, read one run by eye, count units that struck beside units that waited, vary the starting
+layout by seed (a mirrored army with one layout turns on tie draws alone), and play twelve or more seeds before a
+difference of a few percent means anything. Before building a rule on a number that large, look for what stopped doing
+something.

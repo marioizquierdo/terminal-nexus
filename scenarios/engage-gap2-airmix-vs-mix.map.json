@@ -1,0 +1,119 @@
+{
+  "id": "engage-gap2-airmix-vs-mix",
+  "name": "Engage: troopers and flyers against a mixed army through a gap two rows wide",
+  "notes": "Six troopers and six skyraiders (flyers) against six troopers and six marksmen, the same two-row gap. The flyers cross the ridge and fire from behind the door; the troopers queue at it. A mixed army with air does not need the door. Played to a result: a Nexus falling or a side wiped out. Done when: A wins, and every one of A's flyers strikes within twenty seconds.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 900,
+  "terrain": [
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    "................................................",
+    "................................................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##......................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 1,
+        "y": 0
+      },
+      "rows": [
+        "",
+        "",
+        "",
+        "",
+        "     ba",
+        "     b",
+        "     ba",
+        "n     a",
+        "",
+        "     ba",
+        "     ba",
+        "     ba",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.bench.nexus"
+        },
+        "a": {
+          "content": "unit.citizen.trooper"
+        },
+        "b": {
+          "content": "unit.bench.skyraider"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 38,
+        "y": 0
+      },
+      "rows": [
+        "",
+        "",
+        "",
+        "",
+        "  ab",
+        "  ab",
+        "   b",
+        "  ab  n",
+        "  a",
+        "",
+        "  ab",
+        "  ab",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.bench.nexus"
+        },
+        "a": {
+          "content": "unit.citizen.trooper"
+        },
+        "b": {
+          "content": "unit.citizen.marksman"
+        }
+      }
+    }
+  },
+  "targets": {
+    "A": {
+      "x": 44,
+      "y": 7,
+      "width": 3,
+      "height": 2
+    },
+    "B": {
+      "x": 1,
+      "y": 7,
+      "width": 3,
+      "height": 2
+    }
+  }
+}

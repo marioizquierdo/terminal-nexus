@@ -39,3 +39,8 @@ advice as where to start, not a law.
   the one before it.]
 - **Holding is a real choice for a defender.** Dob Hunter's army wins mostly when it holds in front of its Nexus and
   lets the enemy come to it, under the Nexus's own shots. [The Commander duels, 2026-10-20 and 2026-10-21.]
+- **Pick the army for the pass.** Eighteen melee troopers beat a mixed army on open ground and lose to it at a short pass
+  by a wide margin: a gap four rows wide, two rows or one tile, and a long corridor. A two-row door lets two strike
+  abreast; ranged units fire over it and flyers cross it. If the way between the Nexuses is a short pass, field ranged,
+  area and flying units, or hold the door yourself. [The engage scenarios, 12 seeds, 2026-10-29: the melee army left 33,
+  54 and 68 points of health behind at four rows, two and one tile.]

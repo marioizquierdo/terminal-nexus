@@ -39,6 +39,22 @@ was wiped out, time ran out). For each side:
   | `route-corridor` | two squads, one corridor, each side's Nexus beyond it | the battle never stands still for good |
   | `route-falling-building` | a building closing the one gap in a ridge | the troopers break it and go through |
 
+- **The engage scenarios** (`scenarios/engage-*.map.json`, the full spec, not the quick one): the same armies on ground
+  that is open, a gap six rows wide, a gap two rows wide, a corridor and two lanes (twelve units a side on a 48 by 16
+  Grid, the engine tool's pane), each side given the enemy's Nexus as its target as a duel's attack stance does, each
+  played to a result. They are the bench for how fast battles are
+  decided and how many units ever strike, and what they pin is what was measured: which army is the wrong one for which
+  ground (`tests/engage-scenarios.test.ts`).
+
+  | Scenario | What it shows | Done when |
+  | --- | --- | --- |
+  | `engage-open-melee-vs-mix` | twelve troopers against six troopers and six marksmen, open ground | A wins, every unit strikes |
+  | `engage-gap6-mix-mirror` | a mixed army against itself, a gap six rows wide | every unit of both strikes within twenty seconds |
+  | `engage-gap2-melee-vs-mix` | the melee army through a gap two rows wide: the wrong army for the pass | B wins, some of A never strike |
+  | `engage-gap2-airmix-vs-mix` | troopers and flyers through the same gap | A wins, nearly every unit strikes |
+  | `engage-corridor-melee-vs-mix` | the melee army down a corridor four rows wide and twenty long | the battle takes at least 40% longer than on open ground |
+  | `engage-lanes-melee-vs-mix` | the melee army through two gaps three rows wide | A wins, nearly every unit strikes: both lanes used |
+
 - **Every other map** in `scenarios/` on its own seed (the full spec): the rule fixtures and the bench, so a change of
   routes that moves one is seen.
 - **Duels** ([`duels.md`](duels.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
@@ -124,6 +140,15 @@ measurement file with no row in the index.
   set against each other (`--formations`), who won between each two and each one's spread.
 - **Scripted players are not players.** A script that attacks every round tells which army spends its curve better
   when attacking, not which is stronger; model players and Mario's own games say more ([`duels.md`](duels.md)).
+- **A battle must be set up as the game sets it up, and a count of waiting counts only units that try.** A measurement
+  of how long units stood blocked once said a rule had cut it by nine tenths on three scenarios: the units had stopped
+  trying to move at all. Those scenarios gave no side a target, and a unit told to march on with nowhere to march stands
+  idle, which `move.blocked` never records. Give each side what the game gives it (a duel's attack stance gives the
+  enemy Nexus as the target), read one battle's log by eye before trusting a number, and set a count of blocked units
+  beside one of units that struck.
+- **Seeded layouts and enough battles.** A mirrored army with one layout turns on tie draws alone; vary the starting
+  layout by seed and play twelve or more, since differences between targeting rules are a few percent and a stall count
+  has a standard error of about 0.3 a round.
 - **A tick's time is the machine's.** It compares two runs on one machine, played the same way (one process, or the
   same number side by side), never two machines.
 

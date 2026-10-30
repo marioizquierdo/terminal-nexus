@@ -1,0 +1,116 @@
+{
+  "id": "engage-lanes-melee-vs-mix",
+  "name": "Engage: melee against a mixed army through two lanes",
+  "notes": "Twelve troopers against six troopers and six marksmen, a ridge with two gaps, each three rows wide. An army that sends all its units down one lane queues; one that uses both reaches the defenders twice as fast. The test of whether a crowd finds the second way. Played to a result: a Nexus falling or a side wiped out. Done when: A wins, and at least two thirds of its units strike within twenty seconds: it used both lanes.",
+  "grid": {
+    "width": 48,
+    "height": 16
+  },
+  "seed": 1,
+  "pulseTicks": 900,
+  "terrain": [
+    ".......................##.......................",
+    ".......................##.......................",
+    "................................................",
+    "................................................",
+    "................................................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    ".......................##.......................",
+    "................................................",
+    "................................................",
+    "................................................",
+    ".......................##.......................",
+    ".......................##......................."
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 1,
+        "y": 0
+      },
+      "rows": [
+        "",
+        "",
+        "",
+        "",
+        "     aa",
+        "     a",
+        "     aa",
+        "n     a",
+        "",
+        "     aa",
+        "     aa",
+        "     aa",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.bench.nexus"
+        },
+        "a": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 38,
+        "y": 0
+      },
+      "rows": [
+        "",
+        "",
+        "",
+        "",
+        "  ab",
+        "  ab",
+        "   b",
+        "  ab  n",
+        "  a",
+        "",
+        "  ab",
+        "  ab",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "legend": {
+        "n": {
+          "content": "structure.bench.nexus"
+        },
+        "a": {
+          "content": "unit.citizen.trooper"
+        },
+        "b": {
+          "content": "unit.citizen.marksman"
+        }
+      }
+    }
+  },
+  "targets": {
+    "A": {
+      "x": 44,
+      "y": 7,
+      "width": 3,
+      "height": 2
+    },
+    "B": {
+      "x": 1,
+      "y": 7,
+      "width": 3,
+      "height": 2
+    }
+  }
+}

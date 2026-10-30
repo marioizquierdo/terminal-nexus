@@ -21,6 +21,7 @@ const TROOPER = "unit.citizen.trooper"
 const MARKSMAN = "unit.citizen.marksman"
 const NEXUS = "structure.citizen.nexus"
 const MEDIC = "unit.bench.medic"
+const WORKER = "unit.citizen.worker"
 
 function block(placed: readonly Placed[]): PlacementBlock {
   const symbols = "abcdefghijklmnopqrstuvwxyz"
@@ -155,24 +156,68 @@ test("a healer keeps its patient while it is wounded, and chooses again once it 
 
 test("a unit goes COMMIT_TICKS unable to strike the one it holds, and then lets go", () => {
   assert.equal(COMMIT_TICKS, 30)
-  // A trooper holds a marksman behind a wall it cannot pass (the wall runs the Grid's height); a trooper of the
-  // enemy's on its own side is the other it could choose. The count is in the state, as it is spent.
-  const start = load({ A: [[4, 5, TROOPER]], B: [[8, 5, MARKSMAN], [3, 9, TROOPER]] }, { rock: wall(6), ticks: 120 })
-  const walled = byContent(start, MARKSMAN, "B")
+  // A trooper holds a marksman it can walk to but has not come nearer to than it once was (its closest gap is seeded
+  // below what the walk can reach: as if it were held up in a crowd); a trooper of the enemy's on its own side is the
+  // other it could choose. The count is in the state, as it is spent.
+  const start = load({ A: [[4, 5, TROOPER]], B: [[8, 5, MARKSMAN], [3, 9, TROOPER]] }, { ticks: 120 })
+  const slow = byContent(start, MARKSMAN, "B")
   const me = byContent(start, TROOPER, "A")
-  const held: EntityState = { ...me, targetOrdinal: walled.ordinal, commitGap: 1, commitStall: COMMIT_TICKS - 3 }
+  const held: EntityState = { ...me, targetOrdinal: slow.ordinal, commitGap: 1, commitStall: COMMIT_TICKS - 3 }
   const seeded = { ...start, entities: start.entities.map((candidate) => (candidate.ordinal === me.ordinal ? held : candidate)) }
   const { states } = play(seeded, 5)
   const targets = states.slice(1).map((state) => entity(state, me.id)?.targetOrdinal)
   assert.deepEqual(
     targets.slice(0, 2),
-    [walled.ordinal, walled.ordinal],
-    "still holding the one it cannot reach, two ticks short of the limit",
+    [slow.ordinal, slow.ordinal],
+    "still holding the one it cannot strike, two ticks short of the limit",
   )
   assert.equal(entity(states[2] as MatchState, me.id)?.commitStall, COMMIT_TICKS - 1)
   const free = byContent(start, TROOPER, "B")
   assert.equal(targets[2], free.ordinal, "at the limit it chooses afresh, and the one it let go of is not the choice")
   assert.equal(entity(states[3] as MatchState, me.id)?.commitStall, undefined)
+})
+
+test("a held target that is walled in is let go at once, for the nearest the unit can reach", () => {
+  // The wall runs the Grid's height, so the marksman behind it cannot be walked to, and the trooper is not in its range:
+  // holding it would be standing beside the wall for COMMIT_TICKS. The enemy trooper on its own side can be reached.
+  const start = load({ A: [[4, 5, TROOPER]], B: [[8, 5, MARKSMAN], [3, 9, TROOPER]] }, { rock: wall(6), ticks: 120 })
+  const walled = byContent(start, MARKSMAN, "B")
+  const me = byContent(start, TROOPER, "A")
+  const held: EntityState = { ...me, targetOrdinal: walled.ordinal, commitGap: 1 }
+  const seeded = { ...start, entities: start.entities.map((candidate) => (candidate.ordinal === me.ordinal ? held : candidate)) }
+  const { states } = play(seeded, 3)
+  const free = byContent(start, TROOPER, "B")
+  assert.equal(entity(states[1] as MatchState, me.id)?.targetOrdinal, free.ordinal, "it held the one it cannot reach")
+})
+
+/** A ring of rock one tile out round (12, 5): the enemy inside it cannot be walked to. */
+const ring: (readonly [number, number])[] = []
+for (let x = 11; x <= 13; x += 1) for (let y = 4; y <= 6; y += 1) if (x !== 12 || y !== 5) ring.push([x, y])
+
+test("with nothing in sight it can reach, a unit looks further afield for an enemy it can, and goes for that one", () => {
+  // The worker in the ring is the only enemy in sight, and cannot be walked to; a trooper of the enemy's stands beyond
+  // its sight (the sight is 6 columns; the side has a target, so only what is in sight is a choice) but well within four
+  // times it, on open ground.
+  const start = load({ A: [[7, 5, TROOPER]], B: [[12, 5, WORKER], [16, 9, TROOPER]] }, { rock: ring, target: { x: 20, y: 2, width: 3, height: 3 }, ticks: 120 })
+  const me = byContent(start, TROOPER, "A")
+  const far = byContent(start, TROOPER, "B")
+  const { states } = play(start, 3)
+  assert.equal(entity(states[1] as MatchState, me.id)?.targetOrdinal, far.ordinal, "it did not look past the ring")
+})
+
+test("with nothing it can reach anywhere, a unit keeps its choice and stands as near as it can get, rather than marching on", () => {
+  // The only enemy is a worker in the ring, and the trooper's side has a target east of it. Marching on past the fight
+  // would take the trooper off to the target; instead it stands by the ring, the enemy it chose still its target, saying
+  // it has no route, ready to step in if a tile ever opens. (Measured both ways: the two decide battles alike, and a unit
+  // that stands is one rule fewer to explain.)
+  const start = load({ A: [[7, 5, TROOPER]], B: [[12, 5, WORKER]] }, { rock: ring, target: { x: 17, y: 3, width: 4, height: 5 }, ticks: 240 })
+  const me = byContent(start, TROOPER, "A")
+  const walledIn = byContent(start, WORKER, "B")
+  const { states, events } = play(start, 150)
+  const end = entity(states[states.length - 1] as MatchState, me.id) as EntityState
+  assert.ok(end.anchor.x <= 10, `the trooper walked on to x=${end.anchor.x}`)
+  assert.equal(end.targetOrdinal, walledIn.ordinal)
+  assert.ok(events.some((event) => event.kind === "move.blocked" && event.entity === me.id && event.reason === "no-route"), "it never said it had no route")
 })
 
 test("closing on a target, or having it in range, starts the count again", () => {

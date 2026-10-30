@@ -60,7 +60,9 @@ test("climbing the tree fields a stronger last army than the first tier alone; t
   // and 0.56: a survivor goes back to the building that trained it, not the nearest that trains its kind. Far from a fifth, because on this level the early units mostly live; this pins the
   // numbers, so a change is seen, and the milestone's last step measures the level again.
   assert.ok(tree.openingShare > 0.52 && tree.openingShare < 0.68, `the tree's opening share is ${tree.openingShare.toFixed(2)}`)
-  assert.ok(first.openingShare > 0.45 && first.openingShare < 0.6, `the first tier's opening share is ${first.openingShare.toFixed(2)}`)
+  // 0.60 for Barracks alone since a unit that cannot reach its target came to march on round the fight (the tree's
+  // share and its last army stand: 0.57, 3722 against 3092 for Barracks alone): the early units live a little longer.
+  assert.ok(first.openingShare > 0.45 && first.openingShare < 0.66, `the first tier's opening share is ${first.openingShare.toFixed(2)}`)
 })
 
 test("a locked building is in the build menu, refused by its digit with what it needs, and the bottom line says so on its row", () => {
