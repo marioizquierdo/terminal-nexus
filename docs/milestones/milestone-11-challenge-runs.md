@@ -136,11 +136,15 @@ so how they move, sort themselves and choose what to fight is what a player read
       side that fights given a goal; trials in `grid` over seeds from both ends with variants, trial files with what they
       expect, a round robin of armies, and a comparison before and after a change
       ([the testing ground](../system-design/testing-ground.md)). The engage maps rebuilt symmetric; their test is the
-      bench's trial.
+      bench's trial. Then the tools themselves: idle units, target switches and stall queues in every record, what a
+      tick costs (`--profile`), another build beside this one (`--against`), trials across processes, the battles worth
+      watching, and the spec as a playbook for each kind of change.
 - [ ] The queue that is left: melee troops waiting behind a striking front at a gap, mostly geometry, and tested ten ways
       without a gain beyond noise ([the chapter](../system-design/movement.md), "To smooth later"). More ways round (a
       map with more gaps), and what holds flyers back where the ground is tight, are the next things to settle.
 - [ ] Units pacing between two tiles at a door (about five a battle at a one- or two-row gap), the same before this step.
+      A lead: at a two-row gap units flip between two walled-in targets every tick; letting go only when another
+      can be reached is measured (switches 69 → 3 a unit, no outcome moved) and waits for the owner.
 
 Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
 list), and the workers' jobs (Milestone 7).

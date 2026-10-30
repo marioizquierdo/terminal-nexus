@@ -16,7 +16,7 @@ const SEEDS = [1, 2, 3, 4, 5, 6]
 const spec = await loadTrialFile(trialPath("engage-bench") as string)
 
 for (const map of spec.maps) {
-  test(`engage bench, ${map}: ${spec.expect?.filter((each) => each.map === map).map((each) => each.measure).join(", ")} as the trial expects`, async () => {
+  test(`engage bench, ${map}: ${spec.expect?.filter((each) => each.map === map).map((each) => each.measure).join(", ")} as the trial expects`, { timeout: 60_000 }, async () => {
     const one = { ...spec, maps: [map], seeds: SEEDS, expect: spec.expect?.filter((each) => each.map === map) ?? [] }
     const battles = playTrial(one, new Map([[map, await loadMapFile(map)]]))
     assert.equal(battles.length, SEEDS.length * 2)

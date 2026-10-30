@@ -261,3 +261,23 @@ seeds from both ends, with variants for another unit, army, number, ground or ta
 a round robin of armies, and a before-and-after comparison. Replicated: the wrong army for the narrow pass, flyers
 through it, the corridor's cost, a targeting rule before and after. Found on the way: the engage maps were not
 symmetric, now rebuilt. Not built: setting a kernel rule from a trial (a rule is code; it is compared by `--baseline`).
+
+### F236 — The testing ground is for testing changes, not for the best army
+
+> The testing ground is not to test the best army on each ground. The goal of this pull request is to improve the tools
+> of which you use to test different changes. So it will stay generic for now. Figuring out what army works best,
+> whenever we add a new unit or a commander, whenever we change targeting algorithm or the ways a certain troop moves
+> or the ways the army self-arranges information, maybe change priorities, add a new class. All of those things are
+> going to happen, and every time we do that, we have to test it. [...] The thing I'm mostly interested here is you can
+> analyze how the session is been working on the previous PRs, and see if there is any improvements that would have
+> made that faster or better. [...] Then take a chance to refactor, reorganize the code, and also don't forget about
+> ways to measure efficiency. For example, different troop moving algorithms can have different implications in
+> performance, or maybe how often units are targeting. So all of those are useful things to have in the markdown
+> document and available in the tools. [...] This type of game requires a lot of balancing, and that requires a lot of
+> testing.
+
+**Built** ([the report](../reports/2026-10-30-testing-ground.md), its second round): idle units, target switches and
+stall queues in every battle's record; `--profile` for a tick's cost by the clock and by route work; `--against <ref>`
+and `--jobs`; the battles worth watching with the command for each; the trial code in three parts; the spec rewritten
+as a playbook by kind of change. Found with it: a target flip-flop at narrow passes, measured with a candidate fix and
+left for the owner.

@@ -49,15 +49,22 @@ const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay
   grid <map.map.json> --verify [--runs 10] [--seed] [--ticks] [--turn 90]
       re-resolves 10 times (default) and fails if any run's hashes disagree — also headless
 
-  grid <map.map.json> --seeds 1-12 [--swap] [--shuffle] [variant options] [--json] [--out battles.json]
-      a trial: plays the map on every seed (and, with --swap, mirrored with its sides swapped; with --shuffle, each
-      side's units shuffled among their places by the seed) and prints, for the map as built and for the variant the
-      options make of it, who won and how surely, how soon, how many units ever struck, stalled and fell
+  grid <map.map.json> --seeds 1-12 [--swap] [--shuffle] [variant options] [trial options]
+      a trial: plays the map on every seed (with --swap mirrored too, its sides swapped; with --shuffle each side's
+      units shuffled within their formation line by the seed) as built and as the variant options make it, and prints
+      the outcome, how the armies engaged, and with --profile what a tick cost, then the battles worth watching
 
-  grid <trial.trial.json> [--seeds 1-12] [--json] [--out battles.json] [--baseline battles.json]
-      a trial file (scenarios/trials/): maps, seeds, variants and what it expects; fails when an expectation does not hold.
-      --baseline sets each row beside the same trial written down with --out before a change, marking what moved;
-      a round robin of armies prints each map's standings (--cells for every pairing's own row)
+  grid <trial.trial.json> [--seeds 1-12] [variant options] [trial options]
+      a trial file (scenarios/trials/): maps, seeds, variants or a round robin of armies, and what it expects; fails
+      when an expectation does not hold. Variant options given here apply to every variant
+
+Trial options:
+  --profile               what a tick cost: milliseconds, and the route work (fields built, anchors settled, calls)
+  --jobs 4                play across four processes; the same battles, merged in order
+  --against <git ref>     play the same trial by that commit's kernel and content too, each row beside it
+  --out battles.json      write every battle down; --baseline battles.json sets each row beside such a file
+  --json                  the cells, the battles worth watching and any unmet expectation, as data
+  --cells                 a round robin's every pairing in tables, not only its standings
 
 Variant options, for every action (watch, --headless, --verify and a trial):
   --set A.t=raider,B.m=sniper     a side's legend symbol (or every one of a content: A.trooper=raider) made another unit
@@ -331,7 +338,7 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
 
 /** Everything `grid` reads from its command line, besides the map; anything else is refused rather than ignored, as
  *  the game's own command line refuses it (`terminal-nexus.ts`). */
-const GRID_FLAGS: ReadonlySet<string> = new Set(["help", "headless", "verify", "json", "no-effects", "reduced-motion", "swap", "shuffle", "cells"])
+const GRID_FLAGS: ReadonlySet<string> = new Set(["help", "headless", "verify", "json", "no-effects", "reduced-motion", "swap", "shuffle", "cells", "profile"])
 const GRID_OPTIONS: ReadonlySet<string> = new Set([
   "seed",
   "ticks",
@@ -349,6 +356,8 @@ const GRID_OPTIONS: ReadonlySet<string> = new Set([
   "seeds",
   "out",
   "baseline",
+  "against",
+  "jobs",
   ...VARIANT_OPTIONS,
 ])
 

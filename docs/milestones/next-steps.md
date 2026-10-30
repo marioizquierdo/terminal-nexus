@@ -15,11 +15,13 @@ it is done.*
   Watch twelve troopers lose at the two-row door while the same number with half in the air win; say whether that
   reads as good ground (a choice that matters) or as air being too strong where the ground is tight, and whether commitment
   reads as commitment or as stubbornness.
-- **Try the testing ground** ([the spec](../system-design/testing-ground.md)): `./bin/grid.ts army-round-robin` ranks
-  seven armies of twelve supply on five grounds (troopers lead four, pikes the narrow pass, the runner swarm beats nobody);
-  `./bin/grid.ts army-round-robin --tune runner.maxHp=28,runner.attack.damage=7` plays it with a tougher runner (three
-  leaders). Say whether a round robin's "best army, map by map" is the breadth you mean, and whether commitment should be
-  tried shorter: with it off, the two-lanes battle ends 22% sooner.
+- **Try the testing ground** ([the spec](../system-design/testing-ground.md)): `./bin/grid.ts engage-bench --profile`
+  for the bench with what a tick costs, `--against origin/main` to set it beside main. Say what a session should
+  measure that it does not yet show.
+- **Decide on the target flip-flop**: at a narrow pass a unit whose enemy is walled in picks another walled-in one,
+  then the first again, every tick (67 switches a unit a battle, four times open ground's route work). Letting go
+  only when another enemy can be reached cut switches to 3 a unit with no outcome moving; it is measured, not built,
+  since it changes how units choose. Say whether it goes in next.
 - **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge run or any campaign level. Rounds are 30
   seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
   seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2

@@ -4,7 +4,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { playTrial, trialCells, trialLines, unmet, wilson } from "../src/measure/index.ts"
+import { playTrial, playTrialBattle, trialCells, trialLines, unmet, watchCommand, wilson } from "../src/measure/index.ts"
 import type { TrialSpec } from "../src/measure/index.ts"
 import { applyVariant, loadScenario, mirrored, shuffled, tuned, VariantError, withArmy } from "../src/scenario/index.ts"
 import type { ScenarioDefinition } from "../src/scenario/index.ts"
@@ -130,7 +130,7 @@ test("a trial plays every seed from both ends, names each battle's sides by army
   assert.match(lines, /as built +0%/)
 })
 
-test("grid plays a map over seeds and a trial file, and fails a trial whose expectation does not hold", () => {
+test("grid plays a map over seeds and a trial file, and fails a trial whose expectation does not hold", { timeout: 60_000 }, () => {
   const grid = (args: string[]) => spawnSync(process.execPath, ["bin/grid.ts", ...args], { cwd: REPO_ROOT, encoding: "utf8" })
   const adHoc = grid(["engage-gap2-melee-vs-mix", "--seeds", "1", "--army-a", "trooper:6,skyraider:6", "--json"])
   assert.equal(adHoc.status, 0, adHoc.stderr)
@@ -139,4 +139,44 @@ test("grid plays a map over seeds and a trial file, and fails a trial whose expe
   const bad = grid(["engage-gap2-melee-vs-mix", "--seeds", "1", "--tune", "trooper.hp=60"])
   assert.notEqual(bad.status, 0)
   assert.match(bad.stderr, /has no "hp"/)
+})
+
+test("a battle's record counts idle units, target switches, and what each stall was queued behind", async () => {
+  // A squad that reaches its target and stands there with nothing in reach is idle: never blocked, never trying.
+  const standing = await loadScenarioFile("target-head-engage-stand.map.json")
+  const stood = playTrialBattle(standing, {}, standing.seed).battle.sides.A
+  assert.equal(stood.idle, 4)
+  assert.equal(stood.stalled, 0)
+  // At a two-row gap the wrong army stalls; each stall's queue is followed to its head, and a switch is a choice.
+  const gap = await loadScenarioFile("engage-gap2-melee-vs-mix.map.json")
+  const side = playTrialBattle(gap, {}, 1).battle.sides.A
+  assert.ok(side.stalled > 0)
+  const heads = Object.values(side.stallHeads ?? {}).reduce((sum, count) => sum + count, 0)
+  assert.ok(heads >= side.stalled, `${heads} stall heads for ${side.stalled} stalled units`)
+  assert.ok((side.switches ?? 0) <= (side.targetsChosen ?? 0))
+})
+
+test("a trial split across processes plays exactly the battles one process does, route work and all", { timeout: 60_000 }, () => {
+  const grid = (args: string[]) => spawnSync(process.execPath, ["bin/grid.ts", ...args], { cwd: REPO_ROOT, encoding: "utf8" })
+  const cells = (jobs: string) => {
+    const run = grid(["engage-gap2-melee-vs-mix", "--seeds", "1-2", "--swap", "--profile", "--json", "--jobs", jobs])
+    assert.equal(run.status, 0, run.stderr)
+    return (JSON.parse(run.stdout) as { cells: { cost?: { msPerTick?: number } }[] }).cells.map((cell) => ({ ...cell, cost: { ...cell.cost, msPerTick: 0 } }))
+  }
+  assert.deepEqual(cells("2"), cells("1"))
+})
+
+test("the command a trial prints to watch a battle replays that very battle", { timeout: 60_000 }, async () => {
+  const map = await loadScenarioFile("engage-gap2-melee-vs-mix.map.json")
+  const spec: TrialSpec = { id: "watch", maps: [map.id], seeds: [3], swap: true, shuffle: true, variants: { flyers: { army: { A: "trooper:6,skyraider:6" } } } }
+  const [, mirroredBattle] = playTrial(spec, new Map([[map.id, map]]))
+  assert.ok(mirroredBattle !== undefined && mirroredBattle.swapped)
+  const command = watchCommand(spec, mirroredBattle)
+  assert.equal(command, "grid engage-gap2-melee-vs-mix --seed 3 --shuffle --swap --army-a trooper:6,skyraider:6")
+  const run = spawnSync(process.execPath, ["bin/grid.ts", ...command.split(" ").slice(1), "--headless", "--json"], { cwd: REPO_ROOT, encoding: "utf8" })
+  assert.equal(run.status, 0, run.stderr)
+  const summary = JSON.parse(run.stdout) as { ticks: number; outcome: { winner: string | null } }
+  // The command plays the mirrored map, where the army of the map's side A stands as B.
+  const asPlayed = mirroredBattle.battle.winner === "A" ? "B" : mirroredBattle.battle.winner === "B" ? "A" : null
+  assert.deepEqual([summary.ticks, summary.outcome.winner], [mirroredBattle.battle.ticks, asPlayed])
 })

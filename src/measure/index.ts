@@ -19,6 +19,8 @@ export * from "./merge.ts"
 export * from "./spec.ts"
 export * from "./suites.ts"
 export * from "./trial.ts"
+export * from "./trial-cells.ts"
+export * from "./trial-summary.ts"
 export { luckByCards, summaryLines } from "./summary.ts"
 export * from "./who.ts"
 

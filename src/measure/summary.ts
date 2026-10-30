@@ -22,7 +22,11 @@ function stalls(battles: readonly BattleRecord[]): string {
   const blocked = battles.reduce((sum, battle) => sum + both(battle, (side) => side.blockedTicks), 0)
   const longest = Math.max(0, ...battles.map((battle) => Math.max(battle.sides.A.longestBlocked, battle.sides.B.longestBlocked)))
   const stalled = battles.reduce((sum, battle) => sum + both(battle, (side) => side.stalled), 0)
-  return `blocked ${blocked} unit-ticks, longest ${longest}, stalled units ${stalled}`
+  // Idle units and target switches, which records written before they were kept do not have.
+  const kept = battles.every((battle) => battle.sides.A.switches !== undefined && battle.sides.B.switches !== undefined)
+  const idle = battles.reduce((sum, battle) => sum + both(battle, (side) => side.idle ?? 0), 0)
+  const switches = battles.reduce((sum, battle) => sum + both(battle, (side) => side.switches ?? 0), 0)
+  return `blocked ${blocked} unit-ticks, longest ${longest}, stalled units ${stalled}${kept ? `, idle units ${idle}, target switches ${switches}` : ""}`
 }
 
 /** Of duels where the two sides differ by `score`, how many the higher side won. */

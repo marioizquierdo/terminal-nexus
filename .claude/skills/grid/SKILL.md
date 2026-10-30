@@ -109,9 +109,16 @@ surely", play a trial ([`docs/system-design/testing-ground.md`](../../../docs/sy
 grid engage-gap2-melee-vs-mix --seeds 1-12 --swap --shuffle --army-a trooper:6,skyraider:6   # as built vs a variant
 grid engage-bench                                  # a trial file from scenarios/trials/, failing if what it expects fails
 grid army-round-robin --tune runner.maxHp=28       # every army against every other, a unit tuned for the whole trial
-grid engage-bench --out before.json                # before a change ...
+grid engage-bench --against HEAD --profile --jobs 4   # uncommitted work beside the last commit, with what a tick cost
+grid engage-bench --out before.json                # or before a change spanning commits ...
 grid engage-bench --baseline before.json           # ... and after it, each row marked where it moved
 ```
+
+Each summary has three tables a map (outcome; engagement: struck, first strike, idle, stalled, target switches,
+blocked; cost with `--profile`: ms and the route work a tick, the counts the same on every machine), what stalled
+units were queued behind, and the battles worth watching with the command that replays each. Start from the
+playbook in the testing ground's spec ("a recipe for each kind of change") rather than a scratch script; if you
+find yourself writing one, the tool is missing something.
 
 `--swap` plays each seed again mirrored with the sides swapped (always, for which army is better); `--shuffle` swaps
 units of a formation line among their places by the seed. The variant options (`--set`, `--army-a`, `--army-b`,

@@ -1,13 +1,26 @@
 // `grid`'s trials (docs/system-design/testing-ground.md): a trial file (`scenarios/trials/*.trial.json`) or one map
-// played over many seeds (`grid <map> --seeds 1-12`), as it is and as the command line's variant changes it; the
-// summary printed, the battles written down with `--out`. What a trial plays and says is `src/measure/trial.ts`'s;
-// this reads the files and the command line, and prints.
+// played over many seeds (`grid <map> --seeds 1-12`), as it is and as the command line's variant changes it. The
+// summary printed; the battles written down with `--out`, set against a file written before with `--baseline`, or
+// against another build played there and then with `--against <ref>`; split across processes with `--jobs`; what a
+// tick cost with `--profile`. What a trial plays and says is `src/measure/trial*.ts`'s; this reads the files and the
+// command line, runs the processes and prints.
 
-import { existsSync, readdirSync } from "node:fs"
+import { spawn, spawnSync } from "node:child_process"
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { readFile, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
 import { basename, join, resolve } from "node:path"
 import type { TrialBattle, TrialSpec } from "../measure/trial.ts"
-import { onTopOf, parseSeeds, playTrial, standingLines, trialCells, trialLines, unmet } from "../measure/trial.ts"
+import { onTopOf, parseSeeds, playTrial, trialRuns } from "../measure/trial.ts"
+import type { TrialCell } from "../measure/trial-cells.ts"
+import { notableBattles, trialCells, unmet } from "../measure/trial-cells.ts"
+import { standingLines, trialLines } from "../measure/trial-summary.ts"
+import { OWN_ROOT } from "./engine.ts"
+import { questionLines, routeCounter } from "./profile.ts"
+import type { RouteQuestions } from "./profile.ts"
+import { TickRoutes } from "../pulse/routes.ts"
+import { DistanceField } from "../routing/index.ts"
+import type { TrialJob, TrialJobResult } from "./trial-worker.ts"
 import { loadMapFile, SCENARIOS_ROOT } from "../scenario/load-map-file.ts"
 import type { ScenarioDefinition } from "../scenario/types.ts"
 import type { Variant } from "../scenario/variant.ts"
@@ -103,6 +116,73 @@ export function adHocTrial(scenario: ScenarioDefinition, args: ParsedArgs): Tria
   }
 }
 
+/** Battles played, and where their route time went when profiled. */
+type Played = Readonly<{ battles: TrialBattle[]; questions: RouteQuestions }>
+
+const WORKER = resolve(import.meta.dirname, "trial-worker.ts")
+
+/**
+ * Plays `spec` by the build at `root`: in this process when it is this build and one job is asked, else split across
+ * `jobs` worker processes, each its share of the battles, merged back in the trial's order.
+ */
+async function playBy(root: string, spec: TrialSpec, maps: ReadonlyMap<string, ScenarioDefinition>, jobs: number, profile: boolean, progress: (done: number, total: number) => void): Promise<Played> {
+  const total = trialRuns(spec).length
+  if (root === OWN_ROOT && jobs <= 1) {
+    const counter = profile ? routeCounter(() => performance.now(), TickRoutes, DistanceField) : null
+    const battles = playTrial(spec, maps, {
+      each: (_, index) => progress(index + 1, total),
+      ...(counter === null ? {} : { meter: counter.meter }),
+    })
+    return { battles, questions: counter?.questions() ?? new Map() }
+  }
+  const dir = mkdtempSync(join(tmpdir(), "trial-"))
+  try {
+    const shares = Array.from({ length: Math.max(1, Math.min(jobs, total)) }, (_, at) => [...Array(total).keys()].filter((index) => index % Math.max(1, Math.min(jobs, total)) === at))
+    let done = 0
+    const results = await Promise.all(
+      shares.map(async (only, at) => {
+        const job: TrialJob = { root, spec, maps: [...maps.values()], only, profile, out: join(dir, `part-${at}.json`) }
+        const file = join(dir, `job-${at}.json`)
+        writeFileSync(file, JSON.stringify(job))
+        await new Promise<void>((resolveRun, reject) => {
+          const child = spawn(process.execPath, [WORKER, file], { stdio: ["ignore", "inherit", "inherit"] })
+          child.on("error", reject)
+          child.on("exit", (code) => (code === 0 ? resolveRun() : reject(new Error(`trial worker ${at} exited with ${code}`))))
+        })
+        done += only.length
+        progress(done, total)
+        return JSON.parse(readFileSync(job.out, "utf8")) as TrialJobResult
+      }),
+    )
+    const battles = results.flatMap((result) => result.battles).sort((a, b) => a.index - b.index).map((each) => each.battle)
+    const questions = new Map<string, { calls: number; ms: number }>()
+    for (const result of results) {
+      for (const [name, entry] of Object.entries(result.questions)) {
+        const sum = questions.get(name) ?? { calls: 0, ms: 0 }
+        questions.set(name, { calls: sum.calls + entry.calls, ms: sum.ms + entry.ms })
+      }
+    }
+    return { battles, questions }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+/** `ref` checked out beside this repository, handed to `use`, removed after. */
+async function withCheckout<T>(ref: string, use: (root: string) => Promise<T>): Promise<T> {
+  const dir = mkdtempSync(join(tmpdir(), "against-"))
+  const git = (args: string[]): void => {
+    const run = spawnSync("git", args, { cwd: OWN_ROOT, encoding: "utf8" })
+    if (run.status !== 0) throw new Error(`git ${args.join(" ")}: ${run.stderr.trim()}`)
+  }
+  git(["worktree", "add", "--detach", "--quiet", dir, ref])
+  try {
+    return await use(dir)
+  } finally {
+    git(["worktree", "remove", "--force", dir])
+  }
+}
+
 /** Plays `spec`, prints its summary (or its cells as JSON), writes its battles to `--out`; 1 when an expectation fails. */
 export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: ScenarioDefinition): Promise<number> {
   // A trial file run with variant options plays every variant with them on top (`--tune runner.maxHp=24`); its
@@ -119,25 +199,51 @@ export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: Sc
   const maps = new Map<string, ScenarioDefinition>()
   for (const id of played.maps) maps.set(id, preloaded !== undefined && preloaded.id === id ? preloaded : await loadMapFile(id))
   const quiet = args.flags.has("json")
-  const battles = playTrial(played, maps, (battle, index, total) => {
-    if (!quiet && process.stderr.isTTY === true) process.stderr.write(`\r${index + 1}/${total} ${battle.map} ${battle.variant}`.padEnd(70))
-  })
-  if (!quiet && process.stderr.isTTY === true) process.stderr.write(`\r${"".padEnd(70)}\r`)
+  const profile = args.flags.has("profile")
+  const jobs = Number(args.options.get("jobs") ?? "1")
+  if (!Number.isInteger(jobs) || jobs < 1) throw new Error(`--jobs is a whole number from 1, not "${args.options.get("jobs")}"`)
+  const tty = !quiet && process.stderr.isTTY === true
+  const progress = (label: string) => (done: number, total: number) => {
+    if (tty) process.stderr.write(`\r${label} ${done}/${total}`.padEnd(40))
+  }
+
+  // Against another build: the same trial, its kernel and content from that commit, played first.
+  const against = args.options.get("against")
+  let reference: Played | null = null
+  if (against !== undefined) reference = await withCheckout(against, (root) => playBy(root, played, maps, jobs, profile, progress(against)))
+  const now = await playBy(OWN_ROOT, played, maps, jobs, profile, progress(against === undefined ? played.id : "this build"))
+  if (tty) process.stderr.write(`\r${"".padEnd(40)}\r`)
+
+  const { battles } = now
   const cells = trialCells(battles)
   const failures = unmet(played, cells)
   const baselinePath = args.options.get("baseline")
-  const baseline = baselinePath === undefined ? undefined : trialCells((JSON.parse(await readFile(baselinePath, "utf8")) as { battles: TrialBattle[] }).battles)
+  let baseline: TrialCell[] | undefined
+  if (reference !== null) baseline = trialCells(reference.battles)
+  else if (baselinePath !== undefined) baseline = trialCells((JSON.parse(await readFile(baselinePath, "utf8")) as { battles: TrialBattle[] }).battles)
+  const notable = notableBattles(battles)
   const out = args.options.get("out")
   if (out !== undefined) await writeFile(out, `${JSON.stringify({ trial: played, cells, battles }, null, 1)}\n`, "utf8")
-  if (quiet) process.stdout.write(`${JSON.stringify({ trial: played.id, cells: cells.map(({ lengths: _lengths, ...cell }) => cell), unmet: failures }, null, 1)}\n`)
-  else {
-    const lines = played.armies !== undefined && baseline === undefined && !args.flags.has("cells") ? standingLines(played, cells) : trialLines(played, cells, baseline)
-    if ((played.expect ?? []).length > 0) {
-      lines.push("")
-      lines.push(failures.length === 0 ? `every expectation held (${played.expect?.length})` : "expectations not met:")
-      for (const failure of failures) lines.push(`  ${failure}`)
+  if (quiet) {
+    const plain = (each: TrialCell) => {
+      const { lengths: _lengths, cost, ...cell } = each
+      if (cost === undefined) return cell
+      const { perBattle: _perBattle, ...summary } = cost
+      return { ...cell, cost: summary }
     }
-    process.stdout.write(`${lines.join("\n")}\n`)
+    process.stdout.write(`${JSON.stringify({ trial: played.id, cells: cells.map(plain), ...(baseline === undefined ? {} : { baseline: baseline.map(plain) }), notable, unmet: failures }, null, 1)}\n`)
+    return failures.length === 0 ? 0 : 1
   }
+  const lines =
+    played.armies !== undefined && baseline === undefined && !args.flags.has("cells")
+      ? standingLines(played, cells)
+      : trialLines(played, cells, { ...(baseline === undefined ? {} : { baseline }), notable, ...(against === undefined ? {} : { before: against }) })
+  if (profile) lines.push("", ...questionLines(now.questions))
+  if ((played.expect ?? []).length > 0) {
+    lines.push("")
+    lines.push(failures.length === 0 ? `every expectation held (${played.expect?.length})` : "expectations not met:")
+    for (const failure of failures) lines.push(`  ${failure}`)
+  }
+  process.stdout.write(`${lines.join("\n")}\n`)
   return failures.length === 0 ? 0 : 1
 }
