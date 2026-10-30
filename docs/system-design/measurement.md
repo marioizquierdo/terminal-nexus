@@ -26,7 +26,7 @@ was wiped out, time ran out). For each side:
 
 ## 2. What is played
 
-- **The route scenarios** (`scenarios/route-*.map.json`), each made to show one shape a route must manage, on every
+- **The route scenarios** (`scenarios/movement/route-*.map.json`), each made to show one shape a route must manage, on every
   seed of the spec:
 
   | Scenario | What it shows | Done when |
@@ -39,23 +39,12 @@ was wiped out, time ran out). For each side:
   | `route-corridor` | two squads, one corridor, each side's Nexus beyond it | the battle never stands still for good |
   | `route-falling-building` | a building closing the one gap in a ridge | the troopers break it and go through |
 
-- **The engage scenarios** (`scenarios/engage-*.map.json`, the full spec, not the quick one): the same armies on ground
-  that is open, a gap six rows wide, a gap two rows wide, a corridor and two lanes (twelve units a side on a 48 by 16
-  Grid, the engine tool's pane), each side given the enemy's Nexus as its target as a duel's attack stance does, each
-  played to a result. They are the bench for how fast battles are
-  decided and how many units ever strike, and what they pin is what was measured: which army is the wrong one for which
-  ground (`tests/engage-scenarios.test.ts`).
-
-  | Scenario | What it shows | Done when |
-  | --- | --- | --- |
-  | `engage-open-melee-vs-mix` | twelve troopers against six troopers and six marksmen, open ground | A wins, every unit strikes |
-  | `engage-gap6-mix-mirror` | a mixed army against itself, a gap six rows wide | every unit of both strikes within twenty seconds |
-  | `engage-gap2-melee-vs-mix` | the melee army through a gap two rows wide: the wrong army for the pass | B wins, some of A never strike |
-  | `engage-gap2-airmix-vs-mix` | troopers and flyers through the same gap | A wins, nearly every unit strikes |
-  | `engage-corridor-melee-vs-mix` | the melee army down a corridor four rows wide and twenty long | the battle takes at least 40% longer than on open ground |
-  | `engage-lanes-melee-vs-mix` | the melee army through two gaps three rows wide | A wins, nearly every unit strikes: both lanes used |
-
-- **Every other map** in `scenarios/` on its own seed (the full spec): the rule fixtures and the bench, so a change of
+- **The engage scenarios** (`scenarios/engage/`, the full spec, not the quick one): the same armies on ground that is
+  open, a gap six rows wide, a gap two rows wide, a corridor and two lanes, twelve units a side, each side given the
+  enemy's Nexus as its target, each played to a result. They are the bench for how fast battles are decided and how many
+  units ever strike; what they show, how to put another army or unit on them, and the trial that holds them to it
+  (`engage-bench`) are the [testing ground](testing-ground.md)'s.
+- **Every other map** under `scenarios/` on its own seed (the full spec): the rule fixtures and the bench, so a change of
   routes that moves one is seen.
 - **Duels** ([`duels.md`](duels.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
   ends of the map; each scripted player on both sides; on the Crossing, eight rounds at most. Each round records its
@@ -147,8 +136,9 @@ measurement file with no row in the index.
   enemy Nexus as the target), read one battle's log by eye before trusting a number, and set a count of blocked units
   beside one of units that struck.
 - **Seeded layouts and enough battles.** A mirrored army with one layout turns on tie draws alone; vary the starting
-  layout by seed and play twelve or more, since differences between targeting rules are a few percent and a stall count
-  has a standard error of about 0.3 a round.
+  layout by seed and play each from both ends (a trial's `--shuffle` and `--swap`, [the testing
+  ground](testing-ground.md)), twelve seeds or more, since differences between targeting rules are a few percent and a
+  stall count has a standard error of about 0.3 a round.
 - **A tick's time is the machine's.** It compares two runs on one machine, played the same way (one process, or the
   same number side by side), never two machines.
 
@@ -171,3 +161,4 @@ the failures):
 | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | PERIMETER: who wins and loses it with which plan |
 | `tests/lifecycle-build-phase.test.ts`, `tests/playtest.test.ts` | how long PERIMETER's first round runs with the defence plan, on the clock the screen shows |
 | `tests/fairness.test.ts`, `tests/route-scenarios.test.ts` | mirrors split evenly between the two ends; the route scenarios are walked |
+| `tests/engage-scenarios.test.ts` | the engage bench's trial holds what it expects ([the testing ground](testing-ground.md)) |

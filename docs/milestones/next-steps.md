@@ -12,9 +12,14 @@ it is done.*
   it sees if it must, and with none stands as near as it can get. New: six engage scenarios, the same armies on open
   ground, a gap six rows wide and two rows wide, a corridor and two lanes
   (`./bin/grid.ts scenarios/engage/engage-gap2-melee-vs-mix`, `engage-gap2-airmix-vs-mix`, `engage-lanes-melee-vs-mix`).
-  Watch eighteen troopers lose at the two-row door while the same number with half in the air win; say whether that
+  Watch twelve troopers lose at the two-row door while the same number with half in the air win; say whether that
   reads as good ground (a choice that matters) or as air being too strong where the ground is tight, and whether commitment
   reads as commitment or as stubbornness.
+- **Try the testing ground** ([the spec](../system-design/testing-ground.md)): `./bin/grid.ts army-round-robin` ranks
+  seven armies of twelve supply on five grounds (troopers lead four, pikes the narrow pass, the runner swarm beats nobody);
+  `./bin/grid.ts army-round-robin --tune runner.maxHp=28,runner.attack.damage=7` plays it with a tougher runner (three
+  leaders). Say whether a round robin's "best army, map by map" is the breadth you mean, and whether commitment should be
+  tried shorter: with it off, the two-lanes battle ends 22% sooner.
 - **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge run or any campaign level. Rounds are 30
   seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
   seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2

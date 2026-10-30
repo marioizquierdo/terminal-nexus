@@ -646,3 +646,11 @@ harness what the game gives, read one run by eye, count units that struck beside
 layout by seed (a mirrored army with one layout turns on tie draws alone), and play twelve or more seeds before a
 difference of a few percent means anything. Before building a rule on a number that large, look for what stopped doing
 something.
+
+### Play a mirror before trusting a bench
+
+The engage maps were drawn as mirrors and measured for a whole round before the first trial played the mixed army
+against itself from both ends: one end won 27 battles to 7. Side B's Nexus stood two columns nearer the middle and both
+targets missed their Nexus by a column, because the generator placed a three-wide Nexus's symbol where its corner goes.
+A map meant to be even is checked even (the same army on both sides, `--swap`, a dozen seeds) before any result on it is
+read; and a variant's own mirror twice over is the map again (`tests/trial.test.ts`), so the check itself can be trusted.

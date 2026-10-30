@@ -242,3 +242,22 @@ removing the band along the central path hurts. What did not hold, and was corre
 (Part of F233.) **Done**: rule five of the seven had grown to three behaviours and is now two short sentences; the
 chapter says the unreachable-enemy rule in one paragraph; and the simplest of the equivalent rules was kept, so a rule
 that did not earn its place (marching on past the fight) was removed instead of explained.
+
+### F235 — A testing ground for troops, buildings, formations and terrain
+
+> Let's improve the way to test new troops and build strategies. This last round of polishing troop movement gave us
+> many ideas about how to test if a given change in the troops movement algorithm results in more engagements, faster
+> games and more strategical breath. We could experiment a little more with the focus of building a benchmark and
+> testing ground to try out new units, buildings, formations and terrain types. This could be aspec with info about how
+> to test win rate, what scenarios are available, how to modify a scenario, examples of successful tests that we did
+> before, etc. look for opportunities to improve the way we measure, try to replicate some of the previous tests and
+> improve the grid command to allow for better configurations and reading of results. Reorganize the folders and files
+> related to testing scenarios, and remove legacy scenarios that don't add much value (e.g having no target, all game
+> modes should have a target). I'm curious to see how you come out with better ways to validate changes in the gameplay
+
+**Built** ([the report](../reports/2026-10-30-testing-ground.md), [the spec](../../system-design/testing-ground.md)):
+the maps in folders by purpose, five retired, every side given a goal and a test that holds it; trials in `grid` over
+seeds from both ends, with variants for another unit, army, number, ground or target, trial files with expectations and
+a round robin of armies, and a before-and-after comparison. Replicated: the wrong army for the narrow pass, flyers
+through it, the corridor's cost, a targeting rule before and after. Found on the way: the engage maps were not
+symmetric, now rebuilt. Not built: setting a kernel rule from a trial (a rule is code; it is compared by `--baseline`).

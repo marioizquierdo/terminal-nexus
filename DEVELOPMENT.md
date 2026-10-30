@@ -21,7 +21,7 @@ npm run check       # ./scripts/check-repository.sh — the repository validator
 npm run test:all    # typecheck, then both runtimes: what to run before every push
 npm run verify-maps # every checked-in map resolves to the same hashes twenty times (CI runs this)
 
-# grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional.
+# grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional, or a map's id.
 ./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish                       # watch (the default)
 ./bin/grid.ts scenarios/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
 ./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
@@ -29,6 +29,8 @@ npm run verify-maps # every checked-in map resolves to the same hashes twenty ti
 ./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
 ./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
 npm run maps                                                          # every checked-in map
+./bin/grid.ts engage-gap2-melee-vs-mix --seeds 1-12 --swap --army-a trooper:6,skyraider:6   # a trial: as built vs a variant
+./bin/grid.ts engage-bench                                             # a trial file (scenarios/trials/), with what it expects
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
