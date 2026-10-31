@@ -144,6 +144,10 @@ retreating." A unit is always in one of three, worked out every tick from what i
 from its body as range is, and its own attack's range when that is longer. Content may set it for a unit (`vision`): a
 Commander who charges (Averno) sees 12.
 
+Each change of state is recorded after the round: a `unit.state` line in the Activity Logs, under the **Movement**
+filter, read back from the round's states and events (`src/report/move-states.ts`). The kernel keeps no record of it,
+so no hash moved.
+
 ## Troop formation
 
 The owner, 2026-10-27: "Let's define Formation priority starting from 3 formation types: flankers, melee, and ranged.
@@ -438,12 +442,15 @@ try, none of it built:
   slower one, a higher cost for tiles held by blocked allies, a closing charge of a quarter more speed, a hysteresis
   before turning to a nearer enemy, patience that waits for an alternative, and making the attack-position field (every
   free tile beside any enemy, one field a side) the way every troop walks. What is left to try: more ways round (a map
-  with more gaps), and ranged and area units behind the front, which fire over the queue.
+  with more gaps), what holds flyers back where the ground is tight, and ranged and area units behind the front, which
+  fire over the queue. Since a unit keeps the walled-in target it holds, units that paced at a gap now stand in this
+  queue: on the full spec, blocked time at the two-row gap rose from 1,218 to 1,504 unit-ticks while target switches
+  fell from 1,187 to 49.
 - **Pacing at a door.** At a gap of one or two rows about five units a battle of thirty-six pace between two tiles for
   five seconds or more: units standing as near as they can get, tied between two equally near tiles. A third of it was
   units turning between two walled-in enemies every tick, gone since a unit keeps the one it holds when it can reach
-  no other (on the bench's narrow grounds, 2.6 pacing units a battle became 1.7); settling on the tile it holds would
-  remove the rest.
+  no other (on the bench's narrow grounds, 2.6 pacing units a battle became 1.7); the rest is the tie between two
+  equally near tiles. Settling on the tile it holds would remove it; not built, left for smoothing.
 - **Half speed that lasts**: a unit that stays within sight of a higher unit can be slowed for a long time (the median
   slowdown is 0.3 seconds, one in a hundred lasts 12). A rule that slows only while the higher unit is not yet 4 columns
   ahead, and a cap of 6 seconds, sorted the army as well as today's rule; neither is built yet.

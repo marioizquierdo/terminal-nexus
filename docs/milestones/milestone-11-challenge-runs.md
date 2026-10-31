@@ -113,7 +113,8 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] **The chapter**: troop movement as seven rules a player can predict, then each part, what is still to smooth, and
       the strategies it opens.
 - [x] **Three states** in the code: march, battle, retreat (`moveStateOf`).
-- [ ] The three states in the log, so a filter can show a unit changing state (needs a new event kind).
+- [x] **The three states in the log**: each change is a `unit.state` entry, read back from the round once it ends and
+      shown by the Movement filter; no kernel hash moved.
 - [x] **Vision**, 6 columns by default, set per unit in content (`vision`, where `engageRange` was).
 - [x] **Commitment**: a unit keeps its target until it falls or it has gone 2½ seconds unable to strike it; what made
       units change target so often is found and written down.
@@ -123,7 +124,9 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] **"Flanker"** for the line that goes behind the enemy's front, in content and code.
 - [x] The tests that pin a battle are re-pinned with a reason each, never loosened; the quick spec measured before
       and after each half (stalled units 274 → 528 with the formation, → 420 with commitment).
-- [ ] The full spec measured and kept in the history, as a change to how common units choose asks.
+- [x] **The full spec measured and kept** ([commitment and reach, measured](../history/reports/2026-10-31-commitment-and-reach.md)):
+      against the commit before the flip-flop fix, target switches in the duels 183,681 → 43,392 and stalled units
+      2,062 → 1,587, the same winners within a duel or two, every campaign level the same.
 - [x] **A target a unit cannot reach is let go at once**, and a unit that can reach none in sight looks further afield
       for one it can; with none it stands as near as it can get. Measured against holding it: no-route standing is 28%
       lower on the Crossing's duels and 69% lower on the open Pocket's, and a fair battle through a narrow pass blocks
@@ -139,15 +142,11 @@ so how they move, sort themselves and choose what to fight is what a player read
       bench's trial. Then the tools themselves: idle units, target switches and stall queues in every record, what a
       tick costs (`--profile`), another build beside this one (`--against`), trials across processes, the battles worth
       watching, and the spec as a playbook for each kind of change.
-- [ ] The queue that is left: melee troops waiting behind a striking front at a gap, mostly geometry, and tested ten ways
-      without a gain beyond noise ([the chapter](../system-design/movement.md), "To smooth later"). More ways round (a
-      map with more gaps), and what holds flyers back where the ground is tight, are the next things to settle.
 - [x] **A unit keeps a walled-in target when it can reach no other** (the owner, 2026-10-31: "go ahead and fix this
       bug"): it no longer turns to another walled-in enemy and back every tick. Target switches at the two-row gap 69 →
-      2.8 a unit, in duels 36,503 → 11,651 and stalled units 414 → 234, the same winners.
-- [ ] Units pacing between two tiles at a door (about five a battle at a one- or two-row gap), the same before this step.
-      A third of it was units flipping between two walled-in targets every tick, now fixed (below); the rest is the
-      tie between two equally near tiles.
+      2.8 a unit, in the quick spec's duels 36,503 → 11,651 and stalled units 414 → 234, the same winners.
+- [x] **Moved to the chapter's "To smooth later"**: the queue behind a fight at a gap (melee troops waiting behind a
+      striking front, mostly geometry), and units pacing between two tiles at a door; both measured, neither built.
 
 Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
 list), and the workers' jobs (Milestone 7).
