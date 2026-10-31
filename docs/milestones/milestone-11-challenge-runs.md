@@ -134,7 +134,7 @@ so how they move, sort themselves and choose what to fight is what a player read
       engagement up (the chapter's "To smooth later" lists it: nothing beyond 5%).
 - [x] **The testing ground** (the owner, 2026-10-30): the maps in folders by purpose, five legacy maps retired, every
       side that fights given a goal; trials in `grid` over seeds from both ends with variants, trial files with what they
-      expect, a round robin of armies, and a comparison before and after a change
+      expect, and a comparison before and after a change
       ([the testing ground](../system-design/testing-ground.md)). The engage maps rebuilt symmetric; their test is the
       bench's trial. Then the tools themselves: idle units, target switches and stall queues in every record, what a
       tick costs (`--profile`), another build beside this one (`--against`), trials across processes, the battles worth
@@ -142,9 +142,12 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [ ] The queue that is left: melee troops waiting behind a striking front at a gap, mostly geometry, and tested ten ways
       without a gain beyond noise ([the chapter](../system-design/movement.md), "To smooth later"). More ways round (a
       map with more gaps), and what holds flyers back where the ground is tight, are the next things to settle.
+- [x] **A unit keeps a walled-in target when it can reach no other** (the owner, 2026-10-31: "go ahead and fix this
+      bug"): it no longer turns to another walled-in enemy and back every tick. Target switches at the two-row gap 69 →
+      2.8 a unit, in duels 36,503 → 11,651 and stalled units 414 → 234, the same winners.
 - [ ] Units pacing between two tiles at a door (about five a battle at a one- or two-row gap), the same before this step.
-      A lead: at a two-row gap units flip between two walled-in targets every tick; letting go only when another
-      can be reached is measured (switches 69 → 3 a unit, no outcome moved) and waits for the owner.
+      A third of it was units flipping between two walled-in targets every tick, now fixed (below); the rest is the
+      tie between two equally near tiles.
 
 Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
 list), and the workers' jobs (Milestone 7).

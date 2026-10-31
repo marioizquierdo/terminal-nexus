@@ -14,10 +14,9 @@ import type { TrialBattle, TrialSpec } from "../measure/trial.ts"
 import { onTopOf, parseSeeds, playTrial, trialRuns } from "../measure/trial.ts"
 import type { TrialCell } from "../measure/trial-cells.ts"
 import { notableBattles, trialCells, unmet } from "../measure/trial-cells.ts"
-import { standingLines, trialLines } from "../measure/trial-summary.ts"
+import { trialLines } from "../measure/trial-summary.ts"
 import { OWN_ROOT } from "./engine.ts"
-import { questionLines, routeCounter } from "./profile.ts"
-import type { RouteQuestions } from "./profile.ts"
+import { routeCounter } from "./profile.ts"
 import { TickRoutes } from "../pulse/routes.ts"
 import { DistanceField } from "../routing/index.ts"
 import type { TrialJob, TrialJobResult } from "./trial-worker.ts"
@@ -47,7 +46,7 @@ export function trialPath(path: string): string | null {
   return trialCatalog().find((entry) => entry.id === id)?.path ?? null
 }
 
-const TRIAL_KEYS = new Set(["id", "question", "notes", "maps", "seeds", "shuffle", "swap", "variants", "armies", "base", "expect"])
+const TRIAL_KEYS = new Set(["id", "question", "notes", "maps", "seeds", "shuffle", "swap", "variants", "base", "expect"])
 
 /** A trial file read and checked: its seeds may be written `"1-12"`. */
 export async function loadTrialFile(path: string): Promise<TrialSpec> {
@@ -116,24 +115,20 @@ export function adHocTrial(scenario: ScenarioDefinition, args: ParsedArgs): Tria
   }
 }
 
-/** Battles played, and where their route time went when profiled. */
-type Played = Readonly<{ battles: TrialBattle[]; questions: RouteQuestions }>
-
 const WORKER = resolve(import.meta.dirname, "trial-worker.ts")
 
 /**
  * Plays `spec` by the build at `root`: in this process when it is this build and one job is asked, else split across
  * `jobs` worker processes, each its share of the battles, merged back in the trial's order.
  */
-async function playBy(root: string, spec: TrialSpec, maps: ReadonlyMap<string, ScenarioDefinition>, jobs: number, profile: boolean, progress: (done: number, total: number) => void): Promise<Played> {
+async function playBy(root: string, spec: TrialSpec, maps: ReadonlyMap<string, ScenarioDefinition>, jobs: number, profile: boolean, progress: (done: number, total: number) => void): Promise<TrialBattle[]> {
   const total = trialRuns(spec).length
   if (root === OWN_ROOT && jobs <= 1) {
     const counter = profile ? routeCounter(() => performance.now(), TickRoutes, DistanceField) : null
-    const battles = playTrial(spec, maps, {
+    return playTrial(spec, maps, {
       each: (_, index) => progress(index + 1, total),
       ...(counter === null ? {} : { meter: counter.meter }),
     })
-    return { battles, questions: counter?.questions() ?? new Map() }
   }
   const dir = mkdtempSync(join(tmpdir(), "trial-"))
   try {
@@ -154,15 +149,7 @@ async function playBy(root: string, spec: TrialSpec, maps: ReadonlyMap<string, S
         return JSON.parse(readFileSync(job.out, "utf8")) as TrialJobResult
       }),
     )
-    const battles = results.flatMap((result) => result.battles).sort((a, b) => a.index - b.index).map((each) => each.battle)
-    const questions = new Map<string, { calls: number; ms: number }>()
-    for (const result of results) {
-      for (const [name, entry] of Object.entries(result.questions)) {
-        const sum = questions.get(name) ?? { calls: 0, ms: 0 }
-        questions.set(name, { calls: sum.calls + entry.calls, ms: sum.ms + entry.ms })
-      }
-    }
-    return { battles, questions }
+    return results.flatMap((result) => result.battles).sort((a, b) => a.index - b.index).map((each) => each.battle)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -209,17 +196,16 @@ export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: Sc
 
   // Against another build: the same trial, its kernel and content from that commit, played first.
   const against = args.options.get("against")
-  let reference: Played | null = null
+  let reference: TrialBattle[] | null = null
   if (against !== undefined) reference = await withCheckout(against, (root) => playBy(root, played, maps, jobs, profile, progress(against)))
-  const now = await playBy(OWN_ROOT, played, maps, jobs, profile, progress(against === undefined ? played.id : "this build"))
+  const battles = await playBy(OWN_ROOT, played, maps, jobs, profile, progress(against === undefined ? played.id : "this build"))
   if (tty) process.stderr.write(`\r${"".padEnd(40)}\r`)
 
-  const { battles } = now
   const cells = trialCells(battles)
   const failures = unmet(played, cells)
   const baselinePath = args.options.get("baseline")
   let baseline: TrialCell[] | undefined
-  if (reference !== null) baseline = trialCells(reference.battles)
+  if (reference !== null) baseline = trialCells(reference)
   else if (baselinePath !== undefined) baseline = trialCells((JSON.parse(await readFile(baselinePath, "utf8")) as { battles: TrialBattle[] }).battles)
   const notable = notableBattles(battles)
   const out = args.options.get("out")
@@ -234,11 +220,7 @@ export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: Sc
     process.stdout.write(`${JSON.stringify({ trial: played.id, cells: cells.map(plain), ...(baseline === undefined ? {} : { baseline: baseline.map(plain) }), notable, unmet: failures }, null, 1)}\n`)
     return failures.length === 0 ? 0 : 1
   }
-  const lines =
-    played.armies !== undefined && baseline === undefined && !args.flags.has("cells")
-      ? standingLines(played, cells)
-      : trialLines(played, cells, { ...(baseline === undefined ? {} : { baseline }), notable, ...(against === undefined ? {} : { before: against }) })
-  if (profile) lines.push("", ...questionLines(now.questions))
+  const lines = trialLines(played, cells, { ...(baseline === undefined ? {} : { baseline }), notable, ...(against === undefined ? {} : { before: against }) })
   if ((played.expect ?? []).length > 0) {
     lines.push("")
     lines.push(failures.length === 0 ? `every expectation held (${played.expect?.length})` : "expectations not met:")

@@ -278,11 +278,15 @@ export function perception(context: TickContext): void {
   context.routes = routes
 
   // A unit holding a target it can neither strike from where it stands nor walk to — walled in by the fight round it —
-  // lets it go at once, rather than stand beside it for `COMMIT_TICKS`, and chooses afresh by what it can reach.
+  // lets it go at once, rather than stand beside it for `COMMIT_TICKS`, and chooses afresh by what it can reach. Only
+  // when there is something it can reach (`searchWider`): with nothing, it keeps the one it holds and stands as near as
+  // it can get. Choosing afresh among enemies all walled in made it take another walled-in one, then the first again
+  // the next tick, every tick: 69 changes of target a unit in a battle at a two-row gap, and four times the route work.
   for (let at = 0; at < choices.length; at += 1) {
     const choice = choices[at] as Choice
     const { actor, selection } = choice
     if (choice.kept !== true || selection === null || !walksToIt(context, routes, actor, selection.target)) continue
+    if (searchWider(context, routes, actor, selection) === selection) continue
     choices[at] = freshChoice(context, actor, selection.target.ordinal)
   }
 

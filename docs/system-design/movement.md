@@ -28,8 +28,8 @@ Everything below adds up to seven rules:
 4. **Vision is 6 columns** (3 rows) for most troops, and it sees buildings as well as units: whatever of the enemy's
    comes into it, it fights, the nearest first.
 5. **A troop sticks to its enemy** until it falls, and lets go only after 2½ seconds of not being able to strike it. If
-   its enemy is walled in it lets go at once and takes the nearest one it can reach, looking further off than its sight
-   if it must; with none, it stands as near as it can get.
+   its enemy is walled in it lets go at once for the nearest one it can reach, looking further off than its sight if it
+   must; with none it keeps the one it has and stands as near as it can get.
 6. **The formation sorts itself on the march**: flankers in front, then melee, then ranged, shorter range before longer.
    A troop that should be further back walks at half speed while one that should be ahead of it is in its vision.
 7. **Buildings are walked round until there is no way round; then the troops breach** the fewest buildings in the way.
@@ -356,8 +356,8 @@ ground's weight and the formation's half speed decide how often it steps.
 3. **The tick's fields** (`TickRoutes`): ground and fields, worked out as asked and shared by everyone with the same
    body, the same walls and the same goal.
 4. **Choosing again by what can be reached**: a sword fights the enemy nearest to walk to; a gun passes over a target
-   it cannot get in range of; a held target that is walled in is let go, and a unit that can reach none in sight looks
-   further afield.
+   it cannot get in range of; a held target that is walled in is let go for one the unit can reach, and a unit that can
+   reach none in sight looks further afield.
 5. **Breaching**, when buildings close the way.
 6. **The march**: each unit's state, and who of the marchers walks at half speed.
 7. **Steps**: each walker ranks its steps on its field; arbitration settles them; credit is spent.
@@ -440,8 +440,10 @@ try, none of it built:
   free tile beside any enemy, one field a side) the way every troop walks. What is left to try: more ways round (a map
   with more gaps), and ranged and area units behind the front, which fire over the queue.
 - **Pacing at a door.** At a gap of one or two rows about five units a battle of thirty-six pace between two tiles for
-  five seconds or more: units standing as near as they can get, tied between two equally near tiles. It is the same
-  without any of this chapter's target rules; settling on the tile it holds would remove it.
+  five seconds or more: units standing as near as they can get, tied between two equally near tiles. A third of it was
+  units turning between two walled-in enemies every tick, gone since a unit keeps the one it holds when it can reach
+  no other (on the bench's narrow grounds, 2.6 pacing units a battle became 1.7); settling on the tile it holds would
+  remove the rest.
 - **Half speed that lasts**: a unit that stays within sight of a higher unit can be slowed for a long time (the median
   slowdown is 0.3 seconds, one in a hundred lasts 12). A rule that slows only while the higher unit is not yet 4 columns
   ahead, and a cap of 6 seconds, sorted the army as well as today's rule; neither is built yet.

@@ -43,12 +43,6 @@ export type TrialSpec = Readonly<{
   swap?: boolean
   /** By name, in order; the first is what the others are compared with. None: the maps as they are. */
   variants?: Readonly<Record<string, Variant>>
-  /**
-   * A round robin instead (`"melee": "trooper:12"`): every army against every other on each map, each side's one-tile
-   * places filled by it front to back, every pair played as a variant named `melee vs mix`. The summary ranks the
-   * armies on each map: how a new unit's army stands among the others, ground by ground.
-   */
-  armies?: Readonly<Record<string, string>>
   /** What every variant starts from (a tune for the whole trial, say), each variant's own on top of it. */
   base?: Variant
   expect?: readonly Expectation[]
@@ -65,8 +59,8 @@ export type Engine = Readonly<{
 export const OWN_ENGINE: Engine = { registry: FIXTURE_REGISTRY, loadScenario, contextFor, stepTick }
 
 /** What one battle cost to play, as a command measured it: the time, the ticks, and the work the kernel's routes did
- *  (`src/cli/profile.ts`), each count the same on every machine. */
-export type BattleCost = Readonly<{ ms: number; ticks: number; fields?: number; settled?: number; routeCalls?: number }>
+ *  (`src/cli/profile.ts`): distance fields built and the anchors they settled, the same on every machine. */
+export type BattleCost = Readonly<{ ms: number; ticks: number; fields?: number; settled?: number }>
 
 /** Measures what a battle costs: `begin` as it starts, `end` with the ticks it played. Supplied by a command. */
 export type Meter = Readonly<{ begin(): void; end(ticks: number): BattleCost }>
@@ -97,19 +91,9 @@ export function onTopOf(base: Variant | undefined, variant: Variant): Variant {
   }
 }
 
-/** The variants a trial plays, by name, in order: its own, or every pair of its armies, each on top of its base. */
+/** The variants a trial plays, by name, in order, each on top of its base. */
 export function trialVariants(spec: TrialSpec): Readonly<Record<string, Variant>> {
-  return Object.fromEntries(Object.entries(ownVariants(spec)).map(([name, variant]) => [name, onTopOf(spec.base, variant)]))
-}
-
-function ownVariants(spec: TrialSpec): Readonly<Record<string, Variant>> {
-  if (spec.armies === undefined) return spec.variants ?? { "as built": {} }
-  const names = Object.keys(spec.armies)
-  const pairs: Record<string, Variant> = {}
-  names.forEach((a, index) => {
-    for (const b of names.slice(index + 1)) pairs[`${a} vs ${b}`] = { army: { A: spec.armies?.[a] as string, B: spec.armies?.[b] as string } }
-  })
-  return pairs
+  return Object.fromEntries(Object.entries(spec.variants ?? { "as built": {} }).map(([name, variant]) => [name, onTopOf(spec.base, variant)]))
 }
 
 export type TrialRun = Readonly<{ map: string; variant: string; seed: number; swapped: boolean }>

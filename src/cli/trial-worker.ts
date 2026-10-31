@@ -21,8 +21,8 @@ export type TrialJob = Readonly<{
   out: string
 }>
 
-/** What a worker writes back: its battles, each at its index in the trial, and where its route time went. */
-export type TrialJobResult = Readonly<{ battles: readonly Readonly<{ index: number; battle: TrialBattle }>[]; questions: Record<string, { calls: number; ms: number }> }>
+/** What a worker writes back: its battles, each at its index in the trial. */
+export type TrialJobResult = Readonly<{ battles: readonly Readonly<{ index: number; battle: TrialBattle }>[] }>
 
 const job = JSON.parse(readFileSync(process.argv[2] as string, "utf8")) as TrialJob
 const { engine, routes, fields } = await loadEngine(job.root)
@@ -32,8 +32,5 @@ const battles = playTrial(job.spec, new Map(job.maps.map((map) => [map.id, map])
   only: job.only,
   ...(counter === null ? {} : { meter: counter.meter }),
 })
-const result: TrialJobResult = {
-  battles: battles.map((battle, at) => ({ index: job.only[at] as number, battle })),
-  questions: Object.fromEntries(counter?.questions() ?? []),
-}
+const result: TrialJobResult = { battles: battles.map((battle, at) => ({ index: job.only[at] as number, battle })) }
 writeFileSync(job.out, JSON.stringify(result))

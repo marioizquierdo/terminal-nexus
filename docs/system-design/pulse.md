@@ -368,7 +368,9 @@ How they fit together, in plain words, and where a new way of moving plugs in, i
   one. While it holds, perception makes no choice for it (no `selectTarget`, no flanker's line, no crowd aim, no
   `chooseByRoute`); at 30 it chooses afresh without the one it let go of, which it takes again only when nothing else
   qualifies. A held target the unit can neither strike from where it stands nor walk to — walled in by the fight round
-  it — is let go at once, not after 30 ticks (`walksToIt`), and the unit chooses afresh by what it can reach. The enemy
+  it — is let go at once, not after 30 ticks (`walksToIt`), when there is an enemy it can reach (`searchWider`), and the
+  unit chooses afresh by what it can reach; with none it keeps the one it holds, rather than turning to another walled-in
+  enemy and back every tick. The enemy
   Nexus as the march's goal beyond vision is not held; a healer holds its patient while it is
   wounded; a building that shoots takes only what its attack reaches. The count is `commitGap` and `commitStall` in the
   state, absent while nothing is held.
