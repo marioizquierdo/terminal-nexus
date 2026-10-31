@@ -1,0 +1,67 @@
+{
+  "id": "bench-bulwark-shove",
+  "name": "Bulwark shove - a unit that did not walk, and walks back by its route",
+  "notes": "Milestone 16's test effect for a Grid that changes under a unit. A Citizen bulwark stands still; every two seconds it shoves each enemy touching it two tiles straight away (its Shove ability, through the kernel's rule for a unit that did not walk). Two Ravel runners come at it, one from the west and one from straight above, where a rock two rows north stops the shove after one tile. A pushed runner lands where its body fits, says so (entity.displaced), and on the next tick walks back to the bulwark by its route from where it landed.",
+  "grid": {
+    "width": 24,
+    "height": 12
+  },
+  "seed": 7,
+  "pulseTicks": 180,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "..............##........",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 14,
+        "y": 6
+      },
+      "rows": [
+        "b"
+      ],
+      "legend": {
+        "b": {
+          "content": "unit.bench.bulwark"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 8,
+        "y": 0
+      },
+      "rows": [
+        "      r",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.ravel.runner"
+        }
+      }
+    }
+  },
+  "targets": { "B": { "x": 14, "y": 6, "width": 1, "height": 1 } }
+}

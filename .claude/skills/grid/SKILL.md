@@ -100,7 +100,38 @@ The fast loop is text before pixels — a headless run costs nothing and answers
 Only watch it (`grid <map>`, the default action) once the headless report already makes sense — the
 view answers "is this legible," not "is this correct."
 
+## Trials: a map over many seeds
+
+When the question is not "what happened in this battle" but "is this army, unit, number or rule better, and how
+surely", play a trial ([`docs/system-design/testing-ground.md`](../../../docs/system-design/testing-ground.md)):
+
+```text
+grid engage-gap2-melee-vs-mix --seeds 1-12 --swap --shuffle --army-a trooper:6,skyraider:6   # as built vs a variant
+grid engage-bench                                  # a trial file from scenarios/trials/, failing if what it expects fails
+grid army-round-robin --tune runner.maxHp=28       # every army against every other, a unit tuned for the whole trial
+grid engage-bench --against HEAD --profile --jobs 4   # uncommitted work beside the last commit, with what a tick cost
+grid engage-bench --out before.json                # or before a change spanning commits ...
+grid engage-bench --baseline before.json           # ... and after it, each row marked where it moved
+```
+
+Each summary has three tables a map (outcome; engagement: struck, first strike, idle, stalled, target switches,
+blocked; cost with `--profile`: ms and the route work a tick, the counts the same on every machine), what stalled
+units were queued behind, and the battles worth watching with the command that replays each. Start from the
+playbook in the testing ground's spec ("a recipe for each kind of change") rather than a scratch script; if you
+find yourself writing one, the tool is missing something.
+
+`--swap` plays each seed again mirrored with the sides swapped (always, for which army is better); `--shuffle` swaps
+units of a formation line among their places by the seed. The variant options (`--set`, `--army-a`, `--army-b`,
+`--tune`, `--terrain`, `--target-a`, `--target-b`) work on every action, so the one battle a trial points at can be
+watched (`grid <map> --seed 7 --swap --army-a ...`). Read a `*` as "beyond chance"; no `*`, no claim. Compare armies at
+the same supply (the last column).
+
 ## Writing a map
+
+Maps live in `scenarios/` in a folder for what they are for: `rules/`, `units/`, `movement/`, `engage/` (the bench),
+`showcase/`; the id is the file name and every command finds a map by it. **Give each side that fights a goal**: a
+`targets` entry, or an enemy Nexus to head for — `tests/scenario.test.ts` refuses a checked-in map without one, since
+the game never plays such a battle. A question about troops usually needs a variant of an engage map, not a new map.
 
 Every rule gets a named, checked-in `.map.json` file — that is the regression suite and the
 documentation at once (`AGENTS.md`: every rule has a named scenario). A map is plain JSON, the same
@@ -138,7 +169,7 @@ One placement block per player — `placements.A`, `placements.B`, a future play
 block's `at` is where its `rows[0][0]` sits, so `rows` only needs to cover the tiles that block
 actually places, not the whole Grid — write a tight box around one player's squad, not a
 Grid-sized overlay with everyone else blank. A placement symbol marks a unit's **centre tile**: for
-a 1×1 unit that's the only tile it has, but for a multi-tile unit (`scenarios/heavies-clash.map.json`
+a 1×1 unit that's the only tile it has, but for a multi-tile unit (`scenarios/showcase/heavies-clash.map.json`
 is the checked-in example, a 3×3 colossus and a 5×2 leviathan) the symbol sits on the footprint's
 middle tile and the loader derives the anchor from it (`footprintCentre`, `src/grid/coords.ts`). A
 legend entry is `{ "content": "..." }`, or `{ "content": "...", "hp": 12 }` to start that placement
@@ -171,7 +202,8 @@ enforces the import graph). `src/content` — unit/structure definitions, the Ci
 rosters and the Proving Grounds bench roster (`proving-grounds.ts`), all disposable. `src/scenario` — the map format and loader (`load.ts` validates the
 shape once parsed; `load-map-file.ts` reads and parses a `.map.json` path, suffix optional). `src/report`
 — the levelled log and summary. `src/view` — the ASCII compositor and terminal backends. `src/cli` —
-this tool's own entry points. `scenarios/*.map.json` — the fixtures themselves.
+this tool's own entry points. `scenarios/*/*.map.json` — the fixtures themselves, by folder; `scenarios/trials/` — the
+trial files. `src/scenario/variant.ts`, `src/measure/trial.ts`, `src/cli/trial.ts` — variants and trials.
 
 ## Related
 

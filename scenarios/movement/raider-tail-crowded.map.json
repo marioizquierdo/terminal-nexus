@@ -1,0 +1,64 @@
+{
+  "id": "raider-tail-crowded",
+  "name": "Raider tail crowded - a multi-tile mover blocked by a tile that is not its own anchor",
+  "notes": "A multi-tile mover blocked by a tile that is not its own anchor, built by construction. Two raiders (3x1) file east along a corridor one row tall toward a hostile beyond it, nose to tail: the one behind wants the tile ahead of its anchor, which is clear, while the far end of its body would land on the front raider's tail. In a corridor one row tall there is no way round, so it waits behind its ally. The bug this pins: the report used to check only the mover's own anchor tile and, finding it clear, called the block 'edge' - the fallback for 'nothing was wrong with the one tile I looked at' - misreporting a crowded ally as the Grid's own border. footprintBlockerAt (src/grid/occupancy.ts) checks the whole footprint instead. (Before pathfinding the case was a den a raider slid along; routes go round a building now, so the crowding ally is the one ahead in the corridor.)",
+  "grid": {
+    "preset": "medium-extra-wide"
+  },
+  "seed": 40970,
+  "pulseTicks": 180,
+  "terrain": [
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "....########################################....",
+    "................................................",
+    "....########################################....",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................",
+    "................................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 6,
+        "y": 8
+      },
+      "rows": [
+        "r  r"
+      ],
+      "legend": {
+        "r": {
+          "content": "unit.ravel.raider"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 46,
+        "y": 8
+      },
+      "rows": [
+        "w"
+      ],
+      "legend": {
+        "w": {
+          "content": "unit.citizen.worker"
+        }
+      }
+    }
+  },
+  "targets": { "A": { "x": 46, "y": 8, "width": 1, "height": 1 } }
+}

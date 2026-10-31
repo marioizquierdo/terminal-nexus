@@ -46,13 +46,16 @@ RULE — `tests/grid.test.ts`, `tests/rules.test.ts`.
 RULE — `tests/scenario.test.ts`, `tests/proving-grounds.test.ts`, `scenarios/`. Every rule that can be
 shown on a small map has a checked-in, runnable scenario file named for what it exercises
 (`melee-kill`, `mutual-kill`, `worker-flight`, `salvage-drop`, `hauler-two-tile-gap`, `settle-delay`
-and the rest of `scenarios/`), and every file loads with an id that matches its name. A scenario asserts the
+and the rest of `scenarios/`, one folder for each purpose: rules, units, movement, the engage bench, showcases), and
+every file loads with an id that matches its name and gives each side that fights a goal ([the testing
+ground](testing-ground.md)). A scenario asserts the
 rule through events and hashes, and `grid <map> --verify` (see [`runtime.md`](runtime.md)) re-resolves
 it ten times from the command line.
 The rules layer above the kernel (openings, the regroup, missions) is held the same way by
 `tests/match.test.ts` and `tests/mission.test.ts`. The route scenarios (`route-*`) each show one shape a route must
 manage and are played on several seeds (`tests/route-scenarios.test.ts`); routing's own parts are tested alone on
-small Grids and mazes, against a plain search (`tests/routing.test.ts`).
+small Grids and mazes, against a plain search (`tests/routing.test.ts`). The engage bench is held by a trial of what it
+was measured to show, played from both ends over six seeds (`tests/engage-scenarios.test.ts`).
 
 ### Structured-cell snapshots across backends
 

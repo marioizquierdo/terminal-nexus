@@ -12,19 +12,19 @@
 // outcome moved. The clock is read here, around `stepTick`, never inside the kernel.
 
 import { createHash } from "node:crypto"
-import { readdirSync, writeFileSync } from "node:fs"
-import { join } from "node:path"
+import { writeFileSync } from "node:fs"
 import { briefOf, newDuel, playRound, scriptedPlayer } from "../src/duel/index.ts"
 import type { DuelSetup, Side, SidePlan } from "../src/duel/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { loadScenario } from "../src/scenario/load.ts"
-import { loadMapFile } from "../src/scenario/load-map-file.ts"
+import { loadMapFile, mapCatalog } from "../src/scenario/load-map-file.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { TickRoutes } from "../src/pulse/routes.ts"
 import { DistanceField } from "../src/routing/index.ts"
+import { routeCounter } from "../src/cli/profile.ts"
 
 const args = process.argv.slice(2)
 const option = (name: string, fallback: string): string => {
@@ -56,45 +56,24 @@ function timed(units: number, ms: number): void {
 
 /**
  * `--detail`: each of the tick's route questions (`TickRoutes`) wrapped in a timer and a counter, and the fields each
- * tick built counted with what they settled. Inclusive times: a field built inside `nearestReachable` counts there and
- * in whatever asked it. Off by default, as the wrapping costs time of its own.
+ * battle built counted with what they settled (`routeCounter`, `src/cli/profile.ts`, which trials' `--profile` uses
+ * too). Inclusive times: a field built inside `nearestReachable` counts there and in whatever asked it. Off by
+ * default, as the wrapping costs time of its own.
  */
 const detail = args.includes("--detail")
-const asked = new Map<string, { calls: number; ms: number }>()
-const fieldsSeen = new Set<DistanceField>()
+const counter = detail ? routeCounter(clock, TickRoutes, DistanceField) : null
 let fieldsBuilt = 0
 let anchorsSettled = 0
-if (detail) {
-  const proto = TickRoutes.prototype as unknown as Record<string, (...rest: unknown[]) => unknown>
-  for (const name of ["fieldOf", "groundOf", "weightsOf", "dangerOf", "safetyOf", "detourOf", "nearestReachable", "breachOf", "patchesOf"]) {
-    const original = proto[name] as (...rest: unknown[]) => unknown
-    let depth = 0
-    proto[name] = function (this: unknown, ...rest: unknown[]): unknown {
-      depth += 1
-      const began = performance.now()
-      try {
-        const result = original.apply(this, rest)
-        const field = result instanceof DistanceField ? result : (result as { field?: unknown } | null)?.field
-        if (field instanceof DistanceField) fieldsSeen.add(field)
-        return result
-      } finally {
-        depth -= 1
-        if (depth === 0) {
-          const entry = asked.get(name) ?? { calls: 0, ms: 0 }
-          entry.calls += 1
-          entry.ms += performance.now() - began
-          asked.set(name, entry)
-        }
-      }
-    }
-  }
+/** A battle begins: the route counts start again from nothing. */
+function battleBegan(): void {
+  counter?.meter.begin()
 }
-/** Counts the fields the tick just played built, and what they settled. */
-function tickDone(): void {
-  if (!detail) return
-  fieldsBuilt += fieldsSeen.size
-  for (const field of fieldsSeen) anchorsSettled += field.settledCount
-  fieldsSeen.clear()
+/** A battle of `ticks` ends: what its routes built is added up. */
+function battleEnded(ticks: number): void {
+  if (counter === null) return
+  const cost = counter.meter.end(ticks)
+  fieldsBuilt += cost.fields ?? 0
+  anchorsSettled += cost.settled ?? 0
 }
 
 const fingerprints: Record<string, string> = {}
@@ -113,14 +92,15 @@ class Fingerprint {
 }
 
 if (maps !== "none") {
-  const names = readdirSync("scenarios").filter((name) => name.endsWith(".map.json") && (maps === "all" || name.startsWith("route-"))).sort()
-  for (const name of names) {
-    const scenario = await loadMapFile(join("scenarios", name))
+  const entries = mapCatalog().filter((entry) => maps === "all" || entry.id.startsWith("route-"))
+  for (const entry of entries) {
+    const scenario = await loadMapFile(entry.path)
     for (const seed of seeds) {
       const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
       const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
       const print = new Fingerprint()
       let state = loaded.state
+      battleBegan()
       while (state.outcome === null && state.tick < scenario.pulseTicks) {
         const units = state.entities.length
         const began = clock()
@@ -129,10 +109,10 @@ if (maps !== "none") {
         timed(units, ms)
         totalMs += ms
         totalTicks += 1
-        tickDone()
         state = step.state
         print.add(step.events)
       }
+      battleEnded(state.tick)
       fingerprints[`map ${scenario.id} seed ${seed}`] = print.done(state)
     }
   }
@@ -159,19 +139,20 @@ for (let n = firstDuel; n < firstDuel + duelCount; n += 1) {
     let began = 0
     let units = 0
     const round = duel.round
+    battleBegan()
     duel = playRound(duel, plans, (battle, events) => {
       if (last !== null) {
         const ms = clock() - began
         timed(units, ms)
         totalMs += ms
         totalTicks += 1
-        tickDone()
       }
       print.add(events)
       last = battle
       units = battle.entities.length
       began = clock()
     }).state
+    battleEnded((last as MatchState | null)?.tick ?? 0)
     fingerprints[`duel ${a}-${b} ${playerName} seed ${seed} round ${round}`] = print.done(last as unknown as MatchState)
   }
 }
@@ -185,6 +166,6 @@ for (const [key, bucket] of [...buckets].sort((x, y) => x[0] - y[0])) {
 if (detail) {
   process.stdout.write(`\n${fieldsBuilt} fields asked for, ${(fieldsBuilt / Math.max(1, totalTicks)).toFixed(1)} a tick; ${anchorsSettled} anchors settled, ${(anchorsSettled / Math.max(1, totalTicks)).toFixed(0)} a tick\n`)
   process.stdout.write("question            calls     ms\n")
-  for (const [name, entry] of [...asked].sort((x, y) => y[1].ms - x[1].ms)) process.stdout.write(`${name.padEnd(18)} ${String(entry.calls).padStart(7)} ${entry.ms.toFixed(0).padStart(6)}\n`)
+  for (const [name, entry] of [...(counter?.questions() ?? [])].sort((x, y) => y[1].ms - x[1].ms)) process.stdout.write(`${name.padEnd(18)} ${String(entry.calls).padStart(7)} ${entry.ms.toFixed(0).padStart(6)}\n`)
 }
 if (out !== "") writeFileSync(out, `${JSON.stringify(fingerprints, null, 2)}\n`)

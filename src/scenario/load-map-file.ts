@@ -9,9 +9,10 @@
 // (dimension mismatch, unknown legend key, overlapping footprint — src/scenario/load.ts already
 // does all of that once the file is a plain object).
 
-import { existsSync } from "node:fs"
+import { existsSync, readdirSync } from "node:fs"
 import { readFile } from "node:fs/promises"
-import { resolve } from "node:path"
+import { basename, dirname, join, relative, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import type { ScenarioDefinition } from "./types.ts"
 
 export class MapFileError extends Error {}
@@ -29,19 +30,44 @@ const REQUIRED_KEYS: readonly (keyof ScenarioDefinition)[] = [
 
 export const MAP_FILE_SUFFIX = ".map.json"
 
+/** The checked-in maps' folder: `scenarios/` at the repository's root, wherever the command is run from. */
+export const SCENARIOS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../scenarios")
+
 /**
- * `path` may name the file exactly or omit the `.map.json` suffix — `grid scenarios/ravel-cascade`
- * and `grid scenarios/ravel-cascade.map.json` both resolve to the same file.
+ * Every checked-in map, as `{ id, path }`, sorted by id: the `.map.json` files anywhere under `scenarios/`, one folder
+ * per purpose (rules, units, movement, engage, showcase — docs/system-design/testing-ground.md). A map's id is its file
+ * name, unique across the folders, so a map moves between folders without anything that names it changing.
+ */
+export function mapCatalog(root: string = SCENARIOS_ROOT): readonly Readonly<{ id: string; path: string; folder: string }>[] {
+  const found: { id: string; path: string; folder: string }[] = []
+  const walk = (directory: string): void => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = join(directory, entry.name)
+      if (entry.isDirectory()) walk(path)
+      else if (entry.name.endsWith(MAP_FILE_SUFFIX)) {
+        found.push({ id: entry.name.slice(0, -MAP_FILE_SUFFIX.length), path, folder: relative(root, directory) })
+      }
+    }
+  }
+  if (existsSync(root)) walk(root)
+  return found.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+}
+
+/**
+ * `path` may name the file exactly, omit the `.map.json` suffix, or be a checked-in map's bare id —
+ * `grid scenarios/rules/ravel-cascade.map.json`, `grid scenarios/rules/ravel-cascade` and `grid ravel-cascade` all
+ * resolve to the same file. A path whose file is not there falls back to its last part as an id, so a path written
+ * before the maps moved into folders (`scenarios/ravel-cascade`) still finds it.
  */
 export function resolveMapPath(path: string): string {
   const direct = resolve(path)
   if (existsSync(direct)) return direct
-  if (!path.endsWith(MAP_FILE_SUFFIX)) {
-    const withSuffix = resolve(`${path}${MAP_FILE_SUFFIX}`)
-    if (existsSync(withSuffix)) return withSuffix
-    throw new MapFileError(`no map file at "${direct}" or "${withSuffix}"`)
-  }
-  throw new MapFileError(`no map file at "${direct}"`)
+  const withSuffix = path.endsWith(MAP_FILE_SUFFIX) ? direct : resolve(`${path}${MAP_FILE_SUFFIX}`)
+  if (existsSync(withSuffix)) return withSuffix
+  const id = basename(path).replace(/\.map\.json$/, "")
+  const listed = mapCatalog().find((entry) => entry.id === id)
+  if (listed !== undefined) return listed.path
+  throw new MapFileError(`no map file at "${direct}"${withSuffix === direct ? "" : ` or "${withSuffix}"`}, and no checked-in map with the id "${id}"`)
 }
 
 function fail(resolved: string, message: string): never {

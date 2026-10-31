@@ -38,7 +38,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
   // --- Pure content: absorbed with nothing new at all ------------------------------------------
   {
     // The glass cannon: nothing here needed a new capability, only an `AttackDef` shaped like every
-    // other ranged unit's, tuned toward one extreme (`sniper-crossfire.map.json`). Kept slow and
+    // other ranged unit's, tuned toward one extreme. Kept slow and
     // fragile on purpose - a long reach is the whole design, and it should cost something.
     id: "unit.bench.sniper",
     short: "sniper",

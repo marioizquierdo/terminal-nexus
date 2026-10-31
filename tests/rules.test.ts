@@ -368,7 +368,7 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
   // its footprint is what is actually occupied - and a clear single tile fell through
   // blockReasonFor's cases to its "edge" fallback, misreporting a crowded ally as the Grid's border.
   // raider-tail-crowded.map.json builds the same case by construction rather than relying on
-  // speed-parade.map.json's emergent timing, which drifted out from under this test twice - once
+  // a speed parade's emergent timing (a demo map, since retired), which drifted out from under this test twice - once
   // per movement-speed pass - since a demo scenario's job is showing every rate side by side, not
   // holding a specific tick's worth of incidental crowding stable.
   const resolved = await resolveScenario("raider-tail-crowded.map.json")

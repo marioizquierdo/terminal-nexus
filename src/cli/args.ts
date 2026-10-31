@@ -20,6 +20,19 @@ const VALUE_OPTIONS = new Set([
   "glyphs",
   "theme",
   "scroll-margin",
+  // A trial's and a variant's (src/cli/trial.ts): the seeds, what changes about the map, where the battles are written.
+  "seeds",
+  "set",
+  "army-a",
+  "army-b",
+  "tune",
+  "terrain",
+  "target-a",
+  "target-b",
+  "out",
+  "baseline",
+  "against",
+  "jobs",
   // A launch's parts (src/cli/launch.ts): where the game opens, the settings text and the keys it starts from.
   // Every one must be here (tests/launch.test.ts), or the parser would take it for a flag and drop its text.
   "at",

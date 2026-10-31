@@ -1,0 +1,62 @@
+{
+  "id": "worker-flight-between",
+  "name": "Worker flight between two threats - away from danger, not only from the nearest",
+  "notes": "A worker stands between two enemy troopers on one row, the nearer five columns west, the further seven east. Running straight away from the nearest would take it east, toward the other. It flees by how far, to walk, it stands from every enemy that can strike (a field of danger), so it runs up or down the map, away from both. Measured by its first steps.",
+  "grid": {
+    "width": 24,
+    "height": 12
+  },
+  "seed": 3,
+  "pulseTicks": 120,
+  "terrain": [
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................",
+    "........................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock",
+    "*": "terrain.deposit",
+    ",": "terrain.scrub"
+  },
+  "placements": {
+    "A": {
+      "at": {
+        "x": 12,
+        "y": 6
+      },
+      "rows": [
+        "w"
+      ],
+      "legend": {
+        "w": {
+          "content": "unit.citizen.worker"
+        }
+      }
+    },
+    "B": {
+      "at": {
+        "x": 7,
+        "y": 6
+      },
+      "rows": [
+        "t           t"
+      ],
+      "legend": {
+        "t": {
+          "content": "unit.citizen.trooper"
+        }
+      }
+    }
+  },
+  "targets": { "B": { "x": 12, "y": 6, "width": 1, "height": 1 } }
+}

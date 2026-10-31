@@ -18,9 +18,9 @@ the change can move:
 | The change | Run |
 | --- | --- |
 | Presentation only: a screen, an effect, a colour, a key | Nothing. The tests and the `playtest` skill. |
-| A number on one unit or building: health, damage, cost, a timer | `measure who <content id>` on the levels it stands in; the quick spec's duels if a Commander's army fields it |
-| A new unit kind or ability | A scenario that shows it (the `grid` skill), then `measure who <content id>`; the quick spec's duels if an army fields it |
-| A kernel rule on movement, routes or targeting | The quick spec, the full spec's maps (`--spec full --parts scenarios`), and `measure formations` if it touches how units leave their buildings; the full spec's duels too when it changes how a common unit chooses or moves (the quick spec plays the balanced player alone, and only a rush showed the runner as a backliner emptying Dob's front) |
+| A number on one unit or building: health, damage, cost, a timer | A trial with it tuned first (`grid army-round-robin --tune <unit>.<field>=<n>`, [the testing ground](../../../docs/system-design/testing-ground.md)), then `measure who <content id>` on the levels it stands in; the quick spec's duels if a Commander's army fields it |
+| A new unit kind or ability | A scenario that shows it (the `grid` skill), a trial with it in an army (`--army-a` or a trial file's `armies`), then `measure who <content id>`; the quick spec's duels if an army fields it |
+| A kernel rule on movement, routes or targeting | `grid engage-bench --against HEAD --profile` (every expectation must still hold, or the trial file changes with a reason; read switches, idle and stalled units and the route work a tick, not only who won), the quick spec, the full spec's maps (`--spec full --parts scenarios`), and `measure formations` if it touches how units leave their buildings; the full spec's duels too when it changes how a common unit chooses or moves (the quick spec plays the balanced player alone, and only a rush showed the runner as a backliner emptying Dob's front) |
 | A power-curve change: the Grid Nexus, supply, credits, income, a tier, the Nexus Pulse's hand | The full spec, then retire what it supersedes (section 4) |
 
 The quick spec takes about a minute with `--jobs 4` (two alone); the full spec's 162 duels are the long part. Do not

@@ -19,7 +19,7 @@
 //       plays four Barracks built three ways against each other and against a blast, and says what it shows
 
 import { execSync, spawn } from "node:child_process"
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { LEVELS } from "./levels.ts"
@@ -38,7 +38,7 @@ import {
   unitLines,
 } from "../measure/index.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
-import { loadMapFile } from "../scenario/load-map-file.ts"
+import { loadMapFile, mapCatalog } from "../scenario/load-map-file.ts"
 
 const HELP = `measure: battles measured the same way before and after a rule changes (docs/system-design/measurement.md).
 
@@ -240,10 +240,7 @@ export async function main(args: readonly string[]): Promise<number> {
     return finish(mergeMeasurements(played, spec, Math.min(jobs, played.length)), options["out"])
   }
   const scenarios = await Promise.all(
-    readdirSync("scenarios")
-      .filter((name) => name.endsWith(".map.json"))
-      .sort()
-      .map((name) => loadMapFile(join("scenarios", name))),
+    mapCatalog().map((entry) => loadMapFile(entry.path)),
   )
   const started = performance.now()
   const result = runSpec(spec, { scenarios, levels: LEVELS, parts, progress: (line) => process.stderr.write(`${line}\n`) })

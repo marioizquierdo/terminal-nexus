@@ -3,13 +3,12 @@
 // docs/history/measurements/); on routes each is walked, and no unit stands still for good where a way exists.
 
 import { test } from "node:test"
-import { readdirSync } from "node:fs"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { measureScenario } from "../src/measure/index.ts"
 import { contextFor, resolvePulse, stepTick } from "../src/pulse/index.ts"
 import { loadScenario } from "../src/scenario/index.ts"
-import { loadScenarioFile, resolveScenario } from "./helpers.ts"
+import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
 
 const SEEDS = [1, 2, 3, 4]
 
@@ -130,7 +129,7 @@ test("worker-flight-between: a worker between two threats runs off their row, aw
 
 test("a worker crosses its own side's troops and never an enemy's, and a trooper the same with workers", async () => {
   // Over every scenario on file, at every tick: an enemy worker and trooper never share a tile.
-  for (const name of readdirSync("scenarios").filter((file) => file.endsWith(".map.json"))) {
+  for (const name of scenarioFiles()) {
     const scenario = await loadScenarioFile(name)
     const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
     const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)

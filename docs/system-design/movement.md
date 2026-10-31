@@ -255,7 +255,7 @@ stops at its reach and fires over the front.
 
 ## Breaching
 
-RULE (`TickRoutes.breachOf`, `scenarios/route-breach.map.json`). Troops already fight the buildings they see, so a
+RULE (`TickRoutes.breachOf`, `scenarios/movement/route-breach.map.json`). Troops already fight the buildings they see, so a
 building in the way is usually fought before it is ever a wall. When the enemy's buildings close every way to what a
 unit wants, it **breaches**: a second field is worked out with the enemy's buildings open, each step onto one weighing
 eight steps of open ground, so the way through the fewest buildings is taken; the first enemy building on it becomes

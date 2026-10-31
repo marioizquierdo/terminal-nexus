@@ -1,0 +1,54 @@
+{
+  "id": "bomber-crowd",
+  "name": "The Ravel bomber runs past a near enemy into a tight block and bursts there",
+  "notes": "Aiming at a crowd (ContentDef.aim, the owner's yes of 2026-10-21): a lone Ravel bomber, a lone Citizen trooper six columns on and four rows up (14 away), and a block of nine troopers further on (22 away). A unit that aims at the nearest would go for the lone trooper; the bomber counts the troopers round each one within its burst (radius 4: four columns across, two rows up and down) and runs for the block, past the lone one, bursting on contact as the block closes on it: seven of the block are caught, each trooper survives one burst at 36 (40 health), and the lone trooper, chasing it, is left behind and not caught. A bomber that bursts on contact names no killer of its own.",
+  "grid": {
+    "width": 32,
+    "height": 13
+  },
+  "seed": 1610201,
+  "pulseTicks": 120,
+  "terrain": [
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................",
+    "................................"
+  ],
+  "terrainLegend": {
+    ".": "terrain.plain",
+    "#": "terrain.rock"
+  },
+  "placements": {
+    "A": {
+      "at": { "x": 2, "y": 6 },
+      "rows": ["o"],
+      "legend": {
+        "o": { "content": "unit.ravel.bomber" }
+      }
+    },
+    "B": {
+      "at": { "x": 8, "y": 2 },
+      "rows": [
+        "t                  ",
+        "                   ",
+        "                   ",
+        "                ttt",
+        "                ttt",
+        "                ttt"
+      ],
+      "legend": {
+        "t": { "content": "unit.citizen.trooper" }
+      }
+    }
+  },
+  "targets": { "B": { "x": 2, "y": 6, "width": 1, "height": 1 } }
+}

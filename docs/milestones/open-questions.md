@@ -206,7 +206,7 @@ combat rule shape only for a unit that makes units, which is what this question 
 
 ### Q27 — Should "ground cannot target air" be the schema's default, not an opt-in field?
 
-**Status:** OPEN — blocks nothing until a played roster mixes air and ground. Air is real content now (the Ravel buzzard and corsair, `src/content/ravel.ts`, `scenarios/air-crossing.map.json`), but no real unit sets `targetLayers`.
+**Status:** OPEN — blocks nothing until a played roster mixes air and ground. Air is real content now (the Ravel buzzard and corsair, `src/content/ravel.ts`, `scenarios/rules/air-crossing.map.json`), but no real unit sets `targetLayers`.
 
 `ContentDef.targetLayers` is opt-in: undefined means every layer is a legal target, which kept every
 existing definition and hash untouched. Only the bench grunt (`src/content/proving-grounds.ts`) sets it. So
