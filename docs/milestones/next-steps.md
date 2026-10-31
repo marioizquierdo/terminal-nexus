@@ -262,7 +262,7 @@ Small, none blocking.
 | Item | Why | Size |
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
-| The curve levels' empty-base walk is a knife edge | A route to a later round plays the rounds before it building nothing; on Averno's level that base holds round 4 with 25 of 400 health left, and almost any change to how a battle plays tips it. Shape the levels (what an empty base faces) before the next rule change, rather than tuning rules until the walk survives | small |
+| The curve levels' empty-base walk is guarded once | The tests of a level's layout now walk it with its battles undecided, so a change to how battles play cannot fail them. Whether a base with nothing built lives to the last round (what a route to a later round plays) is one check over every level, which says how low the Nexus fell each round: at worst 210 of 400, on Averno's level in round 4. If it tips, shape what an empty base faces on that level (a lighter round-4 raid, or a free defender), not the rules | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet
