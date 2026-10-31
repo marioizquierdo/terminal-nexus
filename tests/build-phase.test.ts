@@ -63,7 +63,7 @@ const RXVT_SHIFT_RIGHT = `${ESC}[c`
 function session(
   terminal = MINIMUM,
 ): { build: BuildSession; layout: ReturnType<typeof buildLayout>; context: ReturnType<typeof starterContext> } {
-  const context = { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT }
+  const context = { ...starterContext(), nexusDraft: NEUTRAL_NEXUS_DRAFT, experiments: { battleBanner: "off" as const } }
   const layout = buildLayout(terminal, context.grid)
   const build = readyBuildSession({
     context,

@@ -91,7 +91,7 @@ Commander, who might also become the army's point to regroup on. Not yet: other 
 for a walker ahead and walks round allies who are stuck (the detour). When the enemy's buildings close it: breaching,
 below.
 
-## Banners — IDEA
+## Banners — prototype
 
 The owner, 2026-10-26, in the core loop ([`core-loop.md`](../milestones/core-loop.md)): orders grow from none, to a
 stance, to a banner, to two banners. **The stance** is one setting for the army: aggressive (march on the enemy Nexus,
@@ -100,16 +100,22 @@ enemy Nexus, aggressive. Aggressive elsewhere, the army goes there first and the
 route; defensive, it holds the line there. **Two banners**: the Commander follows the main one, and a building can be
 set to send its units after a secondary "skirmish" banner.
 
-None is built. Each is one more goal for the machinery on this page:
+**The banner is built as a prototype**, behind the Battle banner Experiment (the owner, 2026-10-31: try the banner's
+placement before the stance; the stance row is the fallback). How it is placed is
+[`ui-patterns.md`](ui-patterns.md), "The battle banner". A side's banner is its target for the round. Defensive, the
+side heads there and holds it. Aggressive, it heads there, and from the tick at least half its fighting units stand in
+or beside the banner's area (3 × 3 round a spot, or a structure's footprint and a ring of one) it has no target, so it
+marches on the enemy's Grid Nexus as by default. The rules layer sets this between ticks (`src/match/banner.ts`); the
+kernel is unchanged. With no banner, a level's own target and the march on the enemy Nexus are as before.
 
 | Order | What the troops do | In the machinery |
 | --- | --- | --- |
 | None, or aggressive | March on the enemy Nexus | As today |
 | Hold the line, or a defensive banner | Gather at the place and hold it; fight what comes into vision; come back to it after | A side's target, as a campaign level's is (built) |
-| An aggressive banner | March to the banner, then on to the enemy Nexus | A waypoint that needs no memory: a marcher heads for the banner until it stands as near the enemy Nexus as the banner does, by the march field, then for the Nexus; a unit already past it never turns back |
+| An aggressive banner | March to the banner, then on to the enemy Nexus | The side's target until half its fighting units reach it, then none (built, in the rules layer) |
 | A skirmish banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
 
-They arrive in that order, each behind a "Banners" Experiment until it is settled; the stance and the banner are steps
+Two banners and the skirmish banner wait; the stance and the banner are steps
 of the runs milestone.
 
 ## Troop spawning
@@ -143,6 +149,10 @@ retreating." A unit is always in one of three, worked out every tick from what i
 **Vision** is how far a unit sees an enemy to turn to it: 6 columns across and 3 rows up or down by default, measured
 from its body as range is, and its own attack's range when that is longer. Content may set it for a unit (`vision`): a
 Commander who charges (Averno) sees 12.
+
+Each change of state is recorded after the round: a `unit.state` line in the Activity Logs, under the **Movement**
+filter, read back from the round's states and events (`src/report/move-states.ts`). The kernel keeps no record of it,
+so no hash moved.
 
 ## Troop formation
 
@@ -438,12 +448,15 @@ try, none of it built:
   slower one, a higher cost for tiles held by blocked allies, a closing charge of a quarter more speed, a hysteresis
   before turning to a nearer enemy, patience that waits for an alternative, and making the attack-position field (every
   free tile beside any enemy, one field a side) the way every troop walks. What is left to try: more ways round (a map
-  with more gaps), and ranged and area units behind the front, which fire over the queue.
+  with more gaps), what holds flyers back where the ground is tight, and ranged and area units behind the front, which
+  fire over the queue. Since a unit keeps the walled-in target it holds, units that paced at a gap now stand in this
+  queue: on the full spec, blocked time at the two-row gap rose from 1,218 to 1,504 unit-ticks while target switches
+  fell from 1,187 to 49.
 - **Pacing at a door.** At a gap of one or two rows about five units a battle of thirty-six pace between two tiles for
   five seconds or more: units standing as near as they can get, tied between two equally near tiles. A third of it was
   units turning between two walled-in enemies every tick, gone since a unit keeps the one it holds when it can reach
-  no other (on the bench's narrow grounds, 2.6 pacing units a battle became 1.7); settling on the tile it holds would
-  remove the rest.
+  no other (on the bench's narrow grounds, 2.6 pacing units a battle became 1.7); the rest is the tie between two
+  equally near tiles. Settling on the tile it holds would remove it; not built, left for smoothing.
 - **Half speed that lasts**: a unit that stays within sight of a higher unit can be slowed for a long time (the median
   slowdown is 0.3 seconds, one in a hundred lasts 12). A rule that slows only while the higher unit is not yet 4 columns
   ahead, and a cap of 6 seconds, sorted the army as well as today's rule; neither is built yet.

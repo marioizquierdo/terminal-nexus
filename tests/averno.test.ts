@@ -16,6 +16,7 @@ import { keepPower } from "../src/cli/pulse-run.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { VISION, visionOf } from "../src/pulse/target.ts"
 import { buildSide, compose, keys, panelLines } from "./build-helpers.ts"
+import { undecided } from "./level-walk.ts"
 
 const AVERNO = "unit.citizen.averno"
 const LEVEL = levelById("averno-test-1")
@@ -24,7 +25,10 @@ const HERS = levelById("vasse-test-3")
 test("his level is hers with him in her place: her map, raids and seed, her first five rounds, every one reachable", () => {
   assert.ok(LEVEL !== undefined && HERS !== undefined)
   assert.equal(LEVEL.rounds, 5)
-  for (let round = 1; round <= LEVEL.rounds; round += 1) assert.equal(openRound(LEVEL, round).round?.number, round)
+  // Every round opens as itself whatever its battles do (tests/level-walk.ts); that an empty base lives to round 5 is
+  // the level's content, guarded once beside every level's (tests/levels.test.ts).
+  const walked = undecided(LEVEL)
+  for (let round = 1; round <= LEVEL.rounds; round += 1) assert.equal(openRound(walked, round).round?.number, round)
   const first = LEVEL.firstRound()
   assert.deepEqual(first.grid, HERS.firstRound().grid)
   assert.ok((first.incoming ?? []).some((entity) => entity.contentId === AVERNO), "he does not walk out with the squads")

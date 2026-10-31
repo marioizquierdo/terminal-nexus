@@ -171,6 +171,9 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   // the one for a draft with nothing to remove (tests/run-draft-popup.test.ts reads the other against a real one).
   "run-draft": [[(side) => ({ ...side.build.state, popup: "run-draft" }), /^Number or \[enter\] takes a card, \[t\] takes requisition\. Nothing to remove\.$/]],
   "run-draft-remove": [[(side) => ({ ...side.build.state, popup: "run-draft-remove" }), /^Number or \[enter\] removes that card for good\. \[esc\] back to the draft\.$/]],
+  // The battle banner's two panels, put up by hand as the dialog is: these sessions play with its Experiment off.
+  "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^\[enter\] Place Target on .+\. Arrows move it, \[esc\] back\.$/]],
+  "banner-stance": [[(side) => ({ ...side.build.state, popup: "banner-stance", bannerDraft: { x: 30, y: 12 } }), /^\[a\] aggressive, \[d\] defensive, up\/down and \[enter\]\. \[esc\] moves it again\.$/]],
   committed: [[(side) => keys(side, "n", "1", "s", "s"), /^The plan is locked in\. \[esc\] opens the menu\.$/]],
   "menu-mouse": [
     [

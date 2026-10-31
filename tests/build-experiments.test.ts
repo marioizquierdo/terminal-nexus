@@ -9,6 +9,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { STARTER_CATALOG } from "../src/build/catalog.ts"
 import { EXPERIMENT_FIELDS, defaultExperiments, experimentSpec, formatExperimentValue, stepExperiment } from "../src/build/experiments.ts"
+import type { Experiments } from "../src/build/experiments.ts"
 import type { ExperimentField } from "../src/build/experiments.ts"
 import { menuEntryRow } from "../src/build/layout.ts"
 import { MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../src/build/mouse.ts"
@@ -44,6 +45,7 @@ import {
   keys,
   placed,
   screenText,
+  withDefaultBanner,
 } from "./build-helpers.ts"
 import type { Side } from "./build-helpers.ts"
 
@@ -79,7 +81,7 @@ function clickValue(side: Side, field: ExperimentField, half: "left" | "right"):
 // --- Opening and closing ---------------------------------------------------------------------------
 
 test("d opens Settings at its Experiments: every flag and its value", () => {
-  const side = buildSide()
+  const side = buildSide({ context: withDefaultBanner() })
   keys(side, "d")
   assert.equal(side.build.state.popup, "settings")
   assert.equal(side.build.state.popupHighlight, settingRow(EXPERIMENT_FIELDS[0]?.field as ExperimentField))
@@ -107,11 +109,12 @@ test("d opens Settings at its Experiments: every flag and its value", () => {
       "buildRange",
       "powerPick",
       "roofExit",
+      "battleBanner",
     ],
   )
   assert.deepEqual(
     EXPERIMENT_FIELDS.map((spec) => spec.section),
-    [...Array.from({ length: 7 }, () => "keyboard"), "effects", "effects", "effects", ...Array.from({ length: 4 }, () => "mission")],
+    [...Array.from({ length: 7 }, () => "keyboard"), "effects", "effects", "effects", ...Array.from({ length: 5 }, () => "mission")],
   )
   // The bottom line says what the keys do there, and the highlighted row's question is
   // shown. Opened by `d` from the game, Esc closes it.
@@ -331,7 +334,8 @@ test("setting an Experiment by keys, by clicks, and from a driver script is the 
   byDriver.build.run(script)
 
   const expected = byKeyboard.build.state
-  let experiments = defaultExperiments()
+  // These sessions play with the Battle banner Experiment off (tests/build-helpers.ts).
+  let experiments: Experiments = { ...defaultExperiments(), battleBanner: "off" }
   for (const [field, step] of [["holdWindowMs", 1], ["holdWindowMs", 1], ["popupPulseMs", -1]] as const) {
     experiments = stepExperiment(experiments, field, step).flags
   }
