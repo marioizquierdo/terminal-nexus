@@ -95,6 +95,8 @@ import { scheduleTrack, trackBusyAt } from "./animation.ts"
 import type { Point, Tween } from "./tween.ts"
 import { retarget, samePoint, still, tileAt, tweenActive, tweenEnd } from "./tween.ts"
 import { nextTrailChange } from "./build-grid.ts"
+import { DROP_MS } from "./banner-marks.ts"
+import { setting } from "../build/all-settings.ts"
 
 /**
  * What a live frame hands the composer — the fields of `BuildCompositionInput` that depend on time, and
@@ -116,6 +118,7 @@ export type LivePresentation = Pick<
   | "popupBorder"
   | "dialogLight"
   | "raidTrail"
+  | "banner"
   | "roundElapsed"
   | "regroup"
   | "room"
@@ -403,6 +406,8 @@ export class BuildAnimation {
   private primed = false
   /** The raid's trail's clock: from the first frame that drew it moving. */
   private readonly trail = new TrailClock()
+  /** The battle banner's pulse and planting. */
+  private readonly bannerClock = new BannerClock()
 
   constructor(tuning: LiveTuning = TUNING) {
     this.tuning = tuning
@@ -626,6 +631,11 @@ export class BuildAnimation {
     // The raid's trail, timed from the first frame that drew it moving. It never settles either, so it asks for
     // a frame only when it next looks different — never every frame — and none at all while it holds still.
     const raidTrail = this.trail.at(state, now, options)
+    // The banner: its pulse never settles, so it asks for frames at the breath's pace; its planting until it ends.
+    const bannerNow = this.bannerClock.at(state, now, options.reducedMotion === true)
+    if (bannerNow.until !== null) ends.push(bannerNow.until)
+    if (bannerNow.pulseMs !== undefined && setting(state, "battleBanner") === "on") breathing = true
+    const banner = bannerNow.pulseMs === undefined && bannerNow.dropMs === undefined ? undefined : { ...(bannerNow.pulseMs === undefined ? {} : { pulseMs: bannerNow.pulseMs }), ...(bannerNow.dropMs === undefined ? {} : { dropMs: bannerNow.dropMs }) }
     // The slow things moving — a breath, the trail — and the first frame either needs: the timer's pace while
     // nothing faster is moving, whose own ends keep it at every frame until they pass.
     let slowUntil: number | null = breathing ? now + BREATH_FRAME_MS : null
@@ -649,11 +659,37 @@ export class BuildAnimation {
       ...(popupBorder === undefined ? {} : { popupBorder }),
       ...(dialogLight === undefined ? {} : { dialogLight }),
       ...(raidTrail === null ? {} : { raidTrail }),
+      ...(banner === undefined ? {} : { banner }),
       ...(roundElapsed === undefined ? {} : { roundElapsed }),
       ...(regroup === null ? {} : { regroup }),
       ...(room.length === 0 ? {} : { room }),
       busyUntil: slowOnly ? slowUntil : ends.length === 0 ? null : Math.max(...ends),
       ...(slowOnly && slowUntil !== null ? { frameMs: slowUntil - now } : {}),
+    }
+  }
+}
+
+/**
+ * **The battle banner's clock**: from the first frame that showed one of its panels (the pulse while the banner is the
+ * cursor, and its march lines moving), and from the first frame that saw a new planting (`BuildState.bannerDrop`),
+ * while it plays. Under reduced motion neither runs: the banner holds still, lit, and planting it shows nothing more.
+ */
+export class BannerClock {
+  private shownAt: number | null = null
+  private drop: Readonly<{ seq: number; at: number }> | null = null
+
+  at(state: BuildState, now: number, reducedMotion: boolean): Readonly<{ pulseMs?: number; dropMs?: number; until: number | null }> {
+    const open = state.popup === "battle-round" || state.popup === "banner-place" || state.popup === "banner-stance"
+    if (!open || reducedMotion) this.shownAt = null
+    else if (this.shownAt === null) this.shownAt = now
+    const seq = state.bannerDrop?.seq
+    if (seq !== undefined && this.drop?.seq !== seq) this.drop = { seq, at: now }
+    const dropMs = this.drop === null || reducedMotion ? undefined : now - this.drop.at
+    const dropping = dropMs !== undefined && dropMs < DROP_MS
+    return {
+      ...(this.shownAt === null ? {} : { pulseMs: now - this.shownAt }),
+      ...(dropping ? { dropMs } : {}),
+      until: dropping && this.drop !== null ? this.drop.at + DROP_MS : null,
     }
   }
 }

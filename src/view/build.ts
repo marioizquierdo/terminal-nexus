@@ -37,6 +37,7 @@ import { drawHandoff } from "./build-handoff.ts"
 import type { PopupBorder } from "./build-popup.ts"
 import { drawPopup } from "./build-popup.ts"
 import { drawDialog } from "./build-dialog.ts"
+import { drawBanner } from "./banner-marks.ts"
 
 // What tests and scripts import from here, wherever it now lives.
 export { ACTIVE_VALUE } from "./build-menu.ts"
@@ -154,6 +155,12 @@ export type BuildCompositionInput = Readonly<{
    * — each stands where its walk ends.
    */
   room?: readonly Readonly<{ ordinal: number; elapsedMs: number }>[]
+  /**
+   * **The battle banner's clock** (`BannerClock`, `src/view/build-live.ts`): how long ago its panels opened — its
+   * pulse while it is the cursor, and its march lines' arrows moving — and how long ago it was last planted, while
+   * its planting plays. Absent — every still frame — the banner is drawn on the beat, its lines still.
+   */
+  banner?: Readonly<{ pulseMs?: number; dropMs?: number }>
   /** Draw no Commander on the map this frame: she is still to appear (`commanderHidden`). Set by the composer. */
   commanderHidden?: boolean
 }>
@@ -223,6 +230,7 @@ export function composeBuildFrame(
   drawOutInBuild(cells, input)
   drawExploredCommander(cells, input, colors)
   drawRaidIntent(cells, input, pack)
+  drawBanner(cells, input, pack)
   drawEffects(cells, input, animating, colors)
   drawPreview(cells, input, preview)
   drawCursor(cells, input)

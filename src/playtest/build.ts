@@ -25,7 +25,7 @@ import type { LevelDestination } from "../cli/route.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { hasTrail } from "../view/build-grid.ts"
-import { RegroupClock, RoomClock, TrailClock } from "../view/build-live.ts"
+import { BannerClock, RegroupClock, RoomClock, TrailClock } from "../view/build-live.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import type { ColorDepth } from "../view/roles.ts"
 import type { Experiments } from "../build/experiments.ts"
@@ -175,6 +175,8 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
   const trail = new TrailClock()
   const regrouping = new RegroupClock()
   const rooming = new RoomClock()
+  // The battle banner's pulse and planting, on the script's clock too: `wait~MS` steps show the planting's ring.
+  const bannering = new BannerClock()
   // Drawn with the settings the script has reached: a step that changes the colour depth or the
   // symbols in Settings shows the change, as the live screen does.
   const compose = (): ReadonlyCellFrame => {
@@ -189,6 +191,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     const raidTrail = trail.at(build.state, clock, { reducedMotion: build.state.settings.reducedMotion, raidTrail: inView })
     const regroup = pulse === undefined ? regrouping.at(build.round.field, clock, build.state.settings.reducedMotion) : null
     const room = pulse === undefined ? rooming.at(build.state.planned, clock, build.state.settings.reducedMotion) : []
+    const { until: _until, ...banner } = bannering.at(build.state, clock, build.state.settings.reducedMotion)
     return composeBuildFrame(
       {
         // This round's: what stands on the map changes from round to round.
@@ -202,6 +205,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
         ...(raidTrail === null ? {} : { raidTrail }),
         ...(regroup === null ? {} : { regroup }),
         ...(room.length === 0 ? {} : { room }),
+        ...(banner.pulseMs === undefined && banner.dropMs === undefined ? {} : { banner }),
       },
       build.state.settings.colors,
     )

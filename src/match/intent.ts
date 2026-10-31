@@ -237,7 +237,13 @@ function wavesThisRound(entity: EntityState, recipe: ProductionRecipe, pulseTick
  *  level names no target for it. */
 function troopsOf(input: MissionPulseInput, state: MatchState, side: PlayerId): TroopsIntent | null {
   const { mission, registry, pulse } = input
-  const region = targetRegionsAt(mission, pulse, 0)[side]
+  // The player's banner, when it moved them: where they head instead of the level's own target.
+  const banner = input.banner?.side === side ? input.banner : undefined
+  const named = targetRegionsAt(mission, pulse, 0)[side]
+  const region =
+    banner === undefined
+      ? named
+      : { id: "banner", name: banner.name, x: banner.area.x, y: banner.area.y, width: banner.area.width, height: banner.area.height }
   if (region === undefined) return null
   const own = state.entities.filter((entity) => entity.player === side && followsTarget(registry.get(entity.contentId)))
   const counts = new Map<string, number>()

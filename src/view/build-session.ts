@@ -171,7 +171,7 @@ export class BuildSession {
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
-  private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; raid: RaidForecast }> | null = null
+  private foreseen: Readonly<{ context: BuildContext; planned: BuildState["planned"]; banner: BuildState["banner"]; raid: RaidForecast }> | null = null
 
   constructor(options: BuildSessionOptions) {
     // Without scenes, no round is handed one: each opens on the menu, as it would after its scene.
@@ -206,16 +206,16 @@ export class BuildSession {
    */
   raid(): RaidForecast | undefined {
     if (this.foresee === null) return undefined
-    const { planned } = this.buildState
+    const { planned, banner } = this.buildState
     const last = this.foreseen
-    if (last !== null && last.context === this.context && last.planned === planned) return last.raid
+    if (last !== null && last.context === this.context && last.planned === planned && last.banner === banner) return last.raid
     let raid: RaidForecast
     try {
       raid = this.foresee(this.context, this.buildState)
     } catch {
       raid = []
     }
-    this.foreseen = { context: this.context, planned, raid }
+    this.foreseen = { context: this.context, planned, banner, raid }
     return raid
   }
 

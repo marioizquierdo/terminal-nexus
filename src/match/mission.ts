@@ -46,6 +46,8 @@ import type { MissionDefinition, MissionVerdict, Region, SpawnAction, TriggerDef
 import type { PulseContext } from "../pulse/context.ts"
 import { contextFor, spawnEvents, stepTick } from "../pulse/index.ts"
 import type { EntityState, MatchState, PlayerId, TargetArea } from "../state/types.ts"
+import type { BannerOrder } from "./banner.ts"
+import { bannerReached, withBannerTargets } from "./banner.ts"
 import { opening } from "./opening.ts"
 import { enemyNexusMiddle, nearestFit } from "./placement.ts"
 import type { Force, StructurePlacement } from "./types.ts"
@@ -74,6 +76,10 @@ export type MissionPulseInput = Readonly<{
   /** The player's carried buildings whose content the Build Phase changed — an upgrade, a mode — and the content id
    *  each starts the Pulse with (`OpeningInput.refits`). Absent: none. */
   refits?: readonly Readonly<{ anchor: Coord; contentId: string }>[]
+  /** The player's battle banner for this Pulse (`banner.ts`): its side heads there from tick 0, in place of the
+   *  target the mission names — and, aggressive, on to the enemy's Nexus once it is reached. Absent: the mission's
+   *  own targets, as before. */
+  banner?: BannerOrder
 }>
 
 /** A unit that arrived by a mission's `spawn`, and what it came with — the group and its line of intention.
@@ -256,7 +262,7 @@ export function missionOpening(input: MissionPulseInput): Readonly<{ state: Matc
     arrivals.push(entry === undefined ? calledUp(entity) : arrivalOf(entry, entity, 0))
   }
   // Where each side's troops head as the Pulse starts: the targets set by now, this round's tick 0 included.
-  return { state: withTargets(result.state, targetsAt(mission, pulse, 0)), arrivals, fired }
+  return { state: withTargets(result.state, withBannerTargets(targetsAt(mission, pulse, 0), input.banner, false)), arrivals, fired }
 }
 
 /**
@@ -391,10 +397,17 @@ export function resolveMissionPulse(input: MissionPulseInput): MissionPulse {
   const later = laterTicks(mission, pulse)
 
   let state = start.state
+  // An aggressive banner, once the army has reached it: the side marches on from the next tick (`banner.ts`).
+  const banner = input.banner
+  let released = false
   while (state.outcome === null && state.tick < mission.pulseTicks) {
     const result = stepTick(state, context)
     state = result.state
     events.push(...result.events)
+    if (banner !== undefined && banner.stance === "aggressive" && !released && state.outcome === null && bannerReached(state, registry, banner)) {
+      released = true
+      state = withTargets(state, withBannerTargets(state.targets, banner, true))
+    }
     if (state.outcome === null && later.has(state.tick)) {
       const tick = state.tick
       for (const trigger of mission.triggers) {
@@ -405,7 +418,7 @@ export function resolveMissionPulse(input: MissionPulseInput): MissionPulse {
       events.push(...arrived.events)
       arrivals.push(...arrived.arrivals)
       // A side's target moved at this moment: its troops head for the new one from the next tick.
-      if (retargetsAt(mission, pulse, tick)) state = withTargets(state, targetsAt(mission, pulse, tick))
+      if (retargetsAt(mission, pulse, tick)) state = withTargets(state, withBannerTargets(targetsAt(mission, pulse, tick), banner, released))
       context = widened(context, state, registry)
     }
     states.push(state)

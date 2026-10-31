@@ -53,6 +53,9 @@ import type { RaidForecast, RaidGroup } from "../build/types.ts"
 import { PERIMETER } from "../armies/index.ts"
 import type { MissionDefinition, SceneLine } from "../mission/index.ts"
 import { regionCentre, regionOf, regionTiles, sceneOf, validateMission } from "../mission/index.ts"
+import { targetRegionsAt } from "../match/index.ts"
+import type { BannerOrder } from "../match/index.ts"
+import { bannerOrder } from "../build/banner.ts"
 import type { MatchState } from "../state/types.ts"
 import { TICKS_PER_SECOND } from "../scenario/load.ts"
 import { setting } from "../build/all-settings.ts"
@@ -366,6 +369,33 @@ function dealtDraft(mission: MissionDefinition, context: BuildContext, round: nu
   })
 }
 
+/**
+ * **The battle banner's default and the places it can name**, for round `pulse` of a mission: where the level sends the
+ * player's troops as the round starts — its target region, held, so defensive — when it names one; and the regions
+ * with a name the player reads. With no target the default is the build side's own (`defaultBanner`): the enemy's
+ * Nexus, aggressive.
+ */
+function bannerFieldsOf(mission: MissionDefinition, pulse: number): Pick<BuildContext, "bannerDefault" | "landmarks"> {
+  const target = targetRegionsAt(mission, pulse, 0).A
+  const landmarks = mission.regions.flatMap((region) =>
+    region.name === undefined ? [] : [{ name: region.name, x: region.x, y: region.y, width: region.width, height: region.height }],
+  )
+  return {
+    ...(target === undefined ? {} : { bannerDefault: { tile: regionCentre(target), name: target.name ?? target.id, stance: "defensive" as const } }),
+    ...(landmarks.length === 0 ? {} : { landmarks }),
+  }
+}
+
+/** The banner the player planted, as the match layer's order — only with the Battle banner Experiment on, and only
+ *  when it is not the round's own default (`bannerOrder`). */
+function bannerOf(context: BuildContext, state: BuildState | undefined): Pick<MissionPulseInput, "banner"> {
+  if (state === undefined || setting(state, "battleBanner") !== "on") return {}
+  const order = bannerOrder(context, state)
+  if (order === null) return {}
+  const banner: BannerOrder = { side: "A", area: order.area, name: order.name, stance: order.stance }
+  return { banner }
+}
+
 export function missionPlay(mission: MissionDefinition): MissionPlay {
   const inputFor = (context: BuildContext, pulse: number, structures: MissionPulseInput["structures"], state?: BuildState): MissionPulseInput => ({
     mission,
@@ -381,6 +411,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
       return { x, y }
     }),
     ...refitsFor(context, state),
+    ...bannerOf(context, state),
   })
 
   /** What the round's triggers bring, set down against the round's opening without a plan — a forecast:
@@ -423,6 +454,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         // Nothing kept yet, nothing called up: a mission starts with a fresh hand.
         kept: [],
         callups: [],
+        ...bannerFieldsOf(mission, 1),
       }
       const context: BuildContext = { ...opened, nexusDraft: dealtDraft(mission, opened, 1) }
       // The round opens on its scene, when the mission has one for it: PERIMETER's intro.
@@ -479,6 +511,9 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
         allotment: remaining(context, state) + income + creditsEarned(resolved.timeline.events, "A"),
         // What was kept stays kept (it is in this context already); what was called up has arrived.
         callups: [],
+        // The banner stays where it was planted, round after round, until it is moved.
+        ...bannerFieldsOf(mission, number),
+        placedBanner: state.banner,
       }
       // The round opens on its Nexus Pulse: a hand dealt for the buildings standing now, not last round's.
       const nexusDraft = dealtDraft(mission, opened, number)

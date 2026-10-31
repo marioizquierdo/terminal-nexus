@@ -35,6 +35,7 @@ import {
   structureAtTile,
 } from "./state.ts"
 import { WHEEL_TILES } from "./mouse.ts"
+import { bannerSpot, capitalised } from "./banner.ts"
 import { defaultValue, setting } from "./all-settings.ts"
 import type { ConstructItem } from "./types.ts"
 
@@ -59,6 +60,8 @@ export type HintSituation =
   | "dialog"
   | "run-draft"
   | "run-draft-remove"
+  | "banner-place"
+  | "banner-stance"
   | "committed"
   | "menu-mouse"
   | "menu-explore"
@@ -83,6 +86,8 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "dialog":
     case "run-draft":
     case "run-draft-remove":
+    case "banner-place":
+    case "banner-stance":
       return state.popup
     default:
       break
@@ -136,7 +141,15 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       ? "Pick one: up/down and [enter], or its number. [esc] closes without a pick."
       : "The Nexus powers you have. [esc] closes.",
   "battle-round": (_context, state) =>
-    `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
+    setting(state, "battleBanner") === "on"
+      ? `Battle Round ${state.pulseNumber}: [s] starts it, [t] moves the banner, [esc] back to the plan.`
+      : `Battle Round ${state.pulseNumber}: [enter] or [s] starts it, [esc] goes back to the plan.`,
+  // The owner: "when hovering targets the action says '[enter] Place Target on Xxx'".
+  "banner-place": (context, state) => {
+    const spot = bannerSpot(context, state, state.cursor)
+    return spot.refusal === null ? `[enter] Place Target on ${spot.name}. Arrows move it, [esc] back.` : `${capitalised(spot.name)}: ${spot.refusal}`
+  },
+  "banner-stance": () => "[a] aggressive, [d] defensive, up/down and [enter]. [esc] moves it again.",
   "game-menu": () => "Up/down and [enter] choose, or press a row's key. [esc] back to the game.",
   settings: (_context, state) => `Left/right change a value, [e] exports them all. ${escBack(state)}`,
   export: (_context, state) => `Paste this into the pull request. Up/down scroll. ${escBack(state)}`,
