@@ -15,13 +15,10 @@ it is done.*
   Watch twelve troopers lose at the two-row door while the same number with half in the air win; say whether that
   reads as good ground (a choice that matters) or as air being too strong where the ground is tight, and whether commitment
   reads as commitment or as stubbornness.
-- **Try the testing ground** ([the spec](../system-design/testing-ground.md)): `./bin/grid.ts engage-bench --profile`
-  for the bench with what a tick costs, `--against origin/main` to set it beside main. Say what a session should
-  measure that it does not yet show.
-- **Decide on the target flip-flop**: at a narrow pass a unit whose enemy is walled in picks another walled-in one,
-  then the first again, every tick (69 switches a unit a battle, four times open ground's route work). Letting go
-  only when another enemy can be reached cut switches to 3 a unit with no outcome moving; it is measured, not built,
-  since it changes how units choose. Say whether it goes in next.
+- **Try the testing ground** ([the guide](../system-design/testing-ground.md)): `./bin/grid.ts engage-bench --against
+  origin/main --profile --jobs 4` sets the bench beside main. Units no longer turn between two walled-in enemies every
+  tick; watch a narrow pass (`./bin/grid.ts engage-gap2-melee-vs-mix`) and say whether the melee army's waiting reads
+  better.
 - **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge run or any campaign level. Rounds are 30
   seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
   seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2

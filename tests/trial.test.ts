@@ -141,19 +141,18 @@ test("grid plays a map over seeds and a trial file, and fails a trial whose expe
   assert.match(bad.stderr, /has no "hp"/)
 })
 
-test("a battle's record counts idle units, target switches, and what each stall was queued behind", async () => {
-  // A squad that reaches its target and stands there with nothing in reach is idle: never blocked, never trying.
+test("a battle's record counts idle units apart from stalled ones", async () => {
+  // A squad that reaches its target and stands there with nothing in reach is idle: never blocked, never trying, which
+  // a count of blocked units never sees.
   const standing = await loadScenarioFile("target-head-engage-stand.map.json")
   const stood = playTrialBattle(standing, {}, standing.seed).battle.sides.A
   assert.equal(stood.idle, 4)
   assert.equal(stood.stalled, 0)
-  // At a two-row gap the wrong army stalls; each stall's queue is followed to its head, and a switch is a choice.
+  // At a two-row gap the wrong army is trying, in vain: stalled, not idle.
   const gap = await loadScenarioFile("engage-gap2-melee-vs-mix.map.json")
   const side = playTrialBattle(gap, {}, 1).battle.sides.A
   assert.ok(side.stalled > 0)
-  const heads = Object.values(side.stallHeads ?? {}).reduce((sum, count) => sum + count, 0)
-  assert.ok(heads >= side.stalled, `${heads} stall heads for ${side.stalled} stalled units`)
-  assert.ok((side.switches ?? 0) <= (side.targetsChosen ?? 0))
+  assert.equal(side.idle, 0)
 })
 
 test("a trial split across processes plays exactly the battles one process does, route work and all", { timeout: 60_000 }, () => {

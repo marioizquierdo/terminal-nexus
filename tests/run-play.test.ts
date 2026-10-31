@@ -296,7 +296,9 @@ test("the driver plays a run end to end, and the same seed and script give the s
   // Pinned again when a unit that cannot reach its target came to let it go and look further afield for one it can:
   // battle 1 is won in round 3 at tick 136 (round 2 now runs out its time), and battle 2 in round 8 at tick 183; battle 3
   // is lost as before. (A first version that marched on past the fight won battle 2 in round 6, at tick 355.)
-  assert.deepEqual(shape(once), [...time(1, 2), "1.3 nexus@136", ...time(2, 7), "2.8 nexus@183", ...time(3, 8)])
+  // Pinned again when a unit whose target is walled in came to let it go only for one it can reach, rather than flip
+  // between two walled-in enemies every tick: battle 2's last round ends 30 ticks sooner, at tick 153.
+  assert.deepEqual(shape(once), [...time(1, 2), "1.3 nexus@136", ...time(2, 7), "2.8 nexus@153", ...time(3, 8)])
 })
 
 test("on the screen, a won battle opens on the draft, the choice settles it, and the session moves to the round it makes", { timeout: 60_000 }, () => {

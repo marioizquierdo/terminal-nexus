@@ -29,7 +29,6 @@ export type RouteCounter = Readonly<{
 export function routeCounter(clock: () => number, routes?: Constructor, fields?: Constructor): RouteCounter {
   const asked = new Map<string, { calls: number; ms: number }>()
   const seen = new Set<{ settledCount?: number }>()
-  let calls = 0
   if (routes !== undefined) {
     const proto = routes.prototype as Record<string, unknown>
     for (const name of QUESTIONS) {
@@ -47,7 +46,6 @@ export function routeCounter(clock: () => number, routes?: Constructor, fields?:
         } finally {
           depth -= 1
           if (depth === 0) {
-            calls += 1
             const entry = asked.get(name) ?? { calls: 0, ms: 0 }
             entry.calls += 1
             entry.ms += clock() - began
@@ -60,13 +58,11 @@ export function routeCounter(clock: () => number, routes?: Constructor, fields?:
     }
   }
   let began = 0
-  let callsAtBegin = 0
   let fieldsBuilt = 0
   let settled = 0
   const meter: Meter = {
     begin() {
       seen.clear()
-      callsAtBegin = calls
       fieldsBuilt = 0
       settled = 0
       began = clock()
@@ -76,7 +72,7 @@ export function routeCounter(clock: () => number, routes?: Constructor, fields?:
       // A field is built once and asked for many times in a tick; counted once for each battle it served.
       fieldsBuilt = seen.size
       for (const field of seen) settled += field.settledCount ?? 0
-      return routes === undefined ? { ms, ticks } : { ms, ticks, fields: fieldsBuilt, settled, routeCalls: calls - callsAtBegin }
+      return routes === undefined ? { ms, ticks } : { ms, ticks, fields: fieldsBuilt, settled }
     },
   }
   return { meter, questions: () => asked }

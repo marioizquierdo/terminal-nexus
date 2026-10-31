@@ -1,10 +1,11 @@
 // What a trial's battles say (docs/system-design/testing-ground.md, reading a trial): one cell for each map and variant,
 // each army's share of wins with its interval, how soon battles were decided, how many units ever struck and how soon,
-// how many stood idle or stalled and what their queues ended at, how often units switched targets, what a battle cost
-// to play when it was measured; whether two cells differ by more than chance; what a trial expects of them; and which
-// battles are worth watching. Pure.
+// how many stood idle or stalled, how often units switched targets, what a battle cost to play when it was measured;
+// whether two cells differ by more than chance; what a trial expects of them; and which battles are worth watching.
+// A new measure is a field read from the battle's record here (`armyCell`), a name in `TRIAL_MEASURES`, and a column in
+// `trial-summary.ts`. Pure.
 
-import type { SideRecord, StallHead } from "./battle.ts"
+import type { SideRecord } from "./battle.ts"
 import type { TrialBattle, TrialSpec } from "./trial.ts"
 import type { PlayerId } from "../state/types.ts"
 
@@ -70,8 +71,6 @@ export type ArmyCell = Readonly<{
   blocked: number
   /** Target switches (a new target while the one held still stood) for each unit fielded, a battle. */
   switches: number
-  /** What its stalled units' queues ended at, over every battle. */
-  stallHeads: Readonly<Partial<Record<StallHead, number>>>
   /** Units fielded and lost, a battle. */
   fielded: number
   lost: number
@@ -85,7 +84,6 @@ export type CostCell = Readonly<{
   msPerTick: number
   fieldsPerTick: number | null
   settledPerTick: number | null
-  routeCallsPerTick: number | null
   /** Each battle's milliseconds a tick and fields a tick, for a comparison's spread. */
   perBattle: readonly Readonly<{ ms: number; fields: number | null }>[]
 }>
@@ -113,10 +111,6 @@ function armyCell(sides: readonly SideRecord[], supply: readonly number[]): Army
   const fielded = sides.reduce((sum, side) => sum + side.fielded, 0)
   const strikes = sides.flatMap((side) => side.firstStrikes ?? [])
   const firstStrike = median(strikes)
-  const stallHeads: Partial<Record<StallHead, number>> = {}
-  for (const side of sides) {
-    for (const [head, count] of Object.entries(side.stallHeads ?? {}) as [StallHead, number][]) stallHeads[head] = (stallHeads[head] ?? 0) + count
-  }
   return {
     struck: fielded === 0 ? 0 : strikes.length / fielded,
     firstStrike: firstStrike === null ? null : firstStrike / TICKS_PER_SECOND,
@@ -124,7 +118,6 @@ function armyCell(sides: readonly SideRecord[], supply: readonly number[]): Army
     stalled: mean(sides.map((side) => side.stalled)),
     blocked: mean(sides.map((side) => side.blockedTicks)) / TICKS_PER_SECOND,
     switches: mean(sides.map((side) => (side.fielded === 0 ? 0 : (side.switches ?? 0) / side.fielded))),
-    stallHeads,
     fielded: mean(sides.map((side) => side.fielded)),
     lost: mean(sides.map((side) => side.lost)),
     supply: mean(supply),
@@ -141,7 +134,6 @@ function costCell(group: readonly TrialBattle[]): CostCell | undefined {
     msPerTick: measured.reduce((sum, cost) => sum + cost.ms, 0) / ticks,
     fieldsPerTick: per((cost) => cost.fields),
     settledPerTick: per((cost) => cost.settled),
-    routeCallsPerTick: per((cost) => cost.routeCalls),
     perBattle: measured.map((cost) => ({ ms: cost.ms / cost.ticks, fields: cost.fields === undefined ? null : cost.fields / cost.ticks })),
   }
 }
@@ -210,9 +202,9 @@ export const TRIAL_MEASURES: Readonly<Record<string, (cell: TrialCell) => number
   stalledB: (cell) => cell.armies.B.stalled,
   switchesA: (cell) => cell.armies.A.switches,
   switchesB: (cell) => cell.armies.B.switches,
-  /** The kernel's route work, the same on every machine: what an algorithm's cost is held to. Needs `--profile`. */
+  /** The kernel's route work, the same on every machine: what an algorithm's cost is held to (never the clock, which
+   *  is the machine's). Needs `--profile`. */
   fieldsPerTick: (cell) => cell.cost?.fieldsPerTick ?? null,
-  msPerTick: (cell) => cell.cost?.msPerTick ?? null,
 }
 
 const round = (value: number, places: number): number => Math.round(value * 10 ** places) / 10 ** places
@@ -248,7 +240,7 @@ export type Notable = Readonly<{ map: string; variant: string; seed: number; swa
 
 /**
  * For each cell, the battles a reader should watch: the one that went against the cell's majority (an upset), the
- * slowest, the one with the most stalled units and the one with the most target switches, each when it stands out.
+ * slowest and the one with the most stalled units, each when it stands out.
  * A trial's numbers say that something happens; one battle watched says why.
  */
 export function notableBattles(battles: readonly TrialBattle[]): Notable[] {
@@ -275,9 +267,6 @@ export function notableBattles(battles: readonly TrialBattle[]): Notable[] {
     const stalls = (each: TrialBattle): number => each.battle.sides.A.stalled + each.battle.sides.B.stalled
     const stalled = by(stalls)
     if (stalled !== undefined) pick(stalled, `the most stalled: ${stalls(stalled)} units`)
-    const switches = (each: TrialBattle): number => (each.battle.sides.A.switches ?? 0) + (each.battle.sides.B.switches ?? 0)
-    const churn = by(switches)
-    if (churn !== undefined) pick(churn, `the most target switches: ${switches(churn)}`)
   }
   return found
 }

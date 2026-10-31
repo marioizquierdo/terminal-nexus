@@ -220,6 +220,20 @@ test("with nothing it can reach anywhere, a unit keeps its choice and stands as 
   assert.ok(events.some((event) => event.kind === "move.blocked" && event.entity === me.id && event.reason === "no-route"), "it never said it had no route")
 })
 
+test("between two enemies both walled in, a unit keeps the one it holds rather than turning from one to the other", () => {
+  // Two workers in two rings of rock, both in sight, neither reachable. Choosing afresh among enemies all walled in used
+  // to take the other one, then the first again the next tick, every tick (69 changes of target a unit in a battle at a
+  // two-row gap); a unit now lets go only of a target it can trade for one it can reach.
+  const lower: (readonly [number, number])[] = []
+  for (let x = 11; x <= 13; x += 1) for (let y = 7; y <= 9; y += 1) if (x !== 12 || y !== 8) lower.push([x, y])
+  const start = load({ A: [[7, 6, TROOPER]], B: [[12, 5, WORKER], [12, 8, WORKER]] }, { rock: [...ring, ...lower], target: { x: 17, y: 3, width: 4, height: 5 }, ticks: 120 })
+  const me = byContent(start, TROOPER, "A")
+  const { events } = play(start, 60)
+  const chosen = events.filter((event) => event.kind === "target.selected" && event.entity === me.id)
+  assert.ok(chosen.length >= 1, "it never chose either")
+  assert.ok(chosen.length <= 2, `it changed target ${chosen.length} times in 60 ticks`)
+})
+
 test("closing on a target, or having it in range, starts the count again", () => {
   const start = load({ A: [[4, 5, TROOPER]], B: [[14, 5, MARKSMAN]] }, { ticks: 120 })
   const { states } = play(start, 60)

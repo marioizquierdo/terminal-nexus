@@ -281,3 +281,17 @@ stall queues in every battle's record; `--profile` for a tick's cost by the cloc
 and `--jobs`; the battles worth watching with the command for each; the trial code in three parts; the spec rewritten
 as a playbook by kind of change. Found with it: a target flip-flop at narrow passes, measured with a candidate fix and
 left for the owner.
+
+### F237 — Fix what the metrics found, then keep the testing ground generic
+
+> First, yes, go ahead and fix this bug. If you find other bugs, go ahead and fix them too. [...] But after you do that,
+> let's take a step back. It's possible we are starting to overfocus on our problem at hand because we just worked on
+> troop movement and retargeting. [...] Please make sure this is not adding too much noise into the generic nature of the
+> testing round. [...] Perhaps we decide some of the data we're logging is not that important. Remember that future
+> sessions can always add it if they need it. So it's more important that the guide that we're writing for future
+> agents explains the important concepts that help those agents use the tool and modify it as they need. [...] It's more
+> about the shape rather than the specific functionality right now.
+
+**Built** ([the report](../reports/2026-10-31-testing-ground-generic.md)): the flip-flop fixed and held by a test; the
+duels' idle units checked and found to be held lines; a mislabelled measure removed; the stall queues, round robin, army
+trials and extra columns dropped; the guide rewritten around the shape of a trial and how to extend each part.
