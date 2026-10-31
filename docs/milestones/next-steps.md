@@ -5,6 +5,10 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Place the battle banner** (the Battle banner Experiment, on by default): start PERIMETER, press `s`, then `t`, move
+  the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
+  intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an
+  enemy Nexus, so the default banner is the level's own target (PERIMETER's line, defensive).
 - **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge run, or
   `./bin/grid.ts scenarios/movement/march-lines` and `scenarios/movement/march-commander`. Ranged units walk at half speed while a trooper
   is near and fall in behind on the move; Vasse is a regular troop; a unit keeps its target until it falls or it has

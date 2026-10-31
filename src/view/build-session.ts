@@ -36,6 +36,7 @@ import { buildKeyboardCommand } from "../build/keyboard.ts"
 import type { Move, MoveTuning } from "../build/motion.ts"
 import { KeyMotion, listTuning, moveTuning, pressTiles } from "../build/motion.ts"
 import type { MouseEvent } from "../build/mouse.ts"
+import { moveStateChanges, moveStateEntry } from "../report/move-states.ts"
 import { buildMouseCommand, parseMouseEvent } from "../build/mouse.ts"
 import type { BuildContext, BuildState } from "../build/state.ts"
 import { applyBuildCommand, buildingActions, cardEntry, createBuildState, displayName, exportText, nexusTile, remaining, structureAtTile, withViewport, withoutScene } from "../build/state.ts"
@@ -458,6 +459,8 @@ export class BuildSession {
       }
       const trained = trainedIn(presenter.resolved)
       if (trained.buildings > 0) this.log.log("pulse.trained", { round: this.buildState.pulseNumber, ...trained })
+      const { timeline } = presenter.resolved
+      for (const change of moveStateChanges(timeline)) this.log.log("unit.state", moveStateEntry(change, this.buildState.pulseNumber, timeline.ticksPerSecond))
     } catch {
       // Never let a log line stop a Pulse.
     }

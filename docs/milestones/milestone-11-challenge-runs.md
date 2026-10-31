@@ -1,7 +1,7 @@
 # Milestone 11 — Challenge Mode: Runs
 
 **Status:** CURRENT
-**Current step:** 11E — troop movement.
+**Current step:** 11G — the banner, tried before the stance (built as a prototype, waiting on the owner's playtest).
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Battle Round loop and a result), Milestone 8 (a Commander exists and the Nexus Pulse deals from an army's pool); Milestone 3's mode select hands off here
 
 Made current on 2026-10-22, when the owner closed Pathfinding: "For now, we want to focus on building a basic game
@@ -163,10 +163,20 @@ list), and the workers' jobs (Milestone 7).
 
 ### Step 11G — The banner
 
+The owner, 2026-10-31 ([his words](../history/feedback/2026-10-31-banner-first.md)): "test placing the banner on the
+map first, because the UX to do it is the big question… if we can't, we will fallback to the stance." Tried before
+11F, behind the Battle banner Experiment.
+
+- [x] **The placement, as a prototype**: Start Battle docks a panel over the menu with the target and stance, the camera
+      on the banner; Change Target makes the cursor a pulsing banner that names the spot under it, refuses ground troops
+      cannot reach, and plants with a ring and a stance choice ([`ui-patterns.md`](../system-design/ui-patterns.md),
+      "The battle banner"). Where no enemy Nexus stands, the default is the level's own target.
 - [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
       Aggressive elsewhere: the army goes there first, then on to the enemy Nexus (a route). Defensive: it holds the line
       there (map control, or the base defended). It replaces the stance row.
-- [ ] The march line runs to the banner; the duel scripts place one.
+- [x] The march line runs to the banner, from the Nexus and from the Commander, and on to the enemy when aggressive.
+- [ ] The duel scripts place one; duels and runs carry it (only campaign missions do today).
+- [ ] The owner plays it and says whether it is easy and intuitive, or the stance row (11F) replaces it.
 
 Two banners — the Commander following the main one, buildings set to send their units after a second — are the
 direction after this ([`core-loop.md`](core-loop.md)); they wait until the map holds resources and bonuses worth
