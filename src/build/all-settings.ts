@@ -433,6 +433,24 @@ export const ALL_SETTINGS = {
     names: { route: "route", ground: "nearest" },
     default: "route",
   },
+
+  // --- The battle banner (the challenge runs, step 11G) ----------------------------------------------------
+  // The owner, 2026-10-31: "I would actually like to test placing the banner on the map first, because the UX to do
+  // it is the big question ... if we can't, we will fallback to the stance." Start Battle Round shows the banner and
+  // its stance in the side panel, the camera on it; Change Target turns the cursor into the banner, with the march
+  // lines drawn to it; placing it asks aggressive or defensive. Off: the Battle Round confirmation as it was, and the
+  // troops head where the level sends them.
+
+  /** Whether Start Battle Round goes through the banner — where the troops head, and whether they push on from
+   *  there or hold it — or straight to the old confirmation. First guess: on, so the owner feels it. */
+  battleBanner: {
+    tier: "experiment",
+    section: "mission",
+    label: "Battle banner",
+    question: "On: Start Battle Round shows the banner; move it, then choose aggressive or defensive. Off: the old popup.",
+    values: ["on", "off"],
+    default: "on",
+  },
 } as const satisfies Readonly<Record<string, SettingSpec>>
 
 // --- Names, values and tiers, as types --------------------------------------------------------------

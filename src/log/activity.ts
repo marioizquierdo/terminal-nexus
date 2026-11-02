@@ -242,6 +242,19 @@ export const ACTIVITY_EVENTS = {
       tiles: { type: "number", description: "How many tiles (or rows) the motion rule moved it — at a list's end, what it would have moved. A held key's repeats that move nothing are not logged." },
     },
   },
+  "unit.state": {
+    defaultLevel: "debug",
+    description: "A unit changed movement state in the Battle Round just ended: march (walking for its side's goal, or nothing to fight), battle (turned to an enemy) or retreat (running from one). Read back from the round once it ends (src/report/move-states.ts), every side's units, a line each change.",
+    props: {
+      round: { type: "number", description: "Which Battle Round." },
+      second: { type: "number", description: "When in the round it changed, in seconds from its start, to a tenth." },
+      unit: { type: "string", description: "Which unit, as the battle report names it: A:unit.citizen.trooper#3 (A is the player's side)." },
+      from: { type: "string", description: "The state it left: march, battle or retreat." },
+      to: { type: "string", description: "The state it took: march, battle or retreat." },
+      x: { type: "number", description: "Where it stood: column." },
+      y: { type: "number", description: "Where it stood: row." },
+    },
+  },
 } as const satisfies EventSchema
 
 export type ActivityEvent = keyof typeof ACTIVITY_EVENTS
@@ -291,6 +304,14 @@ export const ACTIVITY_FILTERS: readonly LogFilter[] = [
     question: "The Commander's life across the mission: each Battle Round, when she fell, the rounds she sat out and when the Nexus Pulse restored her.",
     level: "info",
     events: ["pulse.start", "pulse.end", "commander.fell", "commander.out", "commander.restored"],
+  },
+  // Troop movement's three states (docs/system-design/movement.md): last, so Left from the window's first filter reaches
+  // it. Every change is a debug line, so the filter reads at debug.
+  {
+    name: "Movement",
+    question: "How the units moved in each Battle Round: every time one went from marching to battle, from battle to retreat, and back.",
+    level: "debug",
+    events: ["pulse.start", "pulse.end", "unit.state"],
   },
 ]
 

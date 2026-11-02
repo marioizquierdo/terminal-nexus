@@ -1,3 +1,4 @@
+import type { BuildContext } from "../src/build/state.ts"
 // The Build Phase's frame, at both ends of the supported terminal size range. What is being
 // checked is what docs/system-design/grid.md requires *in place of a minimap* — the weight of the Grid pane's sides
 // where there is more Grid — plus the placement preview, which is the only thing on screen that says
@@ -53,7 +54,8 @@ function screenAt(
   terminal: { columns: number; rows: number },
   drive: (build: BuildSession, layout: ReturnType<typeof buildLayout>) => void = () => {},
 ) {
-  const context = neutralContext()
+  // The Battle Round confirmation these tests read is the one the Battle banner Experiment, off, keeps.
+  const context: BuildContext = { ...neutralContext(), experiments: { battleBanner: "off" } }
   const layout = buildLayout(terminal, context.grid)
   const build = readyBuildSession({ context, cursor: { x: 18, y: 13 }, viewport: layout.viewport })
   drive(build, layout)

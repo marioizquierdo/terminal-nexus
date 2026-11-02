@@ -176,6 +176,13 @@ function popupCommand(key: string, popup: Popup, context: KeyboardContext): Buil
   // The dialog reads on with Enter or Space, and Esc and `x` above skip the rest. `q` opens the game menu
   // over it, as from anywhere; every other key waits for the scene to be over.
   if (popup === "dialog") return PLACE_KEYS.has(key) ? { kind: "dialog-next" } : key === "q" ? { kind: "open-game-menu" } : null
+  // Moving the banner: the cursor keys move it as they move the cursor, Enter and Space plant it. Its panel is
+  // docked over the menu, so the map stays the map.
+  if (popup === "banner-place") {
+    if (PLACE_KEYS.has(key)) return { kind: "banner-place" }
+    const move = cursorMove(key, context)
+    if (move !== null) return move
+  }
   const own = popupOwnKey(key, popup)
   if (own !== null) return own
   const spec = context.popupSpec ?? null

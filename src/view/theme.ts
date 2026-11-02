@@ -75,6 +75,8 @@ export const CHROME_GLYPHS = {
     trailUpright: "|",
     trailFall: "\\",
     trailRise: "/",
+    // The battle banner, where the player planted it: a pole with its flag (the battle banner Experiment).
+    banner: "!",
   },
   unicode: {
     horizontal: "─",
@@ -105,6 +107,7 @@ export const CHROME_GLYPHS = {
     trailUpright: "┃",
     trailFall: "╲",
     trailRise: "╱",
+    banner: "⚑",
   },
 } as const satisfies Readonly<Record<GlyphPack, Readonly<Record<string, string>>>>
 

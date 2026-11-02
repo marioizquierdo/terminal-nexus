@@ -9,6 +9,7 @@ import { ARMIES, PERIMETER } from "../src/armies/index.ts"
 import { DEFAULT_LEVEL, LEVELS, levelById, openRound } from "../src/cli/levels.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { VASSE } from "./commander-fixture.ts"
+import { emptyWalk } from "./level-walk.ts"
 
 test("a level is found by its id, and the default is Vasse's first: PERIMETER", () => {
   assert.ok(LEVELS.length > 0)
@@ -47,6 +48,21 @@ test("a later round is reached by playing the ones before it with nothing built,
     for (let opened = 2; opened <= round; opened += 1) income += roundCredits(opened)
     assert.equal(first.allotment, level.firstRound().allotment + income)
     assert.deepEqual(first.kept, [])
+  }
+})
+
+test("on every level, a base with nothing built lives to the last round, so a route opens any round", { timeout: 120_000 }, () => {
+  // What a route to a later round plays (`openRound`), and a property of each level's content: what an empty base
+  // faces. The tests of a level's layout walk it with its battles undecided (tests/level-walk.ts), so a change to how
+  // battles play fails here alone, and says which round tipped and how close each came. Measured: the Nexus's lowest
+  // health in a round before the last is 210 of 400 at worst (Averno's curve, round 4; the curve's rounds 4 and 5
+  // fall to 234 and 228); the other levels' Nexus is untouched before their last round. When this fails, shape the
+  // level, not the rules.
+  for (const level of LEVELS) {
+    const walk = emptyWalk(level)
+    const read = walk.map((round) => `round ${round.round} ${round.verdict}, Nexus down to ${round.nexusLow}/${round.nexusMax}`).join("; ")
+    assert.equal(walk.length, level.rounds, `${level.id}: an empty base does not reach round ${level.rounds}: ${read}`)
+    for (const round of walk.slice(0, -1)) assert.equal(round.verdict, "continue", `${level.id}: ${read}`)
   }
 })
 

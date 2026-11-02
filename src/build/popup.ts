@@ -39,7 +39,8 @@ import {
   shownEntries,
 } from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { exportText, nexusPowers, pendingPicks } from "./state.ts"
+import { BANNER_STANCES, BANNER_START_ROW, BANNER_TARGET_ROW, exportText, nexusPowers, pendingPicks } from "./state.ts"
+import { bannerSpot, capitalised, currentBanner } from "./banner.ts"
 import type { BuildCommand, DialogLine, PopupMessage, RunDraftCard } from "./types.ts"
 
 export type PopupRow =
@@ -133,7 +134,9 @@ export type PopupSpec = Readonly<{
   rows: readonly PopupRow[]
   scroll?: PopupScroll
   valueWidth?: number
-  dock?: "bottom"
+  /** `bottom`: at the bottom of the map (the dialog). `panel`: over the side panel, where the menu is, leaving the
+   *  map clear to look at (the battle banner's panels). */
+  dock?: "bottom" | "panel"
   click?: BuildCommand
 }>
 
@@ -551,6 +554,97 @@ function sentences(text: string): readonly string[] {
   return text.split(/(?<=[.!?])\s+/u).filter((sentence) => sentence !== "")
 }
 
+// --- The battle banner's panels (the Battle banner Experiment) -----------------------------------------
+//
+// Docked over the side panel, where the menu is (the owner: "the action should go up and manage it on the left
+// menu"), so the map beside them — the banner, the march lines — stays in view.
+
+/** A spot's words after "Target:": "the enemy Nexus" reads "Enemy Nexus", as the owner wrote it; the rest as said,
+ *  its first letter up. */
+function targetLabel(name: string): string {
+  return capitalised(name.startsWith("the enemy ") ? name.slice("the ".length) : name)
+}
+
+/** What a stance means, in a line. */
+const STANCE_LINES: Readonly<Record<"aggressive" | "defensive", string>> = {
+  aggressive: "Go there, then keep pushing on to the enemy.",
+  defensive: "Go there and hold the position.",
+}
+
+/** The Battle Round panel with the banner: the round, where the troops head and their stance, and `[t] Change Target`
+ *  and `[s] Start Battle`. */
+function bannerRoundSpec(context: BuildContext, state: BuildState): PopupSpec {
+  const banner = currentBanner(context, state)
+  return {
+    title: `Battle Round ${state.pulseNumber}`,
+    dock: "panel",
+    rows: [
+      { kind: "blank" },
+      { kind: "text", text: `Start Battle Round ${state.pulseNumber}.`, strong: true },
+      { kind: "blank" },
+      { kind: "note", text: `Target: ${targetLabel(banner.name)}.` },
+      { kind: "note", text: `Stance: ${capitalised(banner.stance)}.` },
+      { kind: "note", text: STANCE_LINES[banner.stance] },
+      { kind: "blank" },
+      { kind: "option", hotkey: "t", label: "Change Target", command: { kind: "banner-target" }, highlighted: state.popupHighlight === BANNER_TARGET_ROW },
+      { kind: "option", hotkey: START_KEY, label: "Start Battle", command: { kind: "start-pulse" }, highlighted: state.popupHighlight === BANNER_START_ROW },
+      // What the round announces, under the actions: on a short panel it is what is left off.
+      { kind: "blank" },
+      ...sentences(roundAnnouncement(context, state.pulseNumber)).map((text): PopupRow => ({ kind: "note", text })),
+      ...absentCommanders(context).map((text): PopupRow => ({ kind: "note", text })),
+      ...(pendingPicks(context, state) > 0 ? [{ kind: "note", text: UNPICKED_POWER } as const] : []),
+    ],
+  }
+}
+
+/** Moving the banner: what it is over, and `[enter] Place Target on ...` — or why it cannot go there. */
+function bannerPlaceSpec(context: BuildContext, state: BuildState): PopupSpec {
+  const spot = bannerSpot(context, state, state.cursor)
+  return {
+    title: "Change Target",
+    dock: "panel",
+    rows: [
+      { kind: "blank" },
+      { kind: "note", text: "Move the banner with the arrows or the mouse." },
+      { kind: "blank" },
+      { kind: "heading", text: "OVER" },
+      { kind: "note", text: targetLabel(spot.name) },
+      { kind: "blank" },
+      spot.refusal === null
+        ? { kind: "option", hotkey: "enter", label: "Place Target on", description: spot.name, command: { kind: "banner-place" }, highlighted: true }
+        : { kind: "note", text: spot.refusal },
+    ],
+  }
+}
+
+/** The stance for the banner just planted: Aggressive or Defensive. */
+function bannerStanceSpec(context: BuildContext, state: BuildState): PopupSpec {
+  const tile = state.bannerDraft ?? state.cursor
+  const spot = bannerSpot(context, state, tile)
+  const label = { aggressive: "Aggressive", defensive: "Defensive" } as const
+  const hotkey = { aggressive: "a", defensive: "d" } as const
+  const describe = { aggressive: "Keep pushing on", defensive: "Hold position" } as const
+  return {
+    title: "Stance",
+    dock: "panel",
+    rows: [
+      { kind: "blank" },
+      { kind: "note", text: `Target: ${targetLabel(spot.name)}.` },
+      { kind: "blank" },
+      ...BANNER_STANCES.map(
+        (stance, index): PopupRow => ({
+          kind: "option",
+          hotkey: hotkey[stance],
+          label: label[stance],
+          description: describe[stance],
+          command: { kind: "banner-stance", stance },
+          highlighted: state.popupHighlight === index,
+        }),
+      ),
+    ],
+  }
+}
+
 /** The popup the state has open, as data, or `null`. */
 export function popupSpec(context: BuildContext, state: BuildState): PopupSpec | null {
   switch (state.popup) {
@@ -587,6 +681,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return { title: "NEXUS PULSE", rows }
     }
     case "battle-round":
+      if (setting(state, "battleBanner") === "on") return bannerRoundSpec(context, state)
       // A confirmation screen, not a question: the round's title,
       // what it announces (and that the Commander is out, when she is), and the one row, `[s] Start`,
       // highlighted because it is what Enter, Space and `s` do. Esc goes back, as from every popup. A Nexus
@@ -620,6 +715,10 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return runDraftSpec(context, state)
     case "run-draft-remove":
       return runDraftRemoveSpec(context, state)
+    case "banner-place":
+      return bannerPlaceSpec(context, state)
+    case "banner-stance":
+      return bannerStanceSpec(context, state)
     default:
       return null
   }
@@ -701,7 +800,9 @@ function scrollBarFor(column: number, top: number, bottom: number, window: Scrol
 export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   const paneWidth = layout.gridBox.right - layout.gridBox.left - 1
   const paneHeight = layout.paneBottom - layout.gridBox.top - 1
-  const width = Math.min(POPUP_WIDTH, Math.max(24, paneWidth - 3))
+  // Over the side panel: the frame's left border to the divider, from the rule under the top bar down.
+  const overPanel = spec.dock === "panel"
+  const width = overPanel ? layout.dividerColumn - layout.offset.column + 1 : Math.min(POPUP_WIDTH, Math.max(24, paneWidth - 3))
   const textLimit = width - 4
   const allLines = spec.rows.reduce((count, row) => count + linesOf(row, textLimit).length, 0)
   // The border, the rows, a blank row of padding, the border, and a row of shadow must fit the Grid
@@ -722,10 +823,14 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   const fill = scroll?.fill === true ? Math.max(0, room - lines) : 0
   // Border, the rows, a blank row of padding, border — or, docked, the rows straight between the borders.
   const docked = spec.dock === "bottom"
-  const height = lines + fill + (docked ? 2 : 3)
-  const left = layout.gridBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
+  // Over the panel it never runs past the rule over the bottom bar, its shadow on that rule: rows that would are left
+  // off, so a panel puts what must show first.
+  const height = overPanel ? Math.min(lines + fill + 3, layout.paneBottom - layout.gridBox.top) : lines + fill + (docked ? 2 : 3)
+  const left = overPanel ? layout.offset.column : layout.gridBox.left + 1 + Math.floor((paneWidth - width - 1) / 2)
   // Docked at the bottom of the map, its shadow on the map's last row and the bottom line clear below it.
-  const top = docked
+  const top = overPanel
+    ? layout.gridBox.top
+    : docked
     ? Math.max(layout.gridBox.top + 1, layout.paneBottom - 1 - height)
     : Math.max(layout.offset.row + 1, layout.gridBox.top + 1 + Math.floor((paneHeight - height - 1) / 2))
   const right = left + width - 1
@@ -733,8 +838,10 @@ export function placePopup(layout: BuildLayout, spec: PopupSpec): PlacedPopup {
   let row = top + 1
   /** The frame rows the scrolling section is drawn on, first and last. */
   const section: number[] = []
+  const lastRow = top + height - 2
   for (const [index, entry] of spec.rows.entries()) {
     if (!shown(index)) continue
+    if (overPanel && row + linesOf(entry, textLimit).length - 1 > lastRow) break
     const inSection = scroll !== undefined && index >= scroll.from && index < scroll.to
     for (const [line, text] of linesOf(entry, textLimit).entries()) {
       if (inSection) section.push(row)

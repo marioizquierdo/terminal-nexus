@@ -89,9 +89,18 @@ export function activityLog(now: () => number = () => 0): ActivityLog {
  *  otherwise, with the keyboard on the menu as the real screen opens. `quits()` counts the times it
  *  asked to leave. It records into an Activity Logs of its own (`activity`), which its Activity logs
  *  window shows, as the live screen's shows the log it records into. Laid out as the live screen is. */
+/** A context with the Battle banner Experiment at this build's default, for a test about the Experiments themselves. */
+export function withDefaultBanner(context: BuildContext = starterContext()): BuildContext {
+  return { ...context, experiments: { ...context.experiments, battleBanner: "on" } }
+}
+
 export function buildSide(options: SideOptions = {}): BuildSide {
   const { context: given = starterContext(), cursor = OPEN_GROUND, terminal = MINIMUM, onQuit, activity = activityLog(), ...rest } = options
-  const context: BuildContext = given.activity === undefined ? { ...given, activity } : given
+  const logged: BuildContext = given.activity === undefined ? { ...given, activity } : given
+  // The suite was written for the Battle Round confirmation: a session plays with the Battle banner Experiment off
+  // unless its context names it (tests/battle-banner.test.ts turns it on; the export's tests keep the default).
+  const context: BuildContext =
+    logged.experiments?.battleBanner === undefined ? { ...logged, experiments: { ...logged.experiments, battleBanner: "off" } } : logged
   const layout = buildLayout(terminal, context.grid)
   let quits = 0
   const build = new BuildSession({

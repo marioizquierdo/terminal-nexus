@@ -141,6 +141,15 @@ export type BuildCommand =
   /** `[s] Start` — the confirmation's one row, by Enter, Space, `s` or a click: the Battle Round starts.
    *  Going back is the cancel every popup has. */
   | Readonly<{ kind: "start-pulse" }>
+  /** **The battle banner** (the Battle banner Experiment). `[t] Change Target` on the Battle Round panel: the cursor
+   *  becomes the banner, on the map, to move as the cursor moves. */
+  | Readonly<{ kind: "banner-target" }>
+  /** Enter (or Space) while the banner is the cursor, its `[enter] Place Target` row, or a second click on the tile it
+   *  stands on: plant it there, and ask its stance. Refused, saying why, where troops could not get. */
+  | Readonly<{ kind: "banner-place" }>
+  /** The stance for the banner just planted — `[a] Aggressive` or `[d] Defensive`, Enter on its row or a click: the
+   *  banner stands, and the Battle Round panel shows it again. */
+  | Readonly<{ kind: "banner-stance"; stance: BannerStance }>
   /** Tab: move keyboard focus. To the Grid it arrives in plain navigation; to the menu
    *  it disarms (a building is armed only while the Grid has focus). */
   | Readonly<{ kind: "focus"; target: Focus }>
@@ -275,6 +284,12 @@ export const MAP_EDGE_STYLES: readonly MapEdgeStyle[] = ["solid", "half", "heavy
 /** Which half of the screen the arrow keys and Enter/Space belong to. The digit hotkeys ignore it. */
 export type Focus = "menu" | "grid"
 
+/** A battle banner's stance: aggressive — go to the banner, then on to the enemy's Nexus — or defensive, hold it. */
+export type BannerStance = "aggressive" | "defensive"
+
+/** The banner the player planted this Build Phase: the tile it stands on, and its stance. */
+export type PlantedBanner = Readonly<{ tile: Coord; stance: BannerStance }>
+
 /**
  * One entry of the side panel's menu, in the order Up/Down walk it: Explore Map first, Nexus, the building rows in hotkey order, and Start Battle Round last. The menu highlight is an index into this list (`menuEntries` in `state.ts`), so every
  * building row keeps its digit.
@@ -305,6 +320,8 @@ export type Popup =
   | "dialog"
   | "run-draft"
   | "run-draft-remove"
+  | "banner-place"
+  | "banner-stance"
 
 /**
  * Where a line of dialog looks, on this round's map: the tile the camera centres on, and the focus's own

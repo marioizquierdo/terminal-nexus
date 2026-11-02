@@ -11,6 +11,7 @@ import { levelById, openRound } from "../src/cli/levels.ts"
 import { hint } from "../src/build/help.ts"
 import { withoutScene } from "../src/build/state.ts"
 import { buildSide, keys, screenText } from "./build-helpers.ts"
+import { undecided } from "./level-walk.ts"
 
 const LEVEL = levelById("vasse-test-3")
 const NEAR = { x: 24, y: 8 }
@@ -21,10 +22,13 @@ const DEPOT = "structure.citizen.depot"
 const TREE: CurvePlan = { name: "climbs the tree", buys: [[BARRACKS, DEPOT], [GARRISON, DEPOT]], near: NEAR }
 const FIRST_TIER: CurvePlan = { name: "Barracks only", buys: [[BARRACKS, DEPOT]], near: NEAR }
 
-test("the curve level is six rounds, and a player who builds nothing reaches every one of them", () => {
+test("the curve level is six rounds, and each one opens as itself", () => {
   assert.ok(LEVEL !== undefined)
   assert.equal(LEVEL.rounds, 6)
-  for (let round = 1; round <= LEVEL.rounds; round += 1) assert.equal(openRound(LEVEL, round).round?.number, round)
+  // Its layout, not its battles: the walk goes on whatever they do (tests/level-walk.ts). Whether an empty base
+  // lives to round 6 is the level's content, guarded once beside every level's (tests/levels.test.ts).
+  const walked = undecided(LEVEL)
+  for (let round = 1; round <= LEVEL.rounds; round += 1) assert.equal(openRound(walked, round).round?.number, round)
 })
 
 test("the Garrison is locked until a Barracks stands, and each round adds the curve's credits", () => {

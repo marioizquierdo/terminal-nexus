@@ -420,7 +420,7 @@ export function hasTrail(raid: RaidForecast | undefined, range?: VisibleRange): 
 
 /** Every tile something stands on, is planned on or arrives on — what a trail mark, the build range's dots
  *  and a building's reach never cover. */
-function takenTiles(context: BuildContext, planned: readonly PlannedPlacement[]): Set<string> {
+export function takenTiles(context: BuildContext, planned: readonly PlannedPlacement[]): Set<string> {
   const taken = new Set<string>()
   const take = (contentId: string, anchor: Coord): void => {
     for (const tile of tilesOf(anchor, context.registry.get(contentId).footprint)) taken.add(`${tile.x},${tile.y}`)

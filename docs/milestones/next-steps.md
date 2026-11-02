@@ -5,6 +5,10 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Place the battle banner** (the Battle banner Experiment, on by default): start PERIMETER, press `s`, then `t`, move
+  the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
+  intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an
+  enemy Nexus, so the default banner is the level's own target (PERIMETER's line, defensive).
 - **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge run, or
   `./bin/grid.ts scenarios/movement/march-lines` and `scenarios/movement/march-commander`. Ranged units walk at half speed while a trooper
   is near and fall in behind on the move; Vasse is a regular troop; a unit keeps its target until it falls or it has
@@ -262,7 +266,7 @@ Small, none blocking.
 | Item | Why | Size |
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
-| The curve levels' empty-base walk is a knife edge | A route to a later round plays the rounds before it building nothing; on Averno's level that base holds round 4 with 25 of 400 health left, and almost any change to how a battle plays tips it. Shape the levels (what an empty base faces) before the next rule change, rather than tuning rules until the walk survives | small |
+| The curve levels' empty-base walk is guarded once | The tests of a level's layout now walk it with its battles undecided, so a change to how battles play cannot fail them. Whether a base with nothing built lives to the last round (what a route to a later round plays) is one check over every level, which says how low the Nexus fell each round: at worst 210 of 400, on Averno's level in round 4. If it tips, shape what an empty base faces on that level (a lighter round-4 raid, or a free defender), not the rules | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet

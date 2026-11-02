@@ -47,6 +47,7 @@ import {
   keys,
   placed,
   screenText,
+  withDefaultBanner,
 } from "./build-helpers.ts"
 import type { BuildSide } from "./build-helpers.ts"
 
@@ -193,7 +194,7 @@ test("every player setting's value box is a click target, the same as Left and R
 // --- The export -------------------------------------------------------------------------------------
 
 test("[e] shows the export in a popup, hands the same text to the adapter, and Esc goes back one popup at a time", () => {
-  const context: BuildContext = { ...starterContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." }
+  const context: BuildContext = withDefaultBanner({ ...starterContext(), buildId: "abc1234", exportDestination: "Copied to the clipboard." })
   const side = session(context)
   keys(side, "d")
   goToExperiment(side, "holdWindowMs")
@@ -658,7 +659,7 @@ test("the terminal's export: OSC 52 to the clipboard and a file beside the setti
 })
 
 test("a fresh Build Phase exports no changed experiment", () => {
-  const side = session()
+  const side = session(withDefaultBanner())
   keys(side, "d", "e")
   assert.match(side.exports[0] as string, /# Changed experiments: none/)
 })

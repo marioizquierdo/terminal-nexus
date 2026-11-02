@@ -152,6 +152,8 @@ const POPUP_ROW: Readonly<Record<Popup, "nexus" | "start" | null>> = {
   dialog: null,
   "run-draft": null,
   "run-draft-remove": null,
+  "banner-place": "start",
+  "banner-stance": "start",
 }
 
 /**

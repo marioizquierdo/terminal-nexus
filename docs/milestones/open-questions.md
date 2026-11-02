@@ -365,6 +365,8 @@ other stops.
 **Status:** OPEN — parked; registered 2026-10-26 by [the troop movement review](../history/reports/2026-10-26-troop-movement-review.md).
 The owner, 2026-10-27: "not yet. I'm thinking in drawing from the commander, and perhaps using the commander as a
 re-grouping mechanism, but there are many other things to change and polish before this."
+The banner prototype (2026-10-31) draws the route from the Nexus and from the Commander to the banner, walked on the
+routing field; the central path the army keeps to is unchanged.
 
 A marcher keeps near a straight **central path** from its own Nexus to the goal, used only to break ties between
 equally good steps; it runs through rock when rock is in the way, and nothing on screen shows it. The **march route**

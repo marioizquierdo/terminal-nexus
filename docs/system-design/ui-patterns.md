@@ -523,6 +523,19 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 
 The run's draft is the second popup the player does not open. A round that has a draft waiting opens on it, behind its scene when it has one. It has the one popup shape: the intro as text, the three cards as options on 1, 2 and 3 with their rarity at the end of the row and their family and role under the name, then Remove a card on `r` and the requisition on `t`, and the army as it stands under a heading. It cannot be dismissed, because what is chosen changes the army the round is built from: Esc, `x`, a right click and a click outside only say what to do, and the top bar offers no close key. Only the game menu (`q`) opens over it, and closing the game menu comes back to the draft as it was. Remove opens a list of the cards the army holds; Esc, `x` and a right click go back to the draft, and a card chosen there settles it. With nothing to remove the Remove row is quiet and says so when pressed. Choosing records the choice, and the screen moves on to the round that choice makes. (RULE — `tests/run-draft-popup.test.ts`, `tests/run-play.test.ts`)
 
+### 10.6 A panel over the menu
+
+A popup may dock over the side panel instead of the map, when what it is about is on the map: the Battle Round panel, moving the banner, choosing the stance. It runs from the rule under the top bar down to the rule over the bottom bar, its shadow on that rule. Rows that do not fit are left off from the end, so such a panel puts its actions before anything that can be dropped. Esc goes back one panel at a time. (GUIDANCE — `tests/battle-banner.test.ts`)
+
+### 10.7 The battle banner
+
+Behind the **Battle banner** Experiment (on by default; off keeps the centred start popup). Starting the Battle Round (`s`, or the menu's Start row) centres the camera on the banner and docks a panel: "Start Battle Round 2.", the Target and the Stance, then `[t] Change Target` and `[s] Start Battle`.
+- **The default banner** is the enemy Nexus, aggressive, where the map has one; otherwise the level's own target (PERIMETER's line, defensive, as its troops hold it today), or "the nearest enemy". Planting back on the default with the default stance clears the order, so the round plays as before.
+- **Change Target** makes the cursor the banner (`!`, `⚑` with Unicode symbols), pulsing on 500 ms beats; the arrows and the mouse move it. The panel and the bottom line say "[enter] Place Target on <spot>": a structure ("the enemy Nexus", "your Barracks"), a named place ("the line"), or ground and what it is near ("ground near resources", "ground near the enemy base", "open ground").
+- **Lines** run to it in the player's colour, from the Nexus and from the Commander, walked on the routing field round terrain and every standing or planned structure (the route with nobody in the way). Rock, ground with no footing, or anywhere troops could not get is refused: the tile flashes, the line turns red and the panel says why.
+- **Planting** (Enter, Space, the panel row, or a second click on the same tile) opens a ring outward from the banner and asks `[a] Aggressive — Keep pushing on` or `[d] Defensive — Hold position`. Aggressive adds a fainter line from the banner on to the enemy.
+- The banner carries to the next round until moved; outside the panels a moved banner stays as a dim mark. Under reduced motion the ring is skipped and the pulse holds. (GUIDANCE — `tests/battle-banner.test.ts`)
+
 ## 11. The bottom line
 
 - **One line: what just happened or why not — and when nothing did, what can be done here.** The last
@@ -832,6 +845,8 @@ the build stamped on every export — is what makes a pasted export reproducible
   filter for its question at the top of `ACTIVITY_FILTERS` (the window opens on the first), then asks in
   the pull request: "play it, open Esc → Activity logs, export, paste it here". Remove both once
   answered, as an Experiment is removed.
+- **Movement**: every unit's change of movement state in the Battle Round just ended, march, battle or retreat, with
+  where it stood and the second (`unit.state`, debug), read back from the round once it ends.
 
 ### 15.3 The playtest page
 
