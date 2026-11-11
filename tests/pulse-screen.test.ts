@@ -69,8 +69,8 @@ test("answering yes turns the screen into the Battle Round, with the keyboard on
   assert.match(text, /TERMINAL NEXUS battle round/)
   assert.match(text, /^\| BATTLE ROUND 1 +\d:\d\d +[|+]/m)
   assert.match(text, /^\| time left {2}1x/m)
-  assert.match(text, /YOU {3}5 \[#+\]/)
-  assert.match(text, /RAID {2}7 \[#+\]/)
+  assert.match(text, /YOU {4}5 \[#+\]/)
+  assert.match(text, /RAID {3}7 \[#+\]/)
   assert.match(text, /\[space\] Pause/)
   assert.match(text, /\[r\] Replay/)
   // The bottom bar's one line is the Pulse's own; its keys are on the Controls page.
