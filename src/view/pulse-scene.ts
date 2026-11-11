@@ -341,7 +341,7 @@ function forceLine(pulse: PulseFrame, player: PlayerId): string {
   const { units, hp } = pulse.forces[player]
   const bar = forceBar(hp, pulse.openingHealth.get(player) ?? 0)
   const side = player === "B" ? (pulse.enemy ?? SIDE.B) : SIDE[player]
-  return `${side.toUpperCase().padEnd(5)}${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
+  return `${side.toUpperCase().padEnd(5)} ${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
 }
 
 /** How many units `player`'s buildings owe of the waves that have come (`EntityState.owed`, `src/pulse/production.ts`):

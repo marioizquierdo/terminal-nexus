@@ -8,8 +8,9 @@
 import type { DuelResult, DuelSetup, Roster } from "../duel/index.ts"
 import type { DraftOffer, DraftRecord } from "./draft.ts"
 
-/** What a run starts from: its seed, and the Commander the player chose (a duel army's: `vasse`, `averno`, `dob`). */
-export type RunSetup = Readonly<{ seed: number; commander: string }>
+/** What a run starts from: its seed, and the Commander the player chose (a duel army's: `vasse`, `averno`, `dob`). A demo
+ *  (`src/run/demo.ts`) is a run of one battle that names its build; its seed is the build's own. */
+export type RunSetup = Readonly<{ seed: number; commander: string; demo?: "mirror" | "battle" }>
 
 /** One battle of a run: its number in the run (from 1), its act, the opponent's Commander, the scripted duel player
  *  that plans the opponent's side (`balanced`, `rush`, `turtle`: `src/duel/players.ts`), and the duel it is — the

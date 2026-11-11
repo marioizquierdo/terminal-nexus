@@ -49,6 +49,8 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `challenge` | a Challenge run's first Build Phase, on a seed from the clock, as choosing its row opens it; `challenge?seed=<n>&commander=<id>` a chosen run (Vasse unless named) |
 | `settings` | the title menu's Settings screen |
 | `about` | the title menu's About screen |
+| `demo`, `demo?build=mirror` | the demo's mirror: Nexus against Nexus on the Crossing, against a scripted enemy, four rounds |
+| `demo?build=battle` | the demo's battle: two armies already in the field, three rounds ([the demo](../game-design/demo.md)) |
 | `campaign?level=vasse-test-1` | PERIMETER's Build Phase, round 1 |
 | `campaign?level=vasse-test-1&round=2` | its round 2 (`&round=3`, its last) |
 | `campaign?level=vasse-test-2` | the Commander's cadence, the campaign's second test level: Vasse falls in round 1 |

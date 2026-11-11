@@ -5,6 +5,12 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Show the demo, and say what reads badly** (his request of 2026-11-11, for a friend who may invest; [the page](../game-design/demo.md)):
+  `./bin/terminal-nexus.ts --at demo` is a level to play, Nexus against Nexus on the Crossing against a scripted enemy that
+  probes, builds up, pushes and goes all in (two to five minutes, four rounds), and `--at 'demo?build=battle'` is two
+  armies of dozens already in the field. Questions for him: is the mirror's enemy easy enough and still a threat (a plain plan
+  fells its Nexus in the last round; the Ravel open with 220 credits against 100 to get there), should the demo be a row on
+  the title screen, and should the battle banner come to duels so the mirror can show it?
 - **Place the battle banner** (the Battle banner Experiment, on by default): start PERIMETER, press `s`, then `t`, move
   the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
   intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an

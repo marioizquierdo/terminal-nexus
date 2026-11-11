@@ -8,6 +8,11 @@
 //   credit, and attacks every round;
 // - **turtle**: builds two Turrets forward and its strongest producers behind them, and holds until the last two rounds.
 //
+// And one that is written to be shown, not measured against:
+//
+// - **showman**: an easy opponent that says what it is doing — a probe, a build-up, a push, an all-in — and never
+//   reacts to the player (the demo's enemy, `docs/game-design/demo.md`).
+//
 // Each also plays with area damage (`rush-area`): one building whose units hit an area bought first each round
 // (`withArea`); and upgrading its buildings (`balanced-upgrade`): what its plan leaves spent on its standing
 // buildings' upgrades, the Barracks's production line first (`withUpgrades`).
@@ -101,6 +106,39 @@ export const turtle: Player = (brief) => {
 }
 
 /**
+ * **The showman**: an opponent to show a game with, easy on purpose and easy to read. It never looks at what the other
+ * side has, so a person can plan against it, and it plays four beats a round apart, each one visible on the map before
+ * it lands:
+ *
+ * 1. **the probe** — its starting package marches out with a couple of cheap buildings forward: a small raid;
+ * 2. **the build-up** — it holds at home and raises a Turret and more producers: the lull a player builds in;
+ * 3. **the push** — the whole army marches with what the area-damage building adds;
+ * 4. **the all-in** — every credit on producers, marching every round after.
+ *
+ * Cheap producers first and never an upgrade, so it is never the strongest army a credit can buy. Pure: a function
+ * of the brief's round, credits and menu alone.
+ */
+export const showman: Player = (brief) => {
+  const power = bestCard(brief.hand, (card) => (/join|wave|send/i.test(card.does) ? 10 : 0) + RARITY.indexOf(card.rarity))
+  const area = brief.buildings.find((building) => building.area === true)
+  const turret = brief.buildings.find((building) => building.spawns === undefined && building.supply === undefined && building.open)
+  const cheapest = (left: number): BriefBuilding | undefined =>
+    affordable(brief.buildings, left)
+      .filter((building) => building.spawns !== undefined)
+      .sort((a, b) => a.cost - b.cost)[0]
+  const beat = Math.min(brief.round, 4)
+  const first = beat === 3 && area !== undefined && area.open && area.cost <= brief.credits ? area : beat === 2 && turret !== undefined && turret.cost <= brief.credits ? turret : undefined
+  const build = spend(
+    brief.credits - (first?.cost ?? 0),
+    (left, bought) => (beat === 1 && bought.length >= 2 ? undefined : cheapest(left)),
+    (_building, index) => (beat >= 3 ? SPREAD[index % SPREAD.length] as Zone : "forward"),
+  )
+  const placed = first === undefined ? build : [{ building: first.id, at: first === turret ? ("forward" as Zone) : ("forward" as Zone) }, ...build]
+  const words = ["the probe: a small raid and two cheap producers", "the build-up: holding at home, a turret and more producers", "the push: the whole army marches, with area damage", "the all-in: every credit on producers, marching"]
+  return { power, build: placed, stance: beat === 2 ? "hold" : "attack", note: words[beat - 1] as string }
+}
+
+/**
  * A player that plays `player`'s plan with area damage: each round it buys one building whose units hit an area and aim
  * at the thickest knot (`BriefBuilding.area`: the Ravels' Fuse Shed, the Citizens' Battery) first, when one is open and
  * affordable, placed where the script puts its producers, and spends what is left as `player` would. The scripts value
@@ -151,6 +189,7 @@ export function withUpgrades(player: Player): Player {
  *  with what is left (`balanced-upgrade`). */
 export const SCRIPTED: Readonly<Record<string, Player>> = {
   balanced,
+  showman,
   rush,
   turtle,
   "balanced-area": withArea(balanced),

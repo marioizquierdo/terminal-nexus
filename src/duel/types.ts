@@ -33,6 +33,11 @@ export type DuelSetup = Readonly<{
   pulseTicks: number
   commanders: Readonly<Record<Side, string>>
   rosters?: Readonly<Partial<Record<Side, Roster>>>
+  /** Troops a side starts the first round with besides its Commander and her starting package, set down with them:
+   *  how a demo opens a battle between two armies already in the field. Absent: none, as every other duel opens. */
+  muster?: Readonly<Partial<Record<Side, readonly Readonly<{ unit: string; count: number }>[]>>>
+  /** Credits a side has in the first round instead of the curve's. Absent: the curve's, as every other duel plays. */
+  credits?: Readonly<Partial<Record<Side, number>>>
 }>
 
 /** **A duel's Battle Round: 30 seconds**, 360 ticks at 12 a second (the owner, 2026-10-26: "Shorter rounds: 30

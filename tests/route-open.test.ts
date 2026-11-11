@@ -107,8 +107,8 @@ test("every route opens where it says: each title menu place on the title menu, 
     } else {
       const text = frameToText(await buildAt(destination))
       const { level, round } = destination
-      // A run's round says its battle first: "build phase - battle 1 of 3 - round 1 of 8".
-      assert.match(text, new RegExp(`build phase - (battle \\d+ of \\d+ - )?round ${round} of ${level.rounds}`, "u"), `${route} opened another round`)
+      // A run's round says its battle first: "build phase - battle 1 of 3 - round 1 of 8", a demo's its name.
+      assert.match(text, new RegExp(`build phase - (?:[a-z][a-z ]*?(?: \\d+ of \\d+)? - )?round ${round} of ${level.rounds}`, "u"), `${route} opened another round`)
     }
   }
 })

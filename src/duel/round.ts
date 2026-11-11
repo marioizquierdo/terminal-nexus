@@ -39,13 +39,19 @@ export const other = (side: Side): Side => (side === "A" ? "B" : "A")
 /** Which way a side faces the enemy along the map's width: east (+1) when the enemy's Nexus stands east of its own. */
 const facing = (map: DuelMap, side: Side): number => (map.nexus[other(side)].x >= map.nexus[side].x ? 1 : -1)
 
+/** The troops a side's first round opens with besides its Commander: her army's starting package, and any more the
+ *  duel's setup musters (`DuelSetup.muster`). */
+export function startingTroops(state: Pick<DuelState, "setup" | "sides">, side: Side): readonly Readonly<{ unit: string; count: number }>[] {
+  return [...armyOf(state, side).commander.start, ...(state.setup.muster?.[side] ?? [])]
+}
+
 /** A duel's first state: round 1 to play, nothing on the Grid yet, each side with round 1's credits. */
 export function newDuel(setup: DuelSetup): DuelState {
   if (DUEL_MAPS[setup.map] === undefined) throw new Error(`no duel map "${setup.map}" (${Object.keys(DUEL_MAPS).join(", ")})`)
   for (const side of SIDES) duelArmy(setup.commanders[side])
   const side = (which: Side): SideState => {
     const roster = setup.rosters?.[which]
-    return { commander: setup.commanders[which], ...(roster === undefined ? {} : { roster }), credits: roundIncome(1), kept: roster?.doctrines ?? [], absent: [] }
+    return { commander: setup.commanders[which], ...(roster === undefined ? {} : { roster }), credits: setup.credits?.[which] ?? roundIncome(1), kept: roster?.doctrines ?? [], absent: [] }
   }
   return { setup, round: 1, carried: null, sides: { A: side("A"), B: side("B") }, history: [], result: null }
 }
@@ -477,7 +483,7 @@ export function playRound(
     const units: string[] = []
     if (state.carried === null) {
       units.push(phases[side].army.commander.unit)
-      for (const { unit, count } of phases[side].army.commander.start) for (let n = 0; n < count; n += 1) units.push(unit)
+      for (const { unit, count } of startingTroops(state, side)) for (let n = 0; n < count; n += 1) units.push(unit)
     }
     for (const { unit, count } of phases[side].callups) for (let n = 0; n < count; n += 1) units.push(unit)
     if (units.length > 0) forces.push({ player: side, muster, units })
