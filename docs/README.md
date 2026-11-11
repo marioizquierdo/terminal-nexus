@@ -7,12 +7,11 @@ version of the design beyond git.
 
 ## Current — what the game is (`game-design/`)
 
-- [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a match works, the promise.
+- [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a battle works, the three modes, the promise.
 - [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language.
-- [`game-modes.md`](game-design/game-modes.md) — Campaign and Challenge, and the vocabulary they share.
-- [`runs.md`](history/challenge-runs-design.md) — Challenge runs as a whole game: the route, the stops, the drafted army, the opponents and the rewards.
+- [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: the words they share, every way a Skirmish is set up, the battle file, how each mode is tested.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
-- [`story.md`](game-design/story.md) — missions, the Citizen opening, PERIMETER, cutscenes.
+- [`story.md`](game-design/story.md) — a Commander's story (tutorial, technology missions, endless stand, final battle), what a mission is, Vasse's story and PERIMETER, cutscenes, testing a mission.
 - [`play-strategies.md`](game-design/play-strategies.md) — what duels have taught about playing a Build Phase well, as advice a model player reads in its brief.
 - [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions and the Campaign's opponent (working design).
 - [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take from each source.
@@ -52,6 +51,7 @@ version of the design beyond git.
 - [`measurements/`](history/measurements/README.md) — results of the `measure` command, dated, each with the build, the rules it measured and whether it is current or superseded.
 - [`milestones/`](history/milestones/) — the completed milestones, kept as records.
 - [`spec-audit-2026-08-21.md`](history/spec-audit-2026-08-21.md), [`original-spec-2026-08-19.md`](history/original-spec-2026-08-19.md) — the August audit and the original specification, verbatim.
+- [`challenge-runs-design.md`](history/challenge-runs-design.md) — the retired Challenge runs design (the route, the stops, the draft), kept for the ideas Story borrows.
 
 ## Elsewhere
 
