@@ -123,6 +123,23 @@ puts before any level's balance:
 His third note, how many enemies are coming, is built: the Build Phase shows the coming raid, its count and
 what each group goes for first (the Commander's second round).
 
+## Reading the battle, then the enemy's base (Mario, 2026-11-11)
+
+After showing the game to a friend he described the loop he wants once the game has taken shape, and said it is not for
+now ([his words](../history/feedback/2026-11-11-showing-the-game.md)). **Idea, recommended order:** the plans stay hidden
+while both sides build, and reveal when the battle starts, as a duel's already do; then the player watches with the camera
+free, a unit inspectable as it fights, and playback that pauses, rewinds and goes forward; and after it, goes back to the
+enemy's base as it stood to read what was built, before deciding the next round from the credits earned, where the army
+stands and in what formation, the Nexus power against where the banner sends the army, and the Commander's state. Most
+parts are already named elsewhere: hovering a unit during a Battle Round (below), rewind and fast-forward (Q19), the replay
+format and what a player may see (visibility projection, above), the banner (milestone 11). What is new is the order, and
+that the enemy's base is read after the battle and not before it, which a scripted campaign opponent, whose raid the Build
+Phase shows ahead, does not do.
+
+Two small things the demo showed that belong with it: a duel does not carry the battle banner yet, so a Challenge run's
+start panel offers one that changes nothing (milestone 11's banner step lists it); and an army past its supply cap reads
+`units 41/12` with no word that its buildings have stopped training, which looks like a mistake.
+
 ## Intent, the next iteration (Mario, 2026-10-04)
 
 The raid's intent is built (a trail to each group's first target, the target marked, the panel's summary), and

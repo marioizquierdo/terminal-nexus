@@ -532,6 +532,22 @@ A second round on colour, the day the 16-colour depth went. What it taught:
    `    watch?.(current, sides.A)`: one replace changed both call sites and the duel's watcher saw no events, which its
    test, counting only ticks, did not notice. Test what a hook is for, not only that it is called.
 
+## Showing the game to someone who has not played it (2026-11-11)
+
+A demo built for an investor's friend (a mirror level and a battle of about eighty units) found four things no playtest of
+the owner's had, and the owner's verdict on it is in [the feedback](feedback/2026-11-11-showing-the-game.md).
+
+- **A number that fits at the size you test breaks at the size you show.** The side panel's unit count ran into the side's
+  name (`ENEMY46`) the first time a battle had ten units a side; every test had five or seven. Look at a battle ten times the
+  size of the tests once, by eye, before showing one.
+- **A control that does nothing is worse than none.** The start panel offers to move the battle banner in a duel, and a duel
+  does not carry it. The demo hid it; the runs still show it. Check what a prompt promises against what the rules read.
+- **Measure the threat, not only the winner.** The easy scripted enemy lost to a plain plan every time, with the player's
+  Nexus never scratched, so the level was easy and also flat. Report the damage a plain plan takes, not who won.
+- **When the best plan is "buy what you can afford", the missing thing is in the rules, not the opponent.** Tuning the
+  enemy moved the round the Nexus fell in, not what the player had to decide; what a person could weigh needs a second
+  resource and units that counter each other.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".
