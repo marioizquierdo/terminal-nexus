@@ -1,6 +1,6 @@
 # Terminal Nexus — concept
 
-_The one-page product definition: what the game is, who it is for, how a match and the two single-player modes work, the fantasy in brief, and what the first proofs are._
+_The one-page product definition: what the game is, who it is for, how a battle and the modes work, the fantasy in brief, and what the first proofs are._
 
 _Licence: creative direction CC BY-SA 4.0; technical requirements Apache-2.0._
 
@@ -9,25 +9,25 @@ _Licence: creative direction CC BY-SA 4.0; technical requirements Apache-2.0._
 **Terminal Nexus is a fast, terminal-native strategy game in which players build compact bases during hidden, simultaneous planning, then watch persistent armies resolve those decisions through vivid deterministic ASCII battles called Battle Rounds.**
 
 **RULE.** The title is **Terminal Nexus**. The product is a deterministic terminal strategy game; a
-language model is not required to play it, to run a match, or to build a campaign.
+language model is not required to play it, to run a battle, or to build a story.
 
 It combines the modern satisfaction of drafting and autobattlers with the physical economy of an old-school RTS: workers, supply, production buildings, research, terrain, fortifications, faction asymmetry, and a prominent commander represented by `@`.
 
 ## Who it is for
 
-Terminal Nexus is made first for programmers, terminal enthusiasts, and strategy players who want a complete tactical experience during a build break. **RULE: a match takes 5–12 minutes.** It should install easily, launch almost instantly, remain comfortable over an ordinary remote shell, and reward both a quick experiment and repeated mastery.
+Terminal Nexus is made first for programmers, terminal enthusiasts, and strategy players who want a complete tactical experience during a build break. A battle takes ten to twenty minutes, about two minutes a round (how long it should be is Q75). It should install easily, launch almost instantly, remain comfortable over an ordinary remote shell, and reward both a quick experiment and repeated mastery.
 
 The terminal is not a novelty wrapper. Fixed cells, symbols, ANSI color, keyboard fluency, replayable text data, small binaries, remote play, and mod-friendly TypeScript are native strengths of the design.
 
-## How a match works
+## How a battle works
 
-**RULE.** A match is a sequence of rounds, each in three parts in this order, and these are their names everywhere — in the interface and the writing:
+**RULE.** A battle (the engine says *match*) is a sequence of rounds, each in three parts in this order, and these are their names everywhere — in the interface and the writing:
 
 1. **Nexus Pulse.** The round opens: each player's Grid Nexus speaks to its Commander and deals a hand of Nexus powers.
 2. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice: a power kept from that hand, which for now may be left unpicked. Planning is hidden, simultaneous, turn-based and untimed.
 3. **Battle Round.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the battle plays on screen is presentation only and is independent of that logical time. The code still calls this step `pulse`, the engine's word (the vocabulary in [`grid-engine.md`](../system-design/grid-engine.md)).
 
-After a Battle Round, surviving units regroup near their home producers. Casualties and destroyed buildings remain consequential. The next round begins from the new public state. The match ends when one Grid Nexus is destroyed. One Nexus Pulse, one Build Phase and one Battle Round make a **round**, the unit the player counts.
+After a Battle Round, surviving units stay on the Grid and regroup where they fought, facing the enemy. Casualties and destroyed buildings remain consequential. The next round begins from the new public state. The battle ends when one Grid Nexus is destroyed, or after its last round. One Nexus Pulse, one Build Phase and one Battle Round make a **round**, the unit the player counts.
 
 The player does not micromanage units during a Battle Round. Their agency comes from base geometry, expansion, resource capacity, supply, production mix, defenses, research drafts, commander development, and prediction of the opponent's hidden plan.
 
@@ -37,20 +37,16 @@ The emotional loop is:
 
 ## How the game is played
 
-Two single-player modes share that match, and both are designed for from the start
-([`game-modes.md`](game-modes.md)):
+Three modes share that battle ([`game-modes.md`](game-modes.md)):
 
-- **Campaign** — the first-time player experience and the established setting: a short, authored sequence
-  of missions that teaches one mechanic at a time, unlocks the cards it introduces, and tells the
-  story. Judged on whether a new player comes out able to play a run, and whether the world feels
-  real — never on length.
-- **Challenge** — seeded runs: a series of battles against escalating Commander Armies, with a run
-  draft between battles — add a card, remove one, or upgrade one — so the build is polished battle
-  by battle. The same seed gives the same run. This is where replay value lives.
+- **Skirmish** — one battle against a scripted Commander Army: the player picks both Commanders, the map and the
+  difficulty, or sets up anything at all in a battle file. The centre of the game, and where every change is tested.
+- **Story** — a Commander's story: a tutorial, missions that collect technologies, an endless stand scored by how far
+  the player gets, and a final battle ([`story.md`](story.md)). The only home of missions.
+- **Versus** — one battle between two people, built on Skirmish. Later.
 
-Skirmish (one battle, any legal army) falls out of the same pieces; multiplayer comes later, on the
-same deterministic match. **RULE: a mode is data over one match loop and one army shape** — nothing below the
-mode knows which one it is serving (`game-modes.md` holds the rule).
+**RULE: a mode is data over one battle** — nothing below the mode knows which one it is serving (`game-modes.md` holds
+the rule).
 
 ## What makes it special
 
@@ -58,11 +54,11 @@ mode knows which one it is serving (`game-modes.md` holds the rule).
 - **Automatic battle preserves strategic authorship.** The spectacle is hands-off, but its causes should be readable in the player's previous decisions.
 - **Persistence creates short stories.** Survivors matter, workers flee, factories can be lost, salvage can be contested, and a commander can fall and later return.
 - **Modern drafting disrupts solved build orders.** The Nexus offers a small randomized upgrade draft; research changes its quality, breadth, and flexibility.
-- **A Commander Army is a bounded composition, not (necessarily) a deck.** The faction is the pool of everything it can field; an army brings a Commander, starting units and structures, a tech tree, upgrades, a small pool of Nexus powers, and a Special to one fight ([`commander-armies.md`](commander-armies.md)). A campaign grows that composition mission by mission, and the same shape leaves room for drafting modes later. Whether it is well described as a "deck of cards" is retracted as a claim, not decided either way.
+- **A Commander Army is a bounded composition, not (necessarily) a deck.** The faction is the pool of everything it can field; an army brings a Commander, starting units and structures, a tech tree, upgrades, a small pool of Nexus powers, and a Special to one fight ([`commander-armies.md`](commander-armies.md)). A Commander's story grows that composition mission by mission. Whether it is well described as a "deck of cards" is retracted as a claim, not decided either way.
 - **It plays at typing speed.** Every menu item shows its hotkey, every hotkey is also a click, and the whole game can be driven from a command stream — by a proficient player, by a mouse, or by an agent playtesting it.
 - **Faction identity is mechanical and symbolic.** Strategy, geometry, glyphs, motion, color, prose, portraits, and effects all express the same civilization.
 - **The simulation is deterministic (RULE — `tests/determinism.test.ts`).** A seed and complete committed plans reproduce the same outcome. Playback speed, animation frames, palette, and renderer never alter play.
-- **The architecture invites creation.** First-party maps, armies, campaigns, effects, and themes use inspectable definitions that may become a future modding surface. This is deliberate and it is why the foundation is being built so carefully: the game is designed for a world where players extend games **with their own agents** — missions, Commander Armies, cards, short stories — which is also how this project builds itself. Content is data with small named vocabularies, and the setting under-specifies on purpose, so there is room to add (the lore's restraint rule, in [`lore.md`](lore.md)).
+- **The architecture invites creation.** First-party maps, armies, stories, effects, and themes use inspectable definitions that may become a future modding surface. This is deliberate and it is why the foundation is being built so carefully: the game is designed for a world where players extend games **with their own agents** — missions, Commander Armies, cards, short stories — which is also how this project builds itself. Content is data with small named vocabularies, and the setting under-specifies on purpose, so there is room to add (the lore's restraint rule, in [`lore.md`](lore.md)).
 
 ## The fantasy
 
@@ -70,7 +66,7 @@ Across the galaxy, ancient pyramidal world machines called Prime Nexuses have aw
 
 The civilizations controlling these machines cannot agree whether the network is a weapon, a trial, a god, an ecological disaster, or an opportunity. Some believe its wars are selecting the one structure that will become the **Terminal Nexus**.
 
-The five long-term factions are Citizens, Ravels, Glitch, Feudals, and Alder. **RULE: the first factions built together are Citizens and Ravels, and the first complete single-player direction is the Citizen origin campaign** (`src/content/citizen.ts`, `src/content/ravel.ts`, `armies/vasse/army.json`).
+The five long-term factions are Citizens, Ravels, Glitch, Feudals, and Alder. **RULE: the first factions built together are Citizens and Ravels, and the first complete single-player direction is Vasse's story** (`src/content/citizen.ts`, `src/content/ravel.ts`, `armies/vasse/army.json`).
 
 See [`lore.md`](lore.md) for the universe and [`commander-armies.md`](commander-armies.md) for the playable rosters.
 
@@ -83,7 +79,7 @@ The player should be able to:
 - watch symbols turn that plan into a legible battle story;
 - understand why the battle unfolded as it did;
 - recover from losses and discover a different build;
-- finish quickly and immediately want one more match.
+- finish a battle and immediately want one more.
 
 ## What the game must prove first
 
