@@ -255,22 +255,21 @@ not exist.
 | Option | Cost |
 | --- | --- |
 | A. **A flat, checked-in list** (JSON or a small TypeScript module) naming what completing PERIMETER makes available. No persistence, no player-facing menu | Cheapest, and enough for "the next level's contract may assume these exist", the only consumer today |
-| B. **Build a minimal save and progression system now** | Real infrastructure for one campaign and one mission, and a second persistence format risks being incompatible with the replay format it should share a schema with |
+| B. **Build a minimal save and progression system now** | Real infrastructure for one story and one mission, and a second persistence format risks being incompatible with the replay format it should share a schema with |
 
 **Recommendation: A.** A real save system belongs with the replay format, for whichever level first needs an
 unlock state that outlives an authoring session.
 
-**Widened since, and A is now the floor rather than the answer.** The Campaign opens with a choice of
-Commander and a player may keep several campaigns in progress, so progress is **per save slot, each slot
-naming its Commander**, and bonus goals unlock content for Challenge mode, so the record outlives a single
-campaign. A flat list still serves the first playable mission; Milestone 4 is where the difference gets
+**Widened since, and A is now the floor rather than the answer.** A player may keep several Commanders' stories in
+progress, so progress is **per save slot, each slot naming its Commander**, and what a story collects carries from
+mission to mission (Story, 2026-11-11). A flat list still serves the first playable mission; Milestone 4 is where the difference gets
 designed rather than discovered.
 
 ### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
 
 **Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-story-menu.md`](milestone-04-story-menu.md).
 
-Mario's campaign-menu description asks for "enemy intel (discovered enemy units, buildings, nexus powers,
+Mario's description of the Story menu (then the campaign menu) asks for "enemy intel (discovered enemy units, buildings, nexus powers,
 enemy generals, and mission reports)." `PlayerView` ([`pulse.md`](../system-design/pulse.md), visibility) is a
 **live filter, one Battle Round at a time**: it decides what a player may be shown this instant and remembers
 nothing between missions. So "discovered" needs a definition before the panel can be built.
@@ -499,7 +498,7 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 | C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No kernel change, but a unit's identity changes under it and every unit needs variants: content bloat to avoid a rule |
 
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
-that is what a readable intention needs and what the Campaign's scripted opponent will be made of.
+that is what a readable intention needs and what a mission's scripted opponent will be made of.
 
 **Built in part, 2026-10-04.** Mario, on the Commander's fourth round: "The campaign levels should have a target
 well defined so it is predictable where your troops are moving", and of posts, "before we start playing with

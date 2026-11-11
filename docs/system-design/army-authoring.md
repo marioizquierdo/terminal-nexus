@@ -1,6 +1,6 @@
 # Terminal Nexus — authoring an army
 
-_How to add a Commander, a faction or a campaign: the files, every field, the code that runs a new ability or a new kind of Nexus power, and the conventions that keep a new army from adding branches to the engine. The guide for a session that makes an army, and the reference a modder would start from._
+_How to add a Commander, a faction or a story: the files, every field, the code that runs a new ability or a new kind of Nexus power, and the conventions that keep a new army from adding branches to the engine. The guide for a session that makes an army, and the reference a modder would start from._
 
 The design of a Commander Army — what it is for, the power curve it is built against, what makes two Commanders
 read apart — is [`commander-armies.md`](../game-design/commander-armies.md). This page is how one is written down.
@@ -23,7 +23,7 @@ The duel, where armies are played against each other, is [`duels.md`](duels.md).
 | `citizen`, `ravel` | faction | A Nexus's units, buildings and the powers any of its Commanders may be dealt. |
 | `vasse`, `averno`, `dob` | Commander | One Commander: her unit, her voice, her own cards, on top of her faction. |
 
-A campaign names the armies its levels play with: the Commander's army and the raid's faction
+A story's file (a campaign file, until the Skirmish milestone renames it) names the armies its missions play with: the Commander's army and the raid's faction
 (`"requires": ["vasse", "ravel"]`). The loader refuses anything a file names that it cannot see, every problem at
 once, by path.
 
@@ -101,7 +101,7 @@ range) held to the same rule; `roundsOut` only on a Commander; a structure never
 | --- | --- |
 | `lean` | One or two of `units`, `nexus`, `structures`, `commander`, `economy`: what the build leans on (commander-armies.md). |
 | `start` | Her starting package: units that walk out with her where a mode scripts none (a duel's first round). |
-| `run` | What a Challenge run starts her army with: `buildings` (card ids on the build menu) and `powers` (Nexus power ids in the pool). Everything else her army can field waits in the run's draft. Absent: the whole of her army (`docs/game-design/runs.md`). |
+| `run` | What a Challenge run starts her army with (retired with runs; removed by the Skirmish milestone): `buildings` (card ids on the build menu) and `powers` (Nexus power ids in the pool). Everything else her army can field waits in the run's draft. Absent: the whole of her army (`docs/game-design/runs.md`). |
 | `schedule` | How her army bends the Nexus Pulse, in every mode (Averno's: a card from the Ravel Nexus in rounds 2 and 4). A level's own schedule replaces it. |
 | `barks`, `portrait`, `portraitFalls` | Her voice in battle and her face (`src/armies/barks.ts`, `src/view/commander-moments.ts`), checked to fit the panel at 80 x 24. |
 
@@ -114,7 +114,7 @@ many a wave, how many waves, the seconds between). `tier` and `requires` place i
 tier 1 requires one of the tier below, standing as the Build Phase opens. Every mode offers the same cards by the same
 rule; a mode decides only which.
 
-**To be dealt by a run's draft** a building card also carries `rarity` and `role`, both or neither (the loader checks); its `tier` is the tech tree's, and a run's draft deals tier *t* from the battle 2*t* − 1. A card with neither is part of an army from its start but never offered.
+**To be dealt by a draft** (the retired run's, Story's technology choice later) a building card also carries `rarity` and `role`, both or neither (the loader checks); its `tier` is the tech tree's, and a run's draft deals tier *t* from the battle 2*t* − 1. A card with neither is part of an army from its start but never offered.
 
 **A building's actions** (`actions`, `src/armies/actions.ts`; the rule is
 [`commander-armies.md`](../game-design/commander-armies.md), what changes between rounds). A building card may list
@@ -140,7 +140,7 @@ most four upgrades and modes. One card gives a structure its actions.
 A power is a name, one line of description, a rarity and a role for the dealer, and **one effect**. A power with `"doctrine": true` is a **Doctrine**, a standing order: the Nexus Pulse never deals it, a run's draft offers it, and once taken it is kept from the first round of every battle of the run (so it cannot also be offered beside every hand, from another Nexus, an upgrade, or dealt by chance or requirements). `tier` (1 to 3, default 1) is the earliest tier of a run it is offered in. Each kind of
 effect is one entry of `EFFECTS` (`src/armies/effects.ts`) that says everything about it: its JSON shape, what the
 loader refuses, what keeping it changes in a side's loadout, whether it stays kept, and the credits it adds. **No
-reader branches on an effect's kind**: the campaign keeps a power with `applyEffect`, the duel with the same function.
+reader branches on an effect's kind**: a mission keeps a power with `applyEffect`, the duel with the same function.
 
 | Kind | Holds | Keeping it |
 | --- | --- | --- |
@@ -188,13 +188,13 @@ of the kernel (RULE — `tests/architecture.test.ts`): a mod's kind needs only t
 takes a table of kinds as an argument (`PulseContext.abilities`), which is the seam a mod's kinds would come through;
 `tests/abilities.test.ts` runs one that the game does not ship.
 
-## 5. Campaigns
+## 5. Stories (campaign files)
 
-A campaign file names its Commander, the armies it requires and its levels in order. A level gives a map, credits,
+A story's file names its Commander, the armies it requires and its levels in order. A level gives a map, credits,
 what it unlocks, a schedule if it bends the default, and a mission (`docs/game-design/story.md`).
 
-- **A mission brings the campaign's Commander as `"@commander"`**, so one level serves every Commander who plays it.
-- **A level may extend another**, its own campaign's or another's: `"extends": "vasse-test-3"`, then only what
+- **A mission brings the story's Commander as `"@commander"`**, so one level serves every Commander who plays it.
+- **A level may extend another**, its own story's or another's: `"extends": "vasse-test-3"`, then only what
   differs. Fields it gives replace the extended level's; its `mission` changes the extended one's, a field at a time,
   and its triggers as a whole list or `{ "remove": [ids], "replace": [triggers] }` (`src/armies/levels.ts`). Averno's
   level is Vasse's third with five rounds.
@@ -222,13 +222,13 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 2. A new skill that no kind expresses: a module in `src/abilities/` and a line in `ABILITIES`, with a test.
 3. A new kind of power: an entry in `EFFECTS` and its line in the `PowerEffect` union, with a test.
 4. One line in `src/shipped.ts`. Run `npm test`: the loader says what is wrong.
-5. Play her: `node bin/duel.ts play --a <id> --b vasse` (`duels.md`), and a campaign when she has one
+5. Play her: `node bin/duel.ts play --a <id> --b vasse` (`duels.md`), and a story when she has one
    (`campaigns/<id>/campaign.json`, its levels extending existing ones where they can).
 6. A test that she reads apart from the others where it counts (`tests/averno.test.ts` is the pattern).
 
 ## 8. What a modder can and cannot do today
 
 Can, with data alone: new units and structures, Commanders, factions, building cards, powers of the kinds above,
-campaigns and levels. Needs code: a new kind of ability or effect, a new map, a new duel player. Cannot: load files
+stories and missions. Needs code: a new kind of ability or effect, a new map, a new duel player. Cannot: load files
 from outside the repository (no mod loader, by rule), change the kernel's phases, or read presentation from the
 rules.

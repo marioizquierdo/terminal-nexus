@@ -15,7 +15,7 @@ campaign?level=vasse-test-1&round=3
 **One grammar for every way of going somewhere** (RULE — `tests/route.test.ts`, `tests/route-open.test.ts`):
 
 - `terminal-nexus --at <route>` opens the game there;
-- `node scripts/playtest.mjs --at <route>` opens a scripted playtest there (a campaign level only);
+- `node scripts/playtest.mjs --at <route>` opens a scripted playtest there (a mission only, until the Skirmish milestone adds a Skirmish);
 - every title menu row that opens a place names its route, and choosing the row follows it;
 - the browser playtest page opens `#at=<route>`, its mode buttons open their routes, and a demo may carry
   an `at`.
@@ -42,6 +42,9 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 
 ## 2. Every route today
 
+The Skirmish milestone renames these: `challenge` becomes `skirmish` (one battle, not a run), and `campaign` with its
+`level` becomes `story` ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md)).
+
 | Route | Opens |
 | --- | --- |
 | `menu`, or nothing | the title menu: Campaign, Challenge, Settings, About, Exit |
@@ -60,7 +63,7 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `campaign?level=averno-test-1&round=2` | his round 2: one card of the hand is from the Ravel Nexus (`&round=4` too) |
 
 Every level the game can open is a route the same way, `campaign?level=<id>` with each of its rounds: the
-levels are every shipped campaign's, from its army ([`content.md`](content.md)). `terminal-nexus --help`
+levels are every shipped story's (campaign file's) ([`content.md`](content.md)). `terminal-nexus --help`
 prints the places and the levels from the same table and list, so it never names one the game does not
 have.
 
@@ -81,7 +84,7 @@ What happens next depends on who asked.
 
 - **The game** (`src/cli/terminal-nexus.ts`). A title menu place runs the title menu's loop, a level the
   Build Phase's loop at that round; both take the destination as `at`, with the settings store, the export,
-  `--settings` and, on a campaign level, `--keys` and `--scroll-margin`. `--keys` and `--scroll-margin` on a
+  `--settings` and, on a mission, `--keys` and `--scroll-margin`. `--keys` and `--scroll-margin` on a
   title menu route are refused, since nothing there reads them; `--settings` there applies its player settings
   to the menu. **An argument the game does not read is refused before any screen**, so a command pasted from
   an older note never opens somewhere it did not mean; the removed `--build-phase` and `--spike` say that
@@ -108,11 +111,12 @@ A place that opens a screen nothing opens yet also needs that screen to follow i
 screen is a row naming its route and a line in the menu's `PLACE_SCREENS` (its screen, and what it says
 there); a new kind of destination makes
 the type checker name every place that must learn it — the game's dispatch, the browser page, the
-scripted playtest. A new campaign level needs no entry here at all: `campaign?level=<id>` reads the levels
+scripted playtest. A new mission needs no entry here at all: `campaign?level=<id>` reads the levels
 the game can open (`src/cli/levels.ts`).
 
-IDEA — places a later step could name, none built: a level's round straight into its Battle Round; the run
-screen, once Challenge exists; a saved replay, once the replay file exists.
+IDEA — places a later step could name, none built: a mission's round straight into its Battle Round; the Skirmish
+setup screen and a battle file (`skirmish?battle=<file>`, the Skirmish milestone); a saved replay, once the replay file
+exists.
 
 ## 5. The bare command and the saved game
 
@@ -130,8 +134,8 @@ The page reads its address after `#` (`src/web/address.ts`):
 | Part | Is | Example |
 | --- | --- | --- |
 | `at=` | where to open: a route | `#at=campaign?level=vasse-test-1&round=3` |
-| `settings=` | a settings text for a campaign level, as `--settings` takes it | `&settings=jumpStep=12&reducedMotion=true` |
-| `keys=` | a key script played first on a campaign level, as `--keys` takes it | `&keys=Esc n 1` |
+| `settings=` | a settings text for a mission, as `--settings` takes it | `&settings=jumpStep=12&reducedMotion=true` |
+| `keys=` | a key script played first on a mission, as `--keys` takes it | `&keys=Esc n 1` |
 
 **A route and a settings text have `&` and `=` of their own**, so a part runs until the next `&at=`,
 `&settings=` or `&keys=`, not until the next `&`: it is written as plainly as on a command line (RULE —

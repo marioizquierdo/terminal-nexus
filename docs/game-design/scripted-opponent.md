@@ -1,12 +1,12 @@
-# Terminal Nexus — the Campaign's opponent: raids, intentions, and what the player can see coming
+# Terminal Nexus — the scripted opponent: raids, intentions, and what the player can see coming
 
-_A working design for how the Campaign's opponent arrives and says what it means to do. GUIDANCE and IDEA throughout; nothing here is built beyond what section 2 says. Mechanical definitions are Apache-2.0; the fiction is CC BY-SA 4.0._
+_A working design for how a mission's opponent arrives and says what it means to do, and where a planner for missions and Skirmish could come from. GUIDANCE and IDEA throughout; nothing here is built beyond what section 2 says. Mechanical definitions are Apache-2.0; the fiction is CC BY-SA 4.0._
 
 ## 1. What the opponent must do
 
 A mission's opponent has to meet three requirements, and they are one design:
 
-1. **The mission defines the round** — nothing arrives "out of nowhere"; what the Battle Round starts with is the mission's data, readable before it starts. A testing setup may spawn units freely; the Campaign fully defines the initial state of the round, so the player can Explore the map and see what is coming.
+1. **The mission defines the round** — nothing arrives "out of nowhere"; what the Battle Round starts with is the mission's data, readable before it starts. A testing setup may spawn units freely; a mission fully defines the initial state of the round, so the player can Explore the map and see what is coming.
 2. **The player can see it coming** — the Build Phase is planning against a known threat, the way PERIMETER's own briefing already says the Nexus "has already assigned the contact a name, a heraldry, and an estimated time of arrival".
 3. **Incoming groups say what they mean to do** — an *intention*, in optional words on each group, which is also the seed of an opponent AI the player can read, so people can properly plan for what is coming. How a raid's groups are configured in the mission files is deliberately left undetailed (section 3.4).
 
@@ -45,20 +45,20 @@ Each step is a verb the kernel would have to learn (this waits on the open quest
 Two ways to get the sentence the player reads, and both are worth having:
 
 - **Written** — the mission author's own line, in the mission's voice ("Knock knock, bureaucrats!" is a bark; "Wait for the flank, then hit the east gate" is an intention). Today's `intent`.
-- **Derived** — a plain sentence built from the plan itself ("Holds at the ridge for 5 s, then advances on the east gate; prefers turrets."), so an intention can never lie about what the group will do, and a mission author who writes nothing still gets one. This is the one to lean on for the Campaign's AI (below), because a generated plan has no author to write its sentence.
+- **Derived** — a plain sentence built from the plan itself ("Holds at the ridge for 5 s, then advances on the east gate; prefers turrets."), so an intention can never lie about what the group will do, and a mission author who writes nothing still gets one. This is the one to lean on for a planner (below), because a generated plan has no author to write its sentence.
 
 On the map the plan could be drawn too, not only said: a faint path from the group to its next region, or an arrow at its destination, in the raid's colour, see-through like the group itself. Half of this is built, with no Experiment, because Mario asked for the intent to be read at a glance: a trail to each group's first target, drawn in arrowheads that read in monochrome too (section 2). What waits for a plan is drawing its later steps.
 
-### 3.3 Where the Campaign's opponent AI comes from
+### 3.3 Where an opponent planner comes from
 
-The Campaign's opponent should be **a planner that writes plans in this same vocabulary** — never code that moves units itself. Each round, before the Build Phase, it looks at the public state (what the player has standing, where the survivors are) and chooses the next round's groups and their plans from the mission's budget and rules; the mission can fix some groups by hand and leave others to it. Then:
+A mission's opponent, and later a Skirmish's (Q92), should be **a planner that writes plans in this same vocabulary** — never code that moves units itself. Each round, before the Build Phase, it looks at the public state (what the player has standing, where the survivors are) and chooses the next round's groups and their plans from the mission's budget and rules; the mission can fix some groups by hand and leave others to it. Then:
 
 - the plan is **data**, so the Build Phase can show it and its intention, exactly as it shows a hand-written group;
 - the kernel executes it, deterministic and replayable — the planner runs between rounds, never inside a tick;
 - a harder difficulty is a better planner (or a bigger budget), not a different rule, and "the AI cheated" can be checked by reading its plan;
-- it is the tier the campaign document calls "weighted faction heuristics" ([`story.md`](story.md), opponent policies): a Ravel planner likes fast flanks, a Feudal one siege lines.
+- it is the tier Story calls "weighted faction heuristics" ([`story.md`](story.md), the opponents a mission brings): a Ravel planner likes fast flanks, a Feudal one siege lines.
 
-**Should the planner see the player's plan?** No — it plans before the player does, from what is public, which is also what makes showing its plan fair. The player sees the raid's intention; the raid never sees the player's buildings until they reveal at the round's start. That asymmetry is the Campaign's whole deal with the player: "the Nexus is ahead of you" (the PERIMETER lore hint) is true mechanically — the player's own Nexus is telling them what is coming.
+**Should the planner see the player's plan?** No — it plans before the player does, from what is public, which is also what makes showing its plan fair. The player sees the raid's intention; the raid never sees the player's buildings until they reveal at the round's start. That asymmetry is Story's whole deal with the player: "the Nexus is ahead of you" (the PERIMETER lore hint) is true mechanically — the player's own Nexus is telling them what is coming.
 
 ### 3.4 How a mission file might say it, later
 

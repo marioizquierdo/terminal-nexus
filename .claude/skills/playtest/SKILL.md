@@ -24,13 +24,13 @@ node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=2' --keys "n 1
 node scripts/playtest.mjs --help
 ```
 
-`--at <route>` opens a campaign level at a round, in the game's own route grammar (`src/cli/route.ts`,
+`--at <route>` opens a mission at a round, in the game's own route grammar (`src/cli/route.ts`,
 the same as `terminal-nexus --at`): `campaign?level=vasse-test-1` is PERIMETER's first round (what runs
 without `--at`), and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who builds nothing and keeps no Nexus power
 reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc s s wait~1000*26
 Enter` reach for round 2, without them (the battle lasts about 21 seconds, then the
 result Enter goes on from). Quote the route: the shell reads `?` and `&`. A title menu route
-(`settings`) is refused, since only a campaign level's Build Phase is wired up here; with `--at`, `--keys`
+(`settings`) is refused, since only a mission's Build Phase is wired up here (a Skirmish, once the Skirmish milestone adds it); with `--at`, `--keys`
 may be left out to see the round as it opens.
 
 Output lands in `.playtest/` (git-ignored): `<name>.txt` always holds every step's screen as text.
@@ -58,7 +58,7 @@ the same targets. `#` starts a comment in a `--file`. The table with bytes is at
 
 ## Useful openings
 
-Each reaches a state on a campaign level's Build Phase (PERIMETER's first round unless `--at` says
+Each reaches a state on a mission's Build Phase (PERIMETER's first round unless `--at` says
 another); what the screens are and every key on them is in
 [`docs/system-design/ui-patterns.md`](../../../docs/system-design/ui-patterns.md) and
 [`docs/system-design/input.md`](../../../docs/system-design/input.md). **PERIMETER opens on its intro**, the

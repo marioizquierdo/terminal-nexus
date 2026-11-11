@@ -159,7 +159,8 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   the next battle's opponent, map and rounds; at the run's end one box holds the whole summary, a paragraph a line.
   The top bar says `battle 1 of 3 - round 1 of 6`; the Battle Round calls the other side ENEMY; a battle's result
   reads BATTLE WON, BATTLE LOST or BATTLE DRAWN, with `[enter] Next battle` or `[enter] Run summary`.
-  (RULE — `tests/run-play.test.ts`, `tests/lifecycle-title-menu.test.ts`)
+  (RULE — `tests/run-play.test.ts`, `tests/lifecycle-title-menu.test.ts`; retired with the run by the Skirmish
+  milestone, which keeps the result dialog for a Skirmish)
 - **A title menu row that opens a place names its route** ([`routing.md`](routing.md)), and choosing it
   follows that route: `--at settings` and pressing Settings open the same frame, and opening at a place
   leaves its row highlighted for Esc to come back to. (RULE — `tests/route-open.test.ts`)
@@ -521,7 +522,7 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 
 ### 10.5 A choice that must be made
 
-The run's draft is the second popup the player does not open. A round that has a draft waiting opens on it, behind its scene when it has one. It has the one popup shape: the intro as text, the three cards as options on 1, 2 and 3 with their rarity at the end of the row and their family and role under the name, then Remove a card on `r` and the requisition on `t`, and the army as it stands under a heading. It cannot be dismissed, because what is chosen changes the army the round is built from: Esc, `x`, a right click and a click outside only say what to do, and the top bar offers no close key. Only the game menu (`q`) opens over it, and closing the game menu comes back to the draft as it was. Remove opens a list of the cards the army holds; Esc, `x` and a right click go back to the draft, and a card chosen there settles it. With nothing to remove the Remove row is quiet and says so when pressed. Choosing records the choice, and the screen moves on to the round that choice makes. (RULE — `tests/run-draft-popup.test.ts`, `tests/run-play.test.ts`)
+The run's draft (retired with the run by the Skirmish milestone; Story's technology choice may reuse its shape) is the second popup the player does not open. A round that has a draft waiting opens on it, behind its scene when it has one. It has the one popup shape: the intro as text, the three cards as options on 1, 2 and 3 with their rarity at the end of the row and their family and role under the name, then Remove a card on `r` and the requisition on `t`, and the army as it stands under a heading. It cannot be dismissed, because what is chosen changes the army the round is built from: Esc, `x`, a right click and a click outside only say what to do, and the top bar offers no close key. Only the game menu (`q`) opens over it, and closing the game menu comes back to the draft as it was. Remove opens a list of the cards the army holds; Esc, `x` and a right click go back to the draft, and a card chosen there settles it. With nothing to remove the Remove row is quiet and says so when pressed. Choosing records the choice, and the screen moves on to the round that choice makes. (RULE — `tests/run-draft-popup.test.ts`, `tests/run-play.test.ts`)
 
 ### 10.6 A panel over the menu
 

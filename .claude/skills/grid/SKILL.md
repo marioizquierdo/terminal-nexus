@@ -134,7 +134,7 @@ the game never plays such a battle. A question about troops usually needs a vari
 
 Every rule gets a named, checked-in `.map.json` file — that is the regression suite and the
 documentation at once (`AGENTS.md`: every rule has a named scenario). A map is plain JSON, the same
-shape a campaign level and a map-editor-authored map will eventually share:
+shape a mission and a map-editor-authored map will eventually share:
 
 ```json
 {

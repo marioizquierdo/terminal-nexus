@@ -178,7 +178,7 @@ engage-gap2-melee-vs-mix
 - **`--out` then `--baseline`**: the same by a file written before, when the change spans commits.
 - **Fingerprints** (`scripts/profile-routes.ts --out`): every map's and some duels' event and state hashes; a refactor's
   proof is no line differing. `--detail` says where route time went, question by question.
-- **Duels and campaign levels**: `measure run ... --out`, then `measure compare`.
+- **Duels and missions**: `measure run ... --out`, then `measure compare`.
 
 ## 8. The maps
 

@@ -70,7 +70,7 @@ what it does is worked out fresh every tick from what stands on the Grid.
 ## Where an army goes — the enemy Nexus
 
 RULE (`headsForNexus`, `src/pulse/perception.ts`; a side's target, `src/pulse/target.ts`). **An army's goal is the
-enemy's Grid Nexus.** A campaign level may name a target instead, a region the side heads for and holds; a duel's side
+enemy's Grid Nexus.** A mission may name a target instead, a region the side heads for and holds; a duel's side
 may hold in front of its own Nexus (the duel's stance). The stance and banners in the Build Phase come next (below).
 
 **How the way is found: a distance field, not a path.** The game does not search a path for each unit. It works out a
@@ -98,7 +98,7 @@ stance, to a banner, to two banners. **The stance** is one setting for the army:
 as today), hold the line, or defensive. **A banner** is placed on the map, aggressive or defensive; by default on the
 enemy Nexus, aggressive. Aggressive elsewhere, the army goes there first and then on to the enemy Nexus, so it sets a
 route; defensive, it holds the line there. **Two banners**: the Commander follows the main one, and a building can be
-set to send its units after a secondary "skirmish" banner.
+set to send its units after a **secondary banner**.
 
 **The banner is built as a prototype**, behind the Battle banner Experiment (the owner, 2026-10-31: try the banner's
 placement before the stance; the stance row is the fallback). How it is placed is
@@ -111,12 +111,12 @@ kernel is unchanged. With no banner, a level's own target and the march on the e
 | Order | What the troops do | In the machinery |
 | --- | --- | --- |
 | None, or aggressive | March on the enemy Nexus | As today |
-| Hold the line, or a defensive banner | Gather at the place and hold it; fight what comes into vision; come back to it after | A side's target, as a campaign level's is (built) |
+| Hold the line, or a defensive banner | Gather at the place and hold it; fight what comes into vision; come back to it after | A side's target, as a mission's is (built) |
 | An aggressive banner | March to the banner, then on to the enemy Nexus | The side's target until half its fighting units reach it, then none (built, in the rules layer) |
-| A skirmish banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
+| A secondary banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
 
-Two banners and the skirmish banner wait; the stance and the banner are steps
-of the runs milestone.
+Two banners and the secondary banner wait; the banner (and the stance, if it replaces the banner) are the Skirmish
+milestone's first steps ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md)).
 
 ## Troop spawning
 

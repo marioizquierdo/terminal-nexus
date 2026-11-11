@@ -11,7 +11,7 @@ and no current document states them as fact. This is the spec every later result
 ## 1. What a battle's record holds
 
 **One record for every battle, from its states and events alone** (RULE — `src/measure/battle.ts`,
-`tests/measure.test.ts`). A scenario, a campaign level's round and a duel's round are recorded the same way, by
+`tests/measure.test.ts`). A scenario, a mission's round and a duel's round are recorded the same way, by
 whatever rule the kernel walks by. For the battle: the ticks it ran, who won, and why it ended (a Nexus fell, a side
 was wiped out, time ran out). For each side:
 
@@ -49,7 +49,7 @@ was wiped out, time ran out). For each side:
 - **Duels** ([`duels.md`](duels.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
   ends of the map; each scripted player on both sides; on the Crossing, eight rounds at most. Each round records its
   battle, the rarity of every card dealt and of the card kept, and each Nexus's health when the battle ended.
-- **Every campaign level** played to its end by fixed plans: **nothing built**, and **a defended base** (a Barracks
+- **Every mission** played to its end by fixed plans: **nothing built**, and **a defended base** (a Barracks
   and a Supply Depot near the Grid Nexus each round, as far as the credits go). Each round records its battle.
 
 ## 3. Seeds and specs
@@ -81,21 +81,21 @@ itself, exactly as before formations: the quick spec's duels replay byte for byt
 
 `node bin/measure.ts run --spec full --routing "<the rules, in a few words>" --question "<what it must answer>"
 --out <file>` writes one JSON file: the spec, the build (the commit it ran on, ending `+uncommitted` when the code,
-armies, campaigns or maps differed from it), the date, the rules it measured, the question it was played to answer,
+armies, stories or maps differed from it), the date, the rules it measured, the question it was played to answer,
 the milliseconds a tick took on that machine, and every battle's record. `measure show <file>` prints what one says; `measure compare
 <before> <after>` prints two, the older first. How much to play for which kind of change, and the rest of the
 procedure, is the [`remeasure`](../../.claude/skills/remeasure/SKILL.md) skill.
 
 **Played in parallel, written down as one** (`src/measure/merge.ts`, `tests/measure-process.test.ts`). `--jobs N`
 plays a spec as up to N processes at once (each scripted player's duels for each Commander on side A on each seed,
-since one seed's duels can take several times another's; the campaign levels; the maps) and merges what they wrote in
+since one seed's duels can take several times another's; the missions; the maps) and merges what they wrote in
 the order one process plays it, so the file holds the same battles in the same order either way; it records how many
 processes played at once, since a tick takes longer on a loaded machine. `measure merge <file>... --out <file>` does
 the same for parts played by hand with `--parts`, `--players`, `--west` (the Commanders on side A) and `--seeds`, and
 refuses parts of two builds, two specs or two sets of rules.
 
 **What one unit did** (`src/measure/who.ts`): `measure who <content id> [--plan nothing|defended|both]
-[--levels <id>,<id>]` plays the campaign levels by the plans and says, for each round, that unit's or building's hits
+[--levels <id>,<id>]` plays the missions by the plans and says, for each round, that unit's or building's hits
 on the enemy, their damage, its kills and the second of its first hit, on each side it stood. It is what a sentence
 that tells the owner to watch something happen in a round is checked against.
 

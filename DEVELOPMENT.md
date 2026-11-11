@@ -158,8 +158,8 @@ remembering a rule instead of relying on one.
 
 A passing test says nothing about spacing, density or where the eye goes. Look.
 
-**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a campaign
-level's Build Phase without a terminal and keeps what the screen showed after every key: text for every step
+**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a mission's
+Build Phase without a terminal (a Skirmish's, once the Skirmish milestone makes it the default) and keeps what the screen showed after every key: text for every step
 in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
 sequence (`--gif`). Keys go through the real keyboard and mouse adapters as the bytes a terminal
 sends, one at a time, and every frame comes from the composer the live screen uses, so there is no
@@ -229,7 +229,7 @@ use a small, cheap model, play each pairing from both sides, and read the report
 
 **Measuring a change plays the same battles before and after it** (`node bin/measure.ts`,
 [`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill):
-the route scenarios and every map, duels between every Commander, and every campaign level by fixed plans, written
+the route scenarios and every map, duels between every Commander, and every mission by fixed plans, written
 down as one JSON file per run and compared in plain words. Play only what the change can move, written down with
 the one question it must answer; after a power-curve change, mark what the new result supersedes rather than
 leaving old numbers to read as current; and check every sentence that tells Mario where to look against the events
@@ -282,8 +282,8 @@ What belongs to no step goes in `docs/milestones/next-steps.md`: what waits on M
 the cleanup queue. Delete an item when it is done. Work no milestone owns yet is
 `docs/milestones/backlog.md`.
 
-The milestone sequence builds the first level of the campaign one system at a time, the match
-experience before the content, because a played loop early is worth more than any one part being
+The milestone sequence builds an enjoyable Skirmish first, one system at a time, and a story around it
+after: the battle before the content, because a played loop early is worth more than any one part being
 good. Prefer the honest, connected, ugly step over the beautiful one that dead-ends; playing the whole
 thing is what says which part deserved the polish.
 

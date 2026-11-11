@@ -130,7 +130,7 @@ its checks and its card line in one place. The loader (`src/armies/load.ts`, pur
 every problem at once, each naming where by ids, and freezes what it hands the game. A Commander's arsenal is her
 own army and her faction chain: she deals and builds only from those, and a card another Nexus slips into her hand
 is marked `from` that faction. The kernel never reads an army; it reads content definitions, each side's own.
-The game reads only the armies and campaigns `src/shipped.ts` lists, imported with the code: there is no mod
+The game reads only the armies and stories (campaign files) `src/shipped.ts` lists, imported with the code: there is no mod
 loader looking for folders on disk.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,

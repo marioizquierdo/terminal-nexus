@@ -72,7 +72,7 @@ it is done.*
   Hunter against each other with three scripts, and [`duels.md`](../system-design/duels.md) says how to set two model
   agents against each other. Three things the duels found wait on his word, measured again on the new routes ([the report](../history/reports/2026-10-20-pathfinding-measured.md)):
   Averno still wins most (65% of 72 scripted duels), Ravel buildings train about half the strength a credit Citizen ones
-  do and Dob wins mostly when he holds, and Dob has no campaign yet. The same duels found that an early lead decides
+  do and Dob wins mostly when he holds, and Dob has no story yet. The same duels found that an early lead decides
   a duel almost every time; with the Nexus fighting back a round-1 march no longer ends one, but the side ahead after
   round 2 still wins 50 of 54 ([the report](../history/reports/2026-10-21-the-march.md)), the armies' next pass.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
@@ -156,7 +156,7 @@ Small, none blocking.
 **From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):
 
 - Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
-  back in a round 4 that does not exist. The campaign's second test level shows it:
+  back in a round 4 that does not exist. Vasse's second test level shows it:
   `--at 'campaign?level=vasse-test-2&round=3'`.
 - Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
   enemy like every unit, from just behind the line.
@@ -171,7 +171,7 @@ Small, none blocking.
 - In monochrome an arriving unit is drawn at full strength (the wash shows only where
   colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
   "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
-- Both of her campaign's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
+- Both of her story's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
   nothing new), so what a level offers changes nothing on screen yet; it shows when a level unlocks a card of
   its own (the Nexus Pulse step).
 - PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
@@ -238,7 +238,7 @@ Small, none blocking.
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
-- Only the buildings a campaign level offers spawn: a barracks in a `grid` scenario still spawns nothing,
+- Only the buildings a mission offers spawn: a barracks in a `grid` scenario still spawns nothing,
   and the bench Hatchery there keeps its own breeding.
 
 
