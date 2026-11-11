@@ -1,4 +1,4 @@
-// A run's army and its draft (docs/game-design/runs.md): what a run starts with, the cards it can be offered, the dealer's
+// A run's army and its draft (docs/history/challenge-runs-design.md): what a run starts with, the cards it can be offered, the dealer's
 // rarity weights, tier gate, pity offset and variety, what a choice does to the army, and that a Doctrine and a cut-down
 // roster are what the battle is played on.
 

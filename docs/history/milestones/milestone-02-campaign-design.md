@@ -9,7 +9,7 @@
 > discipline [`../AGENTS.md`](../../../AGENTS.md) Section 1 asks of every gate ("state the current
 > question, the smallest artifact, required evidence, exclusions") applied to design itself. Nothing
 > here is source code, and nothing here is a story beyond what
-> [`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.2 already wrote for PERIMETER. If a
+> [`docs/game-design/campaigns.md`](../../game-design/story.md) Section 4.2 already wrote for PERIMETER. If a
 > decision below turns out wrong once milestone 5 or 6 actually plays it, that milestone's own report
 > is where it gets revised — this document is a starting position, not something later docs/milestones
 > must contort themselves to preserve.
@@ -48,7 +48,7 @@ definition of the campaign. Its answers (Section 4) stand.
   composition list (Nexus and faction, Commander, starting units and structures, blueprints and the
   tech tree, upgrades, Nexus powers, Specials), 2.2 the affinity model, 4.5 what a power does (a
   name and a plain line; effect kinds live in code), and 4.6 the three starting Commanders — Vasse,
-  Averno, Dob Hunter — with four later candidates kept. [`docs/game-design/campaigns.md`](../../game-design/campaigns.md)
+  Averno, Dob Hunter — with four later candidates kept. [`docs/game-design/campaigns.md`](../../game-design/story.md)
   Section 4.3 gives the two openings, mission goals, and bonus goals. Q42, Q43, Q44, Q45, Q46, Q47 and
   Q48 all answered. Marshal Avern Teag was removed from canon at 2.15 — Averno supersedes her.
 - **2D — Owner confirmation. Closed 2026-09-12.** Mario read `game-modes.md`, the build order in
@@ -61,7 +61,7 @@ definition of the campaign. Its answers (Section 4) stand.
 ### 1.2 What this milestone no longer does
 
 Define the campaign's length or every mission's mechanics (the belief ramp in
-[`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.1 stays direction, not a contract); select
+[`docs/game-design/campaigns.md`](../../game-design/story.md) Section 4.1 stays direction, not a contract); select
 a roster (Milestone 12); fix the run's numbers (Milestone 11 retunes `game-modes.md` Section 3.2 on
 play); design multiplayer.
 
@@ -88,7 +88,7 @@ recommendation rather than treating it as answered.
 
 ## 3. Read before deciding
 
-1. [`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.1 (the belief ramp) and 4.2 — PERIMETER's
+1. [`docs/game-design/campaigns.md`](../../game-design/story.md) Section 4.1 (the belief ramp) and 4.2 — PERIMETER's
    briefing, pre-battle exchange, barks, mid-mission interruption, debrief, and artifact entry are
    **already written**. Nothing here should contradict them; where a mechanical decision below
    constrains what could be shown, the text wins and the mechanism bends.
@@ -155,7 +155,7 @@ menus are a later mission's decision, not this one's.
 A Grid with Nexus and barracks near one edge, open ground toward the approach the raid comes from.
 
 **Q38 is OPEN; this section proceeds under its recommended answer.**
-[`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 4.1's belief-ramp text describes PERIMETER as
+[`docs/game-design/campaigns.md`](../../game-design/story.md) Section 4.1's belief-ramp text describes PERIMETER as
 "a small Grid that never scrolls" — written before milestone 5's own charter (build and test real
 scrolling) existed. A map sized to strictly fit the viewport would leave milestone 5's scrolling work
 either untested against the actual campaign or tested against a second, throwaway fixture instead of
@@ -189,7 +189,7 @@ player does — that is a later mission's opponent, once one genuinely needs to 
 
 **Widened at canon 2.10, and the trigger shape now has a home.** Mario's design notes make every
 mission a sequence of Pulses driven by triggers, and
-[`docs/game-design/campaigns.md`](../../game-design/campaigns.md) Section 2.1 records the model: a trigger is a
+[`docs/game-design/campaigns.md`](../../game-design/story.md) Section 2.1 records the model: a trigger is a
 condition and a list of actions, conditions are addressed as `{ pulse, tick }` or by mission event,
 and actions split into a simulation band (run inside the kernel) and a presentation band (never
 touch state). `{ atTick, action }` is that model with one condition kind. This document therefore
@@ -279,7 +279,7 @@ Moved to Answered in [`docs/milestones/open-questions.md`](../../milestones/open
       approximate coordinates; not the final `.map.json`, but concrete enough for milestone 5/6 to
       author against;
 - [x] the trigger-list shape for the scripted raid is written down precisely enough that milestone 6
-      can implement it without a second design pass — [`docs/game-design/campaigns.md`](../../game-design/campaigns.md)
+      can implement it without a second design pass — [`docs/game-design/campaigns.md`](../../game-design/story.md)
       Section 2.1, canon 2.10, with PERIMETER's own list sketched there (4.4 above);
 - [x] Mario has confirmed the three findings in 4.6, alongside the rest of Sections 4 and 4.6, as part
       of closing gate 2D above;

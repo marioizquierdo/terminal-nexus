@@ -56,7 +56,7 @@ makes it playable.
 
 Milestone 12 repeats: each pass adds cards and retunes both modes on what the last pass measured. Beyond
 it, one milestone per remaining mission (RESTORATION, PRECOMMITTED, TWELVE OF TWELVE, ANNEX ZERO, from
-[`campaigns.md`](../game-design/campaigns.md)) is likely, as is a release-readiness pass once all six
+[`story.md`](../game-design/story.md)) is likely, as is a release-readiness pass once all six
 missions exist (packaging, a title and credits sequence, whatever the finished campaign shows is missing).
 Neither is a file yet, and no number is reserved; each gets one when the milestone before it is close
 enough to done that its contents are no longer a guess.

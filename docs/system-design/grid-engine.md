@@ -163,7 +163,7 @@ are not repeated here.
 | The Build Phase screen follows one set of interface patterns: focus, cancel, lists, popups, cards, hand-offs, the one-line bottom bar, the Grid pane's edge | the tests named in that document | [`ui-patterns.md`](ui-patterns.md) |
 | The browser playtest page is a development tool, never a platform: it runs the terminal's own screen loops and converts only frames, input bytes and settings storage | `tests/web.test.ts` | [`runtime.md`](runtime.md) |
 | Logs are one structured shape: an event is declared before it is logged, a logger takes its clock as an argument and keeps a bounded memory, the kernel and the match layer never log, and nothing the rules decide reads a log | `tests/log.test.ts`, `tests/architecture.test.ts` | [`runtime.md`](runtime.md) |
-| A mission is a sequence of rounds, each a Nexus Pulse, a Build Phase and the Battle Round after it, driven by triggers; simulation actions run inside the kernel as validated intents, presentation actions never touch state, and a scripted Battle Round is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`campaigns.md`](../game-design/campaigns.md) |
+| A mission is a sequence of rounds, each a Nexus Pulse, a Build Phase and the Battle Round after it, driven by triggers; simulation actions run inside the kernel as validated intents, presentation actions never touch state, and a scripted Battle Round is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`story.md`](../game-design/story.md) |
 
 Design commitments the game documents own, GUIDANCE until built and played:
 
@@ -176,7 +176,7 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - A Nexus power is a name and one plain line, with no player-facing classification, and, for now, a dealt one
   may be left unpicked; a mission has goals rather than a fixed length
   ([`commander-armies.md`](../game-design/commander-armies.md),
-  [`campaigns.md`](../game-design/campaigns.md)).
+  [`story.md`](../game-design/story.md)).
 - Each Nexus is named for the faction that holds it, with Prime or Grid appended where it matters;
   Prime Nexuses stay home and replicate Grid Nexuses ([`lore.md`](../game-design/lore.md)).
 - Lore is a platform, not a plot: when clearer ASCII and a richer story compete, the Grid wins

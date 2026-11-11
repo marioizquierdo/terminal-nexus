@@ -20,7 +20,7 @@ something in it, and a story that continues rather than repeats?
 loop can be played start to finish and judged as one thing.
 
 **RIGHT OF SALVAGE, authored for real.** Unlike PERIMETER, this mission's text does not exist yet.
-[`docs/game-design/campaigns.md`](../game-design/campaigns.md) has only the belief ramp's one-row
+[`docs/game-design/story.md`](../game-design/story.md) has only the belief ramp's one-row
 summary: "The Nexus is a tool we are learning", then "First itch: the tool knows things nobody
 entered", teaching "Salvage economy and contested wrecks", with the interface naming Speaker Corvane
 before any contact and Vasse asking "Who filed that?". The full briefing, pre-battle exchange, barks,

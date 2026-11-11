@@ -555,7 +555,7 @@ three rows of `#`.
    a line, and the enemy arriving. Barks are three to eight words. Where a scene could be cut to a
    status line and lose nothing, cut it — the interface's own voice does more per byte than dialogue.
 4. **One coherent timeline.** No parallel or alternate histories; two campaigns may show the same
-   battle from opposite sides, and must then agree on what happened ([`campaigns.md`](campaigns.md)). Continuity is cheap to keep and expensive to repair.
+   battle from opposite sides, and must then agree on what happened ([`story.md`](story.md)). Continuity is cheap to keep and expensive to repair.
 5. **Under-specify on purpose.** The deliberate mysteries above are the model for everything
    else: the lore is a **platform for imagination**, and its job includes leaving room. Terminal Nexus
    is built for a world where players extend games with their own agents — mods, missions, Commander

@@ -36,7 +36,7 @@ the Battle Round, the Build Phase screen, the renderer — knows which mode it i
 | --- | --- |
 | **Match** | One Grid, one or more rounds (each a Nexus Pulse, a Build Phase and the Battle Round that follows), one result. The unit of play; 5–12 minutes ([`concept.md`](concept.md)). Nothing above a match is visible to the kernel |
 | **Battle** | A match played inside a mode. "Battle" is the player-facing word; "match" is the engine's |
-| **Mission** | A battle with authored triggers, text, and a teaching goal — the Campaign's unit ([`campaigns.md`](campaigns.md)) |
+| **Mission** | A battle with authored triggers, text, and a teaching goal — the Campaign's unit ([`story.md`](story.md)) |
 | **Run** | An ordered series of battles in which the army changes between them — the Challenge mode's unit. One attempt, start to finish, win or lose |
 | **Act** | A segment of a run ending in a harder, named battle. A run is a small number of acts |
 | **Card** | Working shorthand for any content item an army can hold or be offered: a structure, a Nexus power, an upgrade, a Commander variant. A unit is not a card — units come from the structures that produce them. **Not a claim that an army behaves like a trading-card deck** — see the note below. **Still ambiguous** (see the terminology glossary in [`commander-armies.md`](commander-armies.md)): whether this stays an internal shorthand or narrows to mean "Nexus power" specifically, the game's actual card-equivalent noun, is not yet decided |
@@ -46,7 +46,7 @@ the Battle Round, the Build Phase screen, the renderer — knows which mode it i
 | **Tier** | The earliest depth at which a card may be offered: `1`, `2`, `3`. Tier gates *when*; rarity weights *how often* |
 | **Unlock** | A card added to the player's available pool, granted by the Campaign or by Challenge's own play, between battles. What the unlock record stores is an open question (Q31). Inside a match, only the tech tree unlocks; a Nexus power *adds* ([`commander-armies.md`](commander-armies.md)) |
 | **Seed** | A run is deterministic from its seed: the same seed deals the same offers and the same opponents in the same order, exactly as a match is deterministic from its seed |
-| **Opponent policy** | What plays the other side of a battle: a trigger list (a scripted mission), or a local heuristic policy driving a Commander Army ([`campaigns.md`](campaigns.md)) |
+| **Opponent policy** | What plays the other side of a battle: a trigger list (a scripted mission), or a local heuristic policy driving a Commander Army ([`story.md`](story.md)) |
 
 Rarity and tier are **two axes on purpose**: a tier-1 rare is a strong early card that is seldom
 offered; a tier-3 common is an ordinary late card. Collapsing them into one "quality" number is the
@@ -74,7 +74,7 @@ sketches.
 ### 3.1 Campaign — the first-time player experience and the established setting
 
 **RULE: the Campaign is the first-time player experience.** It is the game's **on-ramp and its lore**: a short, linear sequence of authored missions
-that teaches the match loop one mechanic at a time and tells the story [`campaigns.md`](campaigns.md) already
+that teaches the match loop one mechanic at a time and tells the story [`story.md`](story.md) already
 carries (the Operator belief ramp). It is judged on two things only: **does a new
 player come out of it able to play a run, and does the world feel real.** It carries no length or breadth
 requirement and no burden of replay value — that burden belongs to Challenge, which is the reason this section
@@ -85,8 +85,8 @@ few cards and unlocks them; by the end, the player's available pool is the facti
 tier-2 catalogue, and they have drafted from it at least once. The Campaign's last mission is a
 small, guided run in all but name — which is what makes the handoff to Challenge invisible.
 
-Missions are trigger lists ([`campaigns.md`](campaigns.md)). Everything about their authored content —
-text, cast, cutscenes, the scripted opponent — stays in `campaigns.md`; this document only says
+Missions are trigger lists ([`story.md`](story.md)). Everything about their authored content —
+text, cast, cutscenes, the scripted opponent — stays in `story.md`; this document only says
 what the mode *is for*. Three things about its shape belong here, because Challenge depends on them
 (see also the three starting Commanders in [`commander-armies.md`](commander-armies.md)):
 
@@ -96,7 +96,7 @@ what the mode *is for*. Three things about its shape belong here, because Challe
   neither is shown before the player has played the first.
 - **Progress is per save slot**, each slot naming its Commander, and a player may start another
   campaign at any time without losing one in progress.
-- **Every mission has a main goal and usually a bonus goal** ([`campaigns.md`](campaigns.md) has the
+- **Every mission has a main goal and usually a bonus goal** ([`story.md`](story.md) has the
   objective shape), and the bonus goal is what **unlocks content for Challenge** — a
   Commander, a card, a starting variant. That is the coupling between the two modes, and it is
   additive only: the Campaign can add a few unlocks, and neither mode owns or gates the other.
@@ -109,7 +109,7 @@ narrowed, battle by battle, and the last battle is fought with an army that did 
 first. The structure is the one that has proven itself across a decade of roguelike deckbuilders and
 autobattlers (see the references below), taken at the size Terminal Nexus's 5–12-minute match affords.
 
-**The whole run is designed in [`runs.md`](runs.md)**: the route the player chooses a path through, the stops on it, the army that is drafted, the opponents and the rewards. The table below is the shape that design builds on, GUIDANCE, and its numbers are a starting guess to be retuned once runs are played:
+**The whole run is designed in [`challenge-runs-design.md`](../history/challenge-runs-design.md)**: the route the player chooses a path through, the stops on it, the army that is drafted, the opponents and the rewards. The table below is the shape that design builds on, GUIDANCE, and its numbers are a starting guess to be retuned once runs are played:
 
 | Element | Starting value | Why this and not another |
 | --- | --- | --- |
@@ -118,7 +118,7 @@ autobattlers (see the references below), taken at the size Terminal Nexus's 5–
 | Between battles | **one run draft**: add one of three offered cards, **or** remove one card, **or** upgrade one card (a building has no levels; what a run draft's upgrade offers — a building's action opened for the run, say — is decided with the draft, [`commander-armies.md`](commander-armies.md), what changes between rounds) | Add/remove/upgrade is the minimum set every reference game converged on. Removal's *reason* differs by what's offered: an army structure costs supply and board space, so trimming one is a real trade-off; a Nexus power is close to strictly good so removing one is about deck focus and role variety, not chasing better odds the way a Slay the Spire deck-thin does |
 | Offer dealing | three cards, weighted by **rarity**, gated by **tier** against the battle index; a **pity offset** raises the rare chance each time no rare is offered and resets when one is | Slay the Spire's mechanism, verbatim in spirit: fair variance without a dead run |
 | Tier schedule | tier *t* becomes available at battle **2t − 1**: tier 1 from battle 1, tier 2 from battle 3, tier 3 from battle 5 | Super Auto Pets' schedule, which makes the run's early third about fundamentals and its last third about combinations |
-| Opponents | **another Commander Army with a heuristic policy**, escalating by act; each act ends in a **named Commander** as its boss | Reuses the army shape and the opponent tiers [`campaigns.md`](campaigns.md) already names. A boss is an army with a signature, not a stat multiplier |
+| Opponents | **another Commander Army with a heuristic policy**, escalating by act; each act ends in a **named Commander** as its boss | Reuses the army shape and the opponent tiers [`story.md`](story.md) already names. A boss is an army with a signature, not a stat multiplier |
 | Between runs | **unlocks into Challenge's own pool** only, primarily through Challenge play itself, with the Campaign's bonus goals adding a few more; no permanent stat buffs | Into the Breach and Hades both persist *options* across runs; persisting *power* would break "understand why the battle unfolded" ([`concept.md`](concept.md)) |
 | Within a run | **the army, the Commander, the Nexus's health and the run's requisition persist; the Grid, structures, and units do not** (open question Q40) | Each battle starts from a fresh Grid with the army's starting package, and the Nexus as damaged as the last battle left it, so the route is a spending of health. Veterans carrying over stays the observable experiment it is, not assumed |
 | Seed | shown, shareable, replayable | A run is a match's determinism at the next scale up: same seed, same run — the daily-run and "try my seed" modes fall out for free |
@@ -144,7 +144,7 @@ autobattlers (see the references below), taken at the size Terminal Nexus's 5–
   the interface's own voice (the system-text exemplars in [`lore.md`](lore.md)) and Commander barks — nothing
   authored per run.
 
-**What is built** (RULE — `src/run/`, `src/cli/run-play.ts`, `tests/run.test.ts`, `tests/run-play.test.ts`; the army and its draft, [`runs.md`](runs.md)). **A run
+**What is built** (RULE — `src/run/`, `src/cli/run-play.ts`, `tests/run.test.ts`, `tests/run-play.test.ts`; the army and its draft, [`challenge-runs-design.md`](../history/challenge-runs-design.md)). **A run
 battle is a duel** ([`duels.md`](../system-design/duels.md)): the player plans one side on the Build Phase screen — the
 same screen, keys, Nexus Pulse and Battle Round as a campaign level — and the opponent's Commander Army is planned by a
 scripted duel player from its brief, the two plans revealed together. The first run is one act of three battles
@@ -159,7 +159,7 @@ summary. A run is played headless by `npm run duel -- run --seed <n>`, through t
 ### 3.3 Skirmish — one battle, any legal army, any opponent — IDEA
 
 One match against a local policy, with every legal Commander Army exposed without campaign completion
-([`campaigns.md`](campaigns.md)). Cheap the moment a run exists — it is a run of length one — and
+([`story.md`](story.md)). Cheap the moment a run exists — it is a run of length one — and
 useful long before then as the mode every interface change can be played in. Not designed further here.
 
 ### 3.4 Multiplayer — later, and more intuitive once the rest exists — IDEA

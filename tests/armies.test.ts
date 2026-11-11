@@ -98,7 +98,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ARMIES.commanders.map((commander) => commander.start.map(({ unit, count }) => `${count} ${unit}`).join(", ")),
     ["3 unit.citizen.trooper, 2 unit.citizen.marksman", "3 unit.citizen.trooper, 2 unit.citizen.marksman", "5 unit.ravel.runner, 2 unit.ravel.slinger"],
   )
-  // A run starts each with a small army (runs.md): a few buildings and two commons, the rest left to the draft.
+  // A run starts each with a small army (docs/history/challenge-runs-design.md): a few buildings and two commons, the rest left to the draft.
   assert.deepEqual(
     ARMIES.commanders.map((commander) => [commander.id, commander.run?.buildings.join(" "), commander.run?.powers.join(" ")]),
     [

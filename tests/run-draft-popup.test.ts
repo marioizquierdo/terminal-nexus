@@ -1,4 +1,4 @@
-// A run's draft as a popup of the Build Phase (docs/game-design/runs.md, the army): three cards to take one of, or a card the
+// A run's draft as a popup of the Build Phase (docs/history/challenge-runs-design.md, the army): three cards to take one of, or a card the
 // army holds to remove, or the requisition instead — the second popup the player does not open, which a round whose context
 // carries a `RunDraft` opens on and which cannot be dismissed, because what is chosen changes the army the round is built
 // from. Hand-made contexts, since the run (`src/run/`) deals the real ones; driven through the real session where a key, a

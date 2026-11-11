@@ -65,7 +65,7 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
   event so presentation and players can both explain a choice.
 - **Visibility projection.** `PlayerView` and visible-event filtering, so hidden plans stay hidden.
   Untested until something is hidden; a scripted single-player opponent
-  ([`campaigns.md`](../game-design/campaigns.md), campaign opponent policies) may not need it, so a level
+  ([`story.md`](../game-design/story.md), campaign opponent policies) may not need it, so a level
   pulls it in only once a mission actually hides something from the player.
 - **Replay format.** The full game log: content locks, hashes, versions, committed plans per Build Phase,
   and a `verify` path that re-simulates recorded inputs rather than re-running a scenario file.

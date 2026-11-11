@@ -18,7 +18,7 @@ language?
 ## What it builds
 
 This is built for the first time against PERIMETER's own already-written material in
-[`docs/game-design/campaigns.md`](../game-design/campaigns.md). Nothing new needs writing, only
+[`docs/game-design/story.md`](../game-design/story.md). Nothing new needs writing, only
 displaying.
 
 - **A cutscene content definition.** A hand-authored ASCII tableau, two to four meaningful poses or

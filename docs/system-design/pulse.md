@@ -437,12 +437,12 @@ one of which the player may keep during the Build Phase (a rule outside the kern
 Nexus Pulse, one Build Phase and one Battle Round, in that order, are a **round**, the unit the player
 counts. A match runs **as many rounds as it needs** — a campaign mission is a sequence of rounds, not
 one, and a mission's triggers decide how many and what happens between them (see
-[`campaigns.md`](../game-design/campaigns.md)). A Battle Round may be scripted (no player plan; the player
+[`story.md`](../game-design/story.md)). A Battle Round may be scripted (no player plan; the player
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
 **The kernel's victory condition never learns about a mission's goal.** A mission's objective is
 resolved one level up, by the scenario and trigger layer, which fires an ordinary `win`/`lose` action
-when its own condition holds (see [`campaigns.md`](../game-design/campaigns.md)). What follows — Grid
+when its own condition holds (see [`story.md`](../game-design/story.md)). What follows — Grid
 Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
 battle with no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
 `src/pulse/victory.ts`).

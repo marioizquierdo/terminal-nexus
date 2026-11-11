@@ -1,4 +1,4 @@
-// A run's army (docs/game-design/runs.md, the army): what a Commander starts a run with, and what is added to it and
+// A run's army (docs/history/challenge-runs-design.md, the army): what a Commander starts a run with, and what is added to it and
 // taken from it between battles. It is a roster (`Roster`, `src/duel/types.ts`): the building cards on the build menu, the
 // Nexus powers in the pool the Nexus Pulse deals from, and the Doctrines kept from the first round of every battle. A
 // battle plays on it by the duel's own rules, with everything the army could field but does not left out.
@@ -10,7 +10,7 @@ import { cardTextFor } from "../content/cards.ts"
 import type { Roster } from "../duel/index.ts"
 import { duelArmy } from "../duel/index.ts"
 
-/** The three families of card a run deals (runs.md): a **structure** joins the build menu; a **Nexus power** joins the
+/** The three families of card a run deals (docs/history/challenge-runs-design.md): a **structure** joins the build menu; a **Nexus power** joins the
  *  pool the Nexus Pulse deals from; a **Doctrine** is a standing order, kept from round one of every battle. */
 export const CARD_KINDS = ["structure", "power", "doctrine"] as const
 export type CardKind = (typeof CARD_KINDS)[number]

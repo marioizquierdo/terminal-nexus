@@ -68,7 +68,7 @@ rounds.
 
 The owner, 2026-10-24 ([his words](../history/feedback/2026-10-24-runs-gameplay.md)): "Runs are very exciting! I think
 here is where we can start building proper gameplay ... define a full game where I could playtest my ability to
-strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../game-design/runs.md); the steps
+strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../history/challenge-runs-design.md); the steps
 from 11C on build it, each playable on its own.
 
 - [x] The run army: a run starts with a small army (Vasse: Barracks, Supply Depot and Turret; Reserve Callup and Drill

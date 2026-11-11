@@ -33,7 +33,7 @@ cycles; PERIMETER is three.
   acceleration); its detail is in `docs/history/`.
 - A mission as validated data (`src/mission/`) and its trigger runner (`src/match/mission.ts`), with
   PERIMETER's three waves as the fixture.
-- Design: [`campaigns.md`](../../game-design/campaigns.md) for missions and the objective shape,
+- Design: [`campaigns.md`](../../game-design/story.md) for missions and the objective shape,
   [`scripted-opponent.md`](../../game-design/scripted-opponent.md) for the opponent the campaign will
   eventually need, and [`ui-patterns.md`](../../system-design/ui-patterns.md) for screens.
 

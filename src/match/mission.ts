@@ -1,4 +1,4 @@
-// The trigger runner's simulation band — campaigns.md: a mission's triggers decide
+// The trigger runner's simulation band — story.md: a mission's triggers decide
 // what each Pulse brings and when the mission is over.
 //
 // **It drives the kernel and never changes it.** A Pulse of a mission is resolved here the way
@@ -16,7 +16,7 @@
 //   of them exactly as it learns of a spawner's children; a side's new target goes into it the same way. Both
 //   act from the next tick.
 //
-// campaigns.md imagines scripted actions running "inside the kernel, as scripted intents"; the kernel has
+// story.md imagines scripted actions running "inside the kernel, as scripted intents"; the kernel has
 // no door for intents yet (the narrow hook content.md describes is unbuilt), so between ticks is the nearest
 // place that needs no kernel change — a finding recorded in docs/history/reports/2026-09-30-round-loop-and-missions.md.
 //

@@ -1,4 +1,4 @@
-// A run's draft (docs/game-design/runs.md, the army): after a battle is won, three cards dealt by the army's rarity and tier,
+// A run's draft (docs/history/challenge-runs-design.md, the army): after a battle is won, three cards dealt by the army's rarity and tier,
 // and the player takes one, **or** removes a card the army holds, **or** takes requisition instead. The dealer is the
 // Nexus Pulse's sibling at the next scale up (game-modes.md): it weighs rarity, gates by tier against the battle's place in the
 // run, lifts the chance of a rare each time none is offered (the pity offset), and brings a family or role the offer
@@ -20,7 +20,7 @@ export const DRAFT_SIZE = 3
  *  (Slay the Spire's mechanism in spirit, game-modes.md). A legendary is not dealt by a run's draft. */
 export const RARITY_WEIGHTS: Readonly<Record<Exclude<Rarity, "legendary">, number>> = { common: 60, uncommon: 37, rare: 3 }
 
-/** The requisition a player takes instead of a draft (runs.md, rewards). */
+/** The requisition a player takes instead of a draft (docs/history/challenge-runs-design.md, rewards). */
 export const REQUISITION_FOR_SKIPPING = 15
 
 /** A draft on offer: the battle it prepares, the cards dealt, the cards the army could remove instead, and the

@@ -13,7 +13,7 @@ export type Side = PlayerId
 export const SIDES: readonly Side[] = ["A", "B"]
 
 /**
- * What a side brings to a duel when it is not its Commander's whole army (a run's army, runs.md): the building cards on
+ * What a side brings to a duel when it is not its Commander's whole army (a run's army, docs/history/challenge-runs-design.md): the building cards on
  * its build menu and the Nexus powers in the pool its Nexus Pulse deals from, by id, and the Doctrines kept from the
  * first round. Everything else the army could field is left out, as if the army never had it.
  */

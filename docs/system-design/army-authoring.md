@@ -191,7 +191,7 @@ takes a table of kinds as an argument (`PulseContext.abilities`), which is the s
 ## 5. Campaigns
 
 A campaign file names its Commander, the armies it requires and its levels in order. A level gives a map, credits,
-what it unlocks, a schedule if it bends the default, and a mission (`docs/game-design/campaigns.md`).
+what it unlocks, a schedule if it bends the default, and a mission (`docs/game-design/story.md`).
 
 - **A mission brings the campaign's Commander as `"@commander"`**, so one level serves every Commander who plays it.
 - **A level may extend another**, its own campaign's or another's: `"extends": "vasse-test-3"`, then only what
