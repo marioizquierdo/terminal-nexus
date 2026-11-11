@@ -282,8 +282,8 @@ What belongs to no step goes in `docs/milestones/next-steps.md`: what waits on M
 the cleanup queue. Delete an item when it is done. Work no milestone owns yet is
 `docs/milestones/backlog.md`.
 
-The milestone sequence builds an enjoyable Skirmish first, one system at a time, and a story around it
-after: the battle before the content, because a played loop early is worth more than any one part being
+The milestone sequence builds an enjoyable Skirmish first, one system at a time, shows it to people, and builds a
+story around it after: the battle before the content, because a played loop early is worth more than any one part being
 good. Prefer the honest, connected, ugly step over the beautiful one that dead-ends; playing the whole
 thing is what says which part deserved the polish.
 

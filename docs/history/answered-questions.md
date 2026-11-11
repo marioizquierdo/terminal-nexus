@@ -6,6 +6,7 @@ Rows move here with the date, the decision, and the document that now owns it.
 
 | ID | Answered | Decision | Now owned by |
 | --- | --- | --- | --- |
+| Q92 | 2026-11-11 | **A handicap, and no word for it.** Mario (feedback F247): "the skirmish could configure the enemy script playstyle and also the amount of credits. So we don't need to say difficulty." A Skirmish sets the opponent's script and its credits; named presets of the two may come later; a smarter opponent, up to Claude planning the other side, is its own milestone | [`game-modes.md`](../game-design/game-modes.md) (what a Skirmish is set up with) |
 | Q40 | 2026-11-11 | **Dropped with runs.** Mario retired the run of many battles (feedback F244): "the run mode and the campaign should merge into one". Nothing carries between battles outside a Commander's story, where technologies collected carry from mission to mission | [`story.md`](../game-design/story.md) (what carries) |
 | Q84 | 2026-11-11 | **Dropped with runs** (feedback F244): no route, no requisition, no Nexus health carried between battles | [`challenge-runs-design.md`](challenge-runs-design.md) (the retired design) |
 | Q85 | 2026-11-11 | **Dropped with runs** (feedback F244): a battle is ten to twenty minutes, too long for a run of many ([single battles](reports/2026-11-11-single-battles.md)). A long game is now one battle, or a Commander's story | [`game-modes.md`](../game-design/game-modes.md) |

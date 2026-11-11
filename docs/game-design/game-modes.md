@@ -41,6 +41,13 @@ Story to learn and to live a Commander's story, Versus to play another person.
 show and measure), and the base Versus builds on. Every rule, unit and screen is judged in a Skirmish before it is
 taught in a mission. A Story mission is a Skirmish setup with a script and words around it.
 
+**How the game grows** (the owner, 2026-11-11, [his words](../history/feedback/2026-11-11-game-modes.md)). Through
+Skirmish, not through missions: polish the interface and the gameplay; add units and keep improving how units, formations
+and balance are tested automatically; give each Commander more Nexus powers; make the opponent better, up to Claude
+planning the other side as the player plans theirs. When the gameplay has a good foundation, Skirmish is shown to people
+(the owner's friends first), and their play says what Story should be. **Story is built after that**, one Commander's
+story at a time. PERIMETER is no longer where changes are tested.
+
 **A mode is data over one battle** (RULE — `tests/architecture.test.ts`: a mode's code never reaches the view or the shell). A mode chooses battles and what carries between them; nothing below the mode
 — the kernel, the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
 
@@ -56,7 +63,7 @@ share of Nexus health kept.
 
 What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two duel maps (the Crossing
 and the Pocket, `src/duel/maps.ts`), and a duel played on the Build Phase screen (today a Challenge battle). What it
-lacks is a setup screen, a battle file, a way to choose a difficulty, and an opponent good enough to play.
+lacks is a setup screen, a battle file, and an opponent good enough to play.
 
 ### 3.2 What a Skirmish is set up with
 
@@ -71,19 +78,19 @@ one key.
 | Your Commander | yes | yes | Vasse |
 | The opponent's Commander | yes | yes | Dob Hunter |
 | The opponent's script | yes, as its play style | yes, by name | `balanced` |
-| Difficulty | yes | yes | normal |
 | The map | yes | yes, by name | the Crossing |
 | The seed | shown, editable | yes | from the clock |
 | Rounds at most | no | yes | 8 |
 | Battle Round length | no | yes, in ticks | 360 (30 seconds) |
-| Each side's starting credits | no | yes | the curve's round 1 |
+| The opponent's credits: at the start and each round, as a share of the curve's | yes | yes | 100% |
+| Each side's starting credits, exactly | no | yes | the curve's round 1 |
 | Each side's roster (build menu and power pool) | no | yes | the Commander's whole army |
 | Buildings and units already on the Grid, either side | no | yes | none beyond the Commander's starting package |
 | Settings and Experiments | no | yes, as `--settings` text | the saved settings |
 
-**Difficulty starts as a handicap**: the opponent's starting credits and credits a round, raised or lowered. The scripts
-differ in plan, not in skill, so a better planner is the later kind of difficulty. Whether a handicap is enough is a
-question for Mario to decide by playing (Q92).
+**There is no difficulty setting** (the owner, 2026-11-11): the opponent's script and its credits are what make a
+Skirmish harder or easier, and the setup says them plainly. The scripts differ in plan, not in skill; a smarter
+opponent is a milestone of its own.
 
 **Later (IDEA):**
 
@@ -94,8 +101,14 @@ question for Mario to decide by playing (Q92).
 - **A pre-battle pick**: choosing a few cards of the army before the battle, as Battle Aces chose eight units.
 - **More than one opponent**, or an ally: needs more than two sides in the duel.
 - **More maps**, a random map from a seed, and the player's own start position.
+- **Presets**: named bundles of an opponent's script and credits ("a cautious Dob with a third more credits"), offered
+  as challenges once playing shows which are worth offering.
 - **A smarter opponent**: a planner that reads the public state and writes plans in the duel's own vocabulary
-  ([`scripted-opponent.md`](scripted-opponent.md)), with difficulty as its skill or budget.
+  ([`scripted-opponent.md`](scripted-opponent.md)).
+- **Claude as the opponent**: a language model planning the other side each round, blind and at the same time as the
+  player, under the same rules. The duel already takes a plan from a command or a file each round, which is how a model
+  plays a side today ([`duels.md`](../system-design/duels.md), model against model). A milestone of its own; the game
+  never needs a model to be played.
 - **An endless stand outside a story**, for a high score and theme unlocks: Story's endless mission offered alone.
   Decided once Story's endless stand has been played.
 - **Saving a battle and sharing its seed and file**, and a daily seed.
@@ -112,7 +125,7 @@ becomes a battle a person can play and a duel can measure. Its shape, a first gu
   "seed": 7,
   "rounds": 8,
   "pulseTicks": 360,
-  "difficulty": "normal",
+  "opponentCredits": 1.0,
   "sides": {
     "A": { "commander": "vasse", "credits": 140 },
     "B": { "commander": "dob", "player": "script:rush",
@@ -142,7 +155,8 @@ the same battle file, seed and plans give the same battle, hash for hash, on Nod
 4. **By Mario**: `./bin/terminal-nexus.ts`, Skirmish on the title menu, or a battle file on the command line.
 
 The Skirmish milestone makes a Skirmish the default place to see a change: the playtest skill, the browser page and the
-pictures a pull request shows start from one, where today they start from PERIMETER.
+pictures a pull request shows start from one, where today they start from PERIMETER. PERIMETER is then opened only for
+a change about missions.
 
 ## 4. Story
 
@@ -153,8 +167,8 @@ is the design).
 **A mission exists only inside Story** (RULE — settled 2026-11-11; the Skirmish milestone's rename holds it in code). Any mission still opens directly for testing, by its route
 (`campaign?level=<id>` today, renamed with the mode), without playing the story before it.
 
-Story comes after Skirmish because every mission is a Skirmish setup plus a script and words: a mission built before
-the battle is fun would be built twice.
+Story comes after Skirmish has been played by people, because every mission is a Skirmish setup plus a script and words:
+a mission built before the battle is fun would be built twice.
 
 ## 5. Versus — IDEA
 
@@ -188,7 +202,7 @@ They are two axes on purpose: a tier-1 rare is a strong early card seldom offere
 
 Three rules of thumb (GUIDANCE):
 
-1. **Commons must be enough to win with.** A battle dealt only commons is winnable at normal difficulty; if a rare is
+1. **Commons must be enough to win with.** A battle dealt only commons is winnable against the default opponent; if a rare is
    required, the balance is wrong, not the rarity (Rosewater's rarity doctrine).
 2. **Complexity lives at uncommon and rare.** A common does one readable thing.
 3. **The dealer reads the role.** Three offers of the same role is a dead hand; the dealer prefers variety across roles
@@ -218,6 +232,6 @@ Balance is **measured, then judged**: duels and Skirmish battles played by scrip
 
 ## 9. What this does not decide
 
-- Difficulty beyond a handicap (Q92), and how an endless stand is scored (Q93).
+- How an endless stand is scored (Q93), and which presets of opponent and credits are worth offering.
 - How long a battle should be (Q75), which the worker economy is the first step able to time.
 - Versus, modifiers and every other later idea of section 3.2: each is decided when a milestone asks for it.

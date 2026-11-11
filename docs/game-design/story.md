@@ -16,7 +16,7 @@ Skirmish well, the world feels real, and the last battle feels earned.
 mission is a Skirmish's setup with a script, words and a goal. **Any mission opens directly for testing**, by its route
 (`campaign?level=<id>`, [`routing.md`](../system-design/routing.md)), with no story played before it.
 
-**Story is built one mission at a time, after Skirmish.** A mission pulls in exactly the systems it needs; nothing here
+**Story is built after Skirmish has been played by people** (the owner's friends first, 2026-11-11), one mission at a time. A mission pulls in exactly the systems it needs; nothing here
 is built until a milestone step asks for it, and the mission list below is direction, not a count the game owes. Built
 today: PERIMETER, Vasse's first mission, and three test levels in her story's file, which Averno's story replays with
 him (`campaigns/vasse/campaign.json`, `campaigns/averno/campaign.json`). The code and the files still say *campaign*;
@@ -57,7 +57,7 @@ endless stand, so two players reach the end with different armies inside one sto
   Liberty research does. The story branches by technology, not by mission, so it stays one story with one timeline.
 - **A mission may be replayed** for what was missed; a replay keeps the best of what was collected.
 - **Achievements** (IDEA): harder goals across a story (win a mission without losing a structure, collect a set in a
-  given order) for players replaying it at a higher difficulty.
+  given order) for players replaying it against a stronger opponent.
 
 **A technology is an option, never a stat bonus.** It is something the army could not do before, so the endless stand's
 score measures how well the story was played, not how long it was ground.

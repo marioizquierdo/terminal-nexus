@@ -172,7 +172,7 @@ genuinely fine to leave unanswered until the project reaches them.
 - whether Specials earn a third Build Phase decision channel beside placement and the Nexus Pulse's pick: Milestone 5 builds the slot, Milestone 6 plays the first whole loop, and only then is it defended or retired ([`commander-armies.md`](../game-design/commander-armies.md));
 - drafting modes and player-defined Commanders: designed only when a milestone wants them;
 - the army-breadth caps (structures and tech tree depth, Nexus powers, Specials) and the size of the hand each Nexus Pulse deals;
-- the run's exact numbers (battles, acts, offer size, tier schedule), difficulty ladders, daily seeds and leaderboards ([`game-modes.md`](../game-design/game-modes.md)), retuned by Milestone 11 on runs actually played;
+- presets of opponent and credits offered as challenges, daily seeds and leaderboards ([`game-modes.md`](../game-design/game-modes.md), the later list);
 - hidden reveal conflicts, and building inside enemy coverage;
 - equal-tick mutual Nexus destruction;
 - exact Nexus Pulse timing and research stacking;

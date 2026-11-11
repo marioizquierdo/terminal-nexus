@@ -1,7 +1,7 @@
 # Milestone 12 — Content and Balance Iteration
 
 **Status:** PLANNED
-**Depends on:** Milestone 17 (Skirmish, to play new content in) and Milestone 10 (missions to teach it in); this milestone repeats rather than closing once
+**Depends on:** Milestone 17 (Skirmish, to play new content in); this milestone repeats rather than closing once
 
 Content comes after the experience, on purpose. Mario's brief: "Once we create some vocabulary and
 structure for the single player modes, we should jump right away into building the actual game
@@ -9,12 +9,15 @@ experience and UX. And later, when we have the UI/UX working, we can start addin
 upgrades, iterating on the game modes as we do more playtesting." Everything before this milestone runs
 on disposable bench content. Here the real Citizens and Ravels rosters, the "Commander Army selection"
 workstream that [`commander-armies.md`](../game-design/commander-armies.md) holds back, finally
-get authored, one card at a time, each judged in a Skirmish and in a mission.
+get authored, one card at a time, each judged in a Skirmish. A mission teaches it later, when Story begins.
+
+Since 2026-11-11 this is how the game grows ([the owner's words](../history/feedback/2026-11-11-game-modes.md)): "keep
+adding a few units, keep polishing how to automatically test units, formations, balance adjustments". Each pass also
+improves the testing ground, so the next unit is cheaper to judge ([`testing-ground.md`](../system-design/testing-ground.md)).
 
 ## Question
 
-With the experience working and both modes playable, does each new card make a Skirmish more interesting and
-let a mission teach it, measured rather than asserted, by battles the scripts and the driver play and battles people play?
+With Skirmish playable, does each new unit and card make a Skirmish more interesting, measured rather than asserted, by battles the scripts and the driver play and battles people play?
 
 ## Steps
 

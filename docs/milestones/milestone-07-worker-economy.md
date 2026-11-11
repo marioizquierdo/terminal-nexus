@@ -1,7 +1,7 @@
 # Milestone 7 — Worker Economy
 
 **Status:** PLANNED
-**Depends on:** Milestone 6 (the Battle Round loop that workers act inside), Milestone 17 (Skirmish, where it is first played)
+**Depends on:** Milestone 6 (the Battle Round loop that workers act inside), Milestone 17 (Skirmish, where it is first played); it may be built beside the Skirmish milestone's banner step (the owner, 2026-11-11)
 
 This milestone was pulled forward from the backlog on purpose. [`backlog.md`](backlog.md) deferred a
 full economy until some level needed one, and this is that level. The scope stays narrow: enough worker

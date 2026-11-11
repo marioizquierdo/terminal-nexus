@@ -36,7 +36,6 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Milestone 10 (PERIMETER polished as the tutorial) |
 | [Q87](#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to) | Should the march route be drawn on the Build Phase? | OPEN | After the stance and the banner |
 | [Q91](#q91--should-flyers-be-held-back-where-the-ground-is-tight) | Should flyers be held back where the ground is tight? | OPEN | The first real air roster (milestone 12) |
-| [Q92](#q92--what-does-a-skirmishs-difficulty-change) | What does a Skirmish's difficulty change? | OPEN | Mario's play of the Skirmish milestone |
 | [Q93](#q93--how-is-an-endless-stand-scored) | How is an endless stand scored? | OPEN | The endless stand's milestone |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
@@ -345,22 +344,6 @@ question for a unit's cost, not a rule.
 
 **Recommendation: A**, measured again with the first real air units: it is a question of what air costs, and the engage
 scenarios are the bench to read it on.
-
-### Q92 — What does a Skirmish's difficulty change?
-
-**Status:** OPEN — registered 2026-11-11 with Skirmish ([`game-modes.md`](../game-design/game-modes.md)); proceeds under the
-recommendation, decided by playing.
-
-A Skirmish offers a difficulty. The opponent's scripts (`balanced`, `rush`, `turtle`) differ in plan, not in skill, so
-picking one is picking a style, not a strength.
-
-| Option | Cost |
-| --- | --- |
-| A. **A handicap**: the opponent's credits, at the start and each round, raised or lowered by a named step | Data only, built in a day, easy to read ("the enemy has a third more credits"); a stronger enemy is a richer one, not a cleverer one |
-| B. **A better planner**: a script that reads the public state and answers it, harder with more lookahead | The real thing, and what a player means by difficulty; costs an opponent design ([`scripted-opponent.md`](../game-design/scripted-opponent.md)) before Skirmish can be played |
-| C. **Both, A first** | A now, B when the scripts have been played enough to say where they fail |
-
-**Recommendation: C** — a handicap with the Skirmish milestone, a better planner when playing shows where the scripts fail.
 
 ### Q93 — How is an endless stand scored?
 

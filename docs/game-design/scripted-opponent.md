@@ -51,11 +51,13 @@ On the map the plan could be drawn too, not only said: a faint path from the gro
 
 ### 3.3 Where an opponent planner comes from
 
-A mission's opponent, and later a Skirmish's (Q92), should be **a planner that writes plans in this same vocabulary** — never code that moves units itself. Each round, before the Build Phase, it looks at the public state (what the player has standing, where the survivors are) and chooses the next round's groups and their plans from the mission's budget and rules; the mission can fix some groups by hand and leave others to it. Then:
+A mission's opponent, and a Skirmish's (the opponents milestone), should be **a planner that writes plans in this same vocabulary** — never code that moves units itself. Each round, before the Build Phase, it looks at the public state (what the player has standing, where the survivors are) and chooses the next round's groups and their plans from the mission's budget and rules; the mission can fix some groups by hand and leave others to it. Then:
 
 - the plan is **data**, so the Build Phase can show it and its intention, exactly as it shows a hand-written group;
 - the kernel executes it, deterministic and replayable — the planner runs between rounds, never inside a tick;
-- a harder difficulty is a better planner (or a bigger budget), not a different rule, and "the AI cheated" can be checked by reading its plan;
+- a stronger opponent is a better planner (or more credits), not a different rule, and "the AI cheated" can be checked by reading its plan;
+- a language model is one such planner: Claude, reading the public state as a duel's brief and writing the plan, as a
+  duel's model player already does ([`duels.md`](../system-design/duels.md));
 - it is the tier Story calls "weighted faction heuristics" ([`story.md`](story.md), the opponents a mission brings): a Ravel planner likes fast flanks, a Feudal one siege lines.
 
 **Should the planner see the player's plan?** No — it plans before the player does, from what is public, which is also what makes showing its plan fair. The player sees the raid's intention; the raid never sees the player's buildings until they reveal at the round's start. That asymmetry is Story's whole deal with the player: "the Nexus is ahead of you" (the PERIMETER lore hint) is true mechanically — the player's own Nexus is telling them what is coming.

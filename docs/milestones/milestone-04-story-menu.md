@@ -1,7 +1,7 @@
 # Milestone 4 — Story Menu
 
 **Status:** PLANNED
-**Depends on:** Milestone 3 (the game menu hands off here), Milestone 17 (Skirmish: a mission is a Skirmish setup with a script)
+**Depends on:** Milestone 3 (the game menu hands off here), Milestone 17 (Skirmish: a mission is a Skirmish setup with a script); and Skirmish played by people, the owner's friends first (2026-11-11)
 
 Re-cut on 2026-11-11 for Story ([`story.md`](../game-design/story.md)): a Commander's story is missions in order, and
 what a player collects carries from one to the next. This milestone builds the screen and the record that carry it.

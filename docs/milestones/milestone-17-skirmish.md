@@ -9,13 +9,14 @@ Made current on 2026-11-11 ([the owner's words](../history/feedback/2026-11-11-g
 the center stone for game design and testing." The design it builds against is [`game-modes.md`](../game-design/game-modes.md).
 Most of it exists, since a Challenge battle is already a duel on the Build Phase screen against a script.
 
-**While 17A waits on Mario's playtest**, the next session takes step 17C: it does not depend on his answer about the
-banner. Steps 17D to 17H follow in order.
+**While 17A waits on Mario's playtest**, the next session takes step 17C, which does not depend on his answer about the
+banner; the worker economy (Milestone 7) may also be built beside the banner, at the owner's word. Steps 17D to 17H
+follow in order.
 
 ## Question
 
-Can a player start a Skirmish from the title menu or a battle file — any Commander against any, on a chosen map and
-difficulty — and play one battle they want to play again; and is a Skirmish the place where every change to the game is
+Can a player start a Skirmish from the title menu or a battle file — any Commander against any script, on a chosen map, with
+the opponent's credits set — and play one battle they want to play again; and is a Skirmish the place where every change to the game is
 seen and tested?
 
 ## Steps
@@ -61,8 +62,8 @@ Built only if the owner chooses the stance over the banner in step 17A.
 ### Step 17D — The setup screen
 
 - [ ] A screen before the battle with every required setting the screen sets ([`game-modes.md`](../game-design/game-modes.md),
-      what a Skirmish is set up with): your Commander, the opponent's Commander and script, difficulty, the map, the
-      seed. Every row has a default, so Enter starts at once.
+      what a Skirmish is set up with): your Commander, the opponent's Commander, its script and its credits, the map,
+      the seed. Every row has a default, so Enter starts at once.
 - [ ] Keys, mouse and driver, its hotkeys shown, adapting across the viewport range like every other screen
       ([`ui-patterns.md`](../system-design/ui-patterns.md), the checklist for a new screen).
 - [ ] The result dialog offers the same battle again, a new seed, or the setup screen.
@@ -76,12 +77,13 @@ Built only if the owner chooses the stance over the banner in step 17A.
 - [ ] Two or three battle files checked in as examples and demos (a mirror, a Commander against another with units
       already in place), each played by a test.
 
-### Step 17F — Difficulty
+### Step 17F — The opponent's credits
 
-- [ ] Difficulty as a handicap on the opponent's credits, at the start and each round, by named steps (Q92 proceeds
-      under its recommendation).
-- [ ] Measured: over seeds, the scripts against each other at each step, so each step is shown to be harder than the
-      one before it.
+- [ ] The opponent's credits, at the start and each round, as a share of the curve's (the owner, 2026-11-11: "the
+      skirmish could configure the enemy script playstyle and also the amount of credits. So we don't need to say
+      difficulty"). On the setup screen and in a battle file.
+- [ ] Measured: over seeds, each script against the others at a few shares, so the setup can say plainly how much
+      harder each share plays.
 
 ### Step 17G — Skirmish, the place to test
 
@@ -100,9 +102,10 @@ Each is in the later list of [`game-modes.md`](../game-design/game-modes.md) and
 
 - Versus, and anything over a network.
 - A Build Phase clock, modifiers, a pre-battle pick, more than two sides, random maps.
-- A smarter opponent than the duel scripts (Q92's second option).
+- A smarter opponent than the duel scripts, and Claude as an opponent (Milestone 19).
+- Presets of opponent and credits offered as challenges.
 - The endless stand, and every mission (Story's milestones).
-- The worker economy (Milestone 7).
+- The worker economy (Milestone 7, next, which may be built beside the banner).
 
 ## How it is judged
 

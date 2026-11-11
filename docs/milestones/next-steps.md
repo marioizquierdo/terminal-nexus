@@ -5,9 +5,6 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Read the modes as decided** ([the game modes](../game-design/game-modes.md), [Story](../game-design/story.md),
-  [the Skirmish milestone](milestone-17-skirmish.md)): say whether the Skirmish settings marked required are the right
-  first set, and whether the worker economy should come before Story's menu (the one ordering left for him to swap).
 - **Place the battle banner** (the Battle banner Experiment, on by default; the Skirmish milestone's first step waits on it): start PERIMETER, press `s`, then `t`, move
   the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
   intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an
