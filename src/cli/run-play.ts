@@ -30,11 +30,11 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
-import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, playRound, scriptedPlayer, standingOf, startingTroops } from "../duel/index.ts"
+import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, playRound, scriptedPlayer, standingOf } from "../duel/index.ts"
 import type { Force, RegroupResult, Restoration } from "../match/index.ts"
 import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
-import type { BattleRecord, DemoBuild, DraftChoice, RunBattle, RunSetup, RunState } from "../run/index.ts"
+import type { BattleRecord, DraftChoice, RunBattle, RunSetup, RunState } from "../run/index.ts"
 import {
   CARD_KINDS,
   DEFAULT_RUN_COMMANDER,
@@ -46,12 +46,6 @@ import {
   battleEndedLine,
   battleIntroLines,
   commanderNameOf,
-  demoEndLines,
-  demoOf,
-  demoOpening,
-  demoSetup,
-  demoStatus,
-  DEFAULT_DEMO_BUILD,
   currentBattle,
   draftWords,
   drafted,
@@ -106,8 +100,9 @@ function arrivalsOf(duel: DuelState, callups: BuildContext["callups"]): Incoming
   for (const side of SIDES) {
     const units: string[] = []
     if (duel.carried === null) {
-      units.push(armyOf(duel, side).commander.unit)
-      for (const { unit, count } of startingTroops(duel, side)) for (let n = 0; n < count; n += 1) units.push(unit)
+      const { commander } = armyOf(duel, side)
+      units.push(commander.unit)
+      for (const { unit, count } of commander.start) for (let n = 0; n < count; n += 1) units.push(unit)
     }
     if (side === "A") for (const { unit, count } of callups ?? []) for (let n = 0; n < count; n += 1) units.push(unit)
     if (units.length > 0) forces.push({ player: side, muster: musterOf(duel, side, content[side]), units })
@@ -132,16 +127,13 @@ function arrivalsOf(duel: DuelState, callups: BuildContext["callups"]): Incoming
   }
 }
 
-/** A side's Grid Nexus as a dialog line looks at it. */
-function nexusFocusOf(duel: DuelState, side: Side): DialogLine["focus"] {
-  const nexus = armyOf(duel, side).nexus
-  const anchor = mapOf(duel).nexus[side]
-  const footprint = contentOf(duel)[side].get(nexus).footprint
+/** The enemy's Grid Nexus as a dialog line looks at it. */
+function enemyNexusFocus(duel: DuelState): DialogLine["focus"] {
+  const nexus = armyOf(duel, "B").nexus
+  const anchor = mapOf(duel).nexus.B
+  const footprint = contentOf(duel).B.get(nexus).footprint
   return { tile: centreTile(anchor, footprint), own: tilesOf(anchor, footprint) }
 }
-
-/** The enemy's Grid Nexus as a dialog line looks at it. */
-const enemyNexusFocus = (duel: DuelState): DialogLine["focus"] => nexusFocusOf(duel, "B")
 
 /** A line in the game's own voice, looking at `focus` when given. */
 const said = (text: string, focus: DialogLine["focus"] = null): DialogLine => ({ speaker: null, side: null, unit: null, text, focus })
@@ -215,7 +207,7 @@ function roundContext(position: RunPosition, previous: Partial<BuildContext>, sc
     buildingCards: army.buildings,
     callups: [],
     commander: { contentId: army.commander.unit, name: army.commander.name, portrait: army.commander.portrait },
-    round: { number: duel.round, of: duel.setup.rounds, stage: stageOf(run, battle) },
+    round: { number: duel.round, of: duel.setup.rounds, stage: battleCount(run, battle.number).toLowerCase() },
     carried: restored?.state ?? null,
     absent: restored?.absent ?? [],
     restored: (restored?.restored ?? []).map((restoration) => ({ player: restoration.player, contentId: restoration.contentId })),
@@ -224,41 +216,13 @@ function roundContext(position: RunPosition, previous: Partial<BuildContext>, sc
     mode: position,
     openingStatus: status(opening, "hint"),
     ...(runDraft === undefined ? {} : { runDraft }),
-    // A duel does not carry the battle banner yet (step 11G's last items), so a demo, which is shown, does not offer
-    // it: its Start Battle Round is the plain popup.
-    ...(run.definition.setup.demo === undefined ? {} : { experiments: { ...previous.experiments, battleBanner: "off" as const } }),
   }
   return scene.length === 0 ? context : { ...context, scene }
-}
-
-/** What the header calls the battle: "battle 2 of 3", or a demo's own name, "the mirror". */
-function stageOf(run: RunState, battle: RunBattle): string {
-  const demo = demoOf(run.definition.setup)
-  return demo === undefined ? battleCount(run, battle.number).toLowerCase() : demo.title.toLowerCase()
-}
-
-/** A demo's opening scene: what the game says, what Vasse says from her Nexus and what Dob Hunter says from his. */
-function demoScene(build: DemoBuild, duel: DuelState): DialogLine[] {
-  return demoOpening(build).map((line) => {
-    switch (line.who) {
-      case "vasse":
-        return { speaker: commanderNameOf(armyOf(duel, "A").commander.id), side: "A", unit: null, text: line.text, focus: nexusFocusOf(duel, "A") }
-      case "enemy":
-        return { speaker: commanderNameOf(armyOf(duel, "B").commander.id), side: "B", unit: null, text: line.text, focus: enemyNexusFocus(duel) }
-      case "game":
-        return said(line.text, line.text.startsWith("THE ") ? null : enemyNexusFocus(duel))
-    }
-  })
 }
 
 /** A run's first round: the run's opening words, then its first battle's. */
 function firstRunRound(setup: RunSetup, extra: Partial<BuildContext>): BuildContext {
   const run = newRun(setup)
-  if (setup.demo !== undefined) {
-    const battle = currentBattle(run) as RunBattle
-    const duel = newDuel(duelFor(run, battle))
-    return roundContext({ kind: "run", run, duel }, extra, demoScene(setup.demo, duel), demoStatus(setup.demo))
-  }
   const battle = currentBattle(run) as RunBattle
   const duel = newDuel(duelFor(run, battle))
   const name = commanderNameOf(setup.commander)
@@ -273,7 +237,7 @@ function firstRunRound(setup: RunSetup, extra: Partial<BuildContext>): BuildCont
 /** How a battle's end reads on the Battle Round's result. */
 function endingOf(run: RunState, record: BattleRecord): MissionEnding {
   const opponent = commanderNameOf(run.definition.battles[record.battle - 1]?.opponent ?? "")
-  const goOn = run.definition.setup.demo !== undefined ? "Play again" : run.over ? "Run summary" : "Next battle"
+  const goOn = run.over ? "Run summary" : "Next battle"
   const reason = reasonWords(record, opponent)
   switch (record.outcome) {
     case "won":
@@ -352,14 +316,6 @@ function nextAfter(played: Played, previous: BuildContext, resolved: ResolvedPul
     const next = newDuel(duelFor(run, battle))
     return roundContext({ kind: "run", run, duel: next }, previous, [], `${battleEndedLine(run, record)} Choose the army's draft.`, draftViewOf(run, record))
   }
-  // A demo is over: how it ended, then the same demo again from its first round.
-  if (run.definition.setup.demo !== undefined) {
-    const build = run.definition.setup.demo
-    const fresh = firstRunRound(demoSetup(build), carriedOver(previous))
-    const opponent = commanderNameOf(run.definition.battles[0]?.opponent ?? "")
-    const scene = [said(demoEndLines(build, record.outcome, reasonWords(record, opponent)).join("\n")), ...(fresh.scene ?? [])]
-    return { ...fresh, scene, openingStatus: status(`${demoStatus(build)} Played again from the start.`, "hint") }
-  }
   // The run is over: its summary, then a new run's first round, on the seed the run named for the next.
   const { setup, nextSeed } = run.definition
   const fresh = firstRunRound({ seed: nextSeed, commander: setup.commander }, carriedOver(previous))
@@ -437,7 +393,7 @@ function runPlay(): LevelPlay {
       const start = states[0] as MatchState
       const final = states[states.length - 1] as MatchState
       const timeline = timelineOf(
-        { id: `${run.definition.setup.demo === undefined ? "challenge" : "demo"}-${run.definition.setup.seed}-battle-${battle.number}`, name: stageOf(run, battle) },
+        { id: `challenge-${run.definition.setup.seed}-battle-${battle.number}`, name: `${battleCount(run, battle.number)}` },
         states,
         [...spawnEvents(start, registry), ...events],
         duel.setup.pulseTicks,
@@ -493,25 +449,20 @@ export const RUN_PLAY: LevelPlay = runPlay()
  *  (`RUN_SEED_LIMIT`). The screens choose it, for the title menu's Challenge; a run itself never reads a clock. */
 export const clockSeed = (now: number): number => Math.floor(Math.abs(now)) % RUN_SEED_LIMIT
 
-/** A demo as a level the game opens (`demo?build=mirror`): its build's one battle, played as a run's. */
-export const demoLevel = (build: DemoBuild = DEFAULT_DEMO_BUILD): PlayableLevel => runLevel(demoSetup(build))
-
 /** The route that opens a run: `challenge?seed=1234`, with `&commander=<id>` for any Commander but the default. */
 export function runRoute(setup: RunSetup): string {
-  if (setup.demo !== undefined) return `demo?build=${setup.demo}`
   return `challenge?seed=${setup.seed}${setup.commander === DEFAULT_RUN_COMMANDER ? "" : `&commander=${setup.commander}`}`
 }
 
 /** A run as a level the game opens: its first round is the first battle's, and it is played by `RUN_PLAY`. Throws
  *  for a seed or a Commander a run cannot have. */
 export function runLevel(setup: RunSetup): PlayableLevel {
-  const run = newRun(setup)
-  const demo = demoOf(setup)
+  newRun(setup)
   return {
-    id: demo === undefined ? `challenge-${setup.seed}` : `demo-${demo.build}`,
-    campaign: demo === undefined ? "challenge" : "demo",
-    title: demo === undefined ? `Challenge run, seed ${setup.seed}` : demo.title,
-    rounds: demo === undefined ? RUN_ROUNDS : (currentBattle(run) as RunBattle).duel.rounds,
+    id: `challenge-${setup.seed}`,
+    campaign: "challenge",
+    title: `Challenge run, seed ${setup.seed}`,
+    rounds: RUN_ROUNDS,
     route: runRoute(setup),
     play: RUN_PLAY,
     firstRound: (scrollMargin, extra = {}) => firstRunRound(setup, { ...extra, ...(scrollMargin === undefined ? {} : { scrollMargin }) }),

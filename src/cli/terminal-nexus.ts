@@ -65,8 +65,6 @@ ${example(`${DEFAULT_LEVEL_ROUTE}&round=3`, "its round 3, reached as a player wh
 ${"".padEnd(54)}builds nothing reaches it
 ${example("challenge?seed=1234", "the Challenge run of seed 1234, with Vasse")}
 ${example("challenge?seed=1234&commander=dob", "... with Dob Hunter")}
-${example("demo", "the demo's mirror: Nexus against Nexus, a scripted enemy")}
-${example("demo?build=battle", "the demo's battle: two armies already in the field")}
       round counts Battle Rounds from 1, as the screen does. The levels:
 ${levels}
 

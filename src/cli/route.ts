@@ -8,8 +8,6 @@
 //   challenge                             a Challenge run, on a seed the game chooses, as its title menu row starts one
 //   challenge?seed=1234                   the run of that seed, at its first battle's first round
 //   challenge?seed=1234&commander=dob     ... with another Commander than Vasse
-//   demo                                  the demo's playable mirror: Nexus against Nexus, a scripted enemy
-//   demo?build=battle                     ... or its full-on battle, two armies already in the field
 //   campaign?level=vasse-test-1           that level's Build Phase, at its first round
 //   campaign?level=vasse-test-1&round=3   ... at round 3: a Battle Round, counted from 1 as the screen counts
 //
@@ -30,8 +28,8 @@
 
 import type { PlayableLevel } from "./levels.ts"
 import { DEFAULT_LEVEL, LEVELS, levelById } from "./levels.ts"
-import { DEFAULT_DEMO_BUILD, DEFAULT_RUN_COMMANDER, DEMO_BUILDS, RUN_COMMANDERS, RUN_SEED_LIMIT, isDemoBuild, isRunSeed } from "../run/index.ts"
-import { demoLevel, runLevel } from "./run-play.ts"
+import { DEFAULT_RUN_COMMANDER, RUN_COMMANDERS, RUN_SEED_LIMIT, isRunSeed } from "../run/index.ts"
+import { runLevel } from "./run-play.ts"
 
 /** The title menu's places: each opens one of its screens, or (Challenge) does what its row does. */
 export type TitlePlace = "menu" | "campaign" | "challenge" | "settings" | "about"
@@ -130,16 +128,6 @@ function challenge(query: Query, problems: string[]): Destination | null {
   return { kind: "level", level: runLevel({ seed: Number(seed), commander: commander ?? DEFAULT_RUN_COMMANDER }), round: 1 }
 }
 
-/** `demo`: one of the demo's builds, the mirror unless another is named: the playable level, or the full-on battle. */
-function demo(query: Query, problems: string[]): Destination | null {
-  const build = query.get("build")?.toLowerCase() ?? DEFAULT_DEMO_BUILD
-  if (!isDemoBuild(build)) {
-    problems.push(`no demo build "${build}": the builds are ${listed(DEMO_BUILDS)}`)
-    return null
-  }
-  return { kind: "level", level: demoLevel(build), round: 1 }
-}
-
 /**
  * Every place a route can name, in the title menu's order after the menu itself. **Adding a place is one entry
  * here.**
@@ -166,12 +154,6 @@ export const PLACES: Readonly<Record<string, Place>> = {
     },
     resolve: challenge,
     routes: () => ["challenge", ...RUN_COMMANDERS.map((commander) => formatRoute({ kind: "level", level: runLevel({ seed: 1, commander }), round: 1 }))],
-  },
-  demo: {
-    opens: "the demo, made to be shown: the mirror, a playable level against a scripted enemy (about three minutes), or the battle, two armies already in the field",
-    query: { build: `which one: ${listed(DEMO_BUILDS)}; ${DEFAULT_DEMO_BUILD} unless given` },
-    resolve: demo,
-    routes: () => [...DEMO_BUILDS.map((build) => formatRoute({ kind: "level", level: demoLevel(build), round: 1 }))],
   },
   settings: titlePlace("settings", "the title menu's Settings screen"),
   about: titlePlace("about", "the title menu's About screen: who made the game, and which build this is"),

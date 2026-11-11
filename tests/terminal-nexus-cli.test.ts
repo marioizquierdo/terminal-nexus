@@ -101,7 +101,7 @@ test("a route that is not a place is refused before any screen, every problem at
   assert.match(result.stderr, /no level "nowhere": the levels are vasse-test-1 \(/)
   const place = runTerminalNexus(["--at", "nowhere"])
   assert.equal(place.status, 2)
-  assert.match(place.stderr, /no place named "nowhere": the places are menu, campaign, challenge, demo, settings and about/)
+  assert.match(place.stderr, /no place named "nowhere": the places are menu, campaign, challenge, settings and about/)
   assert.doesNotMatch(place.stderr + place.stdout, new RegExp(ESC))
 })
 

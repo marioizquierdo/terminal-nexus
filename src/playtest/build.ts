@@ -141,9 +141,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     exportDestination: "Not copied anywhere: this is a scripted playtest.",
     activity,
     activityExportDestination: "Not copied anywhere: this is a scripted playtest.",
-    // What the opened round says about the Experiments (a demo turns the battle banner off) stands over the full
-    // set a settings import carries, as it does in the game, which hands the same set to the round it opens.
-    ...(options.experiments === undefined ? {} : { experiments: opened.experiments ?? options.experiments }),
+    ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
   }
   const terminal = { columns: options.columns ?? 80, rows: options.rows ?? 24 }
   // Below the floor the live screen shows its "terminal too small" notice instead of this one, so

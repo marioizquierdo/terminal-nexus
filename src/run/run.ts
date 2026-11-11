@@ -16,7 +16,6 @@ import { Pcg32, STREAM_RUN } from "../rng/pcg32.ts"
 import type { DraftChoice } from "./draft.ts"
 import { REQUISITION_FOR_SKIPPING, choose, dealDraft } from "./draft.ts"
 import type { DraftRecord } from "./draft.ts"
-import { demoDefinition } from "./demo.ts"
 import { KIND_WORDS, cardByKey, keyOf, ownedCards, startingRoster } from "./army.ts"
 import type { BattleOutcome, BattleRecord, RunAct, RunBattle, RunDefinition, RunSetup, RunState, RunSummary } from "./types.ts"
 
@@ -70,7 +69,6 @@ export function runDefinition(setup: RunSetup): RunDefinition {
     throw new Error(`no Commander "${setup.commander}" for a run (${RUN_COMMANDERS.map((id) => `"${id}"`).join(", ")})`)
   }
   duelArmy(setup.commander)
-  if (setup.demo !== undefined) return demoDefinition(setup)
   const rng = Pcg32.seeded(BigInt(setup.seed), STREAM_RUN)
   // The policies shuffled (Fisher–Yates, from the run's stream), then each battle's seed, then the next run's seed:
   // drawn in that order always, so adding a draw at the end never moves one before it.

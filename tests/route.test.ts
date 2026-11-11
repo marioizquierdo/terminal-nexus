@@ -45,8 +45,6 @@ test("each route parses to the place it names", () => {
     ["CAMPAIGN?Level=vasse-test-1&ROUND=2", "level vasse-test-1 round 2"],
     ["campaign?level=vasse%2Dtest%2D1&round=%32", "level vasse-test-1 round 2"],
     // Challenge: with a seed, that run's first battle; without one, the title menu's place, which picks a seed.
-    ["demo", "level demo-mirror round 1"],
-    ["demo?build=Battle", "level demo-battle round 1"],
     ["challenge?seed=1234", "level challenge-1234 round 1"],
     ["challenge?seed=1234&commander=Dob", "level challenge-1234 round 1"],
     ["challenge?commander=averno", "title challenge"],
@@ -73,9 +71,8 @@ test("every route the game has reads back to itself, and each place lists the ro
   assert.equal(new Set(routes).size, routes.length, "a route is listed twice")
   for (const route of routes) assert.equal(formatRoute(parseRoute(route)), route)
   // Every place, every level and every round of it: the table the routing page, --help and the opening test read.
-  assert.deepEqual(PLACE_NAMES, ["menu", "campaign", "challenge", "demo", "settings", "about"])
-  // The demo is a place that opens a level at once, so it names its builds' routes, not its own name.
-  for (const name of PLACE_NAMES) assert.ok(name === "demo" ? routes.includes("demo?build=mirror") && routes.includes("demo?build=battle") : routes.includes(name), `the place ${name} is not among the routes`)
+  assert.deepEqual(PLACE_NAMES, ["menu", "campaign", "challenge", "settings", "about"])
+  for (const name of PLACE_NAMES) assert.ok(routes.includes(name), `the place ${name} is not among the routes`)
   for (const level of LEVELS) {
     for (let round = 1; round <= level.rounds; round += 1) {
       assert.ok(routes.includes(formatRoute({ kind: "level", level, round })), `${level.id} round ${round} is not among the routes`)
@@ -88,14 +85,14 @@ test("every route the game has reads back to itself, and each place lists the ro
   // A title place's route is its name, and opens itself.
   for (const name of PLACE_NAMES) {
     const destination = parseRoute(name)
-    // The Campaign names its levels' rounds too, and Challenge a run of each Commander; the demo opens its mirror.
-    if (name !== "campaign" && name !== "challenge" && name !== "demo") assert.deepEqual(PLACES[name]?.routes(), [name])
-    assert.equal(destination.kind, name === "demo" ? "level" : "title")
+    // The Campaign names its levels' rounds too, and Challenge a run of each Commander.
+    if (name !== "campaign" && name !== "challenge") assert.deepEqual(PLACES[name]?.routes(), [name])
+    assert.equal(destination.kind, "title")
   }
 })
 
 test("a broken route is refused whole: every problem at once, each naming what exists", () => {
-  const places = "the places are menu, campaign, challenge, demo, settings and about"
+  const places = "the places are menu, campaign, challenge, settings and about"
   const levels = `the levels are ${LEVELS.map((level) => `${level.id} (${level.title}, rounds 1 to ${level.rounds})`).join(", ")}`
   const cases: ReadonlyArray<readonly [string, readonly string[]]> = [
     ["nowhere", [`no place named "nowhere": ${places}`]],
@@ -126,8 +123,6 @@ test("a broken route is refused whole: every problem at once, each naming what e
         'seed must be a whole number from 0 to 999999, not "lots"',
       ],
     ],
-    ["demo?build=nowhere", ['no demo build "nowhere": the builds are mirror and battle']],
-    ["demo?seed=1", ["demo takes no seed: it reads build"]],
     ["challenge?seed=1000000", ['seed must be a whole number from 0 to 999999, not "1000000"']],
   ]
   for (const [route, expected] of cases) assert.deepEqual(problemsOf(route), expected, `"${route}"`)
@@ -149,8 +144,8 @@ test("each title menu row that opens a place names its route, the route of the p
     assert.ok(item.route !== undefined, `the ${item.id} row names no route`)
     assert.deepEqual(parseRoute(item.route), { kind: "title", place: item.id }, `the ${item.id} row's route leads elsewhere`)
   }
-  // Every title menu place but the menu itself has its row, and only one; the demo is reached by its route alone.
-  for (const name of PLACE_NAMES.filter((place) => place !== "menu" && place !== "demo")) {
+  // Every title menu place but the menu itself has its row, and only one.
+  for (const name of PLACE_NAMES.filter((place) => place !== "menu")) {
     assert.equal(routes.filter((route) => route === name).length, 1, `${name} is named by ${routes.filter((route) => route === name).length} rows`)
   }
 })
