@@ -655,4 +655,11 @@ targets missed their Nexus by a column, because the generator placed a three-wid
 A map meant to be even is checked even (the same army on both sides, `--swap`, a dozen seeds) before any result on it is
 read; and a variant's own mirror twice over is the map again (`tests/trial.test.ts`), so the check itself can be trusted.
 
+### When a document moves, grep its name, not its links
+
+The game modes reorganisation moved two design documents and rewrote every Markdown link to them; the link checker
+passed. A third kind of reference survived: a path in backticks (`docs/game-design/runs.md` in a table cell), which no
+link checker reads, found only by a fresh audit. After a move, grep the bare file name across docs, code comments and
+skills, and fix every hit, whether or not it is a link.
+
 - **Separate what a test is about from what it walks through.** A test of a level's layout opened its later rounds by playing every battle with nothing built, so its pass depended on a property of the level's content it did not mean to check. Walk the structure with the battles forced to go on, and check the content property once, by name, with a failure message that gives the margin.
