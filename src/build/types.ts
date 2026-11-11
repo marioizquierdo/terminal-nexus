@@ -345,12 +345,12 @@ export type DialogLine = Readonly<{
   focus: DialogFocus | null
 }>
 
-/** A card on a run's draft, as the screen reads it: plain words, from the run (docs/game-design/runs.md). `key` names it to the
+/** A card on a run's draft, as the screen reads it: plain words, from the run (docs/history/challenge-runs-design.md). `key` names it to the
  *  run (`structure:turret`); `family` is its kind in a player's words ("Structure", "Nexus power", "Doctrine"). */
 export type RunDraftCard = Readonly<{ key: string; name: string; family: string; rarity: string; role: string; line: string }>
 
 /**
- * **A run's draft**, waiting at the start of a battle's first round (docs/game-design/runs.md, the army): three cards to take
+ * **A run's draft**, waiting at the start of a battle's first round (docs/history/challenge-runs-design.md, the army): three cards to take
  * one of, the cards the army holds that it could remove instead, and the requisition to take instead of either. The round
  * opens on it and does not close until the player has chosen, because what is chosen changes the army the round is
  * played with. Plain data: the run (`src/run/`) deals it, the screen only reads it.

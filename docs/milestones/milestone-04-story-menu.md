@@ -1,9 +1,12 @@
-# Milestone 4 — Campaign Menu
+# Milestone 4 — Story Menu
 
 **Status:** PLANNED
-**Depends on:** Milestone 3 (the game menu hands off here)
+**Depends on:** Milestone 3 (the game menu hands off here), Milestone 17 (Skirmish: a mission is a Skirmish setup with a script); and Skirmish played by people, the owner's friends first (2026-11-11)
 
-This milestone is mostly infrastructure, and that is expected. Level 1 is the first mission, so there
+Re-cut on 2026-11-11 for Story ([`story.md`](../game-design/story.md)): a Commander's story is missions in order, and
+what a player collects carries from one to the next. This milestone builds the screen and the record that carry it.
+
+This milestone is mostly infrastructure, and that is expected. Mission 1 is the tutorial, so there
 is no earlier unlock and no earlier enemy sighting: the screen can show only a baseline. Milestone 10's
 second mission (RIGHT OF SALVAGE) is what exercises it, when progress moves, an army grows and enemy
 intel has something in it. Building the screen empty but correct now is cheaper than building it later
@@ -11,20 +14,20 @@ and finding the shape was wrong.
 
 ## Question
 
-From the game menu's "Start New Game" or "Load Game", can a player reach one screen that shows
-campaign progress, the current mission, their own army (unlocked units, buildings, Nexus powers and
-generals) and enemy intel (discovered enemy units, buildings, Nexus powers, generals and past mission
+From the title menu's Story row, can a player choose a Commander's story and reach one screen that shows
+its progress, the current mission, the technologies collected so far, their own army (units, buildings, Nexus powers and
+Commanders) and enemy intel (discovered enemy units, buildings, Nexus powers, Commanders and past mission
 reports), and launch the current mission from it?
 
 ## What it builds
 
-- **Campaign state.** Which campaign, which mission is current, and what the unlock record says is
+- **Story state.** Which Commander's story, which mission is current, what technologies it has collected, and what the record says is
   available. The record is a flat, checked-in list, not a real save format yet (Q31). On the first
   playthrough it is nearly empty by construction: nothing is unlocked before Mission 1 is completed.
-- **Army panel.** Unlocked units, buildings, Nexus powers and generals. "Generals" means exactly the
+- **Army panel.** Units, buildings, Nexus powers and Commanders available. "Commanders" means exactly the
   Commander and Nexus Symbol of [`docs/game-design/commander-armies.md`](../game-design/commander-armies.md),
-  not a new roster concept. The panel reads the unlock record and computes nothing new.
-- **Enemy intel panel.** Discovered enemy units, buildings, Nexus powers, generals and mission reports.
+  not a new roster concept. The panel reads the record and computes nothing new.
+- **Enemy intel panel.** Discovered enemy units, buildings, Nexus powers, Commanders and mission reports.
   This is new ground: no design document yet describes a persistent, cross-mission record of what the
   player has seen of the enemy. The player's view in the grid engine is a live visibility filter for
   one Battle Round, not a remembered log. The discovery rule is an open question (below) and is settled before
@@ -38,9 +41,10 @@ reports), and launch the current mission from it?
 
 ## Steps
 
-### Step 4A — Campaign state and launch
+### Step 4A — Story state and launch
 
-- [ ] The flat unlock record (Q31) and the current mission.
+- [ ] The flat record of what each story has collected (Q31) and its current mission.
+- [ ] Completing Vasse's tutorial opens Averno's and Dob Hunter's stories as two new rows ([`story.md`](../game-design/story.md), progress and the Story menu).
 - [ ] Launching the mission into Milestone 5's Build Phase with that mission's map and trigger list.
 
 ### Step 4B — Army and intel panels
@@ -55,16 +59,19 @@ reports), and launch the current mission from it?
 - [ ] The existing report module's output is saved and shown for each completed mission.
 - [ ] Artifact entries appear here once Milestone 9 produces them.
 
-This is the Campaign's shell; Milestone 11 is the Challenge's. They share the army panel from step 4B,
-and whichever is built second reuses it rather than drawing a second one.
+### Step 4D — Technologies that carry
+
+- [ ] What a mission grants (its main goal, a bonus goal, a choice after it) is recorded for that story, and every later
+      mission offers it on top of its own.
+- [ ] The choice after a mission: a small offer dealt by rarity and tier, some offers exclusive pairs
+      ([`story.md`](../game-design/story.md), what carries). Replaying a mission keeps the best of what was collected.
 
 ## Out of scope
 
 - A real save and progression system. Q31 stays open: this milestone reads and writes the same flat
-  record that Milestone 3's Campaign option reads, nothing richer.
-- A full mission-select map or a branching campaign graph. The campaign design's belief ramp is linear
-  through the missions the roadmap actually builds.
-- Enemy intel content beyond the mechanism. Level 1 has nothing to discover yet.
+  record the title menu's Story row reads, nothing richer.
+- A mission-select map or a branching graph of missions. A story is linear; it branches by technology, not by mission.
+- Enemy intel content beyond the mechanism. Mission 1 has nothing to discover yet.
 
 ## Decision it waits on
 
@@ -77,7 +84,7 @@ from the event stream the way the report module already works. The question is r
 
 ## Done when
 
-- [ ] The campaign screen renders correctly with an empty army and intel state.
+- [ ] The Story screen renders correctly with an empty army and intel state.
 - [ ] Launching the current mission hands off into Milestone 5.
 - [ ] Mission reports reuse the existing report module.
 - [ ] `./scripts/check-repository.sh` passes.

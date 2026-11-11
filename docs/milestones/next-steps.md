@@ -5,11 +5,11 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Place the battle banner** (the Battle banner Experiment, on by default): start PERIMETER, press `s`, then `t`, move
+- **Place the battle banner** (the Battle banner Experiment, on by default; the Skirmish milestone's first step waits on it): start PERIMETER, press `s`, then `t`, move
   the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
   intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an
-  enemy Nexus, so the default banner is the level's own target (PERIMETER's line, defensive). In a Challenge run the panel offers the banner too, but a duel does not carry it yet, so moving it changes nothing.
-- **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge run, or
+  enemy Nexus, so the default banner is the level's own target (PERIMETER's line, defensive).
+- **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge battle, or
   `./bin/grid.ts scenarios/movement/march-lines` and `scenarios/movement/march-commander`. Ranged units walk at half speed while a trooper
   is near and fall in behind on the move; Vasse is a regular troop; a unit keeps its target until it falls or it has
   gone 2½ seconds unable to strike it, or at once if its enemy is walled in, then takes one it can reach, further off than
@@ -23,17 +23,13 @@ it is done.*
   origin/main --profile --jobs 4` sets the bench beside main. Units no longer turn between two walled-in enemies every
   tick; watch a narrow pass (`./bin/grid.ts engage-gap2-melee-vs-mix`) and say whether the melee army's waiting reads
   better.
-- **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge run or any campaign level. Rounds are 30
+- **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge battle (the title menu's Challenge row, which the Skirmish milestone turns into Skirmish) or any mission. Rounds are 30
   seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
   seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2
-  standing) are a starting point to feel. The stance is the next step.
+  standing) are a starting point to feel. The banner is the next step.
 - **Try a building's actions** (his rule of 2026-10-22): in any Build Phase, `e` for Explore Map, onto a Barracks:
   `c` buys its production line (15 credits, one more trooper a wave), `c` again undoes it; onto a Turret, `c` heavy
   rounds, `v` and `b` its two firing modes. The look is for his UX passes.
-- **Play a Challenge run** (the runs milestone's first step): `./bin/terminal-nexus.ts`, then `2` for Challenge, or
-  `./bin/terminal-nexus.ts --at 'challenge?seed=1'` for a chosen seed. Three battles against Dob Hunter's army on the
-  Crossing, each a duel of up to six rounds; a lost battle ends the run on its summary, and the next run begins.
-  Runs play on the armies as they are: they say nothing about balance yet.
 - **Play the pathfinding milestone's wrap-up** ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)):
   `./bin/grid.ts scenarios/movement/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
   troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/movement/march-commander` (Vasse is a regular troop; the troopers pass her
@@ -73,7 +69,7 @@ it is done.*
   Hunter against each other with three scripts, and [`duels.md`](../system-design/duels.md) says how to set two model
   agents against each other. Three things the duels found wait on his word, measured again on the new routes ([the report](../history/reports/2026-10-20-pathfinding-measured.md)):
   Averno still wins most (65% of 72 scripted duels), Ravel buildings train about half the strength a credit Citizen ones
-  do and Dob wins mostly when he holds, and Dob has no campaign yet. The same duels found that an early lead decides
+  do and Dob wins mostly when he holds, and Dob has no story yet. The same duels found that an early lead decides
   a duel almost every time; with the Nexus fighting back a round-1 march no longer ends one, but the side ahead after
   round 2 still wins 50 of 54 ([the report](../history/reports/2026-10-21-the-march.md)), the armies' next pass.
 - **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
@@ -157,7 +153,7 @@ Small, none blocking.
 **From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):
 
 - Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
-  back in a round 4 that does not exist. The campaign's second test level shows it:
+  back in a round 4 that does not exist. Vasse's second test level shows it:
   `--at 'campaign?level=vasse-test-2&round=3'`.
 - Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
   enemy like every unit, from just behind the line.
@@ -172,7 +168,7 @@ Small, none blocking.
 - In monochrome an arriving unit is drawn at full strength (the wash shows only where
   colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
   "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
-- Both of her campaign's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
+- Both of her story's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
   nothing new), so what a level offers changes nothing on screen yet; it shows when a level unlocks a card of
   its own (the Nexus Pulse step).
 - PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
@@ -239,7 +235,7 @@ Small, none blocking.
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
-- Only the buildings a campaign level offers spawn: a barracks in a `grid` scenario still spawns nothing,
+- Only the buildings a mission offers spawn: a barracks in a `grid` scenario still spawns nothing,
   and the bench Hatchery there keeps its own breeding.
 
 

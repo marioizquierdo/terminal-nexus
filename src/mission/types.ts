@@ -1,10 +1,10 @@
-// A mission as data — campaigns.md: "a sequence of Build Phase / Battle Round cycles driven
+// A mission as data — story.md: "a sequence of Build Phase / Battle Round cycles driven
 // by triggers", a trigger being "a condition, and the actions taken when it holds".
 //
 // This file is the **simulation band**, built at the size PERIMETER needs — `spawn`, `target`, `commitPlan`,
 // `win`, `lose` — the **presentation band** at its smallest — `say`, a line of dialog when a round's Build
 // Phase opens — and the four conditions its trigger list uses. The shapes follow the sketch in
-// campaigns.md (`{ pulse: 1, tick: 0 }`, `{ event: "pulse.end", pulse: 3 }`, `{ spawn: {...} }`)
+// story.md (`{ pulse: 1, tick: 0 }`, `{ event: "pulse.end", pulse: 3 }`, `{ spawn: {...} }`)
 // so that sketch and this file read alike. **A mission never contains a function**
 // (missions are declarative triggers, not a scripting API; whether that stays true is an open question,
 // Q39, answered: declarative triggers): the vocabulary grows here, in code, one typed kind at a time, and a mission is only ever these
@@ -111,7 +111,7 @@ export type SimulationAction = SpawnAction | TargetAction | CommitPlanAction | W
 export type SayFocus = Readonly<{ unit: string }> | Readonly<{ group: string }> | Readonly<{ region: string }>
 
 /**
- * **The presentation band, at its smallest** (campaigns.md, "two bands of trigger actions"): a line of
+ * **The presentation band, at its smallest** (story.md, "two bands of trigger actions"): a line of
  * dialog, shown in the dialog at the bottom of the screen when the round's Build Phase opens, advanced by the
  * player and skipped by Esc. The trigger runner never reads it, so a mission's lines can never change what
  * its Pulses resolve (`src/match/mission.ts`).
@@ -149,7 +149,7 @@ export type TriggerDefinition = Readonly<{
 
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
- * the part of campaigns.md's `MissionDefinition` PERIMETER needs — no opponent army or objectives list yet.
+ * the part of story.md's `MissionDefinition` PERIMETER needs — no opponent army or objectives list yet.
  * What the player may build and draft, the credits and the map are the level's that plays it (a campaign's
  * level in its army: `src/armies`), not the mission's; and what a building spawns in its battles is the
  * building's own, on its card in its army (`spawns`).

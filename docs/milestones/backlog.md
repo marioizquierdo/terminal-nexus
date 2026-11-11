@@ -1,7 +1,7 @@
 # Backlog — work no milestone owns yet
 
-The campaign is built one level at a time, and a level pulls in only the piece of this list it needs, the
-day its own mission needs it. Nothing here is more authorized than it was; it is guidance, not a plan.
+Skirmish and Story are built one step at a time, and a step pulls in only the piece of this list it needs, the
+day its own battle or mission needs it. Nothing here is more authorized than it was; it is guidance, not a plan.
 
 ## Completing the Pulse kernel
 
@@ -15,7 +15,7 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
 - **Banners.** A rally point a player plants for their troops to head for before the enemy's Grid Nexus. The owner,
   2026-10-20: set in the Build Phase, as part of the plan, "when we can prove there is a good plan for it" on
   screen; until then there is no banner. The pathfinding milestone leaves the goal a banner would be: one more place
-  a side heads for, like a campaign level's target. The owner, 2026-10-26, added attack and hold banners, the
+  a side heads for, like a mission's target. The owner, 2026-10-26, added attack and hold banners, the
   Commander always following the primary, and skirmish banners on buildings; designed as an idea in
   [`movement.md`](../system-design/movement.md), banners, with how they should arrive an open question.
 - **The units to come.** The owner, 2026-10-21: "Every unit in the games will have its own personality ... special
@@ -65,7 +65,7 @@ day its own mission needs it. Nothing here is more authorized than it was; it is
   event so presentation and players can both explain a choice.
 - **Visibility projection.** `PlayerView` and visible-event filtering, so hidden plans stay hidden.
   Untested until something is hidden; a scripted single-player opponent
-  ([`campaigns.md`](../game-design/campaigns.md), campaign opponent policies) may not need it, so a level
+  ([`story.md`](../game-design/story.md), the opponents a mission brings) may not need it, so a level
   pulls it in only once a mission actually hides something from the player.
 - **Replay format.** The full game log: content locks, hashes, versions, committed plans per Build Phase,
   and a `verify` path that re-simulates recorded inputs rather than re-running a scenario file.
@@ -189,12 +189,12 @@ genuinely fine to leave unanswered until the project reaches them.
 - whether Specials earn a third Build Phase decision channel beside placement and the Nexus Pulse's pick: Milestone 5 builds the slot, Milestone 6 plays the first whole loop, and only then is it defended or retired ([`commander-armies.md`](../game-design/commander-armies.md));
 - drafting modes and player-defined Commanders: designed only when a milestone wants them;
 - the army-breadth caps (structures and tech tree depth, Nexus powers, Specials) and the size of the hand each Nexus Pulse deals;
-- the run's exact numbers (battles, acts, offer size, tier schedule), difficulty ladders, daily seeds and leaderboards ([`game-modes.md`](../game-design/game-modes.md)), retuned by Milestone 11 on runs actually played;
+- presets of opponent and credits offered as challenges, daily seeds and leaderboards ([`game-modes.md`](../game-design/game-modes.md), the later list);
 - hidden reveal conflicts, and building inside enemy coverage;
 - equal-tick mutual Nexus destruction;
 - exact Nexus Pulse timing and research stacking;
-- scoring and long-term skirmish progression;
-- campaign cast, sequence, and ending;
+- scoring and long-term progression beyond a story (an endless stand's high score is Story's);
+- each story's cast, sequence, and ending;
 - final title availability and trademark clearance;
 - sound direction;
 - commercial, open-source or community release model;
@@ -205,15 +205,15 @@ genuinely fine to leave unanswered until the project reaches them.
 
 ## Deferred systems
 
-### Local campaign opponents
+### Local opponents
 
-Single-player opponents begin as deterministic local policies receiving the same bounded planning view and legal action vocabulary as a human. Scripted tutorials, weighted heuristics, and limited rollouts may share that interface. A campaign policy may cheat only when the mission communicates the exception.
+Single-player opponents begin as deterministic local policies receiving the same bounded planning view and legal action vocabulary as a human. Scripted tutorials, weighted heuristics, and limited rollouts may share that interface. A mission's policy may cheat only when the mission communicates the exception; a Skirmish's never does.
 
 ### Multiplayer and model-driven AI
 
 Hidden simultaneous plans and deterministic resolution fit asynchronous or live multiplayer, but networking waits for exact replays, content locks, plan validation, reveal rules, and a balanced two-faction match.
 
-An LLM may later return a constrained legal plan, provide dialogue, answer contextual help, or add campaign texture. It does not mutate rules or become a dependency of the core game.
+An LLM may later return a constrained legal plan, provide dialogue, answer contextual help, or add story texture. It does not mutate rules or become a dependency of the core game.
 
 ### Sound
 

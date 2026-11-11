@@ -1,11 +1,11 @@
 # Milestone 7 — Worker Economy
 
 **Status:** PLANNED
-**Depends on:** Milestone 6 (the Battle Round loop that workers act inside)
+**Depends on:** Milestone 6 (the Battle Round loop that workers act inside), Milestone 17 (Skirmish, where it is first played); it may be built beside the Skirmish milestone's banner step (the owner, 2026-11-11)
 
 This milestone was pulled forward from the backlog on purpose. [`backlog.md`](backlog.md) deferred a
 full economy until some level needed one, and this is that level. The scope stays narrow: enough worker
-behaviour for PERIMETER's own small deposit, not the full economy the backlog still holds (storage and
+behaviour for a deposit on a Skirmish map, not the full economy the backlog still holds (storage and
 warehouses, a second resource, target scoring for combat).
 
 ## Question
@@ -21,7 +21,7 @@ content, for the first time?
   `docs/history/milestones/milestone-02-campaign-design.md` is amended to include it.
 - **Job assignment.** Workers pick the closest available job by deterministic path distance (the
   worker rules in [`docs/system-design/grid-engine.md`](../system-design/grid-engine.md), still
-  unbuilt). For PERIMETER the only job is harvesting the mission's own deposit tiles.
+  unbuilt). The only job is harvesting a map's deposit tiles.
 - **Harvesting.** Workers produce in place, continuously, with no bundles carried home (the
   recommendation in Q7, adopted here). A deposit is finite and depletes for good. Up to five workers
   may share one: the tile itself and its four orthogonal neighbours.
@@ -45,13 +45,12 @@ content, for the first time?
 
 ### Step 7C — Income across battles
 
-- [ ] Decide how gathered resource and the per-battle allotment combine within a match. Until now both
-      modes run on an allotment per battle, as Mechabellum's rounds do, and that is enough for a run
-      to play (see the economy notes in [`docs/game-design/game-modes.md`](../game-design/game-modes.md)).
-- [ ] Record whether anything should persist between a run's battles (Q40, option C).
+- [ ] Decide how gathered resource and the credits a round brings combine within a battle. Until now a
+      battle runs on credits by round, as Mechabellum's rounds do.
+- [ ] Time a Skirmish with an economy, in minutes, for the question of how long a battle is (Q75).
 
-In the build order this comes after the Challenge mode's first run (Milestone 11), on purpose: the
-economy is what makes a battle feel like Terminal Nexus, not what makes it playable.
+In the build order this comes right after Skirmish, on purpose: the economy is what makes a battle feel like
+Terminal Nexus, not what makes it playable, and Story's endless stand asks the player to balance it.
 
 ## Out of scope
 
@@ -74,6 +73,6 @@ tell the resource total is moving because of that worker, not by coincidence.
 ## Done when
 
 - [ ] Worker production is a real build-menu option.
-- [ ] Job assignment and harvesting work on PERIMETER's own deposit.
+- [ ] Job assignment and harvesting work on a Skirmish map's deposit, and a battle file can place one.
 - [ ] Q7 is updated to say it is partly adopted (produce in place) and still open for the storage cap.
 - [ ] `./scripts/check-repository.sh` passes.

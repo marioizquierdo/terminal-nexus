@@ -567,7 +567,7 @@ function nextLine(context: BuildContext, state: BuildState): BuildState {
 
 // --- The run's draft -------------------------------------------------------------------------------
 //
-// **A run's draft** (a named pattern, docs/game-design/runs.md): after a won battle three cards, to take one of — or a card
+// **A run's draft** (a named pattern, docs/history/challenge-runs-design.md): after a won battle three cards, to take one of — or a card
 // the army holds, to remove — or the requisition instead. The second popup the player does not open: a round whose
 // context carries a `RunDraft` opens on it (behind its scene, when it has one), and it **cannot be dismissed** — Esc,
 // `x`, a right click and a click outside only say what to do — because what is chosen changes the army the round is

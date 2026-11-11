@@ -43,7 +43,7 @@ the measurement ends before believing it (DEVELOPMENT.md, "Testing").
 
 ## 3. Run it and keep it
 
-1. **Commit first.** A run on uncommitted code, armies, campaigns or maps is written down with its build as
+1. **Commit first.** A run on uncommitted code, armies, stories or maps is written down with its build as
    `<sha>+uncommitted`; never keep one for the record. One rule change per kept measurement: if a second change lands before the result is kept, play
    it again, or say in the report which change it lacks.
 2. **Play it in parallel**, in the background, with the machine otherwise quiet:

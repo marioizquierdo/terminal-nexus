@@ -1,7 +1,7 @@
 # Milestone 13 — The Nexus Pulse
 
 **Status:** PLANNED
-**Depends on:** Milestone 8 (the Commander, and the Nexus Pulse's dealing by schedule, step 8C); where it sits in the build order is Mario's call
+**Depends on:** Milestone 8 (the Commander, and the Nexus Pulse's dealing by schedule, step 8C), Milestone 17 (Skirmish, where powers are played); placed after the first content pass (2026-11-11: "keep defining new Nexus upgrades for the important commanders")
 
 The owner, 2026-10-07, once the in-match draft had its name: "Perhaps we will need to design a milestone dedicated
 only to improving the Nexus Pulse experience, with dedicated UI and more specific powers." The Commander milestone
@@ -32,10 +32,10 @@ Not started. Each waits for Mario's word, and the order is a first guess.
       Order's upgrade, Mutual Support Standard, Field Triage, Plating Revision, Emergency Procedure, Restoration Order (once
       Expedited Restoration), Early Warning — the effect kinds they need (`modifyRule`, `reveal`) with them.
 - [ ] The hand every few rounds that deals legendaries: how often, and what a legendary may do.
-- [ ] Every new power is proved in tests and played in a mission.
+- [ ] Every new power is proved in tests and played in a Skirmish.
 
 ## Out of scope
 
-The run draft between battles (Milestone 11), new rosters (Milestone 12), and a required pick, which stays
+Story's technology choice between missions (Milestone 4), new rosters (Milestone 12), and a required pick, which stays
 Mario's call through the Nexus pick Experiment. An army bending the schedule, planned here at first, is Marshal
 Averno's quirk in [Milestone 14](../history/milestones/milestone-14-commander-armies.md).

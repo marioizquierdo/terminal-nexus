@@ -251,7 +251,7 @@ balanced one.
 
 One order is left inside a side: of several attackers whose blows kill a unit in the same tick, the lowest id is
 named its killer and takes a killer's pause. It never decides which side gains, only which of one side's units
-waits; changing it tipped the campaign's empty-base walks (a route to a later round plays the rounds before it
+waits; changing it tipped the missions' empty-base walks (a route to a later round plays the rounds before it
 building nothing) more than anything else did, so it waits for a
 reason of its own.
 
@@ -435,16 +435,16 @@ A match alternates (RULE — `tests/pulse-run.test.ts`, `tests/mission.test.ts`)
 Each round opens with the **Nexus Pulse**, when the Grid Nexus deals its Commander a hand of Nexus powers,
 one of which the player may keep during the Build Phase (a rule outside the kernel, section 2.4). One
 Nexus Pulse, one Build Phase and one Battle Round, in that order, are a **round**, the unit the player
-counts. A match runs **as many rounds as it needs** — a campaign mission is a sequence of rounds, not
+counts. A match runs **as many rounds as it needs** — a mission is a sequence of rounds, not
 one, and a mission's triggers decide how many and what happens between them (see
-[`campaigns.md`](../game-design/campaigns.md)). A Battle Round may be scripted (no player plan; the player
+[`story.md`](../game-design/story.md)). A Battle Round may be scripted (no player plan; the player
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
 **The kernel's victory condition never learns about a mission's goal.** A mission's objective is
 resolved one level up, by the scenario and trigger layer, which fires an ordinary `win`/`lose` action
-when its own condition holds (see [`campaigns.md`](../game-design/campaigns.md)). What follows — Grid
+when its own condition holds (see [`story.md`](../game-design/story.md)). What follows — Grid
 Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
-battle with no declared objective lands on: every Skirmish match, and every Challenge battle (RULE —
+battle with no declared objective lands on: every Skirmish battle (a Challenge battle until the Skirmish milestone renames it) (RULE —
 `src/pulse/victory.ts`).
 
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,
@@ -530,11 +530,11 @@ sees a unit like any other, so she fights and dies by the ordinary rules and not
 back. When she falls, the round loop carries an absence beside the state — whose, which, the round she fell
 in and the round she is due — and as that round begins, after the regroup and before its Build Phase, the
 Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body, at full health, standing
-there through the Build Phase like any survivor. "May replicate" is taken as "does", as the campaign's
+there through the Build Phase like any survivor. "May replicate" is taken as "does", as the story's
 third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to
 restore her to, so her absence goes on until it has one. At a Pulse's end she regroups with her army, in the
 middle of her rank. A mission brings its Commander once (`src/mission/validate.ts`
-refuses a second arrival, or two of her), and the Commander it brings for the player is its campaign's
+refuses a second arrival, or two of her), and the Commander it brings for the player is its story's
 (`src/armies/load.ts` refuses another). How much she can take is her army's data, settled at 80 for Vasse. Her skill, By the Book, is an ability the kernel
 keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names
 a target for the player's troops she heads there with them, fights what comes within reach and stands with them
@@ -599,13 +599,13 @@ which is how the battle feed and the Activity Logs tell it from an arrival.
 **What a building spawns is its own** (RULE — `src/armies/load.ts`, `src/match/training.ts`,
 `tests/armies.test.ts`, `tests/production.test.ts`). Its card in its army carries `spawns`: the unit, how many
 a wave, how many waves a round and the seconds between waves, each a whole number above zero. Every building a
-campaign level offers spawns in that level's battles as its card says. When the first wave comes is the same
+mission offers spawns in that mission's battles as its card says. When the first wave comes is the same
 for every building, a tuned value (`firstWave`, five seconds in). The Barracks sends four troopers and the
 Hatchery three swarmers, one wave a round each; a Nexus power that gives a building a second or third wave
 raises its `waves` and nothing else. **No content spawns this way by default** (RULE — `withProduction`,
 `src/content/index.ts`): a `grid` scenario's buildings, and a map that merely has a barracks on it, resolve
 exactly as they always did. **A building makes its units one way in a battle**: one given a recipe loses any
-spawner of its own, so a campaign's Hatchery breeds only its wave, while the bench Hatchery in its `grid`
+spawner of its own, so a mission's Hatchery breeds only its wave, while the bench Hatchery in its `grid`
 scenario keeps its timer. A producer's counters (ticks to its next wave, waves come this Pulse, units still
 owed) are on its state only while it has a recipe, so a state without one serializes byte for byte as before.
 

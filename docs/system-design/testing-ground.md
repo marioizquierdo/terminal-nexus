@@ -73,7 +73,7 @@ map file ──variant──▶ map for one battle ──engine──▶ states 
 | Variant | `src/scenario/variant.ts` | a pure function of a map and its content to another: a unit, an army, a tune, a terrain, a target; and `shuffled` and `mirrored`, which make each seed's opening |
 | Trial | `src/measure/trial.ts` | the spec (maps, seeds, variants, expectations), its runs in order, each played by an `Engine` and timed by a `Meter`, both passed in |
 | Engine | `src/cli/engine.ts` | the kernel, content and scenario loader of a build's folder: this one, or another commit's checked out beside it |
-| Record | `src/measure/battle.ts` | one battle in numbers, built from its states and events alone, the same for a trial, a duel and a campaign level |
+| Record | `src/measure/battle.ts` | one battle in numbers, built from its states and events alone, the same for a trial, a duel and a mission |
 | Cells | `src/measure/trial-cells.ts` | each map and variant's battles summed up: shares with intervals, medians, whether two differ beyond chance, expectations, battles worth watching |
 | Summary | `src/measure/trial-summary.ts` | the printed tables and the command that replays a battle |
 | Command | `src/cli/trial.ts`, `src/cli/trial-worker.ts`, `src/cli/profile.ts` | trial files and options, processes, `--against`, the clock and route counts |
@@ -178,7 +178,7 @@ engage-gap2-melee-vs-mix
 - **`--out` then `--baseline`**: the same by a file written before, when the change spans commits.
 - **Fingerprints** (`scripts/profile-routes.ts --out`): every map's and some duels' event and state hashes; a refactor's
   proof is no line differing. `--detail` says where route time went, question by question.
-- **Duels and campaign levels**: `measure run ... --out`, then `measure compare`.
+- **Duels and missions**: `measure run ... --out`, then `measure compare`.
 
 ## 8. The maps
 

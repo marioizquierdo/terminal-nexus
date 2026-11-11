@@ -184,7 +184,7 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const limit = layout.headerLimit
   text(cells, band, left, headerRow, "TERMINAL NEXUS", "chrome.title", { bold: true, limit })
   // A mission's round, when there is one: its goal is about rounds, so the header counts them
-  // (`docs/game-design/campaigns.md`: a Pulse counter "only when the goal is itself about Pulses").
+  // (`docs/game-design/story.md`: a Pulse counter "only when the goal is itself about Pulses").
   const round = context.round
   const stage = round?.stage === undefined ? "" : `${round.stage} - `
   const phase = round === undefined ? "build phase" : `build phase - ${stage}round ${round.number} of ${round.of}`

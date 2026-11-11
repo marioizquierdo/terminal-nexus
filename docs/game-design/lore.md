@@ -1,10 +1,10 @@
 # Terminal Nexus — lore and aesthetic direction
 
-_The universe, its five factions, their symbols and their voice: the setting that fiction, campaigns, content names and ASCII art are written against._
+_The universe, its five factions, their symbols and their voice: the setting that fiction, stories, content names and ASCII art are written against._
 
 ## 1. Why the lore matters
 
-This is the context document for writing Terminal Nexus fiction, developing campaigns, naming content, and designing ASCII art. New stories may invent local people, places, artifacts, and conflicts, but should preserve the universe rules and deliberate mysteries below.
+This is the context document for writing Terminal Nexus fiction, developing stories, naming content, and designing ASCII art. New stories may invent local people, places, artifacts, and conflicts, but should preserve the universe rules and deliberate mysteries below.
 
 Terminal Nexus cannot depend on expensive realism or hundreds of frames of character animation. Its fantasy must survive compression. A single `@` must feel like a commander; a row of `#` must feel engineered; an expanding violet pulse must feel older than the faction trying to control it.
 
@@ -26,7 +26,7 @@ An important entity should rhyme at four resolutions:
 1. one-cell Grid glyph;
 2. compact selection badge, aura, or status treatment;
 3. larger inspection portrait;
-4. campaign tableau or cutscene composition.
+4. story tableau or cutscene composition.
 
 ## 2. The Activation
 
@@ -42,7 +42,7 @@ The military secured the site. Long-delay communication left frontier leaders ac
 
 The Ravels attacked almost immediately.
 
-Their own Prime Nexus had awakened elsewhere in the region. It replicated a battle Nexus toward the human claim and sent a chosen Symbol with it. The Citizen campaign begins at this perimeter: survivors leaving the broken annex, Ravel forces descending on the new grid, and a military leader discovering that the human Prime Nexus recognizes them.
+Their own Prime Nexus had awakened elsewhere in the region. It replicated a battle Nexus toward the human claim and sent a chosen Symbol with it. Vasse's story begins at this perimeter: survivors leaving the broken annex, Ravel forces descending on the new grid, and a military leader discovering that the human Prime Nexus recognizes them.
 
 ### 2.1 The Return
 
@@ -92,15 +92,15 @@ Characters may still call a Nexus whatever they like. The survey team catalogued
 
 ### 3.2 The Citizen Nexus
 
-The Nexus under the survey annex is the one the origin campaign is about, and the one a first-time player meets.
+The Nexus under the survey annex is the one the Citizen origin story is about, and the one a first-time player meets.
 
 What unsettles about it is not power. It is **administration**. It does not command, bargain, or explain — it *processes*. It assigns a name, a heraldry, and an arrival time to a contact nobody has identified. It approves requests that were never filed, and back-dates them. It opens personnel files on people who have not enlisted, and revises them after they die. Ask it for anything and it answers `ACKNOWLEDGED`, and the thing is already done.
 
-Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the campaign, because it means every uncanny thing this Nexus does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (see the claimants, below) is poorly equipped to notice being standardized.
+Citizens read this as proof they were right: the machine is infrastructure, and infrastructure keeps records. That reading is comfortable, and it is load-bearing for the story, because it means every uncanny thing this Nexus does arrives wearing a form the colony already trusts. A civilization that finds standardization rewarded (see the claimants, below) is poorly equipped to notice being standardized.
 
 Its powers reach a player as ordinary named cards — a permit, an order, a revision — each saying plainly what it does (the Nexus powers in [`commander-armies.md`](commander-armies.md)). The bureaucratic vocabulary is this Nexus's voice, and no other Nexus borrows it: the Ravel Nexus deals in scores and salvage, and means the same six things underneath.
 
-The Citizen Nexus answers none of the deliberate mysteries below. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the campaign's question, and the campaign does not answer it either.
+The Citizen Nexus answers none of the deliberate mysteries below. It is never shown deciding, wanting, or speaking about itself; it files. What that means is the story's question, and the story does not answer it either.
 
 ## 4. Claimants and compulsory conflict
 
@@ -139,15 +139,15 @@ Symbols are often geniuses, leaders, dangerous mystics, or people whose presence
 
 **RULE:** in battle, a Commander is a persistent frontline `@`. If killed, they are absent for the rest of that Battle Round, and the Prime replicates them as the next round opens; some Symbols take longer to restore, and sit out a round or two (its Nexus Pulse, Build Phase and Battle Round) first. Their death is costly but is not the victory condition. Powers may exploit death, absence, restoration, proximity to the battle Nexus, or the connection between replicas.
 
-**On the Grid a Commander's death is ordinary business.** Symbols fall in most battles they fight; the Nexus files the absence and restores them on its schedule, and every army that has a Symbol plans around the time without one. What a death costs is the rest of that round — for some Symbols a round or two more — never the war, and that is how the people around a Commander learn to speak of it: as scheduling, not as grief (the owner: "commanders die on this game, is part of the gameplay"). The campaigns teach it from their first missions; the deliberate mystery is not whether a Commander comes back, but what does.
+**On the Grid a Commander's death is ordinary business.** Symbols fall in most battles they fight; the Nexus files the absence and restores them on its schedule, and every army that has a Symbol plans around the time without one. What a death costs is the rest of that round — for some Symbols a round or two more — never the war, and that is how the people around a Commander learn to speak of it: as scheduling, not as grief (the owner: "commanders die on this game, is part of the gameplay"). The stories teach it from their first missions; the deliberate mystery is not whether a Commander comes back, but what does.
 
 No one can prove that restoration returns the original consciousness. It may restore the same person, reconstruct a pattern, continue a distributed mind, or produce an entity whose belief in continuity is part of the protocol.
 
 ### 5.1 The Operator
 
-The interface may address the player as **Operator**, but the title has no universal in-world identity. Each faction interprets the Operator differently: command authority, conspirator, Queen-process, divine witness, remote consciousness, or something else. The campaigns may imply incompatible answers without collapsing them into one literal being.
+The interface may address the player as **Operator**, but the title has no universal in-world identity. Each faction interprets the Operator differently: command authority, conspirator, Queen-process, divine witness, remote consciousness, or something else. The stories may imply incompatible answers without collapsing them into one literal being.
 
-Each faction's reading is written into its entry under the factions, below, because the reading is part of the faction's character: what a civilization believes the Operator is reveals what that civilization believes authority is. The interface itself may behave suggestively — precommitted plans, impossible knowledge, counts that do not add — but it never testifies. No line of system text, in any campaign, states what the Operator is or whose voice the interface carries.
+Each faction's reading is written into its entry under the factions, below, because the reading is part of the faction's character: what a civilization believes the Operator is reveals what that civilization believes authority is. The interface itself may behave suggestively — precommitted plans, impossible knowledge, counts that do not add — but it never testifies. No line of system text, in any story, states what the Operator is or whose voice the interface carries.
 
 ## 6. Ancients, golems, artifacts, and Originals
 
@@ -178,7 +178,7 @@ Do not answer these merely because a story or implementation prefers completenes
 - Who or what speaks through the interface — and is it the same thing that listens?
 - What condition creates the Terminal Nexus?
 
-The interface question is deliberately separate from the Operator question. The Operator is who the interface addresses; the voice is who addresses them. A campaign can play with either without touching the other, and must answer neither.
+The interface question is deliberately separate from the Operator question. The Operator is who the interface addresses; the voice is who addresses them. A story can play with either without touching the other, and must answer neither.
 
 Mystery is productive only when observable behavior remains consistent. The universe may not know what a Nexus ultimately is; the game must know exactly how replication, construction, restoration, damage, and victory resolve.
 
@@ -454,7 +454,7 @@ One rule inside the budget: a death bark may be sad, but never cynical. "The roa
 
 ### 10.4 Pre-battle exchanges
 
-One reference exchange per faction pairing, at most three lines each. These are skirmish-grade — any Commander of the faction could speak them; campaigns write sharper, personal versions. Each exchange should collide the two philosophies, not merely trade insults.
+One reference exchange per faction pairing, at most three lines each. These are skirmish-grade — any Commander of the faction could speak them; stories write sharper, personal versions. Each exchange should collide the two philosophies, not merely trade insults.
 
 ```text
 CITIZENS: Surrender the Grid. You are surrounded by infrastructure.
@@ -518,7 +518,7 @@ FEUDALS:  We will. After we burn the argument.
 
 ### 10.5 Budgets
 
-Ordinary campaign targets:
+Ordinary story targets:
 
 - briefing: 120–180 words;
 - pre-battle exchange: no more than three short lines;
@@ -554,8 +554,8 @@ three rows of `#`.
 3. **Budgets are ceilings, not targets** (the budgets above). A briefing is a paragraph. An intro is a card,
    a line, and the enemy arriving. Barks are three to eight words. Where a scene could be cut to a
    status line and lose nothing, cut it — the interface's own voice does more per byte than dialogue.
-4. **One coherent timeline.** No parallel or alternate histories; two campaigns may show the same
-   battle from opposite sides, and must then agree on what happened ([`campaigns.md`](campaigns.md)). Continuity is cheap to keep and expensive to repair.
+4. **One coherent timeline.** No parallel or alternate histories; two stories may show the same
+   battle from opposite sides, and must then agree on what happened ([`story.md`](story.md)). Continuity is cheap to keep and expensive to repair.
 5. **Under-specify on purpose.** The deliberate mysteries above are the model for everything
    else: the lore is a **platform for imagination**, and its job includes leaving room. Terminal Nexus
    is built for a world where players extend games with their own agents — mods, missions, Commander
@@ -570,7 +570,7 @@ Grid wins every time.
 
 ## 11. Existing story seeds — IDEA
 
-These summaries preserve useful characters and themes without making every detail mandatory campaign history.
+These summaries preserve useful characters and themes without making every detail mandatory story history.
 
 ### Nothing to Declare
 

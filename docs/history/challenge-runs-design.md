@@ -1,6 +1,8 @@
 # Terminal Nexus — Challenge runs
 
-_The whole run as a game: a route across the Grid that the player chooses a path through, an army that is drafted between battles, and a Nexus whose health has to last. What it borrows from the best roguelikes, what each layer asks of the player, and the numbers it starts with. [`game-modes.md`](game-modes.md) is the vocabulary and the place of Challenge beside the Campaign; this is the design of Challenge itself._
+_Retired 2026-11-11: the owner ended runs of many battles as a mode ([his words](feedback/2026-11-11-game-modes.md), [why](reports/2026-11-11-single-battles.md)). Kept as the record of the design, and for its ideas — the draft, rarity and tier, the pity offset — which the Story mode's technology choices draw on. The code it describes (`src/run/`) still plays until the Skirmish milestone retires it._
+
+_The whole run as a game: a route across the Grid that the player chooses a path through, an army that is drafted between battles, and a Nexus whose health has to last. What it borrows from the best roguelikes, what each layer asks of the player, and the numbers it starts with. [`game-modes.md`](../game-design/game-modes.md) is the vocabulary and the place of Challenge beside the Campaign; this is the design of Challenge itself._
 
 _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0. Unmarked statements are GUIDANCE; every number is a first guess, to be tuned on runs played._
 

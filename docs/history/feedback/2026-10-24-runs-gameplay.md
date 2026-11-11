@@ -13,7 +13,7 @@ Status values: **Built**, **Scheduled**, **Open**, **Contested**.
 > dynamic environment. Feel free to investigate and get inspired by the best rogue likes out there, adapting it to
 > the essence of Terminal Nexus!
 
-**Scheduled.** The whole run is designed in [`runs.md`](../../game-design/runs.md): a route across the Grid that the
+**Scheduled.** The whole run is designed in [`runs.md`](../challenge-runs-design.md): a route across the Grid that the
 player chooses a path through, a small army that grows by drafting between battles, and a Nexus whose health does not
 come back for free. The milestone's steps are re-cut around it, and the first of them is built in this round. The
 campaign waits, on his word.

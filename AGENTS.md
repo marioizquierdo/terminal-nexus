@@ -8,8 +8,10 @@ documents that hold the detail. They change only when a rule of working changes.
 
 Terminal Nexus is a terminal strategy game: each round opens with a Nexus Pulse, when the Grid Nexus
 deals a hand of Nexus powers; players then build a base during a hidden Build Phase, and watch
-persistent armies resolve the plan in a deterministic ASCII battle called a Battle Round. The
-project is at version 0.1 until it is public. The design documents under `docs/` describe the current
+persistent armies resolve the plan in a deterministic ASCII battle called a Battle Round. It has
+three modes ([`docs/game-design/game-modes.md`](docs/game-design/game-modes.md)): **Skirmish**, one battle against a
+scripted Commander Army and the centre of design and testing; **Story**, a Commander's story of missions; and
+**Versus**, later. The project is at version 0.1 until it is public. The design documents under `docs/` describe the current
 design; a merged pull request is the change. Nothing is versioned beyond git.
 
 Every document is on one of three shelves, and the path says which:
@@ -40,7 +42,7 @@ If that is empty too, say so and stop; never start the next step to fill the tim
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) is the practices manual: the toolchain, the tests, how to see a
 change, how milestones and spikes work, the feedback loop with Mario, how a design change lands. The
-project's own words (Nexus Pulse, Battle Round, mission, group, regroup, Experiment, starter map, bench roster, army file)
+project's own words (Nexus Pulse, Battle Round, Skirmish, Story, mission, group, regroup, Experiment, starter map, bench roster, army file)
 are defined once, in the engine overview's [vocabulary](docs/system-design/grid-engine.md).
 
 ## How we work
@@ -98,10 +100,10 @@ IDEA (a sketch). The ones every session needs:
 | Path | What it is |
 | --- | --- |
 | `src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/` | The deterministic kernel. |
-| `armies/`, `campaigns/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions `armies/citizen` and `armies/ravel`, and one army per Commander (`vasse`, `averno`, `dob`); campaigns and their levels in `campaigns/`; the loader and the effects table. How to write one: `docs/system-design/army-authoring.md`. |
+| `armies/`, `campaigns/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions `armies/citizen` and `armies/ravel`, and one army per Commander (`vasse`, `averno`, `dob`); each Commander's story and its missions in `campaigns/` (renamed with the Skirmish milestone); the loader and the effects table. How to write one: `docs/system-design/army-authoring.md`. |
 | `src/abilities/` | What a unit does on its own (an aura, a bounty, loaded dice): one table of kinds the kernel calls at fixed moments. |
-| `src/duel/`, `bin/duel.ts` | Two armies fought out headless, script or model a side (`docs/system-design/duels.md`). |
-| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: scenarios, duels, campaign levels (`docs/system-design/measurement.md`), and trials, a map over many seeds as built and as variants change it (`grid <map> --seeds`). |
+| `src/duel/`, `bin/duel.ts` | Two armies fought out headless, script or model a side (`docs/system-design/duels.md`): the battle a Skirmish plays. |
+| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: scenarios, duels, missions (`docs/system-design/measurement.md`), and trials, a map over many seeds as built and as variants change it (`grid <map> --seeds`). |
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format, its variants, and the checked-in maps by folder (rules, units, movement, the engage bench, showcases) with the trial files (`docs/system-design/testing-ground.md`). |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, the regroup, missions and their trigger runner. |

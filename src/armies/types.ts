@@ -54,9 +54,9 @@ export type BuildingCard = Readonly<{
   /** What it spawns in each battle, in any mode that offers it. Absent: it spawns nothing. */
   spawns?: BuildingSpawns
   /** Its tier in the army's tech tree, 1 to `MAX_TIER` (`curve.ts`). Absent: 1, open from the start. A run draft
-   *  deals it by the same tier (runs.md): the tier gates *when* it may be offered. */
+   *  deals it by the same tier (docs/history/challenge-runs-design.md): the tier gates *when* it may be offered. */
   tier?: number
-  /** How rare it is, for a run's draft to weigh (runs.md). Absent: never offered by a draft; the army's own at the start. */
+  /** How rare it is, for a run's draft to weigh (docs/history/challenge-runs-design.md). Absent: never offered by a draft; the army's own at the start. */
   rarity?: Rarity
   /** What it is for, for a run's draft to bring variety by. Absent with `rarity`. */
   role?: Role
@@ -186,12 +186,12 @@ export type PowerCard = Readonly<{
   /** Offered beside every hand rather than dealt into one (War Chest, the owner's testing tool). */
   always?: boolean
   /**
-   * A Doctrine (runs.md): a standing order, never dealt by the Nexus Pulse. A run's draft offers it, and once taken it is
+   * A Doctrine (docs/history/challenge-runs-design.md): a standing order, never dealt by the Nexus Pulse. A run's draft offers it, and once taken it is
    * kept from the first round of every battle of the run, so its effect is on for the whole of each. Absent: a Nexus power
    * the Pulse deals, as every power was.
    */
   doctrine?: boolean
-  /** The earliest tier of a run it may be offered in, 1 to `MAX_TIER` (the draft's tier schedule, runs.md). Absent: 1. */
+  /** The earliest tier of a run it may be offered in, 1 to `MAX_TIER` (the draft's tier schedule, docs/history/challenge-runs-design.md). Absent: 1. */
   tier?: number
   /** The Nexus it comes from when not the army's own (`"ravel"`: a card from the Ravel Nexus in a Citizen
    *  Commander's hand, Averno's leak). Dealt only by a schedule slot that asks for that Nexus, `{ "from": "ravel" }`,
@@ -242,7 +242,7 @@ export type CommanderEntry = Readonly<{
   /** How her army bends the Nexus Pulse's schedule, in every mode: what each round's hand deals (Averno's: a card
    *  from the Ravel Nexus some rounds). A level that gives its own schedule replaces it. Absent: the game's default. */
   schedule?: Schedule
-  /** What a run starts her army with (runs.md): the building cards on its build menu and the Nexus powers in its pool.
+  /** What a run starts her army with (docs/history/challenge-runs-design.md): the building cards on its build menu and the Nexus powers in its pool.
    *  Everything else her army can field is waiting in the run's draft. Absent: the whole of her army, as in a duel. */
   run?: RunStart
   /** What she says during a Battle Round, by moment (`barks.ts`). Absent: she says nothing. */

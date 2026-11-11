@@ -38,10 +38,13 @@ from a seed, with a levelled report and an ASCII view. It is not the game. It is
 and replays it.
 
 **`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings, About,
-Exit) that works by hotkey, by arrows and Enter, or by mouse. Campaign and Challenge are honest
-placeholders. `--at` opens any place in the game by its route, written like a web address without the
-site (`--help` lists them). The playable part is the **Build Phase** of PERIMETER, the first campaign
-level, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its rounds with `&round=2`:
+Exit) that works by hotkey, by arrows and Enter, or by mouse.
+
+The game has three modes ([the game modes](docs/game-design/game-modes.md)): **Skirmish**, one battle against a scripted
+Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. On today's menu, Challenge is what
+becomes Skirmish and Campaign what becomes Story. `--at` opens any place in the game by its route, written like a web address without the
+site (`--help` lists them). The playable part is the **Build Phase** of PERIMETER, Vasse's first
+mission, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its rounds with `&round=2`:
 
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
@@ -61,7 +64,7 @@ watch it with a countdown, a score and a feed of events, and you can pause, chan
 watch again. The first mission, **PERIMETER**, is three Battle Rounds, with the raid arriving in each.
 After each round there is a result, and Next round opens the next Build Phase on what survived.
 
-Not built yet: an economy, Commander powers, Campaign content, Challenge runs and sound. The
+Not built yet: the Skirmish setup screen, an economy, Story beyond its first mission, and sound. The
 [milestones](docs/milestones/README.md) say what comes next.
 
 ## Local Development
@@ -188,7 +191,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 .
 ├── docs/                  The design, the plan and the history, in five folders
 │   ├── README.md              Index of every document
-│   ├── game-design/           What the game is: concept, lore, modes, Commander Armies, campaigns
+│   ├── game-design/           What the game is: concept, lore, modes, Commander Armies, Story
 │   ├── system-design/         How it is built: the engine, the Pulse, effects, UI patterns, testing
 │   ├── milestones/            What is next: milestones, open questions, backlog
 │   ├── history/               What happened: timeline, reports, feedback, the visual record

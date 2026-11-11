@@ -7,14 +7,13 @@ version of the design beyond git.
 
 ## Current — what the game is (`game-design/`)
 
-- [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a match works, the promise.
+- [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a battle works, the three modes, the promise.
 - [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language.
-- [`game-modes.md`](game-design/game-modes.md) — Campaign and Challenge, and the vocabulary they share.
-- [`runs.md`](game-design/runs.md) — Challenge runs as a whole game: the route, the stops, the drafted army, the opponents and the rewards.
+- [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: the words they share, every way a Skirmish is set up, the battle file, how each mode is tested.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
-- [`campaigns.md`](game-design/campaigns.md) — missions, the Citizen opening, PERIMETER, cutscenes.
+- [`story.md`](game-design/story.md) — a Commander's story (tutorial, technology missions, endless stand, final battle), what a mission is, Vasse's story and PERIMETER, cutscenes, testing a mission.
 - [`play-strategies.md`](game-design/play-strategies.md) — what duels have taught about playing a Build Phase well, as advice a model player reads in its brief.
-- [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions and the Campaign's opponent (working design).
+- [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions, and where an opponent planner for missions and Skirmish comes from (working design).
 - [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take from each source.
 - [`concept-art/`](game-design/concept-art/README.md) — early concept art and the first prototype captures.
 
@@ -26,7 +25,7 @@ version of the design beyond git.
 - [`testing.md`](system-design/testing.md) — what the suite proves and how.
 - [`replay-format.md`](system-design/replay-format.md) — the unbuilt replay file design (GUIDANCE).
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
-- [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a campaign as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
+- [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a story (campaign file) as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
 - [`duels.md`](system-design/duels.md) — two Commander Armies fought out headless, script or model a side: the rules, the command line, the brief and plan, how to run model against model for testing, and what the numbers can say.
 - [`testing-ground.md`](system-design/testing-ground.md) — how a change to troops is tested: which tool answers which question, the shape of a trial (map, variant, engine, record, summary) and how to extend each part, the maps by folder, comparing two builds, and the principles earlier rounds learned.
 - [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route scenarios, duels and campaign levels played, seeds, how a result is written down and retired when it goes stale, and the `measure` command.
@@ -52,6 +51,7 @@ version of the design beyond git.
 - [`measurements/`](history/measurements/README.md) — results of the `measure` command, dated, each with the build, the rules it measured and whether it is current or superseded.
 - [`milestones/`](history/milestones/) — the completed milestones, kept as records.
 - [`spec-audit-2026-08-21.md`](history/spec-audit-2026-08-21.md), [`original-spec-2026-08-19.md`](history/original-spec-2026-08-19.md) — the August audit and the original specification, verbatim.
+- [`challenge-runs-design.md`](history/challenge-runs-design.md) — the retired Challenge runs design (the route, the stops, the draft), kept for the ideas Story borrows.
 
 ## Elsewhere
 

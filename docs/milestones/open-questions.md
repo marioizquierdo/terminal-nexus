@@ -17,7 +17,7 @@ when it is genuinely his call, state the assumption you proceed under, then keep
 
 ## Index
 
-Two are ready for Mario to decide now ("Mario, now"); every other question is parked until the
+One is ready for Mario to decide now ("Mario, now"); every other question is parked until the
 milestone or backlog entry named, and nothing in the current milestone is blocked by any of them.
 
 | Id | Question | Status | Waits on |
@@ -31,14 +31,12 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
-| [Q31](#q31--what-shape-does-an-unlock-record-take-with-no-save-system-yet) | What shape does an unlock record take? | OPEN | Milestone 4 (campaign menu) |
-| [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (campaign menu) |
-| [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Mario, now |
-| [Q40](#q40--within-a-run-what-persists-from-one-battle-to-the-next) | Within a run, what persists from one battle to the next? | OPEN | Milestone 11 (Challenge runs) |
-| [Q84](#q84--is-requisition-the-runs-second-currency-and-does-the-nexuss-health-carry) | Is requisition the run's currency, and does the Nexus's health carry between battles? | OPEN | Mario's playing of a run (milestone 11) |
-| [Q85](#q85--how-long-is-a-run) | How long is a run? | OPEN | Mario's playing of a run (milestone 11) |
+| [Q31](#q31--what-shape-does-an-unlock-record-take-with-no-save-system-yet) | What shape does an unlock record take? | OPEN | Milestone 4 (Story menu) |
+| [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (Story menu) |
+| [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Milestone 10 (PERIMETER polished as the tutorial) |
 | [Q87](#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to) | Should the march route be drawn on the Build Phase? | OPEN | After the stance and the banner |
 | [Q91](#q91--should-flyers-be-held-back-where-the-ground-is-tight) | Should flyers be held back where the ground is tight? | OPEN | The first real air roster (milestone 12) |
+| [Q93](#q93--how-is-an-endless-stand-scored) | How is an endless stand scored? | OPEN | The endless stand's milestone |
 | [Q51](#q51--when-should-the-game-get-a-real-accent-colour-palette-with-variations-per-faction) | When does the game get a real accent-colour palette per faction? | OPEN | Milestone 8 (second faction on screen) |
 | [Q53](#q53--does-the-game-want-a-jump-to-my-next-structure-key-and-which-one) | Does the game want a "jump to my next structure" key? | OPEN | Backlog: keyboard play |
 | [Q59](#q59--should-an-m-map-popup-show-the-whole-grid-at-once) | Should an `[m] Map` popup show the whole Grid? | OPEN | Backlog: map popup spike |
@@ -166,7 +164,7 @@ outposts regroup units next to them so next pulses resolve faster." The idea: an
 retreating or newly-produced units near itself between Battle Rounds, so the *next* Battle Round's armies start
 closer together. Raw speed helps every Battle Round; regrouping would specifically help the second and later ones.
 
-Missions are now several rounds long ([`campaigns.md`](../game-design/campaigns.md)) and PERIMETER plays three
+Missions are now several rounds long ([`story.md`](../game-design/story.md)) and PERIMETER plays three
 rounds, so "regroup between Battle Rounds" is no longer hypothetical. What is still unowned is the outpost
 itself: no structure does it, and Recall already walks units home to their buildings at the end of a Battle Round.
 
@@ -246,9 +244,9 @@ opens with an entirely non-mobile force.
 
 ### Q31 — What shape does an "unlock record" take, with no save system yet?
 
-**Status:** OPEN — parked until Milestone 4 (campaign menu) needs to write one; the recommendation is already assumed by [`milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
+**Status:** OPEN — parked until Milestone 4 (Story menu) needs to write one; the recommendation is already assumed by [`milestone-04-story-menu.md`](milestone-04-story-menu.md).
 
-Mario: "after each level, we unlock new units and powers." [`campaigns.md`](../game-design/campaigns.md) has an
+Mario: "after each level, we unlock new units and powers." [`story.md`](../game-design/story.md) has an
 `unlocks: readonly string[]` field on a mission, but nothing says what a session writes down when Level 1
 grants one, and the real save and replay format ([`replay-format.md`](../system-design/replay-format.md)) does
 not exist.
@@ -256,22 +254,21 @@ not exist.
 | Option | Cost |
 | --- | --- |
 | A. **A flat, checked-in list** (JSON or a small TypeScript module) naming what completing PERIMETER makes available. No persistence, no player-facing menu | Cheapest, and enough for "the next level's contract may assume these exist", the only consumer today |
-| B. **Build a minimal save and progression system now** | Real infrastructure for one campaign and one mission, and a second persistence format risks being incompatible with the replay format it should share a schema with |
+| B. **Build a minimal save and progression system now** | Real infrastructure for one story and one mission, and a second persistence format risks being incompatible with the replay format it should share a schema with |
 
 **Recommendation: A.** A real save system belongs with the replay format, for whichever level first needs an
 unlock state that outlives an authoring session.
 
-**Widened since, and A is now the floor rather than the answer.** The Campaign opens with a choice of
-Commander and a player may keep several campaigns in progress, so progress is **per save slot, each slot
-naming its Commander**, and bonus goals unlock content for Challenge mode, so the record outlives a single
-campaign. A flat list still serves the first playable mission; Milestone 4 is where the difference gets
+**Widened since, and A is now the floor rather than the answer.** A player may keep several Commanders' stories in
+progress, so progress is **per save slot, each slot naming its Commander**, and what a story collects carries from
+mission to mission (Story, 2026-11-11). A flat list still serves the first playable mission; Milestone 4 is where the difference gets
 designed rather than discovered.
 
 ### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
 
-**Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
+**Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-story-menu.md`](milestone-04-story-menu.md).
 
-Mario's campaign-menu description asks for "enemy intel (discovered enemy units, buildings, nexus powers,
+Mario's description of the Story menu (then the campaign menu) asks for "enemy intel (discovered enemy units, buildings, nexus powers,
 enemy generals, and mission reports)." `PlayerView` ([`pulse.md`](../system-design/pulse.md), visibility) is a
 **live filter, one Battle Round at a time**: it decides what a player may be shown this instant and remembers
 nothing between missions. So "discovered" needs a definition before the panel can be built.
@@ -288,11 +285,11 @@ before any contact"). Do not build C's authoring surface before a mission uses i
 
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
-**Status:** OPEN — decision-ready. Scrolling is built; PERIMETER is still played on the Build Phase's placeholder map ([`next-steps.md`](next-steps.md)), so its real map is the open part. The recommendation is already assumed by [`docs/history/milestones/milestone-02-campaign-design.md`](../history/milestones/milestone-02-campaign-design.md).
+**Status:** OPEN — parked 2026-11-11 until Milestone 10 polishes PERIMETER as Vasse's tutorial (the owner: "Don't worry about perimeter for now"). Scrolling is built and proved on the Skirmish maps; only PERIMETER's own map is open.
 
-The belief ramp in [`campaigns.md`](../game-design/campaigns.md) describes PERIMETER's teaching goal as the
+The belief ramp in [`story.md`](../game-design/story.md) describes PERIMETER's teaching goal as the
 "Build Phase / Battle Round loop on **a small Grid that never scrolls**", written as GUIDANCE before the
-campaign-first pivot. Milestone 5's charter says real scrolling is built "against a Grid sized to actually
+pivot to building the first mission first (2026-09). Milestone 5's charter says real scrolling is built "against a Grid sized to actually
 need it". If PERIMETER's real map stays small by design, scrolling has no mission of its own to be proved
 against.
 
@@ -305,60 +302,7 @@ against.
 **Recommendation: A.** Size PERIMETER's real map to genuinely need a little scrolling. It costs nothing the
 fiction depends on, and it means the scrolling work is judged on the mission that motivated it. Mario's own
 input notes call scrolling "the part that needs more attention", so a PERIMETER that never scrolls would leave
-the game's most-scrutinised interaction proved on a fixture the campaign never plays.
-
-### Q40 — Within a run, what persists from one battle to the next?
-
-**Status:** OPEN — parked until Milestone 11's first step; it proceeds under the recommendation. Registered with the Challenge mode itself ([`game-modes.md`](../game-design/game-modes.md)).
-
-A run is a series of battles with the army changing between them. The army composition (structures and Nexus
-power pool) obviously persists. What is not obvious is whether anything *on the Grid* does. The concept's
-promise that "persistence creates short stories — survivors matter" ([`concept.md`](../game-design/concept.md))
-is stated for the Battle Rounds of one match; carrying it across battles would be a new claim.
-
-| Option | Cost |
-| --- | --- |
-| A. **Deck and Commander only.** Every battle starts from a fresh Grid with the starting package | The smallest run, the cheapest to build, and the one every reference deckbuilder uses. Loses the "veterans" fantasy |
-| B. **Deck, Commander, and surviving units**, capped by supply | Into the Breach's pilots at army scale: real attachment. Costs a between-battle roster state, a supply rule for what a fresh Grid can field at tick 0, and a snowballing balance problem |
-| C. **Deck, Commander, and a carried resource** | Cheap, rewards efficient play without roster snowballing. Interacts with the worker economy, which does not exist yet |
-
-**Recommendation: A for the first step, with B made observable as a toggle in the second if it is cheap, and
-judged by playing both.** C waits for an economy to carry.
-
-### Q84 — Is requisition the run's currency, and does the Nexus's health carry?
-
-**Status:** OPEN — proceeds under the recommendation. Raised with the whole run's design ([`runs.md`](../game-design/runs.md)).
-
-A run needs two things the match does not have. **Something that makes the route a spending:** the Nexus's health carried
-from one battle into the next, so a hard path costs health and a mend has to be paid for or found. And **something to buy
-with** at an Exchange: a currency of the run, which this design calls requisition. The earlier rule is "one resource" for a
-match, and requisition never appears in a battle, only on the route; but it is a second number a player holds.
-
-| Option | Cost |
-| --- | --- |
-| A. **Nexus health carries; requisition buys cards on the route** | The roguelike core (health as attrition, a currency worth saving); a second number to explain, and a Nexus that starts a battle hurt |
-| B. **Nexus health carries; no currency.** Stops give cards and mends, nothing is bought | One fewer number; loses the Exchange and the choice between a card and a mend that a currency makes |
-| C. **Neither carries.** Every battle is fresh, a lost battle ends the run, the route is only a choice of fights and rewards | The smallest run; the route has nothing to spend, so choosing a path is choosing a reward and nothing more |
-
-**Recommendation: A.** Navigating a dynamic environment needs a scarce thing the environment takes from you; health is the
-one every reference game uses, and it is already in the game as the Nexus's. The currency is what makes a draft a trade
-rather than a gift. Built that way, both can be switched off by the data if he finds the numbers heavy.
-
-### Q85 — How long is a run?
-
-**Status:** OPEN — proceeds under the recommendation.
-
-[`game-modes.md`](../game-design/game-modes.md) says six to nine battles in two or three acts, a run of an hour. With stops
-that are not battles (an Exchange, a Workshop, a Signal), three acts of three steps and a boss are about ten battles and nine
-other stops.
-
-| Option | Cost |
-| --- | --- |
-| A. **Three acts, and a short run of one act** | An hour or a little more for a full run, a quarter to half an hour for the short one he can playtest in a sitting |
-| B. **Two acts** | About forty minutes; less room for a build to become something |
-| C. **One act only, until content grows** | Fastest to play and test; a run that cannot tell a story of a build over time |
-
-**Recommendation: A**, played short first: the short run is what a playtest uses until the cards exist to fill three acts.
+the game's most-scrutinised interaction proved on a fixture no mission plays.
 
 ### Q87 — Should the march route be drawn on the Build Phase, and be the line the army keeps to?
 
@@ -400,6 +344,22 @@ question for a unit's cost, not a rule.
 
 **Recommendation: A**, measured again with the first real air units: it is a question of what air costs, and the engage
 scenarios are the bench to read it on.
+
+### Q93 — How is an endless stand scored?
+
+**Status:** OPEN — registered 2026-11-11 with Story's endless stand ([`story.md`](../game-design/story.md)); waits on the
+endless stand's milestone.
+
+An endless stand ends when the Nexus falls; its score is how far the player got, and it needs one number a player
+reads at a glance and can beat.
+
+| Option | Cost |
+| --- | --- |
+| A. **Rounds held** | The simplest and the clearest; many ties, and a slow turtle scores as well as a bold defence |
+| B. **Waves cleared**, worth more as they grow | Rewards killing, not only lasting; a wave has to be a counted thing the mission declares |
+| C. **Rounds held, ties broken by the value of enemies destroyed** | A clear headline number and a fair order; two numbers to show |
+
+**Recommendation: C**: rounds are the unit the player already counts, and the tiebreak rewards fighting well.
 
 ### Q51 — When should the game get a real accent-colour palette, with variations per faction?
 
@@ -507,7 +467,7 @@ digit contract stays a rule. Ask him once whether `b` was an example of a key or
 
 **Status:** OPEN — decision-ready; registered 2026-09-30.
 
-[`campaigns.md`](../game-design/campaigns.md) gives the trigger runner an `order` action — a group "advances,
+[`story.md`](../game-design/story.md) gives the trigger runner an `order` action — a group "advances,
 holds, or withdraws toward a region" — and the owner asked for incoming units to show their intention. **The
 kernel has one movement rule: every unit engages the nearest enemy.** It has no field for an order and no phase
 that reads one. So `order` is built with one verb, `advance`, which means exactly what the kernel already does;
@@ -521,7 +481,7 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 | C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No kernel change, but a unit's identity changes under it and every unit needs variants: content bloat to avoid a rule |
 
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
-that is what a readable intention needs and what the Campaign's scripted opponent will be made of.
+that is what a readable intention needs and what a mission's scripted opponent will be made of.
 
 **Built in part, 2026-10-04.** Mario, on the Commander's fourth round: "The campaign levels should have a target
 well defined so it is predictable where your troops are moving", and of posts, "before we start playing with

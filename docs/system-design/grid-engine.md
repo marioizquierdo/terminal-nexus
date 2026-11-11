@@ -163,7 +163,7 @@ are not repeated here.
 | The Build Phase screen follows one set of interface patterns: focus, cancel, lists, popups, cards, hand-offs, the one-line bottom bar, the Grid pane's edge | the tests named in that document | [`ui-patterns.md`](ui-patterns.md) |
 | The browser playtest page is a development tool, never a platform: it runs the terminal's own screen loops and converts only frames, input bytes and settings storage | `tests/web.test.ts` | [`runtime.md`](runtime.md) |
 | Logs are one structured shape: an event is declared before it is logged, a logger takes its clock as an argument and keeps a bounded memory, the kernel and the match layer never log, and nothing the rules decide reads a log | `tests/log.test.ts`, `tests/architecture.test.ts` | [`runtime.md`](runtime.md) |
-| A mission is a sequence of rounds, each a Nexus Pulse, a Build Phase and the Battle Round after it, driven by triggers; simulation actions run inside the kernel as validated intents, presentation actions never touch state, and a scripted Battle Round is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`campaigns.md`](../game-design/campaigns.md) |
+| A mission is a sequence of rounds, each a Nexus Pulse, a Build Phase and the Battle Round after it, driven by triggers; simulation actions run inside the kernel as validated intents, presentation actions never touch state, and a scripted Battle Round is still a Pulse | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | [`story.md`](../game-design/story.md) |
 
 Design commitments the game documents own, GUIDANCE until built and played:
 
@@ -171,12 +171,12 @@ Design commitments the game documents own, GUIDANCE until built and played:
   units and structures, blueprints and a real tech tree, upgrades, Nexus powers and Specials. A
   faction is a wide pool and an army fields a few of them; the match only ever sees an army. "A deck
   of cards" is not the model ([`commander-armies.md`](../game-design/commander-armies.md)).
-- A mode is data over one match loop and one army shape; Campaign and Challenge are uncorrelated
-  ([`game-modes.md`](../game-design/game-modes.md)).
+- A mode is data over one battle: Skirmish, Story and Versus; nothing below the mode knows which it serves, and
+  a mission exists only inside Story ([`game-modes.md`](../game-design/game-modes.md)).
 - A Nexus power is a name and one plain line, with no player-facing classification, and, for now, a dealt one
   may be left unpicked; a mission has goals rather than a fixed length
   ([`commander-armies.md`](../game-design/commander-armies.md),
-  [`campaigns.md`](../game-design/campaigns.md)).
+  [`story.md`](../game-design/story.md)).
 - Each Nexus is named for the faction that holds it, with Prime or Grid appended where it matters;
   Prime Nexuses stay home and replicate Grid Nexuses ([`lore.md`](../game-design/lore.md)).
 - Lore is a platform, not a plot: when clearer ASCII and a richer story compete, the Grid wins
@@ -192,7 +192,8 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Build Phase** — the hidden, simultaneous, untimed phase where each player builds their plan.
 - **Battle Round** — the fixed-tick, deterministic battle that ends each round and resolves both plans in ASCII. It is the battle's name everywhere, on screen and in the writing, and the player never reads Pulse for it. The owner named it for the player first (2026-10-04: "We can refer to it as Nexus Pulse in lore and design, but Battle Round is better for the player and UI"), and for the design and the lore too once the Nexus Pulse became the round's opening (2026-10-07).
 - **the Pulse** (engine) — the engine's name for the deterministic simulation step that resolves a Battle Round: `src/pulse/`, `pulseTicks`, `startPulse`, [`pulse.md`](pulse.md) and the three worlds above. Kept for now in the code and the engine documents; it is never a player's word, and it is not the Nexus Pulse.
-- **mission** — a sequence of rounds driven by triggers, with goals rather than a fixed length.
+- **Skirmish**, **Story**, **Versus** — the three modes: one battle against a scripted Commander Army; a Commander's story of missions; one battle between two people. Their words (battle file, endless stand, technology) are defined in [`game-modes.md`](../game-design/game-modes.md).
+- **mission** — a battle with a script, words and a goal, played in rounds driven by triggers; it exists only inside Story ([`game-modes.md`](../game-design/game-modes.md)).
 - **group** — units a mission trigger brings onto the Grid together during a round, at a chosen tick, with a name and an intention. A group is never a wave (the owner, 2026-10-04).
 - **wave** — the units one building spawns at once in a Battle Round, set down together beside it (the owner, 2026-10-05: "The first wave is at 5 seconds"). How many a wave, how many waves a round and the seconds between them are the building's own, on its card in its army; the first wave comes at the same moment for every building (`firstWave`). The word means only this: a round's battle is a Battle Round, and what a mission brings is a group.
 - **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.

@@ -1,233 +1,237 @@
 # Terminal Nexus — game modes
 
-_The two single-player modes, Campaign and Challenge, designed together over one match loop: the vocabulary they share, what each is for, and how cards are tagged so both can deal them._
+_The three modes — Skirmish, Story and Versus — over one battle: the words they share, what each is for, every way a
+Skirmish can be set up (what the first build needs and what waits), and how each mode is tested. Story's own design is
+[`story.md`](story.md)._
 
 _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 
-## 1. Why the two modes are designed together
+## 1. The words
 
-The Campaign alone would have to carry everything: teach the game, tell the world, and fill a long
-stretch of play. A second mode, **runs** — where each battle ends on a new draft upgrade or a removal
-that polishes the build for the next battle — takes that pressure off. The Campaign stays the cool
-tutorial and world-building it was meant to be, a first-time player experience with no obligation about
-duration, and Challenge (the runs) carries replay value. The two are meant to be thought about
-simultaneously: *campaign (tutorial) and challenge (run).*
+**The names** (RULE — settled 2026-11-11; the code catches up in the Skirmish milestone): every document, screen and new piece of code uses these. The code still says `campaign` and
+`challenge` in places; the Skirmish milestone renames them ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md)).
 
-**RULE: there are two single-player modes, Campaign and Challenge, and they are designed together**
-(`src/cli/menu.ts` makes them the main menu's first two rows; `tests/lifecycle-title-menu.test.ts`
-holds the menu). This document gives them names, a shared vocabulary, and a structure precise enough
-that the game's experience and interface can be built against it — without first deciding how long a
-campaign is, what every mission teaches, or what a run's exact numbers are. Those are decisions for
-playtesting once the interface exists, and the point of writing this down is that nothing built
-before then forecloses either mode.
-
-**RULE: a mode is data over one match loop and one army shape.** The match loop is a round —
-Nexus Pulse, Build Phase, Battle Round — repeated until a result ([`pulse.md`](../system-design/pulse.md), match structure). The army
-shape is the Commander Army, a bounded composition drawn from a faction's pool
-([`commander-armies.md`](commander-armies.md)); what is built of it is cards in army files, which each mode
-offers its own way: the Campaign through its levels' unlocks (`src/armies/`, `tests/armies.test.ts`). A
-mode decides which matches are played, in what
-order, against whom, and what happens to the army between them. Nothing below the mode — the kernel,
-the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
-
-## 2. Vocabulary — RULE for the names, so every document and screen uses the same ones
-
-| Term | Means |
+| Word | Means |
 | --- | --- |
-| **Match** | One Grid, one or more rounds (each a Nexus Pulse, a Build Phase and the Battle Round that follows), one result. The unit of play; 5–12 minutes ([`concept.md`](concept.md)). Nothing above a match is visible to the kernel |
-| **Battle** | A match played inside a mode. "Battle" is the player-facing word; "match" is the engine's |
-| **Mission** | A battle with authored triggers, text, and a teaching goal — the Campaign's unit ([`campaigns.md`](campaigns.md)) |
-| **Run** | An ordered series of battles in which the army changes between them — the Challenge mode's unit. One attempt, start to finish, win or lose |
-| **Act** | A segment of a run ending in a harder, named battle. A run is a small number of acts |
-| **Card** | Working shorthand for any content item an army can hold or be offered: a structure, a Nexus power, an upgrade, a Commander variant. A unit is not a card — units come from the structures that produce them. **Not a claim that an army behaves like a trading-card deck** — see the note below. **Still ambiguous** (see the terminology glossary in [`commander-armies.md`](commander-armies.md)): whether this stays an internal shorthand or narrows to mean "Nexus power" specifically, the game's actual card-equivalent noun, is not yet decided |
-| **Pool / Army** | The faction's whole catalogue / the army's chosen subset ([`commander-armies.md`](commander-armies.md)). The owner calls one Commander's army her **deck**: the package she brings, not deck behaviour — see below. The code has cards in army files, and what a mode offers of them. **"Pool" alone is ambiguous** (a faction's pool versus one army's own slice of it) — always qualify it |
-| **Draft** | Choosing from an offered hand. **The Nexus Pulse** deals one inside a match, as each round opens, from the army's Nexus power pool, each card's rarity set by a schedule that ramps by round, and the player keeps one during the Build Phase ([`commander-armies.md`](commander-armies.md)). **The run draft** happens between battles, from the faction pool, and changes the army |
-| **Rarity** | How rare a card is: `common`, `uncommon`, `rare`, `legendary`. The run draft weighs it, how often a card is offered; the Nexus Pulse deals it by a schedule, which rarity a hand holds in which round, and a legendary only where the schedule asks for one |
-| **Tier** | The earliest depth at which a card may be offered: `1`, `2`, `3`. Tier gates *when*; rarity weights *how often* |
-| **Unlock** | A card added to the player's available pool, granted by the Campaign or by Challenge's own play, between battles. What the unlock record stores is an open question (Q31). Inside a match, only the tech tree unlocks; a Nexus power *adds* ([`commander-armies.md`](commander-armies.md)) |
-| **Seed** | A run is deterministic from its seed: the same seed deals the same offers and the same opponents in the same order, exactly as a match is deterministic from its seed |
-| **Opponent policy** | What plays the other side of a battle: a trigger list (a scripted mission), or a local heuristic policy driving a Commander Army ([`campaigns.md`](campaigns.md)) |
+| **Battle** | One Grid, two sides, rounds until a result: the unit of play. The engine's word is *match*; nothing above a battle is visible to the kernel |
+| **Round** | A Nexus Pulse, a Build Phase and the Battle Round that follows ([`concept.md`](concept.md)) |
+| **Mode** | What decides which battles are played, in what order, against whom, and what carries between them |
+| **Skirmish** | One battle against a scripted Commander Army, set up by the player. The centre of the game and of its testing |
+| **Story** | A Commander's story: missions in order, with technologies carried from one to the next, ending in a final battle |
+| **Versus** | One battle between two people. Later |
+| **Mission** | A battle with a script, words and a goal. **A mission exists only inside Story** |
+| **Endless stand** | A kind of mission: waves that grow until the Nexus falls, scored by how far the player got. It comes before a story's final battle |
+| **Battle file** | A file that sets up a Skirmish: everything the setup screen sets, and more |
+| **Opponent** | What plans the other side of a Skirmish: a duel script (`balanced`, `rush`, `turtle` and their variants) driving a Commander Army |
+| **Technology** | A card a mission in Story grants and later missions keep: a building, an upgrade, a Nexus power. The story file stores it in a level's `unlocks` |
+| **Level** | The code's word for a mission's entry in its story file (`campaign?level=<id>`); say *mission* in writing |
 
-Rarity and tier are **two axes on purpose**: a tier-1 rare is a strong early card that is seldom
-offered; a tier-3 common is an ordinary late card. Collapsing them into one "quality" number is the
-mistake this vocabulary exists to prevent, because both modes need both axes — a Campaign mission
-unlocks by tier, a run deals by rarity.
+**Retired names**: *Campaign* is now Story; *Challenge* and its *run* of many battles are retired (section 6). The
+word *run* is free again; do not use it for a mode.
 
-**"The army is a deck" is parked, not decided.** The claim is withdrawn entirely, not even
-kept as guidance, only as an idea: the army is more than a deck and is composed of a bunch of different
-things. [`commander-armies.md`](commander-armies.md) has the full retraction. "Card," "rarity," "tier," and "draft" stay in this vocabulary as
-working words for a real mechanism — an offer, weighted and gated, that a player accepts or declines
-— not as an assertion that the whole army composition is a deck of cards. One concrete consequence:
-**Nexus powers specifically are almost always strictly advantageous, not diluting**, so
-the deckbuilder intuition "adding things can make my draws worse" does not hold for them the way it
-does in Slay the Spire. For the same reason a dealt Nexus power was first designed so it could not be declined —
-there is nothing to protect a build against by skipping one — but **for now a round may start with the pick
-unmade**, the owner's choice for testing, and whether it stays so is an Experiment (the optional pick in
-[`commander-armies.md`](commander-armies.md), Q74; Alder's own mechanic, which converts a power into honor,
-stays the one designed exception).
+## 2. Why these three, and why Skirmish first
 
-## 3. The modes
+A battle is long: about 1½ to 2½ minutes a round and six or seven rounds, so ten to twenty minutes, more for a player
+who takes their time ([single battles](../history/reports/2026-11-11-single-battles.md)). A mode that strings many
+battles together, as a roguelike run does, becomes an evening; the games that do that well have battles of seconds.
+So the game is built around **the single battle**, the way StarCraft and Age of Empires are: Skirmish to play one,
+Story to learn and to live a Commander's story, Versus to play another person.
 
-Four are named so the seams stay visible; two are designed here. The other two are deliberately
-sketches.
+**Skirmish comes first** (RULE — settled 2026-11-11; the milestone order holds it). It is the playable loop, the testing tool (any setup becomes a battle anyone can play,
+show and measure), and the base Versus builds on. Every rule, unit and screen is judged in a Skirmish before it is
+taught in a mission. A Story mission is a Skirmish setup with a script and words around it.
 
-### 3.1 Campaign — the first-time player experience and the established setting
+**How the game grows** (the owner, 2026-11-11, [his words](../history/feedback/2026-11-11-game-modes.md)). Through
+Skirmish, not through missions: polish the interface and the gameplay; add units and keep improving how units, formations
+and balance are tested automatically; give each Commander more Nexus powers; make the opponent better, up to Claude
+planning the other side as the player plans theirs. When the gameplay has a good foundation, Skirmish is shown to people
+(the owner's friends first), and their play says what Story should be. **Story is built after that**, one Commander's
+story at a time. PERIMETER is no longer where changes are tested.
 
-**RULE: the Campaign is the first-time player experience.** It is the game's **on-ramp and its lore**: a short, linear sequence of authored missions
-that teaches the match loop one mechanic at a time and tells the story [`campaigns.md`](campaigns.md) already
-carries (the Operator belief ramp). It is judged on two things only: **does a new
-player come out of it able to play a run, and does the world feel real.** It carries no length or breadth
-requirement and no burden of replay value — that burden belongs to Challenge, which is the reason this section
-can be short. The rest of the section is GUIDANCE.
+**A mode is data over one battle** (RULE — `tests/architecture.test.ts`: a mode's code never reaches the view or the shell). A mode chooses battles and what carries between them; nothing below the mode
+— the kernel, the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
 
-Mechanically, the Campaign is the mode that **grows the player's pool**. Each mission introduces a
-few cards and unlocks them; by the end, the player's available pool is the faction's tier-1 and
-tier-2 catalogue, and they have drafted from it at least once. The Campaign's last mission is a
-small, guided run in all but name — which is what makes the handoff to Challenge invisible.
+## 3. Skirmish
 
-Missions are trigger lists ([`campaigns.md`](campaigns.md)). Everything about their authored content —
-text, cast, cutscenes, the scripted opponent — stays in `campaigns.md`; this document only says
-what the mode *is for*. Three things about its shape belong here, because Challenge depends on them
-(see also the three starting Commanders in [`commander-armies.md`](commander-armies.md)):
+### 3.1 What it is
 
-- **The Campaign starts with one Commander (Vasse), no choice screen.** Completing her mission 1
-  unlocks two more campaign rows — Averno (near-identical Citizen build) and Dob Hunter (Ravel) —
-  each its own opening on the same maps. A second opening is content, not a second campaign, and
-  neither is shown before the player has played the first.
-- **Progress is per save slot**, each slot naming its Commander, and a player may start another
-  campaign at any time without losing one in progress.
-- **Every mission has a main goal and usually a bonus goal** ([`campaigns.md`](campaigns.md) has the
-  objective shape), and the bonus goal is what **unlocks content for Challenge** — a
-  Commander, a card, a starting variant. That is the coupling between the two modes, and it is
-  additive only: the Campaign can add a few unlocks, and neither mode owns or gates the other.
+The player picks their Commander, the opponent's Commander and how it plays, a map and a few rules, and plays one
+battle of up to eight rounds. **A Skirmish battle is a duel** ([`duels.md`](../system-design/duels.md)): the player
+plans side A on the Build Phase screen, the opponent's script plans side B under the same rules, the two plans are
+revealed together, and the Battle Round plays them. It ends when a Nexus falls, or after the last round on the larger
+share of Nexus health kept.
 
-### 3.2 Challenge — runs
+What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two duel maps (the Crossing
+and the Pocket, `src/duel/maps.ts`), and a duel played on the Build Phase screen (today a Challenge battle). What it
+lacks is a setup screen, a battle file, and an opponent good enough to play.
 
-**RULE: Challenge is seeded runs with a draft between battles.** A **run** is the replayable mode: a seeded series of battles, each followed by a **run draft** that
-changes the army — add a card, remove a card, or upgrade one — so that the build is polished, and
-narrowed, battle by battle, and the last battle is fought with an army that did not exist at the
-first. The structure is the one that has proven itself across a decade of roguelike deckbuilders and
-autobattlers (see the references below), taken at the size Terminal Nexus's 5–12-minute match affords.
+### 3.2 What a Skirmish is set up with
 
-**The whole run is designed in [`runs.md`](runs.md)**: the route the player chooses a path through, the stops on it, the army that is drafted, the opponents and the rewards. The table below is the shape that design builds on, GUIDANCE, and its numbers are a starting guess to be retuned once runs are played:
+Two kinds of setting: **required**, which the Skirmish milestone builds; and **later**, ideas that are each
+worth building once a Skirmish is fun without them. Every required setting has a default, so a Skirmish starts with
+one key.
 
-| Element | Starting value | Why this and not another |
-| --- | --- | --- |
-| Battles per run | **About ten**, in **3 acts** of three steps and a boss (a short run is one act) | A match is 5–12 minutes; a run under an hour is one sitting, and a run over two is a different product. Three acts of three is the roguelike-deckbuilder default; two acts of three is the fallback if battles run long |
-| Starting army | **RULE: Challenge keeps its own progression, and the two modes are uncorrelated by design.** A run starts from one of the faction's basic Commander packages, unlocked from the beginning; playing Challenge itself unlocks more — more Commanders, more army structures, more Nexus powers — the same way Slay the Spire's own meta-progression works. The Campaign's bonus goals may unlock a few of the same things, but only ones Challenge has not already unlocked; neither mode gates or waits on the other. Opening Challenge before the Campaign shows a dismissible recommendation, never a block | A player who dislikes the Campaign is never locked out of content, and a player who plays both is never made to unlock the same thing twice. The one soft nudge is the dismissible "we recommend the Campaign first" message |
-| Between battles | **one run draft**: add one of three offered cards, **or** remove one card, **or** upgrade one card (a building has no levels; what a run draft's upgrade offers — a building's action opened for the run, say — is decided with the draft, [`commander-armies.md`](commander-armies.md), what changes between rounds) | Add/remove/upgrade is the minimum set every reference game converged on. Removal's *reason* differs by what's offered: an army structure costs supply and board space, so trimming one is a real trade-off; a Nexus power is close to strictly good so removing one is about deck focus and role variety, not chasing better odds the way a Slay the Spire deck-thin does |
-| Offer dealing | three cards, weighted by **rarity**, gated by **tier** against the battle index; a **pity offset** raises the rare chance each time no rare is offered and resets when one is | Slay the Spire's mechanism, verbatim in spirit: fair variance without a dead run |
-| Tier schedule | tier *t* becomes available at battle **2t − 1**: tier 1 from battle 1, tier 2 from battle 3, tier 3 from battle 5 | Super Auto Pets' schedule, which makes the run's early third about fundamentals and its last third about combinations |
-| Opponents | **another Commander Army with a heuristic policy**, escalating by act; each act ends in a **named Commander** as its boss | Reuses the army shape and the opponent tiers [`campaigns.md`](campaigns.md) already names. A boss is an army with a signature, not a stat multiplier |
-| Between runs | **unlocks into Challenge's own pool** only, primarily through Challenge play itself, with the Campaign's bonus goals adding a few more; no permanent stat buffs | Into the Breach and Hades both persist *options* across runs; persisting *power* would break "understand why the battle unfolded" ([`concept.md`](concept.md)) |
-| Within a run | **the army, the Commander, the Nexus's health and the run's requisition persist; the Grid, structures, and units do not** (open question Q40) | Each battle starts from a fresh Grid with the army's starting package, and the Nexus as damaged as the last battle left it, so the route is a spending of health. Veterans carrying over stays the observable experiment it is, not assumed |
-| Seed | shown, shareable, replayable | A run is a match's determinism at the next scale up: same seed, same run — the daily-run and "try my seed" modes fall out for free |
-| Failure | a lost battle ends the run; the summary shows the army, the seed, and every draft taken | Reading a lost run is how the mode teaches; the summary is the mode's report |
+**Required:**
 
-**Design consequences a session should hold onto:**
+| Setting | Set on the screen | Set in a battle file | Default |
+| --- | --- | --- | --- |
+| Your Commander | yes | yes | Vasse |
+| The opponent's Commander | yes | yes | Dob Hunter |
+| The opponent's script | yes, as its play style | yes, by name | `balanced` |
+| The map | yes | yes, by name | the Crossing |
+| The seed | shown, editable | yes | from the clock |
+| Rounds at most | no | yes | 8 |
+| Battle Round length | no | yes, in ticks | 360 (30 seconds) |
+| The opponent's credits: at the start and each round, as a share of the curve's | yes | yes | 100% |
+| Each side's starting credits, exactly | no | yes | the curve's round 1 |
+| Each side's roster (build menu and power pool) | no | yes | the Commander's whole army |
+| Buildings and units already on the Grid, either side | no | yes | none beyond the Commander's starting package |
+| Settings and Experiments | no | yes, as `--settings` text | the saved settings |
 
-- **The run draft is the Nexus Pulse's sibling, not its replacement.** Inside a battle, the Nexus
-  still deals a hand from the army's power pool at every Nexus Pulse. Between battles, the run draft
-  changes what that pool — and the structure list — contains. One dealing mechanism, two scales.
-- **Removal is a first-class offer.** Every run draft screen offers removal alongside adding, at the
-  same cost of "this is your one choice." A build that cannot shed its early common structures cannot
-  become a build.
-- **Bosses are named armies.** The Commander proposals in [`commander-armies.md`](commander-armies.md) are the
-  boss roster in waiting: a Ravel act ends in Speaker Corvane or Old Marrow, and a player learns to
-  read a Commander's doctrine from what their army does — the alignment test of
-  the faction design law in [`lore.md`](lore.md), applied to opponents.
-- **A run's definition is a section of an army file (IDEA)**: a `runs` section beside `campaigns`, with its
-  Commander, the credits and cards a run starts with, the pool its run draft deals from and its own
-  progression. It produces the same offer a campaign's level does (`src/armies/`), so nothing below the
-  mode changes, and it builds on the same cards and units, from `armies/all` or a Commander's own army.
-- **Runs need no writing.** That is the whole reason this mode can be built early. Text in a run is
-  the interface's own voice (the system-text exemplars in [`lore.md`](lore.md)) and Commander barks — nothing
-  authored per run.
+**There is no difficulty setting** (the owner, 2026-11-11): the opponent's script and its credits are what make a
+Skirmish harder or easier, and the setup says them plainly. The scripts differ in plan, not in skill; a smarter
+opponent is a milestone of its own.
 
-**What is built** (RULE — `src/run/`, `src/cli/run-play.ts`, `tests/run.test.ts`, `tests/run-play.test.ts`; the army and its draft, [`runs.md`](runs.md)). **A run
-battle is a duel** ([`duels.md`](../system-design/duels.md)): the player plans one side on the Build Phase screen — the
-same screen, keys, Nexus Pulse and Battle Round as a campaign level — and the opponent's Commander Army is planned by a
-scripted duel player from its brief, the two plans revealed together. The first run is one act of three battles
-against Dob Hunter's army on the Crossing, eight rounds of 30 seconds each at most (a battle about seven to twelve minutes), each battle
-played by a different scripted player (rushing, digging in, balanced) in an order the seed shuffles. A lost battle
-ends the run; a drawn one goes on and is not a win. The army is the Commander's small starting army every battle, and the run draft after each won battle changes it. The seed is shown as the run opens and at its end, and a run that ends opens the next on a seed
-it names, so a chain of runs replays from its first seed. The title menu's Challenge row starts one on a seed from the
-clock; `challenge?seed=<n>&commander=<id>` opens a chosen one. Between battles and at the end, a round opens on the
-game's own dialog: how the last battle ended, then the next battle's opponent and rounds; at the end, the whole
-summary. A run is played headless by `npm run duel -- run --seed <n>`, through the same functions the screen uses.
+**Later (IDEA):**
 
-### 3.3 Skirmish — one battle, any legal army, any opponent — IDEA
+- **A Build Phase clock**, soft and optional, to bring a battle near fifteen minutes and add an RTS's pressure: an
+  Experiment once Skirmish is played.
+- **Modifiers**: named rules laid over a battle (faster rounds, double credits, no Turrets), the way StarCraft II's
+  co-op mutators keep the same mission fresh. A battle file is where they would go.
+- **A pre-battle pick**: choosing a few cards of the army before the battle, as Battle Aces chose eight units.
+- **More than one opponent**, or an ally: needs more than two sides in the duel.
+- **More maps**, a random map from a seed, and the player's own start position.
+- **Presets**: named bundles of an opponent's script and credits ("a cautious Dob with a third more credits"), offered
+  as challenges once playing shows which are worth offering.
+- **A smarter opponent**: a planner that reads the public state and writes plans in the duel's own vocabulary
+  ([`scripted-opponent.md`](scripted-opponent.md)).
+- **Claude as the opponent**: a language model planning the other side each round, blind and at the same time as the
+  player, under the same rules. The duel already takes a plan from a command or a file each round, which is how a model
+  plays a side today ([`duels.md`](../system-design/duels.md), model against model). A milestone of its own; the game
+  never needs a model to be played.
+- **An endless stand outside a story**, for a high score and theme unlocks: Story's endless mission offered alone.
+  Decided once Story's endless stand has been played.
+- **Saving a battle and sharing its seed and file**, and a daily seed.
 
-One match against a local policy, with every legal Commander Army exposed without campaign completion
-([`campaigns.md`](campaigns.md)). Cheap the moment a run exists — it is a run of length one — and
-useful long before then as the mode every interface change can be played in. Not designed further here.
+### 3.3 The battle file
 
-### 3.4 Multiplayer — later, and more intuitive once the rest exists — IDEA
+A battle file is a JSON file (`--battle <file>`, planned) that sets up a Skirmish without the screen: anything the screen
+sets, and the rest of the required list. It is the testing tool: any demo of a rule, a Commander or a starting position
+becomes a battle a person can play and a duel can measure. Its shape, a first guess for the milestone to settle:
 
-Hidden simultaneous plans and deterministic resolution already fit asynchronous and live play
-(a match takes two committed plans from anywhere). Multiplayer is more intuitive once the rest
-exists, so it comes later. Nothing here is designed; multiplayer comes later, on the same match, and the seam it needs already exists in the kernel.
-
-## 4. Designing content for both fronts
-
-**RULE: every card carries `rarity`, `tier` and `role` from the day it is authored**, so that both
-modes can deal it; the authoring template in [`commander-armies.md`](commander-armies.md) asks for
-them. Built for Nexus powers, which the Nexus Pulse deals: every power in an army file has a `rarity` and one
-`role`, from short lists the loader checks (`RARITIES` and `ROLES`, `src/armies/types.ts`; `tests/armies.test.ts`).
-`tier` waits for the run draft, which gates by it, and buildings carry no tags until a draft deals them. The three
-rules of thumb after the schema are GUIDANCE.
-
-```ts
-interface CardTags {
-  readonly rarity: "common" | "uncommon" | "rare" | "legendary"
-  readonly tier: 1 | 2 | 3
-  // One for a Nexus power (built): troops, production, offense, defense, support, economy, commander,
-  // information, movement. The run draft may want several for a building.
-  readonly role: readonly string[]
+```json
+{
+  "map": "crossing",
+  "seed": 7,
+  "rounds": 8,
+  "pulseTicks": 360,
+  "opponentCredits": 1.0,
+  "sides": {
+    "A": { "commander": "vasse", "credits": 140 },
+    "B": { "commander": "dob", "player": "script:rush",
+           "roster": { "buildings": ["den"], "powers": [], "doctrines": [] },
+           "units": [{ "unit": "unit.ravel.raider", "count": 4, "at": { "x": 40, "y": 12 } }] }
+  },
+  "settings": "battleBanner=on"
 }
 ```
 
-Three rules of thumb, borrowed from where they were proven:
+Here side A starts with 140 credits instead of the curve's 100, and side B fields only the Den. It builds on what
+exists: the duel's `DuelSetup` (map, seed, rounds, Battle Round length, Commanders and rosters,
+`src/duel/types.ts`) and the scenario format's way of placing units (`src/scenario/`). A battle file the loader refuses
+is refused by name, every problem at once, the way a mission is.
 
-1. **Commons must be enough to win with.** A run dealt only commons should be winnable at base
-   difficulty. Commons are the fundamentals; uncommons help you win; rares *just win* (Rosewater's
-   rarity doctrine, in the references below). If a rare is required, the balance is wrong, not the rarity.
-2. **Complexity lives at uncommon and rare.** A common does one readable thing. A card that needs
-   a paragraph is not common, whatever its power.
-3. **Every card has a role tag, and the dealer reads it.** Three offers of the same role is a dead
-   draft; the dealer prefers variety across roles before it weighs rarity. This is cheap to build and
-   the single largest quality-of-run lever a small catalogue has.
+### 3.4 How a Skirmish is tested
 
-Balance in both modes is **measured, then judged**: pick rate and win rate per card, per tier, per
-act, from runs played by the driver ([`input.md`](../system-design/input.md)) as much as by people —
-the metrics-driven loop Slay the Spire's team described, with the same warning they gave: metrics
-diagnose, they do not define fun.
+**A Skirmish is deterministic** (RULE for the duel it plays, `tests/duel.test.ts`: "a duel resolves the same every run"):
+the same battle file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes four ways to test one, from cheapest to fullest:
 
-## 5. References
+1. **Headless, script against script**: the duel commands (`npm run duel -- play`, `bench`), and a battle file given to
+   them once it exists. For balance and for a rule's effect over many seeds.
+2. **Headless, a player's plans**: the driver plays side A through the Build Phase's own functions, as `duel run` plays
+   a Challenge battle today. For a flow end to end with no terminal.
+3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs`) opening a Skirmish by its route and a battle
+   file, pressing keys and returning every screen. For how it reads.
+4. **By Mario**: `./bin/terminal-nexus.ts`, Skirmish on the title menu, or a battle file on the command line.
 
-Cited by name in the sections above; a session needs these only to go deeper than the mechanism already
-named there, never to re-derive it. A few (marked †) could not be opened directly from this session's
-network and rest on search extracts rather than a full read.
+The Skirmish milestone makes a Skirmish the default place to see a change: the playtest skill, the browser page and the
+pictures a pull request shows start from one, where today they start from PERIMETER. PERIMETER is then opened only for
+a change about missions.
+
+## 4. Story
+
+A Commander's story, the same shape for every Commander: a tutorial, three or four technology missions whose
+collections carry forward, an endless stand scored until the Nexus falls, and a final battle ([`story.md`](story.md)
+is the design).
+
+**A mission exists only inside Story** (RULE — settled 2026-11-11; the Skirmish milestone's rename holds it in code). Any mission still opens directly for testing, by its route
+(`campaign?level=<id>` today, renamed with the mode), without playing the story before it.
+
+Story comes after Skirmish has been played by people, because every mission is a Skirmish setup plus a script and words:
+a mission built before the battle is fun would be built twice.
+
+## 5. Versus — IDEA
+
+Two people, one battle: hidden simultaneous plans and deterministic resolution already fit play over a network and play
+by turns. Versus builds on Skirmish: the settings found to make the most enjoyable Skirmish are where a fair Versus
+battle starts. The cheapest version already half exists: the duel plays through files, one plan a round
+(`duel new`, `wait`, `submit`), so a battle by correspondence is close. Nothing is designed, and multiplayer stays out
+of scope until a milestone asks for it.
+
+## 6. What was retired
+
+**Challenge runs**, a seeded series of battles with a draft between them, were retired on 2026-11-11 ([the owner's
+words](../history/feedback/2026-11-11-game-modes.md)): a battle is too long for a run of many. Their design is
+[kept in history](../history/challenge-runs-design.md). What survives:
+
+- **The draft** — three cards weighted by rarity, gated by tier, with a pity offset — is the starting point for Story's
+  technology choice between missions.
+- **Building actions** (upgrades, modes, orders), **the kept front** and **the battle banner** are battle mechanics and
+  belong to every mode.
+- **The code** (`src/run/`, the title menu's Challenge row, `challenge?seed=<n>`) still plays until the Skirmish
+  milestone replaces it with Skirmish.
+
+## 7. Content every mode can deal
+
+**RULE: every card carries `rarity`, `tier` and `role` from the day it is authored**, so that every way of dealing it
+can read it (`RARITIES` and `ROLES`, `src/armies/types.ts`; `tests/armies.test.ts`). Two things deal cards: **the
+Nexus Pulse**, inside a battle, every round, from the army's power pool by a schedule that ramps rarity by round
+([`commander-armies.md`](commander-armies.md)); and **Story's technology choice**, between missions. Rarity says how
+rare a card is (`common`, `uncommon`, `rare`, `legendary`); tier, the earliest point it may be offered (`1`, `2`, `3`).
+They are two axes on purpose: a tier-1 rare is a strong early card seldom offered; a tier-3 common an ordinary late one.
+
+Three rules of thumb (GUIDANCE):
+
+1. **Commons must be enough to win with.** A battle dealt only commons is winnable against the default opponent; if a rare is
+   required, the balance is wrong, not the rarity (Rosewater's rarity doctrine).
+2. **Complexity lives at uncommon and rare.** A common does one readable thing.
+3. **The dealer reads the role.** Three offers of the same role is a dead hand; the dealer prefers variety across roles
+   before it weighs rarity.
+
+**"The army is a deck" is parked, not decided** ([`commander-armies.md`](commander-armies.md) has the retraction):
+*card*, *rarity*, *tier* and *draft* are working words for an offer, weighted and gated, that a player accepts or
+declines. Nexus powers are almost always strictly good, so a deckbuilder's "adding things can make my draws worse"
+does not hold for them.
+
+Balance is **measured, then judged**: duels and Skirmish battles played by scripts and the driver, then by people
+([`measurement.md`](../system-design/measurement.md)). Metrics diagnose; they do not define fun.
+
+## 8. References
 
 | Source | Cited for |
 | --- | --- |
-| **Slay the Spire** — Giovannetti, *Metrics Driven Design and Balance*, GDC 2019 ([talk](https://www.gdcvault.com/play/1025731/-Slay-the-Spire-Metrics)); [card rewards](https://slay-the-spire.fandom.com/wiki/Card_Rewards) | pick-one-of-three-or-skip; merchant removal; the rarity pity offset; ascension as a difficulty ladder; pick-rate/win-rate balancing |
-| **Super Auto Pets** ([basics](https://superautopets.wiki.gg/wiki/The_Basics)) † | tier-by-turn gating (`2t − 1`); a five-slot team |
-| **Mechabellum** ([site](https://store.steampowered.com/app/669330/Mechabellum/), [review](https://monstervine.com/2025/04/mechabellum-review/)) | Survival mode as precedent for a single-player run on a build-then-watch match; per-round upgrade offers |
-| **Into the Breach** — postmortem, GDC 2019 ([talk](https://www.gdcvault.com/play/1025772/-Into-the-Breach-Design)) †; [time-traveller pilot](https://www.pcgamesn.com/into-the-breach/permadeath) | "clarity over cool"; persisting one pilot and unlocked squads — options, not power — between runs |
-| **Hades** — Kasavin, GDC Podcast ep. 16 ([episode](https://gdconf.com/article/roguelikes-and-narrative-design-with-hades-creative-director-greg-kasavin-gdc-podcast-ep-16/)) †; [Mirror of Night](https://hades.fandom.com/wiki/Mirror_of_Night) † | narrative delivered per run rather than in chapters; the contrast case for persisted *power*, rejected here |
-| **Teamfight Tactics** ([shop odds](https://www.metatft.com/tables/shop-odds)) | the fully quantified version of tier-gates-when / rarity-weights-how-often |
-| **Mark Rosewater** — *Nuts & Bolts #4: Higher Rarities*, *Quite the Rarity* ([Wizards](https://magic.wizards.com/en/news/making-magic/nuts-bolts-higher-rarities-2012-02-27)) † | the rarity doctrine of the content rules above |
-| **Roguebook** ([interview](https://www.gamedeveloper.com/design/tackling-deckbuilding-design-in-abrakam-s-roguebook)) † | second worked example of deckbuilder-meets-roguelite, beside Slay the Spire |
-| **Short & Adams (eds.), *Procedural Storytelling in Game Design*** (CRC Press 2019, [publisher](https://www.routledge.com/Procedural-Storytelling-in-Game-Design/Short-Adams/p/book/9781138595309)) | how a run tells something without authored chapters |
+| **StarCraft, Age of Empires** | the single battle against the computer as a mode of its own (Age of Empires' *Skirmish*; StarCraft's *Versus* for people) |
+| **Mechabellum** ([store](https://store.steampowered.com/app/669330/Mechabellum/)) | a build-then-watch battle of many rounds, technology bought between them, both sides' choices revealed together |
+| **Castle Fight** ([map](https://maps.w3reforged.com/featured-maps/castle-fight)) | the ancestor: buildings that spawn units that march on the enemy by themselves |
+| **Battle Aces** ([wiki](https://en.wikipedia.org/wiki/Battle_Aces)) | a short RTS with a pre-battle pick of units; cancelled in 2025, a warning that a single-battle game lives on its opponent |
+| **Frozen Synapse** ([wiki](https://giantbomb.com/wiki/Games/Frozen_Synapse)) | hidden simultaneous plans; previewing a plan against a guess at the enemy's; a one-turn mode against others' plans |
+| **StarCraft II co-op** ([patch 3.3](https://www.pcgamesn.com/starcraft-ii-legacy-of-the-void/starcraft-2-patch-33)) | mutators and weekly mutations: the same battle kept fresh by new rules |
+| **StarCraft II, Wings of Liberty** ([campaign](https://liquipedia.net/starcraft2/Campaign)) | a campaign that branches by technology, two exclusive choices at a time, inside one story (Story's model) |
+| **Slay the Spire** — Giovannetti, *Metrics Driven Design and Balance*, GDC 2019 ([talk](https://www.gdcvault.com/play/1025731/-Slay-the-Spire-Metrics)) | the rarity pity offset; pick-rate and win-rate balancing; metrics diagnose |
+| **Mark Rosewater** — *Nuts & Bolts #4: Higher Rarities* ([Wizards](https://magic.wizards.com/en/news/making-magic/nuts-bolts-higher-rarities-2012-02-27)) | the rarity doctrine of section 7 |
 
-## 6. What this document does not decide
+## 9. What this does not decide
 
-- The exact numbers in the Challenge table — battles, acts, offer size, tier schedule — are starting
-  values to be retuned on runs actually played.
-- What persists between battles within a run beyond the army and the Commander (Q40, still open —
-  it will be made observable rather than assumed).
-- Difficulty ladders (ascension-style), daily seeds, leaderboards, and any online feature: real
-  ideas, none designed, all downstream of a run that plays end to end.
-- Mod-defined modes. The claim that a mode is data over one loop and one army shape is what keeps
-  them possible; nothing here builds a loader or promises a stable contract.
+- How an endless stand is scored (Q93), and which presets of opponent and credits are worth offering.
+- How long a battle should be (Q75), which the worker economy is the first step able to time.
+- Versus, modifiers and every other later idea of section 3.2: each is decided when a milestone asks for it.

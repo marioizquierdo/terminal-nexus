@@ -1,4 +1,4 @@
-// A mission's lines — the presentation band of its triggers (campaigns.md, "two bands of trigger actions"),
+// A mission's lines — the presentation band of its triggers (story.md, "two bands of trigger actions"),
 // built at its smallest: `say`, a line of dialog, run when a round's Build Phase opens (`build.start`).
 //
 // **The runner never reads any of this** (`src/match/mission.ts` applies only the simulation band), so a

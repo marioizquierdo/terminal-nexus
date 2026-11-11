@@ -1,6 +1,6 @@
 # Terminal Nexus — duels
 
-_Two Commander Armies fought out on one map, headless: script against script, model against model, or any mix. How a duel plays, the command line, the brief a player reads and the plan it answers with, the formation a player builds by, how to run model-against-model games for testing, and what the numbers can and cannot say._
+_Two Commander Armies fought out on one map, headless — the battle a Skirmish plays: script against script, model against model, or any mix. How a duel plays, the command line, the brief a player reads and the plan it answers with, the formation a player builds by, how to run model-against-model games for testing, and what the numbers can and cannot say._
 
 A duel is the development bench for armies (the owner, 2026-10-17: "put each commander nexus on one side of the map
 and play a pvp ... script vs script", and a model planning each side from "the relevant logs plus current map state,
@@ -9,7 +9,7 @@ format any player can use, and a command (`bin/duel.ts`). Armies are written by 
 
 ## 1. How a duel plays
 
-**Each round is the campaign's round, for two sides at once** (RULE — `src/duel/round.ts`, `tests/duel.test.ts`):
+**Each round is a mission's round, for two sides at once** (RULE — `src/duel/round.ts`, `tests/duel.test.ts`):
 
 1. **The Nexus Pulse** deals each side a hand from its army's powers by its Commander's schedule, each side on its own
    seed. A side keeps one card, or none. War Chest is never dealt.
@@ -29,7 +29,7 @@ health wins; on an even share, the side that dealt more damage over the duel; on
 (`start` in her army), and round 1's credits. Maps are `src/duel/maps.ts`: the Crossing (72 by 28, a ridge with one
 gap) and the Pocket (22 by 12, the bases close enough that their build ranges meet).
 
-**A side that is not its Commander's whole army** has a **roster** (RULE — `Roster`, `src/duel/types.ts`; `restrictedTo`, `src/duel/sides.ts`; `tests/run-draft.test.ts`): the building cards on its build menu and the Nexus powers in the pool its Pulse deals from, by id, and the Doctrines it keeps from the first round. Everything else its army could field is left out as if the army never had it; a building a listed power adds still joins the menu when the power is kept. A Challenge run plays its player on one ([`runs.md`](../game-design/runs.md)); the opponent, and every duel the measurement commands play, has none and fields the whole army.
+**A side that is not its Commander's whole army** has a **roster** (RULE — `Roster`, `src/duel/types.ts`; `restrictedTo`, `src/duel/sides.ts`; `tests/run-draft.test.ts`): the building cards on its build menu and the Nexus powers in the pool its Pulse deals from, by id, and the Doctrines it keeps from the first round. Everything else its army could field is left out as if the army never had it; a building a listed power adds still joins the menu when the power is kept. The retired Challenge run played its player on one ([the retired design](../history/challenge-runs-design.md)), and a Skirmish's battle file may name one ([`game-modes.md`](../game-design/game-modes.md)); the opponent, and every duel the measurement commands play, has none and fields the whole army.
 
 ## 2. The command line
 
@@ -127,7 +127,7 @@ against a tight army ([the report](../history/reports/2026-10-21-area-damage.md)
 lines say `built 3 (block)`, and a measurement names each side's player with it (`rush-block` against
 `rush-apart`), so a summary can say who won by formation ([`measurement.md`](measurement.md)).
 
-**A duel side can be played from the Build Phase screen** (`src/cli/run-play.ts`, a Challenge run's battle): the
+**A duel side can be played from the Build Phase screen** (`src/cli/run-play.ts`: a Challenge battle today, a Skirmish once the Skirmish milestone builds it): the
 plan's buildings at their exact anchors, the power picked, the buildings held (`hold`, Hold production), the actions
 taken on its buildings (`actions`: `{x, y, action}`, taken after its buildings are placed, from the credits they leave,
 and said in its report; the `-upgrade` scripts buy them), and the
