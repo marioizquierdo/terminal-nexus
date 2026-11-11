@@ -5,6 +5,10 @@ it is done.*
 
 ## Waiting on Mario
 
+- **Hear the single-battles research** ([the summary](../history/reports/2026-11-11-single-battles.md)): a Skirmish
+  mode next (any Commander against any, any map, a battle file for any setup), runs merged into a Story campaign that
+  branches by technology, Versus kept for two people. Five questions close it, each with a recommendation; nothing is
+  built or renamed until he says.
 - **Place the battle banner** (the Battle banner Experiment, on by default): start PERIMETER, press `s`, then `t`, move
   the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
   intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an
