@@ -53,7 +53,7 @@ the rule).
 - **A base is a spatial puzzle.** Buildings extend connected construction territory, protect economic routes, shape paths, and create spawn and regroup anchors.
 - **Automatic battle preserves strategic authorship.** The spectacle is hands-off, but its causes should be readable in the player's previous decisions.
 - **Persistence creates short stories.** Survivors matter, workers flee, factories can be lost, salvage can be contested, and a commander can fall and later return.
-- **Modern drafting disrupts solved build orders.** The Nexus offers a small randomized upgrade draft; research changes its quality, breadth, and flexibility.
+- **Modern drafting disrupts solved build orders.** Each round the Nexus Pulse deals a small hand of Nexus powers to keep one from, so no build order is solved in advance.
 - **A Commander Army is a bounded composition, not (necessarily) a deck.** The faction is the pool of everything it can field; an army brings a Commander, starting units and structures, a tech tree, upgrades, a small pool of Nexus powers, and a Special to one fight ([`commander-armies.md`](commander-armies.md)). A Commander's story grows that composition mission by mission. Whether it is well described as a "deck of cards" is retracted as a claim, not decided either way.
 - **It plays at typing speed.** Every menu item shows its hotkey, every hotkey is also a click, and the whole game can be driven from a command stream — by a proficient player, by a mouse, or by an agent playtesting it.
 - **Faction identity is mechanical and symbolic.** Strategy, geometry, glyphs, motion, color, prose, portraits, and effects all express the same civilization.

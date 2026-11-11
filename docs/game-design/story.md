@@ -12,7 +12,7 @@ art are CC BY-SA 4.0. Unmarked statements are GUIDANCE._
 world through each Commander, and ends on an epic. It is judged on three things: a player comes out of it able to play a
 Skirmish well, the world feels real, and the last battle feels earned.
 
-**RULE: a mission exists only inside Story** ([`game-modes.md`](game-modes.md)). Skirmish never plays a mission; a
+**A mission exists only inside Story** (RULE — settled 2026-11-11, [`game-modes.md`](game-modes.md)). Skirmish never plays a mission; a
 mission is a Skirmish's setup with a script, words and a goal. **Any mission opens directly for testing**, by its route
 (`campaign?level=<id>`, [`routing.md`](../system-design/routing.md)), with no story played before it.
 
@@ -42,7 +42,7 @@ story affordable.
 
 The first mission teaches the loop on a small Grid against a scripted raid: place, commit, watch, adapt, and that a
 Commander falls and the Nexus Pulse restores her. Vasse's is PERIMETER (section 5.2). It offers few cards and no choice
-of technology.
+of technology. Completing it opens the other Commanders' stories (section 2.5).
 
 ### 2.2 Technology missions, and what carries
 
@@ -89,7 +89,7 @@ whether they are the lore's Ancient Originals ([`lore.md`](lore.md)) is a writin
 
 ### 2.5 Progress and the Story menu
 
-**Save slots.** A player may keep more than one story in progress and start another at any time, so progress is **per slot**, each slot naming its Commander. That is more than the flat checked-in unlock list of the open question about the shape of an unlock record (Q31) assumes, so the Story menu has to design the difference rather than discover it.
+**Save slots** (GUIDANCE; Milestone 4 starts on a flat record and the save system waits on the replay format). A player may keep more than one story in progress and start another at any time, so progress is **per slot**, each slot naming its Commander. That is more than the flat checked-in unlock list of the open question about the shape of an unlock record (Q31) assumes, so the Story menu has to design the difference rather than discover it.
 
 **RULE — there is no upfront Commander-choice screen** (`src/cli/menu.ts`, whose main menu has no Commander choice; `tests/title-menu-campaign-screen.test.ts`). The start is deliberately controlled: Vasse first, then Averno and Dob Hunter once the first mission is done. A new player starts Vasse's mission 1 directly — it is the whole first-time experience. Completing it (its main goal, not the bonus goal) unlocks Averno and Dob Hunter as two new rows on the Story menu, each starting *their own* mission 1 on the same map. The choice belongs to the Story menu as an unlock like any other, not to the main menu. Skirmish is different: there the player picks any Commander from the start.
 
@@ -106,7 +106,7 @@ A mission selects and configures:
 - its scenes and lines (section 6);
 - the technologies it grants, and the bonus goals that grant more.
 
-**A story is a file of its own under `campaigns/`** (RULE — `campaigns/vasse/campaign.json`, `src/armies/load.ts`, `tests/armies.test.ts`; how it is written, [`content.md`](../system-design/content.md)). It names its Commander and lists its levels in the order they are played, each with a map by name, the credits a Build Phase starts with, what it unlocks and its mission: the sketch's `playerArmy` and `availableContent`, split between the story and its levels. **A level offers everything the levels before it unlocked, and its own unlocks**, in the order first unlocked so that a hotkey never moves, and records what is new in it for the screen between missions to show (not built). The Build Phase offers exactly that. The loader refuses an unlock its army cannot see, one an earlier level already gave, and a player Commander that is not the story's. PERIMETER, the first level, unlocks every card `armies/all` has, one by one, so that when it grows the level keeps what it teaches; the second, the Commander's cadence played in three rounds, has no unlocks of its own. The first two are called `vasse-test-1` and `vasse-test-2`, the names a route opens them by ([`routing.md`](../system-design/routing.md)), until the story has real missions.
+**A story is a file of its own under `campaigns/`** (RULE — `campaigns/vasse/campaign.json`, `src/armies/load.ts`, `tests/armies.test.ts`; how it is written, [`content.md`](../system-design/content.md)). It names its Commander and lists its levels in the order they are played, each with a map by name, the credits a Build Phase starts with, what it unlocks and its mission: the `playerArmy` and `availableContent` of the sketch below, split between the story and its levels. **A level offers everything the levels before it unlocked, and its own unlocks**, in the order first unlocked so that a hotkey never moves, and records what is new in it for the screen between missions to show (not built). The Build Phase offers exactly that. The loader refuses an unlock its army cannot see, one an earlier level already gave, and a player Commander that is not the story's. PERIMETER, the first level, unlocks every card `armies/all` has, one by one, so that when it grows the level keeps what it teaches; the second, the Commander's cadence played in three rounds, has no unlocks of its own. The first two are called `vasse-test-1` and `vasse-test-2`, the names a route opens them by ([`routing.md`](../system-design/routing.md)), until the story has real missions.
 
 A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text), held by a level of its story's file with the level's map, credits and unlocks, and no opponent deck or objectives list yet.
 
@@ -265,7 +265,7 @@ The six-mission arc below is **IDEA** beyond its first row: direction for the mi
 | 1 | PERIMETER | "Operator is my job title." | Nothing. The belief is allowed to feel true | Build Phase / Battle Round loop on a small Grid that never scrolls, and that a Commander falls and the Nexus Pulse restores her | Plain, military, correct |
 | 2 | RIGHT OF SALVAGE | "The Nexus is a tool we are learning." | First itch: the tool knows things nobody entered | Salvage economy and contested wrecks | Names Speaker Corvane before any contact. Vasse: "Who filed that?" |
 | 3 | RESTORATION | "The Nexus is issuing us equipment." | The player has watched Vasse fall and return since the first mission; here what the Nexus restores, and what it files about her, becomes the question | What comes back: the restoration, read closely (her death and absence are taught from mission 1) | Treats death as scheduling: `SYMBOL ABSENT — CYCLE 1 OF 1 — HOLD` |
-| 4 | PRECOMMITTED | "I make the plans." | One draft item arrives already committed, marked `SOURCE: NEXUS`. The interface has another user — or another author | The Nexus upgrade draft | Suggestive, not explanatory. The precommitted choice is always defensive, which no one finds comforting |
+| 4 | PRECOMMITTED | "I make the plans." | One power of the Nexus Pulse's hand arrives already kept, marked `SOURCE: NEXUS`. The interface has another user — or another author | The Nexus Pulse's hand | Suggestive, not explanatory. The precommitted choice is always defensive, which no one finds comforting |
 | 5 | TWELVE OF TWELVE | "The interface reports; reports are true." | The screen's totals disagree with what the player watched. The log did not. Two workers are never accounted for | Reading the report and the replay as diegetic objects | `WORKERS RECOVERED: 12 OF 12` — after fourteen were seen to fall. The seam is discoverable in play |
 | 6 | ANNEX ZERO | "Operator is a rank we invented." | Corvane, in parley: the machine speaks over everyone's head — and the player realizes the title predates the software | Neutral hazards: a golem executing its function, hostile to nobody and lethal anyway | Ends on the closing lines, now earned: `ANNEX ZERO EVACUATION COMPLETE / ANNEX ZERO NO LONGER LOCATED` |
 
@@ -346,9 +346,9 @@ The rule that follows, for anyone authoring the second side of any battle: **che
 
 | # | Mission | Main goal | Bonus goal | Estimate | Teaches | Lore hint it plants |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1 | PERIMETER (Citizen) · the same raid (Ravel) | Citizen: hold until the raid's schedule ends · Ravel: destroy the fabricator | Citizen: finish without losing a structure · Ravel: win by round 3 | ~3 rounds, 8–10 min | the loop — place, commit, watch, adapt | the Nexus is **ahead of you**: it named the raid, filed an arrival time, and the fabricator prints to a standard no engineer wrote |
-| 2 | RIGHT OF SALVAGE | recover more of the wreck field than the other side | deny them every wreck | ~4 rounds, 10–12 min | workers, deposits, salvage, contested ground | it knows a name nobody entered — *"Who filed that?"* |
-| 3 | RESTORATION (Citizen) · to be authored (Ravel) — **IDEA** | destroy the enemy Grid Nexus | hold the round your Commander is absent without losing a structure | ~5 rounds, 12–15 min | the Commander — her powers, death, absence, restoration | it keeps **personnel files**, and treats a death as a scheduling matter |
+| 1 | PERIMETER (Citizen) · the same raid (Ravel) | Citizen: hold until the raid's schedule ends · Ravel: destroy the fabricator | Citizen: finish without losing a structure · Ravel: win by round 3 | ~3 rounds, 5–8 min | the loop — place, commit, watch, adapt | the Nexus is **ahead of you**: it named the raid, filed an arrival time, and the fabricator prints to a standard no engineer wrote |
+| 2 | RIGHT OF SALVAGE | recover more of the wreck field than the other side | deny them every wreck | ~4 rounds, 8–10 min | workers, deposits, salvage, contested ground | it knows a name nobody entered — *"Who filed that?"* |
+| 3 | RESTORATION (Citizen) · to be authored (Ravel) — **IDEA** | destroy the enemy Grid Nexus | hold the round your Commander is absent without losing a structure | ~5 rounds, 10–12 min | the Commander — her powers, death, absence, restoration | it keeps **personnel files**, and treats a death as a scheduling matter |
 
 **Commanders die from the first mission** (RULE — the owner, 2026-10-04: "commanders die on this game, is part of the gameplay so we better integrate that into the lore and the campaign intro levels"; `tests/commander.test.ts`, `tests/dialog.test.ts`). A Commander's death is ordinary business on the Grid ([`lore.md`](lore.md)), so the intro levels teach it rather than save it: PERIMETER lets Vasse fall when the raid reaches her, and the round she returns opens on the Nexus Pulse restoring her, looking at her. Her story's second test level has her fall in round 1 and come back for round 2, so her return can be played (`--at 'campaign?level=vasse-test-2'`).
 
@@ -385,15 +385,15 @@ The opening image should make the Prime Nexus physically impossible before the p
 
 ## 7. The opponents a mission brings
 
+Three kinds, one for each kind of battle a story holds: **a trigger list** (a scripted raid: what spawns, where, and what
+it means to do; PERIMETER's is built), **a duel script** driving a Commander Army with a Nexus (the final battle, and any
+mission played Nexus against Nexus; the Skirmish opponent), and **a wave schedule** (the endless stand, section 2.3).
+
 A mission's opponents are local game AIs by default, not LLMs. They receive a bounded planning view and the same legal action vocabulary available to a human plan validator.
 
 Possible tiers include scripted tutorials, weighted faction heuristics, limited search/rollout using the headless simulator, and mission policies altered by scenario parameters. Hidden plans do not leak into an ordinary policy. A mission may grant an explicit exception only when the player can understand it as a rule or narrative event. How a scripted raid names its plan and its intention, and where an opponent planner could come from, is in [`scripted-opponent.md`](scripted-opponent.md).
 
 LLM dialogue or planning remains a future option, not a requirement for the first story.
-
-Three kinds, one for each kind of battle a story holds: **a trigger list** (a scripted raid: what spawns, where, and what
-it means to do; PERIMETER's is built), **a duel script** driving a Commander Army with a Nexus (the final battle, and any
-mission played Nexus against Nexus; the Skirmish opponent), and **a wave schedule** (the endless stand, section 2.3).
 
 ## 8. Authoring and testing a mission
 
@@ -405,8 +405,7 @@ Story's tools should allow humans and agents to:
 - play a mission end to end through the driver ([`input.md`](../system-design/input.md)) — the same command stream an agent uses to playtest, so a mission's script is checked by running it, not by reading it;
 - run opponent policies across seeds;
 - export a deterministic replay and event log;
-- validate references, objectives, reachable states, and progression graphs;
-- package a story using the same content contracts planned for future mods.
+- validate references, objectives and reachable states;
 
 Many useful editors may be literal ASCII arrays, TypeScript definitions, command-line validators, and a shared preview TUI. A polished drag-and-drop editor is not required to make the pipeline powerful.
 

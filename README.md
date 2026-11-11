@@ -38,9 +38,11 @@ from a seed, with a levelled report and an ASCII view. It is not the game. It is
 and replays it.
 
 **`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings, About,
-Exit) that works by hotkey, by arrows and Enter, or by mouse. The game has three modes
-([the game modes](docs/game-design/game-modes.md)): **Skirmish**, one battle against a scripted Commander Army, which
-Challenge becomes; **Story**, a Commander's story of missions, which Campaign becomes; and **Versus**, later. `--at` opens any place in the game by its route, written like a web address without the
+Exit) that works by hotkey, by arrows and Enter, or by mouse.
+
+The game has three modes ([the game modes](docs/game-design/game-modes.md)): **Skirmish**, one battle against a scripted
+Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. On today's menu, Challenge is what
+becomes Skirmish and Campaign what becomes Story. `--at` opens any place in the game by its route, written like a web address without the
 site (`--help` lists them). The playable part is the **Build Phase** of PERIMETER, Vasse's first
 mission, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its rounds with `&round=2`:
 

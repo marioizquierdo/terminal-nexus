@@ -30,7 +30,7 @@ without `--at`), and `&round=3` its third Battle Round, counted from 1 as the sc
 reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc s s wait~1000*26
 Enter` reach for round 2, without them (the battle lasts about 21 seconds, then the
 result Enter goes on from). Quote the route: the shell reads `?` and `&`. A title menu route
-(`settings`) is refused, since only a mission's Build Phase is wired up here (a Skirmish, once the Skirmish milestone adds it); with `--at`, `--keys`
+(`settings`) is refused, since only a Build Phase is wired up here: a mission's, or a Challenge battle's (`challenge?seed=<n>`, a Skirmish once the Skirmish milestone renames it); with `--at`, `--keys`
 may be left out to see the round as it opens.
 
 Output lands in `.playtest/` (git-ignored): `<name>.txt` always holds every step's screen as text.

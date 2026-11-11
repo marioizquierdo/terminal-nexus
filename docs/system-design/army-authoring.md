@@ -101,7 +101,7 @@ range) held to the same rule; `roundsOut` only on a Commander; a structure never
 | --- | --- |
 | `lean` | One or two of `units`, `nexus`, `structures`, `commander`, `economy`: what the build leans on (commander-armies.md). |
 | `start` | Her starting package: units that walk out with her where a mode scripts none (a duel's first round). |
-| `run` | What a Challenge run starts her army with (retired with runs; removed by the Skirmish milestone): `buildings` (card ids on the build menu) and `powers` (Nexus power ids in the pool). Everything else her army can field waits in the run's draft. Absent: the whole of her army (`docs/game-design/runs.md`). |
+| `run` | What a Challenge run starts her army with (retired with runs; removed by the Skirmish milestone): `buildings` (card ids on the build menu) and `powers` (Nexus power ids in the pool). Everything else her army can field waited in the run's draft. Absent: the whole of her army (`docs/history/challenge-runs-design.md`). |
 | `schedule` | How her army bends the Nexus Pulse, in every mode (Averno's: a card from the Ravel Nexus in rounds 2 and 4). A level's own schedule replaces it. |
 | `barks`, `portrait`, `portraitFalls` | Her voice in battle and her face (`src/armies/barks.ts`, `src/view/commander-moments.ts`), checked to fit the panel at 80 x 24. |
 
@@ -137,7 +137,7 @@ most four upgrades and modes. One card gives a structure its actions.
 
 ## 3. Nexus powers: a table of effects
 
-A power is a name, one line of description, a rarity and a role for the dealer, and **one effect**. A power with `"doctrine": true` is a **Doctrine**, a standing order: the Nexus Pulse never deals it, a run's draft offers it, and once taken it is kept from the first round of every battle of the run (so it cannot also be offered beside every hand, from another Nexus, an upgrade, or dealt by chance or requirements). `tier` (1 to 3, default 1) is the earliest tier of a run it is offered in. Each kind of
+A power is a name, one line of description, a rarity and a role for the dealer, and **one effect**. A power with `"doctrine": true` is a **Doctrine**, a standing order: the Nexus Pulse never deals it, the retired run's draft offered it, and once taken it is kept from the first round of every battle of the run (so it cannot also be offered beside every hand, from another Nexus, an upgrade, or dealt by chance or requirements). `tier` (1 to 3, default 1) is the earliest tier of a run it is offered in. Each kind of
 effect is one entry of `EFFECTS` (`src/armies/effects.ts`) that says everything about it: its JSON shape, what the
 loader refuses, what keeping it changes in a side's loadout, whether it stays kept, and the credits it adds. **No
 reader branches on an effect's kind**: a mission keeps a power with `applyEffect`, the duel with the same function.

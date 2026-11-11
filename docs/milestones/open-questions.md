@@ -290,7 +290,7 @@ before any contact"). Do not build C's authoring surface before a mission uses i
 
 The belief ramp in [`story.md`](../game-design/story.md) describes PERIMETER's teaching goal as the
 "Build Phase / Battle Round loop on **a small Grid that never scrolls**", written as GUIDANCE before the
-campaign-first pivot. Milestone 5's charter says real scrolling is built "against a Grid sized to actually
+pivot to building the first mission first (2026-09). Milestone 5's charter says real scrolling is built "against a Grid sized to actually
 need it". If PERIMETER's real map stays small by design, scrolling has no mission of its own to be proved
 against.
 
@@ -303,7 +303,7 @@ against.
 **Recommendation: A.** Size PERIMETER's real map to genuinely need a little scrolling. It costs nothing the
 fiction depends on, and it means the scrolling work is judged on the mission that motivated it. Mario's own
 input notes call scrolling "the part that needs more attention", so a PERIMETER that never scrolls would leave
-the game's most-scrutinised interaction proved on a fixture the campaign never plays.
+the game's most-scrutinised interaction proved on a fixture no mission plays.
 
 ### Q87 — Should the march route be drawn on the Build Phase, and be the line the army keeps to?
 

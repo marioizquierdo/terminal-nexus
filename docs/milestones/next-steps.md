@@ -26,7 +26,7 @@ it is done.*
   origin/main --profile --jobs 4` sets the bench beside main. Units no longer turn between two walled-in enemies every
   tick; watch a narrow pass (`./bin/grid.ts engage-gap2-melee-vs-mix`) and say whether the melee army's waiting reads
   better.
-- **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge battle (`2` on the title menu, a Skirmish until it is renamed) or any mission. Rounds are 30
+- **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge battle (the title menu's Challenge row, which the Skirmish milestone turns into Skirmish) or any mission. Rounds are 30
   seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
   seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2
   standing) are a starting point to feel. The banner is the next step.

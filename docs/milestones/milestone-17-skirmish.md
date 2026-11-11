@@ -5,13 +5,12 @@
 **Depends on:** [the runs milestone](../history/milestones/milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
 banner prototype), Milestone 14 (three Commander Armies and the duel scripts)
 
-Made current on 2026-11-11, when the owner set the modes ([his words](../history/feedback/2026-11-11-game-modes.md)):
-"Let's turn Skirmish into the center stone for game design and testing." Skirmish is one battle against a scripted
-Commander Army, set up on a screen or by a battle file ([`game-modes.md`](../game-design/game-modes.md) is the design this
-builds against: the words, every setting marked required or later, the battle file, how a Skirmish is tested).
+Made current on 2026-11-11 ([the owner's words](../history/feedback/2026-11-11-game-modes.md)): "Let's turn Skirmish into
+the center stone for game design and testing." The design it builds against is [`game-modes.md`](../game-design/game-modes.md).
+Most of it exists, since a Challenge battle is already a duel on the Build Phase screen against a script.
 
-Most of it exists: a Challenge battle is already a duel played on the Build Phase screen against a script. This milestone
-turns that into a mode of its own, makes it the place every change is seen, and gives it an opponent worth playing.
+**While 17A waits on Mario's playtest**, the next session takes step 17C: it does not depend on his answer about the
+banner. Steps 17D to 17H follow in order.
 
 ## Question
 
@@ -52,9 +51,11 @@ Built only if the owner chooses the stance over the banner in step 17A.
 - [ ] The title menu's rows: Skirmish, Story, Settings, About, Exit. Skirmish starts one battle with the defaults
       (Vasse against Dob Hunter's `balanced` script on the Crossing, a seed from the clock).
 - [ ] The names in the code, the files and the routes: `skirmish` and `skirmish?seed=<n>`; `story` and
-      `story?level=<id>&round=<n>` for a mission; the `campaigns/` folder and the `campaign` words become Story's.
-- [ ] The run retired: its draft, its next-battle screen and its summary, `src/run/` and the routes that open it. What
-      a Skirmish needs from it (a duel on the Build Phase screen, the result dialog) moves to Skirmish.
+      `story?mission=<id>&round=<n>` for a mission; the `campaigns/` folder and the `campaign` words become Story's.
+- [ ] The run retired: its draft, its next-battle screen and its summary, `src/run/`, the army files' `run` field and the
+      routes that open it. What a Skirmish needs from it (a duel on the Build Phase screen, the result dialog) moves to
+      Skirmish, and the player's side fields the Commander's whole army, not the run's small one.
+- [ ] The Story row opens what Campaign opens today: a placeholder screen until the Story menu (Milestone 4).
 - [ ] The tests that pinned a run are deleted with it or re-pinned on a Skirmish, each with a reason.
 
 ### Step 17D — The setup screen

@@ -148,7 +148,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   (RULE — `tests/build-start.test.ts`)
 - **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket carries it in monochrome.
   (RULE — `tests/title-menu-view.test.ts`, `tests/build-menu.test.ts`)
-- **A title-menu screen that only has words to show** — Campaign's placeholder, About — has one row,
+- **A title-menu screen that only has words to show** — Campaign's placeholder (Story's, once the Skirmish milestone renames it), About — has one row,
   `[1] Back`, where the rows start, with its words below it: headings bold, text wrapped at words to a
   comfortable reading width, a quiet line (the build) dimmed. Esc goes back too, and the highlight comes
   back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu

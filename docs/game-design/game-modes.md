@@ -8,7 +8,7 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 
 ## 1. The words
 
-**RULE for the names**: every document, screen and new piece of code uses these. The code still says `campaign` and
+**The names** (RULE — settled 2026-11-11; the code catches up in the Skirmish milestone): every document, screen and new piece of code uses these. The code still says `campaign` and
 `challenge` in places; the Skirmish milestone renames them ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md)).
 
 | Word | Means |
@@ -20,10 +20,11 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 | **Story** | A Commander's story: missions in order, with technologies carried from one to the next, ending in a final battle |
 | **Versus** | One battle between two people. Later |
 | **Mission** | A battle with a script, words and a goal. **A mission exists only inside Story** |
-| **Endless stand** | A kind of mission: waves that grow until the Nexus falls, scored by how far the player got. A Commander's story ends in one |
+| **Endless stand** | A kind of mission: waves that grow until the Nexus falls, scored by how far the player got. It comes before a story's final battle |
 | **Battle file** | A file that sets up a Skirmish: everything the setup screen sets, and more |
 | **Opponent** | What plans the other side of a Skirmish: a duel script (`balanced`, `rush`, `turtle` and their variants) driving a Commander Army |
-| **Technology** | A card a mission in Story grants and later missions keep: a building, an upgrade, a Nexus power |
+| **Technology** | A card a mission in Story grants and later missions keep: a building, an upgrade, a Nexus power. The story file stores it in a level's `unlocks` |
+| **Level** | The code's word for a mission's entry in its story file (`campaign?level=<id>`); say *mission* in writing |
 
 **Retired names**: *Campaign* is now Story; *Challenge* and its *run* of many battles are retired (section 6). The
 word *run* is free again; do not use it for a mode.
@@ -36,11 +37,11 @@ battles together, as a roguelike run does, becomes an evening; the games that do
 So the game is built around **the single battle**, the way StarCraft and Age of Empires are: Skirmish to play one,
 Story to learn and to live a Commander's story, Versus to play another person.
 
-**RULE: Skirmish comes first.** It is the playable loop, the testing tool (any setup becomes a battle anyone can play,
+**Skirmish comes first** (RULE — settled 2026-11-11; the milestone order holds it). It is the playable loop, the testing tool (any setup becomes a battle anyone can play,
 show and measure), and the base Versus builds on. Every rule, unit and screen is judged in a Skirmish before it is
 taught in a mission. A Story mission is a Skirmish setup with a script and words around it.
 
-**RULE: a mode is data over one battle.** A mode chooses battles and what carries between them; nothing below the mode
+**A mode is data over one battle** (RULE — `tests/architecture.test.ts`: a mode's code never reaches the view or the shell). A mode chooses battles and what carries between them; nothing below the mode
 — the kernel, the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
 
 ## 3. Skirmish
@@ -113,23 +114,24 @@ becomes a battle a person can play and a duel can measure. Its shape, a first gu
   "pulseTicks": 360,
   "difficulty": "normal",
   "sides": {
-    "A": { "commander": "vasse", "credits": 120 },
+    "A": { "commander": "vasse", "credits": 140 },
     "B": { "commander": "dob", "player": "script:rush",
-           "roster": { "buildings": ["structure.ravel.den"], "powers": [], "doctrines": [] },
+           "roster": { "buildings": ["den"], "powers": [], "doctrines": [] },
            "units": [{ "unit": "unit.ravel.raider", "count": 4, "at": { "x": 40, "y": 12 } }] }
   },
   "settings": "battleBanner=on"
 }
 ```
 
-It builds on what exists: the duel's `DuelSetup` (map, seed, rounds, Battle Round length, Commanders and rosters,
+Here side A starts with 140 credits instead of the curve's 100, and side B fields only the Den. It builds on what
+exists: the duel's `DuelSetup` (map, seed, rounds, Battle Round length, Commanders and rosters,
 `src/duel/types.ts`) and the scenario format's way of placing units (`src/scenario/`). A battle file the loader refuses
 is refused by name, every problem at once, the way a mission is.
 
 ### 3.4 How a Skirmish is tested
 
-**RULE: a Skirmish is deterministic.** The same battle file, seed and plans give the same battle, hash for hash, on
-Node and Bun. That makes four ways to test one, from cheapest to fullest:
+**A Skirmish is deterministic** (RULE for the duel it plays, `tests/duel.test.ts`: "a duel resolves the same every run"):
+the same battle file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes four ways to test one, from cheapest to fullest:
 
 1. **Headless, script against script**: the duel commands (`npm run duel -- play`, `bench`), and a battle file given to
    them once it exists. For balance and for a rule's effect over many seeds.
@@ -144,16 +146,11 @@ pictures a pull request shows start from one, where today they start from PERIME
 
 ## 4. Story
 
-A Commander's story, played in order, each the same shape ([`story.md`](story.md) is the design):
+A Commander's story, the same shape for every Commander: a tutorial, three or four technology missions whose
+collections carry forward, an endless stand scored until the Nexus falls, and a final battle ([`story.md`](story.md)
+is the design).
 
-1. **A tutorial** that teaches the loop.
-2. **Three or four missions** whose goal is not only to win but to collect technologies and meet bonus goals. What a
-   player collects carries to the later missions, and a mission can be replayed for what was missed.
-3. **An endless stand**: waves until the Nexus falls, scored by how far the player got with what they collected.
-4. **The final battle**: the fallen Nexus opens the last chance, a battle against an enemy Nexus as the Eternals awaken,
-   the Commander's final boss.
-
-**RULE: a mission exists only inside Story.** Any mission still opens directly for testing, by its route
+**A mission exists only inside Story** (RULE — settled 2026-11-11; the Skirmish milestone's rename holds it in code). Any mission still opens directly for testing, by its route
 (`campaign?level=<id>` today, renamed with the mode), without playing the story before it.
 
 Story comes after Skirmish because every mission is a Skirmish setup plus a script and words: a mission built before
