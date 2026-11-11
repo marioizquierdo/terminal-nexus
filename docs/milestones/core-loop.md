@@ -32,7 +32,7 @@ predictable spawning schedules. With all that, we can safely leave the units on 
 
 | Level | What the player sets | What it allows |
 | --- | --- | --- |
-| None (today) | Nothing: troops always march on the enemy Nexus; a campaign level sets an automatic target | The simplest; little room for tactics |
+| None (today) | Nothing: troops always march on the enemy Nexus; a mission sets an automatic target | The simplest; little room for tactics |
 | **Stance** | One setting for the army: aggressive, hold the line, or defensive | Much more dynamism for one row |
 | **Banner** | A banner on the map, aggressive or defensive; by default on the enemy Nexus, aggressive | Aggressive elsewhere: the army goes there first, then on to the enemy Nexus, so it sets a route. Defensive: the army holds the line there, for map control or the base |
 | **Two banners** | The Commander follows the main banner; a building can be set to send its units after the secondary one | Split armies, which matter once the map holds resources and bonuses; needs more UX. To test eventually, built towards step by step |
@@ -40,13 +40,9 @@ predictable spawning schedules. With all that, we can safely leave the units on 
 Where it sits: the runs milestone gains three steps before the route — the kept front, the stance, the banner. Two
 banners wait until the map has something worth splitting an army for.
 
-**The game modes, named precisely** (the rename is the next pull request's, not this one's):
-
-| Today | Becomes | What it is |
-| --- | --- | --- |
-| Campaign | **Story** | A tutorial for each Commander, with intros and cut-scenes |
-| Challenge run | **Rogue** | A standard progression of maps with upgrades between them |
-| Duel (player against player) | **Versus** | Nexus against Nexus: two Commanders with the competitive build unlocked |
+**The game modes** were then settled on 2026-11-11, beyond this note's first naming: **Skirmish** (one battle against a
+scripted Commander Army, the centre of design and testing), **Story** (a Commander's story, the only home of missions)
+and **Versus** (two people, later); runs of many battles were retired ([`game-modes.md`](../game-design/game-modes.md)).
 
 ## 1. The question (as it was asked)
 

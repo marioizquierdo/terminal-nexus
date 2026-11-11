@@ -5,15 +5,14 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Hear the single-battles research** ([the summary](../history/reports/2026-11-11-single-battles.md)): a Skirmish
-  mode next (any Commander against any, any map, a battle file for any setup), runs merged into a Story campaign that
-  branches by technology, Versus kept for two people. Five questions close it, each with a recommendation; nothing is
-  built or renamed until he says.
-- **Place the battle banner** (the Battle banner Experiment, on by default): start PERIMETER, press `s`, then `t`, move
+- **Read the modes as decided** ([the game modes](../game-design/game-modes.md), [Story](../game-design/story.md),
+  [the Skirmish milestone](milestone-17-skirmish.md)): say whether the Skirmish settings marked required are the right
+  first set, and whether the worker economy should come before Story's menu (the one ordering left for him to swap).
+- **Place the battle banner** (the Battle banner Experiment, on by default; the Skirmish milestone's first step waits on it): start PERIMETER, press `s`, then `t`, move
   the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
   intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an
   enemy Nexus, so the default banner is the level's own target (PERIMETER's line, defensive).
-- **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge run, or
+- **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge battle, or
   `./bin/grid.ts scenarios/movement/march-lines` and `scenarios/movement/march-commander`. Ranged units walk at half speed while a trooper
   is near and fall in behind on the move; Vasse is a regular troop; a unit keeps its target until it falls or it has
   gone 2½ seconds unable to strike it, or at once if its enemy is walled in, then takes one it can reach, further off than
@@ -27,17 +26,13 @@ it is done.*
   origin/main --profile --jobs 4` sets the bench beside main. Units no longer turn between two walled-in enemies every
   tick; watch a narrow pass (`./bin/grid.ts engage-gap2-melee-vs-mix`) and say whether the melee army's waiting reads
   better.
-- **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge run or any campaign level. Rounds are 30
+- **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge battle (`2` on the title menu, a Skirmish until it is renamed) or any mission. Rounds are 30
   seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
   seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2
-  standing) are a starting point to feel. The stance is the next step.
+  standing) are a starting point to feel. The banner is the next step.
 - **Try a building's actions** (his rule of 2026-10-22): in any Build Phase, `e` for Explore Map, onto a Barracks:
   `c` buys its production line (15 credits, one more trooper a wave), `c` again undoes it; onto a Turret, `c` heavy
   rounds, `v` and `b` its two firing modes. The look is for his UX passes.
-- **Play a Challenge run** (the runs milestone's first step): `./bin/terminal-nexus.ts`, then `2` for Challenge, or
-  `./bin/terminal-nexus.ts --at 'challenge?seed=1'` for a chosen seed. Three battles against Dob Hunter's army on the
-  Crossing, each a duel of up to six rounds; a lost battle ends the run on its summary, and the next run begins.
-  Runs play on the armies as they are: they say nothing about balance yet.
 - **Play the pathfinding milestone's wrap-up** ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)):
   `./bin/grid.ts scenarios/movement/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
   troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/movement/march-commander` (Vasse is a regular troop; the troopers pass her

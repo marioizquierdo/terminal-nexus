@@ -1,7 +1,10 @@
-# Milestone 4 — Campaign Menu
+# Milestone 4 — Story Menu
 
 **Status:** PLANNED
-**Depends on:** Milestone 3 (the game menu hands off here)
+**Depends on:** Milestone 3 (the game menu hands off here), Milestone 17 (Skirmish: a mission is a Skirmish setup with a script)
+
+Re-cut on 2026-11-11 for Story ([`story.md`](../game-design/story.md)): a Commander's story is missions in order, and
+what a player collects carries from one to the next. This milestone builds the screen and the record that carry it.
 
 This milestone is mostly infrastructure, and that is expected. Level 1 is the first mission, so there
 is no earlier unlock and no earlier enemy sighting: the screen can show only a baseline. Milestone 10's
@@ -11,14 +14,14 @@ and finding the shape was wrong.
 
 ## Question
 
-From the game menu's "Start New Game" or "Load Game", can a player reach one screen that shows
-campaign progress, the current mission, their own army (unlocked units, buildings, Nexus powers and
+From the title menu's Story row, can a player choose a Commander's story and reach one screen that shows
+its progress, the current mission, the technologies collected so far, their own army (unlocked units, buildings, Nexus powers and
 generals) and enemy intel (discovered enemy units, buildings, Nexus powers, generals and past mission
 reports), and launch the current mission from it?
 
 ## What it builds
 
-- **Campaign state.** Which campaign, which mission is current, and what the unlock record says is
+- **Story state.** Which Commander's story, which mission is current, what technologies it has collected, and what the unlock record says is
   available. The record is a flat, checked-in list, not a real save format yet (Q31). On the first
   playthrough it is nearly empty by construction: nothing is unlocked before Mission 1 is completed.
 - **Army panel.** Unlocked units, buildings, Nexus powers and generals. "Generals" means exactly the
@@ -38,7 +41,7 @@ reports), and launch the current mission from it?
 
 ## Steps
 
-### Step 4A — Campaign state and launch
+### Step 4A — Story state and launch
 
 - [ ] The flat unlock record (Q31) and the current mission.
 - [ ] Launching the mission into Milestone 5's Build Phase with that mission's map and trigger list.
@@ -55,15 +58,18 @@ reports), and launch the current mission from it?
 - [ ] The existing report module's output is saved and shown for each completed mission.
 - [ ] Artifact entries appear here once Milestone 9 produces them.
 
-This is the Campaign's shell; Milestone 11 is the Challenge's. They share the army panel from step 4B,
-and whichever is built second reuses it rather than drawing a second one.
+### Step 4D — Technologies that carry
+
+- [ ] What a mission grants (its main goal, a bonus goal, a choice after it) is recorded for that story, and every later
+      mission offers it on top of its own.
+- [ ] The choice after a mission: a small offer dealt by rarity and tier, some offers exclusive pairs
+      ([`story.md`](../game-design/story.md), what carries). Replaying a mission keeps the best of what was collected.
 
 ## Out of scope
 
 - A real save and progression system. Q31 stays open: this milestone reads and writes the same flat
-  record that Milestone 3's Campaign option reads, nothing richer.
-- A full mission-select map or a branching campaign graph. The campaign design's belief ramp is linear
-  through the missions the roadmap actually builds.
+  record the title menu's Story row reads, nothing richer.
+- A mission-select map or a branching graph of missions. A story is linear; it branches by technology, not by mission.
 - Enemy intel content beyond the mechanism. Level 1 has nothing to discover yet.
 
 ## Decision it waits on
@@ -77,7 +83,7 @@ from the event stream the way the report module already works. The question is r
 
 ## Done when
 
-- [ ] The campaign screen renders correctly with an empty army and intel state.
+- [ ] The Story screen renders correctly with an empty army and intel state.
 - [ ] Launching the current mission hands off into Milestone 5.
 - [ ] Mission reports reuse the existing report module.
 - [ ] `./scripts/check-repository.sh` passes.

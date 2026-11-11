@@ -8,7 +8,7 @@ wins by where it stands, all built. Commander Armies is closed, and its last ste
 > **CLOSED, 2026-10-22.** Mario, after the wrap-up merged: "don't worry about the next backliner, perimeter balancing
 > or march's numbers. We will correct that when I start playing. For now, we want to focus on building a basic game
 > loop. Let's move into the next most important milestone" ([his words](../feedback/2026-10-21-pathfinding-wrap-up.md)).
-> The next is [Challenge Mode: Runs](../../milestones/milestone-11-challenge-runs.md).
+> The next is [Challenge Mode: Runs](milestone-11-challenge-runs.md).
 
 On 2026-10-19 the owner watched raiders stand behind rocks in PERIMETER and asked for this milestone
 ([his words](../feedback/2026-10-13-commander-armies.md)): "This is a solved problem in many videogames,

@@ -1,7 +1,7 @@
 # Milestone 12 — Content and Balance Iteration
 
 **Status:** PLANNED
-**Depends on:** Milestone 11 (a run to play new content in) and Milestone 10 (missions to teach it in); this milestone repeats rather than closing once
+**Depends on:** Milestone 17 (Skirmish, to play new content in) and Milestone 10 (missions to teach it in); this milestone repeats rather than closing once
 
 Content comes after the experience, on purpose. Mario's brief: "Once we create some vocabulary and
 structure for the single player modes, we should jump right away into building the actual game
@@ -9,12 +9,12 @@ experience and UX. And later, when we have the UI/UX working, we can start addin
 upgrades, iterating on the game modes as we do more playtesting." Everything before this milestone runs
 on disposable bench content. Here the real Citizens and Ravels rosters, the "Commander Army selection"
 workstream that [`commander-armies.md`](../game-design/commander-armies.md) holds back, finally
-get authored, one card at a time, each judged in a run and in a mission.
+get authored, one card at a time, each judged in a Skirmish and in a mission.
 
 ## Question
 
-With the experience working and both modes playable, does each new card make a run more interesting and
-let a mission teach it, measured rather than asserted, by runs the driver plays and runs people play?
+With the experience working and both modes playable, does each new card make a Skirmish more interesting and
+let a mission teach it, measured rather than asserted, by battles the scripts and the driver play and battles people play?
 
 ## Steps
 
@@ -35,7 +35,7 @@ A loop, not a line.
 
 ### Step 12B — Measure
 
-- [ ] Pick rate and win rate per card, per tier and per act, from driver-played runs under a few simple
+- [ ] Pick rate and win rate per card and per tier, from duels and driver-played Skirmish battles under a few simple
       policies and from human sessions, in a small report derived from events the way the `grid`
       report already is.
 - [ ] Follow the Slay the Spire discipline from the game-modes design: weekly-sized changes, metrics
@@ -61,7 +61,7 @@ A loop, not a line.
 Automated: every card has a named scenario exercising its rule, determinism holds across runs and
 runtimes after every content change, and the step 12B report regenerates from logs alone.
 
-Human: a player who has never read the lore can state each faction's philosophy from a run. This is
+Human: a player who has never read the lore can state each faction's philosophy from a Skirmish. This is
 the alignment test in [`docs/game-design/lore.md`](../game-design/lore.md), now applied to real rosters
 rather than bench fixtures.
 

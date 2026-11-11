@@ -1,7 +1,7 @@
 # Milestone 9 — Mission Cutscenes
 
 **Status:** PLANNED
-**Depends on:** Milestone 6 (events fire during the Battle Round), Milestone 4 (the campaign menu is a plausible home for artifact entries)
+**Depends on:** Milestone 6 (events fire during the Battle Round), Milestone 4 (the Story menu is a plausible home for artifact entries)
 
 This is the real mechanism, not a placeholder. An earlier plan deferred cutscenes to plain printed
 text, reasoning that a full system built for one mission's briefing would be a framework built for one
@@ -48,7 +48,7 @@ displaying.
   - The mid-mission interruption at the Battle Round's first tick ("whatever that rhythm is, we build between
     its beats now").
   - The debrief once the Battle Round resolves.
-  - The artifact entry, shown wherever Milestone 4's campaign menu can reasonably hold a collectible
+  - The artifact entry, shown wherever Milestone 4's Story menu can reasonably hold a collectible
     (a small addition to that screen, not a new one).
 
 ## Steps
@@ -71,7 +71,7 @@ displaying.
 
 ## Out of scope
 
-- New mission writing. Every word PERIMETER needs is already in the campaign design.
+- New mission writing. Every word PERIMETER needs is already in the Story design.
 - A preview or validation tool beyond what falls out cheaply from building playback.
 - Cutscenes for any mission beyond PERIMETER. RIGHT OF SALVAGE's material does not exist yet; that is
   Milestone 10's job.

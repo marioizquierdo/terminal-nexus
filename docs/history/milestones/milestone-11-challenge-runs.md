@@ -1,12 +1,19 @@
 # Milestone 11 — Challenge Mode: Runs
 
-**Status:** CURRENT
-**Current step:** 11G — the banner, tried before the stance (built as a prototype, waiting on the owner's playtest).
+**Status:** COMPLETE
+**Closed:** 2026-11-11, when the owner retired runs of many battles and made Skirmish current ([his
+words](../feedback/2026-11-11-game-modes.md), [why](../reports/2026-11-11-single-battles.md)).
 **Depends on:** Milestone 5 (Build Phase), Milestone 6 (the Battle Round loop and a result), Milestone 8 (a Commander exists and the Nexus Pulse deals from an army's pool); Milestone 3's mode select hands off here
 
+**How it closed.** Steps 11A to 11E were built and merged, and 11G's prototype with them. The banner (11G) and the
+stance (11F) moved to the Skirmish milestone as its first steps, because single battles need them most
+([`milestone-17-skirmish.md`](../../milestones/milestone-17-skirmish.md)). The route, the opponents, the run shell and
+playing a run (11H to 11K) were retired with runs; their design is [kept in history](../challenge-runs-design.md). The
+run's code plays until the Skirmish milestone retires it.
+
 Made current on 2026-10-22, when the owner closed Pathfinding: "For now, we want to focus on building a basic game
-loop. Let's move into the next most important milestone" ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)).
-Since this plan was written, duels were built (`src/duel/`, [`duels.md`](../system-design/duels.md)): two Commander
+loop. Let's move into the next most important milestone" ([his words](../feedback/2026-10-21-pathfinding-wrap-up.md)).
+Since this plan was written, duels were built (`src/duel/`, [`duels.md`](../../system-design/duels.md)): two Commander
 Armies fought round by round, each planned by a script or a model under the Build Phase's own rules. **A run's battle
 is a duel**: the player plans one side on the Build Phase screen, a scripted player plans the Commander Army on the
 other. That is the "heuristic policy driving a Commander Army" the design names, already built and measured.
@@ -14,11 +21,11 @@ other. That is the "heuristic policy driving a Commander Army" the design names,
 This is the replayable mode, and the one that needs no writing. Mario's brief: "implementing 'runs',
 where each battle ends on a new draft upgrade or removals that further polish the build for the next
 battle. This could have huge replayability value." A run exercises the Commander Army composition
-model ([`docs/game-design/commander-armies.md`](../game-design/commander-armies.md)) harder than any
+model ([`docs/game-design/commander-armies.md`](../../game-design/commander-armies.md)) harder than any
 mission. The structures, upgrades, Nexus powers and Specials are all real pools a run draft can touch,
 though the old "deck" framing is retracted. A run needs no authored text, and it is where the game's
 long-term value lives. It is built as soon as the match experience can carry it, before the Campaign's
-second mission. [`docs/game-design/game-modes.md`](../game-design/game-modes.md) is the design this
+second mission. [`docs/game-design/game-modes.md`](../../game-design/game-modes.md) is the design this
 builds against; its numbers are starting values this milestone retunes.
 
 ## Question
@@ -47,9 +54,9 @@ Small, in order, each finishable on its own.
 
 ### Step 11B — Building actions: upgrades, modes and orders
 
-The owner, 2026-10-22 ([his words](../history/feedback/2026-10-22-runs.md)): "buildings can be selected and buildings
+The owner, 2026-10-22 ([his words](../feedback/2026-10-22-runs.md)): "buildings can be selected and buildings
 themselves can have actions ... That is the part that I want to formalize and that I want to make sure that our
-framework can absorb." The rule is in [`commander-armies.md`](../game-design/commander-armies.md), what changes between
+framework can absorb." The rule is in [`commander-armies.md`](../../game-design/commander-armies.md), what changes between
 rounds.
 
 - [x] A building card in an army file declares its actions, of three kinds: an **upgrade** (bought with credits, kept
@@ -66,9 +73,9 @@ rounds.
 
 ### Step 11C — The run army and the draft
 
-The owner, 2026-10-24 ([his words](../history/feedback/2026-10-24-runs-gameplay.md)): "Runs are very exciting! I think
+The owner, 2026-10-24 ([his words](../feedback/2026-10-24-runs-gameplay.md)): "Runs are very exciting! I think
 here is where we can start building proper gameplay ... define a full game where I could playtest my ability to
-strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../history/challenge-runs-design.md); the steps
+strategically navigate a dynamic environment." The whole run is designed in [`runs.md`](../challenge-runs-design.md); the steps
 from 11C on build it, each playable on its own.
 
 - [x] The run army: a run starts with a small army (Vasse: Barracks, Supply Depot and Turret; Reserve Callup and Drill
@@ -83,9 +90,9 @@ from 11C on build it, each playable on its own.
 
 ### Step 11D — The kept front
 
-The owner, 2026-10-26 ([his words](../history/feedback/2026-10-26-core-loop.md)), after the measured experiment in
-[`core-loop.md`](core-loop.md): "double down the RTS style, leaving troops on the map, so they can keep moving forward."
-Every mode plays by it ([his next note](../history/feedback/2026-10-26-core-loop.md)): nothing is sent home any more, the
+The owner, 2026-10-26 ([his words](../feedback/2026-10-26-core-loop.md)), after the measured experiment in
+[`core-loop.md`](../../milestones/core-loop.md): "double down the RTS style, leaving troops on the map, so they can keep moving forward."
+Every mode plays by it ([his next note](../feedback/2026-10-26-core-loop.md)): nothing is sent home any more, the
 campaign's missions included.
 
 - [x] **Battle Rounds of 30 seconds**, and the number of rounds a battle lasts measured again for it.
@@ -105,10 +112,10 @@ campaign's missions included.
 
 ### Step 11E — Troop movement
 
-The owner, 2026-10-27 ([his words](../history/feedback/2026-10-26-troop-movement.md)), after the troop movement review:
+The owner, 2026-10-27 ([his words](../feedback/2026-10-26-troop-movement.md)), after the troop movement review:
 "Units should be smart enough, smooth, but even more important, predictable." The kept front leaves armies on the map,
 so how they move, sort themselves and choose what to fight is what a player reads in every Build Phase. The design is
-[`movement.md`](../system-design/movement.md).
+[`movement.md`](../../system-design/movement.md).
 
 - [x] **The chapter**: troop movement as seven rules a player can predict, then each part, what is still to smooth, and
       the strategies it opens.
@@ -124,7 +131,7 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] **"Flanker"** for the line that goes behind the enemy's front, in content and code.
 - [x] The tests that pin a battle are re-pinned with a reason each, never loosened; the quick spec measured before
       and after each half (stalled units 274 → 528 with the formation, → 420 with commitment).
-- [x] **The full spec measured and kept** ([commitment and reach, measured](../history/reports/2026-10-31-commitment-and-reach.md)):
+- [x] **The full spec measured and kept** ([commitment and reach, measured](../reports/2026-10-31-commitment-and-reach.md)):
       against the commit before the flip-flop fix, target switches in the duels 183,681 → 43,392 and stalled units
       2,062 → 1,587, the same winners within a duel or two, every campaign level the same.
 - [x] **A target a unit cannot reach is let go at once**, and a unit that can reach none in sight looks further afield
@@ -133,12 +140,12 @@ so how they move, sort themselves and choose what to fight is what a player read
       11% to 19% fewer unit-ticks. (Marching on past the fight was built and measured twice and left out: the same on
       every measure.)
 - [x] **The engage scenarios**: six battles of the same armies on open ground, gaps, a corridor and lanes, to read speed and
-      how many units strike against ([`measurement.md`](../system-design/measurement.md)); and what was tried to speed
+      how many units strike against ([`measurement.md`](../../system-design/measurement.md)); and what was tried to speed
       engagement up (the chapter's "To smooth later" lists it: nothing beyond 5%).
 - [x] **The testing ground** (the owner, 2026-10-30): the maps in folders by purpose, five legacy maps retired, every
       side that fights given a goal; trials in `grid` over seeds from both ends with variants, trial files with what they
       expect, and a comparison before and after a change
-      ([the testing ground](../system-design/testing-ground.md)). The engage maps rebuilt symmetric; their test is the
+      ([the testing ground](../../system-design/testing-ground.md)). The engage maps rebuilt symmetric; their test is the
       bench's trial. Then the tools themselves: idle units, target switches and stall queues in every record, what a
       tick costs (`--profile`), another build beside this one (`--against`), trials across processes, the battles worth
       watching, and the spec as a playbook for each kind of change.
@@ -151,7 +158,7 @@ so how they move, sort themselves and choose what to fight is what a player read
 Left for later, on purpose: the march route drawn on the Build Phase (the owner: "not yet"), smoothing (the chapter's
 list), and the workers' jobs (Milestone 7).
 
-### Step 11F — The stance
+### Step 11F — The stance (moved to the Skirmish milestone)
 
 - [ ] A Build Phase row for the army's stance for the coming round: **aggressive** (march on the enemy Nexus, as today),
       **hold the line** (stand in formation where the regroup left them and fight what comes in reach), **defensive**
@@ -161,15 +168,15 @@ list), and the workers' jobs (Milestone 7).
 - [ ] The duel scripts choose a stance (hold or fall back when their front is beaten), so a kept front has an answer.
 - [ ] Campaign levels keep their automatic target.
 
-### Step 11G — The banner
+### Step 11G — The banner (moved to the Skirmish milestone)
 
-The owner, 2026-10-31 ([his words](../history/feedback/2026-10-31-banner-first.md)): "test placing the banner on the
+The owner, 2026-10-31 ([his words](../feedback/2026-10-31-banner-first.md)): "test placing the banner on the
 map first, because the UX to do it is the big question… if we can't, we will fallback to the stance." Tried before
 11F, behind the Battle banner Experiment.
 
 - [x] **The placement, as a prototype**: Start Battle docks a panel over the menu with the target and stance, the camera
       on the banner; Change Target makes the cursor a pulsing banner that names the spot under it, refuses ground troops
-      cannot reach, and plants with a ring and a stance choice ([`ui-patterns.md`](../system-design/ui-patterns.md),
+      cannot reach, and plants with a ring and a stance choice ([`ui-patterns.md`](../../system-design/ui-patterns.md),
       "The battle banner"). Where no enemy Nexus stands, the default is the level's own target.
 - [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
       Aggressive elsewhere: the army goes there first, then on to the enemy Nexus (a route). Defensive: it holds the line
@@ -179,10 +186,10 @@ map first, because the UX to do it is the big question… if we can't, we will f
 - [ ] The owner plays it and says whether it is easy and intuitive, or the stance row (11F) replaces it.
 
 Two banners — the Commander following the main one, buildings set to send their units after a second — are the
-direction after this ([`core-loop.md`](core-loop.md)); they wait until the map holds resources and bonuses worth
+direction after this ([`core-loop.md`](../../milestones/core-loop.md)); they wait until the map holds resources and bonuses worth
 splitting an army for.
 
-### Step 11H — The route
+### Step 11H — The route (retired with runs)
 
 - [ ] The route from the seed: three acts of three steps and a boss, stops by kind, intel one step ahead, every offer from
       a stream of its own so a path never moves what another would have offered.
@@ -190,20 +197,20 @@ splitting an army for.
 - [ ] The route screen: choose the next stop with the keys, the mouse and the driver; every stop's kind and reward shown.
 - [ ] Exchange and Workshop stops, built on the draft's cards and the Nexus's health.
 
-### Step 11I — Opponents, bosses and signals
+### Step 11I — Opponents, bosses and signals (retired with runs)
 
 - [ ] An enemy's kit (plan, cards kept, credits) by act, a Stronghold's and a boss's; each act ends in a named Commander.
 - [ ] Signals: the three templates, in the interface's own voice.
 - [ ] A driver-played run that only takes commons either wins at the base difficulty or the finding is recorded and the
       tuning changed.
 
-### Step 11J — The run shell
+### Step 11J — The run shell (retired with runs)
 
 - [ ] The summary: the route taken, every draft taken and refused, the Nexus's health battle by battle, and the lost
       battle's report. Seed entry when starting a run, and a short run of one act.
 - [ ] Every item works by hotkey, click and driver, and adapts across the viewport range like every other screen.
 
-### Step 11K — Playing it
+### Step 11K — Playing it (retired with runs)
 
 - [ ] Mario plays runs and his notes become a feedback round; the numbers in `runs.md` move to what was played, and
       the tuning table says why.

@@ -9,7 +9,7 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 ## 1. The words
 
 **RULE for the names**: every document, screen and new piece of code uses these. The code still says `campaign` and
-`challenge` in places; the Skirmish milestone renames them ([the milestones](../milestones/README.md)).
+`challenge` in places; the Skirmish milestone renames them ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md)).
 
 | Word | Means |
 | --- | --- |

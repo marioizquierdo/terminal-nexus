@@ -17,7 +17,7 @@ when it is genuinely his call, state the assumption you proceed under, then keep
 
 ## Index
 
-Two are ready for Mario to decide now ("Mario, now"); every other question is parked until the
+One is ready for Mario to decide now ("Mario, now"); every other question is parked until the
 milestone or backlog entry named, and nothing in the current milestone is blocked by any of them.
 
 | Id | Question | Status | Waits on |
@@ -31,9 +31,9 @@ milestone or backlog entry named, and nothing in the current milestone is blocke
 | [Q26](#q26--is-a-unit-that-spawns-other-units-a-combat-ability-rather-than-production-or-does-mario-need-to-sign-off-before-real-content-uses-it) | Is a unit that spawns units a combat ability or production? | OPEN | Milestone 7 (worker economy) and Milestone 12 (content) |
 | [Q27](#q27--should-ground-cannot-target-air-be-the-schemas-default-not-an-opt-in-field) | Should "ground cannot target air" be the default? | OPEN | Milestone 12 (first played air roster) |
 | [Q28](#q28--can-a-spawner-only-side-become-permanently-un-annihilatable) | Can a spawner-only side become un-annihilatable? | OPEN | Milestone 12 (first spawner roster) |
-| [Q31](#q31--what-shape-does-an-unlock-record-take-with-no-save-system-yet) | What shape does an unlock record take? | OPEN | Milestone 4 (campaign menu) |
-| [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (campaign menu) |
-| [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Mario, now |
+| [Q31](#q31--what-shape-does-an-unlock-record-take-with-no-save-system-yet) | What shape does an unlock record take? | OPEN | Milestone 4 (Story menu) |
+| [Q35](#q35--what-counts-as-discovered-enemy-intel-and-when-is-it-recorded) | What counts as "discovered" enemy intel? | OPEN | Milestone 4 (Story menu) |
+| [Q38](#q38--does-perimeters-own-map-need-real-scrolling-or-does-milestone-5-prove-scrolling-on-different-content) | Does PERIMETER's own map need real scrolling? | OPEN | Milestone 10 (PERIMETER polished as the tutorial) |
 | [Q87](#q87--should-the-march-route-be-drawn-on-the-build-phase-and-be-the-line-the-army-keeps-to) | Should the march route be drawn on the Build Phase? | OPEN | After the stance and the banner |
 | [Q91](#q91--should-flyers-be-held-back-where-the-ground-is-tight) | Should flyers be held back where the ground is tight? | OPEN | The first real air roster (milestone 12) |
 | [Q92](#q92--what-does-a-skirmishs-difficulty-change) | What does a Skirmish's difficulty change? | OPEN | Mario's play of the Skirmish milestone |
@@ -245,7 +245,7 @@ opens with an entirely non-mobile force.
 
 ### Q31 — What shape does an "unlock record" take, with no save system yet?
 
-**Status:** OPEN — parked until Milestone 4 (campaign menu) needs to write one; the recommendation is already assumed by [`milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
+**Status:** OPEN — parked until Milestone 4 (Story menu) needs to write one; the recommendation is already assumed by [`milestone-04-story-menu.md`](milestone-04-story-menu.md).
 
 Mario: "after each level, we unlock new units and powers." [`story.md`](../game-design/story.md) has an
 `unlocks: readonly string[]` field on a mission, but nothing says what a session writes down when Level 1
@@ -268,7 +268,7 @@ designed rather than discovered.
 
 ### Q35 — What counts as "discovered" enemy intel, and when is it recorded?
 
-**Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-campaign-menu.md`](milestone-04-campaign-menu.md).
+**Status:** OPEN — parked until Milestone 4 builds the enemy-intel panel; the recommendation is already assumed by [`milestone-04-story-menu.md`](milestone-04-story-menu.md).
 
 Mario's campaign-menu description asks for "enemy intel (discovered enemy units, buildings, nexus powers,
 enemy generals, and mission reports)." `PlayerView` ([`pulse.md`](../system-design/pulse.md), visibility) is a
@@ -287,7 +287,7 @@ before any contact"). Do not build C's authoring surface before a mission uses i
 
 ### Q38 — Does PERIMETER's own map need real scrolling, or does Milestone 5 prove scrolling on different content?
 
-**Status:** OPEN — decision-ready. Scrolling is built; PERIMETER is still played on the Build Phase's placeholder map ([`next-steps.md`](next-steps.md)), so its real map is the open part. The recommendation is already assumed by [`docs/history/milestones/milestone-02-campaign-design.md`](../history/milestones/milestone-02-campaign-design.md).
+**Status:** OPEN — parked 2026-11-11 until Milestone 10 polishes PERIMETER as Vasse's tutorial (the owner: "Don't worry about perimeter for now"). Scrolling is built and proved on the Skirmish maps; only PERIMETER's own map is open.
 
 The belief ramp in [`story.md`](../game-design/story.md) describes PERIMETER's teaching goal as the
 "Build Phase / Battle Round loop on **a small Grid that never scrolls**", written as GUIDANCE before the
