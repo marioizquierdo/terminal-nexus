@@ -35,8 +35,12 @@ npm run testing-saves                                                 # every te
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
 ./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, story
+./bin/terminal-nexus.ts --at 'skirmish?setup=new'                           # the setup screen: map, Commanders, who plays, Start
+./bin/terminal-nexus.ts --at 'skirmish?setup=load'                          # Load game: the saves folder, then saves/
 ./bin/terminal-nexus.ts --at 'skirmish?seed=7'                              # a Skirmish: Vasse against Dob Hunter's balanced script
 ./bin/terminal-nexus.ts --load mine.save.json --p2 script:rush              # a save (Esc, Save game), another script in p2
+./bin/terminal-nexus.ts --load saves/mirror-vasse.save.json                 # both slots scripts: spectating
+./bin/terminal-nexus.ts --note ~/.terminal-nexus/notes/<note>.note.json     # a playtest note (!), at its moment
 ./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1'                   # PERIMETER's Build Phase
 ./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1&round=3'           # its round 3, no keys to walk there
 ./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
@@ -48,7 +52,7 @@ bun scripts/build-web.mjs                                             # the brow
 
 **A route** names a place in the game the way a web address names a page, without the site: the place,
 then `?` and `name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`,
-`story` and `skirmish` (`skirmish?seed=<n>`, `skirmish?load=<file>`); a mission is `story?mission=<id>`, with `&round=<n>` counting Battle
+`story` and the Skirmish screens (`skirmish?setup`, `skirmish?setup=new`, `skirmish?setup=load`); a Skirmish is `skirmish`, `skirmish?seed=<n>` or `skirmish?load=<file>`; a mission is `story?mission=<id>`, with `&round=<n>` counting Battle
 Rounds from 1 as the screen does. Quote a route on a command line, since the shell reads `?` and `&` itself. The
 same routes serve the game's `--at`, the scripted playtest's `--at`, the browser page's `#at=` and a
 demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
@@ -162,27 +166,42 @@ A passing test says nothing about spacing, density or where the eye goes. Look.
 **A Skirmish is where a change is seen** ([`game-modes.md`](docs/game-design/game-modes.md), how a Skirmish is tested).
 Headless, a Skirmish is played from a save file, a round a command: `npm run skirmish -- -f <save>` prints the brief,
 `--p1 build:plan.json` checks a plan, `--battle` plays the round and saves the next Build Phase, and `--p2 script:rush`
-changes who plays a side ([`skirmish-saves.md`](docs/system-design/skirmish-saves.md); examples in `saves/`). On screen,
-`--at 'skirmish?seed=<n>'` opens one against Dob Hunter's `balanced` script and `--load <save>` a save at its Build
-Phase; open a mission by its route only when the change is about a mission.
+changes who plays a side ([`skirmish-saves.md`](docs/system-design/skirmish-saves.md), how an agent plays a Skirmish). On
+screen, `--load <save>` opens a save at its Build Phase, `--at 'skirmish?seed=<n>'` a new battle against Dob Hunter's
+`balanced` script, and `--at 'skirmish?setup=new'` the setup screen; open a mission by its route only when the change is
+about a mission. Which save shows what:
 
-**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a mission's
-Build Phase without a terminal (a Skirmish's, once the Skirmish milestone makes it the default) and keeps what the screen showed after every key: text for every step
+| Save | Shows |
+| --- | --- |
+| `saves/crossing-new.save.json` | A new battle, round 1: the opening lines, the first hand, an empty base (the scripted playtest's start) |
+| `saves/crossing-round-4.save.json` | Three rounds in: bases built, armies regrouped, a Commander's return, Save game offering its own name |
+| `saves/mirror-vasse.save.json` | Both slots scripted: spectating, the result naming a winner |
+| `saves/pocket-short.save.json` | Four rounds on the small map: a whole battle to its result and `[m] Setup screen` in minutes |
+| `skirmish-testing/<folder>/*.save.json` | One Battle Round written by hand, one rule each: watched in `grid`, not on the game's screen |
+
+**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on the game's screens
+without a terminal — a Skirmish from `saves/crossing-new.save.json` unless told otherwise, the title menu from a title
+route, a mission from its route — follows the game from screen to screen (New game's Start opens the battle, a
+result's `[m]` comes back to the setup screen), and keeps what the screen showed after every key: text for every step
 in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
 sequence (`--gif`). Keys go through the real keyboard and mouse adapters as the bytes a terminal
 sends, one at a time, and every frame comes from the composer the live screen uses, so there is no
-capture race. `--at <route>` opens a mission at a round (PERIMETER's first unless given; a later round as
-a player who builds nothing reaches it, so a picture of round 3 needs no keys at all, and a title menu
-route is refused) or a Skirmish (`skirmish?seed=<n>`), and `--load <save>` a save with `--p1`/`--p2`; `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
+capture race. `--at <route>` opens a title menu screen (`menu`, `skirmish?setup=new`, `skirmish?setup=load`), a
+mission at a round (a later round as a player who builds nothing reaches it, so a picture of round 3 needs no keys at
+all) or a Skirmish (`skirmish?seed=<n>`), `--load <save>` a save with `--p1`/`--p2`, and `--note <file>` a playtest
+note at its moment; `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
 run recorded in the Activity Logs, as the game's window would export it; `--size`, `--colors`,
 `--theme` and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
 `click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
 
 ```bash
-node scripts/playtest.mjs --keys "Esc Down Down Space*4"                   # every step's status, then the final screen
-node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --png final --name hatchery-run
+node scripts/playtest.mjs --keys "Esc n 1 1 Enter"                         # a Skirmish from a save: a power, a Hatchery
+node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --gif --png final --name hatchery-run
 node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a Battle Round, twenty seconds in
-node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=3' --png final   # round 3 as it opens
+node scripts/playtest.mjs --at skirmish?setup=new --keys "1 3 s Esc s"     # the setup screen: the Pocket, both scripts, watched
+node scripts/playtest.mjs --load saves/crossing-round-4.save.json --png final   # round 4 as it opens
+node scripts/playtest.mjs --note ~/.terminal-nexus/notes/note-20261112-153012.note.json   # a note, at its moment
+node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=3' --png final   # a mission's round 3, for a mission change
 ```
 
 Output goes to `.playtest/`, which git ignores, and so does every capture script's. **Pictures are not
@@ -318,7 +337,7 @@ The unit-architecture spike and the menu spike in `docs/history/reports/` are th
 ## 6. The feedback loop
 
 Mario plays merged builds, several at a time, and sends long, specific feedback, sometimes with a
-pasted **settings export** or an **Activity Logs export**. This is the most valuable input the project
+pasted **settings export**, an **Activity Logs export** or **playtest notes**. This is the most valuable input the project
 gets; the loop is built to turn it around within hours. The exact procedure is the `feedback-round`
 skill; the ideas behind it:
 
@@ -338,13 +357,18 @@ skill; the ideas behind it:
    filter for it at the top of `ACTIVITY_FILTERS` in `src/log/activity.ts`, check with
    `playtest.mjs --activity` that a flow logs it, and ask him to play, open Esc then `a`, export and paste
    it. Remove both once answered, as an Experiment is.
-5. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
+5. **A note is the moment itself.** `!`, on any screen, takes one line and saves a note file (in
+   `~/.terminal-nexus/notes/`; the browser page copies it): the round as its Build Phase opened, every command pressed
+   since with its time, the screen as text, the settings and the last Activity Logs events. `--note <file>` on the game
+   or the playtest script opens it at exactly that moment, so a note needs no paragraph saying how to get there: read
+   its line, open it, and log it like any item (the `feedback-round` skill).
+6. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
    Experiment as `name = value` text; reproduce what he saw with `--settings "<text>"` on the game,
    the playtest script or `#settings=` on the browser page. Then settle each Experiment it answers:
    his value becomes the default, its tier becomes *tuned* with who chose it and when, and the
    Experiment is deleted. A few stay longer (a number that depends on the player's keyboard, a stand-in
    value) or graduate into real Settings.
-6. **Size the Demo to the change** (the `pr-description` skill): a code block or nothing when nothing
+7. **Size the Demo to the change** (the `pr-description` skill): a code block or nothing when nothing
    shows on screen, screenshots for a look, a GIF for motion, a playable page only when it must be
    played. Rewrite the pull request against `main` after every round, then wait; do not start the
    next step.

@@ -20,7 +20,8 @@ the tool measures a few general things, and a session that needs another measure
 | Is this better, how often, how surely, at what cost? | a **trial**: `grid <save> --seeds 1-12 --swap` with a variant, or a trial file |
 | What did my change move? | `grid <trial> --against HEAD --profile` |
 | Did a refactor change no outcome at all? | `node scripts/profile-routes.ts --out <file>` before and after, then `diff` |
-| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --battle`, a round a command, or a plan of your own with `--p1 build:plan.json` ([`skirmish-saves.md`](skirmish-saves.md)) |
+| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --battle`, a round a command, or a plan of your own with `--p1 build:plan.json` ([`skirmish-saves.md`](skirmish-saves.md), how an agent plays a Skirmish) |
+| How does it read on screen, round by round? | the **scripted playtest from a save**: `node scripts/playtest.mjs --load saves/crossing-round-4.save.json --keys "..."` (no `--load`: `saves/crossing-new.save.json`); `--p1 script:<profile>` watches both scripts; a playtest note (`!`) opens at its moment with `--note`. Which save shows what is in DEVELOPMENT.md, how to see a change |
 | How do whole armies play, with a Build Phase each round? | duels: `bin/duel.ts` with scripted players (`balanced`, `rush`, `turtle`) or a model ([`duels.md`](duels.md)); many with `measure run --parts duels` |
 | How does the power curve play? | `measure run --spec quick` or `full`, `measure compare` ([`measurement.md`](measurement.md), the [`remeasure` skill](../../.claude/skills/remeasure/SKILL.md)) |
 | Must this stay true? | a rule's testing save and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |

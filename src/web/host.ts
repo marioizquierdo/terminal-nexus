@@ -23,7 +23,7 @@ import { runMenu } from "../cli/menu.ts"
 import { runBuildPhase } from "../cli/build-phase.ts"
 import { shippedSaves } from "../cli/title-screens.ts"
 import type { Noter } from "../cli/notes.ts"
-import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
+import { SHIPPED_PROFILES, SHIPPED_SAVES } from "../skirmish/shipped-players.ts"
 import type { SaveSetup } from "../skirmish/save.ts"
 import type { Exporter } from "../cli/build-phase.ts"
 import { readLaunch } from "../cli/launch.ts"
@@ -313,7 +313,14 @@ async function startPulse(pulse: PulseName): Promise<void> {
 
 /** Where the page opens when nothing names a place: a Skirmish on the defaults, on a seed from the clock (the owner,
  *  2026-11-11: Skirmish is "the center stone for game design and testing"). */
-const PAGE_START = "skirmish"
+const PAGE_START = "skirmish?load=saves/crossing-new.save.json"
+
+/** A save the page carries, by its path (`saves/crossing-round-4.save.json`): the page has no other files. */
+function shippedSave(path: string): string {
+  const text = SHIPPED_SAVES.get(path.replace(/^\.\//u, ""))
+  if (text === undefined) throw new Error(`the page carries only the example saves: ${[...SHIPPED_SAVES.keys()].join(", ")}`)
+  return text
+}
 
 /**
  * A place in the game, read as a launch, the way the terminal reads one (`src/cli/launch.ts`): the route `at`,
@@ -334,7 +341,7 @@ async function startAt(at: string | undefined, from: string, demo?: Demo): Promi
   let destination: Exclude<Destination, { kind: "skirmish" }>
   if (launch.destination.kind === "skirmish") {
     try {
-      destination = openSkirmish(launch.destination, { now: Date.now })
+      destination = openSkirmish(launch.destination, { now: Date.now, readFile: shippedSave })
     } catch (error) {
       notes.push(`${from}: ${error instanceof Error ? error.message : String(error)}`)
       destination = openSkirmish({}, { now: Date.now })

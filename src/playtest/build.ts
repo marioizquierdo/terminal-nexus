@@ -314,6 +314,9 @@ export class BuildDriver {
   }
 }
 
+/** The save the scripted playtest opens when told nowhere: a new battle on the Crossing, Vasse against Dob Hunter. */
+export const PLAYTEST_SAVE = "saves/crossing-new.save.json"
+
 /**
  * **Where the game's scripted playtest opens** (`./game.ts`): a title menu route (`menu`, `skirmish?setup=new`) as that
  * screen, or anything `playtestOpening` opens, as its Build Phase. Refused, with every problem said, as that is.
@@ -342,7 +345,10 @@ export function gameOpening(
       return { start: { kind: "title", place: launch.destination.place }, steps: keys, ...(settings === undefined ? {} : { settings }) }
     }
   }
-  const opened = playtestOpening(text, keysFrom, skirmish)
+  // Told nowhere, the scripted playtest starts from a save, as testing the battle does (the Skirmish milestone): the
+  // Crossing's new battle, Vasse against Dob Hunter, seed 7. A mission is opened by its route.
+  const told = skirmish.load !== undefined || text.at !== undefined
+  const opened = playtestOpening(text, keysFrom, told ? skirmish : { ...skirmish, load: PLAYTEST_SAVE })
   return { start: opened.at, steps: opened.steps, ...(opened.settings === undefined ? {} : { settings: opened.settings }) }
 }
 

@@ -11,6 +11,14 @@ save file, a round at a time, is the `skirmish` command (`npm run skirmish -- --
 [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md)): use it to play a person's save on, or to try a plan
 of your own against a script round by round. Benches and the two-session file flow stay here.
 
+**Round by round, as an agent plays a Skirmish** ([`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md),
+how an agent plays a Skirmish): copy a save (`cp saves/crossing-round-4.save.json tmp/s.json`), read the brief
+(`npm run skirmish -- -f tmp/s.json`), write a plan, check it (`--p1 build:plan.json`), play it (`--battle`, which saves
+the next Build Phase over the file), and repeat; `--out tmp/runs/` keeps every round's save and report. To see a round
+on screen, the same file opens in the scripted playtest (`node scripts/playtest.mjs --load tmp/s.json`), with
+`--p1 script:<profile>` to watch both sides. The saves in `saves/` say which shows what (DEVELOPMENT.md, how to see a
+change).
+
 ## 1. A scripted bench first (seconds, free)
 
 ```bash

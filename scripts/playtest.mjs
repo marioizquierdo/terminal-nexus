@@ -45,15 +45,19 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 
 const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <path> | --at <route> | --load <file>) [options]
 
-  --keys "<script>"    keys to press, e.g. "Esc Down Down Space*4" (names: src/playtest/keys.ts);
-                       PERIMETER opens on its intro dialog, which Esc skips and Enter reads on
+  --keys "<script>"    keys to press, e.g. "Esc n 1 1 Enter" (names: src/playtest/keys.ts). Told
+                       nowhere, it opens saves/crossing-new.save.json: a new Skirmish on the
+                       Crossing, Vasse against Dob Hunter, seed 7, on its opening lines (Esc skips)
   --file <path>        the same, from a file; # starts a comment
-  --at <route>         where to open, as the game's --at takes it: a story mission at a round,
+  --at <route>         where to open, as the game's --at takes it: a title menu screen ("menu",
+                       "skirmish?setup=new", "skirmish?setup=load"), a story mission at a round,
                        "story?mission=vasse-test-1&round=3" (round counts Battle Rounds from
                        1, as the screen does; a later round is reached as a player who builds
                        nothing reaches it), or a Skirmish, "skirmish?seed=1" (Vasse against
-                       Dob Hunter's balanced script on the Crossing). Round 1 of vasse-test-1
-                       unless given. With --at or --load, the keys may be left out
+                       Dob Hunter's balanced script on the Crossing). The script follows the
+                       game from screen to screen: New game's Start opens its battle, a
+                       result's [m] goes back to the setup screen. With --at, --load or
+                       --note, the keys may be left out
   --load <file>        a Skirmish save file, opened at its Build Phase with its plan so far
                        (what Save game writes): the same as --at "skirmish?load=<file>"
   --note <file>        a playtest note (the ! key writes one), opened at its moment: its round as
