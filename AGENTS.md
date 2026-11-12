@@ -42,7 +42,7 @@ If that is empty too, say so and stop; never start the next step to fill the tim
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) is the practices manual: the toolchain, the tests, how to see a
 change, how milestones and spikes work, the feedback loop with Mario, how a design change lands. The
-project's own words (Nexus Pulse, Battle Round, Skirmish, Story, mission, group, regroup, Experiment, starter map, bench roster, army file)
+project's own words (Nexus Pulse, Battle Round, Skirmish, Story, mission, group, regroup, Experiment, starter map, bench roster, army file, testing save)
 are defined once, in the engine overview's [vocabulary](docs/system-design/grid-engine.md).
 
 ## How we work
@@ -83,7 +83,7 @@ IDEA (a sketch). The ones every session needs:
   like. Only the Pulse mutates state; presentation never influences it. A match must resolve with
   the renderer deleted.
 - **The kernel is pure.** It imports no terminal, clock, network or renderer, calls no `Math.random`,
-  and the same scenario, seed and tick count hash identically on Node and Bun, every run.
+  and the same opening, seed and tick count hash identically on Node and Bun, every run.
 - **Two random streams never touch**: seeded gameplay (PCG32) and cosmetic randomness (a hash of an
   effect instance's identity, never a stream).
 - **Effects are pure functions of presentation time**, and an effect never replaces an entity's glyph.
@@ -108,8 +108,8 @@ IDEA (a sketch). The ones every session needs:
 | `armies/`, `campaigns/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions `armies/citizen` and `armies/ravel`, and one army per Commander (`vasse`, `averno`, `dob`); each Commander's story and its missions in `campaigns/` (renamed with the Skirmish milestone); the loader and the effects table. How to write one: `docs/system-design/army-authoring.md`. |
 | `src/abilities/` | What a unit does on its own (an aura, a bounty, loaded dice): one table of kinds the kernel calls at fixed moments. |
 | `src/duel/`, `bin/duel.ts` | Two armies fought out headless, script or model a side (`docs/system-design/duels.md`): the battle a Skirmish plays. One battle from a save file, a round a command, is `src/skirmish/`, `bin/skirmish.ts` and the examples in `saves/` (`docs/system-design/skirmish-saves.md`). |
-| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: scenarios, duels, missions (`docs/system-design/measurement.md`), and trials, a map over many seeds as built and as variants change it (`grid <map> --seeds`). |
-| `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format, its variants, and the checked-in maps by folder (rules, units, movement, the engage bench, showcases) with the trial files (`docs/system-design/testing-ground.md`). |
+| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: testing saves, duels, missions (`docs/system-design/measurement.md`), and trials, a testing save over many seeds as built and as variants change it (`grid <save> --seeds`). |
+| `src/content/`, `src/skirmish/`, `skirmish-testing/`, `saves/` | Content definitions; the Skirmish save format, the opening of a Battle Round written by hand and its variants; the testing saves by folder (rules, units, movement, the engage bench, showcases) with the trial files (`docs/system-design/testing-ground.md`); example saves and the schema. |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, the regroup, missions and their trigger runner. |
 | `src/build/`, `src/title-menu/`, `src/settings/` | The Build Phase reducer and adapters, the title screen's list reducer and adapters, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |

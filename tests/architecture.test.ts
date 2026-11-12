@@ -127,7 +127,7 @@ test("the simulation never reaches a glyph", () => {
   const art = resolve(SRC, "content/art.ts")
   for (const entry of [
     "content/index.ts",
-    "scenario/index.ts",
+    "skirmish/opening/index.ts",
     "pulse/index.ts",
     "match/index.ts",
     "mission/index.ts",
@@ -176,7 +176,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "scenario", "pulse", "match", "mission", "armies", "abilities", "duel", "run"]
+  const kernel = ["grid", "rng", "content", "events", "state", "skirmish", "pulse", "match", "mission", "armies", "abilities", "duel", "run"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,

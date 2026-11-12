@@ -1,0 +1,89 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Engage: a mixed army against itself through a gap six rows wide",
+  "notes": "The same mixed army on both sides, a ridge between them with a gap six rows wide: the Crossing's shape, small. Both sides' fronts meet in the gap, ranged units fire over their own melee, and the battle is as even as the armies. Played to a result: a Nexus falling or a side wiped out. Done when: Either side may win; every unit strikes within twenty seconds.",
+  "setup": {
+    "map": {
+      "id": "engage-gap6-mix-mirror",
+      "rows": [
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##......................."
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 900,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":0},
+      "rows": [
+        "",
+        "",
+        "",
+        "",
+        "     ba",
+        "     b",
+        "     ba",
+        "n     a",
+        "",
+        "     ba",
+        "     ba",
+        "     ba",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"},
+        "a": {"content":"unit.citizen.trooper"},
+        "b": {"content":"unit.citizen.marksman"}
+      },
+      "target": {"x":45,"y":7,"width":3,"height":2}
+    },
+    "p2": {
+      "at": {"x":40,"y":4},
+      "rows": [
+        "ab",
+        " b",
+        "ab",
+        "a     n",
+        "",
+        "ab",
+        "ab",
+        "ab"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"},
+        "a": {"content":"unit.citizen.trooper"},
+        "b": {"content":"unit.citizen.marksman"}
+      },
+      "target": {"x":0,"y":7,"width":3,"height":2}
+    }
+  }
+}

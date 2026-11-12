@@ -1,8 +1,8 @@
 // A side's target (docs/system-design/pulse.md, perception and intents): the region a campaign level names for
 // the player's troops — the owner: "the campaign levels should have a target well defined so it is predictable
 // where your troops are moving". Its fighting units head for it, engage what comes within their reach on the
-// way, and stand there. The story is the named scenario `scenarios/rules/target-head-engage-stand.map.json`
-// (tests/scenario.test.ts); here are the rule's edges, and the state that carries a target.
+// way, and stand there. The story is the testing save `skirmish-testing/rules/target-head-engage-stand.save.json`
+// (tests/testing-saves.test.ts); here are the rule's edges, and the state that carries a target.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
@@ -11,9 +11,9 @@ import type { ContentDef } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { VISION, visionOf, followsTarget } from "../src/pulse/target.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
-import { ScenarioError } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
+import { OpeningError } from "../src/skirmish/opening/index.ts"
 import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
 
@@ -42,7 +42,7 @@ function run(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>, targ
     const placed = sides[side]
     if (placed !== undefined) placements[side] = block(placed)
   }
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "target-edges",
     name: "target edges",
     grid: { preset: "small-wide" },
@@ -53,7 +53,7 @@ function run(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>, targ
     placements,
     targets: { A: target },
   }
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
   const context = contextFor(loaded.state, FIXTURE_REGISTRY, ticks)
   const states: MatchState[] = [loaded.state]
   const events: DomainEvent[] = []
@@ -145,7 +145,7 @@ test("a state carries a side's target only when it has one, round-trips it byte 
 })
 
 test("a map's target is checked when it loads: on the Grid, whole tiles, and ground its units can stand on", () => {
-  const scenario = (targets: ScenarioDefinition["targets"], terrain = Array.from({ length: 12 }, () => ".".repeat(24))): ScenarioDefinition => ({
+  const opening = (targets: BattleOpening["targets"], terrain = Array.from({ length: 12 }, () => ".".repeat(24))): BattleOpening => ({
     id: "target-load",
     name: "target load",
     grid: { preset: "small-wide" },
@@ -156,10 +156,10 @@ test("a map's target is checked when it loads: on the Grid, whole tiles, and gro
     placements: { A: block([[2, 5, TROOPER]]) },
     ...(targets === undefined ? {} : { targets }),
   })
-  assert.equal(loadScenario(scenario(undefined)).state.targets, undefined)
-  assert.deepEqual(loadScenario(scenario({ A: { x: 3, y: 3, width: 2, height: 2 } })).state.targets, { A: { x: 3, y: 3, width: 2, height: 2 } })
-  assert.throws(() => loadScenario(scenario({ A: { x: 23, y: 3, width: 2, height: 2 } })), (error: unknown) => error instanceof ScenarioError && /reaches off the 24x12 Grid/.test(error.message))
-  assert.throws(() => loadScenario(scenario({ A: { x: 3, y: 3, width: 0, height: 2 } })), /whole tiles, at least one wide and tall/)
+  assert.equal(openBattle(opening(undefined)).state.targets, undefined)
+  assert.deepEqual(openBattle(opening({ A: { x: 3, y: 3, width: 2, height: 2 } })).state.targets, { A: { x: 3, y: 3, width: 2, height: 2 } })
+  assert.throws(() => openBattle(opening({ A: { x: 23, y: 3, width: 2, height: 2 } })), (error: unknown) => error instanceof OpeningError && /reaches off the 24x12 Grid/.test(error.message))
+  assert.throws(() => openBattle(opening({ A: { x: 3, y: 3, width: 0, height: 2 } })), /whole tiles, at least one wide and tall/)
   const rocky = Array.from({ length: 12 }, (_, y) => (y === 4 ? "....#..................." : ".".repeat(24)))
-  assert.throws(() => loadScenario(scenario({ A: { x: 3, y: 3, width: 2, height: 2 } }, rocky)), /covers \(4,4\), which is impassable terrain.rock/)
+  assert.throws(() => openBattle(opening({ A: { x: 3, y: 3, width: 2, height: 2 } }, rocky)), /covers \(4,4\), which is impassable terrain.rock/)
 })

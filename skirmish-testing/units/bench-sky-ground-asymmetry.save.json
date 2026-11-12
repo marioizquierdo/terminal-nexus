@@ -1,0 +1,61 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Proving Grounds - the ground-air asymmetry",
+  "notes": "Mario's first requested design: a flying unit that goes to the nearest enemy and follows, and ground units that cannot reach it. The grunt's attack.targetLayers excludes air, so it never selects the skyraider as a target at all and simply idles the whole match - not a bug, the perception filter working. The flaktrooper carries no such restriction (targetLayers left undefined, its default), so it engages normally: the same field proves both halves of the asymmetry with the same mechanism.",
+  "setup": {
+    "map": {
+      "id": "bench-sky-ground-asymmetry",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 700001,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 220,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":18,"y":5},
+      "rows": [
+        "s"
+      ],
+      "legend": {
+        "s": {"content":"unit.bench.skyraider"}
+      },
+      "target": {"x":4,"y":4,"width":1,"height":2}
+    },
+    "p2": {
+      "at": {"x":4,"y":4},
+      "rows": [
+        "g",
+        "f"
+      ],
+      "legend": {
+        "g": {"content":"unit.bench.grunt"},
+        "f": {"content":"unit.bench.flaktrooper"}
+      },
+      "target": {"x":18,"y":5,"width":1,"height":1}
+    }
+  }
+}

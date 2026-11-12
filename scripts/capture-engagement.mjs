@@ -10,11 +10,11 @@
 //      opening exchange, capturing every frame — that is what shows a diagonal or a jump that whole
 //      ticks smooth over.
 //
-//   node scripts/capture-engagement.mjs --scenario citizens-versus-ravels
-//   node scripts/capture-engagement.mjs --scenario grand-battle --lead-ticks 2 --frames 12
-//   node scripts/capture-engagement.mjs --scenario ravel-cascade --around-tick 25 --frames 20
+//   node scripts/capture-engagement.mjs --save citizens-versus-ravels
+//   node scripts/capture-engagement.mjs --save grand-battle --lead-ticks 2 --frames 12
+//   node scripts/capture-engagement.mjs --save ravel-cascade --around-tick 25 --frames 20
 //
-// Output lands in .playtest/screenshots/engagement-<scenario>/frame-NN.png (git ignores it; --out <dir>
+// `--save` names a testing save (skirmish-testing/) by its id. Output lands in .playtest/screenshots/engagement-<save>/frame-NN.png (git ignores it; --out <dir>
 // replaces .playtest/screenshots), oldest first, plus an index.md naming the presentation-ms each one landed on.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
@@ -42,9 +42,9 @@ function arg(name, fallback) {
   return value === undefined ? fallback : value
 }
 
-const scenario = arg("scenario", null)
-if (scenario === null) {
-  console.error("usage: capture-engagement.mjs --scenario <name> [--around-tick N] [--frames N] " +
+const saveId = arg("save", null)
+if (saveId === null) {
+  console.error("usage: capture-engagement.mjs --save <testing save id> [--around-tick N] [--frames N] " +
     "[--lead-ticks N] [--colors c] [--glyphs g] [--out dir]")
   process.exit(1)
 }
@@ -55,7 +55,7 @@ const glyphs = arg("glyphs", "unicode")
 const cols = Number(arg("cols", "80"))
 const rows = Number(arg("rows", "24"))
 
-const outputDirectory = join(resolve(repoRoot, arg("out", join(".playtest", "screenshots"))), `engagement-${scenario}`)
+const outputDirectory = join(resolve(repoRoot, arg("out", join(".playtest", "screenshots"))), `engagement-${saveId}`)
 const scratch = join(repoRoot, ".capture-tmp")
 
 /**
@@ -64,13 +64,13 @@ const scratch = join(repoRoot, ".capture-tmp")
  * whether several attackers open within the same short window, since that is the case effects need
  * to survive.
  */
-async function findEngagementTick(scenarioFile) {
-  const { loadScenario } = await import("../src/scenario/index.ts")
+async function findEngagementTick(id) {
+  const { openBattle } = await import("../src/skirmish/opening/index.ts")
+  const { loadTestingSave } = await import("../src/skirmish/testing-saves.ts")
   const { resolvePulse } = await import("../src/pulse/index.ts")
   const { FIXTURE_REGISTRY } = await import("../src/content/index.ts")
-  const module = await import(`../scenarios/${scenarioFile}.ts`)
-  const definition = module.default
-  const loaded = loadScenario(definition, { registry: FIXTURE_REGISTRY, seed: definition.seed })
+  const definition = await loadTestingSave(id)
+  const loaded = openBattle(definition, { registry: FIXTURE_REGISTRY, seed: definition.seed })
   const run = resolvePulse({
     initialState: loaded.state,
     registry: loaded.registry,
@@ -79,13 +79,13 @@ async function findEngagementTick(scenarioFile) {
   })
   const firstAttack = run.events.find((event) => event.kind === "attack.launched")
   if (firstAttack === undefined) {
-    throw new Error(`${scenarioFile}: no attack.launched event in the whole Pulse`)
+    throw new Error(`${id}: no attack.launched event in the whole Pulse`)
   }
   const inFirstBeat = run.events.filter(
     (event) => event.kind === "attack.launched" && event.tick <= firstAttack.tick + 4,
   )
   console.log(
-    `${scenarioFile}: first attack at tick ${firstAttack.tick} ` +
+    `${id}: first attack at tick ${firstAttack.tick} ` +
       `(${inFirstBeat.length} attack(s) within the first four ticks of it)`,
   )
   return firstAttack.tick
@@ -93,7 +93,7 @@ async function findEngagementTick(scenarioFile) {
 
 async function main() {
   const aroundArg = arg("around-tick", null)
-  const aroundTick = aroundArg === null ? await findEngagementTick(scenario) : Number(aroundArg)
+  const aroundTick = aroundArg === null ? await findEngagementTick(saveId) : Number(aroundArg)
   const startTick = Math.max(0, aroundTick - leadTicks)
 
   const extraArgs = [
@@ -105,7 +105,7 @@ async function main() {
   mkdirSync(outputDirectory, { recursive: true })
 
   killSession(repoRoot, SESSION)
-  startWatch(repoRoot, SESSION, `scenarios/${scenario}.ts`, cols, rows, extraArgs)
+  startWatch(repoRoot, SESSION, saveId, cols, rows, extraArgs)
   stepToTick(repoRoot, SESSION, startTick)
 
   const index = []
@@ -120,7 +120,7 @@ async function main() {
     const html = ansiToHtml(captured, cols, rows)
     const file = renderPng({
       html,
-      caption: `${scenario} - frame ${frame}, tick ${tick ?? "?"}`,
+      caption: `${saveId} - frame ${frame}, tick ${tick ?? "?"}`,
       cols,
       rows,
       scratchDir: scratch,
@@ -135,7 +135,7 @@ async function main() {
   rmSync(scratch, { recursive: true, force: true })
 
   const lines = [
-    `# Engagement capture - ${scenario}`,
+    `# Engagement capture - ${saveId}`,
     "",
     `Around tick ${aroundTick}, starting ${leadTicks} tick(s) early at ${startTick}, then stepped one ` +
       "presentation frame at a time (the `.` key, not `,`) so the sequence shows what whole-tick " +

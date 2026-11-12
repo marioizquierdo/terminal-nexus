@@ -20,7 +20,7 @@ import { reportLineDetail, summarize } from "./summary.ts"
 export const STUCK_TICKS = 24
 
 export type ReportInput = Readonly<{
-  scenarioId: string
+  battleId: string
   seed: number
   pulseTicks: number
   registry: ContentRegistry
@@ -425,7 +425,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
     tick: input.finalState.tick,
     level: "warn",
     kind: "report",
-    subject: input.scenarioId,
+    subject: input.battleId,
     detail: reportLineDetail(summarize(input)),
   })
 

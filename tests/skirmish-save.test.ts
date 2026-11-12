@@ -12,7 +12,10 @@ import { join } from "node:path"
 import { main } from "../src/cli/skirmish.ts"
 import type { DuelState } from "../src/duel/index.ts"
 import { briefOf, playRound, SCRIPTED } from "../src/duel/index.ts"
+import { spawnSync } from "node:child_process"
 import { duelOf, newSetup, readSave, saveOf, saveText } from "../src/skirmish/save.ts"
+import { openBattle } from "../src/skirmish/opening/open.ts"
+import { loadTestingSave, testingSaveCatalog } from "../src/skirmish/testing-saves.ts"
 import { hashOf } from "../src/state/canonical.ts"
 import { REPO_ROOT } from "./helpers.ts"
 
@@ -120,7 +123,7 @@ test("skirmish: two scripts play a battle to its end, a round a command", { time
 
 test("the JSON Schema names the loader's fields and nothing else", () => {
   const schema = JSON.parse(readFileSync(join(SAVES, "save.schema.json"), "utf8")) as { properties: Record<string, { properties?: Record<string, unknown> }> }
-  assert.deepEqual(Object.keys(schema.properties).sort(), ["draft", "format", "name", "notes", "setup", "state"])
+  assert.deepEqual(Object.keys(schema.properties).sort(), ["draft", "format", "name", "notes", "setup", "start", "state"])
   assert.deepEqual(Object.keys(schema.properties["setup"]!.properties!).sort(), Object.keys(newSetup({})).sort())
 })
 
@@ -135,4 +138,76 @@ test("every save checked in loads and plays its next round", { timeout: 120_000 
     // Written by the game, a save reads back byte for byte.
     assert.equal(saveText(save!), readFileSync(join(SAVES, file), "utf8"), `${file} is not as the game writes it: run node scripts/make-example-saves.ts`)
   }
+})
+
+// --- Testing saves: a save whose start writes its first Battle Round by hand ----------------------------------------
+
+test("every testing save reads as a save, plays one Battle Round with idle slots, and is as the game writes it", () => {
+  const catalog = testingSaveCatalog()
+  assert.ok(catalog.length >= 11, `only ${catalog.length} testing saves in skirmish-testing/`)
+  for (const { id, path } of catalog) {
+    const text = readFileSync(path, "utf8")
+    const { save, problems } = readSave(text)
+    assert.deepEqual(problems, [], id)
+    assert.ok(save!.start !== undefined, `${id} has no start`)
+    assert.equal(save!.setup.rounds, 1, id)
+    assert.deepEqual([save!.setup.slots.p1.controller, save!.setup.slots.p2.controller], ["script:idle", "script:idle"], id)
+    assert.equal(saveText(save!), text, `${id} is not written as saveText writes it`)
+  }
+})
+
+test("a testing save's start opens the kernel as the map it came from did: the same entities, targets and seed", async () => {
+  // melee-kill, as its map file wrote it before the maps became saves: two troopers at (10,5) and (10,6) close on one
+  // at (13,5), each side's target the other.
+  const opening = await loadTestingSave("melee-kill")
+  assert.deepEqual(opening.placements, {
+    A: { at: { x: 10, y: 5 }, rows: ["t", "t"], legend: { t: { content: "unit.citizen.trooper" } } },
+    B: { at: { x: 13, y: 5 }, rows: ["t"], legend: { t: { content: "unit.citizen.trooper" } } },
+  })
+  assert.deepEqual(opening.targets, { A: { x: 13, y: 5, width: 1, height: 1 }, B: { x: 10, y: 5, width: 1, height: 2 } })
+  assert.equal(opening.seed, 40961)
+  assert.equal(opening.pulseTicks, 180)
+  assert.deepEqual(openBattle(opening).state.entities.map((entity) => entity.id), ["A:trooper#1", "B:trooper#2", "A:trooper#3"])
+})
+
+test("a testing save the loader refuses names every problem at once, its units' fit included", () => {
+  const map = { id: "broken", rows: ["....", "...."] }
+  const slots = { p1: { controller: "script:rush" }, p2: { controller: "script:idle" } }
+  const shape = readSave(
+    JSON.stringify({
+      format: "terminal-nexus.save/1",
+      setup: { map, seed: 1, goal: "elimination", modifiers: [], rounds: 3, roundTicks: 60, slots },
+      start: { p1: { rows: ["t"] }, p3: {}, p2: { rows: ["t"], legend: { t: { content: "unit.citizen.trooper" } }, target: { x: 1 } } },
+      draft: {},
+    }),
+  )
+  assert.equal(shape.save, null)
+  for (const part of ["setup.rounds", "setup.slots.p1.controller", "start.p1.legend", "start.p3", "start.p2.target", "draft"]) {
+    assert.ok(shape.problems.some((problem) => problem.startsWith(part)), `nothing said about ${part}: ${shape.problems.join(" | ")}`)
+  }
+  // The shape right, a unit off the Grid is the opening's refusal, named by its place in the start.
+  const fit = readSave(
+    JSON.stringify({
+      format: "terminal-nexus.save/1",
+      setup: { map, seed: 1, goal: "elimination", modifiers: [], rounds: 1, roundTicks: 60, slots: { ...slots, p1: { controller: "script:idle" } } },
+      start: { p1: { at: { x: 6, y: 0 }, rows: ["t"], legend: { t: { content: "unit.citizen.trooper" } } } },
+    }),
+  )
+  assert.equal(fit.save, null)
+  assert.match(fit.problems.join("\n"), /^start: broken: .*outside the 4x2 Grid/m)
+})
+
+test("skirmish: a testing save's --battle plays the Battle Round grid plays, and says so in grid's report", () => {
+  const path = join(REPO_ROOT, "skirmish-testing/rules/melee-kill.save.json")
+  const brief = run(["--load", path])
+  assert.equal(brief.code, 0)
+  assert.match(brief.out, /a testing save, its Battle Round written by hand/)
+  assert.match(brief.out, /add --battle to play it/)
+  const played = run(["--load", path, "--battle"])
+  assert.equal(played.code, 0)
+  assert.match(played.out, /WARN {2}report {3}melee-kill .* outcome A wins/)
+  const grid = spawnSync(process.execPath, [join(REPO_ROOT, "bin/grid.ts"), "melee-kill", "--headless"], { encoding: "utf8" })
+  assert.ok(played.out.includes(grid.stdout.trim()), `skirmish and grid disagree:\n${played.out}\n---\n${grid.stdout}`)
+  assert.throws(() => run(["--load", path, "--battle", "--save", join(tmpdir(), "x.save.json")]), /nothing to save/)
+  assert.throws(() => run(["--load", path, "--p1", "script:rush"]), /plan nothing/)
 })

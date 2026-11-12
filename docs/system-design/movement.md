@@ -265,7 +265,7 @@ stops at its reach and fires over the front.
 
 ## Breaching
 
-RULE (`TickRoutes.breachOf`, `scenarios/movement/route-breach.map.json`). Troops already fight the buildings they see, so a
+RULE (`TickRoutes.breachOf`, `skirmish-testing/movement/route-breach.save.json`). Troops already fight the buildings they see, so a
 building in the way is usually fought before it is ever a wall. When the enemy's buildings close every way to what a
 unit wants, it **breaches**: a second field is worked out with the enemy's buildings open, each step onto one weighing
 eight steps of open ground, so the way through the fewest buildings is taken; the first enemy building on it becomes
@@ -277,7 +277,7 @@ broken; a unit that cannot strike a building walks as near as it can get.
 The worker economy is Milestone 7 ([`milestone-07-worker-economy.md`](../milestones/milestone-07-worker-economy.md));
 today a worker only runs.
 
-**Built** (RULE — `src/pulse/routes.ts`, `tests/route-scenarios.test.ts`, [`grid.md`](grid.md), collision masks):
+**Built** (RULE — `src/pulse/routes.ts`, `tests/route-saves.test.ts`, [`grid.md`](grid.md), collision masks):
 
 - **A worker never fights** and follows no target or banner. It keeps no place in the formation.
 - **It retreats from any threat that comes within that threat's range and two more** (a trooper's touch: 4 columns, 2
@@ -415,7 +415,7 @@ Every way a unit moves is one of three things: **a new goal** for the same field
   not struck it) is in the state and hashed.
 - **Mirror-fair**: everything is read from the state the tick began with, in whole numbers; a tie between steps goes by
   facing, then by the seeded draw ([`pulse.md`](pulse.md), no side wins by where it stands; `march-mirror`).
-- **Measured**: the route and march scenarios (`scenarios/route-*.map.json`, `scenarios/march-*.map.json`) are each a
+- **Measured**: the route and march saves (`skirmish-testing/movement/route-*.save.json`, `skirmish-testing/movement/march-*.save.json`) are each a
   shape movement must manage; `node bin/measure.ts run` measures how long units stand blocked before and after a change
   ([`measurement.md`](measurement.md)).
 
@@ -486,7 +486,7 @@ What a player (and a model playing a duel) can do on purpose with these rules. T
 - **Pick for the pass.** The eighteen troopers that beat a mixed army on open ground by 21 points of health out of 100
   lose to it at a gap four rows wide (by 33), two rows (54) and one tile (68), and down a long corridor (16); at a
   two-row door only eight to twelve of them ever strike. Ranged units fire over a door and flyers cross it. [The arena of
-  eighteen-unit armies, 12 seeds, 2026-10-29; the engage scenarios are its small version.]
+  eighteen-unit armies, 12 seeds, 2026-10-29; the engage saves are its small version.]
 - **Two ways in beat one.** Given two gaps three rows wide the same army uses both (nearly all of it strikes) and wins
   three battles in four in the arena.
 - **Flyers do not queue.** Nine troopers and nine flyers beat the mixed defender through a gap two rows wide (92% of

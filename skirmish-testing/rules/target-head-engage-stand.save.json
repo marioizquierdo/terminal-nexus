@@ -1,0 +1,72 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "A side's target: head for it, engage on the way, stand there",
+  "notes": "A campaign level's target for the player's troops, as a rule of its own. Side A's squad heads for its target, the rectangle to the north-east; the raid's runner charges it on the way and comes within reach, so the squad turns, kills it, and goes on. At the target the first in fill it and the rest gather beside them, and there they stand to the end of the Pulse: the raid's Nexus in the far corner is never within reach of the target or the way there, so nobody goes for it. Strip the target and the same squad, killing the runner, marches on the Nexus, as every unit always did.",
+  "setup": {
+    "map": {
+      "id": "target-head-engage-stand",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 40990,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 240,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":5},
+      "rows": [
+        "mt",
+        " t",
+        " t"
+      ],
+      "legend": {
+        "m": {"content":"unit.citizen.marksman"},
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":15,"y":2,"width":3,"height":3}
+    },
+    "p2": {
+      "at": {"x":12,"y":1},
+      "rows": [
+        "r",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "         n"
+      ],
+      "legend": {
+        "r": {"content":"unit.ravel.runner"},
+        "n": {"content":"structure.ravel.nexus"}
+      },
+      "target": {"x":1,"y":5,"width":2,"height":3}
+    }
+  }
+}

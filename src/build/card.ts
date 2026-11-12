@@ -9,7 +9,7 @@
 
 import { footprintExtent, tilesOf } from "../grid/coords.ts"
 import type { AttackDef } from "../content/types.ts"
-import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
 import type { SettingSource } from "./all-settings.ts"
 import { setting } from "./all-settings.ts"
 import type { FieldEntity, IncomingEntity } from "./types.ts"

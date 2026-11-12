@@ -32,7 +32,7 @@ import { drawTroopsPost } from "./troops-post.ts"
 import { regroupAt } from "../match/types.ts"
 import { makeRoom } from "../match/make-room.ts"
 import type { FieldEntity } from "../build/types.ts"
-import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
 
 /** Every tile of a preview that would be refused: a block of `x`, so shape carries the refusal. */
 const ILLEGAL_PREVIEW_GLYPH = "x"

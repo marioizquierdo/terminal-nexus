@@ -87,11 +87,11 @@ Make your terminal **at least 80 x 24** — bigger is fine — then:
 
 ```bash
 npm install     # only needed once, and only for typechecking and the OpenTUI backend
-npm run grid -- scenarios/citizens-versus-ravels --glyphs unicode --colors truecolor
+npm run grid -- citizens-versus-ravels --glyphs unicode --colors truecolor
 ```
 
-`<map>` is a path to a `.map.json` file — the `.map.json` suffix is optional, and there is no
-subcommand: the first argument is always the map, and the default action is `watch`, the ASCII view.
+`<save>` is a testing save from `skirmish-testing/`: its path, the `.save.json` suffix optional, or only its id; there
+is no subcommand: the first argument is always the save, and the default action is `watch`, the ASCII view.
 
 | While it runs |                                            |
 | -------------- | ----------------------------------------- |
@@ -105,16 +105,16 @@ subcommand: the first argument is always the map, and the default action is `wat
 A few more worth watching, in this order:
 
 ```bash
-npm run grid -- scenarios/ravel-cascade --glyphs unicode --colors truecolor --speed 0.5
-npm run grid -- scenarios/citizens-versus-ravels --no-effects --glyphs unicode --colors truecolor
-npm run grid -- scenarios/citizens-versus-ravels --colors monochrome   # can you still follow it?
-npm run grid -- scenarios/citizen-mirror-skirmish                          # the baseline mirror match
+npm run grid -- ravel-cascade --glyphs unicode --colors truecolor --speed 0.5
+npm run grid -- citizens-versus-ravels --no-effects --glyphs unicode --colors truecolor
+npm run grid -- citizens-versus-ravels --colors monochrome   # can you still follow it?
+npm run grid -- citizen-mirror-skirmish                          # the baseline mirror match
 ```
 
 `npm run maps` lists every checked-in map. `watch` takes the same options on any of them:
 
 ```bash
-npm run grid -- <map> \
+npm run grid -- <save> \
   --colors monochrome|color256|truecolor \
   --glyphs ascii|unicode \
   --speed 2 --no-effects --reduced-motion --seed 0x1234 --turn 90
@@ -143,18 +143,18 @@ menu, and `d` jumps to the Experiments.
 log — one stream, closed by a `report` line carrying the outcome, losses, and hashes:
 
 ```bash
-./bin/grid.ts scenarios/citizens-versus-ravels --headless                  # WARN by default
-./bin/grid.ts scenarios/ravel-cascade --headless | grep blast              # just the detonations
-./bin/grid.ts scenarios/citizens-versus-ravels --headless --log-level info # the story, not just anomalies
-./bin/grid.ts scenarios/citizens-versus-ravels --headless --turn 90        # jump straight to tick 90
+./bin/grid.ts citizens-versus-ravels --headless                  # WARN by default
+./bin/grid.ts ravel-cascade --headless | grep blast              # just the detonations
+./bin/grid.ts citizens-versus-ravels --headless --log-level info # the story, not just anomalies
+./bin/grid.ts citizens-versus-ravels --headless --turn 90        # jump straight to tick 90
 ```
 
 `--verify` is the same resolution, re-run 10 times by default, and fails if any run's hashes
 disagree — also headless:
 
 ```bash
-./bin/grid.ts scenarios/citizen-mirror-skirmish --verify              # same hashes every time?
-./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20
+./bin/grid.ts citizen-mirror-skirmish --verify              # same hashes every time?
+./bin/grid.ts citizen-mirror-skirmish --verify --runs 20
 ```
 
 `--save-log <file>` writes the levelled log to a file in any of the three actions, so you can watch
@@ -197,10 +197,11 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 │   ├── history/               What happened: timeline, reports, feedback, the visual record
 │   └── claude-web.md          Setting up Claude Code on the web
 ├── src/                   The game and its tools: pulse (the rules kernel), match, mission, content,
-│                          scenario, state, events, grid, report, log, terminal, view, build (the Build
+│                          skirmish, state, events, grid, report, log, terminal, view, build (the Build
 │                          Phase), title-menu, cli, settings, web (the browser playtest page)
 ├── tests/                 The test suite; Node's runner and Bun both run it
-├── scenarios/             Checked-in .map.json fixtures, one file per rule under test
+├── skirmish-testing/      Testing saves: Skirmish saves whose first Battle Round is written by hand, one per rule
+├── saves/                 Example Skirmish saves and the save format's JSON Schema
 ├── scripts/               Repository validation and development tooling (its README lists them)
 ├── bin/                   grid.ts and terminal-nexus.ts, the two entry points
 ├── .claude/               Skills for coding agents working in this repository

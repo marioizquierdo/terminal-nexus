@@ -19,7 +19,7 @@ import type { Force, MissionPulse } from "../src/match/index.ts"
 import { PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import type { BuildingSpawns } from "../src/armies/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
-import { TICKS_PER_SECOND } from "../src/scenario/load.ts"
+import { TICKS_PER_SECOND } from "../src/skirmish/opening/open.ts"
 import { hashState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
 
@@ -81,7 +81,7 @@ test("a building makes its units one way in a battle: given a recipe, the Hatche
   const opted = withProduction(FIXTURE_REGISTRY, { [HATCHERY]: brood })
   assert.equal(opted.get(HATCHERY).spawn, undefined, "an opted-in Hatchery still breeds by its own timer too")
   assert.deepEqual(opted.get(HATCHERY).production, brood)
-  // The shared content keeps it, so a grid scenario with a Hatchery (hatchery-spawn) breeds as it always did.
+  // The shared content keeps it, so a testing save with a Hatchery (hatchery-spawn) breeds as it always did.
   assert.deepEqual(FIXTURE_REGISTRY.get(HATCHERY).spawn, ownSpawner)
 
   // On the Grid: its whole brood on the wave's tick, and nothing from the old timer before or after it.

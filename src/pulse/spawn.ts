@@ -1,4 +1,4 @@
-// New entities, created mid-Pulse rather than only at scenario load — the spawner and golem rule
+// New entities, created mid-Pulse rather than only when a Battle Round opens — the spawner and golem rule
 // shapes (from the unit-architecture spike). It is not one of the Pulse's nine phases, which are
 // unchanged (pulse.md); it runs as an explicit "1.5" ahead of them, in tick.ts, so anything
 // created this tick is a full participant in every phase after it — perceived, able to move or fire,
@@ -33,7 +33,7 @@ import { followsTarget } from "./target.ts"
  * its side's target when it follows one, else the enemy's Nexus, else the nearest enemy — so a building's units come out
  * on the side facing the fight, east or west alike, and a tie between equally near tiles is a draw (`drawAmong`). With nowhere to head,
  * the first free tile of the ring. The new entity is wired
- * into `context.actors`/`byOrdinal`/`index` and given an `entity.spawned` event exactly as if the scenario loader had
+ * into `context.actors`/`byOrdinal`/`index` and given an `entity.spawned` event exactly as if the opening (`openBattle`) had
  * placed it. A unit a building trains (`trainedBy`, `production.ts`) remembers that building and the anchor it was set
  * down on (`EntityState.home`, `homeAt`), which the rounds after remember (the walk home that read it is gone). Returns it, or `null` if nothing adjacent fits this attempt — a boxed-in spawner simply tries again next
  * interval (`spawning()`), a building owes the rest of its wave until the first tick there is room

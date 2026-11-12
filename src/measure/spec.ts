@@ -2,14 +2,14 @@
 // measured before a rule changed and one measured after it compare like with like.
 
 import { DUEL_PULSE_TICKS, DUEL_ROUNDS } from "../duel/types.ts"
-import type { DuelMeasure, LevelMeasure, LevelPlan, ScenarioMeasure } from "./suites.ts"
+import type { DuelMeasure, LevelMeasure, LevelPlan, SaveMeasure } from "./suites.ts"
 
 export type MeasureSpec = Readonly<{
   name: string
-  /** The seeds every scenario and every duel is played on. */
+  /** The seeds every route save and every duel is played on. */
   seeds: readonly number[]
-  /** Which maps of `scenarios/`: every one, or only the route scenarios (`route-*`). */
-  scenarios: "all" | "routes"
+  /** Which testing saves of `skirmish-testing/`: every one, or only the route saves (`route-*`). */
+  saves: "all" | "routes"
   duels: Readonly<{
     map: string
     rounds: number
@@ -69,18 +69,18 @@ export const LEVEL_PLANS: readonly LevelPlan[] = [
 export const FULL_SPEC: MeasureSpec = {
   name: "full",
   seeds: [1, 2, 3, 4, 5, 6],
-  scenarios: "all",
+  saves: "all",
   duels: { map: "crossing", rounds: DUEL_ROUNDS, pulseTicks: DUEL_PULSE_TICKS, commanders: ["vasse", "averno", "dob"], players: ["balanced", "rush", "turtle"] },
   levels: [],
   plans: LEVEL_PLANS,
 }
 
-/** A quick look while working: two seeds, one player, the route scenarios. */
+/** A quick look while working: two seeds, one player, the route saves. */
 export const QUICK_SPEC: MeasureSpec = {
   ...FULL_SPEC,
   name: "quick",
   seeds: [1, 2],
-  scenarios: "routes",
+  saves: "routes",
   duels: { ...FULL_SPEC.duels, players: ["balanced"] },
 }
 
@@ -103,7 +103,18 @@ export type Measurement = Readonly<{
   jobs?: number
   /** Milliseconds a tick took, on average over every battle: the machine's, so compared only between runs on one. */
   msPerTick: number | null
-  scenarios: readonly ScenarioMeasure[]
+  saves: readonly SaveMeasure[]
   duels: readonly DuelMeasure[]
   levels: readonly LevelMeasure[]
 }>
+
+/** A measurement from its file's text. One written before the testing saves (the records kept in
+ *  docs/history/measurements/) named its part, and each run's save, by the word the maps had then: it is read as this
+ *  build writes it. */
+export function readMeasurement(text: string): Measurement {
+  const record = JSON.parse(text) as Record<string, unknown>
+  const older = record["scenarios"]
+  if (record["saves"] !== undefined || !Array.isArray(older)) return record as Measurement
+  const saves = older.map((run: Record<string, unknown>) => ({ save: run["scenario"], seed: run["seed"], battle: run["battle"] }))
+  return { ...record, saves } as unknown as Measurement
+}

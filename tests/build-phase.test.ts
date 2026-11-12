@@ -514,7 +514,7 @@ test("a plan is revisable: remove under the cursor, and undo the last one", () =
   assert.match(build.state.status.text, /Nothing to undo/)
 })
 
-test("the cursor points at a structure's centre tile, the way the scenario format already does", () => {
+test("the cursor points at a structure's centre tile, the way a testing save's start already does", () => {
   const context = starterContext()
   const barracks = context.registry.get("structure.citizen.barracks")
   // A 3x2 footprint centres on its second column and its first row.

@@ -45,7 +45,11 @@ import { join } from "node:path"
 import type { DuelState, RoundReport, SidePlan } from "../duel/index.ts"
 import { briefOf, checkPlan, readPlan } from "../duel/index.ts"
 import { buildLog, parseLevel } from "../report/index.ts"
-import type { LogLevel } from "../report/index.ts"
+import type { LogLevel, ReportInput } from "../report/index.ts"
+import { FIXTURE_REGISTRY } from "../content/index.ts"
+import { resolvePulse } from "../pulse/index.ts"
+import { openBattle } from "../skirmish/opening/open.ts"
+import { openingOf } from "../skirmish/start.ts"
 import { hashEvents } from "../events/serialize.ts"
 import { hashState } from "../state/serialize.ts"
 import { readProfiles } from "../skirmish/profile-files.ts"
@@ -205,7 +209,7 @@ function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLev
   if (played.final === null || played.registry === null) return []
   const lines = buildLog(
     {
-      scenarioId: `skirmish round ${round}`,
+      battleId: `skirmish round ${round}`,
       seed: setup.seed,
       pulseTicks: played.state.setup.pulseTicks,
       registry: played.registry,
@@ -334,6 +338,7 @@ export function main(args: readonly string[], write: (line: string) => void = (l
   const count = roundsToPlay(options)
   if (options.values["seeds"] !== undefined) return playSeeds(options, profiles, count, write)
   const { save, loaded } = startingSave(options, profiles)
+  if (save.start !== undefined) return testingSave(save, options, write)
   const { setup, plans, fromFile } = setupFor(options, save, profiles, write)
   const state = duelOf({ ...save, setup }, profiles)
   const players = SLOTS.filter((slot) => isPlayer(setup, slot))
@@ -388,8 +393,42 @@ export function main(args: readonly string[], write: (line: string) => void = (l
   return code
 }
 
+/**
+ * A testing save (`skirmish-testing/`, a save with a `start`): its one Battle Round is written by hand, so it is opened
+ * by the kernel from that start, as `grid` opens it, not by the duel, and played to its end or its ticks. Without
+ * `--battle` it says what it is; with it, the round's report as `grid --headless` prints it. Nothing is saved: the
+ * file is the battle.
+ */
+function testingSave(save: SaveFile, options: Options, write: (line: string) => void): number {
+  for (const slot of SLOTS) if (options.values[slot] !== undefined) throw new Error(`--${slot}: a testing save's slots plan nothing, its units are in its start`)
+  if (options.values["save"] !== undefined) throw new Error("--save: a testing save plays the one Battle Round its start writes, with nothing to save after it")
+  const opening = openingOf(save)
+  write(`${opening.name} (${opening.id}), seed ${save.setup.seed}: a testing save, its Battle Round written by hand, ${save.setup.roundTicks} ticks at most`)
+  if (!options.flags.has("battle")) {
+    write("add --battle to play it")
+    return 0
+  }
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
+  const run = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: opening.pulseTicks, seed: opening.seed })
+  const input: ReportInput = {
+    battleId: opening.id,
+    seed: opening.seed,
+    pulseTicks: opening.pulseTicks,
+    registry: loaded.registry,
+    events: run.events,
+    finalState: run.finalState,
+    stateHash: run.stateHash,
+    eventsHash: run.eventsHash,
+  }
+  const lines = buildLog(input, parseLevel(options.values["log-level"] ?? "warn"))
+  if (options.values["log"] !== undefined) writeFileSync(options.values["log"], `${lines.join("\n")}\n`)
+  for (const line of lines) write(line)
+  write(`tick by tick: grid ${opening.id} --headless --log-level info`)
+  return lines.some((line) => line.includes(" ERROR ")) ? 1 : 0
+}
+
 /** The map's name for a person. */
-const mapName = (setup: SaveSetup): string => (typeof setup.map === "string" ? setup.map : setup.map.name)
+const mapName = (setup: SaveSetup): string => (typeof setup.map === "string" ? setup.map : (setup.map.name ?? setup.map.id))
 
 /** The comment this file opens with: what `skirmish --help` prints. */
 function usage(): string {

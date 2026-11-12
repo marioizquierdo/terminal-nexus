@@ -698,3 +698,9 @@ Undoing a probe edit (a bad line put in to test the validator) with `git checkou
 rewrite of the same file; a backup taken before the probe saved it. Probe on a copy, or commit first.
 
 - **Separate what a test is about from what it walks through.** A test of a level's layout opened its later rounds by playing every battle with nothing built, so its pass depended on a property of the level's content it did not mean to check. Walk the structure with the battles forced to go on, and check the content property once, by name, with a failure message that gives the margin.
+
+- **A word renamed by script is renamed inside strings too.** Renaming a concept across the code with a word-boundary
+  substitution also rewrote the string literals and regular expressions that held it: a folder path in a test helper
+  (`join(root, "...")`), an escaped path in a test's regex, a `git status` path, an older build's file name kept on
+  purpose for `--against`. The type checker saw none of it; the tests did. Rename identifiers by script, then read
+  every changed string by hand, and keep a hash of every battle from before to diff against after.

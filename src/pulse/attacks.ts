@@ -169,7 +169,7 @@ export function attacks(context: TickContext): void {
     // already is, so two shells landing on the same square apply as one combined hit rather than two
     // that could straddle a death differently depending on which is applied first. Each impact
     // excludes its own source, the same self-exclusion `detonate()` (death.ts) already applies to a
-    // dying entity's own blast - found by actually running `bench-siegecrawler-windup.map.json`: a
+    // dying entity's own blast - found by actually running `bench-siegecrawler-windup.save.json`: a
     // target that closed inside the attacker's own splash radius before the shot landed (the whole
     // point of a target still approaching during windup) caught the shooter in its own blast, which
     // no earlier reasoning about "splash is smaller than range" had ruled out. A burst that `hits: "enemies"` (the

@@ -35,7 +35,7 @@ absolute time and must not quietly start depending on a frame:tick alignment.
 
 **What changing the rate would cost.** Content durations are authored in raw ticks (`cooldownTicks`,
 `intervalTicks`, and every cooldown in a fixture), so the number 12 is baked into every one of them.
-Moving the tick rate is a migration of every duration in every definition and scenario, not a
+Moving the tick rate is a migration of every duration in every definition and testing save, not a
 constant to edit. The alternative, authoring durations as rational seconds, buys rate-independence
 at the cost of arithmetic at every use site; it was considered and rejected as the worse trade. The
 rate stays cheap to change only while little content exists, and once real rosters are authored it
@@ -155,7 +155,7 @@ until the end of that window, so what the player sees lands when the tracer does
 draws no tracer (reduced motion, monochrome) still presents damage at the impact beat.
 
 **An ability is decided by the kernel, from a table** (RULE — `src/pulse/abilities.ts`, `src/abilities/`,
-`tests/abilities.test.ts`, `tests/aura.test.ts`, the `aura-by-the-book` and `dob-bounty` scenarios). What a unit does
+`tests/abilities.test.ts`, `tests/aura.test.ts`, the `aura-by-the-book` and `dob-bounty` testing saves). What a unit does
 on its own is content's `abilities`, each one an entry of the abilities table (`PulseContext.abilities`, the shipped
 `ABILITIES` by default), and the kernel calls each kind at four fixed moments: as the attacks begin it asks every
 kind for the tick's damage modifiers, on a read-only view of the bodies; as each attack lands (heals and blasts
@@ -179,7 +179,7 @@ in what order things are said, so a run hashes the same.
   each of the bearer's attacks.
 
 **A unit may aim at a crowd** (RULE — the owner, 2026-10-21; `ContentDef.aim`, `src/pulse/perception.ts`,
-`tests/area-damage.test.ts`, the `bomber-crowd` scenario). A unit whose content says `aim: "crowd"` chooses among the
+`tests/area-damage.test.ts`, the `bomber-crowd` testing save). A unit whose content says `aim: "crowd"` chooses among the
 enemies it could target the ones with the most units and workers of their own side within its area round them —
 its attack's `burn` radius, else its `splash` radius, else its `detonation`'s, measured as range is, from the
 candidate's body, the candidate counted — and among those as every unit chooses: the nearest, the one it holds, the
@@ -188,7 +188,7 @@ bomber and the Citizen mortar aim so; every other unit takes the nearest, as it 
 `target.selected` says the crowd it counted (`crowd`); no rule reads it.
 
 **Burning ground** (RULE — the owner, 2026-10-21; `AttackDef.burn`, `MatchState.burning`, `src/pulse/burning.ts`,
-`tests/area-damage.test.ts`, the `mortar-burning-ground` scenario). A landing hit of an attack that `burn`s lights a
+`tests/area-damage.test.ts`, the `mortar-burning-ground` testing save). A landing hit of an attack that `burn`s lights a
 patch round its target's anchor tile — the point its splash is centred on — on the tick it lands, which is the tick
 it is launched. The patch is kept in the state with its place, its radius, its damage, its beat and its lifetime
 (`startedTick`, `untilTick = startedTick + ticks`) and the shooter's id. On each tick a whole number of beats after it
@@ -207,7 +207,7 @@ hurts friend and foe), and the fire it leaves, 8 a second within 4 for four seco
 either side.
 
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
-`src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` scenario). A healer — content's
+`src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` testing save). A healer — content's
 `behavior: "support"` with a heal `attack` — chooses the nearest wounded ally rather than the nearest enemy, ties
 broken as a target's are (below), and one that names `targetLayers` chooses only among what stands on them, as an attacker's
 layers narrow its enemies. A building never moves, so a building that heals reaches that ally only once it stands
@@ -256,7 +256,7 @@ building nothing) more than anything else did, so it waits for a
 reason of its own.
 
 A mirror battle with nothing tied stays a mirror tick for tick; with ties, each side wins it as often over seeds, and
-mirror duels split about evenly (`tests/fairness.test.ts`, over forty-eight duels; `tests/route-scenarios.test.ts`,
+mirror duels split about evenly (`tests/fairness.test.ts`, over forty-eight duels; `tests/route-saves.test.ts`,
 two squads in one corridor). Entity id still orders iteration and the events.
 
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
@@ -316,9 +316,9 @@ turn on an enemy within the same vision on the way, a melee unit only on one it 
 otherwise keep walking to the Nexus; a unit that cannot strike a Nexus, or a map with none, still engages the nearest
 enemy wherever it is (`headsForNexus`, `src/pulse/perception.ts`, `tests/heading.test.ts`). Workers that flee,
 healers and buildings never follow a target. `targets` is absent when no side has one, so such a state hashes as it
-always did. The named scenario is `target-head-engage-stand`.
+always did. The named testing save is `target-head-engage-stand`.
 
-### 1.6 Routes — RULE — `src/routing/`, `src/pulse/routes.ts`, `tests/routing.test.ts`, `tests/route-scenarios.test.ts`
+### 1.6 Routes — RULE — `src/routing/`, `src/pulse/routes.ts`, `tests/routing.test.ts`, `tests/route-saves.test.ts`
 
 The owner, 2026-10-19, watching raiders stand behind rocks: units must get where they are going, round obstacles,
 through crowds and narrow gaps, on a Grid that changes ([the milestone](../history/milestones/milestone-16-pathfinding.md)).
@@ -441,7 +441,7 @@ one, and a mission's triggers decide how many and what happens between them (see
 watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 
 **The kernel's victory condition never learns about a mission's goal.** A mission's objective is
-resolved one level up, by the scenario and trigger layer, which fires an ordinary `win`/`lose` action
+resolved one level up, by the mission and trigger layer, which fires an ordinary `win`/`lose` action
 when its own condition holds (see [`story.md`](../game-design/story.md)). What follows — Grid
 Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
 battle with no declared objective lands on: every Skirmish battle (a Challenge battle until the Skirmish milestone renames it) (RULE —
@@ -491,11 +491,11 @@ building or a unit stays as hurt as it was. How much a Nexus mends may differ by
 Nexus power, later.
 
 **Destroying the enemy Grid Nexus wins** (RULE — `src/pulse/victory.ts`,
-`tests/scenario.test.ts`). Any attacker in a legal attack position may damage it. Defences and
+`tests/testing-saves.test.ts`). Any attacker in a legal attack position may damage it. Defences and
 terrain make practical outer layers; there is no hidden exposure meter.
 
 **The Grid Nexus fights back** (RULE — the owner, 2026-10-21: "the Nexus have a single attack that deals enough
-damage to kill a trooper"; `src/content/citizen.ts`, `src/content/ravel.ts`, `scenarios/rules/nexus-fights-back.map.json`,
+damage to kill a trooper"; `src/content/citizen.ts`, `src/content/ravel.ts`, `skirmish-testing/rules/nexus-fights-back.save.json`,
 `tests/nexus-fights-back.test.ts`). It is an ordinary ranged attack on its definition, so no rule knows a Nexus
 shoots: 40 damage every three seconds, at a marksman's reach of 6, at units, workers and flyers, never at a
 building. A trooper or a runner falls to one shot; a raider takes two. It matters most early, when a raid is a few
@@ -505,7 +505,7 @@ about routes and endings stand the bench's passive Grid Nexus (`structure.bench.
 was before, so a lone trooper sent round a wall is not shot on arrival.
 
 **A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/pulse/victory.ts`,
-`scenarios/rules/nexus-stands.map.json`, `tests/scenario.test.ts`). Its Pulse goes on until the Nexus falls or
+`skirmish-testing/rules/nexus-stands.save.json`, `tests/testing-saves.test.ts`). Its Pulse goes on until the Nexus falls or
 the time runs out, and a mission may add a losing condition of its own; a side with no Nexus, a raid, is
 still beaten by losing every unit. So a defence round no longer stops with the raid at the gate when the
 player's units fall: the raid comes on to the Nexus, and the round ends when it falls or the time is up.
@@ -603,10 +603,10 @@ mission offers spawns in that mission's battles as its card says. When the first
 for every building, a tuned value (`firstWave`, five seconds in). The Barracks sends four troopers and the
 Hatchery three swarmers, one wave a round each; a Nexus power that gives a building a second or third wave
 raises its `waves` and nothing else. **No content spawns this way by default** (RULE — `withProduction`,
-`src/content/index.ts`): a `grid` scenario's buildings, and a map that merely has a barracks on it, resolve
+`src/content/index.ts`): a testing save's buildings, and a map that merely has a barracks on it, resolve
 exactly as they always did. **A building makes its units one way in a battle**: one given a recipe loses any
 spawner of its own, so a mission's Hatchery breeds only its wave, while the bench Hatchery in its `grid`
-scenario keeps its timer. A producer's counters (ticks to its next wave, waves come this Pulse, units still
+testing save keeps its timer. A producer's counters (ticks to its next wave, waves come this Pulse, units still
 owed) are on its state only while it has a recipe, so a state without one serializes byte for byte as before.
 
 Players shape composition by building, protecting, upgrading, pausing, or losing producers.
@@ -672,7 +672,7 @@ army fields so many units at once: what its standing buildings give (`supplyProv
 Depot 8 more). A unit takes its `supplyCost` places (1 when it says nothing; a pikeman 2; a Commander none). A
 building whose next unit would take its side past its supply keeps the unit owed and waits, so once an army is full
 a new unit comes only as an old one falls. Units a mission or a Nexus power sets down are never held back, and count
-once they stand. A side whose buildings give none has no cap, so every scenario from before supply resolves as it
+once they stand. A side whose buildings give none has no cap, so every testing save from before supply resolves as it
 did. The Build Phase shows it on the credits line, `units 5/12`: the places the round starts with, of what the
 buildings give, a planned Supply Depot counted, since it stands when the Battle Round begins.
 

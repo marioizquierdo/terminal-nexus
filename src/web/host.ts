@@ -31,8 +31,8 @@ import type { Demo } from "./demos.ts"
 import { watchPulse } from "../cli/watch.ts"
 import { buildTimeline } from "../cli/timeline.ts"
 import type { Host } from "../cli/lifecycle.ts"
-import { loadScenario } from "../scenario/load.ts"
-import type { ScenarioDefinition } from "../scenario/types.ts"
+import { openBattle } from "../skirmish/opening/open.ts"
+import type { BattleOpening } from "../skirmish/opening/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { DEFAULT_SETTINGS, parseSettings } from "../settings/types.ts"
 import { importSettings } from "../build/settings-export.ts"
@@ -44,8 +44,10 @@ import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../bu
 import { keyBytes } from "../playtest/keys.ts"
 import { KEY_BAR, StandInKeyboard, mouseBytes, withShift } from "./keys.ts"
 import { activity } from "../log/activity.ts"
-import grandBattle from "../../scenarios/showcase/grand-battle.map.json" with { type: "json" }
-import citizensVersusRavels from "../../scenarios/showcase/citizens-versus-ravels.map.json" with { type: "json" }
+import { openingOf } from "../skirmish/start.ts"
+import type { SaveFile } from "../skirmish/save.ts"
+import grandBattle from "../../skirmish-testing/showcase/grand-battle.save.json" with { type: "json" }
+import citizensVersusRavels from "../../skirmish-testing/showcase/citizens-versus-ravels.save.json" with { type: "json" }
 
 /** Stamped in by the build: which commit this page is, so a screenshot from a phone says so. */
 declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: string }>
@@ -66,9 +68,9 @@ type Screen = "menu" | "build" | PulseName
 /** The screen loop a place in the game runs in. */
 const screenAt = (destination: Destination): Screen => (destination.kind === "title" ? "menu" : "build")
 
-const PULSES: Readonly<Record<PulseName, ScenarioDefinition>> = {
-  "pulse-grand": grandBattle as unknown as ScenarioDefinition,
-  "pulse-mirror": citizensVersusRavels as unknown as ScenarioDefinition,
+const PULSES: Readonly<Record<PulseName, BattleOpening>> = {
+  "pulse-grand": openingOf(grandBattle as unknown as SaveFile),
+  "pulse-mirror": openingOf(citizensVersusRavels as unknown as SaveFile),
 }
 
 // --- The stand-in terminal ------------------------------------------------------------------------
@@ -279,9 +281,9 @@ function track(loop: Promise<number>): void {
 async function startPulse(pulse: PulseName): Promise<void> {
   await switchTo(pulse, null, [])
   const settings = await savedSettings()
-  const scenario = PULSES[pulse]
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-  const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+  const opening = PULSES[pulse]
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+  const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
   track(
     watchPulse({
       ...pageTerminal,

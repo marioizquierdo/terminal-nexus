@@ -14,7 +14,7 @@ import { ENTITY_LAYERS, OccupancyIndex, gridDistance, maskFrom, rowsWithin, tile
 import type { Coord, Footprint, GridTerrain } from "../src/grid/index.ts"
 import { nearestFit } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { TICKS_PER_SECOND, loadScenario } from "../src/scenario/index.ts"
+import { TICKS_PER_SECOND, openBattle } from "../src/skirmish/opening/index.ts"
 import type { MatchState } from "../src/state/types.ts"
 
 /** The design document the pictures are in, from the repository's root. */
@@ -124,7 +124,7 @@ type Walk = readonly Readonly<{ tick: number; from: Coord; to: Coord }>[]
 /** Open ground, 30 by 20, one walker standing on `from`, and its side's target the one tile `to`. */
 function openGround(from: Coord, to: Coord): MatchState {
   const rows = Array.from({ length: from.y + 1 }, (_, y) => (y === from.y ? `${" ".repeat(from.x)}w` : ""))
-  return loadScenario(
+  return openBattle(
     {
       id: "grid-pictures",
       name: "a walk on open ground",

@@ -1,0 +1,57 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Route: the dead end - a trooper straight above its goal, a wall between",
+  "notes": "A trooper stands straight above the enemy's Grid Nexus with a long rock wall between them; the way round is past either end of the wall. The greedy step had one step that brought it closer, into the rock, so it stood above the wall for good (the on-axis dead end). Done when the trooper walks round the wall and the Nexus falls.",
+  "setup": {
+    "map": {
+      "id": "route-dead-end",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "....################....",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 1200,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":12,"y":1},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      }
+    },
+    "p2": {
+      "at": {"x":12,"y":9},
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

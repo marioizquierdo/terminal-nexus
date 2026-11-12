@@ -3,7 +3,7 @@
 // differs from the one it is compared with by more than chance; then the battles worth watching, each with the command
 // that watches it. Pure: lines of text.
 
-import type { Variant } from "../scenario/variant.ts"
+import type { Variant } from "../skirmish/opening/variant.ts"
 import type { Notable, TrialCell } from "./trial-cells.ts"
 import { sharesDiffer, valuesDiffer } from "./trial-cells.ts"
 import type { TrialSpec } from "./trial.ts"

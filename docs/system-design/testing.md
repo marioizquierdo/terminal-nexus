@@ -12,8 +12,8 @@ seed or event fixture; every balance claim should identify a reproducible cohort
 
 RULE — `tests/determinism.test.ts`, `tests/architecture.test.ts`, `tests/rng.test.ts`.
 
-- The same scenario, seed and tick count produce identical final-state and event hashes across twenty
-  runs of every checked-in scenario, and the same INFO log. `tests/grid-cli.test.ts` repeats the check across
+- The same opening, seed and tick count produce identical final-state and event hashes across twenty
+  runs of every checked-in testing save, and the same INFO log. `tests/grid-cli.test.ts` repeats the check across
   runtimes, which one machine and one runtime can never do alone.
 - Resolving in one call equals resolving tick by tick. A different gameplay seed can change the fight,
   and the same one never does. State and the event stream round-trip through their canonical
@@ -32,7 +32,7 @@ RULE — `tests/determinism.test.ts`, `tests/architecture.test.ts`, `tests/rng.t
 RULE — `tests/grid.test.ts`, `tests/rules.test.ts`.
 
 - No two entities overlap in a collision mask that includes both their layers, at any tick of any
-  scenario; a worker and a ground unit may share a tile; a ground unit is blocked by a structure on a
+  testing save; a worker and a ground unit may share a tile; a ground unit is blocked by a structure on a
   different layer; an air unit crosses terrain a ground unit never could.
 - A multi-tile entity is tested by its whole footprint: a three-wide hauler is refused a two-tile gap
   and admitted a three-tile one, range measures to the nearest occupied tile, and the entity is damaged
@@ -41,21 +41,23 @@ RULE — `tests/grid.test.ts`, `tests/rules.test.ts`.
   claims resolve by speed tier before the seeded stream is consulted. Movement credit reproduces the
   cadence table at every rate and never exceeds one step's cost.
 
-### Every rule has a named scenario
+### Every rule has a named testing save
 
-RULE — `tests/scenario.test.ts`, `tests/proving-grounds.test.ts`, `scenarios/`. Every rule that can be
-shown on a small map has a checked-in, runnable scenario file named for what it exercises
+RULE — `tests/testing-saves.test.ts`, `tests/proving-grounds.test.ts`, `skirmish-testing/`. Every rule that can be
+shown on a small map has a checked-in, runnable testing save named for what it exercises
 (`melee-kill`, `mutual-kill`, `worker-flight`, `salvage-drop`, `hauler-two-tile-gap`, `settle-delay`
-and the rest of `scenarios/`, one folder for each purpose: rules, units, movement, the engage bench, showcases), and
+and the rest of `skirmish-testing/`, one folder for each purpose: rules, units, movement, the engage bench, showcases), and
 every file loads with an id that matches its name and gives each side that fights a goal ([the testing
-ground](testing-ground.md)). A scenario asserts the
-rule through events and hashes, and `grid <map> --verify` (see [`runtime.md`](runtime.md)) re-resolves
-it ten times from the command line.
+ground](testing-ground.md)). A testing save asserts the
+rule through events and hashes, and `grid <save> --verify` (see [`runtime.md`](runtime.md)) re-resolves
+it ten times from the command line. A testing save is a Skirmish save whose `start` writes its first Battle Round by
+hand ([`skirmish-saves.md`](skirmish-saves.md)): it reads as every save does, every problem at once, and `skirmish --load
+<save> --battle` plays the same Battle Round (`tests/skirmish-save.test.ts`).
 The rules layer above the kernel (openings, the regroup, missions) is held the same way by
-`tests/match.test.ts` and `tests/mission.test.ts`. The route scenarios (`route-*`) each show one shape a route must
-manage and are played on several seeds (`tests/route-scenarios.test.ts`); routing's own parts are tested alone on
+`tests/match.test.ts` and `tests/mission.test.ts`. The route saves (`route-*`) each show one shape a route must
+manage and are played on several seeds (`tests/route-saves.test.ts`); routing's own parts are tested alone on
 small Grids and mazes, against a plain search (`tests/routing.test.ts`). The engage bench is held by a trial of what it
-was measured to show, played from both ends over six seeds (`tests/engage-scenarios.test.ts`).
+was measured to show, played from both ends over six seeds (`tests/engage-bench.test.ts`).
 
 ### Structured-cell snapshots across backends
 
@@ -64,7 +66,7 @@ RULE — `tests/view.test.ts`, `tests/backend-opentui.test.ts`, `tests/roles.tes
 produce the same characters. Frames are exactly the composition size, a tile to a column at every terminal size; every glyph
 is one printable ASCII cell; identical arguments give identical frames and skipping frames changes
 nothing; at a tick boundary every entity stands on the tile the kernel put it on; monochrome renders
-every scenario with no cell depending on colour to exist; the compositor emits only roles from the
+every testing save with no cell depending on colour to exist; the compositor emits only roles from the
 committed vocabulary. Direct ANSI, OpenTUI (where its native core loads) and the canvas resolve one
 mixed cell to the same colours, and turning effects off changes only the picture (`tests/effects.test.ts`).
 

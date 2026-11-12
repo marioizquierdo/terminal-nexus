@@ -1,0 +1,60 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Salvage drop - debris where a marksman fell",
+  "notes": "Death leaves salvage as a ground item on the tile the entity died on, drawn in the ground-items band. Nothing consumes it in Gate 1A: there is no economy, and the point is that the event and the item exist.",
+  "setup": {
+    "map": {
+      "id": "salvage-drop",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 40969,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 240,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":10,"y":5},
+      "rows": [
+        "t",
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":13,"y":5,"width":1,"height":1}
+    },
+    "p2": {
+      "at": {"x":13,"y":5},
+      "rows": [
+        "r"
+      ],
+      "legend": {
+        "r": {"content":"unit.citizen.marksman"}
+      },
+      "target": {"x":10,"y":5,"width":1,"height":2}
+    }
+  }
+}

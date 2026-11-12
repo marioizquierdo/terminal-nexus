@@ -19,6 +19,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "tests", "scenarios", "bin", "scripts"],
+  "include": ["src", "tests", "bin", "scripts"],
   "exclude": ["src/web/host.ts"]
 }

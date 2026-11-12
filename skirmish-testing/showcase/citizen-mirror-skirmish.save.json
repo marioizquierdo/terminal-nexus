@@ -1,0 +1,81 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Citizen mirror — open field",
+  "notes": "Two matched squads across open ground. The baseline everything else compares to. The Grid is symmetric about its vertical centre line and the check is arithmetic, not visual: on a 24-wide Grid the mirror of column 4 is column 19, so the two rock pairs sit at 4-5 and 18-19 and the two squads at column 2 and column 21. It was not a mirror until 2026-08-22 - the eastern rocks were at 20-21, which is where four of B's seven units stood, entombed inside impassable terrain from tick zero. The loader now refuses that placement outright.",
+  "setup": {
+    "map": {
+      "id": "citizen-mirror-skirmish",
+      "rows": [
+        "........................",
+        "........................",
+        "....##........##........",
+        "....##........##........",
+        "........................",
+        "..........*..*..........",
+        "..........*..*..........",
+        "........................",
+        "....##........##........",
+        "....##........##........",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 1592590337,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 240,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":2,"y":1},
+      "rows": [
+        "m",
+        "m",
+        "r",
+        "w",
+        "",
+        "",
+        "",
+        "w",
+        "r",
+        "m"
+      ],
+      "legend": {
+        "m": {"content":"unit.citizen.trooper"},
+        "r": {"content":"unit.citizen.marksman"},
+        "w": {"content":"unit.citizen.worker"}
+      },
+      "target": {"x":21,"y":1,"width":1,"height":10}
+    },
+    "p2": {
+      "at": {"x":21,"y":1},
+      "rows": [
+        "m",
+        "m",
+        "r",
+        "w",
+        "",
+        "",
+        "",
+        "w",
+        "r",
+        "m"
+      ],
+      "legend": {
+        "m": {"content":"unit.citizen.trooper"},
+        "r": {"content":"unit.citizen.marksman"},
+        "w": {"content":"unit.citizen.worker"}
+      },
+      "target": {"x":2,"y":1,"width":1,"height":10}
+    }
+  }
+}

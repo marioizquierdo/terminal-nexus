@@ -12,10 +12,10 @@ import { contextFor, spawnEvents, stepTick } from "../pulse/index.ts"
 import { hashState } from "../state/serialize.ts"
 import type { MatchState } from "../state/types.ts"
 import type { PulseTimeline } from "../view/index.ts"
-import type { ScenarioDefinition } from "../scenario/index.ts"
+import type { BattleOpening } from "../skirmish/opening/index.ts"
 
 export function buildTimeline(
-  scenario: Pick<ScenarioDefinition, "id" | "name">,
+  opening: Pick<BattleOpening, "id" | "name">,
   initialState: MatchState,
   registry: ContentRegistry,
   pulseTicks: number,
@@ -34,8 +34,8 @@ export function buildTimeline(
   }
 
   return {
-    scenarioId: scenario.id,
-    scenarioName: scenario.name,
+    battleId: opening.id,
+    battleName: opening.name,
     seed,
     pulseTicks,
     ticksPerSecond: initialState.ticksPerSecond,
@@ -51,10 +51,10 @@ export function buildTimeline(
 /**
  * A timeline from a Pulse already resolved elsewhere — a mission's, by the trigger runner, which steps
  * the same kernel and keeps the same states and events (`src/match/mission.ts`). Hashed the same way, so a
- * mission's Pulse and a scenario's are compared by the same two numbers.
+ * mission's Pulse and a testing save's are compared by the same two numbers.
  */
 export function timelineOf(
-  scenario: Pick<ScenarioDefinition, "id" | "name">,
+  opening: Pick<BattleOpening, "id" | "name">,
   states: readonly MatchState[],
   events: readonly DomainEvent[],
   pulseTicks: number,
@@ -65,8 +65,8 @@ export function timelineOf(
   const last = states[states.length - 1]
   if (first === undefined || last === undefined) throw new Error("a timeline needs at least its opening state")
   return {
-    scenarioId: scenario.id,
-    scenarioName: scenario.name,
+    battleId: opening.id,
+    battleName: opening.name,
     seed,
     pulseTicks,
     ticksPerSecond: first.ticksPerSecond,

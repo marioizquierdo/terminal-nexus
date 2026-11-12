@@ -1,0 +1,88 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Engage: melee against a mixed army through a gap two rows wide",
+  "notes": "Twelve troopers against six troopers and six marksmen, the ridge's gap two rows wide. Two abreast can strike at the door and the rest queue behind; the marksmen fire over the door. The wrong army for the pass: it loses, and a sixth or more of it never strikes. Played to a result: a Nexus falling or a side wiped out. Done when: B wins, and at least one of A's twelve units never strikes within twenty seconds.",
+  "setup": {
+    "map": {
+      "id": "engage-gap2-melee-vs-mix",
+      "rows": [
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        "................................................",
+        "................................................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##.......................",
+        ".......................##......................."
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 900,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":0},
+      "rows": [
+        "",
+        "",
+        "",
+        "",
+        "     aa",
+        "     a",
+        "     aa",
+        "n     a",
+        "",
+        "     aa",
+        "     aa",
+        "     aa",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"},
+        "a": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":45,"y":7,"width":3,"height":2}
+    },
+    "p2": {
+      "at": {"x":40,"y":4},
+      "rows": [
+        "ab",
+        " b",
+        "ab",
+        "a     n",
+        "",
+        "ab",
+        "ab",
+        "ab"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"},
+        "a": {"content":"unit.citizen.trooper"},
+        "b": {"content":"unit.citizen.marksman"}
+      },
+      "target": {"x":0,"y":7,"width":3,"height":2}
+    }
+  }
+}

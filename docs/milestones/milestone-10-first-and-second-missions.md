@@ -70,7 +70,7 @@ the endless stand (Milestone 18) and the final battle follow, each its own miles
 ## How it is judged
 
 Automated: RIGHT OF SALVAGE gets the same determinism bar as every other mission and kernel change.
-Named scenarios hash the same across runs and runtimes, and are diffed against the state before this
+Named testing saves hash the same across runs and runtimes, and are diffed against the state before this
 milestone.
 
 Human, and this is the real test: a fresh player finishes PERIMETER, sees a correct unlock and a

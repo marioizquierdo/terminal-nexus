@@ -69,7 +69,7 @@ Terminal Nexus, not what makes it playable, and Story's endless stand asks the p
 ## How it is judged
 
 Automated: the kernel-change checklist. Determinism holds across many runs and both runtimes, there is
-no clock or `Math.random`, a named scenario exercises worker production and harvesting, and
+no clock or `Math.random`, a named testing save exercises worker production and harvesting, and
 `src/pulse` still imports nothing from `src/view`.
 
 Human: a fresh viewer can watch a worker get produced, walk to the deposit and start gathering, and can

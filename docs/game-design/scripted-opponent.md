@@ -38,7 +38,7 @@ Today a `spawn` is units at a region with an optional order and intention. The n
 } }
 ```
 
-Each step is a verb the kernel would have to learn (this waits on the open question about giving units an order primitive, Q69): *hold* (stay, still fire), *advance to a region* (move there, engaging what comes into range), *withdraw*, and a *target preference*. That is a small vocabulary, and it is enough for most of what an RTS campaign's scripted attack does. It grows the way the rest of the vocabulary grows — a typed kind, a named scenario, the determinism tests — never a function in a mission. *Advance to a region* exists now for a whole side (`target`); a group's plan step would be that rule for one group.
+Each step is a verb the kernel would have to learn (this waits on the open question about giving units an order primitive, Q69): *hold* (stay, still fire), *advance to a region* (move there, engaging what comes into range), *withdraw*, and a *target preference*. That is a small vocabulary, and it is enough for most of what an RTS campaign's scripted attack does. It grows the way the rest of the vocabulary grows — a typed kind, a named testing save, the determinism tests — never a function in a mission. *Advance to a region* exists now for a whole side (`target`); a group's plan step would be that rule for one group.
 
 ### 3.2 The intention can be written, or read off the plan
 
@@ -72,7 +72,7 @@ The battle has had several names (Pulse, Battle step, round, Nexus Pulse). Mario
 
 ## 5. A sensible order — IDEA
 
-1. **`hold` and "advance to a region"** (Q69) — the smallest kernel change that makes an intention something the kernel keeps rather than a coincidence. "Advance to a region" is built for a whole side (`target`, its named scenario `target-head-engage-stand`); a group's plan step would be that rule for one group, and `hold` waits with posts.
+1. **`hold` and "advance to a region"** (Q69) — the smallest kernel change that makes an intention something the kernel keeps rather than a coincidence. "Advance to a region" is built for a whole side (`target`, its named testing save `target-head-engage-stand`); a group's plan step would be that rule for one group, and `hold` waits with posts.
 2. **Derived intentions** from the plan, and drawing the plan's later steps on the map (its first target is drawn already).
 3. **A defender's wiped-out units ending a round early** — decided by Mario after playing the first mission's rounds: they do not; only the Nexus falling, or a mission's own condition, loses ([`pulse.md`](../system-design/pulse.md), the victory rule). Built.
 4. **The planner** — only once two missions exist to plan for (PERIMETER and RIGHT OF SALVAGE), so the vocabulary is judged on two real uses before anything generates plans in it.

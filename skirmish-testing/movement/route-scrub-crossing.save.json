@@ -1,0 +1,63 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Route: across scrub - a band two columns wide, the whole height of the map",
+  "notes": "A trooper west, the enemy's Grid Nexus east, a band of scrub two columns wide from the top of the map to the bottom: there is no way round. Each step onto scrub costs twice a step onto open ground, so the trooper crosses it at half its pace and is on the far side two beats later than open ground would allow.",
+  "setup": {
+    "map": {
+      "id": "route-scrub-crossing",
+      "rows": [
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,...........",
+        "...........,,..........."
+      ],
+      "legend": {
+        ".": "terrain.plain",
+        "#": "terrain.rock",
+        "*": "terrain.deposit",
+        ",": "terrain.scrub"
+      }
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 1200,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":5,"y":5},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      }
+    },
+    "p2": {
+      "at": {"x":19,"y":5},
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

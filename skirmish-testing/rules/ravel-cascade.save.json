@@ -1,0 +1,68 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Ravel cascade - everything is fuel",
+  "notes": "The Ravel signature moment, isolated: one chain of detonating fuel wagons deletes a line - or their own. A Citizen line kills the nearest wagon, its blast reaches the next, and the cascade runs until it runs out of fuel. The wagons stand two columns apart and a row apart, each within the next one's blast (a radius of 2 is two columns either side and one row up and down, a row counting two columns), with a runner tucked in beside them. Chains are bounded because an entity can only die once, so the whole cascade resolves inside the tick that started it.",
+  "setup": {
+    "map": {
+      "id": "ravel-cascade",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 45058,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 240,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":6,"y":3},
+      "rows": [
+        "t",
+        "t",
+        "t",
+        "t",
+        "t",
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":11,"y":3,"width":4,"height":4}
+    },
+    "p2": {
+      "at": {"x":11,"y":3},
+      "rows": [
+        " v v",
+        " v v",
+        "xv v",
+        " v v"
+      ],
+      "legend": {
+        "v": {"content":"unit.ravel.fuelwagon"},
+        "x": {"content":"unit.ravel.runner"}
+      },
+      "target": {"x":6,"y":3,"width":1,"height":6}
+    }
+  }
+}

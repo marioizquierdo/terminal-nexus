@@ -152,9 +152,9 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     // The `air` layer's first real content, not just its test fixture: `layer: "air"` and
     // `collidesWith: ["air"]` are the whole difference from a one-tile ground unit - the kernel
     // already ignores terrain for anything on this layer (maskForActor, shared.ts) and the loader
-    // already exempts it from the on-rock-at-spawn check (scenario/load.ts), so a walled rock room
+    // already exempts it from the on-rock-at-spawn check (skirmish/opening/open.ts), so a walled rock room
     // no ground unit could ever leave is just a tile to this thing - see
-    // `scenarios/rules/air-crossing.map.json`. Small, fragile, and it still detonates on death: the
+    // `skirmish-testing/rules/air-crossing.save.json`. Small, fragile, and it still detonates on death: the
     // doctrine does not change because the wreckage falls from higher up.
     id: "unit.ravel.buzzard",
     short: "buzzard",

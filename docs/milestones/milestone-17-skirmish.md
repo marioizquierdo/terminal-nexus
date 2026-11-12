@@ -1,7 +1,7 @@
 # Milestone 17 — Skirmish: setup and save files
 
 **Status:** CURRENT
-**Current step:** 17J — scenarios become saves (17D, the save file, is built; 17A, the banner, waits on the owner's playtest).
+**Current step:** 17J — the testing saves (17D, the save file, is built; 17A, the banner, waits on the owner's playtest).
 **Depends on:** [the runs milestone](../history/milestones/milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
 banner prototype), Milestone 14 (three Commander Armies and the duel scripts)
 
@@ -92,7 +92,7 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
       round 4 of a battle, and a short battle of four rounds on the Pocket. A Commander against another with units
       already in place waits for `start` (17J).
 
-**Next, on the owner's word: 17J**, the scenarios as saves, before 17C.
+**Next, on the owner's word: 17J**, the testing saves, before 17C.
 
 ### Step 17E — Slots, profiles, the goal and modifiers
 
@@ -155,14 +155,27 @@ promises to replay it.
       and how an agent plays round by round ([`skirmish-saves.md`](../system-design/skirmish-saves.md), how an agent
       plays a Skirmish).
 
-### Step 17J — Scenarios become saves
+### Step 17J — The testing saves
 
-- [ ] A save's `start`: what a person adds to round 1 by hand (units and buildings already on the Grid, a side's
-      credits and roster), and a save that is one Battle Round with no Build Phase, as a rule map is.
-- [ ] The engine's rule and bench maps (`scenarios/`) and the duel maps (`src/duel/maps.ts`) move into the format:
-      maps to `maps/`, scenarios to `saves/` (a rule map is a save with its map drawn inline and `script:idle` slots).
-      Converted by a script; every test and every recorded hash unchanged.
-- [ ] `grid` and the measurement read save files; the scenario loader is deleted once nothing reads it.
+Shaped on 2026-11-12 ([his words](../history/feedback/2026-11-12-skirmish-saves.md)): keep the maps that still test
+something, in a folder of their own (`skirmish-testing/`), remove those that no longer add much, and drop the old word
+for the concept from the files, the documents and the code.
+
+- [x] A save's `start`: what each slot has on the Grid before round 1, by hand (its units and buildings as rows and a
+      legend, starting health included, and where its troops head). A save with a `start` is a **testing save**: one
+      Battle Round, both slots `script:idle`, its map drawn inline (a `legend` for ground beyond `. # *`; `nexus` and
+      `hold` optional), its slots' Commanders optional. `readSave` names every problem at once, the units' fit
+      included. A side's credits and roster in `start` wait for a save that needs them.
+- [x] The engine's rule, unit, movement, bench and showcase maps are testing saves in `skirmish-testing/`, by folder,
+      with the trial files in `skirmish-testing/trials/`; converted by a script, and every Battle Round opens to the
+      same state hash and plays to the same events as before (every pinned hash unchanged, on Node and Bun). One map
+      removed: the colossus before a two-tile gap, which its own notes called a confirmation of the hauler's, not a
+      new case.
+- [x] `grid`, the trials (`--against` an older commit included), the measurement, `profile-routes`, the picture scripts,
+      the browser page's two showcase battles and every test read testing saves; the old loader is the opening a
+      testing save starts from (`src/skirmish/opening/`). `skirmish --load <testing save> --battle` plays the same
+      Battle Round and prints `grid`'s report.
+- [ ] The duel maps (`src/duel/maps.ts`) as files in `maps/`: still built in by id, as the setup screen will offer them.
 
 ### Step 17K — Playing it
 
@@ -190,5 +203,5 @@ Human: Mario's session above, start to save to load to an agent's report, withou
 ## Done when
 
 - [ ] Steps 17A, 17C to 17K are built and tested (17B only if the stance replaced the banner).
-- [ ] No mode, route, file or screen says Campaign or Challenge, and no document says scenario where it means a save.
+- [ ] No mode, route, file or screen says Campaign or Challenge, and every document outside the history calls a hand-written Battle Round a testing save.
 - [ ] `./scripts/check-repository.sh` passes.

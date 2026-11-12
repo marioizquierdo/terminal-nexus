@@ -5,7 +5,7 @@
 // runner); a round's scene in the Build Phase's context; **the dialog** — the popup the player does not open,
 // docked at the bottom of the map, read on by Enter, Space or a click and skipped by Esc, the camera on each
 // line's focus and the Build Phase afterwards exactly as the round opened it; **the intro highlight** around
-// that focus, in its three forms; the line the game says when a Commander comes back (the named scenario,
+// that focus, in its three forms; the line the game says when a Commander comes back (the named fixture,
 // `tests/commander-fixture.ts`); the Activity Logs that say whether it was read; and Vasse bold at full
 // strength while a Pulse plays.
 
@@ -128,7 +128,7 @@ function playRound(side: BuildSide): void {
   assert.equal(pulse.phase(), "home")
 }
 
-/** The named scenario's first round on the starter map: Vasse falls in round 1 and is back as round 2 opens — or,
+/** The named fixture's first round on the starter map: Vasse falls in round 1 and is back as round 2 opens — or,
  *  with a Vasse who sits a round out (`out`), back for round 3. */
 function fixtureSide(scenes = true, out = 0): BuildSide {
   const play = missionPlay(COMMANDER_FALLS)
@@ -617,7 +617,7 @@ test("the live loop breathes the light from the frame that first showed each lin
 
 // --- A Commander back: the game's own line ----------------------------------------------------------
 
-test("round 2 of the Commander's named scenario opens on her return, one line in the game's own voice", () => {
+test("round 2 of the Commander's named fixture opens on her return, one line in the game's own voice", () => {
   const side = fixtureSide()
   playRound(side)
   keys(side, ENTER)
@@ -637,7 +637,7 @@ test("round 2 of the Commander's named scenario opens on her return, one line in
 
 test("a Commander who sits a round out: round 2 opens on her absence, round 3 on her return, each one line in the game's own voice", () => {
   const side = fixtureSide(true, 1)
-  assert.equal(side.build.state.popup, null, "the named scenario has no intro")
+  assert.equal(side.build.state.popup, null, "the named fixture has no intro")
   playRound(side)
   keys(side, ENTER)
   assert.equal(side.build.state.pulseNumber, 2)

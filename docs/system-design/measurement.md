@@ -11,7 +11,7 @@ and no current document states them as fact. This is the spec every later result
 ## 1. What a battle's record holds
 
 **One record for every battle, from its states and events alone** (RULE — `src/measure/battle.ts`,
-`tests/measure.test.ts`). A scenario, a mission's round and a duel's round are recorded the same way, by
+`tests/measure.test.ts`). A testing save, a mission's round and a duel's round are recorded the same way, by
 whatever rule the kernel walks by. For the battle: the ticks it ran, who won, and why it ended (a Nexus fell, a side
 was wiped out, time ran out). For each side:
 
@@ -26,10 +26,10 @@ was wiped out, time ran out). For each side:
 
 ## 2. What is played
 
-- **The route scenarios** (`scenarios/movement/route-*.map.json`), each made to show one shape a route must manage, on every
+- **The route saves** (`skirmish-testing/movement/route-*.save.json`), each made to show one shape a route must manage, on every
   seed of the spec:
 
-  | Scenario | What it shows | Done when |
+  | Testing save | What it shows | Done when |
   | --- | --- | --- |
   | `route-dead-end` | a trooper straight above its goal, a long wall between | it walks round the wall and the Nexus falls |
   | `route-pocket` | a trooper at the bottom of a cup of rock, its goal beyond the bottom | it climbs out and round |
@@ -39,12 +39,12 @@ was wiped out, time ran out). For each side:
   | `route-corridor` | two squads, one corridor, each side's Nexus beyond it | the battle never stands still for good |
   | `route-falling-building` | a building closing the one gap in a ridge | the troopers break it and go through |
 
-- **The engage scenarios** (`scenarios/engage/`, the full spec, not the quick one): the same armies on ground that is
+- **The engage saves** (`skirmish-testing/engage/`, the full spec, not the quick one): the same armies on ground that is
   open, a gap six rows wide, a gap two rows wide, a corridor and two lanes, twelve units a side, each side given the
   enemy's Nexus as its target, each played to a result. They are the bench for how fast battles are decided and how many
   units ever strike; what they show, how to put another army or unit on them, and the trial that holds them to it
   (`engage-bench`) are the [testing ground](testing-ground.md)'s.
-- **Every other map** under `scenarios/` on its own seed (the full spec): the rule fixtures and the bench, so a change of
+- **Every other map** under `skirmish-testing/` on its own seed (the full spec): the rule fixtures and the bench, so a change of
   routes that moves one is seen.
 - **Duels** ([`duels.md`](duels.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
   ends of the map; each scripted player on both sides; on the Crossing, eight rounds at most. Each round records its
@@ -57,7 +57,7 @@ was wiped out, time ran out). For each side:
 | Spec | Seeds | Maps | Duel players | Levels |
 | --- | --- | --- | --- | --- |
 | `full` | 1 to 6 | every map | balanced, rush, turtle | every level, both plans |
-| `quick` | 1 and 2 | the route scenarios | balanced | every level, both plans |
+| `quick` | 1 and 2 | the route saves | balanced | every level, both plans |
 
 The full spec is what a power-curve change or a step that changes routes is measured by; the quick one is for a look
 while working. Which to play for which kind of change is the `remeasure` skill's first table.
@@ -116,7 +116,7 @@ measurement file with no row in the index.
 
 ## 6. What the numbers say, and what they cannot
 
-- **Plain words first.** The summary says, per scenario, how often side A won, how long a run took, when A first
+- **Plain words first.** The summary says, per testing save, how often side A won, how long a run took, when A first
   struck and how long units stood blocked; per pair of Commanders, who won; for mirrors, how often each end won; for
   each level and plan, the verdict, the round it ended, the rounds its Commander fell and what it lost.
 - **How soon duels end**: how many were over by the end of rounds 1, 2 and 3. An opening that ends a match is what
@@ -125,13 +125,13 @@ measurement file with no row in the index.
   differ in rarity, how often the luckier side won; and of those where one side was ahead after round 2 (more of its
   Nexus left, then more damage dealt), how often it won. A lucky early hand that wins nearly always is the runaway
   the power curve is built against.
-- **How tight armies meet**: the average spread at first contact, over every battle, and per scenario; with players
+- **How tight armies meet**: the average spread at first contact, over every battle, and per testing save; with players
   set against each other (`--formations`), who won between each two and each one's spread.
 - **Scripted players are not players.** A script that attacks every round tells which army spends its curve better
   when attacking, not which is stronger; model players and Mario's own games say more ([`duels.md`](duels.md)).
 - **A battle must be set up as the game sets it up, and a count of waiting counts only units that try.** A measurement
-  of how long units stood blocked once said a rule had cut it by nine tenths on three scenarios: the units had stopped
-  trying to move at all. Those scenarios gave no side a target, and a unit told to march on with nowhere to march stands
+  of how long units stood blocked once said a rule had cut it by nine tenths on three testing saves: the units had stopped
+  trying to move at all. Those testing saves gave no side a target, and a unit told to march on with nowhere to march stands
   idle, which `move.blocked` never records. Give each side what the game gives it (a duel's attack stance gives the
   enemy Nexus as the target), read one battle's log by eye before trusting a number, and set a count of blocked units
   beside one of units that struck.
@@ -160,5 +160,5 @@ the failures):
 | `tests/averno.test.ts` | Averno beside Vasse: they read apart within two rounds, by who falls |
 | `tests/mission.test.ts`, `tests/mission-loop.test.ts` | PERIMETER: who wins and loses it with which plan |
 | `tests/lifecycle-build-phase.test.ts`, `tests/playtest.test.ts` | how long PERIMETER's first round runs with the defence plan, on the clock the screen shows |
-| `tests/fairness.test.ts`, `tests/route-scenarios.test.ts` | mirrors split evenly between the two ends; the route scenarios are walked |
-| `tests/engage-scenarios.test.ts` | the engage bench's trial holds what it expects ([the testing ground](testing-ground.md)) |
+| `tests/fairness.test.ts`, `tests/route-saves.test.ts` | mirrors split evenly between the two ends; the route saves are walked |
+| `tests/engage-bench.test.ts` | the engage bench's trial holds what it expects ([the testing ground](testing-ground.md)) |

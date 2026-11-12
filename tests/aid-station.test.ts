@@ -1,6 +1,6 @@
 // The Aid Station: what Vasse's Aid Station Permit adds, a building that heals (commander-armies.md, her Nexus
-// powers: "The Aid Station repairs the units beside it each Battle Round"). The story is the named scenario
-// `scenarios/rules/aid-station-repair.map.json`; here are the rule's edges, each on a few units placed to show one thing
+// powers: "The Aid Station repairs the units beside it each Battle Round"). The story is the testing save
+// `skirmish-testing/rules/aid-station-repair.save.json`; here are the rule's edges, each on a few units placed to show one thing
 // (the kernel's healer on a building: `behavior: "support"`, a heal attack, its layers), how a heal looks on
 // screen, and its card at the 80 x 24 floor.
 
@@ -17,14 +17,14 @@ import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { contextFor, resolvePulse, stepTick } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { MatchState, PlayerId } from "../src/state/types.ts"
 import { placementRun } from "../src/view/placement.ts"
 import { COLOR_DEPTHS, DEFAULT_PRESENTATION, EFFECT_RECIPES, MEND_GLYPH, STYLE_ROLES, cellAt, createView, gridOrigin, mendTile } from "../src/view/index.ts"
 import type { EffectContext, EffectInstance, EffectRecipe } from "../src/view/index.ts"
 import { MAXIMUM, MINIMUM, buildSide, compose, keys, panelLines } from "./build-helpers.ts"
-import { loadScenarioFile, resolveScenario } from "./helpers.ts"
+import { loadTestingSaveFile, playTestingSave } from "./helpers.ts"
 
 const AID = "structure.citizen.aidstation"
 
@@ -76,7 +76,7 @@ const FAR_NEXUS: Placed = [16, 8, "structure.ravel.nexus"]
 
 /** A small Grid with each side placed as given, resolved tick by tick for `ticks`: every event, and every state. */
 function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number): { events: DomainEvent[]; states: MatchState[] } {
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "aid-station-edges",
     name: "aid station edges",
     grid: { width: 20, height: 10 },
@@ -86,7 +86,7 @@ function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number
     terrainLegend: { ".": "terrain.plain" },
     placements: { A: block(sides.A), B: block(sides.B) },
   }
-  const loaded = loadScenario(scenario, { registry: REGISTRY })
+  const loaded = openBattle(opening, { registry: REGISTRY })
   const context = contextFor(loaded.state, REGISTRY, ticks)
   const events: DomainEvent[] = []
   const states: MatchState[] = [loaded.state]
@@ -207,10 +207,10 @@ test("a patch lands after the tick's blows: a unit a blow kills is never saved b
   assert.deepEqual(healsOf(events), [], "a patch was made on a unit a blow killed")
 })
 
-// --- The named scenario --------------------------------------------------------------------------------
+// --- The testing save ------------------------------------------------------------------------------------
 
 test("aid-station-repair: the trooper beside the station wins its duel and is mended to full; the same duel beyond its reach is a mutual kill", async () => {
-  const { run: battle } = await resolveScenario("aid-station-repair.map.json")
+  const { run: battle } = await playTestingSave("aid-station-repair.save.json")
   const opening = battle.initialState.entities
   const station = opening.find((entity) => entity.contentId === AID)
   const barracks = opening.find((entity) => entity.contentId === "structure.citizen.barracks")
@@ -238,19 +238,19 @@ test("aid-station-repair: the trooper beside the station wins its duel and is me
 })
 
 test("the Aid Station's battle hashes the same every run, and it is pinned: a change to it is a change on purpose", async () => {
-  const runs = await Promise.all([1, 2, 3].map(() => resolveScenario("aid-station-repair.map.json")))
+  const runs = await Promise.all([1, 2, 3].map(() => playTestingSave("aid-station-repair.save.json")))
   for (const { run: battle } of runs) assert.deepEqual([battle.stateHash, battle.eventsHash], PINNED_AID_STATION)
   // One call and tick by tick agree.
-  const scenario = await loadScenarioFile("aid-station-repair.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
-  const whole = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: scenario.pulseTicks, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("aid-station-repair.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
+  const whole = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: opening.pulseTicks, seed: opening.seed })
   assert.deepEqual([whole.stateHash, whole.eventsHash], PINNED_AID_STATION)
 })
 
 test("the bench medic, the one healer before buildings could heal, heals exactly as it did: its battle is the one it always was", async () => {
   // A healer's wounded allies are now narrowed by its layers (`perception.ts`); the medic names none, so nothing it
   // does may move by that rule. These are its battle's hashes, pinned again when units came to walk by routes.
-  const { run: battle } = await resolveScenario("bench-medic-support.map.json")
+  const { run: battle } = await playTestingSave("bench-medic-support.save.json")
   assert.deepEqual([battle.stateHash, battle.eventsHash], PINNED_MEDIC)
 })
 
@@ -279,9 +279,9 @@ const PINNED_MEDIC = [
 // --- How a heal looks ----------------------------------------------------------------------------------
 
 test("a heal shows on screen: a cross of light beside the mended unit, then risen a row and dim — never on a unit, never as bold as the station; reduced motion holds it", async () => {
-  const scenario = await loadScenarioFile("aid-station-repair.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-  const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+  const opening = await loadTestingSaveFile("aid-station-repair.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+  const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
   // A patch with nothing else happening: the duels are over, the trooper beside the station stands at the line.
   const patch = timeline.events.find((event) => event.kind === "heal.applied" && event.tick > 70)
   assert.ok(patch !== undefined && patch.kind === "heal.applied")
@@ -356,7 +356,7 @@ test("a heal's mark keeps the effect contract: a pure function of time, one ASCI
 })
 
 test("a heal's mark goes on the first open tile beside the mended unit: above, right, left, then below — never on a unit, rock or off the Grid", () => {
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "mend-tile",
     name: "mend tile",
     grid: { width: 8, height: 6 },
@@ -368,7 +368,7 @@ test("a heal's mark goes on the first open tile beside the mended unit: above, r
       A: block([[3, 2, "unit.test.standing"], [4, 2, "unit.test.standing"], [2, 2, "unit.test.standing"], [0, 0, "unit.test.standing"], [5, 4, "unit.citizen.hauler"]]),
     },
   }
-  const { state } = loadScenario(scenario, { registry: REGISTRY })
+  const { state } = openBattle(opening, { registry: REGISTRY })
   const footprint = REGISTRY.get("unit.test.standing").footprint
   // Rock above, a unit on either side: below.
   assert.deepEqual(mendTile(state, REGISTRY, { x: 3, y: 2 }, footprint), { x: 3, y: 3 })
@@ -379,8 +379,8 @@ test("a heal's mark goes on the first open tile beside the mended unit: above, r
   // A three-tile hauler (anchored at 4,4): above the middle of it.
   assert.deepEqual(mendTile(state, REGISTRY, { x: 4, y: 4 }, REGISTRY.get("unit.citizen.hauler").footprint), { x: 5, y: 3 })
   // Every side taken: nowhere.
-  const boxed: ScenarioDefinition = { ...scenario, terrain: ["........", "........", "........", "........", "........", "........"], placements: { A: block([[3, 2, "unit.test.standing"], [3, 1, "unit.test.standing"], [4, 2, "unit.test.standing"], [2, 2, "unit.test.standing"], [3, 3, "unit.test.standing"]]) } }
-  assert.equal(mendTile(loadScenario(boxed, { registry: REGISTRY }).state, REGISTRY, { x: 3, y: 2 }, footprint), null)
+  const boxed: BattleOpening = { ...opening, terrain: ["........", "........", "........", "........", "........", "........"], placements: { A: block([[3, 2, "unit.test.standing"], [3, 1, "unit.test.standing"], [4, 2, "unit.test.standing"], [2, 2, "unit.test.standing"], [3, 3, "unit.test.standing"]]) } }
+  assert.equal(mendTile(openBattle(boxed, { registry: REGISTRY }).state, REGISTRY, { x: 3, y: 2 }, footprint), null)
 })
 
 // --- Its card --------------------------------------------------------------------------------------------

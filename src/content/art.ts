@@ -132,7 +132,7 @@ const BUILT_IN_ART: Readonly<Record<string, UnitArt>> = {
   "unit.bench.flanker": ["k"],
   /** An egg sac, split down the middle - a diamond hull built to open, not to fight. */
   "structure.bench.hatchery": ["/\\", "\\/"],
-  /** The Citizen Nexus's own shape: the bench's passive one is a target for the kernel's scenarios, not a new look. */
+  /** The Citizen Nexus's own shape: the bench's passive one is a target for the kernel's testing saves, not a new look. */
   "structure.bench.nexus": [".n.", "[=]"],
   /** The smallest possible mark - a comma-sized thing, spawned by the hatch or spilled by the
    * shard-giant's death alike. */

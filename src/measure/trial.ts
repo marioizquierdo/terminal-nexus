@@ -12,10 +12,10 @@ import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { supplyCostOf } from "../content/supply.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
-import { loadScenario } from "../scenario/load.ts"
-import type { ScenarioDefinition } from "../scenario/types.ts"
-import type { Variant } from "../scenario/variant.ts"
-import { applyVariant, mirrored, shuffled } from "../scenario/variant.ts"
+import { openBattle } from "../skirmish/opening/open.ts"
+import type { BattleOpening } from "../skirmish/opening/types.ts"
+import type { Variant } from "../skirmish/opening/variant.ts"
+import { applyVariant, mirrored, shuffled } from "../skirmish/opening/variant.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import type { BattleRecord } from "./battle.ts"
 import { BattleRecorder } from "./battle.ts"
@@ -51,12 +51,12 @@ export type TrialSpec = Readonly<{
 /** The kernel and content a trial is played by: this build's (`OWN_ENGINE`), or another's loaded from its folder. */
 export type Engine = Readonly<{
   registry: ContentRegistry
-  loadScenario: typeof loadScenario
+  openBattle: typeof openBattle
   contextFor: typeof contextFor
   stepTick: typeof stepTick
 }>
 
-export const OWN_ENGINE: Engine = { registry: FIXTURE_REGISTRY, loadScenario, contextFor, stepTick }
+export const OWN_ENGINE: Engine = { registry: FIXTURE_REGISTRY, openBattle, contextFor, stepTick }
 
 /** What one battle cost to play, as a command measured it: the time, the ticks, and the work the kernel's routes did
  *  (`src/cli/profile.ts`): distance fields built and the anchors they settled, the same on every machine. */
@@ -112,26 +112,26 @@ function swapSides(battle: BattleRecord): BattleRecord {
   return { ...battle, winner, sides: { A: battle.sides.B, B: battle.sides.A } }
 }
 
-/** The map `variant` makes of `scenario` for one battle: changed, shuffled by the seed and mirrored as asked; and the
+/** The map `variant` makes of `opening` for one battle: changed, shuffled by the seed and mirrored as asked; and the
  *  content it is played with. What `grid <map> --seed N ...` watches is this battle. */
 export function trialMap(
-  scenario: ScenarioDefinition,
+  opening: BattleOpening,
   variant: Variant,
   seed: number,
   options: Readonly<{ shuffle?: boolean; swapped?: boolean; registry?: ContentRegistry }> = {},
-): Readonly<{ scenario: ScenarioDefinition; registry: ContentRegistry; unmirrored: ScenarioDefinition }> {
-  const made = applyVariant(scenario, options.registry ?? FIXTURE_REGISTRY, variant)
-  const unmirrored = options.shuffle === true ? shuffled(made.scenario, made.registry, seed) : made.scenario
-  return { scenario: options.swapped === true ? mirrored(unmirrored, made.registry) : unmirrored, registry: made.registry, unmirrored }
+): Readonly<{ opening: BattleOpening; registry: ContentRegistry; unmirrored: BattleOpening }> {
+  const made = applyVariant(opening, options.registry ?? FIXTURE_REGISTRY, variant)
+  const unmirrored = options.shuffle === true ? shuffled(made.opening, made.registry, seed) : made.opening
+  return { opening: options.swapped === true ? mirrored(unmirrored, made.registry) : unmirrored, registry: made.registry, unmirrored }
 }
 
-/** Plays `scenario` on `seed` by `engine` to its end, every state and its events handed to `recorder`. */
-function playOut(engine: Engine, scenario: ScenarioDefinition, registry: ContentRegistry, seed: number, recorder: BattleRecorder): MatchState {
-  const loaded = engine.loadScenario(scenario, { registry, seed })
-  const context = engine.contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
+/** Plays `opening` on `seed` by `engine` to its end, every state and its events handed to `recorder`. */
+function playOut(engine: Engine, opening: BattleOpening, registry: ContentRegistry, seed: number, recorder: BattleRecorder): MatchState {
+  const loaded = engine.openBattle(opening, { registry, seed })
+  const context = engine.contextFor(loaded.state, loaded.registry, opening.pulseTicks)
   let state: MatchState = loaded.state
   recorder.observe(state, [])
-  while (state.outcome === null && state.tick < scenario.pulseTicks) {
+  while (state.outcome === null && state.tick < opening.pulseTicks) {
     const step: { state: MatchState; events: readonly DomainEvent[] } = engine.stepTick(state, context)
     state = step.state
     recorder.observe(state, step.events)
@@ -141,19 +141,19 @@ function playOut(engine: Engine, scenario: ScenarioDefinition, registry: Content
 
 /** One battle of a trial: the map as the variant makes it, played and recorded, measured by `meter` when given. */
 export function playTrialBattle(
-  scenario: ScenarioDefinition,
+  opening: BattleOpening,
   variant: Variant,
   seed: number,
   options: Readonly<{ shuffle?: boolean; swapped?: boolean; engine?: Engine; meter?: Meter }> = {},
 ): Readonly<{ battle: BattleRecord; supply: Readonly<Record<PlayerId, number>>; cost?: BattleCost }> {
   const engine = options.engine ?? OWN_ENGINE
-  const made = trialMap(scenario, variant, seed, { ...options, registry: engine.registry })
-  const opened = engine.loadScenario(made.unmirrored, { registry: made.registry }).state
+  const made = trialMap(opening, variant, seed, { ...options, registry: engine.registry })
+  const opened = engine.openBattle(made.unmirrored, { registry: made.registry }).state
   const supplyOf = (player: PlayerId): number =>
     opened.entities.filter((entity) => entity.player === player).reduce((sum, entity) => sum + supplyCostOf(made.registry.get(entity.contentId)), 0)
   const recorder = new BattleRecorder(made.registry)
   options.meter?.begin()
-  const last = playOut(engine, made.scenario, made.registry, seed, recorder)
+  const last = playOut(engine, made.opening, made.registry, seed, recorder)
   const cost = options.meter?.end(last.tick)
   const battle = recorder.record()
   return {
@@ -167,7 +167,7 @@ export function playTrialBattle(
  *  by its engine; `maps` holds each map it names, `each` hears of every battle as it is played. */
 export function playTrial(
   spec: TrialSpec,
-  maps: ReadonlyMap<string, ScenarioDefinition>,
+  maps: ReadonlyMap<string, BattleOpening>,
   options: Readonly<{ each?: (battle: TrialBattle, index: number, total: number) => void; engine?: Engine; meter?: Meter; only?: readonly number[] }> = {},
 ): TrialBattle[] {
   const runs = trialRuns(spec)
@@ -176,9 +176,9 @@ export function playTrial(
   return indexes.map((index, done) => {
     const run = runs[index]
     if (run === undefined) throw new Error(`trial ${spec.id}: no battle ${index}`)
-    const scenario = maps.get(run.map)
-    if (scenario === undefined) throw new Error(`trial ${spec.id}: no map "${run.map}"`)
-    const played = playTrialBattle(scenario, variants[run.variant] ?? {}, run.seed, {
+    const opening = maps.get(run.map)
+    if (opening === undefined) throw new Error(`trial ${spec.id}: no map "${run.map}"`)
+    const played = playTrialBattle(opening, variants[run.variant] ?? {}, run.seed, {
       swapped: run.swapped,
       ...(spec.shuffle === undefined ? {} : { shuffle: spec.shuffle }),
       ...(options.engine === undefined ? {} : { engine: options.engine }),

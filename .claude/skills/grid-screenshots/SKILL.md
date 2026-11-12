@@ -22,11 +22,12 @@ Iterate in text, confirm in pixels. A text frame costs nothing and answers most 
 ```bash
 node -e '
 const tl = await import("./src/cli/timeline.ts")
-const sc = await import("./src/scenario/index.ts")
+const op = await import("./src/skirmish/opening/index.ts")
+const ts = await import("./src/skirmish/testing-saves.ts")
 const v  = await import("./src/view/index.ts")
-const scenario = await sc.loadMapFile("scenarios/showcase/citizens-versus-ravels.map.json")
-const loaded = sc.loadScenario(scenario)
-const timeline = tl.buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+const opening = await ts.loadTestingSave("citizens-versus-ravels")
+const loaded = op.openBattle(opening)
+const timeline = tl.buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
 const view = v.createView(timeline, { ...v.DEFAULT_PRESENTATION, glyphPack: "unicode" })
 console.log(v.frameToText(view.snapshotAt(178 * 1000 / 12 + 40, "truecolor")))
 '
@@ -50,7 +51,7 @@ pause, because an Esc and the next key in one read become one Option+key) and ph
 `settledPane` after `waitFor` has seen the text the shot is about.
 
 Add a frame worth looking at by editing the `shots` array at the top of the script. Each entry takes
-`name`, `caption`, `scenario`, `tick`, `cols`, `rows`, and optionally `colors`, `glyphs`,
+`name`, `caption`, `save` (a testing save's id), `tick`, `cols`, `rows`, and optionally `colors`, `glyphs`,
 `theme`, `effects`, `reducedMotion`, and `expectGate` (true for a shot of a terminal too small
 for the composition, where playback freezes behind the too-small notice).
 
@@ -59,13 +60,13 @@ screenshot lands where you meant rather than wherever the wall clock reached. Fi
 shooting from the log first:
 
 ```bash
-./bin/grid.ts scenarios/rules/ravel-cascade --headless | grep -E "blast|death"
+./bin/grid.ts skirmish-testing/rules/ravel-cascade --headless | grep -E "blast|death"
 ```
 
 ## Driving it by hand
 
 ```bash
-tmux new-session -d -s nexus -x 80 -y 24 './bin/grid.ts scenarios/rules/ravel-cascade'
+tmux new-session -d -s nexus -x 80 -y 24 './bin/grid.ts skirmish-testing/rules/ravel-cascade'
 timeout 10 bash -c 'until tmux capture-pane -t nexus -p | grep -q "TERMINAL NEXUS"; do sleep 0.2; done'
 tmux send-keys -t nexus -l ' '          # pause
 tmux send-keys -t nexus -l ',,,,,,,,,,' # ten ticks forward
@@ -104,7 +105,7 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 ## Watching it yourself
 
 ```bash
-./bin/grid.ts scenarios/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
-./bin/grid.ts scenarios/rules/ravel-cascade --colors monochrome --speed 0.5
-./bin/grid.ts scenarios/showcase/citizens-versus-ravels --reduced-motion
+./bin/grid.ts skirmish-testing/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
+./bin/grid.ts skirmish-testing/rules/ravel-cascade --colors monochrome --speed 0.5
+./bin/grid.ts skirmish-testing/showcase/citizens-versus-ravels --reduced-motion
 ```

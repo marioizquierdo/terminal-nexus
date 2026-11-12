@@ -1,0 +1,60 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Shared tile - a worker and a unit overlap",
+  "notes": "Collision is a mask composed from chosen layers, not a rule about layers. A trooper collides with obstacles and units but not with workers, so it walks straight over its own side's worker and the two share a tile.",
+  "setup": {
+    "map": {
+      "id": "share-tile-worker-unit",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 40973,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 240,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":2,"y":5},
+      "rows": [
+        "t   w"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "w": {"content":"unit.citizen.worker"}
+      },
+      "target": {"x":20,"y":5,"width":1,"height":1}
+    },
+    "p2": {
+      "at": {"x":20,"y":5},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":2,"y":5,"width":5,"height":1}
+    }
+  }
+}

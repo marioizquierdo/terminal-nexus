@@ -1,0 +1,59 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Mutual kill - two equal troopers, one tick",
+  "notes": "Two troopers of the same speed tier start adjacent and trade until both reach zero on the same tick. Both die: attacks in a tier are computed against the state at tier start, so neither survives by being iterated first.",
+  "setup": {
+    "map": {
+      "id": "mutual-kill",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 40963,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 120,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":10,"y":5},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":11,"y":5,"width":1,"height":1}
+    },
+    "p2": {
+      "at": {"x":11,"y":5},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":10,"y":5,"width":1,"height":1}
+    }
+  }
+}

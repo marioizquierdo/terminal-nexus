@@ -13,7 +13,7 @@
       "cost": 30,
       "spawns": {"unit": "unit.bench.spawnling", "perWave": 3, "waves": 1, "secondsBetween": 10},
       "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
-      "notes": "Three swarmers in one wave a round: every building the player places that makes units spawns in waves, the same rule as the Barracks. Before, it bred one every few seconds, three alive at most (its own spawner, which a grid scenario's Hatchery still has)."
+      "notes": "Three swarmers in one wave a round: every building the player places that makes units spawns in waves, the same rule as the Barracks. Before, it bred one every few seconds, three alive at most (its own spawner, which a testing save's Hatchery still has)."
     },
     {
       "id": "turret",

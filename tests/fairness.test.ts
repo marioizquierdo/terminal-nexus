@@ -16,8 +16,8 @@ import { maskFrom, OccupancyIndex } from "../src/grid/occupancy.ts"
 import { playDuel, SCRIPTED } from "../src/duel/index.ts"
 import { nearestFit } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { MatchState, PlayerId } from "../src/state/types.ts"
 
 /** A unit with a melee hit and a walk, nothing else. */
@@ -85,7 +85,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
 
 /** An open Grid with each side placed as given. */
 function opening(sides: Readonly<Record<PlayerId, readonly Placed[]>>, seed = 1): MatchState {
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "fairness",
     name: "fairness",
     grid: { width: WIDTH, height: HEIGHT },
@@ -95,7 +95,7 @@ function opening(sides: Readonly<Record<PlayerId, readonly Placed[]>>, seed = 1)
     terrainLegend: { ".": "terrain.plain" },
     placements: { A: block(sides.A), B: block(sides.B) },
   }
-  return loadScenario(scenario, { registry: REGISTRY }).state
+  return openBattle(opening, { registry: REGISTRY }).state
 }
 
 /** Every state of a battle from `start`, `ticks` long or until it ends, and every event. */

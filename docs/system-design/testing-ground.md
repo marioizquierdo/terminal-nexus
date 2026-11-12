@@ -15,15 +15,15 @@ the tool measures a few general things, and a session that needs another measure
 
 | The question | The tool |
 | --- | --- |
-| What happened in this one battle, tick by tick? | `grid <map> --headless --log-level info`, `--events` for the machine stream (the [`grid` skill](../../.claude/skills/grid/SKILL.md)) |
-| Does it look right in motion? | `grid <map>` to watch; the `grid-screenshots` and `playtest` skills for pictures |
-| Is this better, how often, how surely, at what cost? | a **trial**: `grid <map> --seeds 1-12 --swap` with a variant, or a trial file |
+| What happened in this one battle, tick by tick? | `grid <save> --headless --log-level info`, `--events` for the machine stream (the [`grid` skill](../../.claude/skills/grid/SKILL.md)) |
+| Does it look right in motion? | `grid <save>` to watch; the `grid-screenshots` and `playtest` skills for pictures |
+| Is this better, how often, how surely, at what cost? | a **trial**: `grid <save> --seeds 1-12 --swap` with a variant, or a trial file |
 | What did my change move? | `grid <trial> --against HEAD --profile` |
 | Did a refactor change no outcome at all? | `node scripts/profile-routes.ts --out <file>` before and after, then `diff` |
 | How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --battle`, a round a command, or a plan of your own with `--p1 build:plan.json` ([`skirmish-saves.md`](skirmish-saves.md)) |
 | How do whole armies play, with a Build Phase each round? | duels: `bin/duel.ts` with scripted players (`balanced`, `rush`, `turtle`) or a model ([`duels.md`](duels.md)); many with `measure run --parts duels` |
 | How does the power curve play? | `measure run --spec quick` or `full`, `measure compare` ([`measurement.md`](measurement.md), the [`remeasure` skill](../../.claude/skills/remeasure/SKILL.md)) |
-| Must this stay true? | a rule map and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |
+| Must this stay true? | a rule's testing save and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |
 
 Trials ask about troops: how units move, choose, arrange themselves and fight, on ground chosen to show it. Duels and
 measurements ask about the game: what Build Phase choices do over rounds. A change to troops starts with trials and
@@ -58,8 +58,8 @@ Recipes by kind of change, as starting points:
 ## 3. The shape of a trial
 
 ```text
-map file ──variant──▶ map for one battle ──engine──▶ states and events ──record──▶ battle record
- (scenarios/)  (pure)    (shuffled, mirrored)  (kernel and content,        (BattleRecorder:      │
+testing save ─variant─▶ map for one battle ──engine──▶ states and events ──record──▶ battle record
+ (skirmish-testing/) (pure) (shuffled, mirrored)  (kernel and content,        (BattleRecorder:      │
                                                 this build or another)      the same for duels)  │
                                                          ▲                                       ▼
                                                      meter: cost                  cells (map × variant): stats, marks
@@ -70,10 +70,10 @@ map file ──variant──▶ map for one battle ──engine──▶ states 
 
 | Part | Where | What it is |
 | --- | --- | --- |
-| Map | `scenarios/**/*.map.json`, `src/scenario/load-map-file.ts` | the ground, the armies, each side's target; found by id |
-| Variant | `src/scenario/variant.ts` | a pure function of a map and its content to another: a unit, an army, a tune, a terrain, a target; and `shuffled` and `mirrored`, which make each seed's opening |
+| Testing save | `skirmish-testing/**/*.save.json`, `src/skirmish/testing-saves.ts`, `src/skirmish/start.ts` | the ground, the armies, each side's target, as a Skirmish save's `start` ([`skirmish-saves.md`](skirmish-saves.md)); found by id, opened by `openBattle` (`src/skirmish/opening/open.ts`) |
+| Variant | `src/skirmish/opening/variant.ts` | a pure function of a map and its content to another: a unit, an army, a tune, a terrain, a target; and `shuffled` and `mirrored`, which make each seed's opening |
 | Trial | `src/measure/trial.ts` | the spec (maps, seeds, variants, expectations), its runs in order, each played by an `Engine` and timed by a `Meter`, both passed in |
-| Engine | `src/cli/engine.ts` | the kernel, content and scenario loader of a build's folder: this one, or another commit's checked out beside it |
+| Engine | `src/cli/engine.ts` | the kernel, content and opening (`openBattle`) of a build's folder: this one, or another commit's checked out beside it |
 | Record | `src/measure/battle.ts` | one battle in numbers, built from its states and events alone, the same for a trial, a duel and a mission |
 | Cells | `src/measure/trial-cells.ts` | each map and variant's battles summed up: shares with intervals, medians, whether two differ beyond chance, expectations, battles worth watching |
 | Summary | `src/measure/trial-summary.ts` | the printed tables and the command that replays a battle |
@@ -98,7 +98,7 @@ machine, in one process or many, which is what lets two builds be compared at al
   that variants compose with mirroring and shuffling.
 - **A cost** (work the kernel does): wrap the class that does it in `routeCounter` (`src/cli/profile.ts`), add its count
   to `BattleCost` and `CostCell`. Counts the same on every machine are worth more than times.
-- **A trial file**: `scenarios/trials/<id>.trial.json` (section 5). Give it `expect` and a test runs it.
+- **A trial file**: `skirmish-testing/trials/<id>.trial.json` (section 5), naming the testing saves it plays. Give it `expect` and a test runs it.
 - **A one-off question**: a probe script in the scratchpad is fine for a question asked once. Asked twice, it belongs in
   the tool; if a session finds itself rewriting a probe, that is the sign.
 
@@ -124,7 +124,7 @@ grid engage-bench --against HEAD --profile --jobs 4  # the working tree beside t
 | `--jobs 4` | four processes; the same battles merged in order |
 | `--against <ref>`, `--baseline <file>`, `--out <file>`, `--json` | section 7; `--json` prints the cells as data |
 
-The variant options work on every `grid` action, so `grid <map> --seed 7 --swap --army-a ...` watches the battle a
+The variant options work on every `grid` action, so `grid <save> --seed 7 --swap --army-a ...` watches the battle a
 trial pointed at. A trial file keeps a question:
 
 ```json
@@ -142,7 +142,7 @@ trial pointed at. A trial file keeps a question:
 
 `variants` are played in order and each row is marked against the first (none: the maps as built). `base` is what
 every variant starts from, and variant options on the command line go on top of it. `expect` names a measure from
-`TRIAL_MEASURES` and a bound; `grid` fails when one does not hold, and `tests/engage-scenarios.test.ts` runs the bench's.
+`TRIAL_MEASURES` and a bound; `grid` fails when one does not hold, and `tests/engage-bench.test.ts` runs the bench's.
 
 ## 6. Reading a trial
 
@@ -181,20 +181,24 @@ engage-gap2-melee-vs-mix
   proof is no line differing. `--detail` says where route time went, question by question.
 - **Duels and missions**: `measure run ... --out`, then `measure compare`.
 
-## 8. The maps
+## 8. The testing saves
 
-| Folder | What its maps are for |
+The maps a trial plays are **testing saves**: Skirmish saves in `skirmish-testing/` whose `start` writes the first
+Battle Round by hand, both slots `script:idle` ([`skirmish-saves.md`](skirmish-saves.md)). `grid <save>` and
+`skirmish --load <save> --battle` open the same Battle Round.
+
+| Folder | What its testing saves are for |
 | --- | --- |
-| `scenarios/rules/` | one rule each, as small as shows it |
-| `scenarios/units/` | one unit's mechanic each, the proving grounds |
-| `scenarios/movement/` | one shape a route must manage each |
-| `scenarios/engage/` | **the bench**: twelve units a side on six grounds (open, gaps of six and two rows, a corridor, two lanes), each side's target the enemy Nexus, exactly symmetric |
-| `scenarios/showcase/` | whole battles to look at |
-| `scenarios/trials/` | trial files |
+| `skirmish-testing/rules/` | one rule each, as small as shows it |
+| `skirmish-testing/units/` | one unit's mechanic each, the proving grounds |
+| `skirmish-testing/movement/` | one shape a route must manage each |
+| `skirmish-testing/engage/` | **the bench**: twelve units a side on six grounds (open, gaps of six and two rows, a corridor, two lanes), each side's target the enemy Nexus, exactly symmetric |
+| `skirmish-testing/showcase/` | whole battles to look at |
+| `skirmish-testing/trials/` | trial files |
 
-A map's id is its file name, and every command finds a map by it (RULE — `mapCatalog`). **Every side that fights has
+A testing save's id is its file name, and every command finds one by it (RULE — `testingSaveCatalog`). **Every side that fights has
 somewhere to go**, its own target or an enemy Nexus, as in every battle the game plays (RULE — `sidesWithoutGoal`,
-`tests/scenario.test.ts`). A new map for the bench is drawn at 48 by 16, mirrored exactly, each side's target the enemy
+`tests/testing-saves.test.ts`). A new testing save for the bench is drawn at 48 by 16, mirrored exactly, each side's target the enemy
 Nexus, and checked even before anything is read on it: the same army on both sides, `--swap`, a dozen seeds.
 
 ## 9. Principles

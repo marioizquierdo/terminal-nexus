@@ -68,10 +68,10 @@ day its own battle or mission needs it. Nothing here is more authorized than it 
   ([`story.md`](../game-design/story.md), the opponents a mission brings) may not need it, so a level
   pulls it in only once a mission actually hides something from the player.
 - **Replay format.** The full game log: content locks, hashes, versions, committed plans per Build Phase,
-  and a `verify` path that re-simulates recorded inputs rather than re-running a scenario file.
+  and a `verify` path that re-simulates recorded inputs rather than re-running a testing save.
   [`replay-format.md`](../system-design/replay-format.md) is the starting design and works through why a
   persisted recording replays soundly. `grid` today hashes final state and the ordered event stream and
-  `grid --verify` re-resolves a scenario, which proves the kernel is deterministic but not that a
+  `grid --verify` re-resolves a testing save, which proves the kernel is deterministic but not that a
   *recording* can be replayed. It is the first thing worth doing once a level's own save or replay needs
   force the question.
 

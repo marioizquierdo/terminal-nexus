@@ -47,7 +47,7 @@ export type WatchOptions = Readonly<{
 
 function hashLine(timeline: PulseTimeline): string {
   return (
-    `${timeline.scenarioId}  ticks ${timeline.states.length - 1}  ` +
+    `${timeline.battleId}  ticks ${timeline.states.length - 1}  ` +
     `state sha256:${timeline.stateHash.slice(0, 16)}  ` +
     `events sha256:${timeline.eventsHash.slice(0, 16)}`
   )

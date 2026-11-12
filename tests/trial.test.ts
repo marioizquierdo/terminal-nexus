@@ -6,28 +6,28 @@ import { spawnSync } from "node:child_process"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { playTrial, playTrialBattle, trialCells, trialLines, unmet, watchCommand, wilson } from "../src/measure/index.ts"
 import type { TrialSpec } from "../src/measure/index.ts"
-import { applyVariant, loadScenario, mirrored, shuffled, tuned, VariantError, withArmy } from "../src/scenario/index.ts"
-import type { ScenarioDefinition } from "../src/scenario/index.ts"
-import { loadScenarioFile, REPO_ROOT } from "./helpers.ts"
+import { applyVariant, openBattle, mirrored, shuffled, tuned, VariantError, withArmy } from "../src/skirmish/opening/index.ts"
+import type { BattleOpening } from "../src/skirmish/opening/index.ts"
+import { loadTestingSaveFile, REPO_ROOT } from "./helpers.ts"
 
 /** Who stands where with what, a side at a time: what two openings must share to be the same battle. */
-function opening(scenario: ScenarioDefinition): string[] {
-  const { state } = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
+function openingLines(opening: BattleOpening): string[] {
+  const { state } = openBattle(opening, { registry: FIXTURE_REGISTRY })
   return state.entities.map((entity) => `${entity.player} ${entity.contentId} ${entity.anchor.x},${entity.anchor.y}`).sort()
 }
 
 test("a map mirrored twice is the map again, multi-tile units and targets included", async () => {
-  for (const name of ["heavies-clash.map.json", "engage-lanes-melee-vs-mix.map.json", "small-multicell-skirmish.map.json", "aid-station-repair.map.json"]) {
-    const map = await loadScenarioFile(name)
+  for (const name of ["heavies-clash.save.json", "engage-lanes-melee-vs-mix.save.json", "small-multicell-skirmish.save.json", "aid-station-repair.save.json"]) {
+    const map = await loadTestingSaveFile(name)
     const twice = mirrored(mirrored(map, FIXTURE_REGISTRY), FIXTURE_REGISTRY)
-    assert.deepEqual(opening(twice), opening(map), name)
+    assert.deepEqual(openingLines(twice), openingLines(map), name)
     assert.deepEqual(twice.targets, map.targets, name)
     assert.deepEqual(twice.terrain, map.terrain, name)
   }
 })
 
 test("mirroring swaps the sides end for end: side A's army stands where side B's stood, mirrored", async () => {
-  const map = await loadScenarioFile("engage-open-melee-vs-mix.map.json")
+  const map = await loadTestingSaveFile("engage-open-melee-vs-mix.save.json")
   const flipped = mirrored(map, FIXTURE_REGISTRY)
   const width = 48
   const mirror = (line: string): string => {
@@ -37,38 +37,38 @@ test("mirroring swaps the sides end for end: side A's army stands where side B's
     const wide = Math.max(...FIXTURE_REGISTRY.get(content).footprint.map((offset) => offset.x)) + 1
     return `${player === "A" ? "B" : "A"} ${content} ${width - wide - x},${y}`
   }
-  assert.deepEqual(opening(flipped), opening(map).map(mirror).sort())
+  assert.deepEqual(openingLines(flipped), openingLines(map).map(mirror).sort())
   assert.deepEqual(flipped.targets?.A, { ...map.targets?.B, x: width - (map.targets?.B?.x ?? 0) - (map.targets?.B?.width ?? 0) })
 })
 
 test("a shuffle keeps each side's army and its places, and changes who stands where by the seed", async () => {
   // Two kinds of melee unit and one ranged: a shuffle swaps units of a line among that line's places alone.
-  const map = withArmy(await loadScenarioFile("engage-gap6-mix-mirror.map.json"), FIXTURE_REGISTRY, "A", [
+  const map = withArmy(await loadTestingSaveFile("engage-gap6-mix-mirror.save.json"), FIXTURE_REGISTRY, "A", [
     { content: "trooper", count: 3 },
     { content: "pikeman", count: 3 },
     { content: "marksman", count: 6 },
   ])
   const places = (lines: string[]): string[] => lines.map((line) => line.replace(/ \S+ /, " ")).sort()
   const kinds = (lines: string[]): string[] => lines.map((line) => line.split(" ").slice(0, 2).join(" ")).sort()
-  const one = opening(shuffled(map, FIXTURE_REGISTRY, 1))
-  const two = opening(shuffled(map, FIXTURE_REGISTRY, 2))
-  assert.deepEqual(places(one), places(opening(map)))
-  assert.deepEqual(kinds(one), kinds(opening(map)))
+  const one = openingLines(shuffled(map, FIXTURE_REGISTRY, 1))
+  const two = openingLines(shuffled(map, FIXTURE_REGISTRY, 2))
+  assert.deepEqual(places(one), places(openingLines(map)))
+  assert.deepEqual(kinds(one), kinds(openingLines(map)))
   assert.notDeepEqual(one, two, "two seeds shuffled alike")
-  assert.deepEqual(opening(shuffled(map, FIXTURE_REGISTRY, 1)), one, "a shuffle is not a function of its seed")
+  assert.deepEqual(openingLines(shuffled(map, FIXTURE_REGISTRY, 1)), one, "a shuffle is not a function of its seed")
   // The marksmen keep the places that were the ranged ones', behind; the Nexus keeps its place.
   const ranged = (lines: string[]): string[] => lines.filter((line) => line.includes("marksman")).sort()
-  assert.deepEqual(ranged(one), ranged(opening(map)))
-  assert.ok(one.includes(opening(map).find((line) => line.includes("nexus") && line.startsWith("A")) as string))
+  assert.deepEqual(ranged(one), ranged(openingLines(map)))
+  assert.ok(one.includes(openingLines(map).find((line) => line.includes("nexus") && line.startsWith("A")) as string))
 })
 
 test("an army fills a side's one-tile places from the front, and is refused when it is bigger than they are", async () => {
-  const map = await loadScenarioFile("engage-open-melee-vs-mix.map.json")
+  const map = await loadTestingSaveFile("engage-open-melee-vs-mix.save.json")
   const made = withArmy(map, FIXTURE_REGISTRY, "A", [
     { content: "skyraider", count: 2 },
     { content: "trooper", count: 3 },
   ])
-  const units = opening(made).filter((line) => line.startsWith("A") && !line.includes("nexus"))
+  const units = openingLines(made).filter((line) => line.startsWith("A") && !line.includes("nexus"))
   assert.equal(units.length, 5)
   const frontmost = Math.max(...units.map((line) => Number((line.split(" ")[2] as string).split(",")[0])))
   for (const line of units.filter((each) => each.includes("skyraider"))) assert.equal(Number((line.split(" ")[2] as string).split(",")[0]), frontmost)
@@ -85,11 +85,11 @@ test("a tune changes one number of one content, and a misspelt one is refused", 
 })
 
 test("a set swaps a side's symbol, or every symbol of a content, for another unit", async () => {
-  const map = await loadScenarioFile("engage-gap2-melee-vs-mix.map.json")
-  const made = applyVariant(map, FIXTURE_REGISTRY, { set: { "B.marksman": "skyraider" } }).scenario
-  const b = opening(made).filter((line) => line.startsWith("B"))
+  const map = await loadTestingSaveFile("engage-gap2-melee-vs-mix.save.json")
+  const made = applyVariant(map, FIXTURE_REGISTRY, { set: { "B.marksman": "skyraider" } }).opening
+  const b = openingLines(made).filter((line) => line.startsWith("B"))
   assert.ok(!b.some((line) => line.includes("marksman")))
-  assert.equal(b.filter((line) => line.includes("skyraider")).length, opening(map).filter((line) => line.startsWith("B") && line.includes("marksman")).length)
+  assert.equal(b.filter((line) => line.includes("skyraider")).length, openingLines(map).filter((line) => line.startsWith("B") && line.includes("marksman")).length)
 })
 
 test("a win rate's interval is wide over a few battles and narrows over many", () => {
@@ -100,7 +100,7 @@ test("a win rate's interval is wide over a few battles and narrows over many", (
 })
 
 test("a trial plays every seed from both ends, names each battle's sides by army, and checks what it expects", async () => {
-  const map = await loadScenarioFile("engage-gap2-melee-vs-mix.map.json")
+  const map = await loadTestingSaveFile("engage-gap2-melee-vs-mix.save.json")
   const spec: TrialSpec = {
     id: "wrong-army",
     maps: [map.id],
@@ -144,12 +144,12 @@ test("grid plays a map over seeds and a trial file, and fails a trial whose expe
 test("a battle's record counts idle units apart from stalled ones", async () => {
   // A squad that reaches its target and stands there with nothing in reach is idle: never blocked, never trying, which
   // a count of blocked units never sees.
-  const standing = await loadScenarioFile("target-head-engage-stand.map.json")
+  const standing = await loadTestingSaveFile("target-head-engage-stand.save.json")
   const stood = playTrialBattle(standing, {}, standing.seed).battle.sides.A
   assert.equal(stood.idle, 4)
   assert.equal(stood.stalled, 0)
   // At a two-row gap the wrong army is trying, in vain: stalled, not idle.
-  const gap = await loadScenarioFile("engage-gap2-melee-vs-mix.map.json")
+  const gap = await loadTestingSaveFile("engage-gap2-melee-vs-mix.save.json")
   const side = playTrialBattle(gap, {}, 1).battle.sides.A
   assert.ok(side.stalled > 0)
   assert.equal(side.idle, 0)
@@ -166,7 +166,7 @@ test("a trial split across processes plays exactly the battles one process does,
 })
 
 test("the command a trial prints to watch a battle replays that very battle", { timeout: 60_000 }, async () => {
-  const map = await loadScenarioFile("engage-gap2-melee-vs-mix.map.json")
+  const map = await loadTestingSaveFile("engage-gap2-melee-vs-mix.save.json")
   const spec: TrialSpec = { id: "watch", maps: [map.id], seeds: [3], swap: true, shuffle: true, variants: { flyers: { army: { A: "trooper:6,skyraider:6" } } } }
   const [, mirroredBattle] = playTrial(spec, new Map([[map.id, map]]))
   assert.ok(mirroredBattle !== undefined && mirroredBattle.swapped)

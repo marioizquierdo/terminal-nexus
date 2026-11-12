@@ -6,8 +6,9 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import type { ContentRegistry } from "../src/content/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import type { PulseRun } from "../src/pulse/index.ts"
-import { loadMapFile, loadScenario, mapCatalog } from "../src/scenario/index.ts"
-import type { ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import { loadTestingSave, testingSaveCatalog } from "../src/skirmish/testing-saves.ts"
+import type { BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { ReportInput } from "../src/report/index.ts"
 
 export const REPO_ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), "..")
@@ -17,44 +18,44 @@ export const REPO_ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), ".
  * is registered conditionally rather than skipped. Both branches assert something true.
  */
 export const RUNTIME_IS_BUN = (globalThis as { Bun?: unknown }).Bun !== undefined
-export const SCENARIO_DIR = join(REPO_ROOT, "scenarios")
+export const TESTING_DIR = join(REPO_ROOT, "skirmish-testing")
 
-/** Every checked-in map's file name (`melee-kill.map.json`), from every folder under `scenarios/`, sorted. */
-export function scenarioFiles(): string[] {
-  return mapCatalog(SCENARIO_DIR).map((entry) => `${entry.id}.map.json`)
+/** Every checked-in map's file name (`melee-kill.save.json`), from every folder under `skirmish-testing/`, sorted. */
+export function testingSaveFiles(): string[] {
+  return testingSaveCatalog(TESTING_DIR).map((entry) => `${entry.id}.save.json`)
 }
 
 /** A checked-in map by its file name, whichever folder it is in. */
-export async function loadScenarioFile(name: string): Promise<ScenarioDefinition> {
-  return loadMapFile(name)
+export async function loadTestingSaveFile(name: string): Promise<BattleOpening> {
+  return loadTestingSave(name)
 }
 
 export type Resolved = Readonly<{
-  scenario: ScenarioDefinition
+  opening: BattleOpening
   registry: ContentRegistry
   run: PulseRun
 }>
 
-export async function resolveScenario(
+export async function playTestingSave(
   name: string,
   overrides: Readonly<{ seed?: number; ticks?: number }> = {},
 ): Promise<Resolved> {
-  const scenario = await loadScenarioFile(name)
-  const seed = overrides.seed ?? scenario.seed
-  const pulseTicks = overrides.ticks ?? scenario.pulseTicks
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
+  const opening = await loadTestingSaveFile(name)
+  const seed = overrides.seed ?? opening.seed
+  const pulseTicks = overrides.ticks ?? opening.pulseTicks
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed })
   const run = resolvePulse({
     initialState: loaded.state,
     registry: loaded.registry,
     pulseTicks,
     seed,
   })
-  return { scenario, registry: loaded.registry, run }
+  return { opening, registry: loaded.registry, run }
 }
 
 export function reportInputOf(resolved: Resolved): ReportInput {
   return {
-    scenarioId: resolved.scenario.id,
+    battleId: resolved.opening.id,
     seed: resolved.run.seed,
     pulseTicks: resolved.run.pulseTicks,
     registry: resolved.registry,
@@ -65,10 +66,10 @@ export function reportInputOf(resolved: Resolved): ReportInput {
   }
 }
 
-/** Every scenario in the repository, resolved once — the regression suite's raw material. */
-export async function resolveAllScenarios(): Promise<Resolved[]> {
+/** Every testing save in the repository, resolved once — the regression suite's raw material. */
+export async function playAllTestingSaves(): Promise<Resolved[]> {
   const resolved: Resolved[] = []
-  for (const name of scenarioFiles()) resolved.push(await resolveScenario(name))
+  for (const name of testingSaveFiles()) resolved.push(await playTestingSave(name))
   return resolved
 }
 

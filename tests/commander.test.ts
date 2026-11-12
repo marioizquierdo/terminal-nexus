@@ -2,7 +2,7 @@
 // rest of that round's Pulse and for as many whole rounds after it as her definition says (`roundsOut`: none for
 // Vasse), and is then restored beside her side's Grid Nexus. The kernel's half is that it knows nothing of her, so
 // her death decides nothing; the match's half is the absence and the restoration (`src/match/commander.ts`),
-// proven on a named scenario (`tests/commander-fixture.ts`) that hashes the same on every run and both runtimes,
+// proven on a named fixture (`tests/commander-fixture.ts`) that hashes the same on every run and both runtimes,
 // played with Vasse as she is and with a test-only Vasse who sits one round out, or two. What a player reads of
 // it is tests/commander-screen.test.ts.
 
@@ -119,7 +119,7 @@ test("a mission brings its Commander once: two of her, or a second arrival, is r
   assert.doesNotThrow(() => validateMission(COMMANDER_FALLS, grid, registry))
 })
 
-// --- The named scenario: she falls, and the Nexus restores her as the next round opens ----------------
+// --- The named fixture: she falls, and the Nexus restores her as the next round opens ----------------
 
 test("she falls in round 1 and is gone for the rest of it; her death ends nothing", () => {
   const [round1] = playWithCommanders(COMMANDER_FALLS)
@@ -199,7 +199,7 @@ test("a Commander who sits two rounds out is out for the rest of the three-round
   assert.deepEqual(fourth.absent, [])
 })
 
-test("the named scenario is the same every run, and on both runtimes, whatever she sits out", () => {
+test("the named fixture is the same every run, and on both runtimes, whatever she sits out", () => {
   const fingerprint = (rounds: readonly Round[]) => rounds.map((round) => [hashState(round.pulse.final), round.pulse.events.length, JSON.stringify(round.absent)])
   for (const [out, pinned] of [
     [0, PINNED_ROUNDS],

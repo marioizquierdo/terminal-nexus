@@ -10,8 +10,8 @@ import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { PulseSetupError, centreTile, openingState, regroup } from "../src/match/index.ts"
 import type { Force, PulseSetup, StructurePlacement } from "../src/match/index.ts"
 import { gameplayRng } from "../src/rng/pcg32.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { BattleOpening } from "../src/skirmish/opening/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
 
@@ -71,7 +71,7 @@ const distance = gridDistance
 // The opening state
 // ---------------------------------------------------------------------------------------------
 
-test("the opening state follows the scenario loader's conventions: ids, reading-order ordinals, fresh fields", () => {
+test("the opening state follows the conventions of a testing save's opening: ids, reading-order ordinals, fresh fields", () => {
   const state = open(
     [
       { contentId: NEXUS, anchor: { x: 4, y: 6 } },
@@ -109,7 +109,7 @@ test("the opening state follows the scenario loader's conventions: ids, reading-
   assert.equal(hatchery?.spawnCooldown, FIXTURE_REGISTRY.get(HATCHERY).spawn?.intervalTicks)
 })
 
-test("a state built here is the state the scenario loader builds from the same picture", () => {
+test("a state built here is the state a testing save's opening builds from the same picture", () => {
   const grid = gridOf([
     "........................",
     "........................",
@@ -133,7 +133,7 @@ test("a state built here is the state the scenario loader builds from the same p
     ],
     grid,
   )
-  // Redraw exactly what was built as a scenario file's character grids, and load it.
+  // Redraw exactly what was built as a testing save's character grids, and load it.
   const symbols = new Map<string, string>()
   const letter = (contentId: string): string => {
     const known = symbols.get(contentId)
@@ -161,7 +161,7 @@ test("a state built here is the state the scenario loader builds from the same p
   const rowsA = rowsOf("A")
   const rowsB = rowsOf("B")
   const legend = Object.fromEntries([...symbols].map(([contentId, symbol]) => [symbol, { content: contentId }]))
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "opening-parity",
     name: "opening parity",
     grid: { width: grid.width, height: grid.height },
@@ -174,7 +174,7 @@ test("a state built here is the state the scenario loader builds from the same p
       B: { rows: rowsB, legend },
     },
   }
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
   assert.equal(hashState(built), hashState(loaded.state), "the opening is not the state the loader builds from the same picture")
 })
 

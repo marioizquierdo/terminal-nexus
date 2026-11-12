@@ -1,4 +1,4 @@
-// A measurement in plain words (docs/system-design/measurement.md): what each scenario did, how the duels went —
+// A measurement in plain words (docs/system-design/measurement.md): what each testing save did, how the duels went —
 // who beat whom, how evenly a mirror split between the two ends of the map, whether an early lucky hand or an early
 // lead predicted the winner, how long units stood blocked and how tight armies met — and how each campaign level
 // played by each plan. Lines of text, so the command prints them and a report quotes them.
@@ -110,19 +110,19 @@ export function summaryLines(measurement: Measurement): string[] {
     lines.push(`a tick took ${fixed(measurement.msPerTick, 3)} ms on average on this machine${jobs}`)
   }
 
-  if (measurement.scenarios.length > 0) {
-    lines.push("", "Scenarios (how often side A won, the ticks a run took, A's first strike, how long units stood blocked):")
-    const byScenario = new Map<string, BattleRecord[]>()
-    for (const run of measurement.scenarios) {
-      const list = byScenario.get(run.scenario)
-      if (list === undefined) byScenario.set(run.scenario, [run.battle])
+  if (measurement.saves.length > 0) {
+    lines.push("", "Testing saves (how often side A won, the ticks a run took, A's first strike, how long units stood blocked):")
+    const bySave = new Map<string, BattleRecord[]>()
+    for (const run of measurement.saves) {
+      const list = bySave.get(run.save)
+      if (list === undefined) bySave.set(run.save, [run.battle])
       else list.push(run.battle)
     }
-    for (const [scenario, battles] of byScenario) {
+    for (const [save, battles] of bySave) {
       const won = battles.filter((battle) => battle.winner === "A").length
       const lost = battles.filter((battle) => battle.winner === "B").length
       lines.push(
-        `  ${scenario.padEnd(32)} A won ${won}/${battles.length}, lost ${lost}; ${fixed(mean(battles.map((battle) => battle.ticks)), 0)} ticks; first contact ${fixed(mean(battles.map((battle) => battle.sides.A.firstContact ?? battle.ticks)), 0)}; ${stalls(battles)}`,
+        `  ${save.padEnd(32)} A won ${won}/${battles.length}, lost ${lost}; ${fixed(mean(battles.map((battle) => battle.ticks)), 0)} ticks; first contact ${fixed(mean(battles.map((battle) => battle.sides.A.firstContact ?? battle.ticks)), 0)}; ${stalls(battles)}`,
       )
     }
   }

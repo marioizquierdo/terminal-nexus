@@ -1,4 +1,4 @@
-// The Commander's named scenario — not a test file itself: the runners only pick up `*.test.ts`. A three-round
+// The Commander's named fixture — not a test file itself: the runners only pick up `*.test.ts`. A three-round
 // mission on the starter map built so Vasse falls in round 1: she sits no round out (her `roundsOut` is 0), so the
 // Nexus restores her as round 2 opens. PERIMETER is not built to make her fall early, so her return is proven
 // here.

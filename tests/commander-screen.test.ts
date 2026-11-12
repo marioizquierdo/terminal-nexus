@@ -1,7 +1,7 @@
 // What a player reads of the Commander (pulse.md; the rule itself is tests/commander.test.ts): an `@`
 // among the squads and her own card, the feed when she falls, the result's line saying she is back next round,
 // and the Build Phase after it opening with her back. Played through the real session on PERIMETER and on the
-// Commander's named scenario (`tests/commander-fixture.ts`); and, with a test-only Vasse who sits one round out,
+// Commander's named fixture (`tests/commander-fixture.ts`); and, with a test-only Vasse who sits one round out,
 // the result's line on the round she is out for and the Build Phases after it saying she is out and then that
 // she is back.
 
@@ -33,7 +33,7 @@ function perimeter(experiments: BuildContext["experiments"] = {}): BuildSide {
   return buildSide({ context: starterContext(undefined, { experiments }), cursor: STARTER_START_CURSOR, startPulse, nextRound })
 }
 
-/** The named scenario's first Build Phase, on the starter map — or another mission's, on the same, or with a
+/** The named fixture's first Build Phase, on the starter map — or another mission's, on the same, or with a
  *  Vasse who sits rounds out. */
 function fixture(mission: MissionDefinition = COMMANDER_FALLS, registry: ContentRegistry = FIXTURE_REGISTRY): BuildSide {
   const play = missionPlay(mission)
@@ -48,7 +48,7 @@ function fixture(mission: MissionDefinition = COMMANDER_FALLS, registry: Content
   return buildSide({ context, cursor: STARTER_START_CURSOR, startPulse: play.startPulse, nextRound: play.nextRound })
 }
 
-/** The named scenario cut to two rounds, so the round after the one she falls in is its last. (PERIMETER showed this
+/** The named fixture cut to two rounds, so the round after the one she falls in is its last. (PERIMETER showed this
  *  once, at 20 health in its second round; since the Barracks's troopers came to arrive in a wave five seconds in,
  *  she comes through PERIMETER's first two rounds at any health, so it no longer can.) */
 function twoRounds(): MissionDefinition {

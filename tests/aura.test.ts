@@ -1,6 +1,6 @@
 // A Commander's aura in the damage step (docs/system-design/pulse.md): Vasse's By the Book, the owner's
 // "Commanders ... should be like heroes on warcraft3 ... Vasse should provide boost to nearby units". The
-// story is the named scenario `scenarios/rules/aura-by-the-book.map.json` (tests/scenario.test.ts); here are the
+// story is the testing save `skirmish-testing/rules/aura-by-the-book.save.json` (tests/testing-saves.test.ts); here are the
 // rule's edges, each on a few units placed to show one thing. An aura is an ability (`src/abilities/aura.ts`), named by
 // a unit's content as data: `{ "kind": "aura", "radius": 4, "damageTakenPercent": 75 }`.
 
@@ -11,8 +11,8 @@ import { createRegistry, FIXTURE_REGISTRY, rectFootprint } from "../src/content/
 import type { DomainEvent } from "../src/events/types.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { auraOf, boostedAmount, guardedAmount } from "../src/abilities/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
 
 const VASSE = "unit.citizen.vasse"
@@ -78,7 +78,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
 
 /** A small Grid with each side placed as given, resolved tick by tick for `ticks`: every event, in order. */
 function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number): DomainEvent[] {
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "aura-edges",
     name: "aura edges",
     grid: { width: 12, height: 8 },
@@ -88,7 +88,7 @@ function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number
     terrainLegend: { ".": "terrain.plain" },
     placements: { A: block(sides.A), B: block(sides.B) },
   }
-  const loaded = loadScenario(scenario, { registry: REGISTRY })
+  const loaded = openBattle(opening, { registry: REGISTRY })
   const context = contextFor(loaded.state, REGISTRY, ticks)
   const events: DomainEvent[] = []
   let state = loaded.state

@@ -10,8 +10,8 @@ import type { DomainEvent } from "../src/events/types.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { COMMIT_TICKS } from "../src/pulse/perception.ts"
 import { visionOf } from "../src/pulse/target.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { EntityState, MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
 import { hashState } from "../src/state/serialize.ts"
 
@@ -51,7 +51,7 @@ function load(
   const terrain = Array.from({ length: 12 }, (_, y) =>
     Array.from({ length: 24 }, (_, x) => (options.rock?.some(([rx, ry]) => rx === x && ry === y) === true ? "#" : ".")).join(""),
   )
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "commitment",
     name: "commitment",
     grid: { preset: "small-wide" },
@@ -62,7 +62,7 @@ function load(
     placements,
     ...(options.target === undefined ? {} : { targets: { A: options.target } }),
   }
-  return loadScenario(scenario, { registry: FIXTURE_REGISTRY }).state
+  return openBattle(opening, { registry: FIXTURE_REGISTRY }).state
 }
 
 /** The state after each tick, from `state`, for `ticks` ticks (the first is `state` itself), and the events. */

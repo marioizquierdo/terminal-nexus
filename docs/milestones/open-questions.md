@@ -92,7 +92,7 @@ structures at all, and "one side annihilated" ends a Battle Round only if worker
 | --- | --- |
 | A. No friendly Nexus → flee directly away from the nearest threat. Annihilation = every entity on `workers`, `units`, and `air` is dead | Literal and simple. Risks a worker-hunt anticlimax after the fighting is decided |
 | B. Annihilation = no entity that can attack remains; a side reduced to workers loses | Ends the run at the interesting moment. Makes "annihilation" slightly a lie, and changes the outcome of every fixture containing workers |
-| C. Require every scenario to place a Grid Nexus | Removes the ambiguity. Taxes the single-rule fixtures that are meant to stay cheap and obvious |
+| C. Require every testing save to place a Grid Nexus | Removes the ambiguity. Taxes the single-rule fixtures that are meant to stay cheap and obvious |
 
 **Recommendation: A** — simplest, honest, and consistent with the documented rule. B is the better
 *game* answer and a cheap change later; take it if watching a mirror ending shows it visibly dragging.
@@ -206,7 +206,7 @@ combat rule shape only for a unit that makes units, which is what this question 
 
 ### Q27 — Should "ground cannot target air" be the schema's default, not an opt-in field?
 
-**Status:** OPEN — blocks nothing until a played roster mixes air and ground. Air is real content now (the Ravel buzzard and corsair, `src/content/ravel.ts`, `scenarios/rules/air-crossing.map.json`), but no real unit sets `targetLayers`.
+**Status:** OPEN — blocks nothing until a played roster mixes air and ground. Air is real content now (the Ravel buzzard and corsair, `src/content/ravel.ts`, `skirmish-testing/rules/air-crossing.save.json`), but no real unit sets `targetLayers`.
 
 `ContentDef.targetLayers` is opt-in: undefined means every layer is a legal target, which kept every
 existing definition and hash untouched. Only the bench grunt (`src/content/proving-grounds.ts`) sets it. So
@@ -225,13 +225,13 @@ units** (Milestone 12 at the latest). Changing the default later costs nothing e
 
 ### Q28 — Can a spawner-only side become permanently un-annihilatable?
 
-**Status:** OPEN — confirmed only in bench content (`bench-hatchery-spawn.map.json`); blocks nothing before a real roster fields a structure whose starting force is entirely non-mobile (Milestone 12 at the earliest).
+**Status:** OPEN — confirmed only in bench content (`bench-hatchery-spawn.save.json`); blocks nothing before a real roster fields a structure whose starting force is entirely non-mobile (Milestone 12 at the earliest).
 
 Annihilation for a side with no Nexus requires every entity on `workers`, `units` and `air` to be dead
 (Q13), and `PulseContext.roster[player].hasMobile` is computed **once**, from the initial entities, so a side
 that starts with only workers is not declared annihilated for having no soldiers yet. The spike's spawner
 (`structure.bench.hatchery`) has no initial mobile entities at all, so `hasMobile` is `false` at tick 0 and
-never re-evaluated, and `victory()`'s annihilation check can never fire: in `bench-hatchery-spawn.map.json`
+never re-evaluated, and `victory()`'s annihilation check can never fire: in `bench-hatchery-spawn.save.json`
 the hatchery and both spawned children are dead by tick 167 and the match still runs to a draw at tick 300.
 
 | Option | Cost |
@@ -332,7 +332,7 @@ the banner have settled what the army's line is for.
 
 **Status:** OPEN — registered 2026-10-29 by [the stalls and targets report](../history/reports/2026-10-29-stalls-and-targets.md); decide with the first real air roster.
 
-Flyers cross rock, walk over the ground queue and collide only with other flyers. In the engage scenarios an army of nine
+Flyers cross rock, walk over the ground queue and collide only with other flyers. In the engage saves an army of nine
 troopers and nine flyers beats the mixed defender through a gap two rows wide in 92% of battles (by 23 points of health
 out of 100), where eighteen troopers lose it by 54; eighteen flyers beat it on every ground by 58 to 66. A player who
 learns that need never pick for the pass. The bench flyers are first fixtures, not a roster, so this may be a numbers
@@ -345,7 +345,7 @@ question for a unit's cost, not a rule.
 | C. **A stance that keeps flyers behind their own ground front** (they strike only what the front has engaged) | Clear to read; costs the air army its reach, which is the point of flying |
 
 **Recommendation: A**, measured again with the first real air units: it is a question of what air costs, and the engage
-scenarios are the bench to read it on.
+testing saves are the bench to read it on.
 
 ### Q93 — How is an endless stand scored?
 
@@ -479,7 +479,7 @@ by. `hold` and `withdraw` are refused when a mission is loaded, with this questi
 | Option | Cost |
 | --- | --- |
 | A. **Keep `advance` only**; intentions stay words the mission writes | Free; but a raid can never feint, wait at the ridge, or pull back, and "Break through at the ridge" is a promise the kernel keeps only because the nearest enemy happens to be that way |
-| B. **An order field on an entity and a goal in the intents phase**: a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A kernel change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named scenario, the determinism suite. It is also the seam the Campaign's opponent AI needs ([`scripted-opponent.md`](../game-design/scripted-opponent.md)) |
+| B. **An order field on an entity and a goal in the intents phase**: a group holds (never moves, still fires), withdraws (moves away from the region), or heads for a region before it engages | A kernel change: a new `EntityState` field (a schema bump), a rule in the intents phase with its own named testing save, the determinism suite. It is also the seam the Campaign's opponent AI needs ([`scripted-opponent.md`](../game-design/scripted-opponent.md)) |
 | C. **Orders as scripted content swaps** (a "holding" variant of a unit with a static behaviour) | No kernel change, but a unit's identity changes under it and every unit needs variants: content bloat to avoid a rule |
 
 **Recommendation: B, as its own small step**, scoped to `hold` and "head for a region, then engage", because
@@ -568,7 +568,7 @@ a modder reading `pulses: 3` beside a game that says Nexus Pulse could take one 
 | Option | What it costs |
 | --- | --- |
 | A. **Keep the engine's word, documented** (as now): "the Pulse" in code and data is the engine's name for the Battle Round, never the Nexus Pulse | Nothing now; one more line in the vocabulary, and a trap for a reader who skips it |
-| B. **Rename a mission's data and messages** (`pulses` → `rounds`, `pulseTicks` → `roundTicks`, `when.pulse` → `when.round`, `pulse.end` → `round.end`), reading the old names for a while | A format change across the army files, the scenario maps, the loader and the trigger runner, and every test that writes a mission |
+| B. **Rename a mission's data and messages** (`pulses` → `rounds`, `pulseTicks` → `roundTicks`, `when.pulse` → `when.round`, `pulse.end` → `round.end`), reading the old names for a while | A format change across the army files, the testing saves, the loader and the trigger runner, and every test that writes a mission |
 | C. **Rename the engine too** (`src/pulse/` → `src/battle/`, `startPulse` → `startBattle`, the three worlds' "Pulse") | About two thousand names; a long, mechanical pull request with nothing for a player to see |
 
 **Recommendation: B before modding opens, C never on its own.** What a modder writes should use the game's words,

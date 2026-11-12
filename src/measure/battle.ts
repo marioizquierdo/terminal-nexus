@@ -1,7 +1,7 @@
 // What one Battle Round says, in numbers (docs/system-design/measurement.md): who won and when, what each side lost,
 // when a Commander fell, how long units stood wanting a step they could not take, and how tight each army stood when
 // it first met the enemy. Read from the states and events a battle produced, tick by tick, so the same record comes
-// from a scenario, a campaign level's round or a duel's, and from any rule the kernel walks by.
+// from a testing save, a campaign level's round or a duel's, and from any rule the kernel walks by.
 //
 // Pure: nothing here reads a clock. The time a tick takes is the command's to measure (`bin/measure.ts`).
 

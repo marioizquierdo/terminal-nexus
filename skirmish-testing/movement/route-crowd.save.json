@@ -1,0 +1,61 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Route: a crowd round one target - eight troopers in a file against one Grid Nexus",
+  "notes": "Eight troopers in a single file, one behind another on the row of the enemy's Grid Nexus. The greedy step queued them: the one in front fought, the rest waited behind it, because no step round the one in front brought them closer. Measured by how many strike at once and how soon the Nexus falls; done when they spread round it to the free tiles beside it.",
+  "setup": {
+    "map": {
+      "id": "route-crowd",
+      "rows": [
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 1200,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":4,"y":8},
+      "rows": [
+        "tttttttt"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      }
+    },
+    "p2": {
+      "at": {"x":38,"y":8},
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

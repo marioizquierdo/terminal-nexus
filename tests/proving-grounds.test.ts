@@ -6,10 +6,10 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY, PROVING_GROUND_CONTENT } from "../src/content/index.ts"
-import { resolveScenario } from "./helpers.ts"
+import { playTestingSave } from "./helpers.ts"
 
 test("a ground unit with targetLayers set never selects, and never attacks, an entity on an excluded layer", async () => {
-  const resolved = await resolveScenario("bench-sky-ground-asymmetry.map.json")
+  const resolved = await playTestingSave("bench-sky-ground-asymmetry.save.json")
   const events = resolved.run.events
 
   const gruntSelections = events.filter(
@@ -33,7 +33,7 @@ test("a ground unit with targetLayers set never selects, and never attacks, an e
 })
 
 test("contact detonation: a unit with no attack at all still dies by its own choice, not only by taking damage", async () => {
-  const resolved = await resolveScenario("bench-spitter-contact.map.json")
+  const resolved = await playTestingSave("bench-spitter-contact.save.json")
   const events = resolved.run.events
 
   const spitterDeaths = events.filter(
@@ -59,7 +59,7 @@ test("contact detonation: a unit with no attack at all still dies by its own cho
 })
 
 test("splash: one attack.launched can produce more than one damage.applied in the same tick, and never damages its own source", async () => {
-  const resolved = await resolveScenario("bench-siegecrawler-windup.map.json")
+  const resolved = await playTestingSave("bench-siegecrawler-windup.save.json")
   const events = resolved.run.events
 
   const shots = events.filter(
@@ -87,7 +87,7 @@ test("splash: one attack.launched can produce more than one damage.applied in th
 })
 
 test("targetPreference: a giant prefers a farther structure over a much closer soldier", async () => {
-  const resolved = await resolveScenario("bench-ram-preference.map.json")
+  const resolved = await playTestingSave("bench-ram-preference.save.json")
   const events = resolved.run.events
   const first = events.find(
     (event) => event.kind === "target.selected" && event.entity.includes(":ram#"),
@@ -109,7 +109,7 @@ test("targetPreference: a giant prefers a farther structure over a much closer s
 })
 
 test("support: a heal clamps at maxHp, raises hp, and reports as heal.applied, never damage.applied", async () => {
-  const resolved = await resolveScenario("bench-medic-support.map.json")
+  const resolved = await playTestingSave("bench-medic-support.save.json")
   const events = resolved.run.events
   const heals = events.filter((event) => event.kind === "heal.applied")
   assert.ok(heals.length > 0, "the medic never healed anyone")
@@ -131,7 +131,7 @@ test("support: a heal clamps at maxHp, raises hp, and reports as heal.applied, n
 })
 
 test("spawn: a structure creates entities mid-Pulse, capped at maxAlive", async () => {
-  const resolved = await resolveScenario("bench-hatchery-spawn.map.json")
+  const resolved = await playTestingSave("bench-hatchery-spawn.save.json")
   const events = resolved.run.events
   const spawnlingBirths = events.filter(
     (event) => event.kind === "entity.spawned" && event.contentId === "unit.bench.spawnling",
@@ -164,7 +164,7 @@ test("spawn: a structure creates entities mid-Pulse, capped at maxAlive", async 
 })
 
 test("splitOnDeath: dying creates entities in the same tick, through the same spawn primitive", async () => {
-  const resolved = await resolveScenario("bench-shardgiant-split.map.json")
+  const resolved = await playTestingSave("bench-shardgiant-split.save.json")
   const events = resolved.run.events
   const death = events.find(
     (event) => event.kind === "entity.died" && event.entity.includes(":shard#"),
@@ -184,7 +184,7 @@ test("splitOnDeath: dying creates entities in the same tick, through the same sp
 })
 
 test("focusRamp: damage against a held target escalates and is capped", async () => {
-  const resolved = await resolveScenario("bench-beamturret-focus.map.json")
+  const resolved = await playTestingSave("bench-beamturret-focus.save.json")
   const events = resolved.run.events
   const shots = events.filter(
     (event) => event.kind === "attack.launched" && event.attacker.includes(":beam#"),
@@ -214,7 +214,7 @@ test("focusRamp: damage against a held target escalates and is capped", async ()
 })
 
 test("a wall segment is armed but never advances, even under fire", async () => {
-  const resolved = await resolveScenario("bench-wallsegment-blockade.map.json")
+  const resolved = await playTestingSave("bench-wallsegment-blockade.save.json")
   const events = resolved.run.events
   const wallMoves = events.filter(
     (event) => event.kind === "entity.moved" && event.entity.includes(":wall#"),
@@ -227,7 +227,7 @@ test("a wall segment is armed but never advances, even under fire", async () => 
 })
 
 test("pure composition: the structure-only rushers needed no capability beyond targetLayers, air, and detonation", async () => {
-  const resolved = await resolveScenario("bench-hog-saboteur-bomber.map.json")
+  const resolved = await playTestingSave("bench-hog-saboteur-bomber.save.json")
   const events = resolved.run.events
 
   for (const short of ["hog", "saboteur", "bomber"]) {
@@ -248,7 +248,7 @@ test("pure composition: the structure-only rushers needed no capability beyond t
 })
 
 test("a push moves a unit that did not walk: it stops where its body would not fit, and walks back by its route", async () => {
-  const resolved = await resolveScenario("bench-bulwark-shove.map.json")
+  const resolved = await playTestingSave("bench-bulwark-shove.save.json")
   const events = resolved.run.events
   const pushes = events.filter((event) => event.kind === "entity.displaced")
   // From the west, two tiles straight away; from above, one, as the rock two rows up stops it.

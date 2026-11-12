@@ -21,16 +21,16 @@ npm run check       # ./scripts/check-repository.sh — the repository validator
 npm run test:all    # typecheck, then both runtimes: what to run before every push
 npm run verify-maps # every checked-in map resolves to the same hashes twenty times (CI runs this)
 
-# grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional, or a map's id.
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish                       # watch (the default)
-./bin/grid.ts scenarios/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
+# grid — the engine, editor and replay tool. <save> is a testing save (skirmish-testing/): its path, suffix optional, or its id.
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish                       # watch (the default)
+./bin/grid.ts skirmish-testing/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
 npm run maps                                                          # every checked-in map
 ./bin/grid.ts engage-gap2-melee-vs-mix --seeds 1-12 --swap --army-a trooper:6,skyraider:6   # a trial: as built vs a variant
-./bin/grid.ts engage-bench                                             # a trial file (scenarios/trials/), with what it expects
+./bin/grid.ts engage-bench                                             # a trial file (skirmish-testing/trials/), with what it expects
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
@@ -124,15 +124,15 @@ catch.
 What the suite proves, by area, is in [`docs/system-design/testing.md`](docs/system-design/testing.md):
 determinism (identical hashes across runs and runtimes, one call equals tick by tick, the kernel
 imports no renderer and calls no clock), the Grid's occupancy and collision masks, every rule with a
-named scenario, structured-cell snapshots across backends, the terminal lifecycle through one
+named testing save, structured-cell snapshots across backends, the terminal lifecycle through one
 disposer, and the browser page held to the terminal's characters, colours and keys.
 
 Things that bite:
 
 - **Bun has a 5000 ms per-test timeout; Node does not.** A test whose cost scales with the fixture
-  count (`for (const name of scenarioFiles())`) creeps up on it silently. Give it an explicit
+  count (`for (const name of testingSaveFiles())`) creeps up on it silently. Give it an explicit
   `{ timeout: 120_000 }` (third-argument form; identical under Node). Run the Bun suite once before
-  adding a scenario file.
+  adding a testing save.
 - **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
   failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
   test to make a busy machine pass.
@@ -236,7 +236,7 @@ use a small, cheap model, play each pairing from both sides, and read the report
 
 **Measuring a change plays the same battles before and after it** (`node bin/measure.ts`,
 [`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill):
-the route scenarios and every map, duels between every Commander, and every mission by fixed plans, written
+the route saves and every map, duels between every Commander, and every mission by fixed plans, written
 down as one JSON file per run and compared in plain words. Play only what the change can move, written down with
 the one question it must answer; after a power-curve change, mark what the new result supersedes rather than
 leaving old numbers to read as current; and check every sentence that tells Mario where to look against the events

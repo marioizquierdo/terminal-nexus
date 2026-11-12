@@ -42,11 +42,11 @@ import { validateMission } from "../src/mission/index.ts"
 import { contextFor, resolvePulse, stepCost, stepTick } from "../src/pulse/index.ts"
 import { fleeTrigger } from "../src/pulse/perception.ts"
 import { visionOf, followsTarget } from "../src/pulse/target.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
-import { loadScenarioFile, scenarioFiles } from "./helpers.ts"
+import { loadTestingSaveFile, testingSaveFiles } from "./helpers.ts"
 
 const ONE: Footprint = [{ x: 0, y: 0 }]
 const ORIGIN: Coord = { x: 10, y: 10 }
@@ -233,7 +233,7 @@ function field(
     if (placed !== undefined) placements[side] = block(placed)
   }
   const rock = (x: number, y: number): boolean => rocks.some((tile) => tile.x === x && tile.y === y)
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "rows-field",
     name: "rows field",
     grid: { width: 50, height: 30 },
@@ -244,7 +244,7 @@ function field(
     placements,
     ...(Object.keys(targets).length === 0 ? {} : { targets }),
   }
-  return loadScenario(scenario, { registry }).state
+  return openBattle(opening, { registry }).state
 }
 
 /** A state resolved tick by tick for at most `ticks`, on `registry`'s content: every state after the first, and every
@@ -507,12 +507,12 @@ test("a state measures the Grid by the one rule and carries no measure: one that
 })
 
 test("every battle on file keeps every unit's credit between none and its dearest step: no step is taken on credit it did not have", async () => {
-  for (const name of scenarioFiles()) {
-    const scenario = await loadScenarioFile(name)
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  for (const name of testingSaveFiles()) {
+    const opening = await loadTestingSaveFile(name)
+    const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     let state: MatchState = loaded.state
-    const context = contextFor(state, loaded.registry, scenario.pulseTicks)
-    while (state.outcome === null && state.tick < scenario.pulseTicks) {
+    const context = contextFor(state, loaded.registry, opening.pulseTicks)
+    while (state.outcome === null && state.tick < opening.pulseTicks) {
       state = stepTick(state, context).state
       for (const entity of state.entities) {
         const rate = loaded.registry.get(entity.contentId).movementRate
@@ -623,10 +623,10 @@ test("the forecast's way ends touching what it goes for, straight above or below
 })
 
 test("the battle with the most rules in it resolves the same way on every run, and on Node and Bun alike", async () => {
-  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
+  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
   const resolve = (): readonly [string, string] => {
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-    const run = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: scenario.pulseTicks, seed: scenario.seed })
+    const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+    const run = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: opening.pulseTicks, seed: opening.seed })
     return [run.stateHash, run.eventsHash]
   }
   const first = resolve()

@@ -10,14 +10,14 @@ import { contextFor, spawnEvents, stepTick } from "../src/pulse/index.ts"
 import { VISION, visionOf } from "../src/pulse/target.ts"
 import { DEFAULT_VISION, moveStateChanges, moveStateEntry, visionReach } from "../src/report/index.ts"
 import type { MoveStateChange } from "../src/report/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import type { MatchState } from "../src/state/types.ts"
-import { loadScenarioFile, resolveScenario } from "./helpers.ts"
+import { loadTestingSaveFile, playTestingSave } from "./helpers.ts"
 
 async function changesOf(name: string): Promise<Readonly<{ changes: MoveStateChange[]; states: MatchState[]; events: DomainEvent[] }>> {
-  const map = await loadScenarioFile(name)
-  const loaded = loadScenario(map, { registry: FIXTURE_REGISTRY, seed: map.seed })
+  const map = await loadTestingSaveFile(name)
+  const loaded = openBattle(map, { registry: FIXTURE_REGISTRY, seed: map.seed })
   const context = contextFor(loaded.state, loaded.registry, map.pulseTicks)
   const states = [loaded.state]
   const events: DomainEvent[] = spawnEvents(loaded.state, loaded.registry)
@@ -40,7 +40,7 @@ test("the vision the record reads by is the kernel's, for every unit in the cont
 })
 
 test("two lines meeting on open ground march, then turn to battle; nobody retreats who has no reason to", async () => {
-  const { changes } = await changesOf("engage-open-melee-vs-mix.map.json")
+  const { changes } = await changesOf("engage-open-melee-vs-mix.save.json")
   assert.ok(changes.length > 0, "no unit changed state")
   assert.ok(changes.some((change) => change.from === "march" && change.to === "battle"), "nobody turned to battle")
   assert.ok(changes.every((change) => change.to !== "retreat" && change.from !== "retreat"), "a soldier retreated")
@@ -54,24 +54,24 @@ test("two lines meeting on open ground march, then turn to battle; nobody retrea
 })
 
 test("a worker running from a threat retreats, on the tick it is said to flee", async () => {
-  const { changes, events } = await changesOf("worker-flight.map.json")
+  const { changes, events } = await changesOf("worker-flight.save.json")
   const retreat = changes.find((change) => change.to === "retreat")
   assert.ok(retreat !== undefined, "the worker never retreated")
   assert.ok(events.some((event) => event.kind === "behavior.flee" && event.tick === retreat.tick && event.ordinal === retreat.ordinal))
 })
 
 test("the record is the same every run, and reading it moves no hash", async () => {
-  const first = await resolveScenario("engage-gap2-melee-vs-mix.map.json")
-  const again = await changesOf("engage-gap2-melee-vs-mix.map.json")
-  const second = await changesOf("engage-gap2-melee-vs-mix.map.json")
+  const first = await playTestingSave("engage-gap2-melee-vs-mix.save.json")
+  const again = await changesOf("engage-gap2-melee-vs-mix.save.json")
+  const second = await changesOf("engage-gap2-melee-vs-mix.save.json")
   assert.deepEqual(again.changes, second.changes)
-  const resolvedAgain = await resolveScenario("engage-gap2-melee-vs-mix.map.json")
+  const resolvedAgain = await playTestingSave("engage-gap2-melee-vs-mix.save.json")
   assert.equal(resolvedAgain.run.stateHash, first.run.stateHash)
   assert.equal(resolvedAgain.run.eventsHash, first.run.eventsHash)
 })
 
 test("each change is a unit.state entry the Movement filter shows, and the Interactions filter does not", async () => {
-  const { changes, states } = await changesOf("engage-open-melee-vs-mix.map.json")
+  const { changes, states } = await changesOf("engage-open-melee-vs-mix.save.json")
   const log = createActivityLog(() => 0)
   const ticksPerSecond = states[0]?.ticksPerSecond ?? 10
   log.log("pulse.start", { round: 2, buildings: 0 })

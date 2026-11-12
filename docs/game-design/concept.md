@@ -85,7 +85,7 @@ The player should be able to:
 
 The first proofs put a few units on a Grid, let them fight without anyone steering them, and ask three questions in this order:
 
-1. **Is it deterministic?** The same scenario, seed, and tick count resolve into the same events and the same final state, every run, with no terminal involved.
+1. **Is it deterministic?** The same opening, seed, and tick count resolve into the same events and the same final state, every run, with no terminal involved.
 2. **Is it legible?** A viewer who did not simulate it can follow who moved, who shot whom, and who died — at 80×24, with colour switched off.
 3. **Is it good?** Anticipation, impact, and debris turn a readable battle into one worth watching again.
 

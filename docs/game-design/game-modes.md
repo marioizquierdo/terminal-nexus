@@ -134,7 +134,7 @@ A Skirmish is saved and loaded at the opening of a Build Phase, from the game me
 agent plays one headless from the same file, round by round, with any slot given to a script
 ([`skirmish-saves.md`](../system-design/skirmish-saves.md) is the format, the command line and how an agent plays). Every
 demo of a rule, a Commander or a starting position is a save a person can play and a duel can measure; the engine's
-rule maps (`scenarios/`) become saves too, the Skirmish milestone's last step.
+rule maps are saves too, the testing saves (`skirmish-testing/`), each opening on a Battle Round written by hand.
 
 ### 3.4 How a Skirmish is tested
 

@@ -38,7 +38,7 @@ import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, wit
 import { readAddress } from "../src/web/address.ts"
 import { checkDemos } from "../src/web/demos.ts"
 import { DEFAULT_LEVEL_ROUTE, formatRoute, parseRoute } from "../src/cli/route.ts"
-import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
+import { RUNTIME_IS_BUN, loadTestingSaveFile } from "./helpers.ts"
 import { sameness } from "./web-helpers.ts"
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..")
@@ -100,15 +100,15 @@ if (RUNTIME_IS_BUN) {
     }
     const { code, files } = await bundleForBrowser("tests/web-helpers.ts", { minify: false })
     assert.ok(files.includes("src/cli/build-phase.ts") || files.includes("src/view/build-session.ts"))
-    const scenario = await loadScenarioFile("grand-battle.map.json")
+    const opening = await loadTestingSaveFile("grand-battle.save.json")
 
     // A browser's globals, and nothing of Node's: no process, Buffer, require or module.
     const sandbox: Record<string, unknown> = { TextEncoder, TextDecoder, console }
     sandbox["globalThis"] = sandbox
     runInNewContext(code, sandbox)
-    const inBrowser = (sandbox["__terminalNexusSameness"] as typeof sameness)(scenario)
+    const inBrowser = (sandbox["__terminalNexusSameness"] as typeof sameness)(opening)
 
-    const inNode = sameness(scenario)
+    const inNode = sameness(opening)
     assert.equal(inBrowser.stateHash, inNode.stateHash)
     assert.equal(inBrowser.eventsHash, inNode.eventsHash)
     // The sandbox's arrays carry its own Array prototype; copied into this realm, they compare element by element

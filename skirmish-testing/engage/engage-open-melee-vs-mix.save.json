@@ -1,0 +1,88 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Engage: open ground, melee against a mixed army",
+  "notes": "On open ground, eighteen troopers against six troopers and six marksmen: the melee army reaches the defenders from every side, every unit strikes within a few seconds, and it wins. The baseline the passes below are read against. Played to a result: a Nexus falling or a side wiped out. Done when: A wins, and nearly every unit of both sides strikes within twenty seconds.",
+  "setup": {
+    "map": {
+      "id": "engage-open-melee-vs-mix",
+      "rows": [
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 900,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":0},
+      "rows": [
+        "",
+        "",
+        "",
+        "",
+        "     aa",
+        "     a",
+        "     aa",
+        "n     a",
+        "",
+        "     aa",
+        "     aa",
+        "     aa",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"},
+        "a": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":45,"y":7,"width":3,"height":2}
+    },
+    "p2": {
+      "at": {"x":40,"y":4},
+      "rows": [
+        "ab",
+        " b",
+        "ab",
+        "a     n",
+        "",
+        "ab",
+        "ab",
+        "ab"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"},
+        "a": {"content":"unit.citizen.trooper"},
+        "b": {"content":"unit.citizen.marksman"}
+      },
+      "target": {"x":0,"y":7,"width":3,"height":2}
+    }
+  }
+}

@@ -5,13 +5,13 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { formationRegistry, formationScenario, SHAPES } from "../src/measure/index.ts"
+import { formationRegistry, formationOpening, SHAPES } from "../src/measure/index.ts"
 import type { Shape } from "../src/measure/index.ts"
-import { measureScenario } from "../src/measure/index.ts"
+import { measureSave } from "../src/measure/index.ts"
 
 /** How tight `shape` stands at first contact against its mirror, on one seed, leaving the roofs by `exit`. */
 function spread(shape: Shape, exit: "route" | "ground"): number {
-  const { battle } = measureScenario(formationScenario(shape, shape), 1, formationRegistry(exit))
+  const { battle } = measureSave(formationOpening(shape, shape), 1, formationRegistry(exit))
   const west = battle.sides.A.spreadAtContact
   assert.ok(west !== null, `${shape} never met the enemy`)
   return west
@@ -30,7 +30,7 @@ test("walking the roofs keeps a block's wave together; stepping down the nearest
 })
 
 test("a formation battle is the same battle every time, and ends with a Nexus falling", () => {
-  const play = () => measureScenario(formationScenario("block", "line"), 1, formationRegistry("route")).battle
+  const play = () => measureSave(formationOpening("block", "line"), 1, formationRegistry("route")).battle
   const once = play()
   assert.deepEqual(play(), once)
   assert.equal(once.reason, "nexus-destroyed")
