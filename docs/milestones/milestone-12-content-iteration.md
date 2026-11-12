@@ -97,3 +97,9 @@ rather than bench fixtures.
 - [ ] The step 12B numbers are in the pull request, with the interpretation kept separate from them.
 - [ ] The Commander Army and game-modes designs are updated with what the pass learned.
 - [ ] `./scripts/check-repository.sh` passes.
+
+## Found while testing the Skirmish milestone (2026-11-12)
+
+- Many testing saves in `skirmish-testing/` field content no army uses (workers, haulers, the colossus, sentinel,
+  corsair, leviathan, bench units). Once this milestone settles the roster, prune the testing saves that only exercise
+  content no Commander fields, keeping the ones that pin a kernel rule.

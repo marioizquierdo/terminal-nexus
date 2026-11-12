@@ -176,6 +176,13 @@ for it because we don't know the gameplay yet." The ideas, from how roguelikes c
 
 Which keys is the open part: Tab is focus, and the left hand's letters are hotkeys.
 
+## Units circling in a lane (found 2026-11-12)
+
+Running the testing saves after they moved to `skirmish-testing/`: `engage/engage-lanes-melee-vs-mix` warns of units
+"circling" between two tiles in a lane, and `movement/route-breach`, `showcase/heavies-clash` and
+`rules/tick-limit-draw` warn of stuck units. The last three look expected for what they test; the lane circling may be a
+routing case worth a testing save of its own before the pathfinding is next touched.
+
 ## Decisions fine to leave open for now
 
 Decisions that **block or shape current work** live in [`open-questions.md`](open-questions.md), with
