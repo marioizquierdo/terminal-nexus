@@ -10,6 +10,11 @@ whether it is to **play**, **watch**, **decide** or **do**, and about how long i
 A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and where each went, are in
 [the history](../history/retired-asks-2026-11-12.md).
 
+- **Play, about ten minutes: the Skirmish session** (the milestone's own test). `./bin/terminal-nexus.ts`, `1`
+  Skirmish, `1` New game: pick a map, a Commander and who plays each side (`Scripted: agro`, `defensive`, `steady`), `s`
+  to start. Play a round or two, then Esc, Esc, `v` to Save game. Quit, start again, `1`, `2` Load game, open your save
+  and carry on; or change p1 to a script (`1` on its row) and watch both scripts play. Press `!` wherever something
+  confuses you: the note saves that very moment. Then ask me to play your save on with scripts on both sides.
 - **Play, about fifteen minutes: the banner, in a Skirmish** (the title menu's Skirmish row, `1`; unlike PERIMETER it
   has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
   `s` for the start panel, `t` to change the target: move the banner with the arrows or the mouse, Enter, then `a`
