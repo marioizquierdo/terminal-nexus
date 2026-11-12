@@ -166,7 +166,7 @@ export function composeMenuFrame(
   if (input.detail !== undefined) {
     wrapWords(input.detail, size.width - 4)
       .slice(0, 2)
-      .forEach((line, index) => text(cells, band, 2, detailRow + index, line, "chrome.muted", { dim: true }))
+      .forEach((line, index) => text(cells, band, 2, detailRow + index, line, "chrome.muted", { dim: true, limit: size.width - 4 }))
   }
   if (input.notice !== null) {
     text(cells, band, 2, input.detail === undefined ? detailRow : size.height - 4, input.notice, "chrome.value", { limit: size.width - 4 })

@@ -67,7 +67,7 @@ export function listSaves(profiles: Profiles, folder: string = savesFolder(), ex
     const near = relative(process.cwd(), path)
     return near.startsWith("..") || isAbsolute(near) ? shownPath(path) : near
   }
-  return [...mine.map(({ path }) => entry(path, shownPath(path))), ...shipped.filter(({ path }) => !mine.some((own) => own.path === path)).map(({ path }) => entry(path, fromHere(path)))]
+  return [...mine.map(({ path }) => entry(path, fromHere(path))), ...shipped.filter(({ path }) => !mine.some((own) => own.path === path)).map(({ path }) => entry(path, fromHere(path)))]
 }
 
 /** A path as a person reads it: the home folder as `~`. */

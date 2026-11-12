@@ -125,9 +125,9 @@ const BACK_TO: Readonly<Record<TitleScreen, TitleScreen>> = {
 
 /** A save file Load game lists: where it is, as a person reads it, and what it holds — or why it cannot be loaded. */
 export type SaveEntry = Readonly<{
-  /** The path opening it reads, and Save game then offers back. */
+  /** The path the file was read from. */
   path: string
-  /** The path as the list shows it: `~/.terminal-nexus/saves/mine.save.json`, `saves/crossing-new.save.json`. */
+  /** The path as the list shows it, and as Save game then offers it back: `~/.terminal-nexus/saves/mine.save.json`, `saves/crossing-new.save.json`. */
   shown: string
   save: SaveFile | null
   /** Why it cannot be loaded, when `save` is `null`: the loader's first problem. */
@@ -508,7 +508,7 @@ export class TitleScreens {
     }
     const { draft, ...rest } = loading.save
     const kept = draft?.p1 !== undefined && controllerKind(loading.setup.slots.p1.controller) === "player" ? { draft: { p1: draft.p1 } } : {}
-    this.open({ ...rest, setup: loading.setup, ...kept }, { file: loading.entry.path })
+    this.open({ ...rest, setup: loading.setup, ...kept }, { file: loading.entry.shown })
   }
 
   // --- The frame ---------------------------------------------------------------------------------------------------
