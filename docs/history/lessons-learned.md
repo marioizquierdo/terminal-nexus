@@ -678,4 +678,23 @@ passed. A third kind of reference survived: a path in backticks (`docs/game-desi
 link checker reads, found only by a fresh audit. After a move, grep the bare file name across docs, code comments and
 skills, and fix every hit, whether or not it is a link.
 
+### An ask list nobody prunes stops being read
+
+By 2026-11-12 the "Waiting on Mario" list held twenty-three asks, some six weeks old, most written for a map that no
+longer tested anything. Agents added an ask with every pull request and none removed one, so his scarce playtime faced
+a list no evening could clear. It is now held to five, each tagged play, watch, decide or do, and the validator counts
+them. When a change makes an ask stale, retire the ask in the same pull request.
+
+### Bun's strict deep-equal refuses arrays from another realm
+
+The browser-bundle test runs the bundled game in a `vm` sandbox and compared its frame lists with Node's by
+`assert.deepEqual`. Under Bun it failed for weeks with "same structure but not reference-equal": every hash matched,
+but the sandbox's arrays carry the sandbox's `Array` prototype. Copy a value out of a sandbox (`[...frames]`) before
+comparing it. Read an assertion's whole message before calling a failure a difference.
+
+### `git checkout <file>` undoes everything uncommitted in it
+
+Undoing a probe edit (a bad line put in to test the validator) with `git checkout` also threw away a whole uncommitted
+rewrite of the same file; a backup taken before the probe saved it. Probe on a copy, or commit first.
+
 - **Separate what a test is about from what it walks through.** A test of a level's layout opened its later rounds by playing every battle with nothing built, so its pass depended on a property of the level's content it did not mean to check. Walk the structure with the battles forced to go on, and check the content property once, by name, with a failure message that gives the margin.

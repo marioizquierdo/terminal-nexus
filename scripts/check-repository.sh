@@ -238,6 +238,18 @@ for measurement in docs/history/measurements/*.json; do
     || fail "$measurement has no row in docs/history/measurements/README.md"
 done
 
+# Mario's time is the scarcest thing the project has (DEVELOPMENT.md, the feedback loop): at most five asks wait on
+# him, and each says what kind it is. The list once grew to twenty-three, most of them for a map that no longer tested
+# anything.
+asks="$(awk '/^## Waiting on Mario/{on=1; next} /^## /{on=0} on && /^- /' docs/milestones/next-steps.md)"
+ask_count="$(printf '%s' "$asks" | grep -c '^- ' || true)"
+(( ask_count <= 5 )) || fail "docs/milestones/next-steps.md has $ask_count asks waiting on Mario; at most 5"
+while IFS= read -r ask; do
+  [[ -z "$ask" ]] && continue
+  [[ "$ask" =~ ^-\ \*\*(Play|Watch|Decide|Do), ]] \
+    || fail "an ask waiting on Mario does not open with Play, Watch, Decide or Do: ${ask:0:60}"
+done <<< "$asks"
+
 while IFS= read -r markdown_file; do
   fence_count="$(grep -c '^```' "$markdown_file" || true)"
   if (( fence_count % 2 != 0 )); then

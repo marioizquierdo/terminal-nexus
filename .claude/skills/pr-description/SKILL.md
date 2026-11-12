@@ -176,6 +176,8 @@ instructions — give it its own short section after **Changes**, **Workflow and
 - [ ] The Demo is the cheapest layer that shows the change, and its steps were run exactly as written.
 - [ ] No section numbers, question ids, feedback item numbers or step numbers above the footer.
 - [ ] Each decision says how to flip it and asks for the export; an Activity Logs ask names its filter.
+- [ ] Every ask was tried by an agent first, says whether it is to play, watch, decide or do and how long it takes,
+      and replaces an ask in `docs/milestones/next-steps.md` rather than growing it past five.
 - [ ] 150-400 words above the footer.
 - [ ] The attribution lines appear exactly once, at the end.
 

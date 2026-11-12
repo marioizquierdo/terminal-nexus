@@ -113,7 +113,7 @@ After playing PERIMETER across three rounds Mario named what the battle screen l
 the right time ([his words](../history/feedback/2026-10-01-multi-pulse.md)). It is interface work, which he
 puts before any level's balance:
 
-- **Look at units during a Battle Round.** "I should be able to hover over units and see their details, same as with
+- **Look at units during a Battle Round** (promoted on 2026-11-12 into the Skirmish milestone's "Reading the opponent"). "I should be able to hover over units and see their details, same as with
   the Explore feature": pointing at a unit while a Battle Round plays (the mouse, or a cursor the keyboard moves)
   shows the card Explore Map shows in the Build Phase. Playback stays read-only.
 - **Fewer numbers.** "The pulse doesn't need to track that many stats": today the panel shows, for each side,
@@ -125,20 +125,11 @@ what each group goes for first (the Commander's second round).
 
 ## Reading the battle, then the enemy's base (Mario, 2026-11-11)
 
-After showing the game to a friend he described the loop he wants once the game has taken shape, and said it is not for
-now ([his words](../history/feedback/2026-11-11-showing-the-game.md)). **Idea, recommended order:** the plans stay hidden
-while both sides build, and reveal when the battle starts, as a duel's already do; then the player watches with the camera
-free, a unit inspectable as it fights, and playback that pauses, rewinds and goes forward; and after it, goes back to the
-enemy's base as it stood to read what was built, before deciding the next round from the credits earned, where the army
-stands and in what formation, the Nexus power against where the banner sends the army, and the Commander's state. Most
-parts are already named elsewhere: hovering a unit during a Battle Round (below), rewind and fast-forward (Q19), the replay
-format and what a player may see (visibility projection, above), the banner (milestone 11). What is new is the order, and
-that the enemy's base is read after the battle and not before it, which a scripted campaign opponent, whose raid the Build
-Phase shows ahead, does not do.
-
-Two small things the demo showed that belong with it: a duel does not carry the battle banner yet, so a Challenge run's
-start panel offers one that changes nothing (milestone 11's banner step lists it); and an army past its supply cap reads
-`units 41/12` with no word that its buildings have stopped training, which looks like a mistake.
+Promoted on 2026-11-12: the reveal, the enemy's base read after the battle, and pointing at a unit while it fights are
+the Skirmish milestone's step "Reading the opponent" ([his words](../history/feedback/2026-11-11-showing-the-game.md)).
+What stays here: pausing, rewinding and going forward through a battle (Q19), and what a player may see of a hidden plan
+(visibility projection, above). The army past its supply cap that reads `units 41/12` with no word that its buildings
+have stopped training still looks like a mistake, and belongs with that step.
 
 ## Intent, the next iteration (Mario, 2026-10-04)
 
@@ -221,12 +212,8 @@ An LLM may later return a constrained legal plan, provide dialogue, answer conte
 
 ### Feedback from players beyond the playtest page
 
-Notes made inside the game (point at something, say why, collect a few), reports routed to a pull
-request, an issue or a file with enough to replay exactly what the player saw, and an agent that sorts
-reports against the design documents. Mario parked it for now: the loop he uses is Experiments, the
-Activity Logs and the claude.ai playtest page, with feedback in words, screenshots and voice the
-ordinary way. What was considered, why it is parked, and what this game already has that would make it
-cheap (exact replays, screens as text, a hit-test, state fingerprints) is in
-[`docs/history/reports/2026-10-01-feedback-pipeline-parked.md`](../history/reports/2026-10-01-feedback-pipeline-parked.md).
-Mario also asked to keep an eye out for a richer playtest tool someone else builds (pause, talk, point,
-replay in slow motion) and to look for easy ways to plug into it.
+Notes made inside the game were parked in October ([why](../history/reports/2026-10-01-feedback-pipeline-parked.md)) and
+brought back on 2026-11-12 as the Skirmish milestone's step "Notes from a playtest": a note key that saves the moment
+with everything needed to replay it. What stays here: routing reports to an issue or a pull request, an agent that sorts
+reports against the design documents, and a richer playtest tool someone else builds (pause, talk, point, replay in
+slow motion) to plug into.

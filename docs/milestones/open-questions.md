@@ -107,6 +107,8 @@ worker. Whether the dragging is visible still wants someone to watch it.
 ### Q19 — Where should a sandbox placement mode, rewind and fast-forward, and a feedback replay engine live?
 
 **Status:** OPEN — parked under the backlog's replay format; the owner asked for it to be kept in mind and registered, explicitly not built now.
+The feedback half moved on 2026-11-12: a playtest note that replays its moment is step 17D of the Skirmish milestone,
+built on a session record rather than the replay format. The sandbox and rewind halves stay parked.
 
 The owner, after playing the Pulse Playground (now `grid`): "I will want to start improving the Pulse
 Playground to have 'sandbox mode' starting with an empty map... have the cursor that can choose units

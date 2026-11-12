@@ -341,6 +341,22 @@ skill; the ideas behind it:
    played. Rewrite the pull request against `main` after every round, then wait; do not start the
    next step.
 
+**His time is the scarcest thing the project has** (2026-11-12, [his words](docs/history/feedback/2026-11-12-the-new-focus.md):
+"human testing is very slow… once I do it, I will find many small details and start correcting which takes a long
+time"). So the loop spends it only on what a person alone can judge — is it fun, is it clear, does he want another:
+
+- **An agent plays it first.** Before anything reaches him, play the flow yourself with the playtest script (and, once
+  the Skirmish milestone builds it, the player's diary): the keys a task takes, what reads badly, what does nothing. A
+  flow an agent could have found broken never reaches him broken.
+- **Every ask says what kind it is**: *play* (needs his hands, the only expensive kind), *watch* (a picture, a GIF or one
+  command, readable on a phone), *decide* (one line, with a recommendation), or *do* (a chore only he can do), and about
+  how long it takes. Batch the *play* asks into one Skirmish session.
+- **At most five asks wait on him** (`docs/milestones/next-steps.md`; the validator counts them). A new one replaces an
+  old one or waits its turn; an ask that no longer matches how the game is tested is retired, not kept.
+- **His notes are the deliverable, not his fixes.** He plays and sends notes, in words, a voice note or, once built,
+  note files that replay their moment; the fixing is a feedback round's agents. Never ask him to verify a detail an
+  agent can verify.
+
 What four rounds taught is in `docs/history/lessons-learned.md`.
 
 ## 7. Changing the design

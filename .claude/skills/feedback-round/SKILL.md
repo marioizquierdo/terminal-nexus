@@ -67,6 +67,8 @@ Apply the agents' proposed text to the design documents (`docs/system-design/` a
 - Move answered questions from `open-questions.md` to `docs/history/answered-questions.md`, and
   register new ones with a recommendation.
 - Tick the step's checkboxes in its milestone file.
+- Rewrite "Waiting on Mario" in `docs/milestones/next-steps.md`: retire the asks this round answered or made
+  stale, and keep it at five or fewer, each opening with Play, Watch, Decide or Do (the validator checks both).
 - Add one line to the timeline in `docs/history/README.md`.
 - Settle each Experiment his export answers (his value becomes the default, its tier becomes *tuned*,
   the Experiment is deleted), as DEVELOPMENT.md section 6 says.

@@ -41,12 +41,21 @@ Story to learn and to live a Commander's story, Versus to play another person.
 show and measure), and the base Versus builds on. Every rule, unit and screen is judged in a Skirmish before it is
 taught in a mission. A Story mission is a Skirmish setup with a script and words around it.
 
+**On equal ground** (the owner, 2026-11-12, [his words](../history/feedback/2026-11-12-the-new-focus.md): "the main idea
+of fighting an enemy on equal ground before we start adding other challenges like scripted missions"). By default both
+sides of a Skirmish play the same rules on the same power curve, with the same credits; the opponent differs only in
+how it plans. A handicap (the opponent's credits) is a setting the player chooses, never a default.
+
 **How the game grows** (the owner, 2026-11-11, [his words](../history/feedback/2026-11-11-game-modes.md)). Through
 Skirmish, not through missions: polish the interface and the gameplay; add units and keep improving how units, formations
 and balance are tested automatically; give each Commander more Nexus powers; make the opponent better, up to Claude
 planning the other side as the player plans theirs. When the gameplay has a good foundation, Skirmish is shown to people
 (the owner's friends first), and their play says what Story should be. **Story is built after that**, one Commander's
 story at a time. PERIMETER is no longer where changes are tested.
+
+**Fun before polish** (the owner, 2026-11-12). Friends play when the owner says the basic game is fun — at the earliest
+when the Skirmish milestone ends: comfortable to play, the banner a real decision, what the enemy did readable, a battle
+that stays open past its second round, and a few ways to set it up. New effects, art and terminology wait behind that.
 
 **A mode is data over one battle** (RULE — `tests/architecture.test.ts`: a mode's code never reaches the view or the shell). A mode chooses battles and what carries between them; nothing below the mode
 — the kernel, the Battle Round, the Build Phase screen, the renderer — knows which mode it is serving.
@@ -60,6 +69,11 @@ battle of up to eight rounds. **A Skirmish battle is a duel** ([`duels.md`](../s
 plans side A on the Build Phase screen, the opponent's script plans side B under the same rules, the two plans are
 revealed together, and the Battle Round plays them. It ends when a Nexus falls, or after the last round on the larger
 share of Nexus health kept.
+
+**Reading the opponent.** The two plans stay hidden while both sides build. As the Battle Round starts, what the enemy did
+that Build Phase (its new buildings and upgrades, its Nexus power, its banner) is marked and said in a line; after the
+battle its base stands as it is, its new things marked, to be read before the next plan (the Skirmish milestone's step
+of that name). Guessing what the enemy chose, and answering it a round later, is the bet each round asks for.
 
 What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two duel maps (the Crossing
 and the Pocket, `src/duel/maps.ts`), and a duel played on the Build Phase screen (today a Challenge battle). What it
@@ -144,7 +158,7 @@ is refused by name, every problem at once, the way a mission is.
 ### 3.4 How a Skirmish is tested
 
 **A Skirmish is deterministic** (RULE for the duel it plays, `tests/duel.test.ts`: "a duel resolves the same every run"):
-the same battle file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes four ways to test one, from cheapest to fullest:
+the same battle file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes five ways to test one, from cheapest to fullest:
 
 1. **Headless, script against script**: the duel commands (`npm run duel -- play`, `bench`), and a battle file given to
    them once it exists. For balance and for a rule's effect over many seeds.
@@ -152,7 +166,12 @@ the same battle file, seed and plans give the same battle, hash for hash, on Nod
    a Challenge battle today. For a flow end to end with no terminal.
 3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs`) opening a Skirmish by its route and a battle
    file, pressing keys and returning every screen. For how it reads.
-4. **By Mario**: `./bin/terminal-nexus.ts`, Skirmish on the title menu, or a battle file on the command line.
+4. **An agent playing it first** (planned): the playtest skill plays a whole Skirmish through the driver and writes a
+   short player's diary — what confused it, how many keys the common tasks took, how long nothing waited to be decided.
+   Every change to the screen passes this before a person is asked.
+5. **By a person**: Mario, then his friends: `./bin/terminal-nexus.ts`, Skirmish on the title menu, a battle file on the
+   command line, or the browser page. A note key (planned) saves the moment with everything needed to replay it, so a
+   note is the moment itself, not a description of how to reach it.
 
 The Skirmish milestone makes a Skirmish the default place to see a change: the playtest skill, the browser page and the
 pictures a pull request shows start from one, where today they start from PERIMETER. PERIMETER is then opened only for
