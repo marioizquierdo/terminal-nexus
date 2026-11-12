@@ -16,8 +16,8 @@ What makes a Skirmish worth showing friends (reading the opponent, a battle that
 is the next milestone, [20](milestone-20-skirmish-worth-showing.md). This one makes every battle something anyone can set
 up, save, load, hand to an agent and replay.
 
-**While 17A waits on Mario's playtest**, the steps that do not depend on his answer about the banner go on: 17D is built,
-17J is next (his word, 2026-11-12), then 17C. The first content pass (units that counter each other, Milestone 12) may run beside this milestone: it needs
+**While 17A waits on Mario's playtest**, the steps that do not depend on his answer about the banner go on (his word,
+2026-11-12: "Keep going until the whole Skirmish design is implemented"). The first content pass (units that counter each other, Milestone 12) may run beside this milestone: it needs
 no playtime.
 
 ## Question
@@ -95,7 +95,6 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
       round 4 of a battle, and a short battle of four rounds on the Pocket. A Commander against another with units
       already in place waits for `start` (17J).
 
-**Next, on the owner's word: 17J**, the testing saves, before 17C.
 
 ### Step 17E — Slots, profiles, the goal and modifiers
 
@@ -181,7 +180,8 @@ for the concept from the files, the documents and the code.
       the browser page's two showcase battles and every test read testing saves; the old loader is the opening a
       testing save starts from (`src/skirmish/opening/`). `skirmish --load <testing save> --battle` plays the same
       Battle Round and prints `grid`'s report.
-- [ ] The duel maps (`src/duel/maps.ts`) as files in `maps/`: still built in by id, as the setup screen will offer them.
+- [x] The duel maps as files in `maps/` (`crossing.map.json`, `pocket.map.json`, the shape a save draws a map in), read by
+      `src/duel/maps.ts` and offered by id.
 
 ### Step 17K — Playing it
 

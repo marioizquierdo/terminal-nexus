@@ -17,10 +17,10 @@
     "duel": "node bin/duel.ts",
     "skirmish": "node bin/skirmish.ts",
     "terminal-nexus": "node bin/terminal-nexus.ts",
-    "maps": "ls skirmish-testing/*/*.save.json",
+    "testing-saves": "ls skirmish-testing/*/*.save.json",
     "trials": "ls skirmish-testing/trials/*.trial.json",
     "test:all": "npm run typecheck && npm test && npm run test:bun",
-    "verify-maps": "for save in skirmish-testing/*/*.save.json; do ./bin/grid.ts \"$save\" --verify --runs 20 || exit 1; done"
+    "verify-testing-saves": "for save in skirmish-testing/*/*.save.json; do ./bin/grid.ts \"$save\" --verify --runs 20 || exit 1; done"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

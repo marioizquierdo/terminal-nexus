@@ -26,7 +26,7 @@ format any player can use, and a command (`bin/duel.ts`). Armies are written by 
 health wins; on an even share, the side that dealt more damage over the duel; on that too, a draw.
 
 **What a side starts with**: its faction's Grid Nexus on its end of the map, its Commander and her starting package
-(`start` in her army), and round 1's credits. Maps are `src/duel/maps.ts`: the Crossing (72 by 28, a ridge with one
+(`start` in her army), and round 1's credits. Maps are files in `maps/`, read by `src/duel/maps.ts`: the Crossing (72 by 28, a ridge with one
 gap) and the Pocket (22 by 12, the bases close enough that their build ranges meet).
 
 **A side that is not its Commander's whole army** has a **roster** (RULE — `Roster`, `src/duel/types.ts`; `restrictedTo`, `src/duel/sides.ts`; `tests/duel.test.ts`): the building cards on its build menu and the Nexus powers in the pool its Pulse deals from, by id, and the Doctrines it keeps from the first round. Everything else its army could field is left out as if the army never had it; a building a listed power adds still joins the menu when the power is kept. The retired Challenge run played its player on one ([the retired design](../history/challenge-runs-design.md)), and a Skirmish's battle file may name one ([`game-modes.md`](../game-design/game-modes.md)); the opponent, and every duel the measurement commands play, has none and fields the whole army.

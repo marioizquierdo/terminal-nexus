@@ -19,7 +19,7 @@ npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
 npm run check       # ./scripts/check-repository.sh — the repository validator
 npm run test:all    # typecheck, then both runtimes: what to run before every push
-npm run verify-maps # every checked-in map resolves to the same hashes twenty times (CI runs this)
+npm run verify-testing-saves # every testing save resolves to the same hashes twenty times (CI runs this)
 
 # grid — the engine, editor and replay tool. <save> is a testing save (skirmish-testing/): its path, suffix optional, or its id.
 ./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish                       # watch (the default)
@@ -28,7 +28,7 @@ npm run verify-maps # every checked-in map resolves to the same hashes twenty ti
 ./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
 ./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
 ./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
-npm run maps                                                          # every checked-in map
+npm run testing-saves                                                 # every testing save
 ./bin/grid.ts engage-gap2-melee-vs-mix --seeds 1-12 --swap --army-a trooper:6,skyraider:6   # a trial: as built vs a variant
 ./bin/grid.ts engage-bench                                             # a trial file (skirmish-testing/trials/), with what it expects
 

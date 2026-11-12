@@ -16,7 +16,7 @@ The testing save is the first argument, by path or id; the suffix is optional. T
 watch, `--headless` resolves without a terminal and prints the levelled log, `--verify` re-resolves
 (10 runs by default, `--runs N`) and fails if any run's hashes disagree. The full command line and
 the options both programs share are in [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 1.
-`./bin/grid.ts <save> ...` and `npm run grid -- <save> ...` are the same. `npm run maps` runs every
+`./bin/grid.ts <save> ...` and `npm run grid -- <save> ...` are the same. `npm run testing-saves` lists every
 testing save (`ls skirmish-testing/*/*.save.json | wc -l` counts them). A bare `grid` with no map is
 reserved for the map editor and is a usage error today.
 

@@ -111,7 +111,7 @@ npm run grid -- citizens-versus-ravels --colors monochrome   # can you still fol
 npm run grid -- citizen-mirror-skirmish                          # the baseline mirror match
 ```
 
-`npm run maps` lists every checked-in map. `watch` takes the same options on any of them:
+`npm run testing-saves` lists every testing save. `watch` takes the same options on any of them:
 
 ```bash
 npm run grid -- <save> \

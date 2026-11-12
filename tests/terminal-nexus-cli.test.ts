@@ -156,7 +156,7 @@ test("--load opens a save at its Build Phase, with --p1 and --p2 as the skirmish
   assert.match(versus.stderr, /both slots are players: two players at one screen wait for Versus/u)
   const unknown = runTerminalNexus(["--at", "skirmish", "--p2", "script:aggro"])
   assert.equal(unknown.status, 2)
-  assert.match(unknown.stderr, /--p2 script:aggro: no script "aggro"/u)
+  assert.match(unknown.stderr, /--p2 script:aggro: no script or profile "aggro"/u)
   // --p1 and --p2 are a Skirmish's; --load and --at are two ways to say where.
   const story = runTerminalNexus(["--at", "story?mission=vasse-test-1", "--p2", "script:rush"])
   assert.equal(story.status, 2)
