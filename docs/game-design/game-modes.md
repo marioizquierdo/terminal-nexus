@@ -81,8 +81,9 @@ battle its base stands as it is, its new things marked, to be read before the ne
 that name). Guessing what the enemy chose, and answering it a round later, is the bet each round asks for.
 
 What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two duel maps (the Crossing
-and the Pocket, `src/duel/maps.ts`), a Skirmish played on the Build Phase screen from a save (Skirmish on the title menu, `--load`), Save game, and the
-`skirmish` command. What it lacks is a setup screen, and an opponent good enough to play.
+and the Pocket, `src/duel/maps.ts`), the setup screen (Skirmish on the title menu: New game, Load game), a Skirmish played
+on the Build Phase screen from a save (`--load`), spectating two scripts, Save game, playtest notes, and the `skirmish`
+command. What it lacks is an opponent good enough to play.
 
 ### 3.2 What a Skirmish is set up with
 
@@ -97,7 +98,7 @@ the setup screen asks them in this order.
 | --- | --- | --- | --- |
 | The map (it fixes the slots) | yes | yes, by name | the Crossing |
 | Each slot's Commander | yes | yes | Vasse (A), Dob Hunter (B) |
-| Each slot's controller: `Player`, `Scripted` with a profile, later `Agent` | yes | yes | Player (A), `Scripted: balanced` (B) |
+| Each slot's controller: `Player`, `Scripted` with a profile, later `Agent` | yes | yes | Player (A), `Scripted: steady` (B; the `balanced` script) |
 | A script profile's options, among them its credits as a share of the curve's | yes | yes | 100% |
 | The goal | yes | yes | Elimination |
 | Modifiers | yes | yes | none |
@@ -147,22 +148,23 @@ the same save file, seed and plans give the same battle, hash for hash, on Node 
 2. **Headless, round by round**: `skirmish` with a save prints the brief of the slot a player plans, checks a plan given
    at that slot (`--p1 build:plan.json`), and with `--battle` plays the round against the other slot's script and saves
    the next Build Phase. How an agent plays a Skirmish to test it, and how it turns a person's save into variations.
-3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs --load <save>`) presses keys and returns every
-   screen. For how it reads.
+3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs --load <save>`; told nowhere, the save of a
+   new battle on the Crossing) presses keys and returns every screen, the title menu and the setup screen included. For
+   how it reads.
 4. **An agent playing it first** (planned, Milestone 20): the playtest skill plays a whole Skirmish through the driver and
    writes a short player's diary — what confused it, how many keys the common tasks took, how long nothing waited to be
    decided. Every change to the screen passes this before a person is asked.
 5. **By a person**: Mario, then his friends: `./bin/terminal-nexus.ts`, Skirmish on the title menu (New game or Load
-   game), `--load <save>`, or the browser page. A note key (planned) saves the moment with everything needed to replay
-   it, so a note is the moment itself, not a description of how to reach it.
+   game), `--load <save>`, or the browser page. The note key, `!`, saves the moment with everything needed to replay it
+   (`--note <file>`), so a note is the moment itself, not a description of how to reach it.
 
-The `skirmish` command, save files, Save game (Esc, then `[v]`) and the game opening a save (`--load <file>`, the route
-`skirmish?load=<file>`) are built ([`skirmish-saves.md`](../system-design/skirmish-saves.md)); `--at 'skirmish?seed=<n>'`
-opens a new battle on the defaults and that seed.
+The `skirmish` command, save files, the setup screen (`skirmish?setup=new`, `skirmish?setup=load`), Save game (Esc,
+then `[v]`), the game opening a save (`--load <file>`, the route `skirmish?load=<file>`), spectating and notes are built
+([`skirmish-saves.md`](../system-design/skirmish-saves.md)); `--at 'skirmish?seed=<n>'` opens a new battle on the
+defaults and that seed.
 
-The Skirmish milestone makes a Skirmish the default place to see a change: the browser page opens on one already; the
-playtest skill and the pictures a pull request shows start from one next, where today they start from PERIMETER. PERIMETER is then opened only for
-a change about missions.
+A Skirmish is the default place to see a change: the browser page and the playtest script open on a save, and the
+Build Phase pictures of a battle start from one. PERIMETER is opened only for a change about missions.
 
 ## 4. Story
 

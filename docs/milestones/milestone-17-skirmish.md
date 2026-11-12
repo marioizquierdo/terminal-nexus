@@ -1,7 +1,7 @@
 # Milestone 17 — Skirmish: setup and save files
 
 **Status:** CURRENT
-**Current step:** 17F — the setup screen and spectating (17C, 17D, 17E, 17G and 17J are built; 17A, the banner, waits on the owner's playtest).
+**Current step:** 17K — the owner plays the session this milestone is for (17C to 17J are built, but for the duel maps as files and the `duel` skill's new name; 17A, the banner, waits on his playtest).
 **Depends on:** [the runs milestone](../history/milestones/milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
 banner prototype), Milestone 14 (three Commander Armies and the duel scripts)
 
@@ -113,17 +113,21 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
 
 ### Step 17F — The setup screen, and spectating
 
-- [ ] Skirmish on the title menu opens **New game** and **Load game**. New game: the map, then each slot's Commander and
-      controller (`Player: <name>`, `Scripted: <profile>` with its options), the goal, the modifiers, the seed. Every row has
-      a default, so Enter starts at once.
-- [ ] Load game lists the save files; for the one chosen, the controllers, their options, the modifiers and the settings
-      may be changed before it opens, not the map or the Commanders.
-- [ ] **Spectating**: with no `Player:` slot, the Build Phase offers only Explore Map and Start next round, and plays the
-      scripts' plans.
-- [ ] Keys, mouse and driver, its hotkeys shown, adapting across the viewport range like every other screen
-      ([`ui-patterns.md`](../system-design/ui-patterns.md), the checklist for a new screen). Two `Player:` slots are
-      refused until Versus.
-- [ ] The result dialog offers the same battle again, a new seed, or the setup screen.
+- [x] Skirmish on the title menu opens **New game** and **Load game** (`skirmish?setup`). New game: the map, then each
+      slot's Commander and controller (`Player: <name>`, `Scripted: <profile>` with its credits share, `Agent: curious`
+      dimmed), the goal, the modifiers, the seed (typed). Every row has a default and the screen opens on Start, so Enter
+      starts at once (`src/cli/title-screens.ts`, `src/skirmish/setup.ts`).
+- [x] Load game lists the save files (the saves folder, then `saves/`); for the one chosen, the controllers, their credits
+      shares and the modifiers may be changed before it opens, not the map or the Commanders. The settings are the
+      Settings screen's.
+- [x] **Spectating**: with no `Player:` slot, the Build Phase offers only Explore Map and Start next round, and plays the
+      scripts' plans. Every round on screen is played by `playNext` with the profiles, as headless (a test holds them
+      equal); the browser page carries the profiles and example saves as JSON imports.
+- [x] Keys, mouse and driver, its hotkeys shown, on the title menu's 80 × 24 frame
+      ([`ui-patterns.md`](../system-design/ui-patterns.md), the setup screen). Two `Player:` slots, an agent and p2 as the
+      only player are refused, the reason said. The scripted playtest drives the title menu too (`src/playtest/game.ts`).
+- [x] The result dialog offers the same battle again, a new seed, or the setup screen (`[m]`, New game on that battle's
+      setup).
 
 ### Step 17G — Save game
 
@@ -141,12 +145,13 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
 The parked idea of notes made inside the game ([why it was parked](../history/reports/2026-10-01-feedback-pipeline-parked.md)),
 brought back on 2026-11-12, built on save files: a note is the moment itself, not a paragraph describing how to reach it.
 
-- [ ] **A note key**, on every screen: one line to type (Enter alone is fine), and it saves a note file: the save as the
+- [x] **A note key**, `!`, on every screen: one line to type (Enter alone is fine), and it saves a note file: the save as the
       round's Build Phase opened, the named commands pressed since, with their times, the screen as text, the line, and the
-      last Activity Logs events. The browser page copies the same note as text to paste.
-- [ ] **A note replays**: the game, the playtest script and the browser page open a note at its moment (`--note <file>`),
-      so an agent sees exactly what the player saw.
-- [ ] The feedback round skill reads note files the way it reads a settings export.
+      last Activity Logs events, into `~/.terminal-nexus/notes/` (`src/cli/notes.ts`). The browser page copies the same
+      note as text to paste.
+- [x] **A note replays**: the game and the playtest script open a note at its moment (`--note <file>`), so an agent sees
+      exactly what the player saw. The browser page opening one is not built: a note is too long for its address.
+- [x] The feedback round skill reads note files the way it reads a settings export.
 - [ ] Optional, behind an Experiment: one keypress at the end of a round to rate it, 1 to 5, kept in the note.
 
 A note is not the replay format (still in the backlog): no content locks, no version checks; only the game that wrote it
@@ -154,11 +159,13 @@ promises to replay it.
 
 ### Step 17I — Skirmish, the place to test
 
-- [ ] The playtest script, its skill, the browser page and the screenshot capture start from a save file instead of
-      PERIMETER; a mission is still opened by its route when a change is about a mission.
+- [x] The playtest script, its skill, the browser page and the screenshot capture start from a save file instead of
+      PERIMETER (`saves/crossing-new.save.json` when told nowhere; the capture's battle shots from saves); a mission is
+      still opened by its route when a change is about a mission.
 - [ ] The testing pages, the `duel` skill (renamed `skirmish`) and the playtest skill say which save shows which rule,
       and how an agent plays round by round ([`skirmish-saves.md`](../system-design/skirmish-saves.md), how an agent
-      plays a Skirmish).
+      plays a Skirmish). Said (DEVELOPMENT.md's table of saves, the testing ground, the playtest and `duel` skills); the
+      rename waits, since the project's instructions name the skill.
 
 ### Step 17J — The testing saves
 

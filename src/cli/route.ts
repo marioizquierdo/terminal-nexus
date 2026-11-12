@@ -166,7 +166,7 @@ const RENAMED: Readonly<Record<string, string>> = {
 export const PLACES: Readonly<Record<string, Place>> = {
   menu: titlePlace("menu", "the title menu: Skirmish, Story, Settings, About, Exit"),
   skirmish: {
-    opens: "a Skirmish: one battle on the defaults, on a seed the game chooses or the seed given; or a save file",
+    opens: "a Skirmish on the defaults (a seed chosen or given), a save file, or with setup its setup screen",
     query: {
       seed: `a new battle's seed, a whole number from 0 to ${SKIRMISH_SEED_LIMIT - 1}; one the game chooses unless given`,
       load: "a save file to open at its Build Phase, as the game's --load takes it",

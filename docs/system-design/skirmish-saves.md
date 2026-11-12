@@ -4,10 +4,10 @@ _How a Skirmish is set up, saved, loaded and played without a screen: one vocabu
 file, the command line and the routes. The game design of Skirmish (why it is the centre, what it is for) is
 [`game-modes.md`](../game-design/game-modes.md); the duel it plays is [`duels.md`](duels.md). Built so far: the save
 file, the `skirmish` command and the testing saves (`src/skirmish/`, `src/cli/skirmish.ts`, `skirmish-testing/`), script
-profiles and modifiers, the game playing a save on its screen (`src/cli/skirmish-play.ts`), Save game and `--load`
-(`src/cli/skirmish-open.ts`, `src/cli/skirmish-files.ts`); the setup screen, spectating and playtest notes are the rest
-of the Skirmish milestone
-([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md))._
+profiles and modifiers, the game playing a save on its screen through `playNext` (`src/cli/skirmish-play.ts`), Save
+game and `--load` (`src/cli/skirmish-open.ts`, `src/cli/skirmish-files.ts`), the setup screen with New game and Load
+game (`src/cli/title-screens.ts`, `src/skirmish/setup.ts`), spectating, and playtest notes (`src/cli/notes.ts`); what
+is left is in the Skirmish milestone ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md))._
 
 _Licence: Apache-2.0._
 
@@ -38,7 +38,8 @@ The code's word for the two-sided battle stays *duel* (as the engine's word for 
 
 ## 2. Setting up a Skirmish
 
-**The setup screen asks, in order** (GUIDANCE — the order follows what each choice depends on):
+**The setup screen asks, in order** (RULE for what is built — `tests/setup-screen.test.ts`; the order follows what each
+choice depends on; how it looks and which keys it takes are [`ui-patterns.md`](ui-patterns.md), the setup screen):
 
 1. **The map.** It fixes the slots: the Crossing and the Pocket have two.
 2. **Each slot**: its Commander (Vasse, Averno, Dob Hunter) and its controller: `Player: marioiz` (the name from the
@@ -48,10 +49,19 @@ The code's word for the two-sided battle stays *duel* (as the engine's word for 
 4. **Modifiers**, each on or off.
 5. **The seed**: shown, editable.
 
-Every row has a default (Vasse as the player against Dob Hunter's `balanced` script on the Crossing, Elimination, no
-modifiers, a seed from the clock), so Enter starts at once. **Load game** sits beside **New game**: it lists the save
-files and, for the one chosen, lets the slots' controllers, their options, the modifiers and the settings be changed
-before it opens (not the map or the Commanders: the battle so far depends on them).
+Every row has a default (Vasse as `Player: <name>` against Dob Hunter's `steady` profile — the `balanced` script — on
+the Crossing, Elimination, no modifiers, a seed from the clock), so Enter starts at once. The setup it starts is a
+save's `setup`, under the same names: Start opens `{ format, setup }`, nothing translated. A `Player` slot saves as
+`player:<name>`, the name the account's in a terminal (`player` on the browser page). **Load game** sits beside **New
+game**: it lists the saves folder, newest first, then the examples in `saves/`, and, for the one chosen, lets the
+slots' controllers, their credits shares and the modifiers be changed before it opens (not the map or the Commanders:
+the battle so far depends on them); a draft is laid on the Build Phase only while p1 is still the player. The
+settings are the Settings screen's, on the title menu or in the game menu. Not built: a profile's options beyond its
+credits share (its formation, when it attacks) — none of the scripts has one yet.
+
+**The profiles on the browser page** are the same files, imported with the code as JSON
+(`src/skirmish/shipped-players.ts`, held to `players/scripts/` by a test), and so are the example saves Load game lists
+there: the page has no files to read. A terminal reads `players/scripts/` from disk, so a profile a person adds shows.
 
 **The same screen later serves Versus**: a second `player` slot.
 
@@ -113,10 +123,13 @@ setup (`vasse-dob-1234-round-3`). A name alone goes into `~/.terminal-nexus/save
 exactly that Build Phase: the round, its hand and credits, the power picked, every building placed, held and fitted; and
 the round then plays as the uninterrupted one. It is dimmed on a story mission and refused once the plan is locked in.
 
-**The screen is a save played on** (RULE — `src/cli/skirmish-play.ts`): a Skirmish's round carries its setup and the
-duel as the Build Phase opened (`saveOf` and `duelOf` turn either into the other), so there is no screen state a save
-could miss. The screen plays slot p1 as its player and p2 by its script; spectating and p2 as the player wait for the
-setup screen's step, two players for Versus, and each is refused saying so.
+**The screen is a save played on** (RULE — `src/cli/skirmish-play.ts`, `tests/setup-screen.test.ts`): a Skirmish's
+round carries its setup and the duel as the Build Phase opened (`saveOf` and `duelOf` turn either into the other), so
+there is no screen state a save could miss, and **every round is played by `playNext`** (`src/skirmish/play.ts`), the
+same function the `skirmish` command plays, with the script profiles: the same setup and plans give the same duel on
+screen as headless, profiles, credits shares and modifiers included. The screen plays slot p1 as its player against
+p2's script, or watches two scripts (spectating, section 7); p2 as the only player is not built, two players wait for
+Versus, and an agent for its milestone, each refused saying so.
 
 **The units in a save stand where the regroup leaves them** (RULE — the owner, 2026-11-12): the state a save keeps is the
 one after the regroup's walk, every survivor at the end of it, computed by the rules, not by the screen. Anything the
@@ -231,8 +244,9 @@ players in two sessions (`duel new`, `wait`, `submit`). They fold into `skirmish
 
 **The game's own flags** take the same names: `terminal-nexus --load <file> [--p1 build:plan.json] [--p2 script:turtle]`
 (a plan file for p1 is laid on the first Build Phase, as a draft is), the route `skirmish?load=<file>`, and
-`skirmish?seed=7` for a new battle on the defaults (a map and Commanders in the route wait for the setup screen). The
-scripted playtest takes the same `--load`, `--p1` and `--p2`.
+`skirmish?seed=7` for a new battle on the defaults; any other setup is chosen on the setup screen
+(`skirmish?setup=new`). The scripted playtest takes the same `--load`, `--p1` and `--p2`, and starts from
+`saves/crossing-new.save.json` when told nowhere.
 
 ## 6. How an agent plays a Skirmish
 
@@ -249,11 +263,29 @@ Three ways, from cheapest to fullest:
 
 ## 7. Spectating
 
-With no `player` slot the Build Phase has nothing to build: its menu is Explore Map and Start next round, the enemy's
-and the other script's plans revealed as each round starts (Milestone 20's "reading the opponent"). It is how
-a person watches two scripts, or an agent, play; Load game with both slots set to scripts opens it.
+With no `player` slot the Build Phase has nothing to build (RULE — `tests/setup-screen.test.ts`): its menu is Explore
+Map and Start next round, which begins the round at once, both scripts' plans revealed as it starts and played by
+`playNext` as the command line plays them; the opening lines say how each side plays, and the result names the winner
+(`DOB HUNTER WINS`). It is how a person watches two scripts, or an agent, play: New game or Load game with both slots
+set to scripts opens it, and so does `--load <save> --p1 script:<profile>`. What each side planned, read before the
+round, is Milestone 20's "reading the opponent".
 
-## 8. What is not decided
+## 8. Notes from a playtest
+
+**A note is the moment itself** (RULE — `src/cli/notes.ts`, `tests/notes.test.ts`; the owner, 2026-11-12, notes built
+on save files): `!`, on any screen, takes one typed line, and the note file it saves (`terminal-nexus.note/1`) holds
+`line`, `at` (the route: a Skirmish's, a mission's at its round, a title menu screen's), `save` (a Skirmish's round as
+its Build Phase opened, the plan laid then included), `settings` (the export text), `pressed` (every named command
+since the round opened, `{ at, command }`, milliseconds after), `noteAt` (when `!` was pressed), `screen` (the screen
+then, as text, a line a row) and `activity` (the last Activity Logs events, oldest first), with the build and the
+time. A terminal writes it into `~/.terminal-nexus/notes/note-<date>-<time>.note.json`; the browser page copies its
+text. `terminal-nexus --note <file>` and `node scripts/playtest.mjs --note <file>` open it at its moment: the round
+opened from `save` (or `at`), the commands dispatched again at their times (`BuildSession.replay`), the clock moved on
+to `noteAt`, so the screen is the one the note shows. A title menu note opens on its screen. The `feedback-round`
+skill reads note files. A note is not the replay format: no content locks and no version checks; only the build that
+wrote it promises to replay it. Not built: the browser page opening a note, and the optional rating of a round.
+
+## 9. What is not decided
 
 - Goals beyond Elimination (the owner named Economy and Creative) and which modifiers come first: IDEAs, each built
   when a Skirmish is fun without it.

@@ -163,14 +163,34 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu
   has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
   (RULE — `tests/title-menu-about-screen.test.ts`, `tests/title-menu-story-screen.test.ts`)
-- **Skirmish** (`[1]`, the first row: the owner, 2026-11-11, "the center stone for game design and testing") starts
-  one battle on the defaults, Vasse as the player against Dob Hunter's `balanced` script on the Crossing, on a seed from
-  the clock, and hands the terminal to its Build Phase; the setup screen takes its place when it lands. The round opens
-  on a dialog in the game's own voice: the map, the seed, who against whom and how the other side plays; a loaded save
-  opens on one line saying what was loaded. The Battle Round calls the other side ENEMY; a battle's result reads BATTLE
-  WON, BATTLE LOST or BATTLE DRAWN, with `[enter] Same battle again` (the same seed, from round 1) and, on the row above,
-  `[n] New seed`; a click on either row is its key. (RULE — `tests/skirmish-play.test.ts`,
+- **Skirmish** (`[1]`, the first row: the owner, 2026-11-11, "the center stone for game design and testing") opens
+  ***the Skirmish screen***: `[1] New game`, `[2] Load game`, `[3] Back` (the route `skirmish?setup`). The round a battle
+  opens on starts with a dialog in the game's own voice: the map, the seed, who against whom and how the other side
+  plays (both sides, when both are scripts); a loaded save opens on one line saying what was loaded. The Battle Round
+  calls the other side ENEMY; a battle's result reads BATTLE WON, BATTLE LOST or BATTLE DRAWN (watching two scripts,
+  `<COMMANDER> WINS`), with `[enter] Same battle again` (the same seed, from round 1), on the row above `[n] New seed`,
+  and above that `[m] Setup screen`, which goes back to New game on that battle's setup; a click on any of the three
+  rows is its key. (RULE — `tests/skirmish-play.test.ts`, `tests/setup-screen.test.ts`,
   `tests/lifecycle-title-menu.test.ts`)
+- ***The setup screen*** (a named pattern; the owner, 2026-11-12: "Select a map, which fixes the Nexus slots. Each slot
+  gets a Commander and a controller"). **New game** (`skirmish?setup=new`) is one row a line, in the order the setup
+  depends on: `[1] Map`, then each slot's Commander, who plays it and its credits share (`[2]`-`[7]`, p1 west then p2
+  east), `[8] Goal` (Elimination, the only one built, shown), `[9]` and `[0]` the two modifiers on or off, `[e] Seed`,
+  `[s] Start`, `[b] Back`. Each row shows its name and its value in one column; **choosing a row brings its value round**
+  (its key, Enter on it or a click), as a Settings row does: the next map, Commander, controller (`Player: <name>`, the
+  account's name in a terminal; `Scripted: <profile>` for each profile in `players/scripts/`; `Agent: curious`, dimmed,
+  "not built yet"), credits share (50% to 200%; a profile's own share shown as `125% (agro-rich's)`). The seed is the
+  one row typed into: chosen, its digits type, Backspace takes one off, Enter keeps it and Esc keeps the old one.
+  **Every row has a default and the screen opens on Start** — Vasse as the player against Dob Hunter's `steady` profile
+  on the Crossing, Elimination, no modifiers, a seed from the clock — so Enter starts at once. Two lines under the rows,
+  dimmed, explain the highlighted one (a profile's own line, what a modifier does; on Start, who against whom). Start
+  is dimmed and refused, the reason on the line under the rows, for an agent in a slot, two players ("Two players at one
+  screen wait for Versus") or p2 as the only player. **Load game** (`skirmish?setup=load`) lists the saves folder,
+  newest first, then the examples in `saves/`, a row each with its name, its round and its Commanders, under a digit or
+  a letter (a save that cannot be loaded is listed dimmed, saying why); choosing one opens its own rows: who plays each
+  slot, its credits, the modifiers, then `[s] Open` (where it opens) and `[b] Back`, the save's round, map and
+  Commanders said above them (those stay: the battle so far depends on them). The title menu's frame is 80 × 24 at
+  every size, so the setup screen is too. (RULE — `tests/setup-screen.test.ts`)
 - **A title menu row that opens a place names its route** ([`routing.md`](routing.md)), and choosing it
   follows that route: `--at settings` and pressing Settings open the same frame, and opening at a place
   leaves its row highlighted for Esc to come back to. (RULE — `tests/route-open.test.ts`)
@@ -262,6 +282,12 @@ title screen's menu.
   ground only, under the raid's trail. Never at the cost of a whole raid group: short of room the raid's
   groups drop their kinds first, then the troops' lines go. Not during a battle, not on a committed plan.
   (RULE — `tests/raid-view.test.ts`, `tests/intent.test.ts`)
+- ***Spectating*** (a named pattern; the owner, 2026-11-12: "Both sides computer-controlled gives a special spectator
+  UI: only explore the map and start the next round"): with no player at the screen (`BuildContext.spectating`), the
+  menu is only `[e] Explore Map` and `[s] Start next round` — no Nexus Pulse row, no credits line, no buildings — and
+  Up and Down step over the missing rows. `n` says the scripts pick their own powers. Start begins the round at once,
+  with no Battle Round screen to confirm: both scripts' plans are revealed and it plays. (RULE —
+  `tests/setup-screen.test.ts`)
 - **The action that ends the phase is the last row** (`startRow`); it opens the Battle Round screen. A Nexus
   power still waiting holds nothing back — for now the pick is optional (the owner: "it's easier for testing
   if I can just start a round") — so the row is never dim; its hint asks whether to start without one, and the
@@ -817,6 +843,17 @@ The determinism underneath — a seeded kernel, a Build Phase with no clock, eve
 the build stamped on every export — is what makes a pasted export reproducible with `--settings` and
 `--keys`. Keep it that way.
 
+### 15.0 The note key
+
+- **`!` on every screen** — the Build Phase (over any popup, the Battle Round included) and every title menu screen —
+  opens one line to type: what the player noticed (Enter alone is fine). Every character types into it, Backspace takes
+  one off, Enter saves and Esc goes back. Saved, it is a **note file**: the moment itself (the round as its Build Phase
+  opened, every named command pressed since with its time, the settings, the screen as text when `!` was pressed, the
+  line, the last Activity Logs events), written into the notes folder beside the settings in a terminal and copied to
+  the clipboard and the text box under the screen on the browser page. `--note <file>` opens it at that moment, on the
+  game and the playtest script ([`skirmish-saves.md`](skirmish-saves.md), notes). The Controls page names it under
+  ANYWHERE and the title menu's controls line as `! note`. (RULE — `tests/notes.test.ts`)
+
 ### 15.1 Experiments and tuned values
 
 
@@ -868,7 +905,7 @@ the build stamped on every export — is what makes a pasted export reproducible
   screen loops as the terminal. Tools *around* the screen are fair game there; the game's own screen
   never changes for it.
 - **Exports land beside the screen**: the settings and the activity logs each fill a text box with a Copy
-  button, so a phone can paste them. (RULE — `tests/build-activity.test.ts`, `tests/web.test.ts`)
+  button, so a phone can paste them; a note (`!`) is copied into the settings box. (RULE — `tests/build-activity.test.ts`, `tests/web.test.ts`)
 - **Demo buttons open the game where the question is**: `#at=`, `#keys=` and `#settings=` in the address
   of a local copy, and buttons for the pull request's demos (`bun scripts/build-web.mjs --demos <file>`),
   each of which may name a route to open at, so a demo reaches a later round without a key script; a bad

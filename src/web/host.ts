@@ -311,8 +311,8 @@ async function startPulse(pulse: PulseName): Promise<void> {
   )
 }
 
-/** Where the page opens when nothing names a place: a Skirmish on the defaults, on a seed from the clock (the owner,
- *  2026-11-11: Skirmish is "the center stone for game design and testing"). */
+/** Where the page opens when nothing names a place: a Skirmish from the example save of a new battle (the owner,
+ *  2026-11-11: Skirmish is "the center stone for game design and testing"; the Skirmish milestone: tested from a save). */
 const PAGE_START = "skirmish?load=saves/crossing-new.save.json"
 
 /** A save the page carries, by its path (`saves/crossing-round-4.save.json`): the page has no other files. */

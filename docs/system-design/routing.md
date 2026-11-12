@@ -16,8 +16,12 @@ story?mission=vasse-test-1&round=3
 **One grammar for every way of going somewhere** (RULE — `tests/route.test.ts`, `tests/route-open.test.ts`):
 
 - `terminal-nexus --at <route>` opens the game there;
-- `node scripts/playtest.mjs --at <route>` opens a scripted playtest there (a mission or a Skirmish);
+- `node scripts/playtest.mjs --at <route>` opens a scripted playtest there (a title menu screen, a mission or a
+  Skirmish);
 - `--load <file>`, on the game and on the scripted playtest, is the route `skirmish?load=<file>`;
+- `--note <file>`, on the game and on the scripted playtest, opens a playtest note at its moment: a title menu note at
+  its screen's route, a Build Phase note at its round, its commands replayed ([`skirmish-saves.md`](skirmish-saves.md),
+  notes);
 - every title menu row that opens a place names its route, and choosing the row follows it;
 - the browser playtest page opens `#at=<route>`, its mode buttons open their routes, and a demo may carry
   an `at`.
@@ -28,8 +32,8 @@ and `--keys`, the scripted playtest's same three, the page's `#at=`, `#settings=
 `settings` and `keys` (`readLaunch`, `src/cli/launch.ts`). Each only finds the texts and says where they came
 from. What a host does with a part it cannot read is its own: the game and the scripted playtest refuse the
 launch, the page opens a new Skirmish and says why under the screen, the build refuses the demo. Where a launch
-opens when it names no place is the host's too: the title menu for the game, a new Skirmish for the page, PERIMETER's
-first round for the scripted playtest and a demo. (RULE — `tests/launch.test.ts`)
+opens when it names no place is the host's too: the title menu for the game, the save
+`saves/crossing-new.save.json` for the page and the scripted playtest, PERIMETER's first round for a demo. (RULE — `tests/launch.test.ts`)
 
 How a route is read (`parseRoute`, `src/cli/route.ts`):
 
@@ -48,7 +52,10 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | Route | Opens |
 | --- | --- |
 | `menu`, or nothing | the title menu: Skirmish, Story, Settings, About, Exit |
-| `skirmish` | a Skirmish's first Build Phase on the defaults (Vasse against Dob Hunter's `balanced` script on the Crossing), on a seed from the clock, as choosing its row opens it |
+| `skirmish?setup` | the title menu's Skirmish screen: New game, Load game, as choosing its row opens it |
+| `skirmish?setup=new` | New game: the setup screen, every row at its default, the highlight on Start |
+| `skirmish?setup=load` | Load game: the saves folder, then the examples in `saves/` |
+| `skirmish` | a Skirmish's first Build Phase on the defaults (Vasse against Dob Hunter's `balanced` script on the Crossing), on a seed from the clock |
 | `skirmish?seed=1234` | the same battle on that seed |
 | `skirmish?load=<file>` | a save file at its Build Phase, the plan it was saved with restored (`--load <file>` says the same) |
 | `story` | the title menu's Story screen, a placeholder until the Story menu is built |
@@ -100,13 +107,13 @@ Skirmish to open (a seed, the clock's, or a save file: the route never reads a c
   (RULE — `tests/route-open.test.ts`: the same frame either way). Opening at a place leaves its row
   highlighted, so Esc comes back to it as it would for a player who chose it. Exit names no route: it
   opens no place. Each place's screen and the line it says there (Story's placeholder) is one entry in the menu's
-  `PLACE_SCREENS`; Back and Esc follow the menu's own route. Skirmish's row names `skirmish`, which hands the
-  terminal to a battle's Build Phase on a seed from the clock (the setup screen will take its place).
-- **The scripted playtest** (`playtestOpening`, `src/playtest/build.ts`) reads its `--at`, `--settings` and
-  `--keys` (or `--file`) as a launch, and `--load`, `--p1` and `--p2` as the game does: a mission at a round,
-  PERIMETER's first unless given, or a Skirmish, with no keys needed to walk there. A title menu route is refused
-  with a message saying so, until the title menu has a scripted playtest of its own, and so is a key that does not
-  exist.
+  `PLACE_SCREENS` (`src/cli/title-screens.ts`); Back and Esc follow the menu's own route. Skirmish's row names
+  `skirmish?setup`, the Skirmish screen, whose rows name `skirmish?setup=new` and `skirmish?setup=load`. `setup` is the
+  one query name that may stand without a value (a place's `flags`).
+- **The scripted playtest** (`gameOpening`, `src/playtest/build.ts`) reads its `--at`, `--settings` and
+  `--keys` (or `--file`) as a launch, and `--load`, `--note`, `--p1` and `--p2` as the game does: a title menu screen,
+  a mission at a round, or a Skirmish (the save `saves/crossing-new.save.json` unless told), with no keys needed to walk
+  there; a key that does not exist is refused.
 - **The browser page** (`src/web/host.ts`): section 6.
 
 ## 4. Adding a place
@@ -122,15 +129,15 @@ the type checker name every place that must learn it — the game's dispatch, th
 scripted playtest. A new mission needs no entry here at all: `story?mission=<id>` reads the missions
 the game can open (`src/cli/levels.ts`).
 
-IDEA — places a later step could name, none built: a mission's round straight into its Battle Round; the Skirmish
-setup screen (the Skirmish milestone, [`skirmish-saves.md`](skirmish-saves.md)); a saved replay, once the replay file
-exists.
+IDEA — places a later step could name, none built: a mission's round straight into its Battle Round; a setup in a
+route (`skirmish?map=pocket&p1=...`), so a battle chosen on the setup screen has a route of its own (today its route
+names only its seed); a saved replay, once the replay file exists.
 
 ## 5. The bare command and save files
 
 A bare `terminal-nexus` opens the title menu. **Save game** (the Build Phase's game menu, on a Skirmish) writes a save
 file: a name alone into `~/.terminal-nexus/saves/`, beside `settings.json`, a name with a folder where it says.
-`--load <file>` (the route `skirmish?load=<file>`) opens one at its Build Phase, as Load game on the setup screen will.
+`--load <file>` (the route `skirmish?load=<file>`) opens one at its Build Phase, as Load game on the setup screen does.
 
 IDEA — a bare launch could carry on the last save, opening the title menu only when there is none; the owner's session
 ("start the game again, choose skirmish => load game, and continue playing") goes through the title menu instead, so
@@ -148,9 +155,11 @@ The page reads its address after `#` (`src/web/address.ts`):
 
 **A route and a settings text have `&` and `=` of their own**, so a part runs until the next `&at=`,
 `&settings=` or `&keys=`, not until the next `&`: it is written as plainly as on a command line (RULE —
-`tests/web.test.ts`). Any part may also be percent-encoded. Without `#at=` the page opens a new Skirmish on a
-seed from the clock, which `#settings=` and `#keys=` alone apply to; a route that is not a place, or a save file
-(the page has no files), opens that same default, with the problems written under the screen.
+`tests/web.test.ts`). Any part may also be percent-encoded. Without `#at=` the page opens the save
+`saves/crossing-new.save.json`, which `#settings=` and `#keys=` alone apply to. The page has no files, but it carries
+the example saves in `saves/`, so `#at=skirmish?load=saves/crossing-round-4.save.json` opens one; a route that is not a
+place, or a save it does not carry, opens a new Skirmish instead, with the problems written under the screen. Its
+title menu's Load game lists the same examples, and its New game the shipped script profiles.
 
 The page reads its address as a launch (`src/cli/launch.ts`): its parts are the launch's, so a part added
 there is one the address reads.

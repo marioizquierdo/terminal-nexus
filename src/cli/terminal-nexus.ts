@@ -54,7 +54,7 @@ function usage(): string {
     `        --at ${/[?&]/u.test(route) ? `'${route}'` : route}`.padEnd(54) + what
   return `terminal-nexus — the Terminal Nexus game
 
-  terminal-nexus [--at <route> | --load <file>] [--p1 <who>] [--p2 <who>]
+  terminal-nexus [--at <route> | --load <file> | --note <file>] [--p1 <who>] [--p2 <who>]
                  [--settings "<text>"]
                  [--colors monochrome|color256|truecolor]
                  [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
@@ -65,10 +65,15 @@ function usage(): string {
       opens a Skirmish save file at its Build Phase, the plan it was saved with restored: what
       Save game (Esc, then Save game) writes, or the skirmish command's --save. The same as
       --at 'skirmish?load=<file>'.
+  --note <file>
+      opens a playtest note at its moment: the ! key, on any screen, saves one with the line
+      typed (in ~/.terminal-nexus/notes/). Its round opens as it opened and the commands
+      pressed since play again at their times; the keyboard is yours after that.
   --p1 <who>, --p2 <who>
       who plays each slot of a Skirmish, as the skirmish command takes them: build: (the
       player at the screen; build:plan.json lays that plan on the first Build Phase), or
-      script:<name> (balanced, rush, turtle, ...). The screen plays p1; p2 is a script.
+      script:<profile> (agro, defensive, steady, ...; balanced, rush, turtle). The screen
+      plays p1 against a script, or watches when both are scripts (spectating).
 
   --at <route>
       opens the game at a place, written like a web address without its site: the place,
@@ -76,6 +81,7 @@ function usage(): string {
 ${places}
       For example:
 ${example("settings", "the title menu's Settings screen")}
+${example("skirmish?setup=new", "the Skirmish setup screen: map, Commanders, who plays")}
 ${example(DEFAULT_LEVEL_ROUTE, `${DEFAULT_LEVEL.title}'s Build Phase, round 1`)}
 ${example(`${DEFAULT_LEVEL_ROUTE}&round=3`, "its round 3, reached as a player who")}
 ${"".padEnd(54)}builds nothing reaches it
