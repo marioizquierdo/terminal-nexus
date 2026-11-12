@@ -11,7 +11,8 @@ import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { alternativeRow, cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
+import { SETUP_KEY } from "../build/keyboard.ts"
+import { alternativeRow, setupRow, cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
@@ -577,6 +578,13 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
       const above = alternativeRow(layout)
       text(cells, band, column, above, "[n]", "chrome.hotkey", { bold: true, limit })
       text(cells, band, column + 8, above, alternative, "chrome.value", { limit: limit - 8 })
+    }
+    // And the setup screen, when it has one (a Skirmish's), above that: `m` or a click.
+    const setup = pulse.result.setup
+    if (setup !== undefined) {
+      const row = setupRow(layout)
+      text(cells, band, column, row, `[${SETUP_KEY}]`, "chrome.hotkey", { bold: true, limit })
+      text(cells, band, column + 8, row, setup, "chrome.value", { limit: limit - 8 })
     }
   }
   for (const control of pulseControlRows(layout)) {

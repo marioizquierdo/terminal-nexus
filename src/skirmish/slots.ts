@@ -28,14 +28,15 @@ export function withControllers(setup: SaveSetup, asks: Readonly<Partial<Record<
 }
 
 /**
- * Why the game's screen cannot play a setup, or `null`: the screen plays p1 as its player, against any controller in
- * p2 but a second player. Spectating (no player at all) and p2 as the screen's player wait for the setup screen's step;
- * two players wait for Versus.
+ * Why the game's screen cannot play a setup, or `null`: the screen plays p1 as its player against a script in p2, or
+ * watches two scripts (spectating). An agent waits for the agent players' milestone, p2 as the screen's only player is
+ * not built, and two players wait for Versus.
  */
 export function screenProblem(setup: SaveSetup): string | null {
+  const agent = SLOTS.find((slot) => controllerKind(setup.slots[slot].controller) === "agent")
+  if (agent !== undefined) return `${agent} is ${setup.slots[agent].controller}: agent players are not built yet (give it a script, --${agent} script:steady)`
   const players = SLOTS.filter((slot) => controllerKind(setup.slots[slot].controller) === "player")
   if (players.length === 2) return "both slots are players: two players at one screen wait for Versus (give one slot a script, --p2 script:balanced)"
-  if (players.length === 0) return "no slot is a player: watching two scripts (spectating) is not built yet (make p1 the player, --p1 build:)"
-  if (players[0] !== "p1") return "the screen plays p1 as its player: p2 as the player is not built yet (swap the slots' controllers, --p1 build: --p2 script:balanced)"
+  if (players.length === 1 && players[0] !== "p1") return "the screen plays p1 as its player: p2 as the player is not built yet (swap the slots' controllers, --p1 build: --p2 script:balanced)"
   return null
 }

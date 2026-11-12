@@ -124,7 +124,7 @@ test("a broken route is refused whole: every problem at once, each naming what e
     ["story?mission=%zz", ['"%zz" is not readable: a % must start an escape like %20']],
     [
       "skirmish?seed=lots&round=2",
-      ["skirmish takes no round: it reads seed and load", 'seed must be a whole number from 0 to 999999, not "lots"'],
+      ["skirmish takes no round: it reads seed, load and setup", 'seed must be a whole number from 0 to 999999, not "lots"'],
     ],
     ["skirmish?seed=1000000", ['seed must be a whole number from 0 to 999999, not "1000000"']],
     ["skirmish?seed=1&load=x.save.json", ["seed starts a new battle and load opens a saved one: not both"]],
@@ -146,12 +146,13 @@ test("each title menu row that opens a place names its route, the route of the p
       continue
     }
     assert.ok(item.route !== undefined, `the ${item.id} row names no route`)
-    const expected = item.id === "skirmish" ? { kind: "skirmish" } : { kind: "title", place: item.id }
+    const expected = { kind: "title", place: item.id }
     assert.deepEqual(parseRoute(item.route), expected, `the ${item.id} row's route leads elsewhere`)
   }
   // Every title menu place but the menu itself has its row, and only one.
   for (const name of PLACE_NAMES.filter((place) => place !== "menu")) {
-    assert.equal(routes.filter((route) => route === name).length, 1, `${name} is named by ${routes.filter((route) => route === name).length} rows`)
+    const naming = routes.filter((route) => route.split("?")[0] === name).length
+    assert.equal(naming, 1, `${name} is named by ${naming} rows`)
   }
 })
 

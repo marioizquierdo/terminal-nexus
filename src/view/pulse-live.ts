@@ -84,6 +84,8 @@ export type MissionEnding = Readonly<{
   goOn: string
   /** The other way on, under `n`, when there is one: a Skirmish's "New seed". */
   alternative?: string
+  /** The way back to the setup screen, under `m`, when there is one: a Skirmish's "Setup screen". */
+  setup?: string
 }>
 
 /** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */

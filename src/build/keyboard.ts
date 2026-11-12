@@ -35,6 +35,9 @@ const PULSE_KEYS: Readonly<Record<string, PlaybackControl>> = {
 
 const TAB = "\t"
 
+/** The key a Skirmish's result goes back to the setup screen by: `m`, for the menu it is on. */
+export const SETUP_KEY = "m"
+
 /** Every key a building's action can be under: each order's own, and the keys of a card's upgrades and modes. */
 const BUILDING_ACTION_KEYS: ReadonlySet<string> = new Set([...Object.values(ORDERS).map((order) => order.hotkey), ...ACTION_KEYS])
 
@@ -84,6 +87,8 @@ export type KeyboardContext = Readonly<{
   pulseOver?: boolean
   /** That result offers another way on (a Skirmish's New seed): `n` takes it, and Enter and Space still go on. */
   pulseAlternative?: boolean
+  /** That result offers the setup screen (a Skirmish's): `m` goes back to it. */
+  pulseSetup?: boolean
   /**
    * How many tiles a cursor key moves, when the input path knows when keys arrive: its motion rules
    * (`src/build/motion.ts` — taps counted, a hold on the game's own cadence, the fast move's jump), which
@@ -260,6 +265,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   if (context.pulse === true) {
     // Once the result stands, Enter, Space and `n` go on — to the next round, or the mission again.
     if (context.pulseOver === true && key === "n" && context.pulseAlternative === true) return { kind: "next-round", alternative: true }
+    if (context.pulseOver === true && key === SETUP_KEY && context.pulseSetup === true) return { kind: "next-round", setup: true }
     if (context.pulseOver === true && (PLACE_KEYS.has(key) || key === "n")) return { kind: "next-round" }
     const control = PULSE_KEYS[key]
     if (control !== undefined) return { kind: "pulse", control }

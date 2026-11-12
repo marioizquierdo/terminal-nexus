@@ -130,6 +130,11 @@ export function alternativeRow(layout: BuildLayout): number {
   return layout.panelLastRow - 2
 }
 
+/** The row a result's way back to the setup screen sits on, when it has one — `[m] Setup screen` — above New seed. */
+export function setupRow(layout: BuildLayout): number {
+  return layout.panelLastRow - 3
+}
+
 /** Whether a frame column is one of the side panel's — the width a highlight bar or a click target spans. */
 export function inPanelColumns(layout: BuildLayout, column: number): boolean {
   return column >= layout.panelColumn && column < layout.panelColumn + layout.panelLimit

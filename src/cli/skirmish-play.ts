@@ -30,13 +30,15 @@ import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
-import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, playRound, scriptedPlayer, standingOf } from "../duel/index.ts"
+import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, standingOf } from "../duel/index.ts"
 import type { Force, RegroupResult, Restoration } from "../match/index.ts"
 import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
-import type { SaveFile, SaveSetup } from "../skirmish/save.ts"
-import { controllerKind, duelOf, duelSetupOf, IDLE_SCRIPT, newSetup, saveOf, scriptOf } from "../skirmish/save.ts"
-import { commanderNameOf, endedLine, mapNameOf, openingLines, outcomeFor, reasonWords } from "../skirmish/words.ts"
+import type { Profiles, SaveFile, SaveSetup } from "../skirmish/save.ts"
+import { duelOf, duelSetupOf, newSetup, saveOf } from "../skirmish/save.ts"
+import { isPlayer, playNext } from "../skirmish/play.ts"
+import { spectating } from "../skirmish/setup.ts"
+import { commanderNameOf, endedLine, mapNameOf, openingLines, outcomeFor, reasonWords, spectatorReason } from "../skirmish/words.ts"
 import type { MatchState } from "../state/types.ts"
 import { resultOf } from "../view/ending.ts"
 import type { MissionEnding, MissionRound, ResolvedPulse } from "../view/pulse-live.ts"
@@ -186,15 +188,18 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
       })
     }
   }
+  // Spectating: nobody builds at the screen, so it offers nothing to build or pick (`BuildContext.spectating`).
+  const watching = spectating(position.setup)
   const context: BuildContext = {
     ...carriedOver(previous),
     grid: duelGrid(map),
     registry: loadout.registry,
-    catalog: loadout.catalog,
+    catalog: watching ? [] : loadout.catalog,
     standing,
     field,
-    allotment: duel.sides.A.credits,
-    nexusDraft: nexusDraftOf({ powers: handOf(duel, "A") }),
+    allotment: watching ? 0 : duel.sides.A.credits,
+    nexusDraft: watching ? [] : nexusDraftOf({ powers: handOf(duel, "A") }),
+    ...(watching ? { spectating: true } : {}),
     kept: duel.sides.A.kept.flatMap((id) => army.powers.find((card) => card.id === id) ?? []),
     buildingCards: army.buildings,
     callups: [],
@@ -213,20 +218,28 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
 }
 
 /** A new battle's first round: what it is, then how the other side plays, looking at its Nexus. */
-function firstRound(setup: SaveSetup, previous: Partial<BuildContext>, before: readonly DialogLine[] = [], extras: Pick<SkirmishPosition, "file" | "draft"> = {}): BuildContext {
-  const duel = newDuel(duelSetupOf(setup))
-  const [what = "", how = ""] = openingLines(setup)
-  const scene = [...before, said(what), said(how, enemyNexusFocus(duel))]
+function firstRound(setup: SaveSetup, previous: Partial<BuildContext>, before: readonly DialogLine[] = [], extras: Pick<SkirmishPosition, "file" | "draft"> = {}, profiles?: Profiles): BuildContext {
+  const duel = newDuel(duelSetupOf(setup, profiles))
+  const lines = openingLines(setup, profiles)
+  const scene = [...before, ...lines.map((line, index) => (index === lines.length - 1 ? said(line, enemyNexusFocus(duel)) : said(line)))]
   const opponent = commanderNameOf(setup.slots.p2.commander)
   const restored = extras.draft === undefined ? "" : " The plan so far is restored."
-  return roundContext({ kind: "skirmish", setup, duel, ...extras }, previous, scene, `Against ${opponent} on ${mapNameOf(setup.map)}, seed ${setup.seed}.${restored} The Nexus Pulse deals: [n].`)
+  const opening = spectating(setup)
+    ? `Watching, seed ${setup.seed}: both sides are scripts. [s] starts the round.`
+    : `Against ${opponent} on ${mapNameOf(setup.map)}, seed ${setup.seed}.${restored} The Nexus Pulse deals: [n].`
+  return roundContext({ kind: "skirmish", setup, duel, ...extras }, previous, scene, opening)
 }
 
 /** How a battle's end reads on the Battle Round's result: what happened, and the two ways on. */
 function endingOf(setup: SaveSetup, duel: DuelState): MissionEnding {
   const result = duel.result as NonNullable<DuelState["result"]>
+  const ways = { goOn: "Same battle again", alternative: "New seed", setup: "Setup screen" }
+  // Watching two scripts, nobody won or lost: the winner is named.
+  if (spectating(setup)) {
+    const winner = result.winner === null ? null : commanderNameOf(setup.slots[result.winner === "A" ? "p1" : "p2"].commander)
+    return { headline: winner === null ? "BATTLE DRAWN" : `${winner.toUpperCase()} WINS`, reason: spectatorReason(setup, result), tone: "neutral", ...ways }
+  }
   const reason = reasonWords(result, commanderNameOf(setup.slots.p2.commander))
-  const ways = { goOn: "Same battle again", alternative: "New seed" }
   switch (outcomeFor(result)) {
     case "won":
       return { headline: "BATTLE WON", reason, tone: "success", ...ways }
@@ -317,20 +330,9 @@ export function planOnRound(context: BuildContext, state: BuildState, plan: Side
   }
 }
 
-/** Side B's plan this round, by p2's controller: its script from its own brief, or nothing for `script:idle`. */
-function opponentPlan(position: SkirmishPosition): SidePlan {
-  const { setup, duel } = position
-  const controller = setup.slots.p2.controller
-  if (controllerKind(controller) !== "script") throw new Error(`p2 is ${controller}: the screen plays a script in p2`)
-  const script = scriptOf(controller)
-  if (script === IDLE_SCRIPT) return { build: [], stance: "hold" }
-  const player = scriptedPlayer(script)
-  if (player === undefined) throw new Error(`no scripted player "${script}" to plan ${commanderNameOf(setup.slots.p2.commander)}'s side`)
-  return player(briefOf(duel, "B").data)
-}
-
-/** What a Skirmish needs from the screens: a new battle's seed, chosen by them (from the clock); a test's own. */
-export type SkirmishOptions = Readonly<{ newSeed?: () => number }>
+/** What a Skirmish needs from the screens: a new battle's seed, chosen by them (from the clock), or a test's own; and
+ *  the script profiles its scripted slots name (`players/scripts/`, or the shipped ones on the browser page). */
+export type SkirmishOptions = Readonly<{ newSeed?: () => number; profiles?: Profiles }>
 
 /** A seed after `seed` when no screen chose one: a fixed walk, so a test or a driver plays the same battles. */
 const nextSeedOf = (seed: number): number => (seed * 7919 + 104729) % 1_000_000
@@ -354,11 +356,13 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       const position = positionOf(context)
       const { duel, setup } = position
       if (duel.result !== null) return null
-      const plans = { A: sidePlanOf(context, state), B: opponentPlan(position) }
+      // The round as the command line plays it (`playNext`): p1's plan from this Build Phase when a person plays it, every
+      // scripted slot its profile's plan, the modifiers and the credits shares as the setup has them.
+      const plans = isPlayer(setup, "p1") ? { p1: sidePlanOf(context, state) } : {}
       const states: MatchState[] = []
       const events: DomainEvent[] = []
       let content: Readonly<{ registry: ContentRegistry; sides: Readonly<Record<Side, ContentRegistry>> }> | null = null
-      const played = playRound(duel, plans, (battleState, tickEvents, registry, sides) => {
+      const played = playNext(setup, duel, plans, options.profiles, (battleState, tickEvents, registry, sides) => {
         states.push(battleState)
         events.push(...tickEvents)
         content ??= { registry, sides }
@@ -403,19 +407,20 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
         const opened = roundContext({ kind: "skirmish", setup, duel, ...(position.file === undefined ? {} : { file: position.file }) }, context, [], "", played.regroup)
         const back = restoredOf(duel, contentOf(duel))
         const news = back === null ? null : commanderNews(back.restored, back.absent, duel.round, duel.setup.rounds)
-        const refused = report.sides.A.refused
+        const refused = isPlayer(setup, "p1") ? report.sides.A.refused : []
         const scene = [
           ...(news === null ? [] : [said(news, nexusFocus(opened))]),
           ...(refused.length === 0 ? [] : [said(`Not built last round: ${refused.join("; ")}.`)]),
         ]
-        return { ...withoutScene(opened), ...(scene.length === 0 ? {} : { scene }), openingStatus: status(`${last} The Nexus Pulse deals a new hand: [n].`, "hint") }
+        const next = spectating(setup) ? "[s] starts the next round." : "The Nexus Pulse deals a new hand: [n]."
+        return { ...withoutScene(opened), ...(scene.length === 0 ? {} : { scene }), openingStatus: status(`${last} ${next}`, "hint") }
       }
       // The battle is over: the same battle again from round 1, or a new one on a new seed (the result's other choice).
       // Either is a new battle: no longer the file it was loaded from, so Save game offers a new name.
       const seed = alternative ? (options.newSeed?.() ?? nextSeedOf(setup.seed)) : setup.seed
       const again: SaveSetup = { ...setup, seed }
       const ended = said(`${endedLine(setup, duel.result)} ${alternative ? `A new battle, seed ${seed}.` : "The same battle again."}`)
-      return firstRound(again, carriedOver(context), [ended])
+      return firstRound(again, carriedOver(context), [ended], {}, options.profiles)
     },
   }
   return play
@@ -443,7 +448,8 @@ export type SkirmishSource = Readonly<{ file?: string; route?: string }>
 export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, options: SkirmishOptions = {}): PlayableLevel {
   const { setup } = save
   const base = skirmishPlay(options)
-  const draft = save.draft?.p1
+  // A draft is p1's plan at the screen: a p1 now played by a script has none to lay.
+  const draft = isPlayer(setup, "p1") ? save.draft?.p1 : undefined
   const keep = base.keep as NonNullable<LevelPlay["keep"]>
   const play: LevelPlay = {
     ...base,
@@ -455,7 +461,7 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
       return planOnRound({ ...context, mode: rest }, state, mode.draft, keep)
     },
   }
-  const duel = duelOf(save)
+  const duel = duelOf(save, options.profiles)
   return {
     id: `skirmish-${setup.seed}`,
     story: "skirmish",
@@ -467,15 +473,17 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
       const previous = { ...extra, ...(scrollMargin === undefined ? {} : { scrollMargin }) }
       const extras = { ...(source.file === undefined ? {} : { file: source.file }), ...(draft === undefined ? {} : { draft }) }
       // Nothing played yet: the battle opens as a new one does, on what it is and how the other side plays.
-      if (save.state === undefined) return firstRound(setup, previous, [], extras)
+      if (save.state === undefined) return firstRound(setup, previous, [], extras, options.profiles)
       const position: SkirmishPosition = { kind: "skirmish", setup, duel, ...extras }
       const where = duel.result === null ? `round ${duel.round} of ${setup.rounds}` : "the battle over"
       // The whole of what was loaded in a line of the game's own voice; the bottom line, short enough for 80 columns.
       const file = source.file ?? save.name ?? "a save"
       const restored = draft === undefined ? "" : " The plan so far is restored."
-      const scene = [said(`Loaded ${file}: ${where}, ${commanderNameOf(setup.slots.p1.commander)} against ${commanderNameOf(setup.slots.p2.commander)} on ${mapNameOf(setup.map)}, seed ${setup.seed}.${restored}`)]
+      const watching = spectating(setup)
+      const scene = [said(`Loaded ${file}: ${where}, ${commanderNameOf(setup.slots.p1.commander)} against ${commanderNameOf(setup.slots.p2.commander)} on ${mapNameOf(setup.map)}, seed ${setup.seed}.${restored}${watching ? " Both sides are scripts: watch, and start each round." : ""}`)]
       const short = file.slice(file.lastIndexOf("/") + 1)
-      return roundContext(position, previous, scene, `Loaded ${short}: ${where}${draft === undefined ? ". The Nexus Pulse deals: [n]." : ", the plan so far restored."}`)
+      const next = watching ? ": watching. [s] starts the round." : draft === undefined ? ". The Nexus Pulse deals: [n]." : ", the plan so far restored."
+      return roundContext(position, previous, scene, `Loaded ${short}: ${where}${next}`)
     },
   }
 }

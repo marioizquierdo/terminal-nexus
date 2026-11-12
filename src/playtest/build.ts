@@ -25,7 +25,8 @@ import { DEFAULT_LEVEL_ROUTE, RouteError, formatRoute } from "../cli/route.ts"
 import type { LevelDestination } from "../cli/route.ts"
 import { openSkirmish } from "../cli/skirmish-open.ts"
 import { readGameFile, savesFolder, skirmishSaver } from "../cli/skirmish-files.ts"
-import type { Slot } from "../skirmish/save.ts"
+import type { Profiles, Slot } from "../skirmish/save.ts"
+import type { GameStart } from "./game.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { hasTrail } from "../view/build-grid.ts"
@@ -82,7 +83,16 @@ export type BuildPlaytestOptions = Readonly<{
   /** Whether a round that opens with a scene plays it in the dialog first, as the game does — on unless
    *  said otherwise, so a script starts where a player starts: PERIMETER's intro (`Esc` skips it). */
   scenes?: boolean
+  /** The run's Activity Logs and the clock they read, when a longer run (`./game.ts`) shares them across screens. */
+  activity?: ActivityLog
+  clock?: PlaytestClock
+  /** A Skirmish's result's Setup screen chosen: the run goes on at the title menu's New game (`./game.ts`). Absent: the
+   *  result offers no such row. */
+  onSetup?: (context: BuildContext) => void
 }>
+
+/** The script's own clock, in milliseconds: shared by every screen a run passes through. */
+export type PlaytestClock = { now: number }
 
 export type PlaytestFrame = Readonly<{
   /** 0 is the screen as it opens, before any key; step N is the screen after the Nth step. */
@@ -112,7 +122,7 @@ export type BuildPlaytest = Readonly<{
   activity: ActivityLog
   /** Set when the script left the screen (`q`, or Esc with nothing armed); the steps after that one
    *  were not run, because there is no screen left for them to reach. */
-  ended: Readonly<{ by: "quit"; atStep: number; skipped: number }> | null
+  ended: Readonly<{ by: "quit" | "setup"; atStep: number; skipped: number }> | null
 }>
 
 
@@ -124,123 +134,181 @@ function moveLabel(move: Move | null, before: Move | null): string | null {
 }
 
 export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
-  const base = options.settings ?? { ...DEFAULT_SETTINGS, colors: "truecolor" as const }
-  const settings: Settings = {
-    ...base,
-    ...(options.colors === undefined ? {} : { colors: options.colors }),
-    ...(options.glyphPack === undefined ? {} : { glyphPack: options.glyphPack }),
-  }
-  // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
-  // when the script does not say — long enough that every untimed key is a tap that starts over, so taps
-  // only speed up, and a key only reads as held, where a script times its steps (`Right~250*3`). The
-  // run's Activity Logs read it too, so a line's time is its step's.
-  let clock = 0
-  const activity = createActivityLog(() => clock)
-  const at: LevelDestination = options.at ?? { kind: "level", level: DEFAULT_LEVEL, round: 1 }
-  const opened =
-    options.context ??
-    openRound(at.level, at.round, undefined, {
-      settings,
-      ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
-    })
-  const play = options.play ?? at.level.play
-  const saver = skirmishSaver(options.savesFolder ?? savesFolder())
-  const context: BuildContext = {
-    ...opened,
-    settings,
-    saveDestination: saver.destination,
-    exportDestination: "Not copied anywhere: this is a scripted playtest.",
-    activity,
-    activityExportDestination: "Not copied anywhere: this is a scripted playtest.",
-    ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
-  }
-  const terminal = { columns: options.columns ?? 80, rows: options.rows ?? 24 }
-  // Below the floor the live screen shows its "terminal too small" notice instead of this one, so
-  // a playtest there would be of a different screen.
-  if (isGated(terminal, context.grid)) {
-    throw new Error(`${terminal.columns}x${terminal.rows} is below the Build Phase's 80x24 floor`)
-  }
-  // Laid out as the live screen lays out a terminal of this size.
-  const layout = buildLayout(terminal, context.grid)
-
-  let leftBy: "quit" | null = null
-  const build = new BuildSession({
-    context,
-    cursor: options.cursor ?? nexusTile(context) ?? STARTER_START_CURSOR,
-    viewport: layout.viewport,
-    onQuit: () => {
-      leftBy = "quit"
-    },
-    startPulse: play.startPulse,
-    activity,
-    nextRound: play.nextRound,
-    ...(play.keep === undefined ? {} : { keep: play.keep }),
-    ...(play.resume === undefined ? {} : { resume: play.resume }),
-    onSave: saver.onSave,
-    // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
-    ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
-    scenes: options.scenes ?? true,
-  })
-  build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
-
-  // The raid's trail's clock, as the live loop keeps one, on the script's clock; and the survivors' regroup's.
-  const trail = new TrailClock()
-  const regrouping = new RegroupClock()
-  const rooming = new RoomClock()
-  // The battle banner's pulse and planting, on the script's clock too: `wait~MS` steps show the planting's ring.
-  const bannering = new BannerClock()
-  // Drawn with the settings the script has reached: a step that changes the colour depth or the
-  // symbols in Settings shows the change, as the live screen does.
-  const compose = (): ReadonlyCellFrame => {
-    // Three things are drawn at the script's clock. A Battle Round on screen: the frame after a step shows the
-    // Pulse as it is that long after it began. The raid's trail, which moves from the first frame that drew
-    // it moving, as the live loop moves it (`TrailClock`): the same keys draw it in the same place, and
-    // `wait~MS` steps show it moving. And the survivors' regroup as a duel's round opens (`RegroupClock`), from the
-    // first frame that showed the round, and the units walking out from under a building just planned (`RoomClock`). Nothing else on this screen depends on time in a scripted playtest.
-    const pulse = build.pulseFrame()
-    const raid = build.raid()
-    const inView = hasTrail(raid, visibleRange(build.state.camera, build.state.viewport))
-    const raidTrail = trail.at(build.state, clock, { reducedMotion: build.state.settings.reducedMotion, raidTrail: inView })
-    const regroup = pulse === undefined ? regrouping.at(build.round.field, clock, build.state.settings.reducedMotion) : null
-    const room = pulse === undefined ? rooming.at(build.state.planned, clock, build.state.settings.reducedMotion) : []
-    const { until: _until, ...banner } = bannering.at(build.state, clock, build.state.settings.reducedMotion)
-    return composeBuildFrame(
-      {
-        // This round's: what stands on the map changes from round to round.
-        context: build.round,
-        state: build.state,
-        layout,
-        glyphPack: build.state.settings.glyphPack,
-        reducedMotion: build.state.settings.reducedMotion,
-        ...(pulse === undefined ? {} : { pulse }),
-        ...(raid === undefined ? {} : { raid }),
-        ...(raidTrail === null ? {} : { raidTrail }),
-        ...(regroup === null ? {} : { regroup }),
-        ...(room.length === 0 ? {} : { room }),
-        ...(banner.pulseMs === undefined && banner.dropMs === undefined ? {} : { banner }),
-      },
-      build.state.settings.colors,
-    )
-  }
-
-  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: build.state, frame: compose(), moveKind: null }]
+  const driver = new BuildDriver(options)
+  const frames: PlaytestFrame[] = [{ index: 0, label: "start", bytes: "", state: driver.build.state, frame: driver.compose(), moveKind: null }]
   let ended: BuildPlaytest["ended"] = null
-
   for (const [position, step] of options.steps.entries()) {
-    clock += step.afterMs ?? UNTIMED_GAP_MS
-    const moveBefore = build.lastMove
-    const bytes = deliverStep(build, layout, step, clock)
-    // What the live loop's next render would do first: let a Battle Round on screen catch up with the clock
-    // (and, the moment it starts, look at the player's Nexus), so the frame is the one a player sees.
-    build.advance(clock)
-    frames.push({ index: position + 1, label: step.label, bytes, state: build.state, frame: compose(), moveKind: moveLabel(build.lastMove, moveBefore) })
-    if (leftBy !== null) {
-      ended = { by: leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }
+    frames.push({ index: position + 1, ...driver.step(step) })
+    if (driver.leftBy !== null) {
+      ended = { by: driver.leftBy, atStep: position + 1, skipped: options.steps.length - position - 1 }
       break
     }
   }
+  return { context: driver.build.round, layout: driver.layout, frames, ended, activity: driver.activity }
+}
 
-  return { context: build.round, layout, frames, ended, activity }
+/**
+ * **A Build Phase driven a step at a time**: the session, its layout and the clocks a frame is drawn at, on the script's
+ * clock. `runBuildPlaytest` runs a whole script through one; the game's playtest (`./game.ts`) runs one while the
+ * script is on the Build Phase and hands the rest of the script on when it leaves.
+ */
+export class BuildDriver {
+  readonly build: BuildSession
+  readonly layout: BuildLayout
+  readonly activity: ActivityLog
+  readonly clock: PlaytestClock
+  /** Set once the script left the screen: `q` (quit) or the result's Setup screen. */
+  leftBy: "quit" | "setup" | null = null
+  private readonly compose_: () => ReadonlyCellFrame
+
+  constructor(options: BuildPlaytestOptions) {
+    const base = options.settings ?? { ...DEFAULT_SETTINGS, colors: "truecolor" as const }
+    const settings: Settings = {
+      ...base,
+      ...(options.colors === undefined ? {} : { colors: options.colors }),
+      ...(options.glyphPack === undefined ? {} : { glyphPack: options.glyphPack }),
+    }
+    // A clock of the script's own: each step arrives `afterMs` after the one before, or a second after it
+    // when the script does not say — long enough that every untimed key is a tap that starts over, so taps
+    // only speed up, and a key only reads as held, where a script times its steps (`Right~250*3`). The
+    // run's Activity Logs read it too, so a line's time is its step's.
+    const clock: PlaytestClock = options.clock ?? { now: 0 }
+    const activity = options.activity ?? createActivityLog(() => clock.now)
+    this.clock = clock
+    this.activity = activity
+    const at: LevelDestination = options.at ?? { kind: "level", level: DEFAULT_LEVEL, round: 1 }
+    const opened =
+      options.context ??
+      openRound(at.level, at.round, undefined, {
+        settings,
+        ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+      })
+    const play = options.play ?? at.level.play
+    const saver = skirmishSaver(options.savesFolder ?? savesFolder())
+    const context: BuildContext = {
+      ...opened,
+      settings,
+      saveDestination: saver.destination,
+      exportDestination: "Not copied anywhere: this is a scripted playtest.",
+      activity,
+      activityExportDestination: "Not copied anywhere: this is a scripted playtest.",
+      ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
+    }
+    const terminal = { columns: options.columns ?? 80, rows: options.rows ?? 24 }
+    // Below the floor the live screen shows its "terminal too small" notice instead of this one, so
+    // a playtest there would be of a different screen.
+    if (isGated(terminal, context.grid)) {
+      throw new Error(`${terminal.columns}x${terminal.rows} is below the Build Phase's 80x24 floor`)
+    }
+    // Laid out as the live screen lays out a terminal of this size.
+    const layout = buildLayout(terminal, context.grid)
+    this.layout = layout
+
+    const build = new BuildSession({
+      context,
+      cursor: options.cursor ?? nexusTile(context) ?? STARTER_START_CURSOR,
+      viewport: layout.viewport,
+      onQuit: () => {
+        this.leftBy = "quit"
+      },
+      ...(options.onSetup === undefined
+        ? {}
+        : {
+            onSetup: (round: BuildContext) => {
+              this.leftBy = "setup"
+              options.onSetup?.(round)
+            },
+          }),
+      startPulse: play.startPulse,
+      activity,
+      nextRound: play.nextRound,
+      ...(play.keep === undefined ? {} : { keep: play.keep }),
+      ...(play.resume === undefined ? {} : { resume: play.resume }),
+      onSave: saver.onSave,
+      // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
+      ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
+      scenes: options.scenes ?? true,
+    })
+    this.build = build
+    build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
+
+    // The raid's trail's clock, as the live loop keeps one, on the script's clock; and the survivors' regroup's.
+    const trail = new TrailClock()
+    const regrouping = new RegroupClock()
+    const rooming = new RoomClock()
+    // The battle banner's pulse and planting, on the script's clock too: `wait~MS` steps show the planting's ring.
+    const bannering = new BannerClock()
+    // Drawn with the settings the script has reached: a step that changes the colour depth or the
+    // symbols in Settings shows the change, as the live screen does.
+    this.compose_ = (): ReadonlyCellFrame => {
+      // Three things are drawn at the script's clock. A Battle Round on screen: the frame after a step shows the
+      // Pulse as it is that long after it began. The raid's trail, which moves from the first frame that drew
+      // it moving, as the live loop moves it (`TrailClock`): the same keys draw it in the same place, and
+      // `wait~MS` steps show it moving. And the survivors' regroup as a duel's round opens (`RegroupClock`), from the
+      // first frame that showed the round, and the units walking out from under a building just planned (`RoomClock`). Nothing else on this screen depends on time in a scripted playtest.
+      const pulse = build.pulseFrame()
+      const raid = build.raid()
+      const inView = hasTrail(raid, visibleRange(build.state.camera, build.state.viewport))
+      const raidTrail = trail.at(build.state, clock.now, { reducedMotion: build.state.settings.reducedMotion, raidTrail: inView })
+      const regroup = pulse === undefined ? regrouping.at(build.round.field, clock.now, build.state.settings.reducedMotion) : null
+      const room = pulse === undefined ? rooming.at(build.state.planned, clock.now, build.state.settings.reducedMotion) : []
+      const { until: _until, ...banner } = bannering.at(build.state, clock.now, build.state.settings.reducedMotion)
+      return composeBuildFrame(
+        {
+          // This round's: what stands on the map changes from round to round.
+          context: build.round,
+          state: build.state,
+          layout,
+          glyphPack: build.state.settings.glyphPack,
+          reducedMotion: build.state.settings.reducedMotion,
+          ...(pulse === undefined ? {} : { pulse }),
+          ...(raid === undefined ? {} : { raid }),
+          ...(raidTrail === null ? {} : { raidTrail }),
+          ...(regroup === null ? {} : { regroup }),
+          ...(room.length === 0 ? {} : { room }),
+          ...(banner.pulseMs === undefined && banner.dropMs === undefined ? {} : { banner }),
+        },
+        build.state.settings.colors,
+      )
+    }
+
+  }
+
+  /** The frame the screen shows now, at the script's clock. */
+  compose(): ReadonlyCellFrame {
+    return this.compose_()
+  }
+
+  /** One step through the real adapters, the clock moved on first; then what the live loop's next render would do
+   *  first — let a Battle Round on screen catch up with the clock — so the frame is the one a player sees. */
+  step(step: PlaytestStep): Omit<PlaytestFrame, "index"> {
+    this.clock.now += step.afterMs ?? UNTIMED_GAP_MS
+    const moveBefore = this.build.lastMove
+    const bytes = deliverStep(this.build, this.layout, step, this.clock.now)
+    this.build.advance(this.clock.now)
+    return { label: step.label, bytes, state: this.build.state, frame: this.compose(), moveKind: moveLabel(this.build.lastMove, moveBefore) }
+  }
+}
+
+/**
+ * **Where the game's scripted playtest opens** (`./game.ts`): a title menu route (`menu`, `skirmish?setup=new`) as that
+ * screen, or anything `playtestOpening` opens, as its Build Phase. Refused, with every problem said, as that is.
+ */
+export function gameOpening(
+  text: LaunchText,
+  keysFrom = "--keys",
+  skirmish: Readonly<{ load?: string; slots?: Partial<Record<Slot, string>>; now?: () => number; profiles?: Profiles }> = {},
+): Readonly<{ start: GameStart; steps: readonly PlaytestStep[]; settings?: string }> {
+  if (skirmish.load === undefined && text.at !== undefined) {
+    const { launch, problems } = readLaunch(text, DEFAULT_LEVEL_ROUTE)
+    if (problems.length === 0 && launch.destination.kind === "title") {
+      if (Object.keys(skirmish.slots ?? {}).length > 0) throw new Error("--p1 and --p2 name who plays a Skirmish's slots: try --load <file> or --at skirmish")
+      const { settings, keys = [] } = launch
+      return { start: { kind: "title", place: launch.destination.place }, steps: keys, ...(settings === undefined ? {} : { settings }) }
+    }
+  }
+  const opened = playtestOpening(text, keysFrom, skirmish)
+  return { start: opened.at, steps: opened.steps, ...(opened.settings === undefined ? {} : { settings: opened.settings }) }
 }
 
 /**
@@ -254,7 +322,7 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
 export function playtestOpening(
   text: LaunchText,
   keysFrom = "--keys",
-  skirmish: Readonly<{ load?: string; slots?: Partial<Record<Slot, string>>; now?: () => number }> = {},
+  skirmish: Readonly<{ load?: string; slots?: Partial<Record<Slot, string>>; now?: () => number; profiles?: Profiles }> = {},
 ): Readonly<{ at: LevelDestination; steps: readonly PlaytestStep[]; settings?: string }> {
   if (skirmish.load !== undefined && text.at !== undefined) throw new Error("--load opens a save and --at a place: give one of them")
   const at = skirmish.load === undefined ? text.at : `skirmish?load=${encodeURIComponent(skirmish.load)}`
@@ -274,6 +342,11 @@ export function playtestOpening(
     if (hasSlots) throw new Error("--p1 and --p2 name who plays a Skirmish's slots: try --load <file> or --at skirmish")
     return { at: destination, steps: keys, ...(settings === undefined ? {} : { settings }) }
   }
-  const opened = openSkirmish(destination, { readFile: readGameFile, ...(skirmish.slots === undefined ? {} : { slots: skirmish.slots }), ...(skirmish.now === undefined ? {} : { now: skirmish.now }) })
+  const opened = openSkirmish(destination, {
+    readFile: readGameFile,
+    ...(skirmish.slots === undefined ? {} : { slots: skirmish.slots }),
+    ...(skirmish.now === undefined ? {} : { now: skirmish.now }),
+    ...(skirmish.profiles === undefined ? {} : { profiles: skirmish.profiles }),
+  })
   return { at: opened, steps: keys, ...(settings === undefined ? {} : { settings }) }
 }

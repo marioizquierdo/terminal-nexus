@@ -93,6 +93,9 @@ const TITLE_SCREENS: Readonly<Record<TitleDestination["place"], readonly RegExp[
   story: [/story/u, /Story is not built yet/u, /\[1\] Back/u],
   settings: [/settings/u, /Colours/u, /\[5\] Back/u],
   about: [/about/u, /Contributions/u, /\[1\] Back/u],
+  skirmish: [/skirmish/u, /\[1\] New game/u, /\[2\] Load game/u],
+  "new-game": [/new game/u, /Map +The Crossing/u, /\[s\] Start/u],
+  "load-game": [/load game/u, /\[b\] Back/u],
 }
 
 test("every route opens where it says: each title menu place on the title menu, each mission at each round and each Skirmish in its Build Phase", { timeout: 120_000 }, async () => {
@@ -218,7 +221,10 @@ test("the scripted playtest's --at opens a level at a round, and refuses a title
   assert.equal(formatRoute(playtestOpening({ at: "skirmish?seed=9" }).at), "skirmish?seed=9")
   const loaded = runBuildPlaytest({ steps: [], at: playtestOpening({}, "--keys", { load: "saves/crossing-round-4.save.json" }).at })
   assert.equal(loaded.context.round?.number, 4)
-  assert.throws(() => playtestOpening({}, "--keys", { load: "saves/crossing-round-4.save.json", slots: { p1: "script:rush" } }), /no slot is a player/u)
+  // Both slots scripts is spectating, which the screen plays; p2 as its only player is refused.
+  const watched = runBuildPlaytest({ steps: [], at: playtestOpening({}, "--keys", { load: "saves/crossing-round-4.save.json", slots: { p1: "script:rush" } }).at })
+  assert.equal(watched.context.spectating, true)
+  assert.throws(() => playtestOpening({}, "--keys", { load: "saves/crossing-round-4.save.json", slots: { p1: "script:rush", p2: "build:" } }), /p2 as the player is not built yet/u)
   assert.throws(() => playtestOpening({ at: "story" }, "--keys", { load: "x.save.json" }), /give one of them/u)
   // Without --at, PERIMETER's first round; its keys are read as the game reads --keys, and refused by name.
   const opening = playtestOpening({ keys: "Esc n 1", settings: "jumpStep=12" })

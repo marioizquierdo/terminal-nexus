@@ -237,6 +237,8 @@ export type PulseResult = Readonly<{
   goOn?: string
   /** The result's other way on, under `n`, when there is one: a Skirmish's "New seed" beside "Same battle again". */
   alternative?: string
+  /** The way back to the setup screen, under `m`, when there is one: a Skirmish's. */
+  setup?: string
   /** The one line under the map once the result stands. */
   line?: string
   /** What happened to the player's Commander, when she fell this round: that she fell, and while the
@@ -252,7 +254,7 @@ type Round = Readonly<{
   of: number
   endText?: Readonly<{ won: string; lost: string }>
   fell?: readonly CommanderAbsence[]
-  ending?: Readonly<{ headline: string; reason: string; tone: "success" | "danger" | "neutral"; goOn: string; alternative?: string }>
+  ending?: Readonly<{ headline: string; reason: string; tone: "success" | "danger" | "neutral"; goOn: string; alternative?: string; setup?: string }>
 }>
 
 /**
@@ -294,7 +296,8 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
   const { ending } = round
   if (ending !== undefined && round.verdict.kind !== "continue") {
     const alternative = ending.alternative === undefined ? {} : { alternative: ending.alternative }
-    return { headline: ending.headline, reason: ending.reason, tone: ending.tone, mission: last, goOn: ending.goOn, ...alternative, line: `${ending.headline} - ${ending.reason}`, ...commander }
+    const setup = ending.setup === undefined ? {} : { setup: ending.setup }
+    return { headline: ending.headline, reason: ending.reason, tone: ending.tone, mission: last, goOn: ending.goOn, ...alternative, ...setup, line: `${ending.headline} - ${ending.reason}`, ...commander }
   }
   switch (round.verdict.kind) {
     case "won": {

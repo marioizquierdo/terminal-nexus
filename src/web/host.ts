@@ -21,6 +21,9 @@
 
 import { runMenu } from "../cli/menu.ts"
 import { runBuildPhase } from "../cli/build-phase.ts"
+import { shippedSaves } from "../cli/title-screens.ts"
+import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
+import type { SaveSetup } from "../skirmish/save.ts"
 import type { Exporter } from "../cli/build-phase.ts"
 import { readLaunch } from "../cli/launch.ts"
 import type { LaunchPart } from "../cli/launch.ts"
@@ -342,11 +345,17 @@ async function startAt(at: string | undefined, from: string, demo?: Demo): Promi
   const common = { ...pageTerminal, backend: canvasFor(settings), settings, settingsStore, buildId: __TN_BUILD__.commit, hostName: "web" } as const
   if (destination.kind === "title") {
     // Skirmish on the menu hands the page to its battle's Build Phase: its keys on the bar, its route said.
-    const open = (at: Extract<Destination, { kind: "level" }>, settings: Settings): Promise<number> => {
+    // Load game lists the examples the page ships; its own saves wait for a page that can keep files.
+    const saves = (): ReturnType<typeof shippedSaves> => shippedSaves(SHIPPED_PROFILES)
+    const open = (at: Extract<Destination, { kind: "level" }>, settings: Settings, toSetup: (setup: SaveSetup) => void): Promise<number> => {
       showScreen("build", formatRoute(at))
-      return runBuildPhase({ ...common, settings, at, exporter })
+      const back = (setup: SaveSetup): void => {
+        showScreen("menu", "skirmish?setup=new")
+        toSetup(setup)
+      }
+      return runBuildPhase({ ...common, settings, at, exporter, onSetup: back })
     }
-    track(runMenu({ ...common, at: destination, open }))
+    track(runMenu({ ...common, at: destination, open, saves, profiles: SHIPPED_PROFILES }))
     return
   }
   const { keys } = launch

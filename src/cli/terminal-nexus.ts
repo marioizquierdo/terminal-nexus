@@ -31,7 +31,9 @@ import { DEFAULT_LEVEL, LEVELS } from "./levels.ts"
 import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute } from "./route.ts"
 import type { LevelDestination } from "./route.ts"
 import { openSkirmish } from "./skirmish-open.ts"
-import { readGameFile, savesFolder, skirmishSaver } from "./skirmish-files.ts"
+import { listSaves, readGameFile, savesFolder, shownPath, skirmishSaver, terminalPlayerName } from "./skirmish-files.ts"
+import { readProfiles } from "../skirmish/profile-files.ts"
+import type { SaveSetup } from "../skirmish/save.ts"
 import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
@@ -192,9 +194,16 @@ export async function main(argv: readonly string[]): Promise<number> {
   // A Skirmish opened before any screen: a save that cannot be read, or slots the screen cannot play, are refused here,
   // every problem at once, with nothing on the terminal changed.
   let skirmish: LevelDestination | null = null
+  let profiles
+  try {
+    profiles = readProfiles()
+  } catch (error) {
+    process.stderr.write(`terminal-nexus: ${error instanceof Error ? error.message : String(error)}\n`)
+    return 2
+  }
   if (destination.kind === "skirmish") {
     try {
-      skirmish = openSkirmish(destination, { readFile: readGameFile, slots: { ...optionOf("p1", args.options.get("p1")), ...optionOf("p2", args.options.get("p2")) } })
+      skirmish = openSkirmish(destination, { readFile: readGameFile, profiles, slots: { ...optionOf("p1", args.options.get("p1")), ...optionOf("p2", args.options.get("p2")) } })
     } catch (error) {
       process.stderr.write(`terminal-nexus: ${error instanceof Error ? error.message : String(error)}\n`)
       return 2
@@ -235,13 +244,28 @@ export async function main(argv: readonly string[]): Promise<number> {
   // Save game on a Skirmish writes into the saves folder beside the settings, unless the name it is given has a folder.
   const saver = skirmishSaver(savesFolder())
 
+  // The title menu, wherever it opens: the setup screen's profiles, the player's name, and the saves Load game lists.
+  const folder = savesFolder()
+  const menu = {
+    ...common,
+    exporter: terminalExporter(process.stdout, exportPath()),
+    saver,
+    profiles,
+    playerName: terminalPlayerName(),
+    saves: () => listSaves(profiles, folder),
+    savesShown: shownPath(folder),
+    readFile: readGameFile,
+  }
+
   // A place on the title menu: the menu, opened where the route says; Skirmish hands the terminal to a battle's Build
   // Phase, which exports and saves as one opened here does.
-  if (destination.kind === "title") return runMenu({ ...common, at: destination, exporter: terminalExporter(process.stdout, exportPath()), saver })
+  if (destination.kind === "title") return runMenu({ ...menu, at: destination })
 
-  // A story mission or a Skirmish: its Build Phase, at the round the route names.
+  // A story mission or a Skirmish: its Build Phase, at the round the route names. A Skirmish's result may go to the
+  // setup screen, which opens the title menu's New game on that battle's setup.
   const margin = args.options.get("scroll-margin")
-  return runBuildPhase({
+  let back: SaveSetup | null = null
+  const code = await runBuildPhase({
     ...common,
     at: skirmish ?? (destination as LevelDestination),
     saver,
@@ -249,7 +273,13 @@ export async function main(argv: readonly string[]): Promise<number> {
     experiments: imported.experiments,
     ...(launch.keys === undefined ? {} : { startKeys: launch.keys }),
     exporter: terminalExporter(process.stdout, exportPath()),
+    onSetup: (setup) => {
+      back = setup
+    },
   })
+  const returned = back as SaveSetup | null
+  if (returned === null) return code
+  return runMenu({ ...menu, settings: (await settingsStore.load()) ?? settings, at: { kind: "title", place: "new-game" }, setup: returned })
 }
 
 /** `{ [slot]: value }` when the option was given. */

@@ -147,10 +147,12 @@ test("--load opens a save at its Build Phase, with --p1 and --p2 as the skirmish
   const notSave = runTerminalNexus(["--load", "package.json"])
   assert.equal(notSave.status, 2)
   assert.match(notSave.stderr, /package\.json is not a save the game can load:\n {2}format: /u)
-  // The screen plays p1; p2 a script.
+  // The screen plays p1 against a script in p2, or watches two scripts; p2 as its only player waits.
   const spectating = runTerminalNexus(["--load", "saves/crossing-round-4.save.json", "--p1", "script:rush"])
-  assert.equal(spectating.status, 2)
-  assert.match(spectating.stderr, /no slot is a player: watching two scripts \(spectating\) is not built yet/u)
+  assert.equal(spectating.status, 0, spectating.stderr)
+  const p2Alone = runTerminalNexus(["--load", "saves/crossing-round-4.save.json", "--p1", "script:rush", "--p2", "build:"])
+  assert.equal(p2Alone.status, 2)
+  assert.match(p2Alone.stderr, /p2 as the player is not built yet/u)
   const versus = runTerminalNexus(["--at", "skirmish", "--p2", "build:"])
   assert.equal(versus.status, 2)
   assert.match(versus.stderr, /both slots are players: two players at one screen wait for Versus/u)

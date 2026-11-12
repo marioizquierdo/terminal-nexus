@@ -8,6 +8,8 @@
 //   skirmish                                a Skirmish on the defaults, on a seed the game chooses, as its title menu row starts one
 //   skirmish?seed=1234                      ... on that seed
 //   skirmish?load=saves/crossing.save.json  a save file, opened at its Build Phase
+//   skirmish?setup                          the title menu's Skirmish screen: New game, Load game
+//   skirmish?setup=new   skirmish?setup=load   New game's setup, or Load game's list of saves
 //   story?mission=vasse-test-1              that mission's Build Phase, at its first round
 //   story?mission=vasse-test-1&round=3      ... at round 3: a Battle Round, counted from 1 as the screen counts
 //
@@ -33,7 +35,18 @@ import { DEFAULT_LEVEL, LEVELS, levelById } from "./levels.ts"
 import { SKIRMISH_SEED_LIMIT, isSkirmishSeed } from "../skirmish/words.ts"
 
 /** The title menu's places: each opens one of its screens. */
-export type TitlePlace = "menu" | "story" | "settings" | "about"
+export type TitlePlace = "menu" | "story" | "settings" | "about" | "skirmish" | "new-game" | "load-game"
+
+/** The route each title menu place is written as: its own name, or a Skirmish screen's `skirmish?setup...`. */
+const TITLE_ROUTES: Readonly<Record<TitlePlace, string>> = {
+  menu: "menu",
+  story: "story",
+  settings: "settings",
+  about: "about",
+  skirmish: "skirmish?setup",
+  "new-game": "skirmish?setup=new",
+  "load-game": "skirmish?setup=load",
+}
 
 /**
  * Where a route leads: a place on the title menu; a level's Build Phase at one of its rounds (a story mission's, or a
@@ -75,6 +88,8 @@ type Place = Readonly<{
   resolve: (query: Query, problems: string[]) => Destination | null
   /** Every route it names, to list and to test. */
   routes: () => readonly string[]
+  /** The query names it reads that may stand without a value (`skirmish?setup`). */
+  flags?: readonly string[]
 }>
 
 /** A title menu place: no query, and always the same screen. */
@@ -121,7 +136,14 @@ function story(query: Query, problems: string[]): Destination | null {
 function skirmish(query: Query, problems: string[]): Destination | null {
   const seed = query.get("seed")
   const load = query.get("load")
+  const setup = query.get("setup")
   const before = problems.length
+  if (setup !== undefined) {
+    if (seed !== undefined || load !== undefined) problems.push("setup opens the setup screen: no seed or load beside it")
+    const place = setup === "" ? "skirmish" : setup === "new" ? "new-game" : setup === "load" ? "load-game" : null
+    if (place === null) problems.push(`setup is the Skirmish screen (skirmish?setup), New game (setup=new) or Load game (setup=load), not "${setup}"`)
+    return problems.length > before || place === null ? null : { kind: "title", place }
+  }
   if (seed !== undefined && load !== undefined) problems.push("seed starts a new battle and load opens a saved one: not both")
   if (seed !== undefined && (!/^\d+$/u.test(seed) || !isSkirmishSeed(Number(seed)))) {
     problems.push(`seed must be a whole number from 0 to ${SKIRMISH_SEED_LIMIT - 1}, not "${seed}"`)
@@ -148,9 +170,11 @@ export const PLACES: Readonly<Record<string, Place>> = {
     query: {
       seed: `a new battle's seed, a whole number from 0 to ${SKIRMISH_SEED_LIMIT - 1}; one the game chooses unless given`,
       load: "a save file to open at its Build Phase, as the game's --load takes it",
+      setup: "the setup screen instead of a battle: alone the Skirmish screen (New game, Load game), new or load one of them",
     },
+    flags: ["setup"],
     resolve: skirmish,
-    routes: () => ["skirmish", "skirmish?seed=1", "skirmish?load=saves/crossing-round-4.save.json"],
+    routes: () => ["skirmish", "skirmish?seed=1", "skirmish?load=saves/crossing-round-4.save.json", "skirmish?setup", "skirmish?setup=new", "skirmish?setup=load"],
   },
   story: {
     opens: "the Story screen; with a mission, that mission's Build Phase at a round",
@@ -194,10 +218,7 @@ function readQuery(text: string, problems: string[]): Map<string, string> {
       problems.push(`"${pair}" has no name before its =`)
       continue
     }
-    if (value === "") {
-      problems.push(`${name} needs a value: ${name}=...`)
-      continue
-    }
+    // A name with no value is kept as one (`skirmish?setup`); the place says whether it may stand alone.
     if (query.has(name)) {
       problems.push(`${name} is given twice`)
       continue
@@ -232,7 +253,13 @@ export function parseRoute(text: string): Destination {
     throw new RouteError(text, problems)
   }
   const known = Object.keys(place.query)
-  for (const key of query.keys()) {
+  for (const [key, value] of [...query]) {
+    // A name with no value is a problem unless the place lets it stand alone; it is then not read at all.
+    if (value === "" && !(place.flags ?? []).includes(key)) {
+      problems.push(`${key} needs a value: ${key}=...`)
+      query.delete(key)
+      continue
+    }
     if (Object.hasOwn(place.query, key)) continue
     problems.push(known.length === 0 ? `${name} takes no ${key}: it reads no query` : `${name} takes no ${key}: it reads ${listed(known)}`)
   }
@@ -243,7 +270,7 @@ export function parseRoute(text: string): Destination {
 
 /** A destination's route as the game writes it: the shortest that leads there (round 1 is left unsaid). */
 export function formatRoute(destination: Destination): string {
-  if (destination.kind === "title") return destination.place
+  if (destination.kind === "title") return TITLE_ROUTES[destination.place]
   if (destination.kind === "skirmish") {
     if (destination.load !== undefined) return `skirmish?load=${destination.load}`
     return destination.seed === undefined ? "skirmish" : `skirmish?seed=${destination.seed}`

@@ -250,6 +250,8 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
     case "explore":
       return { hotkey: "e", label: "Explore Map", ...look }
     case "nexus": {
+      // Spectating, the Nexus Pulse is the scripts' own: no row.
+      if (context.spectating === true) return null
       // Its "(1)" is the number of picks waiting — optional for now, so it stops nothing — drawn in the
       // hotkey's colour so it catches the eye without a popup forcing it.
       const pending = pendingPicks(context, state)
@@ -265,7 +267,7 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
     case "start":
       // Never dim: a Nexus power still waiting to be picked does not hold the round back (the owner, round 5:
       // "Nexus Powers should be optional for now"), and the Battle Round screen says it is waiting.
-      return { hotkey: START_KEY, label: START_LABEL, ...look }
+      return { hotkey: START_KEY, label: context.spectating === true ? "Start next round" : START_LABEL, ...look }
     case "construct": {
       const item = context.catalog[target.index]
       if (item === undefined) return null
@@ -318,7 +320,8 @@ function drawCredits(cells: BandCell[], input: BuildCompositionInput, pack: Glyp
  */
 export function drawPanel(cells: BandCell[], input: BuildCompositionInput, pack: GlyphPack, colors: ColorDepth): void {
   const { context, layout } = input
-  drawCredits(cells, input, pack)
+  // Spectating, nothing is bought: no credits line.
+  if (context.spectating !== true) drawCredits(cells, input, pack)
   menuEntries(context).forEach((target, entry) => {
     const row = menuEntryRow(layout, context.catalog, target)
     const spec = menuRowSpec(input, entry)

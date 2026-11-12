@@ -252,7 +252,7 @@ export type BuildCommand =
    * after the result, when the Next round Experiment says so. Like `pulse`, the reducer never sees it: the
    * session swaps in the next round's context, which the shell works out (`src/cli/pulse-run.ts`).
    */
-  | Readonly<{ kind: "next-round"; alternative?: boolean }>
+  | Readonly<{ kind: "next-round"; alternative?: boolean; setup?: boolean }>
   /**
    * **The dialog**: the next line of the round's scene — Enter, Space, or a click anywhere while the dialog
    * is open — or, after its last line, the dialog closes and the Build Phase is exactly as the round opened

@@ -6,7 +6,7 @@
 // gestures a flat menu has no use for: the wheel, and the right button.
 
 import type { BuildLayout } from "./layout.ts"
-import { ESC_KEY, alternativeRow, escLabelAt, inPanelColumns, menuEntryAt, nextRoundRow, pulseControlAt, tileAtCell } from "./layout.ts"
+import { ESC_KEY, alternativeRow, setupRow, escLabelAt, inPanelColumns, menuEntryAt, nextRoundRow, pulseControlAt, tileAtCell } from "./layout.ts"
 import type { PlacedPopup } from "./popup.ts"
 import { popupHitAt } from "./popup.ts"
 import type { Camera } from "./camera.ts"
@@ -27,6 +27,8 @@ export type MouseUiState = Readonly<{
   pulseOver?: boolean
   /** That result offers another way on (a Skirmish's New seed): its row, above, answers a click too. */
   pulseAlternative?: boolean
+  /** That result offers the setup screen: a click on its row goes there. */
+  pulseSetup?: boolean
   /** The card's action rows, each the frame row it is drawn on and the command its key sends (a building's
    *  actions, Explore Map's card): a click on one is that action. */
   actions?: readonly Readonly<{ row: number; command: BuildCommand }>[]
@@ -150,6 +152,9 @@ export function buildMouseCommand(
     }
     if (ui.pulseAlternative === true && inPanelColumns(layout, event.column) && event.row === alternativeRow(layout)) {
       return { kind: "next-round", alternative: true }
+    }
+    if (ui.pulseSetup === true && inPanelColumns(layout, event.column) && event.row === setupRow(layout)) {
+      return { kind: "next-round", setup: true }
     }
     const control = pulseControlAt(layout, event.column, event.row)
     if (control !== null) return { kind: "pulse", control }

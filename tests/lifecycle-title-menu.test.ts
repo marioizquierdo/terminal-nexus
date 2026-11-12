@@ -136,8 +136,9 @@ test("activating the menu's own Exit item — by its hotkey — reaches the same
   assert.ok(stdout.written.includes(MOUSE_REPORTING_OFF))
 })
 
-// Re-pinned from Challenge, which started a run, on Skirmish, which starts one battle the same way.
-test("activating Skirmish leaves the menu without quitting and opens a battle on the defaults, on a seed from the clock", async () => {
+// Re-pinned from Challenge, which started a run, on Skirmish, whose New game starts one battle the same way: Skirmish,
+// New game, and Enter on Start, where it opens.
+test("Skirmish, New game and Enter leave the menu without quitting and open a battle on the defaults, on a seed from the clock", async () => {
   const challenge = TOP_LEVEL_ITEMS.find((item) => item.id === "skirmish")
   assert.ok(challenge)
   assert.notEqual(challenge!.disabled, true, "Skirmish is a dimmed stub")
@@ -164,6 +165,8 @@ test("activating Skirmish leaves the menu without quitting and opens a battle on
   })
   await new Promise((resolve) => setTimeout(resolve, 30))
   stdin.emit("data", Buffer.from(challenge!.hotkey))
+  stdin.emit("data", Buffer.from("1"))
+  stdin.emit("data", Buffer.from("\r"))
   // What the battle's screen returns is what the menu returns.
   assert.equal(await session, 7)
   assert.deepEqual(opened, ["skirmish?seed=567890"])

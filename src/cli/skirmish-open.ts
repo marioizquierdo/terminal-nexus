@@ -9,7 +9,8 @@
 // `skirmishLevel(save)` with the map, the slots and the seed it chose — and Load game a file, as `--load` does here.
 
 import { readPlan } from "../duel/index.ts"
-import type { SaveFile, Slot } from "../skirmish/save.ts"
+import type { Profiles, SaveFile, Slot } from "../skirmish/save.ts"
+import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
 import { newSetup, readSave, SLOTS } from "../skirmish/save.ts"
 import type { SlotAsk } from "../skirmish/slots.ts"
 import { screenProblem, slotAsk, withControllers } from "../skirmish/slots.ts"
@@ -26,6 +27,9 @@ export type OpenSkirmishOptions = Readonly<{
   /** A file's text, for a save or a plan file (`readGameFile`, `./skirmish-files.ts`, in a terminal). Absent: a host
    *  with no files (the browser page), where a save or a plan file is refused. */
   readFile?: (path: string) => string
+  /** The script profiles a slot may name: `players/scripts/` in a terminal (`readProfiles`), the shipped ones unless
+   *  given. */
+  profiles?: Profiles
 }>
 
 /**
@@ -36,6 +40,7 @@ export type OpenSkirmishOptions = Readonly<{
  */
 export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: OpenSkirmishOptions = {}): LevelDestination {
   const now = options.now ?? Date.now
+  const profiles = options.profiles ?? SHIPPED_PROFILES
   const read =
     options.readFile ??
     ((path: string): string => {
@@ -49,7 +54,7 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
     } catch (error) {
       throw new Error(`cannot read the save ${ask.load}: ${error instanceof Error ? error.message : String(error)}`)
     }
-    const { save: loaded, problems } = readSave(text)
+    const { save: loaded, problems } = readSave(text, profiles)
     if (loaded === null) throw new Error(`${ask.load} is not a save the game can load:\n  ${problems.join("\n  ")}`)
     save = loaded
   } else {
@@ -61,7 +66,7 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
     const written = options.slots?.[slot]
     if (written === undefined) continue
     try {
-      asks[slot] = slotAsk(written)
+      asks[slot] = slotAsk(written, profiles)
     } catch (error) {
       problems.push(`--${slot} ${written}: ${error instanceof Error ? error.message : String(error)}`)
     }
@@ -78,9 +83,10 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
     if (planProblems.length > 0) throw new Error(`p1's plan (${planFile}):\n  ${planProblems.join("\n  ")}`)
     draft = { ...draft, p1: plan }
   }
+  if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a testing save: it plays one Battle Round in grid (grid <file>), not on the game's screen`)
   const opened: SaveFile = { ...save, setup, ...(draft === undefined ? {} : { draft }) }
   // A file named without a folder is the working folder's: said so, so Save game writes it back there, not into the saves folder.
   const file = ask.load === undefined ? undefined : ask.load.includes("/") ? ask.load : `./${ask.load}`
-  const level = skirmishLevel(opened, file === undefined ? {} : { file }, { newSeed: () => clockSeed(now()) })
+  const level = skirmishLevel(opened, file === undefined ? {} : { file }, { newSeed: () => clockSeed(now()), profiles })
   return { kind: "level", level, round: 1 }
 }

@@ -4,8 +4,9 @@
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
-import type { DuelState, RoundReport, SidePlan } from "../duel/index.ts"
+import type { DuelState, RoundReport, Side, SidePlan } from "../duel/index.ts"
 import { briefOf, playRound, scriptedPlayer } from "../duel/index.ts"
+import type { RegroupResult } from "../match/index.ts"
 import type { MatchState } from "../state/types.ts"
 import type { Profiles, SaveSetup, Slot } from "./save.ts"
 import { controllerKind, duelSetupOf, IDLE_SCRIPT, scriptPlayed, SIDE_OF } from "./save.ts"
@@ -38,24 +39,30 @@ export type Played = Readonly<{
   events: readonly DomainEvent[]
   final: MatchState | null
   registry: ContentRegistry | null
+  /** The survivors' walk back as the next Build Phase opens; `null` once the battle is over. */
+  regroup: RegroupResult | null
 }>
+
+/** What a screen watches of a round as it plays: every tick's state and events, and the content each side drew on. */
+export type RoundWatch = (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry, sides: Readonly<Record<Side, ContentRegistry>>) => void
 
 /**
  * **The next round of a Skirmish**: the duel brought up to the setup (who plans each slot, the modifiers and the credits
  * shares take effect from this round), each player's slot playing the plan given for it (or none: it builds nothing and
  * attacks), each scripted slot its script's plan, then the Battle Round.
  */
-export function playNext(setup: SaveSetup, state: DuelState, plans: Readonly<Partial<Record<Slot, SidePlan>>>, profiles?: Profiles): Played {
+export function playNext(setup: SaveSetup, state: DuelState, plans: Readonly<Partial<Record<Slot, SidePlan>>>, profiles?: Profiles, watch?: RoundWatch): Played {
   if (state.result !== null) throw new Error("the battle is over: there is no next round to play")
   const current: DuelState = { ...state, setup: { ...duelSetupOf(setup, profiles), ...(state.setup.rosters === undefined ? {} : { rosters: state.setup.rosters }) } }
   const plan = (slot: Slot): SidePlan => (isPlayer(setup, slot) ? (plans[slot] ?? EMPTY_PLAN) : scriptPlan(setup, current, slot, profiles))
   const events: DomainEvent[] = []
   let final: MatchState | null = null
   let registry: ContentRegistry | null = null
-  const played = playRound(current, { A: plan("p1"), B: plan("p2") }, (battle, happened, drawn) => {
+  const played = playRound(current, { A: plan("p1"), B: plan("p2") }, (battle, happened, drawn, sides) => {
     events.push(...happened)
     final = battle
     registry = drawn
+    watch?.(battle, happened, drawn, sides)
   })
-  return { state: played.state, report: played.report, events, final, registry }
+  return { state: played.state, report: played.report, events, final, registry, regroup: played.regroup }
 }

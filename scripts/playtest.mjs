@@ -30,7 +30,10 @@ import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 import { importSettings } from "../src/build/settings-export.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
-import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
+import { gameOpening } from "../src/playtest/build.ts"
+import { runGamePlaytest } from "../src/playtest/game.ts"
+import { readProfiles } from "../src/skirmish/profile-files.ts"
+import { listSaves, savesFolder } from "../src/cli/skirmish-files.ts"
 import { ACTIVITY_FILTERS, formatActivityExport } from "../src/log/activity.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { parseColorDepth, parseTheme } from "../src/view/roles.ts"
@@ -111,6 +114,8 @@ const { values } = parseArgs({
     caption: { type: "string" },
     force: { type: "boolean", default: false },
     activity: { type: "string" },
+    player: { type: "string", default: "player" },
+    saves: { type: "string" },
     help: { type: "boolean", short: "h", default: false },
   },
 })
@@ -134,11 +139,13 @@ if (values.help || (values.keys === undefined && values.file === undefined && va
 // on the title menu, which this playtest does not play.
 const script = values.file === undefined ? values.keys : readFileSync(values.file, "utf8")
 let opening
+const profiles = readProfiles()
 try {
   const slots = { ...(values.p1 === undefined ? {} : { p1: values.p1 }), ...(values.p2 === undefined ? {} : { p2: values.p2 }) }
-  opening = playtestOpening({ at: values.at, settings: values.settings, keys: script }, values.file, {
+  opening = gameOpening({ at: values.at, settings: values.settings, keys: script }, values.file, {
     ...(values.load === undefined ? {} : { load: values.load }),
     slots,
+    profiles,
   })
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
@@ -155,13 +162,19 @@ const colors = parseColorDepth(values.colors ?? startSettings.colors)
 const theme = parseTheme(values.theme ?? startSettings.theme)
 const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
 
-const run = runBuildPlaytest({
+// The saves Load game lists: the real saves folder unless --saves names another (tmp/saves for a script's own).
+const savesDir = values.saves === undefined ? savesFolder() : resolve(values.saves)
+const run = runGamePlaytest({
   steps: opening.steps,
   columns: Number(size[1]),
   rows: Number(size[2]),
   settings: { ...startSettings, colors, theme, glyphPack },
   experiments: imported.experiments,
-  at: opening.at,
+  start: opening.start,
+  profiles,
+  playerName: values.player,
+  saves: () => listSaves(profiles, savesDir),
+  ...(values.saves === undefined ? {} : { savesFolder: savesDir }),
 })
 const last = run.frames.length - 1
 
@@ -178,7 +191,8 @@ const heading = (frame) =>
 // What the bottom line reads after the step — the last key's answer, or the hint for where the keyboard
 // is, or the Pulse's own line: read off the frame itself, so it is what a player sees.
 const statusOf = (frame) => {
-  const line = frameToText(frame.frame).split("\n")[run.layout.footerRow] ?? ""
+  if (frame.footerRow === null) return frame.summary ?? ""
+  const line = frameToText(frame.frame).split("\n")[frame.footerRow] ?? ""
   return line.replace(/^\s*\|\s?/u, "").replace(/\s*\|\s*$/u, "").trim() || "(bottom line empty)"
 }
 
@@ -187,16 +201,17 @@ const textPath = join(outDir, `${values.name}.txt`)
 writeFileSync(textPath, transcript, "utf8")
 
 for (const frame of run.frames) {
-  const { cursor } = frame.state
-  const where = `cursor ${`${cursor.x},${cursor.y}`.padEnd(5)}${frame.moveKind === null ? "" : ` ${frame.moveKind}`}`.padEnd(20)
-  const summary = `step ${String(frame.index).padStart(2)}  ${frame.label.padEnd(12)} focus ${frame.state.focus.padEnd(4)}  ${where}${statusOf(frame)}`
+  const summary =
+    frame.state === null
+      ? `step ${String(frame.index).padStart(2)}  ${frame.label.padEnd(12)} title  ${statusOf(frame)}`
+      : `step ${String(frame.index).padStart(2)}  ${frame.label.padEnd(12)} focus ${frame.state.focus.padEnd(4)}  ${`cursor ${`${frame.state.cursor.x},${frame.state.cursor.y}`.padEnd(5)}${frame.moveKind === null ? "" : ` ${frame.moveKind}`}`.padEnd(20)}${statusOf(frame)}`
   if (values.print === "all") process.stdout.write(`${heading(frame)}\n${frameToText(frame.frame)}\n\n`)
   else process.stdout.write(`${summary}\n`)
 }
 if (values.print === "final") process.stdout.write(`\n${frameToText(run.frames[last].frame)}\n`)
 if (run.ended !== null) {
   process.stdout.write(
-    `\nthe script left the screen (${run.ended.by}) at step ${run.ended.atStep}; ${run.ended.skipped} later step(s) not run\n`,
+    `\nthe script left the game at step ${run.ended.atStep}; ${run.ended.skipped} later step(s) not run\n`,
   )
 }
 process.stdout.write(`\ntext of every step: ${relative(repoRoot, textPath)}\n`)
@@ -240,8 +255,8 @@ if (values.png !== undefined) {
     report(
       renderFramePng({
         frame: frame.frame,
-        colors: frame.state.settings.colors,
-        theme: frame.state.settings.theme,
+        colors: frame.settings.colors,
+        theme: frame.settings.theme,
         caption: caption(frame),
         targetPath: join(outDir, name),
         scratchDir: scratch,
@@ -258,8 +273,8 @@ if (values.gif) {
       caption: caption(frame),
       delayMs: index === last ? Number(values.hold) : Number(values.delay),
     })),
-    colors: run.frames[last].state.settings.colors,
-    theme: run.frames[last].state.settings.theme,
+    colors: run.frames[last].settings.colors,
+    theme: run.frames[last].settings.theme,
     targetPath: join(outDir, `${values.name}.gif`),
     scratchDir: scratch,
     scale: Number(values.scale ?? 2),

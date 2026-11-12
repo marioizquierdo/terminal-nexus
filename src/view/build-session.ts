@@ -110,6 +110,11 @@ export type BuildSessionOptions = Readonly<{
    */
   onSave?: (context: BuildContext, state: BuildState, name: string) => Readonly<{ ok: boolean; text: string; context?: BuildContext }>
   /**
+   * **The setup screen, from a battle's result** (`[m] Setup screen`): the shell leaves this screen for the title menu's
+   * New game, with this round's context to take the battle's setup from. Absent: the result offers no such row.
+   */
+  onSetup?: (context: BuildContext) => void
+  /**
    * Whether a round that opens with a scene (`BuildContext.scene`: the mission's lines, a Commander's
    * return) plays it in the dialog before the player has the keyboard: on in the game, the browser page and
    * the scripted playtest. Off unless asked — a session a test builds directly — so every test that starts
@@ -174,6 +179,7 @@ export class BuildSession {
   private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
   private readonly keep: (context: BuildContext, card: PowerCard) => BuildContext
   private readonly onSave: NonNullable<BuildSessionOptions["onSave"]>
+  private readonly onSetup: ((context: BuildContext) => void) | null
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
@@ -204,6 +210,7 @@ export class BuildSession {
     }
     this.onSave = options.onSave ?? ((): ReturnType<NonNullable<BuildSessionOptions["onSave"]>> => ({ ok: false, text: "This screen cannot write a save file." }))
     this.foresee = options.foresee ?? null
+    this.onSetup = options.onSetup ?? null
     this.keep = options.keep ?? ((context, card) => ({ ...context, kept: [...(context.kept ?? []), card] }))
     this.barksOf = options.barksOf
     this.recordDialog(null)
@@ -290,7 +297,8 @@ export class BuildSession {
       return
     }
     if (command.kind === "next-round") {
-      this.moveOn(command.alternative === true)
+      if (command.setup === true) this.toSetup()
+      else this.moveOn(command.alternative === true)
       return
     }
     // Restart is the mission's, from round 1: the reducer starts a Build Phase over on the context it is
@@ -477,6 +485,16 @@ export class BuildSession {
    * way — the settings, the Experiments and the view carried over, the cursor on the Grid Nexus — and the
    * Pulse is gone. Before the result stands it is nothing: a key must never skip the ending.
    */
+  /** The result's way back to the setup screen: the shell leaves this screen for it, with the round's context. Only
+   *  once the result stands, and only when the round offers it and the shell can go there. */
+  private toSetup(): void {
+    const presenter = this.presenter
+    if (presenter === null || presenter.phase() !== "home" || this.onSetup === null) return
+    if (presenter.resolved.mission?.ending?.setup === undefined) return
+    this.log.log("build.command", { command: "setup-screen" })
+    this.onSetup(this.context)
+  }
+
   private moveOn(alternative: boolean): void {
     const presenter = this.presenter
     if (presenter === null || presenter.phase() !== "home") return
@@ -665,6 +683,7 @@ export class BuildSession {
       pulse: this.presenter !== null,
       pulseOver: this.presenter?.phase() === "home",
       pulseAlternative: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.alternative !== undefined,
+      pulseSetup: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.setup !== undefined && this.onSetup !== null,
       // Without a clock every key is a press on its own — a tap, or the fast move's jump as far as the
       // setting says now.
       ...(now === undefined
@@ -696,6 +715,7 @@ export class BuildSession {
       pulse: this.presenter !== null,
       pulseOver: this.presenter?.phase() === "home",
       pulseAlternative: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.alternative !== undefined,
+      pulseSetup: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.setup !== undefined && this.onSetup !== null,
     })
   }
 

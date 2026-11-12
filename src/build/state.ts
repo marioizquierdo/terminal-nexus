@@ -200,6 +200,12 @@ export type BuildContext = Readonly<{
    * by a mode that can be saved (a Skirmish). Absent: nothing to save, and the game menu's Save game row is dimmed.
    */
   saveName?: string
+  /**
+   * **Spectating** (docs/system-design/ui-patterns.md, "Spectating"): nobody plans this round at the screen — both
+   * sides are scripts — so the menu is only Explore Map and Start next round: no Nexus Pulse row, no credits line, no
+   * buildings, and Start begins the round at once. Absent: a player plans it.
+   */
+  spectating?: boolean
   /** Where the adapter writes a save, said in the Save game popup — "Saved under ~/.terminal-nexus/saves/ unless the
    *  name has a folder." Absent: the adapter cannot write one (the browser page), and Save game is dimmed. */
   saveDestination?: string
@@ -1367,7 +1373,7 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
   if (target.kind === "construct") return armItem(context, highlighted, target.index, "menu")
   // The keyboard goes to the menu, where a click from the map landed, before the popup takes it — so
   // the pick hands the player back to the menu.
-  if (target.kind === "nexus") return openNexus(toMenu(highlighted))
+  if (target.kind === "nexus") return context.spectating === true ? refuseSpectating(state) : openNexus(toMenu(highlighted))
   if (target.kind === "start") return openBattleRound(context, highlighted)
   return openExplore(context, highlighted, "menu")
 }
@@ -1380,6 +1386,18 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
  *  (`refuseWhileArmed`). */
 function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
+  // Spectating, there is no plan to confirm: Start next round begins it at once.
+  if (context.spectating === true) {
+    const lock = editLock(state)
+    if (lock !== null) return { ...state, status: lock, ack: acknowledge(state, "refused", entry) }
+    return {
+      ...closePopups(toMap(state)),
+      menuHighlight: entry,
+      ack: acknowledge(state, "pressed", entry),
+      committed: true,
+      status: status(`Battle Round ${state.pulseNumber}: both scripts' plans revealed.`, "success"),
+    }
+  }
   const refused = refuseWhileArmed(context, state)
   if (refused !== null) return refused
   const lock = editLock(state)
@@ -1467,6 +1485,11 @@ function bannerStance(context: BuildContext, state: BuildState, stance: BannerSt
     ...pushPopup(lookAt(context, base, tile), "battle-round", BANNER_START_ROW),
     status: status(`Banner on ${name}, ${stance}.`, "success"),
   }
+}
+
+/** Spectating, the Nexus Pulse is the scripts' to pick: `n` says so and changes nothing. */
+function refuseSpectating(state: BuildState): BuildState {
+  return { ...state, status: status("Watching: the scripts pick their own powers. [s] starts the round.", "warning") }
 }
 
 /** `n`, or the Nexus entry: open its popup. Its row flashes "pressed", however it was reached — a
@@ -2105,7 +2128,10 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.popup !== null) return { ...state, popupHighlight: step(state.popupHighlight, popupRowCount(context, state)) }
       if (state.focus !== "menu") return state
       if (state.highlightHidden) return revealHighlight(state)
-      return { ...state, menuHighlight: step(state.menuHighlight, menuEntries(context).length) }
+      const next = step(state.menuHighlight, menuEntries(context).length)
+      // Spectating, the Nexus Pulse row is not drawn: the walk steps over it.
+      if (context.spectating === true && next === NEXUS_ENTRY) return { ...state, menuHighlight: command.delta < 0 ? EXPLORE_ENTRY : startEntry(context.catalog.length) }
+      return { ...state, menuHighlight: next }
     }
 
     case "activate": {
@@ -2124,7 +2150,7 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       return refuseOnMenu(state)
 
     case "open-nexus-powers":
-      return openNexus(state)
+      return context.spectating === true ? refuseSpectating(state) : openNexus(state)
 
     case "explore":
       return toggleExplore(context, state)

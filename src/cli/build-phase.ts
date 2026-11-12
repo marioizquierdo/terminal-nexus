@@ -38,6 +38,8 @@ import type { Experiments } from "../build/experiments.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { ExportKind } from "../build/types.ts"
 import type { ActivityLog, HostName } from "../log/activity.ts"
+import type { SaveSetup } from "../skirmish/save.ts"
+import { isSkirmish, positionOf } from "./skirmish-play.ts"
 import { activity as globalActivity } from "../log/activity.ts"
 
 const ESC = "\u001b"
@@ -117,6 +119,11 @@ export type BuildPhaseOptions = Readonly<{
    *  Commander's return — and the Commander's appearance with it (`commander-moments.ts`). On unless a test turns
    *  it off to start on the menu. */
   scenes?: boolean
+  /**
+   * **The setup screen, from a Skirmish's result** (`[m] Setup screen`): this screen leaves without exiting, and is
+   * handed the battle's setup to open New game on once the terminal is back. Absent: the result offers no such row.
+   */
+  onSetup?: (setup: SaveSetup) => void
 }>
 
 export async function runBuildPhase(options: BuildPhaseOptions): Promise<number> {
@@ -190,6 +197,15 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     })
   }
 
+  /** The battle's setup, once its result's Setup screen was chosen: handed on when this screen has gone. */
+  let backToSetup: SaveSetup | null = null
+  const toSetup = (round: BuildContext): void => {
+    if (leaving || !isSkirmish(round)) return
+    backToSetup = positionOf(round).setup
+    leaving = true
+    void dispose().then(() => settleSession?.())
+  }
+
   // Saving works as the title menu's Settings screen does (`src/cli/menu.ts`): each write chained on
   // the last, so the last change is the one on disk, and awaited by the disposer before the process
   // exits; a failure is reported once the terminal is back to normal, never mid-screen.
@@ -242,6 +258,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     keep: play.keep,
     ...(play.resume === undefined ? {} : { resume: play.resume }),
     ...(options.saver === undefined ? {} : { onSave: options.saver.onSave }),
+    ...(options.onSetup === undefined ? {} : { onSetup: toSetup }),
     scenes: options.scenes ?? true,
   })
 
@@ -480,6 +497,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     host.reportError(`terminal-nexus failed in the Build Phase: ${String(failure)}\n`)
     return 1
   }
+  const setup = backToSetup as SaveSetup | null
+  if (setup !== null) options.onSetup?.(setup)
   return 0
 }
 
