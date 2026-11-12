@@ -1,4 +1,4 @@
-// The files a Skirmish reads and writes in a terminal: a save or a plan file read (`readGameFile`), and Save game's
+// The files a Skirmish reads and writes in a terminal: a save or a build file read (`readGameFile`), and Save game's
 // writer (`skirmishSaver`), into the saves folder beside the settings. Kept apart from `./skirmish-open.ts`, which the
 // browser page reads too and which therefore names no file system.
 

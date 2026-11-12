@@ -7,12 +7,12 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { playStrategies } from "../src/cli/play-strategies.ts"
-import type { DuelSetup, DuelState, Roster, SidePlan } from "../src/duel/index.ts"
-import { armyOf, briefOf, duelArmy, handOf, loadoutOf, newDuel, playDuel, playRound, readPlan, SCRIPTED } from "../src/duel/index.ts"
+import type { DuelSetup, DuelState, Roster, BuildActions } from "../src/duel/index.ts"
+import { armyOf, briefOf, duelArmy, handOf, loadoutOf, newDuel, playDuel, playRound, readBuildActions, SCRIPTED } from "../src/duel/index.ts"
 import { hashOf } from "../src/state/canonical.ts"
 
 const setup = (extra: Partial<DuelSetup> = {}): DuelSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
-const hold: SidePlan = { build: [], stance: "hold" }
+const hold: BuildActions = { build: [], stance: "hold" }
 
 // It plays a whole duel twice over: longer than Bun's five seconds a test, so it says how long it may take.
 test("a duel resolves the same every run: the same setup and plans give the same duel, round by round", { timeout: 60_000 }, () => {
@@ -52,7 +52,7 @@ test("each side fields its own army: its Commander, its faction's Nexus, its bui
 })
 
 test("a plan is held to the Build Phase's rules: its menu, its tree, its credits and the legal ground, every refusal said", () => {
-  const plan: SidePlan = {
+  const plan: BuildActions = {
     build: [
       { building: "garrison", at: "forward" },
       { building: "barracks", at: "forward" },
@@ -101,10 +101,10 @@ test("two buildings planned on one tile, one by each side, are both refused and 
 })
 
 test("a plan is read leniently: the first JSON object in the text, a building as a bare name, a bad field dropped and said", () => {
-  const read = readPlan('Sure! Here is my plan:\n```json\n{"power": 2, "build": ["barracks", {"building": "depot", "at": "behind"}], "stance": "charge", "note": "go"}\n```')
-  assert.deepEqual(read.plan, { power: 2, build: [{ building: "barracks" }, { building: "depot" }], stance: "hold", note: "go" })
+  const read = readBuildActions('Sure! Here is my plan:\n```json\n{"power": 2, "build": ["barracks", {"building": "depot", "at": "behind"}], "stance": "charge", "note": "go"}\n```')
+  assert.deepEqual(read.actions, { power: 2, build: [{ building: "barracks" }, { building: "depot" }], stance: "hold", note: "go" })
   assert.deepEqual(read.problems, ['build 2: "at" should be one of nexus, forward, back, north, south; it goes by its Nexus', '"stance" should be attack or hold; it holds'])
-  assert.deepEqual(readPlan("no idea").plan, { build: [], stance: "hold" })
+  assert.deepEqual(readBuildActions("no idea").actions, { build: [], stance: "hold" })
 })
 
 test("the brief says what a player needs: the round, the Commander and her skills, the hand, the buildings, the map, the plan's form", () => {
@@ -125,7 +125,7 @@ test("a player that reads words finds the play strategies in its brief, just bef
   assert.ok(strategies.startsWith("## What duels have taught so far"), "the brief takes the page from its marker on, the advice alone")
   const text = briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A", strategies).text
   const taught = text.indexOf("## What duels have taught so far")
-  assert.ok(taught > 0 && taught < text.indexOf("## Your plan"), "the strategies come before the plan")
+  assert.ok(taught > 0 && taught < text.indexOf("## Your build actions"), "the strategies come before the build actions")
   // A script reads the data, which carries no strategies: the brief without them is whole.
   assert.ok(!briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A").text.includes("What duels have taught"))
 })

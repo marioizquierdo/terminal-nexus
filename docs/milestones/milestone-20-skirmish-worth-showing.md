@@ -48,7 +48,7 @@ enemy plays new and how they're plotting to counter your build." The plans stay 
 
 ### Step 20C — A script that answers
 
-What the Skirmish milestone's test runs found (2026-11-12, `skirmish --play-until-win --seeds`): on the Pocket, over
+What the Skirmish milestone's test runs found (2026-11-12, `skirmish --play-to end --seeds`): on the Pocket, over
 four seeds and every pairing of Commanders, the script decided every battle and the Commander never did — `steady`
 (balanced) beat `agro` (rush) and `defensive` (turtle) four to nothing (three to one in the Dob mirror), and
 `defensive` beat `agro` four to nothing. With the sides swapped, `steady` in the east won 22 of 24 the same way, so it is

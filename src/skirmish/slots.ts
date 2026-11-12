@@ -1,19 +1,19 @@
-// Who plays each slot, as a command line asks for it: `--p1`/`--p2` with `build:<plan file>`, `build:`,
+// Who plays each slot, as a command line asks for it: `--p1`/`--p2` with `build:<build file>`, `build:`,
 // `script:<name>` or `script:` — the same words for the `skirmish` command (`src/cli/skirmish.ts`), the game
-// (`terminal-nexus --load`) and the scripted playtest. Pure: a plan file's text is read by the caller.
+// (`terminal-nexus --load`) and the scripted playtest. Pure: a build file's text is read by the caller.
 
 import type { Controller, Profiles, SaveSetup, Slot } from "./save.ts"
 import { controllerKind, controllerProblem, IDLE_SCRIPT, SLOTS } from "./save.ts"
 
-/** What `--p1`/`--p2` asks for: the controller, and for a player the plan file it reads (`""`: none). */
-export type SlotAsk = Readonly<{ controller: Controller; planFile?: string }>
+/** What `--p1`/`--p2` asks for: the controller, and for a player the build file it reads (`""`: none). */
+export type SlotAsk = Readonly<{ controller: Controller; buildFile?: string }>
 
 /** `build:<file>`, `build:`, `script:<name>`, `script:`, or a controller as a save writes it. */
 export function slotAsk(text: string, profiles?: Profiles): SlotAsk {
-  if (text === "build" || text.startsWith("build:")) return { controller: "player", planFile: text.slice("build:".length) }
+  if (text === "build" || text.startsWith("build:")) return { controller: "player", buildFile: text.slice("build:".length) }
   if (text === "script" || text === "script:") return { controller: `script:${IDLE_SCRIPT}` }
   const problem = controllerProblem(text, profiles)
-  if (problem !== null) throw new Error(`${problem}: a slot is build:<plan file> or script:<profile>`)
+  if (problem !== null) throw new Error(`${problem}: a slot is build:<build file> or script:<profile>`)
   return { controller: text }
 }
 

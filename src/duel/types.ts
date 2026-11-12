@@ -87,7 +87,7 @@ export const APART_GAP = 10
  * the buildings that train units (`formation`; absent, each goes where its placement says), and the stance.
  * `note` is the player's own words on why, kept in the record and shown to nobody else during the duel.
  */
-export type SidePlan = Readonly<{
+export type BuildActions = Readonly<{
   power?: number
   build: readonly Placement[]
   formation?: Formation

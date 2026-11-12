@@ -23,7 +23,7 @@ headless with scripts on either side.
 | --- | --- |
 | **Map** | The ground and its **slots**: where each Nexus stands and where its troops hold. A map fixes how many sides a battle has (two today) |
 | **Slot** | One side of the battle, by number (`p1` west, `p2` east): its Commander and its **controller**. The duel's own state calls them side A and side B |
-| **Controller** | Who plans a slot each round: `player` (a person, at the screen or through a plan file; `player:<name>` names them), `script:<profile>` (a scripted player), `agent:<profile>` (a language model, later) |
+| **Controller** | Who plans a slot each round: `player` (a person, at the screen or through a build file; `player:<name>` names them), `script:<profile>` (a scripted player), `agent:<profile>` (a language model, later) |
 | **Script profile** | A named scripted player and its options, a file in `players/scripts/` (`agro.json`). The same scripts the duels and the measurements play |
 | **Agent profile** | A language model's playing style, a Markdown file in `players/agents/` (`curious.md`). Its milestone decides the rest |
 | **Goal** | What wins: **Elimination** (destroy the enemy Nexus; the healthier Nexus after the last round) is the only one built first |
@@ -36,7 +36,35 @@ headless with scripts on either side.
 The code's word for the two-sided battle stays *duel* (as the engine's word for a battle is *match*); a person reads
 *Skirmish*.
 
-## 2. Setting up a Skirmish
+## 2. How the pieces compose
+
+One battle, many ways in. Each layer knows only the one beneath it, so the game's screen, the command line, the
+scripted playtest, a test and an agent are the same battle reached by different doors (the owner, 2026-11-12: "reusing
+components like this is more maintainable, flexible and easier to explain"):
+
+| Layer | What it is | Where |
+| --- | --- | --- |
+| **The battle** | The duel: a round from both sides' build actions, deterministic, the regroup after it | `src/duel/`, the kernel beneath |
+| **The record** | A save: the setup and the battle at a Build Phase, and a slot's build actions so far | `src/skirmish/save.ts` |
+| **The seat** | Who plays each slot: a person, a build file, a script profile, later an agent; each answers the same brief, in any order | `src/skirmish/request.ts`, `slots.ts`, `play.ts` |
+| **The round** | `playNext`: the setup's rules brought up to date, each slot's build actions asked of its controller, the round played | `src/skirmish/play.ts` |
+| **The doors** | The screen (a person plays p1, or watches), the `skirmish` command (anything, headless, any number of rounds and battles), the playtest (keys pressed on the screen), the routes (`skirmish?load=…`) | `src/cli/skirmish-play.ts`, `src/cli/skirmish.ts`, `scripts/playtest.mjs`, `src/cli/route.ts` |
+
+What follows from it:
+
+- **A moment is a file.** Every Build Phase any door reaches can be saved, and every door opens a save; a note (`!`) is
+  a save with what was pressed. So an agent prepares a moment for a person (a round reached by scripts, an opponent
+  chosen) and hands over one line, `./bin/terminal-nexus.ts --load <file>`; a person's moment comes back the same way.
+- **A player is anything that answers a brief.** A person on the screen, a build file (one round or many, written
+  ahead), a script, a model: each is a controller, the brief they read is the same, and none of them can see another's
+  answer. A new kind of player is a new controller, not a new door.
+- **One rule, one place.** A rule of play lives in the battle or the round, never in a door; a door adds only what it
+  is for (the screen's keys and pictures, the command's options and files). A change shows up in every door at once,
+  and a test through the command is a test of the screen's battle.
+- **Words are shared.** `--p1`/`--p2`, `build:` and `script:` mean the same on the command line, the game's flags and
+  the routes; the save's names are the setup screen's.
+
+## 3. Setting up a Skirmish
 
 **The setup screen asks, in order** (RULE for what is built — `tests/setup-screen.test.ts`; the order follows what each
 choice depends on; how it looks and which keys it takes are [`ui-patterns.md`](ui-patterns.md), the setup screen):
@@ -69,7 +97,7 @@ there: the page has no files to read. A terminal reads `players/scripts/` from d
 on any slot: there is no difficulty setting, and both sides start on equal ground (the owner, 2026-11-11 and
 2026-11-12).
 
-## 3. The save file
+## 4. The save file
 
 **One format, written by the game and by a person** (RULE for what is built: `src/skirmish/save.ts`; the JSON Schema is
 [`saves/save.schema.json`](../../saves/save.schema.json), and [`saves/`](../../saves) holds examples):
@@ -104,10 +132,12 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
   engine's words, where side A is `p1` and side B is `p2`: the round to play, each side's credits, kept powers and
   absent Commander, every round's report, the result once there is one, and `carried`, what stands on the Grid. The
   Grid's ground is never in it: the map has it.
-- **`draft`** is a slot's plan so far (the duel's plan, [`duels.md`](duels.md)), so a load returns to where it stopped.
+- **`draft`** is a slot's build actions so far for the round it is at ([`duels.md`](duels.md), the brief and the build
+  actions), so a load returns to where it stopped: half made, as Save game leaves them mid-Build Phase, or whole, handed in
+  by one slot before the other's.
   It is cleared when the round is played.
 - **`start`** is what each slot has on the Grid before round 1, placed by hand: a save with one is a **testing save**
-  (section 4). A side's credits and roster in `start` are not built: no testing save needs them yet.
+  (section 5). A side's credits and roster in `start` are not built: no testing save needs them yet.
 - **The log is never in a save** (the owner: "Logging is a separate concern").
 - **A save the loader refuses is refused whole**, every problem named at once, by its place in the file
   (`setup.slots.p2.controller: no script "aggro"`).
@@ -116,7 +146,7 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
 
 **Saving and loading happen at a Build Phase** (RULE — settled 2026-11-12, the owner: "saving and loading game is always
 for the build phase"; `tests/skirmish-play.test.ts`). **Save game** is on the game menu (Esc, `[v]`; the owner: "on the
-main menu settings "[esc]" instead of in the side menu"): it writes the battle as the Build Phase opened and the plan
+main menu settings "[esc]" instead of in the side menu"): it writes the battle as the Build Phase opened and the build actions
 so far as p1's draft, under a name the player types, offered as the file loaded or last saved to, or a new name by the
 setup (`vasse-dob-1234-round-3`). A name alone goes into `~/.terminal-nexus/saves/` (the folder beside
 `settings.json`), a name with a folder where it says, `.save.json` added unless it ends in `.json`. Loading it returns to
@@ -126,9 +156,9 @@ the round then plays as the uninterrupted one. It is dimmed on a story mission a
 **The screen is a save played on** (RULE — `src/cli/skirmish-play.ts`, `tests/setup-screen.test.ts`): a Skirmish's
 round carries its setup and the duel as the Build Phase opened (`saveOf` and `duelOf` turn either into the other), so
 there is no screen state a save could miss, and **every round is played by `playNext`** (`src/skirmish/play.ts`), the
-same function the `skirmish` command plays, with the script profiles: the same setup and plans give the same duel on
+same function the `skirmish` command plays, with the script profiles: the same setup and build actions give the same duel on
 screen as headless, profiles, credits shares and modifiers included. The screen plays slot p1 as its player against
-p2's script, or watches two scripts (spectating, section 7); p2 as the only player is not built, two players wait for
+p2's script, or watches two scripts (spectating, section 8); p2 as the only player is not built, two players wait for
 Versus, and an agent for its milestone, each refused saying so.
 
 **The units in a save stand where the regroup leaves them** (RULE — the owner, 2026-11-12): the state a save keeps is the
@@ -137,7 +167,7 @@ screen moves during a Build Phase (a regroup still animating, a unit stepping of
 presentation: the Battle Round opens from the saved places, so a battle loaded from a save plays as the one played
 straight through (tested on Node and Bun).
 
-## 4. Testing saves
+## 5. Testing saves
 
 **A testing save opens on a Battle Round written by hand** (RULE — `src/skirmish/start.ts`,
 `src/skirmish/testing-saves.ts`, `tests/skirmish-save.test.ts`, `tests/testing-saves.test.ts`): a save with a `start`,
@@ -174,17 +204,17 @@ saves, in [`skirmish-testing/`](../../skirmish-testing), a folder for each purpo
 - **One opening, two players of it.** The round opens exactly from `start`, by the kernel (`openBattle`,
   `src/skirmish/opening/open.ts`), not by the duel: the same entities in the same reading order, the same seed, the
   same hash. `grid <save>` watches it, `grid <save> --seeds` makes it a trial, the measurement and every test open it,
-  and `skirmish --load <save> --battle` plays it and prints `grid`'s report; nothing is saved after it, since the file
+  and `skirmish --load <save> --play-to next` plays it and prints `grid`'s report; nothing is saved after it, since the file
   is the battle.
 - **Refused whole**, as any save: every problem at once, by its place in the file, and once the shape is right the first
   unit that does not fit the ground (off the Grid, on rock, on another) as `start: ...`.
 
 The built-in maps are files in `maps/` (`crossing.map.json`, `pocket.map.json`), read by `src/duel/maps.ts` and named by id.
 
-## 5. Headless, and the same everywhere
+## 6. Headless, and the same everywhere
 
 **The `skirmish` command plays a Skirmish without a screen** (RULE for what is built — `tests/skirmish-command.test.ts`,
-`tests/skirmish-save.test.ts`): from a save or a new setup, it prints the brief of a slot a player plans, checks a plan
+`tests/skirmish-save.test.ts`): from a save or a new setup, it prints the brief of a slot a player plays, checks its build actions
 by the Build Phase's rules, plays a round or the battle to its end, many battles over seeds or every pairing of
 Commanders, two sessions taking turns through one save, and keeps every round as a save, a report and the battle's
 log. Its manual, every option with examples, is the comment [`src/cli/skirmish.ts`](../../src/cli/skirmish.ts) opens
@@ -192,27 +222,27 @@ with (`npm run skirmish -- --help`); how each kind of test uses it is [`testing-
 
 **Parity with the command** (RULE — the owner, 2026-11-12: "formalize the concept that works both from the UI and from
 the CLI"): the screen and the command open a battle by the same steps (`src/skirmish/request.ts`: a new setup or a save
-read back, then each slot seated with its controller, its credits share and a player's plan file) and play every round
-through `playNext`. A slot is written the same everywhere: `--p1`/`--p2` with `build:<plan file>` (a player; `build:`
+read back, then each slot seated with its controller, its credits share and a player's build file) and play every round
+through `playNext`. A slot is written the same everywhere: `--p1`/`--p2` with `build:<build file>` (a player; `build:`
 alone, the draft or nothing) or `script:<profile>` (`script:` alone plans nothing); a loaded battle keeps its map,
 Commanders and seed, and each slot's controller unless named. A change to one is a change to both.
 
-**The game's own flags** take the same names: `terminal-nexus --load <file> [--p1 build:plan.json] [--p2 script:turtle]`
-(a plan file for p1 is laid on the first Build Phase, as a draft is), the route `skirmish?load=<file>` (with `p1` and
+**The game's own flags** take the same names: `terminal-nexus --load <file> [--p1 build:b.json] [--p2 script:turtle]`
+(a build file's actions for p1 are laid on the Build Phase it opens at, as a draft is), the route `skirmish?load=<file>` (with `p1` and
 `p2` to change who plays), and `skirmish?seed=7&map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds`
 for a new battle under the command's names, the defaults for what it leaves out. A battle started on the setup screen
 (`skirmish?setup=new`) has that route, so it opens again from it. The scripted playtest takes the same `--load`, `--p1` and `--p2`, and starts from
 `saves/crossing-new.save.json` when told nowhere.
 
-## 6. How an agent plays a Skirmish
+## 7. How an agent plays a Skirmish
 
-Round by round from a save file, as a person would: the brief of its slot, a plan written from it, the plan checked,
-then played against the other slot's script and saved at the next Build Phase; or one session a slot against another
-agent, through the same file; or on the screen by keys through the scripted playtest. The commands for each are
+Round by round from a save file, as a person would: the brief of its slot, build actions written from it, checked,
+then played against the other slot's script and saved at the next Build Phase; or two agents, one a slot, each
+answering the same brief; or on the screen by keys through the scripted playtest. The commands for each are
 [`testing-ground.md`](testing-ground.md), testing through Skirmishes. The player's diary (Milestone 20) plays a whole
 battle on the screen this way.
 
-## 7. Spectating
+## 8. Spectating
 
 With no `player` slot the Build Phase has nothing to build (RULE — `tests/setup-screen.test.ts`): its menu is Explore
 Map and Start next round, which begins the round at once, both scripts' plans revealed as it starts and played by
@@ -221,7 +251,7 @@ Map and Start next round, which begins the round at once, both scripts' plans re
 set to scripts opens it, and so does `--load <save> --p1 script:<profile>`. What each side planned, read before the
 round, is Milestone 20's "reading the opponent".
 
-## 8. Notes from a playtest
+## 9. Notes from a playtest
 
 **A note is the moment itself** (RULE — `src/cli/notes.ts`, `tests/notes.test.ts`; the owner, 2026-11-12, notes built
 on save files): `!`, on any screen, takes one typed line, and the note file it saves (`terminal-nexus.note/1`) holds
@@ -236,7 +266,7 @@ to `noteAt`, so the screen is the one the note shows. A title menu note opens on
 skill reads note files. A note is not the replay format: no content locks and no version checks; only the build that
 wrote it promises to replay it. Not built: the browser page opening a note, and the optional rating of a round.
 
-## 9. What is not decided
+## 10. What is not decided
 
 - Goals beyond Elimination (the owner named Economy and Creative) and which modifiers come first: IDEAs, each built
   when a Skirmish is fun without it.

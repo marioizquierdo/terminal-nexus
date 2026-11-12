@@ -18,7 +18,7 @@ import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts
 import type { Player } from "../src/duel/index.ts"
 import { briefOf, duelArmy, handOf, mapOf, newDuel, placementsOf, playRound, scriptedPlayer } from "../src/duel/index.ts"
 import type { PlayableLevel } from "../src/cli/levels.ts"
-import { driveSkirmish, newSkirmishLevel, playedOf, positionOf, saveOfRound, scriptedRound, sidePlanOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
+import { driveSkirmish, newSkirmishLevel, playedOf, positionOf, saveOfRound, scriptedRound, buildActionsOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
 import { readSave, saveText } from "../src/skirmish/save.ts"
 import { roundIncome } from "../src/armies/curve.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
@@ -135,7 +135,7 @@ test("p2's plan comes from its script: the round is the duel's own", { timeout: 
   const { duel } = positionOf(context)
   const state = planOn(context, placementsOf(duel, "A", { build: [{ building: "barracks", at: "forward" }], stance: "attack" }))
   const { played } = started(play, context, state)
-  const plans = { A: sidePlanOf(context, state), B: balanced(briefOf(duel, "B").data) }
+  const plans = { A: buildActionsOf(context, state), B: balanced(briefOf(duel, "B").data) }
   const duelRound = playRound(duel, plans)
   assert.deepEqual(played.report, duelRound.report)
   assert.deepEqual(played.duel, duelRound.state)
@@ -260,7 +260,7 @@ test("a round saves as its setup, its duel and the plan so far; loading it retur
   assert.deepEqual(problems, [])
   assert.ok(save !== null)
   assert.equal(save.state?.round, 2)
-  assert.deepEqual(save.draft?.p1, sidePlanOf(context, state))
+  assert.deepEqual(save.draft?.p1, buildActionsOf(context, state))
   // Loaded: the same round, the same hand and credits, the power kept, the Turret placed and the Barracks held.
   const loaded = skirmishLevel(save, { file: "tmp/half.save.json" })
   const opened = loaded.firstRound()

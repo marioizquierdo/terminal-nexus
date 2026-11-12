@@ -13,7 +13,7 @@ Example save files: a Skirmish's setup, and the battle as it stands at the openi
 
 ```text
 npm run skirmish -- --load saves/crossing-round-4.save.json             the brief of the slot a player plans
-npm run skirmish -- --load saves/crossing-round-4.save.json --p1 build:plan.json --battle --save mine.save.json
+npm run skirmish -- --load saves/crossing-round-4.save.json --p1 build:b.json --play-to next --save mine.save.json
 ```
 
 The test suite loads each one, plays its next round, and checks the file is as the game writes it. After a change to

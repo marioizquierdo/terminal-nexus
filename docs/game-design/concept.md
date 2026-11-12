@@ -24,8 +24,20 @@ The terminal is not a novelty wrapper. Fixed cells, symbols, ANSI color, keyboar
 **RULE.** A battle (the engine says *match*) is a sequence of rounds, each in three parts in this order, and these are their names everywhere — in the interface and the writing:
 
 1. **Nexus Pulse.** The round opens: each player's Grid Nexus speaks to its Commander and deals a hand of Nexus powers.
-2. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice: a power kept from that hand, which for now may be left unpicked. Planning is hidden, simultaneous, turn-based and untimed.
+2. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice: a power kept from that hand, which for now may be left unpicked. Planning is hidden, simultaneous and untimed: there are no turns.
 3. **Battle Round.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the battle plays on screen is presentation only and is independent of that logical time. The code still calls this step `pulse`, the engine's word (the vocabulary in [`grid-engine.md`](../system-design/grid-engine.md)).
+
+**No turns, and everything at once** (RULE — the owner, 2026-11-12: "in Terminal Nexus there are no turns: all players
+move simultaneously during the build phase"). Every player, a person, a script or a model, makes its build actions from
+the same view of the battle as the Build Phase opens, and may make them before or after the others without seeing
+theirs; a game may save build actions half made (Save game in the middle of a Build Phase), but nothing a player sees
+depends on who answered first. What the two sides' build actions do to each other is settled together as the Battle
+Round starts, and the rules settle each clash gracefully, as a chance to make play more interesting rather than an
+error: a building both sides put on the same ground is built by neither, and paid back. **Upgrades and Nexus powers
+are designed the same way**: each takes effect at the start of the Battle Round, and when two would clash on the same
+tick they apply together, damage resolved as unit attacks are; two powers that each "deal 100 damage to the enemy
+Nexus as the round starts" and so destroy both Nexuses on that tick make a draw, rare and fair (the kernel already
+scores two Nexuses falling on one tick as a draw: `src/pulse/victory.ts`).
 
 After a Battle Round, surviving units stay on the Grid and regroup where they fought, facing the enemy. Casualties and destroyed buildings remain consequential. The next round begins from the new public state. The battle ends when one Grid Nexus is destroyed, or after its last round. One Nexus Pulse, one Build Phase and one Battle Round make a **round**, the unit the player counts.
 

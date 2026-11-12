@@ -1,25 +1,26 @@
 // Many battles at once for the `skirmish` command (`./skirmish.ts`): one new battle played once a seed (`--seeds`), a
 // line each and then a tally, and every pairing of the Commanders named, each from both sides (`--commanders`), so a
-// side's advantage on the map cancels out. Every slot is a script: a plan file plays one round of one battle.
+// side's advantage on the map cancels out. A player slot plays its build file's actions, with no brief between rounds.
 
 import { ARMIES } from "../armies/index.ts"
 import type { Profiles } from "../skirmish/save.ts"
-import { duelOf, SLOTS } from "../skirmish/save.ts"
-import { isPlayer } from "../skirmish/play.ts"
+import type { DuelState } from "../duel/index.ts"
+import type { SaveSetup } from "../skirmish/save.ts"
 import type { Tally } from "../skirmish/lines.ts"
 import { counted, emptyTally, slotLabel, standing, tallyLine, winnerOf } from "../skirmish/lines.ts"
 import type { SkirmishRequest } from "./skirmish.ts"
 import type { Write } from "./skirmish-battle.ts"
-import { keepOf, openSave, playRounds, startingSave } from "./skirmish-battle.ts"
+import { keepOf, openSave, playRounds, startingSave, stopRound } from "./skirmish-battle.ts"
 
-/** One new battle, as the request sets it up but on `seed` and with these Commanders, played its rounds. */
-function playOne(request: SkirmishRequest, profiles: Profiles, seed: number, commanders: SkirmishRequest["battle"]["commanders"], prefix: string, write: Write) {
+/** One new battle, as the request sets it up but on `seed` and with these Commanders, played as far as it asks. A
+ *  player slot must have build actions for every round played: there is nobody to stop for. */
+function playOne(request: SkirmishRequest, profiles: Profiles, seed: number, commanders: SkirmishRequest["battle"]["commanders"], prefix: string, write: Write): Readonly<{ setup: SaveSetup; state: DuelState }> {
   const save = startingSave({ ...request, battle: { ...request.battle, ...(commanders === undefined ? {} : { commanders }) } }, profiles, seed)
-  const { setup } = openSave(save, request, profiles, write)
-  const player = SLOTS.find((slot) => isPlayer(setup, slot))
-  if (player !== undefined) throw new Error(`${player} is a player: a plan plays one round of one battle; give every slot a script to play many battles`)
-  const state = playRounds(setup, duelOf({ ...save, setup }, profiles), {}, request.rounds, profiles, keepOf(request, { prefix, quiet: true }), write)
-  return { setup, state }
+  const { setup, state, seated } = openSave(save, request, profiles, write)
+  const ran = playRounds(setup, state, seated.builds, stopRound(request.playTo, state), profiles, keepOf(request, { prefix, quiet: true }), write)
+  const waiting = ran.waiting[0]
+  if (waiting !== undefined) throw new Error(`${waiting} has no build actions for round ${ran.state.round}: give its build file a "*" entry, or the slot a script, to play many battles`)
+  return { setup, state: ran.state }
 }
 
 /** **One battle a seed**: a line each, then the tally. */

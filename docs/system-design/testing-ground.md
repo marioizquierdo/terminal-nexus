@@ -20,7 +20,7 @@ the tool measures a few general things, and a session that needs another measure
 | Is this better, how often, how surely, at what cost? | a **trial**: `grid <save> --seeds 1-12 --swap` with a variant, or a trial file |
 | What did my change move? | `grid <trial> --against HEAD --profile` |
 | Did a refactor change no outcome at all? | `node scripts/profile-routes.ts --out <file>` before and after, then `diff` |
-| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --battle`, a round a command, or a plan of your own with `--p1 build:plan.json` (section 9) |
+| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --play-to next`, a round a command, or build actions of your own with `--p1 build:b.json` (section 9) |
 | How does it read on screen, round by round? | the **scripted playtest from a save**: `node scripts/playtest.mjs --load saves/crossing-round-4.save.json --keys "..."` (no `--load`: `saves/crossing-new.save.json`); `--p1 script:<profile>` watches both scripts; a playtest note (`!`) opens at its moment with `--note`. Which save shows what is in DEVELOPMENT.md, how to see a change |
 | How do whole armies play, with a Build Phase each round? | **Skirmishes headless**: the `skirmish` command, script against script over seeds (`--seeds`), every pairing of Commanders (`--commanders`), or a model a side (section 9); many with `measure run --parts duels` |
 | How does the power curve play? | `measure run --spec quick` or `full`, `measure compare` ([`measurement.md`](measurement.md), the [`remeasure` skill](../../.claude/skills/remeasure/SKILL.md)) |
@@ -186,7 +186,7 @@ engage-gap2-melee-vs-mix
 
 The maps a trial plays are **testing saves**: Skirmish saves in `skirmish-testing/` whose `start` writes the first
 Battle Round by hand, both slots `script:idle` ([`skirmish-saves.md`](skirmish-saves.md)). `grid <save>` and
-`skirmish --load <save> --battle` open the same Battle Round.
+`skirmish --load <save> --play-to next` open the same Battle Round.
 
 | Folder | What its testing saves are for |
 | --- | --- |
@@ -206,22 +206,22 @@ Nexus, and checked even before anything is read on it: the same army on both sid
 
 **A Skirmish played headless is the one the screen plays** (RULE — `src/skirmish/play.ts`, `tests/skirmish-save.test.ts`):
 the `skirmish` command and the game's screen open a battle by the same steps and play every round through `playNext`,
-so the same save, seed and plans give the same battle, hash for hash, on Node and Bun. The command's manual is the
+so the same save, seed and build actions give the same battle, hash for hash, on Node and Bun. The command's manual is the
 comment it opens with ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), `npm run skirmish -- --help`); this section
-is how each kind of test uses it, cheapest first. The duel it plays, the brief and the plan are [`duels.md`](duels.md);
+is how each kind of test uses it, cheapest first. The duel it plays, the brief and the build actions are [`duels.md`](duels.md);
 the save file is [`skirmish-saves.md`](skirmish-saves.md).
 
 **A rule or a unit, in one Battle Round**: a testing save (section 8) plays its round and prints `grid`'s report.
 
 ```bash
-npm run skirmish -- --load skirmish-testing/rules/melee-kill.save.json --battle
+npm run skirmish -- --load skirmish-testing/rules/melee-kill.save.json --play-to next
 grid melee-kill --headless --log-level info             # the same round, tick by tick
 ```
 
 **Script against script**, a round at a time or to the end, with the battle's log and every round kept to read back:
 
 ```bash
-npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-until-win \
+npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-to end \
   --log .playtest/battle.log --log-level info --out .playtest/rounds
 ```
 
@@ -229,7 +229,7 @@ npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play
 the slots' scripts and play again before reading a side into it: the two ends are mirrors, a seed's hands are not.
 
 ```bash
-npm run skirmish -- --map pocket --p1 script:steady --p2 script:agro --play-until-win --seeds 1-20
+npm run skirmish -- --map pocket --p1 script:steady --p2 script:agro --play-to end --seeds 1-20
 ```
 
 **Every pairing of Commanders**, each from both ends of the map, once a seed, after a change to an army, a power or an
@@ -237,39 +237,53 @@ ability. Read a pairing across both sides; a sweep under one script is a lead to
 result.
 
 ```bash
-npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-until-win
+npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-to end
 ```
 
 How tight an army fights (`rush-block` against `rush-apart`) and the power curve over many battles are the measurement's
 (`measure run --parts duels --formations block,apart`, [`measurement.md`](measurement.md)).
 
-**A plan of your own, round by round**, as an agent plays: the brief, a plan written from it, the plan checked (exit 2
-when the rules refuse part of it, each refusal with its reason), then played and saved over the file.
+**Build actions of your own, round by round**, as an agent plays: the brief, a build file written from it, the build
+actions checked (exit 2 when the rules refuse part of them, each refusal with its reason), then played and saved over
+the file, the next brief printed.
 
 ```bash
 cp saves/crossing-round-4.save.json tmp/s.json
-npm run skirmish -- -f tmp/s.json                               # p1's brief
-npm run skirmish -- -f tmp/s.json --p1 build:tmp/plan.json      # checked, nothing built
-npm run skirmish -- -f tmp/s.json --p1 build:tmp/plan.json --battle
+npm run skirmish -- -f tmp/s.json                                    # p1's brief
+npm run skirmish -- -f tmp/s.json --p1 build:tmp/b.json              # checked, nothing built
+npm run skirmish -- -f tmp/s.json --p1 build:tmp/b.json --play-to next
+```
+
+**Several rounds written ahead**: a build file is a list of entries by round (`"round": 3`, `"2-4"`, `"*"`, the first
+that fits winning), and those rounds play blind, with no brief between them. A test pins an opening this way, or plays
+a fixed plan to the end against a script; the battle stops at the first round the file has no entry for and prints
+the brief.
+
+```bash
+npm run skirmish -- --map pocket --p1 build:tmp/rounds.json --p2 script:agro --play-to end
 ```
 
 **A person's save played on**: copy Mario's save and play it with scripts in both slots (`--p1 script:turtle --p2
-script:rush --battle`), or change its `draft` to try another plan; `--out` keeps every round as a save of its own to
-compare, copy and play on.
+script:rush --play-to next`), or change its `draft` to try other build actions; `--out` keeps every round as a save of
+its own to compare, copy and play on.
 
-**Model against model**: two sessions play one save, a slot each, through the file. Make the save with both slots
-players, then start one agent a side, in the background, on a small model, each with this task (its slot and file
-filled in): _"Repeat until the battle is over: run `npm run skirmish -- -f <file> --wait <slot> --timeout 100` (run it
-again if it exits 3, still waiting; stop if it says THE BATTLE IS OVER); decide a plan from the brief; write it as one
-JSON object to `<plan file>`; run `npm run skirmish -- -f <file> --<slot> build:<plan file> --ready`. Only run those two
-commands and write your plan file; read nothing else. When it is over, reply with the result line and one sentence on
-your strategy."_ The plan handed in last plays the round. A six-round battle takes about a minute and some 75 thousand
-tokens of a small model a side; small agents wander, so name the only commands they may run. `--load <file>` afterwards
-prints every round's report.
+**Model against model**: there are no turns, so the session running the test is the table. Make the save with both
+slots players; each round, `npm run skirmish -- -f <file>` prints both slots' briefs, the session hands each brief to
+its agent (one small model a slot, continued round to round so it keeps what it learned), each answers with one JSON
+object of build actions, and `npm run skirmish -- -f <file> --p1 build:<p1 file> --p2 build:<p2 file> --play-to next`
+plays the round and prints the next briefs. Either slot may also hand its actions in alone (`-f <file> --p1
+build:<file>`, kept as the save's draft) and the other's later with `--play-to next`: the order never matters, since
+both read the same brief. Tell each agent to answer with the JSON only and run nothing: small agents wander. A
+six-round battle costs some 75 thousand tokens of a small model a slot. `--load <file>` afterwards prints every
+round's report.
 
 ```bash
 npm run skirmish -- --map crossing --p1-commander averno --p2-commander dob --p1 build: --p2 build: --seed 11 --save .playtest/m1.save.json
 ```
+
+**A battle set up for a person**: every save the command writes at a Build Phase opens on the game's screen
+(`./bin/terminal-nexus.ts --load <file>`, which the command prints), so an agent can prepare the moment to play — a
+round reached by scripts, a script for the opponent — and hand Mario one line.
 
 **On screen, by keys**: the scripted playtest opens a save (`node scripts/playtest.mjs --load <save>`; told nowhere,
 `saves/crossing-new.save.json`) and returns every screen as text, the title menu and the setup screen included;

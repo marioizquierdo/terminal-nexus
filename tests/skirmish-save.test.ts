@@ -79,8 +79,8 @@ test("skirmish: a plan is checked without building, a round is played and saved,
     assert.match(checked.out, /builds barracks at/)
     assert.match(checked.out, /REFUSED garrison: needs Barracks/)
 
-    // A folder means the build.json in it; --battle plays the round, --save writes the next Build Phase.
-    const played = run(["--map", "crossing", "--p1", `build:${dir}`, "--p2", "script:rush", "--battle", "--save", save])
+    // A folder means the build.json in it; --play-to next plays the round, --save writes the next Build Phase.
+    const played = run(["--map", "crossing", "--p1", `build:${dir}`, "--p2", "script:rush", "--play-to", "next", "--save", save])
     assert.equal(played.code, 0)
     assert.match(played.out, /round 1: ended/)
     assert.match(played.out, /saved .* at round 2's Build Phase/)
@@ -95,7 +95,7 @@ test("skirmish: a plan is checked without building, a round is played and saved,
     writeFileSync(plan, JSON.stringify({ build: [{ building: "turret" }], stance: "attack" }))
     run(["--load", save, `--p1=build:${plan}`, "--save", save])
     assert.equal(readSave(readFileSync(save, "utf8")).save!.draft?.p1?.build[0]?.building, "turret")
-    const fromDraft = run(["-f", save, "--battle"])
+    const fromDraft = run(["-f", save, "--play-to", "next"])
     assert.match(fromDraft.out, /p1 vasse: .* built 1/)
     const after = readSave(readFileSync(save, "utf8")).save!
     assert.deepEqual([after.state?.round, after.draft], [3, undefined])
@@ -113,11 +113,11 @@ test("skirmish: two scripts play a battle to its end, a round a command", { time
   const dir = mkdtempSync(join(tmpdir(), "skirmish-"))
   try {
     const save = join(dir, "s.save.json")
-    run(["--map", "pocket", "--p1", "script:rush", "--p2", "script:turtle", "--rounds", "3", "--battle", "--save", save])
-    for (let index = 0; index < 3 && readSave(readFileSync(save, "utf8")).save!.state?.result === null; index += 1) run(["-f", save, "--battle"])
+    run(["--map", "pocket", "--p1", "script:rush", "--p2", "script:turtle", "--rounds", "3", "--play-to", "next", "--save", save])
+    for (let index = 0; index < 3 && readSave(readFileSync(save, "utf8")).save!.state?.result === null; index += 1) run(["-f", save, "--play-to", "next"])
     const over = readSave(readFileSync(save, "utf8")).save!
     assert.notEqual(over.state?.result, null, "three rounds did not end a three-round battle")
-    assert.throws(() => run(["-f", save, "--battle"]), /the battle is over/)
+    assert.throws(() => run(["-f", save, "--play-to", "next"]), /the battle is over/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -199,17 +199,17 @@ test("a testing save the loader refuses names every problem at once, its units' 
   assert.match(fit.problems.join("\n"), /^start: broken: .*outside the 4x2 Grid/m)
 })
 
-test("skirmish: a testing save's --battle plays the Battle Round grid plays, and says so in grid's report", () => {
+test("skirmish: a testing save's --play-to plays the Battle Round grid plays, and says so in grid's report", () => {
   const path = join(REPO_ROOT, "skirmish-testing/rules/melee-kill.save.json")
   const brief = run(["--load", path])
   assert.equal(brief.code, 0)
   assert.match(brief.out, /a testing save, its Battle Round written by hand/)
-  assert.match(brief.out, /add --battle to play it/)
-  const played = run(["--load", path, "--battle"])
+  assert.match(brief.out, /add --play-to next to play it/)
+  const played = run(["--load", path, "--play-to", "next"])
   assert.equal(played.code, 0)
   assert.match(played.out, /WARN {2}report {3}melee-kill .* outcome A wins/)
   const grid = spawnSync(process.execPath, [join(REPO_ROOT, "bin/grid.ts"), "melee-kill", "--headless"], { encoding: "utf8" })
   assert.ok(played.out.includes(grid.stdout.trim()), `skirmish and grid disagree:\n${played.out}\n---\n${grid.stdout}`)
-  assert.throws(() => run(["--load", path, "--battle", "--save", join(tmpdir(), "x.save.json")]), /nothing to save/)
+  assert.throws(() => run(["--load", path, "--play-to", "next", "--save", join(tmpdir(), "x.save.json")]), /nothing to save/)
   assert.throws(() => run(["--load", path, "--p1", "script:rush"]), /plan nothing/)
 })

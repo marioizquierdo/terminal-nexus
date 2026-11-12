@@ -22,8 +22,8 @@ export function playTestingSave(save: SaveFile, request: SkirmishRequest, write:
   if (request.save !== undefined) throw new Error("--save: a testing save plays the one Battle Round its start writes, with nothing to save after it")
   const opening = openingOf(save)
   write(`${opening.name} (${opening.id}), seed ${save.setup.seed}: a testing save, its Battle Round written by hand, ${save.setup.roundTicks} ticks at most`)
-  if (request.rounds === 0) {
-    write("add --battle to play it")
+  if (request.playTo === undefined) {
+    write("add --play-to next to play it")
     return { refused: false }
   }
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })

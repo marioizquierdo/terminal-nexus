@@ -7,8 +7,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { roundLines } from "../src/skirmish/lines.ts"
-import type { DuelState, Formation, RoundReport, SidePlan } from "../src/duel/index.ts"
-import { APART_GAP, briefOf, duelArmy, loadoutOf, newDuel, playRound, readPlan, SCRIPTED, scriptedName, scriptedPlayer } from "../src/duel/index.ts"
+import type { DuelState, Formation, RoundReport, BuildActions } from "../src/duel/index.ts"
+import { APART_GAP, briefOf, duelArmy, loadoutOf, newDuel, playRound, readBuildActions, SCRIPTED, scriptedName, scriptedPlayer } from "../src/duel/index.ts"
 import { footprintDistance, footprintSteps } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { MeasureSpec } from "../src/measure/index.ts"
@@ -26,7 +26,7 @@ const anchorsOf = (report: RoundReport, side: "A" | "B"): Coord[] =>
 /** Two rounds of a side building `count` then `more` of `building` forward by `formation`, both sides alike, holding
  *  through a battle too short to reach anything, so the first round's buildings stand in the second. */
 function twoRounds(commander: string, building: string, formation: Formation): RoundReport[] {
-  const plan = (count: number): SidePlan => ({ power: 0, build: Array.from({ length: count }, () => ({ building, at: "forward" as const })), formation, stance: "hold" })
+  const plan = (count: number): BuildActions => ({ power: 0, build: Array.from({ length: count }, () => ({ building, at: "forward" as const })), formation, stance: "hold" })
   let state: DuelState = newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 24, commanders: { A: commander, B: commander } })
   const reports: RoundReport[] = []
   for (const count of [3, 5]) {
@@ -114,11 +114,11 @@ test("zones is how every plan placed before formations: the same duel, building 
 })
 
 test("a model's plan states a formation, read like any other field, and the brief says what a formation wins and loses", () => {
-  const read = readPlan('{"power": 0, "build": ["den"], "formation": "apart", "stance": "attack"}')
-  assert.deepEqual(read.plan, { power: 0, build: [{ building: "den" }], formation: "apart", stance: "attack" })
+  const read = readBuildActions('{"power": 0, "build": ["den"], "formation": "apart", "stance": "attack"}')
+  assert.deepEqual(read.actions, { power: 0, build: [{ building: "den" }], formation: "apart", stance: "attack" })
   assert.deepEqual(read.problems, [])
-  const wrong = readPlan('{"build": [], "formation": "tight", "stance": "hold"}')
-  assert.equal(wrong.plan.formation, undefined)
+  const wrong = readBuildActions('{"build": [], "formation": "tight", "stance": "hold"}')
+  assert.equal(wrong.actions.formation, undefined)
   assert.deepEqual(wrong.problems, ['"formation" should be "block", "apart", "zones"; each building goes where its "at" says'])
   const brief = briefOf(newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" } }), "A")
   for (const words of ["## How tight your army fights", "come out on the roofs", "an area attack catches few", '"formation"', '"block"', '"apart"', "What their buildings can train", "bursts for"]) {

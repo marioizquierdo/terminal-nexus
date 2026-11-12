@@ -30,7 +30,7 @@ import type { DuelMap } from "./maps.ts"
 import { DUEL_MAPS, duelGrid } from "./maps.ts"
 import type { DuelArmy } from "./sides.ts"
 import { armyOf, duelArmy, loadoutOf, powerOf } from "./sides.ts"
-import type { DuelResult, DuelSetup, DuelState, Formation, Placement, RoundReport, Side, SidePlan, SideReport, SideState, Zone } from "./types.ts"
+import type { DuelResult, DuelSetup, DuelState, Formation, Placement, RoundReport, Side, BuildActions, SideReport, SideState, Zone } from "./types.ts"
 import { APART_GAP, SIDES } from "./types.ts"
 
 /** The other side. */
@@ -215,7 +215,7 @@ function formationOrder(
 function placeAll(
   state: DuelState,
   side: Side,
-  plan: SidePlan,
+  plan: BuildActions,
   catalog: readonly ConstructItem[],
   registry: ContentRegistry,
   credits: number,
@@ -289,13 +289,13 @@ type Acted = Readonly<{
 }>
 
 /**
- * **A side's building actions** (`SidePlan.actions`), in order, after its buildings are placed, from the credits they
+ * **A side's building actions** (`BuildActions.actions`), in order, after its buildings are placed, from the credits they
  * left — by the Build Phase's rules (`buildingAction`, `src/build/state.ts`): a building of its own at that anchor,
  * standing or just placed; an action its card has; an upgrade it does not carry yet, whose requirements are met and
  * whose price is left; a mode not already in force; an order, given. Each building carries what was taken on it as its
  * content id (`fittedId`), which the opening sets it down as.
  */
-function actOn(state: DuelState, side: Side, plan: SidePlan, catalog: readonly ConstructItem[], planned: readonly PlannedPlacement[], credits: number): Acted {
+function actOn(state: DuelState, side: Side, plan: BuildActions, catalog: readonly ConstructItem[], planned: readonly PlannedPlacement[], credits: number): Acted {
   const army = armyOf(state, side)
   const key = (anchor: Readonly<{ x: number; y: number }>): string => `${anchor.x},${anchor.y}`
   const standing = standingOf(state, side)
@@ -370,7 +370,7 @@ function actOn(state: DuelState, side: Side, plan: SidePlan, catalog: readonly C
  * other side's plan is revealed (a clash with it is settled only once both are): each building's card and anchor, in
  * order. For a driver that plays a side through the Build Phase's own functions, which take a plan as placed buildings.
  */
-export function placementsOf(state: DuelState, side: Side, plan: SidePlan): PlannedPlacement[] {
+export function placementsOf(state: DuelState, side: Side, plan: BuildActions): PlannedPlacement[] {
   const army = armyOf(state, side)
   const hand = handOf(state, side)
   const pick = plan.power !== undefined && plan.power >= 1 ? (hand[plan.power - 1] ?? null) : null
@@ -411,7 +411,7 @@ type Planned = Readonly<{
   acted: Acted
   side: SideState
 }>
-function buildPhase(state: DuelState, side: Side, plan: SidePlan): Planned {
+function buildPhase(state: DuelState, side: Side, plan: BuildActions): Planned {
   const army = armyOf(state, side)
   const hand = handOf(state, side)
   const pick = plan.power !== undefined && plan.power >= 1 ? (hand[plan.power - 1] ?? null) : null
@@ -442,7 +442,7 @@ function buildPhase(state: DuelState, side: Side, plan: SidePlan): Planned {
  * rules, and what it would be refused, with the credits it would leave. Blind to the other side, as the Build Phase is:
  * a clash with the other side's plan over one tile is settled only once both are revealed (`playRound`).
  */
-export function checkPlan(state: DuelState, side: Side, plan: SidePlan): Readonly<{ kept: string | null; built: readonly string[]; actions: readonly string[]; refused: readonly string[]; credits: number; spent: number }> {
+export function checkBuildActions(state: DuelState, side: Side, plan: BuildActions): Readonly<{ kept: string | null; built: readonly string[]; actions: readonly string[]; refused: readonly string[]; credits: number; spent: number }> {
   const phase = buildPhase(state, side, plan)
   return {
     kept: phase.pick === null ? null : phase.pick.name,
@@ -466,7 +466,7 @@ export function checkPlan(state: DuelState, side: Side, plan: SidePlan): Readonl
  */
 export function playRound(
   state: DuelState,
-  plans: Readonly<Record<Side, SidePlan>>,
+  plans: Readonly<Record<Side, BuildActions>>,
   watch?: (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry, sides: Readonly<Record<Side, ContentRegistry>>) => void,
 ): Readonly<{ state: DuelState; report: RoundReport; regroup: RegroupResult | null }> {
   if (state.result !== null) throw new Error("the duel is over")
@@ -604,7 +604,7 @@ function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>
 
 /** The buildings both plans hold this round (Hold production), each a building of its own side standing as the round
  *  opens: what the opening holds. Nothing when neither plan holds any, as every script plays. */
-function heldBy(state: DuelState, plans: Readonly<Record<Side, SidePlan>>, phases: Readonly<Record<Side, Readonly<{ acted: Acted }>>>): Readonly<{ held?: readonly Coord[] }> {
+function heldBy(state: DuelState, plans: Readonly<Record<Side, BuildActions>>, phases: Readonly<Record<Side, Readonly<{ acted: Acted }>>>): Readonly<{ held?: readonly Coord[] }> {
   const held = SIDES.flatMap((side) => {
     const own = standingOf(state, side)
     const asked = (plans[side].hold ?? []).filter((anchor) => own.some((structure) => structure.anchor.x === anchor.x && structure.anchor.y === anchor.y))
@@ -629,7 +629,7 @@ export function musterOf(state: DuelState, side: Side, registry: ContentRegistry
 }
 
 /** Where a side's troops head: the enemy's Nexus when it attacks, its own holding ground when it holds. */
-function targetOf(state: DuelState, side: Side, stance: SidePlan["stance"], sides: Readonly<Record<Side, ContentRegistry>>): TargetArea {
+function targetOf(state: DuelState, side: Side, stance: BuildActions["stance"], sides: Readonly<Record<Side, ContentRegistry>>): TargetArea {
   const map = mapOf(state)
   if (stance === "hold") return map.hold[side]
   const enemy = other(side)
@@ -645,7 +645,7 @@ function targetOf(state: DuelState, side: Side, stance: SidePlan["stance"], side
 function sideReport(
   side: Side,
   phase: Readonly<{ army: DuelArmy; hand: PowerCard[]; pick: PowerCard | null; placed: ReturnType<typeof placeAll>; acted: Acted }>,
-  plan: SidePlan,
+  plan: BuildActions,
   credits: number,
   earned: number,
   start: MatchState,

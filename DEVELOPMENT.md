@@ -165,7 +165,7 @@ A passing test says nothing about spacing, density or where the eye goes. Look.
 
 **A Skirmish is where a change is seen** ([`game-modes.md`](docs/game-design/game-modes.md), one battle on screen or not).
 Headless, a Skirmish is played from a save file, a round a command: `npm run skirmish -- -f <save>` prints the brief,
-`--p1 build:plan.json` checks a plan, `--battle` plays the round and saves the next Build Phase, and `--p2 script:rush`
+`--p1 build:b.json` checks a slot's build actions, `--play-to next` plays the round and saves the next Build Phase, and `--p2 script:rush`
 changes who plays a side (the command's manual is `npm run skirmish -- --help`; how each kind of test uses it is
 [`testing-ground.md`](docs/system-design/testing-ground.md), testing through Skirmishes). On
 screen, `--load <save>` opens a save at its Build Phase, `--at 'skirmish?seed=<n>'` a new battle against Dob Hunter's
@@ -241,15 +241,15 @@ claude.ai link cannot carry an address with `=` in it, so a published page opens
 
 **Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill). Headless: each
 round both sides keep a Nexus power and plan a Build Phase blind, then a Battle Round plays between them
-([`duels.md`](docs/system-design/duels.md)). Scripts play in one process; a model plays through the save file, one
-session a slot. Use them to see how an army spends its power curve, never as a verdict on balance.
+([`duels.md`](docs/system-design/duels.md)). Scripts play in one process; a model writes each round's build actions
+from its brief. Use them to see how an army spends its power curve, never as a verdict on balance.
 
 ```bash
-npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-until-win
-npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-until-win --out .playtest/rounds --log .playtest/battle.log
-npm run skirmish -- --map crossing --p1 build: --p2 build: --seed 11 --save .playtest/m1.save.json   # then one model agent a slot:
-npm run skirmish -- -f .playtest/m1.save.json --wait p1      # prints p1's brief when it is p1's turn; the agent writes a plan, then
-npm run skirmish -- -f .playtest/m1.save.json --p1 build:.playtest/p1.json --ready
+npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-to end
+npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-to end --out .playtest/rounds --log .playtest/battle.log
+npm run skirmish -- --map crossing --p1 build: --p2 build: --seed 11 --save .playtest/m1.save.json   # one model agent a slot:
+npm run skirmish -- -f .playtest/m1.save.json      # both briefs; each agent answers with its build actions, then
+npm run skirmish -- -f .playtest/m1.save.json --p1 build:.playtest/p1.json --p2 build:.playtest/p2.json --play-to next
 ```
 
 Model against model, with the task to give each agent, is in [`testing-ground.md`](docs/system-design/testing-ground.md),

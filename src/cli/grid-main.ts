@@ -75,7 +75,7 @@ Variant options, for every action (watch, --headless, --verify and a trial):
   --swap, --shuffle               one battle mirrored with its sides swapped; its units shuffled by --seed
 
 <save> is a testing save (skirmish-testing/, a save whose start writes its Battle Round), with or without the
-.save.json suffix, or its id (grid melee-kill). There is no subcommand. skirmish --load <save> --battle plays the same.
+.save.json suffix, or its id (grid melee-kill). There is no subcommand. skirmish --load <save> --play-to next plays the same.
 
 Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
 carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.

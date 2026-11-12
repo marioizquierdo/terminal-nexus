@@ -12,8 +12,8 @@
 
 import type { Coord, TerrainId } from "../grid/types.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
-import type { DuelMap, DuelSetup, DuelState, Side, SidePlan } from "../duel/index.ts"
-import { DUEL_MAPS, DUEL_PULSE_TICKS, DUEL_ROUNDS, duelArmy, duelGrid, newDuel, readPlan, scriptedName } from "../duel/index.ts"
+import type { DuelMap, DuelSetup, DuelState, Side, BuildActions } from "../duel/index.ts"
+import { DUEL_MAPS, DUEL_PULSE_TICKS, DUEL_ROUNDS, duelArmy, duelGrid, newDuel, readBuildActions, scriptedName } from "../duel/index.ts"
 import { openBattle } from "./opening/open.ts"
 import type { SaveStart } from "./start.ts"
 import { MAP_LEGEND, openingOf, startProblems } from "./start.ts"
@@ -116,7 +116,7 @@ export type SaveFile = Readonly<{
   /** The battle as the Build Phase of `state.round` opened, written by the game. Absent: round 1, nothing built. */
   state?: SavedState
   /** A slot's plan so far this Build Phase, so loading returns to exactly where it stopped. */
-  draft?: Readonly<Partial<Record<Slot, SidePlan>>>
+  draft?: Readonly<Partial<Record<Slot, BuildActions>>>
   /** What each slot places by hand before round 1: a testing save, which opens on its first Battle Round. */
   start?: SaveStart
 }>
@@ -369,7 +369,7 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
     else {
       for (const [slot, plan] of Object.entries(draft)) {
         if (!(SLOTS as readonly string[]).includes(slot)) problems.push(`draft.${slot}: the slots are ${SLOTS.join(" and ")}`)
-        else for (const problem of readPlan(plan).problems) problems.push(`draft.${slot}: ${problem}`)
+        else for (const problem of readBuildActions(plan).problems) problems.push(`draft.${slot}: ${problem}`)
       }
     }
   }

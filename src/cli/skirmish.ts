@@ -1,22 +1,32 @@
-// skirmish: one battle between two Commander Armies, headless: set up or loaded from a save file, planned and played a
-// round at a time, and saved at its next Build Phase, as the game's screen plays it. Each slot is planned by a script,
-// or by a player through a plan file: you, an agent, or one of two sessions taking turns. What it does follows from
-// what it is given: nothing to play prints the briefs and checks the plans; --battle plays a round; --seeds and
-// --commanders play many battles and tally them.
+// skirmish: one battle between two Commander Armies, headless: set up or loaded from a save file, played to the round
+// asked for, and stopped at a Build Phase, as the game's screen plays it. Each slot is played by a script, or by a
+// player through a build file: you, an agent, or anything that writes JSON. There are no turns: both slots make their
+// build actions for a round from the same brief, blind, and the round plays them together. What it does follows from
+// what it is given: nothing to play prints each player's brief, or checks its build actions; --play-to plays rounds and
+// stops at a Build Phase; --seeds and --commanders play many battles and tally them.
 //
 //   skirmish --map crossing --p1 build: --p2 script:agro            a new battle: p1's brief
-//   skirmish --map crossing --p1 build:plan.json --p2 script:agro   p1's plan checked by the rules, nothing built
-//   skirmish --map crossing --p1 build:plan.json --p2 script:agro --battle --save s.json
-//                                                                   both sides build, the Battle Round is played, saved
-//   skirmish -f s.json                                              the brief of every slot a player plans
-//   skirmish -f s.json --p1 build:plan.json --battle                load, play the next round, save over the file
-//   skirmish -f s.json --p1 script:defensive --p2 build:            change who plans each slot
-//   skirmish --map pocket --p1 build:a.json --p2 build:b.json --battle        two plans of your own against each other
-//   skirmish --map crossing --p1 script:agro --p2 script:defensive --play-until-win --log battle.log
-//   skirmish --map crossing --p1 script:agro --p2 script:steady --play-until-win --seeds 1-20
-//   skirmish --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-until-win
-//   skirmish -f s.json --wait p1                                    two sessions: block until p1's turn, print its brief
-//   skirmish -f s.json --p1 build:plan.json --ready                 hand in p1's plan; the last plan in plays the round
+//   skirmish --map crossing --p1 build:b.json --p2 script:agro      p1's build actions checked by the rules, nothing built
+//   skirmish --map crossing --p1 build:b.json --p2 script:agro --play-to next --save s.json
+//                                                                   round 1 played, stopped at round 2's Build Phase, saved
+//   skirmish -f s.json                                              the brief of every slot a player plays
+//   skirmish -f s.json --p1 build:b.json --play-to next             load, play the next round, save over the file
+//   skirmish -f s.json --p1 build:b.json                            hand in p1's build actions alone (the save's draft);
+//   skirmish -f s.json --p2 build:c.json --play-to next               p2's later, and the round plays both
+//   skirmish -f s.json --p1 script:defensive --p2 build:            change who plays each slot
+//   skirmish --map pocket --p1 build:rounds.json --p2 script:agro --play-to 5     p1's build file plays rounds 1 to 4
+//   skirmish --map crossing --p1 script:agro --p2 script:defensive --play-to end --log battle.log
+//   skirmish --map crossing --p1 script:agro --p2 script:steady --play-to end --seeds 1-20
+//   skirmish --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
+//
+// A build file is a slot's build actions as JSON: the power it keeps, what it builds and where, the actions taken on
+// its buildings, the formation and the stance (docs/system-design/duels.md, the brief and the build actions). One object
+// is for the first round played; a list of them is by round, each with "round": 3, "2-4" or "*", the first that
+// fits winning:
+//   [{ "round": 1, "build": [{ "building": "barracks", "at": "forward" }], "stance": "hold" },
+//    { "round": "*", "build": ["barracks", "depot"], "stance": "attack" }]
+// Rounds a build file covers play blind, without a brief between them. When a player slot has no build actions for
+// the round about to play, the battle stops at that round's Build Phase and prints the slot's brief.
 //
 // The battle:
 //   --map <id|file>          a new battle's map: crossing, pocket, or a map file (its rows, nexus and hold by slot)
@@ -29,23 +39,19 @@
 //   --name <text>, --notes <text>          the save's name and notes
 //
 // The slots:
-//   --p1, --p2 <who>         build:<plan file>: a player, and the plan it plays ("build:." reads ./build.json;
+//   --p1, --p2 <who>         build:<build file>: a player, and its build actions ("build:." reads ./build.json;
 //                            "build:" alone, the save's draft or nothing). script:<profile>: a profile in
 //                            players/scripts/ (agro, defensive, steady, agro-rich) or a script by its own name
-//                            (balanced, rush, turtle and their variants); "script:" alone plans nothing.
+//                            (balanced, rush, turtle and their variants); "script:" alone builds nothing.
 //                            A loaded battle keeps each slot's controller unless named.
 //   --p1-credits, --p2-credits <share>     a slot's share of the curve's income (1; a profile may carry one)
 //
 // Playing:
-//   --battle                 build both slots' plans and play the Battle Round
-//   --battles <n>            play n rounds (a plan plays only the first, so the rest need every slot a script)
-//   --play-until-win         play until a Nexus falls or the rounds run out (the limit raised to 100 unless --rounds)
-//   --seeds <1-20|1,4,9>     a new battle once a seed, every slot a script, with --battles or --play-until-win: a line
-//                            each, then a tally of who won
+//   --play-to <next|n|end>   play rounds and stop at a Build Phase: the next round's, round n's, or none (the battle's
+//                            end, its limit raised to 100 rounds unless --rounds). It stops sooner when a player slot
+//                            has no build actions for the round about to play
+//   --seeds <1-20|1,4,9>     a new battle once a seed, with --play-to: a line each, then a tally of who won
 //   --commanders <a,b|all>   every pairing of these Commanders, each from both sides, once a seed: who won by Commander
-//   --wait <p1|p2>           block until the slot has a plan to make, then print its brief (or the result, once over)
-//   --timeout <seconds>      how long --wait blocks (900)
-//   --ready                  hand in the plans given; once every player's slot has one, play the round
 //
 // What it writes:
 //   --json                   the briefs as data rather than text
@@ -53,13 +59,14 @@
 //   --log <file>             every round's Battle Round as grid logs it, at --log-level (info: error, warn, info,
 //                            debug, trace)
 //
-// Exit codes: 0 done; 1 the command could not run (it says why); 2 the rules refused part of a plan it checked;
-// 3 --wait ran out of time (run it again). Saving and loading happen only at a Build Phase. A testing save
-// (skirmish-testing/) plays its one Battle Round with --battle and prints grid's report.
+// Exit codes: 0 done; 1 the command could not run (it says why); 2 the rules refused part of the build actions it
+// checked. Saving and loading happen only at a Build Phase, and a save it writes opens on the game's screen
+// (terminal-nexus --load <file>). A testing save (skirmish-testing/) plays its one Battle Round with --play-to and
+// prints grid's report.
 //
 // This comment is what `skirmish --help` prints. The rest of this file reads the options into a request; the work is
-// in its modules: ./skirmish-battle.ts (one battle), ./skirmish-seeds.ts (many), ./skirmish-turns.ts (two sessions),
-// ./skirmish-testing.ts (a testing save), on the steps the game's screen shares (src/skirmish/request.ts, play.ts).
+// in its modules: ./skirmish-battle.ts (one battle), ./skirmish-seeds.ts (many), ./skirmish-testing.ts (a testing
+// save), on the steps the game's screen shares (src/skirmish/request.ts, play.ts).
 
 import { readFileSync } from "node:fs"
 import type { LogLevel } from "../report/index.ts"
@@ -71,16 +78,15 @@ import { SLOTS } from "../skirmish/save.ts"
 import { slotAsk } from "../skirmish/slots.ts"
 import { playBattle } from "./skirmish-battle.ts"
 import { commandersOf, playPairings, playSeeds } from "./skirmish-seeds.ts"
-import { handIn, waitTurn } from "./skirmish-turns.ts"
 
 /** What the command exits with. */
-export const EXIT = { done: 0, failed: 1, refused: 2, waiting: 3 } as const
+export const EXIT = { done: 0, failed: 1, refused: 2 } as const
 
 /** The options that take no value, and those that take one. */
-const FLAGS = new Set(["battle", "play-until-win", "ready", "json", "help"])
+const FLAGS = new Set(["json", "help"])
 const VALUES = new Set([
   "map", "load", "save", "file", "p1", "p2", "p1-commander", "p2-commander", "p1-credits", "p2-credits", "seed", "seeds",
-  "commanders", "rounds", "ticks", "modifiers", "battles", "wait", "timeout", "out", "log", "log-level", "name", "notes",
+  "commanders", "rounds", "ticks", "modifiers", "play-to", "out", "log", "log-level", "name", "notes",
 ])
 
 /** The options as written: each value by its name, and the flags given. */
@@ -96,12 +102,10 @@ export type SkirmishRequest = Readonly<{
   slots: Readonly<Partial<Record<Slot, SlotChange>>>
   /** The battle's rules changed from the next round: `--rounds` and `--modifiers`. */
   rules: Readonly<{ rounds?: number; modifiers?: readonly string[] }>
-  /** How many rounds to play: 0, n, or until the battle ends (`Infinity`). */
-  rounds: number
+  /** Where to stop: the next round's Build Phase, round n's, or the battle's end; nothing to play when absent. */
+  playTo?: "next" | "end" | number
   seeds?: readonly number[]
   commanders?: readonly string[]
-  ready: boolean
-  wait?: Readonly<{ slot: Slot; timeout: number }>
   out?: string
   log?: string
   logLevel?: LogLevel
@@ -175,11 +179,8 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
     refuse(["p1-commander", "p2-commander"], "a loaded battle keeps its Commanders")
   }
 
-  const asked = [flags.has("battle"), values["battles"] !== undefined, flags.has("play-until-win")].filter(Boolean).length
-  if (asked > 1) throw new Error("--battle, --battles and --play-until-win each say how many rounds to play: give one")
-  const battles = whole("battles")
-  if (battles !== undefined && battles < 1) throw new Error("--battles must be 1 or more")
-  const rounds = flags.has("play-until-win") ? Number.POSITIVE_INFINITY : (battles ?? (flags.has("battle") ? 1 : 0))
+  const playTo = values["play-to"]
+  if (playTo !== undefined && playTo !== "next" && playTo !== "end" && !(Number.isInteger(Number(playTo)) && Number(playTo) >= 1)) throw new Error(`--play-to is next, a round (4) or end, not "${playTo}"`)
 
   const slots: Partial<Record<Slot, SlotChange>> = {}
   for (const slot of SLOTS) {
@@ -193,19 +194,10 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
   if (many) {
     refuse(["load", "file"], "many battles are new ones: use --map")
     refuse(["save"], "many battles are kept with --out <dir>")
-    refuse(["ready", "wait"], "two sessions play one battle")
-    if (rounds === 0) throw new Error(`--${values["seeds"] !== undefined ? "seeds" : "commanders"} needs --battles <n> or --play-until-win: how many rounds each battle plays`)
+    if (playTo === undefined) throw new Error(`--${values["seeds"] !== undefined ? "seeds" : "commanders"} needs --play-to next, a round or end: how far each battle plays`)
   }
   if (values["commanders"] !== undefined) refuse(["p1-commander", "p2-commander"], "--commanders names every Commander played")
 
-  const waitSlot = values["wait"]
-  if (waitSlot !== undefined && waitSlot !== "p1" && waitSlot !== "p2") throw new Error(`--wait names the slot waiting, p1 or p2, not "${waitSlot}"`)
-  if (waitSlot !== undefined) {
-    if (rounds > 0) throw new Error("--wait plays nothing: the last plan handed in with --ready plays the round")
-    refuse(["ready", "p1", "p2", "save"], "--wait only reads the save")
-  } else refuse(["timeout"], "it says how long --wait blocks")
-  if (flags.has("ready") && rounds > 0) throw new Error("--ready plays the round once every plan is in: drop --battle")
-  if ((waitSlot !== undefined || flags.has("ready")) && load === undefined) throw new Error("two sessions share one save: give it with -f <file>")
   if (load === undefined && values["map"] === undefined) throw new Error("a battle needs --map <id|file> to start a new one, or --load <file> (skirmish --help)")
 
   const map = values["map"]
@@ -222,11 +214,9 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
     },
     slots,
     rules: { ...given("rounds", whole("rounds")), ...given("modifiers", modifiers === undefined ? undefined : modifiers === "none" || modifiers === "" ? [] : modifiers.split(",").map((name) => name.trim())) },
-    rounds,
+    ...given<"playTo", "next" | "end" | number>("playTo", playTo === undefined ? undefined : playTo === "next" || playTo === "end" ? playTo : Number(playTo)),
     ...given("seeds", values["seeds"] === undefined ? undefined : seedsOf(values["seeds"])),
     ...given("commanders", values["commanders"] === undefined ? undefined : commandersOf(values["commanders"])),
-    ready: flags.has("ready"),
-    ...given("wait", waitSlot === undefined ? undefined : { slot: waitSlot as Slot, timeout: whole("timeout") ?? 900 }),
     ...given("out", values["out"]),
     ...given("log", values["log"]),
     ...given("logLevel", level === undefined ? undefined : parseLevel(level)),
@@ -252,8 +242,6 @@ export function main(
     const request = requestOf(options, profiles)
     if (request.commanders !== undefined) playPairings(request, profiles, write)
     else if (request.seeds !== undefined) playSeeds(request, profiles, write)
-    else if (request.wait !== undefined) return waitTurn(request, request.wait.slot, request.wait.timeout, profiles, write) ? EXIT.done : EXIT.waiting
-    else if (request.ready) handIn(request, profiles, write)
     else return playBattle(request, profiles, write).refused ? EXIT.refused : EXIT.done
     return EXIT.done
   } catch (error) {

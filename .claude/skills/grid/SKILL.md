@@ -133,7 +133,7 @@ in a folder for what they are for: `rules/`, `units/`, `movement/`, `engage/` (t
 files in `trials/`; the id is the file name and every command finds a save by it. **Give each side that fights a goal**:
 a `target` in its start, or an enemy Nexus to head for — `tests/testing-saves.test.ts` refuses a checked-in save without
 one, since the game never plays such a battle. A question about troops usually needs a variant of an engage save, not a
-new save. `skirmish --load <save> --battle` plays the same Battle Round and prints the same report.
+new save. `skirmish --load <save> --play-to next` plays the same Battle Round and prints the same report.
 
 Every rule gets a named, checked-in testing save — that is the regression suite and the documentation at once. It is a
 save like any other, read by the same loader (`readSave`, every problem at once), with a map drawn inline, both slots

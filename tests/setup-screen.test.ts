@@ -32,7 +32,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runGamePlaytest } from "../src/playtest/game.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
-import type { SidePlan } from "../src/duel/index.ts"
+import type { BuildActions } from "../src/duel/index.ts"
 
 const ENTER = "\r"
 
@@ -195,7 +195,7 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   const save: SaveFile = { format: SAVE_FORMAT, setup: RICH }
   const level = skirmishLevel(save, {}, { profiles: SHIPPED_PROFILES })
   const context = withoutScene(level.firstRound())
-  const plan: SidePlan = { power: 1, build: [{ building: "turret", x: 10, y: 11 }], stance: "attack" }
+  const plan: BuildActions = { power: 1, build: [{ building: "turret", x: 10, y: 11 }], stance: "attack" }
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const planned = planOnRound(context, opened, plan, level.play.keep as NonNullable<typeof level.play.keep>)

@@ -184,17 +184,24 @@ for the concept from the files, the documents and the code.
       new case.
 - [x] `grid`, the trials (`--against` an older commit included), the measurement, `profile-routes`, the picture scripts,
       the browser page's two showcase battles and every test read testing saves; the old loader is the opening a
-      testing save starts from (`src/skirmish/opening/`). `skirmish --load <testing save> --battle` plays the same
+      testing save starts from (`src/skirmish/opening/`). `skirmish --load <testing save> --play-to next` plays the same
       Battle Round and prints `grid`'s report.
 - [x] The duel maps as files in `maps/` (`crossing.map.json`, `pocket.map.json`, the shape a save draws a map in), read by
       `src/duel/maps.ts` and offered by id.
 - [x] **`duel` folded into `skirmish`** ([his words](../history/feedback/2026-11-12-skirmish-command.md): "there's no
       need to have two commands for the same thing"): every pairing of Commanders from both sides over seeds
-      (`--commanders`), two sessions playing one save a slot each (`--wait`, `--ready`), and a finished battle's every
-      report on loading it. The command's file is its manual and its options alone; the work is in its modules, the
+      (`--commanders`), and a finished battle's every report on loading it. The command's file is its manual and its options alone; the work is in its modules, the
       steps the screen shares in `src/skirmish/request.ts`; each document says the command at its own level (the
       manual in the code, the testing uses in the testing ground, the duel's rules in its page, the game in the game
       modes). The `cmd:` player, a command run each round, is gone: a model plays through the save file.
+- [x] **No turns, build actions, `--play-to`** ([his words](../history/feedback/2026-11-12-skirmish-command.md): "in
+      Terminal Nexus there are no turns"): a round's "plan" is now **build actions** everywhere (code, command, brief,
+      documents); a build file holds them by round (`"round": 3`, `"2-4"`, `"*"`), played blind; `--play-to next|n|end`
+      replaces `--battle`, `--battles` and `--play-until-win`, stopping at a Build Phase with the briefs of the slots
+      that have nothing for it; the two-session `--wait` and `--ready` are gone (either slot hands its actions in alone,
+      in any order). The rule written into the concept: every player answers the same brief, and clashes, powers and
+      upgrades settle together as the Battle Round starts (two Nexuses falling on one tick is a draw, tested). Build
+      files with conditions are the next pull request's proposal ([`build-files-with-conditions.md`](build-files-with-conditions.md)).
 
 ### Step 17K — Playing it
 
@@ -214,7 +221,7 @@ for the concept from the files, the documents and the code.
 ## How it is judged
 
 Automated: a save played on after loading hashes as the uninterrupted battle on Node and Bun; every save checked in is
-played by a test; `skirmish --battle` turns a save and a plan into the next save; the setup screen at every colour depth and
+played by a test; `skirmish --play-to next` turns a save and build actions into the next save; the setup screen at every colour depth and
 across the viewport range; the driver plays a whole Skirmish, spectating included, with no terminal.
 
 Human: Mario's session above, start to save to load to an agent's report, without asking how.

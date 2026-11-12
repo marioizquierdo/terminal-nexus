@@ -14,7 +14,7 @@
 import { createHash } from "node:crypto"
 import { writeFileSync } from "node:fs"
 import { briefOf, newDuel, playRound, scriptedPlayer } from "../src/duel/index.ts"
-import type { DuelSetup, Side, SidePlan } from "../src/duel/index.ts"
+import type { DuelSetup, Side, BuildActions } from "../src/duel/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
 import { loadTestingSave, testingSaveCatalog } from "../src/skirmish/testing-saves.ts"
@@ -133,7 +133,7 @@ for (let n = firstDuel; n < firstDuel + duelCount; n += 1) {
   const setup: DuelSetup = { map: "crossing", seed, rounds: 8, pulseTicks: 600, commanders: { A: a, B: b } }
   let duel = newDuel(setup)
   while (duel.result === null) {
-    const plans: Record<Side, SidePlan> = { A: player(briefOf(duel, "A").data), B: player(briefOf(duel, "B").data) }
+    const plans: Record<Side, BuildActions> = { A: player(briefOf(duel, "A").data), B: player(briefOf(duel, "B").data) }
     const print = new Fingerprint()
     let last: MatchState | null = null
     let began = 0

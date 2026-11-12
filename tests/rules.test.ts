@@ -521,3 +521,15 @@ test("a 2x2 ground unit and a 2x1 air unit fight, each within its own escort", a
   )
   assert.ok(newUnitDeaths.length > 0, "neither new unit died, so its death frames were never exercised")
 })
+
+// No turns, everything at once (docs/game-design/concept.md): what would destroy both Nexuses on one tick — two
+// Nexus powers firing as the round starts, two last blows — is a draw, never a win for whoever the code checked first.
+test("two Nexuses falling on the same tick make a draw; one falling alone loses", async () => {
+  const { victory } = await import("../src/pulse/victory.ts")
+  const nexus = (player: "A" | "B") => ({ player, definition: { nexus: true } })
+  const context = (actors: readonly unknown[]) =>
+    ({ actors, tick: 40, pulse: { pulseTicks: 360, roster: { A: { hasNexus: true, hasMobile: false }, B: { hasNexus: true, hasMobile: false } } } }) as unknown as Parameters<typeof victory>[0]
+  assert.deepEqual(victory(context([])), { winner: null, reason: "nexus-destroyed", tick: 40 })
+  assert.deepEqual(victory(context([nexus("A")])), { winner: "A", reason: "nexus-destroyed", tick: 40 })
+  assert.equal(victory(context([nexus("A"), nexus("B")])), null)
+})

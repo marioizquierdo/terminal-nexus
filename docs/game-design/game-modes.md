@@ -166,8 +166,8 @@ a mission built before the battle is fun would be built twice.
 
 Two people, one battle: hidden simultaneous plans and deterministic resolution already fit play over a network and play
 by turns. Versus builds on Skirmish: the settings found to make the most enjoyable Skirmish are where a fair Versus
-battle starts. The cheapest version already half exists: two sessions play one save file, a slot each, one plan a
-round (`skirmish --wait`, `--ready`), so a battle by correspondence is close. Nothing is designed, and multiplayer stays out
+battle starts. The cheapest version already half exists: each slot's build actions for a round may be handed in to one
+save file alone, in any order, and the round plays both, so a battle by correspondence is close. Nothing is designed, and multiplayer stays out
 of scope until a milestone asks for it.
 
 ## 6. What was retired

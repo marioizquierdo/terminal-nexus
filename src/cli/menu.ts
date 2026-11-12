@@ -90,7 +90,7 @@ export type MenuOptions = Readonly<{
   saves?: () => readonly SaveEntry[]
   /** Where the saves folder is, as Load game says it. */
   savesShown?: string
-  /** What a save opened from Load game is read with, for a loaded save's plan file: not needed by the list itself. */
+  /** What a save opened from Load game is read with, for a loaded save's build file: not needed by the list itself. */
   readFile?: (path: string) => string
   /** A setup New game opens on, in place of the defaults: the battle a result's Setup screen came from. */
   setup?: SaveSetup

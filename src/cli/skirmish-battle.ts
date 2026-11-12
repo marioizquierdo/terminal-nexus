@@ -1,13 +1,18 @@
 // One battle of the `skirmish` command (`./skirmish.ts`, where the options are and what each does): opened from a save
-// or set up new, its slots seated, then either each player's plan checked or brief printed, or rounds played, each
-// kept as asked; and the save written. The files and the printing are here; the steps themselves are the ones the
-// game's screens take (`src/skirmish/request.ts` to open, `src/skirmish/play.ts` to play), so a battle played here and
-// one played on the screen are the same battle.
+// or set up new, its slots seated, played to the round asked for (`--play-to`), and stopped at a Build Phase, where each
+// player's build actions for that round are checked, or its brief printed when it has none; then saved. The files and
+// the printing are here; the steps themselves are the ones the game's screens take (`src/skirmish/request.ts` to open,
+// `src/skirmish/play.ts` to play), so a battle played here and one played on the screen are the same battle.
+//
+// There are no turns: both slots make their build actions for a round from the same brief, blind, in any order. A
+// slot's actions may be handed in on their own (saved as the save's draft) and the other's later; the round plays once
+// a run is asked to play it. A save loaded and written back (`-f`) is held under a lock while the run reads and writes
+// it, so two runs handing in actions at once never lose one.
 
-import { appendFileSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
+import { appendFileSync, mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
-import type { DuelState, SidePlan } from "../duel/index.ts"
-import { briefOf, checkPlan } from "../duel/index.ts"
+import type { BuildActions, DuelState } from "../duel/index.ts"
+import { actionsFor, briefOf, checkBuildActions } from "../duel/index.ts"
 import { hashEvents } from "../events/serialize.ts"
 import type { LogLevel } from "../report/index.ts"
 import { buildLog } from "../report/index.ts"
@@ -24,14 +29,14 @@ import type { SkirmishRequest } from "./skirmish.ts"
 import { readGameFile } from "./skirmish-files.ts"
 import { playTestingSave } from "./skirmish-testing.ts"
 
-/** How many rounds `--play-until-win` plays at most, unless `--rounds` says otherwise. */
-export const UNTIL_WIN_ROUNDS = 100
+/** How many rounds `--play-to end` plays at most, unless `--rounds` says otherwise. */
+export const UNTIL_END_ROUNDS = 100
 
 /** What a line is written to. */
 export type Write = (line: string) => void
 
 /** A battle opened: the save it came from, its setup with the slots seated and the rules changed, the duel as it
- *  stands, and the plans the player slots bring. */
+ *  stands, and the build actions the player slots bring. */
 export type Opened = Readonly<{ save: SaveFile; setup: SaveSetup; state: DuelState; seated: Seated }>
 
 /** The save a request starts from: read from `--load`, or a new battle on `seed` (the request's own unless given). */
@@ -40,15 +45,25 @@ export function startingSave(request: SkirmishRequest, profiles: Profiles, seed?
   return newBattle({ ...request.battle, ...(seed === undefined ? {} : { seed }) }, profiles)
 }
 
-/** A save opened as the request asks: its slots seated (each plan file's problems written) and its rules changed. */
+/** A save opened as the request asks: its slots seated (each build file's problems written) and its rules changed. */
 export function openSave(save: SaveFile, request: SkirmishRequest, profiles: Profiles, write: Write): Opened {
   const seated = seat(save, request.slots, readGameFile)
   for (const problem of seated.problems) write(problem)
   const before = duelOf({ ...save, setup: seated.setup }, profiles)
-  const untilWin = request.rounds === Number.POSITIVE_INFINITY ? Math.max(save.setup.rounds, UNTIL_WIN_ROUNDS) : undefined
-  const rounds = request.rules.rounds ?? untilWin
+  const toEnd = request.playTo === "end" ? Math.max(save.setup.rounds, UNTIL_END_ROUNDS) : undefined
+  const rounds = request.rules.rounds ?? toEnd
   const setup = withRules(seated.setup, before.result === null ? before.round : 1, { ...request.rules, ...(rounds === undefined ? {} : { rounds }) })
   return { save, setup, state: duelOf({ ...save, setup }, profiles), seated }
+}
+
+/** The round whose Build Phase a run stops at: the one it is at (nothing to play), the next, a round named, or never
+ *  (play to the end). */
+export function stopRound(playTo: SkirmishRequest["playTo"], state: DuelState): number {
+  if (playTo === undefined) return state.round
+  if (playTo === "next") return state.round + 1
+  if (playTo === "end") return Number.POSITIVE_INFINITY
+  if (playTo < state.round && state.result === null) throw new Error(`--play-to ${playTo}: the battle is already at round ${state.round}`)
+  return playTo
 }
 
 /** A save written whole or not at all: to a file beside it first, then moved over it, so a reader never finds half. */
@@ -57,6 +72,30 @@ export function writeSave(path: string, save: SaveFile): void {
   const next = `${path}.writing`
   writeFileSync(next, saveText(save))
   renameSync(next, path)
+}
+
+/** Waits `ms` without spinning the processor. */
+const pause = (ms: number): void => {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms)
+}
+
+/** Holds a save's lock (`<file>.lock`) while `work` reads and writes it. */
+function locked<T>(file: string, work: () => T): T {
+  const lock = `${file}.lock`
+  for (let tries = 0; ; tries += 1) {
+    try {
+      mkdirSync(lock)
+      break
+    } catch {
+      if (tries > 600) throw new Error(`${file} stayed locked for a minute: remove ${lock} if nothing is running`)
+      pause(100)
+    }
+  }
+  try {
+    return work()
+  } finally {
+    rmdirSync(lock)
+  }
 }
 
 /** Where each round played is kept, and how: its save and report in `out`, its Battle Round's log in `log`. */
@@ -89,17 +128,40 @@ function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLev
   return [`--- seed ${setup.seed}`, `=== round ${round}: ${played.events.length} events`, ...lines]
 }
 
+/** Each player slot's build actions for `round` from its build file (`first`: the first round played with it), and the
+ *  player slots that have none. */
+export function actionsAt(setup: SaveSetup, builds: Seated["builds"], round: number, first: number): Readonly<{ actions: Partial<Record<Slot, BuildActions>>; missing: readonly Slot[] }> {
+  const actions: Partial<Record<Slot, BuildActions>> = {}
+  const missing: Slot[] = []
+  for (const slot of SLOTS) {
+    if (!isPlayer(setup, slot)) continue
+    const given = actionsFor(builds[slot] ?? [], round, first)
+    if (given === undefined) missing.push(slot)
+    else actions[slot] = given
+  }
+  return { actions, missing }
+}
+
+/** A run of rounds played: the duel after them, how many were played, and the player slots it stopped for. */
+export type Ran = Readonly<{ state: DuelState; played: number; waiting: readonly Slot[] }>
+
 /**
- * Plays up to `count` rounds (the plans given play in the first; every later round needs scripts), writing each
- * round's report unless quiet, and keeping it as `keep` asks. Returns the duel after them.
+ * **Rounds played** until the battle reaches round `stop`'s Build Phase, or ends, or a player slot has no build actions
+ * for the round about to play (its build file has no entry for it). Each round's report is written unless quiet, and
+ * kept as `keep` asks.
  */
-export function playRounds(setup: SaveSetup, start: DuelState, plans: Readonly<Partial<Record<Slot, SidePlan>>>, count: number, profiles: Profiles, keep: Keep, write: Write): DuelState {
+export function playRounds(setup: SaveSetup, start: DuelState, builds: Seated["builds"], stop: number, profiles: Profiles, keep: Keep, write: Write): Ran {
   if (keep.out !== undefined) mkdirSync(keep.out, { recursive: true })
+  const first = start.round
   let state = start
-  for (let played = 0; played < count && state.result === null; played += 1) {
+  let played = 0
+  while (state.result === null && state.round < stop) {
+    const { actions, missing } = actionsAt(setup, builds, state.round, first)
+    if (missing.length > 0) return { state, played, waiting: missing }
     const round = state.round
-    const result = playNext(setup, state, played === 0 ? plans : {}, profiles)
+    const result = playNext(setup, state, actions, profiles)
     state = result.state
+    played += 1
     const report = roundLines(result.report)
     if (keep.quiet !== true) for (const line of report) write(line)
     if (keep.log !== undefined) appendFileSync(keep.log, `${roundLog(result, setup, round, keep.level).join("\n")}\n`)
@@ -109,30 +171,29 @@ export function playRounds(setup: SaveSetup, start: DuelState, plans: Readonly<P
       writeFileSync(join(keep.out, `${name}.txt`), `${[...report, standing(setup, state)].join("\n")}\n`)
     }
   }
-  return state
+  return { state, played, waiting: [] }
 }
 
-/** Refuses many rounds while a person plans a slot: a plan plays one round. */
-export function scriptsOnly(setup: SaveSetup, count: number): void {
-  if (count <= 1) return
-  const player = SLOTS.find((slot) => isPlayer(setup, slot))
-  if (player !== undefined) throw new Error(`${player} is a player: a plan plays one round; give every slot a script to play ${count === Number.POSITIVE_INFINITY ? "until the battle ends" : `${count} rounds`}`)
+/** A slot's brief, as text with the play strategies (a player that reads words), or as data. */
+export function writeBrief(setup: SaveSetup, state: DuelState, slot: Slot, json: boolean, write: Write): void {
+  const brief = briefOf(state, SIDE_OF[slot], playStrategies())
+  write(`--- brief for ${slotLabel(setup, slot)}`)
+  write(json ? JSON.stringify(brief.data, null, 1) : brief.text)
 }
 
 /**
- * Each player's slot without a round to play: its plan checked by the Build Phase's rules (what it keeps, builds and
- * takes, each refusal and why), or its brief. Returns whether the rules refused anything.
+ * **At a Build Phase**: each player slot's build actions for the round checked by the Build Phase's rules (what it
+ * keeps, builds and takes, each refusal and why), or, when it has none, its brief. A draft is checked and its brief
+ * printed too. Returns whether the rules refused anything.
  */
-function planLines(opened: Opened, json: boolean, write: Write): boolean {
-  const { setup, state, seated } = opened
+function atBuildPhase(setup: SaveSetup, state: DuelState, seated: Seated, first: number, json: boolean, write: Write): boolean {
   let refused = false
   for (const slot of SLOTS.filter((each) => isPlayer(setup, each))) {
-    const side = SIDE_OF[slot]
-    const given = seated.plans[slot]
+    const given = actionsFor(seated.builds[slot] ?? [], state.round, first)
     const fromFile = seated.fromFile.has(slot)
     if (given !== undefined && (fromFile || !json)) {
-      const checked = checkPlan(state, side, given)
-      write(`${slotLabel(setup, slot)}: ${fromFile ? "the plan" : "the draft"} checked, nothing built`)
+      const checked = checkBuildActions(state, SIDE_OF[slot], given)
+      write(`${slotLabel(setup, slot)}: ${fromFile ? "build actions" : "the draft's build actions"} for round ${state.round} checked, nothing built`)
       write(`  keeps ${checked.kept ?? "no card"}; ${checked.credits} credits, spends ${checked.spent}, leaves ${checked.credits - checked.spent}`)
       for (const line of checked.built) write(`  builds ${line}`)
       for (const line of checked.actions) write(`  takes ${line}`)
@@ -145,48 +206,43 @@ function planLines(opened: Opened, json: boolean, write: Write): boolean {
   return refused
 }
 
-/** A slot's brief, as text with the play strategies (a player that reads words), or as data. */
-export function writeBrief(setup: SaveSetup, state: DuelState, slot: Slot, json: boolean, write: Write): void {
-  const brief = briefOf(state, SIDE_OF[slot], playStrategies())
-  write(`--- brief for ${slotLabel(setup, slot)}`)
-  write(json ? JSON.stringify(brief.data, null, 1) : brief.text)
-}
-
 /**
- * **One battle**: opened, then with rounds to play, played (and the drafts cleared); without, each player's plan
- * checked or brief printed, or, for a battle over, every round's report. Saved when asked. A testing save plays its
- * one Battle Round instead (`./skirmish-testing.ts`). Returns whether the rules refused part of a plan checked.
+ * **One battle**: opened, played to the round asked for, then, at the Build Phase it stops at, each player's build
+ * actions checked or brief printed (for a battle over, every round's report). Saved when asked: build actions handed
+ * in without a round played are kept as the save's draft. A testing save plays its one Battle Round instead
+ * (`./skirmish-testing.ts`). Returns whether the rules refused part of the build actions checked.
  */
 export function playBattle(request: SkirmishRequest, profiles: Profiles, write: Write): Readonly<{ refused: boolean }> {
-  const save = startingSave(request, profiles)
-  if (save.start !== undefined) return playTestingSave(save, request, write)
-  const opened = openSave(save, request, profiles, write)
-  const { setup, state, seated } = opened
-  write(`${battleLine(setup)}: ${standing(setup, state)}`)
-  let next = state
-  let draft: Partial<Record<Slot, SidePlan>> = { ...seated.plans }
-  let refused = false
-  if (request.rounds > 0) {
-    if (state.result !== null) throw new Error("the battle is over: there is no next round to play")
-    scriptsOnly(setup, request.rounds)
-    for (const slot of SLOTS) if (isPlayer(setup, slot) && seated.plans[slot] === undefined) write(`${slot} has no plan: it builds nothing and attacks`)
-    next = playRounds(setup, state, seated.plans, request.rounds, profiles, keepOf(request), write)
-    draft = {}
-    write(standing(setup, next))
-  } else if (state.result !== null) {
-    for (const line of historyLines(setup, state).slice(0, -1)) write(line)
-  } else if (!SLOTS.some((slot) => isPlayer(setup, slot))) {
-    write(`no player plans a slot (${SLOTS.map((slot) => `${slot} ${setup.slots[slot].controller}`).join(", ")}): add --battle to play the round, or --play-until-win`)
-  } else {
-    refused = planLines(opened, request.json, write)
+  const run = (): Readonly<{ refused: boolean }> => {
+    const save = startingSave(request, profiles)
+    if (save.start !== undefined) return playTestingSave(save, request, write)
+    const { setup, state, seated } = openSave(save, request, profiles, write)
+    write(`${battleLine(setup)}: ${standing(setup, state)}`)
+    const first = state.round
+    const stop = stopRound(request.playTo, state)
+    if (state.result !== null && stop > state.round) throw new Error("the battle is over: there is no next round to play")
+    const ran: Ran = stop > state.round ? playRounds(setup, state, seated.builds, stop, profiles, keepOf(request), write) : { state, played: 0, waiting: [] }
+    const next = ran.state
+    if (ran.played > 0) write(standing(setup, next))
+    for (const slot of ran.waiting) write(`${slot} has no build actions for round ${next.round}: the battle waits at its Build Phase`)
+    let refused = false
+    if (next.result !== null) {
+      if (ran.played === 0) for (const line of historyLines(setup, next).slice(0, -1)) write(line)
+    } else if (!SLOTS.some((slot) => isPlayer(setup, slot))) {
+      if (ran.played === 0) write(`no player plays a slot (${SLOTS.map((slot) => `${slot} ${setup.slots[slot].controller}`).join(", ")}): add --play-to next to play the round, or --play-to end`)
+    } else {
+      refused = atBuildPhase(setup, next, seated, first, request.json, write)
+    }
+    if (request.save !== undefined) {
+      const draft = ran.played === 0 ? actionsAt(setup, seated.builds, first, first).actions : {}
+      writeSave(request.save, saveOf(setup, next, { ...named(request, save), draft }))
+      write(`saved ${request.save}${next.result === null ? ` at round ${next.round}'s Build Phase; on screen: ./bin/terminal-nexus.ts --load ${request.save}` : ", the battle over"}`)
+    } else if (ran.played > 0) {
+      write(`not saved: add --save <file>${request.load === undefined ? "" : ` (or -f ${request.load})`} to keep it`)
+    }
+    return { refused }
   }
-  if (request.save !== undefined) {
-    writeSave(request.save, saveOf(setup, next, { ...named(request, save), draft }))
-    write(`saved ${request.save}${next.result === null ? ` at round ${next.round}'s Build Phase` : ", the battle over"}`)
-  } else if (request.rounds > 0) {
-    write(`not saved: add --save <file>${request.load === undefined ? "" : ` (or -f ${request.load})`} to keep it`)
-  }
-  return { refused }
+  return request.load !== undefined && request.save === request.load ? locked(request.load, run) : run()
 }
 
 /** The save's name and notes: the request's, else the file's own. */

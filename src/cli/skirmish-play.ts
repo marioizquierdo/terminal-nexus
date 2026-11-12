@@ -10,7 +10,7 @@
 //
 // - **a round's Build Phase** is side A's: the duel map, its Commander's whole army with every power kept applied, the
 //   duel's credits, the hand its Nexus Pulse deals, its buildings standing, and everything else as the field;
-// - **starting a round's Pulse** turns the plan into side A's duel plan (`sidePlanOf`), asks p2's controller for side
+// - **starting a round's Pulse** turns the plan into side A's duel plan (`buildActionsOf`), asks p2's controller for side
 //   B's, and plays the round with the duel's own `playRound`, every state and event kept for the Battle Round;
 // - **the next round** is the battle's next, from where the survivors regrouped; or, once the battle is over, the same
 //   battle again from round 1, or (the result's other choice) a new battle on a new seed;
@@ -34,7 +34,7 @@ import { status } from "../build/status.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
-import type { DuelState, Player, RoundReport, Side, SidePlan } from "../duel/index.ts"
+import type { DuelState, Player, RoundReport, Side, BuildActions } from "../duel/index.ts"
 import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, standingOf } from "../duel/index.ts"
 import type { Force, RegroupResult, Restoration } from "../match/index.ts"
 import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
@@ -55,7 +55,7 @@ import { timelineOf } from "./timeline.ts"
 
 /** What a Skirmish's round carries in its context (`BuildContext.mode`): the setup, the duel at this Build Phase, the
  *  file it was loaded from or last saved to (what Save game offers to write over), and p1's draft still to restore. */
-export type SkirmishPosition = Readonly<{ kind: "skirmish"; setup: SaveSetup; duel: DuelState; file?: string; draft?: SidePlan }>
+export type SkirmishPosition = Readonly<{ kind: "skirmish"; setup: SaveSetup; duel: DuelState; file?: string; draft?: BuildActions }>
 
 /** A round's Skirmish. Throws for a context that is not a Skirmish's. */
 export function positionOf(context: Pick<BuildContext, "mode">): SkirmishPosition {
@@ -291,7 +291,7 @@ const tileOf = (key: string): Readonly<{ x: number; y: number }> => {
  * building placed at its exact anchor in the order placed, the buildings held this round, the building actions taken,
  * and the troops marching on the enemy's Nexus — the Build Phase has no stance to choose.
  */
-export function sidePlanOf(context: BuildContext, state: BuildState): SidePlan {
+export function buildActionsOf(context: BuildContext, state: BuildState): BuildActions {
   const { duel } = positionOf(context)
   const hold = state.held.map(tileOf)
   const actions = state.fitted.map((taken) => ({ ...tileOf(taken.anchor), action: taken.action }))
@@ -305,7 +305,7 @@ export function sidePlanOf(context: BuildContext, state: BuildState): SidePlan {
 }
 
 /** Whether a plan has anything in it: a power, a building, a hold or an action. */
-const planned = (plan: SidePlan): boolean => plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0
+const planned = (plan: BuildActions): boolean => plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0
 
 /**
  * **A round as a save**: its setup, the duel as this Build Phase opened, and the plan so far as p1's draft — what Save
@@ -314,7 +314,7 @@ const planned = (plan: SidePlan): boolean => plan.power !== undefined || plan.bu
  */
 export function saveOfRound(context: BuildContext, state: BuildState, name?: string): SaveFile {
   const { setup, duel } = positionOf(context)
-  const plan = sidePlanOf(context, state)
+  const plan = buildActionsOf(context, state)
   return saveOf(setup, duel, { ...(name === undefined ? {} : { name }), ...(planned(plan) ? { draft: { p1: plan } } : {}) })
 }
 
@@ -323,7 +323,7 @@ export function saveOfRound(context: BuildContext, state: BuildState, name?: str
  * screen keeps it the moment it is picked), each building placed where the duel places it (`placementsOf`), the
  * buildings held and the actions taken. A draft restored and a scripted round both come this way.
  */
-export function planOnRound(context: BuildContext, state: BuildState, plan: SidePlan, keep: NonNullable<LevelPlay["keep"]>): Readonly<{ context: BuildContext; state: BuildState }> {
+export function planOnRound(context: BuildContext, state: BuildState, plan: BuildActions, keep: NonNullable<LevelPlay["keep"]>): Readonly<{ context: BuildContext; state: BuildState }> {
   const { duel } = positionOf(context)
   const pick = plan.power !== undefined && plan.power >= 1 ? plan.power - 1 : null
   const option = pick === null ? undefined : context.nexusDraft[pick]
@@ -372,7 +372,7 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       if (duel.result !== null) return null
       // The round as the command line plays it (`playNext`): p1's plan from this Build Phase when a person plays it, every
       // scripted slot its profile's plan, the modifiers and the credits shares as the setup has them.
-      const plans = isPlayer(setup, "p1") ? { p1: sidePlanOf(context, state) } : {}
+      const plans = isPlayer(setup, "p1") ? { p1: buildActionsOf(context, state) } : {}
       const states: MatchState[] = []
       const events: DomainEvent[] = []
       let content: Readonly<{ registry: ContentRegistry; sides: Readonly<Record<Side, ContentRegistry>> }> | null = null

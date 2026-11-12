@@ -1,8 +1,8 @@
 // What a duel side is told before it plans a round (`briefOf`): one brief, two forms — `data`, for a script, and `text`,
-// the same facts written out for a language model (docs/system-design/duels.md, "The brief and the plan"). Everything
+// the same facts written out for a language model (docs/system-design/duels.md, "The brief and the build actions"). Everything
 // in it is what a player on the Build Phase screen could see: their own army, credits, hand and map; the enemy's
 // buildings and units where they stand, its Nexus's health and the powers it has kept (kept powers are public:
-// commander-armies.md, catch-up); and what happened last round. The enemy's plan for this round is never in it.
+// commander-armies.md, catch-up); and what happened last round. The enemy's build actions for this round are never in it.
 //
 // Pure: the same duel gives the same brief. Presentation of the duel, so it may read the art and card tables.
 
@@ -352,8 +352,8 @@ export function briefText(data: BriefData, strategies?: string): string {
     lines.push(strategies.trim())
   }
   lines.push("")
-  lines.push("## Your plan")
-  lines.push("Answer with one JSON object and nothing else:")
+  lines.push("## Your build actions")
+  lines.push("Both sides make their build actions from this same moment, blind, and the round plays them together: there are no turns. Answer with one JSON object and nothing else:")
   lines.push("```json")
   lines.push(`{ "power": 1, "build": [ { "building": "${data.buildings[0]?.id ?? "barracks"}", "at": "forward" } ], "formation": "block", "stance": "attack", "note": "one sentence on why" }`)
   lines.push("```")

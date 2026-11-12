@@ -14,7 +14,7 @@ import { createBuildState, withoutScene } from "../build/state.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
-import type { DuelResult, DuelSetup, Side, SidePlan } from "../duel/index.ts"
+import type { DuelResult, DuelSetup, Side, BuildActions } from "../duel/index.ts"
 import { briefOf, newDuel, playRound } from "../duel/index.ts"
 import type { Player } from "../duel/index.ts"
 import { centreTile } from "../match/index.ts"
@@ -65,7 +65,7 @@ export function measureDuel(setup: DuelSetup, players: Readonly<Record<Side, Rea
   const rounds: DuelRound[] = []
   while (state.result === null) {
     const briefs = { A: briefOf(state, "A").data, B: briefOf(state, "B").data }
-    const plans: Record<Side, SidePlan> = { A: players.A.player(briefs.A), B: players.B.player(briefs.B) }
+    const plans: Record<Side, BuildActions> = { A: players.A.player(briefs.A), B: players.B.player(briefs.B) }
     let recorder: BattleRecorder | null = null
     const played = playRound(state, plans, (battle, events, registry, sides) => {
       recorder ??= new BattleRecorder(registry, sides)

@@ -136,3 +136,51 @@ now, `src/skirmish/request.ts`, and the round's report lines another, `src/skirm
 they keep parity with the command. The save page says the command exists and links its manual; the testing ground has
 how each kind of test uses it, the model-against-model recipe included; the duel page keeps the rules, the brief and
 the plan; the game modes say what a Skirmish is to a player.
+
+### F266 — no turns; "plan" becomes build actions
+
+> --wait p1 - what does it mean to wait? note that in Terminal Nexus there are no turns: all players move simultaneously during the build phase. We allow to save with partial build actions (are still calling it "plan" in code, and do you think we can do a naming cleanup here to formalize it as "build actions"), that is particularly useful to save game from the UI in the middle of a build phase, but for testing purposes this is almost never needed. The scripts (and future ai players) can play anytime before or after the current player or players, they should get the exact same view of the battle right before the build phase begins.
+
+**Built.** `--wait` and `--ready` are gone: either slot hands its build actions in alone (kept as the save's draft), in
+any order, and the round plays both; a test shows the other slot's brief unchanged by it. "Plan" is **build actions**
+in the code (`BuildActions`, `readBuildActions`, `checkBuildActions`, `src/duel/build-actions.ts`), the command
+(`build:<build file>`), the brief a model reads ("## Your build actions", saying there are no turns) and the documents.
+
+### F267 — clashes settle gracefully; powers and upgrades apply together
+
+> The game has to resolve any building conflicts gracefully, and we should take advantage of those to make the gameplay more interesting. This also applies to uogrades and powers, they need to be designed with the idea that they get enabled at the start of the battle round, and apply simulataneously if they would conflict on a single frame (e.g damage is reaolved like unit attacks). For example, if two commanders activate a nexus power that "battle round start -deal 100 dmg to enemy nexus", and that would kill both nexus in the same frame, then that would be a rare tie.
+
+**Built** as a rule in the concept ("No turns, and everything at once"), with a test that two Nexuses falling on one
+tick is a draw (the kernel already scored it so). No power deals damage as the round starts yet; the rule is there for
+the first that does.
+
+### F268 — build files by round
+
+> I have an idea to simplify sxripting with the skirmish command: the build player type loads a file, that file could define the round and action to do at that round, and the round could be a number, a range or an asterisk. This way it's possible to define a single round or multiple rounds ahead of time (in which case they play "blindly").
+
+**Built.** A build file is one object (the first round played) or a list of entries with `"round": 3`, `"2-4"` or
+`"*"`, the first that fits winning, played blind; a round it has no entry for stops the battle at that Build Phase
+with the slot's brief.
+
+### F269 — conditional build actions from one library of facts
+
+> Expanding even more on this idea, it would be interesting to spin a desicated subagent to explore simple scripting ideas under this format; build actions could be conditional to the resources or game state. The conditionals could read from a centralized library of game state checks, and that would be the same library that scripts use and the ai llm player would use, and scripted missions too, those functions map into a declarative schema that can be encoded in the build json scripts. This would allow for powerful scripting and testing capabilities that works for for in-game intelligence and coding agent alike. Please explore this idea, that could turn into the next PR.
+
+**Scheduled.** Explored by a dedicated agent: [`build-files-with-conditions.md`](../../milestones/build-files-with-conditions.md),
+the format (`"when"`), the library of facts over the brief, how scripts, missions and a model player meet it, a first
+pull request and six questions with recommendations.
+
+### F270 — one parameter for how far to play
+
+> The skirmish command could then declare a simpler general parameter that says how many rounds to play from there, then pauses and gives brief, for example "--play-until-round=next" or "--play-until-round=4" or "--play-until-round=end" (see what parameter name and format would work better).
+
+**Built** as `--play-to next|<round>|end`: it stops at that round's Build Phase (or at the end), sooner when a player
+slot has nothing for the round, and prints the briefs. It replaces `--battle`, `--battles` and `--play-until-win`.
+
+### F271 — capture the structure
+
+> After this iteration, pause for a moment and capture the patterns and essence of the structure that I am trying to describe here. The various levels of abstraction that allow composing the skirmish in a way that reused a lot pf the same structures for the in-game-ui and the command line that is used for testing and verification. [...] It also becomes a tool for communication where the coding agent can prepare playable scenarios for the human tester that would launch the ui at a specific point and play against a specific script or ai.
+
+**Built.** The save page opens on "How the pieces compose": the battle, the record, the seat, the round and the doors,
+and what follows (a moment is a file; a player is anything that answers a brief; one rule, one place; shared words).
+Every save the command writes at a Build Phase prints the line that opens it on the game's screen.

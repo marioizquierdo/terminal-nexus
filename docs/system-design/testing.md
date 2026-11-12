@@ -52,7 +52,7 @@ ground](testing-ground.md)). A testing save asserts the
 rule through events and hashes, and `grid <save> --verify` (see [`runtime.md`](runtime.md)) re-resolves
 it ten times from the command line. A testing save is a Skirmish save whose `start` writes its first Battle Round by
 hand ([`skirmish-saves.md`](skirmish-saves.md)): it reads as every save does, every problem at once, and `skirmish --load
-<save> --battle` plays the same Battle Round (`tests/skirmish-save.test.ts`).
+<save> --play-to next` plays the same Battle Round (`tests/skirmish-save.test.ts`).
 The rules layer above the kernel (openings, the regroup, missions) is held the same way by
 `tests/match.test.ts` and `tests/mission.test.ts`. The route saves (`route-*`) each show one shape a route must
 manage and are played on several seeds (`tests/route-saves.test.ts`); routing's own parts are tested alone on
