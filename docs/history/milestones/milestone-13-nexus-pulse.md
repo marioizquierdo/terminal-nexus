@@ -1,12 +1,21 @@
 # Milestone 13 — The Nexus Pulse
 
-**Status:** PLANNED
+**Retired unbuilt on 2026-11-12** ([the owner's words](../feedback/2026-11-12-skirmish-saves.md): "I'm not sure we need
+that as a separate milestone, since that was meant to polish the Build+Battle phases, but we are already doing that on
+the Skirmish mode"). Kept here as the record; its status says COMPLETE because a closed milestone lives in history.
+Where its contents went: Vasse's further powers and the effect kinds they need (`modifyRule`, `reveal`) to the content
+passes ([Milestone 12](../../milestones/milestone-12-content-iteration.md)); the Nexus Pulse's own moment on screen and
+the schedule shown a round ahead to [the backlog](../../milestones/backlog.md); the legendary hand stays an IDEA in
+[`commander-armies.md`](../../game-design/commander-armies.md). A rarity that reads at a glance in monochrome is a
+carry-over line.
+
+**Status:** COMPLETE
 **Depends on:** Milestone 8 (the Commander, and the Nexus Pulse's dealing by schedule, step 8C), Milestone 17 (Skirmish, where powers are played); placed after the first content pass (2026-11-11: "keep defining new Nexus upgrades for the important commanders")
 
 The owner, 2026-10-07, once the in-match draft had its name: "Perhaps we will need to design a milestone dedicated
 only to improving the Nexus Pulse experience, with dedicated UI and more specific powers." The Commander milestone
 built how the Nexus Pulse deals — rarity and role, a schedule a level can change, chance, requirements and upgrades
-([`commander-armies.md`](../game-design/commander-armies.md), how the Nexus Pulse deals) — on the popup the draft
+([`commander-armies.md`](../../game-design/commander-armies.md), how the Nexus Pulse deals) — on the popup the draft
 already had. This milestone gives the Nexus Pulse its own moment on screen, and the powers to fill it.
 
 ## Question
@@ -38,4 +47,4 @@ Not started. Each waits for Mario's word, and the order is a first guess.
 
 Story's technology choice between missions (Milestone 4), new rosters (Milestone 12), and a required pick, which stays
 Mario's call through the Nexus pick Experiment. An army bending the schedule, planned here at first, is Marshal
-Averno's quirk in [Milestone 14](../history/milestones/milestone-14-commander-armies.md).
+Averno's quirk in [Milestone 14](milestone-14-commander-armies.md).

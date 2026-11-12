@@ -113,10 +113,10 @@ After playing PERIMETER across three rounds Mario named what the battle screen l
 the right time ([his words](../history/feedback/2026-10-01-multi-pulse.md)). It is interface work, which he
 puts before any level's balance:
 
-- **Look at units during a Battle Round** (promoted on 2026-11-12 into the Skirmish milestone's "Reading the opponent"). "I should be able to hover over units and see their details, same as with
+- **Look at units during a Battle Round** (promoted on 2026-11-12 into Milestone 20's "Reading the opponent"). "I should be able to hover over units and see their details, same as with
   the Explore feature": pointing at a unit while a Battle Round plays (the mouse, or a cursor the keyboard moves)
   shows the card Explore Map shows in the Build Phase. Playback stays read-only.
-- **Fewer numbers.** "The pulse doesn't need to track that many stats": today the panel shows, for each side,
+- **Fewer numbers** (promoted on 2026-11-12 into Milestone 20's "The battle screen reads"). "The pulse doesn't need to track that many stats": today the panel shows, for each side,
   a count of units, a health bar and a health total, and a feed line for every shot and death. Keep what a
   player reads in a fight; drop the rest.
 
@@ -126,10 +126,10 @@ what each group goes for first (the Commander's second round).
 ## Reading the battle, then the enemy's base (Mario, 2026-11-11)
 
 Promoted on 2026-11-12: the reveal, the enemy's base read after the battle, and pointing at a unit while it fights are
-the Skirmish milestone's step "Reading the opponent" ([his words](../history/feedback/2026-11-11-showing-the-game.md)).
+Milestone 20's step "Reading the opponent" ([his words](../history/feedback/2026-11-11-showing-the-game.md)).
 What stays here: pausing, rewinding and going forward through a battle (Q19), and what a player may see of a hidden plan
 (visibility projection, above). The army past its supply cap that reads `units 41/12` with no word that its buildings
-have stopped training still looks like a mistake, and belongs with that step.
+have stopped training still looks like a mistake, and is Milestone 20's step "The battle screen reads".
 
 ## Intent, the next iteration (Mario, 2026-10-04)
 
@@ -155,13 +155,20 @@ place" is built; "hold" is the half of that open question still waiting). Two sh
 Experiment: a post as a building (a flag placed in territory that the nearest squad holds), or a post as an
 order given to a group from the Build Phase.
 
+## The Nexus Pulse's own moment (from the retired milestone, 2026-11-12)
+
+What the retired Nexus Pulse milestone ([its record](../history/milestones/milestone-13-nexus-pulse.md)) planned for the
+screen, kept for when the Pulse is the part of a round that reads worst: as a round opens, the hand shown before the
+Build Phase's plan in a layout of its own (each card's rarity and role), the schedule shown a round ahead, and a
+rarity that reads at a glance by a mark the monochrome floor keeps. Its powers went to the content passes.
+
 ## Jump-to-thing keys (Mario, 2026-10-09)
 
 `g` goes to the player's Nexus. Mario: "We can add some ideas of how to add new hotkeys later, but for now no need
 for it because we don't know the gameplay yet." The ideas, from how roguelikes cross a big map
 ([the survey](../history/reports/2026-10-09-roguelike-navigation.md)):
 
-- `g` again goes on to the enemy Nexus, once a map has one (his own idea), and round again.
+- `g` again goes on to the enemy Nexus, once a map has one (his own idea), and round again (promoted on 2026-11-12 into Milestone 20's "Reading the opponent").
 - A forward and backward pair that cycles the cursor through things of interest: the player's buildings, the
   raid's arrival groups, deposits, what was planned this round (Brogue's Tab, NetHack's `m` `o` `d` `a`).
 - A Shift step that moves "to the next different tile" instead of a fixed number (NetHack's `*` mode).
@@ -213,7 +220,7 @@ An LLM may later return a constrained legal plan, provide dialogue, answer conte
 ### Feedback from players beyond the playtest page
 
 Notes made inside the game were parked in October ([why](../history/reports/2026-10-01-feedback-pipeline-parked.md)) and
-brought back on 2026-11-12 as the Skirmish milestone's step "Notes from a playtest": a note key that saves the moment
+brought back on 2026-11-12 as the Skirmish milestone's step "Notes from a playtest", built on save files: a note key that saves the moment
 with everything needed to replay it. What stays here: routing reports to an issue or a pull request, an agent that sorts
 reports against the design documents, and a richer playtest tool someone else builds (pause, talk, point, replay in
 slow motion) to plug into.

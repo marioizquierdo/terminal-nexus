@@ -21,8 +21,9 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 | **Versus** | One battle between two people. Later |
 | **Mission** | A battle with a script, words and a goal. **A mission exists only inside Story** |
 | **Endless stand** | A kind of mission: waves that grow until the Nexus falls, scored by how far the player got. It comes before a story's final battle |
-| **Battle file** | A file that sets up a Skirmish: everything the setup screen sets, and more |
-| **Opponent** | What plans the other side of a Skirmish: a duel script (`balanced`, `rush`, `turtle` and their variants) driving a Commander Army |
+| **Slot** | One side of a battle, fixed by the map: its Commander and its **controller**, who plans it (`Player: marioiz`, `Scripted: agro`, later `Agent: curious`) |
+| **Save file** | A Skirmish's setup and, once played, the battle as it stands at the opening of a Build Phase: what the setup screen, Load game, the command line and every test start from ([`skirmish-saves.md`](../system-design/skirmish-saves.md)) |
+| **Opponent** | What plans the other side of a Skirmish: a script profile (`balanced`, `rush`, `turtle` and their variants, in `players/scripts/`) driving a Commander Army |
 | **Technology** | A card a mission in Story grants and later missions keep: a building, an upgrade, a Nexus power. The story file stores it in a level's `unlocks` |
 | **Level** | The code's word for a mission's entry in its story file (`campaign?level=<id>`); say *mission* in writing |
 
@@ -50,11 +51,14 @@ how it plans. A handicap (the opponent's credits) is a setting the player choose
 Skirmish, not through missions: polish the interface and the gameplay; add units and keep improving how units, formations
 and balance are tested automatically; give each Commander more Nexus powers; make the opponent better, up to Claude
 planning the other side as the player plans theirs. When the gameplay has a good foundation, Skirmish is shown to people
-(the owner's friends first), and their play says what Story should be. **Story is built after that**, one Commander's
+(the owner's friends first), and their play says what Story should be. The order, reviewed on 2026-11-12: Skirmish set
+up and saved; units that counter each other; a narrow worker economy; a Skirmish worth showing, ending with friends;
+then agent players, further content and Nexus powers, and a deeper planner if friends ask for one
+([the milestones](../milestones/README.md)). **Story is built after that**, one Commander's
 story at a time. PERIMETER is no longer where changes are tested.
 
 **Fun before polish** (the owner, 2026-11-12). Friends play when the owner says the basic game is fun — at the earliest
-when the Skirmish milestone ends: comfortable to play, the banner a real decision, what the enemy did readable, a battle
+when "A Skirmish worth showing" (Milestone 20) ends: comfortable to play, the banner a real decision, what the enemy did readable, a battle
 that stays open past its second round, and a few ways to set it up. New effects, art and terminology wait behind that.
 
 **A mode is data over one battle** (RULE — `tests/architecture.test.ts`: a mode's code never reaches the view or the shell). A mode chooses battles and what carries between them; nothing below the mode
@@ -64,114 +68,95 @@ that stays open past its second round, and a few ways to set it up. New effects,
 
 ### 3.1 What it is
 
-The player picks their Commander, the opponent's Commander and how it plays, a map and a few rules, and plays one
-battle of up to eight rounds. **A Skirmish battle is a duel** ([`duels.md`](../system-design/duels.md)): the player
+The player picks a map, then a Commander and a controller for each of its slots, a goal and a few modifiers, and plays
+one battle of up to eight rounds. **A Skirmish battle is a duel** ([`duels.md`](../system-design/duels.md)): the player
 plans side A on the Build Phase screen, the opponent's script plans side B under the same rules, the two plans are
 revealed together, and the Battle Round plays them. It ends when a Nexus falls, or after the last round on the larger
 share of Nexus health kept.
 
 **Reading the opponent.** The two plans stay hidden while both sides build. As the Battle Round starts, what the enemy did
 that Build Phase (its new buildings and upgrades, its Nexus power, its banner) is marked and said in a line; after the
-battle its base stands as it is, its new things marked, to be read before the next plan (the Skirmish milestone's step
-of that name). Guessing what the enemy chose, and answering it a round later, is the bet each round asks for.
+battle its base stands as it is, its new things marked, to be read before the next plan (Milestone 20's step of
+that name). Guessing what the enemy chose, and answering it a round later, is the bet each round asks for.
 
 What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two duel maps (the Crossing
-and the Pocket, `src/duel/maps.ts`), and a duel played on the Build Phase screen (today a Challenge battle). What it
-lacks is a setup screen, a battle file, and an opponent good enough to play.
+and the Pocket, `src/duel/maps.ts`), a duel played on the Build Phase screen (today a Challenge battle), and a duel's
+state that is already plain JSON. What it lacks is a setup screen, save files, and an opponent good enough to play.
 
 ### 3.2 What a Skirmish is set up with
 
 Two kinds of setting: **required**, which the Skirmish milestone builds; and **later**, ideas that are each
 worth building once a Skirmish is fun without them. Every required setting has a default, so a Skirmish starts with
-one key.
+one key. How each is written in a save file and on the command line is [`skirmish-saves.md`](../system-design/skirmish-saves.md);
+the setup screen asks them in this order.
 
 **Required:**
 
-| Setting | Set on the screen | Set in a battle file | Default |
+| Setting | Set on the screen | Set in a save file | Default |
 | --- | --- | --- | --- |
-| Your Commander | yes | yes | Vasse |
-| The opponent's Commander | yes | yes | Dob Hunter |
-| The opponent's script | yes, as its play style | yes, by name | `balanced` |
-| The map | yes | yes, by name | the Crossing |
+| The map (it fixes the slots) | yes | yes, by name | the Crossing |
+| Each slot's Commander | yes | yes | Vasse (A), Dob Hunter (B) |
+| Each slot's controller: `Player`, `Scripted` with a profile, later `Agent` | yes | yes | Player (A), `Scripted: balanced` (B) |
+| A script profile's options, among them its credits as a share of the curve's | yes | yes | 100% |
+| The goal | yes | yes | Elimination |
+| Modifiers | yes | yes | none |
 | The seed | shown, editable | yes | from the clock |
-| Rounds at most | no | yes | 8 |
-| Battle Round length | no | yes, in ticks | 360 (30 seconds) |
-| The opponent's credits: at the start and each round, as a share of the curve's | yes | yes | 100% |
-| Each side's starting credits, exactly | no | yes | the curve's round 1 |
-| Each side's roster (build menu and power pool) | no | yes | the Commander's whole army |
-| Buildings and units already on the Grid, either side | no | yes | none beyond the Commander's starting package |
+| Rounds at most, Battle Round length | no | yes | 8, 360 ticks (30 seconds) |
+| Each side's starting credits, roster, and units and buildings already on the Grid | no | yes (`start`) | the curve's round 1, the whole army, the starting package |
 | Settings and Experiments | no | yes, as `--settings` text | the saved settings |
 
 **There is no difficulty setting** (the owner, 2026-11-11): the opponent's script and its credits are what make a
-Skirmish harder or easier, and the setup says them plainly. The scripts differ in plan, not in skill; a smarter
-opponent is a milestone of its own.
+Skirmish harder or easier, and the setup says them plainly. The scripts differ in plan, not in skill; a script that
+answers the player is Milestone 20's, a deeper planner Milestone 19's.
+
+**Goals and modifiers** (the owner, 2026-11-12): **Elimination** (destroy the enemy Nexus, or have the healthier one
+after the last round) is the goal built first. Modifiers are named rules over a battle; two are built first,
+`fast-rounds` and `double-income`, and the list is a place to experiment: the ones that make a battle better stay, the
+others are removed.
 
 **Later (IDEA):**
 
-- **A Build Phase clock**, soft and optional, to bring a battle near fifteen minutes and add an RTS's pressure: an
-  Experiment once Skirmish is played.
-- **Modifiers**: named rules laid over a battle (faster rounds, double credits, no Turrets), the way StarCraft II's
-  co-op mutators keep the same mission fresh. A battle file is where they would go.
+- **More goals**: Economy, Creative, each with its own win.
+- **More modifiers** (no Turrets, a Build Phase clock), the way StarCraft II's co-op mutators keep the same mission fresh.
 - **A pre-battle pick**: choosing a few cards of the army before the battle, as Battle Aces chose eight units.
-- **More than one opponent**, or an ally: needs more than two sides in the duel.
+- **More than two slots**, or an ally: needs more than two sides in the duel and maps that hold them.
 - **More maps**, a random map from a seed, and the player's own start position.
-- **Presets**: named bundles of an opponent's script and credits ("a cautious Dob with a third more credits"), offered
-  as challenges once playing shows which are worth offering.
-- **A smarter opponent**: a planner that reads the public state and writes plans in the duel's own vocabulary
-  ([`scripted-opponent.md`](scripted-opponent.md)).
-- **Claude as the opponent**: a language model planning the other side each round, blind and at the same time as the
-  player, under the same rules. The duel already takes a plan from a command or a file each round, which is how a model
-  plays a side today ([`duels.md`](../system-design/duels.md), model against model). A milestone of its own; the game
-  never needs a model to be played.
+- **Agent players**: a language model planning a slot each round, blind and at the same time as the player, under the
+  same rules, in a style its profile describes (Milestone 21). The game never needs a model to be played.
 - **An endless stand outside a story**, for a high score and theme unlocks: Story's endless mission offered alone.
   Decided once Story's endless stand has been played.
-- **Saving a battle and sharing its seed and file**, and a daily seed.
+- **Sharing a save**, and a daily seed. A save file checked in is already a preset: "a cautious Dob with a third more
+  credits" is a file.
 
-### 3.3 The battle file
+### 3.3 Save files
 
-A battle file is a JSON file (`--battle <file>`, planned) that sets up a Skirmish without the screen: anything the screen
-sets, and the rest of the required list. It is the testing tool: any demo of a rule, a Commander or a starting position
-becomes a battle a person can play and a duel can measure. Its shape, a first guess for the milestone to settle:
-
-```json
-{
-  "map": "crossing",
-  "seed": 7,
-  "rounds": 8,
-  "pulseTicks": 360,
-  "opponentCredits": 1.0,
-  "sides": {
-    "A": { "commander": "vasse", "credits": 140 },
-    "B": { "commander": "dob", "player": "script:rush",
-           "roster": { "buildings": ["den"], "powers": [], "doctrines": [] },
-           "units": [{ "unit": "unit.ravel.raider", "count": 4, "at": { "x": 40, "y": 12 } }] }
-  },
-  "settings": "battleBanner=on"
-}
-```
-
-Here side A starts with 140 credits instead of the curve's 100, and side B fields only the Den. It builds on what
-exists: the duel's `DuelSetup` (map, seed, rounds, Battle Round length, Commanders and rosters,
-`src/duel/types.ts`) and the scenario format's way of placing units (`src/scenario/`). A battle file the loader refuses
-is refused by name, every problem at once, the way a mission is.
+A Skirmish is saved and loaded at the opening of a Build Phase, from the game menu and from the command line, and an
+agent plays one headless from the same file, round by round, with any slot given to a script
+([`skirmish-saves.md`](../system-design/skirmish-saves.md) is the format, the command line and how an agent plays). Every
+demo of a rule, a Commander or a starting position is a save a person can play and a duel can measure; the engine's
+rule maps (`scenarios/`) become saves too, the Skirmish milestone's last step.
 
 ### 3.4 How a Skirmish is tested
 
 **A Skirmish is deterministic** (RULE for the duel it plays, `tests/duel.test.ts`: "a duel resolves the same every run"):
-the same battle file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes five ways to test one, from cheapest to fullest:
+the same save file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes five ways to test one, from cheapest to fullest:
 
-1. **Headless, script against script**: the duel commands (`npm run duel -- play`, `bench`), and a battle file given to
-   them once it exists. For balance and for a rule's effect over many seeds.
-2. **Headless, a player's plans**: the driver plays side A through the Build Phase's own functions, as `duel run` plays
-   a Challenge battle today. For a flow end to end with no terminal.
-3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs`) opening a Skirmish by its route and a battle
-   file, pressing keys and returning every screen. For how it reads.
-4. **An agent playing it first** (planned): the playtest skill plays a whole Skirmish through the driver and writes a
-   short player's diary — what confused it, how many keys the common tasks took, how long nothing waited to be decided.
-   Every change to the screen passes this before a person is asked.
-5. **By a person**: Mario, then his friends: `./bin/terminal-nexus.ts`, Skirmish on the title menu, a battle file on the
-   command line, or the browser page. A note key (planned) saves the moment with everything needed to replay it, so a
-   note is the moment itself, not a description of how to reach it.
+1. **Headless, script against script**: `skirmish play` and `skirmish bench` (today `npm run duel -- play`, `bench`),
+   from a save file or setup flags, with any slot given to a script. For balance and for a rule's effect over many seeds.
+2. **Headless, round by round**: `skirmish brief` says what a slot knows, `skirmish round` plays one round from a save
+   with a plan given for some slots and scripts for the rest, and writes the next save and the round's report. How an
+   agent plays a Skirmish to test it, and how it turns a person's save into variations.
+3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs --load <save>`) presses keys and returns every
+   screen. For how it reads.
+4. **An agent playing it first** (planned, Milestone 20): the playtest skill plays a whole Skirmish through the driver and
+   writes a short player's diary — what confused it, how many keys the common tasks took, how long nothing waited to be
+   decided. Every change to the screen passes this before a person is asked.
+5. **By a person**: Mario, then his friends: `./bin/terminal-nexus.ts`, Skirmish on the title menu (New game or Load
+   game), `--load <save>`, or the browser page. A note key (planned) saves the moment with everything needed to replay
+   it, so a note is the moment itself, not a description of how to reach it.
+
+The commands named `skirmish` are planned (the Skirmish milestone renames `bin/duel.ts` and gives it save files); until
+then the duel commands and `--at 'challenge?seed=<n>'` do the same with fewer settings.
 
 The Skirmish milestone makes a Skirmish the default place to see a change: the playtest skill, the browser page and the
 pictures a pull request shows start from one, where today they start from PERIMETER. PERIMETER is then opened only for
@@ -251,6 +236,7 @@ Balance is **measured, then judged**: duels and Skirmish battles played by scrip
 
 ## 9. What this does not decide
 
-- How an endless stand is scored (Q93), and which presets of opponent and credits are worth offering.
+- How an endless stand is scored (Q93), and which saves are worth offering as challenges.
 - How long a battle should be (Q75), which the worker economy is the first step able to time.
-- Versus, modifiers and every other later idea of section 3.2: each is decided when a milestone asks for it.
+- Versus, goals beyond Elimination, modifiers beyond the first two, and every other later idea of section 3.2: each is
+  decided when a milestone asks for it.

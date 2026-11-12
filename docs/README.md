@@ -9,7 +9,7 @@ version of the design beyond git.
 
 - [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a battle works, the three modes, the promise.
 - [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language.
-- [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: the words they share, every way a Skirmish is set up, the battle file, how each mode is tested.
+- [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: the words they share, every way a Skirmish is set up, save files, how each mode is tested.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
 - [`story.md`](game-design/story.md) — a Commander's story (tutorial, technology missions, endless stand, final battle), what a mission is, Vasse's story and PERIMETER, cutscenes, testing a mission.
 - [`play-strategies.md`](game-design/play-strategies.md) — what duels have taught about playing a Build Phase well, as advice a model player reads in its brief.
@@ -27,6 +27,7 @@ version of the design beyond git.
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
 - [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a story (campaign file) as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
 - [`duels.md`](system-design/duels.md) — two Commander Armies fought out headless, script or model a side: the rules, the command line, the brief and plan, how to run model against model for testing, and what the numbers can say.
+- [`skirmish-saves.md`](system-design/skirmish-saves.md) — how a Skirmish is set up (map, slots and controllers, goal, modifiers), saved and loaded at a Build Phase, and played headless by an agent round by round; one vocabulary for the screen, the save file, the command line and the routes (planned, the Skirmish milestone).
 - [`testing-ground.md`](system-design/testing-ground.md) — how a change to troops is tested: which tool answers which question, the shape of a trial (map, variant, engine, record, summary) and how to extend each part, the maps by folder, comparing two builds, and the principles earlier rounds learned.
 - [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route scenarios, duels and campaign levels played, seeds, how a result is written down and retired when it goes stale, and the `measure` command.
 - [`movement.md`](system-design/movement.md) — troop movement: the seven rules a player should be able to predict, then where an army goes, banners (an idea), spawning, the three states (march, battle, retreat), formation, targeting and attacking, breaching, workers, the machinery underneath, what is still to smooth, and strategies.

@@ -115,7 +115,7 @@ scripted playtest. A new mission needs no entry here at all: `campaign?level=<id
 the game can open (`src/cli/levels.ts`).
 
 IDEA — places a later step could name, none built: a mission's round straight into its Battle Round; the Skirmish
-setup screen and a battle file (`skirmish?battle=<file>`, the Skirmish milestone); a saved replay, once the replay file
+setup screen and a save file (`skirmish?load=<file>`, the Skirmish milestone, [`skirmish-saves.md`](skirmish-saves.md)); a saved replay, once the replay file
 exists.
 
 ## 5. The bare command and the saved game

@@ -22,37 +22,41 @@ remains.
 | [14 — Commander Armies](../history/milestones/milestone-14-commander-armies.md) | COMPLETE | done | Can two Commanders on the same buildings feel different, each army leaning its build on something of its own, against one expected power curve a lucky early hand cannot run away with? |
 | [16 — Pathfinding](../history/milestones/milestone-16-pathfinding.md) | COMPLETE | done | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a Grid that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast; and can where a player builds send their army out tight or loose? |
 | [11 — Challenge Mode: Runs](../history/milestones/milestone-11-challenge-runs.md) | COMPLETE | done | Can a player play a seeded run of battles with a run draft between them? Closed when runs were retired: its battle mechanics (building actions, the kept front, troop movement, the banner prototype) carry on in every mode |
-| [17 — Skirmish](milestone-17-skirmish.md) | CURRENT | 8 | Can a player start a Skirmish in a key or two, read what the enemy did, answer it with their build and their banner, and finish a battle they want to play again, against an enemy on equal ground; and is a Skirmish where every change is seen, tested and commented on? |
-| [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 9, beside the banner | Can workers be built and gather resources deterministically during the Battle Round? |
-| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 10, repeating | Does each new unit and card make a Skirmish more interesting — measured by duels and the testing ground, then played? |
-| [13 — The Nexus Pulse](milestone-13-nexus-pulse.md) | PLANNED | 11 | Does each round open on a Nexus Pulse that feels like the Nexus speaking to its Commander — its own moment on screen, a hand worth reading, a schedule to plan around — without making a round slower? |
-| [19 — Opponents](milestone-19-opponents.md) | PLANNED | 12 | Is there an opponent worth playing again and again: a scripted planner that answers the player, and Claude planning the other side at the same time? |
-| [4 — Story Menu](milestone-04-story-menu.md) | PLANNED | 13, after friends have played Skirmish | Can a player choose a Commander's story, see its progress and the technologies it has collected, and launch its next mission? |
-| [9 — Mission Cutscenes](milestone-09-mission-cutscenes.md) | PLANNED | 14 | Can a mission declare and play its own briefing, exchanges, barks, and debrief? |
-| [10 — First and Second Missions](milestone-10-first-and-second-missions.md) | PLANNED | 15 | Do PERIMETER (the tutorial, polished) and RIGHT OF SALVAGE (the first technology mission) read as the opening of a real Commander's story? |
-| [18 — The Endless Stand](milestone-18-endless-stand.md) | PLANNED | 16 | Does an endless stand test what a story collected, play in fifteen to twenty-five minutes, and turn the story to its final battle? |
-| [15 — ASCII Art](milestone-15-ascii-art.md) | PLANNED | not placed: Mario's call | Is there a workflow — research, a tool, an image model and a pass by hand — that makes ASCII and ANSI art a person calls good, for every unit, portrait and vignette? |
+| [13 — The Nexus Pulse](../history/milestones/milestone-13-nexus-pulse.md) | COMPLETE | retired unbuilt | Retired on 2026-11-12: the Skirmish milestones polish the Build Phase and the Battle Round; its powers went to content, its moment on screen to the backlog |
+| [17 — Skirmish: setup and save files](milestone-17-skirmish.md) | CURRENT | 8 | Can Mario set up a Skirmish by map and slots, play, save, load and carry on, and can an agent take the same save, change who plays each side and play it headless, round by round? |
+| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 9, its first pass beside 17; then repeating after friends | Does each new unit and card make a Skirmish more interesting — measured by duels and the testing ground, then played? The first pass: units that counter each other |
+| [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 10, narrow, a map choice | Can workers be built and gather resources deterministically during the Battle Round? |
+| [20 — A Skirmish Worth Showing](milestone-20-skirmish-worth-showing.md) | PLANNED | 11, ends with friends playing | Does a player read what the enemy did, answer it with their build and banner, see the answer matter, and finish a battle that stayed open; and do friends say the same? |
+| [21 — Agent Players](milestone-21-agent-players.md) | PLANNED | 12, after friends, while their notes come in | Can a player choose `Agent: <profile>` for a slot and play against a language model planning the other side each round? |
+| [19 — A Deeper Planner](milestone-19-opponents.md) | PLANNED | 14, only if friends find the scripted enemy dull | Is there a scripted opponent worth playing again and again, planning more than one round ahead? |
+| [4 — Story Menu](milestone-04-story-menu.md) | PLANNED | 15 | Can a player choose a Commander's story, see its progress and the technologies it has collected, and launch its next mission? |
+| [9 — Mission Cutscenes](milestone-09-mission-cutscenes.md) | PLANNED | 16 | Can a mission declare and play its own briefing, exchanges, barks, and debrief? |
+| [10 — First and Second Missions](milestone-10-first-and-second-missions.md) | PLANNED | 17 | Do PERIMETER (the tutorial, polished) and RIGHT OF SALVAGE (the first technology mission) read as the opening of a real Commander's story? |
+| [18 — The Endless Stand](milestone-18-endless-stand.md) | PLANNED | not placed: after Story's first missions | Does an endless stand test what a story collected, play in fifteen to twenty-five minutes, and turn the story to its final battle? |
+| [15 — ASCII Art](milestone-15-ascii-art.md) | PLANNED | not placed: Mario's call, after friends | Is there a workflow — research, a tool, an image model and a pass by hand — that makes ASCII and ANSI art a person calls good, for every unit, portrait and vignette? |
 
 **Skirmish is current, 2026-11-11**: the owner set the modes ("Let's turn Skirmish into the center stone for game
 design and testing", [his words](../history/feedback/2026-11-11-game-modes.md)) and retired runs of many battles. A
-Skirmish is one battle against a scripted Commander Army, set up on a screen or by a battle file; it is the loop a
+Skirmish is one battle against a scripted Commander Army, set up on a screen or from a save file; it is the loop a
 player plays from the title screen, and the place every change is seen.
 
-**How the project grows, from 2026-11-11** ([the owner's words](../history/feedback/2026-11-11-game-modes.md)): through
-Skirmish, not through missions. PERIMETER is no longer the testing map, and no Story mission is built for now. The
-milestones polish Skirmish, its interface and its gameplay; add the worker economy (next, beside the banner); add units
-and keep improving how units, formations and balance are tested automatically; give each Commander more Nexus powers;
-and make the opponent worth playing, up to Claude planning the other side. When the gameplay has a good foundation,
-**Skirmish is shown to people**, the owner's friends first, and only then does Story begin (the Story menu, cutscenes,
-the first missions, the endless stand), one Commander's story at a time. It changes how the project is approached, not
-the game: the Grid, the battle and every rule built so far stay as they are.
+**How the project grows, from 2026-11-11, reviewed 2026-11-12** ([the owner's words](../history/feedback/2026-11-11-game-modes.md),
+[the review](../history/feedback/2026-11-12-skirmish-saves.md)): through Skirmish, not through missions. PERIMETER is
+no longer the testing map, and no Story mission is built for now. In order:
 
-**Toward friends playing, from 2026-11-12** ([the owner's words](../history/feedback/2026-11-12-the-new-focus.md)): "now we
-have to rush a little more towards making sure the UI is comfortable, placing banners actually feels strategic… showing
-visual feedback about what the enemy is doing." The Skirmish milestone now ends on a basic game worth showing: notes
-from a playtest that replay their moment, the enemy's moves readable, a battle that stays open past round 2, and friends
-playing the browser page when the owner says it is fun. Effects, art and more terminology wait behind that, and an
-agent plays every change before an ask reaches him.
+1. **Skirmish: setup and save files** (17): set up by map and slots, saved and loaded at a Build Phase, played headless
+   by an agent round by round. Every later step is tested from a save, which is what spares Mario's playtime.
+2. **Units that counter each other** (12's first pass, beside 17): the cheapest answer to a friend's "it's kind of
+   obvious what to do", measured by duels, no playtime needed.
+3. **The worker economy, narrow** (7): the second answer, offered as a map choice.
+4. **A Skirmish worth showing** (20): the banner as a decision, reading the opponent, a script that answers, a battle
+   that stays open, measured on the real rules. **Its last step is friends playing.**
+5. After friends: **agent players** (21), **content passes** chosen by their notes (12, with more Nexus powers), **a
+   deeper planner** (19) only if they find the enemy dull, then **Story** (4, 9, 10, then 18), one Commander at a time.
+
+The Nexus Pulse milestone was retired on 2026-11-12: the Skirmish milestones polish the Build Phase and the Battle Round
+it was meant to polish. It changes how the project is approached, not the game: the Grid, the battle and every rule built
+so far stay as they are.
 
 Prefer the honest, connected, ugly step over the beautiful one that dead-ends: the biggest improvements to the Grid all
 came after the Battle Round ran end to end, because playing it is what says which part needed the quality.

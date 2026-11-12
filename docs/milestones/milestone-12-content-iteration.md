@@ -27,6 +27,17 @@ improves the testing ground, so the next unit is cheaper to judge ([`testing-gro
   them and not to stand straight above or below another, so a group spreads into a staggered grid, a preference that
   never blocks a move; tested with formations facing up and down against formations facing sideways.
 
+**Two kinds of pass** (2026-11-12, [the review](../history/feedback/2026-11-12-skirmish-saves.md)):
+
+- **The first pass, before friends**, beside the Skirmish milestone: three or four units that counter each other (what
+  beats a swarm, what beats a wall, what beats air), each measured by duels and the testing ground, so a Skirmish has
+  something to weigh beyond "buy what you can afford". It needs no playtime until Milestone 20 plays it.
+- **Later passes, after friends**, chosen by their notes: the full rosters below, tagging and the pick-rate report, and
+  more Nexus powers for each Commander. Vasse's designed powers come from the retired Nexus Pulse milestone
+  ([its record](../history/milestones/milestone-13-nexus-pulse.md)): Countersigned as Standing Order's upgrade, Mutual
+  Support Standard, Field Triage, Plating Revision, Emergency Procedure, Restoration Order, Early Warning, with the effect
+  kinds they need (`modifyRule`, `reveal`).
+
 ## Question
 
 With Skirmish playable, does each new unit and card make a Skirmish more interesting, measured rather than asserted, by battles the scripts and the driver play and battles people play?

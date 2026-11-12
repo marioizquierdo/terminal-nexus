@@ -39,8 +39,8 @@ The emotional loop is:
 
 Three modes share that battle ([`game-modes.md`](game-modes.md)):
 
-- **Skirmish** — one battle against a scripted Commander Army: the player picks both Commanders, the opponent's play
-  style and credits, and the map, or sets up anything at all in a battle file. The centre of the game, and where every change is tested.
+- **Skirmish** — one battle against a scripted Commander Army: the player picks a map, a Commander and a controller
+  for each slot (themselves, or a scripted opponent's play style and credits), or loads a save file that sets up anything at all. The centre of the game, and where every change is tested.
 - **Story** — after Skirmish has been played by people, a Commander's story: a tutorial, missions that collect technologies, an endless stand scored by how far
   the player gets, and a final battle ([`story.md`](story.md)). The only home of missions.
 - **Versus** — one battle between two people, built on Skirmish. Later.

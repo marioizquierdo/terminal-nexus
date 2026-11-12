@@ -158,6 +158,14 @@ remembering a rule instead of relying on one.
 
 A passing test says nothing about spacing, density or where the eye goes. Look.
 
+**A Skirmish is where a change is seen** ([`game-modes.md`](docs/game-design/game-modes.md), how a Skirmish is tested).
+Once the Skirmish milestone builds save files, every way of looking starts from one, under the same names the setup
+screen uses: `--load <save>` on the game and the playtest script, `--slot B=script:rush` to change who plays a side, and
+`skirmish play`, `round` and `brief` to play it headless, a whole battle or one round at a time
+([`skirmish-saves.md`](docs/system-design/skirmish-saves.md)). Until then, a Challenge battle (`--at 'challenge?seed=<n>'`)
+is a Skirmish against Dob Hunter's `balanced` script, and the duel commands play the same battle headless; open a
+mission by its route only when the change is about a mission.
+
 **The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a mission's
 Build Phase without a terminal (a Skirmish's, once the Skirmish milestone makes it the default) and keeps what the screen showed after every key: text for every step
 in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
@@ -346,7 +354,7 @@ skill; the ideas behind it:
 time"). So the loop spends it only on what a person alone can judge — is it fun, is it clear, does he want another:
 
 - **An agent plays it first.** Before anything reaches him, play the flow yourself with the playtest script (and, once
-  the Skirmish milestone builds it, the player's diary): the keys a task takes, what reads badly, what does nothing. A
+  Milestone 20 builds it, the player's diary): the keys a task takes, what reads badly, what does nothing. A
   flow an agent could have found broken never reaches him broken.
 - **Every ask says what kind it is**: *play* (needs his hands, the only expensive kind), *watch* (a picture, a GIF or one
   command, readable on a phone), *decide* (one line, with a recommendation), or *do* (a chore only he can do), and about

@@ -33,6 +33,10 @@ gap) and the Pocket (22 by 12, the bases close enough that their build ranges me
 
 ## 2. The command line
 
+**Becoming `skirmish`** (planned, the Skirmish milestone): `bin/duel.ts` is renamed `skirmish`, takes save files
+(`--load`, `--slot`), and gains `round` (one round from a save to the next save) and `brief`
+([`skirmish-saves.md`](skirmish-saves.md)). The subcommands below keep their names.
+
 ```text
 node bin/duel.ts play  --a vasse --b dob [--player-a script:balanced] [--player-b script:rush] [--seed 1] [--rounds 8] [--out dir]
 node bin/duel.ts bench [--commanders vasse,dob] [--players balanced,rush,turtle] [--seeds 1-6] [--rounds 8] [--out file.json]
