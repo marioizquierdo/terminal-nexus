@@ -1,6 +1,6 @@
 ---
-name: duel
-description: Fight two Commander Armies against each other headless (bin/duel.ts) — scripted benches, or a model agent planning each side through files — to see how an army spends its power curve after an army change. Use after adding or changing a Commander, a power or an ability, and when Mario asks how armies compare. Not a balance verdict.
+name: skirmish
+description: Play Skirmish battles headless to test a change — the skirmish command (bin/skirmish.ts) from a save, a round at a time or to the end, scripts or your own plans on either side, many seeds with a tally, the battle's log — and fight Commander Armies against each other (duel bench, or a model agent planning each side through files) to see how an army spends its power curve. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
 ---
 
 # Duels: armies against each other

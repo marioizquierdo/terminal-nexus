@@ -17,6 +17,7 @@ import type { Profiles, SaveFile, SaveSetup } from "../skirmish/save.ts"
 import { SAVE_FORMAT, SLOTS, controllerKind, readSave } from "../skirmish/save.ts"
 import { SHIPPED_SAVES } from "../skirmish/shipped-players.ts"
 import type { SetupField } from "../skirmish/setup.ts"
+import { cursorKeyOf } from "../terminal/list-keys.ts"
 import { LOAD_GAME_FIELDS, NEW_GAME_FIELDS, fieldAbout, fieldDimmed, fieldText, nextValue, setupDefaults, startProblem } from "../skirmish/setup.ts"
 import { clockSeed, commanderNameOf, isSkirmishSeed, mapNameOf, SKIRMISH_SEED_LIMIT } from "../skirmish/words.ts"
 import { nextColorDepth, nextGlyphPack, nextTheme, toggleReducedMotion } from "../settings/types.ts"
@@ -306,7 +307,32 @@ export class TitleScreens {
       return
     }
     if (this.seedText !== null && this.typeSeed(key)) return
+    if (this.stepRow(key)) return
     this.sessions[this.screenNow].handleKey(key, this.layout)
+  }
+
+  /** Left and Right on a setup row (New game, or a loaded save's): the value before or after, as the Settings rows step
+   *  theirs. Returns whether the key was one. */
+  private stepRow(key: string): boolean {
+    if (this.screenNow !== "new-game" && this.screenNow !== "load-edit") return false
+    const arrow = cursorKeyOf(key)
+    if (arrow === null || arrow.dx === 0 || arrow.dy !== 0) return false
+    const state = this.sessions[this.screenNow].state
+    const item = state.items[state.highlighted]
+    const fields = this.screenNow === "new-game" ? NEW_GAME_FIELDS : LOAD_GAME_FIELDS
+    const field = fields.find((candidate) => fieldId(candidate) === item?.id)
+    if (field === undefined || field.kind === "seed" || field.kind === "goal" || item?.disabled === true) return true
+    const step = arrow.dx < 0 ? -1 : 1
+    if (this.screenNow === "new-game") {
+      this.setup = nextValue(this.setup, field, this.options.playerName, this.options.profiles, step)
+      this.noticeNow = null
+      this.refreshSetup()
+    } else if (this.loading !== null) {
+      this.loading = { ...this.loading, setup: nextValue(this.loading.setup, field, this.options.playerName, this.options.profiles, step) }
+      this.noticeNow = null
+      this.refreshLoad()
+    }
+    return true
   }
 
   // --- The rows ----------------------------------------------------------------------------------------------------

@@ -55,10 +55,12 @@ export function controllerLabel(controller: Controller, playerName: string = DEF
 /** A credits share as a row shows it: `125%`. */
 export const shareLabel = (share: number): string => `${Math.round(share * 100)}%`
 
-/** The item after `current` in `all`, coming round at the end; the first when `current` is not in it. */
-function after<T>(all: readonly T[], current: T): T {
+/** The item `step` places after `current` in `all` (1 the next, -1 the one before), coming round at either end; the
+ *  first when `current` is not in it. */
+function after<T>(all: readonly T[], current: T, step: 1 | -1 = 1): T {
   const index = all.indexOf(current)
-  return all[(index + 1) % all.length] as T
+  if (index < 0) return all[0] as T
+  return all[(index + step + all.length) % all.length] as T
 }
 
 /** What a row of a setup is about. The title screens give each its hotkey and label. */
@@ -169,26 +171,26 @@ function withController(slot: SlotSetup, controller: Controller, profiles: Profi
 }
 
 /**
- * The setup with `field` come round to its next value: the next map, Commander, controller (the player, each profile,
+ * The setup with `field` come round to its next value (`step` -1: the one before, Left on the row): the next map, Commander, controller (the player, each profile,
  * the agent), credits share, the modifier on or off. The goal (Elimination only) and the seed (typed, not cycled) stay
  * as they are.
  */
-export function nextValue(setup: SaveSetup, field: SetupField, playerName: string, profiles: Profiles): SaveSetup {
+export function nextValue(setup: SaveSetup, field: SetupField, playerName: string, profiles: Profiles, step: 1 | -1 = 1): SaveSetup {
   const slot = (key: Slot, change: (slot: SlotSetup) => SlotSetup): SaveSetup => ({ ...setup, slots: { ...setup.slots, [key]: change(setup.slots[key]) } })
   switch (field.kind) {
     case "map":
-      return { ...setup, map: after(SETUP_MAPS, typeof setup.map === "string" ? setup.map : "") }
+      return { ...setup, map: after(SETUP_MAPS, typeof setup.map === "string" ? setup.map : "", step) }
     case "commander":
-      return slot(field.slot, (current) => ({ ...current, commander: after(SETUP_COMMANDERS, current.commander ?? "") }))
+      return slot(field.slot, (current) => ({ ...current, commander: after(SETUP_COMMANDERS, current.commander ?? "", step) }))
     case "controller": {
       const choices = controllerChoices(playerName, profiles)
       const current = setup.slots[field.slot].controller
       // A player of another name is this screen's player: the next is the first script.
       const at = controllerKind(current) === "player" ? `player:${playerName}` : current
-      return slot(field.slot, (value) => withController(value, after(choices, at), profiles))
+      return slot(field.slot, (value) => withController(value, after(choices, at, step), profiles))
     }
     case "credits":
-      return slot(field.slot, (value) => withShare(value, after(CREDIT_SHARES, shareOf(value, profiles)), profiles))
+      return slot(field.slot, (value) => withShare(value, after(CREDIT_SHARES, shareOf(value, profiles), step), profiles))
     case "modifier": {
       const on = setup.modifiers.includes(field.modifier)
       const modifiers = on ? setup.modifiers.filter((modifier) => modifier !== field.modifier) : MODIFIERS.filter((modifier) => modifier === field.modifier || setup.modifiers.includes(modifier))

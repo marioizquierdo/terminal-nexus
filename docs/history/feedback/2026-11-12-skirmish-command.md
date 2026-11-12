@@ -89,16 +89,27 @@ Script profiles are `players/scripts/*.json` (agro, defensive, steady, agro-rich
 
 > And when moving the previous scenarios into the equivalent skirmish save files, keep the ones that offer valid testing scenarios and feel free to remove those that don't add much value anymore or are too complicated to port. Even though they are save files, make sure to keep them at a separate folder called something like "skirmish-testing". Then cleanup, remove the term "scenario" from the files, docs and code (but feel free to name some save files scenario-1, etc. that is fine, we just need to cleanup the concept).
 
-**Scheduled**, in this pull request.
+**Built.** 62 of the 63 rule, unit, movement, engage and showcase maps are testing saves in `skirmish-testing/`, every
+kernel hash unchanged; `colossus-two-tile-gap` was dropped as a repeat of `hauler-two-tile-gap`, with its test. The
+duel maps are files in `maps/`. "Scenario" is gone from the code and the documents but for the history and the two
+places that still read an older build's files for `--against`.
 
 ### F262 — the game opens a save now; Save game in the Esc menu
 
 > Why is that the game can't open a save until Save game is on the Build Phase menu? We could start with the skirmish command right? Then we add save on the UI, but it should be on the main menu settings "[esc]" instead of in the side menu.
 
-**Scheduled**, in this pull request: `--load` on the game first, then Save game in the Esc game menu.
+**Built.** `terminal-nexus --load <file>` (and the route `skirmish?load=<file>`) opens a save at its Build Phase, and
+Save game is in the Esc game menu (`v`), at a Build Phase only.
 
 ### F263 — the whole design, and notes from testing
 
 > Keep going until the whole Skirmish design is implemented. Testing with existing maps is great! and since you are testing, please feel free to take notes from each test case for anything that goes beyond the focus of building skirmish mode, but at the end of this, take an extra pass at those notes and see if 1) the test is not valid anymore => delete the test, 2) the issues could be addressed right away => go ahead! I don't mind a larger PR if it is fixing and improving things, 3) save new ideas on the PROJECT or appropriate milestone to revisit later
 
-**Scheduled**, in this pull request.
+**Built**: the title menu's Skirmish with New game (the setup screen) and Load game, spectating, the note key, and
+testing from saves; every step of the Skirmish milestone but the banner (its own session) and his playtest. The notes
+pass: one testing map dropped as a repeat with its test; fixed at once, the Pocket's top bar running into its Esc label,
+Quit pointing to Save game, Save game offering to write over a shipped example save, the battle's words while watching
+two scripts, Left and Right on the setup rows, a battle's route naming its whole setup, the playtest script's own saves
+folder and its `type:` step, and the picture script finding the browser; one note found wrong (the "missing" map border
+is the map's edge drawn solid); the balance findings on Milestone 20, the content pruning on Milestone 12, and the rest
+in the backlog.

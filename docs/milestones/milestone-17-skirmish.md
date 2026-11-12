@@ -1,7 +1,7 @@
 # Milestone 17 — Skirmish: setup and save files
 
 **Status:** CURRENT
-**Current step:** 17K — the owner plays the session this milestone is for (17C to 17J are built, but for the duel maps as files and the `duel` skill's new name; 17A, the banner, waits on his playtest).
+**Current step:** 17K — the owner plays the session this milestone is for (17C to 17J are built; 17A, the banner, waits on his playtest).
 **Depends on:** [the runs milestone](../history/milestones/milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
 banner prototype), Milestone 14 (three Commander Armies and the duel scripts)
 
@@ -162,10 +162,9 @@ promises to replay it.
 - [x] The playtest script, its skill, the browser page and the screenshot capture start from a save file instead of
       PERIMETER (`saves/crossing-new.save.json` when told nowhere; the capture's battle shots from saves); a mission is
       still opened by its route when a change is about a mission.
-- [ ] The testing pages, the `duel` skill (renamed `skirmish`) and the playtest skill say which save shows which rule,
+- [x] The testing pages, the `duel` skill (renamed `skirmish`) and the playtest skill say which save shows which rule,
       and how an agent plays round by round ([`skirmish-saves.md`](../system-design/skirmish-saves.md), how an agent
-      plays a Skirmish). Said (DEVELOPMENT.md's table of saves, the testing ground, the playtest and `duel` skills); the
-      rename waits, since the project's instructions name the skill.
+      plays a Skirmish). Said (DEVELOPMENT.md's table of saves, the testing ground, the playtest and `skirmish` skills).
 
 ### Step 17J — The testing saves
 

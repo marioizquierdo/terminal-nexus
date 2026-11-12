@@ -176,6 +176,21 @@ for it because we don't know the gameplay yet." The ideas, from how roguelikes c
 
 Which keys is the open part: Tab is focus, and the left hand's letters are hotkeys.
 
+## Skirmish follow-ups (found while building it, 2026-11-12)
+
+Small things noticed while the Skirmish milestone was built and tested, none needed for it:
+
+- **A testing save that opens on a Build Phase**: a testing save's `start` places units and buildings, but not a side's
+  credits or roster, so it can only open on a Battle Round. Adding both would let a testing save show a Build Phase with
+  units already in place.
+- **The round limit on the setup screen**: a loaded save keeps its own limit (the Pocket example's 4) when it goes back to
+  New game, and the setup screen does not show the limit at all. A Rounds row, or the limit in the summary line.
+- **A note's settings as lines**: a playtest note keeps the settings export as one JSON string; its lines would read
+  better.
+- **The battle log's spawn lines**: at `info` a 100-round log is about 3 MB, most of it units coming out of buildings. A
+  spawn could log at `debug`, if the grid reports' tests allow it.
+- **Carrying on the last save** from a bare launch: still the open idea in the routing page, the owner's call.
+
 ## Units circling in a lane (found 2026-11-12)
 
 Running the testing saves after they moved to `skirmish-testing/`: `engage/engage-lanes-melee-vs-mix` warns of units

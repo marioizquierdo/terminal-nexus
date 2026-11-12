@@ -243,9 +243,10 @@ skirmish --map pocket --p1 build: --p2 script:agro-rich --modifiers fast-rounds
 players in two sessions (`duel new`, `wait`, `submit`). They fold into `skirmish` once save files carry them.
 
 **The game's own flags** take the same names: `terminal-nexus --load <file> [--p1 build:plan.json] [--p2 script:turtle]`
-(a plan file for p1 is laid on the first Build Phase, as a draft is), the route `skirmish?load=<file>`, and
-`skirmish?seed=7` for a new battle on the defaults; any other setup is chosen on the setup screen
-(`skirmish?setup=new`). The scripted playtest takes the same `--load`, `--p1` and `--p2`, and starts from
+(a plan file for p1 is laid on the first Build Phase, as a draft is), the route `skirmish?load=<file>` (with `p1` and
+`p2` to change who plays), and `skirmish?seed=7&map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds`
+for a new battle under the command's names, the defaults for what it leaves out. A battle started on the setup screen
+(`skirmish?setup=new`) has that route, so it opens again from it. The scripted playtest takes the same `--load`, `--p1` and `--p2`, and starts from
 `saves/crossing-new.save.json` when told nowhere.
 
 ## 6. How an agent plays a Skirmish

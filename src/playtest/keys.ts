@@ -28,6 +28,8 @@
 //   click@40,7                  left click on frame cell column 40, row 7 (0-based)
 //   rclick:… rclick@…           the same, with the right button
 //   wheelup@… wheeldown@…       the mouse wheel over a frame cell
+//   type:mine-2                 each character typed as its own key, a step apart: a save's name, a note's
+//                               words (no spaces in one token: `Space` between two `type:` steps)
 //   # comment                   to the end of the line, in a script file
 //
 // Names are case-insensitive. Each step is delivered on its own, never glued to the next: an Esc
@@ -108,6 +110,12 @@ export function parseKeyScript(script: string): PlaytestStep[] {
     const repeat = /^(.+)\*(\d+)$/u.exec(token)
     const name = repeat === null ? token : (repeat[1] as string)
     const times = repeat === null ? 1 : Number(repeat[2])
+    if (name.toLowerCase().startsWith("type:")) {
+      const typed = [...name.slice("type:".length)].map((character) => ({ kind: "key" as const, label: character, bytes: keyBytes(character) }))
+      if (typed.length === 0) throw new Error(`"${token}" types nothing: type:<text>`)
+      for (let index = 0; index < times; index += 1) steps.push(...typed)
+      continue
+    }
     const step = parseStep(name)
     for (let index = 0; index < times; index += 1) steps.push(step)
   }

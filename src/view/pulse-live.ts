@@ -58,6 +58,9 @@ export type ResolvedPulse = Readonly<{
   /** What the Battle Round calls the other side, in its force bar, its bottom line and its result: "raid" unless the
    *  mode names it — a Skirmish's "enemy", a Commander's army rather than a raid. */
   enemy?: string
+  /** Both sides' names when nobody at the screen plays either (a Skirmish watched, two scripts): the Battle Round then
+   *  says "Vasse" and "Averno" where it would say "yours" and "the enemy", and who won rather than VICTORY. */
+  watched?: Readonly<Record<PlayerId, string>>
 }>
 
 /** A mission's round, as the result reads it. */
@@ -163,7 +166,7 @@ export class PulsePresenter {
     this.autoNextMs = options.autoNextMs ?? null
     this.view = createView(resolved.timeline, presentation)
     this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, TUNING)
-    this.result = missionResultOf(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), resolved.mission)
+    this.result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.regroup.state.entities.filter(
       (entity) => entity.player === "A" && isMobile(resolved.timeline, entity.contentId),
@@ -350,6 +353,7 @@ export class PulsePresenter {
       forces,
       home: this.home,
       ...(this.resolved.enemy === undefined ? {} : { enemy: this.resolved.enemy }),
+      ...(this.resolved.watched === undefined ? {} : { watched: this.resolved.watched }),
     }
   }
 
@@ -456,4 +460,13 @@ function bearerOf(timeline: PulseTimeline): Bearer | null {
   if (commander === null) return null
   const aura = auraOf(timeline.registry.get(commander.contentId))?.radius ?? null
   return { ordinal: commander.ordinal, contentId: commander.contentId, player: commander.player, aura }
+}
+
+/** A result as a watched battle says it: who won, by name, rather than VICTORY or DEFEAT, which are a player's words. */
+function watchedResult(result: PulseResult, outcome: ReturnType<typeof outcomeOf>, watched: Readonly<Record<PlayerId, string>> | undefined): PulseResult {
+  if (watched === undefined || outcome.winner === null) return result
+  const winner = watched[outcome.winner]
+  const loser = watched[outcome.winner === "A" ? "B" : "A"]
+  const reason = outcome.reason === "nexus-destroyed" ? `${loser}'s Nexus was destroyed.` : `${loser}'s force was wiped out.`
+  return { headline: `${winner.toUpperCase()} WINS`, reason, tone: "neutral" }
 }

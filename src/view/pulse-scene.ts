@@ -66,6 +66,8 @@ export type PulseFrame = Readonly<{
   forces: Readonly<Record<PlayerId, Readonly<{ units: number; hp: number }>>>
   /** What the other side is called: "raid" unless the Pulse names it (`ResolvedPulse.enemy`). */
   enemy?: string
+  /** Both sides' names when the battle is watched, nobody at the screen playing either (`ResolvedPulse.watched`). */
+  watched?: Readonly<Record<PlayerId, string>>
   /** How many mobile units the player has left, standing where the fight left them to regroup. */
   home: number
   /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
@@ -331,9 +333,11 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
     case "halted":
       return status(`${held}Cease fire. The battle is over.`)
     case "home":
-      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
+      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${pulse.watched === undefined ? cameHome(pulse.home) : `${pulse.home} of ${pulse.watched.A}'s hold the field.`}`, pulse.result.tone)
     default:
-      return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the ${pulse.enemy ?? SIDE.B}.`)
+      return pulse.watched === undefined
+        ? status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the ${pulse.enemy ?? SIDE.B}.`)
+        : status(`${held}Battle Round - ${pulse.watched.A} ${pulse.forces.A.units} against ${pulse.watched.B} ${pulse.forces.B.units}.`)
   }
 }
 
@@ -341,7 +345,7 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
 function forceLine(pulse: PulseFrame, player: PlayerId): string {
   const { units, hp } = pulse.forces[player]
   const bar = forceBar(hp, pulse.openingHealth.get(player) ?? 0)
-  const side = player === "B" ? (pulse.enemy ?? SIDE.B) : SIDE[player]
+  const side = pulse.watched !== undefined ? pulse.watched[player].slice(0, 5) : player === "B" ? (pulse.enemy ?? SIDE.B) : SIDE[player]
   return `${side.toUpperCase().padEnd(5)} ${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
 }
 

@@ -13,10 +13,11 @@ import { buildLayout } from "../src/build/layout.ts"
 import type { BuildContext } from "../src/build/state.ts"
 import { createBuildState, menuEntries, nexusTile, withoutScene } from "../src/build/state.ts"
 import { TitleScreens, shippedSaves } from "../src/cli/title-screens.ts"
+import { openSkirmish } from "../src/cli/skirmish-open.ts"
 import type { SaveEntry } from "../src/cli/title-screens.ts"
 import type { LevelDestination } from "../src/cli/route.ts"
 import { formatRoute, parseRoute } from "../src/cli/route.ts"
-import { planOnRound, playedOf, positionOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
+import { isShippedSave, planOnRound, playedOf, positionOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
 import { listSaves } from "../src/cli/skirmish-files.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 import { SHIPPED_PROFILES, SHIPPED_SAVES } from "../src/skirmish/shipped-players.ts"
@@ -60,6 +61,15 @@ test("the profiles and example saves the browser page carries are exactly the fi
   const files = readdirSync("saves").filter((name) => name.endsWith(".save.json")).map((name) => `saves/${name}`).sort()
   assert.deepEqual([...SHIPPED_SAVES.keys()].sort(), files)
   for (const [path, text] of SHIPPED_SAVES) assert.deepEqual(JSON.parse(text), JSON.parse(readFileSync(path, "utf8")), path)
+})
+
+test("Left steps a setup row back and Right forward, on the screen as by nextValue", () => {
+  const defaults = setupDefaults(1, "marioiz", SHIPPED_PROFILES)
+  const back = nextValue(defaults, { kind: "controller", slot: "p2" }, "marioiz", SHIPPED_PROFILES, -1)
+  assert.equal(nextValue(back, { kind: "controller", slot: "p2" }, "marioiz", SHIPPED_PROFILES, 1).slots.p2.controller, defaults.slots.p2.controller)
+  const run = runGamePlaytest({ start: { kind: "title", place: "new-game" }, profiles: SHIPPED_PROFILES, steps: parseKeyScript("Up*10 Left") })
+  const text = frameToText((run.frames[run.frames.length - 1] as (typeof run.frames)[number]).frame)
+  assert.match(text, /\[2\] p1 \(west\) Commander\s+Dob Hunter/u, "Left on Edda Vasse comes round to the last Commander")
 })
 
 test("Skirmish on the title menu opens New game and Load game, and the routes name each screen", () => {
@@ -224,6 +234,11 @@ test("spectating: with no player the Build Phase offers only Explore Map and Sta
   const played = session.pulse === null ? undefined : playedOf(session.pulse.resolved)
   assert.ok(played !== undefined)
   assert.deepEqual(played.duel, playNext(setup, duelOf(save, SHIPPED_PROFILES), {}, SHIPPED_PROFILES).state)
+  // Watched, the Battle Round names both sides: neither is "yours" nor "the enemy".
+  assert.deepEqual(session.pulse?.resolved.watched, { A: "Vasse", B: "Dob" })
+  session.handleData("", layout)
+  const during = frameToText(sessionFrame(session, layout))
+  assert.doesNotMatch(during, /of yours|YOU /u)
 })
 
 /** A Build Phase frame, composed as the screen composes it. */
@@ -269,4 +284,16 @@ test("the game's playtest walks from the title menu through New game into the Bu
   } finally {
     rmSync(folder, { recursive: true, force: true })
   }
+})
+
+test("Save game never offers back a save that ships with the game: a battle opened from saves/ gets a new name", () => {
+  assert.equal(isShippedSave("saves/crossing-new.save.json"), true)
+  assert.equal(isShippedSave("skirmish-testing/rules/melee-kill.save.json"), true)
+  assert.equal(isShippedSave("/home/me/.terminal-nexus/saves/mine.save.json"), false)
+  assert.equal(isShippedSave(".playtest/saves/mine.save.json"), false)
+  assert.equal(isShippedSave("tmp/mine.save.json"), false)
+  const start = openSkirmish({ load: "saves/crossing-new.save.json" }, { profiles: SHIPPED_PROFILES, readFile: (path) => readFileSync(path, "utf8") })
+  const run = runGamePlaytest({ start, profiles: SHIPPED_PROFILES, steps: parseKeyScript("Esc Esc v") })
+  const text = frameToText((run.frames[run.frames.length - 1] as (typeof run.frames)[number]).frame)
+  assert.doesNotMatch(text, /Name: saves\/crossing-new/u)
 })

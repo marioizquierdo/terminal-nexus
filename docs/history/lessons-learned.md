@@ -704,3 +704,13 @@ rewrite of the same file; a backup taken before the probe saved it. Probe on a c
   (`join(root, "...")`), an escaped path in a test's regex, a `git status` path, an older build's file name kept on
   purpose for `--against`. The type checker saw none of it; the tests did. Rename identifiers by script, then read
   every changed string by hand, and keep a hash of every battle from before to diff against after.
+
+- **"No Chromium here" was a path, not a missing browser.** Three agents in a row reported that pictures could not be
+  made because no Chromium was installed. It was installed, under Playwright's newer folder name (`chrome-linux64`, not
+  `chrome-linux`), with a plain `chromium` link beside it; the capture script looked only for the old name. When a tool
+  says something is missing, look for it before believing it (`ls /opt/pw-browsers`).
+
+- **A loaded file offered back can be a file in the repository.** Save game offers the name of the file a battle was
+  loaded from, which is right for the player's own saves and wrong for the examples that ship in `saves/`: the scripted
+  playtest opens one by default, so pressing Enter in the Save game popup would have written over a checked-in file. It
+  was seen only in a picture of the popup. A default that writes a file now never names a shipped one.

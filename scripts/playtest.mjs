@@ -33,8 +33,8 @@ import { DEFAULT_SETTINGS } from "../src/settings/types.ts"
 import { gameOpening } from "../src/playtest/build.ts"
 import { runGamePlaytest } from "../src/playtest/game.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
-import { listSaves, savesFolder } from "../src/cli/skirmish-files.ts"
-import { notesFolder, terminalNoter } from "../src/cli/note-files.ts"
+import { listSaves } from "../src/cli/skirmish-files.ts"
+import { terminalNoter } from "../src/cli/note-files.ts"
 import { ACTIVITY_FILTERS, formatActivityExport } from "../src/log/activity.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { parseColorDepth, parseTheme } from "../src/view/roles.ts"
@@ -63,8 +63,9 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
   --note <file>        a playtest note (the ! key writes one), opened at its moment: its round as
                        it opened, the commands pressed since replayed at their times; --keys go on
                        from there. The settings it was played with unless --settings says others
-  --notes <dir>        where ! writes a note (default ~/.terminal-nexus/notes/; tmp/notes for a script)
-  --saves <dir>        the saves Load game lists (default ~/.terminal-nexus/saves/), then saves/
+  --notes <dir>        where ! writes a note (default .playtest/notes/, never the player's own)
+  --saves <dir>        the saves Load game lists and Save game writes a bare name into (default
+                       .playtest/saves/, never the player's own), then saves/
   --player <name>      the name a Player slot shows on the setup screen (default player)
   --p1 <who>, --p2 <who>  who plays each slot of a Skirmish, as the skirmish command takes
                        them: build: (the screen; build:plan.json lays a plan on round 1's
@@ -176,8 +177,9 @@ const colors = parseColorDepth(values.colors ?? startSettings.colors)
 const theme = parseTheme(values.theme ?? startSettings.theme)
 const glyphPack = parseGlyphPack(values.glyphs ?? startSettings.glyphPack)
 
-// The saves Load game lists: the real saves folder unless --saves names another (tmp/saves for a script's own).
-const savesDir = values.saves === undefined ? savesFolder() : resolve(values.saves)
+// The saves Load game lists and Save game writes into: the script's own (.playtest/saves, git-ignored) unless --saves
+// names another, so a script never reads or writes the player's own saves and its row numbers never depend on them.
+const savesDir = resolve(values.saves ?? ".playtest/saves")
 const run = runGamePlaytest({
   steps: opening.steps,
   columns: Number(size[1]),
@@ -188,9 +190,9 @@ const run = runGamePlaytest({
   profiles,
   playerName: values.player,
   saves: () => listSaves(profiles, savesDir),
-  ...(values.saves === undefined ? {} : { savesFolder: savesDir }),
-  // A note (!) goes into the notes folder beside the settings unless --notes names another (tmp/notes for a script's own).
-  noter: terminalNoter(values.notes === undefined ? notesFolder() : resolve(values.notes)),
+  savesFolder: savesDir,
+  // A note (!) goes into the script's own notes folder (.playtest/notes) unless --notes names another.
+  noter: terminalNoter(resolve(values.notes ?? ".playtest/notes")),
 })
 const last = run.frames.length - 1
 

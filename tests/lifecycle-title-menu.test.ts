@@ -169,7 +169,8 @@ test("Skirmish, New game and Enter leave the menu without quitting and open a ba
   stdin.emit("data", Buffer.from("\r"))
   // What the battle's screen returns is what the menu returns.
   assert.equal(await session, 7)
-  assert.deepEqual(opened, ["skirmish?seed=567890"])
+  // The setup screen's defaults: its opponent is the steady profile, which the route names, so the battle reopens the same.
+  assert.deepEqual(opened, ["skirmish?seed=567890&p2=script:steady"])
   assert.deepEqual(exits, [], "choosing Skirmish exited the application")
   // The menu's own disposer ran before the battle opened: raw mode, the alternate screen and mouse reporting all off.
   assert.equal(stdin.raw, false)

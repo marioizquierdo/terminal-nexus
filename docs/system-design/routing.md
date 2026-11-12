@@ -57,6 +57,7 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `skirmish?setup=load` | Load game: the saves folder, then the examples in `saves/` |
 | `skirmish` | a Skirmish's first Build Phase on the defaults (Vasse against Dob Hunter's `balanced` script on the Crossing), on a seed from the clock |
 | `skirmish?seed=1234` | the same battle on that seed |
+| `skirmish?seed=7&map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds` | a new battle set up as named, under the `skirmish` command's names (`map`, `p1`, `p2`, `p1-commander`, `p2-commander`, `modifiers`); what is not named is the default. A battle started from the setup screen has this route, so it can be opened again |
 | `skirmish?load=<file>` | a save file at its Build Phase, the plan it was saved with restored (`--load <file>` says the same) |
 | `story` | the title menu's Story screen, a placeholder until the Story menu is built |
 | `settings` | the title menu's Settings screen |
@@ -129,9 +130,8 @@ the type checker name every place that must learn it — the game's dispatch, th
 scripted playtest. A new mission needs no entry here at all: `story?mission=<id>` reads the missions
 the game can open (`src/cli/levels.ts`).
 
-IDEA — places a later step could name, none built: a mission's round straight into its Battle Round; a setup in a
-route (`skirmish?map=pocket&p1=...`), so a battle chosen on the setup screen has a route of its own (today its route
-names only its seed); a saved replay, once the replay file exists.
+IDEA — places a later step could name, none built: a mission's round straight into its Battle Round; a saved replay,
+once the replay file exists.
 
 ## 5. The bare command and save files
 

@@ -26,9 +26,9 @@ node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=3' --png final 
 node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=2' --keys "n 1 s s wait~1000*26"
 node scripts/playtest.mjs --at 'skirmish?seed=7' --keys "Esc n 1 1 Enter"    # a Skirmish: a power, a building
 node scripts/playtest.mjs --load tmp/mine.save.json --p2 script:rush          # a save, at its Build Phase
-node scripts/playtest.mjs --at menu --keys "1 1 1 2 s Esc" --saves tmp/saves   # title -> Skirmish -> New game: the Pocket, Averno, Start
-node scripts/playtest.mjs --at 'skirmish?setup=load' --saves tmp/saves --keys "2 1 s Esc s"   # Load game: round 4, p1 a script, watch
-node scripts/playtest.mjs --note tmp/notes/note-20261112-153012.note.json     # a playtest note (!), at its moment
+node scripts/playtest.mjs --at menu --keys "1 1 1 2 s Esc"   # title -> Skirmish -> New game: the Pocket, Averno, Start
+node scripts/playtest.mjs --at 'skirmish?setup=load' --keys "2 1 s Esc s"   # Load game: round 4, p1 a script, watch
+node scripts/playtest.mjs --note .playtest/notes/note-20261112-153012.note.json     # a playtest note (!), at its moment
 node scripts/playtest.mjs --help
 ```
 
@@ -45,19 +45,19 @@ watch it). Open a mission (`--at 'story?mission=vasse-test-1'`) only for a chang
 `--at 'skirmish?setup=load'`. New game opens on Start, so `Enter` starts its defaults; `1`-`0` come a row round (the
 map, each slot's Commander, who plays it, its credits, the modifiers), `e` types the seed (digits, Enter), `s` starts.
 New game's seed comes from a fixed clock (567890), so a script plays the same battle every run. Load game lists the
-saves folder (`--saves tmp/saves` for a script's own) then `saves/`; a row's key chooses one, its rows change who
+script's own saves folder (`.playtest/saves/`, or `--saves <dir>`) then `saves/`; a row's key chooses one, its rows change who
 plays each side, `s` opens it. The name a `Player` slot shows is `--player <name>` (`player` unless given). The
 summary line of a title step says the screen, its highlighted row and its notice.
 
-**A note** (`!`, on any screen, a line, Enter) is written into `--notes <dir>` (the real notes folder unless given;
-keep a script's under `tmp/notes`). `--note <file>` opens it at its moment: its round as it opened, the commands
+**A note** (`!`, on any screen, a line, Enter) is written into `.playtest/notes/` (or `--notes <dir>`): a script never
+writes into the player's own notes. `--note <file>` opens it at its moment: its round as it opened, the commands
 pressed since replayed at their times, the very screen the note shows; `--keys` go on from there.
 
-**Save game in a script**: `Esc v`, then the name (Backspace as many times as the offered name is long, then the
-letters one key at a time: `t m p / m i n e`; Space types `-`), then `Enter`. A name with a folder is written there, from the
-working folder, so keep a script's saves under `tmp/`; a bare name goes into the real saves folder beside the
-settings (`~/.terminal-nexus/saves/`). The file then opens with `--load tmp/mine.save.json`, on the round it was saved
-at, with the plan restored, or from the title menu: `--at 'skirmish?setup=load' --saves tmp`.
+**Save game in a script**: `Esc v`, then the name (`Bksp*40` clears the offered one, then `type:mine`; Space types
+`-`), then `Enter`. A bare name goes into the script's own saves folder (`.playtest/saves/`, git-ignored, or
+`--saves <dir>`), never the player's; a name with a folder is written there, from the working folder. The file then
+opens with `--load .playtest/saves/mine.save.json`, on the round it was saved at, with the plan restored, or from the
+title menu: `--at 'skirmish?setup=load'`.
 
 `--at <route>` opens a mission at a round, in the game's own route grammar (`src/cli/route.ts`,
 the same as `terminal-nexus --at`): `story?mission=vasse-test-1` is PERIMETER's first round, and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who builds nothing and keeps no Nexus power

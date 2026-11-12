@@ -8,6 +8,8 @@ import { DEFAULT_LEVEL, LEVELS } from "../src/cli/levels.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, allRoutes, formatRoute, parseRoute } from "../src/cli/route.ts"
 import type { Destination } from "../src/cli/route.ts"
+import { openSkirmish } from "../src/cli/skirmish-open.ts"
+import { SHIPPED_PROFILES } from "../src/skirmish/shipped-players.ts"
 
 /** A destination as plain data: its kind, and its place or its level's id and round. */
 const plain = (destination: Destination): string => {
@@ -124,7 +126,7 @@ test("a broken route is refused whole: every problem at once, each naming what e
     ["story?mission=%zz", ['"%zz" is not readable: a % must start an escape like %20']],
     [
       "skirmish?seed=lots&round=2",
-      ["skirmish takes no round: it reads seed, load and setup", 'seed must be a whole number from 0 to 999999, not "lots"'],
+      ["skirmish takes no round: it reads seed, load, setup, map, p1, p2, p1-commander, p2-commander and modifiers", 'seed must be a whole number from 0 to 999999, not "lots"'],
     ],
     ["skirmish?seed=1000000", ['seed must be a whole number from 0 to 999999, not "1000000"']],
     ["skirmish?seed=1&load=x.save.json", ["seed starts a new battle and load opens a saved one: not both"]],
@@ -164,4 +166,18 @@ test("a Skirmish route names a seed or a save file, and reads back to itself", (
   // With neither, the title menu's Skirmish: the game picks the seed.
   assert.deepEqual(parseRoute("skirmish"), { kind: "skirmish" })
   assert.equal(formatRoute(parseRoute("skirmish")), "skirmish")
+})
+
+test("a Skirmish route sets up a new battle under the skirmish command's names, and a battle's own route names its setup", () => {
+  const route = "skirmish?seed=7&map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds,double-income"
+  const destination = parseRoute(route)
+  assert.deepEqual(destination, { kind: "skirmish", seed: 7, setup: { map: "pocket", p2: "script:agro", p2Commander: "averno", modifiers: ["fast-rounds", "double-income"] } })
+  assert.equal(formatRoute(destination), route)
+  // A loaded save keeps its map, Commanders and modifiers: only who plays each slot may change.
+  assert.deepEqual(parseRoute("skirmish?load=saves/mine.save.json&p1=script:steady"), { kind: "skirmish", load: "saves/mine.save.json", setup: { p1: "script:steady" } })
+  assert.throws(() => parseRoute("skirmish?load=saves/mine.save.json&map=pocket"), /a loaded save keeps its own/u)
+  // Opened, the battle is that setup, and its route reads back to the same battle.
+  const opened = openSkirmish({ seed: 7, setup: { map: "pocket", p2: "script:agro", p2Commander: "averno", modifiers: ["fast-rounds"] } }, { profiles: SHIPPED_PROFILES })
+  assert.equal(opened.level.route, "skirmish?seed=7&map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds")
+  assert.throws(() => openSkirmish({ setup: { map: "nowhere" } }, { now: () => 0 }), /no map "nowhere"/u)
 })

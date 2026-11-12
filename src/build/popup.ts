@@ -275,7 +275,7 @@ function menuSpec(context: BuildContext, state: BuildState): PopupSpec {
         label: "Quit",
         command: { kind: "quit" },
         highlighted: on("quit"),
-        description: "The plan is not saved.",
+        description: unsaved === null ? "The battle is not saved: Save game [v] keeps it, the plan so far included." : "The plan is not saved.",
       },
     ],
   }

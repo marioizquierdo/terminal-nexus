@@ -58,12 +58,27 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
     if (loaded === null) throw new Error(`${ask.load} is not a save the game can load:\n  ${problems.join("\n  ")}`)
     save = loaded
   } else {
-    save = { format: "terminal-nexus.save/1", setup: newSetup({ seed: ask.seed ?? clockSeed(now()) }) }
+    const named = ask.setup
+    save = {
+      format: "terminal-nexus.save/1",
+      setup: newSetup({
+        seed: ask.seed ?? clockSeed(now()),
+        ...(named?.map === undefined ? {} : { map: named.map }),
+        ...(named?.modifiers === undefined ? {} : { modifiers: named.modifiers }),
+        slots: {
+          p1: named?.p1Commander === undefined ? {} : { commander: named.p1Commander },
+          p2: named?.p2Commander === undefined ? {} : { commander: named.p2Commander },
+        },
+      }),
+    }
+    const { problems: setupProblems } = readSave(JSON.stringify(save), profiles)
+    if (setupProblems.length > 0) throw new Error(`that Skirmish cannot be set up:\n  ${setupProblems.join("\n  ")}`)
   }
   const asks: Partial<Record<Slot, SlotAsk>> = {}
   const problems: string[] = []
   for (const slot of SLOTS) {
-    const written = options.slots?.[slot]
+    // The command line's --p1/--p2 over the route's p1/p2.
+    const written = options.slots?.[slot] ?? ask.setup?.[slot]
     if (written === undefined) continue
     try {
       asks[slot] = slotAsk(written, profiles)

@@ -177,7 +177,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   depends on: `[1] Map`, then each slot's Commander, who plays it and its credits share (`[2]`-`[7]`, p1 west then p2
   east), `[8] Goal` (Elimination, the only one built, shown), `[9]` and `[0]` the two modifiers on or off, `[e] Seed`,
   `[s] Start`, `[b] Back`. Each row shows its name and its value in one column; **choosing a row brings its value round**
-  (its key, Enter on it or a click), as a Settings row does: the next map, Commander, controller (`Player: <name>`, the
+  (its key, Enter on it or a click; Right does the same, Left steps back), as a Settings row does: the next map, Commander, controller (`Player: <name>`, the
   account's name in a terminal; `Scripted: <profile>` for each profile in `players/scripts/`; `Agent: curious`, dimmed,
   "not built yet"), credits share (50% to 200%; a profile's own share shown as `125% (agro-rich's)`). The seed is the
   one row typed into: chosen, its digits type, Backspace takes one off, Enter keeps it and Esc keeps the old one.

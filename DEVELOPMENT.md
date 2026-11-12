@@ -239,7 +239,7 @@ address says: `#at=story?mission=vasse-test-1&round=3`, with `&settings=` and `&
 claude.ai link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
 
 **Duels put two armies against each other** (`npm run duel -- ...`, [`duels.md`](docs/system-design/duels.md),
-the `duel` skill). Headless: each round both sides keep a Nexus power and plan a Build Phase blind, then a Battle
+the `skirmish` skill). Headless: each round both sides keep a Nexus power and plan a Build Phase blind, then a Battle
 Round plays between them. Scripts play in one process; a model plays through files, one agent a side. Use them to
 see how an army spends its power curve, never as a verdict on balance.
 

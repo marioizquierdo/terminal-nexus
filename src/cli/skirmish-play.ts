@@ -35,9 +35,10 @@ import type { Force, RegroupResult, Restoration } from "../match/index.ts"
 import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
 import type { Profiles, SaveFile, SaveSetup } from "../skirmish/save.ts"
-import { duelOf, duelSetupOf, newSetup, saveOf } from "../skirmish/save.ts"
+import { controllerKind, duelOf, duelSetupOf, newSetup, saveOf, SLOTS } from "../skirmish/save.ts"
 import { isPlayer, playNext } from "../skirmish/play.ts"
 import { spectating } from "../skirmish/setup.ts"
+import { skirmishSetupRoute } from "./route.ts"
 import { commanderNameOf, endedLine, mapNameOf, openingLines, outcomeFor, reasonWords, spectatorReason } from "../skirmish/words.ts"
 import type { MatchState } from "../state/types.ts"
 import { resultOf } from "../view/ending.ts"
@@ -115,6 +116,9 @@ function arrivalsOf(duel: DuelState, callups: BuildContext["callups"]): Incoming
   }
 }
 
+/** A Commander as a watched battle's force bars and lines call her: her id, capitalized (Vasse, Averno, Dob). */
+const shortName = (commander: string | undefined): string => (commander === undefined ? "?" : `${commander.slice(0, 1).toUpperCase()}${commander.slice(1)}`)
+
 /** The enemy's Grid Nexus as a dialog line looks at it. */
 function enemyNexusFocus(duel: DuelState): DialogLine["focus"] {
   const nexus = armyOf(duel, "B").nexus
@@ -142,9 +146,14 @@ function carriedOver(context: Partial<BuildContext>): Partial<BuildContext> {
   }
 }
 
-/** The name Save game offers for a round: the file it was loaded from or last saved to, or a new one by its setup. */
+/** Whether a file is one of the example saves that ship with the game (`saves/`, or `skirmish-testing/`): never offered
+ *  back by Save game, which would write over a file in the repository. */
+export const isShippedSave = (file: string): boolean => /(^|\/)(saves|skirmish-testing)\/[^/]+(\/[^/]+)?\.save\.json$/u.test(file) && !file.includes(".terminal-nexus/") && !file.includes(".playtest/")
+
+/** The name Save game offers for a round: the file it was loaded from or last saved to (but never a shipped example),
+ *  or a new one by its setup. */
 export function saveNameOf(position: SkirmishPosition): string {
-  if (position.file !== undefined) return position.file
+  if (position.file !== undefined && !isShippedSave(position.file)) return position.file
   const { setup } = position
   return `${setup.slots.p1.commander}-${setup.slots.p2.commander}-${setup.seed}-round-${position.duel.round}`
 }
@@ -390,7 +399,7 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       }
       // Nobody walks home: the survivors stand where the shooting stopped, and regroup in the next Build Phase. Once the
       // battle is over nothing regroups; its end, settled where everyone stands, is what the result shows.
-      const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy" }
+      const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy", ...(spectating(setup) ? { watched: { A: shortName(setup.slots.p1.commander), B: shortName(setup.slots.p2.commander) } } : {}) }
       PLAYED.set(resolved, { duel: next, report: played.report, regroup: played.regroup })
       return resolved
     },
@@ -437,6 +446,23 @@ function nexusFocus(context: BuildContext): DialogLine["focus"] {
 /** The route that opens a new Skirmish of this seed, on the defaults: `skirmish?seed=1234`. */
 export const skirmishRoute = (seed: number): string => `skirmish?seed=${seed}`
 
+/** The route that opens a new Skirmish of this setup: its seed and every part that is not the default
+ *  (`skirmish?seed=7&map=pocket&p2=script:agro`), so a battle set up on the setup screen can be opened again from it. */
+export function setupRoute(setup: SaveSetup): string {
+  const plain = newSetup({ seed: setup.seed })
+  const ask: Record<string, string | readonly string[]> = {}
+  if (setup.map !== plain.map && typeof setup.map === "string") ask["map"] = setup.map
+  for (const slot of SLOTS) {
+    const now = setup.slots[slot]
+    if (now.commander !== plain.slots[slot].commander && now.commander !== undefined) ask[`${slot}Commander`] = now.commander
+    // A player is a player whatever their name: the route names who plays a slot only when it is not the default.
+    const same = now.controller === plain.slots[slot].controller || (controllerKind(now.controller) === "player" && controllerKind(plain.slots[slot].controller) === "player")
+    if (!same) ask[slot] = controllerKind(now.controller) === "player" ? "build:" : now.controller
+  }
+  if (setup.modifiers.length > 0) ask["modifiers"] = setup.modifiers
+  return Object.keys(ask).length === 0 ? skirmishRoute(setup.seed) : skirmishSetupRoute(setup.seed, ask)
+}
+
 /** Where a save opened on screen came from, to name it and offer it back. */
 export type SkirmishSource = Readonly<{ file?: string; route?: string }>
 
@@ -467,7 +493,7 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
     story: "skirmish",
     title: save.name ?? `Skirmish on ${mapNameOf(setup.map)}, seed ${setup.seed}`,
     rounds: setup.rounds,
-    route: source.route ?? (source.file === undefined ? skirmishRoute(setup.seed) : `skirmish?load=${source.file}`),
+    route: source.route ?? (source.file === undefined ? setupRoute(setup) : `skirmish?load=${source.file}`),
     play,
     firstRound: (scrollMargin, extra = {}) => {
       const previous = { ...extra, ...(scrollMargin === undefined ? {} : { scrollMargin }) }
