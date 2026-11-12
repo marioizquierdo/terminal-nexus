@@ -91,7 +91,7 @@ export function measureDuel(setup: DuelSetup, players: Readonly<Record<Side, Rea
   return {
     commanders: setup.commanders,
     players: { A: players.A.name, B: players.B.name },
-    map: setup.map,
+    map: typeof setup.map === "string" ? setup.map : setup.map.id,
     seed: setup.seed,
     result: state.result as DuelResult,
     rounds,

@@ -41,7 +41,8 @@ const facing = (map: DuelMap, side: Side): number => (map.nexus[other(side)].x >
 
 /** A duel's first state: round 1 to play, nothing on the Grid yet, each side with round 1's credits. */
 export function newDuel(setup: DuelSetup): DuelState {
-  if (DUEL_MAPS[setup.map] === undefined) throw new Error(`no duel map "${setup.map}" (${Object.keys(DUEL_MAPS).join(", ")})`)
+  if (typeof setup.map === "string" && DUEL_MAPS[setup.map] === undefined) throw new Error(`no duel map "${setup.map}" (${Object.keys(DUEL_MAPS).join(", ")})`)
+  if (typeof setup.map !== "string") duelGrid(setup.map)
   for (const side of SIDES) duelArmy(setup.commanders[side])
   const side = (which: Side): SideState => {
     const roster = setup.rosters?.[which]
@@ -52,7 +53,7 @@ export function newDuel(setup: DuelSetup): DuelState {
 
 /** The duel's map. */
 export function mapOf(state: Pick<DuelState, "setup">): DuelMap {
-  return DUEL_MAPS[state.setup.map] as DuelMap
+  return typeof state.setup.map === "string" ? (DUEL_MAPS[state.setup.map] as DuelMap) : state.setup.map
 }
 
 /** The hand a side's Nexus Pulse deals it this round: from its army's powers, by its Commander's schedule, for the
@@ -393,6 +394,61 @@ function tally(contentIds: readonly string[]): Record<string, number> {
   return counts
 }
 
+/** A side's Build Phase as its plan played it, before the other side's plan is revealed. */
+type Planned = Readonly<{
+  army: DuelArmy
+  registry: ContentRegistry
+  catalog: readonly ConstructItem[]
+  hand: PowerCard[]
+  pick: PowerCard | null
+  callups: readonly Readonly<{ unit: string; count: number }>[]
+  placed: ReturnType<typeof placeAll>
+  acted: Acted
+  side: SideState
+}>
+function buildPhase(state: DuelState, side: Side, plan: SidePlan): Planned {
+  const army = armyOf(state, side)
+  const hand = handOf(state, side)
+  const pick = plan.power !== undefined && plan.power >= 1 ? (hand[plan.power - 1] ?? null) : null
+  const kept = pick === null ? state.sides[side].kept : [...state.sides[side].kept, pick.id]
+  const loadout = loadoutOf(army, { kept })
+  // The units the card picked this round calls up, if it calls any: what keeping it adds to no call-ups at all.
+  const callups = pick === null ? [] : applyEffect(loadoutOf(army, state.sides[side]), pick.effect).callups
+  const credits = state.sides[side].credits + (pick === null ? 0 : creditsOf(pick.effect))
+  const built = placeAll(state, side, plan, loadout.catalog, loadout.registry, credits)
+  // Then what it does with its buildings, from what building them left.
+  const acted = actOn(state, side, plan, loadout.catalog, built.planned, credits - built.spent)
+  const placed = { ...built, planned: [...acted.planned], spent: built.spent + acted.spent, refused: [...built.refused, ...acted.refused] }
+  return {
+    army,
+    registry: battleContent(loadout.registry, loadout.catalog),
+    catalog: loadout.catalog,
+    hand,
+    pick,
+    callups,
+    placed,
+    acted,
+    side: { ...state.sides[side], kept, credits: credits - placed.spent },
+  }
+}
+
+/**
+ * **A plan checked without the battle**: what a side's plan would keep, build and do this round by the Build Phase's
+ * rules, and what it would be refused, with the credits it would leave. Blind to the other side, as the Build Phase is:
+ * a clash with the other side's plan over one tile is settled only once both are revealed (`playRound`).
+ */
+export function checkPlan(state: DuelState, side: Side, plan: SidePlan): Readonly<{ kept: string | null; built: readonly string[]; actions: readonly string[]; refused: readonly string[]; credits: number; spent: number }> {
+  const phase = buildPhase(state, side, plan)
+  return {
+    kept: phase.pick === null ? null : phase.pick.name,
+    built: phase.placed.built,
+    actions: phase.acted.took,
+    refused: phase.placed.refused,
+    credits: state.sides[side].credits + (phase.pick === null ? 0 : creditsOf(phase.pick.effect)),
+    spent: phase.placed.spent,
+  }
+}
+
 /**
  * **One round of the duel.** Each side keeps the card its plan names from its hand, builds what its plan asks for that
  * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; the
@@ -414,44 +470,7 @@ export function playRound(
   const round = state.round
 
   // Each side's Build Phase, blind to the other's.
-  type Planned = Readonly<{
-    army: DuelArmy
-    registry: ContentRegistry
-    catalog: readonly ConstructItem[]
-    hand: PowerCard[]
-    pick: PowerCard | null
-    callups: readonly Readonly<{ unit: string; count: number }>[]
-    placed: ReturnType<typeof placeAll>
-    acted: Acted
-    side: SideState
-  }>
-  const phase = (side: Side): Planned => {
-    const army = armyOf(state, side)
-    const hand = handOf(state, side)
-    const plan = plans[side]
-    const pick = plan.power !== undefined && plan.power >= 1 ? (hand[plan.power - 1] ?? null) : null
-    const kept = pick === null ? state.sides[side].kept : [...state.sides[side].kept, pick.id]
-    const loadout = loadoutOf(army, { kept })
-    // The units the card picked this round calls up, if it calls any: what keeping it adds to no call-ups at all.
-    const callups = pick === null ? [] : applyEffect(loadoutOf(army, state.sides[side]), pick.effect).callups
-    const credits = state.sides[side].credits + (pick === null ? 0 : creditsOf(pick.effect))
-    const built = placeAll(state, side, plan, loadout.catalog, loadout.registry, credits)
-    // Then what it does with its buildings, from what building them left.
-    const acted = actOn(state, side, plan, loadout.catalog, built.planned, credits - built.spent)
-    const placed = { ...built, planned: [...acted.planned], spent: built.spent + acted.spent, refused: [...built.refused, ...acted.refused] }
-    return {
-      army,
-      registry: battleContent(loadout.registry, loadout.catalog),
-      catalog: loadout.catalog,
-      hand,
-      pick,
-      callups,
-      placed,
-      acted,
-      side: { ...state.sides[side], kept, credits: credits - placed.spent },
-    }
-  }
-  const planned = { A: phase("A"), B: phase("B") }
+  const planned = { A: buildPhase(state, "A", plans.A), B: buildPhase(state, "B", plans.B) }
   const sides = { A: planned.A.registry, B: planned.B.registry }
   const phases = clashesSettled(planned, sides)
 

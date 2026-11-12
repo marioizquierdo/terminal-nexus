@@ -1,0 +1,23 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "A short battle on the Pocket",
+  "notes": "Four rounds on the small map, the bases close enough to build into each other's reach: a playtest that fits in ten minutes.",
+  "setup": {
+    "map": "pocket",
+    "seed": 5,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 4,
+    "roundTicks": 360,
+    "slots": {
+      "p1": {
+        "commander": "averno",
+        "controller": "player"
+      },
+      "p2": {
+        "commander": "dob",
+        "controller": "script:rush"
+      }
+    }
+  }
+}

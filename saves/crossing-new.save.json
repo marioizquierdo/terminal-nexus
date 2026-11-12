@@ -1,0 +1,23 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Vasse against Dob on the Crossing",
+  "notes": "A new battle with the setup screen's defaults: Vasse played by a person, Dob Hunter by the balanced script.",
+  "setup": {
+    "map": "crossing",
+    "seed": 7,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 8,
+    "roundTicks": 360,
+    "slots": {
+      "p1": {
+        "commander": "vasse",
+        "controller": "player"
+      },
+      "p2": {
+        "commander": "dob",
+        "controller": "script:balanced"
+      }
+    }
+  }
+}

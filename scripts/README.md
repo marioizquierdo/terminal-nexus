@@ -8,6 +8,7 @@ Tools for checking the repository and for seeing a change. Anything they write l
 - `check-markdown-links.mjs` - fails on a broken local Markdown link; the validator runs it.
 - `run-tests.sh` - the test suite on one runtime; `./scripts/run-tests.sh` (Node) or `./scripts/run-tests.sh bun`.
 - `grid-pictures.ts` - the grid design's pictures of distance, reach and walking, drawn by the rules' own code; `node scripts/grid-pictures.ts` prints them, `--write` redraws them in `docs/system-design/grid.md`, and `tests/grid-pictures.test.ts` fails when one drifts.
+- `make-example-saves.ts` - writes the example Skirmish saves in `saves/` from their setups and the rounds scripts played to reach them; `node scripts/make-example-saves.ts` after a rule or content change, and `tests/skirmish-save.test.ts` fails when one is not as the game writes it.
 
 **Measuring a tick**
 - `profile-routes.ts` - plays every map and a run of duels, prints a fingerprint of each battle's events and last state and what a tick cost by how many entities stood in it; `node scripts/profile-routes.ts --duels 3 --maps route`, `--out <file>` to diff the fingerprints before and after a change that must move no outcome, `--detail` to time each route question.

@@ -33,7 +33,7 @@ test("a run's definition comes from its seed alone: three battles against Dob Hu
   assert.deepEqual(definition.acts.map((act) => act.battles.length), [RUN_BATTLES], "one act, for now")
   for (const battle of definition.battles) {
     assert.equal(battle.opponent, "dob")
-    assert.ok(DUEL_MAPS[battle.duel.map] !== undefined, `battle ${battle.number} is on no duel map`)
+    assert.ok(typeof battle.duel.map === "string" && DUEL_MAPS[battle.duel.map] !== undefined, `battle ${battle.number} is on no duel map`)
     assert.equal(battle.duel.map, "crossing")
     assert.equal(battle.duel.rounds, RUN_ROUNDS)
     assert.deepEqual(battle.duel.commanders, { A: "vasse", B: "dob" })

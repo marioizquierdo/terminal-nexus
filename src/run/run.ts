@@ -158,7 +158,7 @@ export function drafted(run: RunState, choice: DraftChoice): RunState {
 export const commanderNameOf = (id: string): string => ARMIES.commanders.find((commander) => commander.id === id)?.name ?? id
 
 /** A duel map's name. */
-export const mapNameOf = (id: string): string => DUEL_MAPS[id]?.name ?? id
+export const mapNameOf = (map: DuelSetup["map"]): string => (typeof map === "string" ? (DUEL_MAPS[map]?.name ?? map) : map.name)
 
 /** What each scripted player does, in a few words a battle's opening says. */
 const POLICY_WORDS: Readonly<Record<string, string>> = {

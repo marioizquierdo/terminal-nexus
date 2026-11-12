@@ -7,6 +7,7 @@
 
 import type { Absence } from "../match/commander.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
+import type { DuelMap } from "./maps.ts"
 
 /** A side of the duel, the state's own `PlayerId`: A starts in the west, B in the east. */
 export type Side = PlayerId
@@ -26,7 +27,8 @@ export type Roster = Readonly<{
 /** What a duel is: the map, the gameplay seed, how many rounds at most, how long each Battle Round may last, and the
  *  Commander each side plays; and, for a side that is not its Commander's whole army, its roster. */
 export type DuelSetup = Readonly<{
-  map: string
+  /** A map of `DUEL_MAPS` by id, or one drawn in full (a Skirmish save may carry its own map). */
+  map: string | DuelMap
   seed: number
   rounds: number
   /** Ticks a Battle Round lasts at most (12 a second). */

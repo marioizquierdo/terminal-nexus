@@ -25,8 +25,8 @@ node scripts/playtest.mjs --help
 ```
 
 **Start from a Skirmish.** A change to the battle or the Build Phase is seen in a Skirmish, not in PERIMETER: today
-`--at 'challenge?seed=7'` (Esc skips its opening lines); once the Skirmish milestone builds save files, `--load <save>`
-with `--slot` as the `skirmish` command takes it ([`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md)).
+`--at 'challenge?seed=7'` (Esc skips its opening lines); once the game opens save files (Save game, the Skirmish
+milestone), `--load <save>` with `--p1`/`--p2` as the `skirmish` command takes them ([`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md)).
 Open a mission only for a change about missions.
 
 `--at <route>` opens a mission at a round, in the game's own route grammar (`src/cli/route.ts`,

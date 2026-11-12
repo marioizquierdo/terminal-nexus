@@ -141,11 +141,11 @@ rule maps (`scenarios/`) become saves too, the Skirmish milestone's last step.
 **A Skirmish is deterministic** (RULE for the duel it plays, `tests/duel.test.ts`: "a duel resolves the same every run"):
 the same save file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes five ways to test one, from cheapest to fullest:
 
-1. **Headless, script against script**: `skirmish play` and `skirmish bench` (today `npm run duel -- play`, `bench`),
-   from a save file or setup flags, with any slot given to a script. For balance and for a rule's effect over many seeds.
-2. **Headless, round by round**: `skirmish brief` says what a slot knows, `skirmish round` plays one round from a save
-   with a plan given for some slots and scripts for the rest, and writes the next save and the round's report. How an
-   agent plays a Skirmish to test it, and how it turns a person's save into variations.
+1. **Headless, script against script**: `skirmish -f <save> --p1 script:rush --p2 script:turtle --battle`, a round a
+   command, and `duel bench` over many seeds. For balance and for a rule's effect.
+2. **Headless, round by round**: `skirmish` with a save prints the brief of the slot a player plans, checks a plan given
+   at that slot (`--p1 build:plan.json`), and with `--battle` plays the round against the other slot's script and saves
+   the next Build Phase. How an agent plays a Skirmish to test it, and how it turns a person's save into variations.
 3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs --load <save>`) presses keys and returns every
    screen. For how it reads.
 4. **An agent playing it first** (planned, Milestone 20): the playtest skill plays a whole Skirmish through the driver and
@@ -155,8 +155,8 @@ the same save file, seed and plans give the same battle, hash for hash, on Node 
    game), `--load <save>`, or the browser page. A note key (planned) saves the moment with everything needed to replay
    it, so a note is the moment itself, not a description of how to reach it.
 
-The commands named `skirmish` are planned (the Skirmish milestone renames `bin/duel.ts` and gives it save files); until
-then the duel commands and `--at 'challenge?seed=<n>'` do the same with fewer settings.
+The `skirmish` command and save files are built ([`skirmish-saves.md`](../system-design/skirmish-saves.md)); the game
+opening a save (`--load`) waits for Save game, and until then `--at 'challenge?seed=<n>'` is the Skirmish on screen.
 
 The Skirmish milestone makes a Skirmish the default place to see a change: the playtest skill, the browser page and the
 pictures a pull request shows start from one, where today they start from PERIMETER. PERIMETER is then opened only for

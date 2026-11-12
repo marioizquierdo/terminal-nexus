@@ -159,12 +159,11 @@ remembering a rule instead of relying on one.
 A passing test says nothing about spacing, density or where the eye goes. Look.
 
 **A Skirmish is where a change is seen** ([`game-modes.md`](docs/game-design/game-modes.md), how a Skirmish is tested).
-Once the Skirmish milestone builds save files, every way of looking starts from one, under the same names the setup
-screen uses: `--load <save>` on the game and the playtest script, `--slot B=script:rush` to change who plays a side, and
-`skirmish play`, `round` and `brief` to play it headless, a whole battle or one round at a time
-([`skirmish-saves.md`](docs/system-design/skirmish-saves.md)). Until then, a Challenge battle (`--at 'challenge?seed=<n>'`)
-is a Skirmish against Dob Hunter's `balanced` script, and the duel commands play the same battle headless; open a
-mission by its route only when the change is about a mission.
+Headless, a Skirmish is played from a save file, a round a command: `npm run skirmish -- -f <save>` prints the brief,
+`--p1 build:plan.json` checks a plan, `--battle` plays the round and saves the next Build Phase, and `--p2 script:rush`
+changes who plays a side ([`skirmish-saves.md`](docs/system-design/skirmish-saves.md); examples in `saves/`). On screen,
+until the game opens a save, a Challenge battle (`--at 'challenge?seed=<n>'`) is a Skirmish against Dob Hunter's
+`balanced` script; open a mission by its route only when the change is about a mission.
 
 **The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a mission's
 Build Phase without a terminal (a Skirmish's, once the Skirmish milestone makes it the default) and keeps what the screen showed after every key: text for every step

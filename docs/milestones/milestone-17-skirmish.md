@@ -1,7 +1,7 @@
 # Milestone 17 — Skirmish: setup and save files
 
 **Status:** CURRENT
-**Current step:** 17A — the banner (the prototype built in the runs milestone, waiting on the owner's playtest).
+**Current step:** 17J — scenarios become saves (17D, the save file, is built; 17A, the banner, waits on the owner's playtest).
 **Depends on:** [the runs milestone](../history/milestones/milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
 banner prototype), Milestone 14 (three Commander Armies and the duel scripts)
 
@@ -16,8 +16,8 @@ What makes a Skirmish worth showing friends (reading the opponent, a battle that
 is the next milestone, [20](milestone-20-skirmish-worth-showing.md). This one makes every battle something anyone can set
 up, save, load, hand to an agent and replay.
 
-**While 17A waits on Mario's playtest**, the next session takes step 17C, then 17D; neither depends on his answer about
-the banner. The first content pass (units that counter each other, Milestone 12) may run beside this milestone: it needs
+**While 17A waits on Mario's playtest**, the steps that do not depend on his answer about the banner go on: 17D is built,
+17J is next (his word, 2026-11-12), then 17C. The first content pass (units that counter each other, Milestone 12) may run beside this milestone: it needs
 no playtime.
 
 ## Question
@@ -72,20 +72,27 @@ Built only if the owner chooses the stance over the banner in step 17A.
 
 ### Step 17D — The save file, headless
 
-- [ ] The save file's format ([`skirmish-saves.md`](../system-design/skirmish-saves.md), the save file): `setup` (map,
-      seed, slots, goal, modifiers, rounds, round length, settings), `start` (what a person adds to round 1), `round`,
-      `state` and `draft`; a JSON Schema checked in beside it. A file the loader refuses is refused by name, every problem
-      at once.
-- [ ] **`skirmish`**: `bin/duel.ts` renamed and given `--load`: `play` (a whole battle), `round` (one round from a save,
-      plans for some slots and scripts for the rest, writing the next save and the round's report), `brief` (what a slot
-      knows), `bench`, and the file flow (`new`, `wait`, `submit`, `status`). `npm run skirmish`.
-- [ ] Slots on the command line as `<commander>:<controller>` (`dob:script:rush`); `--slot B=<controller>` changes a
-      loaded save's controller. The log is written beside, never inside (`--log <file>`).
-- [ ] **Determinism holds across a save**: saving at any round, loading and playing on gives the same hashes as playing
-      straight through, on Node and Bun.
-- [ ] A few saves checked in as examples, each played by a test: a fresh setup, a mirror, a Commander against another
-      with units already in place, round 4 of a battle, and a short battle of four rounds on the Pocket, so a playtest
-      fits in ten minutes.
+Taken before 17C on the owner's word (2026-11-12, [his words](../history/feedback/2026-11-12-skirmish-command.md)): "start
+working on implementing the skirmish save files, and then convert the current testing scenarios", with one `skirmish`
+command in place of `play`, `round` and `brief`, and the slots numbered `p1` and `p2`.
+
+- [x] The save file's format ([`skirmish-saves.md`](../system-design/skirmish-saves.md), the save file): `setup` (map,
+      seed, slots, goal, modifiers, rounds, round length), `state` (the battle after the regroup, without the map's
+      ground) and `draft`; a JSON Schema checked in beside the examples (`saves/save.schema.json`). A file the loader
+      refuses is refused by name, every problem at once. `start` waits for 17J, which needs it.
+- [x] **`skirmish`**, one command: `--map` or `--load`/`-f`; with no plan the brief of every slot a player plans; with a
+      plan given at its slot (`--p1 build:plan.json`) the plan checked by the Build Phase's rules, each refusal with its
+      reason; with `--battle` both sides built and the Battle Round played; `--save` writes the next Build Phase.
+      `npm run skirmish`. `duel` keeps the bench and the two-session file flow until they fold in.
+- [x] Slots as `--p1`/`--p2` with `build:<file>` or `script:<name>`; a load keeps each slot's controller unless one is
+      named; a loaded battle refuses a new map, seed or Commander. The log is never in a save.
+- [x] **Determinism holds across a save**: saving after every round, loading and playing on gives the same hashes as
+      playing straight through, on Node and Bun.
+- [x] Saves checked in as examples, each loaded and played a round by a test: a fresh setup, a mirror (spectating),
+      round 4 of a battle, and a short battle of four rounds on the Pocket. A Commander against another with units
+      already in place waits for `start` (17J).
+
+**Next, on the owner's word: 17J**, the scenarios as saves, before 17C.
 
 ### Step 17E — Slots, profiles, the goal and modifiers
 
@@ -147,6 +154,8 @@ promises to replay it.
 
 ### Step 17J — Scenarios become saves
 
+- [ ] A save's `start`: what a person adds to round 1 by hand (units and buildings already on the Grid, a side's
+      credits and roster), and a save that is one Battle Round with no Build Phase, as a rule map is.
 - [ ] The engine's rule and bench maps (`scenarios/`) and the duel maps (`src/duel/maps.ts`) move into the format:
       maps to `maps/`, scenarios to `saves/` (a rule map is a save with its map drawn inline and `script:idle` slots).
       Converted by a script; every test and every recorded hash unchanged.
@@ -170,7 +179,7 @@ promises to replay it.
 ## How it is judged
 
 Automated: a save played on after loading hashes as the uninterrupted battle on Node and Bun; every save checked in is
-played by a test; `skirmish round` turns a save and a plan into the next save; the setup screen at every colour depth and
+played by a test; `skirmish --battle` turns a save and a plan into the next save; the setup screen at every colour depth and
 across the viewport range; the driver plays a whole Skirmish, spectating included, with no terminal.
 
 Human: Mario's session above, start to save to load to an agent's report, without asking how.
