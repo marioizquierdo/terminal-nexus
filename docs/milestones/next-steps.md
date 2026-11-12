@@ -35,8 +35,8 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
 Small, none blocking. What rounds on PERIMETER left unfinished moved to
 [the first missions' milestone](milestone-10-first-and-second-missions.md), where PERIMETER is polished.
 
-- The battle feed gives each unit of a wave its own line ("5.0s trooper trained" four times), and a swarmer reads
-  "spawnling" there (the feed's short ids); one line a wave would read better.
+- A rarity on a Nexus Pulse card should read at a glance by a mark the monochrome floor keeps, not only by its style
+  role (from the retired Nexus Pulse milestone).
 
 **From step 8A's third round** ([Mario's notes](../history/feedback/2026-10-04-commander-round-3.md)):
 
@@ -95,7 +95,7 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
 | The curve levels' empty-base walk is guarded once | The tests of a level's layout now walk it with its battles undecided, so a change to how battles play cannot fail them. Whether a base with nothing built lives to the last round (what a route to a later round plays) is one check over every level, which says how low the Nexus fell each round: at worst 210 of 400, on Averno's level in round 4. If it tips, shape what an empty base faces on that level (a lighter round-4 raid, or a free defender), not the rules | small |
 | `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests | The game no longer uses it; the tests can reach the mission another way | small |
-| A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
+| A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test; Milestone 20 needs it before friends play the page | small to medium |
 
 ## Not measured yet
 

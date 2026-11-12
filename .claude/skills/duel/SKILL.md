@@ -6,7 +6,9 @@ description: Fight two Commander Armies against each other headless (bin/duel.ts
 # Duels: armies against each other
 
 The rules, the brief, the plan format and the biases are in
-[`docs/system-design/duels.md`](../../../docs/system-design/duels.md); this is the procedure.
+[`docs/system-design/duels.md`](../../../docs/system-design/duels.md); this is the procedure. The Skirmish milestone
+renames the command `skirmish` and gives it save files ([`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md)):
+then a bench, a battle or one round starts from a save, and this skill becomes the `skirmish` skill.
 
 ## 1. A scripted bench first (seconds, free)
 

@@ -51,7 +51,7 @@ On the map the plan could be drawn too, not only said: a faint path from the gro
 
 ### 3.3 Where an opponent planner comes from
 
-A mission's opponent, and a Skirmish's (the opponents milestone), should be **a planner that writes plans in this same vocabulary** — never code that moves units itself. Each round, before the Build Phase, it looks at the public state (what the player has standing, where the survivors are) and chooses the next round's groups and their plans from the mission's budget and rules; the mission can fix some groups by hand and leave others to it. Then:
+A mission's opponent, and a Skirmish's (a script that answers in Milestone 20, a deeper planner in Milestone 19), should be **a planner that writes plans in this same vocabulary** — never code that moves units itself. Each round, before the Build Phase, it looks at the public state (what the player has standing, where the survivors are) and chooses the next round's groups and their plans from the mission's budget and rules; the mission can fix some groups by hand and leave others to it. Then:
 
 - the plan is **data**, so the Build Phase can show it and its intention, exactly as it shows a hand-written group;
 - the kernel executes it, deterministic and replayable — the planner runs between rounds, never inside a tick;

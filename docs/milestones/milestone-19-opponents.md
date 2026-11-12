@@ -1,48 +1,39 @@
-# Milestone 19 — Opponents
+# Milestone 19 — A deeper planner
 
 **Status:** PLANNED
-**Depends on:** Milestone 17 (Skirmish, the battle the opponent plays), the duel's model player
-([`duels.md`](../system-design/duels.md), model against model)
+**Depends on:** Milestone 20 (its script that answers, and friends' notes on it); built only if those notes say the
+scripted enemy is dull
 
-The owner, 2026-11-11 ([his words](../history/feedback/2026-11-11-game-modes.md)): "keep improving the scripted UI AI at
-a mode where we can play against Claude. So the LLM itself can be playing simultaneously against the player. That will
-be an interesting mode to play against AI." The design is [`scripted-opponent.md`](../game-design/scripted-opponent.md),
-where an opponent planner comes from.
+The owner, 2026-11-11 ([his words](../history/feedback/2026-11-11-game-modes.md)): "keep improving the scripted UI AI".
+Reshaped on 2026-11-12 ([the review](../history/feedback/2026-11-12-skirmish-saves.md)): the first script that answers
+what the player does moved into [Milestone 20](milestone-20-skirmish-worth-showing.md), because reading the opponent
+shows nothing if the enemy never reacts; Claude as the opponent became [Milestone 21](milestone-21-agent-players.md).
+What is left is a planner that plays well, from [`scripted-opponent.md`](../game-design/scripted-opponent.md).
 
 ## Question
 
-Is there an opponent worth playing a Skirmish against again and again: a scripted planner that answers what the player
-does, and Claude, planning the other side each round at the same time as the player, blind, under the same rules?
+Is there a scripted opponent worth playing again and again, one that plans over more than one round from what is public,
+measured stronger than the script that answers?
 
 ## Steps
 
-Not started; each waits for Mario's word, and the order is a first guess.
+Not started; each waits for Mario's word.
 
-### Step 19A — A planner that answers
+### Step 19A — A planner that looks ahead
 
-- [ ] A script that reads the public state each round (the brief a duel already writes) and plans against it: answers a
-      kept front, a rush, a turtle, an army that is losing.
-- [ ] Measured against the existing scripts over seeds, so "better" is a number before a person plays it.
+- [ ] A planner that reads the public state and weighs its plans a round or two ahead (what the player is likely to
+      build next, where the front will be), in the duel's own plan vocabulary.
+- [ ] Measured against the script that answers over seeds, so "better" is a number before a person plays it.
 
-### Step 19B — Claude as the opponent
+### Step 19B — Playing it
 
-- [ ] A Skirmish whose opponent is Claude: each round it reads the brief and writes the plan while the player plans
-      theirs, and the two are revealed together, as any duel's are. The duel's `cmd:` player is where it plugs in.
-- [ ] While the model thinks, the player is never blocked: the Build Phase stays playable, and the round starts when both
-      plans are in. If the model fails or times out, a script plays its round, and the player is told.
-- [ ] A model is never needed to play the game: Claude is an opponent to choose, and its key is the player's own.
-- [ ] What it plans is kept with the battle, so a battle against Claude replays exactly, model or not.
-
-### Step 19C — Playing it
-
-- [ ] Mario plays against both and says which he would show a friend.
+- [ ] Mario and his friends play against it and say whether it is the default opponent.
 
 ## Out of scope
 
-- Versus between two people, and anything over a network beyond the model's own call.
-- A model that writes dialogue or changes a rule: it only plans, like any player.
+- Agent players (Milestone 21). A planner that sees the player's hidden plan: it plans from what is public.
 
 ## Done when
 
-- [ ] Steps 19A to 19C are built and tested.
+- [ ] Steps 19A and 19B are built and tested.
 - [ ] `./scripts/check-repository.sh` passes.

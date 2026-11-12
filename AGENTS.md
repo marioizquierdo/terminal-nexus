@@ -107,7 +107,7 @@ IDEA (a sketch). The ones every session needs:
 | `src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/` | The deterministic kernel. |
 | `armies/`, `campaigns/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions `armies/citizen` and `armies/ravel`, and one army per Commander (`vasse`, `averno`, `dob`); each Commander's story and its missions in `campaigns/` (renamed with the Skirmish milestone); the loader and the effects table. How to write one: `docs/system-design/army-authoring.md`. |
 | `src/abilities/` | What a unit does on its own (an aura, a bounty, loaded dice): one table of kinds the kernel calls at fixed moments. |
-| `src/duel/`, `bin/duel.ts` | Two armies fought out headless, script or model a side (`docs/system-design/duels.md`): the battle a Skirmish plays. |
+| `src/duel/`, `bin/duel.ts` | Two armies fought out headless, script or model a side (`docs/system-design/duels.md`): the battle a Skirmish plays. Becomes the `skirmish` command with save files (`docs/system-design/skirmish-saves.md`). |
 | `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: scenarios, duels, missions (`docs/system-design/measurement.md`), and trials, a map over many seeds as built and as variants change it (`grid <map> --seeds`). |
 | `src/content/`, `src/scenario/`, `scenarios/` | Content definitions, the map format, its variants, and the checked-in maps by folder (rules, units, movement, the engage bench, showcases) with the trial files (`docs/system-design/testing-ground.md`). |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |

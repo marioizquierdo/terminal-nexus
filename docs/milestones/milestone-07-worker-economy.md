@@ -1,12 +1,17 @@
 # Milestone 7 — Worker Economy
 
 **Status:** PLANNED
-**Depends on:** Milestone 6 (the Battle Round loop that workers act inside), Milestone 17 (Skirmish, where it is first played); it may be built beside the Skirmish milestone's banner step (the owner, 2026-11-11)
+**Depends on:** Milestone 6 (the Battle Round loop that workers act inside), Milestone 17 (Skirmish, where it is first played); before friends play (Milestone 20), after or beside the first content pass (2026-11-12)
 
 This milestone was pulled forward from the backlog on purpose. [`backlog.md`](backlog.md) deferred a
 full economy until some level needed one, and this is that level. The scope stays narrow: enough worker
 behaviour for a deposit on a Skirmish map, not the full economy the backlog still holds (storage and
 warehouses, a second resource, target scoring for combat).
+
+**Narrowed on 2026-11-12** ([the review](../history/feedback/2026-11-12-skirmish-saves.md)): steps 7A and 7B only, on a
+map with deposits offered as a map choice (the Crossing with a deposit), so the default Skirmish is not at risk while it
+is tuned. How gathered resource and the round's credits combine, and how long a battle with an economy plays, are
+settled by measurement in [Milestone 20](milestone-20-skirmish-worth-showing.md), a battle that stays open.
 
 ## Question
 
@@ -43,7 +48,7 @@ content, for the first time?
 - [ ] Workers produce in place from a finite deposit that five workers can share.
 - [ ] The resource total visibly moves because of a worker.
 
-### Step 7C — Income across battles
+### Step 7C — Income across battles (moved to Milestone 20)
 
 - [ ] Decide how gathered resource and the credits a round brings combine within a battle. Until now a
       battle runs on credits by round, as Mechabellum's rounds do.
@@ -73,6 +78,6 @@ tell the resource total is moving because of that worker, not by coincidence.
 ## Done when
 
 - [ ] Worker production is a real build-menu option.
-- [ ] Job assignment and harvesting work on a Skirmish map's deposit, and a battle file can place one.
+- [ ] Job assignment and harvesting work on a Skirmish map's deposit, and a save file can place one.
 - [ ] Q7 is updated to say it is partly adopted (produce in place) and still open for the storage cap.
 - [ ] `./scripts/check-repository.sh` passes.
