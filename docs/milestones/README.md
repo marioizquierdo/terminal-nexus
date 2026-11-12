@@ -22,7 +22,7 @@ remains.
 | [14 — Commander Armies](../history/milestones/milestone-14-commander-armies.md) | COMPLETE | done | Can two Commanders on the same buildings feel different, each army leaning its build on something of its own, against one expected power curve a lucky early hand cannot run away with? |
 | [16 — Pathfinding](../history/milestones/milestone-16-pathfinding.md) | COMPLETE | done | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a Grid that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast; and can where a player builds send their army out tight or loose? |
 | [11 — Challenge Mode: Runs](../history/milestones/milestone-11-challenge-runs.md) | COMPLETE | done | Can a player play a seeded run of battles with a run draft between them? Closed when runs were retired: its battle mechanics (building actions, the kept front, troop movement, the banner prototype) carry on in every mode |
-| [17 — Skirmish](milestone-17-skirmish.md) | CURRENT | 8 | Can a player start a Skirmish — any Commander against any script, a chosen map and the opponent's credits, or a battle file — play one battle they want to play again, and is a Skirmish where every change is seen and tested? |
+| [17 — Skirmish](milestone-17-skirmish.md) | CURRENT | 8 | Can a player start a Skirmish in a key or two, read what the enemy did, answer it with their build and their banner, and finish a battle they want to play again, against an enemy on equal ground; and is a Skirmish where every change is seen, tested and commented on? |
 | [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 9, beside the banner | Can workers be built and gather resources deterministically during the Battle Round? |
 | [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 10, repeating | Does each new unit and card make a Skirmish more interesting — measured by duels and the testing ground, then played? |
 | [13 — The Nexus Pulse](milestone-13-nexus-pulse.md) | PLANNED | 11 | Does each round open on a Nexus Pulse that feels like the Nexus speaking to its Commander — its own moment on screen, a hand worth reading, a schedule to plan around — without making a round slower? |
@@ -46,6 +46,13 @@ and make the opponent worth playing, up to Claude planning the other side. When 
 **Skirmish is shown to people**, the owner's friends first, and only then does Story begin (the Story menu, cutscenes,
 the first missions, the endless stand), one Commander's story at a time. It changes how the project is approached, not
 the game: the Grid, the battle and every rule built so far stay as they are.
+
+**Toward friends playing, from 2026-11-12** ([the owner's words](../history/feedback/2026-11-12-the-new-focus.md)): "now we
+have to rush a little more towards making sure the UI is comfortable, placing banners actually feels strategic… showing
+visual feedback about what the enemy is doing." The Skirmish milestone now ends on a basic game worth showing: notes
+from a playtest that replay their moment, the enemy's moves readable, a battle that stays open past round 2, and friends
+playing the browser page when the owner says it is fun. Effects, art and more terminology wait behind that, and an
+agent plays every change before an ask reaches him.
 
 Prefer the honest, connected, ugly step over the beautiful one that dead-ends: the biggest improvements to the Grid all
 came after the Battle Round ran end to end, because playing it is what says which part needed the quality.

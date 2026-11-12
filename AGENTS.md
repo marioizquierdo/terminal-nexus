@@ -50,6 +50,11 @@ are defined once, in the engine overview's [vocabulary](docs/system-design/grid-
 - **Scope is the current milestone step.** One step per session, one pull request per step. Do not
   start the next step because time remains; finishing early with a clean, tested result is the
   intended outcome. Future milestones are context, not scope.
+- **Toward a Skirmish worth playing.** The goal now is a basic game that is fun against an enemy on equal ground,
+  comfortable, and set up a few ways, so friends can play it; polish of the look waits behind that
+  ([`game-modes.md`](docs/game-design/game-modes.md), how the game grows).
+- **Mario's time is the scarcest thing we have.** Play every change yourself before asking him; every ask says whether
+  it is to play, watch, decide or do; at most five wait on him (the manual's "The feedback loop").
 - **Whatever Mario's latest feedback asks for comes first.** A pasted settings export is feedback:
   start the game with it (`--settings`) and settle each Experiment it answers.
 - **Small, reviewable changes**, each with its tests, green on both runtimes (`npm test`,
@@ -92,7 +97,7 @@ IDEA (a sketch). The ones every session needs:
   (`--colors`, `--theme` and where a colour goes are in the manual's "The display options").
 - **Lore is a platform, not a plot.** When clearer ASCII and richer story compete, the Grid wins.
 - Do not build what no milestone step asks for: a second resource, routing, visibility, the replay
-  format, multiplayer, sound, packaging, a mod loader, any mission beyond PERIMETER and RIGHT OF SALVAGE,
+  format (the Skirmish milestone's session record for playtest notes is not it), multiplayer, sound, packaging, a mod loader, any mission beyond PERIMETER and RIGHT OF SALVAGE,
   or a full Commander Army.
 
 ## Where things are

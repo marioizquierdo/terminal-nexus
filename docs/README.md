@@ -51,6 +51,7 @@ version of the design beyond git.
 - [`measurements/`](history/measurements/README.md) — results of the `measure` command, dated, each with the build, the rules it measured and whether it is current or superseded.
 - [`milestones/`](history/milestones/) — the completed milestones, kept as records.
 - [`spec-audit-2026-08-21.md`](history/spec-audit-2026-08-21.md), [`original-spec-2026-08-19.md`](history/original-spec-2026-08-19.md) — the August audit and the original specification, verbatim.
+- [`retired-asks-2026-11-12.md`](history/retired-asks-2026-11-12.md) — the asks retired from the "Waiting on Mario" list when it was cut to five, and where each went.
 - [`challenge-runs-design.md`](history/challenge-runs-design.md) — the retired Challenge runs design (the route, the stops, the draft), kept for the ideas Story borrows.
 
 ## Elsewhere

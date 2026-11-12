@@ -5,212 +5,47 @@ it is done.*
 
 ## Waiting on Mario
 
-- **Place the battle banner** (the Battle banner Experiment, on by default; the Skirmish milestone's first step waits on it): start PERIMETER, press `s`, then `t`, move
-  the banner with the arrows or the mouse, Enter, then `a` or `d`, and `s` to start. Say whether placing it is easy and
-  intuitive, or whether the simpler stance row should replace it. Open question in the prototype: no playable level has an
-  enemy Nexus, so the default banner is the level's own target (PERIMETER's line, defensive).
-- **Watch troops move, and read the arena** ([the chapter](../system-design/movement.md)): a Challenge battle, or
-  `./bin/grid.ts scenarios/movement/march-lines` and `scenarios/movement/march-commander`. Ranged units walk at half speed while a trooper
-  is near and fall in behind on the move; Vasse is a regular troop; a unit keeps its target until it falls or it has
-  gone 2½ seconds unable to strike it, or at once if its enemy is walled in, then takes one it can reach, further off than
-  it sees if it must, and with none stands as near as it can get. New: six engage scenarios, the same armies on open
-  ground, a gap six rows wide and two rows wide, a corridor and two lanes
-  (`./bin/grid.ts scenarios/engage/engage-gap2-melee-vs-mix`, `engage-gap2-airmix-vs-mix`, `engage-lanes-melee-vs-mix`).
-  Watch twelve troopers lose at the two-row door while the same number with half in the air win; say whether that
-  reads as good ground (a choice that matters) or as air being too strong where the ground is tight, and whether commitment
-  reads as commitment or as stubbornness.
-- **Try the testing ground** ([the guide](../system-design/testing-ground.md)): `./bin/grid.ts engage-bench --against
-  origin/main --profile --jobs 4` sets the bench beside main. Units no longer turn between two walled-in enemies every
-  tick; watch a narrow pass (`./bin/grid.ts engage-gap2-melee-vs-mix`) and say whether the melee army's waiting reads
-  better.
-- **Play the kept front** ([`core-loop.md`](core-loop.md)): a Challenge battle (the title menu's Challenge row, which the Skirmish milestone turns into Skirmish) or any mission. Rounds are 30
-  seconds, eight to a battle; after a round the survivors stay, step back and form up during the Build Phase's first 10
-  seconds; a building placed on troops, anyone's, pushes them out. The regroup's numbers (2 seconds back, 6 forming, 2
-  standing) are a starting point to feel. The banner is the next step.
-- **Try a building's actions** (his rule of 2026-10-22): in any Build Phase, `e` for Explore Map, onto a Barracks:
-  `c` buys its production line (15 credits, one more trooper a wave), `c` again undoes it; onto a Turret, `c` heavy
-  rounds, `v` and `b` its two firing modes. The look is for his UX passes.
-- **Play the pathfinding milestone's wrap-up** ([his words](../history/feedback/2026-10-21-pathfinding-wrap-up.md)):
-  `./bin/grid.ts scenarios/movement/march-lines` (a mixed army that sets out with its guns in front and arrives in order:
-  troopers, then marksmen, then the mortar), `./bin/grid.ts scenarios/movement/march-commander` (Vasse is a regular troop; the troopers pass her
-  and nobody waits for her), `./bin/grid.ts scenarios/rules/mortar-burning-ground` (the lighter fire), and PERIMETER's round 2 from
-  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=2'`, where last round's troopers stand on and
-  beside their Barracks. The march's numbers, the next flanker and PERIMETER's balance with nothing built wait for
-  his playing (his words: "We will correct that when I start playing").
-- **Feel the Nexus fighting back** ([his words](../history/feedback/2026-10-21-pathfinding.md)), from
-  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'`: start the round without building (`s`, `s`)
-  and watch the Nexus shoot the raiders that reach it (in rounds 1 and 2 the squads stop the raid before it comes
-  within the Nexus's reach); its card (Explore Map, `e`, onto it) says it shoots and mends. Is one shot every three
-  seconds, 40 a shot, the right strength, and is 40 mended a round "a little"?
-- **Look at the colour work once, on a terminal whose colours are not the game's** ([his words](../history/feedback/2026-10-15-colours-and-background.md);
-  the game now paints its own background, so the terminal's theme no longer shows): `./bin/terminal-nexus.ts --colors
-  truecolor --theme light` (the light theme should now read on a dark terminal and on a Solarized one), then
-  `--colors color256`, then `--colors monochrome`. Settings (`d`), Colours and Background, are the same choices.
-  Worth a look for the light theme's Ravel green (now a green that reads as green, not near-black) and for 256 colours'
-  territory washes, which land on the nearest of few pale colours and can read pinker than in millions.
-- **Settle the keyboard's steps** ([his request](../history/feedback/2026-10-08-keyboard-without-acceleration.md);
-  acceleration is gone on his word): press `d`, try Arrow step, Shift step (below the arrow step, Shift is the slow
-  move; other roguelikes use 5 to 8), Shift pace and Hold pace, and paste the settings export. The ones he settles
-  become tuned values. The next navigation ideas, from [the roguelike survey](../history/reports/2026-10-09-roguelike-navigation.md),
-  wait for his pick.
-- **Play the curve level** (Commander Armies' second step; Pathfinding's last step also plays it headless, on the new routes), from `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-3'`:
-  six rounds on the starter map with only the Nexus standing. The credits line's left says the army's supply,
-  `units 5/12`; a Supply Depot (`4`) gives 8 more. The Garrison (`5`) is dimmed: it needs a Barracks standing. Build a
-  Barracks (`1`, Enter), start the round (`s`, `s`); round 2 opens with what you did not spend and 120 more, and the
-  Garrison can be built — four pikemen a wave, each about three troopers and two places. Explore Map (`e`) onto a
-  Barracks: its card lists `[z] Hold production`, which keeps its wave home this round.
-- **Play Averno beside Vasse** (Commander Armies' third step; measured headless on the new routes: he clears his rounds faster and falls in rounds 1 and 5, she never falls, [the report](../history/reports/2026-10-20-pathfinding-measured.md)), from `./bin/terminal-nexus.ts --at 'campaign?level=averno-test-1'`
-  and then `--at 'campaign?level=vasse-test-3'`: the same curve, her map and raids, with him in her place for five
-  rounds. He is `&`, he charges out of the line, and his units near him hit a quarter harder. In round 2 the Nexus
-  Pulse (`n`) deals one card tagged `Ravel`: raiders or runners from the Ravel Nexus who fight for him. When he
-  falls he is out for the next round, not back at once as she is. Do they feel different within two rounds?
-- **Read the army guide, and run a duel** (the army structure round): [`army-authoring.md`](../system-design/army-authoring.md)
-  is the guide for writing a Commander as data; `npm run duel -- bench --seeds 1-6` fights Vasse, Averno and Dob
-  Hunter against each other with three scripts, and [`duels.md`](../system-design/duels.md) says how to set two model
-  agents against each other. Three things the duels found wait on his word, measured again on the new routes ([the report](../history/reports/2026-10-20-pathfinding-measured.md)):
-  Averno still wins most (65% of 72 scripted duels), Ravel buildings train about half the strength a credit Citizen ones
-  do and Dob wins mostly when he holds, and Dob has no story yet. The same duels found that an early lead decides
-  a duel almost every time; with the Nexus fighting back a round-1 march no longer ends one, but the side ahead after
-  round 2 still wins 50 of 54 ([the report](../history/reports/2026-10-21-the-march.md)), the armies' next pass.
-- **Her moments, when convenient** (the Commander milestone is accepted; this is to try, not a gate), from
-  `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-2'`: start the round without building (`s`, `s`). When
-  she falls, a small window opens beside her, her face falls and the window evaporates; her dim `@` waits beside the
-  Nexus. Enter: round 2 opens on the Nexus Pulse restoring her, and she appears beside the Nexus half a second in,
-  a ring closing on her, with a line of her own. Explore Map (`e`) on her shows her portrait and a ring of light.
-- **The ASCII art milestone, when he says** ([the plan](milestone-15-ascii-art.md)): research, a tool and an image
-  model's help for art that looks good, then the Commander's portrait and vignette redrawn with it. Not placed in
-  the order.
-- **Read the round's words** ([his words](../history/feedback/2026-10-07-nexus-pulse.md)): the one list of the
-  round's, the Nexus Pulse's and the tech tree's words in [`commander-armies.md`](../game-design/commander-armies.md),
-  and the tech tree's two new rules there (its state is always in sight on the Grid and the build menu; an upgrade
-  shows in its details, sometimes on the map). The title screen's motto now reads "Build. Commit. Battle.
-  Understand. Adapt.", since Pulse names the round's opening. One question is his: whether a mission's data keeps
-  the engine's word "pulse" for the battle (Q76; recommended: rename it before modding opens).
-- **The Nexus Pulse's own milestone, when he says** ([the plan](milestone-13-nexus-pulse.md)): its own moment on
-  screen, the Nexus speaking to its Commander, more powers, and whether the pick becomes required. Not placed in
-  the order; his call where it goes. An army bending the schedule moved to Commander Armies, as Averno's quirk.
-- **Play the Commander's fifth round** (his notes after pull request 60 merged), from `./bin/terminal-nexus.ts
-  --at 'campaign?level=vasse-test-1'`: press `1` to arm a Barracks. The dotted ground is the build range,
-  given only by what stood when the round opened, and a building needs one tile on it; buildings may touch, since
-  units come out over the roofs. Explore Map (`e`) over a marksman
-  draws its range; the raid's trail is a slow line of arrows. Start the battle without picking a Nexus power:
-  four troopers come out of the Barracks together at five seconds, and Vasse speaks beside her. Under THE
-  MISSION in Settings (`d`), **Spawn space** (1 or 2) is new beside **Build range** and **By the
-  Book**; paste the settings export.
-- **A sparse formation, when he says** ([his idea](../history/feedback/2026-10-06-rows-x2.md); he took the
-  Nexus Pulse first): units prefer a free column beside them and not to stand straight above or below another, so
-  a group spreads into a staggered grid; a preference that never blocks a move. It explores the pathfinding it
-  needs, runs simulations, and brings units and scenarios made to test formations facing up and down against
-  formations facing sideways.
-- **Play the Activity logs** (pull request 51): on the playtest page open the "Activity logs" demo, press
-  Esc then `a`, change the filter, press `e`, and paste the export into the pull request. Also look at the
-  About screen (Menu, then `4`).
-- **Turn on GitHub Discussions** (repository Settings → General → Features) with an Announcements
-  category; the About screen then links to it (`src/title-menu/about.ts` has the slot). Why this and not
-  Discord: [the parked feedback pipeline](../history/reports/2026-10-01-feedback-pipeline-parked.md).
-- **Run the key-release probe in iTerm2**: `node scripts/probe-key-release.mjs`, hold an arrow, let it go,
-  tap it, `q`. Lines saying `release` mean the Key releases Experiment's `auto` works there; `legacy`
-  means `auto` and `off` feel the same.
-- **Open questions** (each has a recommendation in the register): an order primitive as its own step (Q69, which
-  would also let Vasse hold the line; the thinking is in [`scripted-opponent.md`](../game-design/scripted-opponent.md)),
-  letter hotkeys for buildings (Q67), the exploring click, the wheel step and the light theme's light (Q63;
-  Q62 and Q64 are answered), how long a match is (Q75, now six to nine rounds by his word, the minutes still to measure), and whether a mission's data keeps the engine's "pulse" (Q76).
-- **Experiments that came back without an export** stay at their first guesses until he sends one: the menu
-  spike's (Battle Round flash, Flash strength, Popup pulse, the keyboard navigation numbers), and the round
-  loop's under THE MISSION (Next round).
+**At most five asks** (the validator counts them), because his time is the scarcest thing the project has. Each says
+whether it is to **play**, **watch**, **decide** or **do**, and about how long it takes; each was tried by an agent first.
+A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and where each went, are in
+[the history](../history/retired-asks-2026-11-12.md).
+
+- **Play, about fifteen minutes: the banner, in a Challenge battle** (the title menu's Challenge row, `2`, which the
+  Skirmish milestone turns into Skirmish; unlike PERIMETER it has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
+  `s` for the start panel, `t` to change the target: move the banner with the arrows or the mouse, Enter, then `a`
+  (aggressive) or `d` (defensive), and `s` to start. Is placing it comfortable and clear, or should a simpler stance row
+  replace it? In a duel the banner does not move the army yet (the step's next item), so judge the placing, not the
+  battle. While you are there, say anything about the kept front (survivors step back and form up in the first
+  10 seconds), a building's actions (`e` onto a Barracks, then `c`), and the Nexus shooting back. In Settings, under
+  Experiments, try the keyboard's Arrow step, Shift step, Shift pace and Hold pace, then export the settings and paste
+  them with your notes.
+- **Watch, five minutes: troops at a narrow door.** `./bin/grid.ts scenarios/engage/engage-gap2-melee-vs-mix`, then
+  `./bin/grid.ts scenarios/engage/engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
+  number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong
+  where the ground is tight? Does a unit that keeps its target read as commitment or as stubbornness?
+- **Decide, one line: letter keys for buildings.** Your notes once said "press 'b' to build a barracks". Was `b` an
+  example, or do you want letters? Recommended: the digits stay, since they never move when a building is added; if you
+  want letters, one is shown beside the name wherever it is free.
+- **Do, one minute: turn on GitHub Discussions** (the repository's Settings, General, Features) with an Announcements
+  category, so the About screen can point friends to it when they play. Why this and not Discord:
+  [the parked feedback pipeline](../history/reports/2026-10-01-feedback-pipeline-parked.md).
 
 ## Carry-over
 
-Small, none blocking.
+Small, none blocking. What rounds on PERIMETER left unfinished moved to
+[the first missions' milestone](milestone-10-first-and-second-missions.md), where PERIMETER is polished.
 
-**From rows x2** ([his words](../history/feedback/2026-10-06-rows-x2.md); the rule is in
-[`grid.md`](../system-design/grid.md), distance, reach and movement):
-
-- Ranges and raids are not tuned for balance: every reach became a whole number of rows and nothing more, since
-  ranges get adjusted as units are made (his words). As played, at the default settings, PERIMETER is won in all
-  three rounds with nothing built, and with two Turrets and one more each round; with nothing built and Vasse at 60
-  health with a 10% aura, the Nexus falls in round 3.
-- The Commander's cadence level does not always show the cadence: at 100 health and a 40% aura she lives through
-  round 1, and at 20 health and a 10% aura without the Barracks's wave the mission is lost in round 2, before her
-  return. Both were so before this round.
-- Two melee units of one speed set down diagonally from each other step round each other without ever touching.
-  Real pathfinding, not the greedy step, is what closes it.
-- A big unit's death shockwave and the debris round a small one are drawn square: decoration that claims no area,
-  but a raider's shockwave reaches two rows up and down as its blast of 1 goes off. Its rows could be weighted by
-  the rule if it reads as the blast.
-- A deposit inside the build range carries no mark in monochrome (the range's wash does not
-  render there and a deposit takes no dot), though a building may be placed on it. Older than the rule.
-
-**From step 6B** ([the round-loop report](../history/reports/2026-09-30-round-loop-and-missions.md) has the reasons):
-
-- PERIMETER is played on the Build Phase's starter map, with regions named for its landmarks; its own map is Q38's.
-- Every unit engages the nearest enemy: `order` has one verb, `advance` (Q69).
-- The incoming raid is a forecast placed against the map without the plan; a building on an arrival's
-  tile moves it when the round starts.
-- The walk home is a straight glide over whole tiles, with no routing. Replay plays back a Battle Round
-  already resolved; it must never resolve a new one.
-
-**From step 8A** ([the Commander report](../history/reports/2026-10-01-commander-vasse.md) has the outcomes):
-
-- Vasse's return is never seen in PERIMETER: she cannot fall before round 2 there, and a fall in round 2 is
-  back in a round 4 that does not exist. Vasse's second test level shows it:
-  `--at 'campaign?level=vasse-test-2&round=3'`.
-- Her doctrine's "hold, then advance" waits on an order the kernel can keep (Q69); she engages the nearest
-  enemy like every unit, from just behind the line.
-- In round 1 she is incoming with the squads, so her card is the incoming one ("Yours, next round"), not her
-  own ("Your Commander"); from round 2 on it is hers.
-
-**From step 8A's second round** ([Mario's notes](../history/feedback/2026-10-03-commander-round-2.md)):
-
-- The raid's intent is its first target only: after first contact the raid retargets, nearest enemy each
-  tick, and where the fight then goes is not shown. A group arriving seconds in is foreseen against the
-  round's opening.
-- In monochrome an arriving unit is drawn at full strength (the wash shows only where
-  colours blend), so arriving and present enemies look alike there; the panel's heading and the card's
-  "Incoming" say which. At 256 colours the washes come out grey, and washed orange turns pinkish.
-- Both of her story's levels offer the same cards (PERIMETER unlocks all of `armies/all`, the cadence level
-  nothing new), so what a level offers changes nothing on screen yet; it shows when a level unlocks a card of
-  its own (the Nexus Pulse step).
-- PERIMETER opens on its intro, so a key script for the game, the playtest or the browser page starts with
-  `Esc` (the documented examples do).
+- The battle feed gives each unit of a wave its own line ("5.0s trooper trained" four times), and a swarmer reads
+  "spawnling" there (the feed's short ids); one line a wave would read better.
 
 **From step 8A's third round** ([Mario's notes](../history/feedback/2026-10-04-commander-round-3.md)):
 
 - Only Nexus powers carry rarity and role, though the game modes design says every card does from the day it is
-  authored: `tier` waits for the run draft, which gates by it, and buildings carry no tags until a draft deals them.
+  authored: `tier` waits for Story's technology choice, which gates by it, and buildings carry no tags until something deals them.
 - The army loader does not check that a Nexus power's line fits a panel row (28 columns at 80 × 24).
 - The units' and buildings' definitions (stats, footprints) are still TypeScript in `src/content`; an army
   names them by id. Moving them into the army files is the next step for content.
 - A claude.ai link cannot carry `#at=`; the published page opens a place through a demo's route instead.
-
-**From step 8A's fourth round** ([Mario's notes](../history/feedback/2026-10-04-commander-round-4.md)):
-
-- A lone Turret or Hatchery east of the Barracks draws round 1's probe against the ridge, out of the line's
-  reach, and the round runs to time (still survived): units step greedily and have no pathfinding.
-- Round 2 with nothing built is still won, so "the second round needs something built" holds neither before
-  this round nor after it; the level was not tuned for it.
-- By the Book's reach is drawn only where colours blend: in monochrome her card says what it
-  does.
-- The forecast carries the player's troops as one more forecast group (`TroopsGroup`); a `post` field on the
-  raid's group would be one shape fewer.
-- `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests; the game no longer uses
-  it.
-- Building inside a raid's public coverage waits for a raid that stands buildings at the start of a Build Phase.
-
-**From step 8A's fifth round** ([Mario's notes](../history/feedback/2026-10-05-commander-round-5.md)):
-
-- PERIMETER is easier: a Barracks's four troopers at five seconds hold its last round even with nothing built,
-  and Vasse now lives through it in most plans, so her health Experiment matters only in round 3.
-- The battle feed gives each unit of a wave its own line ("5.0s trooper trained" four times), and a swarmer
-  reads "spawnling" there (the feed's short ids); one line a wave would read better.
-- Without chaining, round 1's build range is the Nexus's and the Barracks's alone, and reaching further takes a
-  round a step. A room of 1 leaves a Barracks's corners open, corner to corner. The room shows only while a
-  building is armed.
-- Her round-opening line rarely fits now that first contact comes sooner: the moments that matter more come first.
-- The tests' shared PERIMETER plan (`STRONG`, `tests/mission.test.ts`) puts a Turret (22,7) outside the build
-  range at every value; the tests skip the placement check, so the plan could not be placed in the game as written.
-- The raid's trail is the second animation that never settles, beside a popup's breath: the screen redraws five
-  to seven times a second while it moves. Moving arrows may strengthen the worry, in the backlog, that lanes of arrows read as a tower defence.
 
 **From the colour work of 2026-10-15** ([the colour depths](../history/feedback/2026-10-15-drop-16-colours.md) and
 [the background](../history/feedback/2026-10-15-colours-and-background.md); the lessons file has the reasons):
@@ -228,16 +63,12 @@ Small, none blocking.
   backdrop), and are regenerated, not rewritten, the next time a round touches them.
 - OpenTUI's background is drawn through the test harness only; its live backend runs under Bun on a real terminal,
   and nobody has looked at it there since.
-- `tests/web.test.ts`'s browser-bundle test fails under Bun 1.4.2 in the cloud session on `main` as well (its
-  hashes differ from Node's); not caused by, or looked at in, this change.
-
 **From step 6C** ([the Barracks report](../history/reports/2026-10-01-barracks-trains.md) has the outcomes):
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
 - Only the buildings a mission offers spawn: a barracks in a `grid` scenario still spawns nothing,
   and the bench Hatchery there keeps its own breeding.
-
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):
 
@@ -263,6 +94,7 @@ Small, none blocking.
 | --- | --- | --- |
 | A `ScreenHost` interface and an `InputEvent` with `phase` | Fewer TTY fakes, real key releases, gamepad and touch-hold | see [`portability.md`](../system-design/portability.md) |
 | The curve levels' empty-base walk is guarded once | The tests of a level's layout now walk it with its battles undecided, so a change to how battles play cannot fail them. Whether a base with nothing built lives to the last round (what a route to a later round plays) is one check over every level, which says how low the Nexus fell each round: at worst 210 of 400, on Averno's level in round 4. If it tips, shape what an empty base faces on that level (a lighter round-4 raid, or a free defender), not the rules | small |
+| `src/cli/pulse-run.ts` still exports PERIMETER's mission connection for seven tests | The game no longer uses it; the tests can reach the mission another way | small |
 | A host-conformance test: run a key script through the terminal path and the page (headless Chromium) and compare frames | Turns the by-hand check we did into a test | small to medium |
 
 ## Not measured yet

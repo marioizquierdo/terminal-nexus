@@ -15,6 +15,18 @@ Since 2026-11-11 this is how the game grows ([the owner's words](../history/feed
 adding a few units, keep polishing how to automatically test units, formations, balance adjustments". Each pass also
 improves the testing ground, so the next unit is cheaper to judge ([`testing-ground.md`](../system-design/testing-ground.md)).
 
+**What the first pass starts from** (moved here from the "Waiting on Mario" list on 2026-11-12):
+
+- **Units that counter each other.** After showing the game, the owner: "it's kind of obvious what to do. Just place
+  some buildings and use your money" ([his words](../history/feedback/2026-11-11-showing-the-game.md)). With one
+  resource and no counters, buying what you can afford is the whole plan; counters and the worker economy answer it.
+- **What the duels found** ([the report](../history/reports/2026-10-20-pathfinding-measured.md)): Averno wins most (65%
+  of 72 scripted duels); Ravel buildings train about half the strength per credit that Citizen ones do; Dob Hunter wins
+  mostly when he holds. The early lead deciding a battle is the Skirmish milestone's own step.
+- **A sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)): units prefer a free column beside
+  them and not to stand straight above or below another, so a group spreads into a staggered grid, a preference that
+  never blocks a move; tested with formations facing up and down against formations facing sideways.
+
 ## Question
 
 With Skirmish playable, does each new unit and card make a Skirmish more interesting, measured rather than asserted, by battles the scripts and the driver play and battles people play?

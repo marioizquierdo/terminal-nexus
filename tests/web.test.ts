@@ -111,9 +111,11 @@ if (RUNTIME_IS_BUN) {
     const inNode = sameness(scenario)
     assert.equal(inBrowser.stateHash, inNode.stateHash)
     assert.equal(inBrowser.eventsHash, inNode.eventsHash)
-    assert.deepEqual(inBrowser.pulseFrames, inNode.pulseFrames)
-    assert.deepEqual(inBrowser.buildFrames, inNode.buildFrames)
-    assert.deepEqual(inBrowser.menuFrames, inNode.menuFrames)
+    // The sandbox's arrays carry its own Array prototype; copied into this realm, they compare element by element
+    // (Bun's strict deep-equal refuses a foreign prototype even when every element matches).
+    assert.deepEqual([...inBrowser.pulseFrames], inNode.pulseFrames)
+    assert.deepEqual([...inBrowser.buildFrames], inNode.buildFrames)
+    assert.deepEqual([...inBrowser.menuFrames], inNode.menuFrames)
     assert.ok(inNode.pulseFrames.length > 30 && inNode.buildFrames.length > 10)
   })
 }
