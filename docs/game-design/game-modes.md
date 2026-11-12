@@ -80,10 +80,10 @@ that Build Phase (its new buildings and upgrades, its Nexus power, its banner) i
 battle its base stands as it is, its new things marked, to be read before the next plan (Milestone 20's step of
 that name). Guessing what the enemy chose, and answering it a round later, is the bet each round asks for.
 
-What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two duel maps (the Crossing
-and the Pocket, `src/duel/maps.ts`), the setup screen (Skirmish on the title menu: New game, Load game), a Skirmish played
-on the Build Phase screen from a save (`--load`), spectating two scripts, Save game, playtest notes, and the `skirmish`
-command. What it lacks is an opponent good enough to play.
+What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two maps (the Crossing
+and the Pocket), the setup screen (Skirmish on the title menu: New game, Load game), Save game, spectating two scripts,
+playtest notes, and the `skirmish` command, which plays the same battle without a screen. What it lacks is an opponent
+good enough to play.
 
 ### 3.2 What a Skirmish is set up with
 
@@ -132,36 +132,20 @@ others are removed.
 
 ### 3.3 Save files
 
-A Skirmish is saved and loaded at the opening of a Build Phase, from the game menu and from the command line, and an
-agent plays one headless from the same file, round by round, with any slot given to a script
-([`skirmish-saves.md`](../system-design/skirmish-saves.md) is the format, the command line and how an agent plays). Every
-demo of a rule, a Commander or a starting position is a save a person can play and a duel can measure; the engine's
-rule maps are saves too, the testing saves (`skirmish-testing/`), each opening on a Battle Round written by hand.
+A Skirmish is saved and loaded at the opening of a Build Phase, from the game menu and from the command line
+([`skirmish-saves.md`](../system-design/skirmish-saves.md) is the format). A save file is a battle anyone can pick up:
+a person carries on from it, an agent plays it on headless with any slot given to a script, and every demo of a rule, a
+Commander or a starting position is one, the engine's rule maps included (the testing saves, `skirmish-testing/`, each
+opening on a Battle Round written by hand). A save checked in is already a preset.
 
-### 3.4 How a Skirmish is tested
+### 3.4 One battle, on screen or not
 
 **A Skirmish is deterministic** (RULE for the duel it plays, `tests/duel.test.ts`: "a duel resolves the same every run"):
-the same save file, seed and plans give the same battle, hash for hash, on Node and Bun. That makes five ways to test one, from cheapest to fullest:
-
-1. **Headless, script against script**: `skirmish -f <save> --p1 script:rush --p2 script:turtle --battle`, a round a
-   command, and `duel bench` over many seeds. For balance and for a rule's effect.
-2. **Headless, round by round**: `skirmish` with a save prints the brief of the slot a player plans, checks a plan given
-   at that slot (`--p1 build:plan.json`), and with `--battle` plays the round against the other slot's script and saves
-   the next Build Phase. How an agent plays a Skirmish to test it, and how it turns a person's save into variations.
-3. **On screen, by keys**: the playtest script (`node scripts/playtest.mjs --load <save>`; told nowhere, the save of a
-   new battle on the Crossing) presses keys and returns every screen, the title menu and the setup screen included. For
-   how it reads.
-4. **An agent playing it first** (planned, Milestone 20): the playtest skill plays a whole Skirmish through the driver and
-   writes a short player's diary — what confused it, how many keys the common tasks took, how long nothing waited to be
-   decided. Every change to the screen passes this before a person is asked.
-5. **By a person**: Mario, then his friends: `./bin/terminal-nexus.ts`, Skirmish on the title menu (New game or Load
-   game), `--load <save>`, or the browser page. The note key, `!`, saves the moment with everything needed to replay it
-   (`--note <file>`), so a note is the moment itself, not a description of how to reach it.
-
-The `skirmish` command, save files, the setup screen (`skirmish?setup=new`, `skirmish?setup=load`), Save game (Esc,
-then `[v]`), the game opening a save (`--load <file>`, the route `skirmish?load=<file>`), spectating and notes are built
-([`skirmish-saves.md`](../system-design/skirmish-saves.md)); `--at 'skirmish?seed=<n>'` opens a new battle on the
-defaults and that seed.
+the same save, seed and plans give the same battle, hash for hash, on Node and Bun, whether a person plays it on the
+screen or the `skirmish` command plays it headless. That is what makes it the place every change is tried: headless
+script against script, an agent planning round by round, the playtest pressing keys, an agent's player's diary
+(Milestone 20), then a person, with `!` saving the moment as a note that opens again where it was. How a test does
+each is [`testing-ground.md`](../system-design/testing-ground.md), testing through Skirmishes.
 
 A Skirmish is the default place to see a change: the browser page and the playtest script open on a save, and the
 Build Phase pictures of a battle start from one. PERIMETER is opened only for a change about missions.
@@ -182,8 +166,8 @@ a mission built before the battle is fun would be built twice.
 
 Two people, one battle: hidden simultaneous plans and deterministic resolution already fit play over a network and play
 by turns. Versus builds on Skirmish: the settings found to make the most enjoyable Skirmish are where a fair Versus
-battle starts. The cheapest version already half exists: the duel plays through files, one plan a round
-(`duel new`, `wait`, `submit`), so a battle by correspondence is close. Nothing is designed, and multiplayer stays out
+battle starts. The cheapest version already half exists: two sessions play one save file, a slot each, one plan a
+round (`skirmish --wait`, `--ready`), so a battle by correspondence is close. Nothing is designed, and multiplayer stays out
 of scope until a milestone asks for it.
 
 ## 6. What was retired

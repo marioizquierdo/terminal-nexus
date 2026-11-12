@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { main } from "../src/cli/skirmish.ts"
+import { EXIT, main } from "../src/cli/skirmish.ts"
 import type { DuelState } from "../src/duel/index.ts"
 import { briefOf, playRound, SCRIPTED } from "../src/duel/index.ts"
 import { spawnSync } from "node:child_process"
@@ -24,10 +24,12 @@ const SAVES = join(REPO_ROOT, "saves")
 /** One round, side A by the balanced script and side B by rush. */
 const round = (state: DuelState): DuelState => playRound(state, { A: SCRIPTED.balanced!(briefOf(state, "A").data), B: SCRIPTED.rush!(briefOf(state, "B").data) }).state
 
-/** Runs the command, returning its exit code and what it wrote. */
+/** Runs the command, returning its exit code and what it wrote; when it could not run (exit 1), throws what it said. */
 function run(args: readonly string[]): Readonly<{ code: number; out: string }> {
   const lines: string[] = []
-  const code = main(args, (line) => lines.push(line))
+  const failed: string[] = []
+  const code = main(args, (line) => lines.push(line), undefined, (line) => failed.push(line))
+  if (code === EXIT.failed) throw new Error(failed.join("\n"))
   return { code, out: lines.join("\n") }
 }
 
@@ -73,7 +75,7 @@ test("skirmish: a plan is checked without building, a round is played and saved,
     assert.equal(brief.code, 0)
     assert.match(brief.out, /--- brief for p1 \(west, vasse, player\)/)
     const checked = run(["--map", "crossing", "--p1", `build:${plan}`, "--p2", "script:rush"])
-    assert.equal(checked.code, 1)
+    assert.equal(checked.code, EXIT.refused)
     assert.match(checked.out, /builds barracks at/)
     assert.match(checked.out, /REFUSED garrison: needs Barracks/)
 

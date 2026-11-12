@@ -6,7 +6,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { roundLines } from "../src/cli/duel.ts"
+import { roundLines } from "../src/skirmish/lines.ts"
 import type { DuelState, Formation, RoundReport, SidePlan } from "../src/duel/index.ts"
 import { APART_GAP, briefOf, duelArmy, loadoutOf, newDuel, playRound, readPlan, SCRIPTED, scriptedName, scriptedPlayer } from "../src/duel/index.ts"
 import { footprintDistance, footprintSteps } from "../src/grid/coords.ts"

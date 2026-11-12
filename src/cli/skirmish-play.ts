@@ -17,6 +17,11 @@
 // - **a save** of the round is its setup, its duel and the plan so far as p1's draft (`saveOfRound`); a save opened
 //   at its Build Phase restores that draft (`resume`), so loading returns to exactly where the player stopped.
 //
+// **Parity with the `skirmish` command** (`./skirmish.ts`): every round, the player's and a script's, is played by
+// `playNext` (`src/skirmish/play.ts`), the function the command plays, with the same profiles, credits shares and
+// modifiers; a battle is opened by the steps the command opens one with (`./skirmish-open.ts`); and a save written here
+// is one the command plays on, and back. A rule of play belongs in `src/skirmish/`, never here, or the two drift apart.
+//
 // Pure: the same save and plans give the same battle. A new seed is chosen by the screens (`clockSeed`) and handed in
 // (`SkirmishOptions.newSeed`); nothing here reads a clock or a file.
 

@@ -113,3 +113,27 @@ two scripts, Left and Right on the setup rows, a battle's route naming its whole
 folder and its `type:` step, and the picture script finding the browser; one note found wrong (the "missing" map border
 is the map's edge drawn solid); the balance findings on Milestone 20, the content pruning on Milestone 12, and the rest
 in the backlog.
+
+### F264 — fold `duel` into `skirmish`
+
+> fold duel into skirmish, there's no need to have two commands for the same thing.
+
+**Built.** `duel` is gone. What it did that `skirmish` did not, `skirmish` now does: `--commanders vasse,dob` (or
+`all`) plays every pairing from both ends over `--seeds` and says who won by Commander; two sessions play one save a
+slot each, `--wait <slot>` blocking until that slot's turn and printing its brief, `--ready` handing in its plan, the
+last plan in playing the round; loading a finished battle prints every round's report. The `cmd:` player is gone: a
+model plays through the save file.
+
+### F265 — a cleanup pass: the command self-documenting, each document at its level
+
+> Then, take an extra pass to cleanup and refactor. Start from reviewing the documentation around the skirmish command. Make sure it is well organized. To simplify, it helps cleaning up the command code itself so it is self-documenting. Offload imementation details to their modules so the main skirmish file acta more as a "main" module, desicated to declare amd parse the parameters and handling error codes. This file top comment could be the cannonical intronfor the command itself. Then, the documentation mentions the existence of the command, a quick description, and a link to the code. The testing specs can add more examples and focus on explaining how the command is particularly used for the different testing scenarios. The UI code can also make references to keeping "parity with the command". Then, the relevant design spec explains the concept of a skirmish from the gameplay point of view. So all the pieces stay focused at the right level of abstraction, creating a simpler and more modular structure that allows future agents to understand the whole picture, but focus on a specific area when needed, which will make future code changes easier to maintain. It also helps looking for duplication and opportunities to refactor common functionality from UI and command into the proper modules.
+
+**Built.** `src/cli/skirmish.ts` is the command's manual (its opening comment, what `--help` prints), its options, the
+request they make, and its exit codes (0 done, 1 could not run, 2 a plan refused, 3 still waiting); one battle, many
+battles, two sessions and a testing save are each a module beside it. Opening a battle (a new setup or a save, then the
+slots seated with a plan file read) was written twice, once for the screen and once for the command: it is one module
+now, `src/skirmish/request.ts`, and the round's report lines another, `src/skirmish/lines.ts`; the screen's files say
+they keep parity with the command. The save page says the command exists and links its manual; the testing ground has
+how each kind of test uses it, the model-against-model recipe included; the duel page keeps the rules, the brief and
+the plan; the game modes say what a Skirmish is to a player.
+

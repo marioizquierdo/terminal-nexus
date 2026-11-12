@@ -14,7 +14,6 @@
     "test": "./scripts/run-tests.sh node",
     "test:bun": "./scripts/run-tests.sh bun",
     "grid": "node bin/grid.ts",
-    "duel": "node bin/duel.ts",
     "skirmish": "node bin/skirmish.ts",
     "terminal-nexus": "node bin/terminal-nexus.ts",
     "testing-saves": "ls skirmish-testing/*/*.save.json",

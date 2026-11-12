@@ -121,6 +121,7 @@ _The dated record of the project, oldest first; never required reading. The pull
 | 2026-11-12 | The scenarios become testing saves: 62 of the 63 rule, unit, movement, engage and showcase maps converted into Skirmish saves in `skirmish-testing/` with a hand-written `start`, every kernel hash unchanged, the word "scenario" retired from the code and documents; the duel maps become files in `maps/` |
 | 2026-11-12 | Skirmish on the title menu (Skirmish, Story, Settings, About, Exit); Campaign renamed Story (`stories/`); the Challenge run retired; the game opens a save with `--load` and the route `skirmish?load=`, and Save game sits in the Esc menu |
 | 2026-11-12 | The Skirmish setup screen (New game: map, each slot's Commander, who plays it and its credits share, the goal, the modifiers, the seed; Load game with the controllers changeable), spectating two scripts, the `!` note key with `--note` to replay a note at its moment, and testing from saves; a battle's route names its setup; the `duel` skill renamed `skirmish`; the notes from testing fixed, recorded or dropped |
+| 2026-11-12 | `duel` folded into `skirmish` (every pairing of Commanders with `--commanders`, two sessions taking turns through one save with `--wait` and `--ready`); the command's file is its manual and options, its work in modules, opening a battle shared by the screen and the command (`src/skirmish/request.ts`); each document says the command at its own level |
 
 ## Where the detail is
 

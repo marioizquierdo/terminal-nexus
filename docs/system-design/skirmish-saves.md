@@ -1,13 +1,13 @@
 # Skirmish setup, save files and headless play
 
 _How a Skirmish is set up, saved, loaded and played without a screen: one vocabulary for the setup screen, the save
-file, the command line and the routes. The game design of Skirmish (why it is the centre, what it is for) is
-[`game-modes.md`](../game-design/game-modes.md); the duel it plays is [`duels.md`](duels.md). Built so far: the save
-file, the `skirmish` command and the testing saves (`src/skirmish/`, `src/cli/skirmish.ts`, `skirmish-testing/`), script
-profiles and modifiers, the game playing a save on its screen through `playNext` (`src/cli/skirmish-play.ts`), Save
-game and `--load` (`src/cli/skirmish-open.ts`, `src/cli/skirmish-files.ts`), the setup screen with New game and Load
-game (`src/cli/title-screens.ts`, `src/skirmish/setup.ts`), spectating, and playtest notes (`src/cli/notes.ts`); what
-is left is in the Skirmish milestone ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md))._
+file, the command line and the routes. What a Skirmish is for a player is [`game-modes.md`](../game-design/game-modes.md);
+the duel it plays is [`duels.md`](duels.md); the `skirmish` command's manual is the comment it opens with
+([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); how a test plays one is [`testing-ground.md`](testing-ground.md),
+testing through Skirmishes. The code: the save and the steps the screen and the command share in `src/skirmish/`
+(`save.ts`, `request.ts`, `play.ts`), the screen in `src/cli/skirmish-play.ts` and `src/cli/skirmish-open.ts`, the setup
+screen in `src/cli/title-screens.ts`; what is left is in the Skirmish milestone
+([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md))._
 
 _Licence: Apache-2.0._
 
@@ -179,68 +179,23 @@ saves, in [`skirmish-testing/`](../../skirmish-testing), a folder for each purpo
 - **Refused whole**, as any save: every problem at once, by its place in the file, and once the shape is right the first
   unit that does not fit the ground (off the Grid, on rock, on another) as `start: ...`.
 
-The duel maps (`src/duel/maps.ts`) are still built in, by id; files for them in `maps/` wait for the setup screen.
+The built-in maps are files in `maps/` (`crossing.map.json`, `pocket.map.json`), read by `src/duel/maps.ts` and named by id.
 
-## 5. The `skirmish` command
+## 5. Headless, and the same everywhere
 
-**One command, new or loaded** (the owner, 2026-11-12): `--map` starts a battle, `--load` carries one on from its Build
-Phase, and what it does follows from what it is given. `skirmish --help` lists every option.
+**The `skirmish` command plays a Skirmish without a screen** (RULE for what is built — `tests/skirmish-command.test.ts`,
+`tests/skirmish-save.test.ts`): from a save or a new setup, it prints the brief of a slot a player plans, checks a plan
+by the Build Phase's rules, plays a round or the battle to its end, many battles over seeds or every pairing of
+Commanders, two sessions taking turns through one save, and keeps every round as a save, a report and the battle's
+log. Its manual, every option with examples, is the comment [`src/cli/skirmish.ts`](../../src/cli/skirmish.ts) opens
+with (`npm run skirmish -- --help`); how each kind of test uses it is [`testing-ground.md`](testing-ground.md).
 
-```text
-skirmish --map crossing --p1 build: --p2 script:rush                  a new battle: p1's brief
-skirmish --map crossing --p1 build:plan.json --p2 script:rush         p1's plan checked, nothing built
-skirmish --map crossing --p1 build:. --p2 script:rush --battle --save s.json
-                                                                      both sides build, the Battle Round, saved
-skirmish --load s.json                                                the brief of every slot a player plans
-skirmish --load s.json --p1 script:turtle --p2 build:                 who plans each slot, changed
-skirmish --load s.json --p1 build:plan.json --save s.json             p1's plan kept as the draft, no battle
-skirmish -f s.json --battle                                           load, play the next round, save over it
-skirmish -f s.json --p1 script:agro --p2 script:defensive --battle    two scripts, a round a command
-skirmish --map pocket --p1 build:a.json --p2 build:b.json --battle    two plans of your own, against each other
-skirmish -f s.json --battles 3                                        three rounds (every slot a script)
-skirmish --map crossing --p1 script:agro --p2 script:defensive --play-until-win --log battle.log
-                                                                      to the end, the battle's log beside
-skirmish --map crossing --p1 script:agro --p2 script:steady --play-until-win --seeds 1-20 --out runs/
-                                                                      twenty battles, a line each, a tally
-skirmish --map pocket --p1 build: --p2 script:agro-rich --modifiers fast-rounds
-```
-
-- **A slot** is `--p1`/`--p2` and who plans it: `build:<plan file>` (a player; a folder or `.` means the `build.json` in
-  it; `build:` alone means the save's draft, or nothing), or `script:<name>` (`script:` alone plans nothing). A slot
-  that builds by hand is saved as `player`; a load with no slots named keeps each slot's controller.
-- **Without `--battle` nothing changes**: a player's slot with a plan file has the plan checked by the Build Phase's rules
-  (the card it keeps, what it would build and where, each refusal with its reason, the credits left; exit code 1 when
-  anything is refused), and one without prints its brief (`--json` for the brief as data). A plan's clash with the
-  other side's over one tile is settled only once both are revealed, at the battle.
-- **Who plays**: both slots may be players (`--p1 build:a.json --p2 build:b.json`: an agent plays itself), both scripts
-  (the battle is watched), or one of each. A script slot names a **script profile** (`players/scripts/<name>.json`: the
-  duel script it plays, a line saying how, and its options; `agro`, `defensive`, `steady`, `agro-rich`) or a duel
-  script by its own name (`rush`, `turtle-area`). `agent:<profile>` is refused until agent players are built.
-- **How many rounds**: `--battle` plays one; `--battles <n>` plays n; `--play-until-win` plays until the battle ends, a
-  Nexus falling or the rounds running out, with the limit raised to 100 rounds unless `--rounds` says otherwise. A
-  player's plan plays one round, so many rounds need every slot a script. The report says what each side kept, built,
-  fielded and lost.
-- **Many seeds**: `--seeds 1-20` (or `1,4,9`) plays a new battle once a seed with `--battles` or `--play-until-win`, a
-  line each and then a tally (who won how often, how many by a Nexus falling, rounds on average). It never saves over a
-  file: `--out` keeps every round.
-- **Every round kept**: `--out <dir>` writes each round's save and report (`round-<n>.save.json`, `round-<n>.txt`), so a
-  battle can be read, copied and played on from any round.
-- **The battle's log**: `--log <file>` writes every round's Battle Round as `grid` writes a battle's log, at `--log-level`
-  (`info` unless set: what happened; `debug` and `trace` add the detail; `warn` only what looks wrong). The log is never
-  in a save.
-- **Credits shares**: `--p1-credits 1.25` gives a slot a quarter more income each round (a profile may carry one; the
-  slot's own wins). There is no difficulty setting.
-- **Modifiers**: `--modifiers fast-rounds,double-income` (or `none`), on a new battle or a loaded one, from the next
-  round: `fast-rounds` halves every Battle Round, `double-income` doubles every side's income. `--rounds` on a loaded
-  battle changes its limit from now on, never below the round it is at.
-- **`--save <file>`** writes the save (made or replaced); `-f <file>` loads and saves the same file.
-- A new battle's Commanders are `--p1-commander` and `--p2-commander` (Vasse against Dob Hunter unless named), with
-  `--seed` and `--ticks`; a loaded battle refuses them, and refuses `--map`: the battle so far depends on them.
-- **A map file** is a map drawn in full, as a save carries it (`--map rocks.json`); the save then carries the map.
-- An option nobody knows is refused by name.
-
-**`duel` stays beside it** for every pairing of every Commander over seeds (`duel bench`) and the file flow for two model
-players in two sessions (`duel new`, `wait`, `submit`). They fold into `skirmish` once save files carry them.
+**Parity with the command** (RULE — the owner, 2026-11-12: "formalize the concept that works both from the UI and from
+the CLI"): the screen and the command open a battle by the same steps (`src/skirmish/request.ts`: a new setup or a save
+read back, then each slot seated with its controller, its credits share and a player's plan file) and play every round
+through `playNext`. A slot is written the same everywhere: `--p1`/`--p2` with `build:<plan file>` (a player; `build:`
+alone, the draft or nothing) or `script:<profile>` (`script:` alone plans nothing); a loaded battle keeps its map,
+Commanders and seed, and each slot's controller unless named. A change to one is a change to both.
 
 **The game's own flags** take the same names: `terminal-nexus --load <file> [--p1 build:plan.json] [--p2 script:turtle]`
 (a plan file for p1 is laid on the first Build Phase, as a draft is), the route `skirmish?load=<file>` (with `p1` and
@@ -251,16 +206,11 @@ for a new battle under the command's names, the defaults for what it leaves out.
 
 ## 6. How an agent plays a Skirmish
 
-Three ways, from cheapest to fullest:
-
-1. **Round by round** — the usual one. `skirmish -f s.json` prints the brief of the slot it plays; the agent writes a
-   plan (`plan.json`, the duel's plan: a card to keep, buildings and where, building actions, the stance); `skirmish -f
-   s.json --p1 build:plan.json` checks it; `--battle` added plays it against the other slot's script and saves the next
-   Build Phase. Every round can be a file of its own to keep, compare, copy and change (`--load` one, `--save` another).
-2. **Variations from a person's save**: copy Mario's save and play it on with scripts in both slots (`--p1 script:turtle
-   --p2 script:rush --battle`), a round a command, or change its `draft` to try another plan.
-3. **On the screen**: the playtest script opens a save (`--load`) and presses keys, returning every screen as text, for
-   how it reads; `Esc v`, a name and Enter save where it stopped. The player's diary (Milestone 20) plays a whole battle this way.
+Round by round from a save file, as a person would: the brief of its slot, a plan written from it, the plan checked,
+then played against the other slot's script and saved at the next Build Phase; or one session a slot against another
+agent, through the same file; or on the screen by keys through the scripted playtest. The commands for each are
+[`testing-ground.md`](testing-ground.md), testing through Skirmishes. The player's diary (Milestone 20) plays a whole
+battle on the screen this way.
 
 ## 7. Spectating
 

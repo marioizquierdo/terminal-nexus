@@ -17,26 +17,29 @@ export function slotAsk(text: string, profiles?: Profiles): SlotAsk {
   return { controller: text }
 }
 
-/** A setup with the controllers asked for in place of its own; a slot not asked for keeps its controller. */
-export function withControllers(setup: SaveSetup, asks: Readonly<Partial<Record<Slot, SlotAsk>>>): SaveSetup {
-  const slots = { ...setup.slots }
-  for (const slot of SLOTS) {
-    const ask = asks[slot]
-    if (ask !== undefined) slots[slot] = { ...slots[slot], controller: ask.controller }
-  }
-  return { ...setup, slots }
-}
+/** Why the game's screen cannot play a setup, by kind: an agent in a slot, two players, or p2 as the only player. */
+export type ScreenRefusal = Readonly<{ kind: "agent"; slot: Slot } | { kind: "two-players" } | { kind: "p2-player" }>
 
 /**
- * Why the game's screen cannot play a setup, or `null`: the screen plays p1 as its player against a script in p2, or
- * watches two scripts (spectating). An agent waits for the agent players' milestone, p2 as the screen's only player is
- * not built, and two players wait for Versus.
+ * **What the screen can play**, or why not (`null`: it can): p1 as its player against a script in p2, or two scripts to
+ * watch (spectating). An agent waits for the agent players' milestone, p2 as the screen's only player is not built,
+ * and two players wait for Versus. The setup screen (`startProblem`) and a save opened on the screen (`screenProblem`)
+ * say it each in their own words.
  */
-export function screenProblem(setup: SaveSetup): string | null {
+export function screenRefusal(setup: SaveSetup): ScreenRefusal | null {
   const agent = SLOTS.find((slot) => controllerKind(setup.slots[slot].controller) === "agent")
-  if (agent !== undefined) return `${agent} is ${setup.slots[agent].controller}: agent players are not built yet (give it a script, --${agent} script:steady)`
+  if (agent !== undefined) return { kind: "agent", slot: agent }
   const players = SLOTS.filter((slot) => controllerKind(setup.slots[slot].controller) === "player")
-  if (players.length === 2) return "both slots are players: two players at one screen wait for Versus (give one slot a script, --p2 script:balanced)"
-  if (players.length === 1 && players[0] !== "p1") return "the screen plays p1 as its player: p2 as the player is not built yet (swap the slots' controllers, --p1 build: --p2 script:balanced)"
+  if (players.length === 2) return { kind: "two-players" }
+  if (players.length === 1 && players[0] !== "p1") return { kind: "p2-player" }
   return null
+}
+
+/** Why a save or a command line's slots cannot open on the screen, in the command line's words, or `null`. */
+export function screenProblem(setup: SaveSetup): string | null {
+  const refusal = screenRefusal(setup)
+  if (refusal === null) return null
+  if (refusal.kind === "agent") return `${refusal.slot} is ${setup.slots[refusal.slot].controller}: agent players are not built yet (give it a script, --${refusal.slot} script:steady)`
+  if (refusal.kind === "two-players") return "both slots are players: two players at one screen wait for Versus (give one slot a script, --p2 script:balanced)"
+  return "the screen plays p1 as its player: p2 as the player is not built yet (swap the slots' controllers, --p1 build: --p2 script:balanced)"
 }

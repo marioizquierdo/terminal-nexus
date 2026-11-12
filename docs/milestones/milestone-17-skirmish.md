@@ -86,7 +86,7 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
 - [x] **`skirmish`**, one command: `--map` or `--load`/`-f`; with no plan the brief of every slot a player plans; with a
       plan given at its slot (`--p1 build:plan.json`) the plan checked by the Build Phase's rules, each refusal with its
       reason; with `--battle` both sides built and the Battle Round played; `--save` writes the next Build Phase.
-      `npm run skirmish`. `duel` keeps the bench and the two-session file flow until they fold in.
+      `npm run skirmish`. `duel` folded into it on 2026-11-12 (step 17J, the last item).
 - [x] Slots as `--p1`/`--p2` with `build:<file>` or `script:<name>`; a load keeps each slot's controller unless one is
       named; a loaded battle refuses a new map, seed or Commander. The log is never in a save.
 - [x] **Determinism holds across a save**: saving after every round, loading and playing on gives the same hashes as
@@ -188,6 +188,13 @@ for the concept from the files, the documents and the code.
       Battle Round and prints `grid`'s report.
 - [x] The duel maps as files in `maps/` (`crossing.map.json`, `pocket.map.json`, the shape a save draws a map in), read by
       `src/duel/maps.ts` and offered by id.
+- [x] **`duel` folded into `skirmish`** ([his words](../history/feedback/2026-11-12-skirmish-command.md): "there's no
+      need to have two commands for the same thing"): every pairing of Commanders from both sides over seeds
+      (`--commanders`), two sessions playing one save a slot each (`--wait`, `--ready`), and a finished battle's every
+      report on loading it. The command's file is its manual and its options alone; the work is in its modules, the
+      steps the screen shares in `src/skirmish/request.ts`; each document says the command at its own level (the
+      manual in the code, the testing uses in the testing ground, the duel's rules in its page, the game in the game
+      modes). The `cmd:` player, a command run each round, is gone: a model plays through the save file.
 
 ### Step 17K — Playing it
 

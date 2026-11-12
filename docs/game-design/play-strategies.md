@@ -1,7 +1,7 @@
 # Terminal Nexus — play strategies
 
-_What duels have taught about playing a Build Phase well, as advice a player can act on. A model player reads this
-page in its brief (`npm run duel`, [`duels.md`](../system-design/duels.md)), so each entry is written to it: one thing
+_What battles have taught about playing a Build Phase well, as advice a player can act on. A model player reads this
+page in its brief (`npm run skirmish`, [`duels.md`](../system-design/duels.md)), so each entry is written to it: one thing
 to do or not to do, why, and the measurement it comes from. Add an entry when a measured duel or a playtest teaches
 something a player could use; change or remove one when a later measurement says otherwise. Never an entry no
 measurement or playtest backs._

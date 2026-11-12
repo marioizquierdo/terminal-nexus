@@ -1,15 +1,12 @@
 // The duel (src/duel/): two Commander Armies on one map, a round at a time — each side's Nexus Pulse and Build Phase
 // planned blind and revealed together, then a Battle Round between them. Here: a duel resolves the same every run, a
 // plan is held to the Build Phase's rules, what one side keeps changes its own content and never the other's, two
-// buildings on one tile are both refused, a plan is read leniently, the brief says what a player needs, and the file
-// protocol plays a round once both plans are in.
+// buildings on one tile are both refused, a plan is read leniently, and the brief says what a player needs. Two sessions
+// playing one battle through its save are the skirmish command's (tests/skirmish-command.test.ts).
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
-import { join } from "node:path"
-import { main, playStrategies } from "../src/cli/duel.ts"
+import { playStrategies } from "../src/cli/play-strategies.ts"
 import type { DuelSetup, DuelState, Roster, SidePlan } from "../src/duel/index.ts"
 import { armyOf, briefOf, duelArmy, handOf, loadoutOf, newDuel, playDuel, playRound, readPlan, SCRIPTED } from "../src/duel/index.ts"
 import { hashOf } from "../src/state/canonical.ts"
@@ -131,28 +128,6 @@ test("a player that reads words finds the play strategies in its brief, just bef
   assert.ok(taught > 0 && taught < text.indexOf("## Your plan"), "the strategies come before the plan")
   // A script reads the data, which carries no strategies: the brief without them is whole.
   assert.ok(!briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A").text.includes("What duels have taught"))
-})
-
-test("the file protocol: a round plays once both sides have handed in a plan, and each side's next brief is written", () => {
-  const dir = mkdtempSync(join(tmpdir(), "duel-"))
-  try {
-    const lines: string[] = []
-    const write = (line: string): void => {
-      lines.push(line)
-    }
-    assert.equal(main(["new", "--dir", dir, "--a", "vasse", "--b", "averno", "--rounds", "2", "--ticks", "120"], write), 0)
-    writeFileSync(join(dir, "a.json"), '{"power": 1, "build": [{"building": "barracks", "at": "forward"}], "stance": "hold"}')
-    writeFileSync(join(dir, "b.json"), '{"power": 0, "build": [], "stance": "attack"}')
-    main(["submit", "--dir", dir, "--side", "A", "--plan", join(dir, "a.json")], write)
-    assert.ok(lines.some((line) => /waiting for side B/.test(line)))
-    main(["submit", "--dir", dir, "--side", "B", "--plan", join(dir, "b.json")], write)
-    assert.ok(lines.some((line) => /^round 1: ended/.test(line)))
-    lines.length = 0
-    assert.equal(main(["wait", "--dir", dir, "--side", "B", "--timeout", "1"], write), 0)
-    assert.match(lines.join("\n"), /# Duel, round 2 of 2: you are side B/)
-  } finally {
-    rmSync(dir, { recursive: true, force: true })
-  }
 })
 
 // Moved from the retired run's tests (tests/run-draft.test.ts): a roster is the duel's own, which a Skirmish's battle

@@ -1,19 +1,19 @@
-// Opening a Skirmish on the screen, and writing one from it: the files and the clock a Skirmish's route and Save game
-// need, kept apart from the pure play (`./skirmish-play.ts`) and the pure route (`./route.ts`). The game
-// (`terminal-nexus --load`, `--at skirmish...`), the title menu's Skirmish row and the scripted playtest all open one
-// here, so a slot named on any command line (`--p1`, `--p2`) means the same everywhere — the `skirmish` command's words
-// (`src/skirmish/slots.ts`).
+// Opening a Skirmish on the screen: the files and the clock a Skirmish's route needs, kept apart from the pure play
+// (`./skirmish-play.ts`) and the pure route (`./route.ts`). The game (`terminal-nexus --load`, `--at skirmish...`), the
+// setup screen's New game and Load game, and the scripted playtest all open one here.
 //
-// **The seam for the setup screen** (the Skirmish milestone's next screen): the title menu's Skirmish opens
-// `openSkirmish({})`, the defaults on a seed from the clock. The setup screen will hand a setup of its own instead —
-// `skirmishLevel(save)` with the map, the slots and the seed it chose — and Load game a file, as `--load` does here.
+// **Parity with the `skirmish` command** (`./skirmish.ts`): a battle is opened by the same steps the command takes
+// (`src/skirmish/request.ts`: a new battle or a save read back, then the slots seated), under the same words (`--p1`,
+// `--p2`, `build:<plan file>`, `script:<profile>`), and played by the same `playNext`; so a battle asked for on one opens
+// and plays as it would on the other. What differs is what a screen can play (`screenProblem`): p1 as its player, or
+// two scripts to watch.
 
-import { readPlan } from "../duel/index.ts"
+import type { SlotChange } from "../skirmish/request.ts"
+import { loadedBattle, newBattle, seat } from "../skirmish/request.ts"
 import type { Profiles, SaveFile, Slot } from "../skirmish/save.ts"
 import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
-import { newSetup, readSave, SLOTS } from "../skirmish/save.ts"
-import type { SlotAsk } from "../skirmish/slots.ts"
-import { screenProblem, slotAsk, withControllers } from "../skirmish/slots.ts"
+import { SLOTS } from "../skirmish/save.ts"
+import { screenProblem, slotAsk } from "../skirmish/slots.ts"
 import { clockSeed } from "../skirmish/words.ts"
 import type { LevelDestination, SkirmishDestination } from "./route.ts"
 import { skirmishLevel } from "./skirmish-play.ts"
@@ -54,50 +54,41 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
     } catch (error) {
       throw new Error(`cannot read the save ${ask.load}: ${error instanceof Error ? error.message : String(error)}`)
     }
-    const { save: loaded, problems } = readSave(text, profiles)
-    if (loaded === null) throw new Error(`${ask.load} is not a save the game can load:\n  ${problems.join("\n  ")}`)
-    save = loaded
+    save = loadedBattle(text, ask.load, profiles)
   } else {
     const named = ask.setup
-    save = {
-      format: "terminal-nexus.save/1",
-      setup: newSetup({
+    save = newBattle(
+      {
         seed: ask.seed ?? clockSeed(now()),
         ...(named?.map === undefined ? {} : { map: named.map }),
         ...(named?.modifiers === undefined ? {} : { modifiers: named.modifiers }),
-        slots: {
-          p1: named?.p1Commander === undefined ? {} : { commander: named.p1Commander },
-          p2: named?.p2Commander === undefined ? {} : { commander: named.p2Commander },
-        },
-      }),
-    }
-    const { problems: setupProblems } = readSave(JSON.stringify(save), profiles)
-    if (setupProblems.length > 0) throw new Error(`that Skirmish cannot be set up:\n  ${setupProblems.join("\n  ")}`)
+        commanders: { ...(named?.p1Commander === undefined ? {} : { p1: named.p1Commander }), ...(named?.p2Commander === undefined ? {} : { p2: named.p2Commander }) },
+      },
+      profiles,
+    )
   }
-  const asks: Partial<Record<Slot, SlotAsk>> = {}
+  const changes: Partial<Record<Slot, SlotChange>> = {}
   const problems: string[] = []
   for (const slot of SLOTS) {
     // The command line's --p1/--p2 over the route's p1/p2.
     const written = options.slots?.[slot] ?? ask.setup?.[slot]
     if (written === undefined) continue
     try {
-      asks[slot] = slotAsk(written, profiles)
+      changes[slot] = { ask: slotAsk(written, profiles) }
     } catch (error) {
       problems.push(`--${slot} ${written}: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
   if (problems.length > 0) throw new Error(problems.join("\n"))
-  const setup = withControllers(save.setup, asks)
+  // The same seating the `skirmish` command does: a plan file given for p1 is the plan so far, laid on the Build Phase
+  // as it opens, as a save's draft is. The screen plans only p1, so only p1's is kept.
+  const seated = seat(save, changes, read)
+  const { setup } = seated
   const refused = screenProblem(setup)
   if (refused !== null) throw new Error(`the game cannot open this Skirmish: ${refused}`)
-  // A plan file given for p1 is the plan so far: laid on the Build Phase as it opens, as a save's draft is.
-  let draft = save.draft
-  const planFile = asks.p1?.planFile
-  if (planFile !== undefined && planFile !== "") {
-    const { plan, problems: planProblems } = readPlan(read(planFile))
-    if (planProblems.length > 0) throw new Error(`p1's plan (${planFile}):\n  ${planProblems.join("\n  ")}`)
-    draft = { ...draft, p1: plan }
-  }
+  if (seated.problems.length > 0) throw new Error(seated.problems.join("\n"))
+  const p1 = seated.plans.p1
+  const draft = p1 === undefined ? save.draft : { ...save.draft, p1 }
   if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a testing save: it plays one Battle Round in grid (grid <file>), not on the game's screen`)
   const opened: SaveFile = { ...save, setup, ...(draft === undefined ? {} : { draft }) }
   // A file named without a folder is the working folder's: said so, so Save game writes it back there, not into the saves folder.

@@ -1,59 +1,48 @@
 ---
 name: skirmish
-description: Play Skirmish battles headless to test a change — the skirmish command (bin/skirmish.ts) from a save, a round at a time or to the end, scripts or your own plans on either side, many seeds with a tally, the battle's log — and fight Commander Armies against each other (duel bench, or a model agent planning each side through files) to see how an army spends its power curve. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
+description: Play Skirmish battles headless to test a change — the skirmish command (bin/skirmish.ts) from a save or a new setup, a round at a time or to the end, scripts or your own plans on either side, many seeds with a tally, every pairing of Commanders, two model agents taking turns through one save, the battle's log — to see how an army spends its power curve. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
 ---
 
-# Duels: armies against each other
+# Skirmishes: armies against each other, headless
 
-The rules, the brief, the plan format and the biases are in
-[`docs/system-design/duels.md`](../../../docs/system-design/duels.md); this is the procedure. One battle played from a
-save file, a round at a time, is the `skirmish` command (`npm run skirmish -- --help`,
-[`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md)): use it to play a person's save on, or to try a plan
-of your own against a script round by round. Benches and the two-session file flow stay here.
+Where each piece is, so this page stays the procedure:
 
-**Round by round, as an agent plays a Skirmish** ([`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md),
-how an agent plays a Skirmish): copy a save (`cp saves/crossing-round-4.save.json tmp/s.json`), read the brief
-(`npm run skirmish -- -f tmp/s.json`), write a plan, check it (`--p1 build:plan.json`), play it (`--battle`, which saves
-the next Build Phase over the file), and repeat; `--out tmp/runs/` keeps every round's save and report. To see a round
-on screen, the same file opens in the scripted playtest (`node scripts/playtest.mjs --load tmp/s.json`), with
-`--p1 script:<profile>` to watch both sides. The saves in `saves/` say which shows what (DEVELOPMENT.md, how to see a
-change).
+- **The command's manual** is the comment [`src/cli/skirmish.ts`](../../../src/cli/skirmish.ts) opens with
+  (`npm run skirmish -- --help`): every option, what it refuses, the exit codes.
+- **How each kind of test uses it**, with the commands and the task to give a model agent:
+  [`testing-ground.md`](../../../docs/system-design/testing-ground.md), testing through Skirmishes.
+- **The rules, the brief, the plan format, formations and the biases**: [`duels.md`](../../../docs/system-design/duels.md).
+- **The save file**: [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md).
 
-## 1. A scripted bench first (seconds, free)
+## 1. Every pairing first (seconds, free)
 
 ```bash
-npm run duel -- bench --seeds 1-6 --rounds 8 --out .playtest/bench.json
+npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-until-win
 ```
 
-Every pairing of every Commander, from both sides, for each script (`balanced`, `rush`, `turtle`). Read a pairing
-across both sides: neither end of the map is favoured (`tests/fairness.test.ts`), but a seed's hand is its own. A
-sweep like 12–0 under one script is a lead to explain from a report (`play --out <dir>` writes every round's), not a
-result.
+Every pair of Commanders, each from both ends of the map, once a seed; run it again with other scripts (`agro`,
+`defensive`, or a script by name: `rush`, `turtle-area`). Read a pairing across both sides: neither end of the map is
+favoured (`tests/fairness.test.ts`), but a seed's hand is its own. A sweep like 12–0 under one script is a lead to
+explain from a battle's report (`--out <dir>` keeps every round's, `--log` the Battle Round's own lines), not a result.
 
-## 2. Formations: a tight army against a loose one
-
-Where a side builds decides how tight its army fights (duels.md, formations). Set one against the other:
+## 2. One battle, read closely
 
 ```bash
-npm run duel -- play --a vasse --b dob --player-a script:rush-block --player-b script:rush-apart --seed 1
-node bin/measure.ts run --spec quick --parts duels --players rush --formations block,apart --jobs 4 \
-  --routing "<the rules, in a few words>" --question "<what it must answer>"
+npm run skirmish -- --map pocket --p1 script:agro --p2 script:defensive --play-until-win --out .playtest/rounds --log .playtest/battle.log
+npm run skirmish -- --load .playtest/rounds/round-3.save.json --p1 script:steady --battle     # play on from any round
 ```
 
-The second plays `rush-block` against `rush-apart` from both ends for every pair of Commanders and seed, and says
-who won by formation and how tight each met the enemy. Any script takes `-block`, `-apart` or `-zones` (its own
-places, as the bare name); any script also comes with area damage (`rush-area`, `rush-area-block`), buying a Battery
-or a Fuse Shed first each round. A model player states `"formation"` in its plan; the brief tells it what each wins and
-loses.
+Formations (`rush-block` against `rush-apart`) and the power curve over many battles are the measurement's
+(`node bin/measure.ts run --spec quick --parts duels --players rush --formations block,apart`, the `remeasure` skill).
 
 ## 3. Model against model (about a minute and 75 thousand small-model tokens a side)
 
-1. `npm run duel -- new --dir .playtest/<name> --a <commander> --b <commander> --seed <n> --rounds 8`
-2. Start **two background agents on a small, cheap model**, one a side, with the task in duels.md's "Model against
-   model" (fill in the side and the directory). Name the only commands they may run and tell them to call no
+1. `npm run skirmish -- --map crossing --p1-commander <id> --p2-commander <id> --p1 build: --p2 build: --seed <n> --save .playtest/<name>.save.json`
+2. Start **two background agents on a small, cheap model**, one a slot, with the task in testing-ground.md (fill in
+   the slot and the file). Name the only commands they may run (`--wait`, then `--ready`) and tell them to call no
    other tool: small agents wander.
-3. When both report, `npm run duel -- status --dir .playtest/<name>`; every round's report sits beside `result.md`.
-4. Play the pairing swapped (A and B) and on a second seed before saying anything about it.
+3. When both report, `npm run skirmish -- --load .playtest/<name>.save.json` prints every round's report.
+4. Play the pairing swapped (p1 and p2) and on a second seed before saying anything about it.
 
 ## 4. Report it as direction
 
@@ -61,7 +50,7 @@ Give the numbers (who won, how: a Nexus falling, health share or damage; credits
 and one sentence on why from the reports. Say every time that a scripted or small-model player is not a good
 player. Anything an army needs changed becomes a question for Mario with a recommendation, not a quiet retune.
 
-**What a duel teaches about playing goes in the play strategies** ([`play-strategies.md`](../../../docs/game-design/play-strategies.md)):
+**What a battle teaches about playing goes in the play strategies** ([`play-strategies.md`](../../../docs/game-design/play-strategies.md)):
 one entry of advice a player can act on, with the measurement in brackets, or a change to an entry a new measurement
-contradicts. A model player reads that page in its brief, so what one duel learns the next one plays with. Never an
+contradicts. A model player reads that page in its brief, so what one battle learns the next one plays with. Never an
 entry no measurement or playtest backs.

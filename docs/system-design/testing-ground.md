@@ -20,15 +20,15 @@ the tool measures a few general things, and a session that needs another measure
 | Is this better, how often, how surely, at what cost? | a **trial**: `grid <save> --seeds 1-12 --swap` with a variant, or a trial file |
 | What did my change move? | `grid <trial> --against HEAD --profile` |
 | Did a refactor change no outcome at all? | `node scripts/profile-routes.ts --out <file>` before and after, then `diff` |
-| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --battle`, a round a command, or a plan of your own with `--p1 build:plan.json` ([`skirmish-saves.md`](skirmish-saves.md), how an agent plays a Skirmish) |
+| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --battle`, a round a command, or a plan of your own with `--p1 build:plan.json` (section 9) |
 | How does it read on screen, round by round? | the **scripted playtest from a save**: `node scripts/playtest.mjs --load saves/crossing-round-4.save.json --keys "..."` (no `--load`: `saves/crossing-new.save.json`); `--p1 script:<profile>` watches both scripts; a playtest note (`!`) opens at its moment with `--note`. Which save shows what is in DEVELOPMENT.md, how to see a change |
-| How do whole armies play, with a Build Phase each round? | duels: `bin/duel.ts` with scripted players (`balanced`, `rush`, `turtle`) or a model ([`duels.md`](duels.md)); many with `measure run --parts duels` |
+| How do whole armies play, with a Build Phase each round? | **Skirmishes headless**: the `skirmish` command, script against script over seeds (`--seeds`), every pairing of Commanders (`--commanders`), or a model a side (section 9); many with `measure run --parts duels` |
 | How does the power curve play? | `measure run --spec quick` or `full`, `measure compare` ([`measurement.md`](measurement.md), the [`remeasure` skill](../../.claude/skills/remeasure/SKILL.md)) |
 | Must this stay true? | a rule's testing save and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |
 
 Trials ask about troops: how units move, choose, arrange themselves and fight, on ground chosen to show it. Duels and
 measurements ask about the game: what Build Phase choices do over rounds. A change to troops starts with trials and
-ends with whatever duels its `remeasure` row asks for.
+ends with whatever Skirmishes and duels its `remeasure` row asks for.
 
 ## 2. The loop
 
@@ -202,7 +202,86 @@ somewhere to go**, its own target or an enemy Nexus, as in every battle the game
 `tests/testing-saves.test.ts`). A new testing save for the bench is drawn at 48 by 16, mirrored exactly, each side's target the enemy
 Nexus, and checked even before anything is read on it: the same army on both sides, `--swap`, a dozen seeds.
 
-## 9. Principles
+## 9. Testing through Skirmishes
+
+**A Skirmish played headless is the one the screen plays** (RULE — `src/skirmish/play.ts`, `tests/skirmish-save.test.ts`):
+the `skirmish` command and the game's screen open a battle by the same steps and play every round through `playNext`,
+so the same save, seed and plans give the same battle, hash for hash, on Node and Bun. The command's manual is the
+comment it opens with ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), `npm run skirmish -- --help`); this section
+is how each kind of test uses it, cheapest first. The duel it plays, the brief and the plan are [`duels.md`](duels.md);
+the save file is [`skirmish-saves.md`](skirmish-saves.md).
+
+**A rule or a unit, in one Battle Round**: a testing save (section 8) plays its round and prints `grid`'s report.
+
+```bash
+npm run skirmish -- --load skirmish-testing/rules/melee-kill.save.json --battle
+grid melee-kill --headless --log-level info             # the same round, tick by tick
+```
+
+**Script against script**, a round at a time or to the end, with the battle's log and every round kept to read back:
+
+```bash
+npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-until-win \
+  --log .playtest/battle.log --log-level info --out .playtest/rounds
+```
+
+**Many seeds and a tally**: one new battle a seed, a line each, then who won how often and how (`--seeds 1-20`). Swap
+the slots' scripts and play again before reading a side into it: the two ends are mirrors, a seed's hands are not.
+
+```bash
+npm run skirmish -- --map pocket --p1 script:steady --p2 script:agro --play-until-win --seeds 1-20
+```
+
+**Every pairing of Commanders**, each from both ends of the map, once a seed, after a change to an army, a power or an
+ability. Read a pairing across both sides; a sweep under one script is a lead to explain from a battle's report, not a
+result.
+
+```bash
+npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-until-win
+```
+
+How tight an army fights (`rush-block` against `rush-apart`) and the power curve over many battles are the measurement's
+(`measure run --parts duels --formations block,apart`, [`measurement.md`](measurement.md)).
+
+**A plan of your own, round by round**, as an agent plays: the brief, a plan written from it, the plan checked (exit 2
+when the rules refuse part of it, each refusal with its reason), then played and saved over the file.
+
+```bash
+cp saves/crossing-round-4.save.json tmp/s.json
+npm run skirmish -- -f tmp/s.json                               # p1's brief
+npm run skirmish -- -f tmp/s.json --p1 build:tmp/plan.json      # checked, nothing built
+npm run skirmish -- -f tmp/s.json --p1 build:tmp/plan.json --battle
+```
+
+**A person's save played on**: copy Mario's save and play it with scripts in both slots (`--p1 script:turtle --p2
+script:rush --battle`), or change its `draft` to try another plan; `--out` keeps every round as a save of its own to
+compare, copy and play on.
+
+**Model against model**: two sessions play one save, a slot each, through the file. Make the save with both slots
+players, then start one agent a side, in the background, on a small model, each with this task (its slot and file
+filled in): _"Repeat until the battle is over: run `npm run skirmish -- -f <file> --wait <slot> --timeout 100` (run it
+again if it exits 3, still waiting; stop if it says THE BATTLE IS OVER); decide a plan from the brief; write it as one
+JSON object to `<plan file>`; run `npm run skirmish -- -f <file> --<slot> build:<plan file> --ready`. Only run those two
+commands and write your plan file; read nothing else. When it is over, reply with the result line and one sentence on
+your strategy."_ The plan handed in last plays the round. A six-round battle takes about a minute and some 75 thousand
+tokens of a small model a side; small agents wander, so name the only commands they may run. `--load <file>` afterwards
+prints every round's report.
+
+```bash
+npm run skirmish -- --map crossing --p1-commander averno --p2-commander dob --p1 build: --p2 build: --seed 11 --save .playtest/m1.save.json
+```
+
+**On screen, by keys**: the scripted playtest opens a save (`node scripts/playtest.mjs --load <save>`; told nowhere,
+`saves/crossing-new.save.json`) and returns every screen as text, the title menu and the setup screen included;
+`--p1 script:<profile>` watches two scripts. **An agent playing a whole Skirmish first** (Milestone 20) writes a
+player's diary before a person is asked. **A person** plays last: Skirmish on the title menu, `--load <save>`, or the
+browser page, and `!` saves the moment as a note that opens again where it was (`--note <file>`).
+
+**What these games are and are not.** A scripted or small-model player is not a good player: it shows what an army
+does in the hands of a plain plan, where its strengths come from, and where the rules or the brief let a player down.
+It does not show balance. Read the numbers for direction, the reports for why, and say so every time.
+
+## 10. Principles
 
 - **Set a battle up as the game sets it up.** A rule once seemed to cut blocked time by nine tenths: its units had
   stopped trying, on maps that gave no side a target. Hence the goal rule, and idle units counted beside stalled ones.

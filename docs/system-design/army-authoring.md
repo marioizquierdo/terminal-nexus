@@ -222,7 +222,7 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 2. A new skill that no kind expresses: a module in `src/abilities/` and a line in `ABILITIES`, with a test.
 3. A new kind of power: an entry in `EFFECTS` and its line in the `PowerEffect` union, with a test.
 4. One line in `src/shipped.ts`. Run `npm test`: the loader says what is wrong.
-5. Play her: `node bin/duel.ts play --a <id> --b vasse` (`duels.md`), and a story when she has one
+5. Play her: `npm run skirmish -- --map crossing --p1-commander <id> --p1 script:steady --p2 script:steady --play-until-win`, and against every Commander with `--commanders all --seeds 1-6` ([`testing-ground.md`](testing-ground.md), testing through Skirmishes), and a story when she has one
    (`stories/<id>/story.json`, its levels extending existing ones where they can).
 6. A test that she reads apart from the others where it counts (`tests/averno.test.ts` is the pattern).
 

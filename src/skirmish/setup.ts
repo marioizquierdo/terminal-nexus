@@ -11,6 +11,7 @@ import { DUEL_MAPS } from "../duel/index.ts"
 import type { Controller, Modifier, Profiles, SaveSetup, Slot, SlotSetup } from "./save.ts"
 import { controllerKind, MODIFIERS, newSetup, scriptOf, shareOf, SLOTS } from "./save.ts"
 import { commanderNameOf, mapNameOf } from "./words.ts"
+import { screenRefusal } from "./slots.ts"
 
 /** The maps New game offers, in order: the duel's built-in ones. */
 export const SETUP_MAPS: readonly string[] = Object.keys(DUEL_MAPS)
@@ -202,18 +203,14 @@ export function nextValue(setup: SaveSetup, field: SetupField, playerName: strin
   }
 }
 
-/**
- * Why the screen cannot start this setup, or `null`: an agent in a slot (not built yet), two players at one screen
- * (Versus), or p2 as the only player (the screen plays p1). No player at all is spectating, which it plays.
- */
+/** Why the setup screen cannot start this setup, in its own words (`screenRefusal`), or `null`: no player at all is
+ *  spectating, which it plays. */
 export function startProblem(setup: SaveSetup): string | null {
-  for (const slot of SLOTS) {
-    if (controllerKind(setup.slots[slot].controller) === "agent") return `${slot} is an agent: agent players are not built yet. Choose a player or a script.`
-  }
-  const players = SLOTS.filter((slot) => controllerKind(setup.slots[slot].controller) === "player")
-  if (players.length === 2) return "Two players at one screen wait for Versus: give one slot a script."
-  if (players.length === 1 && players[0] === "p2") return "The screen plays p1: make p1 the player and p2 a script, or both scripts to watch."
-  return null
+  const refusal = screenRefusal(setup)
+  if (refusal === null) return null
+  if (refusal.kind === "agent") return `${refusal.slot} is an agent: agent players are not built yet. Choose a player or a script.`
+  if (refusal.kind === "two-players") return "Two players at one screen wait for Versus: give one slot a script."
+  return "The screen plays p1: make p1 the player and p2 a script, or both scripts to watch."
 }
 
 /** Whether nobody plays at the screen: both slots scripts, a battle to watch. */
