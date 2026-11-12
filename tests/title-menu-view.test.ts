@@ -125,5 +125,5 @@ test("a body starts a row below the last row, wraps at words, and stops before t
   }
   // Too long to fit: cut off a blank row above the controls line, which still reads whole.
   assert.equal((lines[MENU_SIZE.height - 4] ?? "").slice(1, -1).trim(), "", "the body ran up against the controls line")
-  assert.match(lines[MENU_SIZE.height - 3] ?? "", /esc back {2}- {2}q quit/u)
+  assert.match(lines[MENU_SIZE.height - 3] ?? "", /esc back {2}- {2}! note {2}- {2}q quit {2}/u)
 })

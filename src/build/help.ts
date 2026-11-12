@@ -59,6 +59,7 @@ export type HintSituation =
   | "activity-logs"
   | "dialog"
   | "save-game"
+  | "note"
   | "banner-place"
   | "banner-stance"
   | "committed"
@@ -84,6 +85,7 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "game-menu":
     case "dialog":
     case "save-game":
+    case "note":
     case "banner-place":
     case "banner-stance":
       return state.popup
@@ -163,6 +165,7 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
   },
 
   "save-game": () => "Type a name, [enter] saves. [esc] back to the menu.",
+  note: () => "Type what you noticed, [enter] saves the note with this moment. [esc] back.",
 
   // --- A committed plan with no Pulse on screen (a Pulse says its own line) ---
   committed: () => "The plan is locked in. [esc] opens the menu.",
@@ -438,6 +441,7 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "q", text: "the game menu" },
         { keys: "d", text: "the Experiments (playtests)" },
         { keys: "?", text: "this page" },
+        { keys: "!", text: "a note: this moment, saved" },
         { keys: "ctrl+c", text: "quit at once" },
       ],
     },

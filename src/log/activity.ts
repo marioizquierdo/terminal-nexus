@@ -119,7 +119,7 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A popup opened over the Build Phase.",
     props: {
-      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog, save-game, banner-place, banner-stance." },
+      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog, save-game, note, banner-place, banner-stance." },
     },
   },
   "game.save": {
@@ -130,6 +130,15 @@ export const ACTIVITY_EVENTS = {
       saved: { type: "boolean", description: "Whether the file was written." },
       answer: { type: "string", description: "What the bottom line said: where it went, or why not." },
       round: { type: "number", description: "The Battle Round whose Build Phase was saved." },
+    },
+  },
+  "game.note": {
+    defaultLevel: "info",
+    description: "A playtest note (the ! key) was saved with its moment, or could not be.",
+    props: {
+      line: { type: "string", description: "The line typed." },
+      saved: { type: "boolean", description: "Whether the note was written." },
+      answer: { type: "string", description: "What the bottom line said: where it went, or why not." },
     },
   },
   "setting.change": {

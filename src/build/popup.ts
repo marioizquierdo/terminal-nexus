@@ -466,6 +466,25 @@ function saveGameSpec(context: BuildContext, state: BuildState): PopupSpec {
   }
 }
 
+/**
+ * **A note** (`!`, on every screen): one line about this moment, typed with a cursor after it, then `[enter] Save
+ * note`. Saved with the moment itself — the round as it opened, what was pressed since, the screen and the last
+ * Activity Logs events — so whoever reads it can open the game exactly here (`--note`).
+ */
+function noteSpec(context: BuildContext, state: BuildState): PopupSpec {
+  return {
+    title: "NOTE",
+    rows: [
+      { kind: "note", text: "What did you notice? One line; Enter alone is fine. Saved with this moment, to open again exactly here." },
+      ...(context.noteDestination === undefined ? [] : [{ kind: "note", text: context.noteDestination } as const]),
+      { kind: "blank" },
+      { kind: "text", text: `> ${state.noteField}_`, code: true, strong: true },
+      { kind: "blank" },
+      { kind: "option", hotkey: "enter", label: "Save note", command: { kind: "save-note" }, highlighted: true },
+    ],
+  }
+}
+
 /** What the Battle Round confirmation announces when a mission has nothing of its own to say. */
 export const DEFAULT_ROUND_TEXT = "Activate Nexus. Collect Resources. Spawn Units."
 
@@ -675,6 +694,8 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return dialogSpec(context, state)
     case "save-game":
       return saveGameSpec(context, state)
+    case "note":
+      return noteSpec(context, state)
     case "banner-place":
       return bannerPlaceSpec(context, state)
     case "banner-stance":

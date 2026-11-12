@@ -34,6 +34,7 @@ import { gameOpening } from "../src/playtest/build.ts"
 import { runGamePlaytest } from "../src/playtest/game.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 import { listSaves, savesFolder } from "../src/cli/skirmish-files.ts"
+import { notesFolder, terminalNoter } from "../src/cli/note-files.ts"
 import { ACTIVITY_FILTERS, formatActivityExport } from "../src/log/activity.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { parseColorDepth, parseTheme } from "../src/view/roles.ts"
@@ -55,6 +56,12 @@ const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <pat
                        unless given. With --at or --load, the keys may be left out
   --load <file>        a Skirmish save file, opened at its Build Phase with its plan so far
                        (what Save game writes): the same as --at "skirmish?load=<file>"
+  --note <file>        a playtest note (the ! key writes one), opened at its moment: its round as
+                       it opened, the commands pressed since replayed at their times; --keys go on
+                       from there. The settings it was played with unless --settings says others
+  --notes <dir>        where ! writes a note (default ~/.terminal-nexus/notes/; tmp/notes for a script)
+  --saves <dir>        the saves Load game lists (default ~/.terminal-nexus/saves/), then saves/
+  --player <name>      the name a Player slot shows on the setup screen (default player)
   --p1 <who>, --p2 <who>  who plays each slot of a Skirmish, as the skirmish command takes
                        them: build: (the screen; build:plan.json lays a plan on round 1's
                        Build Phase) or script:<name>. The screen plays p1
@@ -115,6 +122,8 @@ const { values } = parseArgs({
     force: { type: "boolean", default: false },
     activity: { type: "string" },
     player: { type: "string", default: "player" },
+    note: { type: "string" },
+    notes: { type: "string" },
     saves: { type: "string" },
     help: { type: "boolean", short: "h", default: false },
   },
@@ -129,7 +138,7 @@ if (activityFilter === undefined) {
   throw new Error(`--activity: no filter named "${values.activity}"; the filters are ${ACTIVITY_FILTERS.map((filter) => filter.name).join(", ")}`)
 }
 
-if (values.help || (values.keys === undefined && values.file === undefined && values.at === undefined && values.load === undefined)) {
+if (values.help || (values.keys === undefined && values.file === undefined && values.at === undefined && values.load === undefined && values.note === undefined)) {
   process.stdout.write(USAGE)
   process.exit(values.help ? 0 : 2)
 }
@@ -144,6 +153,7 @@ try {
   const slots = { ...(values.p1 === undefined ? {} : { p1: values.p1 }), ...(values.p2 === undefined ? {} : { p2: values.p2 }) }
   opening = gameOpening({ at: values.at, settings: values.settings, keys: script }, values.file, {
     ...(values.load === undefined ? {} : { load: values.load }),
+    ...(values.note === undefined ? {} : { note: values.note }),
     slots,
     profiles,
   })
@@ -175,6 +185,8 @@ const run = runGamePlaytest({
   playerName: values.player,
   saves: () => listSaves(profiles, savesDir),
   ...(values.saves === undefined ? {} : { savesFolder: savesDir }),
+  // A note (!) goes into the notes folder beside the settings unless --notes names another (tmp/notes for a script's own).
+  noter: terminalNoter(values.notes === undefined ? notesFolder() : resolve(values.notes)),
 })
 const last = run.frames.length - 1
 

@@ -49,6 +49,25 @@ import type { BuildCommand, ExportKind, RaidForecast } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
 
+/** A command pressed on a Build Phase, and when, in milliseconds since the round opened: what a note replays. */
+export type PressedCommand = Readonly<{ at: number; command: BuildCommand }>
+
+/**
+ * **The moment a note is about** (`!`): the line typed; the round as its Build Phase opened (its context and state, a
+ * draft laid included) and every command pressed since, with their times — enough to reach this moment again by
+ * replaying them (`BuildSession.replay`) — how long after the round opened it was; and the screen as it stood when `!`
+ * was pressed (its context and state, for the shell to draw as text).
+ */
+export type NoteMoment = Readonly<{
+  line: string
+  opened: Readonly<{ context: BuildContext; state: BuildState }>
+  pressed: readonly PressedCommand[]
+  at: number
+  screen: Readonly<{ context: BuildContext; state: BuildState }>
+  /** The screen as text when `!` was pressed, Battle Round and all, when the shell can draw it (`captureScreen`). */
+  screenText?: string
+}>
+
 export type BuildSessionOptions = Readonly<{
   context: BuildContext
   cursor: Coord
@@ -115,6 +134,13 @@ export type BuildSessionOptions = Readonly<{
    */
   onSetup?: (context: BuildContext) => void
   /**
+   * **A note's side effect** (`!`): the moment, to be written by the shell as a note file, which says how it went in a
+   * line for the bottom line. Absent: nothing is written, and the bottom line says so.
+   */
+  onNote?: (moment: NoteMoment) => Readonly<{ ok: boolean; text: string }>
+  /** The screen as text right now, as the shell draws it: asked the moment `!` is pressed, for the note. */
+  captureScreen?: () => string
+  /**
    * Whether a round that opens with a scene (`BuildContext.scene`: the mission's lines, a Commander's
    * return) plays it in the dialog before the player has the keyboard: on in the game, the browser page and
    * the scripted playtest. Off unless asked — a session a test builds directly — so every test that starts
@@ -180,6 +206,15 @@ export class BuildSession {
   private readonly keep: (context: BuildContext, card: PowerCard) => BuildContext
   private readonly onSave: NonNullable<BuildSessionOptions["onSave"]>
   private readonly onSetup: ((context: BuildContext) => void) | null
+  private readonly onNote: NonNullable<BuildSessionOptions["onNote"]>
+  /** The round as its Build Phase opened, and what has been pressed since, with when: what a note carries. */
+  private opened: Readonly<{ context: BuildContext; state: BuildState }>
+  private pressed: PressedCommand[] = []
+  /** The screen's clock when the round opened; `null` until the first time is heard. */
+  private openedAt: number | null = null
+  /** The screen as `!` found it, kept while the note is typed: what the note shows as the screen. */
+  private beforeNote: Readonly<{ context: BuildContext; state: BuildState; at: number; text?: string }> | null = null
+  private readonly captureScreen: (() => string) | null
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
@@ -211,6 +246,9 @@ export class BuildSession {
     this.onSave = options.onSave ?? ((): ReturnType<NonNullable<BuildSessionOptions["onSave"]>> => ({ ok: false, text: "This screen cannot write a save file." }))
     this.foresee = options.foresee ?? null
     this.onSetup = options.onSetup ?? null
+    this.onNote = options.onNote ?? ((): Readonly<{ ok: boolean; text: string }> => ({ ok: false, text: "This screen cannot write a note." }))
+    this.opened = { context: this.context, state: this.buildState }
+    this.captureScreen = options.captureScreen ?? null
     this.keep = options.keep ?? ((context, card) => ({ ...context, kept: [...(context.kept ?? []), card] }))
     this.barksOf = options.barksOf
     this.recordDialog(null)
@@ -260,6 +298,7 @@ export class BuildSession {
    */
   advance(now: number, hold = false): void {
     this.now = now
+    this.openedAt ??= now
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
     for (const command of this.presenter.due()) this.dispatch(command)
@@ -304,6 +343,8 @@ export class BuildSession {
     // Restart is the mission's, from round 1: the reducer starts a Build Phase over on the context it is
     // given, so it is given the first round's.
     if (command.kind === "restart") this.context = this.firstContext
+    // The note about to open: the screen as it stands, drawn by the shell before the popup covers it.
+    const screenBefore = command.kind === "open-note" && this.buildState.popup !== "note" ? this.captureScreen?.() : undefined
     const before = this.buildState
     this.buildState = applyBuildCommand(this.context, before, command)
     // A Nexus power was just picked: it is kept, and what it does is in the round's context from now on.
@@ -326,6 +367,9 @@ export class BuildSession {
     else if (before.committed && !this.buildState.committed) this.presenter = null
     // Save game asked to write: the shell writes it and says how it went, which the bottom line says.
     if (this.buildState.saveRequests > before.saveRequests) this.save()
+    // The note opened: the screen as it stood is what the note shows. Saved: the shell writes the moment.
+    if (this.buildState.popup === "note" && before.popup !== "note") this.beforeNote = { context: this.context, state: before, at: this.sinceOpened(), ...(screenBefore === undefined ? {} : { text: screenBefore }) }
+    if (this.buildState.noteRequests > before.noteRequests) this.note()
   }
 
   /**
@@ -539,6 +583,58 @@ export class BuildSession {
     this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
     this.presenter = null
     this.recordDialog(null)
+    // A new round: a note from here on replays from its opening.
+    this.opened = { context: this.context, state: this.buildState }
+    this.pressed = []
+    this.openedAt = this.now ?? null
+  }
+
+  /** A command from a key or a click, kept with its time for a note — not the note's own keys, which a replay would
+   *  open the note again with. */
+  private press(command: BuildCommand): void {
+    const own = command.kind === "open-note" || command.kind === "note-text" || command.kind === "save-note"
+    if (!own && this.buildState.popup !== "note") this.pressed.push({ at: this.sinceOpened(), command })
+    this.dispatch(command)
+  }
+
+  /** Milliseconds since the round opened, on the screen's clock. */
+  private sinceOpened(): number {
+    return Math.max(0, (this.now ?? 0) - (this.openedAt ?? this.now ?? 0))
+  }
+
+  /**
+   * **A note's moment, reached again**: each command pressed since the round opened, at its time after `base` (the
+   * screen's clock as the round opened here), and the clock moved on to `until` after it. The commands are kept as
+   * pressed, so a note made after a replay carries them too.
+   */
+  replay(pressed: readonly PressedCommand[], until: number, base: number = this.now ?? 0): void {
+    this.advance(base)
+    this.openedAt = base
+    for (const { at, command } of pressed) {
+      this.advance(base + at)
+      this.pressed.push({ at, command })
+      this.dispatch(command)
+    }
+    this.advance(base + until)
+  }
+
+  /** The note's line saved: the shell writes the moment and says how it went. Recorded as `game.note`. */
+  private note(): void {
+    const line = this.buildState.noteField.trim()
+    const screen = this.beforeNote ?? { context: this.context, state: this.buildState, at: this.sinceOpened() }
+    let answer: Readonly<{ ok: boolean; text: string }>
+    try {
+      answer = this.onNote({ line, opened: this.opened, pressed: [...this.pressed], at: screen.at, screen: { context: screen.context, state: screen.state }, ...(screen.text === undefined ? {} : { screenText: screen.text }) })
+    } catch (error) {
+      answer = { ok: false, text: `Note not saved: ${error instanceof Error ? error.message : String(error)}` }
+    }
+    this.buildState = applyBuildCommand(this.context, this.buildState, { kind: "note-result", ok: answer.ok, text: answer.text })
+    if (answer.ok) this.beforeNote = null
+    try {
+      this.log.log("game.note", { line, saved: answer.ok, answer: answer.text })
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
   }
 
   /** A round has opened: whether the player's Commander sits it out (`commander.out`) or the Nexus Pulse that opened
@@ -612,7 +708,7 @@ export class BuildSession {
     const command = mouse.press ? this.resolveDoubleClick(mouse, clicked, timing.now) : clicked
     if (command === null) return
     const before = this.buildState
-    this.dispatch(command)
+    this.press(command)
     if (mouse.press && timing.now !== undefined && this.buildState.planned.length > before.planned.length) {
       this.lastPlacingClick = { column: mouse.column, row: mouse.row, at: timing.now }
     }
@@ -649,7 +745,7 @@ export class BuildSession {
       return
     }
     const command = this.keyCommand(key, now, phase)
-    if (command !== null) this.dispatch(command)
+    if (command !== null) this.press(command)
   }
 
   /**

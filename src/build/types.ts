@@ -133,6 +133,14 @@ export type BuildCommand =
   /** What the shell answers once it has written the save, or failed to: the line the bottom says. A save written closes
    *  the popups; one that failed leaves the name to change. Sent by the session, never by a key. */
   | Readonly<{ kind: "save-result"; ok: boolean; text: string }>
+  /** `!`, on every screen: the note popup, one line to type about this moment, over whatever is open. */
+  | Readonly<{ kind: "open-note" }>
+  /** A key typed into the note's line (`text`), or Backspace taking the last character off (`text` absent). */
+  | Readonly<{ kind: "note-text"; text?: string }>
+  /** Enter in the note: save it (`BuildState.noteRequests`), which the session hands to the shell with the moment. */
+  | Readonly<{ kind: "save-note" }>
+  /** What the shell answers once the note is written, or not: the bottom line's words. Sent by the session. */
+  | Readonly<{ kind: "note-result"; ok: boolean; text: string }>
   /** `s` (or `p`), or the menu's last row, `[s] Start Battle Round` — open the Battle Round confirmation.
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
    *  while a building is armed. */
@@ -316,6 +324,7 @@ export type Popup =
   | "activity-logs"
   | "dialog"
   | "save-game"
+  | "note"
   | "banner-place"
   | "banner-stance"
 

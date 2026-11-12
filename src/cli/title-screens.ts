@@ -30,6 +30,7 @@ import { parseMouseClick } from "../title-menu/mouse.ts"
 import { shownSetting } from "../build/all-settings.ts"
 import type { ReadonlyCellFrame } from "../view/frame.ts"
 import { composeMenuFrame, MENU_LAYOUT } from "../view/menu.ts"
+import { frameToText } from "../view/frame.ts"
 import type { Destination, LevelDestination, TitlePlace } from "./route.ts"
 import { parseRoute } from "./route.ts"
 import { skirmishLevel } from "./skirmish-play.ts"
@@ -163,7 +164,22 @@ export type TitleScreensOptions = Readonly<{
   record?: ActivityLog
   /** A setup to open New game on, in place of the defaults: the battle a result's "Setup screen" came from. */
   setup?: SaveSetup
+  /** **A note** (`!`): the line typed, the screen's route and the screen as text, to be written by the host, which says
+   *  how it went. Absent: the note says this screen cannot write one. */
+  onNote?: (line: string, at: string, screen: string) => Readonly<{ ok: boolean; text: string }>
 }>
+
+/** The route each screen is at, for a note. */
+const SCREEN_ROUTES: Readonly<Record<TitleScreen, string>> = {
+  top: "menu",
+  settings: "settings",
+  story: "story",
+  about: "about",
+  skirmish: "skirmish?setup",
+  "new-game": "skirmish?setup=new",
+  "load-game": "skirmish?setup=load",
+  "load-edit": "skirmish?setup=load",
+}
 
 /**
  * **The title menu's screens**: one `MenuSession` a screen, the setup's rows rebuilt from the setup each time one
@@ -180,6 +196,8 @@ export class TitleScreens {
   private setup: SaveSetup
   /** The seed being typed, while the Seed row takes digits; `null` otherwise. */
   private seedText: string | null = null
+  /** The note being typed (`!`), and the screen as it stood when it opened; `null` otherwise. */
+  private noteLine: Readonly<{ line: string; screen: string }> | null = null
   /** The saves Load game lists, as last asked for. */
   private saves: readonly SaveEntry[] = []
   /** The save chosen in Load game, and its setup as changed so far. */
@@ -282,6 +300,11 @@ export class TitleScreens {
 
   /** One key: typed into the seed while it is being typed, or through the screen's own adapters. */
   handleKey(key: string): void {
+    if (this.noteLine !== null) return this.typeNote(key)
+    if (key === "!" && this.seedText === null) {
+      this.noteLine = { line: "", screen: frameToText(this.frame()) }
+      return
+    }
     if (this.seedText !== null && this.typeSeed(key)) return
     this.sessions[this.screenNow].handleKey(key, this.layout)
   }
@@ -347,6 +370,30 @@ export class TitleScreens {
       this.noticeNow = null
     }
     this.refreshSetup()
+  }
+
+  /** Whether a note is being typed. */
+  get typingNote(): boolean {
+    return this.noteLine !== null
+  }
+
+  /** A key while the note is typed: a character types, Backspace takes one off, Enter saves it, Esc goes back. */
+  private typeNote(key: string): void {
+    const note = this.noteLine
+    if (note === null) return
+    if (key === "\u001b") {
+      this.noteLine = null
+      this.noticeNow = "No note saved."
+    } else if (key === "\r" || key === "\n") {
+      const answer = this.options.onNote?.(note.line.trim(), SCREEN_ROUTES[this.screenNow], note.screen) ?? { ok: false, text: "This screen cannot write a note." }
+      this.options.record?.log("game.note", { line: note.line.trim(), saved: answer.ok, answer: answer.text })
+      this.noteLine = null
+      this.noticeNow = answer.text
+    } else if (key === "\u007f" || key === "\b") {
+      this.noteLine = { ...note, line: note.line.slice(0, -1) }
+    } else if ([...key].length === 1 && key >= " ") {
+      this.noteLine = { ...note, line: `${note.line}${key}`.slice(0, 200) }
+    }
   }
 
   /** A key while the seed is typed: a digit types, Backspace takes one off, Enter keeps it, Esc keeps the old one. A
@@ -513,12 +560,13 @@ export class TitleScreens {
 
   frame(): ReadonlyCellFrame {
     const info = SCREEN_INFO[this.screenNow]
-    const detail = this.detail()
+    const typing = this.noteLine
+    const detail = typing === null ? this.detail() : "Note: what did you notice? One line; Enter saves it with this screen, Esc goes back."
     const body = this.body()
     return composeMenuFrame(
       {
         state: this.list,
-        notice: this.noticeNow,
+        notice: typing === null ? this.noticeNow : `> ${typing.line}_`,
         glyphPack: this.settingsNow.glyphPack,
         subtitle: info.subtitle,
         showBack: info.showBack,

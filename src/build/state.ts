@@ -206,6 +206,8 @@ export type BuildContext = Readonly<{
    * buildings, and Start begins the round at once. Absent: a player plans it.
    */
   spectating?: boolean
+  /** Where a note goes, said in the note popup ("Saved in ~/.terminal-nexus/notes/."). Absent: the popup says nothing. */
+  noteDestination?: string
   /** Where the adapter writes a save, said in the Save game popup — "Saved under ~/.terminal-nexus/saves/ unless the
    *  name has a folder." Absent: the adapter cannot write one (the browser page), and Save game is dimmed. */
   saveDestination?: string
@@ -413,6 +415,11 @@ export type BuildState = Readonly<{
   /** How many times Save game has been asked to write, counting up: the session hands the round, the plan and the name
    *  to the shell each time it goes up, as it does an export (`activityExports`). */
   saveRequests: number
+  /** The note's line as typed so far (the note popup, `!`). */
+  noteField: string
+  /** How many times a note has been asked to be saved, counting up: the session hands the moment to the shell each
+   *  time it goes up, as it does a save (`saveRequests`). */
+  noteRequests: number
   /** **The battle banner** the player planted (the Battle banner Experiment), or `null` for the round's default
    *  (`defaultBanner`): what the Battle Round panel says, and what starting the round hands the match. */
   banner: PlantedBanner | null
@@ -509,6 +516,8 @@ export function createBuildState(
     activityExports: 0,
     saveField: context.saveName ?? "",
     saveRequests: 0,
+    noteField: "",
+    noteRequests: 0,
     banner: context.placedBanner ?? null,
     bannerDraft: null,
     bannerDrop: null,
@@ -1706,6 +1715,9 @@ function openFromGameMenu(state: BuildState, popup: Popup, row: GameMenuRow, hig
 /** The longest name Save game takes. */
 const SAVE_NAME_LIMIT = 60
 
+/** How long a note's line may be: one line, typed. */
+const NOTE_LIMIT = 200
+
 /** Why Save game cannot write this round, or `null`: a round of a mode that saves (a Skirmish's), on a screen that can
  *  write a file, at its Build Phase (the owner, 2026-11-12: "saving and loading game is always for the build phase"). */
 export function saveRefusal(context: BuildContext, state: Pick<BuildState, "committed">): string | null {
@@ -2189,6 +2201,20 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       if (state.popup !== "save-game") return state
       if (state.saveField.trim() === "") return { ...state, status: status("Name the save first.", "warning") }
       return { ...state, saveRequests: state.saveRequests + 1, status: status(`Saving ${state.saveField}...`) }
+
+    case "open-note":
+      // Over whatever is open, the Battle Round included: a note is about the moment, whatever it is.
+      if (state.popup === "note" || state.popup === "save-game") return state
+      return { ...pushPopup(state, "note", 0), noteField: "", status: status("Note: what did you notice? [enter] saves it with this moment.") }
+
+    case "note-text":
+      return state.popup !== "note" ? state : { ...state, noteField: command.text === undefined ? state.noteField.slice(0, -1) : `${state.noteField}${command.text}`.slice(0, NOTE_LIMIT) }
+
+    case "save-note":
+      return state.popup !== "note" ? state : { ...state, noteRequests: state.noteRequests + 1, status: status("Saving the note...") }
+
+    case "note-result":
+      return command.ok ? { ...popPopup(state), noteField: "", status: status(command.text, "success") } : { ...state, status: status(command.text, "danger") }
 
     case "save-result":
       return command.ok ? { ...closePopups(state), status: status(command.text, "success") } : { ...state, status: status(command.text, "danger") }

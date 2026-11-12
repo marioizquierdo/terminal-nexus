@@ -22,6 +22,7 @@
 import { runMenu } from "../cli/menu.ts"
 import { runBuildPhase } from "../cli/build-phase.ts"
 import { shippedSaves } from "../cli/title-screens.ts"
+import type { Noter } from "../cli/notes.ts"
 import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
 import type { SaveSetup } from "../skirmish/save.ts"
 import type { Exporter } from "../cli/build-phase.ts"
@@ -217,6 +218,15 @@ const exporter: Exporter = {
   },
 }
 
+/** The page's note (`!`): the note's text copied, and shown in the settings text box under the screen to copy from. */
+const noter: Noter = {
+  destination: "Copied to the clipboard, and shown in the text box under the screen: paste it to whoever asked.",
+  write: (text) => {
+    void exporter.export(text, "settings")
+    return { ok: true, text: "Note copied to the clipboard and the text box under the screen." }
+  },
+}
+
 /**
  * Stops the screen running, if any, and shows `screen` as the one starting: its mode button pressed — Menu for
  * any place on the title menu, Build Phase for any story level and round, a replay for itself — its keys on
@@ -353,13 +363,13 @@ async function startAt(at: string | undefined, from: string, demo?: Demo): Promi
         showScreen("menu", "skirmish?setup=new")
         toSetup(setup)
       }
-      return runBuildPhase({ ...common, settings, at, exporter, onSetup: back })
+      return runBuildPhase({ ...common, settings, at, exporter, noter, onSetup: back })
     }
-    track(runMenu({ ...common, at: destination, open, saves, profiles: SHIPPED_PROFILES }))
+    track(runMenu({ ...common, at: destination, open, saves, profiles: SHIPPED_PROFILES, noter }))
     return
   }
   const { keys } = launch
-  track(runBuildPhase({ ...common, at: destination, experiments, ...(keys === undefined ? {} : { startKeys: keys }), exporter }))
+  track(runBuildPhase({ ...common, at: destination, experiments, ...(keys === undefined ? {} : { startKeys: keys }), exporter, noter }))
 }
 
 function renderKeyBar(): void {

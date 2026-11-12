@@ -26,6 +26,11 @@ import type { LevelDestination } from "../cli/route.ts"
 import { openSkirmish } from "../cli/skirmish-open.ts"
 import { readGameFile, savesFolder, skirmishSaver } from "../cli/skirmish-files.ts"
 import type { Profiles, Slot } from "../skirmish/save.ts"
+import type { Noter } from "../cli/notes.ts"
+import { noteOf, noteOpening, noteText, readNote } from "../cli/notes.ts"
+import { terminalNoter } from "../cli/note-files.ts"
+import type { NoteMoment, PressedCommand } from "../view/build-session.ts"
+import { frameToText } from "../view/frame.ts"
 import type { GameStart } from "./game.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
@@ -89,6 +94,10 @@ export type BuildPlaytestOptions = Readonly<{
   /** A Skirmish's result's Setup screen chosen: the run goes on at the title menu's New game (`./game.ts`). Absent: the
    *  result offers no such row. */
   onSetup?: (context: BuildContext) => void
+  /** What a note (`!`) is written with: the notes folder unless given (`terminalNoter`). */
+  noter?: Noter
+  /** A note's moment to open at (`--note`): its commands replayed at their times before the first frame. */
+  replay?: Readonly<{ pressed: readonly PressedCommand[]; until: number }>
 }>
 
 /** The script's own clock, in milliseconds: shared by every screen a run passes through. */
@@ -185,10 +194,12 @@ export class BuildDriver {
       })
     const play = options.play ?? at.level.play
     const saver = skirmishSaver(options.savesFolder ?? savesFolder())
+    const noter = options.noter ?? terminalNoter()
     const context: BuildContext = {
       ...opened,
       settings,
       saveDestination: saver.destination,
+      noteDestination: noter.destination,
       exportDestination: "Not copied anywhere: this is a scripted playtest.",
       activity,
       activityExportDestination: "Not copied anywhere: this is a scripted playtest.",
@@ -227,9 +238,22 @@ export class BuildDriver {
       onSave: saver.onSave,
       // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
       ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
+      captureScreen: () => frameToText(this.compose()),
+      onNote: (moment: NoteMoment) => {
+        const screen = moment.screenText ?? frameToText(composeBuildFrame({ context: moment.screen.context, state: moment.screen.state, layout, glyphPack: moment.screen.state.settings.glyphPack, reducedMotion: true }, "monochrome"))
+        const note = noteOf(moment, at.level, { build: "scripted playtest", screen, activity: activity.entries(), startedAt: activity.startedAt })
+        return noter.write(noteText(note))
+      },
       scenes: options.scenes ?? true,
     })
     this.build = build
+    // The round opens on the script's clock now: a note's times count from here.
+    build.advance(clock.now)
+    // A note's moment: its commands at their times on the script's clock, which then reads the moment.
+    if (options.replay !== undefined) {
+      build.replay(options.replay.pressed, options.replay.until, clock.now)
+      clock.now += options.replay.until
+    }
     build.setKeyReleases(options.keyReleases ?? options.steps.some((step) => step.kind === "key" && step.phase !== undefined))
 
     // The raid's trail's clock, as the live loop keeps one, on the script's clock; and the survivors' regroup's.
@@ -297,8 +321,19 @@ export class BuildDriver {
 export function gameOpening(
   text: LaunchText,
   keysFrom = "--keys",
-  skirmish: Readonly<{ load?: string; slots?: Partial<Record<Slot, string>>; now?: () => number; profiles?: Profiles }> = {},
+  skirmish: Readonly<{ load?: string; note?: string; slots?: Partial<Record<Slot, string>>; now?: () => number; profiles?: Profiles }> = {},
 ): Readonly<{ start: GameStart; steps: readonly PlaytestStep[]; settings?: string }> {
+  // A note: its moment, the settings it was played with unless a settings text is given, and the keys after it.
+  if (skirmish.note !== undefined) {
+    if (skirmish.load !== undefined || text.at !== undefined) throw new Error("--note opens a note's moment: no --at or --load beside it")
+    const { note, problems } = readNote(readGameFile(skirmish.note), skirmish.profiles)
+    if (note === null) throw new Error(`${skirmish.note} is not a note the game can open:\n  ${problems.join("\n  ")}`)
+    const { launch, problems: keyProblems } = readLaunch({ keys: text.keys, settings: text.settings ?? note.settings }, DEFAULT_LEVEL_ROUTE)
+    if (keyProblems.length > 0) throw new Error(keyProblems.map(({ error }) => `${keysFrom}: ${error.message}`).join("\n"))
+    const opened = noteOpening(note, skirmish.profiles === undefined ? {} : { profiles: skirmish.profiles })
+    const start: GameStart = opened.kind === "title" ? { kind: "title", place: opened.at.place } : { ...opened.at, replay: { pressed: opened.pressed, until: opened.until } }
+    return { start, steps: launch.keys ?? [], ...(launch.settings === undefined ? {} : { settings: launch.settings }) }
+  }
   if (skirmish.load === undefined && text.at !== undefined) {
     const { launch, problems } = readLaunch(text, DEFAULT_LEVEL_ROUTE)
     if (problems.length === 0 && launch.destination.kind === "title") {

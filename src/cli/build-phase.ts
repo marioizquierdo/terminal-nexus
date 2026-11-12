@@ -40,6 +40,10 @@ import type { ExportKind } from "../build/types.ts"
 import type { ActivityLog, HostName } from "../log/activity.ts"
 import type { SaveSetup } from "../skirmish/save.ts"
 import { isSkirmish, positionOf } from "./skirmish-play.ts"
+import type { Noter } from "./notes.ts"
+import { noteOf, noteText } from "./notes.ts"
+import type { NoteMoment, PressedCommand } from "../view/build-session.ts"
+import { frameToText } from "../view/frame.ts"
 import { activity as globalActivity } from "../log/activity.ts"
 
 const ESC = "\u001b"
@@ -124,6 +128,12 @@ export type BuildPhaseOptions = Readonly<{
    * handed the battle's setup to open New game on once the terminal is back. Absent: the result offers no such row.
    */
   onSetup?: (setup: SaveSetup) => void
+  /** What a note (`!`) is written with: a file in the notes folder, the clipboard on the browser page. Absent: the
+   *  note popup says this screen cannot write one. */
+  noter?: Noter
+  /** **A note's moment, reached again** (`--note`): the commands pressed since its round opened, replayed at their
+   *  times on the script's clock, then `until` after it, before the player has the keyboard. */
+  replay?: Readonly<{ pressed: readonly PressedCommand[]; until: number }>
 }>
 
 export async function runBuildPhase(options: BuildPhaseOptions): Promise<number> {
@@ -147,6 +157,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       ? {}
       : { exportDestination: options.exporter.destination.settings, activityExportDestination: options.exporter.destination.activity }),
     ...(options.saver === undefined ? {} : { saveDestination: options.saver.destination }),
+    ...(options.noter === undefined ? {} : { noteDestination: options.noter.destination }),
   })
   const terminalSize = (): { columns: number; rows: number } => ({
     columns: stdout.columns ?? FLOOR.width,
@@ -242,7 +253,12 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     pendingSave = pendingSave.then(() => done)
   }
 
-  const build = new BuildSession({
+  /** The Battle Round on screen as a frame shows it now, for a note's screen. */
+  const pulseNow = (): Readonly<{ pulse?: NonNullable<ReturnType<BuildSession["pulseFrame"]>> }> => {
+    const pulse = build.pulseFrame()
+    return pulse === undefined ? {} : { pulse }
+  }
+  const build: BuildSession = new BuildSession({
     context,
     // On the level's own Nexus, as every later round opens (`moveOn`); the starter map's spot without one.
     cursor: nexusTile(context) ?? STARTER_START_CURSOR,
@@ -259,6 +275,17 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     ...(play.resume === undefined ? {} : { resume: play.resume }),
     ...(options.saver === undefined ? {} : { onSave: options.saver.onSave }),
     ...(options.onSetup === undefined ? {} : { onSetup: toSetup }),
+    ...(options.noter === undefined
+      ? {}
+      : {
+          captureScreen: () => frameToText(composeBuildFrame({ context: build.round, state: build.state, layout, glyphPack: build.state.settings.glyphPack, reducedMotion: true, ...pulseNow() }, "monochrome")),
+          onNote: (moment: NoteMoment) => {
+            const noter = options.noter as Noter
+            const screen = moment.screenText ?? frameToText(composeBuildFrame({ context: moment.screen.context, state: moment.screen.state, layout, glyphPack: moment.screen.state.settings.glyphPack, reducedMotion: true, ...pulseNow() }, "monochrome"))
+            const note = noteOf(moment, at.level, { written: new Date((options.now ?? Date.now)()).toISOString(), ...(options.buildId === undefined ? {} : { build: options.buildId }), screen, activity: log.entries(), startedAt: log.startedAt })
+            return noter.write(noteText(note))
+          },
+        }),
     scenes: options.scenes ?? true,
   })
 
@@ -279,6 +306,9 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       if (leaving) break
     }
   }
+
+  // A note's moment: its commands replayed on the script's clock, as start keys are, before the live clock takes over.
+  if (options.replay !== undefined) build.replay(options.replay.pressed, options.replay.until, 0)
 
   // **The screen's clock lives here, never in the reducer**. Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's

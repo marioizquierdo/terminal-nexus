@@ -73,7 +73,7 @@ function drawBorder(cells: BandCell[], size: { width: number; height: number }, 
  *  invented, since a stub screen still owes the player something true about the game. */
 const TAGLINE = "Build. Commit. Battle. Understand. Adapt."
 
-const BASE_CONTROLS = "arrows + enter, or a digit, or click a row"
+const BASE_CONTROLS = "arrows + enter, a key, or click a row"
 
 /** A comfortable line for reading — about the 66 characters typesetters aim for — narrower than the
  *  72 columns between the screen's margins, so a paragraph reads as a paragraph, not a wall. */
@@ -120,7 +120,7 @@ export function composeMenuFrame(
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
   const band = BANDS.chrome
-  const controls = `${BASE_CONTROLS}${input.showBack === true ? "  -  esc back" : ""}  -  q quit`
+  const controls = `${BASE_CONTROLS}${input.showBack === true ? "  -  esc back" : ""}  -  ! note  -  q quit`
 
   drawBorder(cells, size, pack)
 

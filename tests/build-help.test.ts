@@ -170,6 +170,7 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
   // Save game is put up by hand, as the dialog is: these sessions are on a story mission, where it is dimmed (it opens on
   // a Skirmish: tests/skirmish-play.test.ts).
   "save-game": [[(side) => ({ ...side.build.state, popup: "save-game" }), /^Type a name, \[enter\] saves\. \[esc\] back to the menu\.$/]],
+  note: [[(side) => keys(side, "!"), /^Type what you noticed, \[enter\] saves the note with this moment\. \[esc\] back\.$/]],
   // The battle banner's two panels, put up by hand as the dialog is: these sessions play with its Experiment off.
   "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^\[enter\] Place Target on .+\. Arrows move it, \[esc\] back\.$/]],
   "banner-stance": [[(side) => ({ ...side.build.state, popup: "banner-stance", bannerDraft: { x: 30, y: 12 } }), /^\[a\] aggressive, \[d\] defensive, up\/down and \[enter\]\. \[esc\] moves it again\.$/]],

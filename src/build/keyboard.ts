@@ -157,6 +157,17 @@ function popupOwnKey(key: string, popup: Popup): BuildCommand | null {
   }
 }
 
+/** The note key, on every screen (`!`): one line about this moment, saved with it. */
+export const NOTE_KEY = "!"
+
+/** A key in the note: Esc goes back, Enter saves, Backspace takes a character off, any other character types. */
+function noteCommand(key: string): BuildCommand | null {
+  if (key === ESC) return { kind: "cancel" }
+  if (key === "\r" || key === "\n") return { kind: "save-note" }
+  if (REMOVE_KEYS.has(key)) return { kind: "note-text" }
+  return [...key].length === 1 && key >= " " ? { kind: "note-text", text: key } : null
+}
+
 /** What a file's name may hold, typed into Save game's: letters, digits and `- _ . / ~`. */
 const NAME_KEY = /^[A-Za-z0-9._/~-]$/u
 
@@ -190,6 +201,9 @@ function highlightedChoice(rows: readonly PopupRow[]): PopupRow | undefined {
 function popupCommand(key: string, popup: Popup, context: KeyboardContext): BuildCommand | null {
   // Save game's name is typed: every key that can be in a file's name types, `x` and `q` too, so only Esc goes back.
   if (popup === "save-game") return saveNameCommand(key)
+  // The note's line is typed: every character, so only Esc goes back.
+  if (popup === "note") return noteCommand(key)
+  if (key === NOTE_KEY) return { kind: "open-note" }
   const back = backCommand(key)
   if (back !== null) return back
   // A message has nothing to choose: only the cancel above closes it ("clicking outside
@@ -258,6 +272,8 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
     return popupCommand(key, popup, context)
   }
   const focus = context.focus ?? "grid"
+  // `!` opens the note from anywhere, a Battle Round included.
+  if (key === NOTE_KEY) return { kind: "open-note" }
 
   // A Battle Round on screen takes its own playback keys first: Space pauses it rather than opening
   // Explore Map, and `r` watches it again. Everything else — the arrows that look around the map, Esc,

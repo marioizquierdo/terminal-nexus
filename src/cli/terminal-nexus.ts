@@ -33,6 +33,9 @@ import type { LevelDestination } from "./route.ts"
 import { openSkirmish } from "./skirmish-open.ts"
 import { listSaves, readGameFile, savesFolder, shownPath, skirmishSaver, terminalPlayerName } from "./skirmish-files.ts"
 import { readProfiles } from "../skirmish/profile-files.ts"
+import type { NoteFile, NoteOpening } from "./notes.ts"
+import { noteOpening, readNote } from "./notes.ts"
+import { terminalNoter } from "./note-files.ts"
 import type { SaveSetup } from "../skirmish/save.ts"
 import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
@@ -130,7 +133,7 @@ const SKIRMISH_FLAGS = ["p1", "p2"] as const
 /** Everything the game reads from its command line; anything else is refused rather than ignored, so a command
  *  pasted from an older note never opens somewhere it did not mean. (`grid` shares the parser and reads others.) */
 const GAME_FLAGS: ReadonlySet<string> = new Set(["help", "reduced-motion"])
-const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "load", "p1", "p2", "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
+const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "load", "note", "p1", "p2", "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
 
 /** What the game says for what it does not read: a removed flag names what replaced it, a retired option what
  *  changed (`RETIRED_OPTIONS`); anything else, --help. */
@@ -170,6 +173,9 @@ export async function main(argv: readonly string[]): Promise<number> {
     process.stderr.write("terminal-nexus: --load opens a save and --at a place: give one of them.\n")
     return 2
   }
+  // `--note <file>`: a playtest note's moment, its round opened and its commands replayed, then the keyboard is yours.
+  const notePath = args.options.get("note")
+  if (notePath !== undefined) return openNote(notePath, args)
   const at = load === undefined ? args.options.get("at") : `skirmish?load=${encodeURIComponent(load)}`
   const { launch, problems } = readLaunch({ at, settings: args.options.get("settings"), keys: args.options.get("keys") }, "menu")
   if (problems.length > 0) {
@@ -255,6 +261,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     saves: () => listSaves(profiles, folder),
     savesShown: shownPath(folder),
     readFile: readGameFile,
+    noter: terminalNoter(),
   }
 
   // A place on the title menu: the menu, opened where the route says; Skirmish hands the terminal to a battle's Build
@@ -273,6 +280,7 @@ export async function main(argv: readonly string[]): Promise<number> {
     experiments: imported.experiments,
     ...(launch.keys === undefined ? {} : { startKeys: launch.keys }),
     exporter: terminalExporter(process.stdout, exportPath()),
+    noter: terminalNoter(),
     onSetup: (setup) => {
       back = setup
     },
@@ -280,6 +288,48 @@ export async function main(argv: readonly string[]): Promise<number> {
   const returned = back as SaveSetup | null
   if (returned === null) return code
   return runMenu({ ...menu, settings: (await settingsStore.load()) ?? settings, at: { kind: "title", place: "new-game" }, setup: returned })
+}
+
+/** `--note <file>`: the note read and checked, refused whole with every problem; then its moment, on its settings. */
+async function openNote(path: string, args: ReturnType<typeof parseArgs>): Promise<number> {
+  const clash = ["at", "load", "p1", "p2", "keys"].filter((name) => args.options.has(name))
+  if (clash.length > 0) {
+    process.stderr.write(`terminal-nexus: --note opens a note's moment: not with ${clash.map((name) => `--${name}`).join(" or ")}.\n`)
+    return 2
+  }
+  let opened: NoteOpening
+  let note: NoteFile
+  try {
+    const profiles = readProfiles()
+    const read = readNote(readGameFile(path), profiles)
+    if (read.note === null) throw new Error(`${path} is not a note the game can open:\n  ${read.problems.join("\n  ")}`)
+    note = read.note
+    opened = noteOpening(note, { profiles })
+  } catch (error) {
+    process.stderr.write(`terminal-nexus: ${error instanceof Error ? error.message : String(error)}\n`)
+    return 2
+  }
+  const settingsStore = createSettingsStore(defaultSettingsPath())
+  const base: Settings = (await settingsStore.load()) ?? { ...DEFAULT_SETTINGS, colors: detectColorDepth() }
+  const imported = importSettings(args.options.get("settings") ?? note.settings, base)
+  const settings: Settings = {
+    colors: parseColorDepth(args.options.get("colors") ?? imported.settings.colors),
+    theme: parseTheme(args.options.get("theme") ?? imported.settings.theme),
+    glyphPack: parseGlyphPack(args.options.get("glyphs") ?? imported.settings.glyphPack),
+    reducedMotion: args.flags.has("reduced-motion") ? true : imported.settings.reducedMotion,
+  }
+  const buildId = currentCommit()
+  const common = { settings, settingsStore, backend: args.options.get("backend") ?? "auto", stdout: process.stdout, stdin: process.stdin, ...(buildId === undefined ? {} : { buildId }) }
+  if (opened.kind === "title") return runMenu({ ...common, at: opened.at, noter: terminalNoter() })
+  return runBuildPhase({
+    ...common,
+    at: opened.at,
+    saver: skirmishSaver(savesFolder()),
+    noter: terminalNoter(),
+    experiments: imported.experiments,
+    replay: { pressed: opened.pressed, until: opened.until },
+    exporter: terminalExporter(process.stdout, exportPath()),
+  })
 }
 
 /** `{ [slot]: value }` when the option was given. */

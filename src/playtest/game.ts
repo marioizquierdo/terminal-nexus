@@ -26,10 +26,16 @@ import { formatMouseClick } from "../title-menu/mouse.ts"
 import { BuildDriver } from "./build.ts"
 import type { PlaytestClock } from "./build.ts"
 import { UNTIMED_GAP_MS } from "./deliver.ts"
+import type { Noter } from "../cli/notes.ts"
+import { noteText, titleNoteOf } from "../cli/notes.ts"
+import { terminalNoter } from "../cli/note-files.ts"
+import type { PressedCommand } from "../view/build-session.ts"
 import type { PlaytestStep } from "./keys.ts"
 
 /** Where a game playtest opens: a title menu place, or a Build Phase. */
-export type GameStart = Readonly<{ kind: "title"; place: TitlePlace; setup?: SaveSetup }> | LevelDestination
+export type GameStart =
+  | Readonly<{ kind: "title"; place: TitlePlace; setup?: SaveSetup }>
+  | (LevelDestination & Readonly<{ replay?: Readonly<{ pressed: readonly PressedCommand[]; until: number }> }>)
 
 export type GamePlaytestOptions = Readonly<{
   steps: readonly PlaytestStep[]
@@ -48,6 +54,8 @@ export type GamePlaytestOptions = Readonly<{
   now?: () => number
   /** Where Save game writes a bare name (`BuildPlaytestOptions.savesFolder`). */
   savesFolder?: string
+  /** What a note (`!`) is written with: the notes folder unless given. */
+  noter?: Noter
 }>
 
 /** One step's screen: which screen drew it, the frame, and — on a Build Phase — its state. */
@@ -97,11 +105,14 @@ export function runGamePlaytest(options: GamePlaytestOptions): GamePlaytest {
   let build: BuildDriver | null = null
   let quit = false
 
-  const openBuild = (at: LevelDestination): void => {
+  const noter = options.noter ?? terminalNoter()
+  const openBuild = (at: GameStart & LevelDestination): void => {
     title = null
     build = new BuildDriver({
       steps: [],
-      at,
+      at: { kind: "level", level: at.level, round: at.round },
+      noter,
+      ...("replay" in at && at.replay !== undefined ? { replay: at.replay } : {}),
       settings,
       ...(options.columns === undefined ? {} : { columns: options.columns }),
       ...(options.rows === undefined ? {} : { rows: options.rows }),
@@ -135,6 +146,7 @@ export function runGamePlaytest(options: GamePlaytestOptions): GamePlaytest {
       onSettingsChange: (changed) => {
         settings = changed
       },
+      onNote: (line, at, screen) => noter.write(noteText(titleNoteOf(line, at, { build: "scripted playtest", screen, activity: activity.entries(), startedAt: activity.startedAt }))),
     })
     title.follow(place)
   }

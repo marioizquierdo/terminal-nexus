@@ -38,6 +38,8 @@ import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
 import { DEFAULT_PLAYER_NAME } from "../skirmish/setup.ts"
 import type { SaveEntry } from "./title-screens.ts"
 import { TitleScreens } from "./title-screens.ts"
+import type { Noter } from "./notes.ts"
+import { noteText, titleNoteOf } from "./notes.ts"
 
 export { SKIRMISH_ITEMS, TOP_LEVEL_ITEMS, settingsItems } from "./title-screens.ts"
 
@@ -92,6 +94,8 @@ export type MenuOptions = Readonly<{
   readFile?: (path: string) => string
   /** A setup New game opens on, in place of the defaults: the battle a result's Setup screen came from. */
   setup?: SaveSetup
+  /** What a note (`!`) is written with, here and in the Build Phase a Skirmish opens: absent, a note cannot be written. */
+  noter?: Noter
 }>
 
 export async function runMenu(options: MenuOptions): Promise<number> {
@@ -162,6 +166,14 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     saves: options.saves ?? ((): readonly SaveEntry[] => []),
     ...(options.savesShown === undefined ? {} : { savesShown: options.savesShown }),
     ...(options.setup === undefined ? {} : { setup: options.setup }),
+    ...(options.noter === undefined
+      ? {}
+      : {
+          onNote: (line: string, at: string, screen: string) => {
+            const note = titleNoteOf(line, at, { written: new Date(now()).toISOString(), ...(options.buildId === undefined ? {} : { build: options.buildId }), screen, activity: record.entries(), startedAt: record.startedAt })
+            return (options.noter as Noter).write(noteText(note))
+          },
+        }),
     record,
     onOpen: handOff,
     onSkirmishRoute: (destination) => {
@@ -306,6 +318,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       ...(options.activity === undefined ? {} : { activity: options.activity }),
       ...(options.exporter === undefined ? {} : { exporter: options.exporter }),
       ...(options.saver === undefined ? {} : { saver: options.saver }),
+      ...(options.noter === undefined ? {} : { noter: options.noter }),
       onSetup: toSetup,
       at,
     })
