@@ -15,7 +15,7 @@ export { readPlan } from "./plan.ts"
 export type { ReadPlan } from "./plan.ts"
 export { inFormation, SCRIPTED, scriptedName, scriptedNames, scriptedPlayer } from "./players.ts"
 export type { Player } from "./players.ts"
-export { checkPlan, handOf, mapOf, musterOf, newDuel, placementsOf, playRound, standingOf, titleOf, zonePoint } from "./round.ts"
+export { checkPlan, handOf, incomeOf, mapOf, musterOf, newDuel, placementsOf, playRound, standingOf, titleOf, zonePoint } from "./round.ts"
 export { armyOf, duelArmy, loadoutOf, restrictedTo } from "./sides.ts"
 export type { DuelArmy } from "./sides.ts"
 

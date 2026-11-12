@@ -85,7 +85,8 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
 
 - **`setup`** is exactly what the setup screen chooses, under the same names. A file with only `format` and `setup` is
   a new battle. `map` is a built-in map's id (`crossing`, `pocket`) or a map drawn in full (`id`, `name`, `rows`, and
-  `nexus` and `hold` by slot), as a map file is. No modifier is built yet, and Elimination is the only goal.
+  `nexus` and `hold` by slot), as a map file is. A slot may carry `options` (`credits`, its share of the income).
+  Elimination is the only goal.
 - **`state`** is written by the game: the duel's own state between rounds (`DuelState`, `src/duel/types.ts`), in the
   engine's words, where side A is `p1` and side B is `p2`: the round to play, each side's credits, kept powers and
   absent Commander, every round's report, the result once there is one, and `carried`, what stands on the Grid. The
@@ -129,7 +130,14 @@ skirmish --load s.json                                                the brief 
 skirmish --load s.json --p1 script:turtle --p2 build:                 who plans each slot, changed
 skirmish --load s.json --p1 build:plan.json --save s.json             p1's plan kept as the draft, no battle
 skirmish -f s.json --battle                                           load, play the next round, save over it
-skirmish -f s.json --p1 script:rush --p2 script:turtle --battle       two scripts, a round a command
+skirmish -f s.json --p1 script:agro --p2 script:defensive --battle    two scripts, a round a command
+skirmish --map pocket --p1 build:a.json --p2 build:b.json --battle    two plans of your own, against each other
+skirmish -f s.json --battles 3                                        three rounds (every slot a script)
+skirmish --map crossing --p1 script:agro --p2 script:defensive --play-until-win --log battle.log
+                                                                      to the end, the battle's log beside
+skirmish --map crossing --p1 script:agro --p2 script:steady --play-until-win --seeds 1-20 --out runs/
+                                                                      twenty battles, a line each, a tally
+skirmish --map pocket --p1 build: --p2 script:agro-rich --modifiers fast-rounds
 ```
 
 - **A slot** is `--p1`/`--p2` and who plans it: `build:<plan file>` (a player; a folder or `.` means the `build.json` in
@@ -139,16 +147,35 @@ skirmish -f s.json --p1 script:rush --p2 script:turtle --battle       two script
   (the card it keeps, what it would build and where, each refusal with its reason, the credits left; exit code 1 when
   anything is refused), and one without prints its brief (`--json` for the brief as data). A plan's clash with the
   other side's over one tile is settled only once both are revealed, at the battle.
-- **`--battle`** builds both sides' plans (a script plans from its own brief) and plays the Battle Round; the report says
-  what each side kept, built, fielded and lost.
+- **Who plays**: both slots may be players (`--p1 build:a.json --p2 build:b.json`: an agent plays itself), both scripts
+  (the battle is watched), or one of each. A script slot names a **script profile** (`players/scripts/<name>.json`: the
+  duel script it plays, a line saying how, and its options; `agro`, `defensive`, `steady`, `agro-rich`) or a duel
+  script by its own name (`rush`, `turtle-area`). `agent:<profile>` is refused until agent players are built.
+- **How many rounds**: `--battle` plays one; `--battles <n>` plays n; `--play-until-win` plays until the battle ends, a
+  Nexus falling or the rounds running out, with the limit raised to 100 rounds unless `--rounds` says otherwise. A
+  player's plan plays one round, so many rounds need every slot a script. The report says what each side kept, built,
+  fielded and lost.
+- **Many seeds**: `--seeds 1-20` (or `1,4,9`) plays a new battle once a seed with `--battles` or `--play-until-win`, a
+  line each and then a tally (who won how often, how many by a Nexus falling, rounds on average). It never saves over a
+  file: `--out` keeps every round.
+- **Every round kept**: `--out <dir>` writes each round's save and report (`round-<n>.save.json`, `round-<n>.txt`), so a
+  battle can be read, copied and played on from any round.
+- **The battle's log**: `--log <file>` writes every round's Battle Round as `grid` writes a battle's log, at `--log-level`
+  (`info` unless set: what happened; `debug` and `trace` add the detail; `warn` only what looks wrong). The log is never
+  in a save.
+- **Credits shares**: `--p1-credits 1.25` gives a slot a quarter more income each round (a profile may carry one; the
+  slot's own wins). There is no difficulty setting.
+- **Modifiers**: `--modifiers fast-rounds,double-income` (or `none`), on a new battle or a loaded one, from the next
+  round: `fast-rounds` halves every Battle Round, `double-income` doubles every side's income. `--rounds` on a loaded
+  battle changes its limit from now on, never below the round it is at.
 - **`--save <file>`** writes the save (made or replaced); `-f <file>` loads and saves the same file.
 - A new battle's Commanders are `--p1-commander` and `--p2-commander` (Vasse against Dob Hunter unless named), with
-  `--seed`, `--rounds` and `--ticks`; a loaded battle refuses them, and refuses `--map`: the battle so far depends on them.
+  `--seed` and `--ticks`; a loaded battle refuses them, and refuses `--map`: the battle so far depends on them.
 - **A map file** is a map drawn in full, as a save carries it (`--map rocks.json`); the save then carries the map.
 - An option nobody knows is refused by name.
 
-**`duel` stays beside it** for what is not one battle: `duel bench` (every pairing over seeds) and the file flow for two
-model players in two sessions (`duel new`, `wait`, `submit`). They fold into `skirmish` once save files carry them.
+**`duel` stays beside it** for every pairing of every Commander over seeds (`duel bench`) and the file flow for two model
+players in two sessions (`duel new`, `wait`, `submit`). They fold into `skirmish` once save files carry them.
 
 **The game's own flags** take the same names once Save game lands: `terminal-nexus --load <file> [--p2 script:turtle]`,
 the route `skirmish?load=<file>`, and `skirmish?map=pocket&seed=7` for a new battle.

@@ -26,8 +26,34 @@ export const SLOT_OF: Readonly<Record<Side, Slot>> = { A: "p1", B: "p2" }
 export const GOALS = ["elimination"] as const
 export type Goal = (typeof GOALS)[number]
 
-/** The modifiers built so far: none yet (they are the Skirmish milestone's next step). */
-export const MODIFIERS: readonly string[] = []
+/**
+ * The modifiers: named rules laid over a battle, a playground for experiments (the owner, 2026-11-12: "as
+ * experimentation ground"). The ones that do not earn a place are removed.
+ *
+ * - **fast-rounds**: every Battle Round lasts half as long.
+ * - **double-income**: every side's round income is doubled.
+ */
+export const MODIFIERS = ["fast-rounds", "double-income"] as const
+export type Modifier = (typeof MODIFIERS)[number]
+
+/**
+ * A script profile (`players/scripts/<name>.json`): a named scripted player — the script it plays (one of the duel's
+ * scripts, `src/duel/players.ts`), a line saying how it plays, and its options. The same scripts the duels and the
+ * measurements play.
+ */
+export type ScriptProfile = Readonly<{
+  script: string
+  about: string
+  options?: SlotOptions
+}>
+
+/** A slot's options: its credits share, a share of the curve's income (1 unless set). There is no difficulty setting
+ *  (the owner, 2026-11-11): a share is how a side is made richer or poorer, and may be set on any slot. */
+export type SlotOptions = Readonly<{ credits?: number }>
+
+/** The script profiles a run knows, by name. Empty when none were read: the duel's own scripts still play by name. */
+export type Profiles = ReadonlyMap<string, ScriptProfile>
+const NO_PROFILES: Profiles = new Map()
 
 /** The script that plans nothing: builds nothing, keeps no card, holds. What `script:` with no name plays. */
 export const IDLE_SCRIPT = "idle"
@@ -39,7 +65,7 @@ export const IDLE_SCRIPT = "idle"
 export type Controller = string
 
 /** A slot as the setup chooses it: its Commander, and who plans it. */
-export type SlotSetup = Readonly<{ commander: string; controller: Controller }>
+export type SlotSetup = Readonly<{ commander: string; controller: Controller; options?: SlotOptions }>
 
 /** A map drawn in full inside a save, as `DuelMap` is but by slot. */
 export type SaveMap = Readonly<{
@@ -88,16 +114,35 @@ export type ReadSave = Readonly<{ save: SaveFile | null; problems: readonly stri
 /** The kind of a controller: `player`, `script` or `agent`. */
 export const controllerKind = (controller: Controller): string => controller.split(":")[0] ?? ""
 
-/** The script a `script:` controller names. */
+/** The profile or script a `script:` controller names. */
 export const scriptOf = (controller: Controller): string => controller.slice("script:".length) || IDLE_SCRIPT
 
+/** The duel script a `script:` controller plays: its profile's script, or the name itself when it is one. `null` for
+ *  a name that is neither. */
+export function scriptPlayed(controller: Controller, profiles: Profiles = NO_PROFILES): string | null {
+  const name = scriptOf(controller)
+  if (name === IDLE_SCRIPT) return IDLE_SCRIPT
+  const profile = profiles.get(name)
+  if (profile !== undefined) return profile.script
+  return scriptedName(name) === undefined ? null : name
+}
+
+/** A slot's credits share: its own option, else its profile's, else 1. */
+export function shareOf(slot: SlotSetup, profiles: Profiles = NO_PROFILES): number {
+  if (slot.options?.credits !== undefined) return slot.options.credits
+  if (controllerKind(slot.controller) !== "script") return 1
+  return profiles.get(scriptOf(slot.controller))?.options?.credits ?? 1
+}
+
 /** What is wrong with a controller, or `null`. */
-export function controllerProblem(controller: Controller): string | null {
+export function controllerProblem(controller: Controller, profiles: Profiles = NO_PROFILES): string | null {
   const kind = controllerKind(controller)
   if (kind === "player") return null
   if (kind === "script") {
     const script = scriptOf(controller)
-    return script === IDLE_SCRIPT || scriptedName(script) !== undefined ? null : `no script "${script}"`
+    if (scriptPlayed(controller, profiles) !== null) return null
+    const known = [...profiles.keys()]
+    return `no script or profile "${script}"${known.length === 0 ? "" : ` (profiles: ${known.join(", ")}; or a script: balanced, rush, turtle and their variants)`}`
   }
   if (kind === "agent") return "agent players are not built yet (the agent players' milestone)"
   return `"${controller}" is not a controller: player, script:<name> or agent:<name>`
@@ -126,20 +171,26 @@ const groundOf = (map: SaveSetup["map"]): ReturnType<typeof duelGrid> => {
 
 // --- Between a save and a duel -----------------------------------------------------------------------------------------
 
-/** The duel a save's setup describes. */
-export function duelSetupOf(setup: SaveSetup): DuelSetup {
+/** The duel a save's setup describes, its modifiers and the slots' credits shares laid over it. */
+export function duelSetupOf(setup: SaveSetup, profiles: Profiles = NO_PROFILES): DuelSetup {
+  const modifiers = new Set(setup.modifiers)
+  const income = (slot: Slot): number => shareOf(setup.slots[slot], profiles) * (modifiers.has("double-income") ? 2 : 1)
+  const shares = { A: income("p1"), B: income("p2") }
   return {
     map: duelMapOf(setup.map),
     seed: setup.seed,
     rounds: setup.rounds,
-    pulseTicks: setup.roundTicks,
+    pulseTicks: modifiers.has("fast-rounds") ? Math.max(1, Math.round(setup.roundTicks / 2)) : setup.roundTicks,
     commanders: { A: setup.slots.p1.commander, B: setup.slots.p2.commander },
+    ...(shares.A === 1 && shares.B === 1 ? {} : { income: shares }),
   }
 }
 
-/** The duel as a save left it: its state with the map's ground put back, or a new duel when it has none. */
-export function duelOf(save: SaveFile): DuelState {
-  const setup = duelSetupOf(save.setup)
+/** The duel as a save left it: its state with the map's ground put back, or a new duel when it has none. The setup is
+ *  always the save's own (with `profiles` for the shares), so a changed controller or modifier takes effect from the
+ *  next round. */
+export function duelOf(save: SaveFile, profiles: Profiles = NO_PROFILES): DuelState {
+  const setup = duelSetupOf(save.setup, profiles)
   if (save.state === undefined) return newDuel(setup)
   const { carried, ...rest } = save.state
   return { ...rest, setup, carried: carried === null ? null : { ...carried, grid: groundOf(save.setup.map) } }
@@ -214,7 +265,7 @@ function mapProblems(map: unknown): string[] {
 }
 
 /** The problems with a slot. */
-function slotProblems(slot: Slot, value: unknown): string[] {
+function slotProblems(slot: Slot, value: unknown, profiles: Profiles): string[] {
   if (!isRecord(value)) return [`setup.slots.${slot}: { commander, controller }`]
   const problems: string[] = []
   const commander = value["commander"]
@@ -229,14 +280,23 @@ function slotProblems(slot: Slot, value: unknown): string[] {
   const controller = value["controller"]
   if (typeof controller !== "string") problems.push(`setup.slots.${slot}.controller: player, script:<name> or agent:<name>`)
   else {
-    const problem = controllerProblem(controller)
+    const problem = controllerProblem(controller, profiles)
     if (problem !== null) problems.push(`setup.slots.${slot}.controller: ${problem}`)
+  }
+  const options = value["options"]
+  if (options !== undefined) {
+    if (!isRecord(options)) problems.push(`setup.slots.${slot}.options: { credits }`)
+    else {
+      const credits = options["credits"]
+      if (credits !== undefined && (typeof credits !== "number" || !(credits > 0) || credits > 10)) problems.push(`setup.slots.${slot}.options.credits: a share of the income above 0, at most 10 (1 is the curve's)`)
+      for (const key of Object.keys(options)) if (key !== "credits") problems.push(`setup.slots.${slot}.options.${key}: the only option is credits`)
+    }
   }
   return problems
 }
 
 /** A save from its text: what it says, and every problem with it at once. A save with any problem is refused whole. */
-export function readSave(text: string): ReadSave {
+export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSave {
   let value: unknown
   try {
     value = JSON.parse(text)
@@ -255,12 +315,12 @@ export function readSave(text: string): ReadSave {
     if (!(GOALS as readonly unknown[]).includes(setup["goal"])) problems.push(`setup.goal: one of ${GOALS.join(", ")}`)
     const modifiers = setup["modifiers"]
     if (!Array.isArray(modifiers)) problems.push("setup.modifiers: a list, [] for none")
-    else for (const modifier of modifiers) if (!MODIFIERS.includes(modifier as string)) problems.push(`setup.modifiers: no modifier ${JSON.stringify(modifier)} (${MODIFIERS.length === 0 ? "none are built yet" : MODIFIERS.join(", ")})`)
+    else for (const modifier of modifiers) if (!(MODIFIERS as readonly unknown[]).includes(modifier)) problems.push(`setup.modifiers: no modifier ${JSON.stringify(modifier)} (${MODIFIERS.join(", ")})`)
     for (const field of ["rounds", "roundTicks"]) if (!isWhole(setup[field]) || (setup[field] as number) < 1) problems.push(`setup.${field}: a whole number, 1 or more`)
     const slots = setup["slots"]
     if (!isRecord(slots)) problems.push("setup.slots: { p1, p2 }")
     else {
-      for (const slot of SLOTS) problems.push(...slotProblems(slot, slots[slot]))
+      for (const slot of SLOTS) problems.push(...slotProblems(slot, slots[slot], profiles))
       for (const key of Object.keys(slots)) if (!(SLOTS as readonly string[]).includes(key)) problems.push(`setup.slots.${key}: the slots are ${SLOTS.join(" and ")}`)
     }
   }

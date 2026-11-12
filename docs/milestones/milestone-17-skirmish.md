@@ -96,15 +96,18 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
 
 ### Step 17E — Slots, profiles, the goal and modifiers
 
-- [ ] **Script profiles** in `players/scripts/`: one file per profile naming its script (today's `balanced`, `rush`,
+- [x] **Script profiles** in `players/scripts/`: one file per profile naming its script (today's `balanced`, `rush`,
       `turtle` and their variants, the same ones the measurements play), its options and a line saying how it plays.
       The opponent's credits are an option of every profile, a share of the curve (100% unless set): there is no
       difficulty setting (the owner, 2026-11-11).
-- [ ] **Agent profiles** in `players/agents/`: the folder and one example Markdown file, so the format reserves
+- [x] **Agent profiles** in `players/agents/`: the folder and one example Markdown file, so the format reserves
       `agent:<profile>`. Loading one says plainly that agent players are not built yet (Milestone 21).
-- [ ] **The goal**: Elimination, the only one built; the setup names it so others can follow.
-- [ ] **Two modifiers**, `fast-rounds` and `double-income`, as named rules over a battle, each with a test; the list is a
+- [x] **The goal**: Elimination, the only one built; the setup names it so others can follow.
+- [x] **Two modifiers**, `fast-rounds` and `double-income`, as named rules over a battle, each with a test; the list is a
       place to experiment, and the ones that do not earn a place are removed.
+- [x] More on the command line (the owner, 2026-11-12): two plans of one's own against each other, `--battles <n>`,
+      `--play-until-win`, `--seeds` with a tally, `--out` for every round's save and report, `--log` for the battle's log,
+      and `--p1-credits`/`--p2-credits`.
 
 ### Step 17F — The setup screen, and spectating
 

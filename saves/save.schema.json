@@ -4,93 +4,308 @@
   "title": "Terminal Nexus Skirmish save",
   "description": "A Skirmish's setup and the battle as it stands at the opening of a Build Phase (docs/system-design/skirmish-saves.md). The loader, src/skirmish/save.ts, is the authority: it checks what a schema cannot (a Commander, a script, a map's rows).",
   "type": "object",
-  "required": ["format", "setup"],
+  "required": [
+    "format",
+    "setup"
+  ],
   "additionalProperties": false,
   "properties": {
-    "format": { "const": "terminal-nexus.save/1" },
-    "name": { "type": "string" },
-    "notes": { "type": "string" },
+    "format": {
+      "const": "terminal-nexus.save/1"
+    },
+    "name": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
     "setup": {
       "type": "object",
-      "required": ["map", "seed", "goal", "modifiers", "rounds", "roundTicks", "slots"],
+      "required": [
+        "map",
+        "seed",
+        "goal",
+        "modifiers",
+        "rounds",
+        "roundTicks",
+        "slots"
+      ],
       "additionalProperties": false,
       "properties": {
         "map": {
           "oneOf": [
-            { "type": "string", "description": "A built-in map by id: crossing, pocket." },
+            {
+              "type": "string",
+              "description": "A built-in map by id: crossing, pocket."
+            },
             {
               "type": "object",
               "description": "A map drawn in full: rows of text (. open, # rock, * deposit), and each slot's Nexus (its north-west tile) and where its troops hold.",
-              "required": ["id", "name", "rows", "nexus", "hold"],
+              "required": [
+                "id",
+                "name",
+                "rows",
+                "nexus",
+                "hold"
+              ],
               "properties": {
-                "id": { "type": "string" },
-                "name": { "type": "string" },
-                "notes": { "type": "string" },
-                "rows": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-                "nexus": { "type": "object", "required": ["p1", "p2"], "properties": { "p1": { "$ref": "#/$defs/tile" }, "p2": { "$ref": "#/$defs/tile" } } },
-                "hold": { "type": "object", "required": ["p1", "p2"], "properties": { "p1": { "$ref": "#/$defs/area" }, "p2": { "$ref": "#/$defs/area" } } }
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "string"
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                },
+                "nexus": {
+                  "type": "object",
+                  "required": [
+                    "p1",
+                    "p2"
+                  ],
+                  "properties": {
+                    "p1": {
+                      "$ref": "#/$defs/tile"
+                    },
+                    "p2": {
+                      "$ref": "#/$defs/tile"
+                    }
+                  }
+                },
+                "hold": {
+                  "type": "object",
+                  "required": [
+                    "p1",
+                    "p2"
+                  ],
+                  "properties": {
+                    "p1": {
+                      "$ref": "#/$defs/area"
+                    },
+                    "p2": {
+                      "$ref": "#/$defs/area"
+                    }
+                  }
+                }
               }
             }
           ]
         },
-        "seed": { "type": "integer" },
-        "goal": { "enum": ["elimination"] },
-        "modifiers": { "type": "array", "items": { "type": "string" }, "maxItems": 0, "description": "None are built yet." },
-        "rounds": { "type": "integer", "minimum": 1 },
-        "roundTicks": { "type": "integer", "minimum": 1, "description": "Ticks a Battle Round lasts at most, 12 a second." },
+        "seed": {
+          "type": "integer"
+        },
+        "goal": {
+          "enum": [
+            "elimination"
+          ]
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "fast-rounds",
+              "double-income"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "Named rules over the battle: fast-rounds (each Battle Round half as long), double-income (every side's round income doubled)."
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roundTicks": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Ticks a Battle Round lasts at most, 12 a second."
+        },
         "slots": {
           "type": "object",
-          "required": ["p1", "p2"],
+          "required": [
+            "p1",
+            "p2"
+          ],
           "additionalProperties": false,
-          "properties": { "p1": { "$ref": "#/$defs/slot" }, "p2": { "$ref": "#/$defs/slot" } }
+          "properties": {
+            "p1": {
+              "$ref": "#/$defs/slot"
+            },
+            "p2": {
+              "$ref": "#/$defs/slot"
+            }
+          }
         }
       }
     },
     "state": {
       "type": "object",
       "description": "Written by the game: the duel's state between rounds (DuelState, src/duel/types.ts) without its setup and without the map's ground, in the engine's words (side A is p1, side B is p2).",
-      "required": ["round", "carried", "sides", "history", "result"],
+      "required": [
+        "round",
+        "carried",
+        "sides",
+        "history",
+        "result"
+      ],
       "properties": {
-        "round": { "type": "integer", "minimum": 1 },
-        "carried": { "type": ["object", "null"] },
-        "sides": { "type": "object", "required": ["A", "B"] },
-        "history": { "type": "array" },
-        "result": { "type": ["object", "null"] }
+        "round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "carried": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "sides": {
+          "type": "object",
+          "required": [
+            "A",
+            "B"
+          ]
+        },
+        "history": {
+          "type": "array"
+        },
+        "result": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
       }
     },
     "draft": {
       "type": "object",
       "description": "A slot's plan so far this Build Phase (the duel's plan, docs/system-design/duels.md).",
       "additionalProperties": false,
-      "properties": { "p1": { "$ref": "#/$defs/plan" }, "p2": { "$ref": "#/$defs/plan" } }
+      "properties": {
+        "p1": {
+          "$ref": "#/$defs/plan"
+        },
+        "p2": {
+          "$ref": "#/$defs/plan"
+        }
+      }
     }
   },
   "$defs": {
-    "tile": { "type": "object", "required": ["x", "y"], "properties": { "x": { "type": "integer" }, "y": { "type": "integer" } } },
+    "tile": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer"
+        },
+        "y": {
+          "type": "integer"
+        }
+      }
+    },
     "area": {
       "type": "object",
-      "required": ["x", "y", "width", "height"],
-      "properties": { "x": { "type": "integer" }, "y": { "type": "integer" }, "width": { "type": "integer" }, "height": { "type": "integer" } }
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer"
+        },
+        "y": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        }
+      }
     },
     "slot": {
       "type": "object",
-      "required": ["commander", "controller"],
+      "required": [
+        "commander",
+        "controller"
+      ],
       "additionalProperties": false,
       "properties": {
-        "commander": { "type": "string", "description": "vasse, averno or dob." },
-        "controller": { "type": "string", "pattern": "^(player(:.+)?|script:.+|agent:.+)$", "description": "player, script:<name> or agent:<name> (not built yet)." }
+        "commander": {
+          "type": "string",
+          "description": "vasse, averno or dob."
+        },
+        "controller": {
+          "type": "string",
+          "pattern": "^(player(:.+)?|script:.+|agent:.+)$",
+          "description": "player, script:<profile or script> (profiles are players/scripts/*.json) or agent:<profile> (not built yet)."
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "credits": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "The slot's share of the curve's income, 1 unless set."
+            }
+          }
+        }
       }
     },
     "plan": {
       "type": "object",
       "properties": {
-        "power": { "type": "integer", "minimum": 0 },
-        "build": { "type": "array", "items": { "type": "object", "required": ["building"] } },
-        "formation": { "enum": ["block", "apart", "zones"] },
-        "stance": { "enum": ["attack", "hold"] },
-        "hold": { "type": "array" },
-        "actions": { "type": "array" },
-        "note": { "type": "string" }
+        "power": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "build": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "building"
+            ]
+          }
+        },
+        "formation": {
+          "enum": [
+            "block",
+            "apart",
+            "zones"
+          ]
+        },
+        "stance": {
+          "enum": [
+            "attack",
+            "hold"
+          ]
+        },
+        "hold": {
+          "type": "array"
+        },
+        "actions": {
+          "type": "array"
+        },
+        "note": {
+          "type": "string"
+        }
       }
     }
   }

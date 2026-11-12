@@ -1,0 +1,4 @@
+{
+  "script": "balanced",
+  "about": "Builds a mix of units and defences each round and attacks with all of it: the setup screen's default opponent."
+}

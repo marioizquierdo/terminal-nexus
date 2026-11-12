@@ -39,6 +39,11 @@ export const other = (side: Side): Side => (side === "A" ? "B" : "A")
 /** Which way a side faces the enemy along the map's width: east (+1) when the enemy's Nexus stands east of its own. */
 const facing = (map: DuelMap, side: Side): number => (map.nexus[other(side)].x >= map.nexus[side].x ? 1 : -1)
 
+/** A side's income for a round: the curve's, times its multiplier (`DuelSetup.income`), in whole credits. */
+export function incomeOf(setup: DuelSetup, side: Side, round: number): number {
+  return Math.round(roundIncome(round) * (setup.income?.[side] ?? 1))
+}
+
 /** A duel's first state: round 1 to play, nothing on the Grid yet, each side with round 1's credits. */
 export function newDuel(setup: DuelSetup): DuelState {
   if (typeof setup.map === "string" && DUEL_MAPS[setup.map] === undefined) throw new Error(`no duel map "${setup.map}" (${Object.keys(DUEL_MAPS).join(", ")})`)
@@ -46,7 +51,7 @@ export function newDuel(setup: DuelSetup): DuelState {
   for (const side of SIDES) duelArmy(setup.commanders[side])
   const side = (which: Side): SideState => {
     const roster = setup.rosters?.[which]
-    return { commander: setup.commanders[which], ...(roster === undefined ? {} : { roster }), credits: roundIncome(1), kept: roster?.doctrines ?? [], absent: [] }
+    return { commander: setup.commanders[which], ...(roster === undefined ? {} : { roster }), credits: incomeOf(setup, which, 1), kept: roster?.doctrines ?? [], absent: [] }
   }
   return { setup, round: 1, carried: null, sides: { A: side("A"), B: side("B") }, history: [], result: null }
 }
@@ -535,7 +540,7 @@ export function playRound(
     const stillOut = restored === null ? [] : restored.absent.filter((absence) => absence.player === side)
     next[side] = {
       ...next[side],
-      credits: next[side].credits + roundIncome(round + 1) + earned,
+      credits: next[side].credits + incomeOf(state.setup, side, round + 1) + earned,
       absent: [...stillOut, ...fell.filter((absence) => absence.player === side)],
     }
     reports[side] = sideReport(side, phases[side], plans[side], state.sides[side].credits, earned, start, current, events, sides, fell.some((absence) => absence.player === side))

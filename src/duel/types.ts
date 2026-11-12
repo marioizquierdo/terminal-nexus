@@ -35,6 +35,9 @@ export type DuelSetup = Readonly<{
   pulseTicks: number
   commanders: Readonly<Record<Side, string>>
   rosters?: Readonly<Partial<Record<Side, Roster>>>
+  /** What each side's round income is multiplied by (1 unless set): a script profile's credits share, and the
+   *  `double-income` modifier. Rounded to whole credits. */
+  income?: Readonly<Partial<Record<Side, number>>>
 }>
 
 /** **A duel's Battle Round: 30 seconds**, 360 ticks at 12 a second (the owner, 2026-10-26: "Shorter rounds: 30

@@ -67,3 +67,38 @@ named): his examples left them out.
 **Scheduled.** The save files are this pull request (step 17D). Converting the scenarios is step 17J, now next: it needs
 a save's `start` section (units and buildings placed by hand before round 1) and a battle that is one Battle Round
 with no plans, which the scenarios are.
+
+## The second round: the whole Skirmish design
+
+After pull request 97 was opened, the owner asked for the rest of the Skirmish design in the same pull request.
+
+### F260 — more combinations on the command line
+
+> note that, while the UI only allows one player at this moment, the CLI skirmish command can easily allow for multiple "build" actions. So you could, for example, test playing against yourself by just saying `skirmish --p1 build:build-actions-1.json --p2 build:build-actions-2.json --battle`. Also, if both player slots are scripts, there should be a way to just let them play multiple rounds until there is a winner (or round 100 to put a limit): `skirmish --p1 script:foo1 --p2 script:foo2 --play-until-win`.
+>
+> Think of any other combination that allows this command to test many situations. Along with a proper definition of build actions, scripts and save files for skirmish, that would create a very robust and solid platform for testing. Think of other combinations and edge cases, and of course, make sure to write in a way that is testable, implement tests, and run some exploratory rounds and games. Make sure you can still see the battle details through the log system.
+
+**Built.** Two `build:` slots play against each other; `--play-until-win` plays scripts to the battle's end (the limit
+raised to 100 rounds unless `--rounds` says otherwise); `--battles <n>` plays n rounds; `--seeds 1-20` plays a new battle
+once a seed with a tally; `--out <dir>` keeps every round's save and report; `--log <file>` writes the battle's log, at
+`--log-level`, as `grid` writes one; `--modifiers`, `--rounds` on a loaded battle, and `--p1-credits`/`--p2-credits`.
+Script profiles are `players/scripts/*.json` (agro, defensive, steady, agro-rich); agent profiles are reserved in
+`players/agents/`.
+
+### F261 — testing scenarios become testing saves, and the word "scenario" goes
+
+> And when moving the previous scenarios into the equivalent skirmish save files, keep the ones that offer valid testing scenarios and feel free to remove those that don't add much value anymore or are too complicated to port. Even though they are save files, make sure to keep them at a separate folder called something like "skirmish-testing". Then cleanup, remove the term "scenario" from the files, docs and code (but feel free to name some save files scenario-1, etc. that is fine, we just need to cleanup the concept).
+
+**Scheduled**, in this pull request.
+
+### F262 — the game opens a save now; Save game in the Esc menu
+
+> Why is that the game can't open a save until Save game is on the Build Phase menu? We could start with the skirmish command right? Then we add save on the UI, but it should be on the main menu settings "[esc]" instead of in the side menu.
+
+**Scheduled**, in this pull request: `--load` on the game first, then Save game in the Esc game menu.
+
+### F263 — the whole design, and notes from testing
+
+> Keep going until the whole Skirmish design is implemented. Testing with existing maps is great! and since you are testing, please feel free to take notes from each test case for anything that goes beyond the focus of building skirmish mode, but at the end of this, take an extra pass at those notes and see if 1) the test is not valid anymore => delete the test, 2) the issues could be addressed right away => go ahead! I don't mind a larger PR if it is fixing and improving things, 3) save new ideas on the PROJECT or appropriate milestone to revisit later
+
+**Scheduled**, in this pull request.

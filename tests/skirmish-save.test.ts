@@ -47,7 +47,7 @@ test("a save the loader refuses names every problem at once", () => {
   const { save, problems } = readSave(
     JSON.stringify({
       format: "terminal-nexus.save/0",
-      setup: { map: "nowhere", seed: 1.5, goal: "economy", modifiers: ["double-income"], rounds: 0, roundTicks: 360, slots: { p1: { commander: "nobody", controller: "player" }, p2: { commander: "dob", controller: "script:nope" }, p3: {} } },
+      setup: { map: "nowhere", seed: 1.5, goal: "economy", modifiers: ["triple-income"], rounds: 0, roundTicks: 360, slots: { p1: { commander: "nobody", controller: "player" }, p2: { commander: "dob", controller: "script:nope" }, p3: {} } },
       draft: { p1: { build: "barracks" } },
     }),
   )
