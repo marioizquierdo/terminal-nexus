@@ -136,4 +136,3 @@ now, `src/skirmish/request.ts`, and the round's report lines another, `src/skirm
 they keep parity with the command. The save page says the command exists and links its manual; the testing ground has
 how each kind of test uses it, the model-against-model recipe included; the duel page keeps the rules, the brief and
 the plan; the game modes say what a Skirmish is to a player.
-
