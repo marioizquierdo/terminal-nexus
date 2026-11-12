@@ -36,7 +36,7 @@ export const ACTIVITY_EVENTS = {
       columns: { type: "number", description: "The terminal's width in columns." },
       rows: { type: "number", description: "The terminal's height in rows." },
       colors: { type: "string", description: "The colour depth drawn with, as --colors names it: monochrome, color256 or truecolor." },
-      at: { type: "string", description: "The route the screen opened at: menu, settings, campaign?level=vasse-test-1&round=2.", optional: true },
+      at: { type: "string", description: "The route the screen opened at: menu, settings, story?mission=vasse-test-1&round=2.", optional: true },
     },
   },
   "session.resize": {
@@ -59,9 +59,9 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A row picked on the title menu or one of its screens.",
     props: {
-      screen: { type: "string", description: "The screen the row is on: top, settings, campaign, about." },
-      item: { type: "string", description: "The row's id: campaign, settings, about, exit, back, ..." },
-      route: { type: "string", description: "The route the row opens, when it opens a place: settings, campaign.", optional: true },
+      screen: { type: "string", description: "The screen the row is on: top, settings, story, about." },
+      item: { type: "string", description: "The row's id: story, settings, about, exit, back, ..." },
+      route: { type: "string", description: "The route the row opens, when it opens a place: settings, story.", optional: true },
     },
   },
   "build.command": {
@@ -119,16 +119,17 @@ export const ACTIVITY_EVENTS = {
     defaultLevel: "info",
     description: "A popup opened over the Build Phase.",
     props: {
-      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog, run-draft, run-draft-remove." },
+      popup: { type: "string", description: "Which: nexus-powers, battle-round, game-menu, settings, export, controls, activity-logs, message, dialog, save-game, banner-place, banner-stance." },
     },
   },
-  "run.draft": {
+  "game.save": {
     defaultLevel: "info",
-    description: "A run's draft was settled: a card taken, a card of the army removed, or the requisition taken instead.",
+    description: "Save game wrote the battle and the plan so far to a file, or could not.",
     props: {
-      draft: { type: "string", description: "Which draft, by its title: Draft after battle 1." },
-      choice: { type: "string", description: "take, remove or requisition." },
-      key: { type: "string", description: "The card taken or removed, by its key: structure:turret. None for the requisition.", optional: true },
+      name: { type: "string", description: "The name typed." },
+      saved: { type: "boolean", description: "Whether the file was written." },
+      answer: { type: "string", description: "What the bottom line said: where it went, or why not." },
+      round: { type: "number", description: "The Battle Round whose Build Phase was saved." },
     },
   },
   "setting.change": {

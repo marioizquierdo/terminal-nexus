@@ -1,12 +1,11 @@
 // The `terminal-nexus` executable's own CLI: the game's actual entry
 // point, as distinct from `grid`'s. No subcommand and no map file: a bare `terminal-nexus` opens the title
-// menu, and `--at <route>` opens any other place in the game (`./route.ts`) — a screen of the title menu, or a
-// campaign level's Build Phase at one of its rounds.
+// menu, `--at <route>` opens any other place in the game (`./route.ts`) — a screen of the title menu, a Skirmish, or
+// a story mission's Build Phase at one of its rounds — and `--load <file>` a Skirmish save at its Build Phase, with
+// `--p1`/`--p2` naming who plays each slot as the `skirmish` command takes them.
 //
-// **The bare command** opens the title menu today. That is a stand-in for the intended start: once the game can
-// save, a plain launch continues the saved game from its default place beside the settings (a file in
-// `~/.terminal-nexus/`, next to `settings.json`), and opens the title menu only when there is none; `--at` stays
-// the way to go anywhere else, saved game or not. Saves are not built.
+// **The bare command** opens the title menu. Save game (the Build Phase's game menu) writes a save file, and
+// `--load` opens one; whether a plain launch should carry on the last saved game is not decided.
 //
 // Where it opens, its settings text and its key script are read the way every other way of starting a run reads
 // them (`./launch.ts`); this file only says they came from `--at`, `--settings` and `--keys`.
@@ -30,6 +29,9 @@ import { readLaunch } from "./launch.ts"
 import type { LaunchProblem } from "./launch.ts"
 import { DEFAULT_LEVEL, LEVELS } from "./levels.ts"
 import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute } from "./route.ts"
+import type { LevelDestination } from "./route.ts"
+import { openSkirmish } from "./skirmish-open.ts"
+import { readGameFile, savesFolder, skirmishSaver } from "./skirmish-files.ts"
 import type { ExportKind } from "../build/types.ts"
 import { DEFAULT_SETTINGS, createSettingsStore, defaultSettingsPath } from "../settings/index.ts"
 import type { Settings } from "../settings/index.ts"
@@ -47,12 +49,21 @@ function usage(): string {
     `        --at ${/[?&]/u.test(route) ? `'${route}'` : route}`.padEnd(54) + what
   return `terminal-nexus — the Terminal Nexus game
 
-  terminal-nexus [--at <route>] [--settings "<text>"]
+  terminal-nexus [--at <route> | --load <file>] [--p1 <who>] [--p2 <who>]
+                 [--settings "<text>"]
                  [--colors monochrome|color256|truecolor]
                  [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
                  [--backend auto|ansi|opentui]
-      With no --at, opens the title menu: Campaign, Challenge, Settings, About, Exit.
-      (Once the game can save, a plain launch will continue the saved game instead.)
+      With no --at, opens the title menu: Skirmish, Story, Settings, About, Exit.
+
+  --load <file>
+      opens a Skirmish save file at its Build Phase, the plan it was saved with restored: what
+      Save game (Esc, then Save game) writes, or the skirmish command's --save. The same as
+      --at 'skirmish?load=<file>'.
+  --p1 <who>, --p2 <who>
+      who plays each slot of a Skirmish, as the skirmish command takes them: build: (the
+      player at the screen; build:plan.json lays that plan on the first Build Phase), or
+      script:<name> (balanced, rush, turtle, ...). The screen plays p1; p2 is a script.
 
   --at <route>
       opens the game at a place, written like a web address without its site: the place,
@@ -63,19 +74,21 @@ ${example("settings", "the title menu's Settings screen")}
 ${example(DEFAULT_LEVEL_ROUTE, `${DEFAULT_LEVEL.title}'s Build Phase, round 1`)}
 ${example(`${DEFAULT_LEVEL_ROUTE}&round=3`, "its round 3, reached as a player who")}
 ${"".padEnd(54)}builds nothing reaches it
-${example("challenge?seed=1234", "the Challenge run of seed 1234, with Vasse")}
-${example("challenge?seed=1234&commander=dob", "... with Dob Hunter")}
-      round counts Battle Rounds from 1, as the screen does. The levels:
+${example("skirmish?seed=1234", "a Skirmish on seed 1234: Vasse against Dob Hunter")}
+${example("skirmish?load=mine.save.json", "a save file, at its Build Phase")}
+      round counts Battle Rounds from 1, as the screen does. The missions:
 ${levels}
 
-      A campaign level opens its Build Phase on its map and plays its mission from there: a
+      A Skirmish or a story mission opens its Build Phase on its map and plays from there: a
       Grid larger than the screen, a cursor that scrolls it, buildings to place by keyboard,
       by mouse or from a script, a Nexus power to pick, then the Battle Round. Esc opens the
       game menu: Settings, in sections - the display settings (saved, like the title menu's)
       and Experiments, the choices still being tried, live, never saved; d jumps straight to
       the first of them. "Export settings" copies them all as text. The game menu's Activity
       logs shows what happened, through a filter; "Export logs" copies it and saves
-      activity-export.txt. Two flags only a campaign level takes:
+      activity-export.txt. On a Skirmish the game menu's Save game writes the battle and the
+      plan so far to a file (~/.terminal-nexus/saves/ unless the name has a folder). Two flags
+      only a Build Phase takes:
       --keys "<key script>" opens it already in the state those keys reach, in the scripted
       playtest's key names: --keys "Esc n 1 1 Enter" skips the intro, picks the first power and
       places a Barracks. For demos and for reproducing a report; the keyboard is yours after
@@ -106,13 +119,16 @@ function refusal({ part, error }: LaunchProblem): string {
   return `terminal-nexus: --at "${error.route}" is not a place in the game:\n${problems}terminal-nexus --help lists every place, with examples.\n`
 }
 
-/** The flags only a campaign level's Build Phase reads. */
+/** The flags only a Build Phase reads (a story mission's or a Skirmish's). */
 const BUILD_PHASE_FLAGS = ["keys", "scroll-margin"] as const
+
+/** The flags only a Skirmish reads. */
+const SKIRMISH_FLAGS = ["p1", "p2"] as const
 
 /** Everything the game reads from its command line; anything else is refused rather than ignored, so a command
  *  pasted from an older note never opens somewhere it did not mean. (`grid` shares the parser and reads others.) */
 const GAME_FLAGS: ReadonlySet<string> = new Set(["help", "reduced-motion"])
-const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
+const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "load", "p1", "p2", "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
 
 /** What the game says for what it does not read: a removed flag names what replaced it, a retired option what
  *  changed (`RETIRED_OPTIONS`); anything else, --help. */
@@ -146,10 +162,14 @@ export async function main(argv: readonly string[]): Promise<number> {
   // Where to open and what to start from, read before anything is touched: a route that is not a place, or a
   // key the game does not know, is refused whole, every problem at once, and so is a flag the place it names
   // cannot use. With no --at, the title menu: the bare command's stand-in for the saved game.
-  const { launch, problems } = readLaunch(
-    { at: args.options.get("at"), settings: args.options.get("settings"), keys: args.options.get("keys") },
-    "menu",
-  )
+  // `--load <file>` is the route `skirmish?load=<file>`, said the way the skirmish command says it.
+  const load = args.options.get("load")
+  if (load !== undefined && args.options.has("at")) {
+    process.stderr.write("terminal-nexus: --load opens a save and --at a place: give one of them.\n")
+    return 2
+  }
+  const at = load === undefined ? args.options.get("at") : `skirmish?load=${encodeURIComponent(load)}`
+  const { launch, problems } = readLaunch({ at, settings: args.options.get("settings"), keys: args.options.get("keys") }, "menu")
   if (problems.length > 0) {
     process.stderr.write(problems.map(refusal).join(""))
     return 2
@@ -159,10 +179,26 @@ export async function main(argv: readonly string[]): Promise<number> {
   if (destination.kind === "title" && unused.length > 0) {
     const flags = unused.map((name) => `--${name}`).join(" and ")
     process.stderr.write(
-      `terminal-nexus: ${flags} ${unused.length > 1 ? "are" : "is"} for a campaign level's Build Phase, and ` +
+      `terminal-nexus: ${flags} ${unused.length > 1 ? "are" : "is"} for a Build Phase, and ` +
         `${formatRoute(destination)} is on the title menu: try --at '${DEFAULT_LEVEL_ROUTE}'\n`,
     )
     return 2
+  }
+  const slotFlags = SKIRMISH_FLAGS.filter((name) => args.options.has(name))
+  if (destination.kind !== "skirmish" && slotFlags.length > 0) {
+    process.stderr.write(`terminal-nexus: ${slotFlags.map((name) => `--${name}`).join(" and ")} name who plays a Skirmish's slots: try --load <file> or --at skirmish\n`)
+    return 2
+  }
+  // A Skirmish opened before any screen: a save that cannot be read, or slots the screen cannot play, are refused here,
+  // every problem at once, with nothing on the terminal changed.
+  let skirmish: LevelDestination | null = null
+  if (destination.kind === "skirmish") {
+    try {
+      skirmish = openSkirmish(destination, { readFile: readGameFile, slots: { ...optionOf("p1", args.options.get("p1")), ...optionOf("p2", args.options.get("p2")) } })
+    } catch (error) {
+      process.stderr.write(`terminal-nexus: ${error instanceof Error ? error.message : String(error)}\n`)
+      return 2
+    }
   }
 
   const settingsStore = createSettingsStore(defaultSettingsPath())
@@ -196,21 +232,28 @@ export async function main(argv: readonly string[]): Promise<number> {
     ...(buildId === undefined ? {} : { buildId }),
   }
 
-  // A place on the title menu: the menu, opened where the route says; Challenge hands the terminal to a run's Build
-  // Phase, which exports as a level's does.
-  if (destination.kind === "title") return runMenu({ ...common, at: destination, exporter: terminalExporter(process.stdout, exportPath()) })
+  // Save game on a Skirmish writes into the saves folder beside the settings, unless the name it is given has a folder.
+  const saver = skirmishSaver(savesFolder())
 
-  // A campaign level: its Build Phase, at the round the route names.
+  // A place on the title menu: the menu, opened where the route says; Skirmish hands the terminal to a battle's Build
+  // Phase, which exports and saves as one opened here does.
+  if (destination.kind === "title") return runMenu({ ...common, at: destination, exporter: terminalExporter(process.stdout, exportPath()), saver })
+
+  // A story mission or a Skirmish: its Build Phase, at the round the route names.
   const margin = args.options.get("scroll-margin")
   return runBuildPhase({
     ...common,
-    at: destination,
+    at: skirmish ?? (destination as LevelDestination),
+    saver,
     ...(margin === undefined ? {} : { scrollMargin: parseInteger(margin.endsWith("%") ? margin.slice(0, -1) : margin, "--scroll-margin") }),
     experiments: imported.experiments,
     ...(launch.keys === undefined ? {} : { startKeys: launch.keys }),
     exporter: terminalExporter(process.stdout, exportPath()),
   })
 }
+
+/** `{ [slot]: value }` when the option was given. */
+const optionOf = (slot: "p1" | "p2", value: string | undefined): Partial<Record<"p1" | "p2", string>> => (value === undefined ? {} : { [slot]: value })
 
 /** Where an export is written: beside the settings file, so it is found where settings already are. */
 function exportPath(): string {

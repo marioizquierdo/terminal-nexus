@@ -1,8 +1,9 @@
 // `terminal-nexus`'s menu screens: the top-level menu and the three input adapters, plus Settings as
-// a real second screen that reuses the same list shape rather than inventing anything new. Campaign
-// has its own placeholder screen (the same reuse again) because the campaign menu isn't built yet;
-// Challenge starts a run, handing the terminal to the Build Phase (`runBuildPhase`) on a seed the game
-// chooses; Settings and Exit are real. About is the same reuse once more: who made the game, where its code
+// a real second screen that reuses the same list shape rather than inventing anything new. Skirmish
+// starts one battle, handing the terminal to the Build Phase (`runBuildPhase`) on the defaults and a seed the
+// game chooses — until the setup screen lands, which takes its place (`openSkirmish`, `./skirmish-open.ts`). Story
+// has its own placeholder screen (the same reuse again) because the Story menu isn't built yet; Settings and Exit
+// are real. About is the same reuse once more: who made the game, where its code
 // lives, how to contribute, and which build this is.
 //
 // The event loop here is deliberately unlike `watch.ts`'s: a menu has no ticks and nothing animates,
@@ -35,25 +36,24 @@ import { nextColorDepth, nextGlyphPack, nextTheme, toggleReducedMotion } from ".
 import type { Settings, SettingsStore } from "../settings/index.ts"
 import { formatRoute, parseRoute } from "./route.ts"
 import { shownSetting } from "../build/all-settings.ts"
-import type { LevelDestination, TitleDestination, TitlePlace } from "./route.ts"
+import type { Destination, LevelDestination, TitleDestination, TitlePlace } from "./route.ts"
 import { runBuildPhase } from "./build-phase.ts"
-import type { Exporter } from "./build-phase.ts"
-import { DEFAULT_RUN_COMMANDER } from "../run/index.ts"
-import { clockSeed, runLevel } from "./run-play.ts"
+import type { BuildPhaseOptions, Exporter } from "./build-phase.ts"
+import { openSkirmish } from "./skirmish-open.ts"
 
-/** Five rows; a sixth, choosing a Commander upfront, was considered and rejected: a new player starts the
- *  first mission directly. About sits above Exit, so Exit's digit is 5 — the digits stay one sequence in
- *  walking order, and `q` still leaves from every title screen. Each row but Exit names the route it opens. */
+/** Five rows (the owner, 2026-11-11: Skirmish is "the center stone for game design and testing", so it comes first).
+ *  About sits above Exit, so Exit's digit is 5 — the digits stay one sequence in walking order, and `q` still leaves
+ *  from every title screen. Each row but Exit names the route it opens. */
 export const TOP_LEVEL_ITEMS: readonly MenuItem[] = [
-  { id: "campaign", hotkey: "1", label: "Campaign", route: "campaign" },
-  // A run of three battles, on a seed the game chooses and shows as the run opens.
-  { id: "challenge", hotkey: "2", label: "Challenge", route: "challenge" },
+  // One battle on the defaults, on a seed the game chooses and shows as the battle opens; the setup screen comes later.
+  { id: "skirmish", hotkey: "1", label: "Skirmish", route: "skirmish" },
+  { id: "story", hotkey: "2", label: "Story", route: "story" },
   { id: "settings", hotkey: "3", label: "Settings", route: "settings" },
   { id: "about", hotkey: "4", label: "About", route: "about" },
   { id: "exit", hotkey: "5", label: "Exit" },
 ]
 
-/** A screen with only words to show — Campaign's placeholder and About — has exactly one row, the way
+/** A screen with only words to show — Story's placeholder and About — has exactly one row, the way
  *  back, so Up, Down and Enter alone still leave it, as every menu must allow. */
 const BACK_ONLY_ITEMS: readonly MenuItem[] = [{ id: "back", hotkey: "1", label: "Back" }]
 
@@ -118,53 +118,53 @@ export type MenuOptions = Readonly<{
   /**
    * Where to open (`--at settings`, a title menu route): the top-level menu unless given. Opening at a place
    * follows its route exactly as choosing the row that names it does, and leaves that row highlighted, so Esc
-   * comes back to it as it would for a player who had chosen it — or, for Challenge, starts a run at once.
+   * comes back to it as it would for a player who had chosen it.
    */
   at?: TitleDestination
-  /** The clock a new run's seed is chosen from, in milliseconds: `Date.now` unless a test injects one. */
+  /** The clock a new Skirmish's seed is chosen from, in milliseconds: `Date.now` unless a test injects one. */
   now?: () => number
-  /** What an export does in the Build Phase a run opens on (`runBuildPhase`'s `exporter`). */
+  /** What an export does in the Build Phase a Skirmish opens on (`runBuildPhase`'s `exporter`). */
   exporter?: Exporter
+  /** What Save game does in that Build Phase (`runBuildPhase`'s `saver`). */
+  saver?: BuildPhaseOptions["saver"]
   /**
-   * What opens a run once the menu has handed the terminal back: the Build Phase on the run's first round, with this
+   * What opens a Skirmish once the menu has handed the terminal back: the Build Phase on its first round, with this
    * session's settings, backend and terminal (`runBuildPhase`) unless a host opens it its own way — the browser page,
    * which shows the Build Phase's keys under the screen. What it returns is what the menu returns.
    */
   open?: (at: LevelDestination, settings: Settings) => Promise<number>
 }>
 
-type Screen = "top" | "settings" | "campaign" | "about"
+type Screen = "top" | "settings" | "story" | "about"
 
 /** What each screen's frame says about itself — the one place that grows when a screen is added,
  *  instead of a `screen === "x" ? ... : screen === "y" ? ...` chain repeated at every call site. */
 const SCREEN_INFO: Readonly<Record<Screen, Readonly<{ subtitle: string; showBack: boolean }>>> = {
   top: { subtitle: "main menu", showBack: false },
   settings: { subtitle: "settings", showBack: true },
-  campaign: { subtitle: "campaign", showBack: true },
+  story: { subtitle: "story", showBack: true },
   about: { subtitle: "about", showBack: true },
 }
 
 /**
  * The screen each title menu place opens, and the line it says there. Stub honestly rather than half-build: an
- * option not built yet says plainly what it is waiting on, rather than silently doing nothing — Campaign on a
- * placeholder screen of its own, whether its row was chosen or its route followed. Challenge opens no screen here:
- * it starts a run.
+ * option not built yet says plainly what it is waiting on, rather than silently doing nothing — Story on a
+ * placeholder screen of its own, whether its row was chosen or its route followed. Skirmish is no place here: its
+ * row's route starts a battle (`startSkirmish`).
  */
 const PLACE_SCREENS: Readonly<Record<TitlePlace, Readonly<{ screen: Screen; notice?: string }>>> = {
   menu: { screen: "top" },
-  campaign: { screen: "campaign", notice: "Campaign is not built yet - its menu is coming soon." },
-  // Not a screen of the menu's: following it starts a run (`startRun`), and the menu hands the terminal over.
-  challenge: { screen: "top" },
+  story: { screen: "story", notice: "Story is not built yet - its menu is coming soon." },
   settings: { screen: "settings" },
   about: { screen: "about" },
 }
 
-/** The title menu place a row's route names. Every row's route is a title menu place
- *  (`tests/route.test.ts`); a row naming any other would be a screen this loop cannot open. */
-function placeOf(route: string): TitlePlace {
+/** Where a row's route leads: a title menu place, or (Skirmish) a battle to start. Every row's route is one of the
+ *  two (`tests/route.test.ts`); a row naming any other would be a screen this loop cannot open. */
+function placeOf(route: string): TitleDestination | Extract<Destination, { kind: "skirmish" }> {
   const destination = parseRoute(route)
-  if (destination.kind !== "title") throw new Error(`a title menu row names "${route}", which is not on the title menu`)
-  return destination.place
+  if (destination.kind === "level") throw new Error(`a title menu row names "${route}", which is not on the title menu`)
+  return destination
 }
 
 
@@ -177,8 +177,6 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     stdout.write("terminal-nexus needs an interactive terminal for its menu.\n")
     return 0
   }
-  // Opening at Challenge starts its run at once: there is no menu to show first.
-  if (options.at?.place === "challenge") return openRun(runLevelAt(options.at), options.settings)
 
   const backend = await selectBackend(options.backend, {
     stdout,
@@ -197,7 +195,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   let leaving = false
   let failure: unknown = null
   let settleSession: (() => void) | null = null
-  /** The run the menu is handing the terminal to (Challenge), once one is chosen: opened when the menu has gone. */
+  /** The Skirmish the menu is handing the terminal to, once its row is chosen: opened when the menu has gone. */
   let handoff: LevelDestination | null = null
   // The tail of every settings write so far, chained rather than fired independently — awaited by
   // the disposer so the last thing a player changed is genuinely on disk before the process actually
@@ -254,23 +252,23 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   }
 
   /**
-   * **Challenge**: a run on a seed the game chooses from the clock (`clockSeed`), shown as the run opens so it can be
-   * shared and played again (`--at 'challenge?seed=<n>'`), with the Commander the route named or Vasse. The menu
-   * leaves without exiting, and the run's Build Phase opens on the same terminal.
+   * **Skirmish**: one battle on the defaults (Vasse as the player against Dob Hunter's `balanced` script on the Crossing),
+   * on a seed the game chooses from the clock (`clockSeed`), shown as the battle opens so it can be played again
+   * (`--at 'skirmish?seed=<n>'`). The menu leaves without exiting, and the battle's Build Phase opens on the same
+   * terminal. The setup screen, when it lands, opens here instead and hands its own setup on.
    */
-  function startRun(commander: string | undefined): void {
+  function startSkirmish(): void {
     if (leaving) return
-    const seed = clockSeed((options.now ?? Date.now)())
-    handoff = { kind: "level", level: runLevel({ seed, commander: commander ?? DEFAULT_RUN_COMMANDER }), round: 1 }
+    handoff = openSkirmish({}, { now: options.now ?? Date.now })
     leaving = true
     void dispose().then(() => settleSession?.())
   }
 
   /** Where a title menu route leads: the one way a chosen row and an opening `--at` both change screen. Draws
    *  nothing; the caller does once it has finished. */
-  function follow(place: TitlePlace, commander?: string): void {
-    if (place === "challenge") {
-      startRun(commander)
+  function follow(place: TitlePlace | "skirmish"): void {
+    if (place === "skirmish") {
+      startSkirmish()
       return
     }
     const opens = PLACE_SCREENS[place]
@@ -297,7 +295,8 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     items: TOP_LEVEL_ITEMS,
     onActivate: picked("top", (item) => {
       if (item.route !== undefined) {
-        follow(placeOf(item.route))
+        const destination = placeOf(item.route)
+        follow(destination.kind === "title" ? destination.place : "skirmish")
         render()
         return
       }
@@ -345,7 +344,7 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   const sessions: Readonly<Record<Screen, MenuSession>> = {
     top: topMenu,
     settings: settingsMenu,
-    campaign: wordsOnly("campaign"),
+    story: wordsOnly("story"),
     about: wordsOnly("about"),
   }
 
@@ -401,7 +400,11 @@ export async function runMenu(options: MenuOptions): Promise<number> {
   // route followed. Not a pick, so not recorded as one: nobody chose it on this screen.
   if (options.at !== undefined) {
     const place = options.at.place
-    const row = TOP_LEVEL_ITEMS.findIndex((item) => item.route !== undefined && placeOf(item.route) === place)
+    const row = TOP_LEVEL_ITEMS.findIndex((item) => {
+      if (item.route === undefined) return false
+      const destination = placeOf(item.route)
+      return destination.kind === "title" && destination.place === place
+    })
     if (row >= 0) topMenu.dispatch({ kind: "highlight", index: row })
     follow(place)
   }
@@ -443,10 +446,10 @@ export async function runMenu(options: MenuOptions): Promise<number> {
     host.reportError(`terminal-nexus failed: ${String(failure)}\n`)
     return 1
   }
-  return handoff === null ? 0 : openRun(handoff, settings)
+  return handoff === null ? 0 : openBattle(handoff, settings)
 
-  /** The run's Build Phase, on this terminal, with the settings as the menu leaves them. */
-  function openRun(at: LevelDestination, settings: Settings): Promise<number> {
+  /** The Skirmish's Build Phase, on this terminal, with the settings as the menu leaves them. */
+  function openBattle(at: LevelDestination, settings: Settings): Promise<number> {
     if (options.open !== undefined) return options.open(at, settings)
     return runBuildPhase({
       settings,
@@ -460,14 +463,9 @@ export async function runMenu(options: MenuOptions): Promise<number> {
       ...(options.hostName === undefined ? {} : { hostName: options.hostName }),
       ...(options.activity === undefined ? {} : { activity: options.activity }),
       ...(options.exporter === undefined ? {} : { exporter: options.exporter }),
+      ...(options.saver === undefined ? {} : { saver: options.saver }),
       at,
     })
-  }
-
-  /** The run an opening `--at challenge` starts: on a seed from the clock, with the Commander it names. */
-  function runLevelAt(at: TitleDestination): LevelDestination {
-    const seed = clockSeed((options.now ?? Date.now)())
-    return { kind: "level", level: runLevel({ seed, commander: at.commander ?? DEFAULT_RUN_COMMANDER }), round: 1 }
   }
 }
 

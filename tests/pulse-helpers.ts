@@ -118,7 +118,7 @@ export type Played = Readonly<{
 
 /**
  * The starter map's context with buildings that spawn nothing — what the placeholder Pulse was played on before
- * buildings made units: a campaign's buildings spawn their waves because its level offers them so (`spawns` on
+ * buildings made units: a story's buildings spawn their waves because its level offers them so (`spawns` on
  * each row of the build menu), and the test mission is no level's, so its first round is still the very
  * Pulse it was.
  */

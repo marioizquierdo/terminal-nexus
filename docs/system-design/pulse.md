@@ -444,7 +444,7 @@ watches) and it is still a Pulse: seeded, deterministic, replayed the same way.
 resolved one level up, by the mission and trigger layer, which fires an ordinary `win`/`lose` action
 when its own condition holds (see [`story.md`](../game-design/story.md)). What follows — Grid
 Nexus destroyed, a side with no Nexus standing annihilated, tick limit reached — is the fallback a
-battle with no declared objective lands on: every Skirmish battle (a Challenge battle until the Skirmish milestone renames it) (RULE —
+battle with no declared objective lands on: every Skirmish battle (RULE —
 `src/pulse/victory.ts`).
 
 Both players see the resolved Grid: terrain, deposits, neutral zones, known actors, health,

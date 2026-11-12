@@ -136,9 +136,18 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   right end says what Esc does now**: `menu [esc]` on the menu and while a Battle Round plays, `back [esc]` on
   the map, `close [esc]` over a popup — the action quiet, the key in the hotkey colour. A click on it is
   exactly Esc (`escLabel` in `src/build/layout.ts`). (RULE — `tests/build-popups.test.ts`, `tests/build-cancel.test.ts`)
-- **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart` (the
+- **The game menu** is `[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[v] Save game`, `[r] Restart` (the
   plan lost, settings and Experiments kept) and `[q] Quit`. **Leaving always asks**; Ctrl+C is the one immediate way out.
   (RULE — `tests/build-settings.test.ts`, `tests/build-popups.test.ts`, `tests/lifecycle-build-phase.test.ts`)
+- **Save game** (the owner, 2026-11-12: "it should be on the main menu settings "[esc]" instead of in the side menu")
+  opens a popup over the game menu: what is saved and where a name alone goes (the saves folder beside the settings),
+  then `Name:` with the name typed and a cursor after it, and `[enter] Save`. It offers the file the battle was loaded
+  from or last saved to, or a new name by its setup (`vasse-dob-1234-round-3`). Every key a file's name can hold types
+  into it, `x` and `q` included, Space types `-`, Backspace takes a character off, Enter saves and Esc goes back to the
+  game menu. Saved, the popups close and the bottom line says where; a write that fails says why and leaves the name to
+  change. **Saving happens only at a Build Phase**: the row is dimmed on a story mission ("Only a Skirmish can be
+  saved.") and refused once the plan is locked in for the Battle Round; the save holds the battle as the Build Phase
+  opened and the plan so far, and loading it returns to exactly that screen. (RULE — `tests/skirmish-play.test.ts`)
 
 ## 4. Menu rows
 
@@ -148,19 +157,20 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   (RULE — `tests/build-start.test.ts`)
 - **Every row shows its hotkey** as `[x]` in the hotkey colour; the bracket carries it in monochrome.
   (RULE — `tests/title-menu-view.test.ts`, `tests/build-menu.test.ts`)
-- **A title-menu screen that only has words to show** — Campaign's placeholder (Story's, once the Skirmish milestone renames it), About — has one row,
+- **A title-menu screen that only has words to show** — Story's placeholder, About — has one row,
   `[1] Back`, where the rows start, with its words below it: headings bold, text wrapped at words to a
   comfortable reading width, a quiet line (the build) dimmed. Esc goes back too, and the highlight comes
   back to the row that opened it. It keeps a Back row, unlike a Build Phase popup, because the title menu
   has no top bar naming Esc and every action must be reachable with Up, Down and Enter alone.
-  (RULE — `tests/title-menu-about-screen.test.ts`, `tests/title-menu-campaign-screen.test.ts`)
-- **Challenge** (`[2]`) starts a run on a seed from the clock and hands the terminal to its Build Phase. Between
-  battles, and at a run's end, the round opens on a dialog in the game's own voice: how the last battle ended, then
-  the next battle's opponent, map and rounds; at the run's end one box holds the whole summary, a paragraph a line.
-  The top bar says `battle 1 of 3 - round 1 of 6`; the Battle Round calls the other side ENEMY; a battle's result
-  reads BATTLE WON, BATTLE LOST or BATTLE DRAWN, with `[enter] Next battle` or `[enter] Run summary`.
-  (RULE — `tests/run-play.test.ts`, `tests/lifecycle-title-menu.test.ts`; retired with the run by the Skirmish
-  milestone, which keeps the result dialog for a Skirmish)
+  (RULE — `tests/title-menu-about-screen.test.ts`, `tests/title-menu-story-screen.test.ts`)
+- **Skirmish** (`[1]`, the first row: the owner, 2026-11-11, "the center stone for game design and testing") starts
+  one battle on the defaults, Vasse as the player against Dob Hunter's `balanced` script on the Crossing, on a seed from
+  the clock, and hands the terminal to its Build Phase; the setup screen takes its place when it lands. The round opens
+  on a dialog in the game's own voice: the map, the seed, who against whom and how the other side plays; a loaded save
+  opens on one line saying what was loaded. The Battle Round calls the other side ENEMY; a battle's result reads BATTLE
+  WON, BATTLE LOST or BATTLE DRAWN, with `[enter] Same battle again` (the same seed, from round 1) and, on the row above,
+  `[n] New seed`; a click on either row is its key. (RULE — `tests/skirmish-play.test.ts`,
+  `tests/lifecycle-title-menu.test.ts`)
 - **A title menu row that opens a place names its route** ([`routing.md`](routing.md)), and choosing it
   follows that route: `--at settings` and pressing Settings open the same frame, and opening at a place
   leaves its row highlighted for Esc to come back to. (RULE — `tests/route-open.test.ts`)
@@ -522,7 +532,10 @@ dialogs") is how a mission speaks: a round's scene, one line at a time. (RULE �
 
 ### 10.5 A choice that must be made
 
-The run's draft (retired with the run by the Skirmish milestone; Story's technology choice may reuse its shape) is the second popup the player does not open. A round that has a draft waiting opens on it, behind its scene when it has one. It has the one popup shape: the intro as text, the three cards as options on 1, 2 and 3 with their rarity at the end of the row and their family and role under the name, then Remove a card on `r` and the requisition on `t`, and the army as it stands under a heading. It cannot be dismissed, because what is chosen changes the army the round is built from: Esc, `x`, a right click and a click outside only say what to do, and the top bar offers no close key. Only the game menu (`q`) opens over it, and closing the game menu comes back to the draft as it was. Remove opens a list of the cards the army holds; Esc, `x` and a right click go back to the draft, and a card chosen there settles it. With nothing to remove the Remove row is quiet and says so when pressed. Choosing records the choice, and the screen moves on to the round that choice makes. (RULE — `tests/run-draft-popup.test.ts`, `tests/run-play.test.ts`)
+A popup the player does not open and cannot dismiss, because what is chosen changes the round it opens on, was the
+retired runs' draft. None is built now; Story's technology choice between missions may bring the shape back: the
+choices as options, a quiet row for one that cannot be taken, Esc and a click outside only saying what to do, and only
+the game menu opening over it. Its design is in the runs' history ([`challenge-runs-design.md`](../history/challenge-runs-design.md)).
 
 ### 10.6 A panel over the menu
 

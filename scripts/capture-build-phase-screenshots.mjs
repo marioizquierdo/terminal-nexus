@@ -799,7 +799,7 @@ function live(name, caption, { cols = 80, rows = 24, args = "--colors truecolor 
     "-y",
     String(rows),
     // `--keys Esc`: past round 1's intro before the first frame, so these shots open where they always did.
-    `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys Esc ${args}`,
+    `./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys Esc ${args}`,
   ])
   waitFor(
     repoRoot,

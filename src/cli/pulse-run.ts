@@ -534,7 +534,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 }
 
 /** The mission the Build Phase's screen plays: PERIMETER's three Battle Rounds, on the starter map — the mission of the
- *  first level of Vasse's campaign (`armies/vasse/army.json`, level `vasse-test-1`). */
+ *  first level of Vasse's story (`armies/vasse/army.json`, level `vasse-test-1`). */
 export const STARTER_MISSION: MissionPlay = missionPlay(PERIMETER)
 
 /** The screen's connections to it, as `BuildSession` takes them. */

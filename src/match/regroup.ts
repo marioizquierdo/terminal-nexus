@@ -1,4 +1,4 @@
-// The regroup — what every survivor does between two Battle Rounds, in a campaign's mission, a duel and a run alike
+// The regroup — what every survivor does between two Battle Rounds, in a story's mission, a duel and a run alike
 // (the owner, 2026-10-26: "Keep units on the map after a fight. If they are in battle, they stop targeting, move back
 // for 2 seconds, and self-arrange in formation for 6 seconds (10 seconds total)"; and, the same day, "no more sending
 // troops back to their origin base anywhere": it replaced Recall, which walked every survivor home onto its roof).
@@ -24,7 +24,7 @@
 //   stands, so a straggler left forward does not pull the rest up to it): by the formation's priority list (movement.md,
 //   troop formation) front to back — flankers, melee, ranged, shorter range first, tank to siege — and units with no
 //   attack behind; the Commander takes the place her attack gives her. A side whose level names a target for it
-//   (a campaign's automatic target) forms up on the line to that target instead, and one with no enemy Nexus to face
+//   (a story's automatic target) forms up on the line to that target instead, and one with no enemy Nexus to face
 //   on the line to the Grid's middle; a side with neither a Commander nor a Nexus of its own (a mission's raid) has no
 //   line, and its survivors stand where the round left them. Survivors more than `BEHIND` columns behind
 //   that front (units that never left the base) form a group of their own where their own front stands. Each slot is

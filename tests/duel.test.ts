@@ -10,8 +10,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { main, playStrategies } from "../src/cli/duel.ts"
-import type { DuelSetup, DuelState, SidePlan } from "../src/duel/index.ts"
-import { briefOf, duelArmy, handOf, loadoutOf, newDuel, playDuel, playRound, readPlan, SCRIPTED } from "../src/duel/index.ts"
+import type { DuelSetup, DuelState, Roster, SidePlan } from "../src/duel/index.ts"
+import { armyOf, briefOf, duelArmy, handOf, loadoutOf, newDuel, playDuel, playRound, readPlan, SCRIPTED } from "../src/duel/index.ts"
 import { hashOf } from "../src/state/canonical.ts"
 
 const setup = (extra: Partial<DuelSetup> = {}): DuelSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
@@ -152,5 +152,30 @@ test("the file protocol: a round plays once both sides have handed in a plan, an
     assert.match(lines.join("\n"), /# Duel, round 2 of 2: you are side B/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+// Moved from the retired run's tests (tests/run-draft.test.ts): a roster is the duel's own, which a Skirmish's battle
+// file may name one day; the run that first played one is gone, the rule is not.
+test("a battle is played on the roster: a Doctrine is kept from round one, and what the army lacks cannot be built or dealt", () => {
+  const roster: Roster = { buildings: ["barracks", "depot", "turret"], powers: ["reserve-callup", "drill-schedule"], doctrines: ["heavy-rounds-standard"] }
+  const duel = newDuel({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" }, rosters: { A: roster } })
+  assert.deepEqual(duel.sides.A.kept, ["heavy-rounds-standard"])
+  const army = armyOf(duel, "A")
+  assert.deepEqual(army.buildings.map((card) => card.id), ["turret", "barracks", "depot"].filter((id) => army.buildings.some((card) => card.id === id)))
+  assert.ok(!army.buildings.some((card) => card.id === "garrison" || card.id === "battery"), "the Garrison was not drafted")
+  const whole = loadoutOf(armyOf(newDuel({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } }), "A"), { kept: [] })
+  const fielded = loadoutOf(army, duel.sides.A)
+  const damage = (loadout: typeof whole): number => (loadout.registry.get("structure.bench.beamturret").attack?.damage ?? 0)
+  assert.equal(damage(fielded), damage(whole) + 3, "the Doctrine's three damage is on every Turret from the first round")
+  assert.equal(whole.catalog.length > fielded.catalog.length, true, "a side on a roster builds from a smaller menu")
+  // Neither the Pulse nor the roster's pool deals a Doctrine or a power the army lacks.
+  for (let seed = 0; seed < 40; seed += 1) {
+    const hand = handOf({ ...duel, setup: { ...duel.setup, seed } }, "A").map((card) => card.id)
+    for (const id of hand) assert.ok(roster.powers.includes(id), `${id} is in the hand but not in the pool`)
+  }
+  for (let seed = 0; seed < 20; seed += 1) {
+    const free = handOf(newDuel({ map: "crossing", seed, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } }), "A").map((card) => card.id)
+    assert.ok(!free.some((id) => id.endsWith("-standard") || id === "long-barrels"), "a Doctrine was dealt by the Nexus Pulse")
   }
 })

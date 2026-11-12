@@ -8,8 +8,9 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 
 ## 1. The words
 
-**The names** (RULE — settled 2026-11-11; the code catches up in the Skirmish milestone): every document, screen and new piece of code uses these. The code still says `campaign` and
-`challenge` in places; the Skirmish milestone renames them ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md)).
+**The names** (RULE — settled 2026-11-11, and the code's since the Skirmish milestone's title menu step): every
+document, screen and new piece of code uses these. The routes are `skirmish` and `story`, the story files are in
+`stories/`; `campaign` and `challenge` routes are refused with what replaced them.
 
 | Word | Means |
 | --- | --- |
@@ -25,7 +26,7 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 | **Save file** | A Skirmish's setup and, once played, the battle as it stands at the opening of a Build Phase: what the setup screen, Load game, the command line and every test start from ([`skirmish-saves.md`](../system-design/skirmish-saves.md)) |
 | **Opponent** | What plans the other side of a Skirmish: a script profile (`balanced`, `rush`, `turtle` and their variants, in `players/scripts/`) driving a Commander Army |
 | **Technology** | A card a mission in Story grants and later missions keep: a building, an upgrade, a Nexus power. The story file stores it in a level's `unlocks` |
-| **Level** | The code's word for a mission's entry in its story file (`campaign?level=<id>`); say *mission* in writing |
+| **Level** | The code's word for a mission's entry in its story file (`story?mission=<id>`); say *mission* in writing |
 
 **Retired names**: *Campaign* is now Story; *Challenge* and its *run* of many battles are retired (section 6). The
 word *run* is free again; do not use it for a mode.
@@ -80,8 +81,8 @@ battle its base stands as it is, its new things marked, to be read before the ne
 that name). Guessing what the enemy chose, and answering it a round later, is the bet each round asks for.
 
 What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two duel maps (the Crossing
-and the Pocket, `src/duel/maps.ts`), a duel played on the Build Phase screen (today a Challenge battle), and a duel's
-state that is already plain JSON. What it lacks is a setup screen, save files, and an opponent good enough to play.
+and the Pocket, `src/duel/maps.ts`), a Skirmish played on the Build Phase screen from a save (Skirmish on the title menu, `--load`), Save game, and the
+`skirmish` command. What it lacks is a setup screen, and an opponent good enough to play.
 
 ### 3.2 What a Skirmish is set up with
 
@@ -155,11 +156,12 @@ the same save file, seed and plans give the same battle, hash for hash, on Node 
    game), `--load <save>`, or the browser page. A note key (planned) saves the moment with everything needed to replay
    it, so a note is the moment itself, not a description of how to reach it.
 
-The `skirmish` command and save files are built ([`skirmish-saves.md`](../system-design/skirmish-saves.md)); the game
-opening a save (`--load`) waits for Save game, and until then `--at 'challenge?seed=<n>'` is the Skirmish on screen.
+The `skirmish` command, save files, Save game (Esc, then `[v]`) and the game opening a save (`--load <file>`, the route
+`skirmish?load=<file>`) are built ([`skirmish-saves.md`](../system-design/skirmish-saves.md)); `--at 'skirmish?seed=<n>'`
+opens a new battle on the defaults and that seed.
 
-The Skirmish milestone makes a Skirmish the default place to see a change: the playtest skill, the browser page and the
-pictures a pull request shows start from one, where today they start from PERIMETER. PERIMETER is then opened only for
+The Skirmish milestone makes a Skirmish the default place to see a change: the browser page opens on one already; the
+playtest skill and the pictures a pull request shows start from one next, where today they start from PERIMETER. PERIMETER is then opened only for
 a change about missions.
 
 ## 4. Story
@@ -168,8 +170,8 @@ A Commander's story, the same shape for every Commander: a tutorial, three or fo
 collections carry forward, an endless stand scored until the Nexus falls, and a final battle ([`story.md`](story.md)
 is the design).
 
-**A mission exists only inside Story** (RULE — settled 2026-11-11; the Skirmish milestone's rename holds it in code). Any mission still opens directly for testing, by its route
-(`campaign?level=<id>` today, renamed with the mode), without playing the story before it.
+**A mission exists only inside Story** (RULE — settled 2026-11-11, held in code since the Skirmish milestone's rename).
+Any mission still opens directly for testing, by its route (`story?mission=<id>`), without playing the story before it.
 
 Story comes after Skirmish has been played by people, because every mission is a Skirmish setup plus a script and words:
 a mission built before the battle is fun would be built twice.
@@ -192,8 +194,9 @@ words](../history/feedback/2026-11-11-game-modes.md)): a battle is too long for 
   technology choice between missions.
 - **Building actions** (upgrades, modes, orders), **the kept front** and **the battle banner** are battle mechanics and
   belong to every mode.
-- **The code** (`src/run/`, the title menu's Challenge row, `challenge?seed=<n>`) still plays until the Skirmish
-  milestone replaces it with Skirmish.
+- **The battle on the Build Phase screen** and its result: the Skirmish plays them (`src/cli/skirmish-play.ts`). The
+  run's own code (`src/run/`, its draft popup, its summary, the army files' `run` field, `challenge?seed=<n>`,
+  `duel run`) was removed with the Skirmish milestone's title menu step.
 
 ## 7. Content every mode can deal
 

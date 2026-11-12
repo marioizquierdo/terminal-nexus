@@ -1,5 +1,5 @@
 // Every route opens where it says (src/cli/route.ts): each place on the title menu through `runMenu`, each
-// campaign level at each of its rounds through the Build Phase's own loop, on a stand-in terminal that records
+// story level at each of its rounds through the Build Phase's own loop, on a stand-in terminal that records
 // the frames presented — the fake terminal the lifecycle tests use, with a backend that keeps frames instead of
 // writing escape sequences. And choosing a row is following its route: the same screen, the same frame.
 
@@ -15,6 +15,8 @@ import type { LevelDestination, TitleDestination } from "../src/cli/route.ts"
 import { ACTIVITY_EVENTS, createLogger, entryProblems } from "../src/log/index.ts"
 import { keyBytes, parseKeyScript } from "../src/playtest/keys.ts"
 import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
+import { openSkirmish } from "../src/cli/skirmish-open.ts"
+import { readGameFile } from "../src/cli/skirmish-files.ts"
 import { DEFAULT_SETTINGS } from "../src/settings/index.ts"
 import type { Settings, SettingsStore } from "../src/settings/index.ts"
 import { frameToAnsi, frameToText } from "../src/view/frame.ts"
@@ -50,7 +52,7 @@ async function until(ready: () => boolean, what: string): Promise<void> {
 }
 
 /** The title menu opened at `at` (or at the top), with `keys` pressed one at a time: the last frame. Its clock stands
- *  still, so Challenge's run takes the same seed (0) however it is reached. */
+ *  still, so Skirmish's battle takes the same seed (0) however it is reached. */
 async function menuAt(at: TitleDestination | undefined, keys: readonly string[] = []): Promise<ReadonlyCellFrame> {
   const { stdout, stdin, frames, backend } = standIn()
   const running = runMenu({ settings: SETTINGS, settingsStore: STORE, backend, stdout, stdin, host: HOST, now: () => 0, ...(at === undefined ? {} : { at }) })
@@ -66,7 +68,7 @@ async function menuAt(at: TitleDestination | undefined, keys: readonly string[] 
   return last
 }
 
-/** A campaign level's Build Phase opened at `at` (or as it opens when told nothing): the first frame. */
+/** A story level's Build Phase opened at `at` (or as it opens when told nothing): the first frame. */
 async function buildAt(at: LevelDestination | undefined): Promise<ReadonlyCellFrame> {
   const { stdout, stdin, frames, backend } = standIn()
   const running = runBuildPhase({
@@ -88,14 +90,12 @@ async function buildAt(at: LevelDestination | undefined): Promise<ReadonlyCellFr
 /** What a title menu place's screen shows, and must: its subtitle and words only it has. */
 const TITLE_SCREENS: Readonly<Record<TitleDestination["place"], readonly RegExp[]>> = {
   menu: [/main menu/u, /\[5\] Exit/u],
-  campaign: [/campaign/u, /Campaign is not built yet/u, /\[1\] Back/u],
-  // Challenge starts a run: its first battle's Build Phase, on a seed the game chose, said as it opens.
-  challenge: [/build phase - battle 1 of 3 - round 1 of 8/u, /seed 0\./u],
+  story: [/story/u, /Story is not built yet/u, /\[1\] Back/u],
   settings: [/settings/u, /Colours/u, /\[5\] Back/u],
   about: [/about/u, /Contributions/u, /\[1\] Back/u],
 }
 
-test("every route opens where it says: each title menu place on the title menu, each level at each round in its Build Phase", { timeout: 120_000 }, async () => {
+test("every route opens where it says: each title menu place on the title menu, each mission at each round and each Skirmish in its Build Phase", { timeout: 120_000 }, async () => {
   const routes = allRoutes()
   assert.ok(routes.length >= 5 + LEVELS.length, "the route table is shorter than the places and levels it should name")
   for (const route of routes) {
@@ -103,12 +103,17 @@ test("every route opens where it says: each title menu place on the title menu, 
     if (destination.kind === "title") {
       const text = frameToText(await menuAt(destination))
       for (const shown of TITLE_SCREENS[destination.place]) assert.match(text, shown, `${route} opened a screen without ${String(shown)}`)
-      if (destination.place !== "menu" && destination.place !== "challenge") assert.doesNotMatch(text, /\[5\] Exit/u, `${route} left the top-level menu on screen`)
+      if (destination.place !== "menu") assert.doesNotMatch(text, /\[5\] Exit/u, `${route} left the top-level menu on screen`)
+    } else if (destination.kind === "skirmish") {
+      // A Skirmish opened as the game opens one: a seed, the clock's (standing still), or a save file at its round.
+      const opened = openSkirmish(destination, { now: () => 0, readFile: readGameFile })
+      const text = frameToText(await buildAt(opened))
+      const round = destination.load === undefined ? 1 : 4
+      assert.match(text, new RegExp(`build phase - round ${round} of 8`, "u"), `${route} opened another round`)
     } else {
       const text = frameToText(await buildAt(destination))
       const { level, round } = destination
-      // A run's round says its battle first: "build phase - battle 1 of 3 - round 1 of 8".
-      assert.match(text, new RegExp(`build phase - (battle \\d+ of \\d+ - )?round ${round} of ${level.rounds}`, "u"), `${route} opened another round`)
+      assert.match(text, new RegExp(`build phase - round ${round} of ${level.rounds}`, "u"), `${route} opened another round`)
     }
   }
 })
@@ -117,6 +122,13 @@ test("choosing a title menu row and following its route open the same screen, an
   for (const item of TOP_LEVEL_ITEMS) {
     if (item.route === undefined) continue
     const destination = parseRoute(item.route)
+    // Skirmish's row starts its battle: the Build Phase on the defaults and the clock's seed, said as it opens.
+    if (destination.kind === "skirmish") {
+      const text = frameToText(await menuAt(undefined, [item.hotkey]))
+      assert.match(text, /build phase - round 1 of 8/u)
+      assert.match(text, /seed 0/u)
+      continue
+    }
     assert.equal(destination.kind, "title")
     if (destination.kind !== "title") continue
     // Colour and highlight included: the frame as the terminal gets it.
@@ -124,7 +136,6 @@ test("choosing a title menu row and following its route open the same screen, an
     const chosen = await menuAt(undefined, [item.hotkey])
     const followed = await menuAt(destination)
     assert.equal(print(followed), print(chosen), `--at ${item.route} is not the screen its row opens`)
-    if (destination.place === "challenge") continue
     // Back from where the route opened is back to its row, highlighted, as for a player who chose it.
     assert.equal(print(await menuAt(destination, ["Esc"])), print(await menuAt(undefined, [item.hotkey, "Esc"])), `Esc from ${item.route}`)
   }
@@ -168,7 +179,7 @@ test("the Activity Logs say where a screen opened, and the route a picked row op
   build.stdin.emit("data", keyBytes("C-c"))
   assert.equal(await running, 0)
   const start = buildLog.entries().find((entry) => entry.event === "session.start")
-  assert.equal(start?.props["at"], "campaign?level=vasse-test-1&round=2")
+  assert.equal(start?.props["at"], "story?mission=vasse-test-1&round=2")
   assert.deepEqual(entryProblems(ACTIVITY_EVENTS, start!), [])
 })
 
@@ -178,14 +189,14 @@ test("the default level is the Build Phase as it opens when told nothing: PERIME
   const untold = await buildAt(undefined)
   assert.equal(frameToAnsi(told, "color256", "dark"), frameToAnsi(untold, "color256", "dark"))
   assert.match(frameToText(untold), /build phase - round 1 of 3/u)
-  assert.equal(formatRoute({ kind: "level", level, round: 1 }), "campaign?level=vasse-test-1")
+  assert.equal(formatRoute({ kind: "level", level, round: 1 }), "story?mission=vasse-test-1")
 })
 
 test("a route to round 2 opens exactly the screen a player reaches by playing round 1 with nothing built and no power kept", () => {
   // The demos used to walk there with keys: start the Pulse, let it play, then Enter. A power kept would change the
   // battle, so the walk keeps none (the pick is optional).
   const walked = runBuildPlaytest({ steps: parseKeyScript("Esc s s wait~1000*26 Enter") })
-  const routed = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "campaign?level=vasse-test-1&round=2" }).at })
+  const routed = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "story?mission=vasse-test-1&round=2" }).at })
   const reached = walked.frames[walked.frames.length - 1]!
   const opened = routed.frames[0]!
   assert.equal(frameToAnsi(opened.frame, "truecolor", "dark"), frameToAnsi(reached.frame, "truecolor", "dark"))
@@ -194,18 +205,24 @@ test("a route to round 2 opens exactly the screen a player reaches by playing ro
 })
 
 test("the scripted playtest's --at opens a level at a round, and refuses a title menu route", () => {
-  const third = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "campaign?level=vasse-test-1&round=3" }).at })
+  const third = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "story?mission=vasse-test-1&round=3" }).at })
   assert.match(frameToText(third.frames[0]!.frame), /build phase - round 3 of 3/u)
   assert.equal(third.context.round?.number, 3)
   // With a settings text, the rounds on the way are played with its Experiments too.
-  const settled = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "campaign?level=vasse-test-1&round=2" }).at, experiments: { buildRange: 8 } })
+  const settled = runBuildPlaytest({ steps: [], at: playtestOpening({ at: "story?mission=vasse-test-1&round=2" }).at, experiments: { buildRange: 8 } })
   assert.equal(settled.frames[0]!.state.experiments.buildRange, 8)
-  assert.throws(() => playtestOpening({ at: "settings" }), /--at settings is on the title menu, and the scripted playtest plays a campaign level's Build Phase/u)
-  assert.throws(() => playtestOpening({ at: "campaign" }), /on the title menu/u)
-  assert.throws(() => playtestOpening({ at: "campaign?level=nowhere" }), /no level "nowhere"/u)
+  assert.throws(() => playtestOpening({ at: "settings" }), /--at settings is on the title menu, and the scripted playtest plays a Build Phase/u)
+  assert.throws(() => playtestOpening({ at: "story" }), /on the title menu/u)
+  assert.throws(() => playtestOpening({ at: "story?mission=nowhere" }), /no mission "nowhere"/u)
+  // A Skirmish opens on its seed, or a save file at its round, and slots the screen cannot play are refused.
+  assert.equal(formatRoute(playtestOpening({ at: "skirmish?seed=9" }).at), "skirmish?seed=9")
+  const loaded = runBuildPlaytest({ steps: [], at: playtestOpening({}, "--keys", { load: "saves/crossing-round-4.save.json" }).at })
+  assert.equal(loaded.context.round?.number, 4)
+  assert.throws(() => playtestOpening({}, "--keys", { load: "saves/crossing-round-4.save.json", slots: { p1: "script:rush" } }), /no slot is a player/u)
+  assert.throws(() => playtestOpening({ at: "story" }, "--keys", { load: "x.save.json" }), /give one of them/u)
   // Without --at, PERIMETER's first round; its keys are read as the game reads --keys, and refused by name.
   const opening = playtestOpening({ keys: "Esc n 1", settings: "jumpStep=12" })
-  assert.equal(formatRoute(opening.at), "campaign?level=vasse-test-1")
+  assert.equal(formatRoute(opening.at), "story?mission=vasse-test-1")
   assert.deepEqual(opening.steps, parseKeyScript("Esc n 1"))
   assert.equal(opening.settings, "jumpStep=12")
   assert.throws(() => playtestOpening({ keys: "Esc Dwn" }), /^Error: --keys: unknown key "Dwn"/u)

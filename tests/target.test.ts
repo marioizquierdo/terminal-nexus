@@ -1,5 +1,5 @@
-// A side's target (docs/system-design/pulse.md, perception and intents): the region a campaign level names for
-// the player's troops — the owner: "the campaign levels should have a target well defined so it is predictable
+// A side's target (docs/system-design/pulse.md, perception and intents): the region a story level names for
+// the player's troops — the owner: "the story levels should have a target well defined so it is predictable
 // where your troops are moving". Its fighting units head for it, engage what comes within their reach on the
 // way, and stand there. The story is the testing save `skirmish-testing/rules/target-head-engage-stand.save.json`
 // (tests/testing-saves.test.ts); here are the rule's edges, and the state that carries a target.

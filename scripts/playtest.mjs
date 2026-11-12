@@ -7,14 +7,17 @@
 //   node scripts/playtest.mjs --file my-flow.keys --gif --name hatchery-run
 //   node scripts/playtest.mjs --keys "Esc 1 click:24,13 click:24,13" --print all
 //   node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what it logged
-//   node scripts/playtest.mjs --at "campaign?level=vasse-test-1&round=3" --png final   # round 3, no keys
+//   node scripts/playtest.mjs --at "story?mission=vasse-test-1&round=3" --png final   # round 3, no keys
+//   node scripts/playtest.mjs --at "skirmish?seed=1" --keys "Esc n 1 1 Enter"         # a Skirmish
+//   node scripts/playtest.mjs --load tmp/mine.save.json --p2 script:rush               # a save, at its Build Phase
 //
 // The keys go through the real keyboard and mouse adapters as the exact bytes a terminal sends, one
 // key at a time (`src/playtest/keys.ts` has the names). The frames come from the same composer the
 // live screen presents, in-process, so there is no capture race: every picture is of the state the
-// script actually reached. Only a campaign level's Build Phase is wired up so far — `--at` names which level
-// and round, as the game's own `--at` does (`src/cli/route.ts`), and refuses a title menu route;
-// `src/playtest/build.ts` is the shape another screen would copy.
+// script actually reached. Only the Build Phase is wired up so far — a story mission's at a round, or a Skirmish's:
+// `--at` names which, as the game's own `--at` does (`src/cli/route.ts`), `--load` opens a save file, and a title
+// menu route is refused; `src/playtest/build.ts` is the shape another screen would copy. Save game (Esc, v) writes
+// a file as the game does: a name with a folder (tmp/mine) where it says, a bare name into the game's saves folder.
 //
 // Output goes to `.playtest/` (ignored by git) unless `--out` says otherwise. A picture for a pull
 // request is committed on the branch under `docs/pr-pictures/` (`--out docs/pr-pictures`), and the
@@ -36,18 +39,22 @@ import { renderFramePng, renderFramesGif } from "./lib/frame-capture.mjs"
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..")
 
-const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <path> | --at <route>) [options]
+const USAGE = `usage: node scripts/playtest.mjs (--keys "<script>" | --file <path> | --at <route> | --load <file>) [options]
 
   --keys "<script>"    keys to press, e.g. "Esc Down Down Space*4" (names: src/playtest/keys.ts);
                        PERIMETER opens on its intro dialog, which Esc skips and Enter reads on
   --file <path>        the same, from a file; # starts a comment
-  --at <route>         the campaign level and round to open, as the game's --at takes it:
-                       "campaign?level=vasse-test-1&round=3" (round counts Battle Rounds from
-                       1, as the screen does). Round 1 of vasse-test-1 unless given;
-                       a later round is reached as a player who builds nothing reaches it.
-                       "challenge?seed=1" opens that Challenge run's first battle
-                       (&commander=averno or dob for another Commander than Vasse).
-                       With --at, the keys may be left out: the screen as it opens
+  --at <route>         where to open, as the game's --at takes it: a story mission at a round,
+                       "story?mission=vasse-test-1&round=3" (round counts Battle Rounds from
+                       1, as the screen does; a later round is reached as a player who builds
+                       nothing reaches it), or a Skirmish, "skirmish?seed=1" (Vasse against
+                       Dob Hunter's balanced script on the Crossing). Round 1 of vasse-test-1
+                       unless given. With --at or --load, the keys may be left out
+  --load <file>        a Skirmish save file, opened at its Build Phase with its plan so far
+                       (what Save game writes): the same as --at "skirmish?load=<file>"
+  --p1 <who>, --p2 <who>  who plays each slot of a Skirmish, as the skirmish command takes
+                       them: build: (the screen; build:plan.json lays a plan on round 1's
+                       Build Phase) or script:<name>. The screen plays p1
   --size 80x24         terminal size (default 80x24; 104x30 is the largest view, and a larger one centres it)
   --colors <depth>     truecolor (default), color256, monochrome
   --theme <theme>      dark (default) or light; the game paints its own background
@@ -85,6 +92,9 @@ const { values } = parseArgs({
     keys: { type: "string" },
     file: { type: "string" },
     at: { type: "string" },
+    load: { type: "string" },
+    p1: { type: "string" },
+    p2: { type: "string" },
     size: { type: "string", default: "80x24" },
     colors: { type: "string" },
     theme: { type: "string" },
@@ -114,7 +124,7 @@ if (activityFilter === undefined) {
   throw new Error(`--activity: no filter named "${values.activity}"; the filters are ${ACTIVITY_FILTERS.map((filter) => filter.name).join(", ")}`)
 }
 
-if (values.help || (values.keys === undefined && values.file === undefined && values.at === undefined)) {
+if (values.help || (values.keys === undefined && values.file === undefined && values.at === undefined && values.load === undefined)) {
   process.stdout.write(USAGE)
   process.exit(values.help ? 0 : 2)
 }
@@ -125,7 +135,11 @@ if (values.help || (values.keys === undefined && values.file === undefined && va
 const script = values.file === undefined ? values.keys : readFileSync(values.file, "utf8")
 let opening
 try {
-  opening = playtestOpening({ at: values.at, settings: values.settings, keys: script }, values.file)
+  const slots = { ...(values.p1 === undefined ? {} : { p1: values.p1 }), ...(values.p2 === undefined ? {} : { p2: values.p2 }) }
+  opening = playtestOpening({ at: values.at, settings: values.settings, keys: script }, values.file, {
+    ...(values.load === undefined ? {} : { load: values.load }),
+    slots,
+  })
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
   process.exit(2)

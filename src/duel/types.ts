@@ -42,11 +42,11 @@ export type DuelSetup = Readonly<{
 
 /** **A duel's Battle Round: 30 seconds**, 360 ticks at 12 a second (the owner, 2026-10-26: "Shorter rounds: 30
  *  seconds"), with the front kept between rounds (`src/match/regroup.ts`). What a duel plays when it is not told
- *  otherwise, a run's battles and the measure spec's duels. */
+ *  otherwise, a Skirmish's and the measure spec's duels. */
 export const DUEL_PULSE_TICKS = 360
 
-/** **Rounds a duel lasts at most when it is not told otherwise: 8**, a run battle's too — measured for 30-second rounds
- *  with the front kept (`RUN_ROUNDS`, `src/run/run.ts`, says how). */
+/** **Rounds a duel lasts at most when it is not told otherwise: 8**, a Skirmish's too — measured for 30-second rounds
+ *  with the front kept, for the retired runs (docs/history/challenge-runs-design.md). */
 export const DUEL_ROUNDS = 8
 
 /** Where a building should go, as a plan names it: a place relative to the side's own base, or a tile. A named place

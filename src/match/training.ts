@@ -1,4 +1,4 @@
-// The registry a campaign's battle runs on: each building that makes units given a production recipe from what
+// The registry a story's battle runs on: each building that makes units given a production recipe from what
 // its army says it spawns (`spawns` on its card, `armies/all/army.json`), so it spawns them in waves
 // (`src/pulse/production.ts`). What a building spawns is the building's own — the unit, how many a wave, how
 // many waves a round, the seconds between them — and when the first wave comes is every building's, one tuned

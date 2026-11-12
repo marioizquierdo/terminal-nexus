@@ -1,4 +1,4 @@
-// Reading an army file and a campaign file: the shape each part must have, checked item by item before anything
+// Reading an army file and a story file: the shape each part must have, checked item by item before anything
 // reads it, every problem said by path (`src/content/shape.ts`). A list's item with the wrong shape is left out of
 // everything after, so one broken level, one broken power or one broken unit never hides the problems of the rest.
 //
@@ -19,7 +19,7 @@ import type {
   BuildingActionCard,
   BuildingCard,
   BuildingSpawns,
-  CampaignManifest,
+  StoryManifest,
   ChanceModifier,
   CommanderEntry,
   LevelEntry,
@@ -96,7 +96,6 @@ const commanderEntry = record<CommanderEntry>(
     portrait: list(text),
     portraitFalls: list(list(text)),
     start: list(record<Readonly<{ unit: string; count: number }>>({ unit: text, count: positiveWholeNumber }, {})),
-    run: record<NonNullable<CommanderEntry["run"]>>({ buildings: list(text), powers: list(text) }, {}),
     schedule: scheduleShape,
   },
 )
@@ -112,7 +111,7 @@ const armyFields = record<ArmyManifest>(
   },
 )
 
-// --- The shapes of a campaign's parts ------------------------------------------------------------------------
+// --- The shapes of a story's parts ------------------------------------------------------------------------
 
 const unlocks = record<Unlocks>({}, { buildings: list(text), powers: list(text) })
 /** A level's own fields. Its mission is checked after the level it extends is resolved (`levels.ts`), by the
@@ -121,8 +120,8 @@ export const levelShape = record<LevelEntry>(
   { id: text },
   { extends: text, map: text, credits: wholeNumber, unlocks, schedule: scheduleShape, mission: anything as Shape<LevelEntry["mission"] & object>, notes: text },
 )
-/** A campaign file's own fields. Its levels are checked one by one, after. */
-const campaignFields = record<CampaignManifest>(
+/** A story file's own fields. Its levels are checked one by one, after. */
+const storyFields = record<StoryManifest>(
   { id: text, title: text, commander: text, requires: list(text), levels: anything as Shape<readonly LevelEntry[]> },
   { notes: text },
 )
@@ -193,21 +192,21 @@ export function readArmy(file: unknown, label: string, problems: string[]): Read
   return { file: file as ArmyManifest, id, requires, content, entries, buildings, powers, commander }
 }
 
-// --- A campaign file, read -------------------------------------------------------------------------------------
+// --- A story file, read -------------------------------------------------------------------------------------
 
-/** A campaign file as far as its shape allows, its levels as written (not yet resolved against what they extend). */
-export type ReadCampaign = Readonly<{
-  file: CampaignManifest
+/** A story file as far as its shape allows, its levels as written (not yet resolved against what they extend). */
+export type ReadStory = Readonly<{
+  file: StoryManifest
   id: string
   requires: readonly string[]
   levels: readonly LevelEntry[]
 }>
 
-/** A campaign file as far as its shape allows, or `null` when it has no id to be known by. */
-export function readCampaign(file: unknown, label: string, problems: string[]): ReadCampaign | null {
+/** A story file as far as its shape allows, or `null` when it has no id to be known by. */
+export function readStory(file: unknown, label: string, problems: string[]): ReadStory | null {
   const id = idOf(file)
-  const say: Say = (problem) => problems.push(`${id === null ? label : `campaign "${id}"`}: ${problem}`)
-  campaignFields.check(file, "", say)
+  const say: Say = (problem) => problems.push(`${id === null ? label : `story "${id}"`}: ${problem}`)
+  storyFields.check(file, "", say)
   if (!isObject(file) || id === null) return null
   const requires = Array.isArray(file["requires"]) ? file["requires"].filter((entry): entry is string => typeof entry === "string") : []
   const levels = keep(file["levels"], "levels", levelShape, say)
@@ -217,5 +216,5 @@ export function readCampaign(file: unknown, label: string, problems: string[]): 
       if (level[needed] === undefined) say(`${fieldAt(`levels[${level.id}]`, needed)} is needed: the level extends no other`)
     }
   }
-  return { file: file as CampaignManifest, id, requires, levels }
+  return { file: file as StoryManifest, id, requires, levels }
 }

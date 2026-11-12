@@ -1,16 +1,16 @@
-// The army loader: the game's armies and campaigns, checked and resolved before anything reads them.
+// The army loader: the game's armies and stories, checked and resolved before anything reads them.
 //
-// An army or a campaign is data a modder can write without TypeScript, so everything is checked here, and every
+// An army or a story is data a modder can write without TypeScript, so everything is checked here, and every
 // problem is reported at once, by name, the way a mission's own validation reports (`validateMission`). In order:
 //
 // 1. **read** each file's shape (`read.ts`): a broken item is left out of what follows, never hiding the rest;
-// 2. **see**: each army sees itself and what it requires, directly or through another, and a campaign sees what it
+// 2. **see**: each army sees itself and what it requires, directly or through another, and a story sees what it
 //    requires; a circle of `requires` is refused;
 // 3. **index** every id once: content, building cards, Nexus powers, Commanders, levels;
 // 4. **check** that everything a file names is in its sight: a building's structure and units, a power's effect
 //    (`effects.ts`), a Commander's unit and voice, a level's map, unlocks, schedule and mission (made whole first,
 //    `levels.ts`);
-// 5. **resolve** each campaign's levels into what each offers: everything the campaign has unlocked by then.
+// 5. **resolve** each story's levels into what each offers: everything the story has unlocked by then.
 //
 // Pure, like the rest of the rules around the kernel: no clock, no randomness, nothing read from disk. The files,
 // the content registry and the map table are arguments (`src/armies/index.ts` passes the game's).
@@ -29,9 +29,9 @@ import { ACTION_KEYS, ACTION_LABEL_MAX, ORDERS, fitterOf, modeSet } from "./acti
 import type { EffectKind, EffectSight } from "./effects.ts"
 import { EFFECTS, addsOf, effectParts } from "./effects.ts"
 import { wholeLevels, withCommander } from "./levels.ts"
-import type { ReadArmy, ReadCampaign } from "./read.ts"
-import { readArmy, readCampaign } from "./read.ts"
-import type { Armies, BuildingActionCard, BuildingCard, Campaign, Commander, CommanderEntry, Level, LevelEntry, LevelMap, PowerCard, Schedule } from "./types.ts"
+import type { ReadArmy, ReadStory } from "./read.ts"
+import { readArmy, readStory } from "./read.ts"
+import type { Armies, BuildingActionCard, BuildingCard, Story, Commander, CommanderEntry, Level, LevelEntry, LevelMap, PowerCard, Schedule } from "./types.ts"
 import { ArmyError, COMMANDER_PLACEHOLDER, PORTRAIT_ROWS, PORTRAIT_WIDTH } from "./types.ts"
 
 // --- Requires: what each file sees, and the circles ----------------------------------------------------------
@@ -91,7 +91,7 @@ function loadOrder(armies: ReadonlyMap<string, ReadArmy>): ReadArmy[] {
 const quoted = (ids: readonly string[]): string =>
   ids.length === 1 ? `"${ids[0]}"` : `${ids.slice(0, -1).map((id) => `"${id}"`).join(", ")} and "${ids[ids.length - 1]}"`
 
-/** Every content id a mission names: what it spawns, plans, has speak and looks at — but the campaign's Commander,
+/** Every content id a mission names: what it spawns, plans, has speak and looks at — but the story's Commander,
  *  which it names as "@commander". */
 function contentOfMission(mission: MissionDefinition, registry: ContentRegistry): string[] {
   const ids: string[] = []
@@ -193,14 +193,14 @@ export type LoadWorld = Readonly<{
   maps: Readonly<Record<string, LevelMap>>
 }>
 
-/** The army files and the campaign files to load. */
-export type GameFiles = Readonly<{ armies: readonly unknown[]; campaigns?: readonly unknown[] }>
+/** The army files and the story files to load. */
+export type GameFiles = Readonly<{ armies: readonly unknown[]; stories?: readonly unknown[] }>
 
-/** A file's sight, by name: an army's own and what it requires, or what a campaign requires. */
+/** A file's sight, by name: an army's own and what it requires, or what a story requires. */
 type Viewer = Readonly<{ name: string; sees: ReadonlySet<string> }>
 
 /**
- * The armies and campaigns, checked and resolved: each campaign's levels in order, each with what it offers. Throws
+ * The armies and stories, checked and resolved: each story's levels in order, each with what it offers. Throws
  * `ArmyError` listing every problem found in any of them.
  */
 export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
@@ -215,12 +215,12 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     if (read.has(army.id)) problems.push(`two armies are called "${army.id}"; the second is left out`)
     else read.set(army.id, army)
   })
-  const campaignFiles = new Map<string, ReadCampaign>()
-  ;(files.campaigns ?? []).forEach((given, index) => {
-    const campaign = readCampaign(copied(given), `campaign ${index + 1}`, problems)
-    if (campaign === null) return
-    if (campaignFiles.has(campaign.id)) problems.push(`two campaigns are called "${campaign.id}"; the second is left out`)
-    else campaignFiles.set(campaign.id, campaign)
+  const storyFiles = new Map<string, ReadStory>()
+  ;(files.stories ?? []).forEach((given, index) => {
+    const story = readStory(copied(given), `story ${index + 1}`, problems)
+    if (story === null) return
+    if (storyFiles.has(story.id)) problems.push(`two stories are called "${story.id}"; the second is left out`)
+    else storyFiles.set(story.id, story)
   })
 
   // An army may not define what the engine already defines another way.
@@ -245,13 +245,13 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
   for (const loop of circles(read).filter((ids) => ids.length > 1)) {
     problems.push(`armies ${quoted(loop)} require each other in a circle: ${[...loop, loop[0]].join(" -> ")}`)
   }
-  for (const campaign of campaignFiles.values()) {
-    for (const required of campaign.requires) if (!read.has(required)) problems.push(`campaign "${campaign.id}" requires "${required}", which is not an army`)
+  for (const story of storyFiles.values()) {
+    for (const required of story.requires) if (!read.has(required)) problems.push(`story "${story.id}" requires "${required}", which is not an army`)
   }
   const armyViewer = (id: string): Viewer => ({ name: id, sees: sightOf(read, [id]) })
 
   // 3. Every id once: content an army brings, cards, Commanders and levels (a level's id is what a route names, so it
-  // is unique across every campaign).
+  // is unique across every story).
   type Owned<V = object> = Readonly<{ army: string }> & V
   const contentBy = new Map<string, Owned>()
   const buildingsBy = new Map<string, Owned<{ card: BuildingCard }>>()
@@ -270,15 +270,15 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     if (army.commander !== null) once(commandersBy, army.commander.id, { ...owned, entry: army.commander }, "Commander")
   }
   const levelEntries = new Map<string, LevelEntry>()
-  const levelCampaign = new Map<string, string>()
-  for (const campaign of campaignFiles.values()) {
-    for (const level of campaign.levels) {
-      const first = levelCampaign.get(level.id)
+  const levelStory = new Map<string, string>()
+  for (const story of storyFiles.values()) {
+    for (const level of story.levels) {
+      const first = levelStory.get(level.id)
       if (first !== undefined) {
-        problems.push(first === campaign.id ? `campaign "${first}" has the level "${level.id}" twice` : `the level "${level.id}" is in both "${first}" and "${campaign.id}"`)
+        problems.push(first === story.id ? `story "${first}" has the level "${level.id}" twice` : `the level "${level.id}" is in both "${first}" and "${story.id}"`)
         continue
       }
-      levelCampaign.set(level.id, campaign.id)
+      levelStory.set(level.id, story.id)
       levelEntries.set(level.id, level)
     }
   }
@@ -552,17 +552,6 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
         const problem = sightFor(viewer).unit(unit)
         if (problem !== null) say(`the Commander "${entry.id}" starts with ${problem}`)
       }
-      // What a run starts her army with: cards her army sees, a building and a Nexus power each.
-      for (const [kind, ids] of [["building", entry.run?.buildings ?? []], ["Nexus power", entry.run?.powers ?? []]] as const) {
-        const seen = new Set<string>()
-        for (const id of ids) {
-          const unseen = unseenCard(viewer, kind, id)
-          if (unseen !== null) say(`the Commander "${entry.id}" starts a run with ${unseen}`)
-          else if (kind === "Nexus power" && powersBy.get(id)?.card.doctrine === true) say(`the Commander "${entry.id}" starts a run with the Doctrine "${id}": a Doctrine is drafted, never started with`)
-          if (seen.has(id)) say(`the Commander "${entry.id}" starts a run with the ${kind} "${id}" twice`)
-          seen.add(id)
-        }
-      }
       // Her army's schedule, against every power her army can offer.
       if (entry.schedule !== undefined) {
         const offered = new Set([...powersBy.entries()].filter(([, owned]) => viewer.sees.has(owned.army)).map(([id]) => id))
@@ -580,26 +569,26 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
     else problems.push(`the buildings "${first}" and "${card.id}" both give "${card.structure}" actions; one card says what a building can do`)
   }
 
-  // 4b. Campaigns: a Commander they see, levels made whole, and each level's map, unlocks and mission.
-  const whole = wholeLevels(levelEntries, (level, problem) => problems.push(`campaign "${levelCampaign.get(level)}": level "${level}" ${problem}`))
+  // 4b. Stories: a Commander they see, levels made whole, and each level's map, unlocks and mission.
+  const whole = wholeLevels(levelEntries, (level, problem) => problems.push(`story "${levelStory.get(level)}": level "${level}" ${problem}`))
   const missions = new Map<string, MissionDefinition>()
-  for (const campaign of campaignFiles.values()) {
-    const viewer: Viewer = { name: campaign.id, sees: sightOf(read, campaign.requires) }
+  for (const story of storyFiles.values()) {
+    const viewer: Viewer = { name: story.id, sees: sightOf(read, story.requires) }
     const say = (problem: string): void => {
-      problems.push(`campaign "${campaign.id}": ${problem}`)
+      problems.push(`story "${story.id}": ${problem}`)
     }
     // What its shape check already refused (no Commander named, no list of levels) is not said again here.
-    const { commander, levels: written } = campaign.file
+    const { commander, levels: written } = story.file
     const owner = typeof commander === "string" ? commandersBy.get(commander) : undefined
     if (typeof commander === "string" && owner === undefined) say(`it is led by "${commander}", which is not a Commander any army has`)
-    else if (owner !== undefined && !viewer.sees.has(owner.army)) say(`it is led by "${commander}", whom "${owner.army}" has and "${campaign.id}" does not require`)
+    else if (owner !== undefined && !viewer.sees.has(owner.army)) say(`it is led by "${commander}", whom "${owner.army}" has and "${story.id}" does not require`)
     if (Array.isArray(written) && written.length === 0) say(`it has no levels`)
     const commanderUnit = owner?.entry.unit
     const unlocked = { buildings: new Map<string, string>(), powers: new Map<string, string>() }
 
-    for (const written of campaign.levels) {
+    for (const written of story.levels) {
       const made = whole.get(written.id)
-      if (made === undefined || levelCampaign.get(written.id) !== campaign.id) continue
+      if (made === undefined || levelStory.get(written.id) !== story.id) continue
       const level = made.entry
       const where = `level "${level.id}"`
       const map = level.map !== undefined && Object.hasOwn(maps, level.map) ? maps[level.map] : undefined
@@ -650,7 +639,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
 
       // Its mission, whole: its shape, then what it names, then against its map.
       if (!missionShape.check(made.mission, `levels[${level.id}].mission`, say)) continue
-      // A mission that brings "@commander" in a campaign whose Commander is not found is not checked further: that she
+      // A mission that brings "@commander" in a story whose Commander is not found is not checked further: that she
       // is not found is said, and every line naming her would only say it again.
       if (commanderUnit === undefined && JSON.stringify(made.mission).includes(`"${COMMANDER_PLACEHOLDER}"`)) continue
       const mission = commanderUnit === undefined ? made.mission : withCommander(made.mission, commanderUnit)
@@ -672,14 +661,14 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
         const unseen = registry.has(id) ? unseenContent(viewer, id) : null
         if (unseen !== null) say(`${inMission} uses ${unseen}`)
       }
-      // The Commander a level brings for the player is its campaign's: "@commander", or her own id.
+      // The Commander a level brings for the player is its story's: "@commander", or her own id.
       mission.triggers.forEach((trigger) =>
         trigger.do.forEach((action: TriggerAction, index) => {
           if (!("spawn" in action) || action.spawn.side !== "A" || commanderUnit === undefined) return
           for (const unit of action.spawn.units) {
             if (!registry.has(unit.unit) || registry.get(unit.unit).commander !== true || unit.unit === commanderUnit) continue
             say(
-              `${inMission}: trigger "${trigger.id}", action ${index + 1} (${actionName(action)}) brings the Commander "${unit.unit}" for the player, whose campaign's Commander is "${commanderUnit}": bring "${COMMANDER_PLACEHOLDER}"`,
+              `${inMission}: trigger "${trigger.id}", action ${index + 1} (${actionName(action)}) brings the Commander "${unit.unit}" for the player, whose story's Commander is "${commanderUnit}": bring "${COMMANDER_PLACEHOLDER}"`,
             )
           }
         }),
@@ -689,7 +678,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
 
   if (problems.length > 0) throw new ArmyError(problems)
 
-  // 5. Resolved: each campaign's levels, each offering what the campaign has unlocked by then.
+  // 5. Resolved: each story's levels, each offering what the story has unlocked by then.
   const ordered = loadOrder(read)
   const commanders = new Map<string, Commander>()
   for (const army of ordered) {
@@ -703,20 +692,19 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       faction: entry.faction,
       lean: entry.lean,
       start: entry.start ?? [],
-      ...(entry.run === undefined ? {} : { run: entry.run }),
       ...(entry.schedule === undefined ? {} : { schedule: entry.schedule }),
       barks: entry.barks ?? {},
       portrait: entry.portrait ?? [],
       portraitFalls: entry.portraitFalls ?? [],
     })
   }
-  const campaigns: Campaign[] = []
-  for (const campaign of campaignFiles.values()) {
-    const commander = commanders.get(campaign.file.commander) as Commander
+  const stories: Story[] = []
+  for (const story of storyFiles.values()) {
+    const commander = commanders.get(story.file.commander) as Commander
     const levels: Level[] = []
     let buildings: readonly BuildingCard[] = []
     let powers: readonly PowerCard[] = []
-    campaign.levels.forEach((written, index) => {
+    story.levels.forEach((written, index) => {
       const entry = (whole.get(written.id) as Readonly<{ entry: LevelEntry }>).entry
       const newBuildings = (entry.unlocks?.buildings ?? []).map((id) => (buildingsBy.get(id) as Readonly<{ card: BuildingCard }>).card)
       const newPowers = (entry.unlocks?.powers ?? []).map((id) => (powersBy.get(id) as Readonly<{ card: PowerCard }>).card)
@@ -728,7 +716,7 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
       )
       levels.push({
         id: entry.id,
-        campaign: campaign.id,
+        story: story.id,
         army: commander.army,
         number: index + 1,
         map: entry.map as string,
@@ -738,13 +726,13 @@ export function loadArmies(files: GameFiles, world: LoadWorld): Armies {
         unlocked: { buildings: newBuildings, powers: newPowers },
       })
     })
-    campaigns.push({ id: campaign.id, army: commander.army, title: campaign.file.title, commander, levels })
+    stories.push({ id: story.id, army: commander.army, title: story.file.title, commander, levels })
   }
   return frozen({
     armies: ordered.map((army) => army.file),
     commanders: [...commanders.values()],
-    campaigns,
-    levels: campaigns.flatMap((campaign) => campaign.levels),
+    stories,
+    levels: stories.flatMap((story) => story.levels),
     arsenals: Object.fromEntries(
       ordered.map((army) => {
         const sees = sightOf(read, [army.id])

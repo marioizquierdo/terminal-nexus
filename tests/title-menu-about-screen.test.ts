@@ -245,8 +245,8 @@ test("the title menu logs one session.start and a schema-valid menu.select for e
   menu.send(itemNamed("settings").hotkey)
   menu.send("4") // Settings' reduced-motion row
   menu.send(ESC) // back, which is not a pick
-  menu.send(itemNamed("campaign").hotkey)
-  menu.send("\r") // Enter on Campaign's Back
+  menu.send(itemNamed("story").hotkey)
+  menu.send("\r") // Enter on Story's Back
   menu.stdout.emit("resize") // the browser page's window changed shape, the terminal did not
   menu.stdout.columns = 100
   menu.stdout.emit("resize")
@@ -265,8 +265,8 @@ test("the title menu logs one session.start and a schema-valid menu.select for e
     ["about", "back"],
     ["top", "settings"],
     ["settings", "reducedMotion"],
-    ["top", "campaign"],
-    ["campaign", "back"],
+    ["top", "story"],
+    ["story", "back"],
     ["top", "exit"],
   ])
   const resizes = entries.filter((entry) => entry.event === "session.resize").map((entry) => entry.props)

@@ -1,5 +1,6 @@
-// A scripted playtest of the Build Phase: a campaign level's screen (`--at campaign?level=<id>&round=<n>`,
-// PERIMETER's first round unless told otherwise), driven by a key script through the
+// A scripted playtest of the Build Phase: a story mission's screen (`--at story?mission=<id>&round=<n>`,
+// PERIMETER's first round unless told otherwise) or a Skirmish's (`--at skirmish?seed=<n>`, `--load <file>`), driven
+// by a key script through the
 // real adapters, with every step's frame kept. No terminal, no clock, no capture race — the frames are
 // composed in-process by the very function the live screen presents (`composeBuildFrame`), so step N's
 // frame is exactly what a player would see after pressing step N's key.
@@ -22,6 +23,9 @@ import type { LevelPlay } from "../cli/levels.ts"
 import { DEFAULT_LEVEL, openRound } from "../cli/levels.ts"
 import { DEFAULT_LEVEL_ROUTE, RouteError, formatRoute } from "../cli/route.ts"
 import type { LevelDestination } from "../cli/route.ts"
+import { openSkirmish } from "../cli/skirmish-open.ts"
+import { readGameFile, savesFolder, skirmishSaver } from "../cli/skirmish-files.ts"
+import type { Slot } from "../skirmish/save.ts"
 import type { Coord } from "../grid/types.ts"
 import { composeBuildFrame } from "../view/build.ts"
 import { hasTrail } from "../view/build-grid.ts"
@@ -51,7 +55,7 @@ export type BuildPlaytestOptions = Readonly<{
   /** Experiments to open with instead of this build's defaults — an imported export's. */
   experiments?: Partial<Experiments>
   /**
-   * The campaign level and round to open (`--at campaign?level=<id>&round=<n>`, `playtestOpening`): that round
+   * The story level and round to open (`--at story?mission=<id>&round=<n>`, `playtestOpening`): that round
    * as a player who builds nothing reaches it (`openRound`), the rounds before it played with this run's
    * settings and Experiments, and its rounds played on its own mission. PERIMETER's first round unless given;
    * `context` and `play`, when given, win.
@@ -61,7 +65,12 @@ export type BuildPlaytestOptions = Readonly<{
   /** The mission the rounds are played on, when it is not the level's own: another mission's or a test
    *  map's `startPulse`, `nextRound` and, to see its raid's intent, `foresee` (`missionPlay`), with
    *  `context` its first round. */
-  play?: Pick<MissionPlay, "startPulse" | "nextRound"> & Partial<Pick<MissionPlay, "foresee" | "keep">> & Partial<Pick<LevelPlay, "draft">>
+  play?: Pick<MissionPlay, "startPulse"> & Pick<LevelPlay, "nextRound"> & Partial<Pick<MissionPlay, "foresee" | "keep">> & Partial<Pick<LevelPlay, "resume">>
+  /**
+   * Where Save game writes a name with no folder of its own: the game's saves folder (`savesFolder`) unless given. A
+   * name with a folder (`tmp/mine`) is written there, from the working folder, as the game writes it.
+   */
+  savesFolder?: string
   cursor?: Coord
   /**
    * Play a terminal that reports key presses, repeats and releases (the kitty keyboard protocol, which
@@ -135,9 +144,11 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
       ...(options.experiments === undefined ? {} : { experiments: options.experiments }),
     })
   const play = options.play ?? at.level.play
+  const saver = skirmishSaver(options.savesFolder ?? savesFolder())
   const context: BuildContext = {
     ...opened,
     settings,
+    saveDestination: saver.destination,
     exportDestination: "Not copied anywhere: this is a scripted playtest.",
     activity,
     activityExportDestination: "Not copied anywhere: this is a scripted playtest.",
@@ -164,7 +175,8 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
     activity,
     nextRound: play.nextRound,
     ...(play.keep === undefined ? {} : { keep: play.keep }),
-    ...(play.draft === undefined ? {} : { draft: play.draft }),
+    ...(play.resume === undefined ? {} : { resume: play.resume }),
+    onSave: saver.onSave,
     // Another mission's raid is its own to foresee: PERIMETER's is not drawn over it.
     ...(play.foresee === undefined ? {} : { foresee: play.foresee }),
     scenes: options.scenes ?? true,
@@ -234,24 +246,34 @@ export function runBuildPlaytest(options: BuildPlaytestOptions): BuildPlaytest {
 /**
  * Where a scripted playtest opens and what it starts from (`runBuildPlaytest`'s `at` and `steps`), read from its
  * command line's texts as the game reads its own (`src/cli/launch.ts`): PERIMETER's first round unless `at` names
- * another. Refused, with every problem said, when the route is not a place, a key the script names does not exist
- * (`keysFrom` says where the script came from), or the place is on the title menu: a scripted playtest plays a
- * campaign level's Build Phase.
+ * another, or `skirmish.load` a save file (the game's `--load`), with `skirmish.slots` who plays each slot (`--p1`,
+ * `--p2`). Refused, with every problem said, when the route is not a place, a key the script names does not exist
+ * (`keysFrom` says where the script came from), the save cannot be opened, or the place is on the title menu: a
+ * scripted playtest plays a Build Phase. `skirmish.now` is the clock a seedless `skirmish` takes its seed from.
  */
 export function playtestOpening(
   text: LaunchText,
   keysFrom = "--keys",
+  skirmish: Readonly<{ load?: string; slots?: Partial<Record<Slot, string>>; now?: () => number }> = {},
 ): Readonly<{ at: LevelDestination; steps: readonly PlaytestStep[]; settings?: string }> {
-  const { launch, problems } = readLaunch(text, DEFAULT_LEVEL_ROUTE)
+  if (skirmish.load !== undefined && text.at !== undefined) throw new Error("--load opens a save and --at a place: give one of them")
+  const at = skirmish.load === undefined ? text.at : `skirmish?load=${encodeURIComponent(skirmish.load)}`
+  const { launch, problems } = readLaunch({ ...text, at }, DEFAULT_LEVEL_ROUTE)
   if (problems.length > 0) {
     throw new Error(problems.map(({ error }) => (error instanceof RouteError ? `--at ${error.message}` : `${keysFrom}: ${error.message}`)).join("\n"))
   }
   const { destination, settings, keys = [] } = launch
   if (destination.kind === "title") {
     throw new Error(
-      `--at ${formatRoute(destination)} is on the title menu, and the scripted playtest plays a campaign level's Build Phase: ` +
-        `try --at '${DEFAULT_LEVEL_ROUTE}&round=2'`,
+      `--at ${formatRoute(destination)} is on the title menu, and the scripted playtest plays a Build Phase: ` +
+        `try --at '${DEFAULT_LEVEL_ROUTE}&round=2' or --at 'skirmish?seed=1'`,
     )
   }
-  return { at: destination, steps: keys, ...(settings === undefined ? {} : { settings }) }
+  const hasSlots = Object.keys(skirmish.slots ?? {}).length > 0
+  if (destination.kind !== "skirmish") {
+    if (hasSlots) throw new Error("--p1 and --p2 name who plays a Skirmish's slots: try --load <file> or --at skirmish")
+    return { at: destination, steps: keys, ...(settings === undefined ? {} : { settings }) }
+  }
+  const opened = openSkirmish(destination, { readFile: readGameFile, ...(skirmish.slots === undefined ? {} : { slots: skirmish.slots }), ...(skirmish.now === undefined ? {} : { now: skirmish.now }) })
+  return { at: opened, steps: keys, ...(settings === undefined ? {} : { settings }) }
 }

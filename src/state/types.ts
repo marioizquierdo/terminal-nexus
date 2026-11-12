@@ -79,7 +79,7 @@ export type GroundItem = Readonly<{
 }>
 
 /**
- * A rectangle of the Grid a side's fighting units head for — a campaign level's target for the player's
+ * A rectangle of the Grid a side's fighting units head for — a story level's target for the player's
  * troops (pulse.md, perception and intents). Inclusive of its north-west tile, `width` by `height` tiles.
  */
 export type TargetArea = Readonly<{ x: number; y: number; width: number; height: number }>
@@ -131,7 +131,7 @@ export type MatchState = Readonly<{
   rng: RngState
   nextOrdinal: number
   /**
-   * Where each side's fighting units head when no enemy is within their reach: the target a campaign
+   * Where each side's fighting units head when no enemy is within their reach: the target a story
    * level names for a side (pulse.md). A side with none heads for the enemy's Grid Nexus, engaging what comes
    * within its reach on the way (`headsForNexus`, `src/pulse/perception.ts`). Only the trigger runner sets it (`src/match/mission.ts`),
    * at a Pulse's start or between two ticks; the kernel reads it and never changes it.

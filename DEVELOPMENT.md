@@ -34,28 +34,29 @@ npm run maps                                                          # every ch
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
-./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, campaign
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'                   # PERIMETER's Build Phase
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'           # its round 3, no keys to walk there
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings 'jumpStep=12&reducedMotion=true'
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
+./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, story
+./bin/terminal-nexus.ts --at 'skirmish?seed=7'                              # a Skirmish: Vasse against Dob Hunter's balanced script
+./bin/terminal-nexus.ts --load mine.save.json --p2 script:rush              # a save (Esc, Save game), another script in p2
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1'                   # PERIMETER's Build Phase
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1&round=3'           # its round 3, no keys to walk there
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings 'jumpStep=12&reducedMotion=true'
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
 
 bun scripts/build-web.mjs                                             # the browser playtest page
 ```
 
 **A route** names a place in the game the way a web address names a page, without the site: the place,
 then `?` and `name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`,
-`campaign` and `challenge`; a campaign level is `campaign?level=<id>`, with `&round=<n>` counting Battle
+`story` and `skirmish` (`skirmish?seed=<n>`, `skirmish?load=<file>`); a mission is `story?mission=<id>`, with `&round=<n>` counting Battle
 Rounds from 1 as the screen does. Quote a route on a command line, since the shell reads `?` and `&` itself. The
 same routes serve the game's `--at`, the scripted playtest's `--at`, the browser page's `#at=` and a
 demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
 every problem at once and what exists instead. The grammar and its table, where adding a place is one
 entry, are `src/cli/route.ts`; a route is read with the settings text and the key script as one launch, the
-same way for all four (`src/cli/launch.ts`). A bare launch opens the title menu for now; once the game can
-save, it is meant to continue the saved game from beside the settings in `~/.terminal-nexus/`, and `--at`
-stays the way to go anywhere else. An argument the game does not read is refused, and the removed
-`--build-phase` says that `--at 'campaign?level=vasse-test-1'` replaced it.
+same way for all four (`src/cli/launch.ts`). A bare launch opens the title menu; Save game (Esc, `v`, on a Skirmish) writes a
+save into `~/.terminal-nexus/saves/` (or the folder its name gives), and `--load <file>` opens it again. An argument the game does not read is refused, and the removed
+`--build-phase` says that `--at 'story?mission=vasse-test-1'` replaced it.
 
 Pinned versions, re-checked rather than remembered:
 
@@ -162,17 +163,17 @@ A passing test says nothing about spacing, density or where the eye goes. Look.
 Headless, a Skirmish is played from a save file, a round a command: `npm run skirmish -- -f <save>` prints the brief,
 `--p1 build:plan.json` checks a plan, `--battle` plays the round and saves the next Build Phase, and `--p2 script:rush`
 changes who plays a side ([`skirmish-saves.md`](docs/system-design/skirmish-saves.md); examples in `saves/`). On screen,
-until the game opens a save, a Challenge battle (`--at 'challenge?seed=<n>'`) is a Skirmish against Dob Hunter's
-`balanced` script; open a mission by its route only when the change is about a mission.
+`--at 'skirmish?seed=<n>'` opens one against Dob Hunter's `balanced` script and `--load <save>` a save at its Build
+Phase; open a mission by its route only when the change is about a mission.
 
 **The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a mission's
 Build Phase without a terminal (a Skirmish's, once the Skirmish milestone makes it the default) and keeps what the screen showed after every key: text for every step
 in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
 sequence (`--gif`). Keys go through the real keyboard and mouse adapters as the bytes a terminal
 sends, one at a time, and every frame comes from the composer the live screen uses, so there is no
-capture race. `--at <route>` opens a level at a round (PERIMETER's first unless given; a later round as
+capture race. `--at <route>` opens a mission at a round (PERIMETER's first unless given; a later round as
 a player who builds nothing reaches it, so a picture of round 3 needs no keys at all, and a title menu
-route is refused); `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
+route is refused) or a Skirmish (`skirmish?seed=<n>`), and `--load <save>` a save with `--p1`/`--p2`; `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
 run recorded in the Activity Logs, as the game's window would export it; `--size`, `--colors`,
 `--theme` and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
 `click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
@@ -181,7 +182,7 @@ run recorded in the Activity Logs, as the game's window would export it; `--size
 node scripts/playtest.mjs --keys "Esc Down Down Space*4"                   # every step's status, then the final screen
 node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --png final --name hatchery-run
 node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a Battle Round, twenty seconds in
-node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=3' --png final   # round 3 as it opens
+node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=3' --png final   # round 3 as it opens
 ```
 
 Output goes to `.playtest/`, which git ignores, and so does every capture script's. **Pictures are not
@@ -204,7 +205,7 @@ regeneration touches only the pictures a change shows up in. Set an Experiment b
 `--settings`, never by counting rows.
 
 **The browser playtest page** (`bun scripts/build-web.mjs`, one self-contained HTML file) runs the
-real menu, Build Phase and Battle Round through a stand-in terminal, painted on a canvas, with an on-screen
+real menu, Build Phase and Battle Round through a stand-in terminal, opening on a Skirmish,, painted on a canvas, with an on-screen
 key bar for the keys a phone lacks. It is a development tool, never a platform: the build fails if
 anything the page reaches imports a Node-only module, and a terminal at 80 × 24 stays the acceptance
 target. It cannot show raw keyboard mode, terminal cleanup, signals, a real terminal's own key
@@ -215,7 +216,7 @@ per demo, each opening the game at a route (a level at a round, with no key scri
 key script with given settings, and saying what to try (`scripts/build-web.mjs` describes the file; a bad
 route or key script fails the build; keep a pull request's file in `scripts/demos/` until its question is
 answered). Its mode buttons that are game screens open their routes, and a copy on disk opens wherever its
-address says: `#at=campaign?level=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A
+address says: `#at=story?mission=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A
 claude.ai link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
 
 **Duels put two armies against each other** (`npm run duel -- ...`, [`duels.md`](docs/system-design/duels.md),

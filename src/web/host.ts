@@ -25,6 +25,7 @@ import type { Exporter } from "../cli/build-phase.ts"
 import { readLaunch } from "../cli/launch.ts"
 import type { LaunchPart } from "../cli/launch.ts"
 import { DEFAULT_LEVEL_ROUTE, formatRoute, parseRoute } from "../cli/route.ts"
+import { openSkirmish } from "../cli/skirmish-open.ts"
 import type { Destination } from "../cli/route.ts"
 import { readAddress } from "./address.ts"
 import type { Demo } from "./demos.ts"
@@ -62,7 +63,7 @@ declare const __TN_DEMOS__: readonly Demo[]
 /** The engine tool's two battle replays a mode button opens: battles, not places in the game. */
 type PulseName = "pulse-grand" | "pulse-mirror"
 
-/** Which screen loop runs: the title menu's, a campaign level's Build Phase, or a Pulse replay. */
+/** Which screen loop runs: the title menu's, a story level's Build Phase, or a Pulse replay. */
 type Screen = "menu" | "build" | PulseName
 
 /** The screen loop a place in the game runs in. */
@@ -169,10 +170,10 @@ let running: Promise<number> | null = null
 let switching = false
 let shift = false
 /** The screen running, and the route it opened at when it is a place in the game: the key bar shows the
- *  screen's keys, and the settings box's button starts a campaign level over at the same round. */
+ *  screen's keys, and the settings box's button starts a story level over at the same round. */
 let shown: Readonly<{ screen: Screen; route?: string }> = { screen: "build" }
 /**
- * Settings text to start a campaign level with — from `#settings=` in the address, a demo, or the text box's
+ * Settings text to start a story level with — from `#settings=` in the address, a demo, or the text box's
  * "Start the Build Phase with these". Its player settings apply for this visit without being saved,
  * as `--settings` does in a terminal; changing one in the game's Settings saves them all.
  */
@@ -215,7 +216,7 @@ const exporter: Exporter = {
 
 /**
  * Stops the screen running, if any, and shows `screen` as the one starting: its mode button pressed — Menu for
- * any place on the title menu, Build Phase for any campaign level and round, a replay for itself — its keys on
+ * any place on the title menu, Build Phase for any story level and round, a replay for itself — its keys on
  * the bar, and `notes` under the screen. `route` is where a place in the game opened.
  */
 async function switchTo(screen: Screen, route: string | null, notes: readonly string[]): Promise<void> {
@@ -297,25 +298,40 @@ async function startPulse(pulse: PulseName): Promise<void> {
   )
 }
 
+/** Where the page opens when nothing names a place: a Skirmish on the defaults, on a seed from the clock (the owner,
+ *  2026-11-11: Skirmish is "the center stone for game design and testing"). */
+const PAGE_START = "skirmish"
+
 /**
  * A place in the game, read as a launch, the way the terminal reads one (`src/cli/launch.ts`): the route `at`,
  * which came from where `from` says; the settings text the page holds; and `demo`'s own keys or, without a demo,
- * the address's. A route that is not a place opens the default level's first round, and the first note says why.
+ * the address's. A route that is not a place opens a new Skirmish, and the first note says why; so does a save file,
+ * which the page has no files to read.
  */
 async function startAt(at: string | undefined, from: string, demo?: Demo): Promise<void> {
+  // A demo with no route opens PERIMETER's first round, as demos always have; the page itself a Skirmish.
   const { launch, problems } = readLaunch(
     { at, settings: imported ?? undefined, keys: demo !== undefined ? demo.keys : readAddress(window.location.hash).keys },
-    DEFAULT_LEVEL_ROUTE,
+    demo !== undefined ? DEFAULT_LEVEL_ROUTE : PAGE_START,
   )
-  const { destination } = launch
   const said = (part: LaunchPart, where: string): string[] =>
     problems.filter((problem) => problem.part === part).map(({ error }) => `${where}: ${error.message}`)
   const notes = said("at", from)
+  // A Skirmish is opened here, on the page's clock; a save file cannot be (no files), so a new battle opens instead.
+  let destination: Exclude<Destination, { kind: "skirmish" }>
+  if (launch.destination.kind === "skirmish") {
+    try {
+      destination = openSkirmish(launch.destination, { now: Date.now })
+    } catch (error) {
+      notes.push(`${from}: ${error instanceof Error ? error.message : String(error)}`)
+      destination = openSkirmish({}, { now: Date.now })
+    }
+  } else destination = launch.destination
   await switchTo(screenAt(destination), formatRoute(destination), notes)
 
   const saved = await savedSettings()
-  // The settings text and the keys reach a campaign level only, and so does what was wrong with them; the menu
-  // opens on what is saved.
+  // The settings text and the keys reach a Build Phase only, and so does what was wrong with them; the menu opens on
+  // what is saved.
   const onLevel = destination.kind === "level"
   const { settings, experiments, ignored } = importSettings(onLevel ? launch.settings : undefined, saved)
   if (ignored.length > 0) notes.push(`Settings text: ignored ${ignored.join(", ")}`)
@@ -325,7 +341,7 @@ async function startAt(at: string | undefined, from: string, demo?: Demo): Promi
   status.textContent = notes.join(" · ")
   const common = { ...pageTerminal, backend: canvasFor(settings), settings, settingsStore, buildId: __TN_BUILD__.commit, hostName: "web" } as const
   if (destination.kind === "title") {
-    // Challenge on the menu hands the page to a run's Build Phase: its keys on the bar, its route said.
+    // Skirmish on the menu hands the page to its battle's Build Phase: its keys on the bar, its route said.
     const open = (at: Extract<Destination, { kind: "level" }>, settings: Settings): Promise<number> => {
       showScreen("build", formatRoute(at))
       return runBuildPhase({ ...common, settings, at, exporter })
@@ -469,17 +485,17 @@ window.addEventListener("unhandledrejection", (event) => {
   const reason: unknown = event.reason
   activity.log("session.error", { where: "page", message: reason instanceof Error ? reason.message : String(reason) })
 })
-// The text box's own button: the campaign level already open starts over with its settings — at the same round —
-// or, from any other screen, the default level.
+// The text box's own button: the Build Phase already open starts over with its settings — at the same round —
+// or, from any other screen, a new Skirmish.
 element("settings-apply").addEventListener("click", () => {
   imported = settingsText.value
   void startAt(shown.screen === "build" ? shown.route : undefined, "the settings box")
 })
 
 /**
- * What the address asks for (`src/web/address.ts`): its settings text kept for the next campaign level, and the
- * page opened where `#at=` says — the default level's first round without one, so `#keys=` and `#settings=` alone
- * still work as they always have. A route that is not a place says so under the screen.
+ * What the address asks for (`src/web/address.ts`): its settings text kept for the next Build Phase, and the
+ * page opened where `#at=` says — a new Skirmish without one, where `#keys=` and `#settings=` alone apply. A route
+ * that is not a place says so under the screen.
  */
 function followAddress(): void {
   const address = readAddress(window.location.hash)

@@ -114,12 +114,8 @@ export const STREAM_COSMETIC = 1n
 /** The Nexus Pulse's own seeded stream (`src/armies/deal.ts`): gameplay, deterministic, and never the kernel's, so
  *  dealing a hand never moves a battle's draws. */
 export const STREAM_DRAFT = 2n
-/** A Challenge run's own seeded stream (`src/run/`): which opponent plays how in which battle, each battle's seed, and
- *  the seed of the run after it. Gameplay, deterministic, and never the kernel's or the dealer's. */
-export const STREAM_RUN = 3n
-/** A Challenge run's draft dealer's own seeded stream (`src/run/draft.ts`): each draft's three cards, from a seed made of
- *  the run's seed and the battle the draft prepares, so a draft never depends on the path to it. */
-export const STREAM_RUN_DRAFT = 4n
+// Streams 3 and 4 were the retired Challenge runs' (their battles, their drafts): left unused, so a later stream never
+// reads like one of theirs in an old note.
 
 export function gameplayRng(seed: number): Pcg32 {
   return Pcg32.seeded(BigInt(seed), STREAM_GAMEPLAY)

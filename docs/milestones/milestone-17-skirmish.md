@@ -1,7 +1,7 @@
 # Milestone 17 — Skirmish: setup and save files
 
 **Status:** CURRENT
-**Current step:** 17J — the testing saves (17D, the save file, is built; 17A, the banner, waits on the owner's playtest).
+**Current step:** 17F — the setup screen and spectating (17C, 17D, 17E, 17G and 17J are built; 17A, the banner, waits on the owner's playtest).
 **Depends on:** [the runs milestone](../history/milestones/milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
 banner prototype), Milestone 14 (three Commander Armies and the duel scripts)
 
@@ -58,17 +58,20 @@ Built only if the owner chooses the stance over the banner in step 17A.
 
 ### Step 17C — Skirmish on the title menu, and the names
 
-- [ ] The title menu's rows: Skirmish, Story, Settings, About, Exit. Skirmish starts one battle with the defaults
+- [x] The title menu's rows: Skirmish, Story, Settings, About, Exit. Skirmish starts one battle with the defaults
       (Vasse as the player against Dob Hunter's `balanced` script on the Crossing, a seed from the clock) until the setup
-      screen lands.
-- [ ] The names in the code, the files and the routes: `skirmish` and `skirmish?seed=<n>`; `story` and
-      `story?mission=<id>&round=<n>` for a mission; the `campaigns/` folder and the `campaign` words become Story's.
-- [ ] The run retired: its draft, its next-battle screen and its summary, `src/run/`, the army files' `run` field and the
-      routes that open it. What a Skirmish needs from it (a duel on the Build Phase screen, the result dialog) moves to
-      Skirmish, and the player's side fields the Commander's whole army, not the run's small one.
-- [ ] The Story row opens what Campaign opens today: a placeholder screen until the Story menu (Milestone 4).
-- [ ] The tests that pinned a run are deleted with it or re-pinned on a Skirmish, each with a reason.
-- [ ] The playable browser page opens on a Skirmish.
+      screen lands (the seam: `openSkirmish`, `src/cli/skirmish-open.ts`).
+- [x] The names in the code, the files and the routes: `skirmish`, `skirmish?seed=<n>` and `skirmish?load=<file>`;
+      `story` and `story?mission=<id>&round=<n>` for a mission; the `campaigns/` folder (now `stories/`, each
+      `story.json`) and the `campaign` words become Story's. `campaign` and `challenge` routes are refused with what
+      replaced them.
+- [x] The run retired: its draft, its next-battle screen and its summary, `src/run/`, the army files' `run` field and the
+      routes that open it, and `duel run`. What a Skirmish needs from it (a duel on the Build Phase screen, the result
+      dialog) moves to Skirmish (`src/cli/skirmish-play.ts`), backed by the save model, and the player's side fields the
+      Commander's whole army, not the run's small one. The result offers the same battle again (Enter) or a new seed (`n`).
+- [x] The Story row opens what Campaign opened: a placeholder screen until the Story menu (Milestone 4).
+- [x] The tests that pinned a run are deleted with it or re-pinned on a Skirmish, each with a reason.
+- [x] The playable browser page opens on a Skirmish.
 
 ### Step 17D — The save file, headless
 
@@ -125,11 +128,14 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
 
 ### Step 17G — Save game
 
-- [ ] **Save game** on the Build Phase's game menu writes a new save file (named by the player, or over the one loaded),
-      with the plan so far as its draft; loading it returns to exactly that screen. Saving and loading happen only at a
-      Build Phase (the owner, 2026-11-12).
-- [ ] The playtest script and the game open a save directly: `--load <file>`, with the same `--slot` and `--modifiers`
-      as the `skirmish` command; the route is `skirmish?load=<file>`.
+- [x] **Save game** on the game menu (Esc, `[v]`; the owner, 2026-11-12: "on the main menu settings "[esc]" instead of in
+      the side menu") writes a save file named by the player, offering the file loaded or last saved to, or a new name in
+      the saves folder beside the settings, with the plan so far as its draft; loading it returns to exactly that screen,
+      which then plays as the uninterrupted one. Saving and loading happen only at a Build Phase (the owner, 2026-11-12):
+      Save game is dimmed on a story mission and refused once the plan is locked in.
+- [x] The playtest script and the game open a save directly: `--load <file>`, with the same `--p1`/`--p2` as the
+      `skirmish` command (a plan file for p1 is laid on the first Build Phase); the route is `skirmish?load=<file>`.
+      `--modifiers` waits for the modifiers (17E).
 
 ### Step 17H — Notes from a playtest
 

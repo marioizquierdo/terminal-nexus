@@ -1,7 +1,7 @@
-// A level's first round, ready for the Build Phase: its mission laid on its map, offering what its campaign has
+// A level's first round, ready for the Build Phase: its mission laid on its map, offering what its story has
 // unlocked by then, with its credits — and the default level's, PERIMETER's, which most tests start from.
 //
-// The level is its campaign's army's (`src/armies`); its map is the map table's (`src/build/maps.ts`); what it
+// The level is its story's army's (`src/armies`); its map is the map table's (`src/build/maps.ts`); what it
 // offers becomes the build menu and the Nexus Pulse's hand in `src/build/catalog.ts`. Assembling them into round 1
 // needs the mission (`./pulse-run.ts`), which reaches the kernel, and `src/build` may never do that
 // (`tests/architecture.test.ts`) — so the assembly lives here, in the application shell, beside the other half of
@@ -20,7 +20,7 @@ export function starterContext(scrollMargin?: number, extra: Partial<BuildContex
   return levelContext(PERIMETER_LEVEL, scrollMargin, extra)
 }
 
-/** Round 1 of a level: its mission on its map, its build menu and Nexus power pool what its campaign has
+/** Round 1 of a level: its mission on its map, its build menu and Nexus power pool what its story has
  *  unlocked by then (the mission deals round 1's hand from the pool), and its credits. */
 export function levelContext(level: Level, scrollMargin?: number, extra: Partial<BuildContext> = {}): BuildContext {
   const map = MAPS[level.map]
@@ -44,8 +44,8 @@ export function levelContext(level: Level, scrollMargin?: number, extra: Partial
   })
 }
 
-/** The level's Commander as the Commander panel shows her: its campaign's. */
+/** The level's Commander as the Commander panel shows her: its story's. */
 function commanderOf(level: Level): Pick<BuildContext, "commander"> {
-  const commander = ARMIES.campaigns.find((campaign) => campaign.id === level.campaign)?.commander
+  const commander = ARMIES.stories.find((story) => story.id === level.story)?.commander
   return commander === undefined ? {} : { commander: { contentId: commander.unit, name: commander.name, portrait: commander.portrait } }
 }

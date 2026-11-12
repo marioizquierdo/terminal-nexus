@@ -1,5 +1,5 @@
 // How a battle is measured (docs/system-design/measurement.md, src/measure/): a battle's record says who won, what
-// each side lost, how long units stood blocked and how tight an army met the enemy; a duel and a campaign level are
+// each side lost, how long units stood blocked and how tight an army met the enemy; a duel and a story level are
 // recorded round by round; and the same inputs measure the same every run.
 
 import { test } from "node:test"
@@ -58,7 +58,7 @@ test("a duel is measured round by round: the hands dealt, the card kept, each ba
   assert.deepEqual(measureDuel(setup, { A: { name: "balanced", player: balanced }, B: { name: "balanced", player: balanced } }), duel)
 })
 
-test("a campaign level is played by each plan to its end, every round's battle recorded", { timeout: 120_000 }, () => {
+test("a story level is played by each plan to its end, every round's battle recorded", { timeout: 120_000 }, () => {
   const level = levelById("vasse-test-2")
   assert.ok(level !== undefined)
   const plan = LEVEL_PLANS[0]

@@ -9,7 +9,7 @@ import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildState } from "../src/build/state.ts"
 import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts"
-import { RUN_PLAY, playedOf, runLevel, sidePlanOf } from "../src/cli/run-play.ts"
+import { newSkirmishLevel, playedOf, sidePlanOf } from "../src/cli/skirmish-play.ts"
 import type { DuelSetup, DuelState, Player, SidePlan } from "../src/duel/index.ts"
 import { SCRIPTED, briefOf, newDuel, placementsOf, playDuel, playRound, readPlan } from "../src/duel/index.ts"
 
@@ -96,8 +96,10 @@ test("the balanced script with upgrades spends what its plan leaves on its Barra
   assert.ok(plain.history.every((report) => report.sides.A.actions === undefined))
 })
 
-test("a run battle hands the screen's actions to its duel: a production line bought on the screen is bought in the battle", { timeout: 120_000 }, () => {
-  const context = withoutScene(runLevel({ seed: 1, commander: "vasse" }).firstRound())
+// Re-pinned from a Challenge run's battle on a Skirmish's: the same screen hands its actions to the same duel.
+test("a Skirmish hands the screen's actions to its duel: a production line bought on the screen is bought in the battle", { timeout: 120_000 }, () => {
+  const { play, firstRound } = newSkirmishLevel(1)
+  const context = withoutScene(firstRound())
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const { duel } = (context.mode as { duel: DuelState })
@@ -107,7 +109,7 @@ test("a run battle hands the screen's actions to its duel: a production line bou
   const state: BuildState = { ...opened, planned: [{ ordinal: 0, contentId: BARRACKS, anchor: spot.anchor }], nextOrdinal: 1, fitted: [{ anchor: key, action: "production-line" }] }
   const plan = sidePlanOf(context, state)
   assert.deepEqual(plan.actions, [{ x: spot.anchor.x, y: spot.anchor.y, action: "production-line" }])
-  const resolved = RUN_PLAY.startPulse(context, state)
+  const resolved = play.startPulse(context, state)
   assert.ok(resolved !== null)
   const played = playedOf(resolved)
   assert.deepEqual(played?.report.sides.A.actions, [`production-line on barracks at ${key}`])
@@ -115,6 +117,6 @@ test("a run battle hands the screen's actions to its duel: a production line bou
   const barracks = played?.duel.carried?.entities.find((entity) => entity.anchor.x === spot.anchor.x && entity.anchor.y === spot.anchor.y)
   assert.equal(barracks?.contentId, `${BARRACKS}+production-line`)
   // The next round's Build Phase stands it as it is, its card's upgrade offered no more.
-  const next = RUN_PLAY.nextRound(context, state, resolved)
+  const next = play.nextRound(context, state, resolved)
   assert.ok(next?.standing.some((structure) => structure.contentId === `${BARRACKS}+production-line`))
 })

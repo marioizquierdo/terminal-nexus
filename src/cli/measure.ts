@@ -10,7 +10,7 @@
 //   measure merge <file>... [--out <file>]
 //       makes parts of one spec, played apart, one measurement
 //   measure who <content id> [--plan nothing|defended|both] [--levels <id>,<id>]
-//       what one kind of unit or building did in each round of each campaign level
+//       what one kind of unit or building did in each round of each story level
 //   measure show <file>
 //       prints what a measurement written down says
 //   measure compare <before> <after>
@@ -57,7 +57,7 @@ const HELP = `measure: battles measured the same way before and after a rule cha
       makes parts of one spec, played apart, one measurement, and prints what it says; refuses parts of different
       builds or specs
   measure who <content id> [--plan nothing|defended|both] [--levels <id>,<id>]
-      plays every campaign level (or those named) by the plan and says what that unit or building did in each
+      plays every story level (or those named) by the plan and says what that unit or building did in each
       round: hits on the enemy, damage, kills and when it first hit. Run it before telling anyone to watch a
       unit do something in a round
   measure show <file>
@@ -69,9 +69,9 @@ const HELP = `measure: battles measured the same way before and after a rule cha
       says how tight each army meets the enemy and who wins; --exit is the "Way off the roof" Experiment's value
 
 The quick spec plays the route saves and one scripted player's duels on two seeds; the full spec every map, three
-players' duels and every campaign level by its plans on six seeds. --routing names the rules it measured (the routes,
+players' duels and every story level by its plans on six seeds. --routing names the rules it measured (the routes,
 the Nexus, a tier), in a few words, for the record. A build ending "+uncommitted" was measured with changes to the
-code, armies, campaigns or maps not yet committed.`
+code, armies, stories or maps not yet committed.`
 
 type Options = Record<string, string>
 
@@ -108,12 +108,12 @@ function seedsOf(text: string): number[] {
   })
 }
 
-/** The commit measured, "+uncommitted" when what a battle is made of (the code, the armies, the campaigns, the maps)
+/** The commit measured, "+uncommitted" when what a battle is made of (the code, the armies, the stories, the maps)
  *  differs from it, new files included: a result is only as named as its build. A document being written is not. */
 function build(): string {
   try {
     const head = execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim()
-    const changed = execSync("git status --porcelain -- src bin armies campaigns skirmish-testing", { encoding: "utf8" }).trim() !== ""
+    const changed = execSync("git status --porcelain -- src bin armies stories skirmish-testing", { encoding: "utf8" }).trim() !== ""
     return changed ? `${head}+uncommitted` : head
   } catch {
     return "unknown"

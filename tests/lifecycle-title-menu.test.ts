@@ -136,11 +136,13 @@ test("activating the menu's own Exit item — by its hotkey — reaches the same
   assert.ok(stdout.written.includes(MOUSE_REPORTING_OFF))
 })
 
-test("activating Challenge leaves the menu without quitting and opens a run, on a seed from the clock", async () => {
-  const challenge = TOP_LEVEL_ITEMS.find((item) => item.id === "challenge")
+// Re-pinned from Challenge, which started a run, on Skirmish, which starts one battle the same way.
+test("activating Skirmish leaves the menu without quitting and opens a battle on the defaults, on a seed from the clock", async () => {
+  const challenge = TOP_LEVEL_ITEMS.find((item) => item.id === "skirmish")
   assert.ok(challenge)
-  assert.notEqual(challenge!.disabled, true, "Challenge is still a dimmed stub")
-  assert.equal(challenge!.label, "Challenge")
+  assert.notEqual(challenge!.disabled, true, "Skirmish is a dimmed stub")
+  assert.equal(challenge!.label, "Skirmish")
+  assert.equal(challenge!.hotkey, "1", "Skirmish is the title menu's first row")
   const { stdout, stdin } = fakes()
   const exits: number[] = []
   const opened: string[] = []
@@ -153,7 +155,7 @@ test("activating Challenge leaves the menu without quitting and opens a run, on 
     exit: (code) => {
       exits.push(code)
     },
-    // A clock at 1,234,567,890 ms: the run's seed is its last six digits.
+    // A clock at 1,234,567,890 ms: the battle's seed is its last six digits.
     now: () => 1_234_567_890,
     open: async (at) => {
       opened.push(at.level.route ?? at.level.id)
@@ -162,26 +164,26 @@ test("activating Challenge leaves the menu without quitting and opens a run, on 
   })
   await new Promise((resolve) => setTimeout(resolve, 30))
   stdin.emit("data", Buffer.from(challenge!.hotkey))
-  // What the run's screen returns is what the menu returns.
+  // What the battle's screen returns is what the menu returns.
   assert.equal(await session, 7)
-  assert.deepEqual(opened, ["challenge?seed=567890"])
-  assert.deepEqual(exits, [], "choosing Challenge exited the application")
-  // The menu's own disposer ran before the run opened: raw mode, the alternate screen and mouse reporting all off.
+  assert.deepEqual(opened, ["skirmish?seed=567890"])
+  assert.deepEqual(exits, [], "choosing Skirmish exited the application")
+  // The menu's own disposer ran before the battle opened: raw mode, the alternate screen and mouse reporting all off.
   assert.equal(stdin.raw, false)
   assert.ok(stdout.written.includes(`${ESC}[?1049l`), "the menu never left the alternate screen")
   assert.ok(stdout.written.includes(MOUSE_REPORTING_OFF), "the menu left mouse reporting on")
 })
 
-test("activating Campaign leaves the top-level menu for its own placeholder screen", async () => {
-  const campaign = TOP_LEVEL_ITEMS.find((item) => item.id === "campaign")
-  assert.ok(campaign)
-  assert.notEqual(campaign!.disabled, true, "Campaign should not be a dimmed stub - it gets a real screen")
+test("activating Story leaves the top-level menu for its own placeholder screen", async () => {
+  const story = TOP_LEVEL_ITEMS.find((item) => item.id === "story")
+  assert.ok(story)
+  assert.notEqual(story!.disabled, true, "Story should not be a dimmed stub - it gets a real screen")
   const { stdout, exits } = await menuSession((input) => {
-    input.emit("data", Buffer.from(campaign!.hotkey))
+    input.emit("data", Buffer.from(story!.hotkey))
   })
   assert.deepEqual(exits, [], "a placeholder screen should not exit the application")
-  assert.ok(stdout.written.includes("Campaign is not built yet"), "no honest placeholder message was ever drawn")
-  assert.ok(stdout.written.includes("campaign"), "the subtitle never switched away from the top-level menu")
+  assert.ok(stdout.written.includes("Story is not built yet"), "no honest placeholder message was ever drawn")
+  assert.ok(stdout.written.includes("story"), "the subtitle never switched away from the top-level menu")
   assert.ok(stdout.written.includes("Back"), "the placeholder screen has no way back")
   // The top-level menu's own other items are gone from the *current* frame - this is a different
   // screen, not a notice pinned to the one the player was already looking at. (`written`'s full

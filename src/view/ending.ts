@@ -235,6 +235,8 @@ export type PulseResult = Readonly<{
   /** What the row at the foot of the result does: "Next round", or "Play again" once the mission is
    *  over. Absent for a Pulse with no mission, which goes nowhere. */
   goOn?: string
+  /** The result's other way on, under `n`, when there is one: a Skirmish's "New seed" beside "Same battle again". */
+  alternative?: string
   /** The one line under the map once the result stands. */
   line?: string
   /** What happened to the player's Commander, when she fell this round: that she fell, and while the
@@ -250,7 +252,7 @@ type Round = Readonly<{
   of: number
   endText?: Readonly<{ won: string; lost: string }>
   fell?: readonly CommanderAbsence[]
-  ending?: Readonly<{ headline: string; reason: string; tone: "success" | "danger" | "neutral"; goOn: string }>
+  ending?: Readonly<{ headline: string; reason: string; tone: "success" | "danger" | "neutral"; goOn: string; alternative?: string }>
 }>
 
 /**
@@ -288,10 +290,11 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
   const last = `Round ${round.round} of ${round.of}: ${fight.headline.toLowerCase()}. ${fight.reason}`
   const line = commanderLine(round)
   const commander = line === undefined ? {} : { commander: line }
-  // A mode's own words for the round that ends its match (a Challenge run's battle), over a mission's.
+  // A mode's own words for the round that ends its match (a Skirmish's battle), over a mission's.
   const { ending } = round
   if (ending !== undefined && round.verdict.kind !== "continue") {
-    return { headline: ending.headline, reason: ending.reason, tone: ending.tone, mission: last, goOn: ending.goOn, line: `${ending.headline} - ${ending.reason}`, ...commander }
+    const alternative = ending.alternative === undefined ? {} : { alternative: ending.alternative }
+    return { headline: ending.headline, reason: ending.reason, tone: ending.tone, mission: last, goOn: ending.goOn, ...alternative, line: `${ending.headline} - ${ending.reason}`, ...commander }
   }
   switch (round.verdict.kind) {
     case "won": {
@@ -317,8 +320,8 @@ export function missionResultOf(fight: PulseResult, round: Round | undefined): P
  * The result for the player, side A. The kernel's own three endings (`pulse.md`) — a Nexus destroyed,
  * a force wiped out, the tick limit — and both sides' luck at once. A time-out is a draw here, as the
  * kernel has it: whether "still standing when the raid's schedule ends" should read as a win is a
- * mission's question, not this view's. `enemy` is what the other side is called: a mission's "raid", a Challenge
- * run's "enemy".
+ * mission's question, not this view's. `enemy` is what the other side is called: a mission's "raid", a
+ * Skirmish's "enemy".
  */
 export function resultOf(outcome: Outcome, player: PlayerId = "A", enemy = "raid"): PulseResult {
   if (outcome.winner === null) {

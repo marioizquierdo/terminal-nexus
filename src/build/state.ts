@@ -74,8 +74,6 @@ import type {
   PopupMessage,
   StandingStructure,
   DialogLine,
-  RunDraft,
-  RunDraftChoice,
   BannerStance,
   PlantedBanner,
 } from "./types.ts"
@@ -147,14 +145,14 @@ export type BuildContext = Readonly<{
   round?: Readonly<{
     number: number
     of: number
-    /** Where the round's match stands in the mode that plays it, when the mode says — a Challenge run's "battle 2 of
-     *  3" — said in the top bar before the round. Absent: a campaign mission's round, which needs no more. */
+    /** Where the round's match stands in the mode that plays it, when the mode says — a mode's own stage, as the retired runs said "battle 2 of
+     *  3" — said in the top bar before the round. Absent: a story mission's round, which needs no more. */
     stage?: string
   }>
   /**
-   * What the mode playing this round keeps between its rounds — a Challenge run's battles so far and the duel in
+   * What the mode playing this round keeps between its rounds — a Skirmish's setup and the duel in
    * play — handed back to the shell untouched, as `carried` is: the reducer and the view never read it, so nothing
-   * below the mode knows which mode it serves. Absent: a campaign mission, whose rounds need nothing more.
+   * below the mode knows which mode it serves. Absent: a story mission, whose rounds need nothing more.
    */
   mode?: unknown
   /**
@@ -172,7 +170,7 @@ export type BuildContext = Readonly<{
   restored?: readonly Readonly<{ player: "A" | "B"; contentId: string }>[]
   /**
    * The player's Commander as the Commander panel shows her (`src/view/commander-panel.ts`): her unit, her name and
-   * her portrait, from the campaign the level belongs to. What she has and where she is, the panel reads from the
+   * her portrait, from the story the level belongs to. What she has and where she is, the panel reads from the
    * rest of the context (the field, the absences, the round's arrivals). Absent: a level with no Commander.
    */
   commander?: Readonly<{ contentId: string; name: string; portrait: readonly string[] }>
@@ -189,13 +187,7 @@ export type BuildContext = Readonly<{
    */
   scene?: readonly DialogLine[]
   /**
-   * **A run's draft** waiting on this round (`RunDraft`): the round opens on its popup, which holds the keyboard and the mouse
-   * until the player chooses (the choice is handed to the session's `draft`, which returns the round to play: the same
-   * battle's first round, with the army the choice made). Absent: none.
-   */
-  runDraft?: RunDraft
-  /**
-   * What the Battle Round confirmation announces for round *n*, keyed by its number ("campaign missions may
+   * What the Battle Round confirmation announces for round *n*, keyed by its number ("story missions may
    * inject pulse-n text here", the owner). A round with no entry says
    * `DEFAULT_ROUND_TEXT` (`popup.ts`). Nothing supplies one yet; a mission's own data will.
    */
@@ -203,6 +195,14 @@ export type BuildContext = Readonly<{
   /** Where the adapter puts an export besides the screen, said in the export popup — "Copied to the
    *  clipboard and saved to ...". Absent: the popup says nothing about a copy. */
   exportDestination?: string
+  /**
+   * **What Save game offers to write this round as**: the file it was loaded from or last saved to, or a new name — set
+   * by a mode that can be saved (a Skirmish). Absent: nothing to save, and the game menu's Save game row is dimmed.
+   */
+  saveName?: string
+  /** Where the adapter writes a save, said in the Save game popup — "Saved under ~/.terminal-nexus/saves/ unless the
+   *  name has a folder." Absent: the adapter cannot write one (the browser page), and Save game is dimmed. */
+  saveDestination?: string
   /**
    * The log the Activity logs window shows — read-only, and read by
    * the reducer for that window alone: the newest sequence number when it opens, and how many rows it
@@ -330,12 +330,6 @@ export type BuildState = Readonly<{
    * menu) goes back to it.
    */
   dialog: Readonly<{ line: number; cursor: Coord; camera: Camera }> | null
-  /**
-   * What the player chose from the round's run draft (`BuildContext.runDraft`), or `null` while it waits — and with none to
-   * make. While the context holds a draft and this is `null`, a popup of it is always open (`keepDraft`); the reducer
-   * can never reach the run, so the session notices the choice appear and hands it on (`BuildSessionOptions.draft`).
-   */
-  draftChoice: RunDraftChoice | null
   planned: readonly PlannedPlacement[]
   /** The player's buildings, by anchor (`x,y`), that hold their wave this round: a building's action, Hold
    *  production (the owner, 2026-10-16: "Pause production, that stops producing units for the next round"). The
@@ -408,6 +402,11 @@ export type BuildState = Readonly<{
    *  hands the text to the shell each time it goes up — a side effect the reducer only records, the way
    *  `ack` records a flash. */
   activityExports: number
+  /** The save's name as typed in the Save game popup, from `BuildContext.saveName` when it opens. */
+  saveField: string
+  /** How many times Save game has been asked to write, counting up: the session hands the round, the plan and the name
+   *  to the shell each time it goes up, as it does an export (`activityExports`). */
+  saveRequests: number
   /** **The battle banner** the player planted (the Battle banner Experiment), or `null` for the round's default
    *  (`defaultBanner`): what the Battle Round panel says, and what starting the round hands the match. */
   banner: PlantedBanner | null
@@ -485,7 +484,6 @@ export function createBuildState(
     popupUnder: [],
     message: null,
     dialog: null,
-    draftChoice: null,
     planned: [],
     held: [],
     fitted: [],
@@ -503,13 +501,14 @@ export function createBuildState(
     activityFilter: 0,
     activityFrozen: [],
     activityExports: 0,
+    saveField: context.saveName ?? "",
+    saveRequests: 0,
     banner: context.placedBanner ?? null,
     bannerDraft: null,
     bannerDrop: null,
   }
-  // A round that opens with a scene opens on the dialog: a popup the player does not open. The run's draft is the other,
-  // and waits behind the scene when there is one (`keepDraft`).
-  return (context.scene ?? []).length > 0 ? openDialog(context, opened) : keepDraft(context, opened)
+  // A round that opens with a scene opens on the dialog: a popup the player does not open.
+  return (context.scene ?? []).length > 0 ? openDialog(context, opened) : opened
 }
 
 /** `context` without its scene: what a session that does not play scenes hands the reducer, so its rounds
@@ -565,88 +564,6 @@ function nextLine(context: BuildContext, state: BuildState): BuildState {
   return showLine(context, state, next)
 }
 
-// --- The run's draft -------------------------------------------------------------------------------
-//
-// **A run's draft** (a named pattern, docs/history/challenge-runs-design.md): after a won battle three cards, to take one of — or a card
-// the army holds, to remove — or the requisition instead. The second popup the player does not open: a round whose
-// context carries a `RunDraft` opens on it (behind its scene, when it has one), and it **cannot be dismissed** — Esc,
-// `x`, a right click and a click outside only say what to do — because what is chosen changes the army the round is
-// built from. Only the game menu opens over it (`q`), and closing that comes back to the draft as it was. The remove
-// list is a second popup over it, which Esc and `x` go back from. Choosing records `draftChoice` and closes both; the
-// reducer never reaches the run, so the session hands the choice on and moves the screen to the round it makes.
-
-/** What the bottom line says while the draft waits, and what Esc, `x`, a right click and a click outside answer. */
-export const DRAFT_HOLD = "Choose a card, remove one, or take the requisition."
-
-/** The draft the round opened with still waits for a choice. */
-export function draftPending(context: BuildContext, state: BuildState): boolean {
-  return context.runDraft !== undefined && state.draftChoice === null
-}
-
-/** The draft's popup, or the remove list over it, is showing — or is under the popup that is (the game menu opened over it). */
-function inDraft(state: BuildState): boolean {
-  const draft = (popup: Popup | null): boolean => popup === "run-draft" || popup === "run-draft-remove"
-  return draft(state.popup) || state.popupUnder.some((level) => draft(level.popup))
-}
-
-/**
- * While a draft waits a popup of it is always open: when whatever closed (the scene's last line, a popup dismissed in a way that
- * took the draft with it) leaves none, the draft opens again, on the row it was on in `before`.
- */
-function keepDraft(context: BuildContext, state: BuildState, before: BuildState = state): BuildState {
-  if (!draftPending(context, state) || state.popup !== null) return state
-  const level = before.popup === "run-draft" ? before.popupHighlight : (before.popupUnder.find((each) => each.popup === "run-draft")?.highlight ?? 0)
-  // How the last battle ended is the intro's to say here; the bottom line gives the draft's own hint.
-  const opening = state.status === context.openingStatus && context.openingStatus !== undefined
-  return { ...state, popup: "run-draft", popupHighlight: level, popupUnder: [], message: null, ...(opening ? { status: NO_STATUS } : {}) }
-}
-
-/** How many rows the draft popup's list has: its cards, then Remove and the requisition. */
-function draftRowCount(context: BuildContext): number {
-  return (context.runDraft?.cards.length ?? 0) + 2
-}
-
-/** The draft settled: its choice recorded and its popups closed. The session hands it on. */
-function settleDraft(state: BuildState, choice: RunDraftChoice, text: string): BuildState {
-  return { ...closePopups(state), draftChoice: choice, status: status(text, "success") }
-}
-
-/** A draft command sent where it has no meaning — no draft waiting, or another popup in the way. */
-function draftRefusal(context: BuildContext, state: BuildState, popup: "run-draft" | "run-draft-remove"): BuildState | null {
-  if (!draftPending(context, state)) return { ...state, status: status("No draft waiting.", "warning") }
-  if (state.popup !== popup) return { ...state, status: inDraft(state) ? status("Close the popup first: [esc].", "warning") : status(DRAFT_HOLD, "warning") }
-  return null
-}
-
-function draftTake(context: BuildContext, state: BuildState, index: number): BuildState {
-  const refused = draftRefusal(context, state, "run-draft")
-  if (refused !== null) return refused
-  const card = context.runDraft?.cards[index]
-  return card === undefined ? state : settleDraft(state, { kind: "take", key: card.key }, `${card.name} taken.`)
-}
-
-function draftRequisition(context: BuildContext, state: BuildState): BuildState {
-  const refused = draftRefusal(context, state, "run-draft")
-  if (refused !== null) return refused
-  const requisition = context.runDraft?.requisition ?? 0
-  return settleDraft(state, { kind: "requisition" }, `${requisition} requisition taken.`)
-}
-
-/** `r` or the Remove row: the list of cards that could go, over the draft — which Esc comes back to, on the Remove row. */
-function draftOpenRemove(context: BuildContext, state: BuildState): BuildState {
-  const refused = draftRefusal(context, state, "run-draft")
-  if (refused !== null) return refused
-  if ((context.runDraft?.removable.length ?? 0) === 0) return { ...state, status: status("Nothing can be removed.", "warning") }
-  return pushPopup(state, "run-draft-remove", 0, context.runDraft?.cards.length ?? 0)
-}
-
-function draftRemove(context: BuildContext, state: BuildState, index: number): BuildState {
-  const refused = draftRefusal(context, state, "run-draft-remove")
-  if (refused !== null) return refused
-  const card = context.runDraft?.removable[index]
-  return card === undefined ? state : settleDraft(state, { kind: "remove", key: card.key }, `${card.name} removed.`)
-}
-
 /**
  * Why a command that edits the plan (arm, place, remove, undo) — or opens the Battle Round screen — is
  * refused right now, or `null` when none of these apply. Checked in priority order — most-final first,
@@ -661,7 +578,6 @@ function draftRemove(context: BuildContext, state: BuildState, index: number): B
 function editLock(state: BuildState): StatusMessage | null {
   if (state.committed) return status("The plan is locked in.", "warning")
   if (state.popup === "battle-round") return status("Start or go back first: [s] start, [esc] back.", "warning")
-  if (state.popup === "run-draft") return status(DRAFT_HOLD, "warning")
   if (state.popup !== null) return status("Close the popup first: [esc].", "warning")
   return null
 }
@@ -1640,11 +1556,9 @@ function openPopup(state: BuildState, popup: Popup): BuildState {
   // either would be a second question on top of one. The game menu is the one exception: leaving can
   // always be asked about.
   if (popup !== "game-menu") {
-    const lock = state.committed || state.popup === "battle-round" || inDraft(state) ? editLock(state) : null
+    const lock = state.committed || state.popup === "battle-round" ? editLock(state) : null
     if (lock !== null) return { ...state, status: lock }
   }
-  // The game menu over the draft or its remove list: pushed, never closing them, and not opened twice.
-  if (inDraft(state)) return state.popup === "game-menu" ? state : pushPopup(state, popup, 0)
   if (state.popup === "dialog") return pushPopup(state, popup, 0)
   return pushPopup(closePopups(state), popup, 0)
 }
@@ -1717,8 +1631,6 @@ function cancel(state: BuildState): BuildState {
   if (state.popup === "banner-place") return popPopup(state)
   // The dialog: the rest of the scene skipped, and the round as it opened.
   if (state.popup === "dialog") return closePopups(state)
-  // The draft cannot be dismissed, only answered; its remove list goes back to it, like any popup over another.
-  if (state.popup === "run-draft") return { ...state, status: status(DRAFT_HOLD, "warning") }
   if (state.popup !== null) return popPopup(state)
   if (state.committed) return openPopup(state, "game-menu")
   switch (mapMode(state)) {
@@ -1766,6 +1678,26 @@ function openSettings(state: BuildState, section: "settings" | "experiments"): B
 function openFromGameMenu(state: BuildState, popup: Popup, row: GameMenuRow, highlight: number): BuildState {
   if (state.popup !== null && state.popup !== "game-menu") return state
   return pushPopup(state, popup, highlight, GAME_MENU_ROWS.indexOf(row))
+}
+
+/** The longest name Save game takes. */
+const SAVE_NAME_LIMIT = 60
+
+/** Why Save game cannot write this round, or `null`: a round of a mode that saves (a Skirmish's), on a screen that can
+ *  write a file, at its Build Phase (the owner, 2026-11-12: "saving and loading game is always for the build phase"). */
+export function saveRefusal(context: BuildContext, state: Pick<BuildState, "committed">): string | null {
+  if (context.saveName === undefined) return "Only a Skirmish can be saved."
+  if (context.saveDestination === undefined) return "This screen cannot write a save file."
+  if (state.committed) return "Save game waits for the next Build Phase."
+  return null
+}
+
+/** The game menu's `[v] Save game`: the popup that names the file, over the game menu, the name it last had typed in. */
+function openSaveGame(context: BuildContext, state: BuildState): BuildState {
+  const refused = saveRefusal(context, state)
+  if (refused !== null) return { ...state, status: status(refused, "warning") }
+  if (state.popup !== null && state.popup !== "game-menu") return state
+  return { ...pushPopup(state, "save-game", 0, GAME_MENU_ROWS.indexOf("save")), saveField: context.saveName ?? state.saveField }
 }
 
 /**
@@ -1903,10 +1835,6 @@ function popupRowCount(context: BuildContext, state: BuildState): number {
       return bannerOn(state) ? 2 : 1
     case "banner-stance":
       return BANNER_STANCES.length
-    case "run-draft":
-      return draftRowCount(context)
-    case "run-draft-remove":
-      return context.runDraft?.removable.length ?? 0
     default:
       return 0
   }
@@ -1959,8 +1887,7 @@ export function applyBuildCommand(
   const applied = applyCommand(context, base, command)
   // Nothing armed, nothing to draw as a ghost.
   const next = applied.armed === null && applied.noSpotFound ? { ...applied, noSpotFound: false } : applied
-  // A draft that waits keeps a popup open: when one closed and left none, it is the draft again.
-  const result = keepDraft(context, warnIfRestartNeeded(base, next), base)
+  const result = warnIfRestartNeeded(base, next)
   // The dialog says nothing of its own on the bottom line, and lapses nothing either: the answer the round
   // opened with — how the last round went — is still there when the scene is over.
   return state.popup === "dialog" ? result : lapseStatus(state, result)
@@ -1983,9 +1910,6 @@ function lapseStatus(before: BuildState, after: BuildState): BuildState {
  * focus, never a placement or a pick — is the caller's.
  */
 function dismissPopup(state: BuildState): BuildState {
-  // Over the draft a click outside closes nothing of it: the game menu goes back to it, and the draft itself only says
-  // what to do.
-  if (inDraft(state)) return state.popup === "run-draft" || state.popup === "run-draft-remove" ? { ...state, status: status(DRAFT_HOLD, "warning") } : popPopup(state)
   return { ...closePopups(state), ...(state.popup === "battle-round" ? { status: status("Cancelled.") } : {}) }
 }
 
@@ -2007,8 +1931,6 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
       // The dialog is read, not chosen from: a click anywhere shows the next line, and a stray one never
       // skips the scene (the mouse sends the same for a click on it or off it).
       if (state.popup === "dialog") return nextLine(context, state)
-      // Over the draft a click on the map chooses nothing and moves nothing.
-      if (inDraft(state)) return dismissPopup(state)
       const target = clampToGrid({ x: command.x, y: command.y }, context.grid)
       // Moving the banner: a click moves it there, and a second click on the tile it stands on plants it, as a
       // building is placed.
@@ -2046,7 +1968,6 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "click-menu": {
       if (state.popup === "dialog") return nextLine(context, state)
-      if (inDraft(state)) return dismissPopup(state)
       if (state.committed) return state
       // A click anywhere outside a popup dismisses it first — and only that, plus focus.
       if (state.popup !== null) {
@@ -2130,17 +2051,6 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
     case "pick-nexus":
       return pickNexus(context, state, command.index)
 
-    case "draft-take":
-      return draftTake(context, state, command.index)
-
-    case "draft-requisition":
-      return draftRequisition(context, state)
-
-    case "draft-open-remove":
-      return draftOpenRemove(context, state)
-
-    case "draft-remove":
-      return draftRemove(context, state, command.index)
 
     case "open-battle-round":
       return openBattleRound(context, state)
@@ -2242,6 +2152,20 @@ function applyCommand(context: BuildContext, state: BuildState, command: BuildCo
 
     case "open-activity-logs":
       return openActivityLogs(context, state)
+
+    case "open-save-game":
+      return openSaveGame(context, state)
+
+    case "save-name":
+      return state.popup !== "save-game" ? state : { ...state, saveField: command.text === undefined ? state.saveField.slice(0, -1) : `${state.saveField}${command.text}`.slice(0, SAVE_NAME_LIMIT) }
+
+    case "save-game":
+      if (state.popup !== "save-game") return state
+      if (state.saveField.trim() === "") return { ...state, status: status("Name the save first.", "warning") }
+      return { ...state, saveRequests: state.saveRequests + 1, status: status(`Saving ${state.saveField}...`) }
+
+    case "save-result":
+      return command.ok ? { ...closePopups(state), status: status(command.text, "success") } : { ...state, status: status(command.text, "danger") }
 
     case "activity-filter":
       return stepActivity(context, state, command.step)

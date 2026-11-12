@@ -82,6 +82,8 @@ export type KeyboardContext = Readonly<{
   pulse?: boolean
   /** The Pulse on screen has ended and its result stands: Enter, Space and `n` go on. */
   pulseOver?: boolean
+  /** That result offers another way on (a Skirmish's New seed): `n` takes it, and Enter and Space still go on. */
+  pulseAlternative?: boolean
   /**
    * How many tiles a cursor key moves, when the input path knows when keys arrive: its motion rules
    * (`src/build/motion.ts` — taps counted, a hold on the game's own cadence, the fast move's jump), which
@@ -150,6 +152,19 @@ function popupOwnKey(key: string, popup: Popup): BuildCommand | null {
   }
 }
 
+/** What a file's name may hold, typed into Save game's: letters, digits and `- _ . / ~`. */
+const NAME_KEY = /^[A-Za-z0-9._/~-]$/u
+
+/** A key in Save game: Esc goes back, Enter saves, Backspace takes a character off, Space types `-`, and a character a
+ *  file's name may hold is typed. Nothing else means anything here. */
+function saveNameCommand(key: string): BuildCommand | null {
+  if (key === ESC) return { kind: "cancel" }
+  if (key === "\r" || key === "\n") return { kind: "save-game" }
+  if (REMOVE_KEYS.has(key)) return { kind: "save-name" }
+  if (key === " ") return { kind: "save-name", text: "-" }
+  return NAME_KEY.test(key) ? { kind: "save-name", text: key } : null
+}
+
 /** The row the keyboard is on in a popup, when it is one that does something: an option or a setting. */
 function highlightedChoice(rows: readonly PopupRow[]): PopupRow | undefined {
   return rows.find((row) => (row.kind === "option" || row.kind === "setting") && row.highlighted === true)
@@ -168,6 +183,8 @@ function highlightedChoice(rows: readonly PopupRow[]): PopupRow | undefined {
  * - Left/Right send the highlighted setting's `decrease` or `increase`.
  */
 function popupCommand(key: string, popup: Popup, context: KeyboardContext): BuildCommand | null {
+  // Save game's name is typed: every key that can be in a file's name types, `x` and `q` too, so only Esc goes back.
+  if (popup === "save-game") return saveNameCommand(key)
   const back = backCommand(key)
   if (back !== null) return back
   // A message has nothing to choose: only the cancel above closes it ("clicking outside
@@ -242,6 +259,7 @@ export function buildKeyboardCommand(key: string, context: KeyboardContext): Bui
   // `q`, `d` — is still the screen's.
   if (context.pulse === true) {
     // Once the result stands, Enter, Space and `n` go on — to the next round, or the mission again.
+    if (context.pulseOver === true && key === "n" && context.pulseAlternative === true) return { kind: "next-round", alternative: true }
     if (context.pulseOver === true && (PLACE_KEYS.has(key) || key === "n")) return { kind: "next-round" }
     const control = PULSE_KEYS[key]
     if (control !== undefined) return { kind: "pulse", control }

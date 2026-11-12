@@ -3,12 +3,12 @@
   "title": "The Citizen mirror",
   "commander": "averno",
   "requires": ["averno", "ravel"],
-  "notes": "His campaign, as far as the curve's test needs: one level, the curve level with him in Vasse's place, so the two can be played side by side.",
+  "notes": "His story, as far as the curve's test needs: one level, the curve level with him in Vasse's place, so the two can be played side by side.",
   "levels": [
     {
       "id": "averno-test-1",
       "extends": "vasse-test-3",
-      "notes": "The power curve's test level with Averno: the same map, raids and seed as Vasse's (vasse-test-3), her first five rounds, his powers and the shared ones offered, and his hand dealing one card from the Ravel Nexus in rounds 2 and 4 (an army bending the schedule). Reached by route: campaign?level=averno-test-1.",
+      "notes": "The power curve's test level with Averno: the same map, raids and seed as Vasse's (vasse-test-3), her first five rounds, his powers and the shared ones offered, and his hand dealing one card from the Ravel Nexus in rounds 2 and 4 (an army bending the schedule). Reached by route: story?mission=averno-test-1.",
       "unlocks": {
         "buildings": ["barracks", "hatchery", "turret", "depot", "garrison"],
         "powers": [

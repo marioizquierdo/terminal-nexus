@@ -14,15 +14,14 @@ Skirmish well, the world feels real, and the last battle feels earned.
 
 **A mission exists only inside Story** (RULE — settled 2026-11-11, [`game-modes.md`](game-modes.md)). Skirmish never plays a mission; a
 mission is a Skirmish's setup with a script, words and a goal. **Any mission opens directly for testing**, by its route
-(`campaign?level=<id>`, [`routing.md`](../system-design/routing.md)), with no story played before it.
+(`story?mission=<id>`, [`routing.md`](../system-design/routing.md)), with no story played before it.
 
 **Story is built after Skirmish has been played by people** (the owner's friends first, 2026-11-11), one mission at a time. A mission pulls in exactly the systems it needs; nothing here
 is built until a milestone step asks for it, and the mission list below is direction, not a count the game owes. Built
 today: PERIMETER, Vasse's first mission, and three test levels in her story's file, which Averno's story replays with
-him (`campaigns/vasse/campaign.json`, `campaigns/averno/campaign.json`). The code and the files still say *campaign*;
-the Skirmish milestone renames them.
+him (`stories/vasse/story.json`, `stories/averno/story.json`; the code's word for a mission's entry there is *level*).
 
-**RULE — the first complete single-player direction is Vasse's story** (`campaigns/vasse/campaign.json`, PERIMETER, its
+**RULE — the first complete single-player direction is Vasse's story** (`stories/vasse/story.json`, PERIMETER, its
 first level; `tests/mission.test.ts`).
 
 ## 2. The shape of a Commander's story
@@ -91,7 +90,7 @@ whether they are the lore's Ancient Originals ([`lore.md`](lore.md)) is a writin
 
 **Save slots** (GUIDANCE; Milestone 4 starts on a flat record and the save system waits on the replay format). A player may keep more than one story in progress and start another at any time, so progress is **per slot**, each slot naming its Commander. That is more than the flat checked-in unlock list of the open question about the shape of an unlock record (Q31) assumes, so the Story menu has to design the difference rather than discover it.
 
-**RULE — there is no upfront Commander-choice screen** (`src/cli/menu.ts`, whose main menu has no Commander choice; `tests/title-menu-campaign-screen.test.ts`). The start is deliberately controlled: Vasse first, then Averno and Dob Hunter once the first mission is done. A new player starts Vasse's mission 1 directly — it is the whole first-time experience. Completing it (its main goal, not the bonus goal) unlocks Averno and Dob Hunter as two new rows on the Story menu, each starting *their own* mission 1 on the same map. The choice belongs to the Story menu as an unlock like any other, not to the main menu. Skirmish is different: there the player picks any Commander from the start.
+**RULE — there is no upfront Commander-choice screen** (`src/cli/menu.ts`, whose main menu has no Commander choice; `tests/title-menu-story-screen.test.ts`). The start is deliberately controlled: Vasse first, then Averno and Dob Hunter once the first mission is done. A new player starts Vasse's mission 1 directly — it is the whole first-time experience. Completing it (its main goal, not the bonus goal) unlocks Averno and Dob Hunter as two new rows on the Story menu, each starting *their own* mission 1 on the same map. The choice belongs to the Story menu as an unlock like any other, not to the main menu. Skirmish is different: there the player picks any Commander from the start.
 
 ## 3. What a mission is
 
@@ -106,7 +105,7 @@ A mission selects and configures:
 - its scenes and lines (section 6);
 - the technologies it grants, and the bonus goals that grant more.
 
-**A story is a file of its own under `campaigns/`** (RULE — `campaigns/vasse/campaign.json`, `src/armies/load.ts`, `tests/armies.test.ts`; how it is written, [`content.md`](../system-design/content.md)). It names its Commander and lists its levels in the order they are played, each with a map by name, the credits a Build Phase starts with, what it unlocks and its mission: the `playerArmy` and `availableContent` of the sketch below, split between the story and its levels. **A level offers everything the levels before it unlocked, and its own unlocks**, in the order first unlocked so that a hotkey never moves, and records what is new in it for the screen between missions to show (not built). The Build Phase offers exactly that. The loader refuses an unlock its army cannot see, one an earlier level already gave, and a player Commander that is not the story's. PERIMETER, the first level, unlocks every card `armies/all` has, one by one, so that when it grows the level keeps what it teaches; the second, the Commander's cadence played in three rounds, has no unlocks of its own. The first two are called `vasse-test-1` and `vasse-test-2`, the names a route opens them by ([`routing.md`](../system-design/routing.md)), until the story has real missions.
+**A story is a file of its own under `stories/`** (RULE — `stories/vasse/story.json`, `src/armies/load.ts`, `tests/armies.test.ts`; how it is written, [`content.md`](../system-design/content.md)). It names its Commander and lists its levels in the order they are played, each with a map by name, the credits a Build Phase starts with, what it unlocks and its mission: the `playerArmy` and `availableContent` of the sketch below, split between the story and its levels. **A level offers everything the levels before it unlocked, and its own unlocks**, in the order first unlocked so that a hotkey never moves, and records what is new in it for the screen between missions to show (not built). The Build Phase offers exactly that. The loader refuses an unlock its army cannot see, one an earlier level already gave, and a player Commander that is not the story's. PERIMETER, the first level, unlocks every card `armies/all` has, one by one, so that when it grows the level keeps what it teaches; the second, the Commander's cadence played in three rounds, has no unlocks of its own. The first two are called `vasse-test-1` and `vasse-test-2`, the names a route opens them by ([`routing.md`](../system-design/routing.md)), until the story has real missions.
 
 A high-level definition may resemble the following. It is architectural direction, not a frozen API; what is built today is the smaller `MissionDefinition` in `src/mission/types.ts` (regions, triggers, round count, seed and result text), held by a level of its story's file with the level's map, credits and unlocks, and no opponent deck or objectives list yet.
 
@@ -165,7 +164,7 @@ The two bands keep the three-worlds rule ([`grid-engine.md`](../system-design/gr
 
 **Custom stories.** A mission references armies by id, and an army is a bounded composition validated against its faction's pools ([`commander-armies.md`](commander-armies.md)). A custom story is therefore a folder of missions plus the Commander Armies it ships, loaded and validated by the same code as a first-party one. Nothing about that is built or promised now — it is *why* the trigger surface is data and army legality is a load-time check rather than a feature in itself.
 
-**IDEA — PERIMETER's trigger list in this shape**: an intro, a raid in each of three Battle Rounds, and the hold, so the model is concrete rather than described. (The built mission is the first level in `campaigns/vasse/campaign.json`.)
+**IDEA — PERIMETER's trigger list in this shape**: an intro, a raid in each of three Battle Rounds, and the hold, so the model is concrete rather than described. (The built mission is the first level in `stories/vasse/story.json`.)
 
 ```ts
 triggers: [
@@ -350,7 +349,7 @@ The rule that follows, for anyone authoring the second side of any battle: **che
 | 2 | RIGHT OF SALVAGE | recover more of the wreck field than the other side | deny them every wreck | ~4 rounds, 8–10 min | workers, deposits, salvage, contested ground | it knows a name nobody entered — *"Who filed that?"* |
 | 3 | RESTORATION (Citizen) · to be authored (Ravel) — **IDEA** | destroy the enemy Grid Nexus | hold the round your Commander is absent without losing a structure | ~5 rounds, 10–12 min | the Commander — her powers, death, absence, restoration | it keeps **personnel files**, and treats a death as a scheduling matter |
 
-**Commanders die from the first mission** (RULE — the owner, 2026-10-04: "commanders die on this game, is part of the gameplay so we better integrate that into the lore and the campaign intro levels"; `tests/commander.test.ts`, `tests/dialog.test.ts`). A Commander's death is ordinary business on the Grid ([`lore.md`](lore.md)), so the intro levels teach it rather than save it: PERIMETER lets Vasse fall when the raid reaches her, and the round she returns opens on the Nexus Pulse restoring her, looking at her. Her story's second test level has her fall in round 1 and come back for round 2, so her return can be played (`--at 'campaign?level=vasse-test-2'`).
+**Commanders die from the first mission** (RULE — the owner, 2026-10-04: "commanders die on this game, is part of the gameplay so we better integrate that into the lore and the campaign intro levels"; `tests/commander.test.ts`, `tests/dialog.test.ts`). A Commander's death is ordinary business on the Grid ([`lore.md`](lore.md)), so the intro levels teach it rather than save it: PERIMETER lets Vasse fall when the raid reaches her, and the round she returns opens on the Nexus Pulse restoring her, looking at her. Her story's second test level has her fall in round 1 and come back for round 2, so her return can be played (`--at 'story?mission=vasse-test-2'`).
 
 **Mission 3 keeps restoration as its subject (IDEA)**, now as the question the lore leaves open rather than the first sight of a death: the round she is absent is played through (`SYMBOL ABSENT — CYCLE 1 OF 1 — HOLD`), and what the Nexus restores, and what it files about her, is what the mission turns over. The bonus goal stays about surviving the absence. Vasse returns the round after she falls (the owner, 2026-10-14), so **the mission delays her return, once** (the owner, 2026-10-15: "the mission delays her return once"): the Nexus files her late this one time, a level's own change to how many rounds she sits out, and the round without her is the mission's story — the delay itself the thing the player notices the Nexus doing.
 
@@ -415,5 +414,5 @@ Many useful editors may be literal ASCII arrays, TypeScript definitions, command
   runner and assert its result and its hash; `src/measure/` measures a level over seeds the same way before and after a
   rule changes ([`measurement.md`](../system-design/measurement.md)).
 - **On screen**: open the mission by its route, any round of it (`./bin/terminal-nexus.ts --at
-  'campaign?level=vasse-test-1&round=2'`), or press keys on it with the playtest script (`node scripts/playtest.mjs`).
+  'story?mission=vasse-test-1&round=2'`), or press keys on it with the playtest script (`node scripts/playtest.mjs`).
 - **Validation**: a mission the loader refuses is refused by name, every problem at once (`src/mission/validate.ts`).

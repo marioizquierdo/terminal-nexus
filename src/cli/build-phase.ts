@@ -1,5 +1,6 @@
-// `terminal-nexus --at campaign?level=<id>&round=<n>` — the Build Phase's live terminal loop, opened on a
-// campaign level at one of its rounds (`./levels.ts`, `./route.ts`); PERIMETER's first unless told otherwise.
+// `terminal-nexus --at story?mission=<id>&round=<n>`, `--at skirmish`, `--load <file>` — the Build Phase's live
+// terminal loop, opened on a story mission at one of its rounds or on a Skirmish (`./levels.ts`, `./route.ts`,
+// `./skirmish-open.ts`); PERIMETER's first unless told otherwise.
 //
 // Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
 // the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
@@ -65,7 +66,7 @@ const messageOf = (error: unknown): string => (error instanceof Error ? error.me
 export type BuildPhaseOptions = Readonly<{
   settings: Settings
   /**
-   * The campaign level to open and the round to open it at (`--at campaign?level=<id>&round=<n>`): the level's
+   * The story level to open and the round to open it at (`--at story?mission=<id>&round=<n>`): the level's
    * mission plays its rounds, and a later round is reached as a player who builds nothing reaches it
    * (`openRound`), with this run's Experiments. PERIMETER's first round (`DEFAULT_LEVEL`) unless given.
    */
@@ -101,6 +102,11 @@ export type BuildPhaseOptions = Readonly<{
   /** What an export does besides showing its text — the settings' and the Activity Logs' (`Exporter`). */
   exporter?: Exporter
   /**
+   * What Save game does on a Skirmish (`skirmishSaver`, `./skirmish-open.ts`): writes the file and says where, in the
+   * sentence its popup shows (`destination`). Absent: Save game is dimmed, saying this screen cannot write one.
+   */
+  saver?: Readonly<{ destination: string; onSave: NonNullable<ConstructorParameters<typeof BuildSession>[0]["onSave"]> }>
+  /**
    * The Activity Logs this screen records into and its Activity logs window shows: the game's global `activity` unless a test passes its own. The browser page
    * shares the global across its screens, so a playtester's export holds the whole visit.
    */
@@ -133,6 +139,7 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     ...(options.exporter === undefined
       ? {}
       : { exportDestination: options.exporter.destination.settings, activityExportDestination: options.exporter.destination.activity }),
+    ...(options.saver === undefined ? {} : { saveDestination: options.saver.destination }),
   })
   const terminalSize = (): { columns: number; rows: number } => ({
     columns: stdout.columns ?? FLOOR.width,
@@ -233,7 +240,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     nextRound: play.nextRound,
     foresee: play.foresee,
     keep: play.keep,
-    ...(play.draft === undefined ? {} : { draft: play.draft }),
+    ...(play.resume === undefined ? {} : { resume: play.resume }),
+    ...(options.saver === undefined ? {} : { onSave: options.saver.onSave }),
     scenes: options.scenes ?? true,
   })
 

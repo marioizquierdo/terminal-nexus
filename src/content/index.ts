@@ -103,7 +103,7 @@ export const FIXTURE_REGISTRY: ContentRegistry = createRegistry([...BENCH_CONTEN
 
 /**
  * `registry`, with each named building given a production recipe — how a battle opts its buildings into
- * spawning units in waves (a campaign's buildings, each as its army says: `src/match/training.ts`). The
+ * spawning units in waves (a story's buildings, each as its army says: `src/match/training.ts`). The
  * shared content carries none, so every other map that has the same building on it resolves exactly as it
  * did. **A building makes its units one way in a battle**: one given a recipe loses any `spawn` of its own,
  * the periodic spawner the bench Hatchery has, so the recipe alone decides what it makes and when. Throws

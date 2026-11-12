@@ -11,7 +11,7 @@ import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
+import { alternativeRow, cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
@@ -571,6 +571,13 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
     const row = nextRoundRow(layout)
     text(cells, band, column, row, "[enter]", "chrome.hotkey", { bold: true, limit })
     text(cells, band, column + 8, row, goOn, "chrome.value", { limit: limit - 8 })
+    // The other way on, when the result has one (a Skirmish's New seed), on the row above: `n` or a click.
+    const alternative = pulse.result.alternative
+    if (alternative !== undefined) {
+      const above = alternativeRow(layout)
+      text(cells, band, column, above, "[n]", "chrome.hotkey", { bold: true, limit })
+      text(cells, band, column + 8, above, alternative, "chrome.value", { limit: limit - 8 })
+    }
   }
   for (const control of pulseControlRows(layout)) {
     if (control.control === "toggle" && pulse.phase === "home") continue

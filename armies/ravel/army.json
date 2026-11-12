@@ -1,7 +1,7 @@
 {
   "id": "ravel",
   "title": "The Ravel Nexus",
-  "notes": "The Ravel faction: what every Ravel Commander builds on, and what the campaigns' raids are drawn from. The engine's bench Ravel roster is named by id (runners that burst, raiders, slingers, the Den and the Ravel Nexus); the Stash and the Chop Shop are defined here. Its buildings mirror the Citizens' at Ravel prices: the Den sends runners as the Barracks sends troopers, the Sling Pit slingers, the Stash is the Supply Depot, and the Chop Shop is the second tier, raiders as the Garrison's pikemen. A Citizen Commander who takes a card from the Ravel Nexus (Averno) requires it to see what that card brings. First guesses, no balance claim.",
+  "notes": "The Ravel faction: what every Ravel Commander builds on, and what the stories' raids are drawn from. The engine's bench Ravel roster is named by id (runners that burst, raiders, slingers, the Den and the Ravel Nexus); the Stash and the Chop Shop are defined here. Its buildings mirror the Citizens' at Ravel prices: the Den sends runners as the Barracks sends troopers, the Sling Pit slingers, the Stash is the Supply Depot, and the Chop Shop is the second tier, raiders as the Garrison's pikemen. A Citizen Commander who takes a card from the Ravel Nexus (Averno) requires it to see what that card brings. First guesses, no balance claim.",
   "requires": ["all"],
   "content": [
     "structure.ravel.nexus",

@@ -1,4 +1,4 @@
-// The maps a level can name, by id — the small map table a campaign's levels point into (`map: "starter"` in
+// The maps a level can name, by id — the small map table a story's levels point into (`map: "starter"` in
 // `armies/vasse/army.json`) — and the one map there is: the Build Phase's starter map, a Grid big enough that
 // scrolling is unavoidable, with two structures already standing on it.
 //

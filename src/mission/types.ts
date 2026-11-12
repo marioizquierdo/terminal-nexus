@@ -12,7 +12,7 @@
 // reference before anything runs, and a replay re-derive every action from the mission, the seed and the
 // plans.
 //
-// A mission is written as JSON in its campaign's army (`armies/<id>/army.json`, read by `src/armies`), so
+// A mission is written as JSON in its story's army (`armies/<id>/army.json`, read by `src/armies`), so
 // what a TypeScript comment once said about a choice is said in `notes` — on the mission, a region or a trigger —
 // which nothing reads. The army loader checks a mission's JSON against these shapes first
 // (`src/armies/mission-shape.ts`): a kind added to the vocabulary here is added there too, or it is refused.
@@ -150,7 +150,7 @@ export type TriggerDefinition = Readonly<{
 /**
  * One mission: who stands where when it opens, what it brings each Pulse, and how it ends. Deliberately
  * the part of story.md's `MissionDefinition` PERIMETER needs — no opponent army or objectives list yet.
- * What the player may build and draft, the credits and the map are the level's that plays it (a campaign's
+ * What the player may build and draft, the credits and the map are the level's that plays it (a story's
  * level in its army: `src/armies`), not the mission's; and what a building spawns in its battles is the
  * building's own, on its card in its army (`spawns`).
  */

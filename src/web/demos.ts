@@ -8,10 +8,11 @@
 //
 //   label     the button's name
 //   try       what to try once it opens, shown under the screen
-//   at        where it opens, as a route (`src/cli/route.ts`): `campaign?level=vasse-test-1&round=2` opens that
-//             round without a key script walking to it; a campaign level's first round unless given
-//   keys      a key script played first, as `--keys` takes it — on a campaign level only
-//   settings  a settings text to start with, as `--settings` takes it — on a campaign level only
+//   at        where it opens, as a route (`src/cli/route.ts`): `story?mission=vasse-test-1&round=2` opens that
+//             round without a key script walking to it, `skirmish?seed=7` a Skirmish; PERIMETER's first round unless
+//             given (the page itself opens on a Skirmish, but a demo written before that still opens where it did)
+//   keys      a key script played first, as `--keys` takes it — on a Build Phase only
+//   settings  a settings text to start with, as `--settings` takes it — on a Build Phase only
 //
 // `at`, `keys` and `settings` are a launch's parts (`src/cli/launch.ts`), read the way the page reads them.
 // Not reached by the page: its demos are stamped into it already checked.
@@ -43,8 +44,11 @@ export function checkDemos(list: unknown, source: string): readonly Demo[] {
     }
     const { at, keys, settings } = demo as LaunchText
     const { launch, problems } = readLaunch({ at, keys, settings }, DEFAULT_LEVEL_ROUTE)
-    if (launch.destination.kind !== "level" && (keys !== undefined || settings !== undefined)) {
-      throw new Error(`${which}'s at, "${at}", is on the title menu: its keys and settings are for a campaign level`)
+    if (launch.destination.kind === "title" && (keys !== undefined || settings !== undefined)) {
+      throw new Error(`${which}'s at, "${at}", is on the title menu: its keys and settings are for a Build Phase`)
+    }
+    if (launch.destination.kind === "skirmish" && launch.destination.load !== undefined) {
+      throw new Error(`${which}'s at, "${at}", opens a save file, which the page has no files to read: give a seed`)
     }
     // A route or a key script the page cannot read would open the Build Phase at its beginning and say nothing.
     const [problem] = problems

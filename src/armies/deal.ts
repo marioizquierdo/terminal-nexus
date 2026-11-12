@@ -1,5 +1,5 @@
 // The Nexus Pulse's dealer: the hand the Grid Nexus deals as each round opens, from the army's Nexus power pool,
-// one power to keep (commander-armies.md, how the Nexus Pulse deals). The Campaign deals it from what a level
+// one power to keep (commander-armies.md, how the Nexus Pulse deals). The Story deals it from what a level
 // offers; Milestone 11's run draft reuses it at the next scale.
 //
 // A schedule says what each card of a round's hand is dealt from: a rarity, or a power a level makes sure of

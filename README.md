@@ -37,14 +37,14 @@ Two programs exist today.
 from a seed, with a levelled report and an ASCII view. It is not the game. It is the tool that builds
 and replays it.
 
-**`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings, About,
+**`terminal-nexus`** is the game's own executable. It opens on a menu (Skirmish, Story, Settings, About,
 Exit) that works by hotkey, by arrows and Enter, or by mouse.
 
 The game has three modes ([the game modes](docs/game-design/game-modes.md)): **Skirmish**, one battle against a scripted
-Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. On today's menu, Challenge is what
-becomes Skirmish and Campaign what becomes Story. `--at` opens any place in the game by its route, written like a web address without the
+Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. Skirmish on the menu starts one battle
+against Dob Hunter's scripted army; Esc then Save game keeps it in a file, and `--load <file>` opens it again. `--at` opens any place in the game by its route, written like a web address without the
 site (`--help` lists them). The playable part is the **Build Phase** of PERIMETER, Vasse's first
-mission, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its rounds with `&round=2`:
+mission, opened with `--at 'story?mission=vasse-test-1'`, and at any of its rounds with `&round=2`:
 
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
@@ -127,13 +127,15 @@ tick 90 instead of playing from the start, in watch, headless and verify alike.
 ### The game
 
 ```bash
-npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, About, Exit
-npm run terminal-nexus -- --at 'campaign?level=vasse-test-1'           # PERIMETER: the Build Phase and the Battle Round
-npm run terminal-nexus -- --at 'campaign?level=vasse-test-1&round=3'   # its last round
+npm run terminal-nexus              # the menu: Skirmish, Story, Settings, About, Exit
+npm run terminal-nexus -- --at 'skirmish?seed=7'                      # a Skirmish on seed 7
+npm run terminal-nexus -- --load mine.save.json                       # a saved Skirmish, at its Build Phase
+npm run terminal-nexus -- --at 'story?mission=vasse-test-1'           # PERIMETER: the Build Phase and the Battle Round
+npm run terminal-nexus -- --at 'story?mission=vasse-test-1&round=3'   # its last round
 npm run terminal-nexus -- --at settings                                # any screen of the title menu
 ```
 
-Every menu row shows its hotkey (`[1] Campaign`) and works three ways: press the hotkey, arrow to it
+Every menu row shows its hotkey (`[1] Skirmish`) and works three ways: press the hotkey, arrow to it
 and press Enter, or click it. Inside the Build Phase, press `?` for every key. Esc opens the game
 menu, and `d` jumps to the Experiments.
 

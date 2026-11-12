@@ -1,4 +1,4 @@
-// The shape a JSON file must have — an army, a campaign, a unit written as data — checked before anything reads it:
+// The shape a JSON file must have — an army, a story, a unit written as data — checked before anything reads it:
 // a modder writes JSON without TypeScript, so the loader is what tells them, by path and all at once, that a field is
 // missing, is misspelt, or holds the wrong kind of value.
 //

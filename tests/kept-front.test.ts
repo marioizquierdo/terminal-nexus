@@ -13,12 +13,11 @@ import type { BuildContext } from "../src/build/state.ts"
 import { createBuildState, legalityAt, nexusTile, withoutScene } from "../src/build/state.ts"
 import type { FieldEntity } from "../src/build/types.ts"
 import { starterContext } from "../src/cli/starter.ts"
-import { RUN_PLAY, playedOf, runLevel, scriptedRound } from "../src/cli/run-play.ts"
+import { newSkirmishLevel, playedOf, scriptedRound } from "../src/cli/skirmish-play.ts"
 import type { DuelState, Player } from "../src/duel/index.ts"
 import { DUEL_PULSE_TICKS, newDuel, placementsOf, playRound, scriptedPlayer } from "../src/duel/index.ts"
 import { ROOM_STEP_TICKS, makeRoom, openingState } from "../src/match/index.ts"
 import type { Force } from "../src/match/index.ts"
-import { RUN_PULSE_TICKS } from "../src/run/index.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { REGROUP_MS, RegroupClock, RoomClock } from "../src/view/build-live.ts"
@@ -161,9 +160,9 @@ test("a duel's plan builds where units stand, its own or the enemy's, and they w
   }
 })
 
-test("Battle Rounds of duels and runs last 30 seconds", () => {
+test("Battle Rounds of duels and Skirmishes last 30 seconds", () => {
   assert.equal(DUEL_PULSE_TICKS, 30 * 12)
-  assert.equal(RUN_PULSE_TICKS, DUEL_PULSE_TICKS)
+  assert.equal(newSkirmishLevel(1).firstRound().mode !== undefined && (newSkirmishLevel(1).firstRound().mode as { setup: { roundTicks: number } }).setup.roundTicks, DUEL_PULSE_TICKS)
 })
 
 test("the regroup's clock plays once from the round's first frame, and not at all under reduced motion", () => {
@@ -214,12 +213,13 @@ test("the room clock times each planned building's walks out from the frame it w
 })
 
 test("the Build Phase draws the units a planned building stands on walking out, then where their walk ends", { timeout: 120_000 }, () => {
-  // A run's second round: its field carries ordinals, its round the state, so the view works the walks out.
+  // A Skirmish's second round (a Challenge run's, before the runs were retired): its field carries ordinals, its round the state, so the view works the walks out.
   const balanced = scriptedPlayer("balanced") as Player
-  const planned = scriptedRound(withoutScene(runLevel({ seed: 1, commander: "vasse" }).firstRound()), balanced)
-  const resolved = RUN_PLAY.startPulse(planned.context, planned.state)
+  const skirmish = newSkirmishLevel(1)
+  const planned = scriptedRound(withoutScene(skirmish.firstRound()), balanced, skirmish.play)
+  const resolved = skirmish.play.startPulse(planned.context, planned.state)
   assert.ok(resolved !== null)
-  const opened = withoutScene(RUN_PLAY.nextRound(planned.context, planned.state, resolved) as BuildContext)
+  const opened = withoutScene(skirmish.play.nextRound(planned.context, planned.state, resolved) as BuildContext)
   // One of the player's units set down by the Nexus, where a Turret may go, and a Turret planned on it.
   const turret = opened.catalog.find((item) => item.label === "Turret")?.contentId as string
   const unit = (opened.field ?? []).find((entity) => entity.player === "A" && entity.ordinal !== undefined && opened.registry.get(entity.contentId).layer === "units") as FieldEntity
@@ -250,17 +250,18 @@ test("the Build Phase draws the units a planned building stands on walking out, 
   if (path.steps.length > 1) assert.equal(glyphAt(walking, first.to), unitGlyph, "mid-walk it is drawn along its way out")
 })
 
-test("a run's round ends without a walk home, and the next Build Phase holds the regroup's walks", { timeout: 120_000 }, () => {
+test("a Skirmish's round ends without a walk home, and the next Build Phase holds the regroup's walks", { timeout: 120_000 }, () => {
   const balanced = scriptedPlayer("balanced") as Player
-  const planned = scriptedRound(withoutScene(runLevel({ seed: 1, commander: "vasse" }).firstRound()), balanced)
-  const resolved = RUN_PLAY.startPulse(planned.context, planned.state)
+  const skirmish = newSkirmishLevel(1)
+  const planned = scriptedRound(withoutScene(skirmish.firstRound()), balanced, skirmish.play)
+  const resolved = skirmish.play.startPulse(planned.context, planned.state)
   assert.ok(resolved !== null)
   const live = new PulsePresenter(resolved)
   const ending = live.frame({ colors: "monochrome", reducedMotion: false, view: { camera: { x: 0, y: 0 }, viewport: { width: 48, height: 16 } } })
   assert.ok(ending.times.homeMs >= ending.times.stopMs, "the result follows the cease fire: no walk")
   const played = playedOf(resolved)
   assert.ok(played !== undefined && played.duel.result === null, "the battle goes on after its first round")
-  const next = RUN_PLAY.nextRound(planned.context, planned.state, resolved) as BuildContext
+  const next = skirmish.play.nextRound(planned.context, planned.state, resolved) as BuildContext
   const walkers = (next.field ?? []).filter((entity) => entity.walk !== undefined)
   assert.ok(walkers.length > 0, "the survivors regroup as the round opens")
   // Each walk ends where the field stands it, which is where the next round finds it.
@@ -270,7 +271,7 @@ test("a run's round ends without a walk home, and the next Build Phase holds the
   }
 })
 
-test("a campaign's mission keeps the front too: its survivors regroup where they fought, nobody walks home", { timeout: 120_000 }, () => {
+test("a story's mission keeps the front too: its survivors regroup where they fought, nobody walks home", { timeout: 120_000 }, () => {
   // The Hatchery alone: once a unit keeps the target it holds (commitment) the first Turret alone leaves nobody to regroup.
   const played = play({ plan: [DEFENCE[2]!] })
   const { regroup } = played.pulse

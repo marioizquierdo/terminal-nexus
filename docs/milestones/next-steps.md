@@ -10,8 +10,8 @@ whether it is to **play**, **watch**, **decide** or **do**, and about how long i
 A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and where each went, are in
 [the history](../history/retired-asks-2026-11-12.md).
 
-- **Play, about fifteen minutes: the banner, in a Challenge battle** (the title menu's Challenge row, `2`, which the
-  Skirmish milestone turns into Skirmish; unlike PERIMETER it has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
+- **Play, about fifteen minutes: the banner, in a Skirmish** (the title menu's Skirmish row, `1`; unlike PERIMETER it
+  has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
   `s` for the start panel, `t` to change the target: move the banner with the arrows or the mouse, Enter, then `a`
   (aggressive) or `d` (defensive), and `s` to start. Is placing it comfortable and clear, or should a simpler stance row
   replace it? In a duel the banner does not move the army yet (the step's next item), so judge the placing, not the

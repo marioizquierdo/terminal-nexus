@@ -1,16 +1,17 @@
-// The campaign levels the game can open, by id: what a route's `campaign?level=<id>` names, and how a level is
+// The story levels the game can open, by id: what a route's `story?mission=<id>` names, and how a level is
 // opened at any of its rounds.
 //
-// This is the seam between where a level's definition comes from (its campaign's army, `src/armies`) and the
+// This is the seam between where a level's definition comes from (its story's army, `src/armies`) and the
 // screens that open it (the title menu, a route, the browser page, the scripted playtest): they ask for a level by
 // id and get its first round, or any later round, ready for the Build Phase. Every level of every shipped
-// campaign is here, in campaign order. In the application shell because opening a round plays the mission, which
+// story is here, in story order. In the application shell because opening a round plays the mission, which
 // reaches the kernel (`tests/architecture.test.ts`).
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
 import type { BuildContext } from "../build/state.ts"
-import type { RunDraftChoice } from "../build/types.ts"
+import type { BuildState } from "../build/state.ts"
+import type { ResolvedPulse } from "../view/pulse-live.ts"
 import { createBuildState, withoutScene } from "../build/state.ts"
 import type { Level } from "../armies/index.ts"
 import { ARMIES, PERIMETER_LEVEL } from "../armies/index.ts"
@@ -19,25 +20,29 @@ import { missionPlay } from "./pulse-run.ts"
 import { levelContext } from "./starter.ts"
 
 /** What the Build Phase screen is handed to play a level's rounds (`BuildSession`): starting a round's Pulse, the
- *  round after it, the raid foreseen, a Nexus power kept — and, for a campaign mission, the mission itself. */
-export type LevelPlay = Pick<MissionPlay, "startPulse" | "nextRound" | "foresee" | "keep"> &
+ *  round after it, the raid foreseen, a Nexus power kept — and, for a story mission, the mission itself. */
+export type LevelPlay = Pick<MissionPlay, "startPulse" | "foresee" | "keep"> &
   Partial<Pick<MissionPlay, "mission">> & {
-    /** A run's draft settled (`RunDraftChoice`): the round to play instead of the one that waited on it. Only a run has one. */
-    draft?: (context: BuildContext, choice: RunDraftChoice) => BuildContext
+    /** The round after a played one, or `null`; `alternative` when the player took the result's other way on (a
+     *  Skirmish's New seed). Only a Skirmish has one. */
+    nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse, alternative?: boolean) => BuildContext | null
+    /** The Build Phase as it opens, with what a save left planned laid on it: a Skirmish loaded with a draft. Absent:
+     *  every round opens with nothing planned. */
+    resume?: (context: BuildContext, state: BuildState) => Readonly<{ context: BuildContext; state: BuildState }>
   }
 
-/** A level the game can open: a campaign's mission, or a Challenge run, whose battles the same screen plays. */
+/** A level the game can open: a story's mission, or a Skirmish, whose battle the same screen plays. */
 export type PlayableLevel = Readonly<{
-  /** The id a route names: `campaign?level=vasse-test-1`. */
+  /** The id a route names: `story?mission=vasse-test-1`. */
   id: string
-  /** The campaign it belongs to, or `challenge` for a run. */
-  campaign: string
+  /** The story it belongs to, or `skirmish` for a Skirmish. */
+  story: string
   /** What the player reads: the mission's name. */
   title: string
-  /** How many rounds it plays: a run's, how many each battle may last. */
+  /** How many rounds it plays: a Skirmish's, how many its battle may last. */
   rounds: number
-  /** The route that opens it, when it is not a campaign level's (`campaign?level=<id>`): a run's,
-   *  `challenge?seed=1234`. */
+  /** The route that opens it, when it is not a story level's (`story?mission=<id>`): a Skirmish's,
+   *  `skirmish?seed=1234` or `skirmish?load=<file>`. */
   route?: string
   /** Its connection to the Build Phase: starting a round's Pulse, the round after it, the raid foreseen. */
   play: LevelPlay
@@ -45,17 +50,17 @@ export type PlayableLevel = Readonly<{
   firstRound: (scrollMargin?: number, extra?: Partial<BuildContext>) => BuildContext
 }>
 
-/** A campaign's level, as the screens open it. */
+/** A story's level, as the screens open it. */
 const playable = (level: Level): PlayableLevel => ({
   id: level.id,
-  campaign: level.campaign,
+  story: level.story,
   title: level.mission.name,
   rounds: level.mission.pulses,
   play: missionPlay(level.mission),
   firstRound: (scrollMargin, extra) => levelContext(level, scrollMargin, extra),
 })
 
-/** Every level the game can open, in campaign order: every level of every shipped campaign. */
+/** Every level the game can open, in story order: every level of every shipped story. */
 export const LEVELS: readonly PlayableLevel[] = ARMIES.levels.map(playable)
 
 /** A level by id, or `undefined`. */

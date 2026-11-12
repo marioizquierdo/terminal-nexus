@@ -83,7 +83,7 @@ test("what one kind of unit did is read from the battle's events, for each side 
   assert.equal(nexus.A, null)
 })
 
-test("what a unit did in a campaign level is told round by round, every round the level played", { timeout: 120_000 }, () => {
+test("what a unit did in a story level is told round by round, every round the level played", { timeout: 120_000 }, () => {
   const level = levelById("vasse-test-2")
   const plan = LEVEL_PLANS[0]
   assert.ok(level !== undefined && plan !== undefined)

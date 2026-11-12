@@ -56,7 +56,9 @@ import { readProfiles } from "../skirmish/profile-files.ts"
 import type { Played } from "../skirmish/play.ts"
 import { isPlayer, playNext } from "../skirmish/play.ts"
 import type { Controller, Profiles, SaveFile, SaveMap, SaveSetup, Slot } from "../skirmish/save.ts"
-import { controllerProblem, duelOf, IDLE_SCRIPT, MODIFIERS, newSetup, readSave, saveOf, saveText, SIDE_OF, SLOT_OF, SLOTS } from "../skirmish/save.ts"
+import { duelOf, IDLE_SCRIPT, MODIFIERS, newSetup, readSave, saveOf, saveText, SIDE_OF, SLOT_OF, SLOTS } from "../skirmish/save.ts"
+import type { SlotAsk } from "../skirmish/slots.ts"
+import { slotAsk } from "../skirmish/slots.ts"
 import { playStrategies, roundLines } from "./duel.ts"
 
 type Options = Readonly<{ values: Readonly<Record<string, string>>; flags: ReadonlySet<string> }>
@@ -109,17 +111,9 @@ function whole(options: Options, name: string): number | undefined {
   return parsed
 }
 
-/** What `--p1`/`--p2` asks for: the controller, and for a player the plan file it reads (`""`: none). */
-export type SlotAsk = Readonly<{ controller: Controller; planFile?: string }>
-
-/** `build:<file>`, `build:`, `script:<name>`, `script:`, or a controller as a save writes it. */
-export function slotAsk(text: string, profiles?: Profiles): SlotAsk {
-  if (text === "build" || text.startsWith("build:")) return { controller: "player", planFile: text.slice("build:".length) }
-  if (text === "script" || text === "script:") return { controller: `script:${IDLE_SCRIPT}` }
-  const problem = controllerProblem(text, profiles)
-  if (problem !== null) throw new Error(`${problem}: a slot is build:<plan file> or script:<profile>`)
-  return { controller: text }
-}
+/** `--p1`/`--p2` read (`src/skirmish/slots.ts`): kept exported here for what imported it from the command. */
+export { slotAsk }
+export type { SlotAsk }
 
 /** "1-6" or "1,4,9": the seeds. */
 export function seedsOf(text: string): number[] {

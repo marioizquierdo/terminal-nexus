@@ -145,7 +145,7 @@ function fixtureSide(scenes = true, out = 0): BuildSide {
 
 // --- A mission's lines, as data -----------------------------------------------------------------------
 
-test("PERIMETER's round 1 has the intro's four lines, in order, every word already written in the campaign design", () => {
+test("PERIMETER's round 1 has the intro's four lines, in order, every word already written in the story design", () => {
   assert.deepEqual(
     sceneOf(PERIMETER, 1).map((line) => [line.speaker, line.text]),
     [

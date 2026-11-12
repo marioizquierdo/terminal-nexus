@@ -196,7 +196,7 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const escText = escLabel(state)
   const hint = escLabelSpan(layout, escText)
   const name = escText.slice(0, escText.length - ESC_KEY.length)
-  // A popup that cannot be closed (a run's draft) offers no Esc at all.
+  // A popup that cannot be closed (none now; the retired runs' draft was one) offers no Esc at all.
   if (escText !== "") {
     text(cells, band, hint.from, hint.row, name, "chrome.muted")
     text(cells, band, hint.from + name.length, hint.row, ESC_KEY, "chrome.hotkey", { bold: true })

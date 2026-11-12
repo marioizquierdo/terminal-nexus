@@ -63,14 +63,14 @@ test("the highlighted row, and only it, renders inverse — the carrier monochro
 
 test("a notice, when set, is on screen; when null, nothing is printed in its place", () => {
   const withNotice = frameToText(
-    composeMenuFrame({ state: createMenuList(ITEMS), notice: "Campaign is not built yet." }, "color256"),
+    composeMenuFrame({ state: createMenuList(ITEMS), notice: "Story is not built yet." }, "color256"),
   )
-  assert.ok(withNotice.includes("Campaign is not built yet."))
+  assert.ok(withNotice.includes("Story is not built yet."))
 
   const withoutNotice = frameToText(
     composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color256"),
   )
-  assert.ok(!withoutNotice.includes("Campaign is not built yet."))
+  assert.ok(!withoutNotice.includes("Story is not built yet."))
 })
 
 test("a disabled item renders dimmed when not highlighted, and exactly like any other when it is", () => {

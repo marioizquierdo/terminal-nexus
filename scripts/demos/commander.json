@@ -22,11 +22,11 @@
   {
     "label": "Moving trail",
     "try": "Round 2: two groups, each trail a slow line of arrows, one every three tiles, each leaving a fading copy behind as it moves. Reduced motion, in Settings, holds them still.",
-    "at": "campaign?level=vasse-test-1&round=2"
+    "at": "story?mission=vasse-test-1&round=2"
   },
   {
     "label": "Her return",
-    "try": "The Commander's cadence, on her campaign's second test level: Vasse fell in round 1, so round 2 opens on a line saying she is out, the camera on your Nexus. Press Enter, then s s to play the round without her. When it ends, press Enter: round 3 opens on her return, the light around her.",
-    "at": "campaign?level=vasse-test-2&round=2"
+    "try": "The Commander's cadence, on her story's second test level: Vasse fell in round 1, so round 2 opens on a line saying she is out, the camera on your Nexus. Press Enter, then s s to play the round without her. When it ends, press Enter: round 3 opens on her return, the light around her.",
+    "at": "story?mission=vasse-test-2&round=2"
   }
 ]

@@ -16,7 +16,7 @@ Tools for checking the repository and for seeing a change. Anything they write l
 **Seeing a change**
 - `playtest.mjs` - press keys on the Build Phase without a terminal; text, PNGs and a GIF in `.playtest/`; `--keys "Down Space"`.
 - `capture-build-phase-screenshots.mjs` - every Build Phase screenshot and GIF, in-process or through tmux; `--only <name>`, `--force`.
-- `capture-menu-screenshot.mjs` - the title menu, Settings, About and Campaign screens on a real terminal (tmux); no flags needed.
+- `capture-menu-screenshot.mjs` - the title menu, Settings, About and Story screens on a real terminal (tmux); no flags needed.
 - `capture-screenshots.mjs` - screenshots of the engine tool `grid` on a real terminal (tmux); `--only <name>`.
 - `capture-engagement.mjs` - a run of sub-tick frames around one engagement, on request only; `--save <testing save id>`.
 - `build-web.mjs` - the browser playtest page, one HTML file; `bun scripts/build-web.mjs [--demos <file>]`.

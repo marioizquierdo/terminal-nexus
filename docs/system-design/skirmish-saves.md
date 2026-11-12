@@ -3,8 +3,10 @@
 _How a Skirmish is set up, saved, loaded and played without a screen: one vocabulary for the setup screen, the save
 file, the command line and the routes. The game design of Skirmish (why it is the centre, what it is for) is
 [`game-modes.md`](../game-design/game-modes.md); the duel it plays is [`duels.md`](duels.md). Built so far: the save
-file, the `skirmish` command and the testing saves (`src/skirmish/`, `src/cli/skirmish.ts`, `skirmish-testing/`); the setup screen, profiles, goals, modifiers
-and saving from the game are the rest of the Skirmish milestone
+file, the `skirmish` command and the testing saves (`src/skirmish/`, `src/cli/skirmish.ts`, `skirmish-testing/`), script
+profiles and modifiers, the game playing a save on its screen (`src/cli/skirmish-play.ts`), Save game and `--load`
+(`src/cli/skirmish-open.ts`, `src/cli/skirmish-files.ts`); the setup screen, spectating and playtest notes are the rest
+of the Skirmish milestone
 ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md))._
 
 _Licence: Apache-2.0._
@@ -103,7 +105,18 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
   hundred units is a page.
 
 **Saving and loading happen at a Build Phase** (RULE — settled 2026-11-12, the owner: "saving and loading game is always
-for the build phase"). The Build Phase's game menu gains **Save game**, which writes a new file (or over the one loaded).
+for the build phase"; `tests/skirmish-play.test.ts`). **Save game** is on the game menu (Esc, `[v]`; the owner: "on the
+main menu settings "[esc]" instead of in the side menu"): it writes the battle as the Build Phase opened and the plan
+so far as p1's draft, under a name the player types, offered as the file loaded or last saved to, or a new name by the
+setup (`vasse-dob-1234-round-3`). A name alone goes into `~/.terminal-nexus/saves/` (the folder beside
+`settings.json`), a name with a folder where it says, `.save.json` added unless it ends in `.json`. Loading it returns to
+exactly that Build Phase: the round, its hand and credits, the power picked, every building placed, held and fitted; and
+the round then plays as the uninterrupted one. It is dimmed on a story mission and refused once the plan is locked in.
+
+**The screen is a save played on** (RULE — `src/cli/skirmish-play.ts`): a Skirmish's round carries its setup and the
+duel as the Build Phase opened (`saveOf` and `duelOf` turn either into the other), so there is no screen state a save
+could miss. The screen plays slot p1 as its player and p2 by its script; spectating and p2 as the player wait for the
+setup screen's step, two players for Versus, and each is refused saying so.
 
 **The units in a save stand where the regroup leaves them** (RULE — the owner, 2026-11-12): the state a save keeps is the
 one after the regroup's walk, every survivor at the end of it, computed by the rules, not by the screen. Anything the
@@ -216,8 +229,10 @@ skirmish --map pocket --p1 build: --p2 script:agro-rich --modifiers fast-rounds
 **`duel` stays beside it** for every pairing of every Commander over seeds (`duel bench`) and the file flow for two model
 players in two sessions (`duel new`, `wait`, `submit`). They fold into `skirmish` once save files carry them.
 
-**The game's own flags** take the same names once Save game lands: `terminal-nexus --load <file> [--p2 script:turtle]`,
-the route `skirmish?load=<file>`, and `skirmish?map=pocket&seed=7` for a new battle.
+**The game's own flags** take the same names: `terminal-nexus --load <file> [--p1 build:plan.json] [--p2 script:turtle]`
+(a plan file for p1 is laid on the first Build Phase, as a draft is), the route `skirmish?load=<file>`, and
+`skirmish?seed=7` for a new battle on the defaults (a map and Commanders in the route wait for the setup screen). The
+scripted playtest takes the same `--load`, `--p1` and `--p2`.
 
 ## 6. How an agent plays a Skirmish
 
@@ -229,8 +244,8 @@ Three ways, from cheapest to fullest:
    Build Phase. Every round can be a file of its own to keep, compare, copy and change (`--load` one, `--save` another).
 2. **Variations from a person's save**: copy Mario's save and play it on with scripts in both slots (`--p1 script:turtle
    --p2 script:rush --battle`), a round a command, or change its `draft` to try another plan.
-3. **On the screen**: the playtest script opens a save (`--load`, with Save game) and presses keys, returning every
-   screen as text, for how it reads. The player's diary (Milestone 20) plays a whole battle this way.
+3. **On the screen**: the playtest script opens a save (`--load`) and presses keys, returning every screen as text, for
+   how it reads; `Esc v`, a name and Enter save where it stopped. The player's diary (Milestone 20) plays a whole battle this way.
 
 ## 7. Spectating
 
