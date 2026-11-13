@@ -48,7 +48,11 @@ was wiped out, time ran out). For each side:
   routes that moves one is seen.
 - **Duels** ([`duels.md`](duels.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
   ends of the map; each scripted player on both sides; on the Crossing, eight rounds at most. Each round records its
-  battle, the rarity of every card dealt and of the card kept, and each Nexus's health when the battle ended.
+  battle, the rarity of every card dealt and of the card kept, and each Nexus's health when the battle ended. A duel
+  is played as a Skirmish, by the same steps the `skirmish` command and the game's screen take (a new battle's save,
+  each slot seated with `script:<player>`, every round played by `playOn`, `src/skirmish/play.ts`), so what a
+  measurement says of a battle is what `skirmish --p1 script:<player> --p2 script:<player> --play-to end` plays.
+  Every map is played the way `grid` plays it (`playTestingRound`, `src/skirmish/testing-round.ts`).
 - **Every mission** played to its end by fixed plans: **nothing built**, and **a defended base** (a Barracks
   and a Supply Depot near the Grid Nexus each round, as far as the credits go). Each round records its battle.
 

@@ -46,9 +46,10 @@ components like this is more maintainable, flexible and easier to explain"):
 | --- | --- | --- |
 | **The battle** | The duel: a round from both sides' build actions, deterministic, the regroup after it | `src/duel/`, the kernel beneath |
 | **The record** | A save: the setup and the battle at a Build Phase, and a slot's build actions so far | `src/skirmish/save.ts` |
+| **The ask** | The words a Skirmish is asked for by (`load`, `map`, `seed`, `rounds`, `p1`, `p2-commander`, …), read by one reader whichever door they come through | `src/skirmish/ask.ts` |
 | **The seat** | Who plays each slot: a person, a build file, a script profile, later an agent; each answers the same brief, in any order | `src/skirmish/request.ts`, `slots.ts`, `play.ts` |
-| **The round** | `playNext`: the setup's rules brought up to date, each slot's build actions asked of its controller, the round played | `src/skirmish/play.ts` |
-| **The doors** | The screen (a person plays p1, or watches), the `skirmish` command (anything, headless, any number of rounds and battles), the playtest (keys pressed on the screen), the routes (`skirmish?load=…`) | `src/cli/skirmish-play.ts`, `src/cli/skirmish.ts`, `scripts/playtest.mjs`, `src/cli/route.ts` |
+| **The round** | `playNext`: the setup's rules brought up to date, each slot's build actions asked of its controller, the round played; `playOn`, the one loop rounds are played on by | `src/skirmish/play.ts` |
+| **The doors** | The screen (a person plays p1, or watches), the `skirmish` command (anything, headless, any number of rounds and battles), the measurement (scripts over many seeds, every Battle Round recorded), the playtest (keys pressed on the screen), the routes and the game's flags (`skirmish?map=pocket`, `--map pocket`) | `src/cli/skirmish-play.ts`, `src/cli/skirmish.ts`, `src/measure/`, `scripts/playtest.mjs`, `src/cli/route.ts` |
 
 What follows from it:
 
@@ -61,8 +62,14 @@ What follows from it:
 - **One rule, one place.** A rule of play lives in the battle or the round, never in a door; a door adds only what it
   is for (the screen's keys and pictures, the command's options and files). A change shows up in every door at once,
   and a test through the command is a test of the screen's battle.
-- **Words are shared.** `--p1`/`--p2`, `build:` and `script:` mean the same on the command line, the game's flags and
-  the routes; the save's names are the setup screen's.
+- **Words are shared.** Every word that asks for a Skirmish means the same on the `skirmish` command, the game's flags
+  and the routes, because one reader reads them all (`readAsk`) and writes them back (`askWords`):
+  `skirmish --map pocket --p2-commander averno`, `terminal-nexus --map pocket --p2-commander averno` and
+  `--at 'skirmish?map=pocket&p2-commander=averno'` are one battle, refused for the same reasons. The save's names are
+  the setup screen's.
+- **A testing save is not a battle.** It tests one rule on the bench's content, with no Commander, Build Phase or wave,
+  so it starts the kernel straight from the units it places. It too has one path, `playTestingRound`
+  (`src/skirmish/testing-round.ts`), which `grid`, the `skirmish` command and the measurement all play it by.
 
 ## 3. Setting up a Skirmish
 

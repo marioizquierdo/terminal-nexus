@@ -39,11 +39,11 @@ import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, n
 import type { Force, RegroupResult, Restoration } from "../match/index.ts"
 import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
-import type { Profiles, SaveFile, SaveSetup } from "../skirmish/save.ts"
+import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
 import { controllerKind, duelOf, duelSetupOf, newSetup, saveOf, SLOTS } from "../skirmish/save.ts"
 import { isPlayer, playNext } from "../skirmish/play.ts"
 import { spectating } from "../skirmish/setup.ts"
-import { skirmishSetupRoute } from "./route.ts"
+import { skirmishRoute } from "./route.ts"
 import { commanderNameOf, endedLine, mapNameOf, openingLines, outcomeFor, reasonWords, spectatorReason } from "../skirmish/words.ts"
 import type { MatchState } from "../state/types.ts"
 import { resultOf } from "../view/ending.ts"
@@ -448,24 +448,26 @@ function nexusFocus(context: BuildContext): DialogLine["focus"] {
   return { tile, own: tilesOf(nexus.anchor, context.registry.get(nexus.contentId).footprint) }
 }
 
-/** The route that opens a new Skirmish of this seed, on the defaults: `skirmish?seed=1234`. */
-export const skirmishRoute = (seed: number): string => `skirmish?seed=${seed}`
-
 /** The route that opens a new Skirmish of this setup: its seed and every part that is not the default
  *  (`skirmish?seed=7&map=pocket&p2=script:agro`), so a battle set up on the setup screen can be opened again from it. */
 export function setupRoute(setup: SaveSetup): string {
   const plain = newSetup({ seed: setup.seed })
-  const ask: Record<string, string | readonly string[]> = {}
-  if (setup.map !== plain.map && typeof setup.map === "string") ask["map"] = setup.map
+  const slots: Partial<Record<Slot, string>> = {}
+  const commanders: Partial<Record<Slot, string>> = {}
   for (const slot of SLOTS) {
     const now = setup.slots[slot]
-    if (now.commander !== plain.slots[slot].commander && now.commander !== undefined) ask[`${slot}Commander`] = now.commander
+    if (now.commander !== plain.slots[slot].commander && now.commander !== undefined) commanders[slot] = now.commander
     // A player is a player whatever their name: the route names who plays a slot only when it is not the default.
     const same = now.controller === plain.slots[slot].controller || (controllerKind(now.controller) === "player" && controllerKind(plain.slots[slot].controller) === "player")
-    if (!same) ask[slot] = controllerKind(now.controller) === "player" ? "build:" : now.controller
+    if (!same) slots[slot] = controllerKind(now.controller) === "player" ? "build:" : now.controller
   }
-  if (setup.modifiers.length > 0) ask["modifiers"] = setup.modifiers
-  return Object.keys(ask).length === 0 ? skirmishRoute(setup.seed) : skirmishSetupRoute(setup.seed, ask)
+  return skirmishRoute({
+    seed: setup.seed,
+    ...(setup.map !== plain.map && typeof setup.map === "string" ? { map: setup.map } : {}),
+    ...(Object.keys(slots).length === 0 ? {} : { slots }),
+    ...(Object.keys(commanders).length === 0 ? {} : { commanders }),
+    ...(setup.modifiers.length > 0 ? { modifiers: setup.modifiers } : {}),
+  })
 }
 
 /** Where a save opened on screen came from, to name it and offer it back. */
@@ -498,7 +500,7 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
     story: "skirmish",
     title: save.name ?? `Skirmish on ${mapNameOf(setup.map)}, seed ${setup.seed}`,
     rounds: setup.rounds,
-    route: source.route ?? (source.file === undefined ? setupRoute(setup) : `skirmish?load=${source.file}`),
+    route: source.route ?? (source.file === undefined ? setupRoute(setup) : skirmishRoute({ load: source.file })),
     play,
     firstRound: (scrollMargin, extra = {}) => {
       const previous = { ...extra, ...(scrollMargin === undefined ? {} : { scrollMargin }) }

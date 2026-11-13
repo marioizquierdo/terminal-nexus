@@ -714,3 +714,9 @@ rewrite of the same file; a backup taken before the probe saved it. Probe on a c
   loaded from, which is right for the player's own saves and wrong for the examples that ship in `saves/`: the scripted
   playtest opens one by default, so pressing Enter in the Save game popup would have written over a checked-in file. It
   was seen only in a picture of the popup. A default that writes a file now never names a shipped one.
+
+- **A harness replaced is checked against what it wrote, not against the tests.** Before moving the measurement onto
+  the Skirmish's loop and the testing saves onto one path, the quick measurement, the formations bench and four testing
+  saves through `grid` and `skirmish` were written to files; after, the same runs were compared with them, record for
+  record. The tests would have passed on a measurement that drifted (they check a duel's shape, not its numbers); the
+  comparison could not.

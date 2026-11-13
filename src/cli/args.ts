@@ -5,7 +5,7 @@ export type ParsedArgs = Readonly<{
   flags: ReadonlySet<string>
 }>
 
-const VALUE_OPTIONS = new Set([
+export const VALUE_OPTIONS: ReadonlySet<string> = new Set([
   "seed",
   "ticks",
   "turn",
@@ -38,10 +38,18 @@ const VALUE_OPTIONS = new Set([
   "at",
   "settings",
   "keys",
-  // The game's Skirmish (src/cli/terminal-nexus.ts): a save file to open, and who plays each slot.
+  // The game's Skirmish (src/cli/terminal-nexus.ts): the `skirmish` command's words for a battle, every one
+  // (`ASK_WORDS`, src/skirmish/ask.ts; tests/route.test.ts holds the two lists together).
   "load",
+  "map",
+  "rounds",
+  "modifiers",
   "p1",
   "p2",
+  "p1-commander",
+  "p2-commander",
+  "p1-credits",
+  "p2-credits",
 ])
 
 /**

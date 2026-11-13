@@ -57,19 +57,24 @@ export type ResolveOptions = Readonly<{
   registry: ContentRegistry
   pulseTicks: number
   seed: number
+  /** Shown every state as it is reached, the opening first (with no events), then each tick with its own events: what
+   *  a measurement records a battle from. It sees; it changes nothing. */
+  watch?: (state: MatchState, events: readonly DomainEvent[]) => void
 }> &
   PulseOptions
 
 export function resolvePulse(options: ResolveOptions): PulseRun {
-  const { initialState, registry, pulseTicks, seed, sides, abilities } = options
+  const { initialState, registry, pulseTicks, seed, sides, abilities, watch } = options
   const context = createContext(initialState, registry, pulseTicks, { ...(sides === undefined ? {} : { sides }), ...(abilities === undefined ? {} : { abilities }) })
   const events: DomainEvent[] = spawnEvents(initialState, registry)
 
   let state = initialState
+  watch?.(state, [])
   while (state.outcome === null && state.tick < pulseTicks) {
     const result = stepTick(state, context)
     state = result.state
     events.push(...result.events)
+    watch?.(state, result.events)
   }
 
   return {
@@ -84,49 +89,6 @@ export function resolvePulse(options: ResolveOptions): PulseRun {
     events,
     stateHash: hashState(state),
     eventsHash: hashEvents(events),
-  }
-}
-
-/**
- * `resolvePulse`, plus one intermediate `MatchState` snapshot captured the instant `tick ===
- * snapshotTick` — for `grid --turn`, jumping straight to a tick a report or a bug is about instead
- * of scrolling from the start. `snapshot` is `null` when the Pulse ends (outcome decided, or the
- * tick cap hit) before reaching `snapshotTick`, which is not an error, just nothing to show.
- *
- * A second loop rather than a `snapshotTick` parameter on `resolvePulse` itself: the common case
- * (no snapshot wanted) stays exactly the function that every hash in this project is pinned to,
- * unchanged and un-branched.
- */
-export function resolvePulseAt(
-  options: ResolveOptions,
-  snapshotTick: number,
-): PulseRun & { snapshot: MatchState | null } {
-  const { initialState, registry, pulseTicks, seed, sides, abilities } = options
-  const context = createContext(initialState, registry, pulseTicks, { ...(sides === undefined ? {} : { sides }), ...(abilities === undefined ? {} : { abilities }) })
-  const events: DomainEvent[] = spawnEvents(initialState, registry)
-
-  let state = initialState
-  let snapshot: MatchState | null = state.tick === snapshotTick ? state : null
-  while (state.outcome === null && state.tick < pulseTicks) {
-    const result = stepTick(state, context)
-    state = result.state
-    events.push(...result.events)
-    if (snapshot === null && state.tick === snapshotTick) snapshot = state
-  }
-
-  return {
-    schemaVersion: initialState.schemaVersion,
-    engineVersion: ENGINE_VERSION,
-    contentLock: contentLockOf(registry),
-    ticksPerSecond: initialState.ticksPerSecond,
-    pulseTicks,
-    seed,
-    initialState,
-    finalState: state,
-    events,
-    stateHash: hashState(state),
-    eventsHash: hashEvents(events),
-    snapshot,
   }
 }
 

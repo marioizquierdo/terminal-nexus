@@ -8,9 +8,11 @@
 //   skirmish                                a Skirmish on the defaults, on a seed the game chooses, as its title menu row starts one
 //   skirmish?seed=1234                      ... on that seed
 //   skirmish?map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds&seed=7
-//                                           a new battle set up as named: the setup screen's rows, the skirmish
-//                                           command's names (map, p1, p2, p1-commander, p2-commander, modifiers)
-//   skirmish?load=saves/crossing.save.json  a save file, opened at its Build Phase (p1 and p2 may change who plays)
+//                                           a new battle set up as named: the words the `skirmish` command takes,
+//                                           read by the same reader (`src/skirmish/ask.ts`): map, seed, ticks, rounds,
+//                                           modifiers, p1, p2, p1-commander, p2-commander, p1-credits, p2-credits
+//   skirmish?load=saves/crossing.save.json  a save file, opened at its Build Phase (who plays, the credits shares,
+//                                           the rounds and the modifiers may change)
 //   skirmish?setup                          the title menu's Skirmish screen: New game, Load game
 //   skirmish?setup=new   skirmish?setup=load   New game's setup, or Load game's list of saves
 //   story?mission=vasse-test-1              that mission's Build Phase, at its first round
@@ -35,7 +37,8 @@
 
 import type { PlayableLevel } from "./levels.ts"
 import { DEFAULT_LEVEL, LEVELS, levelById } from "./levels.ts"
-import { SKIRMISH_SEED_LIMIT, isSkirmishSeed } from "../skirmish/words.ts"
+import type { SkirmishAsk } from "../skirmish/ask.ts"
+import { ASK_WORDS, askWords, readAsk } from "../skirmish/ask.ts"
 
 /** The title menu's places: each opens one of its screens. */
 export type TitlePlace = "menu" | "story" | "settings" | "about" | "skirmish" | "new-game" | "load-game"
@@ -60,13 +63,7 @@ const TITLE_ROUTES: Readonly<Record<TitlePlace, string>> = {
 export type Destination =
   | Readonly<{ kind: "title"; place: TitlePlace }>
   | Readonly<{ kind: "level"; level: PlayableLevel; round: number }>
-  | Readonly<{ kind: "skirmish"; seed?: number; load?: string; setup?: SkirmishAsk }>
-
-/** A new battle's setup as a route names it, under the `skirmish` command's names: what is not named is the default. */
-export type SkirmishAsk = Readonly<{ map?: string; p1?: string; p2?: string; p1Commander?: string; p2Commander?: string; modifiers?: readonly string[] }>
-
-/** The route names of a battle's setup, each with the field it fills. */
-const SETUP_NAMES = { map: "map", p1: "p1", p2: "p2", "p1-commander": "p1Commander", "p2-commander": "p2Commander", modifiers: "modifiers" } as const
+  | (Readonly<{ kind: "skirmish" }> & SkirmishAsk)
 
 export type TitleDestination = Extract<Destination, { kind: "title" }>
 export type LevelDestination = Extract<Destination, { kind: "level" }>
@@ -140,47 +137,30 @@ function story(query: Query, problems: string[]): Destination | null {
   return { kind: "level", level, round: counted }
 }
 
-/** `skirmish`: a new Skirmish on the defaults, on the seed given or one the game chooses; or a save file, at its Build
- *  Phase. A seed and a file are two different battles, so not both. */
+/** `skirmish`: a new Skirmish on the defaults, on the seed given or one the game chooses, set up as its words ask
+ *  (`readAsk`, the reader the `skirmish` command's flags go through); or a save file, at its Build Phase; or with
+ *  `setup`, the setup screen. */
 function skirmish(query: Query, problems: string[]): Destination | null {
-  const seed = query.get("seed")
-  const load = query.get("load")
   const setup = query.get("setup")
   const before = problems.length
   if (setup !== undefined) {
-    if (seed !== undefined || load !== undefined) problems.push("setup opens the setup screen: no seed or load beside it")
+    if (query.get("seed") !== undefined || query.get("load") !== undefined) problems.push("setup opens the setup screen: no seed or load beside it")
     const place = setup === "" ? "skirmish" : setup === "new" ? "new-game" : setup === "load" ? "load-game" : null
     if (place === null) problems.push(`setup is the Skirmish screen (skirmish?setup), New game (setup=new) or Load game (setup=load), not "${setup}"`)
     return problems.length > before || place === null ? null : { kind: "title", place }
   }
-  if (seed !== undefined && load !== undefined) problems.push("seed starts a new battle and load opens a saved one: not both")
-  if (seed !== undefined && (!/^\d+$/u.test(seed) || !isSkirmishSeed(Number(seed)))) {
-    problems.push(`seed must be a whole number from 0 to ${SKIRMISH_SEED_LIMIT - 1}, not "${seed}"`)
-  }
-  const asked: Record<string, string | readonly string[]> = {}
-  for (const [name, field] of Object.entries(SETUP_NAMES)) {
-    const value = query.get(name)
-    if (value === undefined) continue
-    if (load !== undefined && name !== "p1" && name !== "p2") problems.push(`${name} sets up a new battle: a loaded save keeps its own (p1 and p2 may change who plays)`)
-    asked[field] = field === "modifiers" ? (value === "" || value === "none" ? [] : value.split(",")) : value
-  }
+  const read = readAsk((word) => query.get(word))
+  problems.push(...read.problems.map((problem) => `${problem.word} ${problem.says}`))
   if (problems.length > before) return null
-  const named = Object.keys(asked).length === 0 ? {} : { setup: asked as SkirmishAsk }
-  if (load !== undefined) return { kind: "skirmish", load, ...named }
-  return { kind: "skirmish", ...(seed === undefined ? {} : { seed: Number(seed) }), ...named }
+  return { kind: "skirmish", ...read.ask }
 }
 
-/** A new battle's route: its seed, and every part of its setup that is not the default, under the route's names. */
-export function skirmishSetupRoute(seed: number, setup: SkirmishAsk): string {
-  const parts = [`seed=${seed}`]
-  for (const [name, field] of Object.entries(SETUP_NAMES)) {
-    const value = setup[field]
-    if (value === undefined) continue
-    if (Array.isArray(value)) {
-      if (value.length > 0) parts.push(`${name}=${value.join(",")}`)
-    } else parts.push(`${name}=${value as string}`)
-  }
-  return `skirmish?${parts.join("&")}`
+/** A Skirmish's route: every word its ask says, in the reader's order (`askWords`). */
+export function skirmishRoute(ask: SkirmishAsk): string {
+  const words = askWords(ask)
+  // A value is escaped where a route would read it otherwise (`&`, `=`, `%`, a space), and left readable elsewhere.
+  const value = (text: string): string => encodeURIComponent(text).replace(/%(3A|2C|2F)/giu, (escape) => decodeURIComponent(escape))
+  return words.length === 0 ? "skirmish" : `skirmish?${words.map(([word, text]) => `${word}=${value(text)}`).join("&")}`
 }
 
 /** The places the Skirmish milestone renamed, each with what replaced it: a pasted note says where to go now. */
@@ -197,16 +177,11 @@ export const PLACES: Readonly<Record<string, Place>> = {
   menu: titlePlace("menu", "the title menu: Skirmish, Story, Settings, About, Exit"),
   skirmish: {
     opens: "a Skirmish on the defaults (a seed chosen or given), a save file, or with setup its setup screen",
+    // The words the `skirmish` command takes (`ASK_WORDS`), and the setup screen.
     query: {
-      seed: `a new battle's seed, a whole number from 0 to ${SKIRMISH_SEED_LIMIT - 1}; one the game chooses unless given`,
-      load: "a save file to open at its Build Phase, as the game's --load takes it",
+      ...ASK_WORDS,
+      seed: `${ASK_WORDS["seed"] ?? ""}; one the game chooses unless given`,
       setup: "the setup screen instead of a battle: alone the Skirmish screen (New game, Load game), new or load one of them",
-      map: "a new battle's map: crossing or pocket",
-      p1: "who plays p1, as the skirmish command takes it: build: (the screen) or script:<profile>",
-      p2: "who plays p2: build: or script:<profile> (steady unless given)",
-      "p1-commander": "p1's Commander: vasse, averno or dob",
-      "p2-commander": "p2's Commander: vasse, averno or dob",
-      modifiers: "the modifiers, by name with commas: fast-rounds, double-income",
     },
     flags: ["setup"],
     resolve: skirmish,
@@ -308,13 +283,8 @@ export function parseRoute(text: string): Destination {
 export function formatRoute(destination: Destination): string {
   if (destination.kind === "title") return TITLE_ROUTES[destination.place]
   if (destination.kind === "skirmish") {
-    if (destination.load !== undefined) {
-      const slots = (["p1", "p2"] as const).flatMap((slot) => (destination.setup?.[slot] === undefined ? [] : [`&${slot}=${destination.setup[slot]}`]))
-      return `skirmish?load=${destination.load}${slots.join("")}`
-    }
-    if (destination.setup !== undefined && destination.seed !== undefined) return skirmishSetupRoute(destination.seed, destination.setup)
-    if (destination.setup !== undefined) return skirmishSetupRoute(0, destination.setup).replace("seed=0&", "")
-    return destination.seed === undefined ? "skirmish" : `skirmish?seed=${destination.seed}`
+    const { kind: _kind, ...ask } = destination
+    return skirmishRoute(ask)
   }
   // A Skirmish names its own route: its seed, or its file.
   if (destination.level.route !== undefined) return destination.level.route

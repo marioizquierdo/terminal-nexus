@@ -31,7 +31,7 @@
 // The battle:
 //   --map <id|file>          a new battle's map: crossing, pocket, or a map file (its rows, nexus and hold by slot)
 //   --p1-commander, --p2-commander <id>    a new battle's Commanders: vasse, averno, dob (vasse against dob)
-//   --seed <n>, --ticks <n>  a new battle's seed (1) and how many ticks a Battle Round lasts (360)
+//   --seed <n>, --ticks <n>  a new battle's seed (1; up to 999999) and how many ticks a Battle Round lasts (360)
 //   --load <file>            a save to carry on from, at its Build Phase; it keeps its map, Commanders and seed
 //   --save <file>            where to write the save, made or replaced; -f <file> (--file) loads and saves one file
 //   --rounds <n>             rounds the battle lasts at most (8); on a loaded battle, from now on
@@ -64,6 +64,10 @@
 // (terminal-nexus --load <file>). A testing save (skirmish-testing/) plays its one Battle Round with --play-to and
 // prints grid's report.
 //
+// The words for the battle and the slots are the game's too, read by one reader (src/skirmish/ask.ts): terminal-nexus
+// --map pocket --p2 script:agro opens on screen the battle skirmish --map pocket --p2 script:agro plays, and so does the
+// route skirmish?map=pocket&p2=script:agro.
+//
 // This comment is what `skirmish --help` prints. The rest of this file reads the options into a request; the work is
 // in its modules: ./skirmish-battle.ts (one battle), ./skirmish-seeds.ts (many), ./skirmish-testing.ts (a testing
 // save), on the steps the game's screen shares (src/skirmish/request.ts, play.ts).
@@ -72,22 +76,19 @@ import { readFileSync } from "node:fs"
 import type { LogLevel } from "../report/index.ts"
 import { parseLevel } from "../report/index.ts"
 import { readProfiles } from "../skirmish/profile-files.ts"
+import { ASK_WORDS, newBattleOf, readAsk, rulesOf, slotChangesOf } from "../skirmish/ask.ts"
 import type { NewBattle, SlotChange } from "../skirmish/request.ts"
-import type { Profiles, SaveMap, Slot } from "../skirmish/save.ts"
-import { SLOTS } from "../skirmish/save.ts"
-import { slotAsk } from "../skirmish/slots.ts"
+import type { Profiles, Slot } from "../skirmish/save.ts"
 import { playBattle } from "./skirmish-battle.ts"
 import { commandersOf, playPairings, playSeeds } from "./skirmish-seeds.ts"
 
 /** What the command exits with. */
 export const EXIT = { done: 0, failed: 1, refused: 2 } as const
 
-/** The options that take no value, and those that take one. */
+/** The options that take no value, and those that take one: the words that ask for a Skirmish, which the game's route
+ *  takes too (`src/skirmish/ask.ts`), and the command's own. */
 const FLAGS = new Set(["json", "help"])
-const VALUES = new Set([
-  "map", "load", "save", "file", "p1", "p2", "p1-commander", "p2-commander", "p1-credits", "p2-credits", "seed", "seeds",
-  "commanders", "rounds", "ticks", "modifiers", "play-to", "out", "log", "log-level", "name", "notes",
-])
+const VALUES = new Set([...Object.keys(ASK_WORDS), "save", "file", "seeds", "commanders", "play-to", "out", "log", "log-level", "name", "notes"])
 
 /** The options as written: each value by its name, and the flags given. */
 export type Options = Readonly<{ values: Readonly<Record<string, string>>; flags: ReadonlySet<string> }>
@@ -149,46 +150,23 @@ export function seedsOf(text: string): number[] {
   return seeds
 }
 
-/** A map file: its rows, and its Nexus and hold for each slot. */
-function mapFile(path: string): SaveMap {
-  const value = JSON.parse(readFileSync(path, "utf8")) as Partial<SaveMap>
-  return { id: value.id ?? path.replace(/^.*\//u, "").replace(/\.json$/u, ""), name: value.name ?? value.id ?? path, ...value } as SaveMap
-}
-
 const given = <K extends string, V>(key: K, value: V | undefined): Partial<Record<K, V>> => (value === undefined ? {} : ({ [key]: value } as Record<K, V>))
 
-/** The options read into a request, every combination that cannot work refused saying why. */
+/** The options read into a request: the words a Skirmish is asked for by (`readAsk`, as the route reads them), then the
+ *  command's own; every combination that cannot work refused saying why. */
 export function requestOf(options: Options, profiles: Profiles): SkirmishRequest {
   const { values, flags } = options
-  const whole = (name: string): number | undefined => {
-    const value = values[name]
-    if (value === undefined) return undefined
-    const parsed = Number(value)
-    if (!Number.isInteger(parsed)) throw new Error(`--${name} must be a whole number, not "${value}"`)
-    return parsed
-  }
   const refuse = (names: readonly string[], why: string): void => {
     for (const name of names) if (values[name] !== undefined || flags.has(name)) throw new Error(`--${name}: ${why}`)
   }
 
   const load = values["load"] ?? values["file"]
   const save = values["save"] ?? values["file"]
-  if (load !== undefined) {
-    refuse(["map"], "it starts a new battle; a loaded save keeps its map")
-    refuse(["seed", "ticks"], "it sets up a new battle; a loaded save keeps its own")
-    refuse(["p1-commander", "p2-commander"], "a loaded battle keeps its Commanders")
-  }
+  const { ask, problems } = readAsk((word) => (word === "load" ? load : values[word]))
+  if (problems.length > 0) throw new Error(problems.map((problem) => `--${problem.word} ${problem.says}`).join("\n"))
 
   const playTo = values["play-to"]
   if (playTo !== undefined && playTo !== "next" && playTo !== "end" && !(Number.isInteger(Number(playTo)) && Number(playTo) >= 1)) throw new Error(`--play-to is next, a round (4) or end, not "${playTo}"`)
-
-  const slots: Partial<Record<Slot, SlotChange>> = {}
-  for (const slot of SLOTS) {
-    const who = values[slot]
-    const credits = values[`${slot}-credits`]
-    if (credits !== undefined && !(Number(credits) > 0)) throw new Error(`--${slot}-credits is a share above 0 (1 is the curve's), not "${credits}"`)
-    if (who !== undefined || credits !== undefined) slots[slot] = { ...given("ask", who === undefined ? undefined : slotAsk(who, profiles)), ...given("credits", credits === undefined ? undefined : Number(credits)) }
-  }
 
   const many = values["seeds"] !== undefined || values["commanders"] !== undefined
   if (many) {
@@ -198,22 +176,15 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
   }
   if (values["commanders"] !== undefined) refuse(["p1-commander", "p2-commander"], "--commanders names every Commander played")
 
-  if (load === undefined && values["map"] === undefined) throw new Error("a battle needs --map <id|file> to start a new one, or --load <file> (skirmish --help)")
+  if (load === undefined && ask.map === undefined) throw new Error("a battle needs --map <id|file> to start a new one, or --load <file> (skirmish --help)")
 
-  const map = values["map"]
-  const modifiers = values["modifiers"]
   const level = values["log-level"]
   return {
     ...given("load", load),
     ...given("save", save),
-    battle: {
-      ...given("map", map === undefined ? undefined : map.endsWith(".json") ? mapFile(map) : map),
-      ...given("seed", whole("seed")),
-      ...given("roundTicks", whole("ticks")),
-      commanders: { ...given("p1", values["p1-commander"]), ...given("p2", values["p2-commander"]) },
-    },
-    slots,
-    rules: { ...given("rounds", whole("rounds")), ...given("modifiers", modifiers === undefined ? undefined : modifiers === "none" || modifiers === "" ? [] : modifiers.split(",").map((name) => name.trim())) },
+    battle: newBattleOf(ask, (path) => readFileSync(path, "utf8")),
+    slots: slotChangesOf(ask, profiles, (word) => `--${word}`),
+    rules: rulesOf(ask),
     ...given<"playTo", "next" | "end" | number>("playTo", playTo === undefined ? undefined : playTo === "next" || playTo === "end" ? playTo : Number(playTo)),
     ...given("seeds", values["seeds"] === undefined ? undefined : seedsOf(values["seeds"])),
     ...given("commanders", values["commanders"] === undefined ? undefined : commandersOf(values["commanders"])),

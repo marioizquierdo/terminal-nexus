@@ -71,7 +71,7 @@ testing save ─variant─▶ map for one battle ──engine──▶ states an
 
 | Part | Where | What it is |
 | --- | --- | --- |
-| Testing save | `skirmish-testing/**/*.save.json`, `src/skirmish/testing-saves.ts`, `src/skirmish/start.ts` | the ground, the armies, each side's target, as a Skirmish save's `start` ([`skirmish-saves.md`](skirmish-saves.md)); found by id, opened by `openBattle` (`src/skirmish/opening/open.ts`) |
+| Testing save | `skirmish-testing/**/*.save.json`, `src/skirmish/testing-saves.ts`, `src/skirmish/start.ts` | the ground, the armies, each side's target, as a Skirmish save's `start` ([`skirmish-saves.md`](skirmish-saves.md)); found by id, opened by `openBattle` (`src/skirmish/opening/open.ts`) and played by `playTestingRound` (`src/skirmish/testing-round.ts`), the one path `grid`, the `skirmish` command and the measurement share |
 | Variant | `src/skirmish/opening/variant.ts` | a pure function of a map and its content to another: a unit, an army, a tune, a terrain, a target; and `shuffled` and `mirrored`, which make each seed's opening |
 | Trial | `src/measure/trial.ts` | the spec (maps, seeds, variants, expectations), its runs in order, each played by an `Engine` and timed by a `Meter`, both passed in |
 | Engine | `src/cli/engine.ts` | the kernel, content and opening (`openBattle`) of a build's folder: this one, or another commit's checked out beside it |

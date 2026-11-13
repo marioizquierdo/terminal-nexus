@@ -1,8 +1,9 @@
 // The `terminal-nexus` executable's own CLI: the game's actual entry
 // point, as distinct from `grid`'s. No subcommand and no map file: a bare `terminal-nexus` opens the title
 // menu, `--at <route>` opens any other place in the game (`./route.ts`) — a screen of the title menu, a Skirmish, or
-// a story mission's Build Phase at one of its rounds — and `--load <file>` a Skirmish save at its Build Phase, with
-// `--p1`/`--p2` naming who plays each slot as the `skirmish` command takes them.
+// a story mission's Build Phase at one of its rounds — and the `skirmish` command's own words open a Skirmish as that
+// command opens it: `--load <file>` a save at its Build Phase, `--map pocket --p2-commander averno` a new battle,
+// `--p1`/`--p2` who plays each slot (`src/skirmish/ask.ts` reads them for both, and for the route).
 //
 // **The bare command** opens the title menu. Save game (the Build Phase's game menu) writes a save file, and
 // `--load` opens one; whether a plain launch should carry on the last saved game is not decided.
@@ -28,7 +29,8 @@ import type { Exporter } from "./build-phase.ts"
 import { readLaunch } from "./launch.ts"
 import type { LaunchProblem } from "./launch.ts"
 import { DEFAULT_LEVEL, LEVELS } from "./levels.ts"
-import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute } from "./route.ts"
+import { DEFAULT_LEVEL_ROUTE, PLACES, PLACE_NAMES, RouteError, formatRoute, skirmishRoute } from "./route.ts"
+import { ASK_WORDS, readAsk } from "../skirmish/ask.ts"
 import type { LevelDestination } from "./route.ts"
 import { openSkirmish } from "./skirmish-open.ts"
 import { listSaves, readGameFile, savesFolder, shownPath, skirmishSaver, terminalPlayerName } from "./skirmish-files.ts"
@@ -54,7 +56,7 @@ function usage(): string {
     `        --at ${/[?&]/u.test(route) ? `'${route}'` : route}`.padEnd(54) + what
   return `terminal-nexus — the Terminal Nexus game
 
-  terminal-nexus [--at <route> | --load <file> | --note <file>] [--p1 <who>] [--p2 <who>]
+  terminal-nexus [--at <route> | --load <file> | --map <id> ... | --note <file>] [--p1 <who>] [--p2 <who>]
                  [--settings "<text>"]
                  [--colors monochrome|color256|truecolor]
                  [--theme dark|light] [--glyphs ascii|unicode] [--reduced-motion]
@@ -65,6 +67,11 @@ function usage(): string {
       opens a Skirmish save file at its Build Phase, the plan it was saved with restored: what
       Save game (Esc, then Save game) writes, or the skirmish command's --save. The same as
       --at 'skirmish?load=<file>'.
+  --map, --seed, --ticks, --rounds, --modifiers, --p1-commander, --p2-commander, --p1-credits,
+  --p2-credits
+      the skirmish command's words for a battle, read the same way: --map pocket --p2-commander
+      averno opens that new battle, as --at 'skirmish?map=pocket&p2-commander=averno' does.
+      Beside --load, --rounds, --modifiers and the credits shares change the loaded battle.
   --note <file>
       opens a playtest note at its moment: the ! key, on any screen, saves one with the line
       typed (in ~/.terminal-nexus/notes/). Its round opens as it opened and the commands
@@ -133,13 +140,17 @@ function refusal({ part, error }: LaunchProblem): string {
 /** The flags only a Build Phase reads (a story mission's or a Skirmish's). */
 const BUILD_PHASE_FLAGS = ["keys", "scroll-margin"] as const
 
-/** The flags only a Skirmish reads. */
+/** The flags that name who plays a Skirmish's slots: beside --at, over the route's own. */
 const SKIRMISH_FLAGS = ["p1", "p2"] as const
+
+/** The words that ask for a Skirmish (`--load`, `--map`, `--seed`, `--p2-commander`, ...): the `skirmish` command's own,
+ *  read by its reader (`readAsk`), and written as the route they ask for. */
+const ASK_FLAGS: readonly string[] = Object.keys(ASK_WORDS).filter((word) => !(SKIRMISH_FLAGS as readonly string[]).includes(word))
 
 /** Everything the game reads from its command line; anything else is refused rather than ignored, so a command
  *  pasted from an older note never opens somewhere it did not mean. (`grid` shares the parser and reads others.) */
 const GAME_FLAGS: ReadonlySet<string> = new Set(["help", "reduced-motion"])
-const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "load", "note", "p1", "p2", "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
+const GAME_OPTIONS: ReadonlySet<string> = new Set(["at", "note", ...Object.keys(ASK_WORDS), "settings", "keys", "colors", "theme", "glyphs", "backend", "scroll-margin"])
 
 /** What the game says for what it does not read: a removed flag names what replaced it, a retired option what
  *  changed (`RETIRED_OPTIONS`); anything else, --help. */
@@ -173,16 +184,22 @@ export async function main(argv: readonly string[]): Promise<number> {
   // Where to open and what to start from, read before anything is touched: a route that is not a place, or a
   // key the game does not know, is refused whole, every problem at once, and so is a flag the place it names
   // cannot use. With no --at, the title menu: the bare command's stand-in for the saved game.
-  // `--load <file>` is the route `skirmish?load=<file>`, said the way the skirmish command says it.
-  const load = args.options.get("load")
-  if (load !== undefined && args.options.has("at")) {
-    process.stderr.write("terminal-nexus: --load opens a save and --at a place: give one of them.\n")
+  // The `skirmish` command's words (`--load <file>`, `--map pocket --p2-commander averno`) are the route they ask for,
+  // read by the same reader: `--load s.json` is `skirmish?load=s.json`.
+  const asked = ASK_FLAGS.filter((name) => args.options.has(name))
+  if (asked.length > 0 && args.options.has("at")) {
+    process.stderr.write(`terminal-nexus: ${asked.map((name) => `--${name}`).join(" and ")} ask${asked.length > 1 ? "" : "s"} for a Skirmish and --at names a place: give one of them.\n`)
     return 2
   }
   // `--note <file>`: a playtest note's moment, its round opened and its commands replayed, then the keyboard is yours.
   const notePath = args.options.get("note")
   if (notePath !== undefined) return openNote(notePath, args)
-  const at = load === undefined ? args.options.get("at") : `skirmish?load=${encodeURIComponent(load)}`
+  const read = readAsk((word) => (asked.includes(word) ? args.options.get(word) : undefined))
+  if (read.problems.length > 0) {
+    process.stderr.write(read.problems.map((problem) => `terminal-nexus: --${problem.word} ${problem.says}\n`).join(""))
+    return 2
+  }
+  const at = asked.length === 0 ? args.options.get("at") : skirmishRoute(read.ask)
   const { launch, problems } = readLaunch({ at, settings: args.options.get("settings"), keys: args.options.get("keys") }, "menu")
   if (problems.length > 0) {
     process.stderr.write(problems.map(refusal).join(""))

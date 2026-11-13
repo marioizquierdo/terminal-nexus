@@ -11,13 +11,13 @@
 
 import { appendFileSync, mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
-import type { BuildActions, DuelState } from "../duel/index.ts"
+import type { DuelState } from "../duel/index.ts"
 import { actionsFor, briefOf, checkBuildActions } from "../duel/index.ts"
 import { hashEvents } from "../events/serialize.ts"
 import type { LogLevel } from "../report/index.ts"
 import { buildLog } from "../report/index.ts"
-import type { Played } from "../skirmish/play.ts"
-import { isPlayer, playNext } from "../skirmish/play.ts"
+import type { Played, Ran } from "../skirmish/play.ts"
+import { actionsAt, isPlayer, playOn } from "../skirmish/play.ts"
 import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
 import { duelOf, saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
 import type { Seated } from "../skirmish/request.ts"
@@ -128,50 +128,24 @@ function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLev
   return [`--- seed ${setup.seed}`, `=== round ${round}: ${played.events.length} events`, ...lines]
 }
 
-/** Each player slot's build actions for `round` from its build file (`first`: the first round played with it), and the
- *  player slots that have none. */
-export function actionsAt(setup: SaveSetup, builds: Seated["builds"], round: number, first: number): Readonly<{ actions: Partial<Record<Slot, BuildActions>>; missing: readonly Slot[] }> {
-  const actions: Partial<Record<Slot, BuildActions>> = {}
-  const missing: Slot[] = []
-  for (const slot of SLOTS) {
-    if (!isPlayer(setup, slot)) continue
-    const given = actionsFor(builds[slot] ?? [], round, first)
-    if (given === undefined) missing.push(slot)
-    else actions[slot] = given
-  }
-  return { actions, missing }
-}
-
-/** A run of rounds played: the duel after them, how many were played, and the player slots it stopped for. */
-export type Ran = Readonly<{ state: DuelState; played: number; waiting: readonly Slot[] }>
-
 /**
- * **Rounds played** until the battle reaches round `stop`'s Build Phase, or ends, or a player slot has no build actions
- * for the round about to play (its build file has no entry for it). Each round's report is written unless quiet, and
- * kept as `keep` asks.
+ * **Rounds played** (`playOn`, the one loop every door plays by) until the battle reaches round `stop`'s Build Phase, or
+ * ends, or a player slot has no build actions for the round about to play. Each round's report is written unless quiet,
+ * and kept as `keep` asks.
  */
 export function playRounds(setup: SaveSetup, start: DuelState, builds: Seated["builds"], stop: number, profiles: Profiles, keep: Keep, write: Write): Ran {
   if (keep.out !== undefined) mkdirSync(keep.out, { recursive: true })
-  const first = start.round
-  let state = start
-  let played = 0
-  while (state.result === null && state.round < stop) {
-    const { actions, missing } = actionsAt(setup, builds, state.round, first)
-    if (missing.length > 0) return { state, played, waiting: missing }
-    const round = state.round
-    const result = playNext(setup, state, actions, profiles)
-    state = result.state
-    played += 1
-    const report = roundLines(result.report)
+  return playOn(setup, start, builds, stop, profiles, ({ before, played }) => {
+    const round = before.round
+    const report = roundLines(played.report)
     if (keep.quiet !== true) for (const line of report) write(line)
-    if (keep.log !== undefined) appendFileSync(keep.log, `${roundLog(result, setup, round, keep.level).join("\n")}\n`)
+    if (keep.log !== undefined) appendFileSync(keep.log, `${roundLog(played, setup, round, keep.level).join("\n")}\n`)
     if (keep.out !== undefined) {
       const name = `${keep.prefix ?? ""}round-${round}`
-      writeFileSync(join(keep.out, `${name}.save.json`), saveText(saveOf(setup, state)))
-      writeFileSync(join(keep.out, `${name}.txt`), `${[...report, standing(setup, state)].join("\n")}\n`)
+      writeFileSync(join(keep.out, `${name}.save.json`), saveText(saveOf(setup, played.state)))
+      writeFileSync(join(keep.out, `${name}.txt`), `${[...report, standing(setup, played.state)].join("\n")}\n`)
     }
-  }
-  return { state, played, waiting: [] }
+  })
 }
 
 /** A slot's brief, as text with the play strategies (a player that reads words), or as data. */

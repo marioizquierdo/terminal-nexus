@@ -5,8 +5,6 @@
 // (`bin/measure.ts`) reads the maps, keeps time and writes the result down.
 
 import type { PlayableLevel } from "../cli/levels.ts"
-import type { Player } from "../duel/index.ts"
-import { scriptedNames, scriptedPlayer } from "../duel/index.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MeasureSpec } from "./spec.ts"
 import { playerPairs } from "./spec.ts"
@@ -64,19 +62,13 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
   }
   if (inputs.parts.has("duels")) {
     const { duels: setup } = spec
-    const scripted = (name: string): Player => {
-      const player = scriptedPlayer(name)
-      if (player === undefined) throw new Error(`no scripted player "${name}" (${scriptedNames()})`)
-      return player
-    }
     for (const name of setup.players) {
       for (const pair of playerPairs(setup, name)) {
-        const players = { A: { name: pair.A, player: scripted(pair.A) }, B: { name: pair.B, player: scripted(pair.B) } }
         const label = pair.A === pair.B ? pair.A : `${pair.A} v ${pair.B}`
         for (const a of setup.west ?? setup.commanders) {
           for (const b of setup.commanders) {
             for (const seed of spec.seeds) {
-              const duel = measureDuel({ map: setup.map, seed, rounds: setup.rounds, pulseTicks: setup.pulseTicks, commanders: { A: a, B: b } }, players)
+              const duel = measureDuel({ map: setup.map, seed, rounds: setup.rounds, pulseTicks: setup.pulseTicks, commanders: { A: a, B: b } }, pair)
               ticks += duel.rounds.reduce((sum, round) => sum + round.battle.ticks, 0)
               duels.push(duel)
               const won = duel.result.winner

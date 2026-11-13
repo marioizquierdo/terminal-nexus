@@ -18,12 +18,13 @@
 import { writeFile } from "node:fs/promises"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { serializeEvents } from "../events/serialize.ts"
-import { resolvePulse, resolvePulseAt } from "../pulse/index.ts"
-import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../report/index.ts"
+import { buildLog, parseLevel, summarize, summaryJson } from "../report/index.ts"
 import type { ReportInput } from "../report/index.ts"
 import { hashState } from "../state/serialize.ts"
 import { applyVariant, openBattle, mirrored, shuffled, sidesWithoutGoal } from "../skirmish/opening/index.ts"
 import { loadTestingSave } from "../skirmish/testing-saves.ts"
+import { playTestingRound } from "../skirmish/testing-round.ts"
+import type { MatchState } from "../state/types.ts"
 import type { BattleOpening } from "../skirmish/opening/index.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { DEFAULT_PRESENTATION, parseColorDepth, parseGlyphPack, parseTheme } from "../view/index.ts"
@@ -154,24 +155,7 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
   const { opening, registry } = await openMap(path, args, overrides.seed)
   const seed = overrides.seed ?? opening.seed
   const pulseTicks = overrides.ticks ?? opening.pulseTicks
-  const loaded = openBattle(opening, { registry, seed })
-  const run = resolvePulse({
-    initialState: loaded.state,
-    registry: loaded.registry,
-    pulseTicks,
-    seed,
-  })
-
-  const input: ReportInput = {
-    battleId: opening.id,
-    seed,
-    pulseTicks,
-    registry: loaded.registry,
-    events: run.events,
-    finalState: run.finalState,
-    stateHash: run.stateHash,
-    eventsHash: run.eventsHash,
-  }
+  const { run, report: input } = playTestingRound(opening, { registry, seed, ticks: pulseTicks })
 
   const level = parseLevel(args.options.get("log-level") ?? "warn")
   const turn = turnFrom(args)
@@ -220,31 +204,14 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   let logDigest: string | null = null
   let snapshotHash: string | null = null
 
-  // Always call resolvePulseAt, even without --turn: a snapshot tick that can never occur (-1) is
-  // simpler than carrying two different return shapes through the loop below.
-  const snapshotTick = turn ?? -1
-
   for (let index = 0; index < runs; index += 1) {
-    const loaded = openBattle(opening, { registry, seed })
-    const run = resolvePulseAt(
-      { initialState: loaded.state, registry: loaded.registry, pulseTicks, seed },
-      snapshotTick,
-    )
-    const snapshotAt = run.snapshot === null ? null : hashState(run.snapshot)
+    // The state at `--turn`, caught as the run passes it: none when the battle ends first.
+    let snapshot: MatchState | null = null
+    const { run, report } = playTestingRound(opening, { registry, seed, ticks: pulseTicks, watch: (state) => (snapshot ??= state.tick === turn ? state : null) })
+    const caught = snapshot as MatchState | null
+    const snapshotAt = caught === null ? null : hashState(caught)
 
-    const log = buildLog(
-      {
-        battleId: opening.id,
-        seed,
-        pulseTicks,
-        registry: loaded.registry,
-        events: run.events,
-        finalState: run.finalState,
-        stateHash: run.stateHash,
-        eventsHash: run.eventsHash,
-      },
-      "info",
-    ).join("\n")
+    const log = buildLog(report, "info").join("\n")
 
     if (stateHash === null) {
       stateHash = run.stateHash

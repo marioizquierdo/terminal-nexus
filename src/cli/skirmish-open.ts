@@ -9,12 +9,12 @@
 // two scripts to watch.
 
 import { actionsFor } from "../duel/index.ts"
-import type { SlotChange } from "../skirmish/request.ts"
-import { loadedBattle, newBattle, seat } from "../skirmish/request.ts"
+import type { SkirmishAsk } from "../skirmish/ask.ts"
+import { newBattleOf, rulesOf, slotChangesOf } from "../skirmish/ask.ts"
+import { loadedBattle, newBattle, seat, withRules } from "../skirmish/request.ts"
 import type { Profiles, SaveFile, Slot } from "../skirmish/save.ts"
 import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
-import { SLOTS } from "../skirmish/save.ts"
-import { screenProblem, slotAsk } from "../skirmish/slots.ts"
+import { screenProblem } from "../skirmish/slots.ts"
 import { clockSeed } from "../skirmish/words.ts"
 import type { LevelDestination, SkirmishDestination } from "./route.ts"
 import { skirmishLevel } from "./skirmish-play.ts"
@@ -57,38 +57,19 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
     }
     save = loadedBattle(text, ask.load, profiles)
   } else {
-    const named = ask.setup
-    save = newBattle(
-      {
-        seed: ask.seed ?? clockSeed(now()),
-        ...(named?.map === undefined ? {} : { map: named.map }),
-        ...(named?.modifiers === undefined ? {} : { modifiers: named.modifiers }),
-        commanders: { ...(named?.p1Commander === undefined ? {} : { p1: named.p1Commander }), ...(named?.p2Commander === undefined ? {} : { p2: named.p2Commander }) },
-      },
-      profiles,
-    )
+    save = newBattle({ ...newBattleOf(ask, read), seed: ask.seed ?? clockSeed(now()) }, profiles)
   }
-  const changes: Partial<Record<Slot, SlotChange>> = {}
-  const problems: string[] = []
-  for (const slot of SLOTS) {
-    // The command line's --p1/--p2 over the route's p1/p2.
-    const written = options.slots?.[slot] ?? ask.setup?.[slot]
-    if (written === undefined) continue
-    try {
-      changes[slot] = { ask: slotAsk(written, profiles) }
-    } catch (error) {
-      problems.push(`--${slot} ${written}: ${error instanceof Error ? error.message : String(error)}`)
-    }
-  }
-  if (problems.length > 0) throw new Error(problems.join("\n"))
+  // The command line's --p1/--p2 over the route's p1/p2; then who plays each slot, read as the command reads it.
+  const written: SkirmishAsk = { ...ask, slots: { ...ask.slots, ...options.slots } }
+  const changes = slotChangesOf(written, profiles, (word) => `--${word}`)
   // The same seating the `skirmish` command does: p1's build actions for the round it opens at (from its build file,
   // else the draft) are laid on the Build Phase as it opens. The screen plays only p1, so only p1's are kept.
   const seated = seat(save, changes, read)
-  const { setup } = seated
+  const round = save.state?.round ?? 1
+  const setup = withRules(seated.setup, round, rulesOf(ask))
   const refused = screenProblem(setup)
   if (refused !== null) throw new Error(`the game cannot open this Skirmish: ${refused}`)
   if (seated.problems.length > 0) throw new Error(seated.problems.join("\n"))
-  const round = save.state?.round ?? 1
   const p1 = actionsFor(seated.builds.p1 ?? [], round, round)
   const draft = p1 === undefined ? save.draft : { ...save.draft, p1 }
   if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a testing save: it plays one Battle Round in grid (grid <file>), not on the game's screen`)

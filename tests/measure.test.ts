@@ -5,7 +5,6 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { levelById } from "../src/cli/levels.ts"
-import { SCRIPTED } from "../src/duel/index.ts"
 import { LEVEL_PLANS, measureDuel, measureLevel, measureSave, spreadOf, STALL_TICKS, summaryLines } from "../src/measure/index.ts"
 import type { Measurement } from "../src/measure/index.ts"
 import { loadTestingSaveFile } from "./helpers.ts"
@@ -43,10 +42,8 @@ test("a squad that reaches its target is measured by when it first struck and ho
 })
 
 test("a duel is measured round by round: the hands dealt, the card kept, each battle and the Nexus left", () => {
-  const balanced = SCRIPTED["balanced"]
-  assert.ok(balanced !== undefined)
   const setup = { map: "pocket", seed: 3, rounds: 2, pulseTicks: 240, commanders: { A: "vasse", B: "dob" } }
-  const duel = measureDuel(setup, { A: { name: "balanced", player: balanced }, B: { name: "balanced", player: balanced } })
+  const duel = measureDuel(setup, { A: "balanced", B: "balanced" })
   assert.ok(duel.rounds.length >= 1 && duel.rounds.length <= 2)
   for (const round of duel.rounds) {
     assert.ok(round.battle.ticks > 0 && round.battle.ticks <= 240)
@@ -55,7 +52,7 @@ test("a duel is measured round by round: the hands dealt, the card kept, each ba
       assert.ok(round.sides[side].kept === null || round.sides[side].hand.includes(round.sides[side].kept))
     }
   }
-  assert.deepEqual(measureDuel(setup, { A: { name: "balanced", player: balanced }, B: { name: "balanced", player: balanced } }), duel)
+  assert.deepEqual(measureDuel(setup, { A: "balanced", B: "balanced" }), duel)
 })
 
 test("a story level is played by each plan to its end, every round's battle recorded", { timeout: 120_000 }, () => {

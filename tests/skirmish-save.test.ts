@@ -101,8 +101,8 @@ test("skirmish: a plan is checked without building, a round is played and saved,
     assert.deepEqual([after.state?.round, after.draft], [3, undefined])
 
     // What a loaded battle keeps, and an option nobody knows, are refused by name.
-    assert.throws(() => run(["--load", save, "--p1-commander", "averno"]), /keeps its Commanders/)
-    assert.throws(() => run(["--load", save, "--map", "crossing"]), /keeps its map/)
+    assert.throws(() => run(["--load", save, "--p1-commander", "averno"]), /--p1-commander sets up a new battle: a loaded save keeps its own/)
+    assert.throws(() => run(["--load", save, "--map", "crossing"]), /--map sets up a new battle: a loaded save keeps its own/)
     assert.throws(() => run(["--load", save, "--battel"]), /no option --battel/)
   } finally {
     rmSync(dir, { recursive: true, force: true })

@@ -8,7 +8,7 @@
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { hashEvents } from "../events/serialize.ts"
-import { contextFor, spawnEvents, stepTick } from "../pulse/index.ts"
+import { resolvePulse } from "../pulse/index.ts"
 import { hashState } from "../state/serialize.ts"
 import type { MatchState } from "../state/types.ts"
 import type { PulseTimeline } from "../view/index.ts"
@@ -21,18 +21,9 @@ export function buildTimeline(
   pulseTicks: number,
   seed: number,
 ): PulseTimeline {
-  const context = contextFor(initialState, registry, pulseTicks)
-  const states: MatchState[] = [initialState]
-  const events: DomainEvent[] = spawnEvents(initialState, registry)
-
-  let state = initialState
-  while (state.outcome === null && state.tick < pulseTicks) {
-    const result = stepTick(state, context)
-    state = result.state
-    states.push(state)
-    events.push(...result.events)
-  }
-
+  // The kernel's own run, every state it reaches kept: the same events and hashes `grid --headless` reports.
+  const states: MatchState[] = []
+  const run = resolvePulse({ initialState, registry, pulseTicks, seed, watch: (state) => states.push(state) })
   return {
     battleId: opening.id,
     battleName: opening.name,
@@ -42,9 +33,9 @@ export function buildTimeline(
     grid: initialState.grid,
     registry,
     states,
-    events,
-    stateHash: hashState(state),
-    eventsHash: hashEvents(events),
+    events: run.events,
+    stateHash: run.stateHash,
+    eventsHash: run.eventsHash,
   }
 }
 

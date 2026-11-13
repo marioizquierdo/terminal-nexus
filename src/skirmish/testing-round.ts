@@ -1,0 +1,42 @@
+// A testing save's one Battle Round, played (docs/system-design/testing-ground.md): its opening opened on the content
+// it is played with, and the kernel run from it to its end or its ticks. The one path every door plays a testing save
+// by: `grid --headless`, the `skirmish` command (`src/cli/skirmish-testing.ts`), a measurement (`measureSave`,
+// `src/measure/suites.ts`) and the formations bench, so a testing save says the same through each.
+//
+// Not the duel: a testing save tests one rule on the bench's content, with no Commander, Build Phase or wave a battle
+// adds, so it starts the kernel straight from the units its `start` places. Pure: the save is already read.
+
+import type { ContentRegistry } from "../content/index.ts"
+import { FIXTURE_REGISTRY } from "../content/index.ts"
+import type { DomainEvent } from "../events/types.ts"
+import type { PulseRun } from "../pulse/index.ts"
+import { resolvePulse } from "../pulse/index.ts"
+import type { ReportInput } from "../report/index.ts"
+import type { MatchState } from "../state/types.ts"
+import { openBattle } from "./opening/open.ts"
+import type { BattleOpening } from "./opening/types.ts"
+
+/** How a testing save is played: on other content (a variant's), another seed, more or fewer ticks; and who watches. */
+export type TestingRoundOptions = Readonly<{
+  registry?: ContentRegistry
+  seed?: number
+  ticks?: number
+  /** Shown every state, the opening first, with the events of the tick that made it. */
+  watch?: (state: MatchState, events: readonly DomainEvent[]) => void
+}>
+
+/** A testing save's Battle Round played: the run, and what its report is written from (`buildLog`). */
+export type TestingRound = Readonly<{ run: PulseRun; registry: ContentRegistry; report: ReportInput }>
+
+/** **A testing save's Battle Round**, from its opening to its end or its last tick. */
+export function playTestingRound(opening: BattleOpening, options: TestingRoundOptions = {}): TestingRound {
+  const seed = options.seed ?? opening.seed
+  const pulseTicks = options.ticks ?? opening.pulseTicks
+  const loaded = openBattle(opening, { registry: options.registry ?? FIXTURE_REGISTRY, seed })
+  const run = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks, seed, ...(options.watch === undefined ? {} : { watch: options.watch }) })
+  return {
+    run,
+    registry: loaded.registry,
+    report: { battleId: opening.id, seed, pulseTicks, registry: loaded.registry, events: run.events, finalState: run.finalState, stateHash: run.stateHash, eventsHash: run.eventsHash },
+  }
+}

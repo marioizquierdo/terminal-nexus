@@ -202,6 +202,10 @@ for the concept from the files, the documents and the code.
       in any order). The rule written into the concept: every player answers the same brief, and clashes, powers and
       upgrades settle together as the Battle Round starts (two Nexuses falling on one tick is a draw, tested). Build
       files with conditions are the next pull request's proposal ([`build-files-with-conditions.md`](build-files-with-conditions.md)).
+- [x] **One path for each thing** ([his words](../history/feedback/2026-11-13-one-path.md)): a measurement's duels are
+      Skirmishes, played by the loop the command plays by (`playOn`), to the same records as before; a testing save's
+      Battle Round has one path (`playTestingRound`) for `grid`, the command and the measurement; the words that ask
+      for a Skirmish have one reader (`src/skirmish/ask.ts`) for the command's flags, the route and the game's flags.
 
 ### Step 17K — Playing it
 
