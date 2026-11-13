@@ -43,7 +43,7 @@ testing and measurement, settings and feedback, the screen, effects, planning, t
 - **score** — who leads, and on what, if the battle ended now: Nexus health by share, then the damage dealt over the
   battle. The brief says it every round (`scoreOf`, [`duels.md`](../system-design/duels.md), reading a battle).
 - **reading** — what a Battle Round said beyond its totals, read in one place (`src/duel/reading.ts`): the **front**
-  (where the fighting was, 0 at your Nexus and 1 at theirs: the map's tempo), **first contact** (the tick units first
+  (where the fighting was, 0% at your Nexus and 100% at theirs: the map's tempo), **first contact** (the tick units first
   hurt each other), the nearest an enemy came to each Nexus, what hit each Nexus, each building lost and by what, and
   what a side's own blasts cost it. The brief, the round's report and the scripts read it.
 - **round limit** — the most rounds a battle lasts (`rounds` in a save, `--rounds`); a loaded battle may change it
@@ -233,8 +233,8 @@ plays, [`duels.md`](../system-design/duels.md).
   `build:<build file>`. The setup screen shows them as `Player: <name>`, `Scripted: <profile>`, `Agent: <profile>`.
 - **opponent** — what plans the other side: a script profile driving a Commander Army.
 - **script** — a coded player (`src/duel/players.ts`): `balanced`, `rush`, `turtle` and their variants (`rush-area`,
-  `turtle-upgrade`, `rush-block` …), and `reader`, which plans from the last round's reading (its stance from the
-  trade, a Turret when the enemy reached its Nexus, apart against area damage). One plain idea of how to spend a round;
+  `turtle-upgrade`, `rush-block` …), and `reader`, which plans from the battle's reading (the stance that has traded
+  better, a Turret when the enemy reached its Nexus, apart against area damage). One plain idea of how to spend a round;
   none is a good player.
 - **script profile** — a named script with its options, a file in `players/scripts/`: `agro` (rush), `defensive`,
   `steady`, `agro-rich`. What `script:<profile>` names first.

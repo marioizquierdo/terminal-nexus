@@ -104,9 +104,10 @@ export const turtle: Player = (brief) => {
  * **reader**: a player that reads the battle (`src/duel/reading.ts`) before it plans, where the others follow a fixed
  * idea. It builds as `balanced` does, and then:
  *
- * - **the stance from the last round's trade**: it attacks while its attacks win the trade, holds when an attack lost
- *   it, and pushes out again when a hold won it by a third; it attacks a Nexus brought under half, holds a lead on Nexus
- *   health in the last round, and attacks when behind on it;
+ * - **the stance from the battle's trades**: it plays the stance that has traded better over the battle (what it dealt for
+ *   each point it took, in the rounds it played that stance), trying each once; it attacks when both sides held (a
+ *   round that trades nothing says nothing), attacks a Nexus brought under half, holds a lead on Nexus health in the
+ *   last round, and attacks when behind on it;
  * - **a Turret when the enemy reached its Nexus** (a hit, or an enemy within 8 tiles), placed by the Nexus, first;
  * - **apart against area damage**: its buildings that train units set apart once the enemy has a building standing
  *   whose units aim at the thickest knot; otherwise each where `balanced` puts it (a block was tried, and on the
@@ -118,19 +119,37 @@ export const reader: Player = (brief) => {
   const enemy = brief.side === "A" ? "B" : "A"
   const last = brief.last
   const read = last?.reading?.sides[brief.side]
-  const total = (side: "A" | "B"): number => (last === null ? 0 : last.sides[side].dealt.units + last.sides[side].dealt.buildings + last.sides[side].dealt.nexus)
-  const ours = total(brief.side)
-  const theirs = total(enemy)
-  const wasAttacking = last?.sides[brief.side].stance === "attack"
   const enemyShare = brief.enemy.nexus.most === 0 ? 1 : brief.enemy.nexus.health / brief.enemy.nexus.most
   const lastRound = brief.round >= brief.rounds
+  // How each stance has traded over the battle: what it dealt for each point it took, in the rounds it was played and
+  // something was traded (a round both sides held trades next to nothing, and says nothing).
+  const trade = (stance: Stance): number | null => {
+    let dealt = 0
+    let taken = 0
+    for (const report of brief.reports) {
+      if (report.sides[brief.side].stance !== stance) continue
+      const d = report.sides[brief.side].dealt.units + report.sides[brief.side].dealt.buildings + report.sides[brief.side].dealt.nexus
+      const t = report.sides[enemy].dealt.units + report.sides[enemy].dealt.buildings + report.sides[enemy].dealt.nexus
+      if (d + t < 50) continue
+      dealt += d
+      taken += t
+    }
+    return dealt + taken === 0 ? null : dealt / Math.max(1, taken)
+  }
   const decided = ((): Readonly<{ stance: Stance; because: string }> => {
     if (enemyShare <= 0.5) return { stance: "attack", because: "their Nexus is under half" }
     if (lastRound && brief.score.leader === brief.side && brief.score.by === "health") return { stance: "hold", because: "the last round, ahead on Nexus health" }
     if (brief.score.leader === enemy && brief.score.by === "health") return { stance: "attack", because: "behind on Nexus health" }
     if (last === null) return { stance: "hold", because: "round 1: gathering" }
-    if (wasAttacking) return ours >= theirs ? { stance: "attack", because: "its attack won the trade" } : { stance: "hold", because: "its attack lost the trade" }
-    return ours >= theirs * 1.34 ? { stance: "attack", because: "its hold won the trade by a third" } : { stance: "hold", because: "holding" }
+    if (last.sides[brief.side].stance === "hold" && last.sides[enemy].stance === "hold") return { stance: "attack", because: "both held: someone has to move" }
+    const attack = trade("attack")
+    const hold = trade("hold")
+    if (attack === null) return { stance: "attack", because: "attacking has not been tried" }
+    if (hold === null) return attack >= 1 ? { stance: "attack", because: "its attacks have won the trade" } : { stance: "hold", because: "its attacks lost the trade, and holding has not been tried" }
+    const pct = (ratio: number): string => `${Math.round(ratio * 100)}%`
+    return attack >= hold
+      ? { stance: "attack", because: `attacking has traded better (${pct(attack)} of what it took, holding ${pct(hold)})` }
+      : { stance: "hold", because: `holding has traded better (${pct(hold)} of what it took, attacking ${pct(attack)})` }
   })()
   const stance = decided.stance
   const why: string[] = [decided.because]

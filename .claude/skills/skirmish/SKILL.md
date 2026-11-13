@@ -34,7 +34,7 @@ npm run skirmish -- --load .playtest/rounds/round-3.save.json --play-to next --s
 ```
 
 **Read before you guess.** Every brief says the score (who leads, on Nexus health or on damage) and what the last round
-said: the front (0 at your Nexus, 1 at theirs), first contact, the nearest the enemy came, what hit your Nexus, what
+said: the front (0% at your Nexus, 100% at theirs), first contact, the nearest the enemy came, what hit your Nexus, what
 destroyed your buildings and by what, and what your own blasts cost you. Each round's report prints both sides' in a
 line. `--show` draws the Battle Round as text at the ticks you name, after the round's report: load any kept round
 and play it again to see a moment, nothing saved over without `--save`. What the battle says is read in one place

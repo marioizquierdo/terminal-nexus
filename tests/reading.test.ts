@@ -28,10 +28,10 @@ test("a round is read as it plays: the front, first contact, what hit each Nexus
   for (const reading of read) {
     for (const side of ["A", "B"] as const) {
       const front = reading!.sides[side].front
-      assert.ok(front === null || (front >= 0 && front <= 1))
+      assert.ok(front === null || (Number.isInteger(front) && front >= 0 && front <= 100))
     }
     const { A, B } = reading!.sides
-    if (A.front !== null && B.front !== null) assert.equal(Math.round((A.front + B.front) * 100), 100, "one front, read from both ends")
+    if (A.front !== null && B.front !== null) assert.equal(A.front + B.front, 100, "one front, read from both ends")
   }
   // What hit a Nexus adds up to what it lost (it is not mended inside a round).
   for (const report of state.history) {
@@ -64,11 +64,11 @@ test("the reader script plans from what the battle said: it holds after an attac
     A: { stance: "attack", dealt: { units: 10, buildings: 0, nexus: 0 } },
     B: { stance: "hold", dealt: { units: 90, buildings: 0, nexus: 0 } },
   } } as unknown as RoundReport }
-  const plan = SCRIPTED.reader!(lost)
+  const plan = SCRIPTED.reader!({ ...lost, reports: [lost.last!] })
   assert.equal(plan.stance, "hold")
   assert.match(plan.note ?? "", /lost the trade/u)
   const won = { ...lost, last: { ...lost.last!, sides: { ...lost.last!.sides, A: { ...lost.last!.sides.A, dealt: { units: 200, buildings: 0, nexus: 0 } } } } as RoundReport }
-  assert.equal(SCRIPTED.reader!(won).stance, "attack", "an attack that won the trade presses on")
+  assert.equal(SCRIPTED.reader!({ ...won, reports: [won.last!] }).stance, "attack", "an attack that won the trade presses on")
 })
 
 test("skirmish --show draws each Battle Round played at the ticks asked for, and as it ends", { timeout: 60_000 }, () => {

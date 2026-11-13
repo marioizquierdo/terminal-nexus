@@ -164,7 +164,7 @@ never feeds the rules: a round plays the same whether or not it is read.
   every round: `Score: You lead on damage: damage dealt 518 to 382; both Nexuses whole.` A battle judged on damage is
   no longer won on a total nobody sees (from the agent's play of 2026-11-13).
 - **A round's reading** (`roundReader`, played through by `playRound` and kept in its report as `reading`):
-  - **the front**, where the fighting was between the two Nexuses, 0 at a side's own and 1 at the enemy's — the map's
+  - **the front**, where the fighting was between the two Nexuses, in whole percent, 0 at a side's own and 100 at the enemy's — the map's
     tempo in one number: on the Pocket the scripts fight from tick 1, on the Crossing in the middle by tick 130;
   - **first contact**, the tick units first hurt each other;
   - **the nearest an enemy came** to each Nexus, in tiles;
@@ -181,10 +181,12 @@ never feeds the rules: a round plays the same whether or not it is read.
   Battle Round played at those ticks and as it ends, after the round's report, so an agent reading text sees the battle
   at the moment it asks about. Played from any kept round (`--out` keeps each round's save), that is the inspection a
   test needs: load the round, give its build actions, `--play-to next --show <ticks>`, and nothing is saved over.
-- **A script that reads** (`reader`, `src/duel/players.ts`): builds as `balanced`, then sets its stance from the last
-  round's trade (presses an attack that won it, holds after one that lost it, pushes out when a hold won it by a
-  third; attacks a Nexus under half, holds a lead on Nexus health in the last round, attacks when behind on it), puts a
+- **A script that reads** (`reader`, `src/duel/players.ts`): builds as `balanced`, then plays the stance that has traded
+  better over the battle, trying each once (every round's report is in the brief's data, `reports`), attacks when both
+  sides held, attacks a Nexus under half, holds a lead on Nexus health in the last round and attacks when behind; puts a
   Turret by its Nexus first when the enemy reached it, and sets its producers apart once the enemy has a building
   standing whose units aim at the thickest knot (a block otherwise was tried: on the Pocket's small build range it
-  left credits unspent, and lost). Its note says why each round. A new reading is a new field here, read
+  left credits unspent, and lost). Measured on 2026-11-13 ([the table](../history/feedback/2026-11-13-reading-the-battle.md)):
+  better than `balanced` on the Pocket and faster against a rush, worse on the Crossing, where a hold gives back the
+  kept front. Its note says why each round. A new reading is a new field here, read
   by the brief and offered to every script at once.

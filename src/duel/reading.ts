@@ -60,8 +60,8 @@ export function scoreLine(score: Score, side: Side): string {
 
 /** What one side's Battle Round said beyond its totals. */
 export type SideReading = Readonly<{
-  /** Where the fighting was, on average, from 0 (at this side's Nexus) to 1 (at the enemy's): the front. `null` when no
-   *  unit was hurt. */
+  /** Where the fighting was, on average, in whole percent of the way from this side's Nexus (0) to the enemy's (100): the
+   *  front. A whole number, as everything a duel's state keeps. `null` when no unit was hurt. */
   front: number | null
   /** The nearest an enemy unit came to this side's Nexus, in tiles (a row counting two); `null` when none stood. */
   closest: number | null
@@ -149,9 +149,9 @@ export function roundReader(start: MatchState, sides: Readonly<Record<Side, Cont
     },
     reading() {
       const front = fronts.length === 0 ? null : fronts.reduce((sum, share) => sum + share, 0) / fronts.length
-      const round2 = (value: number): number => Math.round(value * 100) / 100
+      const percent = front === null ? null : Math.round(front * 100)
       const sideReading = (side: Side): SideReading => ({
-        front: front === null ? null : round2(side === "A" ? front : 1 - front),
+        front: percent === null ? null : side === "A" ? percent : 100 - percent,
         closest: closest[side],
         nexusHits: nexusHits[side],
         buildingsLost: buildingsLost[side],
@@ -179,7 +179,7 @@ export function readingLines(reading: RoundReading, side: Side): string[] {
   const lines: string[] = []
   const where = mine.front === null
     ? "no unit hurt another"
-    : `the fighting was ${Math.round(mine.front * 100)}% of the way from your Nexus to theirs${mine.front < 0.35 ? " (in your half: they pressed you)" : mine.front > 0.65 ? " (in their half: you pressed them)" : " (about the middle)"}`
+    : `the fighting was ${mine.front}% of the way from your Nexus to theirs${mine.front < 35 ? " (in your half: they pressed you)" : mine.front > 65 ? " (in their half: you pressed them)" : " (about the middle)"}`
   lines.push(`Front: ${where}${reading.contact === null ? "" : `; first contact at tick ${reading.contact}`}${mine.closest === null ? "" : `; the nearest an enemy came to your Nexus was ${mine.closest} tile${mine.closest === 1 ? "" : "s"}`}.`)
   const hits = Object.entries(mine.nexusHits).sort((a, b) => b[1] - a[1])
   if (hits.length > 0) lines.push(`Your Nexus was hit by: ${hits.map(([by, amount]) => `${nameOf(by)} ${amount}`).join(", ")}.`)

@@ -43,10 +43,26 @@ watched), and it would wrap the same reader.
 
 > And then again, try to expose that to see if we can define a more intelligent script that is not just all aggro or not. Having the simple script is great, it's just a quick way to go. But I think once we define better readers of checking the map state, we can start exposing that to our script. So yes, a third task will be to try to create and improve the script for that you can play against during testing.
 
-**Built: `script:reader`.** It builds as `balanced`, then reads the last round: it presses an attack that won the trade
-and holds after one that lost it, pushes out when a hold won by a third, attacks a Nexus under half, holds a lead on
-Nexus health in the last round and attacks when behind; it puts a Turret by its Nexus when the enemy reached it, and
-sets its producers apart once the enemy has area damage standing. Its note says why each round. RESULTS
+**Built: `script:reader`.** It builds as `balanced`, then reads the battle: it plays the stance that has traded better
+over the battle (trying each once), attacks when both sides held, attacks a Nexus under half, holds a lead on Nexus
+health in the last round and attacks when behind; it puts a Turret by its Nexus when the enemy reached it, and sets its
+producers apart once the enemy has area damage standing. Its note says why each round.
+
+Measured as p1 against each script profile, every pairing of Commanders, seeds 1 to 3, 8 rounds (18 battles a row),
+beside `steady` (the balanced script) in its place:
+
+| p2 | the Pocket: reader | the Pocket: steady | the Crossing: reader | the Crossing: steady |
+| --- | --- | --- | --- | --- |
+| `agro` | 18–0 | 18–0 | 18–0, in 3.0 rounds | 18–0, in 4.1 |
+| `defensive` | 15–3 | 12–6 | 14–4 | 18–0 |
+| `steady` | 10–8 | 8–10 | 6–12 | 8–10 |
+
+Better on the Pocket, and faster against a rush; worse than a plain attack from round 3 on the Crossing. Two
+versions before it taught what to keep: a block for every build left credits unspent on the Pocket's small build range
+(2–16 against `steady`), and reading only the last round made it flip between attack and hold on the Crossing, giving
+back each round the ground the last one took. On the Crossing pressure that never lets up still wins more than reading
+does: the kept front makes a hold cost ground, which no reading of one trade sees. A direction, not a verdict: a script
+is no good player.
 
 ### F287 — later, models injected with the same information
 

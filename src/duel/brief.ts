@@ -96,6 +96,8 @@ export type BriefData = Readonly<{
    *  rounds is judged by (`scoreOf`, `./reading.ts`). */
   score: Score
   last: RoundReport | null
+  /** Every round's report so far, the last one included, for a script that reads more than the last round. */
+  reports: readonly RoundReport[]
   history: readonly string[]
 }>
 
@@ -261,6 +263,7 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
     map: picture(state, registryOf),
     score: scoreOf(state.history),
     last,
+    reports: state.history,
     history: state.history.map((report) => {
       const ours = report.sides[side]
       const theirs = report.sides[enemy]

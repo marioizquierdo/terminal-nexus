@@ -40,7 +40,7 @@ export function roundLines(report: RoundReport): string[] {
     const read = report.reading?.sides[side]
     if (read !== undefined) {
       const parts = [
-        read.front === null ? "no fighting" : `front ${Math.round(read.front * 100)}% toward the enemy`,
+        read.front === null ? "no fighting" : `front ${read.front}% toward the enemy`,
         ...(read.closest === null ? [] : [`nearest enemy ${read.closest} from its Nexus`]),
         ...(Object.keys(read.nexusHits).length === 0 ? [] : [`Nexus hit by ${namedCounts(read.nexusHits)}`]),
         ...(Object.keys(read.buildingsLost).length === 0 ? [] : [`buildings lost ${namedCounts(read.buildingsLost)}`]),
