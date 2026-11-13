@@ -74,7 +74,7 @@ export function restoreCommanders(
   registry: ContentRegistry,
   sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>,
 ): Readonly<{ state: MatchState; absent: Absence[]; restored: Restoration[] }> {
-  /** The content `player`'s things are defined by: its side's own in a duel (`PulseContext.sides`), else `registry`. */
+  /** The content `player`'s things are defined by: its side's own in a battle (`PulseContext.sides`), else `registry`. */
   const contentFor = (player: PlayerId): ContentRegistry => sides?.[player] ?? registry
   const due = absent.filter((absence) => absence.returnsInRound <= round)
   if (due.length === 0) return { state, absent: [...absent], restored: [] }

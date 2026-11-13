@@ -1,20 +1,20 @@
 // A Skirmish played on the Build Phase's screen — the application shell's part of it, beside a story mission's
-// (`./pulse-run.ts`), and the only place a save, the duel, the Build Phase and the view meet.
+// (`./pulse-run.ts`), and the only place a save, the battle, the Build Phase and the view meet.
 //
-// **A Skirmish is a save played on**: its setup (`SaveSetup`, `src/skirmish/save.ts`) and the duel as it stands at a
-// Build Phase (`DuelState`) travel in the round's context (`BuildContext.mode`), so the screen's battle is always one
-// `saveOf` away from a file, and a file one `duelOf` away from the screen. The player plans slot p1 (side A) on the
+// **A Skirmish is a save played on**: its setup (`SaveSetup`, `src/skirmish/save.ts`) and the battle as it stands at a
+// Build Phase (`BattleState`) travel in the round's context (`BuildContext.mode`), so the screen's battle is always one
+// `saveOf` away from a file, and a file one `battleOf` away from the screen. The player plans slot p1 (side A) on the
 // Build Phase screen — the same screen, keys, menu, Nexus Pulse hand and Battle Round as a story mission — and slot p2
-// is planned by its controller, a scripted duel player from its own brief. The screen is handed the same functions a
+// is planned by its controller, a scripted battle player from its own brief. The screen is handed the same functions a
 // story mission hands it (`LevelPlay`): nothing below the mode knows it serves a Skirmish.
 //
-// - **a round's Build Phase** is side A's: the duel map, its Commander's whole army with every power kept applied, the
-//   duel's credits, the hand its Nexus Pulse deals, its buildings standing, and everything else as the field;
-// - **starting a round's Pulse** turns the plan into side A's duel plan (`buildActionsOf`), asks p2's controller for side
-//   B's, and plays the round with the duel's own `playRound`, every state and event kept for the Battle Round;
+// - **a round's Build Phase** is side A's: the battle map, its Commander's whole army with every power kept applied, the
+//   battle's credits, the hand its Nexus Pulse deals, its buildings standing, and everything else as the field;
+// - **starting a round's Pulse** turns the plan into side A's battle plan (`buildActionsOf`), asks p2's controller for side
+//   B's, and plays the round with the battle's own `playRound`, every state and event kept for the Battle Round;
 // - **the next round** is the battle's next, from where the survivors regrouped; or, once the battle is over, the same
 //   battle again from round 1, or (the result's other choice) a new battle on a new seed;
-// - **a save** of the round is its setup, its duel and the plan so far as p1's draft (`saveOfRound`); a save opened
+// - **a save** of the round is its setup, its battle and the plan so far as p1's draft (`saveOfRound`); a save opened
 //   at its Build Phase restores that draft (`resume`), so loading returns to exactly where the player stopped.
 //
 // **Parity with the `skirmish` command** (`./skirmish.ts`): every round, the player's and a script's, is played by
@@ -34,13 +34,13 @@ import { status } from "../build/status.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { tilesOf } from "../grid/coords.ts"
-import type { DuelState, Player, RoundReport, Side, BuildActions } from "../duel/index.ts"
-import { SIDES, armyOf, briefOf, duelGrid, handOf, loadoutOf, mapOf, musterOf, newDuel, placementsOf, standingOf } from "../duel/index.ts"
+import type { BattleState, Player, RoundReport, Side, BuildActions } from "../battle/index.ts"
+import { SIDES, armyOf, briefOf, battleGrid, handOf, loadoutOf, mapOf, musterOf, beginBattle, placementsOf, standingOf } from "../battle/index.ts"
 import type { Force, RegroupResult, Restoration } from "../match/index.ts"
 import { centreTile, opening, restoreCommanders, standDown } from "../match/index.ts"
 import { spawnEvents } from "../pulse/index.ts"
 import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
-import { controllerKind, duelOf, duelSetupOf, newSetup, saveOf, SLOTS } from "../skirmish/save.ts"
+import { controllerKind, battleOf, battleSetupOf, newSetup, saveOf, SLOTS } from "../skirmish/save.ts"
 import { isPlayer, playNext } from "../skirmish/play.ts"
 import { spectating } from "../skirmish/setup.ts"
 import { skirmishRoute } from "./route.ts"
@@ -53,14 +53,14 @@ import type { LevelPlay, PlayableLevel } from "./levels.ts"
 import { commanderNews, keepPower } from "./pulse-run.ts"
 import { timelineOf } from "./timeline.ts"
 
-/** What a Skirmish's round carries in its context (`BuildContext.mode`): the setup, the duel at this Build Phase, the
+/** What a Skirmish's round carries in its context (`BuildContext.mode`): the setup, the battle at this Build Phase, the
  *  file it was loaded from or last saved to (what Save game offers to write over), and p1's draft still to restore. */
-export type SkirmishPosition = Readonly<{ kind: "skirmish"; setup: SaveSetup; duel: DuelState; file?: string; draft?: BuildActions }>
+export type SkirmishPosition = Readonly<{ kind: "skirmish"; setup: SaveSetup; battle: BattleState; file?: string; draft?: BuildActions }>
 
 /** A round's Skirmish. Throws for a context that is not a Skirmish's. */
 export function positionOf(context: Pick<BuildContext, "mode">): SkirmishPosition {
   const mode = context.mode as Partial<SkirmishPosition> | undefined
-  if (mode?.kind !== "skirmish" || mode.setup === undefined || mode.duel === undefined) throw new Error("this round is not a Skirmish's")
+  if (mode?.kind !== "skirmish" || mode.setup === undefined || mode.battle === undefined) throw new Error("this round is not a Skirmish's")
   return mode as SkirmishPosition
 }
 
@@ -68,48 +68,48 @@ export function positionOf(context: Pick<BuildContext, "mode">): SkirmishPositio
 export const isSkirmish = (context: Pick<BuildContext, "mode">): boolean => (context.mode as { kind?: unknown } | undefined)?.kind === "skirmish"
 
 /** Each side's content as its kept powers leave it: what the Build Phase draws and places by. */
-function contentOf(duel: DuelState): Record<Side, ContentRegistry> {
+function contentOf(battle: BattleState): Record<Side, ContentRegistry> {
   return {
-    A: loadoutOf(armyOf(duel, "A"), duel.sides.A).registry,
-    B: loadoutOf(armyOf(duel, "B"), duel.sides.B).registry,
+    A: loadoutOf(armyOf(battle, "A"), battle.sides.A).registry,
+    B: loadoutOf(armyOf(battle, "B"), battle.sides.B).registry,
   }
 }
 
 /** The Grid as the Battle Round will open on it before any plan: where the regroup left everyone, with every Commander
  *  due back set down beside her Nexus (as `playRound` will), and who was set down — `null` before a battle's first round. */
-function restoredOf(duel: DuelState, content: Readonly<Record<Side, ContentRegistry>>): Readonly<{ state: MatchState; restored: Restoration[]; absent: DuelState["sides"]["A"]["absent"] }> | null {
-  if (duel.carried === null) return null
-  return restoreCommanders(duel.carried, [...duel.sides.A.absent, ...duel.sides.B.absent], duel.round, content.A, content)
+function restoredOf(battle: BattleState, content: Readonly<Record<Side, ContentRegistry>>): Readonly<{ state: MatchState; restored: Restoration[]; absent: BattleState["sides"]["A"]["absent"] }> | null {
+  if (battle.carried === null) return null
+  return restoreCommanders(battle.carried, [...battle.sides.A.absent, ...battle.sides.B.absent], battle.round, content.A, content)
 }
 
 /**
- * **What arrives as the round starts**, set down as the duel's opening will set it down without a plan: in a battle's
+ * **What arrives as the round starts**, set down as the battle's opening will set it down without a plan: in a battle's
  * first round each side's Commander and her starting package beside its Nexus, and the units a power kept this round
  * calls up for the player. The Build Phase draws them see-through where they arrive. Nothing when none comes, or when
  * there is no room.
  */
-function arrivalsOf(duel: DuelState, callups: BuildContext["callups"]): IncomingEntity[] {
-  const content = contentOf(duel)
+function arrivalsOf(battle: BattleState, callups: BuildContext["callups"]): IncomingEntity[] {
+  const content = contentOf(battle)
   const forces: Force[] = []
   for (const side of SIDES) {
     const units: string[] = []
-    if (duel.carried === null) {
-      const { commander } = armyOf(duel, side)
+    if (battle.carried === null) {
+      const { commander } = armyOf(battle, side)
       units.push(commander.unit)
       for (const { unit, count } of commander.start) for (let n = 0; n < count; n += 1) units.push(unit)
     }
     if (side === "A") for (const { unit, count } of callups ?? []) for (let n = 0; n < count; n += 1) units.push(unit)
-    if (units.length > 0) forces.push({ player: side, muster: musterOf(duel, side, content[side]), units })
+    if (units.length > 0) forces.push({ player: side, muster: musterOf(battle, side, content[side]), units })
   }
   if (forces.length === 0) return []
-  const restored = restoredOf(duel, content)
+  const restored = restoredOf(battle, content)
   try {
     const opened = opening({
-      grid: duelGrid(mapOf(duel)),
+      grid: battleGrid(mapOf(battle)),
       registry: content.A,
       sides: content,
-      structures: restored === null ? SIDES.flatMap((side) => standingOf(duel, side)) : [],
-      setup: { seed: duel.setup.seed, pulseTicks: duel.setup.pulseTicks, forces },
+      structures: restored === null ? SIDES.flatMap((side) => standingOf(battle, side)) : [],
+      setup: { seed: battle.setup.seed, pulseTicks: battle.setup.pulseTicks, forces },
       ...(restored === null ? {} : { carried: restored.state }),
     }).state
     const before = new Set((restored?.state.entities ?? []).map((entity) => entity.id))
@@ -125,10 +125,10 @@ function arrivalsOf(duel: DuelState, callups: BuildContext["callups"]): Incoming
 const shortName = (commander: string | undefined): string => (commander === undefined ? "?" : `${commander.slice(0, 1).toUpperCase()}${commander.slice(1)}`)
 
 /** The enemy's Grid Nexus as a dialog line looks at it. */
-function enemyNexusFocus(duel: DuelState): DialogLine["focus"] {
-  const nexus = armyOf(duel, "B").nexus
-  const anchor = mapOf(duel).nexus.B
-  const footprint = contentOf(duel).B.get(nexus).footprint
+function enemyNexusFocus(battle: BattleState): DialogLine["focus"] {
+  const nexus = armyOf(battle, "B").nexus
+  const anchor = mapOf(battle).nexus.B
+  const footprint = contentOf(battle).B.get(nexus).footprint
   return { tile: centreTile(anchor, footprint), own: tilesOf(anchor, footprint) }
 }
 
@@ -160,29 +160,29 @@ export const isShippedSave = (file: string): boolean => /(^|\/)(saves|sandboxes)
 export function saveNameOf(position: SkirmishPosition): string {
   if (position.file !== undefined && !isShippedSave(position.file)) return position.file
   const { setup } = position
-  return `${setup.slots.p1.commander}-${setup.slots.p2.commander}-${setup.seed}-round-${position.duel.round}`
+  return `${setup.slots.p1.commander}-${setup.slots.p2.commander}-${setup.seed}-round-${position.battle.round}`
 }
 
 /**
- * **A Skirmish's round, ready for the Build Phase**: side A's view of the duel in play. Its build menu and content are
- * its Commander's whole army with every power it kept applied (`loadoutOf`, as the duel reads it); its credits the
- * duel's; its hand the one the duel deals it (`handOf`), so the card picked is the card the round keeps; its buildings
+ * **A Skirmish's round, ready for the Build Phase**: side A's view of the battle in play. Its build menu and content are
+ * its Commander's whole army with every power it kept applied (`loadoutOf`, as the battle reads it); its credits the
+ * battle's; its hand the one the battle deals it (`handOf`), so the card picked is the card the round keeps; its buildings
  * standing, and everything else on the Grid as the field, every Commander due back already beside her Nexus — each
  * survivor with the walk that brought it there when `regroup` is the one the last round ended in. The round opens on
  * `scene` and says `opening` on the bottom line.
  */
 function roundContext(position: SkirmishPosition, previous: Partial<BuildContext>, scene: readonly DialogLine[], opening: string, regroup?: RegroupResult | null): BuildContext {
-  const { duel } = position
-  const army = armyOf(duel, "A")
-  const loadout = loadoutOf(army, duel.sides.A)
-  const content = contentOf(duel)
-  const map = mapOf(duel)
-  const restored = restoredOf(duel, content)
+  const { battle } = position
+  const army = armyOf(battle, "A")
+  const loadout = loadoutOf(army, battle.sides.A)
+  const content = contentOf(battle)
+  const map = mapOf(battle)
+  const restored = restoredOf(battle, content)
   const standing: StandingStructure[] = []
   const field: FieldEntity[] = []
   if (restored === null) {
-    standing.push(...standingOf(duel, "A").map(({ contentId, anchor }) => ({ contentId, anchor })))
-    const nexus = armyOf(duel, "B").nexus
+    standing.push(...standingOf(battle, "A").map(({ contentId, anchor }) => ({ contentId, anchor })))
+    const nexus = armyOf(battle, "B").nexus
     field.push({ contentId: nexus, anchor: map.nexus.B, player: "B", hp: content.B.get(nexus).maxHp })
   } else {
     const walks = new Map((regroup?.paths ?? []).map((path) => [path.ordinal, path] as const))
@@ -206,23 +206,23 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
   const watching = spectating(position.setup)
   const context: BuildContext = {
     ...carriedOver(previous),
-    grid: duelGrid(map),
+    grid: battleGrid(map),
     registry: loadout.registry,
     catalog: watching ? [] : loadout.catalog,
     standing,
     field,
-    allotment: watching ? 0 : duel.sides.A.credits,
-    nexusDraft: watching ? [] : nexusDraftOf({ powers: handOf(duel, "A") }),
+    allotment: watching ? 0 : battle.sides.A.credits,
+    nexusDraft: watching ? [] : nexusDraftOf({ powers: handOf(battle, "A") }),
     ...(watching ? { spectating: true } : {}),
-    kept: duel.sides.A.kept.flatMap((id) => army.powers.find((card) => card.id === id) ?? []),
+    kept: battle.sides.A.kept.flatMap((id) => army.powers.find((card) => card.id === id) ?? []),
     buildingCards: army.buildings,
     callups: [],
     commander: { contentId: army.commander.unit, name: army.commander.name, portrait: army.commander.portrait },
-    round: { number: duel.round, of: duel.setup.rounds },
+    round: { number: battle.round, of: battle.setup.rounds },
     carried: restored?.state ?? null,
     absent: restored?.absent ?? [],
     restored: (restored?.restored ?? []).map((restoration) => ({ player: restoration.player, contentId: restoration.contentId })),
-    incoming: arrivalsOf(duel, []),
+    incoming: arrivalsOf(battle, []),
     roundText: {},
     mode: position,
     saveName: saveNameOf(position),
@@ -233,20 +233,20 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
 
 /** A new battle's first round: what it is, then how the other side plays, looking at its Nexus. */
 function firstRound(setup: SaveSetup, previous: Partial<BuildContext>, before: readonly DialogLine[] = [], extras: Pick<SkirmishPosition, "file" | "draft"> = {}, profiles?: Profiles): BuildContext {
-  const duel = newDuel(duelSetupOf(setup, profiles))
+  const battle = beginBattle(battleSetupOf(setup, profiles))
   const lines = openingLines(setup, profiles)
-  const scene = [...before, ...lines.map((line, index) => (index === lines.length - 1 ? said(line, enemyNexusFocus(duel)) : said(line)))]
+  const scene = [...before, ...lines.map((line, index) => (index === lines.length - 1 ? said(line, enemyNexusFocus(battle)) : said(line)))]
   const opponent = commanderNameOf(setup.slots.p2.commander)
   const restored = extras.draft === undefined ? "" : " The plan so far is restored."
   const opening = spectating(setup)
     ? `Watching, seed ${setup.seed}: both sides are scripts. [s] starts the round.`
     : `Against ${opponent} on ${mapNameOf(setup.map)}, seed ${setup.seed}.${restored} The Nexus Pulse deals: [n].`
-  return roundContext({ kind: "skirmish", setup, duel, ...extras }, previous, scene, opening)
+  return roundContext({ kind: "skirmish", setup, battle, ...extras }, previous, scene, opening)
 }
 
 /** How a battle's end reads on the Battle Round's result: what happened, and the two ways on. */
-function endingOf(setup: SaveSetup, duel: DuelState): MissionEnding {
-  const result = duel.result as NonNullable<DuelState["result"]>
+function endingOf(setup: SaveSetup, battle: BattleState): MissionEnding {
+  const result = battle.result as NonNullable<BattleState["result"]>
   const ways = { goOn: "Same battle again", alternative: "New seed", setup: "Setup screen" }
   // Watching two scripts, nobody won or lost: the winner is named.
   if (spectating(setup)) {
@@ -264,9 +264,9 @@ function endingOf(setup: SaveSetup, duel: DuelState): MissionEnding {
   }
 }
 
-/** What a played round leaves for the next: the duel after it, the round's report, and the survivors' regroup (`null`
+/** What a played round leaves for the next: the battle after it, the round's report, and the survivors' regroup (`null`
  *  once the battle is over). */
-export type Played = Readonly<{ duel: DuelState; report: RoundReport; regroup: RegroupResult | null }>
+export type Played = Readonly<{ battle: BattleState; report: RoundReport; regroup: RegroupResult | null }>
 
 /** Every round played, by the Pulse it resolved: the screen hands that Pulse back to open the next round, so what the
  *  round left is found by it. Held weakly: a Pulse nobody holds is let go. */
@@ -275,9 +275,9 @@ const PLAYED = new WeakMap<ResolvedPulse, Played>()
 /** What a round a Skirmish played left, by the Pulse it resolved; `undefined` for a Pulse a Skirmish did not resolve. */
 export const playedOf = (resolved: ResolvedPulse): Played | undefined => PLAYED.get(resolved)
 
-/** The card id of the building a structure is, for a duel plan. */
-function cardIdOf(duel: DuelState, contentId: string): string {
-  return armyOf(duel, "A").buildings.find((card) => card.structure === contentId)?.id ?? contentId
+/** The card id of the building a structure is, for a battle plan. */
+function cardIdOf(battle: BattleState, contentId: string): string {
+  return armyOf(battle, "A").buildings.find((card) => card.structure === contentId)?.id ?? contentId
 }
 
 /** "x,y", a tile as the Build Phase keys it. */
@@ -287,17 +287,17 @@ const tileOf = (key: string): Readonly<{ x: number; y: number }> => {
 }
 
 /**
- * **Side A's duel plan from a Build Phase**: the power picked (its number in the hand, which is the duel's hand), every
+ * **Side A's battle plan from a Build Phase**: the power picked (its number in the hand, which is the battle's hand), every
  * building placed at its exact anchor in the order placed, the buildings held this round, the building actions taken,
  * and the troops marching on the enemy's Nexus — the Build Phase has no stance to choose.
  */
 export function buildActionsOf(context: BuildContext, state: BuildState): BuildActions {
-  const { duel } = positionOf(context)
+  const { battle } = positionOf(context)
   const hold = state.held.map(tileOf)
   const actions = state.fitted.map((taken) => ({ ...tileOf(taken.anchor), action: taken.action }))
   return {
     ...(state.nexusPick === null ? {} : { power: state.nexusPick + 1 }),
-    build: state.planned.map((placement) => ({ building: cardIdOf(duel, placement.contentId), x: placement.anchor.x, y: placement.anchor.y })),
+    build: state.planned.map((placement) => ({ building: cardIdOf(battle, placement.contentId), x: placement.anchor.x, y: placement.anchor.y })),
     stance: "attack",
     ...(hold.length === 0 ? {} : { hold }),
     ...(actions.length === 0 ? {} : { actions }),
@@ -308,27 +308,27 @@ export function buildActionsOf(context: BuildContext, state: BuildState): BuildA
 const planned = (plan: BuildActions): boolean => plan.power !== undefined || plan.build.length > 0 || (plan.hold?.length ?? 0) > 0 || (plan.actions?.length ?? 0) > 0
 
 /**
- * **A round as a save**: its setup, the duel as this Build Phase opened, and the plan so far as p1's draft — what Save
+ * **A round as a save**: its setup, the battle as this Build Phase opened, and the plan so far as p1's draft — what Save
  * game writes. `name` is the save's own name for a person, when given. Loading it (`skirmishLevel`) returns to exactly
  * this screen: the round, its hand and its credits, the power picked and every building placed.
  */
 export function saveOfRound(context: BuildContext, state: BuildState, name?: string): SaveFile {
-  const { setup, duel } = positionOf(context)
+  const { setup, battle } = positionOf(context)
   const plan = buildActionsOf(context, state)
-  return saveOf(setup, duel, { ...(name === undefined ? {} : { name }), ...(planned(plan) ? { draft: { p1: plan } } : {}) })
+  return saveOf(setup, battle, { ...(name === undefined ? {} : { name }), ...(planned(plan) ? { draft: { p1: plan } } : {}) })
 }
 
 /**
  * **A plan laid on a Build Phase**, as the player would have made it: the power it names picked and kept (`keep`, as the
- * screen keeps it the moment it is picked), each building placed where the duel places it (`placementsOf`), the
+ * screen keeps it the moment it is picked), each building placed where the battle places it (`placementsOf`), the
  * buildings held and the actions taken. A draft restored and a scripted round both come this way.
  */
 export function planOnRound(context: BuildContext, state: BuildState, plan: BuildActions, keep: NonNullable<LevelPlay["keep"]>): Readonly<{ context: BuildContext; state: BuildState }> {
-  const { duel } = positionOf(context)
+  const { battle } = positionOf(context)
   const pick = plan.power !== undefined && plan.power >= 1 ? plan.power - 1 : null
   const option = pick === null ? undefined : context.nexusDraft[pick]
   const planning = option === undefined ? context : keep(context, option.card)
-  const placed = placementsOf(duel, "A", plan)
+  const placed = placementsOf(battle, "A", plan)
   const nextOrdinal = placed.reduce((last, placement) => Math.max(last, placement.ordinal), 0) + 1
   return {
     context: planning,
@@ -360,23 +360,23 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
     keep(context, card) {
       const kept = keepPower(context, card)
       // Units it calls up arrive beside the Nexus as the round starts: drawn where they will.
-      return kept.callups === context.callups ? kept : { ...kept, incoming: arrivalsOf(positionOf(kept).duel, kept.callups) }
+      return kept.callups === context.callups ? kept : { ...kept, incoming: arrivalsOf(positionOf(kept).battle, kept.callups) }
     },
 
-    // No raid comes: the enemy plans in secret and reveals with the player, as in a duel.
+    // No raid comes: the enemy plans in secret and reveals with the player, as in a battle.
     foresee: () => [],
 
     startPulse(context, state) {
       const position = positionOf(context)
-      const { duel, setup } = position
-      if (duel.result !== null) return null
+      const { battle, setup } = position
+      if (battle.result !== null) return null
       // The round as the command line plays it (`playNext`): p1's plan from this Build Phase when a person plays it, every
       // scripted slot its profile's plan, the modifiers and the credits shares as the setup has them.
       const plans = isPlayer(setup, "p1") ? { p1: buildActionsOf(context, state) } : {}
       const states: MatchState[] = []
       const events: DomainEvent[] = []
       let content: Readonly<{ registry: ContentRegistry; sides: Readonly<Record<Side, ContentRegistry>> }> | null = null
-      const played = playNext(setup, duel, plans, options.profiles, (battleState, tickEvents, registry, sides) => {
+      const played = playNext(setup, battle, plans, options.profiles, (battleState, tickEvents, registry, sides) => {
         states.push(battleState)
         events.push(...tickEvents)
         content ??= { registry, sides }
@@ -385,27 +385,27 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       const start = states[0] as MatchState
       const final = states[states.length - 1] as MatchState
       const timeline = timelineOf(
-        { id: `skirmish-${setup.seed}-round-${duel.round}`, name: `Skirmish, seed ${setup.seed}` },
+        { id: `skirmish-${setup.seed}-round-${battle.round}`, name: `Skirmish, seed ${setup.seed}` },
         states,
         [...spawnEvents(start, registry), ...events],
-        duel.setup.pulseTicks,
-        duel.setup.seed,
+        battle.setup.pulseTicks,
+        battle.setup.seed,
         registry,
       )
       const next = played.state
-      const fell = SIDES.flatMap((side) => next.sides[side].absent.filter((absence) => absence.fellInRound === duel.round))
+      const fell = SIDES.flatMap((side) => next.sides[side].absent.filter((absence) => absence.fellInRound === battle.round))
       const mission: MissionRound = {
         // The battle goes on, or it is over: a drawn battle reads as a won one here, its own words saying it was drawn.
         verdict: next.result === null ? { kind: "continue" } : { kind: outcomeFor(next.result) === "lost" ? "lost" : "won", trigger: `battle ${outcomeFor(next.result)}` },
-        round: duel.round,
-        of: duel.setup.rounds,
+        round: battle.round,
+        of: battle.setup.rounds,
         ...(fell.length === 0 ? {} : { fell }),
         ...(next.result === null ? {} : { ending: endingOf(setup, next) }),
       }
       // Nobody walks home: the survivors stand where the shooting stopped, and regroup in the next Build Phase. Once the
       // battle is over nothing regroups; its end, settled where everyone stands, is what the result shows.
       const resolved: ResolvedPulse = { timeline, regroup: played.regroup ?? standDown(final, registry, sides), nexus: nexusTile(context), mission, enemy: "enemy", ...(spectating(setup) ? { watched: { A: shortName(setup.slots.p1.commander), B: shortName(setup.slots.p2.commander) } } : {}) }
-      PLAYED.set(resolved, { duel: next, report: played.report, regroup: played.regroup })
+      PLAYED.set(resolved, { battle: next, report: played.report, regroup: played.regroup })
       return resolved
     },
 
@@ -414,13 +414,13 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       if (played === undefined) return null
       const position = positionOf(context)
       const { setup } = position
-      const { duel, report } = played
+      const { battle, report } = played
       // The battle goes on: its next round, from where the survivors regrouped, their walk played as it opens.
-      if (duel.result === null) {
+      if (battle.result === null) {
         const last = `Round ${report.round}: ${resultOf(outcomeOf(resolved.timeline)).headline.toLowerCase()}.`
-        const opened = roundContext({ kind: "skirmish", setup, duel, ...(position.file === undefined ? {} : { file: position.file }) }, context, [], "", played.regroup)
-        const back = restoredOf(duel, contentOf(duel))
-        const news = back === null ? null : commanderNews(back.restored, back.absent, duel.round, duel.setup.rounds)
+        const opened = roundContext({ kind: "skirmish", setup, battle, ...(position.file === undefined ? {} : { file: position.file }) }, context, [], "", played.regroup)
+        const back = restoredOf(battle, contentOf(battle))
+        const news = back === null ? null : commanderNews(back.restored, back.absent, battle.round, battle.setup.rounds)
         const refused = isPlayer(setup, "p1") ? report.sides.A.refused : []
         const scene = [
           ...(news === null ? [] : [said(news, nexusFocus(opened))]),
@@ -433,7 +433,7 @@ export function skirmishPlay(options: SkirmishOptions = {}): LevelPlay {
       // Either is a new battle: no longer the file it was loaded from, so Save game offers a new name.
       const seed = alternative ? (options.newSeed?.() ?? nextSeedOf(setup.seed)) : setup.seed
       const again: SaveSetup = { ...setup, seed }
-      const ended = said(`${endedLine(setup, duel.result)} ${alternative ? `A new battle, seed ${seed}.` : "The same battle again."}`)
+      const ended = said(`${endedLine(setup, battle.result)} ${alternative ? `A new battle, seed ${seed}.` : "The same battle again."}`)
       return firstRound(again, carriedOver(context), [ended], {}, options.profiles)
     },
   }
@@ -494,7 +494,7 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
       return planOnRound({ ...context, mode: rest }, state, mode.draft, keep)
     },
   }
-  const duel = duelOf(save, options.profiles)
+  const battle = battleOf(save, options.profiles)
   return {
     id: `skirmish-${setup.seed}`,
     story: "skirmish",
@@ -507,8 +507,8 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
       const extras = { ...(source.file === undefined ? {} : { file: source.file }), ...(draft === undefined ? {} : { draft }) }
       // Nothing played yet: the battle opens as a new one does, on what it is and how the other side plays.
       if (save.state === undefined) return firstRound(setup, previous, [], extras, options.profiles)
-      const position: SkirmishPosition = { kind: "skirmish", setup, duel, ...extras }
-      const where = duel.result === null ? `round ${duel.round} of ${setup.rounds}` : "the battle over"
+      const position: SkirmishPosition = { kind: "skirmish", setup, battle, ...extras }
+      const where = battle.result === null ? `round ${battle.round} of ${setup.rounds}` : "the battle over"
       // The whole of what was loaded in a line of the game's own voice; the bottom line, short enough for 80 columns.
       const file = source.file ?? save.name ?? "a save"
       const restored = draft === undefined ? "" : " The plan so far is restored."
@@ -526,19 +526,19 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
 export const newSkirmishLevel = (seed: number, options: SkirmishOptions = {}): PlayableLevel =>
   skirmishLevel({ format: "terminal-nexus.save/1", setup: newSetup({ seed }) }, {}, options)
 
-/** A Skirmish headless, as the driver played it: the duel at its end, and every round's report. */
-export type DrivenSkirmish = Readonly<{ duel: DuelState; rounds: readonly RoundReport[] }>
+/** A Skirmish headless, as the driver played it: the battle at its end, and every round's report. */
+export type DrivenSkirmish = Readonly<{ battle: BattleState; rounds: readonly RoundReport[] }>
 
 /**
- * **A round planned by a scripted duel player through the Build Phase's own functions**: `player` plans side A from its
- * brief, as a duel side would, and the plan is laid on the Build Phase as the player would lay it (`planOnRound`) —
+ * **A round planned by a scripted battle player through the Build Phase's own functions**: `player` plans side A from its
+ * brief, as a battle side would, and the plan is laid on the Build Phase as the player would lay it (`planOnRound`) —
  * ready to start.
  */
 export function scriptedRound(context: BuildContext, player: Player, play: LevelPlay): Readonly<{ context: BuildContext; state: BuildState }> {
-  const { duel } = positionOf(context)
+  const { battle } = positionOf(context)
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
   const opened = createBuildState(withoutScene(context), nexusTile(context) ?? STARTER_START_CURSOR, viewport)
-  return planOnRound(context, opened, player(briefOf(duel, "A").data), play.keep as NonNullable<LevelPlay["keep"]>)
+  return planOnRound(context, opened, player(briefOf(battle, "A").data), play.keep as NonNullable<LevelPlay["keep"]>)
 }
 
 /**
@@ -555,7 +555,7 @@ export function driveSkirmish(level: PlayableLevel, player: Player): DrivenSkirm
     const played = resolved === null ? undefined : playedOf(resolved)
     if (resolved === null || played === undefined) throw new Error("a Skirmish's round could not start")
     rounds.push(played.report)
-    if (played.duel.result !== null) return { duel: played.duel, rounds }
+    if (played.battle.result !== null) return { battle: played.battle, rounds }
     const next = level.play.nextRound(planned.context, planned.state, resolved)
     if (next === null) throw new Error("a Skirmish's round led nowhere")
     context = next

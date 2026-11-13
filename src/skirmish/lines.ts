@@ -2,9 +2,9 @@
 // tally of many battles. The `skirmish` command prints them and writes them beside each round it keeps
 // (`src/cli/skirmish.ts`); the screen says the same things in its own words (`./words.ts`). Pure.
 
-import type { DuelState, RoundReport } from "../duel/index.ts"
-import { SIDES } from "../duel/index.ts"
-import { namedCounts } from "../duel/reading.ts"
+import type { BattleState, RoundReport } from "../battle/index.ts"
+import { SIDES } from "../battle/index.ts"
+import { namedCounts } from "../battle/reading.ts"
 import type { SaveSetup, Slot } from "./save.ts"
 import { SLOT_OF } from "./save.ts"
 import { mapNameOf } from "./words.ts"
@@ -17,10 +17,10 @@ export const battleLine = (setup: SaveSetup): string =>
   `${setup.slots.p1.commander} (p1) against ${setup.slots.p2.commander} (p2) on ${mapNameOf(setup.map)}, seed ${setup.seed}${setup.modifiers.length === 0 ? "" : `, ${setup.modifiers.join(", ")}`}`
 
 /** The slot that won, or `null` for a draw or a battle not over. */
-export const winnerOf = (state: DuelState): Slot | null => (state.result === null || state.result.winner === null ? null : SLOT_OF[state.result.winner])
+export const winnerOf = (state: BattleState): Slot | null => (state.result === null || state.result.winner === null ? null : SLOT_OF[state.result.winner])
 
 /** How the battle stands, in a line. */
-export function standing(setup: SaveSetup, state: DuelState): string {
+export function standing(setup: SaveSetup, state: BattleState): string {
   if (state.result === null) return `round ${state.round} of ${setup.rounds}, at its Build Phase`
   const winner = winnerOf(state)
   return winner === null ? `over: a draw after round ${state.result.round}` : `over: ${slotLabel(setup, winner)} won by ${state.result.by} in round ${state.result.round}`
@@ -54,7 +54,7 @@ export function roundLines(report: RoundReport): string[] {
 }
 
 /** Every round played so far, then how the battle stands. */
-export const historyLines = (setup: SaveSetup, state: DuelState): string[] => [...state.history.flatMap(roundLines), standing(setup, state)]
+export const historyLines = (setup: SaveSetup, state: BattleState): string[] => [...state.history.flatMap(roundLines), standing(setup, state)]
 
 /** How many battles each slot won, how many were drawn or left unfinished, and how they ended. */
 export type Tally = { p1: number; p2: number; draw: number; unfinished: number; byNexus: number; rounds: number; battles: number }
@@ -62,7 +62,7 @@ export type Tally = { p1: number; p2: number; draw: number; unfinished: number; 
 export const emptyTally = (): Tally => ({ p1: 0, p2: 0, draw: 0, unfinished: 0, byNexus: 0, rounds: 0, battles: 0 })
 
 /** The tally with one more battle counted, as it stands after `state`. */
-export function counted(tally: Tally, state: DuelState): Tally {
+export function counted(tally: Tally, state: BattleState): Tally {
   const key = state.result === null ? "unfinished" : (winnerOf(state) ?? "draw")
   return { ...tally, [key]: tally[key] + 1, byNexus: tally.byNexus + (state.result?.by === "nexus" ? 1 : 0), rounds: tally.rounds + state.round - 1, battles: tally.battles + 1 }
 }

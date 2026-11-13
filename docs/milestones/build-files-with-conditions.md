@@ -11,11 +11,11 @@ This sits on top of the plain build file, built: a list of entries, each
 proposal adds one optional key to an entry, `when`, and one small library of named facts that `when` reads. It
 leaves the entry shape, the round matching and the first-match rule as they are.
 
-What I read: `src/duel/types.ts` (`BuildActions`), `src/duel/build-actions.ts` (`readBuildActions`), `src/duel/brief.ts`
-(`briefOf`, `BriefData`, `briefText`), `src/duel/players.ts` (`balanced`, `rush`, `turtle`, `withArea`,
+What I read: `src/battle/types.ts` (`BuildActions`), `src/battle/build-actions.ts` (`readBuildActions`), `src/battle/brief.ts`
+(`briefOf`, `BriefData`, `briefText`), `src/battle/players.ts` (`balanced`, `rush`, `turtle`, `withArea`,
 `withUpgrades`, `SCRIPTED`, `scriptedPlayer`), `src/mission/types.ts` and the trigger runner's `verdictAt` in
 `src/match/mission.ts`, `src/skirmish/profile-files.ts` and `ScriptProfile` in `src/skirmish/save.ts`,
-`players/scripts/*.json`, the armies' building cards, `docs/system-design/duels.md`,
+`players/scripts/*.json`, the armies' building cards, `docs/system-design/battles.md`,
 `docs/system-design/skirmish-saves.md`, and the planner direction in `docs/game-design/scripted-opponent.md`.
 
 ---
@@ -91,7 +91,7 @@ brief and in the round's report. That works, but it is noisy (see the open quest
 credits buy").
 
 **2. `turtle` rewritten** (`defensive.json`). Two Turrets forward, the strongest producer behind, hold until the
-last two rounds. The rounds a duel lasts are known before the battle (8 unless set), so "the last two rounds" is a
+last two rounds. The rounds a battle lasts are known before the battle (8 unless set), so "the last two rounds" is a
 range:
 
 ```json
@@ -205,7 +205,7 @@ still needs "strength a credit" (a selector, which I recommend against for now).
 
 ### What it is
 
-One table, `FACTS`, in a new pure module `src/duel/facts.ts`. Each entry is a name, a line saying what it is,
+One table, `FACTS`, in a new pure module `src/battle/facts.ts`. Each entry is a name, a line saying what it is,
 whether it takes `of` and what kind of id, and a pure function over `BriefData`:
 
 ```ts
@@ -226,7 +226,7 @@ every reader.
 
 ### The facts, first cut
 
-Every one is computed from what `briefOf` already puts in `BriefData`. None reads the duel state directly.
+Every one is computed from what `briefOf` already puts in `BriefData`. None reads the battle state directly.
 
 | Fact | `of` | What it is | From |
 | --- | --- | --- | --- |
@@ -282,11 +282,11 @@ of a Build Phase. They are different questions, so neither replaces the other.
 - **Later, a trigger gains an optional `if`**, a `when` from this library, checked only on `build.start` and
   `pulse.end` (the two moments the whole state is settled). `{ "when": { "event": "build.start", "pulse": 2 },
   "if": { "enemy.units": { "min": 6 } }, "do": [ { "say": ... } ] }`. For that the mission side needs a
-  `BriefData` (or the part of it facts read) for a side of a mission round. A duel computes one with `briefOf`
-  from a `DuelState`; a mission round has a `MatchState` and a level, not a `DuelState`. So the shared input
+  `BriefData` (or the part of it facts read) for a side of a mission round. A battle computes one with `briefOf`
+  from a `BattleState`; a mission round has a `MatchState` and a level, not a `BattleState`. So the shared input
   should be a **narrower type the facts read** (call it `Facts` data: the id fields above, credits, supply,
-  Nexuses, round), which `briefOf` produces for a duel and a mission function would produce for a mission. That is
-  the moment the library moves from `src/duel/facts.ts` to a home of its own beside `src/mission/` (it imports only
+  Nexuses, round), which `briefOf` produces for a battle and a mission function would produce for a mission. That is
+  the moment the library moves from `src/battle/facts.ts` to a home of its own beside `src/mission/` (it imports only
   types, so `tests/architecture.test.ts` keeps the mission files free of the kernel).
 - **A mission's `commitPlan` already is a build-file entry in disguise**: a side's buildings for one Pulse. A
   mission's scripted side could one day be a build file (`round`, `when`, plan), which is what
@@ -298,7 +298,7 @@ of a Build Phase. They are different questions, so neither replaces the other.
 ## How the pieces meet
 
 The key fact about the code as it stands: **every player is already `Player = (brief: BriefData) => BuildActions`**
-(`src/duel/players.ts`). A build file with conditions is just one more of those:
+(`src/battle/players.ts`). A build file with conditions is just one more of those:
 
 ```ts
 export function buildFilePlayer(entries: readonly BuildEntry[]): Player {
@@ -343,13 +343,13 @@ Two uses, both reading the same table:
 ## Determinism and simultaneity
 
 - **A condition reads only the brief at the start of the Build Phase.** `briefOf(state, side)` is a pure function
-  of the `DuelState` between rounds, and both slots' briefs come from the same state before either plan exists.
+  of the `BattleState` between rounds, and both slots' briefs come from the same state before either plan exists.
   `holds(when, brief)` takes nothing else. It cannot see the other slot's plan this round, because that plan is not
   in the brief (`briefOf` says so: "The enemy's plan for this round is never in it").
 - **What a slot sees of the other side is what is public**: its standing buildings, units on the Grid, kept powers,
   Nexus health, last round's report. The same facts a person on the Build Phase screen can see.
 - **No clock, no random, no log.** Facts are whole-number arithmetic on the brief. They never read the Activity
-  Logs or the round's printed lines; `brief.last` is the `RoundReport` kept in the duel's state, not a log, so the
+  Logs or the round's printed lines; `brief.last` is the `RoundReport` kept in the battle's state, not a log, so the
   rule that a log is never an input holds.
 - **The order is fixed**: entries are read top to bottom, `when` keys are all-of (order does not matter for an
   "and"), `any` is read in list order, and the first matching entry wins. The same file and the same brief give
@@ -363,15 +363,15 @@ Two uses, both reading the same table:
 
 **What it builds**
 
-1. `src/duel/facts.ts`: the `FACTS` table (the first cut above, minus anything that needs the brief's id fields
+1. `src/battle/facts.ts`: the `FACTS` table (the first cut above, minus anything that needs the brief's id fields
    if those are not added in the same pull request), `holds`, and `checkCondition` returning every problem.
 2. `BriefData` gains the id fields facts need (standing buildings by id and anchor, units by short id, kept powers
    by id, `commander.out`, `enemy.area`). Additive; `briefText` unchanged.
 3. The first layer's build-file reader accepts an optional `when` on an entry, checks it at load against `FACTS`
    (and against the two armies' ids when the command knows them), and the entry matches only when it holds.
-4. `roomLeft` in `src/duel/players.ts` becomes `FACTS["supply.room"].read`, and the scripts' round checks read
+4. `roomLeft` in `src/battle/players.ts` becomes `FACTS["supply.room"].read`, and the scripts' round checks read
    `round` and `rounds.left`: one shared function, no change in play.
-5. The command's manual (the opening comment of `src/cli/skirmish.ts`) and `duels.md` say what `when` is, with one
+5. The command's manual (the opening comment of `src/cli/skirmish.ts`) and `battles.md` say what `when` is, with one
    example; a `when` example file beside the first layer's.
 
 **What it tests**
@@ -382,7 +382,7 @@ Two uses, both reading the same table:
 - The first match wins with conditions: a file whose second entry holds and first does not plays the second.
 - A battle played with example 4 against `rush-area` switches to `apart` once the Fuse Shed stands, and the same
   battle on the same seed hashes the same on Node and Bun.
-- The scripts play exactly as before after step 4 (the existing pinned duels stay green, unchanged).
+- The scripts play exactly as before after step 4 (the existing pinned battles stay green, unchanged).
 
 **What it leaves for later**
 

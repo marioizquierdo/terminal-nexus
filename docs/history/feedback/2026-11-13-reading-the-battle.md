@@ -21,7 +21,7 @@ words we stopped using. `AGENTS.md` sends every session there before naming anyt
 
 > All of this information that comes from the map, for example, the map's tempo, should be in a centralized library. We talked about this before, and I think now it's time to make it a little more formal. If there is a single place in code that can check for map status, then we can expose that to the testing. Particularly, we can request it on the output. Some of that can be automatically returned because it's very useful for any type of testing running the skirmish and checking the brief. But also can be exposed to the scripting to define new scripted AIs.
 
-**Built.** `src/duel/reading.ts` reads what a battle says: the score (who leads, on Nexus health or on damage), and
+**Built.** `src/battle/reading.ts` reads what a battle says: the score (who leads, on Nexus health or on damage), and
 for each Battle Round the front (where the fighting was between the Nexuses: the map's tempo), first contact, the
 nearest the enemy came to each Nexus, what hit each Nexus by source, each building lost and by what, and what a side's
 own blasts cost it. Every round's report keeps it; every brief prints the score and the side's own reading, as words
@@ -33,7 +33,7 @@ and as data, so a script, a model and a person read the same.
 
 **Built, in the `skirmish` command rather than a second tool.** The reading comes back automatically: in each brief,
 and in each round's report a line a side. `--show 0,120,end` draws each Battle Round played as text at those ticks and
-as it ends (`src/duel/picture.ts`, the brief's own map, a unit on a roof counted rather than drawn over its building).
+as it ends (`src/battle/picture.ts`, the brief's own map, a unit on a roof counted rather than drawn over its building).
 Taking a battle from a save to a moment is what the command already does: `--load` any kept round (`--out` keeps each),
 give its build actions, `--play-to next --show <ticks>`, and nothing is saved over. A second tool would repeat it; one
 would earn its place when an inspection needs more than a round replayed (a unit followed tick by tick, a region

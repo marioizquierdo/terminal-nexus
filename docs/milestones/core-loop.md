@@ -33,7 +33,7 @@ predictable spawning schedules. With all that, we can safely leave the units on 
 | Level | What the player sets | What it allows |
 | --- | --- | --- |
 | None (today) | Nothing: troops always march on the enemy Nexus; a mission sets an automatic target | The simplest; little room for tactics |
-| **Stance** | One setting for the army: attack or hold (built in a duel's build actions, `attack` and `hold`; first sketched as aggressive, hold the line or defensive) | Much more dynamism for one row |
+| **Stance** | One setting for the army: attack or hold (built in a battle's build actions, `attack` and `hold`; first sketched as aggressive, hold the line or defensive) | Much more dynamism for one row |
 | **Banner** | A banner on the map, aggressive or defensive; by default on the enemy Nexus, aggressive | Aggressive elsewhere: the army goes there first, then on to the enemy Nexus, so it sets a route. Defensive: the army holds the line there, for map control or the base |
 | **Two banners** | The Commander follows the main banner; a building can be set to send its units after the secondary one | Split armies, which matter once the map holds resources and bonuses; needs more UX. To test eventually, built towards step by step |
 
@@ -77,24 +77,24 @@ So a decision here is mostly about rules, not new machinery:
   to the march's goal, from the side's own Nexus without her, and marchers keep within a band of it and form up
   behind her by line (the march, [`movement.md`](../system-design/movement.md)). Drawing it in the Build Phase is
   presentation only.
-- **Orders exist in the duel.** A duel side's plan has a stance, `attack` or `hold`
-  ([`duels.md`](../system-design/duels.md)); the Build Phase screen does not offer it yet, and its troops always attack.
+- **Orders exist in the battle.** A battle side's plan has a stance, `attack` or `hold`
+  ([`battles.md`](../system-design/battles.md)); the Build Phase screen does not offer it yet, and its troops always attack.
   A building's order (Hold production) is the pattern for an order given between rounds.
 - **Survivors are already drawn in the Build Phase** as the field, and their health carries; only where they stand
   changes between the rules.
-- **The snowball is known.** In the scripted duels the side ahead after round 2 wins 50 of 54
+- **The snowball is known.** In the scripted battles the side ahead after round 2 wins 50 of 54
   ([the march's report](../history/reports/2026-10-21-the-march.md)). Any rule that keeps the winner's army closer to
   the loser's Nexus could make that worse; a rule that makes reinforcing the front slow could make it better.
 
 ## 3. The experiment
 
-The three rules were built as an experiment-only option on the duel (nothing in the game changed) and measured: 3888
-scripted duels on the Crossing, the three Commanders against each other, with Battle Rounds of 30, 50 and 75 seconds
+The three rules were built as an experiment-only option on the battle (nothing in the game changed) and measured: 3888
+scripted battles on the Crossing, the three Commanders against each other, with Battle Rounds of 30, 50 and 75 seconds
 ([the report, with every table](../history/reports/2026-10-26-between-rounds.md)).
 
 | Battle Round | A Nexus falls: home / fall back / stay | The front as the Build Phase opens (distance to the enemy Nexus): home / fall back / stay |
 | --- | --- | --- |
-| 30 s | 23% / 36% / 43% of duels | 51 / 40 / 32 |
+| 30 s | 23% / 36% / 43% of battles | 51 / 40 / 32 |
 | 50 s (today) | 49% / 48% / 50% | 53 / 41 / 33 |
 | 75 s | 65% / 66% / 66% | 58 / 46 / 39 |
 
@@ -104,7 +104,7 @@ scripted duels on the Crossing, the three Commanders against each other, with Ba
 - **The rule is what lets rounds be short.** At 30 seconds home rounds mostly end before anyone reaches a Nexus; with
   the front kept, a 30-second round is as decisive as a 50-second one is today.
 - **The snowball may soften when the front is kept** (the side ahead after round 2 won 82% under home, 69% under fall
-  back, 74% under stay), but on about 50 duels: a hint, not a finding.
+  back, 74% under stay), but on about 50 battles: a hint, not a finding.
 - **Under stay a Build Phase can open with the enemy at your Nexus.** Fall back keeps the front's place but always
   leaves a gap.
 - **The scripts never retreat, hold when beaten, or answer a camped army**, so the numbers measure script against
@@ -126,7 +126,7 @@ most likely to feel decided rather than tense. Stay is the purer autobattler and
 **Orders are the other half, and they are cheap.** With the front kept, the decision a player most wants is the army's:
 press on, hold the line, or pull back to the base — the round's order, given in the Build Phase and carried out in the
 Battle Round, exactly as a building's order is. Fall back to base is today's Recall turned into a choice. Banners and
-outposts come later as places to hold or gather, and the guide line runs to them. The duel's stance already holds
+outposts come later as places to hold or gather, and the guide line runs to them. The battle's stance already holds
 `attack` and `hold`; the Build Phase only needs the row.
 
 **Show the line.** The guide line exists in the march; drawing it on the Build Phase map — from the Commander to the

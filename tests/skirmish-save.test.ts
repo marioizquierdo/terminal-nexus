@@ -10,10 +10,10 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "n
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { EXIT, main } from "../src/cli/skirmish.ts"
-import type { DuelState } from "../src/duel/index.ts"
-import { briefOf, playRound, SCRIPTED } from "../src/duel/index.ts"
+import type { BattleState } from "../src/battle/index.ts"
+import { briefOf, playRound, SCRIPTED } from "../src/battle/index.ts"
 import { spawnSync } from "node:child_process"
-import { duelOf, newSetup, readSave, saveOf, saveText } from "../src/skirmish/save.ts"
+import { battleOf, newSetup, readSave, saveOf, saveText } from "../src/skirmish/save.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
 import { loadSandbox, sandboxCatalog } from "../src/skirmish/sandboxes.ts"
 import { hashOf } from "../src/state/canonical.ts"
@@ -22,7 +22,7 @@ import { REPO_ROOT } from "./helpers.ts"
 const SAVES = join(REPO_ROOT, "saves")
 
 /** One round, side A by the balanced script and side B by rush. */
-const round = (state: DuelState): DuelState => playRound(state, { A: SCRIPTED.balanced!(briefOf(state, "A").data), B: SCRIPTED.rush!(briefOf(state, "B").data) }).state
+const round = (state: BattleState): BattleState => playRound(state, { A: SCRIPTED.balanced!(briefOf(state, "A").data), B: SCRIPTED.rush!(briefOf(state, "B").data) }).state
 
 /** Runs the command, returning its exit code and what it wrote; when it could not run (exit 1), throws what it said. */
 function run(args: readonly string[]): Readonly<{ code: number; out: string }> {
@@ -35,13 +35,13 @@ function run(args: readonly string[]): Readonly<{ code: number; out: string }> {
 
 test("a battle saved after every round and loaded plays on as the battle played straight through", { timeout: 60_000 }, () => {
   const setup = newSetup({ map: "crossing", seed: 3, rounds: 4, roundTicks: 240 })
-  let straight = duelOf(saveOf(setup, duelOf({ format: "terminal-nexus.save/1", setup })))
+  let straight = battleOf(saveOf(setup, battleOf({ format: "terminal-nexus.save/1", setup })))
   let saved = straight
   for (let index = 0; index < 4 && straight.result === null; index += 1) {
     straight = round(straight)
     const read = readSave(saveText(saveOf(setup, round(saved))))
     assert.deepEqual(read.problems, [])
-    saved = duelOf(read.save!)
+    saved = battleOf(read.save!)
     assert.equal(hashOf(saved), hashOf(straight), `round ${index + 1}: the loaded battle differs from the one played straight through`)
   }
   // The ground is the map's, never the save's.
@@ -135,7 +135,7 @@ test("every save checked in loads and plays its next round", { timeout: 120_000 
   for (const file of files) {
     const { save, problems } = readSave(readFileSync(join(SAVES, file), "utf8"))
     assert.deepEqual(problems, [], file)
-    const state = duelOf(save!)
+    const state = battleOf(save!)
     if (state.result === null) assert.equal(round(state).round, state.round + 1, file)
     // Written by the game, a save reads back byte for byte.
     assert.equal(saveText(save!), readFileSync(join(SAVES, file), "utf8"), `${file} is not as the game writes it: run node scripts/make-example-saves.ts`)

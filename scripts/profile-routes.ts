@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 // What a tick costs, and proof that a change to how routes are worked out changed no outcome (F203).
 //
-//   node scripts/profile-routes.ts [--duels N] [--first-duel K] [--seeds 1,2] [--maps route|all|none] [--detail]
+//   node scripts/profile-routes.ts [--battles N] [--first-battle K] [--seeds 1,2] [--maps route|all|none] [--detail]
 //                                  [--out <file>]
 //
-// Plays every sandbox in `sandboxes/` (or only the route saves) on the seeds given, and N duels on the Crossing
+// Plays every sandbox in `sandboxes/` (or only the route saves) on the seeds given, and N battles on the Crossing
 // (Commander pairs by the scripted players, eight rounds at most), timing each tick by the wall clock and
 // fingerprinting each battle: the SHA-256 of every event it emitted, in order, and of its last state. Prints the
 // fingerprints, then how long a tick took by how many units stood in it. `--out` writes the fingerprints as JSON;
@@ -13,8 +13,8 @@
 
 import { createHash } from "node:crypto"
 import { writeFileSync } from "node:fs"
-import { briefOf, newDuel, playRound, scriptedPlayer } from "../src/duel/index.ts"
-import type { DuelSetup, Side, BuildActions } from "../src/duel/index.ts"
+import { briefOf, beginBattle, playRound, scriptedPlayer } from "../src/battle/index.ts"
+import type { BattleSetup, Side, BuildActions } from "../src/battle/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
 import { loadSandbox, sandboxCatalog } from "../src/skirmish/sandboxes.ts"
@@ -32,9 +32,9 @@ const option = (name: string, fallback: string): string => {
   return at === -1 ? fallback : (args[at + 1] ?? fallback)
 }
 const seeds = option("seeds", "1,2").split(",").map(Number)
-const duelCount = Number(option("duels", "6"))
-/** Which duel of the sequence to start from, so a long run can be split across processes. */
-const firstDuel = Number(option("first-duel", "0"))
+const duelCount = Number(option("battles", "6"))
+/** Which battle of the sequence to start from, so a long run can be split across processes. */
+const firstDuel = Number(option("first-battle", "0"))
 const maps = option("maps", "all")
 const out = option("out", "")
 
@@ -130,17 +130,17 @@ for (let n = firstDuel; n < firstDuel + duelCount; n += 1) {
   const player = scriptedPlayer(playerName)
   if (player === undefined) throw new Error(playerName)
   const seed = 1 + Math.floor(n / (PAIRS.length * PLAYERS.length))
-  const setup: DuelSetup = { map: "crossing", seed, rounds: 8, pulseTicks: 600, commanders: { A: a, B: b } }
-  let duel = newDuel(setup)
-  while (duel.result === null) {
-    const plans: Record<Side, BuildActions> = { A: player(briefOf(duel, "A").data), B: player(briefOf(duel, "B").data) }
+  const setup: BattleSetup = { map: "crossing", seed, rounds: 8, pulseTicks: 600, commanders: { A: a, B: b } }
+  let battle = beginBattle(setup)
+  while (battle.result === null) {
+    const plans: Record<Side, BuildActions> = { A: player(briefOf(battle, "A").data), B: player(briefOf(battle, "B").data) }
     const print = new Fingerprint()
     let last: MatchState | null = null
     let began = 0
     let units = 0
-    const round = duel.round
+    const round = battle.round
     battleBegan()
-    duel = playRound(duel, plans, (battle, events) => {
+    battle = playRound(battle, plans, (battle, events) => {
       if (last !== null) {
         const ms = clock() - began
         timed(units, ms)
@@ -153,7 +153,7 @@ for (let n = firstDuel; n < firstDuel + duelCount; n += 1) {
       began = clock()
     }).state
     battleEnded((last as MatchState | null)?.tick ?? 0)
-    fingerprints[`duel ${a}-${b} ${playerName} seed ${seed} round ${round}`] = print.done(last as unknown as MatchState)
+    fingerprints[`battle ${a}-${b} ${playerName} seed ${seed} round ${round}`] = print.done(last as unknown as MatchState)
   }
 }
 

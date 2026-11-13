@@ -1,4 +1,4 @@
-// The duel's scripted players: plans worked out from the same brief a language model reads (`BriefData`), so a
+// The battle's scripted players: plans worked out from the same brief a language model reads (`BriefData`), so a
 // script, a model and a person all play from the same facts. None of them is a good player — each is one plain idea of
 // how to spend a round, there to give a Commander something to fight in every seed and to measure against:
 //
@@ -101,7 +101,7 @@ export const turtle: Player = (brief) => {
 }
 
 /**
- * **reader**: a player that reads the battle (`src/duel/reading.ts`) before it plans, where the others follow a fixed
+ * **reader**: a player that reads the battle (`src/battle/reading.ts`) before it plans, where the others follow a fixed
  * idea. It builds as `balanced` does, and then:
  *
  * - **the stance from the battle's trades**: it plays the stance that has traded better over the battle (what it dealt for

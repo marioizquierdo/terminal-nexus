@@ -1,4 +1,4 @@
-// The regroup between a duel's (and a run's) Battle Rounds (`src/match/regroup.ts`): the survivors stay on the Grid,
+// The regroup between a battle's (and a run's) Battle Rounds (`src/match/regroup.ts`): the survivors stay on the Grid,
 // step back from a fight and form up across their march line, worked out from the round's end alone. Rules-layer code
 // beside the kernel, so these are the kernel's kind of tests: exact states, exact hashes, no screen.
 
@@ -12,8 +12,8 @@ import { BEHIND, FRONT_GAP, REGROUP_TICKS, centreTile, openingState, regroup, re
 import type { Force, RegroupResult, StructurePlacement } from "../src/match/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
-import { DUEL_PULSE_TICKS, briefOf, newDuel, playRound, scriptedPlayer } from "../src/duel/index.ts"
-import type { DuelState, Side } from "../src/duel/index.ts"
+import { BATTLE_ROUND_TICKS, briefOf, beginBattle, playRound, scriptedPlayer } from "../src/battle/index.ts"
+import type { BattleState, Side } from "../src/battle/index.ts"
 import { createHash } from "node:crypto"
 
 const NEXUS = "structure.citizen.nexus"
@@ -195,38 +195,38 @@ test("mirror-fair: a mirrored end of round regroups into the mirrored formation"
   }
 })
 
-/** A duel played round by round, the regroup of each round kept. */
+/** A battle played round by round, the regroup of each round kept. */
 function duelRounds(rounds: number, commanders: Readonly<Record<Side, string>>, players: Readonly<Record<Side, string>>, seed = 2) {
-  let duel: DuelState = newDuel({ map: "crossing", seed, rounds: 8, pulseTicks: DUEL_PULSE_TICKS, commanders })
-  const played: Array<Readonly<{ duel: DuelState; regroup: RegroupResult | null; ticks: number; sides: Readonly<Record<Side, ContentRegistry>> | null }>> = []
-  for (let round = 0; round < rounds && duel.result === null; round += 1) {
+  let battle: BattleState = beginBattle({ map: "crossing", seed, rounds: 8, pulseTicks: BATTLE_ROUND_TICKS, commanders })
+  const played: Array<Readonly<{ battle: BattleState; regroup: RegroupResult | null; ticks: number; sides: Readonly<Record<Side, ContentRegistry>> | null }>> = []
+  for (let round = 0; round < rounds && battle.result === null; round += 1) {
     let sides: Readonly<Record<Side, ContentRegistry>> | null = null
-    const plans = { A: (scriptedPlayer(players.A) as NonNullable<ReturnType<typeof scriptedPlayer>>)(briefOf(duel, "A").data), B: (scriptedPlayer(players.B) as NonNullable<ReturnType<typeof scriptedPlayer>>)(briefOf(duel, "B").data) }
-    const next = playRound(duel, plans, (_battle, _events, _registry, each) => {
+    const plans = { A: (scriptedPlayer(players.A) as NonNullable<ReturnType<typeof scriptedPlayer>>)(briefOf(battle, "A").data), B: (scriptedPlayer(players.B) as NonNullable<ReturnType<typeof scriptedPlayer>>)(briefOf(battle, "B").data) }
+    const next = playRound(battle, plans, (_battle, _events, _registry, each) => {
       sides ??= each
     })
-    played.push({ duel: next.state, regroup: next.regroup, ticks: next.report.ticks, sides })
-    duel = next.state
+    played.push({ battle: next.state, regroup: next.regroup, ticks: next.report.ticks, sides })
+    battle = next.state
   }
   return played
 }
 
-test("a duel keeps its front: rounds of 30 seconds, the survivors regrouped where they fought, no two on a tile", { timeout: 120_000 }, () => {
-  assert.equal(DUEL_PULSE_TICKS, 360, "a Battle Round of a duel lasts 30 seconds")
+test("a battle keeps its front: rounds of 30 seconds, the survivors regrouped where they fought, no two on a tile", { timeout: 120_000 }, () => {
+  assert.equal(BATTLE_ROUND_TICKS, 360, "a Battle Round of a battle lasts 30 seconds")
   const rounds = duelRounds(3, { A: "vasse", B: "dob" }, { A: "rush", B: "rush" })
   assert.equal(rounds.length, 3)
   for (const [index, round] of rounds.entries()) {
     assert.ok(round.ticks <= 360)
-    if (round.duel.result !== null) continue
-    const carried = round.duel.carried as MatchState
+    if (round.battle.result !== null) continue
+    const carried = round.battle.carried as MatchState
     const sides = round.sides as Readonly<Record<Side, ContentRegistry>>
     const definition = (entity: EntityState) => sides[entity.player].get(entity.contentId)
     assertNoOverlap(carried, definition, `after round ${index + 1}`)
-    assert.ok(round.regroup !== null, "the duel goes on, so its survivors regrouped")
+    assert.ok(round.regroup !== null, "the battle goes on, so its survivors regrouped")
     assert.equal(hashState(carried), hashState(round.regroup.state))
   }
   // By the end of the second round the rushing armies stand well out of their bases: the front is kept.
-  const second = rounds[1]?.duel.carried as MatchState
+  const second = rounds[1]?.battle.carried as MatchState
   const sides = rounds[1]?.sides as Readonly<Record<Side, ContentRegistry>>
   const nexusOf = (player: Side): Coord => {
     const nexus = second.entities.find((entity) => entity.player === player && sides[player].get(entity.contentId).nexus === true) as EntityState
@@ -237,7 +237,7 @@ test("a duel keeps its front: rounds of 30 seconds, the survivors regrouped wher
   assert.ok(furthest("A") > 16 || furthest("B") > 16, `a front stands out on the map (A ${furthest("A")}, B ${furthest("B")} from home)`)
 })
 
-test("the regroup of a played duel round is pinned, on Node and on Bun", { timeout: 120_000 }, () => {
+test("the regroup of a played battle round is pinned, on Node and on Bun", { timeout: 120_000 }, () => {
   const [first] = duelRounds(1, { A: "vasse", B: "averno" }, { A: "balanced", B: "rush" }, 5)
   const result = first?.regroup as RegroupResult
   // Pinned: the same end of round regroups into the same walks and the same state on every runtime; a change to the

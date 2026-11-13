@@ -92,7 +92,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ],
   )
   assert.deepEqual(ARMIES.commanders[0]?.portraitFalls, [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]])
-  // Each walks out with a starting package where a mode scripts none (a duel), and Averno's army bends the Nexus Pulse
+  // Each walks out with a starting package where a mode scripts none (a battle), and Averno's army bends the Nexus Pulse
   // in every mode: a card from the Ravel Nexus in rounds 2 and 4.
   assert.deepEqual(
     ARMIES.commanders.map((commander) => commander.start.map(({ unit, count }) => `${count} ${unit}`).join(", ")),

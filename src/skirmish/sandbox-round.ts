@@ -3,7 +3,7 @@
 // by: `grid --headless`, the `skirmish` command (`src/cli/skirmish-sandbox.ts`), a measurement (`measureSave`,
 // `src/measure/suites.ts`) and the formations bench, so a sandbox says the same through each.
 //
-// Not the duel: a sandbox tests one rule on the bench's content, with no Commander, Build Phase or wave a battle
+// Not the battle: a sandbox tests one rule on the bench's content, with no Commander, Build Phase or wave a battle
 // adds, so it starts the kernel straight from the units its `start` places. Pure: the save is already read.
 
 import type { ContentRegistry } from "../content/index.ts"

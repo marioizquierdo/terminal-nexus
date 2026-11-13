@@ -1,10 +1,10 @@
-// What a duel side is told before it plans a round (`briefOf`): one brief, two forms — `data`, for a script, and `text`,
-// the same facts written out for a language model (docs/system-design/duels.md, "The brief and the build actions"). Everything
+// What a battle side is told before it plans a round (`briefOf`): one brief, two forms — `data`, for a script, and `text`,
+// the same facts written out for a language model (docs/system-design/battles.md, "The brief and the build actions"). Everything
 // in it is what a player on the Build Phase screen could see: their own army, credits, hand and map; the enemy's
 // buildings and units where they stand, its Nexus's health and the powers it has kept (kept powers are public:
 // commander-armies.md, catch-up); and what happened last round. The enemy's build actions for this round are never in it.
 //
-// Pure: the same duel gives the same brief. Presentation of the duel, so it may read the art and card tables.
+// Pure: the same battle gives the same brief. Presentation of the battle, so it may read the art and card tables.
 
 import { abilityLines } from "../abilities/index.ts"
 import type { ActionKind, PowerCard } from "../armies/index.ts"
@@ -13,13 +13,13 @@ import { CARD_TEXT } from "../content/cards.ts"
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittingsOf } from "../content/index.ts"
 import { supplyOf } from "../content/supply.ts"
-import type { DuelArmy } from "./sides.ts"
+import type { BattleArmy } from "./sides.ts"
 import { armyOf, loadoutOf, powerOf } from "./sides.ts"
 import { handOf, mapOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
 import { battlePicture } from "./picture.ts"
 import type { Score } from "./reading.ts"
 import { readingLines, scoreLine, scoreOf } from "./reading.ts"
-import type { DuelState, RoundReport, Side, SideReport } from "./types.ts"
+import type { BattleState, RoundReport, Side, SideReport } from "./types.ts"
 import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
 
 /** A building the side can build: its card id, name, cost, what it needs standing, and what it does. */
@@ -129,7 +129,7 @@ export function strengthOf(definition: ContentDef): number {
 const cardOf = (card: PowerCard, number: number): BriefCard => ({ number, id: card.id, name: card.name, does: card.description, rarity: card.rarity })
 
 /** The map as rows of text, drawn as every picture of a battle is (`battlePicture`): the Grid as the round opens. */
-function picture(state: DuelState, registry: (side: Side) => ContentRegistry): string[] {
+function picture(state: BattleState, registry: (side: Side) => ContentRegistry): string[] {
   const things = state.carried === null
     ? (["A", "B"] as const).flatMap((side) => standingOf(state, side).map((structure) => ({ contentId: structure.contentId, player: side, anchor: structure.anchor })))
     : state.carried.entities.map((entity) => ({ contentId: entity.contentId, player: entity.player as Side, anchor: entity.anchor }))
@@ -149,12 +149,12 @@ function reportLine(label: string, report: SideReport): string {
   ].join("\n")
 }
 
-/** The brief side `side` reads before it plans the duel's next round. `strategies`, when given, is what duels have
+/** The brief side `side` reads before it plans the battle's next round. `strategies`, when given, is what battles have
  *  taught so far (`docs/game-design/play-strategies.md`), for a player that reads words: the text carries it. */
-export function briefOf(state: DuelState, side: Side, strategies?: string): Brief {
+export function briefOf(state: BattleState, side: Side, strategies?: string): Brief {
   const enemy = other(side)
-  const army: DuelArmy = armyOf(state, side)
-  const enemyArmy: DuelArmy = armyOf(state, enemy)
+  const army: BattleArmy = armyOf(state, side)
+  const enemyArmy: BattleArmy = armyOf(state, enemy)
   const loadout = loadoutOf(army, state.sides[side])
   const enemyLoadout = loadoutOf(enemyArmy, state.sides[enemy])
   const registryOf = (who: Side): ContentRegistry => (who === side ? loadout.registry : enemyLoadout.registry)

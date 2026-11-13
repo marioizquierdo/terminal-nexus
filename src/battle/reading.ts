@@ -1,10 +1,10 @@
-// What a battle says, read in one place (docs/system-design/duels.md, "Reading a battle"): the score as it stands
+// What a battle says, read in one place (docs/system-design/battles.md, "Reading a battle"): the score as it stands
 // (who leads, and by which rule the battle would be judged if it ended now), and what one Battle Round said beyond its
 // totals — where the fighting was between the two Nexuses, when it began, how near the enemy came, what hit each
 // Nexus and what destroyed each building. The brief prints it for every player (a person, a script, a model), the
-// round report carries it, and a script reads it to plan (`src/duel/players.ts`).
+// round report carries it, and a script reads it to plan (`src/battle/players.ts`).
 //
-// Pure: a reading is a function of the duel's history, or of a round's states and events as the round plays them. It
+// Pure: a reading is a function of the battle's history, or of a round's states and events as the round plays them. It
 // reads the record, never feeds the rules: nothing the kernel decides depends on it.
 
 import { cardTextFor } from "../content/cards.ts"
@@ -61,7 +61,7 @@ export function scoreLine(score: Score, side: Side): string {
 /** What one side's Battle Round said beyond its totals. */
 export type SideReading = Readonly<{
   /** Where the fighting was, on average, in whole percent of the way from this side's Nexus (0) to the enemy's (100): the
-   *  front. A whole number, as everything a duel's state keeps. `null` when no unit was hurt. */
+   *  front. A whole number, as everything a battle's state keeps. `null` when no unit was hurt. */
   front: number | null
   /** The nearest an enemy unit came to this side's Nexus, in tiles (a row counting two); `null` when none stood. */
   closest: number | null

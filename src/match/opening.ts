@@ -43,7 +43,7 @@ const MUSTER_RADIUS = 24
 export type OpeningInput = Readonly<{
   grid: GridTerrain
   registry: ContentRegistry
-  /** Each side's own content, when the sides' differ (a duel's: `PulseContext.sides`). Absent: `registry` for both. */
+  /** Each side's own content, when the sides' differ (a battle's: `PulseContext.sides`). Absent: `registry` for both. */
   sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>
   /** Everything newly standing or committed for this Pulse, the player's and anyone else's. */
   structures: readonly StructurePlacement[]
@@ -52,7 +52,7 @@ export type OpeningInput = Readonly<{
    *  clock and ground items carry on; `setup.seed` is then not read. */
   carried?: MatchState
   /** The buildings, by anchor, that hold their wave this Pulse (Hold production): they open with every wave of the
-   *  Pulse already sent, so they send none. Whichever side's they are (a duel's sides may each hold some); no two
+   *  Pulse already sent, so they send none. Whichever side's they are (a battle's sides may each hold some); no two
    *  buildings share an anchor. Absent: none. */
   held?: readonly Coord[]
   /** The carried buildings, by anchor, whose content the Build Phase changed — an upgrade bought on one, its mode

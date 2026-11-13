@@ -3,7 +3,7 @@
 _A measured experiment for the core loop's open question ([`core-loop.md`](../../milestones/core-loop.md)): what happens to an
 army between Battle Rounds. Evidence for a decision, not the decision; nothing in the game changed._
 
-**How.** The duel gained an experiment-only option, `DuelSetup.recall` (`src/match/recall-variants.ts`; absent, today's
+**How.** The duel gained an experiment-only option, `BattleSetup.recall` (`src/match/recall-variants.ts`; absent, today's
 Recall, so every pinned battle holds): **home** (today: every survivor to its roof or beside its Nexus), **fallback**
 (each survivor steps back up to 12 toward the home Recall would give it, landing exactly there if it is that close) and
 **stay** (survivors stand where the round left them; the Nexus still mends, the clock resets). 3888 duels on the Crossing,

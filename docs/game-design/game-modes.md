@@ -70,7 +70,7 @@ that stays open past its second round, and a few ways to set it up. New effects,
 ### 3.1 What it is
 
 The player picks a map, then a Commander and a controller for each of its slots, a goal and a few modifiers, and plays
-one battle of up to eight rounds. **A Skirmish battle is a duel** ([`duels.md`](../system-design/duels.md)): the player
+one battle of up to eight rounds. **A Skirmish battle is a battle** ([`battles.md`](../system-design/battles.md)): the player
 plans slot p1 on the Build Phase screen, the opponent's script plans slot p2 under the same rules, the two plans are
 revealed together, and the Battle Round plays them. It ends when a Nexus falls, or after the last round on the larger
 share of Nexus health kept.
@@ -80,7 +80,7 @@ that Build Phase (its new buildings and upgrades, its Nexus power, its banner) i
 battle its base stands as it is, its new things marked, to be read before the next plan (Milestone 20's step of
 that name). Guessing what the enemy chose, and answering it a round later, is the bet each round asks for.
 
-What exists already: the duel and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two maps (the Crossing
+What exists already: the battle and its scripts, three Commanders (Vasse, Averno, Dob Hunter), two maps (the Crossing
 and the Pocket), the setup screen (Skirmish on the title menu: New game, Load game), Save game, spectating two scripts,
 playtest notes, and the `skirmish` command, which plays the same battle without a screen. What it lacks is an opponent
 good enough to play.
@@ -121,7 +121,7 @@ others are removed.
 - **More goals**: Economy, Creative, each with its own win.
 - **More modifiers** (no Turrets, a Build Phase clock), the way StarCraft II's co-op mutators keep the same mission fresh.
 - **A pre-battle pick**: choosing a few cards of the army before the battle, as Battle Aces chose eight units.
-- **More than two slots**, or an ally: needs more than two sides in the duel and maps that hold them.
+- **More than two slots**, or an ally: needs more than two sides in the battle and maps that hold them.
 - **More maps**, a random map from a seed, and the player's own start position.
 - **Agent players**: a language model planning a slot each round, blind and at the same time as the player, under the
   same rules, in a style its profile describes (Milestone 21). The game never needs a model to be played.
@@ -140,7 +140,7 @@ opening on a Battle Round written by hand). A save checked in is already a prese
 
 ### 3.4 One battle, on screen or not
 
-**A Skirmish is deterministic** (RULE for the duel it plays, `tests/duel.test.ts`: "a duel resolves the same every run"):
+**A Skirmish is deterministic** (RULE for the battle it plays, `tests/battle.test.ts`: "a battle resolves the same every run"):
 the same save, seed and plans give the same battle, hash for hash, on Node and Bun, whether a person plays it on the
 screen or the `skirmish` command plays it headless. That is what makes it the place every change is tried: headless
 script against script, an agent planning round by round, the playtest pressing keys, an agent's player's diary
@@ -182,7 +182,7 @@ words](../history/feedback/2026-11-11-game-modes.md)): a battle is too long for 
   belong to every mode.
 - **The battle on the Build Phase screen** and its result: the Skirmish plays them (`src/cli/skirmish-play.ts`). The
   run's own code (`src/run/`, its draft popup, its summary, the army files' `run` field, `challenge?seed=<n>`,
-  `duel run`) was removed with the Skirmish milestone's title menu step.
+  `battle run`) was removed with the Skirmish milestone's title menu step.
 
 ## 7. Content every mode can deal
 
@@ -206,7 +206,7 @@ Three rules of thumb (GUIDANCE):
 declines. Nexus powers are almost always strictly good, so a deckbuilder's "adding things can make my draws worse"
 does not hold for them.
 
-Balance is **measured, then judged**: duels and Skirmish battles played by scripts and the driver, then by people
+Balance is **measured, then judged**: battles and Skirmish battles played by scripts and the driver, then by people
 ([`measurement.md`](../system-design/measurement.md)). Metrics diagnose; they do not define fun.
 
 ## 8. References

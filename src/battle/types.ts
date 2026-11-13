@@ -1,21 +1,21 @@
-// A duel: two Commander Armies, one a side, on one map, round after round — each round a Nexus Pulse and a Build Phase
+// A battle: two Commander Armies, one a side, on one map, round after round — each round a Nexus Pulse and a Build Phase
 // for each side, planned blind and revealed together, then a Battle Round between them (milestone 14, the headless
-// duel; the owner, 2026-10-17: "put each commander nexus on one side of the map and play ... script vs script").
+// battle; the owner, 2026-10-17: "put each commander nexus on one side of the map and play ... script vs script").
 //
-// Everything here is plain data, serializable as JSON, so a duel can be saved after any round, a plan can come from a
-// script, a file or a language model, and the same setup and plans resolve the same duel on every machine.
+// Everything here is plain data, serializable as JSON, so a battle can be saved after any round, a plan can come from a
+// script, a file or a language model, and the same setup and plans resolve the same battle on every machine.
 
 import type { Absence } from "../match/commander.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
-import type { DuelMap } from "./maps.ts"
+import type { BattleMap } from "./maps.ts"
 import type { RoundReading } from "./reading.ts"
 
-/** A side of the duel, the state's own `PlayerId`: A starts in the west, B in the east. */
+/** A side of the battle, the state's own `PlayerId`: A starts in the west, B in the east. */
 export type Side = PlayerId
 export const SIDES: readonly Side[] = ["A", "B"]
 
 /**
- * What a side brings to a duel when it is not its Commander's whole army (a roster chosen for it, docs/history/challenge-runs-design.md): the building cards on
+ * What a side brings to a battle when it is not its Commander's whole army (a roster chosen for it, docs/history/challenge-runs-design.md): the building cards on
  * its build menu and the Nexus powers in the pool its Nexus Pulse deals from, by id, and the Doctrines kept from the
  * first round. Everything else the army could field is left out, as if the army never had it.
  */
@@ -25,11 +25,11 @@ export type Roster = Readonly<{
   doctrines: readonly string[]
 }>
 
-/** What a duel is: the map, the gameplay seed, how many rounds at most, how long each Battle Round may last, and the
+/** What a battle is: the map, the gameplay seed, how many rounds at most, how long each Battle Round may last, and the
  *  Commander each side plays; and, for a side that is not its Commander's whole army, its roster. */
-export type DuelSetup = Readonly<{
-  /** A map of `DUEL_MAPS` by id, or one drawn in full (a Skirmish save may carry its own map). */
-  map: string | DuelMap
+export type BattleSetup = Readonly<{
+  /** A map of `BATTLE_MAPS` by id, or one drawn in full (a Skirmish save may carry its own map). */
+  map: string | BattleMap
   seed: number
   rounds: number
   /** Ticks a Battle Round lasts at most (12 a second). */
@@ -41,14 +41,14 @@ export type DuelSetup = Readonly<{
   income?: Readonly<Partial<Record<Side, number>>>
 }>
 
-/** **A duel's Battle Round: 30 seconds**, 360 ticks at 12 a second (the owner, 2026-10-26: "Shorter rounds: 30
- *  seconds"), with the front kept between rounds (`src/match/regroup.ts`). What a duel plays when it is not told
- *  otherwise, a Skirmish's and the measure spec's duels. */
-export const DUEL_PULSE_TICKS = 360
+/** **A battle's Battle Round: 30 seconds**, 360 ticks at 12 a second (the owner, 2026-10-26: "Shorter rounds: 30
+ *  seconds"), with the front kept between rounds (`src/match/regroup.ts`). What a battle plays when it is not told
+ *  otherwise, a Skirmish's and the measure spec's battles. */
+export const BATTLE_ROUND_TICKS = 360
 
-/** **Rounds a duel lasts at most when it is not told otherwise: 8**, a Skirmish's too — measured for 30-second rounds
+/** **Rounds a battle lasts at most when it is not told otherwise: 8**, a Skirmish's too — measured for 30-second rounds
  *  with the front kept, for the retired runs (docs/history/challenge-runs-design.md). */
-export const DUEL_ROUNDS = 8
+export const BATTLE_ROUNDS = 8
 
 /** Where a building should go, as a plan names it: a place relative to the side's own base, or a tile. A named place
  *  is the legal spot nearest it (`zonePoint`, `round.ts`). */
@@ -86,7 +86,7 @@ export const APART_GAP = 10
  * A side's plan for one round, the whole of what a player decides: which card of the Nexus Pulse's hand to keep (1 to
  * the hand's size; 0 or absent keeps none), what to build and where (in order, while credits last), how tight to set
  * the buildings that train units (`formation`; absent, each goes where its placement says), and the stance.
- * `note` is the player's own words on why, kept in the record and shown to nobody else during the duel.
+ * `note` is the player's own words on why, kept in the record and shown to nobody else during the battle.
  */
 export type BuildActions = Readonly<{
   power?: number
@@ -157,7 +157,7 @@ export type SideReport = Readonly<{
   abilities: Readonly<Record<string, number>>
 }>
 
-/** One round of the duel, both sides. */
+/** One round of the battle, both sides. */
 export type RoundReport = Readonly<{
   round: number
   sides: Readonly<Record<Side, SideReport>>
@@ -165,26 +165,26 @@ export type RoundReport = Readonly<{
   ticks: number
   ended: "nexus" | "time"
   /** What the Battle Round said beyond its totals: the front, first contact, the nearest the enemy came, what hit each
-   *  Nexus and destroyed each building (`src/duel/reading.ts`). Absent in a save written before it was read. */
+   *  Nexus and destroyed each building (`src/battle/reading.ts`). Absent in a save written before it was read. */
   reading?: RoundReading
 }>
 
-/** How a duel ended: who won, and how. */
-export type DuelResult = Readonly<{
+/** How a battle ended: who won, and how. */
+export type BattleResult = Readonly<{
   winner: Side | null
   /** "nexus": one side's Nexus fell; "health": the rounds ran out and the healthier Nexus won; "damage": the Nexuses
-   *  were as healthy, and the side that dealt more over the duel won; "draw": neither. */
+   *  were as healthy, and the side that dealt more over the battle won; "draw": neither. */
   by: "nexus" | "health" | "damage" | "draw"
   round: number
 }>
 
-/** A duel between rounds: what it is, the round to play next, what the last round left on the Grid (after the regroup), each
+/** A battle between rounds: what it is, the round to play next, what the last round left on the Grid (after the regroup), each
  *  side, every round so far, and how it ended once it has. */
-export type DuelState = Readonly<{
-  setup: DuelSetup
+export type BattleState = Readonly<{
+  setup: BattleSetup
   round: number
   carried: MatchState | null
   sides: Readonly<Record<Side, SideState>>
   history: readonly RoundReport[]
-  result: DuelResult | null
+  result: BattleResult | null
 }>

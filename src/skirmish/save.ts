@@ -2,18 +2,18 @@
 // Build Phase. One format, written by the game and by a person, read by the `skirmish` command, the game and a test.
 //
 // Pure: it reads and writes text, never a file. The parts a person writes (`setup`, `draft`) say `p1` and `p2`, the
-// slots a player picks; the part the game writes (`state`) is the duel's own state between rounds, `DuelState`, in the
+// slots a player picks; the part the game writes (`state`) is the battle's own state between rounds, `BattleState`, in the
 // engine's words, where side A is `p1` and side B is `p2`. The Grid's ground is never saved (the map has it) and the
 // log never is (the owner, 2026-11-12: "Logging is a separate concern").
 //
 // A save may instead open on a Battle Round written by hand: a **sandbox** (`sandboxes/`), whose `start`
 // says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the kernel from that `start`
-// (`src/skirmish/opening/`), not by the duel, and both its slots plan nothing.
+// (`src/skirmish/opening/`), not by the battle, and both its slots plan nothing.
 
 import type { Coord, TerrainId } from "../grid/types.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
-import type { DuelMap, DuelSetup, DuelState, Side, BuildActions } from "../duel/index.ts"
-import { DUEL_MAPS, DUEL_PULSE_TICKS, DUEL_ROUNDS, duelArmy, duelGrid, newDuel, readBuildActions, scriptedName } from "../duel/index.ts"
+import type { BattleMap, BattleSetup, BattleState, Side, BuildActions } from "../battle/index.ts"
+import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, battleArmy, battleGrid, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
 import { openBattle } from "./opening/open.ts"
 import type { SaveStart } from "./start.ts"
 import { MAP_LEGEND, openingOf, startProblems } from "./start.ts"
@@ -25,7 +25,7 @@ export const SAVE_FORMAT = "terminal-nexus.save/1"
 export const SLOTS = ["p1", "p2"] as const
 export type Slot = (typeof SLOTS)[number]
 
-/** The duel's side a slot plays: p1 is A, in the west; p2 is B, in the east. */
+/** The battle's side a slot plays: p1 is A, in the west; p2 is B, in the east. */
 export const SIDE_OF: Readonly<Record<Slot, Side>> = { p1: "A", p2: "B" }
 export const SLOT_OF: Readonly<Record<Side, Slot>> = { A: "p1", B: "p2" }
 
@@ -44,8 +44,8 @@ export const MODIFIERS = ["fast-rounds", "double-income"] as const
 export type Modifier = (typeof MODIFIERS)[number]
 
 /**
- * A script profile (`players/scripts/<name>.json`): a named scripted player — the script it plays (one of the duel's
- * scripts, `src/duel/players.ts`), a line saying how it plays, and its options. The same scripts the duels and the
+ * A script profile (`players/scripts/<name>.json`): a named scripted player — the script it plays (one of the battle's
+ * scripts, `src/battle/players.ts`), a line saying how it plays, and its options. The same scripts the battles and the
  * measurements play.
  */
 export type ScriptProfile = Readonly<{
@@ -58,7 +58,7 @@ export type ScriptProfile = Readonly<{
  *  (the owner, 2026-11-11): a share is how a side is made richer or poorer, and may be set on any slot. */
 export type SlotOptions = Readonly<{ credits?: number }>
 
-/** The script profiles a run knows, by name. Empty when none were read: the duel's own scripts still play by name. */
+/** The script profiles a run knows, by name. Empty when none were read: the battle's own scripts still play by name. */
 export type Profiles = ReadonlyMap<string, ScriptProfile>
 const NO_PROFILES: Profiles = new Map()
 
@@ -76,7 +76,7 @@ export type Controller = string
 export type SlotSetup = Readonly<{ commander?: string; controller: Controller; options?: SlotOptions }>
 
 /**
- * A map drawn in full inside a save, as `DuelMap` is but by slot. `legend` names the ground each character of the rows
+ * A map drawn in full inside a save, as `BattleMap` is but by slot. `legend` names the ground each character of the rows
  * is (`.` open, `#` rock, `*` a deposit unless given), and `nexus` and `hold` say where each slot's Nexus stands and
  * its troops hold: a sandbox, whose `start` places the Nexuses, may leave them out.
  */
@@ -103,9 +103,9 @@ export type SaveSetup = Readonly<{
   slots: Readonly<Record<Slot, SlotSetup>>
 }>
 
-/** The duel's state between rounds as a save keeps it: `DuelState` without its setup (the save's own) and without the
+/** The battle's state between rounds as a save keeps it: `BattleState` without its setup (the save's own) and without the
  *  Grid's ground (the map's). */
-export type SavedState = Omit<DuelState, "setup" | "carried"> & Readonly<{ carried: Omit<MatchState, "grid"> | null }>
+export type SavedState = Omit<BattleState, "setup" | "carried"> & Readonly<{ carried: Omit<MatchState, "grid"> | null }>
 
 /** A save file. Only `format` and `setup` are needed: a file with only those is a new battle. */
 export type SaveFile = Readonly<{
@@ -132,7 +132,7 @@ export const controllerKind = (controller: Controller): string => controller.spl
 /** The profile or script a `script:` controller names. */
 export const scriptOf = (controller: Controller): string => controller.slice("script:".length) || IDLE_SCRIPT
 
-/** The duel script a `script:` controller plays: its profile's script, or the name itself when it is one. `null` for
+/** The battle script a `script:` controller plays: its profile's script, or the name itself when it is one. `null` for
  *  a name that is neither. */
 export function scriptPlayed(controller: Controller, profiles: Profiles = NO_PROFILES): string | null {
   const name = scriptOf(controller)
@@ -165,10 +165,10 @@ export function controllerProblem(controller: Controller, profiles: Profiles = N
 
 // --- Maps --------------------------------------------------------------------------------------------------------------
 
-/** A save's map as the duel reads it: a built-in one by id, or one drawn in full, its slots turned to sides. */
-export function duelMapOf(map: SaveSetup["map"]): string | DuelMap {
+/** A save's map as the battle reads it: a built-in one by id, or one drawn in full, its slots turned to sides. */
+export function battleMapOf(map: SaveSetup["map"]): string | BattleMap {
   if (typeof map === "string") return map
-  if (map.nexus === undefined || map.hold === undefined) throw new Error(`map "${map.id}" says no Nexus or hold for its slots: a duel needs both`)
+  if (map.nexus === undefined || map.hold === undefined) throw new Error(`map "${map.id}" says no Nexus or hold for its slots: a battle needs both`)
   return {
     id: map.id,
     name: map.name ?? map.id,
@@ -180,22 +180,22 @@ export function duelMapOf(map: SaveSetup["map"]): string | DuelMap {
 }
 
 /** The map's ground, whichever way the save names it. */
-const groundOf = (map: SaveSetup["map"]): ReturnType<typeof duelGrid> => {
-  const duel = duelMapOf(map)
-  return duelGrid(typeof duel === "string" ? (DUEL_MAPS[duel] as DuelMap) : duel)
+const groundOf = (map: SaveSetup["map"]): ReturnType<typeof battleGrid> => {
+  const battle = battleMapOf(map)
+  return battleGrid(typeof battle === "string" ? (BATTLE_MAPS[battle] as BattleMap) : battle)
 }
 
-// --- Between a save and a duel -----------------------------------------------------------------------------------------
+// --- Between a save and a battle -----------------------------------------------------------------------------------------
 
-/** The duel a save's setup describes, its modifiers and the slots' credits shares laid over it. */
-export function duelSetupOf(setup: SaveSetup, profiles: Profiles = NO_PROFILES): DuelSetup {
+/** The battle a save's setup describes, its modifiers and the slots' credits shares laid over it. */
+export function battleSetupOf(setup: SaveSetup, profiles: Profiles = NO_PROFILES): BattleSetup {
   const { p1, p2 } = setup.slots
-  if (p1.commander === undefined || p2.commander === undefined) throw new Error("a slot names no Commander: a sandbox opens from its start, not the duel")
+  if (p1.commander === undefined || p2.commander === undefined) throw new Error("a slot names no Commander: a sandbox opens from its start, not the battle")
   const modifiers = new Set(setup.modifiers)
   const income = (slot: Slot): number => shareOf(setup.slots[slot], profiles) * (modifiers.has("double-income") ? 2 : 1)
   const shares = { A: income("p1"), B: income("p2") }
   return {
-    map: duelMapOf(setup.map),
+    map: battleMapOf(setup.map),
     seed: setup.seed,
     rounds: setup.rounds,
     pulseTicks: modifiers.has("fast-rounds") ? Math.max(1, Math.round(setup.roundTicks / 2)) : setup.roundTicks,
@@ -204,18 +204,18 @@ export function duelSetupOf(setup: SaveSetup, profiles: Profiles = NO_PROFILES):
   }
 }
 
-/** The duel as a save left it: its state with the map's ground put back, or a new duel when it has none. The setup is
+/** The battle as a save left it: its state with the map's ground put back, or a new battle when it has none. The setup is
  *  always the save's own (with `profiles` for the shares), so a changed controller or modifier takes effect from the
  *  next round. */
-export function duelOf(save: SaveFile, profiles: Profiles = NO_PROFILES): DuelState {
-  const setup = duelSetupOf(save.setup, profiles)
-  if (save.state === undefined) return newDuel(setup)
+export function battleOf(save: SaveFile, profiles: Profiles = NO_PROFILES): BattleState {
+  const setup = battleSetupOf(save.setup, profiles)
+  if (save.state === undefined) return beginBattle(setup)
   const { carried, ...rest } = save.state
   return { ...rest, setup, carried: carried === null ? null : { ...carried, grid: groundOf(save.setup.map) } }
 }
 
-/** A save of the duel as it stands, with the slots' controllers and drafts. */
-export function saveOf(setup: SaveSetup, state: DuelState, extra: Readonly<{ name?: string; notes?: string; draft?: SaveFile["draft"] }> = {}): SaveFile {
+/** A save of the battle as it stands, with the slots' controllers and drafts. */
+export function saveOf(setup: SaveSetup, state: BattleState, extra: Readonly<{ name?: string; notes?: string; draft?: SaveFile["draft"] }> = {}): SaveFile {
   const { setup: _setup, carried, ...rest } = state
   const saved: SavedState = { ...rest, carried: carried === null ? null : withoutGround(carried) }
   const draft = extra.draft === undefined || Object.keys(extra.draft).length === 0 ? undefined : extra.draft
@@ -241,8 +241,8 @@ export function newSetup(given: Readonly<Partial<Omit<SaveSetup, "slots">> & { s
     seed: given.seed ?? 1,
     goal: given.goal ?? "elimination",
     modifiers: given.modifiers ?? [],
-    rounds: given.rounds ?? DUEL_ROUNDS,
-    roundTicks: given.roundTicks ?? DUEL_PULSE_TICKS,
+    rounds: given.rounds ?? BATTLE_ROUNDS,
+    roundTicks: given.roundTicks ?? BATTLE_ROUND_TICKS,
     slots: {
       p1: { commander: given.slots?.p1?.commander ?? "vasse", controller: given.slots?.p1?.controller ?? "player" },
       p2: { commander: given.slots?.p2?.commander ?? "dob", controller: given.slots?.p2?.controller ?? "script:balanced" },
@@ -256,9 +256,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> => value !==
 const isWhole = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value)
 
 /** The problems with a map drawn in full. A sandbox's (`started`) may leave out where the Nexuses stand and its
- *  troops hold, and may name ground the duel does not draw. */
+ *  troops hold, and may name ground the battle does not draw. */
 function mapProblems(map: unknown, started: boolean): string[] {
-  if (typeof map === "string") return DUEL_MAPS[map] === undefined ? [`setup.map: no map "${map}" (${Object.keys(DUEL_MAPS).join(", ")}), or draw one in full`] : []
+  if (typeof map === "string") return BATTLE_MAPS[map] === undefined ? [`setup.map: no map "${map}" (${Object.keys(BATTLE_MAPS).join(", ")}), or draw one in full`] : []
   if (!isRecord(map)) return ["setup.map: a map's id, or a map drawn in full ({ id, name, rows, legend?, nexus, hold })"]
   const problems: string[] = []
   if (typeof map["id"] !== "string") problems.push("setup.map.id: a name for the map")
@@ -269,7 +269,7 @@ function mapProblems(map: unknown, started: boolean): string[] {
     if (!isRecord(legend) || !Object.values(legend).every((terrain) => typeof terrain === "string" && terrain.startsWith("terrain."))) {
       problems.push(`setup.map.legend: { "<character>": "terrain.<kind>" }, the ground each character of the rows is`)
     } else if (!started && Object.entries(legend).some(([symbol, terrain]) => MAP_LEGEND[symbol] !== terrain)) {
-      problems.push(`setup.map.legend: a battle the duel plays draws its map in ${Object.keys(MAP_LEGEND).join(" ")}; another legend is for a sandbox's start`)
+      problems.push(`setup.map.legend: a battle the battle plays draws its map in ${Object.keys(MAP_LEGEND).join(" ")}; another legend is for a sandbox's start`)
     }
   }
   for (const part of ["nexus", "hold"] as const) {
@@ -284,7 +284,7 @@ function mapProblems(map: unknown, started: boolean): string[] {
   }
   if (problems.length === 0 && !started) {
     try {
-      duelGrid(duelMapOf(map as SaveMap) as DuelMap)
+      battleGrid(battleMapOf(map as SaveMap) as BattleMap)
     } catch (error) {
       problems.push(`setup.map: ${error instanceof Error ? error.message : String(error)}`)
     }
@@ -302,7 +302,7 @@ function slotProblems(slot: Slot, value: unknown, started: boolean, profiles: Pr
   } else if (typeof commander !== "string") problems.push(`setup.slots.${slot}.commander: a Commander's id (vasse, averno, dob)`)
   else {
     try {
-      duelArmy(commander)
+      battleArmy(commander)
     } catch (error) {
       problems.push(`setup.slots.${slot}.commander: ${error instanceof Error ? error.message : String(error)}`)
     }

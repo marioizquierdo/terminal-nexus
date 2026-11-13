@@ -4,7 +4,7 @@
 
 import { ARMIES } from "../armies/index.ts"
 import type { Profiles } from "../skirmish/save.ts"
-import type { DuelState } from "../duel/index.ts"
+import type { BattleState } from "../battle/index.ts"
 import type { SaveSetup } from "../skirmish/save.ts"
 import type { Tally } from "../skirmish/lines.ts"
 import { counted, emptyTally, slotLabel, standing, tallyLine, winnerOf } from "../skirmish/lines.ts"
@@ -14,7 +14,7 @@ import { keepOf, openSave, playRounds, startingSave, stopRound } from "./skirmis
 
 /** One new battle, as the request sets it up but on `seed` and with these Commanders, played as far as it asks. A
  *  player slot must have build actions for every round played: there is nobody to stop for. */
-function playOne(request: SkirmishRequest, profiles: Profiles, seed: number, commanders: SkirmishRequest["battle"]["commanders"], prefix: string, write: Write): Readonly<{ setup: SaveSetup; state: DuelState }> {
+function playOne(request: SkirmishRequest, profiles: Profiles, seed: number, commanders: SkirmishRequest["battle"]["commanders"], prefix: string, write: Write): Readonly<{ setup: SaveSetup; state: BattleState }> {
   const save = startingSave({ ...request, battle: { ...request.battle, ...(commanders === undefined ? {} : { commanders }) } }, profiles, seed)
   const { setup, state, seated } = openSave(save, request, profiles, write)
   const ran = playRounds(setup, state, seated.builds, stopRound(request.playTo, state), profiles, keepOf(request, { prefix, quiet: true }), write)

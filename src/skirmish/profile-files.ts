@@ -4,7 +4,7 @@
 
 import { existsSync, readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { scriptedName } from "../duel/index.ts"
+import { scriptedName } from "../battle/index.ts"
 import type { Profiles, ScriptProfile } from "./save.ts"
 
 /** Where the profiles that ship with the game are. */
@@ -18,7 +18,7 @@ export function readProfiles(dir: string = PLAYERS_DIR): Profiles {
   for (const file of readdirSync(folder).filter((name) => name.endsWith(".json")).sort()) {
     const name = file.slice(0, -".json".length)
     const value = JSON.parse(readFileSync(join(folder, file), "utf8")) as Partial<ScriptProfile>
-    if (typeof value.script !== "string" || scriptedName(value.script) === undefined) throw new Error(`players/scripts/${file}: "script" must be one of the duel's scripts, not ${JSON.stringify(value.script)}`)
+    if (typeof value.script !== "string" || scriptedName(value.script) === undefined) throw new Error(`players/scripts/${file}: "script" must be one of the battle's scripts, not ${JSON.stringify(value.script)}`)
     if (typeof value.about !== "string") throw new Error(`players/scripts/${file}: "about" says in a line how it plays`)
     const credits = value.options?.credits
     if (credits !== undefined && (typeof credits !== "number" || !(credits > 0))) throw new Error(`players/scripts/${file}: options.credits is a share above 0`)

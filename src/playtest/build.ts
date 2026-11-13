@@ -268,7 +268,7 @@ export class BuildDriver {
       // Three things are drawn at the script's clock. A Battle Round on screen: the frame after a step shows the
       // Pulse as it is that long after it began. The raid's trail, which moves from the first frame that drew
       // it moving, as the live loop moves it (`TrailClock`): the same keys draw it in the same place, and
-      // `wait~MS` steps show it moving. And the survivors' regroup as a duel's round opens (`RegroupClock`), from the
+      // `wait~MS` steps show it moving. And the survivors' regroup as a battle's round opens (`RegroupClock`), from the
       // first frame that showed the round, and the units walking out from under a building just planned (`RoomClock`). Nothing else on this screen depends on time in a scripted playtest.
       const pulse = build.pulseFrame()
       const raid = build.raid()

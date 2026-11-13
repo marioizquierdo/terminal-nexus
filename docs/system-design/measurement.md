@@ -46,7 +46,7 @@ was wiped out, time ran out). For each side:
   (`engage-bench`) belong to [sandboxes and trials](sandboxes.md).
 - **Every other map** under `sandboxes/` on its own seed (the full spec): the rule fixtures and the bench, so a change of
   routes that moves one is seen.
-- **Duels** ([`duels.md`](duels.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
+- **Duels** ([`battles.md`](battles.md)): every ordered pair of the Commanders, mirrors included, so each plays from both
   ends of the map; each scripted player on both sides; on the Crossing, eight rounds at most. Each round records its
   battle, the rarity of every card dealt and of the card kept, and each Nexus's health when the battle ended. A duel
   is played as a Skirmish, by the same steps the `skirmish` command and the game's screen take (a new battle's save,
@@ -71,9 +71,9 @@ while working. Which to play for which kind of change is the `remeasure` skill's
 shape against every shape from both ends and each against a blast, saying how tight each army meets the enemy and who
 wins. The first run is [a report of its own](../history/reports/2026-10-20-formations.md).
 
-**Formations in a duel** (`--formations`, `src/measure/spec.ts`, `tests/duel-formation.test.ts`): the same question
+**Formations in a duel** (`--formations`, `src/measure/spec.ts`, `tests/battle-formation.test.ts`): the same question
 asked of whole duels, where each side's scripted player builds its army's own buildings by a formation
-([`duels.md`](duels.md), formations). `measure run --parts duels --players rush --formations block,apart` plays,
+([`battles.md`](battles.md), formations). `measure run --parts duels --players rush --formations block,apart` plays,
 for each player, every ordered pair of two different formations named (`rush-block` on side A against `rush-apart`
 on side B, then the other way round), over every pair of Commanders and every seed; with one formation named, both
 sides play it. A player named with a formation (`--players rush-block`) plays it on both sides. The summary then says,
@@ -132,7 +132,7 @@ measurement file with no row in the index.
 - **How tight armies meet**: the average spread at first contact, over every battle, and per sandbox; with players
   set against each other (`--formations`), who won between each two and each one's spread.
 - **Scripted players are not players.** A script that attacks every round tells which army spends its curve better
-  when attacking, not which is stronger; model players and Mario's own games say more ([`duels.md`](duels.md)).
+  when attacking, not which is stronger; model players and Mario's own games say more ([`battles.md`](battles.md)).
 - **A battle must be set up as the game sets it up, and a count of waiting counts only units that try.** A measurement
   of how long units stood blocked once said a rule had cut it by nine tenths on three sandboxes: the units had stopped
   trying to move at all. Those sandboxes gave no side a target, and a unit told to march on with nowhere to march stands

@@ -11,7 +11,7 @@ Tools for checking the repository and for seeing a change. Anything they write l
 - `make-example-saves.ts` - writes the example Skirmish saves in `saves/` from their setups and the rounds scripts played to reach them; `node scripts/make-example-saves.ts` after a rule or content change, and `tests/skirmish-save.test.ts` fails when one is not as the game writes it.
 
 **Measuring a tick**
-- `profile-routes.ts` - plays every map and a run of duels, prints a fingerprint of each battle's events and last state and what a tick cost by how many entities stood in it; `node scripts/profile-routes.ts --duels 3 --maps route`, `--out <file>` to diff the fingerprints before and after a change that must move no outcome, `--detail` to time each route question.
+- `profile-routes.ts` - plays every map and a run of battles, prints a fingerprint of each battle's events and last state and what a tick cost by how many entities stood in it; `node scripts/profile-routes.ts --battles 3 --maps route`, `--out <file>` to diff the fingerprints before and after a change that must move no outcome, `--detail` to time each route question.
 
 **Seeing a change**
 - `playtest.mjs` - press keys on the Build Phase without a terminal; text, PNGs and a GIF in `.playtest/`; `--keys "Down Space"`.

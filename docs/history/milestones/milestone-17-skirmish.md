@@ -190,7 +190,7 @@ for the concept from the files, the documents and the code.
       sandbox starts from (`src/skirmish/opening/`). `skirmish --load <sandbox> --play-to next` plays the same
       Battle Round and prints `grid`'s report.
 - [x] The duel maps as files in `maps/` (`crossing.map.json`, `pocket.map.json`, the shape a save draws a map in), read by
-      `src/duel/maps.ts` and offered by id.
+      `src/battle/maps.ts` and offered by id.
 - [x] **`duel` folded into `skirmish`** ([his words](../feedback/2026-11-12-skirmish-command.md): "there's no
       need to have two commands for the same thing"): every pairing of Commanders from both sides over seeds
       (`--commanders`), and a finished battle's every report on loading it. The command's file is its manual and its options alone; the work is in its modules, the

@@ -1,16 +1,16 @@
-// A battle drawn as text (docs/system-design/duels.md, "Reading a battle"): the map's ground, every building in its
+// A battle drawn as text (docs/system-design/battles.md, "Reading a battle"): the map's ground, every building in its
 // art, and every unit by the first letter of its name — p1's (side A's) in lower case, p2's (side B's) in upper case.
 // A unit standing on a building's roof is not drawn over the building's art; the roofs' units are counted under the
 // picture instead. The brief draws the Grid between rounds with it, and `skirmish --show` draws a Battle Round at the
 // ticks asked for.
 //
-// Presentation of the duel: pure, and read by nothing the rules decide.
+// Presentation of the battle: pure, and read by nothing the rules decide.
 
 import { artFor } from "../content/art.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { tilesOf } from "../grid/coords.ts"
 import type { Coord } from "../grid/types.ts"
-import type { DuelMap } from "./maps.ts"
+import type { BattleMap } from "./maps.ts"
 import type { Side } from "./types.ts"
 
 /** A thing on the Grid as the picture needs it: what it is, whose, where, and (for a unit) its health. */
@@ -19,7 +19,7 @@ export type Pictured = Readonly<{ contentId: string; player: Side; anchor: Coord
 const letter = (contentId: string): string => contentId.slice(contentId.lastIndexOf(".") + 1, contentId.lastIndexOf(".") + 2)
 
 /** **The battle as rows of text**: a header of column tens, then each row numbered; and under it, the units on roofs. */
-export function battlePicture(map: DuelMap, things: readonly Pictured[], registry: (side: Side) => ContentRegistry): string[] {
+export function battlePicture(map: BattleMap, things: readonly Pictured[], registry: (side: Side) => ContentRegistry): string[] {
   const width = map.rows[0]?.length ?? 0
   const height = map.rows.length
   const rows = map.rows.map((row) => [...row])

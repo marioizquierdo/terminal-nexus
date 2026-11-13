@@ -70,8 +70,8 @@ what it does is worked out fresh every tick from what stands on the Grid.
 ## Where an army goes — the enemy Nexus
 
 RULE (`headsForNexus`, `src/pulse/perception.ts`; a side's target, `src/pulse/target.ts`). **An army's goal is the
-enemy's Grid Nexus.** A mission may name a target instead, a region the side heads for and holds; a duel's side
-may hold in front of its own Nexus (the duel's stance). The stance and banners in the Build Phase come next (below).
+enemy's Grid Nexus.** A mission may name a target instead, a region the side heads for and holds; a battle's side
+may hold in front of its own Nexus (the battle's stance). The stance and banners in the Build Phase come next (below).
 
 **How the way is found: a distance field, not a path.** The game does not search a path for each unit. It works out a
 number on every tile saying how far it is, walking, to the goal, shared by every unit going there; a unit takes the step
@@ -94,7 +94,7 @@ below.
 ## Banners — prototype
 
 The owner, 2026-10-26, in the core loop ([`core-loop.md`](../milestones/core-loop.md)): orders grow from none, to a
-stance, to a banner, to two banners. **The stance** is whether the army attacks or holds this round (`attack`, `hold`, in a duel's
+stance, to a banner, to two banners. **The stance** is whether the army attacks or holds this round (`attack`, `hold`, in a battle's
 build actions); a banner has its own stance, aggressive or defensive. **A banner** is placed on the map, aggressive or defensive; by default on the
 enemy Nexus, aggressive. Aggressive elsewhere, the army goes there first and then on to the enemy Nexus, so it sets a
 route; defensive, it holds the line there. **Two banners**: the Commander follows the main one, and a building can be
@@ -196,7 +196,7 @@ priority list front to back.
 **Flankers go behind the enemy's line.** A flanker chooses first among the enemies in its vision that are not melee — a
 shooter, another flanker, a building that shoots — the nearest it can walk to; with none, it chooses as every unit
 does. The bomber keeps its aim at the thickest crowd. **A flanker is a special unit, not an army's mainstay**: with
-every runner of Dob's army a flanker his front was empty and his Nexus fell in round 1 or 2 in 20 of 24 rush duels,
+every runner of Dob's army a flanker his front was empty and his Nexus fell in round 1 or 2 in 20 of 24 rush battles,
 against 1 of 24 with the runner melee, where it now is.
 
 ## Targeting and attacking
@@ -245,10 +245,10 @@ times its sight, for the nearest it can walk to: the other lane, the far side of
 keeps its choice and **stands as near as it can get**, saying it has no route, ready to step in when a tile frees. It
 does not march on past the fight. Two versions that did, at once and after a second, were measured against this and
 came out the same on every measure (speed, strikes, stalls), so the rule with fewer parts stays. Against holding the
-unreachable enemy for 2½ seconds, this took no-route standing down by 28% on the Crossing's duels and 69% on the open
+unreachable enemy for 2½ seconds, this took no-route standing down by 28% on the Crossing's battles and 69% on the open
 Pocket's, and the blocked unit-ticks of a fair battle through a narrow pass by 11% to 19%.
 
-**Why units used to change target so often** (12 scripted duels on the Crossing: a trooper held a living target a median
+**Why units used to change target so often** (12 scripted battles on the Crossing: a trooper held a living target a median
 of 4 ticks, and changed away from a still-living one some 3,400 times). Three causes, all in perception: a unit chose
 afresh every tick, so the nearest enemy by range (a marksman's, the Nexus's gun) or by walk (a melee unit's) replaced
 the one it was already striking or walking to; a melee unit at the edge of its reach dropped a candidate whose walk was
@@ -324,7 +324,7 @@ The owner, 2026-10-27: "no A*, i agree, using each tile's distance is much bette
 It is the "flow field" of crowd games (Supreme Commander 2 made it known) and the "Dijkstra map" of roguelikes. It is
 worked out lazily, from the goal outward, only as far as the furthest unit asking needs, with a bucket for each
 distance since steps cost small whole numbers, and it says at once, from the patch of ground a unit stands on, whether
-it can reach the goal at all. About 200 units and buildings in an eighth-round duel cost about 5½ ms a tick
+it can reach the goal at all. About 200 units and buildings in an eighth-round battle cost about 5½ ms a tick
 ([`scripts/profile-routes.ts`](../../scripts/profile-routes.ts), 2026-10-21); the same script fingerprints every battle
 it plays, so a change meant to make routes faster is proved to change no outcome.
 
@@ -435,7 +435,7 @@ try, none of it built:
   least never lies.
 - **The draw at a tie**: two equally good steps are broken by facing and then the seeded stream, which is fair but can
   look like a unit hesitating.
-- **The queue behind a fight.** In rounds 5 to 8 of scripted duels on the Crossing about four units a round stand
+- **The queue behind a fight.** In rounds 5 to 8 of scripted battles on the Crossing about four units a round stand
   blocked for five seconds or more (against none in rounds 1 to 4, and about one in ten rounds on the open Pocket).
   Nearly all are melee troops blocked by troops of their own side, behind a front that is striking, and the head of the
   queue is usually a unit with no route to anything. It is mostly geometry: a one-tile enemy has at most four faces to
@@ -463,7 +463,7 @@ try, none of it built:
 
 ## Strategies
 
-What a player (and a model playing a duel) can do on purpose with these rules. The measured advice is in
+What a player (and a model playing a battle) can do on purpose with these rules. The measured advice is in
 [`play-strategies.md`](../game-design/play-strategies.md); this is what the rules make possible.
 
 - **Bait.** A cheap building within 6 columns of the enemy's way pulls its front off the march to fight there, under
@@ -476,7 +476,7 @@ What a player (and a model playing a duel) can do on purpose with these rules. T
   chose where they come through.
 - **Place production for the trade-off.** Behind the Nexus is safe and slow to reinforce the front; forward reinforces
   fast and is razed.
-- **Spread against area damage, block against a line clash** (measured in duels).
+- **Spread against area damage, block against a line clash** (measured in battles).
 - **Read the regroup.** The Build Phase opens on the front the next round starts from: build where it is thin, and place a
   building on the enemy's troops to push them back.
 - **Chaff and flankers.** Nearest-first means cheap fast units soak the first volleys; flankers go round them for the
@@ -493,5 +493,5 @@ What a player (and a model playing a duel) can do on purpose with these rules. T
   battles, by 23 points) and everywhere else but the one-tile door; eighteen flyers beat it everywhere by 58 to 66
   points. Nothing yet holds air back where the ground is tight; whether something should is a question for the roster
   ([the register](../milestones/open-questions.md)).
-- **Hold** (duels today, the stance next): a defender that holds in front of its Nexus, under its guns, lets the enemy
+- **Hold** (battles today, the stance next): a defender that holds in front of its Nexus, under its guns, lets the enemy
   come to it.

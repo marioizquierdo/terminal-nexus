@@ -11,7 +11,7 @@ Where each piece is, so this page stays the procedure:
   (`npm run skirmish -- --help`): every option, what it refuses, the exit codes.
 - **How each kind of test uses it**, with the commands and the task to give a model agent:
   [`sandboxes.md`](../../../docs/system-design/sandboxes.md), testing through Skirmishes.
-- **The rules, the brief, the build actions, formations and the biases**: [`duels.md`](../../../docs/system-design/duels.md).
+- **The rules, the brief, the build actions, formations and the biases**: [`battles.md`](../../../docs/system-design/battles.md).
 - **The save file**: [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md).
 
 ## 1. Every pairing first (seconds, free)
@@ -38,12 +38,12 @@ said: the front (0% at your Nexus, 100% at theirs), first contact, the nearest t
 destroyed your buildings and by what, and what your own blasts cost you. Each round's report prints both sides' in a
 line. `--show` draws the Battle Round as text at the ticks you name, after the round's report: load any kept round
 and play it again to see a moment, nothing saved over without `--save`. What the battle says is read in one place
-(`src/duel/reading.ts`, [`duels.md`](../../../docs/system-design/duels.md), reading a battle); a reading a test needs is
+(`src/battle/reading.ts`, [`battles.md`](../../../docs/system-design/battles.md), reading a battle); a reading a test needs is
 added there, and the brief and every script get it at once. `script:reader` plays from it, a better sparring partner
 than the fixed scripts.
 
 Formations (`rush-block` against `rush-apart`) and the power curve over many battles are the measurement's
-(`node bin/measure.ts run --spec quick --parts duels --players rush --formations block,apart`, the `remeasure` skill).
+(`node bin/measure.ts run --spec quick --parts battles --players rush --formations block,apart`, the `remeasure` skill).
 
 ## 3. Model against model (some 75 thousand small-model tokens a slot for six rounds)
 

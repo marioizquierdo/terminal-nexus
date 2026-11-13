@@ -147,7 +147,7 @@
       "requires": ["den"],
       "spawns": {"unit": "unit.ravel.bomber", "perWave": 2, "waves": 1, "secondsBetween": 10},
       "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
-      "notes": "Two bombers a wave once a Den stands, for a little more than a Den. A bomber has no weapon, so the duel's measure of strength (health times damage a second) counts it as none and no scripted player picks it yet: a player chooses it against a tight army. First numbers, to be measured."
+      "notes": "Two bombers a wave once a Den stands, for a little more than a Den. A bomber has no weapon, so the battle's measure of strength (health times damage a second) counts it as none and no scripted player picks it yet: a player chooses it against a tight army. First numbers, to be measured."
     }
   ],
   "powers": [

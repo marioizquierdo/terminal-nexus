@@ -24,7 +24,7 @@ Not started; each waits for Mario's word, and the order is a first guess.
 - [ ] A group schedule as mission data: what spawns, where and when, growing round by round, the same every time from the
       seed; validated by name like every other mission shape.
 - [ ] A mission with no enemy Nexus that ends when the player's falls; its rounds are not capped.
-- [ ] Measured: the duel scripts hold against the schedule over seeds, so its pace (fifteen to twenty-five minutes for a
+- [ ] Measured: the battle scripts hold against the schedule over seeds, so its pace (fifteen to twenty-five minutes for a
       typical stand) is set by numbers before a person plays it.
 
 ### Step 18B — The score

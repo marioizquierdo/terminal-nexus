@@ -1,6 +1,6 @@
 // What battles have taught so far (`docs/game-design/play-strategies.md`), for the brief a player that reads words is
 // handed: the `skirmish` command prints it with every brief (`src/cli/skirmish-battle.ts`). A file read, so it lives
-// here rather than beside the brief itself (`src/duel/brief.ts`), which is pure.
+// here rather than beside the brief itself (`src/battle/brief.ts`), which is pure.
 
 import { existsSync, readFileSync } from "node:fs"
 

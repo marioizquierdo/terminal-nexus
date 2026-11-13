@@ -1,8 +1,8 @@
-// The maps a duel is played on: two Grid Nexuses, one a side, and the ground between them. Written as rows of text so
+// The maps a battle is played on: two Grid Nexuses, one a side, and the ground between them. Written as rows of text so
 // a person, a test and a language model all read the same picture: `.` open ground, `#` rock, `*` a deposit.
 //
-// A duel map says where each side's Nexus stands (the side's own faction Nexus is set down there: a Citizen's or a
-// Ravel's, `src/duel/sides.ts`) and where each side's troops stand when they hold rather than attack. Symmetric by
+// A battle map says where each side's Nexus stands (the side's own faction Nexus is set down there: a Citizen's or a
+// Ravel's, `src/battle/sides.ts`) and where each side's troops stand when they hold rather than attack. Symmetric by
 // design, west against east, so neither side's ground is the better one.
 
 import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
@@ -11,9 +11,9 @@ import type { Side } from "./types.ts"
 import crossing from "../../maps/crossing.map.json" with { type: "json" }
 import pocket from "../../maps/pocket.map.json" with { type: "json" }
 
-/** A duel map: its picture, where each Nexus stands (the anchor of its footprint, its north-west tile), and where a
+/** A battle map: its picture, where each Nexus stands (the anchor of its footprint, its north-west tile), and where a
  *  side holding its ground gathers. */
-export type DuelMap = Readonly<{
+export type BattleMap = Readonly<{
   id: string
   name: string
   notes: string
@@ -24,16 +24,16 @@ export type DuelMap = Readonly<{
 
 const TERRAIN: Readonly<Record<string, TerrainId>> = { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" }
 
-/** The Grid of a duel map's rows. Throws for a row of another width or a character it does not know. */
-export function duelGrid(map: DuelMap): GridTerrain {
+/** The Grid of a battle map's rows. Throws for a row of another width or a character it does not know. */
+export function battleGrid(map: BattleMap): GridTerrain {
   const height = map.rows.length
   const width = map.rows[0]?.length ?? 0
   const tiles: TerrainId[] = []
   map.rows.forEach((row, y) => {
-    if (row.length !== width) throw new Error(`duel map "${map.id}": row ${y} is ${row.length} wide, not ${width}`)
+    if (row.length !== width) throw new Error(`battle map "${map.id}": row ${y} is ${row.length} wide, not ${width}`)
     for (const character of row) {
       const terrain = TERRAIN[character]
-      if (terrain === undefined) throw new Error(`duel map "${map.id}": "${character}" in row ${y} is not ground the map knows`)
+      if (terrain === undefined) throw new Error(`battle map "${map.id}": "${character}" in row ${y} is not ground the map knows`)
       tiles.push(terrain)
     }
   })
@@ -51,8 +51,8 @@ type MapFile = Readonly<{
   hold: Readonly<Record<"p1" | "p2", TargetArea>>
 }>
 
-/** A map file as the duel reads it, by side. */
-const fromFile = (file: MapFile): DuelMap => ({
+/** A map file as the battle reads it, by side. */
+const fromFile = (file: MapFile): BattleMap => ({
   id: file.id,
   name: file.name,
   notes: file.notes,
@@ -67,4 +67,4 @@ const fromFile = (file: MapFile): DuelMap => ({
  * gap; and **the Pocket**, 22 by 12, the two Nexuses ten columns apart, so their build ranges meet in the middle from
  * the first round: a quick battle, and where a test puts two sides that both reach the same ground.
  */
-export const DUEL_MAPS: Readonly<Record<string, DuelMap>> = { crossing: fromFile(crossing), pocket: fromFile(pocket) }
+export const BATTLE_MAPS: Readonly<Record<string, BattleMap>> = { crossing: fromFile(crossing), pocket: fromFile(pocket) }

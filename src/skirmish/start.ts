@@ -5,11 +5,11 @@
 //
 // Pure: it turns a save's text, already read, into the opening the kernel starts from (`BattleOpening`,
 // `src/skirmish/opening/`), and names what is wrong with a `start`. It imports the save's types only, so the browser
-// page can open a sandbox without the duel.
+// page can open a sandbox without the battle.
 
 import type { Coord, TerrainId } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
-import { DUEL_MAPS } from "../duel/maps.ts"
+import { BATTLE_MAPS } from "../battle/maps.ts"
 import type { BattleOpening, PlacementBlock, PlacementEntry } from "./opening/types.ts"
 import type { SaveFile, SaveMap, Slot } from "./save.ts"
 
@@ -82,7 +82,7 @@ export function startProblems(start: unknown): string[] {
 /** A map's rows and legend, whether the save names a built-in map or draws one. */
 function groundOf(map: string | SaveMap): Readonly<{ id: string; name: string; rows: readonly string[]; legend: Readonly<Record<string, TerrainId>> }> {
   if (typeof map !== "string") return { id: map.id, name: map.name ?? map.id, rows: map.rows, legend: map.legend ?? MAP_LEGEND }
-  const known = DUEL_MAPS[map]
+  const known = BATTLE_MAPS[map]
   if (known === undefined) throw new Error(`no map "${map}"`)
   return { id: known.id, name: known.name, rows: known.rows, legend: MAP_LEGEND }
 }
@@ -94,7 +94,7 @@ function groundOf(map: string | SaveMap): Readonly<{ id: string; name: string; r
  */
 export function openingOf(save: SaveFile): BattleOpening {
   const start = save.start
-  if (start === undefined) throw new Error("this save has no start: it opens on a Build Phase, played by the duel")
+  if (start === undefined) throw new Error("this save has no start: it opens on a Build Phase, played by the battle")
   const ground = groundOf(save.setup.map)
   const placements: Partial<Record<PlayerId, PlacementBlock>> = {}
   const targets: Partial<Record<PlayerId, TargetArea>> = {}

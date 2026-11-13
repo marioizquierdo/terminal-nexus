@@ -4,7 +4,7 @@ _How to add a Commander, a faction or a story: the files, every field, the code 
 
 The design of a Commander Army — what it is for, the power curve it is built against, what makes two Commanders
 read apart — is [`commander-armies.md`](../game-design/commander-armies.md). This page is how one is written down.
-The duel, where armies are played against each other, is [`duels.md`](duels.md).
+The battle, where armies are played against each other, is [`battles.md`](battles.md).
 
 ## 1. The pieces
 
@@ -100,7 +100,7 @@ range) held to the same rule; `roundsOut` only on a Commander; a structure never
 | Field | What it is |
 | --- | --- |
 | `lean` | One or two of `units`, `nexus`, `structures`, `commander`, `economy`: what the build leans on (commander-armies.md). |
-| `start` | Her starting package: units that walk out with her where a mode scripts none (a duel's first round). |
+| `start` | Her starting package: units that walk out with her where a mode scripts none (a battle's first round). |
 | `schedule` | How her army bends the Nexus Pulse, in every mode (Averno's: a card from the Ravel Nexus in rounds 2 and 4). A level's own schedule replaces it. |
 | `barks`, `portrait`, `portraitFalls` | Her voice in battle and her face (`src/armies/barks.ts`, `src/view/commander-moments.ts`), checked to fit the panel at 80 x 24. |
 
@@ -139,7 +139,7 @@ most four upgrades and modes. One card gives a structure its actions.
 A power is a name, one line of description, a rarity and a role for the dealer, and **one effect**. A power with `"doctrine": true` is a **Doctrine**, a standing order: the Nexus Pulse never deals it, the retired run's draft offered it, and once taken it is kept from the first round of every battle of the run (so it cannot also be offered beside every hand, from another Nexus, an upgrade, or dealt by chance or requirements). `tier` (1 to 3, default 1) is the earliest tier of a run it is offered in. Each kind of
 effect is one entry of `EFFECTS` (`src/armies/effects.ts`) that says everything about it: its JSON shape, what the
 loader refuses, what keeping it changes in a side's loadout, whether it stays kept, and the credits it adds. **No
-reader branches on an effect's kind**: a mission keeps a power with `applyEffect`, the duel with the same function.
+reader branches on an effect's kind**: a mission keeps a power with `applyEffect`, the battle with the same function.
 
 | Kind | Holds | Keeping it |
 | --- | --- | --- |
@@ -200,7 +200,7 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 
 ## 6. Conventions
 
-- **One table per open set.** Effect kinds (`EFFECTS`), ability kinds (`ABILITIES`), duel maps (`DUEL_MAPS`), scripted
+- **One table per open set.** Effect kinds (`EFFECTS`), ability kinds (`ABILITIES`), battle maps (`BATTLE_MAPS`), scripted
   players (`SCRIPTED`), the shipped files (`src/shipped.ts`). A new member is a new entry; code that reads them asks
   the entry, never `if (kind === ...)`. A branch on a kind outside its table is a bug to fix.
 - **Data first.** A Commander, her units, her buildings and her powers are JSON. TypeScript is for a new *kind* of
@@ -209,7 +209,7 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
   by path. A rule that is only written here is a rule to move into the loader.
 - **Each side owns its content.** What a side's kept powers change is that side's alone (`PulseContext.sides`); two
   armies of one faction never share a change.
-- **Pure.** The loader, the effects, the abilities and the duel's rules read no clock, no disk and no randomness but
+- **Pure.** The loader, the effects, the abilities and the battle's rules read no clock, no disk and no randomness but
   the battle's seeded stream.
 - **Numbers carry their reason.** A content entry's `notes` say why each number is what it is, and that it is a first
   guess until it is measured.
@@ -228,6 +228,6 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 ## 8. What a modder can and cannot do today
 
 Can, with data alone: new units and structures, Commanders, factions, building cards, powers of the kinds above,
-stories and missions. Needs code: a new kind of ability or effect, a new map, a new duel player. Cannot: load files
+stories and missions. Needs code: a new kind of ability or effect, a new map, a new battle player. Cannot: load files
 from outside the repository (no mod loader, by rule), change the kernel's phases, or read presentation from the
 rules.

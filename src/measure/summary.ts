@@ -3,7 +3,7 @@
 // lead predicted the winner, how long units stood blocked and how tight armies met — and how each Story level
 // played by each plan. Lines of text, so the command prints them and a report quotes them.
 
-import type { Side } from "../duel/index.ts"
+import type { Side } from "../battle/index.ts"
 import type { BattleRecord } from "./battle.ts"
 import type { Measurement } from "./spec.ts"
 import type { DuelMeasure } from "./suites.ts"

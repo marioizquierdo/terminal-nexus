@@ -26,9 +26,9 @@ the tool measures a few general things, and a session that needs another measure
 | How does the power curve play? | `measure run --spec quick` or `full`, `measure compare` ([`measurement.md`](measurement.md), the [`remeasure` skill](../../.claude/skills/remeasure/SKILL.md)) |
 | Must this stay true? | a rule's sandbox and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |
 
-Trials ask about troops: how units move, choose, arrange themselves and fight, on ground chosen to show it. Duels and
+Trials ask about troops: how units move, choose, arrange themselves and fight, on ground chosen to show it. Battles and
 measurements ask about the game: what Build Phase choices do over rounds. A change to troops starts with trials and
-ends with whatever Skirmishes and duels its `remeasure` row asks for.
+ends with whatever Skirmishes and battles its `remeasure` row asks for.
 
 ## 2. The loop
 
@@ -50,7 +50,7 @@ Recipes by kind of change, as starting points:
 - **A new unit**: put it in an army, `--army-a trooper:6,<unit>:6` or `--set A.marksman=<unit>`; does its army win, and
   do its units ever reach the fight (struck, first strike)?
 - **A targeting or movement rule**: the bench `--against HEAD --profile`; engagement and cost first, outcomes should
-  move only on purpose; then the quick spec's duels.
+  move only on purpose; then the quick spec's battles.
 - **How an army arranges itself**: mixed armies in several orders with `--army-a`; when the back of the army first
   strikes; `measure formations` for armies leaving their buildings.
 - **A kind of ground**: `--terrain "#=scrub"` on the bench, or a new map of the shape.
@@ -61,7 +61,7 @@ Recipes by kind of change, as starting points:
 ```text
 sandbox ─variant─▶ map for one battle ──engine──▶ states and events ──record──▶ battle record
  (sandboxes/) (pure) (shuffled, mirrored)  (kernel and content,        (BattleRecorder:      │
-                                                this build or another)      the same for duels)  │
+                                                this build or another)      the same for battles)  │
                                                          ▲                                       ▼
                                                      meter: cost                  cells (map × variant): stats, marks
                                                   (clock, route work)                 │                │
@@ -75,7 +75,7 @@ sandbox ─variant─▶ map for one battle ──engine──▶ states and eve
 | Variant | `src/skirmish/opening/variant.ts` | a pure function of a map and its content to another: a unit, an army, a tune, a terrain, a target; and `shuffled` and `mirrored`, which make each seed's opening |
 | Trial | `src/measure/trial.ts` | the spec (maps, seeds, variants, expectations), its runs in order, each played by an `Engine` and timed by a `Meter`, both passed in |
 | Engine | `src/cli/engine.ts` | the kernel, content and opening (`openBattle`) of a build's folder: this one, or another commit's checked out beside it |
-| Record | `src/measure/battle.ts` | one battle in numbers, built from its states and events alone, the same for a trial, a duel and a mission |
+| Record | `src/measure/battle.ts` | one battle in numbers, built from its states and events alone, the same for a trial, a battle and a mission |
 | Cells | `src/measure/trial-cells.ts` | each map and variant's battles summed up: shares with intervals, medians, whether two differ beyond chance, expectations, battles worth watching |
 | Summary | `src/measure/trial-summary.ts` | the printed tables and the command that replays a battle |
 | Command | `src/cli/trial.ts`, `src/cli/trial-worker.ts`, `src/cli/profile.ts` | trial files and options, processes, `--against`, the clock and route counts |
@@ -90,7 +90,7 @@ machine, in one process or many, which is what lets two builds be compared at al
 - **A measure** (a count a battle should report): add an optional field to `SideRecord` and count it in
   `BattleRecorder.observe` from the tick's events and state (`src/measure/battle.ts`); sum it in `armyCell`
   (`trial-cells.ts`); give it a name in `TRIAL_MEASURES` if a trial may expect it; add a column in `trialLines`
-  (`trial-summary.ts`); and, if duels should show it, a phrase in `src/measure/summary.ts`. A record written before has
+  (`trial-summary.ts`); and, if battles should show it, a phrase in `src/measure/summary.ts`. A record written before has
   no such field, so read it as absent, not zero. If no event says what you need, an event is declared in the kernel
   first (`src/events/types.ts`): that is a kernel change, with its own tests.
 - **A variant** (another way to change a map): a pure function in `variant.ts`, a field of `Variant` applied in
@@ -178,9 +178,9 @@ engage-gap2-melee-vs-mix
   after; the maps, trial and record are the working tree's, so both are asked the same question. `--against HEAD`
   compares uncommitted work with the last commit, `--against origin/main` a branch with main.
 - **`--out` then `--baseline`**: the same by a file written before, when the change spans commits.
-- **Fingerprints** (`scripts/profile-routes.ts --out`): every map's and some duels' event and state hashes; a refactor's
+- **Fingerprints** (`scripts/profile-routes.ts --out`): every map's and some battles' event and state hashes; a refactor's
   proof is no line differing. `--detail` says where route time went, question by question.
-- **Duels and missions**: `measure run ... --out`, then `measure compare`.
+- **Battles and missions**: `measure run ... --out`, then `measure compare`.
 
 ## 8. The sandboxes
 
@@ -208,7 +208,7 @@ Nexus, and checked even before anything is read on it: the same army on both sid
 the `skirmish` command and the game's screen open a battle by the same steps and play every round through `playNext`,
 so the same save, seed and build actions give the same battle, hash for hash, on Node and Bun. The command's manual is the
 comment it opens with ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), `npm run skirmish -- --help`); this section
-is how each kind of test uses it, cheapest first. The duel it plays, the brief and the build actions are [`duels.md`](duels.md);
+is how each kind of test uses it, cheapest first. The battle it plays, the brief and the build actions are [`battles.md`](battles.md);
 the save file is [`skirmish-saves.md`](skirmish-saves.md).
 
 **A rule or a unit, in one Battle Round**: a sandbox (section 8) plays its round and prints `grid`'s report.
@@ -306,4 +306,4 @@ It does not show balance. Read the numbers for direction, the reports for why, a
 - **Read the whole row.** Better metrics find more problems: the first count of target switches found units at a narrow
   pass changing target every tick, at four times the route work, while their win rate gave no sign of it.
 - **Watch one battle** before believing a number that moved a lot.
-- **Scripted armies are not players**, and twelve units a side are not forty: confirm on duels and in the owner's games.
+- **Scripted armies are not players**, and twelve units a side are not forty: confirm on battles and in the owner's games.

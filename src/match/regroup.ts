@@ -1,4 +1,4 @@
-// The regroup — what every survivor does between two Battle Rounds, in a story's mission, a duel and a run alike
+// The regroup — what every survivor does between two Battle Rounds, in a story's mission, a battle and a run alike
 // (the owner, 2026-10-26: "Keep units on the map after a fight. If they are in battle, they stop targeting, move back
 // for 2 seconds, and self-arrange in formation for 6 seconds (10 seconds total)"; and, the same day, "no more sending
 // troops back to their origin base anywhere": it replaced Recall, which walked every survivor home onto its roof).
@@ -6,7 +6,7 @@
 //
 // Like Recall was, it is a pure function of the state a Battle Round ended in and the content, worked out **beside the
 // kernel's tick and never inside it** — `stepTick` does not call it, no Pulse's hash moves, and nothing the player
-// does in the Build Phase reaches it — so a scripted battle and a duel play the same on every machine. It returns the
+// does in the Build Phase reaches it — so a scripted battle and a battle play the same on every machine. It returns the
 // state the next round opens from and every survivor's walk, tick by tick, which the Build Phase plays over its first
 // ten seconds (presentation only: the state is already where the walk ends).
 //

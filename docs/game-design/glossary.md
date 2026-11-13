@@ -41,8 +41,8 @@ testing and measurement, settings and feedback, the screen, effects, planning, t
 - **goal** — what wins. **Elimination**: destroy the enemy Nexus, or have the healthier one after the last round. The
   only goal built so far ([`skirmish-saves.md`](../system-design/skirmish-saves.md)).
 - **score** — who leads, and on what, if the battle ended now: Nexus health by share, then the damage dealt over the
-  battle. The brief says it every round (`scoreOf`, [`duels.md`](../system-design/duels.md), reading a battle).
-- **reading** — what a Battle Round said beyond its totals, read in one place (`src/duel/reading.ts`): the **front**
+  battle. The brief says it every round (`scoreOf`, [`battles.md`](../system-design/battles.md), reading a battle).
+- **reading** — what a Battle Round said beyond its totals, read in one place (`src/battle/reading.ts`): the **front**
   (where the fighting was, 0% at your Nexus and 100% at theirs: the map's tempo), **first contact** (the tick units first
   hurt each other), the nearest an enemy came to each Nexus, what hit each Nexus, each building lost and by what, and
   what a side's own blasts cost it. The brief, the round's report and the scripts read it.
@@ -223,7 +223,7 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 ## A Skirmish
 
 How a Skirmish is set up, saved and opened is [`skirmish-saves.md`](../system-design/skirmish-saves.md); the battle it
-plays, [`duels.md`](../system-design/duels.md).
+plays, [`battles.md`](../system-design/battles.md).
 
 - **slot** — one side of a battle, `p1` (west) or `p2` (east): its Commander and its controller. The duel's state
   calls them side A and side B.
@@ -232,7 +232,7 @@ plays, [`duels.md`](../system-design/duels.md).
   nothing), later `agent:<profile>`. On the command line and in a route a player slot is written `build:` or
   `build:<build file>`. The setup screen shows them as `Player: <name>`, `Scripted: <profile>`, `Agent: <profile>`.
 - **opponent** — what plans the other side: a script profile driving a Commander Army.
-- **script** — a coded player (`src/duel/players.ts`): `balanced`, `rush`, `turtle` and their variants (`rush-area`,
+- **script** — a coded player (`src/battle/players.ts`): `balanced`, `rush`, `turtle` and their variants (`rush-area`,
   `turtle-upgrade`, `rush-block` …), and `reader`, which plans from the battle's reading (the stance that has traded
   better, a Turret when the enemy reached its Nexus, apart against area damage). One plain idea of how to spend a round;
   none is a good player.
@@ -245,7 +245,7 @@ plays, [`duels.md`](../system-design/duels.md).
 - **save file** — a setup and the battle as it stands at the opening of a Build Phase (`*.save.json`). Every way into
   a Skirmish opens one, and every Build Phase can be written as one.
 - **brief** — what a player reads before a round: the board, the hand, the credits, what each building costs and
-  does, the score and the last round's reading. A person, a script and a model all read the same one ([`duels.md`](../system-design/duels.md)).
+  does, the score and the last round's reading. A person, a script and a model all read the same one ([`battles.md`](../system-design/battles.md)).
 - **battle picture** — the battle drawn as text, p1's things in lower case and p2's in upper case (`battlePicture`):
   the brief's map between rounds, and `skirmish --show 0,120,end` during a Battle Round.
 - **build actions** — a slot's answer for one round: the power it keeps, what it builds and where, its building
@@ -292,7 +292,7 @@ plays, [`duels.md`](../system-design/duels.md).
 - **route saves** — `sandboxes/movement/route-*`: each one shape a unit's walk must manage.
 - **showcase** — a whole battle in `sandboxes/showcase/`, to look at.
 - **duel** — the code's word for the two-sided battle a Skirmish plays, a person, a script or a model planning each
-  side ([`duels.md`](../system-design/duels.md)).
+  side ([`battles.md`](../system-design/battles.md)).
 - **measurement** — battles played the same way before and after a change, so the numbers compare: sandboxes, duels
   and missions (`bin/measure.ts`, [`measurement.md`](../system-design/measurement.md)).
 - **record** — what a measurement keeps of one battle.

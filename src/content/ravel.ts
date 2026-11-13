@@ -42,7 +42,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
   {
     // Fast, fragile, first. It dies to anything that connects and it usually connects first. In the melee line: as a
     // flanker, every runner of Dob's army ran past the enemy's troopers for what stood behind them, leaving his front
-    // empty, and his Nexus fell in round 1 or 2 in 20 of 24 rush duels (1 of the same 24 as melee).
+    // empty, and his Nexus fell in round 1 or 2 in 20 of 24 rush battles (1 of the same 24 as melee).
     id: "unit.ravel.runner",
     short: "runner",
     layer: "units",
@@ -212,7 +212,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     behavior: "static",
     salvage: 120,
     detonation: { radius: 2, damage: 15 },
-    // A Ravel side builds as a Citizen one does (a duel's, `src/duel/`): a build range and a supply of its own, the
+    // A Ravel side builds as a Citizen one does (a battle's, `src/battle/`): a build range and a supply of its own, the
     // Citizen Nexus's numbers. Only the Build Phase reads the range; the raid's own Nexus never produces, so the supply
     // changes no battle it fights.
     constructionRadius: 6,

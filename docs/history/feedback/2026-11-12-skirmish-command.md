@@ -143,7 +143,7 @@ the plan; the game modes say what a Skirmish is to a player.
 
 **Built.** `--wait` and `--ready` are gone: either slot hands its build actions in alone (kept as the save's draft), in
 any order, and the round plays both; a test shows the other slot's brief unchanged by it. "Plan" is **build actions**
-in the code (`BuildActions`, `readBuildActions`, `checkBuildActions`, `src/duel/build-actions.ts`), the command
+in the code (`BuildActions`, `readBuildActions`, `checkBuildActions`, `src/battle/build-actions.ts`), the command
 (`build:<build file>`), the brief a model reads ("## Your build actions", saying there are no turns) and the documents.
 
 ### F267 — clashes settle gracefully; powers and upgrades apply together

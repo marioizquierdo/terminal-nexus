@@ -3,7 +3,7 @@
 // map put west, north or first. Here: two equal units that trade blows both fall; a building sets its units down on
 // the side facing the enemy, east or west; a unit picks among equally near enemies by holding what it holds, or a
 // draw; a muster's tie goes toward the enemy; a battle with its sides' names swapped is the same battle; a mirror
-// battle with nothing tied stays a mirror, tick for tick, with a unit three tiles wide among them; and mirror duels
+// battle with nothing tied stays a mirror, tick for tick, with a unit three tiles wide among them; and mirror battles
 // are won from either end about as often.
 
 import { test } from "node:test"
@@ -13,7 +13,7 @@ import { createRegistry, FIXTURE_REGISTRY, rectFootprint } from "../src/content/
 import type { DomainEvent } from "../src/events/types.ts"
 import { footprintExtent } from "../src/grid/coords.ts"
 import { maskFrom, OccupancyIndex } from "../src/grid/occupancy.ts"
-import { playDuel, SCRIPTED } from "../src/duel/index.ts"
+import { playToEnd, SCRIPTED } from "../src/battle/index.ts"
 import { nearestFit } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
@@ -207,7 +207,7 @@ test("a mirror battle with nothing tied stays a mirror, tick for tick, a unit th
   assert.ok(deaths.length >= 2, `${deaths.length} fell`)
 })
 
-test("a mirror duel is won from either end about as often: the same Commander and plan on both sides, over seeds", { timeout: 180_000 }, () => {
+test("a mirror battle is won from either end about as often: the same Commander and plan on both sides, over seeds", { timeout: 180_000 }, () => {
   // Before ties went by what a unit faces, the west won all sixteen of these: its new units came out of the back of
   // its buildings and its musters filled the western tiles first. On the Pocket the two bases touch, and one early
   // draw — whose building sets its units down first between them — snowballs over three rounds, so the split is read
@@ -215,8 +215,8 @@ test("a mirror duel is won from either end about as often: the same Commander an
   const won = { A: 0, B: 0, draw: 0 }
   for (const [map, seeds] of [["pocket", 40], ["crossing", 8]] as const) {
     for (let seed = 1; seed <= seeds; seed += 1) {
-      const duel = playDuel({ map, seed, rounds: 3, pulseTicks: 400, commanders: { A: "vasse", B: "vasse" } }, { A: SCRIPTED.rush!, B: SCRIPTED.rush! })
-      won[duel.result?.winner ?? "draw"] += 1
+      const battle = playToEnd({ map, seed, rounds: 3, pulseTicks: 400, commanders: { A: "vasse", B: "vasse" } }, { A: SCRIPTED.rush!, B: SCRIPTED.rush! })
+      won[battle.result?.winner ?? "draw"] += 1
     }
   }
   // Even odds give more than 32 of 48 to one end about one time in a hundred; the seeds are fixed, so it never flickers.

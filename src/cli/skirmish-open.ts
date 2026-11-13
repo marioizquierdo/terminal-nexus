@@ -8,7 +8,7 @@
 // and plays as it would on the other. What differs is what a screen can play (`screenProblem`): p1 as its player, or
 // two scripts to watch.
 
-import { actionsFor } from "../duel/index.ts"
+import { actionsFor } from "../battle/index.ts"
 import type { SkirmishAsk } from "../skirmish/ask.ts"
 import { newBattleOf, rulesOf, slotChangesOf } from "../skirmish/ask.ts"
 import { loadedBattle, newBattle, seat, withRules } from "../skirmish/request.ts"

@@ -31,8 +31,8 @@ prototype behind the Battle banner Experiment:
       replaces it (the plan already carries a stance: attack or hold).
 - [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
       Aggressive elsewhere: the army goes there first, then on to the enemy Nexus. Defensive: it holds the line there.
-      Duels carry it: a plan names a banner, and the brief says where each side's stood last round.
-- [ ] The duel scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls
+      Battles carry it: a plan names a banner, and the brief says where each side's stood last round.
+- [ ] The battle scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls
       back.
 - [ ] **Strategic, measured**: over seeds, a script that plants well beats the same script planting at the default, and
       rush and turtle reach each other's Nexus. A banner that never changes an outcome is decoration, and the step says so.
@@ -62,13 +62,13 @@ four seeds and every pairing of Commanders, the script decided every battle and 
 `defensive` beat `agro` four to nothing. With the sides swapped, `steady` in the east won 22 of 24 the same way, so it is
 the scripts, not the west. A strict order, nothing that answers anything.
 
-- [ ] One script profile that reads what the player did (the brief a duel already writes) and answers it: a kept front,
+- [ ] One script profile that reads what the player did (the brief a battle already writes) and answers it: a kept front,
       a rush, a turtle, an army it is losing to, the counter to what it saw built. Measured against the existing scripts
       over seeds, then offered as the default opponent if it is better.
 
 ### Step 20D — A battle that stays open, and one that ends
 
-The duels found that an early lead decides a battle: the side ahead after round 2 wins 50 of 54
+The battles found that an early lead decides a battle: the side ahead after round 2 wins 50 of 54
 ([the report](../history/reports/2026-10-21-the-march.md)). A battle decided in round 2 is not one a player wants to
 finish. The other end is as bad, found while testing the Skirmish milestone (2026-11-12): on the Crossing, `agro`
 (Vasse) against `defensive` (Dob Hunter) played to round 100 on all six seeds tried without either Nexus taking a hit,
@@ -125,7 +125,7 @@ Not a balance verdict, but where this milestone's steps should look first:
 - **Reading the opponent, and reading a loss**: the brief should show the score that decides (the damage totals while
   damage decides), and a round's report should say what hit the Nexus and what destroyed the buildings, by source.
   **Built headless on 2026-11-13** ([his words](../history/feedback/2026-11-13-reading-the-battle.md)): one reader of
-  the battle (`src/duel/reading.ts`: the score, the front, first contact, the nearest the enemy came, what hit each
+  the battle (`src/battle/reading.ts`: the score, the front, first contact, the nearest the enemy came, what hit each
   Nexus, each building lost and by what, a side's own blasts), in every brief and round report; the battle drawn as
   text at chosen ticks (`skirmish --show`); and `script:reader`, which plans from it. The screen saying the same waits
   for this milestone's steps.

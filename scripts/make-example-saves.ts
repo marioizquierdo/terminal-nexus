@@ -6,9 +6,9 @@
 //   node scripts/make-example-saves.ts
 
 import { writeFileSync } from "node:fs"
-import { briefOf, playRound, SCRIPTED } from "../src/duel/index.ts"
+import { briefOf, playRound, SCRIPTED } from "../src/battle/index.ts"
 import type { SaveSetup } from "../src/skirmish/save.ts"
-import { duelOf, newSetup, saveOf, saveText, SIDE_OF } from "../src/skirmish/save.ts"
+import { battleOf, newSetup, saveOf, saveText, SIDE_OF } from "../src/skirmish/save.ts"
 
 type Example = Readonly<{ file: string; name: string; notes: string; setup: SaveSetup; played?: number; scripts?: readonly [string, string] }>
 
@@ -42,7 +42,7 @@ const EXAMPLES: readonly Example[] = [
 ]
 
 for (const example of EXAMPLES) {
-  let state = duelOf({ format: "terminal-nexus.save/1", setup: example.setup })
+  let state = battleOf({ format: "terminal-nexus.save/1", setup: example.setup })
   for (let index = 0; index < (example.played ?? 0) && state.result === null; index += 1) {
     const [a, b] = example.scripts ?? ["balanced", "balanced"]
     state = playRound(state, { [SIDE_OF.p1]: SCRIPTED[a]!(briefOf(state, "A").data), [SIDE_OF.p2]: SCRIPTED[b]!(briefOf(state, "B").data) } as never).state

@@ -12,16 +12,16 @@
 import { appendFileSync, mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import type { ContentRegistry } from "../content/index.ts"
-import type { DuelState, Side } from "../duel/index.ts"
-import { actionsFor, briefOf, checkBuildActions, mapOf } from "../duel/index.ts"
-import { battlePicture } from "../duel/picture.ts"
+import type { BattleState, Side } from "../battle/index.ts"
+import { actionsFor, briefOf, checkBuildActions, mapOf } from "../battle/index.ts"
+import { battlePicture } from "../battle/picture.ts"
 import { hashEvents } from "../events/serialize.ts"
 import type { LogLevel } from "../report/index.ts"
 import { buildLog } from "../report/index.ts"
 import type { Played, Ran, RoundWatch } from "../skirmish/play.ts"
 import { actionsAt, isPlayer, playOn } from "../skirmish/play.ts"
 import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
-import { duelOf, saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
+import { battleOf, saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
 import type { Seated } from "../skirmish/request.ts"
 import { loadedBattle, newBattle, seat, withRules } from "../skirmish/request.ts"
 import { battleLine, historyLines, roundLines, slotLabel, standing } from "../skirmish/lines.ts"
@@ -38,9 +38,9 @@ export const UNTIL_END_ROUNDS = 100
 /** What a line is written to. */
 export type Write = (line: string) => void
 
-/** A battle opened: the save it came from, its setup with the slots seated and the rules changed, the duel as it
+/** A battle opened: the save it came from, its setup with the slots seated and the rules changed, the battle as it
  *  stands, and the build actions the player slots bring. */
-export type Opened = Readonly<{ save: SaveFile; setup: SaveSetup; state: DuelState; seated: Seated }>
+export type Opened = Readonly<{ save: SaveFile; setup: SaveSetup; state: BattleState; seated: Seated }>
 
 /** The save a request starts from: read from `--load`, or a new battle on `seed` (the request's own unless given). */
 export function startingSave(request: SkirmishRequest, profiles: Profiles, seed?: number): SaveFile {
@@ -52,16 +52,16 @@ export function startingSave(request: SkirmishRequest, profiles: Profiles, seed?
 export function openSave(save: SaveFile, request: SkirmishRequest, profiles: Profiles, write: Write): Opened {
   const seated = seat(save, request.slots, readGameFile)
   for (const problem of seated.problems) write(problem)
-  const before = duelOf({ ...save, setup: seated.setup }, profiles)
+  const before = battleOf({ ...save, setup: seated.setup }, profiles)
   const toEnd = request.playTo === "end" ? Math.max(save.setup.rounds, UNTIL_END_ROUNDS) : undefined
   const rounds = request.rules.rounds ?? toEnd
   const setup = withRules(seated.setup, before.result === null ? before.round : 1, { ...request.rules, ...(rounds === undefined ? {} : { rounds }) })
-  return { save, setup, state: duelOf({ ...save, setup }, profiles), seated }
+  return { save, setup, state: battleOf({ ...save, setup }, profiles), seated }
 }
 
 /** The round whose Build Phase a run stops at: the one it is at (nothing to play), the next, a round named, or never
  *  (play to the end). */
-export function stopRound(playTo: SkirmishRequest["playTo"], state: DuelState): number {
+export function stopRound(playTo: SkirmishRequest["playTo"], state: BattleState): number {
   if (playTo === undefined) return state.round
   if (playTo === "next") return state.round + 1
   if (playTo === "end") return Number.POSITIVE_INFINITY
@@ -137,7 +137,7 @@ function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLev
  * ends, or a player slot has no build actions for the round about to play. Each round's report is written unless quiet,
  * and kept as `keep` asks.
  */
-export function playRounds(setup: SaveSetup, start: DuelState, builds: Seated["builds"], stop: number, profiles: Profiles, keep: Keep, write: Write): Ran {
+export function playRounds(setup: SaveSetup, start: BattleState, builds: Seated["builds"], stop: number, profiles: Profiles, keep: Keep, write: Write): Ran {
   if (keep.out !== undefined) mkdirSync(keep.out, { recursive: true })
   // `--show`: the Battle Round drawn at the ticks asked for, and as it ends, printed after its report.
   const ticks = new Set((keep.show ?? []).filter((tick): tick is number => tick !== "end"))
@@ -168,7 +168,7 @@ export function playRounds(setup: SaveSetup, start: DuelState, builds: Seated["b
 }
 
 /** A slot's brief, as text with the play strategies (a player that reads words), or as data. */
-export function writeBrief(setup: SaveSetup, state: DuelState, slot: Slot, json: boolean, write: Write): void {
+export function writeBrief(setup: SaveSetup, state: BattleState, slot: Slot, json: boolean, write: Write): void {
   const brief = briefOf(state, SIDE_OF[slot], playStrategies())
   write(`--- brief for ${slotLabel(setup, slot)}`)
   write(json ? JSON.stringify(brief.data, null, 1) : brief.text)
@@ -179,7 +179,7 @@ export function writeBrief(setup: SaveSetup, state: DuelState, slot: Slot, json:
  * keeps, builds and takes, each refusal and why), or, when it has none, its brief. A draft is checked and its brief
  * printed too. Returns whether the rules refused anything.
  */
-function atBuildPhase(setup: SaveSetup, state: DuelState, seated: Seated, first: number, json: boolean, write: Write): boolean {
+function atBuildPhase(setup: SaveSetup, state: BattleState, seated: Seated, first: number, json: boolean, write: Write): boolean {
   let refused = false
   for (const slot of SLOTS.filter((each) => isPlayer(setup, each))) {
     const given = actionsFor(seated.builds[slot] ?? [], state.round, first)

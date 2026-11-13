@@ -1,15 +1,15 @@
-// Reading a battle (docs/system-design/duels.md, "Reading a battle"): the score, a round's reading, the picture of a
+// Reading a battle (docs/system-design/battles.md, "Reading a battle"): the score, a round's reading, the picture of a
 // battle, the reader script that plans by them, and `skirmish --show`.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { main } from "../src/cli/skirmish.ts"
-import type { DuelSetup, RoundReport } from "../src/duel/index.ts"
-import { briefOf, newDuel, playDuel, playRound, SCRIPTED } from "../src/duel/index.ts"
-import { readingLines, scoreOf } from "../src/duel/reading.ts"
+import type { BattleSetup, RoundReport } from "../src/battle/index.ts"
+import { briefOf, beginBattle, playToEnd, playRound, SCRIPTED } from "../src/battle/index.ts"
+import { readingLines, scoreOf } from "../src/battle/reading.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 
-const setup = (extra: Partial<DuelSetup> = {}): DuelSetup => ({ map: "pocket", seed: 2, rounds: 3, pulseTicks: 240, commanders: { A: "dob", B: "vasse" }, ...extra })
+const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "pocket", seed: 2, rounds: 3, pulseTicks: 240, commanders: { A: "dob", B: "vasse" }, ...extra })
 
 test("the score is the rule a battle is judged by: Nexus health by share, then the damage over the battle", () => {
   const side = (after: number, units: number) => ({ nexus: { before: 400, after, most: 400 }, dealt: { units, buildings: 0, nexus: 0 } })
@@ -22,7 +22,7 @@ test("the score is the rule a battle is judged by: Nexus health by share, then t
 
 test("a round is read as it plays: the front, first contact, what hit each Nexus, the buildings lost and by what", { timeout: 60_000 }, () => {
   const players = { A: SCRIPTED.rush!, B: SCRIPTED.turtle! }
-  const state = playDuel(setup(), players)
+  const state = playToEnd(setup(), players)
   const read = state.history.map((report) => report.reading)
   assert.ok(read.every((reading) => reading !== undefined), "every round played carries its reading")
   for (const reading of read) {
@@ -42,13 +42,13 @@ test("a round is read as it plays: the front, first contact, what hit each Nexus
     }
   }
   // Reading watches and never feeds: the round plays the same whether or not anything else watches it.
-  const once = playRound(newDuel(setup()), { A: { build: [], stance: "attack" }, B: { build: [], stance: "hold" } })
+  const once = playRound(beginBattle(setup()), { A: { build: [], stance: "attack" }, B: { build: [], stance: "hold" } })
   assert.ok(once.report.reading !== undefined)
 })
 
 test("the brief carries the score and the last round's reading, as data and as words", { timeout: 60_000 }, () => {
-  const duel = newDuel(setup())
-  const first = playRound(duel, { A: SCRIPTED.rush!(briefOf(duel, "A").data), B: SCRIPTED.turtle!(briefOf(duel, "B").data) })
+  const battle = beginBattle(setup())
+  const first = playRound(battle, { A: SCRIPTED.rush!(briefOf(battle, "A").data), B: SCRIPTED.turtle!(briefOf(battle, "B").data) })
   const brief = briefOf(first.state, "B")
   assert.deepEqual(brief.data.score, scoreOf(first.state.history))
   assert.match(brief.text, /^Score: /mu)
@@ -57,8 +57,8 @@ test("the brief carries the score and the last round's reading, as data and as w
 })
 
 test("the reader script plans from what the battle said: it holds after an attack that lost the trade, and says why", () => {
-  const duel = newDuel(setup())
-  const brief = briefOf(duel, "A").data
+  const battle = beginBattle(setup())
+  const brief = briefOf(battle, "A").data
   assert.equal(SCRIPTED.reader!(brief).stance, "hold", "round 1: it gathers")
   const lost = { ...brief, last: { round: 1, ticks: 240, ended: "time", sides: {
     A: { stance: "attack", dealt: { units: 10, buildings: 0, nexus: 0 } },

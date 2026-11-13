@@ -22,7 +22,7 @@ Not started; each waits for Mario's word.
 ### Step 19A — A planner that looks ahead
 
 - [ ] A planner that reads the public state and weighs its plans a round or two ahead (what the player is likely to
-      build next, where the front will be), in the duel's own plan vocabulary.
+      build next, where the front will be), in the battle's own plan vocabulary.
 - [ ] Measured against the script that answers over seeds, so "better" is a number before a person plays it.
 
 ### Step 19B — Playing it

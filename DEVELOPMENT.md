@@ -241,7 +241,7 @@ claude.ai link cannot carry an address with `=` in it, so a published page opens
 
 **Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill). Headless: each
 round both sides keep a Nexus power and plan a Build Phase blind, then a Battle Round plays between them
-([`duels.md`](docs/system-design/duels.md)). Scripts play in one process; a model writes each round's build actions
+([`battles.md`](docs/system-design/battles.md)). Scripts play in one process; a model writes each round's build actions
 from its brief. Use them to see how an army spends its power curve, never as a verdict on balance.
 
 ```bash
@@ -258,7 +258,7 @@ for why.
 
 **Measuring a change plays the same battles before and after it** (`node bin/measure.ts`,
 [`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill):
-the route saves and every map, duels between every Commander, and every mission by fixed plans, written
+the route saves and every map, battles between every Commander, and every mission by fixed plans, written
 down as one JSON file per run and compared in plain words. Play only what the change can move, written down with
 the one question it must answer; after a power-curve change, mark what the new result supersedes rather than
 leaving old numbers to read as current; and check every sentence that tells Mario where to look against the events
