@@ -33,7 +33,7 @@ predictable spawning schedules. With all that, we can safely leave the units on 
 | Level | What the player sets | What it allows |
 | --- | --- | --- |
 | None (today) | Nothing: troops always march on the enemy Nexus; a mission sets an automatic target | The simplest; little room for tactics |
-| **Stance** | One setting for the army: aggressive, hold the line, or defensive | Much more dynamism for one row |
+| **Stance** | One setting for the army: attack or hold (built in a duel's build actions, `attack` and `hold`; first sketched as aggressive, hold the line or defensive) | Much more dynamism for one row |
 | **Banner** | A banner on the map, aggressive or defensive; by default on the enemy Nexus, aggressive | Aggressive elsewhere: the army goes there first, then on to the enemy Nexus, so it sets a route. Defensive: the army holds the line there, for map control or the base |
 | **Two banners** | The Commander follows the main banner; a building can be set to send its units after the secondary one | Split armies, which matter once the map holds resources and bonuses; needs more UX. To test eventually, built towards step by step |
 

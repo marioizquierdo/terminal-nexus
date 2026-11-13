@@ -1,5 +1,5 @@
 // Who plays each slot, as a command line asks for it: `--p1`/`--p2` with `build:<build file>`, `build:`,
-// `script:<name>` or `script:` — the same words for the `skirmish` command (`src/cli/skirmish.ts`), the game
+// `script:<profile>` or `script:` — the same words for the `skirmish` command (`src/cli/skirmish.ts`), the game
 // (`terminal-nexus --load`) and the scripted playtest. Pure: a build file's text is read by the caller.
 
 import type { Controller, Profiles, SaveSetup, Slot } from "./save.ts"
@@ -8,7 +8,7 @@ import { controllerKind, controllerProblem, IDLE_SCRIPT, SLOTS } from "./save.ts
 /** What `--p1`/`--p2` asks for: the controller, and for a player the build file it reads (`""`: none). */
 export type SlotAsk = Readonly<{ controller: Controller; buildFile?: string }>
 
-/** `build:<file>`, `build:`, `script:<name>`, `script:`, or a controller as a save writes it. */
+/** `build:<file>`, `build:`, `script:<profile>`, `script:`, or a controller as a save writes it. */
 export function slotAsk(text: string, profiles?: Profiles): SlotAsk {
   if (text === "build" || text.startsWith("build:")) return { controller: "player", buildFile: text.slice("build:".length) }
   if (text === "script" || text === "script:") return { controller: `script:${IDLE_SCRIPT}` }
@@ -40,6 +40,6 @@ export function screenProblem(setup: SaveSetup): string | null {
   const refusal = screenRefusal(setup)
   if (refusal === null) return null
   if (refusal.kind === "agent") return `${refusal.slot} is ${setup.slots[refusal.slot].controller}: agent players are not built yet (give it a script, --${refusal.slot} script:steady)`
-  if (refusal.kind === "two-players") return "both slots are players: two players at one screen wait for Versus (give one slot a script, --p2 script:balanced)"
-  return "the screen plays p1 as its player: p2 as the player is not built yet (swap the slots' controllers, --p1 build: --p2 script:balanced)"
+  if (refusal.kind === "two-players") return "both slots are players: two players at one screen wait for Versus (give one slot a script, --p2 script:steady)"
+  return "the screen plays p1 as its player: p2 as the player is not built yet (swap the slots' controllers, --p1 build: --p2 script:steady)"
 }

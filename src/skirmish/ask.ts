@@ -22,7 +22,7 @@ export type SkirmishAsk = Readonly<{
   rounds?: number
   modifiers?: readonly string[]
   commanders?: Readonly<Partial<Record<Slot, string>>>
-  /** Who plays each slot, as written: `build:`, `build:<build file>`, `script:<name>`. */
+  /** Who plays each slot, as written: `build:`, `build:<build file>`, `script:<profile>`. */
   slots?: Readonly<Partial<Record<Slot, string>>>
   credits?: Readonly<Partial<Record<Slot, number>>>
 }>

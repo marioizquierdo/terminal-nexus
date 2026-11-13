@@ -1,4 +1,4 @@
-// What one kind of unit or building did, round by round, in each campaign level (docs/system-design/measurement.md):
+// What one kind of unit or building did, round by round, in each Story level (docs/system-design/measurement.md):
 // how many hits it landed on the enemy, the damage they dealt, what it killed and when it first hit. Read from each
 // round's events, so a sentence that tells the owner "watch the Nexus shoot in round 3" is checked against the round
 // it happens in before it is written (the `remeasure` skill). Pure, like the rest of `src/measure/`.
@@ -94,7 +94,7 @@ function tallyWords(tally: UnitTally, ticksPerSecond: number): string {
 /** What `contentId` did, one line per level and plan, its rounds one after another. */
 export function unitLines(contentId: string, measures: readonly UnitLevelMeasure[], ticksPerSecond: number): string[] {
   const lines = [
-    `What ${contentId} did in each round of each campaign level: hits on the enemy, their damage, kills and the`,
+    `What ${contentId} did in each round of each mission: hits on the enemy, their damage, kills and the`,
     `moment of its first hit ("-": it stood and did nothing; "absent": it never stood; "B:" is the other side's).`,
   ]
   for (const measure of measures) {

@@ -34,7 +34,7 @@ story affordable.
 | --- | --- | --- |
 | **The tutorial** | Learns the loop: build, commit, watch, adapt | Its goal is met |
 | **Technology missions** (three or four) | Wins, and collects technologies and bonus goals that carry forward | Each mission's goal is met; any may be replayed |
-| **The endless stand** | Holds against waves that keep growing, with everything collected, for a score | The Nexus falls |
+| **The endless stand** | Holds against groups that keep growing, with everything collected, for a score | The Nexus falls |
 | **The final battle** | Takes the last chance the fallen Nexus opens: destroy an enemy Nexus as the Eternals awaken | The enemy Nexus falls and the story is won, or the player's falls and they try again |
 
 ### 2.1 The tutorial
@@ -63,13 +63,13 @@ score measures how well the story was played, not how long it was ground.
 
 ### 2.3 The endless stand
 
-**An endless stand is a kind of mission**: the enemy has no Nexus, waves arrive on a schedule that keeps growing, and the
+**An endless stand is a kind of mission**: the enemy has no Nexus, groups arrive on a schedule that keeps growing, and the
 mission ends when the player's Nexus falls. Its score is how far the player got (Q93 asks how it is counted). It tests
 the whole story: the player balances what they collected, their economy, holding the line and taking strategic points.
 
 What it needs, GUIDANCE until its milestone:
 
-- **A wave schedule** as mission data: what spawns, where and when, growing round by round, the same every time from the
+- **A group schedule** as mission data: what spawns, where and when, growing round by round, the same every time from the
   seed. The trigger runner already spawns groups at a moment (section 3.1).
 - **A score** shown through the stand, and a high score kept per Commander on the player's machine.
 - **A pace**: at about two minutes a round, the schedule ends a typical stand in fifteen to twenty-five minutes.
@@ -101,7 +101,7 @@ A mission selects and configures:
 - what the player may build and the Nexus may deal: what this mission offers, and what the story has collected;
 - the starting state and credits;
 - goals, loss conditions, triggers and scripted events;
-- the opponent: a trigger list, a duel script, or a wave schedule (section 7);
+- the opponent: a trigger list, a duel script, or a group schedule (section 7);
 - its scenes and lines (section 6);
 - the technologies it grants, and the bonus goals that grant more.
 
@@ -386,7 +386,7 @@ The opening image should make the Prime Nexus physically impossible before the p
 
 Three kinds, one for each kind of battle a story holds: **a trigger list** (a scripted raid: what spawns, where, and what
 it means to do; PERIMETER's is built), **a duel script** driving a Commander Army with a Nexus (the final battle, and any
-mission played Nexus against Nexus; the Skirmish opponent), and **a wave schedule** (the endless stand, section 2.3).
+mission played Nexus against Nexus; the Skirmish opponent), and **a group schedule** (the endless stand, section 2.3).
 
 A mission's opponents are local game AIs by default, not LLMs. They receive a bounded planning view and the same legal action vocabulary available to a human plan validator.
 

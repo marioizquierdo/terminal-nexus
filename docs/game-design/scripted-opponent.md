@@ -6,7 +6,7 @@ _A working design for how a mission's opponent arrives and says what it means to
 
 A mission's opponent has to meet three requirements, and they are one design:
 
-1. **The mission defines the round** — nothing arrives "out of nowhere"; what the Battle Round starts with is the mission's data, readable before it starts. A testing setup may spawn units freely; a mission fully defines the initial state of the round, so the player can Explore the map and see what is coming.
+1. **The mission defines the round** — nothing arrives "out of nowhere"; what the Battle Round starts with is the mission's data, readable before it starts. A sandbox may spawn units freely; a mission fully defines the initial state of the round, so the player can Explore the map and see what is coming.
 2. **The player can see it coming** — the Build Phase is planning against a known threat, the way PERIMETER's own briefing already says the Nexus "has already assigned the contact a name, a heraldry, and an estimated time of arrival".
 3. **Incoming groups say what they mean to do** — an *intention*, in optional words on each group, which is also the seed of an opponent AI the player can read, so people can properly plan for what is coming. How a raid's groups are configured in the mission files is deliberately left undetailed (section 3.4).
 

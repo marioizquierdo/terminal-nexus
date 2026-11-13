@@ -101,7 +101,6 @@ range) held to the same rule; `roundsOut` only on a Commander; a structure never
 | --- | --- |
 | `lean` | One or two of `units`, `nexus`, `structures`, `commander`, `economy`: what the build leans on (commander-armies.md). |
 | `start` | Her starting package: units that walk out with her where a mode scripts none (a duel's first round). |
-| `run` | What a Challenge run starts her army with (retired with runs; removed by the Skirmish milestone): `buildings` (card ids on the build menu) and `powers` (Nexus power ids in the pool). Everything else her army can field waited in the run's draft. Absent: the whole of her army (`docs/history/challenge-runs-design.md`). |
 | `schedule` | How her army bends the Nexus Pulse, in every mode (Averno's: a card from the Ravel Nexus in rounds 2 and 4). A level's own schedule replaces it. |
 | `barks`, `portrait`, `portraitFalls` | Her voice in battle and her face (`src/armies/barks.ts`, `src/view/commander-moments.ts`), checked to fit the panel at 80 x 24. |
 

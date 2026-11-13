@@ -94,8 +94,8 @@ below.
 ## Banners — prototype
 
 The owner, 2026-10-26, in the core loop ([`core-loop.md`](../milestones/core-loop.md)): orders grow from none, to a
-stance, to a banner, to two banners. **The stance** is one setting for the army: aggressive (march on the enemy Nexus,
-as today), hold the line, or defensive. **A banner** is placed on the map, aggressive or defensive; by default on the
+stance, to a banner, to two banners. **The stance** is whether the army attacks or holds this round (`attack`, `hold`, in a duel's
+build actions); a banner has its own stance, aggressive or defensive. **A banner** is placed on the map, aggressive or defensive; by default on the
 enemy Nexus, aggressive. Aggressive elsewhere, the army goes there first and then on to the enemy Nexus, so it sets a
 route; defensive, it holds the line there. **Two banners**: the Commander follows the main one, and a building can be
 set to send its units after a **secondary banner**.

@@ -108,7 +108,7 @@ A few more worth watching, in this order:
 npm run grid -- ravel-cascade --glyphs unicode --colors truecolor --speed 0.5
 npm run grid -- citizens-versus-ravels --no-effects --glyphs unicode --colors truecolor
 npm run grid -- citizens-versus-ravels --colors monochrome   # can you still follow it?
-npm run grid -- citizen-mirror-skirmish                          # the baseline mirror match
+npm run grid -- citizen-mirror-skirmish                          # the baseline mirror battle
 ```
 
 `npm run sandboxes` lists every sandbox. `watch` takes the same options on any of them:

@@ -53,12 +53,12 @@ export type BuildingCard = Readonly<{
   cost: number
   /** What it spawns in each battle, in any mode that offers it. Absent: it spawns nothing. */
   spawns?: BuildingSpawns
-  /** Its tier in the army's tech tree, 1 to `MAX_TIER` (`curve.ts`). Absent: 1, open from the start. A run draft
+  /** Its tier in the army's tech tree, 1 to `MAX_TIER` (`curve.ts`). Absent: 1, open from the start. A draft
    *  deals it by the same tier (docs/history/challenge-runs-design.md): the tier gates *when* it may be offered. */
   tier?: number
-  /** How rare it is, for a run's draft to weigh (docs/history/challenge-runs-design.md). Absent: never offered by a draft; the army's own at the start. */
+  /** How rare it is, for a draft (Story's technology choice) to weigh (docs/history/challenge-runs-design.md). Absent: never offered by a draft; the army's own at the start. */
   rarity?: Rarity
-  /** What it is for, for a run's draft to bring variety by. Absent with `rarity`. */
+  /** What it is for, for a draft to bring variety by. Absent with `rarity`. */
   role?: Role
   /** The buildings, by card id, that must stand for the player as a Build Phase opens before this one can be built:
    *  the tech tree. Each is of a lower tier, and a building above tier 1 requires one of the tier below it. Absent:
@@ -186,12 +186,12 @@ export type PowerCard = Readonly<{
   /** Offered beside every hand rather than dealt into one (War Chest, the owner's testing tool). */
   always?: boolean
   /**
-   * A Doctrine (docs/history/challenge-runs-design.md): a standing order, never dealt by the Nexus Pulse. A run's draft offers it, and once taken it is
+   * A Doctrine (docs/history/challenge-runs-design.md): a standing order, never dealt by the Nexus Pulse. A draft offers it, and once taken it is
    * kept from the first round of every battle of the run, so its effect is on for the whole of each. Absent: a Nexus power
    * the Pulse deals, as every power was.
    */
   doctrine?: boolean
-  /** The earliest tier of a run it may be offered in, 1 to `MAX_TIER` (the draft's tier schedule, docs/history/challenge-runs-design.md). Absent: 1. */
+  /** The earliest tier it may be offered in, 1 to `MAX_TIER` (the draft's tier schedule, docs/history/challenge-runs-design.md). Absent: 1. */
   tier?: number
   /** The Nexus it comes from when not the army's own (`"ravel"`: a card from the Ravel Nexus in a Citizen
    *  Commander's hand, Averno's leak). Dealt only by a schedule slot that asks for that Nexus, `{ "from": "ravel" }`,

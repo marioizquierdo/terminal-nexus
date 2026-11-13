@@ -28,7 +28,7 @@ export type MeasureSpec = Readonly<{
      *  the duels, for one of several processes (`jobsOf`, `src/measure/merge.ts`). */
     west?: readonly string[]
   }>
-  /** Campaign levels by id (empty: every level), each played by every plan. */
+  /** Story levels (missions) by id (empty: every level), each played by every plan. */
   levels: readonly string[]
   plans: readonly LevelPlan[]
 }>
@@ -59,7 +59,7 @@ export function pairingIndex(duels: MeasureSpec["duels"], players: Readonly<{ A:
 const BARRACKS = "structure.citizen.barracks"
 const DEPOT = "structure.citizen.depot"
 
-/** The plans every campaign level is played by: building nothing, and a base that trains a defence each round. */
+/** The plans every Story level is played by: building nothing, and a base that trains a defence each round. */
 export const LEVEL_PLANS: readonly LevelPlan[] = [
   { name: "nothing built", buys: [[]] },
   { name: "a defended base", buys: [[BARRACKS, DEPOT]] },

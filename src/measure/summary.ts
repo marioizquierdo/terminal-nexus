@@ -1,6 +1,6 @@
 // A measurement in plain words (docs/system-design/measurement.md): what each sandbox did, how the duels went —
 // who beat whom, how evenly a mirror split between the two ends of the map, whether an early lucky hand or an early
-// lead predicted the winner, how long units stood blocked and how tight armies met — and how each campaign level
+// lead predicted the winner, how long units stood blocked and how tight armies met — and how each Story level
 // played by each plan. Lines of text, so the command prints them and a report quotes them.
 
 import type { Side } from "../duel/index.ts"
@@ -180,7 +180,7 @@ export function summaryLines(measurement: Measurement): string[] {
   }
 
   if (measurement.levels.length > 0) {
-    lines.push("", "Campaign levels (verdict, round it ended, the Commander's falls by round, units lost):")
+    lines.push("", "Missions (verdict, round it ended, the Commander's falls by round, units lost):")
     for (const level of measurement.levels) {
       const falls = level.rounds.filter((round) => round.battle.sides.A.commanderFellAt !== null).map((round) => round.round)
       const lost = level.rounds.reduce((sum, round) => sum + round.battle.sides.A.lost, 0)

@@ -12,16 +12,16 @@ the endless stand.
 
 ## Question
 
-Does an endless stand — waves that grow until the Nexus falls, scored by how far the player got — test what a player
+Does an endless stand — groups that grow until the Nexus falls, scored by how far the player got — test what a player
 collected across a Commander's story, play in fifteen to twenty-five minutes, and turn the story to its final battle?
 
 ## Steps
 
 Not started; each waits for Mario's word, and the order is a first guess.
 
-### Step 18A — Waves as a mission
+### Step 18A — Groups as a mission
 
-- [ ] A wave schedule as mission data: what spawns, where and when, growing round by round, the same every time from the
+- [ ] A group schedule as mission data: what spawns, where and when, growing round by round, the same every time from the
       seed; validated by name like every other mission shape.
 - [ ] A mission with no enemy Nexus that ends when the player's falls; its rounds are not capped.
 - [ ] Measured: the duel scripts hold against the schedule over seeds, so its pace (fifteen to twenty-five minutes for a

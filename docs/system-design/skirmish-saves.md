@@ -28,7 +28,7 @@ headless with scripts on either side.
 | **Agent profile** | A language model's playing style, a Markdown file in `players/agents/` (`curious.md`). Its milestone decides the rest |
 | **Goal** | What wins: **Elimination** (destroy the enemy Nexus; the healthier Nexus after the last round) is the only one built first |
 | **Modifier** | A named rule laid over the battle: `fast-rounds`, `double-income`. A playground for experiments; the good ones are kept |
-| **Setup** | The map, the seed, the slots, the goal, the modifiers and the settings text: everything chosen before round 1 |
+| **Setup** | The map, the seed, the slots, the goal, the modifiers, the round limit and the Battle Round's ticks: everything chosen before round 1 (the settings text travels beside it) |
 | **Save file** | A setup, and the battle as it stands at the opening of a Build Phase (`*.save.json`) |
 | **Sandbox** | A save that opens on a Battle Round written by hand (its `start`), both slots planning nothing: a rule, a unit, a kind of ground or a showcase, in `sandboxes/` |
 | **Spectating** | A battle with no `player:` slot: the Build Phase has nothing to build, only Explore Map and Start next round |
@@ -100,7 +100,7 @@ there: the page has no files to read. A terminal reads `players/scripts/` from d
 
 **The same screen later serves Versus**: a second `player` slot.
 
-**The opponent's credits** are a script profile's option, a share of the power curve (100% unless set), and may be set
+**The opponent's credits** are a script profile's option, a share of the credits curve (1, shown as 100%, unless set), and may be set
 on any slot: there is no difficulty setting, and both sides start on equal ground (the owner, 2026-11-11 and
 2026-11-12).
 
@@ -223,7 +223,7 @@ The built-in maps are files in `maps/` (`crossing.map.json`, `pocket.map.json`),
 **The `skirmish` command plays a Skirmish without a screen** (RULE for what is built — `tests/skirmish-command.test.ts`,
 `tests/skirmish-save.test.ts`): from a save or a new setup, it prints the brief of a slot a player plays, checks its build actions
 by the Build Phase's rules, plays a round or the battle to its end, many battles over seeds or every pairing of
-Commanders, two sessions taking turns through one save, and keeps every round as a save, a report and the battle's
+Commanders, two sessions handing in build actions through one save, and keeps every round as a save, a report and the battle's
 log. Its manual, every option with examples, is the comment [`src/cli/skirmish.ts`](../../src/cli/skirmish.ts) opens
 with (`npm run skirmish -- --help`); how each kind of test uses it is [`sandboxes.md`](sandboxes.md).
 

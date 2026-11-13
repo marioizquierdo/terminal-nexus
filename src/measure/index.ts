@@ -1,7 +1,7 @@
 // Measuring battles the same way before and after a rule changes (docs/system-design/measurement.md): the spec of
 // what is played (`spec.ts`), the battles themselves (`suites.ts`), a battle's record (`battle.ts`), and the plain
 // words a measurement says (`summary.ts`); a spec split into processes and merged back (`merge.ts`); and what one
-// unit did in each round of each campaign level (`who.ts`). `runSpec` plays a whole spec; the command around it
+// unit did in each round of each Story level (`who.ts`). `runSpec` plays a whole spec; the command around it
 // (`bin/measure.ts`) reads the maps, keeps time and writes the result down.
 
 import type { PlayableLevel } from "../cli/levels.ts"

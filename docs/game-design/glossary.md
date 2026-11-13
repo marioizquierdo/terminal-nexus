@@ -10,7 +10,8 @@ GUIDANCE._
 - **battle** — one Grid, two sides, rounds until a result: the unit of play. The kernel's word is *match*, and the
   two-sided battle in code is the *duel* ([`game-modes.md`](game-modes.md)).
 - **round** — one Nexus Pulse, one Build Phase and one Battle Round, in that order: the unit the player counts, "round 2
-  of 3". In code the round's number is `pulseNumber`.
+  of 3". In code the round's number is `round` in the duel and the save, `pulseNumber` in the Build Phase, and `pulse` in a
+  mission's triggers (`{ pulse: 2, tick: 0 }`).
 - **Nexus Pulse** — the moment each round opens, when the Grid Nexus speaks to its Commander and deals a hand of Nexus
   powers; the player may keep one during the Build Phase (for now the pick is optional). It took the place of "the
   Nexus draft" (the owner, 2026-10-07: "The Nexus Pulse signals the start of a new round").
@@ -29,6 +30,10 @@ GUIDANCE._
   Never a wave (the owner, 2026-10-04).
 - **goal** — what wins. **Elimination**: destroy the enemy Nexus, or have the healthier one after the last round. The
   only goal built so far.
+- **banner** — where the player sets the army's goal in the Build Phase, aggressive or defensive; by default on the
+  enemy Nexus, aggressive. A prototype behind the Battle banner Experiment (`src/match/banner.ts`,
+  [`ui-patterns.md`](../system-design/ui-patterns.md)).
+- **the kept front** — the ground a side's survivors hold after the regroup, where its next round starts.
 - **round limit** — the most rounds a battle lasts (`rounds` in a save, `--rounds`); a loaded battle may change it
   from the next round on.
 
@@ -58,16 +63,23 @@ GUIDANCE._
   upgrades, Nexus powers and Specials.
 - **army file** — `armies/<id>/army.json`, an army as data, stacked: `armies/all` (what any Commander may use), the
   faction armies, one army per Commander ([`army-authoring.md`](../system-design/army-authoring.md)).
-- **Nexus power** — a named effect with one plain line of description, dealt in a hand at each Nexus Pulse. **draft**
-  is the word for choosing from that hand.
+- **Nexus power** — a named effect with one plain line of description, dealt in a **hand** at each Nexus Pulse; the
+  player may **keep** one. **draft** is the word for choosing from that hand.
+- **rarity**, **tier**, **role** — the three tags an offered card carries: how often it is dealt, how far up the tech
+  tree it is, what it is for.
 - **building**, **unit** — what a player places in the Build Phase, and what a building makes to fight. A Commander is
-  a unit too, and marches like any other.
-- **building action** — something done to a standing building in the Build Phase: an upgrade, a mode or an order
-  ("hold production").
+  a unit too, and marches like any other. Content ids and older pages call a building a *structure*
+  (`structure.citizen.barracks`). A building that makes units is a **producer**.
+- **worker** — a unit that gathers rather than fights; built in the Proving Grounds bench, and the subject of the worker
+  economy milestone.
+- **supply** — the cap on how many units a side may field; supply buildings raise it.
+- **building action** — something done to a standing building in the Build Phase: an **upgrade** (it makes that
+  building better), a mode, or an order ("Hold production", which keeps its waves home for a round).
 - **ability** — what a unit does on its own, by a kind from one table (`src/abilities/`): an aura, a bounty, loaded
   dice.
-- **credits** — what everything costs. Each round's income follows the **credits curve**; a slot's **credits share**
-  is its part of that curve (1 is the curve's own; `--p1-credits 1.25`).
+- **credits** — what everything costs. Each round's income follows the **credits curve** (`ROUND_CREDITS`), the income
+  part of the **expected power curve** every army is designed against (`src/armies/curve.ts`); a slot's **credits
+  share** is its part of that curve (1 is the curve's own; `--p1-credits 1.25`).
 - **tech tree**, **blueprint**, **Special**, **research** — the mechanisms that grow an army between rounds and
   missions, each naming exactly one thing ([`commander-armies.md`](commander-armies.md)).
 
@@ -81,22 +93,25 @@ GUIDANCE._
 - **mission** — a battle with a script, words and a goal, played in rounds driven by triggers; only inside Story. Its
   entry in a story file is a **level** in code.
 - **technology** — a card a mission grants and later missions keep.
-- **endless stand** — a mission of waves that grow until the Nexus falls, scored by how far the player got.
+- **endless stand** — a mission of groups that grow until the Nexus falls, scored by how far the player got.
+- **PERIMETER** — Vasse's first mission, the tutorial; the first map the game was built on, no longer its testing map.
 
 ## Setting up and playing a Skirmish
 
 - **slot** — one side of a battle, `p1` (west) or `p2` (east): its Commander and its controller. The duel's state
   calls them side A and side B ([`skirmish-saves.md`](../system-design/skirmish-saves.md)).
-- **controller** — who plays a slot each round, as the save writes it: `player` (a person, at the screen or through a
-  build file), `script:<profile>`, later `agent:<profile>`. On the command line and in a route a player slot is
-  written `build:` or `build:<build file>`.
+- **controller** — who plays a slot each round, as the save writes it: `player` or `player:<name>` (a person, at the
+  screen or through a build file), `script:<profile>` (or a script's own name, `script:rush`; `script:` alone builds
+  nothing), later `agent:<profile>`. On the command line and in a route a player slot is written `build:` or
+  `build:<build file>`. The setup screen shows them as `Player: <name>`, `Scripted: <profile>`, `Agent: <profile>`.
 - **script** — a coded player (`src/duel/players.ts`): `balanced`, `rush`, `turtle` and their variants (`rush-area`,
   `turtle-upgrade`, `rush-block` …). One plain idea of how to spend a round; none is a good player.
 - **script profile** — a named script with its options, a file in `players/scripts/`: `agro` (rush), `defensive`,
   `steady`, `agro-rich`. What `script:<profile>` names first.
 - **agent profile** — a language model's playing style, a Markdown file in `players/agents/`. Later.
 - **modifier** — a named rule laid over a battle from the next round: `fast-rounds`, `double-income`.
-- **setup** — everything chosen before round 1: map, seed, slots, goal, modifiers, round limit, settings.
+- **setup** — everything chosen before round 1: map, seed, slots, goal, modifiers, round limit and the Battle Round's
+  ticks (`roundTicks`); the settings travel beside it.
 - **save file** — a setup and the battle as it stands at the opening of a Build Phase (`*.save.json`). Every way into
   a Skirmish opens one, and every Build Phase can be written as one.
 - **brief** — what a player reads before a round: the board, the hand, the credits, what each building costs and
@@ -104,9 +119,14 @@ GUIDANCE._
 - **build actions** — a slot's answer for one round: the power it keeps, what it builds and where, its building
   actions, its formation and its stance. Both slots answer blind; there are no turns.
 - **build file** — build actions as JSON, for one round or many (`"round": 3`, `"2-4"`, `"*"`).
-- **draft** (in a save) — a slot's build actions handed in so far for the round it is at.
-- **stance** — whether a slot's army holds or attacks this round.
-- **formation** — how a plan sets its buildings that make units: touching (`block`) or apart (`apart`).
+- **draft** (the save's field) — a slot's build actions handed in so far for the round it is at. The save keeps this
+  older word; in writing, say *build actions handed in so far*.
+- **stance** — whether a slot's army attacks or holds this round (`attack`, `hold`). A banner has its own,
+  aggressive or defensive.
+- **hold** — the word does three jobs, so say which: in a map, the ground where a slot's troops stand (`hold`); as a
+  stance, staying in front of the Nexus; and *Hold production*, a building's order.
+- **formation** — how a plan sets its buildings that make units: touching (`block`), apart (`apart`), or each where its
+  placement says (`zones`, the same as naming none).
 - **ask** — a Skirmish asked for in words (`map`, `seed`, `ticks`, `rounds`, `p1`, `p2-commander`, `p1-credits`,
   `modifiers`, `load`): one reader reads them from the `skirmish` command's flags, the game's flags and a route
   (`src/skirmish/ask.ts`).
@@ -127,8 +147,8 @@ GUIDANCE._
 - **variant** — the same ground with one thing changed: a unit tuned, a rule switched, a formation.
 - **bench roster** — the Citizen, Ravel and Proving Grounds units and buildings that sandboxes and tests use; not a
   Commander Army.
-- **duel** — the code's word for the two-sided battle a Skirmish plays, a script or a model planning each side
-  ([`duels.md`](../system-design/duels.md)).
+- **duel** — the code's word for the two-sided battle a Skirmish plays, a person, a script or a model planning each
+  side ([`duels.md`](../system-design/duels.md)).
 - **measurement** — battles played the same way before and after a change, so the numbers compare: sandboxes, duels
   and missions ([`measurement.md`](../system-design/measurement.md)).
 - **record** — what a measurement keeps of one battle.

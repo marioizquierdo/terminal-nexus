@@ -1,5 +1,5 @@
 // The battles a measurement plays (docs/system-design/measurement.md): a map from `sandboxes/` on a seed, a duel
-// between two Commanders played as a Skirmish (the same save, seating and round loop the `skirmish` command plays by), and a campaign level played by a fixed plan. Each comes back as the records of
+// between two Commanders played as a Skirmish (the same save, seating and round loop the `skirmish` command plays by), and a Story level played by a fixed plan. Each comes back as the records of
 // its battles (`battle.ts`) and what decided it. Pure: the same inputs measure the same on every machine. Reading the
 // maps from disk, the clock and writing the results down are the command's (`bin/measure.ts`).
 
@@ -113,7 +113,7 @@ export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, s
 /** How lucky a hand kept was: its rarity's place among the rarities, common 1 up to legendary 4; none kept 0. */
 export const luckOf = (kept: Rarity | null): number => (kept === null ? 0 : RARITIES.indexOf(kept) + 1)
 
-/** A plan a campaign level is played by: what it buys each round, near the player's Grid Nexus. */
+/** A plan a Story level is played by: what it buys each round, near the player's Grid Nexus. */
 export type LevelPlan = Readonly<{ name: string; buys: CurvePlan["buys"] }>
 
 export type LevelMeasure = Readonly<{

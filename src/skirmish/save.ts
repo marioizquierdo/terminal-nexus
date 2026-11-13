@@ -160,7 +160,7 @@ export function controllerProblem(controller: Controller, profiles: Profiles = N
     return `no script or profile "${script}"${known.length === 0 ? "" : ` (profiles: ${known.join(", ")}; or a script: balanced, rush, turtle and their variants)`}`
   }
   if (kind === "agent") return "agent players are not built yet (the agent players' milestone)"
-  return `"${controller}" is not a controller: player, script:<name> or agent:<name>`
+  return `"${controller}" is not a controller: player, script:<profile> or agent:<profile>`
 }
 
 // --- Maps --------------------------------------------------------------------------------------------------------------
@@ -308,7 +308,7 @@ function slotProblems(slot: Slot, value: unknown, started: boolean, profiles: Pr
     }
   }
   const controller = value["controller"]
-  if (typeof controller !== "string") problems.push(`setup.slots.${slot}.controller: player, script:<name> or agent:<name>`)
+  if (typeof controller !== "string") problems.push(`setup.slots.${slot}.controller: player, script:<profile> or agent:<profile>`)
   else {
     const problem = controllerProblem(controller, profiles)
     if (problem !== null) problems.push(`setup.slots.${slot}.controller: ${problem}`)

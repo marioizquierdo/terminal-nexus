@@ -40,7 +40,7 @@ gap) and the Pocket (22 by 12, the bases close enough that their build ranges me
 ## 2. Playing one
 
 A duel is played as a Skirmish: on the Build Phase screen (`src/cli/skirmish-play.ts`), or headless by the `skirmish`
-command, a round a command, many battles over seeds, every pairing of Commanders, or two sessions taking turns through
+command, a round a command, many battles over seeds, every pairing of Commanders, or two sessions handing in build actions through
 one save file. Both play every round through one function (`playNext`, `src/skirmish/play.ts`), so a duel played on
 screen and one played headless are the same duel. The command's options and examples are its opening comment
 ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); the save it plays from is [`skirmish-saves.md`](skirmish-saves.md).

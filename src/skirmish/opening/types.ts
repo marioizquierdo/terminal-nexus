@@ -77,7 +77,7 @@ export type BattleOpening = Readonly<{
   placements: Readonly<Partial<Record<PlayerId, PlacementBlock>>>
   /**
    * A side's target (pulse.md): the rectangle its fighting units head for, engaging what comes within their
-   * reach on the way and standing there when nothing does — a campaign level's target, written into a map
+   * reach on the way and standing there when nothing does — a Story level's target, written into a map
    * so the rule has a sandbox of its own. Absent for a side that engages the nearest enemy wherever it is,
    * as every side did before targets.
    */

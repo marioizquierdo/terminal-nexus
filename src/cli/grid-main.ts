@@ -142,11 +142,11 @@ function tickFrom(args: ParsedArgs): number | undefined {
  * moment in question, without scrolling past everything that came before it. Never drops an ERROR
  * (an invariant violation is never hidden) or the trailing `report` line (always worth seeing).
  */
-function fromTick(lines: readonly string[], turn: number): string[] {
+function fromTick(lines: readonly string[], startTick: number): string[] {
   return lines.filter((line) => {
     if (line.includes(" ERROR ") || line.includes(" WARN  report ")) return true
     const match = /^\[(\d+)\]/.exec(line)
-    return match !== null && Number(match[1]) >= turn
+    return match !== null && Number(match[1]) >= startTick
   })
 }
 
@@ -158,8 +158,8 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
   const { run, report: input } = playSandboxRound(opening, { registry, seed, ticks: pulseTicks })
 
   const level = parseLevel(args.options.get("log-level") ?? "warn")
-  const turn = tickFrom(args)
-  const lines = turn === undefined ? buildLog(input, level) : fromTick(buildLog(input, level), turn)
+  const startTick = tickFrom(args)
+  const lines = startTick === undefined ? buildLog(input, level) : fromTick(buildLog(input, level), startTick)
 
   const savePath = args.options.get("save-log")
   if (savePath !== undefined) await writeFile(savePath, `${lines.join("\n")}\n`, "utf8")
@@ -197,7 +197,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   const seed = overrides.seed ?? opening.seed
   const pulseTicks = overrides.ticks ?? opening.pulseTicks
   const runs = parseInteger(args.options.get("runs") ?? String(DEFAULT_VERIFY_RUNS), "--runs")
-  const turn = tickFrom(args)
+  const startTick = tickFrom(args)
 
   let stateHash: string | null = null
   let eventsHash: string | null = null
@@ -207,7 +207,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   for (let index = 0; index < runs; index += 1) {
     // The state at `--from-tick`, caught as the run passes it: none when the battle ends first.
     let snapshot: MatchState | null = null
-    const { run, report } = playSandboxRound(opening, { registry, seed, ticks: pulseTicks, watch: (state) => (snapshot ??= state.tick === turn ? state : null) })
+    const { run, report } = playSandboxRound(opening, { registry, seed, ticks: pulseTicks, watch: (state) => (snapshot ??= state.tick === startTick ? state : null) })
     const caught = snapshot as MatchState | null
     const snapshotAt = caught === null ? null : hashState(caught)
 
@@ -232,8 +232,8 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
       process.stderr.write(`run ${index + 1}: INFO log differs from run 1\n`)
       return 1
     }
-    if (turn !== undefined && snapshotAt !== snapshotHash) {
-      process.stderr.write(`run ${index + 1}: state at tick ${turn} differs from run 1\n`)
+    if (startTick !== undefined && snapshotAt !== snapshotHash) {
+      process.stderr.write(`run ${index + 1}: state at tick ${startTick} differs from run 1\n`)
       return 1
     }
   }
@@ -244,11 +244,11 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
     `state      sha256:${(stateHash ?? "").slice(0, 16)}`,
     `events     sha256:${(eventsHash ?? "").slice(0, 16)}`,
   ]
-  if (turn !== undefined) {
+  if (startTick !== undefined) {
     lines.push(
       snapshotHash === null
-        ? `tick ${turn}   every run ended before reaching this tick`
-        : `tick ${turn}   sha256:${snapshotHash.slice(0, 16)}`,
+        ? `tick ${startTick}   every run ended before reaching this tick`
+        : `tick ${startTick}   sha256:${snapshotHash.slice(0, 16)}`,
     )
   }
   lines.push("")
@@ -290,7 +290,7 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
         : parseInteger(cosmeticSeed, "--cosmetic-seed"),
     glyphPack: parseGlyphPack(args.options.get("glyphs") ?? "ascii"),
   }
-  const turn = tickFrom(args)
+  const startTick = tickFrom(args)
   return watchPulse({
     timeline,
     colors: parseColorDepth(args.options.get("colors") ?? detectColorDepth()),
@@ -298,7 +298,7 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
     speed: Number(args.options.get("speed") ?? "1"),
     backend: args.options.get("backend") ?? "auto",
     presentation,
-    ...(turn === undefined ? {} : { startTick: turn }),
+    ...(startTick === undefined ? {} : { startTick }),
     stdout: process.stdout,
     stdin: process.stdin,
   })
