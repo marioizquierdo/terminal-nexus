@@ -15,7 +15,6 @@ import { defaultValue } from "../build/all-settings.ts"
 import type { BuildContext } from "../build/state.ts"
 import { legalityAt, missingFor } from "../build/state.ts"
 import type { ConstructItem, FieldEntity, PlannedPlacement } from "../build/types.ts"
-import { cardTextFor } from "../content/cards.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
@@ -30,6 +29,7 @@ import type { DuelMap } from "./maps.ts"
 import { DUEL_MAPS, duelGrid } from "./maps.ts"
 import type { DuelArmy } from "./sides.ts"
 import { armyOf, duelArmy, loadoutOf, powerOf } from "./sides.ts"
+import { nameOf, roundReader, scoreOf } from "./reading.ts"
 import type { DuelResult, DuelSetup, DuelState, Formation, Placement, RoundReport, Side, BuildActions, SideReport, SideState, Zone } from "./types.ts"
 import { APART_GAP, SIDES } from "./types.ts"
 
@@ -383,7 +383,7 @@ export function placementsOf(state: DuelState, side: Side, plan: BuildActions): 
 const buildingIdOf = (army: DuelArmy, item: ConstructItem): string => army.buildings.find((card) => card.structure === item.contentId)?.id ?? item.contentId
 
 /** What a card calls a content id, or its short name. */
-export const titleOf = (contentId: string): string => cardTextFor(contentId)?.title ?? baseContentId(contentId).slice(baseContentId(contentId).lastIndexOf(".") + 1)
+export const titleOf = nameOf
 
 /** `registry` with each building of `catalog` that makes units making them in waves, as its card says. */
 function battleContent(registry: ContentRegistry, catalog: readonly ConstructItem[]): ContentRegistry {
@@ -522,12 +522,14 @@ export function playRound(
   // The Battle Round, each side on its own content.
   const context = contextFor(start, sides.A, state.setup.pulseTicks, { sides })
   const events: DomainEvent[] = []
+  const reader = roundReader(start, sides)
   let current = start
   watch?.(current, [], sides.A, sides)
   while (current.outcome === null && current.tick < state.setup.pulseTicks) {
     const step = stepTick(current, context)
     current = step.state
     events.push(...step.events)
+    reader.step(current, step.events)
     watch?.(current, step.events, sides.A, sides)
   }
 
@@ -546,7 +548,7 @@ export function playRound(
     reports[side] = sideReport(side, phases[side], plans[side], state.sides[side].credits, earned, start, current, events, sides, fell.some((absence) => absence.player === side))
   }
   const ended = current.outcome?.reason === "nexus-destroyed" ? "nexus" : "time"
-  const report: RoundReport = { round, sides: reports, ticks: current.tick, ended }
+  const report: RoundReport = { round, sides: reports, ticks: current.tick, ended, reading: reader.reading() }
   const result: DuelResult | null =
     ended === "nexus" && current.outcome !== null
       ? { winner: current.outcome.winner, by: current.outcome.winner === null ? "draw" : "nexus", round }
@@ -706,15 +708,9 @@ function sideReport(
   }
 }
 
-/**
- * The rounds ran out: the side whose Nexus kept the larger share of its health wins; on an even share, the side that
- * dealt more damage over the whole duel; on that too, a draw.
- */
+/** The rounds ran out: judged by the score (`scoreOf`) — the healthier Nexus by share, then the damage dealt over the whole
+ *  duel; on both, a draw. */
 function judged(history: readonly RoundReport[], round: number): DuelResult {
-  const last = history.at(-1) as RoundReport
-  const share = (side: Side): number => (last.sides[side].nexus.most === 0 ? 0 : last.sides[side].nexus.after / last.sides[side].nexus.most)
-  if (share("A") !== share("B")) return { winner: share("A") > share("B") ? "A" : "B", by: "health", round }
-  const dealt = (side: Side): number => history.reduce((sum, report) => sum + report.sides[side].dealt.units + report.sides[side].dealt.buildings + report.sides[side].dealt.nexus, 0)
-  if (dealt("A") !== dealt("B")) return { winner: dealt("A") > dealt("B") ? "A" : "B", by: "damage", round }
-  return { winner: null, by: "draw", round }
+  const score = scoreOf(history)
+  return score.leader === null ? { winner: null, by: "draw", round } : { winner: score.leader, by: score.by === "health" ? "health" : "damage", round }
 }

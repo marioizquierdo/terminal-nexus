@@ -54,6 +54,7 @@
 //   --commanders <a,b|all>   every pairing of these Commanders, each from both sides, once a seed: who won by Commander
 //
 // What it writes:
+//   --show <0,120,end>       each Battle Round played drawn as text at these ticks (end: as it ends), after its report
 //   --json                   the briefs as data rather than text
 //   --out <dir>              every round played: its save (round-<n>.save.json) and its report (round-<n>.txt)
 //   --log <file>             every round's Battle Round as grid logs it, at --log-level (info: error, warn, info,
@@ -88,7 +89,7 @@ export const EXIT = { done: 0, failed: 1, refused: 2 } as const
 /** The options that take no value, and those that take one: the words that ask for a Skirmish, which the game's route
  *  takes too (`src/skirmish/ask.ts`), and the command's own. */
 const FLAGS = new Set(["json", "help"])
-const VALUES = new Set([...Object.keys(ASK_WORDS), "save", "file", "seeds", "commanders", "play-to", "out", "log", "log-level", "name", "notes"])
+const VALUES = new Set([...Object.keys(ASK_WORDS), "save", "file", "seeds", "commanders", "play-to", "out", "log", "log-level", "name", "notes", "show"])
 
 /** The options as written: each value by its name, and the flags given. */
 export type Options = Readonly<{ values: Readonly<Record<string, string>>; flags: ReadonlySet<string> }>
@@ -110,6 +111,8 @@ export type SkirmishRequest = Readonly<{
   out?: string
   log?: string
   logLevel?: LogLevel
+  /** The ticks of every Battle Round played to draw the battle at (`end`: as the round ends): `--show 0,120,end`. */
+  show?: readonly (number | "end")[]
   json: boolean
   name?: string
   notes?: string
@@ -179,6 +182,13 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
   if (load === undefined && ask.map === undefined) throw new Error("a battle needs --map <id|file> to start a new one, or --load <file> (skirmish --help)")
 
   const level = values["log-level"]
+  const show = values["show"]?.split(",").map((part) => {
+    const tick = part.trim()
+    if (tick === "end") return "end" as const
+    if (/^\d+$/u.test(tick)) return Number(tick)
+    throw new Error(`--show is ticks and end, with commas (0,120,end), not "${values["show"]}"`)
+  })
+  if (show !== undefined && playTo === undefined) throw new Error("--show draws the Battle Rounds played: it needs --play-to")
   return {
     ...given("load", load),
     ...given("save", save),
@@ -191,6 +201,7 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
     ...given("out", values["out"]),
     ...given("log", values["log"]),
     ...given("logLevel", level === undefined ? undefined : parseLevel(level)),
+    ...given("show", show),
     json: flags.has("json"),
     ...given("name", values["name"]),
     ...given("notes", values["notes"]),

@@ -11,12 +11,14 @@
 
 import { appendFileSync, mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
-import type { DuelState } from "../duel/index.ts"
-import { actionsFor, briefOf, checkBuildActions } from "../duel/index.ts"
+import type { ContentRegistry } from "../content/index.ts"
+import type { DuelState, Side } from "../duel/index.ts"
+import { actionsFor, briefOf, checkBuildActions, mapOf } from "../duel/index.ts"
+import { battlePicture } from "../duel/picture.ts"
 import { hashEvents } from "../events/serialize.ts"
 import type { LogLevel } from "../report/index.ts"
 import { buildLog } from "../report/index.ts"
-import type { Played, Ran } from "../skirmish/play.ts"
+import type { Played, Ran, RoundWatch } from "../skirmish/play.ts"
 import { actionsAt, isPlayer, playOn } from "../skirmish/play.ts"
 import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
 import { duelOf, saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
@@ -24,6 +26,7 @@ import type { Seated } from "../skirmish/request.ts"
 import { loadedBattle, newBattle, seat, withRules } from "../skirmish/request.ts"
 import { battleLine, historyLines, roundLines, slotLabel, standing } from "../skirmish/lines.ts"
 import { hashState } from "../state/serialize.ts"
+import type { MatchState } from "../state/types.ts"
 import { playStrategies } from "./play-strategies.ts"
 import type { SkirmishRequest } from "./skirmish.ts"
 import { readGameFile } from "./skirmish-files.ts"
@@ -99,12 +102,13 @@ function locked<T>(file: string, work: () => T): T {
 }
 
 /** Where each round played is kept, and how: its save and report in `out`, its Battle Round's log in `log`. */
-export type Keep = Readonly<{ out?: string; log?: string; level: LogLevel; prefix?: string; quiet?: boolean }>
+export type Keep = Readonly<{ out?: string; log?: string; level: LogLevel; prefix?: string; quiet?: boolean; show?: readonly (number | "end")[] }>
 
 /** Where the request keeps each round. */
 export const keepOf = (request: SkirmishRequest, more: Partial<Keep> = {}): Keep => ({
   ...(request.out === undefined ? {} : { out: request.out }),
   ...(request.log === undefined ? {} : { log: request.log }),
+  ...(request.show === undefined ? {} : { show: request.show }),
   level: request.logLevel ?? "info",
   ...more,
 })
@@ -135,9 +139,24 @@ function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLev
  */
 export function playRounds(setup: SaveSetup, start: DuelState, builds: Seated["builds"], stop: number, profiles: Profiles, keep: Keep, write: Write): Ran {
   if (keep.out !== undefined) mkdirSync(keep.out, { recursive: true })
+  // `--show`: the Battle Round drawn at the ticks asked for, and as it ends, printed after its report.
+  const ticks = new Set((keep.show ?? []).filter((tick): tick is number => tick !== "end"))
+  const map = mapOf(start)
+  const draw = (battle: MatchState, sides: Readonly<Record<Side, ContentRegistry>>): string[] => [
+    `--- the battle at tick ${battle.tick}`,
+    ...battlePicture(map, battle.entities.map((entity) => ({ contentId: entity.contentId, player: entity.player as Side, anchor: entity.anchor })), (side) => sides[side]),
+  ]
+  let pictures: string[] = []
+  let last: string[] = []
+  const watch: RoundWatch | undefined = keep.show === undefined ? undefined : (battle, _events, _drawn, sides) => {
+    if (ticks.has(battle.tick)) pictures.push(...draw(battle, sides))
+    if (keep.show?.includes("end") === true) last = draw(battle, sides)
+  }
   return playOn(setup, start, builds, stop, profiles, ({ before, played }) => {
     const round = before.round
-    const report = roundLines(played.report)
+    const report = [...roundLines(played.report), ...pictures, ...last]
+    pictures = []
+    last = []
     if (keep.quiet !== true) for (const line of report) write(line)
     if (keep.log !== undefined) appendFileSync(keep.log, `${roundLog(played, setup, round, keep.level).join("\n")}\n`)
     if (keep.out !== undefined) {
@@ -145,7 +164,7 @@ export function playRounds(setup: SaveSetup, start: DuelState, builds: Seated["b
       writeFileSync(join(keep.out, `${name}.save.json`), saveText(saveOf(setup, played.state)))
       writeFileSync(join(keep.out, `${name}.txt`), `${[...report, standing(setup, played.state)].join("\n")}\n`)
     }
-  })
+  }, watch)
 }
 
 /** A slot's brief, as text with the play strategies (a player that reads words), or as data. */

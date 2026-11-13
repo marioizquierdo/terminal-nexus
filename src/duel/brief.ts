@@ -9,16 +9,16 @@
 import { abilityLines } from "../abilities/index.ts"
 import type { ActionKind, PowerCard } from "../armies/index.ts"
 import { modeIn, modeSet } from "../armies/index.ts"
-import { artFor } from "../content/art.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittingsOf } from "../content/index.ts"
 import { supplyOf } from "../content/supply.ts"
-import { tilesOf } from "../grid/coords.ts"
-import { duelGrid } from "./maps.ts"
 import type { DuelArmy } from "./sides.ts"
 import { armyOf, loadoutOf, powerOf } from "./sides.ts"
 import { handOf, mapOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
+import { battlePicture } from "./picture.ts"
+import type { Score } from "./reading.ts"
+import { readingLines, scoreLine, scoreOf } from "./reading.ts"
 import type { DuelState, RoundReport, Side, SideReport } from "./types.ts"
 import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
 
@@ -92,6 +92,9 @@ export type BriefData = Readonly<{
     trains: readonly string[]
   }>
   map: readonly string[]
+  /** The score so far: each side's damage dealt and Nexus share, and who leads by the rule a battle that runs out of
+   *  rounds is judged by (`scoreOf`, `./reading.ts`). */
+  score: Score
   last: RoundReport | null
   history: readonly string[]
 }>
@@ -123,28 +126,12 @@ export function strengthOf(definition: ContentDef): number {
 /** What a power does, in its card's own line. */
 const cardOf = (card: PowerCard, number: number): BriefCard => ({ number, id: card.id, name: card.name, does: card.description, rarity: card.rarity })
 
-/** The map as rows of text: ground, then every building and unit drawn with its glyph — your side in lower case, the
- *  enemy's in upper case — so the picture is the screen's. */
+/** The map as rows of text, drawn as every picture of a battle is (`battlePicture`): the Grid as the round opens. */
 function picture(state: DuelState, registry: (side: Side) => ContentRegistry): string[] {
-  const map = mapOf(state)
-  const grid = duelGrid(map)
-  const rows = map.rows.map((row) => [...row])
-  const draw = (contentId: string, anchor: Readonly<{ x: number; y: number }>, side: Side): void => {
-    const footprint = registry(side).get(contentId).footprint
-    const art = artFor(contentId)
-    for (const tile of tilesOf(anchor, footprint)) {
-      if (tile.x < 0 || tile.y < 0 || tile.x >= grid.width || tile.y >= grid.height) continue
-      const glyph = art?.[tile.y - anchor.y]?.[tile.x - anchor.x] ?? contentId.slice(contentId.lastIndexOf(".") + 1, contentId.lastIndexOf(".") + 2)
-      ;(rows[tile.y] as string[])[tile.x] = side === "B" ? glyph.toUpperCase() : glyph.toLowerCase()
-    }
-  }
-  if (state.carried === null) {
-    for (const side of ["A", "B"] as const) for (const structure of standingOf(state, side)) draw(structure.contentId, structure.anchor, side)
-  } else {
-    for (const entity of state.carried.entities) draw(entity.contentId, entity.anchor, entity.player)
-  }
-  const header = `   ${Array.from({ length: grid.width }, (_, x) => (x % 10 === 0 ? String(x / 10) : " ")).join("")}`
-  return [header, ...rows.map((row, y) => `${String(y).padStart(2, " ")} ${row.join("")}`)]
+  const things = state.carried === null
+    ? (["A", "B"] as const).flatMap((side) => standingOf(state, side).map((structure) => ({ contentId: structure.contentId, player: side, anchor: structure.anchor })))
+    : state.carried.entities.map((entity) => ({ contentId: entity.contentId, player: entity.player as Side, anchor: entity.anchor }))
+  return battlePicture(mapOf(state), things, registry)
 }
 
 /** A side's round report as one line: what it built, kept, fielded, lost, dealt. */
@@ -272,6 +259,7 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
       ),
     },
     map: picture(state, registryOf),
+    score: scoreOf(state.history),
     last,
     history: state.history.map((report) => {
       const ours = report.sides[side]
@@ -295,6 +283,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push(`Your buildings: ${data.yours.buildings.join(", ")}. Your units on the Grid: ${Object.entries(data.yours.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}.`)
   lines.push(`Credits to spend: ${data.credits}. Supply: ${data.supply.used} of ${data.supply.cap ?? "unlimited"} places used (a building stops training while the army is full).`)
   lines.push(`Your Nexus: ${data.nexus.health} of ${data.nexus.most}. Theirs (${data.enemy.commander}): ${data.enemy.nexus.health} of ${data.enemy.nexus.most}. A side whose Nexus falls loses.`)
+  lines.push(`Score: ${scoreLine(data.score, data.side)}`)
   lines.push("")
   lines.push("## The Nexus Pulse's hand: keep one (by its number), or none")
   for (const card of data.hand) lines.push(`${card.number}. ${card.name} (${card.rarity}): ${card.does}`)
@@ -341,6 +330,7 @@ export function briefText(data: BriefData, strategies?: string): string {
     const enemy = data.side === "A" ? "B" : "A"
     lines.push(reportLine("You", data.last.sides[data.side]))
     lines.push(reportLine("They", data.last.sides[enemy]))
+    if (data.last.reading !== undefined) lines.push(...readingLines(data.last.reading, data.side))
   }
   if (data.history.length > 1) {
     lines.push("")

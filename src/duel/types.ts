@@ -8,6 +8,7 @@
 import type { Absence } from "../match/commander.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import type { DuelMap } from "./maps.ts"
+import type { RoundReading } from "./reading.ts"
 
 /** A side of the duel, the state's own `PlayerId`: A starts in the west, B in the east. */
 export type Side = PlayerId
@@ -163,6 +164,9 @@ export type RoundReport = Readonly<{
   /** The tick the battle ended on, and why: a Nexus fell, or time ran out. */
   ticks: number
   ended: "nexus" | "time"
+  /** What the Battle Round said beyond its totals: the front, first contact, the nearest the enemy came, what hit each
+   *  Nexus and destroyed each building (`src/duel/reading.ts`). Absent in a save written before it was read. */
+  reading?: RoundReading
 }>
 
 /** How a duel ended: who won, and how. */

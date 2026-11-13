@@ -152,3 +152,39 @@ player: its games show what an army does in the hands of a plain plan, not balan
 - **Strength a credit is in the brief** (each building's units' health times damage a second, a credit): Ravel
   buildings train about half what Citizen ones do by that measure, because a Ravel unit's worth is partly its burst on
   death, which the measure leaves out.
+
+## 7. Reading a battle
+
+**What a battle says is read in one place** (RULE — `src/duel/reading.ts`, `tests/reading.test.ts`), so the brief, the
+round's report, the `skirmish` command, a script and a model all read the same facts. A reading reads the record and
+never feeds the rules: a round plays the same whether or not it is read.
+
+- **The score** (`scoreOf`): each side's damage dealt over the battle and its Nexus's share of health, and who leads by
+  the rule a battle that runs out of rounds is judged by (the healthier Nexus, then the damage). The brief says it
+  every round: `Score: You lead on damage: damage dealt 518 to 382; both Nexuses whole.` A battle judged on damage is
+  no longer won on a total nobody sees (from the agent's play of 2026-11-13).
+- **A round's reading** (`roundReader`, played through by `playRound` and kept in its report as `reading`):
+  - **the front**, where the fighting was between the two Nexuses, 0 at a side's own and 1 at the enemy's — the map's
+    tempo in one number: on the Pocket the scripts fight from tick 1, on the Crossing in the middle by tick 130;
+  - **first contact**, the tick units first hurt each other;
+  - **the nearest an enemy came** to each Nexus, in tiles;
+  - **what hit each Nexus**, damage by the content that dealt it, its own side's blasts included;
+  - **each building lost, and what destroyed it** (`2 Barracks by Bomber`);
+  - **what a side's own blasts and splashes cost it**: a death's blast hurts friend and foe unless its content says
+    enemies alone ([`pulse.md`](pulse.md)), and now the player is told.
+
+  The brief prints the side's own reading under the last round (`Front: …`, `Your Nexus was hit by: …`), and each round's
+  report in the command prints both sides' in a line.
+- **The battle drawn as text** (`battlePicture`, `src/duel/picture.ts`): the ground, each building in its art, each unit
+  by its name's first letter, p1's in lower case and p2's in upper case; a unit on a roof is counted under the picture
+  rather than drawn over the building. The brief's map is it, between rounds; `skirmish --show 0,120,end` draws each
+  Battle Round played at those ticks and as it ends, after the round's report, so an agent reading text sees the battle
+  at the moment it asks about. Played from any kept round (`--out` keeps each round's save), that is the inspection a
+  test needs: load the round, give its build actions, `--play-to next --show <ticks>`, and nothing is saved over.
+- **A script that reads** (`reader`, `src/duel/players.ts`): builds as `balanced`, then sets its stance from the last
+  round's trade (presses an attack that won it, holds after one that lost it, pushes out when a hold won it by a
+  third; attacks a Nexus under half, holds a lead on Nexus health in the last round, attacks when behind on it), puts a
+  Turret by its Nexus first when the enemy reached it, and sets its producers apart once the enemy has a building
+  standing whose units aim at the thickest knot (a block otherwise was tried: on the Pocket's small build range it
+  left credits unspent, and lost). Its note says why each round. A new reading is a new field here, read
+  by the brief and offered to every script at once.

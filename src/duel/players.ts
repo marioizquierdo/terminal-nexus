@@ -19,7 +19,7 @@
 // Pure: a plan is a function of the brief.
 
 import type { BriefBuilding, BriefCard, BriefData } from "./brief.ts"
-import type { BuildingOrder, Formation, Placement, BuildActions, Zone } from "./types.ts"
+import type { BuildingOrder, Formation, Placement, BuildActions, Stance, Zone } from "./types.ts"
 import { FORMATIONS } from "./types.ts"
 
 /** A player: a plan from a brief. */
@@ -101,6 +101,59 @@ export const turtle: Player = (brief) => {
 }
 
 /**
+ * **reader**: a player that reads the battle (`src/duel/reading.ts`) before it plans, where the others follow a fixed
+ * idea. It builds as `balanced` does, and then:
+ *
+ * - **the stance from the last round's trade**: it attacks while its attacks win the trade, holds when an attack lost
+ *   it, and pushes out again when a hold won it by a third; it attacks a Nexus brought under half, holds a lead on Nexus
+ *   health in the last round, and attacks when behind on it;
+ * - **a Turret when the enemy reached its Nexus** (a hit, or an enemy within 8 tiles), placed by the Nexus, first;
+ * - **apart against area damage**: its buildings that train units set apart once the enemy has a building standing
+ *   whose units aim at the thickest knot; otherwise each where `balanced` puts it (a block was tried, and on the
+ *   Pocket's small build range it left credits unspent).
+ *
+ * Still one plain idea, read a round at a time: it plans nothing more than one round ahead, and is no good player.
+ */
+export const reader: Player = (brief) => {
+  const enemy = brief.side === "A" ? "B" : "A"
+  const last = brief.last
+  const read = last?.reading?.sides[brief.side]
+  const total = (side: "A" | "B"): number => (last === null ? 0 : last.sides[side].dealt.units + last.sides[side].dealt.buildings + last.sides[side].dealt.nexus)
+  const ours = total(brief.side)
+  const theirs = total(enemy)
+  const wasAttacking = last?.sides[brief.side].stance === "attack"
+  const enemyShare = brief.enemy.nexus.most === 0 ? 1 : brief.enemy.nexus.health / brief.enemy.nexus.most
+  const lastRound = brief.round >= brief.rounds
+  const decided = ((): Readonly<{ stance: Stance; because: string }> => {
+    if (enemyShare <= 0.5) return { stance: "attack", because: "their Nexus is under half" }
+    if (lastRound && brief.score.leader === brief.side && brief.score.by === "health") return { stance: "hold", because: "the last round, ahead on Nexus health" }
+    if (brief.score.leader === enemy && brief.score.by === "health") return { stance: "attack", because: "behind on Nexus health" }
+    if (last === null) return { stance: "hold", because: "round 1: gathering" }
+    if (wasAttacking) return ours >= theirs ? { stance: "attack", because: "its attack won the trade" } : { stance: "hold", because: "its attack lost the trade" }
+    return ours >= theirs * 1.34 ? { stance: "attack", because: "its hold won the trade by a third" } : { stance: "hold", because: "holding" }
+  })()
+  const stance = decided.stance
+  const why: string[] = [decided.because]
+
+  const threatened = read !== undefined && (Object.keys(read.nexusHits).length > 0 || (read.closest !== null && read.closest <= 8))
+  const turret = brief.buildings.find((building) => building.spawns === undefined && building.supply === undefined && building.open)
+  const first = threatened && turret !== undefined && turret.cost <= brief.credits ? turret : undefined
+  if (first !== undefined) why.push("a Turret by the Nexus, since the enemy reached it")
+  const plan = balanced({ ...brief, credits: brief.credits - (first?.cost ?? 0) })
+
+  const knots = brief.enemy.trains.filter((line) => /thickest knot/u.test(line)).map((line) => line.slice(0, line.indexOf(":")))
+  const facesArea = knots.some((name) => brief.enemy.buildings.some((standing) => standing.startsWith(`${name} at`)))
+  if (facesArea) why.push("apart, against their area damage")
+  return {
+    ...plan,
+    build: first === undefined ? plan.build : [{ building: first.id, at: "nexus" }, ...plan.build],
+    ...(facesArea ? { formation: "apart" as const } : {}),
+    stance,
+    note: `reader: ${why.join("; ")}`,
+  }
+}
+
+/**
  * A player that plays `player`'s plan with area damage: each round it buys one building whose units hit an area and aim
  * at the thickest knot (`BriefBuilding.area`: the Ravels' Fuse Shed, the Citizens' Battery) first, when one is open and
  * affordable, placed where the script puts its producers, and spends what is left as `player` would. The scripts value
@@ -153,6 +206,7 @@ export const SCRIPTED: Readonly<Record<string, Player>> = {
   balanced,
   rush,
   turtle,
+  reader,
   "balanced-area": withArea(balanced),
   "rush-area": withArea(rush),
   "turtle-area": withArea(turtle),

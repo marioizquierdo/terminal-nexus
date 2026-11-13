@@ -30,7 +30,17 @@ explain from a battle's report (`--out <dir>` keeps every round's, `--log` the B
 ```bash
 npm run skirmish -- --map pocket --p1 script:agro --p2 script:defensive --play-to end --out .playtest/rounds --log .playtest/battle.log
 npm run skirmish -- --load .playtest/rounds/round-3.save.json --p1 script:steady --play-to next     # play on from any round
+npm run skirmish -- --load .playtest/rounds/round-3.save.json --play-to next --show 0,120,240,end   # see round 4 at those ticks
 ```
+
+**Read before you guess.** Every brief says the score (who leads, on Nexus health or on damage) and what the last round
+said: the front (0 at your Nexus, 1 at theirs), first contact, the nearest the enemy came, what hit your Nexus, what
+destroyed your buildings and by what, and what your own blasts cost you. Each round's report prints both sides' in a
+line. `--show` draws the Battle Round as text at the ticks you name, after the round's report: load any kept round
+and play it again to see a moment, nothing saved over without `--save`. What the battle says is read in one place
+(`src/duel/reading.ts`, [`duels.md`](../../../docs/system-design/duels.md), reading a battle); a reading a test needs is
+added there, and the brief and every script get it at once. `script:reader` plays from it, a better sparring partner
+than the fixed scripts.
 
 Formations (`rush-block` against `rush-apart`) and the power curve over many battles are the measurement's
 (`node bin/measure.ts run --spec quick --parts duels --players rush --formations block,apart`, the `remeasure` skill).
