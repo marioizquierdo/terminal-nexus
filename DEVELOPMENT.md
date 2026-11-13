@@ -431,7 +431,8 @@ not think of. One home per fact; everything else links.
 
 **Retired words.** "Canon", "gate", "evidence", the old folder paths and the old document names (engine, ascii-effects, the governance document) are retired outside `docs/history/`; the validator rejects them in documents, skills, source, tests and scripts alike. <!-- stale-ok -->
 Say "the design documents", "milestone step", "screenshots", "in scope", and cite a design page by its
-current name. History keeps the words it was written with.
+current name. History keeps the words it was written with. Every retired word, game words included, is in the
+[glossary](docs/game-design/glossary.md)'s "Words we stopped using", with what to say instead.
 
 ## 8. Writing for Mario
 
@@ -447,7 +448,9 @@ He does not have section numbers, question ids or feedback item numbers memorise
 have to; those index things for the next agent, and a reply that says "item 87" has failed. A sentence he
 has to look up before he can judge it has failed. Name the rule, decision or idea in plain English;
 if the source matters, put it in parentheses after the idea. Define a project word (milestone step,
-Experiment, regroup) the first time it appears in anything he reads, or use an ordinary word. Say what
+Experiment, regroup) the first time it appears in anything he reads, or use an ordinary word. **The
+[glossary](docs/game-design/glossary.md) is where to check a word**: its one line is the definition to use, a
+word that does two jobs says which, and a thing that needs a new name gets it there, in the same pull request. Say what
 no person has tried yet and what is known to be broken. Internal shorthand is fine where the audience
 is the next agent: a note in a design document for the next session, a code comment.
 

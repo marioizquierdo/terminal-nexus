@@ -26,7 +26,8 @@ Every document is on one of three shelves, and the path says which:
 
 1. Run `./scripts/check-repository.sh`. It validates the repository and prints the current milestone
    and its current step.
-2. Read [`docs/README.md`](docs/README.md), the index of every document, one line each.
+2. Read [`docs/README.md`](docs/README.md), the index of every document, one line each, and keep the
+   [glossary](docs/game-design/glossary.md) at hand: the project's words, one line each.
 3. Read the current milestone in [`docs/milestones/`](docs/milestones/README.md) through its current
    step, and [`docs/milestones/next-steps.md`](docs/milestones/next-steps.md) for what is waiting on
    Mario, the owner, and what rode along.
@@ -57,6 +58,9 @@ are defined once, in the [glossary](docs/game-design/glossary.md).
   it is to play, watch, decide or do; at most five wait on him (the manual's "The feedback loop").
 - **Whatever Mario's latest feedback asks for comes first.** A pasted settings export is feedback:
   start the game with it (`--settings`) and settle each Experiment it answers.
+- **One word, one thing: check the [glossary](docs/game-design/glossary.md) before naming anything** — a
+  screen, a setting, a flag, a field, a file, a heading, a line a player reads. Use the word it gives; if the
+  word is missing, add it there in the same pull request; never bring back a word from its "Words we stopped using".
 - **Small, reviewable changes**, each with its tests, green on both runtimes (`npm test`,
   `npm run test:bun`, `npm run typecheck`), and the validator passing.
 - **See it before you claim it.** The playtest script presses keys without a terminal and returns
@@ -125,6 +129,7 @@ IDEA (a sketch). The ones every session needs:
 
 - [ ] `./scripts/check-repository.sh` passes; both test runtimes and the type check are green.
 - [ ] The milestone's step list is ticked for what was built, and nothing else.
+- [ ] Every new word is in the glossary, and no retired one came back.
 - [ ] New questions carry a recommendation; new Experiments name the question they serve.
 - [ ] The pull request says what a person will notice, how to try it, and what is left to decide.
 - [ ] Anything learned the hard way is in `docs/history/lessons-learned.md`, not only fixed.

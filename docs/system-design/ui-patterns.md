@@ -928,7 +928,7 @@ the build stamped on every export — is what makes a pasted export reproducible
   Nexus deals its hand (the owner, 2026-10-07): on screen, the menu row `[n] Nexus Pulse` and the popup it
   opens, titled `NEXUS PULSE`. The code still calls the battle step `pulse`, the engine's word, which a player
   never reads. A mission's cycles are **rounds** to the player — "round 2 of 3", "Next round". The words are defined in
-  [`grid-engine.md`](grid-engine.md); the "Popup pulse" Experiment is a breath of light on a popup's
+  the [glossary](../game-design/glossary.md); the "Popup pulse" Experiment is a breath of light on a popup's
   border and has nothing to do with the Nexus Pulse.
 
 ## Where the rules came from
