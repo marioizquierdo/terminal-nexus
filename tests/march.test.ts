@@ -11,24 +11,24 @@ import { classOf, FIXTURE_REGISTRY, formationRank, lineOf, rectFootprint } from 
 import type { ContentDef } from "../src/content/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { footprintExtent } from "../src/grid/coords.ts"
-import { measureScenario } from "../src/measure/index.ts"
+import { measureSave } from "../src/measure/index.ts"
 import { lineTiles, moveStateOf } from "../src/pulse/march.ts"
 import { accrueCredit, accrueSlowedCredit, stepCost } from "../src/pulse/movement.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import type { Actor } from "../src/pulse/shared.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
-import { loadScenarioFile } from "./helpers.ts"
+import { loadTestingSaveFile } from "./helpers.ts"
 
-/** Every state of a scenario's battle, and every event, on its own seed or `seed`. */
-async function play(name: string, seed?: number, scenario?: ScenarioDefinition): Promise<Readonly<{ states: MatchState[]; events: DomainEvent[] }>> {
-  const map = scenario ?? (await loadScenarioFile(`${name}.map.json`))
+/** Every state of a testing save's battle, and every event, on its own seed or `seed`. */
+async function play(name: string, seed?: number, opening?: BattleOpening): Promise<Readonly<{ states: MatchState[]; events: DomainEvent[] }>> {
+  const map = opening ?? (await loadTestingSaveFile(`${name}.save.json`))
   return playMap(map, seed)
 }
 
-function playMap(map: ScenarioDefinition, seed?: number): Readonly<{ states: MatchState[]; events: DomainEvent[] }> {
-  const loaded = loadScenario(map, { registry: FIXTURE_REGISTRY, seed: seed ?? map.seed })
+function playMap(map: BattleOpening, seed?: number): Readonly<{ states: MatchState[]; events: DomainEvent[] }> {
+  const loaded = openBattle(map, { registry: FIXTURE_REGISTRY, seed: seed ?? map.seed })
   const context = contextFor(loaded.state, loaded.registry, map.pulseTicks)
   const states = [loaded.state]
   const events: DomainEvent[] = []
@@ -169,7 +169,7 @@ test("half speed is movement credit: a slowed unit accrues on every second tick,
 })
 
 /** Open field, side A's two units a row apart marching east on B's Nexus, and nothing else. */
-function pair(rows: readonly string[], width = 70): ScenarioDefinition {
+function pair(rows: readonly string[], width = 70): BattleOpening {
   const height = 9
   return {
     id: "pair",
@@ -275,9 +275,9 @@ test("march-commander: the Commander is a regular troop - the troopers pass her,
 })
 
 test("march-narrow-gap: troopers swap past the slower marksmen in a one-wide corridor, a raider waits behind its marksman, and nothing jams", async () => {
-  const scenario = await loadScenarioFile("march-narrow-gap.map.json")
+  const opening = await loadTestingSaveFile("march-narrow-gap.save.json")
   for (const seed of [1, 2, 3, 4]) {
-    const { battle } = measureScenario(scenario, seed)
+    const { battle } = measureSave(opening, seed)
     assert.equal(battle.winner, "A", `seed ${seed}: ${battle.reason} at ${battle.ticks}`)
     assert.equal(battle.reason, "nexus-destroyed")
     assert.equal(battle.sides.A.stalled, 0, `seed ${seed}: a unit stood still for good`)
@@ -310,9 +310,9 @@ function rows(state: MatchState, width: number, mirrored: boolean): string[] {
 }
 
 test("march-mirror: two mirrored armies sort themselves and march at each other, a mirror tick for tick", async () => {
-  const scenario = await loadScenarioFile("march-mirror.map.json")
+  const opening = await loadTestingSaveFile("march-mirror.save.json")
   const { states, events } = await play("march-mirror")
-  const width = "width" in scenario.grid ? scenario.grid.width : 0
+  const width = "width" in opening.grid ? opening.grid.width : 0
   states.forEach((state, tick) => assert.deepEqual(rows(state, width, false), rows(state, width, true), `parted at tick ${tick}`))
   // Both sides' marksmen stepped back for their troopers, as many times each.
   const swaps = (player: "A" | "B"): number => events.filter((event) => event.kind === "march.made-way" && event.entity.startsWith(`${player}:`)).length
@@ -321,11 +321,11 @@ test("march-mirror: two mirrored armies sort themselves and march at each other,
 })
 
 test("a march with its sides' names swapped is the same march: nothing favours A for being A", async () => {
-  const scenario = await loadScenarioFile("march-lines.map.json")
-  const swapped: ScenarioDefinition = {
-    ...scenario,
-    placements: { A: scenario.placements.B ?? { rows: [], legend: {} }, B: scenario.placements.A ?? { rows: [], legend: {} } },
-    targets: { ...(scenario.targets?.B === undefined ? {} : { A: scenario.targets.B }), ...(scenario.targets?.A === undefined ? {} : { B: scenario.targets.A }) },
+  const opening = await loadTestingSaveFile("march-lines.save.json")
+  const swapped: BattleOpening = {
+    ...opening,
+    placements: { A: opening.placements.B ?? { rows: [], legend: {} }, B: opening.placements.A ?? { rows: [], legend: {} } },
+    targets: { ...(opening.targets?.B === undefined ? {} : { A: opening.targets.B }), ...(opening.targets?.A === undefined ? {} : { B: opening.targets.A }) },
   }
   const once = await play("march-lines")
   const twice = await play("march-lines", undefined, swapped)
@@ -348,7 +348,7 @@ test("the guide line covers mirrored tiles from either end, both tiles where it 
 test("a flanker goes for the shooter behind the enemy's front, where any other unit fights the trooper nearest it", () => {
   // A flanker (the bench's runner that goes beyond the line) above a trooper, an enemy trooper two columns ahead of it
   // and a marksman three behind that.
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "flanker",
     name: "flanker",
     grid: { width: 30, height: 9 },
@@ -361,7 +361,7 @@ test("a flanker goes for the shooter behind the enemy's front, where any other u
       B: { at: { x: 10, y: 4 }, rows: ["t  m"], legend: { t: { content: "unit.citizen.trooper" }, m: { content: "unit.citizen.marksman" } } },
     },
   }
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: 1 })
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: 1 })
   const context = contextFor(loaded.state, loaded.registry, 60)
   const { events } = stepTick(loaded.state, context)
   const chose = (who: string): string => {

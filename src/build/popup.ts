@@ -22,7 +22,7 @@ import { SECTIONS, SHOWN_SETTINGS, setting, shownSetting } from "./all-settings.
 import type { BuildLayout } from "./layout.ts"
 import { START_KEY } from "./layout.ts"
 import { CONTROLS_TITLE, controlsPage } from "./help.ts"
-import { ACTIVITY_DESCRIPTION, CONTROLS_DESCRIPTION, GAME_MENU_ROWS, RESTART_DESCRIPTION, SETTINGS_ROWS, sectionOfRow } from "./settings.ts"
+import { ACTIVITY_DESCRIPTION, CONTROLS_DESCRIPTION, GAME_MENU_ROWS, RESTART_DESCRIPTION, SAVE_DESCRIPTION, SETTINGS_ROWS, sectionOfRow } from "./settings.ts"
 import { ACTIVITY_FILTERS } from "../log/activity.ts"
 import { commanderName } from "../content/cards.ts"
 import {
@@ -39,9 +39,9 @@ import {
   shownEntries,
 } from "./activity.ts"
 import type { BuildContext, BuildState } from "./state.ts"
-import { BANNER_STANCES, BANNER_START_ROW, BANNER_TARGET_ROW, exportText, nexusPowers, pendingPicks } from "./state.ts"
+import { BANNER_STANCES, BANNER_START_ROW, BANNER_TARGET_ROW, exportText, nexusPowers, pendingPicks, saveRefusal } from "./state.ts"
 import { bannerSpot, capitalised, currentBanner } from "./banner.ts"
-import type { BuildCommand, DialogLine, PopupMessage, RunDraftCard } from "./types.ts"
+import type { BuildCommand, DialogLine, PopupMessage } from "./types.ts"
 
 export type PopupRow =
   | Readonly<{ kind: "blank" }>
@@ -72,7 +72,7 @@ export type PopupRow =
       description?: string
       tag?: string
       /** Drawn quietly, as a row that is there but has nothing to do now (the draft's Remove with nothing to remove);
-       *  its hotkey and click still send the command, which says why it is refused. */
+       *  its hotkey and click still send the command, which says why it is refused. (Save game where nothing can be saved.) */
       muted?: boolean
     }>
   /**
@@ -218,10 +218,11 @@ function settingsSpec(state: BuildState): PopupSpec {
   }
 }
 
-/** The game menu: Settings, Controls and hotkeys, Activity logs, Restart, Quit. Every row is an option, and the highlight is `GAME_MENU_ROWS`'s
- *  index. No row goes back to the game: Esc, `x`, the top bar's `close [esc]` and a click outside
- *  do, as for every popup. */
-function menuSpec(state: BuildState): PopupSpec {
+/** The game menu: Settings, Controls and hotkeys, Activity logs, Save game, Restart, Quit. Every row is an option, and the
+ *  highlight is `GAME_MENU_ROWS`'s index. Save game is dimmed where nothing can be saved, its description saying why. No row
+ *  goes back to the game: Esc, `x`, the top bar's `close [esc]` and a click outside do, as for every popup. */
+function menuSpec(context: BuildContext, state: BuildState): PopupSpec {
+  const unsaved = saveRefusal(context, state)
   const on = (row: (typeof GAME_MENU_ROWS)[number]): boolean => GAME_MENU_ROWS[state.popupHighlight] === row
   return {
     title: "MENU",
@@ -253,6 +254,15 @@ function menuSpec(state: BuildState): PopupSpec {
       },
       {
         kind: "option",
+        hotkey: "v",
+        label: "Save game",
+        command: { kind: "open-save-game" },
+        highlighted: on("save"),
+        description: unsaved ?? SAVE_DESCRIPTION,
+        ...(unsaved === null ? {} : { muted: true }),
+      },
+      {
+        kind: "option",
         hotkey: "r",
         label: "Restart",
         command: { kind: "restart" },
@@ -265,7 +275,7 @@ function menuSpec(state: BuildState): PopupSpec {
         label: "Quit",
         command: { kind: "quit" },
         highlighted: on("quit"),
-        description: "The plan is not saved.",
+        description: unsaved === null ? "The battle is not saved: Save game [v] keeps it, the plan so far included." : "The plan is not saved.",
       },
     ],
   }
@@ -436,71 +446,42 @@ export function dialogSpec(context: BuildContext, state: BuildState): PopupSpec 
   }
 }
 
-/** The hotkeys of a list of choices past nine: a to z, without `q` (the game menu) and `x` (back), which are never a row's. */
-const LIST_HOTKEYS = "123456789abcdefghijklmnoprstuvwyz"
-
-/** A run's draft card as an option: its name, its rarity at the end of the row, and under it what family and role it is of and
- *  what it does. */
-function cardOption(card: RunDraftCard, hotkey: string, command: BuildCommand, highlighted: boolean): PopupRow {
+/**
+ * **Save game**, over the game menu: where the file goes, the name to type — the file it was loaded from or last saved to,
+ * or a new one — with a cursor after it, then `[enter] Save`. Letters, digits and `- _ . / ~` type into the name (Space
+ * types `-`), Backspace takes the last one off; Esc goes back to the game menu. A name with no folder is written under
+ * the saves folder, and `.save.json` is added unless it ends in `.json`.
+ */
+function saveGameSpec(context: BuildContext, state: BuildState): PopupSpec {
   return {
-    kind: "option",
-    hotkey,
-    label: card.name,
-    command,
-    highlighted,
-    description: `${card.family} · ${card.role}: ${card.line}`,
-    tag: card.rarity,
+    title: "SAVE GAME",
+    rows: [
+      { kind: "note", text: "The battle as this Build Phase opened, with the plan so far. Loading it comes back here." },
+      ...(context.saveDestination === undefined ? [] : [{ kind: "note", text: context.saveDestination } as const]),
+      { kind: "blank" },
+      { kind: "text", text: `Name: ${state.saveField}_`, code: true, strong: true },
+      { kind: "blank" },
+      { kind: "option", hotkey: "enter", label: "Save", command: { kind: "save-game" }, highlighted: true },
+    ],
   }
 }
 
-/** The army as the draft popup ends with it: a line for each family — "Structures: Barracks, Turret". */
-function armyLines(context: BuildContext): readonly PopupRow[] {
-  const army = context.runDraft?.army ?? []
-  return army.map((each): PopupRow => ({ kind: "text", text: `${each.family}: ${each.names.length === 0 ? "none" : each.names.join(", ")}`, muted: true }))
-}
-
 /**
- * **A run's draft**, in the one popup shape: the intro as text, the three cards as options on `1` `2` `3`, then `[r] Remove a
- * card` and `[t] Take <n> requisition`, always present, and the army as it stands under a heading. Fewer than three cards
- * means fewer rows, the keys still counting from 1. It has no close: the top bar offers none, and Esc, `x`, a right click
- * and a click outside say what to do (`DRAFT_HOLD`). The army is its one run that scrolls, should a small terminal leave it too little room.
+ * **A note** (`!`, on every screen): one line about this moment, typed with a cursor after it, then `[enter] Save
+ * note`. Saved with the moment itself — the round as it opened, what was pressed since, the screen and the last
+ * Activity Logs events — so whoever reads it can open the game exactly here (`--note`).
  */
-export function runDraftSpec(context: BuildContext, state: BuildState): PopupSpec | null {
-  const draft = context.runDraft
-  if (draft === undefined) return null
-  const on = (row: number): boolean => row === state.popupHighlight
-  const cards = draft.cards.length
-  const rows: PopupRow[] = [
-    ...draft.intro.map((text): PopupRow => ({ kind: "note", text })),
-    ...draft.cards.map((card, index) => cardOption(card, String(index + 1), { kind: "draft-take", index }, on(index))),
-    {
-      kind: "option",
-      hotkey: "r",
-      label: "Remove a card",
-      command: { kind: "draft-open-remove" },
-      highlighted: on(cards),
-      ...(draft.removable.length === 0 ? { muted: true, tag: "none" } : {}),
-    },
-    { kind: "option", hotkey: "t", label: `Take ${draft.requisition} requisition`, command: { kind: "draft-requisition" }, highlighted: on(cards + 1) },
-    { kind: "heading", text: "ARMY" },
-  ]
-  const from = rows.length
-  rows.push(...armyLines(context))
-  if (rows.length === from) return { title: draft.title, rows }
-  return { title: draft.title, rows, scroll: { from, to: rows.length, highlight: from, select: (): BuildCommand => ({ kind: "select-row", row: state.popupHighlight }) } }
-}
-
-/** The list of cards the draft could remove instead, over it: one option each, on `1` to `9` and then letters, scrolling when
- *  the army holds more than fit. Choosing one settles the draft; Esc and `x` go back to it. */
-export function runDraftRemoveSpec(context: BuildContext, state: BuildState): PopupSpec | null {
-  const draft = context.runDraft
-  if (draft === undefined) return null
-  const rows = draft.removable.map((card, index) => cardOption(card, LIST_HOTKEYS[index] ?? "", { kind: "draft-remove", index }, index === state.popupHighlight))
-  if (rows.length === 0) return { title: "REMOVE A CARD", rows }
+function noteSpec(context: BuildContext, state: BuildState): PopupSpec {
   return {
-    title: "REMOVE A CARD",
-    rows,
-    scroll: { from: 0, to: rows.length, highlight: state.popupHighlight, select: (row): BuildCommand => ({ kind: "select-row", row }) },
+    title: "NOTE",
+    rows: [
+      { kind: "note", text: "What did you notice? One line; Enter alone is fine. Saved with this moment, to open again exactly here." },
+      ...(context.noteDestination === undefined ? [] : [{ kind: "note", text: context.noteDestination } as const]),
+      { kind: "blank" },
+      { kind: "text", text: `> ${state.noteField}_`, code: true, strong: true },
+      { kind: "blank" },
+      { kind: "option", hotkey: "enter", label: "Save note", command: { kind: "save-note" }, highlighted: true },
+    ],
   }
 }
 
@@ -698,7 +679,7 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
         ],
       }
     case "game-menu":
-      return menuSpec(state)
+      return menuSpec(context, state)
     case "settings":
       return settingsSpec(state)
     case "export":
@@ -711,10 +692,10 @@ export function popupSpec(context: BuildContext, state: BuildState): PopupSpec |
       return activitySpec(context, state)
     case "dialog":
       return dialogSpec(context, state)
-    case "run-draft":
-      return runDraftSpec(context, state)
-    case "run-draft-remove":
-      return runDraftRemoveSpec(context, state)
+    case "save-game":
+      return saveGameSpec(context, state)
+    case "note":
+      return noteSpec(context, state)
     case "banner-place":
       return bannerPlaceSpec(context, state)
     case "banner-stance":

@@ -11,7 +11,8 @@ import { barkPanelRows, quoted } from "../armies/barks.ts"
 import type { Camera, Viewport } from "../build/camera.ts"
 import { visibleRange } from "../build/camera.ts"
 import type { BuildLayout } from "../build/layout.ts"
-import { cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
+import { SETUP_KEY } from "../build/keyboard.ts"
+import { alternativeRow, setupRow, cellForTile, nextRoundRow, pulseControlRows, tileAtCell } from "../build/layout.ts"
 import { wrapWords } from "./draw.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { CARD_TEXT, commanderName } from "../content/cards.ts"
@@ -65,6 +66,8 @@ export type PulseFrame = Readonly<{
   forces: Readonly<Record<PlayerId, Readonly<{ units: number; hp: number }>>>
   /** What the other side is called: "raid" unless the Pulse names it (`ResolvedPulse.enemy`). */
   enemy?: string
+  /** Both sides' names when the battle is watched, nobody at the screen playing either (`ResolvedPulse.watched`). */
+  watched?: Readonly<Record<PlayerId, string>>
   /** How many mobile units the player has left, standing where the fight left them to regroup. */
   home: number
   /** Her aura's reach while the fight is on (`pulse-live.ts`). Absent: no aura on the Grid. */
@@ -330,9 +333,11 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
     case "halted":
       return status(`${held}Cease fire. The battle is over.`)
     case "home":
-      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${cameHome(pulse.home)}`, pulse.result.tone)
+      return status(pulse.result.line ?? `${pulse.result.headline} - ${pulse.result.reason} ${pulse.watched === undefined ? cameHome(pulse.home) : `${pulse.home} of ${pulse.watched.A}'s hold the field.`}`, pulse.result.tone)
     default:
-      return status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the ${pulse.enemy ?? SIDE.B}.`)
+      return pulse.watched === undefined
+        ? status(`${held}Battle Round - ${pulse.forces.A.units} of yours against ${pulse.forces.B.units} of the ${pulse.enemy ?? SIDE.B}.`)
+        : status(`${held}Battle Round - ${pulse.watched.A} ${pulse.forces.A.units} against ${pulse.watched.B} ${pulse.forces.B.units}.`)
   }
 }
 
@@ -340,7 +345,7 @@ export function pulseStatus(pulse: PulseFrame): StatusMessage {
 function forceLine(pulse: PulseFrame, player: PlayerId): string {
   const { units, hp } = pulse.forces[player]
   const bar = forceBar(hp, pulse.openingHealth.get(player) ?? 0)
-  const side = player === "B" ? (pulse.enemy ?? SIDE.B) : SIDE[player]
+  const side = pulse.watched !== undefined ? pulse.watched[player].slice(0, 5) : player === "B" ? (pulse.enemy ?? SIDE.B) : SIDE[player]
   return `${side.toUpperCase().padEnd(5)} ${String(units).padStart(2)} [${bar}] ${String(hp).padStart(4)}`
 }
 
@@ -571,6 +576,20 @@ export function drawPulsePanel(cells: BandCell[], layout: BuildLayout, pulse: Pu
     const row = nextRoundRow(layout)
     text(cells, band, column, row, "[enter]", "chrome.hotkey", { bold: true, limit })
     text(cells, band, column + 8, row, goOn, "chrome.value", { limit: limit - 8 })
+    // The other way on, when the result has one (a Skirmish's New seed), on the row above: `n` or a click.
+    const alternative = pulse.result.alternative
+    if (alternative !== undefined) {
+      const above = alternativeRow(layout)
+      text(cells, band, column, above, "[n]", "chrome.hotkey", { bold: true, limit })
+      text(cells, band, column + 8, above, alternative, "chrome.value", { limit: limit - 8 })
+    }
+    // And the setup screen, when it has one (a Skirmish's), above that: `m` or a click.
+    const setup = pulse.result.setup
+    if (setup !== undefined) {
+      const row = setupRow(layout)
+      text(cells, band, column, row, `[${SETUP_KEY}]`, "chrome.hotkey", { bold: true, limit })
+      text(cells, band, column + 8, row, setup, "chrome.value", { limit: limit - 8 })
+    }
   }
   for (const control of pulseControlRows(layout)) {
     if (control.control === "toggle" && pulse.phase === "home") continue

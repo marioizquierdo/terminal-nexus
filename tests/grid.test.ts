@@ -7,21 +7,21 @@ import type { ContentDef } from "../src/content/index.ts"
 import { OccupancyIndex, footprintDistance, maskFrom, tilesOf } from "../src/grid/index.ts"
 import type { GridTerrain, TerrainId } from "../src/grid/index.ts"
 import { contextFor, occupancyFor, stepTick } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
+import { loadTestingSaveFile, playTestingSave, testingSaveFiles } from "./helpers.ts"
 
 function plainGrid(width: number, height: number): GridTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
 test("no two entities overlap in a mask that includes both their layers, at any tick", async () => {
-  for (const name of scenarioFiles()) {
-    const scenario = await loadScenarioFile(name)
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-    const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
+  for (const name of testingSaveFiles()) {
+    const opening = await loadTestingSaveFile(name)
+    const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+    const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
     let state = loaded.state
-    while (state.outcome === null && state.tick < scenario.pulseTicks) {
+    while (state.outcome === null && state.tick < opening.pulseTicks) {
       // The index itself refuses a double occupancy, so building one per tick is the assertion.
       assert.doesNotThrow(
         () => occupancyFor(state, context),
@@ -53,12 +53,12 @@ test("no two entities overlap in a mask that includes both their layers, at any 
 test("a worker and a ground unit may share a tile", async () => {
   // Collision is a mask composed from chosen layers, so at some tick a unit and a worker stand on
   // the same tile — asserted rather than forbidden.
-  const scenario = await loadScenarioFile("share-tile-worker-unit.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-  const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
+  const opening = await loadTestingSaveFile("share-tile-worker-unit.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+  const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
   let state = loaded.state
   let overlapped = false
-  while (state.outcome === null && state.tick < scenario.pulseTicks && !overlapped) {
+  while (state.outcome === null && state.tick < opening.pulseTicks && !overlapped) {
     const occupied = new Map<string, string>()
     for (const entity of state.entities) {
       const key = `${entity.anchor.x},${entity.anchor.y}`
@@ -150,17 +150,17 @@ test("a 3x1 hauler is refused a two-tile gap and admitted a three-tile one", () 
   }
 })
 
-test("the hauler scenarios agree with the mask: three crosses the wall, two never does", async () => {
+test("the hauler testing saves agree with the mask: three crosses the wall, two never does", async () => {
   const crossed = async (name: string): Promise<boolean> => {
-    const resolved = await resolveScenario(name)
+    const resolved = await playTestingSave(name)
     return resolved.run.events.some((event) => event.kind === "entity.moved" && event.to.y > 6)
   }
-  assert.equal(await crossed("hauler-three-tile-gap.map.json"), true)
-  assert.equal(await crossed("hauler-two-tile-gap.map.json"), false)
+  assert.equal(await crossed("hauler-three-tile-gap.save.json"), true)
+  assert.equal(await crossed("hauler-two-tile-gap.save.json"), false)
 })
 
 test("a multi-tile entity is damaged and destroyed as one entity", async () => {
-  const resolved = await resolveScenario("structure-destruction.map.json")
+  const resolved = await playTestingSave("structure-destruction.save.json")
   const destroyed = resolved.run.events.filter((event) => event.kind === "structure.destroyed")
   assert.equal(destroyed.length, 1, "a 3x2 Grid Nexus died more than once")
   const nexus = destroyed[0]

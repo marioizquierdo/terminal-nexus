@@ -34,7 +34,7 @@ export function jobsOf(spec: MeasureSpec, parts: ReadonlySet<string>): MeasureJo
     }
   }
   if (parts.has("levels")) jobs.push({ label: "levels", parts: ["levels"], players, west, seeds: spec.seeds })
-  if (parts.has("scenarios")) jobs.push({ label: "scenarios", parts: ["scenarios"], players, west, seeds: spec.seeds })
+  if (parts.has("saves")) jobs.push({ label: "saves", parts: ["saves"], players, west, seeds: spec.seeds })
   return jobs
 }
 
@@ -49,7 +49,7 @@ const battleTicks = (battles: readonly BattleRecord[]): number => battles.reduce
 /** Every tick a measurement played: what its time per tick is averaged over. */
 export function ticksOf(measurement: Measurement): number {
   return (
-    battleTicks(measurement.scenarios.map((run) => run.battle)) +
+    battleTicks(measurement.saves.map((run) => run.battle)) +
     battleTicks(measurement.duels.flatMap((duel) => duel.rounds.map((round) => round.battle))) +
     battleTicks(measurement.levels.flatMap((level) => level.rounds.map((round) => round.battle)))
   )
@@ -103,7 +103,7 @@ export function mergeMeasurements(parts: readonly Measurement[], spec: MeasureSp
     ...(question === undefined ? {} : { question }),
     jobs,
     msPerTick: ticks === 0 ? null : Math.round((ms / ticks) * 1000) / 1000,
-    scenarios: parts.flatMap((part) => part.scenarios),
+    saves: parts.flatMap((part) => part.saves),
     duels,
     levels: parts.flatMap((part) => part.levels),
   }

@@ -125,6 +125,16 @@ export function nextRoundRow(layout: BuildLayout): number {
   return layout.panelLastRow - 1
 }
 
+/** The row a result's other way on sits on, when it has one — `[n] New seed` — above the one Enter goes on by. */
+export function alternativeRow(layout: BuildLayout): number {
+  return layout.panelLastRow - 2
+}
+
+/** The row a result's way back to the setup screen sits on, when it has one — `[m] Setup screen` — above New seed. */
+export function setupRow(layout: BuildLayout): number {
+  return layout.panelLastRow - 3
+}
+
 /** Whether a frame column is one of the side panel's — the width a highlight bar or a click target spans. */
 export function inPanelColumns(layout: BuildLayout, column: number): boolean {
   return column >= layout.panelColumn && column < layout.panelColumn + layout.panelLimit
@@ -165,9 +175,6 @@ export const ESC_KEY = "[esc]"
  * it — "menu [esc]" — the way a way-back is read, hotkey on the right.
  */
 export function escLabel(state: Pick<BuildState, "popup" | "focus" | "committed" | "armed" | "exploreMap">): string {
-  // A run's draft cannot be closed, so its top bar offers nothing; the remove list over it goes back.
-  if (state.popup === "run-draft") return ""
-  if (state.popup === "run-draft-remove") return `back ${ESC_KEY}`
   const action = state.popup !== null ? "close" : state.committed || mapMode(state) === "menu" ? "menu" : "back"
   return `${action} ${ESC_KEY}`
 }

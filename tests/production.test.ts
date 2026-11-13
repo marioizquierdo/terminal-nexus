@@ -19,7 +19,7 @@ import type { Force, MissionPulse } from "../src/match/index.ts"
 import { PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import type { BuildingSpawns } from "../src/armies/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
-import { TICKS_PER_SECOND } from "../src/scenario/load.ts"
+import { TICKS_PER_SECOND } from "../src/skirmish/opening/open.ts"
 import { hashState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
 
@@ -81,7 +81,7 @@ test("a building makes its units one way in a battle: given a recipe, the Hatche
   const opted = withProduction(FIXTURE_REGISTRY, { [HATCHERY]: brood })
   assert.equal(opted.get(HATCHERY).spawn, undefined, "an opted-in Hatchery still breeds by its own timer too")
   assert.deepEqual(opted.get(HATCHERY).production, brood)
-  // The shared content keeps it, so a grid scenario with a Hatchery (hatchery-spawn) breeds as it always did.
+  // The shared content keeps it, so a testing save with a Hatchery (hatchery-spawn) breeds as it always did.
   assert.deepEqual(FIXTURE_REGISTRY.get(HATCHERY).spawn, ownSpawner)
 
   // On the Grid: its whole brood on the wave's tick, and nothing from the old timer before or after it.
@@ -173,7 +173,7 @@ test("the same Barracks, the same seed, the same ticks: the same hash, every run
   assert.equal(hashes.size, 1)
 })
 
-// --- In a campaign ---------------------------------------------------------------------------------
+// --- In a story ---------------------------------------------------------------------------------
 
 /** What each building PERIMETER offers spawns, by its structure: its army's own words for it. */
 const SPAWNS: Readonly<Record<string, BuildingSpawns>> = Object.fromEntries(
@@ -181,19 +181,19 @@ const SPAWNS: Readonly<Record<string, BuildingSpawns>> = Object.fromEntries(
 )
 /** Every building's first wave, in ticks: the owner's five seconds, as the tuned setting has it. */
 const FIRST_WAVE = defaultValue("firstWave") * TICKS_PER_SECOND
-const campaignRegistry = spawningRegistry(FIXTURE_REGISTRY, SPAWNS, FIRST_WAVE)
+const storyRegistry = spawningRegistry(FIXTURE_REGISTRY, SPAWNS, FIRST_WAVE)
 
 function round(
   pulse: number,
   carried: MatchState | null,
   plan: readonly { contentId: string; anchor: { x: number; y: number } }[] = [],
-  registry = campaignRegistry,
+  registry = storyRegistry,
 ): MissionPulse {
   const structures = [...(pulse === 1 ? STARTER_STANDING : []), ...plan]
   return resolveMissionPulse({ mission: PERIMETER, grid, registry, pulse, carried, structures })
 }
 
-test("the Barracks and the Hatchery say what they spawn on their own cards, and the campaign's battles run on it", () => {
+test("the Barracks and the Hatchery say what they spawn on their own cards, and the story's battles run on it", () => {
   // The owner's numbers: four troopers in one wave a round; the Hatchery's brood, three, by the same rule.
   assert.deepEqual(SPAWNS, {
     [BARRACKS]: { unit: TROOPER, perWave: 4, waves: 1, secondsBetween: 10 },
@@ -202,10 +202,10 @@ test("the Barracks and the Hatchery say what they spawn on their own cards, and 
   assert.equal(FIRST_WAVE, 60)
   // The mission names nothing that spawns: that is the buildings' own.
   assert.ok(!("trains" in PERIMETER), "PERIMETER still lists what trains")
-  assert.deepEqual(campaignRegistry.get(BARRACKS).production, { output: TROOPER, perWave: 4, waves: 1, firstTicks: 60, intervalTicks: 120 })
-  assert.deepEqual(campaignRegistry.get(HATCHERY).production, spawnRecipe({ unit: SWARMER, perWave: 3, waves: 1, secondsBetween: 10 }, 60))
-  assert.equal(campaignRegistry.get(HATCHERY).spawn, undefined, "the campaign's Hatchery still breeds by its own timer")
-  assert.equal(campaignRegistry.get("structure.bench.beamturret").production, undefined)
+  assert.deepEqual(storyRegistry.get(BARRACKS).production, { output: TROOPER, perWave: 4, waves: 1, firstTicks: 60, intervalTicks: 120 })
+  assert.deepEqual(storyRegistry.get(HATCHERY).production, spawnRecipe({ unit: SWARMER, perWave: 3, waves: 1, secondsBetween: 10 }, 60))
+  assert.equal(storyRegistry.get(HATCHERY).spawn, undefined, "the story's Hatchery still breeds by its own timer")
+  assert.equal(storyRegistry.get("structure.bench.beamturret").production, undefined)
   // Nothing spawns, nothing changes.
   assert.equal(spawningRegistry(FIXTURE_REGISTRY, {}, FIRST_WAVE), FIXTURE_REGISTRY)
 })
@@ -219,7 +219,7 @@ test("PERIMETER's round 1: the Barracks on the map sends its four troopers toget
   assert.deepEqual(trained.map((event) => event.tick), [60, 60, 60, 60])
   // On its roof, on the tiles nearest where they head (the line, the troops' target, north-west of it): its north row
   // whole, and the ties for the fourth drawn.
-  const roof = tilesOf(opening.anchor, campaignRegistry.get(BARRACKS).footprint)
+  const roof = tilesOf(opening.anchor, storyRegistry.get(BARRACKS).footprint)
   const at = trained.map((event) => (event.kind === "entity.spawned" ? `${event.at.x},${event.at.y}` : ""))
   assert.ok(at.every((tile) => roof.some((own) => `${own.x},${own.y}` === tile)), `a trooper came down off the roof: ${at.join(" ")}`)
   const north = roof.filter((tile) => tile.y === opening.anchor.y).map((tile) => `${tile.x},${tile.y}`)
@@ -262,7 +262,7 @@ test("supply: an army fields no more than its buildings give, and a wave past it
   ]
   const run = round(1, null, placed)
   const unitsAt = (state: MatchState): number =>
-    supplyOf(state.entities.filter((entity) => entity.player === "A").map((entity) => campaignRegistry.get(entity.contentId))).used
+    supplyOf(state.entities.filter((entity) => entity.player === "A").map((entity) => storyRegistry.get(entity.contentId))).used
   for (const state of run.states) assert.ok(unitsAt(state) <= 12, `the army took ${unitsAt(state)} places at tick ${state.tick}`)
   const trained = trainedEvents(run.events).map((event) => event.tick)
   // Seven fit as the first waves come; the rest wait for a place.
@@ -294,10 +294,10 @@ test("supply: an army fields no more than its buildings give, and a wave past it
 })
 
 test("supply's arithmetic: a unit takes 1 unless it says, a Commander none, a structure none; no building giving any is no cap", () => {
-  const trooper = campaignRegistry.get("unit.citizen.trooper")
-  const nexus = campaignRegistry.get("structure.citizen.nexus")
-  const vasse = campaignRegistry.get("unit.citizen.vasse")
-  const pikeman = campaignRegistry.get("unit.citizen.pikeman")
+  const trooper = storyRegistry.get("unit.citizen.trooper")
+  const nexus = storyRegistry.get("structure.citizen.nexus")
+  const vasse = storyRegistry.get("unit.citizen.vasse")
+  const pikeman = storyRegistry.get("unit.citizen.pikeman")
   assert.deepEqual([supplyCostOf(trooper), supplyCostOf(vasse), supplyCostOf(pikeman), supplyCostOf(nexus)], [1, 0, 2, 0])
   assert.deepEqual(supplyOf([nexus, trooper, pikeman, vasse]), { used: 3, cap: 12 })
   assert.deepEqual(supplyOf([trooper, trooper]), { used: 2, cap: null })
@@ -312,7 +312,7 @@ test("a wave's survivors stay on the Grid; the regroup and the next opening star
   const first = round(1, null, [{ contentId: "structure.bench.beamturret", anchor: { x: 25, y: 7 } }])
   const trained = trainedEvents(first.events)
   assert.equal(trained.length, 4, "round 1 did not train its wave")
-  const back = regroup(first.final, campaignRegistry)
+  const back = regroup(first.final, storyRegistry)
   const barracks = back.state.entities.find((entity) => entity.contentId === BARRACKS)
   assert.ok(barracks !== undefined)
   assert.deepEqual([barracks.productionCooldown, barracks.produced, barracks.owed], [FIRST_WAVE, 0, 0])

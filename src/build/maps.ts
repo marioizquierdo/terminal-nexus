@@ -1,4 +1,4 @@
-// The maps a level can name, by id — the small map table a campaign's levels point into (`map: "starter"` in
+// The maps a level can name, by id — the small map table a story's levels point into (`map: "starter"` in
 // `armies/vasse/army.json`) — and the one map there is: the Build Phase's starter map, a Grid big enough that
 // scrolling is unavoidable, with two structures already standing on it.
 //
@@ -61,7 +61,7 @@ const DEPOSITS: readonly Readonly<{ x: number; y: number }>[] = [
 ]
 
 /**
- * Built by a function rather than checked in as a `.map.json` scenario: a scenario file is
+ * Built by a function rather than checked in as a testing save (`.save.json`): a testing save is
  * simulation input and the determinism suite replays every one of them twenty times. This Grid never
  * reaches the kernel. Deterministic all the same — no randomness, no clock, the same tiles each run.
  */

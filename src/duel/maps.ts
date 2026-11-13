@@ -8,6 +8,8 @@
 import type { Coord, GridTerrain, TerrainId } from "../grid/types.ts"
 import type { TargetArea } from "../state/types.ts"
 import type { Side } from "./types.ts"
+import crossing from "../../maps/crossing.map.json" with { type: "json" }
+import pocket from "../../maps/pocket.map.json" with { type: "json" }
 
 /** A duel map: its picture, where each Nexus stands (the anchor of its footprint, its north-west tile), and where a
  *  side holding its ground gathers. */
@@ -38,48 +40,31 @@ export function duelGrid(map: DuelMap): GridTerrain {
   return { width, height, tiles }
 }
 
-/** Rows of `width` by `height`, open but for the rectangles of rock given. */
-function drawn(width: number, height: number, rocks: readonly Readonly<{ x: number; y: number; width: number; height: number }>[]): string[] {
-  const rows = Array.from({ length: height }, () => Array.from({ length: width }, () => "."))
-  for (const rock of rocks) {
-    for (let y = rock.y; y < rock.y + rock.height; y += 1) for (let x = rock.x; x < rock.x + rock.width; x += 1) (rows[y] as string[])[x] = "#"
-  }
-  return rows.map((row) => row.join(""))
-}
+/** A map file (`maps/<id>.map.json`): the picture and, by slot (`p1` west is side A, `p2` east is side B), where each
+ *  Nexus stands and where its troops hold. The same shape a Skirmish save draws a map in. */
+type MapFile = Readonly<{
+  id: string
+  name: string
+  notes: string
+  rows: readonly string[]
+  nexus: Readonly<Record<"p1" | "p2", Coord>>
+  hold: Readonly<Record<"p1" | "p2", TargetArea>>
+}>
+
+/** A map file as the duel reads it, by side. */
+const fromFile = (file: MapFile): DuelMap => ({
+  id: file.id,
+  name: file.name,
+  notes: file.notes,
+  rows: file.rows,
+  nexus: { A: file.nexus.p1, B: file.nexus.p2 },
+  hold: { A: file.hold.p1, B: file.hold.p2 },
+})
 
 /**
- * The Crossing: 72 by 28, a Nexus at each end of the middle row and a ridge down the centre with one wide gap, so the
- * armies meet in the middle or go round. Pillars on either side give a line somewhere to stand. Every Nexus is twenty
- * columns from the gap, a crossing of about twenty seconds at a trooper's pace.
+ * The maps that ship, in `maps/`: **the Crossing**, 72 by 28, a Nexus at each end of the middle row and a ridge down
+ * the centre with one gap eight rows wide, pillars on either side to hold beside, every Nexus twenty columns from the
+ * gap; and **the Pocket**, 22 by 12, the two Nexuses ten columns apart, so their build ranges meet in the middle from
+ * the first round: a quick battle, and where a test puts two sides that both reach the same ground.
  */
-const CROSSING: DuelMap = {
-  id: "crossing",
-  name: "The Crossing",
-  notes: "Two Nexuses at the ends of the middle row, a ridge down the centre with a gap eight rows wide, and pillars to hold beside.",
-  rows: drawn(72, 28, [
-    { x: 35, y: 0, width: 2, height: 10 },
-    { x: 35, y: 18, width: 2, height: 10 },
-    { x: 22, y: 6, width: 2, height: 2 },
-    { x: 22, y: 20, width: 2, height: 2 },
-    { x: 48, y: 6, width: 2, height: 2 },
-    { x: 48, y: 20, width: 2, height: 2 },
-  ]),
-  nexus: { A: { x: 6, y: 13 }, B: { x: 63, y: 13 } },
-  hold: { A: { x: 14, y: 11, width: 4, height: 6 }, B: { x: 54, y: 11, width: 4, height: 6 } },
-}
-
-/**
- * The Pocket: 22 by 12, the two Nexuses ten columns apart, so their build ranges meet in the middle from the first
- * round. A quick duel, and the place a test puts two sides that both reach the same ground.
- */
-const POCKET: DuelMap = {
-  id: "pocket",
-  name: "The Pocket",
-  notes: "A small open field with the two bases close enough that their build ranges meet in the middle from the first round.",
-  rows: drawn(22, 12, []),
-  nexus: { A: { x: 3, y: 5 }, B: { x: 16, y: 5 } },
-  hold: { A: { x: 7, y: 4, width: 2, height: 4 }, B: { x: 13, y: 4, width: 2, height: 4 } },
-}
-
-/** Every duel map, by id. */
-export const DUEL_MAPS: Readonly<Record<string, DuelMap>> = { crossing: CROSSING, pocket: POCKET }
+export const DUEL_MAPS: Readonly<Record<string, DuelMap>> = { crossing: fromFile(crossing), pocket: fromFile(pocket) }

@@ -13,7 +13,7 @@ The duel, where armies are played against each other, is [`duels.md`](duels.md).
 | File | What it holds |
 | --- | --- |
 | `armies/<id>/army.json` | What a side can field: units and structures, building cards, Nexus powers, and at most one Commander. |
-| `campaigns/<id>/campaign.json` | A Commander's levels in order: map, credits, unlocks, schedule, mission. |
+| `stories/<id>/story.json` | A Commander's levels in order: map, credits, unlocks, schedule, mission. |
 
 **Armies stack by `requires`**, and each army sees what it requires and nothing else:
 
@@ -23,7 +23,7 @@ The duel, where armies are played against each other, is [`duels.md`](duels.md).
 | `citizen`, `ravel` | faction | A Nexus's units, buildings and the powers any of its Commanders may be dealt. |
 | `vasse`, `averno`, `dob` | Commander | One Commander: her unit, her voice, her own cards, on top of her faction. |
 
-A story's file (a campaign file, until the Skirmish milestone renames it) names the armies its missions play with: the Commander's army and the raid's faction
+A story's file (`stories/<id>/story.json`) names the armies its missions play with: the Commander's army and the raid's faction
 (`"requires": ["vasse", "ravel"]`). The loader refuses anything a file names that it cannot see, every problem at
 once, by path.
 
@@ -188,7 +188,7 @@ of the kernel (RULE — `tests/architecture.test.ts`): a mod's kind needs only t
 takes a table of kinds as an argument (`PulseContext.abilities`), which is the seam a mod's kinds would come through;
 `tests/abilities.test.ts` runs one that the game does not ship.
 
-## 5. Stories (campaign files)
+## 5. Stories
 
 A story's file names its Commander, the armies it requires and its levels in order. A level gives a map, credits,
 what it unlocks, a schedule if it bends the default, and a mission (`docs/game-design/story.md`).
@@ -222,8 +222,8 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 2. A new skill that no kind expresses: a module in `src/abilities/` and a line in `ABILITIES`, with a test.
 3. A new kind of power: an entry in `EFFECTS` and its line in the `PowerEffect` union, with a test.
 4. One line in `src/shipped.ts`. Run `npm test`: the loader says what is wrong.
-5. Play her: `node bin/duel.ts play --a <id> --b vasse` (`duels.md`), and a story when she has one
-   (`campaigns/<id>/campaign.json`, its levels extending existing ones where they can).
+5. Play her: `npm run skirmish -- --map crossing --p1-commander <id> --p1 script:steady --p2 script:steady --play-to end`, and against every Commander with `--commanders all --seeds 1-6` ([`testing-ground.md`](testing-ground.md), testing through Skirmishes), and a story when she has one
+   (`stories/<id>/story.json`, its levels extending existing ones where they can).
 6. A test that she reads apart from the others where it counts (`tests/averno.test.ts` is the pattern).
 
 ## 8. What a modder can and cannot do today

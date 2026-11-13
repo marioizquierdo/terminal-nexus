@@ -24,7 +24,7 @@ import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { createView } from "../src/view/snapshot.ts"
 import { BARRACKS, DEFENCE, MINIMUM, placeholderContext, play, testMission } from "./pulse-helpers.ts"
-import type { Scenario, Spot } from "./pulse-helpers.ts"
+import type { TestSetup, Spot } from "./pulse-helpers.ts"
 
 const headlineOf = (pulse: ResolvedPulse): string => resultOf(outcomeOf(pulse.timeline)).headline
 
@@ -32,10 +32,10 @@ test("every ending the player can meet is reachable from the starter map's own d
   // The question is whether the ending reads "regardless of whether they won, lost, or
   // reached the mission's own tick limit". Nothing can be judged that cannot be reached. A defeat is
   // only ever the Nexus falling (Mario, 2026-10-01): a force wiped out with its Nexus standing plays on,
-  // so a side wiped out and a draw belong to battles with no Nexus (`grid`'s scenarios), and their words
+  // so a side wiped out and a draw belong to battles with no Nexus (`grid`'s testing saves), and their words
   // are ending.test.ts's.
-  const table: readonly (readonly [string, Scenario, string, string | null, string])[] = [
-    // name, scenario, headline, winner, reason
+  const table: readonly (readonly [string, TestSetup, string, string | null, string])[] = [
+    // name, setup, headline, winner, reason
     // The Nexus fights back: with nothing built, the squads and the Nexus's own shots wipe the first raid out.
     ["nothing built", {}, "VICTORY", "A", "annihilation"],
     ["one Turret", { plan: [DEFENCE[0] as Spot] }, "VICTORY", "A", "annihilation"],
@@ -44,8 +44,8 @@ test("every ending the player can meet is reachable from the starter map's own d
     ["no units of your own, a heavy raid", { crew: "none", raid: "heavy" }, "DEFEAT", "B", "nexus-destroyed"],
     ["a heavy raid, nothing built", { raid: "heavy" }, "DEFEAT", "B", "nexus-destroyed"],
   ]
-  for (const [name, scenario, headline, winner, reason] of table) {
-    const { pulse } = play(scenario)
+  for (const [name, opening, headline, winner, reason] of table) {
+    const { pulse } = play(opening)
     const outcome = outcomeOf(pulse.timeline)
     assert.equal(headlineOf(pulse), headline, `${name}: the headline`)
     assert.equal(outcome.winner, winner, `${name}: the winner`)
@@ -100,8 +100,8 @@ test("what the player built is what the Pulse resolves: a different plan is a di
 })
 
 test("the timeline runs to the outcome and no further; the regroup hands the next Build Phase a clean, legal state", () => {
-  for (const scenario of [{}, { plan: DEFENCE }, { raid: "none" }] as const) {
-    const { timeline, regroup: recall } = play(scenario).pulse
+  for (const opening of [{}, { plan: DEFENCE }, { raid: "none" }] as const) {
+    const { timeline, regroup: recall } = play(opening).pulse
     const last = timeline.states[timeline.states.length - 1] as NonNullable<(typeof timeline.states)[number]>
     assert.ok(last.outcome !== null, "the timeline stopped without an outcome")
     assert.equal(timeline.states.length - 1, last.outcome.tick, "the timeline ran past its own ending")

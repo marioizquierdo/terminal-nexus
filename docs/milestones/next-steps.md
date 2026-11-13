@@ -10,8 +10,13 @@ whether it is to **play**, **watch**, **decide** or **do**, and about how long i
 A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and where each went, are in
 [the history](../history/retired-asks-2026-11-12.md).
 
-- **Play, about fifteen minutes: the banner, in a Challenge battle** (the title menu's Challenge row, `2`, which the
-  Skirmish milestone turns into Skirmish; unlike PERIMETER it has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
+- **Play, about ten minutes: the Skirmish session** (the milestone's own test). `./bin/terminal-nexus.ts`, `1`
+  Skirmish, `1` New game: pick a map, a Commander and who plays each side (`Scripted: agro`, `defensive`, `steady`), `s`
+  to start. Play a round or two, then Esc, Esc, `v` to Save game. Quit, start again, `1`, `2` Load game, open your save
+  and carry on; or change p1 to a script (`1` on its row) and watch both scripts play. Press `!` wherever something
+  confuses you: the note saves that very moment. Then ask me to play your save on with scripts on both sides.
+- **Play, about fifteen minutes: the banner, in a Skirmish** (the title menu's Skirmish row, `1`; unlike PERIMETER it
+  has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
   `s` for the start panel, `t` to change the target: move the banner with the arrows or the mouse, Enter, then `a`
   (aggressive) or `d` (defensive), and `s` to start. Is placing it comfortable and clear, or should a simpler stance row
   replace it? In a duel the banner does not move the army yet (the step's next item), so judge the placing, not the
@@ -19,8 +24,8 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
   10 seconds), a building's actions (`e` onto a Barracks, then `c`), and the Nexus shooting back. In Settings, under
   Experiments, try the keyboard's Arrow step, Shift step, Shift pace and Hold pace, then export the settings and paste
   them with your notes.
-- **Watch, five minutes: troops at a narrow door.** `./bin/grid.ts scenarios/engage/engage-gap2-melee-vs-mix`, then
-  `./bin/grid.ts scenarios/engage/engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
+- **Watch, five minutes: troops at a narrow door.** `./bin/grid.ts skirmish-testing/engage/engage-gap2-melee-vs-mix`, then
+  `./bin/grid.ts skirmish-testing/engage/engage-gap2-airmix-vs-mix`: twelve troopers lose at a door two rows wide, and the same
   number with half of them in the air win. Does that read as good ground (a choice that matters) or as air too strong
   where the ground is tight? Does a unit that keeps its target read as commitment or as stubbornness?
 - **Decide, one line: letter keys for buildings.** Your notes once said "press 'b' to build a barracks". Was `b` an
@@ -67,7 +72,7 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
-- Only the buildings a mission offers spawn: a barracks in a `grid` scenario still spawns nothing,
+- Only the buildings a mission offers spawn: a barracks in a testing save still spawns nothing,
   and the bench Hatchery there keeps its own breeding.
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):

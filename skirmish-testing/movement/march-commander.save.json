@@ -1,0 +1,69 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "March: the Commander is a regular troop - she walks in her place and nobody waits for her",
+  "notes": "Vasse marches from the north-west corner on the enemy's Grid Nexus in the south-east, the long way across the map, with four troopers behind her, two marksmen ahead of her and a flanker (the bench's runner that goes beyond the line) behind her on a row of its own. She is a ranged unit like any other, short of the marksmen: the troopers walk past her at full speed, she walks at half speed while they are in her sight, the marksmen settle behind her, and only the flanker, ahead of everyone in the list, is ahead of the troopers. Nothing waits for her, nothing is held back by her. Done when the army reaches the Nexus with its troopers ahead of her and its marksmen behind, and it falls.",
+  "setup": {
+    "map": {
+      "id": "march-commander",
+      "rows": [
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 1800,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":1},
+      "rows": [
+        "  tt",
+        "          m",
+        "n tt  @",
+        "          m",
+        "    r"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "m": {"content":"unit.citizen.marksman"},
+        "@": {"content":"unit.citizen.vasse"},
+        "r": {"content":"unit.bench.flanker"},
+        "n": {"content":"structure.bench.nexus"}
+      }
+    },
+    "p2": {
+      "at": {"x":46,"y":14},
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

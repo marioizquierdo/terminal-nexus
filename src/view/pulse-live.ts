@@ -42,7 +42,7 @@ import { DEFAULT_PRESENTATION, createView } from "./snapshot.ts"
 import type { PresentationOptions, PulseTimeline, PulseView } from "./snapshot.ts"
 
 /** A Pulse the kernel has resolved, and the regroup that follows it — everything the screen needs to play it, built by
- *  the application shell (`src/cli/pulse-run.ts`, `src/cli/run-play.ts`) and never by the view. */
+ *  the application shell (`src/cli/pulse-run.ts`, `src/cli/skirmish-play.ts`) and never by the view. */
 export type ResolvedPulse = Readonly<{
   timeline: PulseTimeline
   /** The survivors' regroup after it (`src/match/regroup.ts`): where the next Build Phase finds them, and their walk
@@ -56,8 +56,11 @@ export type ResolvedPulse = Readonly<{
    *  on or a trigger ended it. Absent for a Pulse with no mission. */
   mission?: MissionRound
   /** What the Battle Round calls the other side, in its force bar, its bottom line and its result: "raid" unless the
-   *  mode names it — a Challenge run's "enemy", a Commander's army rather than a raid. */
+   *  mode names it — a Skirmish's "enemy", a Commander's army rather than a raid. */
   enemy?: string
+  /** Both sides' names when nobody at the screen plays either (a Skirmish watched, two scripts): the Battle Round then
+   *  says "Vasse" and "Averno" where it would say "yours" and "the enemy", and who won rather than VICTORY. */
+  watched?: Readonly<Record<PlayerId, string>>
 }>
 
 /** A mission's round, as the result reads it. */
@@ -69,14 +72,24 @@ export type MissionRound = Readonly<{
   endText?: Readonly<{ won: string; lost: string }>
   /** The Commanders who fell this round, and the round each is back for (`src/match/commander.ts`). */
   fell?: readonly CommanderAbsence[]
-  /** The words for a round that ends its match, when the mode has its own rather than a mission's: a Challenge
-   *  run's battle won, lost or drawn (`MissionEnding`). Absent: "MISSION COMPLETE" and "Play again". */
+  /** The words for a round that ends its match, when the mode has its own rather than a mission's: a Skirmish's
+   *  battle won, lost or drawn, and its two ways on (`MissionEnding`). Absent: "MISSION COMPLETE" and "Play again". */
   ending?: MissionEnding
 }>
 
 /** How a match's last round reads when the mode says it in its own words: the headline, the line under it, its
  *  tone, and what the result's row goes on to ("BATTLE WON", "Dob Hunter's Nexus fell.", "Next battle"). */
-export type MissionEnding = Readonly<{ headline: string; reason: string; tone: "success" | "danger" | "neutral"; goOn: string }>
+export type MissionEnding = Readonly<{
+  headline: string
+  reason: string
+  tone: "success" | "danger" | "neutral"
+  /** What Enter (and the row above Replay) goes on to: "Same battle again". */
+  goOn: string
+  /** The other way on, under `n`, when there is one: a Skirmish's "New seed". */
+  alternative?: string
+  /** The way back to the setup screen, under `m`, when there is one: a Skirmish's "Setup screen". */
+  setup?: string
+}>
 
 /** Frames a second the playback's own single-frame step is worth (`grid watch`'s 30). */
 const STEP_FRAMES_PER_SECOND = 30
@@ -153,7 +166,7 @@ export class PulsePresenter {
     this.autoNextMs = options.autoNextMs ?? null
     this.view = createView(resolved.timeline, presentation)
     this.times = endingTimes(this.view.lastTick * this.view.tickDurationMs, this.view.effectsEndMs, TUNING)
-    this.result = missionResultOf(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), resolved.mission)
+    this.result = missionResultOf(watchedResult(resultOf(outcomeOf(resolved.timeline), "A", resolved.enemy), outcomeOf(resolved.timeline), resolved.watched), resolved.mission)
     this.strain = nexusStrain(resolved.timeline)
     this.home = resolved.regroup.state.entities.filter(
       (entity) => entity.player === "A" && isMobile(resolved.timeline, entity.contentId),
@@ -340,6 +353,7 @@ export class PulsePresenter {
       forces,
       home: this.home,
       ...(this.resolved.enemy === undefined ? {} : { enemy: this.resolved.enemy }),
+      ...(this.resolved.watched === undefined ? {} : { watched: this.resolved.watched }),
     }
   }
 
@@ -446,4 +460,13 @@ function bearerOf(timeline: PulseTimeline): Bearer | null {
   if (commander === null) return null
   const aura = auraOf(timeline.registry.get(commander.contentId))?.radius ?? null
   return { ordinal: commander.ordinal, contentId: commander.contentId, player: commander.player, aura }
+}
+
+/** A result as a watched battle says it: who won, by name, rather than VICTORY or DEFEAT, which are a player's words. */
+function watchedResult(result: PulseResult, outcome: ReturnType<typeof outcomeOf>, watched: Readonly<Record<PlayerId, string>> | undefined): PulseResult {
+  if (watched === undefined || outcome.winner === null) return result
+  const winner = watched[outcome.winner]
+  const loser = watched[outcome.winner === "A" ? "B" : "A"]
+  const reason = outcome.reason === "nexus-destroyed" ? `${loser}'s Nexus was destroyed.` : `${loser}'s force was wiped out.`
+  return { headline: `${winner.toUpperCase()} WINS`, reason, tone: "neutral" }
 }

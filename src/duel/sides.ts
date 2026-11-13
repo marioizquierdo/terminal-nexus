@@ -1,6 +1,6 @@
 // A duel side's army, as the round reads it: its Commander, what it can build and be dealt (its army's arsenal, every
 // card in its sight), its faction's Nexus, and its loadout — the content its battles run on and its build menu, with
-// every power it has kept applied in order (`applyEffect`, `src/armies/effects.ts`, the same function the campaign
+// every power it has kept applied in order (`applyEffect`, `src/armies/effects.ts`, the same function the story
 // keeps a power with).
 //
 // A loadout is never stored: it is worked out again from the side's kept powers each time, so a saved duel is plain

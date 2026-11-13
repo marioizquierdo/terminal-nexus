@@ -63,14 +63,14 @@ test("the highlighted row, and only it, renders inverse — the carrier monochro
 
 test("a notice, when set, is on screen; when null, nothing is printed in its place", () => {
   const withNotice = frameToText(
-    composeMenuFrame({ state: createMenuList(ITEMS), notice: "Campaign is not built yet." }, "color256"),
+    composeMenuFrame({ state: createMenuList(ITEMS), notice: "Story is not built yet." }, "color256"),
   )
-  assert.ok(withNotice.includes("Campaign is not built yet."))
+  assert.ok(withNotice.includes("Story is not built yet."))
 
   const withoutNotice = frameToText(
     composeMenuFrame({ state: createMenuList(ITEMS), notice: null }, "color256"),
   )
-  assert.ok(!withoutNotice.includes("Campaign is not built yet."))
+  assert.ok(!withoutNotice.includes("Story is not built yet."))
 })
 
 test("a disabled item renders dimmed when not highlighted, and exactly like any other when it is", () => {
@@ -125,5 +125,5 @@ test("a body starts a row below the last row, wraps at words, and stops before t
   }
   // Too long to fit: cut off a blank row above the controls line, which still reads whole.
   assert.equal((lines[MENU_SIZE.height - 4] ?? "").slice(1, -1).trim(), "", "the body ran up against the controls line")
-  assert.match(lines[MENU_SIZE.height - 3] ?? "", /esc back {2}- {2}q quit/u)
+  assert.match(lines[MENU_SIZE.height - 3] ?? "", /esc back {2}- {2}! note {2}- {2}q quit {2}/u)
 })

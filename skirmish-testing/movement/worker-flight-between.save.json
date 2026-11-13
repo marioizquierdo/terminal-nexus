@@ -1,0 +1,64 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Worker flight between two threats - away from danger, not only from the nearest",
+  "notes": "A worker stands between two enemy troopers on one row, the nearer five columns west, the further seven east. Running straight away from the nearest would take it east, toward the other. It flees by how far, to walk, it stands from every enemy that can strike (a field of danger), so it runs up or down the map, away from both. Measured by its first steps.",
+  "setup": {
+    "map": {
+      "id": "worker-flight-between",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ],
+      "legend": {
+        ".": "terrain.plain",
+        "#": "terrain.rock",
+        "*": "terrain.deposit",
+        ",": "terrain.scrub"
+      }
+    },
+    "seed": 3,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 120,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":12,"y":6},
+      "rows": [
+        "w"
+      ],
+      "legend": {
+        "w": {"content":"unit.citizen.worker"}
+      }
+    },
+    "p2": {
+      "at": {"x":7,"y":6},
+      "rows": [
+        "t           t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":12,"y":6,"width":1,"height":1}
+    }
+  }
+}

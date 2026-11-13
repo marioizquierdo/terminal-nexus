@@ -7,7 +7,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import vasse from "../armies/vasse/army.json" with { type: "json" }
-import { ARMY_FILES, ArmyError, CAMPAIGN_FILES, loadArmies } from "../src/armies/index.ts"
+import { ARMY_FILES, ArmyError, STORY_FILES, loadArmies } from "../src/armies/index.ts"
 import type { PlayableLevel } from "../src/cli/levels.ts"
 import { levelById } from "../src/cli/levels.ts"
 import { MAPS } from "../src/build/maps.ts"
@@ -44,7 +44,7 @@ const VASSE = "unit.citizen.vasse"
 function problemsWith(change: object): readonly string[] {
   const changed = { ...vasse, commander: { ...vasse.commander, ...change } }
   try {
-    loadArmies({ armies: ARMY_FILES.map((file) => (file === vasse ? changed : file)), campaigns: CAMPAIGN_FILES }, { registry: FIXTURE_REGISTRY, maps: MAPS })
+    loadArmies({ armies: ARMY_FILES.map((file) => (file === vasse ? changed : file)), stories: STORY_FILES }, { registry: FIXTURE_REGISTRY, maps: MAPS })
     return []
   } catch (error) {
     assert.ok(error instanceof ArmyError, String(error))

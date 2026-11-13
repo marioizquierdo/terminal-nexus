@@ -38,7 +38,7 @@ import { KEY_BAR, StandInKeyboard, bytesForKeyPress, keyNameFor, mouseBytes, wit
 import { readAddress } from "../src/web/address.ts"
 import { checkDemos } from "../src/web/demos.ts"
 import { DEFAULT_LEVEL_ROUTE, formatRoute, parseRoute } from "../src/cli/route.ts"
-import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
+import { RUNTIME_IS_BUN, loadTestingSaveFile } from "./helpers.ts"
 import { sameness } from "./web-helpers.ts"
 
 const ROOT = resolve(dirname(new URL(import.meta.url).pathname), "..")
@@ -100,15 +100,15 @@ if (RUNTIME_IS_BUN) {
     }
     const { code, files } = await bundleForBrowser("tests/web-helpers.ts", { minify: false })
     assert.ok(files.includes("src/cli/build-phase.ts") || files.includes("src/view/build-session.ts"))
-    const scenario = await loadScenarioFile("grand-battle.map.json")
+    const opening = await loadTestingSaveFile("grand-battle.save.json")
 
     // A browser's globals, and nothing of Node's: no process, Buffer, require or module.
     const sandbox: Record<string, unknown> = { TextEncoder, TextDecoder, console }
     sandbox["globalThis"] = sandbox
     runInNewContext(code, sandbox)
-    const inBrowser = (sandbox["__terminalNexusSameness"] as typeof sameness)(scenario)
+    const inBrowser = (sandbox["__terminalNexusSameness"] as typeof sameness)(opening)
 
-    const inNode = sameness(scenario)
+    const inNode = sameness(opening)
     assert.equal(inBrowser.stateHash, inNode.stateHash)
     assert.equal(inBrowser.eventsHash, inNode.eventsHash)
     // The sandbox's arrays carry its own Array prototype; copied into this realm, they compare element by element
@@ -309,14 +309,14 @@ test("the page plays a terminal that reports key events: it answers, keeps the f
 
 test("#at= opens a route, whole: a part runs to the next part the page knows, not to the next &", () => {
   // As a person writes it: the route's own ? = and &, then a settings text with its own & and =, then keys.
-  const address = readAddress("#at=campaign?level=vasse-test-1&round=2&settings=nextRound=auto&jumpStep=12&keys=Esc n 1")
-  assert.deepEqual(address, { at: "campaign?level=vasse-test-1&round=2", settings: "nextRound=auto&jumpStep=12", keys: "Esc n 1" })
+  const address = readAddress("#at=story?mission=vasse-test-1&round=2&settings=nextRound=auto&jumpStep=12&keys=Esc n 1")
+  assert.deepEqual(address, { at: "story?mission=vasse-test-1&round=2", settings: "nextRound=auto&jumpStep=12", keys: "Esc n 1" })
   const at = parseRoute(address.at ?? "")
-  assert.equal(at.kind === "level" ? `${at.level.id} ${at.round}` : at.place, "vasse-test-1 2")
+  assert.equal(at.kind === "level" ? `${at.level.id} ${at.round}` : at.kind, "vasse-test-1 2")
   // Percent-encoded, as an address often is, and in any order.
-  assert.deepEqual(readAddress("#keys=Esc%20n%201&at=campaign%3Flevel%3Dvasse-test-1%26round%3D3"), {
+  assert.deepEqual(readAddress("#keys=Esc%20n%201&at=story%3Fmission%3Dvasse-test-1%26round%3D3"), {
     keys: "Esc n 1",
-    at: "campaign?level=vasse-test-1&round=3",
+    at: "story?mission=vasse-test-1&round=3",
   })
   // The addresses the page always took still read as they did.
   assert.deepEqual(readAddress("#settings=raid%3Dprobe%20crew%3Dsome"), { settings: "raid=probe crew=some" })
@@ -325,7 +325,7 @@ test("#at= opens a route, whole: a part runs to the next part the page knows, no
   // Nothing it knows: nothing asked. A lone % is kept as written rather than lost.
   assert.deepEqual(readAddress(""), {})
   assert.deepEqual(readAddress("#somewhere"), {})
-  assert.deepEqual(readAddress("#at=campaign?level=100%"), { at: "campaign?level=100%" })
+  assert.deepEqual(readAddress("#at=story?mission=100%"), { at: "story?mission=100%" })
   // The first of a repeated part counts.
   assert.deepEqual(readAddress("#at=about&at=settings"), { at: "about" })
 })
@@ -333,7 +333,7 @@ test("#at= opens a route, whole: a part runs to the next part the page knows, no
 test("the page's mode buttons that are game screens open their routes; the replays are named as replays", () => {
   const html = readFileSync(resolve(ROOT, "src/web/page.html"), "utf8")
   const routes = [...html.matchAll(/data-at="([^"]*)"/gu)].map((match) => match[1] as string)
-  assert.deepEqual(routes, ["menu", DEFAULT_LEVEL_ROUTE])
+  assert.deepEqual(routes, ["menu", "skirmish", DEFAULT_LEVEL_ROUTE])
   for (const route of routes) assert.equal(formatRoute(parseRoute(route)), route)
   assert.deepEqual([...html.matchAll(/data-pulse="([^"]*)"/gu)].map((match) => match[1]), ["pulse-grand", "pulse-mirror"])
   assert.doesNotMatch(html, /data-mode=/u, "a mode button still names a mode rather than a route")
@@ -347,10 +347,10 @@ test("every checked-in demo is one the page can follow: its route, its keys, and
     for (const demo of demos) if (demo.at !== undefined) parseRoute(demo.at)
   }
   // A demo may open a level at a round; one whose route is not a place, or is on the title menu with keys, is refused.
-  const round2 = checkDemos([{ label: "Round 2", try: "-", at: "campaign?level=vasse-test-1&round=2", keys: "Esc" }], "demos.json")
-  assert.equal(round2[0]?.at, "campaign?level=vasse-test-1&round=2")
-  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "campaign?level=nowhere" }], "demos.json"), /demos\.json: demo 1's at: .*no level "nowhere"/u)
-  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "settings", keys: "Down" }], "demos.json"), /is on the title menu: its keys and settings are for a campaign level/u)
+  const round2 = checkDemos([{ label: "Round 2", try: "-", at: "story?mission=vasse-test-1&round=2", keys: "Esc" }], "demos.json")
+  assert.equal(round2[0]?.at, "story?mission=vasse-test-1&round=2")
+  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "story?mission=nowhere" }], "demos.json"), /demos\.json: demo 1's at: .*no mission "nowhere"/u)
+  assert.throws(() => checkDemos([{ label: "x", try: "-", at: "settings", keys: "Down" }], "demos.json"), /is on the title menu: its keys and settings are for a Build Phase/u)
   assert.throws(() => checkDemos([{ label: "x", try: "-", keys: "Dwn" }], "demos.json"), /demo 1's keys: unknown key "Dwn"/u)
   // A settings text this build would skip is a mistake in a demo: it would open with the default and say nothing.
   assert.equal(checkDemos([{ label: "x", try: "-", settings: "buildRange=8&jumpStep=12" }], "demos.json")[0]?.settings, "buildRange=8&jumpStep=12")

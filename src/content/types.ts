@@ -251,7 +251,7 @@ export type ContentDef = Readonly<{
   /**
    * Supply (the owner, 2026-10-16: "Supply should be controlled by another building"): a structure with this lets its
    * side field this many more units at once. A side's supply is the sum of what its standing structures give; a side
-   * whose structures give none has no cap, so every map and scenario from before supply resolves exactly as it did.
+   * whose structures give none has no cap, so every map and testing save from before supply resolves exactly as it did.
    * The kernel reads it, in production only (`src/content/supply.ts`).
    */
   supplyProvided?: number
@@ -299,7 +299,7 @@ export type ProductionRecipe = Readonly<{
 
 /**
  * The default per-entity fields every fresh instance of this content starts with — shared by the
- * scenario loader (a scenario's own initial placements, `scenario/load.ts`) and the kernel's own
+ * opening of a testing save (its own initial placements, `skirmish/opening/open.ts`) and the kernel's own
  * spawn point (a unit created mid-Pulse, `pulse/spawn.ts`), so a fresh entity's defaults are declared
  * once rather than kept in sync by hand in two files that create entities for two different reasons.
  * Lives here rather than in `state/types.ts` because it reads `ContentDef` fields; `state` stays

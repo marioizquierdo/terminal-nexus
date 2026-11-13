@@ -54,7 +54,7 @@ export const DEFENCE_KEYS = [`n ${warChest(starterContext()) + 1}`, ...DEFENCE.m
 export type RaidSize = "none" | "probe" | "heavy"
 export type CrewSize = "some" | "none"
 
-export type Scenario = Readonly<{
+export type TestSetup = Readonly<{
   plan?: readonly Spot[]
   /** Which raid comes: the probe (the default), a heavy one, or none. */
   raid?: RaidSize
@@ -81,13 +81,13 @@ const RAIDS: Readonly<Record<RaidSize, readonly Readonly<{ unit: string; count: 
  * Pulse it was before missions, forces in the same order, and every ending the tests reach is still reachable. Its
  * rounds after the first bring nothing new; the last one's end wins, unless the Nexus fell.
  */
-export function testMission(scenario: Scenario = {}): MissionDefinition {
-  const rounds = scenario.rounds ?? 2
+export function testMission(setup: TestSetup = {}): MissionDefinition {
+  const rounds = setup.rounds ?? 2
   const opening: SimulationAction[] = []
-  if ((scenario.crew ?? "some") === "some") {
+  if ((setup.crew ?? "some") === "some") {
     opening.push({ spawn: { side: "A", units: [many("unit.citizen.trooper", 3), many("unit.citizen.marksman", 2)], at: "crew" } })
   }
-  const raid = RAIDS[scenario.raid ?? "probe"]
+  const raid = RAIDS[setup.raid ?? "probe"]
   if (raid.length > 0) opening.push({ spawn: { side: "B", units: raid, at: "raid", intent: "Test the line." } })
   return {
     id: "mission.test.placeholder",
@@ -118,7 +118,7 @@ export type Played = Readonly<{
 
 /**
  * The starter map's context with buildings that spawn nothing — what the placeholder Pulse was played on before
- * buildings made units: a campaign's buildings spawn their waves because its level offers them so (`spawns` on
+ * buildings made units: a story's buildings spawn their waves because its level offers them so (`spawns` on
  * each row of the build menu), and the test mission is no level's, so its first round is still the very
  * Pulse it was.
  */
@@ -128,13 +128,13 @@ export function placeholderContext(): BuildContext {
 }
 
 /** A session on the starter map, opening on the Grid Nexus as the game does, playing the test mission for a
- *  scenario (the probe, by default) with the shell's own `startPulse` and `nextRound`. */
+ *  setup (the probe, by default) with the shell's own `startPulse` and `nextRound`. */
 export function newSession(
   size: Readonly<{ columns: number; rows: number }> = MINIMUM,
   onQuit?: () => void,
-  scenario: Scenario = {},
+  setup: TestSetup = {},
 ): Omit<Played, "pulse"> {
-  const mission = missionPlay(testMission(scenario))
+  const mission = missionPlay(testMission(setup))
   const { build, context, layout } = buildSide({
     context: mission.firstRound(placeholderContext()),
     cursor: STARTER_START_CURSOR,
@@ -149,21 +149,21 @@ export function newSession(
 
 /** The Build Phase's commands up to (not including) the commit: a Nexus power, and the plan, each
  *  building placed by two clicks on its tile. */
-export function prepare(build: BuildSession, scenario: Scenario = {}): void {
+export function prepare(build: BuildSession, setup: TestSetup = {}): void {
   build.dispatch({ kind: "pick-nexus", index: warChest(build.round) }) // War Chest: 2000 to spend
-  for (const [index, x, y] of scenario.plan ?? []) {
+  for (const [index, x, y] of setup.plan ?? []) {
     build.run([{ kind: "arm", index }, { kind: "click-tile", x, y }, { kind: "click-tile", x, y }])
   }
-  assert.equal(build.state.planned.length, (scenario.plan ?? []).length, "the plan was not placed as drawn")
+  assert.equal(build.state.planned.length, (setup.plan ?? []).length, "the plan was not placed as drawn")
 }
 
 /**
  * A Build Phase played through the driver's commands — a Nexus power, some buildings, the commit and its
  * yes — and the Pulse the shell resolved for it.
  */
-export function play(scenario: Scenario = {}, size: Readonly<{ columns: number; rows: number }> = MINIMUM): Played {
-  const session = newSession(size, undefined, scenario)
-  prepare(session.build, scenario)
+export function play(setup: TestSetup = {}, size: Readonly<{ columns: number; rows: number }> = MINIMUM): Played {
+  const session = newSession(size, undefined, setup)
+  prepare(session.build, setup)
   session.build.run([{ kind: "open-battle-round" }, { kind: "start-pulse" }])
   assert.ok(session.build.pulse !== null, "committing did not start a Pulse")
   return { ...session, pulse: session.build.pulse.resolved }

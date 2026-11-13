@@ -8,19 +8,19 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
-import { loadScenario } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
 import { createView, frameToText } from "../src/view/index.ts"
-import { RUNTIME_IS_BUN, loadScenarioFile } from "./helpers.ts"
+import { RUNTIME_IS_BUN, loadTestingSaveFile } from "./helpers.ts"
 
 async function mirrorFrame() {
-  const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("citizen-mirror-skirmish.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
-    scenario,
+    opening,
     loaded.state,
     loaded.registry,
-    scenario.pulseTicks,
-    scenario.seed,
+    opening.pulseTicks,
+    opening.seed,
   )
   const view = createView(timeline)
   return view.snapshotAt(view.durationMs * 0.66, "monochrome")

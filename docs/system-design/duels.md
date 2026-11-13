@@ -1,11 +1,17 @@
 # Terminal Nexus — duels
 
-_Two Commander Armies fought out on one map, headless — the battle a Skirmish plays: script against script, model against model, or any mix. How a duel plays, the command line, the brief a player reads and the plan it answers with, the formation a player builds by, how to run model-against-model games for testing, and what the numbers can and cannot say._
+_The duel is the battle a Skirmish plays: two Commander Armies on one map, a round at a time, each side planned blind
+by a script, a person or a model. How its rounds play, the brief a player reads and the build actions it answers with, the
+formation a player builds by, and what its numbers can and cannot say. The code is `src/duel/`, pure; a person plays it
+as a Skirmish ([`game-modes.md`](../game-design/game-modes.md)), the `skirmish` command plays it headless
+([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), whose opening comment is its manual), and how a test uses that
+is [`testing-ground.md`](testing-ground.md), testing through Skirmishes._
 
-A duel is the development bench for armies (the owner, 2026-10-17: "put each commander nexus on one side of the map
+It began as the development bench for armies (the owner, 2026-10-17: "put each commander nexus on one side of the map
 and play a pvp ... script vs script", and a model planning each side from "the relevant logs plus current map state,
-plus game instructions"). It is not multiplayer and has no screen: it is the rules (`src/duel/`), a brief and a plan
-format any player can use, and a command (`bin/duel.ts`). Armies are written by [`army-authoring.md`](army-authoring.md).
+plus game instructions"). It is not multiplayer and has no screen of its own: it is the rules, and a brief and a format
+for build actions any player can use. Armies are written by [`army-authoring.md`](army-authoring.md). Its code calls the two
+sides A and B; a Skirmish calls them slots `p1` (west) and `p2` (east).
 
 ## 1. How a duel plays
 
@@ -13,8 +19,8 @@ format any player can use, and a command (`bin/duel.ts`). Armies are written by 
 
 1. **The Nexus Pulse** deals each side a hand from its army's powers by its Commander's schedule, each side on its own
    seed. A side keeps one card, or none. War Chest is never dealt.
-2. **The Build Phase**: each side's plan places buildings by the Build Phase's own rules (`legalityAt`: build range,
-   room round a building that trains, rock, cost; the tech tree as the round opens). The two plans are blind to each
+2. **The Build Phase**: each side's build actions place buildings by the Build Phase's own rules (`legalityAt`: build range,
+   room round a building that trains, rock, cost; the tech tree as the round opens). The two sides' build actions are blind to each
    other and revealed together; a building both sides put on the same ground is built by neither, and paid back.
 3. **The Battle Round**: each side's troops take its stance — `attack` marches on the enemy Nexus, `hold` gathers in
    front of its own — and the kernel runs it, **each side on its own content** (`PulseContext.sides`): what one side's
@@ -26,48 +32,31 @@ format any player can use, and a command (`bin/duel.ts`). Armies are written by 
 health wins; on an even share, the side that dealt more damage over the duel; on that too, a draw.
 
 **What a side starts with**: its faction's Grid Nexus on its end of the map, its Commander and her starting package
-(`start` in her army), and round 1's credits. Maps are `src/duel/maps.ts`: the Crossing (72 by 28, a ridge with one
+(`start` in her army), and round 1's credits. Maps are files in `maps/`, read by `src/duel/maps.ts`: the Crossing (72 by 28, a ridge with one
 gap) and the Pocket (22 by 12, the bases close enough that their build ranges meet).
 
-**A side that is not its Commander's whole army** has a **roster** (RULE — `Roster`, `src/duel/types.ts`; `restrictedTo`, `src/duel/sides.ts`; `tests/run-draft.test.ts`): the building cards on its build menu and the Nexus powers in the pool its Pulse deals from, by id, and the Doctrines it keeps from the first round. Everything else its army could field is left out as if the army never had it; a building a listed power adds still joins the menu when the power is kept. The retired Challenge run played its player on one ([the retired design](../history/challenge-runs-design.md)), and a Skirmish's battle file may name one ([`game-modes.md`](../game-design/game-modes.md)); the opponent, and every duel the measurement commands play, has none and fields the whole army.
+**A side that is not its Commander's whole army** has a **roster** (RULE — `Roster`, `src/duel/types.ts`; `restrictedTo`, `src/duel/sides.ts`; `tests/duel.test.ts`): the building cards on its build menu and the Nexus powers in the pool its Pulse deals from, by id, and the Doctrines it keeps from the first round. Everything else its army could field is left out as if the army never had it; a building a listed power adds still joins the menu when the power is kept. The retired Challenge run played its player on one ([the retired design](../history/challenge-runs-design.md)), and a Skirmish's battle file may name one ([`game-modes.md`](../game-design/game-modes.md)); the opponent, and every duel the measurement commands play, has none and fields the whole army.
 
-## 2. The command line
+## 2. Playing one
 
-**Becoming `skirmish`** (planned, the Skirmish milestone): `bin/duel.ts` is renamed `skirmish`, takes save files
-(`--load`, `--slot`), and gains `round` (one round from a save to the next save) and `brief`
-([`skirmish-saves.md`](skirmish-saves.md)). The subcommands below keep their names.
+A duel is played as a Skirmish: on the Build Phase screen (`src/cli/skirmish-play.ts`), or headless by the `skirmish`
+command, a round a command, many battles over seeds, every pairing of Commanders, or two sessions taking turns through
+one save file. Both play every round through one function (`playNext`, `src/skirmish/play.ts`), so a duel played on
+screen and one played headless are the same duel. The command's options and examples are its opening comment
+([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); the save it plays from is [`skirmish-saves.md`](skirmish-saves.md).
 
-```text
-node bin/duel.ts play  --a vasse --b dob [--player-a script:balanced] [--player-b script:rush] [--seed 1] [--rounds 8] [--out dir]
-node bin/duel.ts bench [--commanders vasse,dob] [--players balanced,rush,turtle] [--seeds 1-6] [--rounds 8] [--out file.json]
-node bin/duel.ts new    --dir D --a vasse --b dob [--seed 1] [--rounds 8]
-node bin/duel.ts wait   --dir D --side A [--timeout 100]
-node bin/duel.ts submit --dir D --side A --plan plan.json
-node bin/duel.ts status --dir D
-```
-
-- **`play`** fights one duel in one process. A player is `script:balanced`, `script:rush`, `script:turtle`
-  (`src/duel/players.ts`), each also by a formation (`script:rush-block`, `script:rush-apart`: formations, below), or
-  `cmd:<command>`: the command runs once a round with the brief's text on its input, and what it prints is the plan
-  — the hook for a model on the command line.
-- **`bench`** plays every pairing **from both sides** over the seeds, so a side's advantage on the map cancels out, and
-  prints who won. With no `--commanders`, every Commander the armies have.
-- **`new` / `wait` / `submit`** play a duel through files, for players that are other processes: `new` writes
-  `state.json` and each side's `brief-<side>-<round>.md` (and `.json`); `wait` blocks until a side has a brief to
-  answer and prints it (or prints `THE DUEL IS OVER`); `submit` hands in a plan, and the second side's plan plays the
-  round and writes `report-<round>.md`. A lock keeps two sides submitting at once from playing a round twice.
-
-## 3. The brief and the plan
+## 3. The brief and the build actions
 
 **The brief** (`src/duel/brief.ts`) is what a player on the Build Phase screen could know, as data for a script and as
 text for a model: the round, the Commander and her skills, credits and supply, both Nexuses' health, the hand, what it
 can build (cost, tier, what it trains and how strong that is a credit, what it needs standing, its own skills), the map
 drawn with every glyph (its side lower case, the enemy upper case), the places it can name, the enemy's buildings,
 units and kept powers (kept powers are public), last round's report for both sides, and a line for every round so far.
-Never the enemy's plan.
+Never the enemy's build actions.
 
-**The plan** is one JSON object, read leniently (`src/duel/plan.ts`): the first `{ ... }` in whatever the player
-wrote.
+**The build actions** are one JSON object a round, read leniently (`src/duel/build-actions.ts`): the first `{ ... }` in
+whatever the player wrote. A build file holds them for one round or many, each entry with the `round` it is for (`3`,
+`"2-4"`, `"*"`), the first that fits winning (the `skirmish` command's manual says how a run plays them).
 
 ```json
 { "power": 1, "build": [{ "building": "barracks", "at": "forward" }, { "building": "depot", "at": "back" }], "formation": "block", "stance": "attack", "note": "why" }
@@ -85,15 +74,15 @@ said as one (a splash, burning ground, a burst, aiming at the thickest knot), so
 against the army it faces.
 
 **A player that reads words also gets the play strategies** ([`play-strategies.md`](../game-design/play-strategies.md)):
-what duels have taught so far, as advice with its measurement, just before the plan it is asked for. The page is read
-when the brief is written (`playStrategies`, `src/cli/duel.ts`), from its marker to its end, so an entry added there is
+what battles have taught so far, as advice with its measurement, just before the build actions it is asked for. The page is read
+when the brief is written (`playStrategies`, `src/cli/play-strategies.ts`), from its marker to its end, so an entry added there is
 in the next duel's brief; a script reads the brief's data, which carries none.
 
 ## 4. How tight an army fights: formations
 
 Units come out on the roofs of the buildings that made them, so where a side builds decides how tight its army fights
 ([the formations report](../history/reports/2026-10-20-formations.md): a block of Barracks meets the enemy about 3
-columns from its middle, set apart about 14). **A plan's `formation` makes that a choice** (RULE — `src/duel/round.ts`,
+columns from its middle, set apart about 14). **The build actions' `formation` makes that a choice** (RULE — `src/duel/round.ts`,
 `tests/duel-formation.test.ts`). It places only the buildings that train units; a Turret or a Supply Depot goes where
 its own placement says. Every spot is still one the Build Phase allows (`legalityAt`), and both ends of the map play
 it as each other's mirror.
@@ -131,42 +120,32 @@ against a tight army ([the report](../history/reports/2026-10-21-area-damage.md)
 lines say `built 3 (block)`, and a measurement names each side's player with it (`rush-block` against
 `rush-apart`), so a summary can say who won by formation ([`measurement.md`](measurement.md)).
 
-**A duel side can be played from the Build Phase screen** (`src/cli/run-play.ts`: a Challenge battle today, a Skirmish once the Skirmish milestone builds it): the
+**A duel side can be played from the Build Phase screen** (`src/cli/skirmish-play.ts`: a Skirmish): the
 plan's buildings at their exact anchors, the power picked, the buildings held (`hold`, Hold production), the actions
 taken on its buildings (`actions`: `{x, y, action}`, taken after its buildings are placed, from the credits they leave,
 and said in its report; the `-upgrade` scripts buy them), and the
 troops attacking, since the Build Phase has no stance. `placementsOf` says where a scripted plan's buildings would
-go, so a driver plays a side through the Build Phase's own functions (`duel run`).
+go, so the screen plays a scripted side through the Build Phase's own functions.
 
-## 5. Model against model, for testing
+## 5. No turns, and model against model
 
-A cheap model plays a side well enough to put an army through its paces. The recipe this repository has run (from a
-Claude Code session; any agent that can run a shell command works):
+**Both sides plan from the same moment** (RULE — the owner, 2026-11-12: "there are no turns: all players move
+simultaneously during the build phase"): each side's brief is written from the battle as the Build Phase opens, before
+either side's build actions exist, so a script, a person and a model may answer in any order and see the same battle.
+What two sides' actions would do to each other is settled when the Battle Round starts, together, never by who handed
+them in first (a building on the same ground, above; no turns, in [`concept.md`](../game-design/concept.md)).
 
-1. `node bin/duel.ts new --dir <D> --a vasse --b dob --seed 11 --rounds 8`.
-2. Start one agent per side, in the background, on a small model, each with this task (its side and directory filled
-   in): _"Repeat until the duel is over: run `node bin/duel.ts wait --dir <D> --side <S> --timeout 100` (run it again
-   if it says still waiting; stop if it says THE DUEL IS OVER); decide a plan from the brief; write it as one JSON
-   object to `<D>/my-plan-<S>.json`; run `node bin/duel.ts submit --dir <D> --side <S> --plan <D>/my-plan-<S>.json`.
-   Only run those two commands and write your plan file; read nothing else. When it is over, reply with the result line
-   and one sentence on your strategy."_
-3. Read the result: `node bin/duel.ts status --dir <D>`, or `<D>/result.md`; every round's report is beside it.
-
-Play each pairing from both sides (A and B swapped) and over several seeds before reading anything into it. A six-round
-duel takes about a minute and some 75 thousand tokens of a small model a side. Small agents wander: several of the
-first sixteen made one call to a tool they were told not to use (all refused or harmless); name the only commands they
-may run, and prefer `cmd:` on a machine with a command-line model.
-
-**What a model's games are and are not.** A scripted or small-model player is not a good player: it shows what an army
-does in the hands of a plain plan, where its strengths come from, and where the rules or the brief let a player down.
-It does not show balance. Read the numbers for direction, the reports for why.
+A cheap model plays a side well enough to put an army through its paces: each round, each model reads its brief and
+answers with its build actions, and the round plays both. The recipe, its cost and how to read what it shows are
+[`testing-ground.md`](testing-ground.md), testing through Skirmishes. A scripted or small-model player is not a good
+player: its games show what an army does in the hands of a plain plan, not balance.
 
 ## 6. What a duel measures, and what biases it
 
 - **No side wins by where it stands** (since 2026-10-19; before, one end of the map won nearly every mirror duel,
   which end by the plan). Every tie the rules break goes by what the deciding unit faces, then a seeded draw
   ([`pulse.md`](pulse.md), "No side wins by where it stands"), so the same Commander and plan win from either end
-  about as often (`tests/fairness.test.ts`). A bench still plays every pairing from both sides: the two ends are
+  about as often (`tests/fairness.test.ts`). A tally of Commanders (`skirmish --commanders`) still plays every pairing from both sides: the two ends are
   each other's mirror, but a seed's hand and draws are not.
 - **A duel that ends on time is judged on the Nexuses' health, then on damage**, which a stalemate decides by small
   margins. A duel that ends with a Nexus falling says more.

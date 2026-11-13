@@ -42,6 +42,11 @@ export type MenuCompositionInput = Readonly<{
   /** Words drawn under the rows — the About screen's (`src/title-menu/about.ts`): each section's heading, then its text wrapped at words, a blank row
    *  between sections. */
   body?: readonly TextSection[]
+  /** Where this screen's rows are drawn: `MENU_LAYOUT` unless a screen of many rows (the setup screen) packs them a
+   *  row a line. The mouse adapter reads the same one. */
+  layout?: MenuLayout
+  /** A line or two explaining the highlighted row, dimmed, under the rows (the setup screen's): wrapped at words. */
+  detail?: string
 }>
 
 /** The border only — no inner divider, unlike the Grid screen's Grid/panel split, because a menu has
@@ -68,7 +73,7 @@ function drawBorder(cells: BandCell[], size: { width: number; height: number }, 
  *  invented, since a stub screen still owes the player something true about the game. */
 const TAGLINE = "Build. Commit. Battle. Understand. Adapt."
 
-const BASE_CONTROLS = "arrows + enter, or a digit, or click a row"
+const BASE_CONTROLS = "arrows + enter, a key, or click a row"
 
 /** A comfortable line for reading — about the 66 characters typesetters aim for — narrower than the
  *  72 columns between the screen's margins, so a paragraph reads as a paragraph, not a wall. */
@@ -85,10 +90,10 @@ function drawBody(
   sections: readonly TextSection[],
   firstRow: number,
   size: { width: number; height: number },
+  lastRow: number = size.height - 5,
 ): void {
   const band = BANDS.chrome
   const measure = Math.min(BODY_MEASURE, size.width - 2 * MENU_LAYOUT.column)
-  const lastRow = size.height - 5
   let row = firstRow
   const line = (value: string, role: StyleRole, extra: Readonly<{ bold?: boolean; dim?: boolean }>): void => {
     if (row <= lastRow) text(cells, band, MENU_LAYOUT.column, row, value, role, { ...extra, limit: measure })
@@ -115,7 +120,7 @@ export function composeMenuFrame(
   const pack: GlyphPack = input.glyphPack ?? "ascii"
   const cells: BandCell[] = []
   const band = BANDS.chrome
-  const controls = `${BASE_CONTROLS}${input.showBack === true ? "  -  esc back" : ""}  -  q quit`
+  const controls = `${BASE_CONTROLS}${input.showBack === true ? "  -  esc back" : ""}  -  ! note  -  q quit`
 
   drawBorder(cells, size, pack)
 
@@ -123,8 +128,9 @@ export function composeMenuFrame(
   text(cells, band, 18, 1, input.subtitle ?? "top-level menu", "chrome.muted", { dim: true })
   text(cells, band, 2, 2, TAGLINE, "chrome.muted", { dim: true })
 
+  const layout = input.layout ?? MENU_LAYOUT
   input.state.items.forEach((item, index) => {
-    const row = menuItemRow(MENU_LAYOUT, index)
+    const row = menuItemRow(layout, index)
     const highlighted = index === input.state.highlighted
     const hotkeyPart = `[${item.hotkey}]`
     const labelPart = ` ${item.label}`
@@ -132,7 +138,7 @@ export function composeMenuFrame(
       // Inverse video carries "selected" at every colour depth, including monochrome — `presentation.md`:
       // colour never carries meaning alone. The hotkey/label split stops mattering once the
       // whole row is one inverted block.
-      text(cells, band, MENU_LAYOUT.column, row, hotkeyPart + labelPart, "chrome.title", {
+      text(cells, band, layout.column, row, hotkeyPart + labelPart, "chrome.title", {
         bold: true,
         inverse: true,
       })
@@ -144,18 +150,26 @@ export function composeMenuFrame(
       // activated, and looks that way before it's even pressed. Highlighting it still inverts the
       // whole block below, same as any other item — inverse video is what "selected" means, and that
       // stays true regardless of whether the selected item is this one.
-      text(cells, band, MENU_LAYOUT.column, row, hotkeyPart + labelPart, "chrome.muted", { dim: true })
+      text(cells, band, layout.column, row, hotkeyPart + labelPart, "chrome.muted", { dim: true })
       return
     }
-    text(cells, band, MENU_LAYOUT.column, row, hotkeyPart, "chrome.hotkey", { bold: true })
-    text(cells, band, MENU_LAYOUT.column + hotkeyPart.length, row, labelPart, "chrome.value")
+    text(cells, band, layout.column, row, hotkeyPart, "chrome.hotkey", { bold: true })
+    text(cells, band, layout.column + hotkeyPart.length, row, labelPart, "chrome.value")
   })
 
   // The body starts where one more row would have been drawn, so the rows and the words never touch.
-  if (input.body !== undefined) drawBody(cells, input.body, menuItemRow(MENU_LAYOUT, input.state.items.length), size)
+  // With a detail under it, the body stops above the detail's two lines.
+  const detailRow = size.height - 6
+  if (input.body !== undefined) drawBody(cells, input.body, menuItemRow(layout, input.state.items.length) + (layout === MENU_LAYOUT ? 0 : 1), size, input.detail === undefined ? size.height - 5 : detailRow - 2)
 
+  // The detail's two lines, then the notice under them; without a detail the notice keeps its own row.
+  if (input.detail !== undefined) {
+    wrapWords(input.detail, size.width - 4)
+      .slice(0, 2)
+      .forEach((line, index) => text(cells, band, 2, detailRow + index, line, "chrome.muted", { dim: true, limit: size.width - 4 }))
+  }
   if (input.notice !== null) {
-    text(cells, band, 2, size.height - 6, input.notice, "chrome.value")
+    text(cells, band, 2, input.detail === undefined ? detailRow : size.height - 4, input.notice, "chrome.value", { limit: size.width - 4 })
   }
 
   text(cells, band, 2, size.height - 3, controls, "chrome.muted", { dim: true })

@@ -147,7 +147,7 @@ test("the tech tree is checked by name: tiers in range, lower tiers required, th
       card("leap", { tier: 3, requires: ["barracks"] }),
     ],
   }
-  const treeCampaign = {
+  const treeStory = {
     id: "tree",
     title: "Tree",
     commander: "vasse",
@@ -156,7 +156,7 @@ test("the tech tree is checked by name: tiers in range, lower tiers required, th
   }
   const problems = (() => {
     try {
-      loadArmies({ armies: [...ARMY_FILES, tree], campaigns: [treeCampaign] }, { registry: FIXTURE_REGISTRY, maps: MAPS })
+      loadArmies({ armies: [...ARMY_FILES, tree], stories: [treeStory] }, { registry: FIXTURE_REGISTRY, maps: MAPS })
       return []
     } catch (error) {
       assert.ok(error instanceof ArmyError, String(error))
@@ -170,6 +170,6 @@ test("the tech tree is checked by name: tiers in range, lower tiers required, th
     'army "tree": the building "level" of tier 2 requires "garrison", of tier 2: a building requires only lower tiers',
     'army "tree": the building "floating" of tier 2 requires nothing: name the building of tier 1 that unlocks it',
     'army "tree": the building "leap" of tier 3 requires no building of tier 2',
-    'campaign "tree": level "tree-1" offers the building "garrison", which requires "barracks", which the level neither offers nor has standing',
+    'story "tree": level "tree-1" offers the building "garrison", which requires "barracks", which the level neither offers nor has standing',
   ])
 })

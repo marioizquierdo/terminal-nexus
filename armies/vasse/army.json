@@ -1,7 +1,7 @@
 {
   "id": "vasse",
   "title": "Edda Vasse",
-  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol: the protector. Her army requires the Citizen faction and brings her own unit, her two powers (Standing Order and Aid Station Permit) and the Aid Station that permit adds. Her campaign is campaigns/vasse.",
+  "notes": "Commander Edda Vasse, the Citizen Nexus's Symbol: the protector. Her army requires the Citizen faction and brings her own unit, her two powers (Standing Order and Aid Station Permit) and the Aid Station that permit adds. Her story is stories/vasse.",
   "requires": ["citizen"],
   "content": [
     {
@@ -89,7 +89,6 @@
       {"unit": "unit.citizen.trooper", "count": 3},
       {"unit": "unit.citizen.marksman", "count": 2}
     ],
-    "run": {"buildings": ["barracks", "depot", "turret"], "powers": ["reserve-callup", "drill-schedule"]},
     "portrait": [" _@_ ", "(-_-)", "/|@|\\"],
     "portraitFalls": [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]],
     "barks": {

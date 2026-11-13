@@ -1,5 +1,5 @@
-// The levels the game can open by id (src/cli/levels.ts): what a route's `campaign?level=<id>` names, opened at
-// any of its rounds the same way every time. They are the shipped campaigns' levels, in order (src/armies):
+// The levels the game can open by id (src/cli/levels.ts): what a route's `story?mission=<id>` names, opened at
+// any of its rounds the same way every time. They are the shipped stories' levels, in order (src/armies):
 // Vasse's PERIMETER, then the Commander's cadence, where her return can be played.
 
 import { test } from "node:test"
@@ -16,7 +16,7 @@ test("a level is found by its id, and the default is Vasse's first: PERIMETER", 
   const level = levelById("vasse-test-1")
   assert.ok(level !== undefined)
   assert.equal(level, DEFAULT_LEVEL)
-  assert.equal(level.campaign, "vasse")
+  assert.equal(level.story, "vasse")
   assert.equal(level.title, "Perimeter")
   assert.equal(level.rounds, 3)
   assert.equal(levelById("nowhere"), undefined)
@@ -70,9 +70,9 @@ test("a round the level does not have is refused by name", () => {
   for (const round of [0, 4, 1.5]) assert.throws(() => openRound(DEFAULT_LEVEL, round), /has rounds 1 to 3/)
 })
 
-test("the levels are her campaign's, in its order: PERIMETER, the Commander's cadence, then the curve; then his", () => {
+test("the levels are her story's, in its order: PERIMETER, the Commander's cadence, then the curve; then his", () => {
   assert.deepEqual(
-    LEVELS.map((level) => [level.id, level.campaign, level.title, level.rounds]),
+    LEVELS.map((level) => [level.id, level.story, level.title, level.rounds]),
     [
       ["vasse-test-1", "vasse", "Perimeter", 3],
       ["vasse-test-2", "vasse", "The Commander falls", 3],
@@ -92,7 +92,7 @@ test("the levels are her campaign's, in its order: PERIMETER, the Commander's ca
 test("the cadence level opens by id, and her return is played: she falls in round 1 and is back as round 2 opens", () => {
   const level = levelById("vasse-test-2")
   assert.ok(level !== undefined)
-  // Round 1: she arrives out in front, and the level offers what the campaign has unlocked by then — all PERIMETER did.
+  // Round 1: she arrives out in front, and the level offers what the story has unlocked by then — all PERIMETER did.
   const first = openRound(level, 1)
   assert.deepEqual(first.catalog, starterContext().catalog)
   // Its own hand, dealt by its own seed from the same pool.

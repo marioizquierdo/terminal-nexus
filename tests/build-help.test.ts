@@ -167,10 +167,10 @@ const SITUATIONS: Readonly<Record<HintSituation, readonly (readonly [drive: Driv
     [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 0, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 1 of 4\. \[enter\] next line, \[esc\] skips the rest\.$/],
     [(side) => ({ ...side.build.state, popup: "dialog", dialog: { line: 3, cursor: side.build.state.cursor, camera: side.build.state.camera } }), /^Line 4 of 4\. \[enter\] or \[esc\] closes it\.$/],
   ],
-  // A run's draft is put up by hand, as the dialog is: these sessions are on the starter map, which holds none, so its hint is
-  // the one for a draft with nothing to remove (tests/run-draft-popup.test.ts reads the other against a real one).
-  "run-draft": [[(side) => ({ ...side.build.state, popup: "run-draft" }), /^Number or \[enter\] takes a card, \[t\] takes requisition\. Nothing to remove\.$/]],
-  "run-draft-remove": [[(side) => ({ ...side.build.state, popup: "run-draft-remove" }), /^Number or \[enter\] removes that card for good\. \[esc\] back to the draft\.$/]],
+  // Save game is put up by hand, as the dialog is: these sessions are on a story mission, where it is dimmed (it opens on
+  // a Skirmish: tests/skirmish-play.test.ts).
+  "save-game": [[(side) => ({ ...side.build.state, popup: "save-game" }), /^Type a name, \[enter\] saves\. \[esc\] back to the menu\.$/]],
+  note: [[(side) => keys(side, "!"), /^Type what you noticed, \[enter\] saves the note with this moment\. \[esc\] back\.$/]],
   // The battle banner's two panels, put up by hand as the dialog is: these sessions play with its Experiment off.
   "banner-place": [[(side) => ({ ...side.build.state, popup: "banner-place", cursor: { x: 30, y: 12 } }), /^\[enter\] Place Target on .+\. Arrows move it, \[esc\] back\.$/]],
   "banner-stance": [[(side) => ({ ...side.build.state, popup: "banner-stance", bannerDraft: { x: 30, y: 12 } }), /^\[a\] aggressive, \[d\] defensive, up\/down and \[enter\]\. \[esc\] moves it again\.$/]],
@@ -221,12 +221,12 @@ test("a hint for every situation the hint list names, each one line that fits th
 // --- The Controls and hotkeys page -------------------------------------------------------------------
 
 test("the game menu lists [c] Controls and hotkeys right after Settings", () => {
-  // Activity logs sits between Controls and Restart.
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "restart", "quit"])
+  // Activity logs and Save game sit between Controls and Restart.
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "restart", "quit"])
   const side = buildSide()
   keys(side, ESC)
   const text = screenText(side)
-  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[r\] Restart/)
+  assert.match(text, /\[s\] Settings[\s\S]*\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[r\] Restart/)
   assert.match(text, new RegExp(CONTROLS_DESCRIPTION))
 })
 
@@ -349,7 +349,7 @@ test("the page is one table: every situation, every line fits at the floor, and 
   const sections = controlsPage()
   assert.deepEqual(
     sections.map((section) => section.heading),
-    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "THE DRAFT", "THE REMOVE LIST", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
+    ["THE MENU", "THE MAP", "THE GROUND", "PLACING A BUILDING", "EXPLORE MAP", "POPUPS", "THE DIALOG", "SAVE GAME", "ANY LIST", "THE MOUSE", "THE BATTLE ROUND", "ANYWHERE"],
   )
   for (const size of SIZES) {
     const side = buildSide({ terminal: size })

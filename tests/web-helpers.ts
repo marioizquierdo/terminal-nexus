@@ -7,8 +7,8 @@ import { buildTimeline } from "../src/cli/timeline.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { TOP_LEVEL_ITEMS } from "../src/cli/menu.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { loadScenario } from "../src/scenario/load.ts"
-import type { ScenarioDefinition } from "../src/scenario/types.ts"
+import { openBattle } from "../src/skirmish/opening/open.ts"
+import type { BattleOpening } from "../src/skirmish/opening/types.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { STARTER_START_CURSOR } from "../src/build/catalog.ts"
 import { buildLayout } from "../src/build/layout.ts"
@@ -35,9 +35,9 @@ const MENU_SCRIPT = ["Down", "Down", "Enter", "Up", "3"]
 /** Colour and style included: a frame is fingerprinted as the exact ANSI text the terminal gets. */
 const print = (frame: ReadonlyCellFrame): string => sha256Hex(frameToAnsi(frame, "truecolor", "dark"))
 
-export function sameness(scenario: ScenarioDefinition): Sameness {
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-  const timeline = buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+export function sameness(opening: BattleOpening): Sameness {
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+  const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
   const view = createView(timeline, DEFAULT_PRESENTATION)
   const pulseFrames: string[] = []
   for (let time = 0; time <= view.durationMs; time += Math.max(1, Math.floor(view.durationMs / 40))) {

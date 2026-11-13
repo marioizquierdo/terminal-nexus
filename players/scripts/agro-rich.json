@@ -1,0 +1,5 @@
+{
+  "script": "rush",
+  "about": "The agro script with a quarter more income each round: an opponent that plays harder by having more.",
+  "options": { "credits": 1.25 }
+}

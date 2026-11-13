@@ -71,11 +71,11 @@ PlayerId | null, reason: VictoryReason, tick: number }`.
 
 ```ts
 type ReplaySetup = Readonly<{
-  /** A checked-in scenario by id, or a fully embedded one: "map id, or map ascii if not one of
-   *  the core maps". Both cases exist today: ScenarioDefinition already is a map plus a starting
-   *  placement (src/scenario/types.ts). */
-  map: Readonly<{ scenarioId: string }> | Readonly<{ scenario: ScenarioDefinition }>
-  /** hashOf(the resolved ScenarioDefinition) either way: the game log's "map id and hash". One
+  /** A checked-in testing save by id, or a fully embedded one: "map id, or map ascii if not one of
+   *  the core maps". Both cases exist today: BattleOpening already is a map plus a starting
+   *  placement (src/skirmish/opening/types.ts). */
+  map: Readonly<{ battleId: string }> | Readonly<{ opening: BattleOpening }>
+  /** hashOf(the resolved BattleOpening) either way: the game log's "map id and hash". One
    *  hash function, already built (src/state/canonical.ts), no new machinery. */
   mapHash: string
   players: Readonly<Record<PlayerId, ReplayPlayerSetup>>
@@ -85,7 +85,7 @@ type ReplayPlayerSetup = Readonly<{
   /** Reserved, until real armies exist. */
   armyId?: string
   /** Reserved, same reason. Today a player's faction is implicit in which content ids their
-   *  scenario placements use: there is nothing to record here yet, only a slot to record it into
+   *  a testing save's start uses: there is nothing to record here yet, only a slot to record it into
    *  later without reopening this file's shape. */
   faction?: string
 }>
@@ -119,7 +119,7 @@ type ReplayPhase =
     }>
 ```
 
-A "grid-playground" replay has exactly one `build` phase (the scenario's static placements, standing in
+A "grid-playground" replay has exactly one `build` phase (the testing save's static placements, standing in
 for a real Build Phase) followed by exactly one `pulse` phase. A "match" replay is the general case:
 `build`, `pulse`, `build`, `pulse`, … until the last Pulse's `finalState.outcome` is non-null. Each
 `build` and `pulse` pair is one round, and `pulseNumber` counts rounds.
@@ -245,7 +245,7 @@ format may assume the last entry in `phases` is a finished game.
 
 ### One canonical event encoding, two containers
 
-`grid x.map.json --headless --events file.jsonl` already exists and already emits one `DomainEvent` per
+`grid x.save.json --headless --events file.jsonl` already exists and already emits one `DomainEvent` per
 line, canonically serialized (`src/events/serialize.ts`, held by `tests/determinism.test.ts` and
 `tests/grid-cli.test.ts`). A `pulse` phase's `events` array should serialize each entry through that exact same
 per-event encoding, so `hashEvents` agrees whether the events came from a `.replay.json` phase or a
@@ -264,8 +264,8 @@ like a file-format break, or the reverse.
 
 Not built. The shape the tool could grow into:
 
-- **`grid <map> --headless --save-replay <file> [--log-level LEVEL] [--type grid-playground]`**:
-  today's `grid <map> --headless` plus persistence: one implicit `build` phase (the map's own
+- **`grid <save> --headless --save-replay <file> [--log-level LEVEL] [--type grid-playground]`**:
+  today's `grid <save> --headless` plus persistence: one implicit `build` phase (the map's own
   placements), one `pulse` phase resolved and filtered to `LEVEL`, written to a new `.replay.json`.
   This is packaging, not new machinery: `resolvePulse` and the existing JSONL event encoding already do
   the work; this only adds the setup and provenance wrapper. A flag, not a subcommand: `grid`'s first
@@ -275,7 +275,7 @@ Not built. The shape the tool could grow into:
   version-skew check.
 - **`grid <file>`** (the default action, watch): a replay's `setup.map` is already a full map (embedded
   or by id), so watching a saved replay should need no new rendering: the same viewer that plays a
-  `.map.json` map today plays a `.replay.json`'s setup the same way, then steps through its recorded
+  `.save.json` map today plays a `.replay.json`'s setup the same way, then steps through its recorded
   Pulse the same way `grid` already steps through a live resolution.
 
 ## Naming: "grid-playground" replays, and recording the engine version now

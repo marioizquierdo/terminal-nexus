@@ -1,5 +1,6 @@
-// `terminal-nexus --at campaign?level=<id>&round=<n>` — the Build Phase's live terminal loop, opened on a
-// campaign level at one of its rounds (`./levels.ts`, `./route.ts`); PERIMETER's first unless told otherwise.
+// `terminal-nexus --at story?mission=<id>&round=<n>`, `--at skirmish`, `--load <file>` — the Build Phase's live
+// terminal loop, opened on a story mission at one of its rounds or on a Skirmish (`./levels.ts`, `./route.ts`,
+// `./skirmish-open.ts`); PERIMETER's first unless told otherwise.
 //
 // Built on the same pieces as `src/cli/menu.ts`: the shared idempotent disposer (`lifecycle.ts`),
 // the same backend selection, the same opt-in SGR mouse reporting switched off on every exit path.
@@ -37,6 +38,12 @@ import type { Experiments } from "../build/experiments.ts"
 import { TUNING } from "../build/tuning.ts"
 import type { ExportKind } from "../build/types.ts"
 import type { ActivityLog, HostName } from "../log/activity.ts"
+import type { SaveSetup } from "../skirmish/save.ts"
+import { isSkirmish, positionOf } from "./skirmish-play.ts"
+import type { Noter } from "./notes.ts"
+import { noteOf, noteText } from "./notes.ts"
+import type { NoteMoment, PressedCommand } from "../view/build-session.ts"
+import { frameToText } from "../view/frame.ts"
 import { activity as globalActivity } from "../log/activity.ts"
 
 const ESC = "\u001b"
@@ -65,7 +72,7 @@ const messageOf = (error: unknown): string => (error instanceof Error ? error.me
 export type BuildPhaseOptions = Readonly<{
   settings: Settings
   /**
-   * The campaign level to open and the round to open it at (`--at campaign?level=<id>&round=<n>`): the level's
+   * The story level to open and the round to open it at (`--at story?mission=<id>&round=<n>`): the level's
    * mission plays its rounds, and a later round is reached as a player who builds nothing reaches it
    * (`openRound`), with this run's Experiments. PERIMETER's first round (`DEFAULT_LEVEL`) unless given.
    */
@@ -101,6 +108,11 @@ export type BuildPhaseOptions = Readonly<{
   /** What an export does besides showing its text — the settings' and the Activity Logs' (`Exporter`). */
   exporter?: Exporter
   /**
+   * What Save game does on a Skirmish (`skirmishSaver`, `./skirmish-open.ts`): writes the file and says where, in the
+   * sentence its popup shows (`destination`). Absent: Save game is dimmed, saying this screen cannot write one.
+   */
+  saver?: Readonly<{ destination: string; onSave: NonNullable<ConstructorParameters<typeof BuildSession>[0]["onSave"]> }>
+  /**
    * The Activity Logs this screen records into and its Activity logs window shows: the game's global `activity` unless a test passes its own. The browser page
    * shares the global across its screens, so a playtester's export holds the whole visit.
    */
@@ -111,6 +123,17 @@ export type BuildPhaseOptions = Readonly<{
    *  Commander's return — and the Commander's appearance with it (`commander-moments.ts`). On unless a test turns
    *  it off to start on the menu. */
   scenes?: boolean
+  /**
+   * **The setup screen, from a Skirmish's result** (`[m] Setup screen`): this screen leaves without exiting, and is
+   * handed the battle's setup to open New game on once the terminal is back. Absent: the result offers no such row.
+   */
+  onSetup?: (setup: SaveSetup) => void
+  /** What a note (`!`) is written with: a file in the notes folder, the clipboard on the browser page. Absent: the
+   *  note popup says this screen cannot write one. */
+  noter?: Noter
+  /** **A note's moment, reached again** (`--note`): the commands pressed since its round opened, replayed at their
+   *  times on the script's clock, then `until` after it, before the player has the keyboard. */
+  replay?: Readonly<{ pressed: readonly PressedCommand[]; until: number }>
 }>
 
 export async function runBuildPhase(options: BuildPhaseOptions): Promise<number> {
@@ -133,6 +156,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     ...(options.exporter === undefined
       ? {}
       : { exportDestination: options.exporter.destination.settings, activityExportDestination: options.exporter.destination.activity }),
+    ...(options.saver === undefined ? {} : { saveDestination: options.saver.destination }),
+    ...(options.noter === undefined ? {} : { noteDestination: options.noter.destination }),
   })
   const terminalSize = (): { columns: number; rows: number } => ({
     columns: stdout.columns ?? FLOOR.width,
@@ -183,6 +208,15 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     })
   }
 
+  /** The battle's setup, once its result's Setup screen was chosen: handed on when this screen has gone. */
+  let backToSetup: SaveSetup | null = null
+  const toSetup = (round: BuildContext): void => {
+    if (leaving || !isSkirmish(round)) return
+    backToSetup = positionOf(round).setup
+    leaving = true
+    void dispose().then(() => settleSession?.())
+  }
+
   // Saving works as the title menu's Settings screen does (`src/cli/menu.ts`): each write chained on
   // the last, so the last change is the one on disk, and awaited by the disposer before the process
   // exits; a failure is reported once the terminal is back to normal, never mid-screen.
@@ -219,7 +253,12 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     pendingSave = pendingSave.then(() => done)
   }
 
-  const build = new BuildSession({
+  /** The Battle Round on screen as a frame shows it now, for a note's screen. */
+  const pulseNow = (): Readonly<{ pulse?: NonNullable<ReturnType<BuildSession["pulseFrame"]>> }> => {
+    const pulse = build.pulseFrame()
+    return pulse === undefined ? {} : { pulse }
+  }
+  const build: BuildSession = new BuildSession({
     context,
     // On the level's own Nexus, as every later round opens (`moveOn`); the starter map's spot without one.
     cursor: nexusTile(context) ?? STARTER_START_CURSOR,
@@ -233,7 +272,20 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     nextRound: play.nextRound,
     foresee: play.foresee,
     keep: play.keep,
-    ...(play.draft === undefined ? {} : { draft: play.draft }),
+    ...(play.resume === undefined ? {} : { resume: play.resume }),
+    ...(options.saver === undefined ? {} : { onSave: options.saver.onSave }),
+    ...(options.onSetup === undefined ? {} : { onSetup: toSetup }),
+    ...(options.noter === undefined
+      ? {}
+      : {
+          captureScreen: () => frameToText(composeBuildFrame({ context: build.round, state: build.state, layout, glyphPack: build.state.settings.glyphPack, reducedMotion: true, ...pulseNow() }, "monochrome")),
+          onNote: (moment: NoteMoment) => {
+            const noter = options.noter as Noter
+            const screen = moment.screenText ?? frameToText(composeBuildFrame({ context: moment.screen.context, state: moment.screen.state, layout, glyphPack: moment.screen.state.settings.glyphPack, reducedMotion: true, ...pulseNow() }, "monochrome"))
+            const note = noteOf(moment, at.level, { written: new Date((options.now ?? Date.now)()).toISOString(), ...(options.buildId === undefined ? {} : { build: options.buildId }), screen, activity: log.entries(), startedAt: log.startedAt })
+            return noter.write(noteText(note))
+          },
+        }),
     scenes: options.scenes ?? true,
   })
 
@@ -254,6 +306,9 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
       if (leaving) break
     }
   }
+
+  // A note's moment: its commands replayed on the script's clock, as start keys are, before the live clock takes over.
+  if (options.replay !== undefined) build.replay(options.replay.pressed, options.replay.until, 0)
 
   // **The screen's clock lives here, never in the reducer**. Everything that moves between
   // commands — the view sliding to a new position, the cursor gliding to a new tile, a menu row's
@@ -472,6 +527,8 @@ export async function runBuildPhase(options: BuildPhaseOptions): Promise<number>
     host.reportError(`terminal-nexus failed in the Build Phase: ${String(failure)}\n`)
     return 1
   }
+  const setup = backToSetup as SaveSetup | null
+  if (setup !== null) options.onSetup?.(setup)
   return 0
 }
 

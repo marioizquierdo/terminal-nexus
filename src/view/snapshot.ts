@@ -20,8 +20,8 @@ import type { FireTile } from "./burning.ts"
 import { fireAt } from "./burning.ts"
 
 export type PulseTimeline = Readonly<{
-  scenarioId: string
-  scenarioName: string
+  battleId: string
+  battleName: string
   seed: number
   pulseTicks: number
   ticksPerSecond: number
@@ -238,8 +238,8 @@ export function createView(
     const sample = sampleAt(timeMs, colors)
     return composeFrame(
       {
-        scenarioId: timeline.scenarioId,
-        scenarioName: timeline.scenarioName,
+        battleId: timeline.battleId,
+        battleName: timeline.battleName,
         seed: timeline.seed,
         pulseTicks: timeline.pulseTicks,
         grid: timeline.grid,

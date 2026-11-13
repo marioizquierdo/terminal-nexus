@@ -10,7 +10,7 @@ import { footprintWithin } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { withinArea } from "../src/pulse/shared.ts"
 import type { Actor } from "../src/pulse/shared.ts"
-import { TICKS_PER_SECOND, loadScenario } from "../src/scenario/index.ts"
+import { TICKS_PER_SECOND, openBattle } from "../src/skirmish/opening/index.ts"
 import type { BurningGround, MatchState } from "../src/state/types.ts"
 import { FIRE, FIRE_FILLS, FIRE_GLYPHS, fireAt, patchTiles } from "../src/view/burning.ts"
 import { DEFAULT_PRESENTATION, cellAt, createView, frameToText, gridOrigin, offendingGlyph, resolveCell } from "../src/view/index.ts"
@@ -19,7 +19,7 @@ import { runBuildPlaytest } from "../src/playtest/build.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
 import { DEFAULT_LEVEL } from "../src/cli/levels.ts"
 import { cellForTile } from "../src/build/layout.ts"
-import { loadScenarioFile } from "./helpers.ts"
+import { loadTestingSaveFile } from "./helpers.ts"
 
 const TICK_MS = 1000 / TICKS_PER_SECOND
 const ONE_TILE = [{ x: 0, y: 0 }]
@@ -35,16 +35,16 @@ function patch(centre: Coord, radius: number, untilTick = 60, startedTick = 0): 
  * `burningAt(t)` says burns — built by hand, with no kernel rule behind it. Effects off: nothing but the ground.
  */
 async function timelineWith(burningAt: (tick: number) => readonly BurningGround[], ticks = 120): Promise<PulseTimeline> {
-  const scenario = await loadScenarioFile("melee-kill.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("melee-kill.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const states: MatchState[] = Array.from({ length: ticks + 1 }, (_, tick) => {
     const burning = burningAt(tick)
     return burning.length === 0 ? { ...loaded.state, tick } : { ...loaded.state, tick, burning }
   })
   return {
-    scenarioId: scenario.id,
-    scenarioName: scenario.name,
-    seed: scenario.seed,
+    battleId: opening.id,
+    battleName: opening.name,
+    seed: opening.seed,
     pulseTicks: ticks,
     ticksPerSecond: TICKS_PER_SECOND,
     grid: loaded.state.grid,

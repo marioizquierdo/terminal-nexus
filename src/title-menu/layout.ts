@@ -14,7 +14,7 @@ export type MenuLayout = Readonly<{
   rowStep: number
 }>
 
-/** `[1] Campaign` — the one format a hotkey is ever shown in (`input.md`). */
+/** `[1] Story` — the one format a hotkey is ever shown in (`input.md`). */
 export function menuItemLabel(item: MenuItem): string {
   return `[${item.hotkey}] ${item.label}`
 }

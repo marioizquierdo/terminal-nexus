@@ -64,7 +64,7 @@ Terminal Nexus keeps three things apart that most games blend together:
 The three laws that follow from this:
 
 1. **Only the Pulse mutates state.** Nothing else writes to it. Not presentation, not input, not a
-   scenario script, not a content hook.
+   mission script, not a content hook.
 2. **Presentation cannot influence the Pulse.** Frame rate, dropped frames, playback speed, pause,
    window size, colour depth, and reduced motion are all invisible to it. A Pulse resolved on a
    machine with no screen at all resolves identically.
@@ -87,14 +87,14 @@ presentation model (below), not in the state the Pulse hashes.
 ## 2. Responsibility layers
 
 The boundaries are right; the exact module names will move as code arrives. **RULE —
-`tests/architecture.test.ts`: the layers stay separate.** The kernel, content, scenario, projection,
+`tests/architecture.test.ts`: the layers stay separate.** The kernel, content, opening, projection,
 presentation, adapters and shell never reach into one another against the arrows below.
 
 | Layer | Owns | Must not own |
 | --- | --- | --- |
 | Rules kernel | ticks, state transitions, randomness, occupancy, movement, targeting, damage, economy, legality, victory | terminal objects, wall clocks, network calls, glyphs, prose |
 | Content definitions | units, attacks, structures, upgrades, Commanders, armies, factions, maps, semantic themes | mutable match authority, backend classes |
-| Scenario runtime | starting state, objectives, triggers, mission progress, win/loss requests, unlocks | direct mutation bypassing the kernel |
+| Rules runtime | starting state, objectives, triggers, mission progress, win/loss requests, unlocks | direct mutation bypassing the kernel |
 | Player projection | visibility-filtered state, legal public actions, visible ordered events | hidden-plan leakage, invented facts |
 | Presentation | semantic cues, animation state, portraits, cell frames or graphical scenes, accessibility | damage, targeting, legal placement, victory |
 | Platform adapters | terminal, browser, native input, output, resize, streams, device lifecycle; the keyboard, mouse and driver input adapters that turn events into shell commands ([`input.md`](input.md)) | interpreting ANSI or pixels as game state; giving one adapter a command another cannot issue |
@@ -103,7 +103,7 @@ presentation, adapters and shell never reach into one another against the arrows
 Runtime flow:
 
 ```text
-content + scenario + committed plans
+content + opening + committed plans
                  ↓
        deterministic kernel  ── seeded gameplay RNG
                  ↓
@@ -142,11 +142,11 @@ are not repeated here.
 
 | Invariant | Held by | Detail |
 | --- | --- | --- |
-| The kernel is pure: no terminal, clock, network or renderer; no `Math.random`; the same scenario, seed and tick count hash identically on Node and Bun | `tests/architecture.test.ts`, `tests/determinism.test.ts` | [`pulse.md`](pulse.md) |
+| The kernel is pure: no terminal, clock, network or renderer; no `Math.random`; the same opening, seed and tick count hash identically on Node and Bun | `tests/architecture.test.ts`, `tests/determinism.test.ts` | [`pulse.md`](pulse.md) |
 | Gameplay randomness is one seeded PCG32 stream; cosmetic randomness is a hash of an effect instance's identity, never a stream; the Nexus Pulse, a rule outside the kernel, deals from a seeded stream of its own, so a hand never moves a battle | `tests/rng.test.ts`, `tests/effects.test.ts`, `tests/nexus-draft.test.ts` | [`pulse.md`](pulse.md), [`effects.md`](effects.md) |
 | The simulation emits canonical state and ordered semantic events: events carry meaning, not appearance, and no renderer reads cells back into mechanics | `tests/architecture.test.ts` | [`pulse.md`](pulse.md) |
 | The simulation never knows a glyph; it knows semantic ids such as `unit.worker` | `tests/architecture.test.ts` | [`presentation.md`](presentation.md) |
-| `(0,0)` is the north-west tile, `x` grows east, `y` grows south, scenario rows read north to south: one convention in every module | `tests/scenario.test.ts` | [`grid.md`](grid.md) |
+| `(0,0)` is the north-west tile, `x` grows east, `y` grows south, testing save rows read north to south: one convention in every module | `tests/testing-saves.test.ts` | [`grid.md`](grid.md) |
 | The Grid has five layers; layers define render order only, and collision is a mask composed from a chosen set of layers | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | Every entity has an anchor, a footprint and a facing; units as well as structures may span tiles, a mover tests its whole footprint, range measures to the nearest occupied tile | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | A unit stands two squares tall: every distance, range, reach and radius counts a row up or down as two columns (`ROW_DISTANCE`), a step takes as long as the distance it covers, a reach is a diamond as wide as it is tall on screen, and touching is a side shared, which melee reaches with its range of 1 | `tests/rows.test.ts`, `tests/grid-pictures.test.ts` | [`grid.md`](grid.md), [`pulse.md`](pulse.md) |
@@ -199,14 +199,15 @@ Design commitments the game documents own, GUIDANCE until built and played:
 - **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.
 - **Regroup** — what happens when a Battle Round ends: survivors stay where they fought, step back and form up across their march line, so the next round starts from the front. (It replaced Recall, the walk home, on 2026-10-26.)
 - **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
-- **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds what any Commander may use, a faction army (`armies/citizen`, `armies/ravel`) its Nexus, units and buildings, and a Commander army her unit, her own powers and her starting package; a campaign is `campaigns/<id>/campaign.json` ([`army-authoring.md`](army-authoring.md)).
+- **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds what any Commander may use, a faction army (`armies/citizen`, `armies/ravel`) its Nexus, units and buildings, and a Commander army her unit, her own powers and her starting package; a story is `stories/<id>/story.json` ([`army-authoring.md`](army-authoring.md)).
 - **ability** — what a unit does on its own, by a kind from one table (`src/abilities/`): an aura, a bounty, loaded dice.
+- **testing save** — a Skirmish save in `skirmish-testing/` that opens on a Battle Round written by hand (its `start`: what each side has on the Grid, and where its troops head), with both slots planning nothing: a rule, a unit, a kind of ground or a showcase that `grid`, the trials, the measurement and the tests open exactly ([`skirmish-saves.md`](skirmish-saves.md)).
 - **duel** — two Commander Armies fought out headless, round by round, a script or a model planning each side ([`duels.md`](duels.md)).
 - **target** — the place a level sends a side's troops: they head for it, engage what comes within reach on the way, and stand there ([`pulse.md`](pulse.md)). PERIMETER's is the line.
 - **build range** — the ground a new building needs a tile on: within the construction radius of the player's Grid Nexus and of every standing building linked to it, counted as any reach is; a building planned this round gives its range from the next ([`pulse.md`](pulse.md)).
 - **room** — the tiles a building that makes units keeps free round it, so its waves have somewhere to appear: no other building may stand there ([`pulse.md`](pulse.md)).
 - **distance** — columns across plus two for each row up or down, between the nearest tiles of two footprints: every range, reach and radius counts in it, a reach is every tile within it, and a reach of 1 is touching, a side shared ([`grid.md`](grid.md)).
-- **route** — a place in the game written like a web address without its site (`settings`, `campaign?level=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
+- **route** — a place in the game written like a web address without its site (`settings`, `story?mission=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
 - **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
 - **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.
 - **Nexus power** — a named effect with one plain line of description, dealt to the player in a hand at each Nexus Pulse.

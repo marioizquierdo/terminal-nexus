@@ -5,7 +5,7 @@ import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/grid/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
-import { loadScenario } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
 import {
   COMPOSITION_SIZE,
   PANEL_COLUMNS,
@@ -23,16 +23,16 @@ import {
 } from "../src/view/index.ts"
 import type { PulseTimeline } from "../src/view/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
-import { isColourCode, loadScenarioFile, scenarioFiles, sgrCodes } from "./helpers.ts"
+import { isColourCode, loadTestingSaveFile, testingSaveFiles, sgrCodes } from "./helpers.ts"
 
 async function timelineFor(name: string): Promise<PulseTimeline> {
-  const scenario = await loadScenarioFile(name)
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-  return buildTimeline(scenario, loaded.state, loaded.registry, scenario.pulseTicks, scenario.seed)
+  const opening = await loadTestingSaveFile(name)
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+  return buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
 }
 
 test("frames are exactly the composition size: the 80 x 24 floor, a column for each tile of the pane", async () => {
-  const timeline = await timelineFor("citizen-mirror-skirmish.map.json")
+  const timeline = await timelineFor("citizen-mirror-skirmish.save.json")
   const view = createView(timeline)
   assert.deepEqual(COMPOSITION_SIZE, { width: 80, height: 24 })
   // 1 border, the 48 tiles of the minimum viewport a column each, 1 border, the 30-column panel.
@@ -43,8 +43,8 @@ test("frames are exactly the composition size: the 80 x 24 floor, a column for e
   assert.equal(frame.cells.length, COMPOSITION_SIZE.width * COMPOSITION_SIZE.height)
 })
 
-test("every glyph in every scenario is one printable ASCII cell", async () => {
-  for (const name of scenarioFiles()) {
+test("every glyph in every testing save is one printable ASCII cell", async () => {
+  for (const name of testingSaveFiles()) {
     const view = createView(await timelineFor(name))
     for (const fraction of [0, 0.25, 0.5, 0.9]) {
       const timeMs = view.durationMs * fraction
@@ -57,7 +57,7 @@ test("every glyph in every scenario is one printable ASCII cell", async () => {
 })
 
 test("identical arguments produce identical frames, and skipping frames changes nothing", async () => {
-  const view = createView(await timelineFor("citizen-mirror-skirmish.map.json"))
+  const view = createView(await timelineFor("citizen-mirror-skirmish.save.json"))
   const times = [0, 137.5, 1000, 4321.9, 9999]
   const once = times.map((time) => frameToText(view.snapshotAt(time, "color256")))
 
@@ -75,7 +75,7 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
   // The check that catches a compositor with a transposed axis or an off-by-one band: it would pass
   // every other test in this file while drawing a deterministic, correctly sized picture of the
   // wrong fight. Asserted against the event stream, not against the compositor's own inputs.
-  for (const name of ["citizen-mirror-skirmish.map.json", "hauler-three-tile-gap.map.json"]) {
+  for (const name of ["citizen-mirror-skirmish.save.json", "hauler-three-tile-gap.save.json"]) {
     const timeline = await timelineFor(name)
     const view = createView(timeline)
     const positions = new Map<number, { x: number; y: number }>()
@@ -127,8 +127,8 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
   }
 })
 
-test("monochrome renders every scenario, and no cell depends on colour to exist", async () => {
-  for (const name of scenarioFiles()) {
+test("monochrome renders every testing save, and no cell depends on colour to exist", async () => {
+  for (const name of testingSaveFiles()) {
     const view = createView(await timelineFor(name))
     const timeMs = view.durationMs / 2
     const mono = view.snapshotAt(timeMs, "monochrome")
@@ -185,7 +185,7 @@ test("the resize gate is drawn below the composition size", () => {
 })
 
 test("the compositor only ever emits roles from the committed vocabulary", async () => {
-  const view = createView(await timelineFor("structure-destruction.map.json"))
+  const view = createView(await timelineFor("structure-destruction.save.json"))
   const frame = view.snapshotAt(view.durationMs * 0.9, "color256")
   const roles = new Set<string>()
   for (const cell of frame.cells) {
@@ -201,12 +201,12 @@ test("the compositor only ever emits roles from the committed vocabulary", async
   }
 })
 
-// It plays every map in scenarios/ twice, once headless and once for the view: longer than Bun's five seconds a
+// It plays every map in skirmish-testing/ twice, once headless and once for the view: longer than Bun's five seconds a
 // test, so it says how long it may take.
 test("the view and the headless run agree on the fight they describe", { timeout: 60_000 }, async () => {
-  const { resolveScenario } = await import("./helpers.ts")
-  for (const name of scenarioFiles()) {
-    const headless = await resolveScenario(name)
+  const { playTestingSave } = await import("./helpers.ts")
+  for (const name of testingSaveFiles()) {
+    const headless = await playTestingSave(name)
     const timeline = await timelineFor(name)
     assert.equal(timeline.stateHash, headless.run.stateHash, `${name}: watch and run disagree`)
     assert.equal(timeline.eventsHash, headless.run.eventsHash, `${name}: watch and run disagree`)
@@ -214,7 +214,7 @@ test("the view and the headless run agree on the fight they describe", { timeout
 })
 
 test("interpolation is presentation only: a mid-tick frame never changes the timeline", async () => {
-  const timeline = await timelineFor("citizen-mirror-skirmish.map.json")
+  const timeline = await timelineFor("citizen-mirror-skirmish.save.json")
   const view = createView(timeline)
   const before = timeline.states.map((state) => state.tick).join(",")
   const tick = 100
@@ -230,7 +230,7 @@ test("interpolation is presentation only: a mid-tick frame never changes the tim
 })
 
 test("a Grid smaller than the pane is centred in it, a column for each of its tiles, inside a quiet rule", async () => {
-  const timeline = await timelineFor("melee-kill.map.json")
+  const timeline = await timelineFor("melee-kill.save.json")
   const { grid } = timeline
   assert.deepEqual([grid.width, grid.height], [24, 12])
   const frame = createView(timeline).snapshotAt(2000, "monochrome")
@@ -255,9 +255,9 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
   // (there is always at least one - the fixture is built to be a real, populated fight) and checks
   // the target's own glyph is still drawn through the hold, then gone the instant the impact beat
   // that fx.death.collapse/fx.impact.burst already wait for arrives.
-  const { resolveScenario } = await import("./helpers.ts")
-  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
-  const timeline = await timelineFor("citizens-versus-ravels.map.json")
+  const { playTestingSave } = await import("./helpers.ts")
+  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
+  const timeline = await timelineFor("citizens-versus-ravels.save.json")
   const view = createView(timeline)
   const tickMs = view.tickDurationMs
   const origin = gridOrigin(timeline.grid)

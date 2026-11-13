@@ -75,7 +75,7 @@ function shoot(
   killSession(repoRoot, SESSION)
 }
 
-shoot("menu-top-level", "terminal-nexus's top-level menu - Campaign highlighted at launch")
+shoot("menu-top-level", "terminal-nexus's top-level menu - Skirmish highlighted at launch")
 
 shoot(
   "menu-monochrome",
@@ -93,18 +93,6 @@ shoot(
     sendKey(repoRoot, SESSION, "Down")
     sendKey(repoRoot, SESSION, "Down")
   } },
-)
-
-shoot(
-  "menu-stub-notice",
-  "Pressing 2 (Challenge, shown dimmed): an honest stub notice, not a dead end",
-  { drive: () => sendKeys(repoRoot, SESSION, "2") },
-)
-
-shoot(
-  "menu-challenge-dimmed",
-  "Challenge already says why it's dimmed before it's even pressed; highlighting it is still plain inverse video",
-  { drive: () => sendKey(repoRoot, SESSION, "Down") },
 )
 
 shoot(
@@ -160,23 +148,23 @@ shoot("about-screen", "About, reached by its own hotkey - the designer, the repo
   waitForText: "Contributions",
 })
 
-// Campaign's own placeholder screen.
-shoot("campaign-screen", "Campaign, reached by its own hotkey - a real screen, not a notice pinned to the menu behind it", {
-  drive: () => sendKeys(repoRoot, SESSION, "1"),
-  waitForText: "Campaign is not built yet",
+// Story's own placeholder screen.
+shoot("story-screen", "Story, reached by its own hotkey - a real screen, not a notice pinned to the menu behind it", {
+  drive: () => sendKeys(repoRoot, SESSION, "2"),
+  waitForText: "Story is not built yet",
 })
 
 shoot(
-  "campaign-back-to-top",
-  "Pressing Back (or Esc) returns to the top-level menu, still highlighting Campaign",
+  "story-back-to-top",
+  "Pressing Back (or Esc) returns to the top-level menu, still highlighting Story",
   {
     // Same reasoning as settings-back-to-top's own comment: "top-level menu" is on screen from the
     // very first frame, so the eventual wait below only means something once we've first confirmed
     // we actually left it.
     drive: () => {
-      sendKeys(repoRoot, SESSION, "1") // 1 = Campaign
-      waitFor(repoRoot, SESSION, (text) => text.includes("Campaign is not built yet"), "the Campaign screen")
-      sendKeys(repoRoot, SESSION, "1") // 1 = Back, Campaign screen's only row
+      sendKeys(repoRoot, SESSION, "2") // 2 = Story
+      waitFor(repoRoot, SESSION, (text) => text.includes("Story is not built yet"), "the Story screen")
+      sendKeys(repoRoot, SESSION, "1") // 1 = Back, Story screen's only row
     },
     waitForText: "top-level menu",
   },

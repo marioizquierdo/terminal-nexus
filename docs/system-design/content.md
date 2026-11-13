@@ -112,13 +112,13 @@ Commander, starting units and structures, blueprints and a tech tree, upgrades, 
 Specials, bounded against its faction's pools (same document). The match, the Pulse, and every
 renderer see an army; none of them ever sees a faction.
 
-**An army is data, not code** (RULE — `armies/`, `campaigns/`, `src/armies/`, `tests/armies.test.ts`). How to write
+**An army is data, not code** (RULE — `armies/`, `stories/`, `src/armies/`, `tests/armies.test.ts`). How to write
 one, field by field, with its conventions and a checklist for a new Commander, is
 [`army-authoring.md`](army-authoring.md); what follows is the shape. Armies stack: `armies/all` holds what any
 Commander may use (the Hatchery, the Turret, War Chest); a faction army (`armies/citizen`, `armies/ravel`) requires
 it and holds that faction's Nexus, units, buildings and powers; a Commander army (`armies/vasse`, `armies/averno`,
 `armies/dob`) requires her faction and holds her unit, her `commanders` entry (her faction, lean, portrait, barks,
-starting package and Nexus Pulse schedule) and her own powers. Campaigns are their own folders under `campaigns/`,
+starting package and Nexus Pulse schedule) and her own powers. Stories are their own folders under `stories/`,
 requiring the armies they play; a level may extend another and change its mission. **An army sees what it and the
 armies it requires bring, and nothing else.** A unit or a structure is written in an army's `content` as data —
 its stats, its footprint, its card text and its glyph — with the engine's defaults filled in
@@ -130,7 +130,7 @@ its checks and its card line in one place. The loader (`src/armies/load.ts`, pur
 every problem at once, each naming where by ids, and freezes what it hands the game. A Commander's arsenal is her
 own army and her faction chain: she deals and builds only from those, and a card another Nexus slips into her hand
 is marked `from` that faction. The kernel never reads an army; it reads content definitions, each side's own.
-The game reads only the armies and stories (campaign files) `src/shipped.ts` lists, imported with the code: there is no mod
+The game reads only the armies and stories `src/shipped.ts` lists, imported with the code: there is no mod
 loader looking for folders on disk.
 
 Prefer composable capabilities — health, movement, attack, production, storage, supply, worker slots,

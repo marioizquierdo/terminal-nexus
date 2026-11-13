@@ -264,12 +264,12 @@ export function applyDamage(
  * `a.definition.footprint` as the origin reproduces `within` exactly, and a bare impact point is just a
  * one-tile footprint, `[{x:0,y:0}]`, at the point in question. One primitive under both call shapes, not two.
  *
- * Caught by actually running a scenario, not by inspection: the first cut of this measured every
+ * Caught by actually running a testing save, not by inspection: the first cut of this measured every
  * blast from a bare point at the dying entity's *anchor*, which is correct for a 1x1 body and silently
  * shrinks the effective radius for anything bigger — a multi-tile detonator (`unit.ravel.leviathan`,
  * 5x2) caught fewer neighbours than `detonate()`'s original, footprint-aware `distanceBetween` call
  * did, changing existing fixtures' event counts and death tolls with no content change behind it.
- * `citizens-versus-ravels.map.json` and `grand-battle.map.json` are what caught it, hash-compared
+ * `citizens-versus-ravels.save.json` and `grand-battle.save.json` are what caught it, hash-compared
  * against `main` before this fix landed.
  */
 export function withinArea(originAnchor: Coord, originFootprint: readonly Coord[], b: Actor, radius: number): boolean {

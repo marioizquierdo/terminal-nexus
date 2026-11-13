@@ -15,8 +15,11 @@ import { readAddress } from "../src/web/address.ts"
 import { checkDemos } from "../src/web/demos.ts"
 
 /** Where a launch opens, as plain data. */
-const where = ({ destination }: Launch): string =>
-  destination.kind === "title" ? `title ${destination.place}` : `level ${destination.level.id} round ${destination.round}`
+const where = ({ destination }: Launch): string => {
+  if (destination.kind === "title") return `title ${destination.place}`
+  if (destination.kind === "skirmish") return `skirmish ${destination.load ?? destination.seed ?? "clock"}`
+  return `level ${destination.level.id} round ${destination.round}`
+}
 
 test("a launch opens where its route says, and where its host starts without one", () => {
   // The game's bare command opens the title menu; the page, a demo and the scripted playtest the default level.
@@ -24,12 +27,12 @@ test("a launch opens where its route says, and where its host starts without one
   assert.equal(where(readLaunch({ at: undefined }, DEFAULT_LEVEL_ROUTE).launch), "level vasse-test-1 round 1")
   assert.equal(where(readLaunch({ at: "about" }, "menu").launch), "title about")
   assert.equal(where(readLaunch({ at: "" }, DEFAULT_LEVEL_ROUTE).launch), "title menu")
-  assert.equal(where(readLaunch({ at: "campaign?level=vasse-test-1" }, "menu").launch), "level vasse-test-1 round 1")
-  assert.equal(where(readLaunch({ at: "campaign?level=vasse-test-1&round=3" }, "menu").launch), "level vasse-test-1 round 3")
+  assert.equal(where(readLaunch({ at: "story?mission=vasse-test-1" }, "menu").launch), "level vasse-test-1 round 1")
+  assert.equal(where(readLaunch({ at: "story?mission=vasse-test-1&round=3" }, "menu").launch), "level vasse-test-1 round 3")
 })
 
 test("a launch keeps its settings text as written, and reads its keys as a key script", () => {
-  const { launch, problems } = readLaunch({ at: "campaign?level=vasse-test-1&round=2", settings: "jumpStep=12&reducedMotion=true", keys: "Esc n 1" }, "menu")
+  const { launch, problems } = readLaunch({ at: "story?mission=vasse-test-1&round=2", settings: "jumpStep=12&reducedMotion=true", keys: "Esc n 1" }, "menu")
   assert.deepEqual(problems, [])
   assert.equal(launch.settings, "jumpStep=12&reducedMotion=true")
   assert.deepEqual(launch.keys, parseKeyScript("Esc n 1"))
@@ -39,7 +42,7 @@ test("a launch keeps its settings text as written, and reads its keys as a key s
 })
 
 test("what a launch cannot read is said part by part and left out: a route that is not a place opens the host's start", () => {
-  const route = "campaign?level=nowhere&colour=red"
+  const route = "story?mission=nowhere&colour=red"
   const { launch, problems } = readLaunch({ at: route, settings: "foo=1", keys: "Esc Dwn" }, DEFAULT_LEVEL_ROUTE)
   assert.deepEqual(problems.map((problem) => problem.part), ["at", "keys"])
   const [at, keys] = problems
@@ -56,7 +59,7 @@ test("what a launch cannot read is said part by part and left out: a route that 
 test("every launch part arrives through the game's argument parser whole, in both of its forms", () => {
   // A parser that took an unknown option for a flag would drop the text: the route, the settings or the keys.
   for (const part of LAUNCH_PARTS) {
-    const text = part === "at" ? "campaign?level=vasse-test-1&round=2" : "a=1&b=2 c"
+    const text = part === "at" ? "story?mission=vasse-test-1&round=2" : "a=1&b=2 c"
     assert.equal(parseArgs([`--${part}`, text]).options.get(part), text, `--${part}`)
     assert.equal(parseArgs([`--${part}=${text}`]).options.get(part), text, `--${part}=`)
     assert.deepEqual([...parseArgs([`--${part}`, text]).flags], [], `--${part}`)

@@ -45,9 +45,28 @@ import { cardActionRows } from "./build-card.ts"
 import { SHOWN_SETTINGS, setting } from "../build/all-settings.ts"
 import { activityExportText, loggedTile, shownEntries } from "../build/activity.ts"
 import { TUNING } from "../build/tuning.ts"
-import type { BuildCommand, ExportKind, RaidForecast, RunDraftChoice } from "../build/types.ts"
+import type { BuildCommand, ExportKind, RaidForecast } from "../build/types.ts"
 import type { Coord } from "../grid/types.ts"
 import type { Settings } from "../settings/types.ts"
+
+/** A command pressed on a Build Phase, and when, in milliseconds since the round opened: what a note replays. */
+export type PressedCommand = Readonly<{ at: number; command: BuildCommand }>
+
+/**
+ * **The moment a note is about** (`!`): the line typed; the round as its Build Phase opened (its context and state, a
+ * draft laid included) and every command pressed since, with their times — enough to reach this moment again by
+ * replaying them (`BuildSession.replay`) — how long after the round opened it was; and the screen as it stood when `!`
+ * was pressed (its context and state, for the shell to draw as text).
+ */
+export type NoteMoment = Readonly<{
+  line: string
+  opened: Readonly<{ context: BuildContext; state: BuildState }>
+  pressed: readonly PressedCommand[]
+  at: number
+  screen: Readonly<{ context: BuildContext; state: BuildState }>
+  /** The screen as text when `!` was pressed, Battle Round and all, when the shell can draw it (`captureScreen`). */
+  screenText?: string
+}>
 
 export type BuildSessionOptions = Readonly<{
   context: BuildContext
@@ -82,7 +101,7 @@ export type BuildSessionOptions = Readonly<{
    * credits not spent, the next round's arrivals — or `null` when the mission is over. Injected for the
    * same reason as `startPulse`. Absent: a round's result is where the screen stops.
    */
-  nextRound?: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
+  nextRound?: (context: BuildContext, state: BuildState, resolved: ResolvedPulse, alternative?: boolean) => BuildContext | null
   /**
    * What each group of the raid the round brings goes for first, and the way it would go, on the plan as
    * it stands — the kernel's own first choice. Injected for the same reason as `startPulse`, and asked
@@ -97,13 +116,30 @@ export type BuildSessionOptions = Readonly<{
    */
   keep?: (context: BuildContext, card: PowerCard) => BuildContext
   /**
-   * The round once a run's draft (`BuildContext.runDraft`) is settled: asked the moment the player chooses, with the round the
-   * draft opened and the choice made, it returns the same battle's first round with the army the choice made, and the screen
-   * moves on to it as it moves on to a next round — a fresh Build Phase, the settings and Experiments carried over, a scene
-   * played when the session plays scenes. Injected for the same reason as `startPulse`: the run is the shell's. Absent: the
-   * choice only closes the popup, and the round stays as it is.
+   * The Build Phase as it first opens, with a plan already laid on it: a Skirmish save's draft (`LevelPlay.resume`,
+   * `src/cli/levels.ts`), so loading returns to exactly where the player stopped. Asked once, as the session is made.
+   * Absent: the first round opens with nothing planned, as every later one does.
    */
-  draft?: (context: BuildContext, choice: RunDraftChoice) => BuildContext
+  resume?: (context: BuildContext, state: BuildState) => Readonly<{ context: BuildContext; state: BuildState }>
+  /**
+   * **Save game's side effect**: the round, the plan as it stands and the name typed, to be written by the shell, which
+   * says how it went in a line for the bottom line, and may hand back the round's context as it stands now (the file it
+   * was saved to, which Save game then offers again). Called each time Save game asks (`BuildState.saveRequests`).
+   * Absent: nothing is written, and the bottom line says so.
+   */
+  onSave?: (context: BuildContext, state: BuildState, name: string) => Readonly<{ ok: boolean; text: string; context?: BuildContext }>
+  /**
+   * **The setup screen, from a battle's result** (`[m] Setup screen`): the shell leaves this screen for the title menu's
+   * New game, with this round's context to take the battle's setup from. Absent: the result offers no such row.
+   */
+  onSetup?: (context: BuildContext) => void
+  /**
+   * **A note's side effect** (`!`): the moment, to be written by the shell as a note file, which says how it went in a
+   * line for the bottom line. Absent: nothing is written, and the bottom line says so.
+   */
+  onNote?: (moment: NoteMoment) => Readonly<{ ok: boolean; text: string }>
+  /** The screen as text right now, as the shell draws it: asked the moment `!` is pressed, for the note. */
+  captureScreen?: () => string
   /**
    * Whether a round that opens with a scene (`BuildContext.scene`: the mission's lines, a Commander's
    * return) plays it in the dialog before the player has the keyboard: on in the game, the browser page and
@@ -160,7 +196,7 @@ export class BuildSession {
    *  rule, is swallowed rather than read as a fresh click on the map. */
   private lastPlacingClick: Readonly<{ column: number; row: number; at: number }> | null = null
   private readonly startPulse: (context: BuildContext, state: BuildState) => ResolvedPulse | null
-  private readonly nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse) => BuildContext | null
+  private readonly nextRound: (context: BuildContext, state: BuildState, resolved: ResolvedPulse, alternative?: boolean) => BuildContext | null
   /** The Battle Round on screen, from the moment the plan is committed until the Build Phase starts over. */
   private presenter: PulsePresenter | null = null
   /** The screen's clock at the last thing the session heard of it, so a Pulse begun by a key press is at
@@ -168,7 +204,17 @@ export class BuildSession {
   private now: number | undefined
   private readonly foresee: ((context: BuildContext, state: BuildState) => RaidForecast) | null
   private readonly keep: (context: BuildContext, card: PowerCard) => BuildContext
-  private readonly draft: ((context: BuildContext, choice: RunDraftChoice) => BuildContext) | null
+  private readonly onSave: NonNullable<BuildSessionOptions["onSave"]>
+  private readonly onSetup: ((context: BuildContext) => void) | null
+  private readonly onNote: NonNullable<BuildSessionOptions["onNote"]>
+  /** The round as its Build Phase opened, and what has been pressed since, with when: what a note carries. */
+  private opened: Readonly<{ context: BuildContext; state: BuildState }>
+  private pressed: PressedCommand[] = []
+  /** The screen's clock when the round opened; `null` until the first time is heard. */
+  private openedAt: number | null = null
+  /** The screen as `!` found it, kept while the note is typed: what the note shows as the screen. */
+  private beforeNote: Readonly<{ context: BuildContext; state: BuildState; at: number; text?: string }> | null = null
+  private readonly captureScreen: (() => string) | null
   /** Where a Commander's lines come from (`BuildSessionOptions.barksOf`); `undefined`: her army's. */
   private readonly barksOf: BarksOf | undefined
   /** The raid last foreseen, and the round and plan it was foreseen on. */
@@ -180,19 +226,29 @@ export class BuildSession {
     this.context = staged(options.context)
     this.firstContext = this.context
     this.buildState = createBuildState(this.context, options.cursor, options.viewport)
+    // A save's plan, laid on the round it was saved at: the context it leaves (a power kept) is the round's from now on,
+    // and Restart still goes back to the round as it opened, with nothing planned.
+    if (options.resume !== undefined) {
+      const resumed = options.resume(this.context, this.buildState)
+      this.context = resumed.context
+      this.buildState = resumed.state
+    }
     this.onQuit = options.onQuit ?? ((): void => {})
     this.onExport = options.onExport ?? ((): void => {})
     this.onSettingsChange = options.onSettingsChange ?? ((): void => {})
     this.startPulse = options.startPulse ?? ((): null => null)
     this.log = options.activity ?? globalActivity
     const nextRound = options.nextRound ?? ((): null => null)
-    this.nextRound = (context, state, resolved) => {
-      const next = nextRound(context, state, resolved)
+    this.nextRound = (context, state, resolved, alternative) => {
+      const next = nextRound(context, state, resolved, alternative)
       return next === null ? null : staged(next)
     }
-    const draft = options.draft
-    this.draft = draft === undefined ? null : (context, choice) => staged(draft(context, choice))
+    this.onSave = options.onSave ?? ((): ReturnType<NonNullable<BuildSessionOptions["onSave"]>> => ({ ok: false, text: "This screen cannot write a save file." }))
     this.foresee = options.foresee ?? null
+    this.onSetup = options.onSetup ?? null
+    this.onNote = options.onNote ?? ((): Readonly<{ ok: boolean; text: string }> => ({ ok: false, text: "This screen cannot write a note." }))
+    this.opened = { context: this.context, state: this.buildState }
+    this.captureScreen = options.captureScreen ?? null
     this.keep = options.keep ?? ((context, card) => ({ ...context, kept: [...(context.kept ?? []), card] }))
     this.barksOf = options.barksOf
     this.recordDialog(null)
@@ -242,6 +298,7 @@ export class BuildSession {
    */
   advance(now: number, hold = false): void {
     this.now = now
+    this.openedAt ??= now
     if (this.presenter === null) return
     this.presenter.advance(now, hold)
     for (const command of this.presenter.due()) this.dispatch(command)
@@ -279,12 +336,15 @@ export class BuildSession {
       return
     }
     if (command.kind === "next-round") {
-      this.moveOn()
+      if (command.setup === true) this.toSetup()
+      else this.moveOn(command.alternative === true)
       return
     }
     // Restart is the mission's, from round 1: the reducer starts a Build Phase over on the context it is
     // given, so it is given the first round's.
     if (command.kind === "restart") this.context = this.firstContext
+    // The note about to open: the screen as it stands, drawn by the shell before the popup covers it.
+    const screenBefore = command.kind === "open-note" && this.buildState.popup !== "note" ? this.captureScreen?.() : undefined
     const before = this.buildState
     this.buildState = applyBuildCommand(this.context, before, command)
     // A Nexus power was just picked: it is kept, and what it does is in the round's context from now on.
@@ -305,9 +365,11 @@ export class BuildSession {
     // The plan was just committed: the Battle Round starts. Or the Build Phase started over: it is gone.
     if (!before.committed && this.buildState.committed) this.beginPulse()
     else if (before.committed && !this.buildState.committed) this.presenter = null
-    // A run's draft was just settled: the round it opened is played with the army the choice made.
-    const choice = this.buildState.draftChoice
-    if (before.draftChoice === null && choice !== null && this.draft !== null) this.startRound(this.draft(this.context, choice))
+    // Save game asked to write: the shell writes it and says how it went, which the bottom line says.
+    if (this.buildState.saveRequests > before.saveRequests) this.save()
+    // The note opened: the screen as it stood is what the note shows. Saved: the shell writes the moment.
+    if (this.buildState.popup === "note" && before.popup !== "note") this.beforeNote = { context: this.context, state: before, at: this.sinceOpened(), ...(screenBefore === undefined ? {} : { text: screenBefore }) }
+    if (this.buildState.noteRequests > before.noteRequests) this.note()
   }
 
   /**
@@ -336,11 +398,6 @@ export class BuildSession {
       if (command.kind !== "restart" && after.planned !== before.planned) this.recordPlan(before, after)
       if (command.kind === "building-action" && (after.fitted !== before.fitted || after.held !== before.held)) this.recordAction(before, after, command.key)
       if (after.popup !== null && opened(before, after)) log.log("popup.open", { popup: after.popup })
-      if (before.draftChoice === null && after.draftChoice !== null) {
-        const { draftChoice } = after
-        const title = this.context.runDraft?.title ?? ""
-        log.log("run.draft", { draft: title, choice: draftChoice.kind, ...(draftChoice.kind === "requisition" ? {} : { key: draftChoice.key }) })
-      }
       if (after.settings !== before.settings || after.experiments !== before.experiments) {
         for (const spec of SHOWN_SETTINGS) {
           const value = setting(after, spec.field)
@@ -472,13 +529,47 @@ export class BuildSession {
    * way — the settings, the Experiments and the view carried over, the cursor on the Grid Nexus — and the
    * Pulse is gone. Before the result stands it is nothing: a key must never skip the ending.
    */
-  private moveOn(): void {
+  /** The result's way back to the setup screen: the shell leaves this screen for it, with the round's context. Only
+   *  once the result stands, and only when the round offers it and the shell can go there. */
+  private toSetup(): void {
+    const presenter = this.presenter
+    if (presenter === null || presenter.phase() !== "home" || this.onSetup === null) return
+    if (presenter.resolved.mission?.ending?.setup === undefined) return
+    this.log.log("build.command", { command: "setup-screen" })
+    this.onSetup(this.context)
+  }
+
+  private moveOn(alternative: boolean): void {
     const presenter = this.presenter
     if (presenter === null || presenter.phase() !== "home") return
-    const next = this.nextRound(this.context, this.buildState, presenter.resolved)
+    // The result's other way on is only there when the round that ended offers one.
+    if (alternative && presenter.resolved.mission?.ending?.alternative === undefined) return
+    const next = this.nextRound(this.context, this.buildState, presenter.resolved, alternative)
     if (next === null && presenter.resolved.mission === undefined) return
     this.startRound(next ?? this.firstContext)
     this.noteCommander()
+  }
+
+  /**
+   * Save game: the shell writes the round, the plan and the name, and its answer is the bottom line's (`save-result`), the
+   * popups closed when it was written. A context it hands back (the file the round now belongs to) is the round's from
+   * now on. Recorded as `game.save`, with where it went or why it did not.
+   */
+  private save(): void {
+    const name = this.buildState.saveField.trim()
+    let answer: ReturnType<NonNullable<BuildSessionOptions["onSave"]>>
+    try {
+      answer = this.onSave(this.context, this.buildState, name)
+    } catch (error) {
+      answer = { ok: false, text: `Not saved: ${error instanceof Error ? error.message : String(error)}` }
+    }
+    if (answer.context !== undefined) this.context = answer.context
+    this.buildState = applyBuildCommand(this.context, this.buildState, { kind: "save-result", ok: answer.ok, text: answer.text })
+    try {
+      this.log.log("game.save", { name, saved: answer.ok, answer: answer.text, round: this.buildState.pulseNumber })
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
   }
 
   /** The screen moves on to `context`: a fresh Build Phase on it, the settings, the Experiments and the view carried over, the
@@ -492,6 +583,58 @@ export class BuildSession {
     this.buildState = { ...fresh, ack: before.ack, refusedTry: before.refusedTry, handoff: before.handoff }
     this.presenter = null
     this.recordDialog(null)
+    // A new round: a note from here on replays from its opening.
+    this.opened = { context: this.context, state: this.buildState }
+    this.pressed = []
+    this.openedAt = this.now ?? null
+  }
+
+  /** A command from a key or a click, kept with its time for a note — not the note's own keys, which a replay would
+   *  open the note again with. */
+  private press(command: BuildCommand): void {
+    const own = command.kind === "open-note" || command.kind === "note-text" || command.kind === "save-note"
+    if (!own && this.buildState.popup !== "note") this.pressed.push({ at: this.sinceOpened(), command })
+    this.dispatch(command)
+  }
+
+  /** Milliseconds since the round opened, on the screen's clock. */
+  private sinceOpened(): number {
+    return Math.max(0, (this.now ?? 0) - (this.openedAt ?? this.now ?? 0))
+  }
+
+  /**
+   * **A note's moment, reached again**: each command pressed since the round opened, at its time after `base` (the
+   * screen's clock as the round opened here), and the clock moved on to `until` after it. The commands are kept as
+   * pressed, so a note made after a replay carries them too.
+   */
+  replay(pressed: readonly PressedCommand[], until: number, base: number = this.now ?? 0): void {
+    this.advance(base)
+    this.openedAt = base
+    for (const { at, command } of pressed) {
+      this.advance(base + at)
+      this.pressed.push({ at, command })
+      this.dispatch(command)
+    }
+    this.advance(base + until)
+  }
+
+  /** The note's line saved: the shell writes the moment and says how it went. Recorded as `game.note`. */
+  private note(): void {
+    const line = this.buildState.noteField.trim()
+    const screen = this.beforeNote ?? { context: this.context, state: this.buildState, at: this.sinceOpened() }
+    let answer: Readonly<{ ok: boolean; text: string }>
+    try {
+      answer = this.onNote({ line, opened: this.opened, pressed: [...this.pressed], at: screen.at, screen: { context: screen.context, state: screen.state }, ...(screen.text === undefined ? {} : { screenText: screen.text }) })
+    } catch (error) {
+      answer = { ok: false, text: `Note not saved: ${error instanceof Error ? error.message : String(error)}` }
+    }
+    this.buildState = applyBuildCommand(this.context, this.buildState, { kind: "note-result", ok: answer.ok, text: answer.text })
+    if (answer.ok) this.beforeNote = null
+    try {
+      this.log.log("game.note", { line, saved: answer.ok, answer: answer.text })
+    } catch {
+      // A log that could break the game would not be worth having.
+    }
   }
 
   /** A round has opened: whether the player's Commander sits it out (`commander.out`) or the Nexus Pulse that opened
@@ -565,7 +708,7 @@ export class BuildSession {
     const command = mouse.press ? this.resolveDoubleClick(mouse, clicked, timing.now) : clicked
     if (command === null) return
     const before = this.buildState
-    this.dispatch(command)
+    this.press(command)
     if (mouse.press && timing.now !== undefined && this.buildState.planned.length > before.planned.length) {
       this.lastPlacingClick = { column: mouse.column, row: mouse.row, at: timing.now }
     }
@@ -602,7 +745,7 @@ export class BuildSession {
       return
     }
     const command = this.keyCommand(key, now, phase)
-    if (command !== null) this.dispatch(command)
+    if (command !== null) this.press(command)
   }
 
   /**
@@ -635,6 +778,8 @@ export class BuildSession {
       popupSpec: popupSpec(this.context, state),
       pulse: this.presenter !== null,
       pulseOver: this.presenter?.phase() === "home",
+      pulseAlternative: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.alternative !== undefined,
+      pulseSetup: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.setup !== undefined && this.onSetup !== null,
       // Without a clock every key is a press on its own — a tap, or the fast move's jump as far as the
       // setting says now.
       ...(now === undefined
@@ -665,6 +810,8 @@ export class BuildSession {
       escLabel: escLabel(state),
       pulse: this.presenter !== null,
       pulseOver: this.presenter?.phase() === "home",
+      pulseAlternative: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.alternative !== undefined,
+      pulseSetup: this.presenter?.phase() === "home" && this.presenter.resolved.mission?.ending?.setup !== undefined && this.onSetup !== null,
     })
   }
 

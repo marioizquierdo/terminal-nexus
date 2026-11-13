@@ -189,14 +189,20 @@ export function drawTopBarAndBottomLine(cells: BandCell[], input: BuildCompositi
   const stage = round?.stage === undefined ? "" : `${round.stage} - `
   const phase = round === undefined ? "build phase" : `build phase - ${stage}round ${round.number} of ${round.of}`
   const subtitle = input.pulse === undefined ? phase : pulseSubtitle(input.pulse)
-  text(cells, band, left + 15, headerRow, subtitle, "chrome.muted", { limit: limit - 15 })
   // What Esc does right now, right-aligned: "menu [esc]", "back [esc]", "close [esc]" —
   // the name quiet, the key in the hotkey colour after it, findable without competing with the game's
   // own title. The same text is the click target that sends Esc.
   const escText = escLabel(state)
   const hint = escLabelSpan(layout, escText)
+  // The subtitle stops a space short of the Esc label. On a bar too narrow for it (a small map's), the round
+  // goes before the "build phase" words, and a subtitle that still does not fit is left off, never run into
+  // the label.
+  const room = (escText === "" ? limit : hint.from - left - 1) - 15
+  const shorter = round === undefined || input.pulse !== undefined ? [subtitle] : [subtitle, `${stage}round ${round.number} of ${round.of}`, `round ${round.number}/${round.of}`]
+  const fitted = shorter.find((candidate) => candidate.length <= room)
+  if (fitted !== undefined) text(cells, band, left + 15, headerRow, fitted, "chrome.muted", { limit: room })
   const name = escText.slice(0, escText.length - ESC_KEY.length)
-  // A popup that cannot be closed (a run's draft) offers no Esc at all.
+  // A popup that cannot be closed (none now; the retired runs' draft was one) offers no Esc at all.
   if (escText !== "") {
     text(cells, band, hint.from, hint.row, name, "chrome.muted")
     text(cells, band, hint.from + name.length, hint.row, ESC_KEY, "chrome.hotkey", { bold: true })

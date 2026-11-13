@@ -1,0 +1,71 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Route: a corridor walked both ways at once - two squads, one corridor, each side's Nexus beyond it",
+  "notes": "Two rock masses leave one corridor two rows tall across the middle of the map. Each side has a Grid Nexus at its end and a squad of four troopers that must go through the corridor to reach the other's. The squads meet in it and fight. Done when the battle never stands still for good: someone wins the corridor and walks on.",
+  "setup": {
+    "map": {
+      "id": "route-corridor",
+      "rows": [
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................................................",
+        "................................................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................",
+        "................################................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 2400,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":6,"y":4},
+      "rows": [
+        "tt",
+        "tt",
+        "",
+        "",
+        "n"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "n": {"content":"structure.bench.nexus"}
+      }
+    },
+    "p2": {
+      "at": {"x":41,"y":4},
+      "rows": [
+        "tt",
+        "tt",
+        "",
+        "",
+        "n"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

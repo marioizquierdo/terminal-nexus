@@ -66,8 +66,8 @@ export type HeldCorpse = Readonly<{
 }>
 
 export type CompositionInput = Readonly<{
-  scenarioId: string
-  scenarioName: string
+  battleId: string
+  battleName: string
   seed: number
   pulseTicks: number
   grid: GridTerrain
@@ -286,7 +286,7 @@ function drawChrome(
     dim: true,
     limit: right - 19,
   })
-  text(cells, band, 2, 2, input.scenarioName, "chrome.value", { limit: paneLimit })
+  text(cells, band, 2, 2, input.battleName, "chrome.value", { limit: paneLimit })
   text(cells, band, 2, 3, `seed ${hexSeed(input.seed)}`, "chrome.label", { limit: paneLimit })
 
   // Footer — the position readout `grid.md` requires, the controls, and the status line.
@@ -311,7 +311,7 @@ function drawChrome(
   // Side panel — 30 columns. During a Pulse it carries the pulse state, both sides' force totals,
   // and the feed that makes "who shot whom" readable without effects.
   text(cells, band, panelX, 1, "NEXUS PULSE", "chrome.title", { bold: true, limit: panelLimit })
-  text(cells, band, panelX, 2, input.scenarioId, "chrome.muted", { dim: true, limit: panelLimit })
+  text(cells, band, panelX, 2, input.battleId, "chrome.muted", { dim: true, limit: panelLimit })
   text(
     cells,
     band,

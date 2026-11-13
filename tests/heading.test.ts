@@ -7,8 +7,8 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
 
 type Placed = readonly [x: number, y: number, content: string]
@@ -40,7 +40,7 @@ function firstTick(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>
     const placed = sides[side]
     if (placed !== undefined) placements[side] = block(placed)
   }
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "heading",
     name: "heading",
     grid: { preset: "small-wide" },
@@ -50,7 +50,7 @@ function firstTick(sides: Readonly<Partial<Record<PlayerId, readonly Placed[]>>>
     terrainLegend: { ".": "terrain.plain" },
     placements,
   }
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY })
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
   return stepTick(loaded.state, contextFor(loaded.state, FIXTURE_REGISTRY, 60)).state
 }
 

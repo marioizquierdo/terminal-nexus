@@ -1,4 +1,4 @@
-// A duel side's building actions (`SidePlan.actions`, `src/duel/round.ts`): a plan names a building of its own by its
+// A duel side's building actions (`BuildActions.actions`, `src/duel/round.ts`): a plan names a building of its own by its
 // anchor and one of its card's actions — an upgrade bought, a mode switched to, an order given — taken by the Build
 // Phase's own rules after its buildings are placed, from the credits they leave; the battle runs on what each building
 // carries, and the regroup carries it into the next round. A run's battle hands the screen's actions to its duel the same
@@ -9,19 +9,19 @@ import assert from "node:assert/strict"
 import { buildLayout } from "../src/build/layout.ts"
 import type { BuildState } from "../src/build/state.ts"
 import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts"
-import { RUN_PLAY, playedOf, runLevel, sidePlanOf } from "../src/cli/run-play.ts"
-import type { DuelSetup, DuelState, Player, SidePlan } from "../src/duel/index.ts"
-import { SCRIPTED, briefOf, newDuel, placementsOf, playDuel, playRound, readPlan } from "../src/duel/index.ts"
+import { newSkirmishLevel, playedOf, buildActionsOf } from "../src/cli/skirmish-play.ts"
+import type { DuelSetup, DuelState, Player, BuildActions } from "../src/duel/index.ts"
+import { SCRIPTED, briefOf, newDuel, placementsOf, playDuel, playRound, readBuildActions } from "../src/duel/index.ts"
 
 const BARRACKS = "structure.citizen.barracks"
 const setup = (extra: Partial<DuelSetup> = {}): DuelSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
-const hold: SidePlan = { build: [], stance: "hold" }
+const hold: BuildActions = { build: [], stance: "hold" }
 
 /** A duel after its first round, side A having built one Barracks by its Nexus and a Supply Depot: the duel, and where
  *  the Barracks stands. */
 function withBarracks(): Readonly<{ duel: DuelState; at: Readonly<{ x: number; y: number }> }> {
   // A Supply Depot beside it, so the army has room for whole waves.
-  const plan: SidePlan = { build: [{ building: "barracks", at: "nexus" }, { building: "depot", at: "back" }], stance: "hold" }
+  const plan: BuildActions = { build: [{ building: "barracks", at: "nexus" }, { building: "depot", at: "back" }], stance: "hold" }
   const at = placementsOf(newDuel(setup()), "A", plan)[0]?.anchor
   assert.ok(at !== undefined, "the Barracks found no spot")
   return { duel: playRound(newDuel(setup()), { A: plan, B: hold }).state, at }
@@ -80,10 +80,10 @@ test("a plan's building actions are held to the rules: a building of its own, an
 })
 
 test("a plan reads its actions leniently: each a building by x and y and an action by id, a broken one said and dropped", () => {
-  const read = readPlan('{ "build": [], "stance": "attack", "actions": [ { "x": 9, "y": 5, "action": "production-line" }, { "x": "9", "action": 3 } ] }')
-  assert.deepEqual(read.plan.actions, [{ x: 9, y: 5, action: "production-line" }])
+  const read = readBuildActions('{ "build": [], "stance": "attack", "actions": [ { "x": 9, "y": 5, "action": "production-line" }, { "x": "9", "action": 3 } ] }')
+  assert.deepEqual(read.actions.actions, [{ x: 9, y: 5, action: "production-line" }])
   assert.deepEqual(read.problems, ['action 2 should be { "x", "y", "action" }: a building of yours by its anchor, and one of its actions by id'])
-  assert.equal(readPlan('{ "build": [], "stance": "attack" }').plan.actions, undefined)
+  assert.equal(readBuildActions('{ "build": [], "stance": "attack" }').actions.actions, undefined)
 })
 
 test("the balanced script with upgrades spends what its plan leaves on its Barracks's production line, and the duel plays it", { timeout: 120_000 }, () => {
@@ -96,8 +96,10 @@ test("the balanced script with upgrades spends what its plan leaves on its Barra
   assert.ok(plain.history.every((report) => report.sides.A.actions === undefined))
 })
 
-test("a run battle hands the screen's actions to its duel: a production line bought on the screen is bought in the battle", { timeout: 120_000 }, () => {
-  const context = withoutScene(runLevel({ seed: 1, commander: "vasse" }).firstRound())
+// Re-pinned from a Challenge run's battle on a Skirmish's: the same screen hands its actions to the same duel.
+test("a Skirmish hands the screen's actions to its duel: a production line bought on the screen is bought in the battle", { timeout: 120_000 }, () => {
+  const { play, firstRound } = newSkirmishLevel(1)
+  const context = withoutScene(firstRound())
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
   const { duel } = (context.mode as { duel: DuelState })
@@ -105,9 +107,9 @@ test("a run battle hands the screen's actions to its duel: a production line bou
   assert.ok(spot !== undefined)
   const key = `${spot.anchor.x},${spot.anchor.y}`
   const state: BuildState = { ...opened, planned: [{ ordinal: 0, contentId: BARRACKS, anchor: spot.anchor }], nextOrdinal: 1, fitted: [{ anchor: key, action: "production-line" }] }
-  const plan = sidePlanOf(context, state)
+  const plan = buildActionsOf(context, state)
   assert.deepEqual(plan.actions, [{ x: spot.anchor.x, y: spot.anchor.y, action: "production-line" }])
-  const resolved = RUN_PLAY.startPulse(context, state)
+  const resolved = play.startPulse(context, state)
   assert.ok(resolved !== null)
   const played = playedOf(resolved)
   assert.deepEqual(played?.report.sides.A.actions, [`production-line on barracks at ${key}`])
@@ -115,6 +117,6 @@ test("a run battle hands the screen's actions to its duel: a production line bou
   const barracks = played?.duel.carried?.entities.find((entity) => entity.anchor.x === spot.anchor.x && entity.anchor.y === spot.anchor.y)
   assert.equal(barracks?.contentId, `${BARRACKS}+production-line`)
   // The next round's Build Phase stands it as it is, its card's upgrade offered no more.
-  const next = RUN_PLAY.nextRound(context, state, resolved)
+  const next = play.nextRound(context, state, resolved)
   assert.ok(next?.standing.some((structure) => structure.contentId === `${BARRACKS}+production-line`))
 })

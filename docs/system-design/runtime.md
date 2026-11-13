@@ -94,7 +94,7 @@ plus metadata; armies, units, structures, upgrades, themes and glyphs as validat
 as typed functions; cutscenes as tableaux and timelines; missions as map, army, objective, trigger and
 scene definitions.
 
-**`grid`** — a `.map.json` map file plus a CLI that defines a Grid, places entities, takes a seed and a
+**`grid`** — a testing save (`skirmish-testing/`) plus a CLI that defines a Grid, places entities, takes a seed and a
 tick count, runs or steps a Pulse, and reports what happened — is permanent infrastructure, not spike
 residue: it is the fastest feedback loop the project has, for humans and agents alike, and every future
 unit gets tested on it. `grid` is the editor and replay tool, not the game; the `terminal-nexus`
@@ -102,7 +102,7 @@ executable is what launches the game built on it. What "replay tool" means concr
 writing a persisted, levelled game log rather than only resolving a map fresh each time — is designed,
 not built, in [`replay-format.md`](replay-format.md).
 
-RULE — `tests/grid-cli.test.ts`. There is no subcommand: `grid <map>` takes a path to a `.map.json` file
+RULE — `tests/grid-cli.test.ts`. There is no subcommand: `grid <save>` takes a testing save (`skirmish-testing/`) by path or id
 (the suffix is optional) and defaults to `watch`, the ASCII view; `--headless` resolves without a
 terminal and `--verify` re-resolves 10 times and fails on any hash disagreement. One output stream, not
 two: a headless run's **levelled log** (default `WARN`) carries the story in fixed, greppable columns,
@@ -119,7 +119,7 @@ font, so every pack keeps an ASCII-safe fallback.
 
 ### Scaling toward hundreds or thousands of units
 
-The test scenarios top out at a few dozen actors on a preset Grid. Whether the kernel's shape holds at
+The testing saves top out at a few dozen actors on a preset Grid. Whether the kernel's shape holds at
 "hundreds or thousands of units, and possible future epic-large maps" has not been measured, and
 nothing here claims it has. This section records what a code review found about *where* cost would
 appear first, and which design moves are cheap to take now versus expensive to retrofit later.
@@ -142,7 +142,7 @@ thing to bound before "hundreds or thousands" is a real target. The other rows s
 range or are already bounded.
 
 Two cheap fixes are already in, because they cost nothing and change nothing observable (verified
-hash-identical across every scenario, the multi-death chain in `ravel-cascade` included): attacks
+hash-identical across every testing save, the multi-death chain in `ravel-cascade` included): attacks
 bucket actors by speed tier once per tick instead of re-scanning every actor per tier, and death
 resolution uses a reverse `target → observers` index, maintained at the few places a target is
 written, instead of scanning every observer. The kernel's tick is one file per phase under
@@ -151,7 +151,7 @@ written, instead of scanning every observer. The kernel's tick is one file per p
 **Four design rules, adoptable without building real spatial pathfinding:**
 
 1. **Treat grid size as a declared mode with a sane upper bound, not an unbounded input.** RULE —
-   `src/scenario/load.ts` (`MAX_DECLARED_GRID_TILES`), `tests/scenario.test.ts` ("a custom grid over
+   `src/skirmish/opening/open.ts` (`MAX_DECLARED_GRID_TILES`), `tests/testing-saves.test.ts` ("a custom grid over
    the declared-mode tile cap"). A custom grid over 10,000 tiles (roughly five times the largest
    preset) is rejected at load time, loudly, rather than degrading silently every tick: with no
    autoscroll or streamed geography, an unbounded grid is an unbounded per-tick allocation.
@@ -168,12 +168,12 @@ written, instead of scanning every observer. The kernel's tick is one file per p
 4. **A radius cap on target selection, with an explicit and deterministic fallback, is the real fix,
    and it is a design decision, not an engineering one.** Capping "nearest enemy anywhere" to "nearest
    enemy within R" is cheap once rule 3 exists; deciding what a unit with nothing in R does instead
-   changes emergent behaviour and is expensive to reconsider once a scenario is pinned to a specific
+   changes emergent behaviour and is expensive to reconsider once a testing save is pinned to a specific
    contract. What such a unit does is answered: it heads for the enemy's Grid Nexus, the rule a side with no
    target already walks by ([`pulse.md`](pulse.md), a side's target; the options weighed are in
-   [the answered register](../history/answered-questions.md)). Land the cap itself inert until a scenario
+   [the answered register](../history/answered-questions.md)). Land the cap itself inert until a testing save
    actually needs it.
 
 **What this section is not.** It is not a commitment to build real pathfinding, a spatial index or a
-radius cap, and not a claim that the scenarios are slow: nothing here is a measurement, only an
+radius cap, and not a claim that the testing saves are slow: nothing here is a measurement, only an
 assessment of where a future measurement would first go red.

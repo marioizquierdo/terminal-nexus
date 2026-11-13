@@ -6,8 +6,8 @@
 //   grid <map> --verify [--runs 10]               # same hashes every run? (headless)
 //   grid <map> --turn 90                          # jump straight to a tick, in any of the above
 //
-// `<map>` is a path to a `.map.json` file; the suffix is optional (`grid scenarios/rules/melee-kill` and
-// `grid scenarios/rules/melee-kill.map.json` are the same file). There is no subcommand: the first
+// `<map>` is a path to a `.save.json` file; the suffix is optional (`grid skirmish-testing/rules/melee-kill` and
+// `grid skirmish-testing/rules/melee-kill.save.json` are the same file). There is no subcommand: the first
 // positional argument is always the map, and the default action is `watch`. A bare `grid` with no
 // map is reserved for the map editor — not built yet, so it is a usage error today.
 //
@@ -22,8 +22,9 @@ import { resolvePulse, resolvePulseAt } from "../pulse/index.ts"
 import { buildLog, formatSummary, parseLevel, summarize, summaryJson } from "../report/index.ts"
 import type { ReportInput } from "../report/index.ts"
 import { hashState } from "../state/serialize.ts"
-import { applyVariant, loadMapFile, loadScenario, mirrored, shuffled, sidesWithoutGoal } from "../scenario/index.ts"
-import type { ScenarioDefinition } from "../scenario/index.ts"
+import { applyVariant, openBattle, mirrored, shuffled, sidesWithoutGoal } from "../skirmish/opening/index.ts"
+import { loadTestingSave } from "../skirmish/testing-saves.ts"
+import type { BattleOpening } from "../skirmish/opening/index.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { DEFAULT_PRESENTATION, parseColorDepth, parseGlyphPack, parseTheme } from "../view/index.ts"
 import type { ColorDepth, PresentationOptions } from "../view/index.ts"
@@ -35,27 +36,27 @@ import { watchPulse } from "./watch.ts"
 
 const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
 
-  grid <map.map.json>          [--seed 0xABCD] [--ticks 120] [--turn 90] [--speed 1]
+  grid <save.save.json>         [--seed 0xABCD] [--ticks 120] [--turn 90] [--speed 1]
                                 [--colors monochrome|color256|truecolor]
                                 [--theme dark|light] [--glyphs ascii|unicode]
                                 [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
                                 [--backend auto|ansi|opentui] [--save-log <file>] [--log-level info]
-      the ASCII view (the default action) — watches the map resolve live
+      the ASCII view (the default action) — watches the testing save's Battle Round resolve live
 
-  grid <map.map.json> --headless [--seed] [--ticks] [--turn 90] [--log-level info]
-                                  [--events events.jsonl] [--json] [--save-log <file>]
+  grid <save.save.json> --headless [--seed] [--ticks] [--turn 90] [--log-level info]
+                                   [--events events.jsonl] [--json] [--save-log <file>]
       resolves without a terminal and prints the levelled log
 
-  grid <map.map.json> --verify [--runs 10] [--seed] [--ticks] [--turn 90]
+  grid <save.save.json> --verify [--runs 10] [--seed] [--ticks] [--turn 90]
       re-resolves 10 times (default) and fails if any run's hashes disagree — also headless
 
-  grid <map.map.json> --seeds 1-12 [--swap] [--shuffle] [variant options] [trial options]
-      a trial: plays the map on every seed (with --swap mirrored too, its sides swapped; with --shuffle each side's
-      units shuffled within their formation line by the seed) as built and as the variant options make it, and prints
-      the outcome, how the armies engaged, and with --profile what a tick cost, then the battles worth watching
+  grid <save.save.json> --seeds 1-12 [--swap] [--shuffle] [variant options] [trial options]
+      a trial: plays the testing save on every seed (with --swap mirrored too, its sides swapped; with --shuffle each
+      side's units shuffled within their formation line by the seed) as built and as the variant options make it, and
+      prints the outcome, how the armies engaged, and with --profile what a tick cost, then the battles worth watching
 
   grid <trial.trial.json> [--seeds 1-12] [variant options] [trial options]
-      a trial file (scenarios/trials/): maps, seeds, variants and what it expects; fails
+      a trial file (skirmish-testing/trials/): testing saves, seeds, variants and what it expects; fails
       when an expectation does not hold. Variant options given here apply to every variant
 
 Trial options:
@@ -73,7 +74,8 @@ Variant options, for every action (watch, --headless, --verify and a trial):
   --target-a x,y,w,h              a side's target moved (--target-b)
   --swap, --shuffle               one battle mirrored with its sides swapped; its units shuffled by --seed
 
-<map> is a .map.json file, with or without the suffix, or a checked-in map's id (grid melee-kill). There is no subcommand.
+<save> is a testing save (skirmish-testing/, a save whose start writes its Battle Round), with or without the
+.save.json suffix, or its id (grid melee-kill). There is no subcommand. skirmish --load <save> --play-to next plays the same.
 
 Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
 carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.
@@ -106,18 +108,18 @@ type RunOptions = Readonly<{ seed?: number; ticks?: number }>
  * its units shuffled by the seed with `--shuffle`, mirrored with its sides swapped with `--swap`; and the content it is
  * played with. Warns, once, of a side that fights with nowhere to go.
  */
-async function openMap(path: string, args: ParsedArgs, seed?: number): Promise<{ scenario: ScenarioDefinition; registry: ContentRegistry }> {
-  const loaded = await loadMapFile(path)
+async function openMap(path: string, args: ParsedArgs, seed?: number): Promise<{ opening: BattleOpening; registry: ContentRegistry }> {
+  const loaded = await loadTestingSave(path)
   const variant = variantFromArgs(args)
-  const made = variant === null ? { scenario: loaded, registry: FIXTURE_REGISTRY } : applyVariant(loaded, FIXTURE_REGISTRY, variant)
-  let scenario = made.scenario
-  if (args.flags.has("shuffle")) scenario = shuffled(scenario, made.registry, seed ?? scenario.seed)
-  if (args.flags.has("swap")) scenario = mirrored(scenario, made.registry)
-  const state = loadScenario(scenario, { registry: made.registry }).state
+  const made = variant === null ? { opening: loaded, registry: FIXTURE_REGISTRY } : applyVariant(loaded, FIXTURE_REGISTRY, variant)
+  let opening = made.opening
+  if (args.flags.has("shuffle")) opening = shuffled(opening, made.registry, seed ?? opening.seed)
+  if (args.flags.has("swap")) opening = mirrored(opening, made.registry)
+  const state = openBattle(opening, { registry: made.registry }).state
   for (const side of sidesWithoutGoal(state, made.registry)) {
-    process.stderr.write(`grid: side ${side} of ${scenario.id} fights with no target and no enemy Nexus, a battle the game never plays\n`)
+    process.stderr.write(`grid: side ${side} of ${opening.id} fights with no target and no enemy Nexus, a battle the game never plays\n`)
   }
-  return { scenario, registry: made.registry }
+  return { opening, registry: made.registry }
 }
 
 function optionsFrom(args: ParsedArgs): RunOptions {
@@ -149,10 +151,10 @@ function fromTurn(lines: readonly string[], turn: number): string[] {
 
 async function commandHeadless(path: string, args: ParsedArgs): Promise<number> {
   const overrides = optionsFrom(args)
-  const { scenario, registry } = await openMap(path, args, overrides.seed)
-  const seed = overrides.seed ?? scenario.seed
-  const pulseTicks = overrides.ticks ?? scenario.pulseTicks
-  const loaded = loadScenario(scenario, { registry, seed })
+  const { opening, registry } = await openMap(path, args, overrides.seed)
+  const seed = overrides.seed ?? opening.seed
+  const pulseTicks = overrides.ticks ?? opening.pulseTicks
+  const loaded = openBattle(opening, { registry, seed })
   const run = resolvePulse({
     initialState: loaded.state,
     registry: loaded.registry,
@@ -161,7 +163,7 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
   })
 
   const input: ReportInput = {
-    scenarioId: scenario.id,
+    battleId: opening.id,
     seed,
     pulseTicks,
     registry: loaded.registry,
@@ -207,9 +209,9 @@ const DEFAULT_VERIFY_RUNS = 10
 
 async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   const overrides = optionsFrom(args)
-  const { scenario, registry } = await openMap(path, args, overrides.seed)
-  const seed = overrides.seed ?? scenario.seed
-  const pulseTicks = overrides.ticks ?? scenario.pulseTicks
+  const { opening, registry } = await openMap(path, args, overrides.seed)
+  const seed = overrides.seed ?? opening.seed
+  const pulseTicks = overrides.ticks ?? opening.pulseTicks
   const runs = parseInteger(args.options.get("runs") ?? String(DEFAULT_VERIFY_RUNS), "--runs")
   const turn = turnFrom(args)
 
@@ -223,7 +225,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   const snapshotTick = turn ?? -1
 
   for (let index = 0; index < runs; index += 1) {
-    const loaded = loadScenario(scenario, { registry, seed })
+    const loaded = openBattle(opening, { registry, seed })
     const run = resolvePulseAt(
       { initialState: loaded.state, registry: loaded.registry, pulseTicks, seed },
       snapshotTick,
@@ -232,7 +234,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
 
     const log = buildLog(
       {
-        scenarioId: scenario.id,
+        battleId: opening.id,
         seed,
         pulseTicks,
         registry: loaded.registry,
@@ -270,7 +272,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   }
 
   const lines = [
-    `scenario   ${scenario.id}`,
+    `battle     ${opening.id}`,
     `runs       ${runs} identical`,
     `state      sha256:${(stateHash ?? "").slice(0, 16)}`,
     `events     sha256:${(eventsHash ?? "").slice(0, 16)}`,
@@ -289,17 +291,17 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
 
 async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
   const overrides = optionsFrom(args)
-  const { scenario, registry } = await openMap(path, args, overrides.seed)
-  const seed = overrides.seed ?? scenario.seed
-  const pulseTicks = overrides.ticks ?? scenario.pulseTicks
-  const loaded = loadScenario(scenario, { registry, seed })
-  const timeline = buildTimeline(scenario, loaded.state, loaded.registry, pulseTicks, seed)
+  const { opening, registry } = await openMap(path, args, overrides.seed)
+  const seed = overrides.seed ?? opening.seed
+  const pulseTicks = overrides.ticks ?? opening.pulseTicks
+  const loaded = openBattle(opening, { registry, seed })
+  const timeline = buildTimeline(opening, loaded.state, loaded.registry, pulseTicks, seed)
 
   const savePath = args.options.get("save-log")
   if (savePath !== undefined) {
     const level = parseLevel(args.options.get("log-level") ?? "warn")
     const input: ReportInput = {
-      scenarioId: timeline.scenarioId,
+      battleId: timeline.battleId,
       seed,
       pulseTicks,
       registry: timeline.registry,
@@ -397,8 +399,8 @@ export async function main(argv: readonly string[]): Promise<number> {
   const trial = trialPath(path)
   if (trial !== null) return runTrial(await loadTrialFile(trial), args)
   if (args.options.has("seeds")) {
-    const scenario = await loadMapFile(path)
-    return runTrial(adHocTrial(scenario, args), args, scenario)
+    const opening = await loadTestingSave(path)
+    return runTrial(adHocTrial(opening, args), args, opening)
   }
   if (args.flags.has("verify")) return commandVerify(path, args)
   if (args.flags.has("headless")) return commandHeadless(path, args)

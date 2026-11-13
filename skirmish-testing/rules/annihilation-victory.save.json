@@ -1,0 +1,62 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Annihilation - workers count",
+  "notes": "A side is annihilated when every entity on workers, units and air is dead - workers included (Q13). The defending worker flees into a rock pocket it cannot leave, and the Pulse ends only once it dies too.",
+  "setup": {
+    "map": {
+      "id": "annihilation-victory",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "...................####.",
+        "......................#.",
+        "...................####.",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 40970,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 480,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":2,"y":5},
+      "rows": [
+        "t",
+        "r"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "r": {"content":"unit.citizen.marksman"}
+      },
+      "target": {"x":15,"y":5,"width":6,"height":1}
+    },
+    "p2": {
+      "at": {"x":15,"y":5},
+      "rows": [
+        "r    w"
+      ],
+      "legend": {
+        "r": {"content":"unit.citizen.marksman"},
+        "w": {"content":"unit.citizen.worker"}
+      },
+      "target": {"x":2,"y":5,"width":1,"height":2}
+    }
+  }
+}

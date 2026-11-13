@@ -15,11 +15,11 @@ import { regroup } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { BURNING_WEIGHT } from "../src/pulse/routes.ts"
 import { onPatch } from "../src/pulse/burning.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { BurningGround, MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
-import { resolveScenario } from "./helpers.ts"
+import { playTestingSave } from "./helpers.ts"
 
 const TROOPER = "unit.citizen.trooper"
 const BOMBER = "unit.ravel.bomber"
@@ -55,7 +55,7 @@ function field(
     if (placed !== undefined) placements[side] = block(placed)
   }
   const rock = (x: number, y: number): boolean => rocks.some((tile) => tile.x === x && tile.y === y)
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "area-field",
     name: "area field",
     grid: { width: 50, height: 30 },
@@ -66,7 +66,7 @@ function field(
     placements,
     ...(Object.keys(targets).length === 0 ? {} : { targets }),
   }
-  return loadScenario(scenario, { registry }).state
+  return openBattle(opening, { registry }).state
 }
 
 /** Every state after the first, and every event, resolved tick by tick for at most `ticks`. */
@@ -156,7 +156,7 @@ test("the loader holds a unit that aims at a crowd to having an area, and a burn
 // --- Aiming at a crowd ------------------------------------------------------------------------------------------------
 
 test("a bomber runs past the nearest enemy to the thickest knot and bursts in it (bomber-crowd)", async () => {
-  const { run } = await resolveScenario("bomber-crowd.map.json")
+  const { run } = await playTestingSave("bomber-crowd.save.json")
   const bomber = run.initialState.entities.find((entity) => entity.contentId === BOMBER)
   const lone = run.initialState.entities.find((entity) => entity.anchor.x === 8 && entity.anchor.y === 2)
   assert.ok(bomber !== undefined && lone !== undefined)
@@ -382,19 +382,19 @@ test("battles with a bomber and with burning ground resolve to the same hashes o
   // stands, falling by the same tick; the mortar heads for the west end of its strip above the block's target, so its
   // first shell lands two columns sooner (its walker moved up two to meet the fire) and the block falls by tick 200.
   const pins: Readonly<Record<string, readonly [string, string, number]>> = {
-    "bomber-crowd.map.json": ["10a4f80b1c101ab634277df86987c9da043f4363e7b713e1a6980898ced266fc", "68819c077dd11333e70771ca4a4b8834f6693062ac0fccdb9f45a29db3c1e9b5", 37],
-    "mortar-burning-ground.map.json": ["77e07c9e5a083a461000b1806ec3f482e5362323bd2a05db2603e40417f7c491", "03efa2d64ed413f94453bd758d687ade00ca5985fe8876bc61f7ecb7a8644dbf", 200],
+    "bomber-crowd.save.json": ["10a4f80b1c101ab634277df86987c9da043f4363e7b713e1a6980898ced266fc", "68819c077dd11333e70771ca4a4b8834f6693062ac0fccdb9f45a29db3c1e9b5", 37],
+    "mortar-burning-ground.save.json": ["77e07c9e5a083a461000b1806ec3f482e5362323bd2a05db2603e40417f7c491", "03efa2d64ed413f94453bd758d687ade00ca5985fe8876bc61f7ecb7a8644dbf", 200],
   }
   for (const [name, [stateHash, eventsHash, ticks]] of Object.entries(pins)) {
-    const first = await resolveScenario(name)
-    const again = await resolveScenario(name)
+    const first = await playTestingSave(name)
+    const again = await playTestingSave(name)
     assert.equal(first.run.stateHash, again.run.stateHash)
     assert.deepEqual([first.run.stateHash, first.run.eventsHash, first.run.finalState.tick], [stateHash, eventsHash, ticks], name)
   }
 })
 
-test("in the mortar's scenario the ground burns both the block and, standing in it, the block at its target; a walker behind goes round the patch", async () => {
-  const { run } = await resolveScenario("mortar-burning-ground.map.json")
+test("in the mortar's testing save the ground burns both the block and, standing in it, the block at its target; a walker behind goes round the patch", async () => {
+  const { run } = await playTestingSave("mortar-burning-ground.save.json")
   const lit = run.events.filter((event) => event.kind === "ground.lit")
   assert.ok(lit.length >= 2)
   const caught = run.events.flatMap((event) => (event.kind === "ground.burned" ? event.caught : []))

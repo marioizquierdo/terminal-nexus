@@ -1,0 +1,23 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Vasse against Vasse",
+  "notes": "A mirror, both slots scripted: nobody builds by hand, so the battle is watched (spectating). Balanced in the west, rush in the east.",
+  "setup": {
+    "map": "crossing",
+    "seed": 2,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 8,
+    "roundTicks": 360,
+    "slots": {
+      "p1": {
+        "commander": "vasse",
+        "controller": "script:balanced"
+      },
+      "p2": {
+        "commander": "vasse",
+        "controller": "script:rush"
+      }
+    }
+  }
+}

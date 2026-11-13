@@ -2,9 +2,9 @@
 // valid construction becomes operational." The Build Phase's plan is a list of placements on a screen;
 // this is where it becomes entities the kernel can resolve.
 //
-// It follows the scenario loader's conventions exactly — ids, ordinals in Grid reading order, a
+// It follows the conventions of a testing save's opening (`openBattle`) exactly — ids, ordinals in Grid reading order, a
 // fresh entity's fields from `freshEntityFields`, sides facing each other — so a Pulse that starts here
-// is indistinguishable, to the kernel, from one a `.map.json` file started. What it adds is the two
+// is indistinguishable, to the kernel, from one a `.save.json` file started. What it adds is the two
 // things a Build Phase has and a file does not: structures given by an anchor (the way the Build Phase
 // stores a placement) rather than by a centre tile in a character grid, and units mustered around a
 // point on whatever free tiles the plan left them.
@@ -26,7 +26,7 @@ import { OccupancyIndex, maskFrom } from "../grid/occupancy.ts"
 import type { Coord, GridTerrain } from "../grid/types.ts"
 import { ENTITY_LAYERS, TERRAIN } from "../grid/types.ts"
 import { gameplayRng } from "../rng/pcg32.ts"
-import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
 import type { EntityState, MatchState, PlayerId } from "../state/types.ts"
 import { SCHEMA_VERSION } from "../state/types.ts"
 import { makeRoom } from "./make-room.ts"
@@ -90,7 +90,7 @@ function refitted(input: OpeningInput): MatchState | undefined {
 
 /**
  * The opening `MatchState` for a Pulse. Throws `PulseSetupError`, naming what is wrong, for anything
- * the scenario loader would refuse too: an unknown content id, a footprint off the Grid, a ground
+ * a testing save's opening would refuse too: an unknown content id, a footprint off the Grid, a ground
  * entity on rock, two things on one layer overlapping — or a force with no room to stand.
  */
 export function openingState(input: OpeningInput): MatchState {

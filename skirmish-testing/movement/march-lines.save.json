@@ -1,0 +1,75 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "March: a mixed army sorts itself on the move - ranged units in front at the start, behind the melee on arrival",
+  "notes": "An open field. Side A marches on its target, a banner by B's Nexus where four B troopers hold their own target. A's three marksmen and its mortar start ahead of its six troopers. On the march a unit walks at half speed while an ally of higher priority marches in its sight (melee, then ranged by range: the marksmen at 6, the mortar at 10): the marksmen and the mortar slow as the troopers come up, the troopers walk through them, and the army arrives melee first, the marksmen behind, the mortar furthest back. No Commander leads: the band follows the line from A's Nexus to the banner. Done when A's troopers strike first, ahead of the shooters, and no unit ever stands still for good.",
+  "setup": {
+    "map": {
+      "id": "march-lines",
+      "rows": [
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................",
+        "................................................"
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 480,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":5},
+      "rows": [
+        "   tt     m",
+        "",
+        "n  tt     m u",
+        "",
+        "   tt     m"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "m": {"content":"unit.citizen.marksman"},
+        "u": {"content":"unit.citizen.mortar"},
+        "n": {"content":"structure.bench.nexus"}
+      },
+      "target": {"x":35,"y":3,"width":8,"height":9}
+    },
+    "p2": {
+      "at": {"x":41,"y":5},
+      "rows": [
+        "t",
+        "",
+        "t   n",
+        "",
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "n": {"content":"structure.bench.nexus"}
+      },
+      "target": {"x":40,"y":5,"width":2,"height":5}
+    }
+  }
+}

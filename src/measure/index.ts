@@ -7,11 +7,11 @@
 import type { PlayableLevel } from "../cli/levels.ts"
 import type { Player } from "../duel/index.ts"
 import { scriptedNames, scriptedPlayer } from "../duel/index.ts"
-import type { ScenarioDefinition } from "../scenario/types.ts"
+import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MeasureSpec } from "./spec.ts"
 import { playerPairs } from "./spec.ts"
-import type { DuelMeasure, LevelMeasure, ScenarioMeasure } from "./suites.ts"
-import { measureDuel, measureLevel, measureScenario } from "./suites.ts"
+import type { DuelMeasure, LevelMeasure, SaveMeasure } from "./suites.ts"
+import { measureDuel, measureLevel, measureSave } from "./suites.ts"
 
 export * from "./battle.ts"
 export * from "./formations.ts"
@@ -26,16 +26,16 @@ export * from "./who.ts"
 
 export type SpecInputs = Readonly<{
   /** The maps to play, already read. */
-  scenarios: readonly ScenarioDefinition[]
+  saves: readonly BattleOpening[]
   levels: readonly PlayableLevel[]
-  /** Which parts to play: any of "scenarios", "duels", "levels". */
+  /** Which parts to play: any of "saves", "duels", "levels". */
   parts: ReadonlySet<string>
   /** Told of each battle as it is played, for a line on the console. */
   progress?: (line: string) => void
 }>
 
 export type SpecResult = Readonly<{
-  scenarios: readonly ScenarioMeasure[]
+  saves: readonly SaveMeasure[]
   duels: readonly DuelMeasure[]
   levels: readonly LevelMeasure[]
   /** Every tick played, for the time a tick took. */
@@ -45,20 +45,20 @@ export type SpecResult = Readonly<{
 /** Plays everything `spec` names, in a fixed order. */
 export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
   const say = inputs.progress ?? (() => {})
-  const scenarios: ScenarioMeasure[] = []
+  const saves: SaveMeasure[] = []
   const duels: DuelMeasure[] = []
   const levels: LevelMeasure[] = []
   let ticks = 0
-  if (inputs.parts.has("scenarios")) {
-    const maps = inputs.scenarios.filter((scenario) => spec.scenarios === "all" || scenario.id.startsWith("route-"))
-    for (const scenario of maps) {
-      // A route scenario is played on every seed; every other map on its own seed, the one its tests use.
-      const seeds = scenario.id.startsWith("route-") ? spec.seeds : [scenario.seed]
+  if (inputs.parts.has("saves")) {
+    const maps = inputs.saves.filter((opening) => spec.saves === "all" || opening.id.startsWith("route-"))
+    for (const opening of maps) {
+      // A route save is played on every seed; every other testing save on its own seed, the one its tests use.
+      const seeds = opening.id.startsWith("route-") ? spec.seeds : [opening.seed]
       for (const seed of seeds) {
-        const run = measureScenario(scenario, seed)
+        const run = measureSave(opening, seed)
         ticks += run.battle.ticks
-        scenarios.push(run)
-        say(`scenario ${scenario.id} seed ${seed}: ${run.battle.winner ?? "draw"} at ${run.battle.ticks}`)
+        saves.push(run)
+        say(`testing save ${opening.id} seed ${seed}: ${run.battle.winner ?? "draw"} at ${run.battle.ticks}`)
       }
     }
   }
@@ -99,5 +99,5 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
       }
     }
   }
-  return { scenarios, duels, levels, ticks }
+  return { saves, duels, levels, ticks }
 }

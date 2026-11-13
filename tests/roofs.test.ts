@@ -12,8 +12,8 @@ import type { DomainEvent } from "../src/events/types.ts"
 import { tilesOf } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { EntityState, MatchState, PlayerId } from "../src/state/types.ts"
 
 type Placed = readonly [x: number, y: number, content: string]
@@ -62,7 +62,7 @@ function battle(
     const placed = sides[side]
     if (placed !== undefined) placements[side] = block(placed)
   }
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "roofs",
     name: "roofs",
     grid: { width: WIDTH, height: HEIGHT },
@@ -72,7 +72,7 @@ function battle(
     terrainLegend: { ".": "terrain.plain" },
     placements,
   }
-  const loaded = loadScenario(scenario, { registry })
+  const loaded = openBattle(opening, { registry })
   const context = contextFor(loaded.state, registry, ticks)
   const states: MatchState[] = [loaded.state]
   const events: DomainEvent[] = []

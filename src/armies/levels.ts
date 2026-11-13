@@ -1,12 +1,12 @@
-// A campaign's levels as written, made whole before they are checked: a level that extends another becomes a copy of
-// it with its own fields in place (`extends`), and a mission that brings "@commander" brings the campaign's Commander.
+// A story's levels as written, made whole before they are checked: a level that extends another becomes a copy of
+// it with its own fields in place (`extends`), and a mission that brings "@commander" brings the story's Commander.
 // So the second Commander's level is the first one's rounds with one line changed, and stays so when they change.
 //
 // - **What a level gives replaces what it extends**, field by field: its map, credits, unlocks, schedule and notes.
 // - **Its mission changes the extended one's**: a field it gives replaces that field whole; its `triggers` are a whole
 //   new list, or `{ "remove": [ids], "replace": [triggers] }` — the triggers to drop, and the triggers to put in, in
 //   place of the one with the same id or after the rest.
-// - **A level may extend a level that extends another**, from any campaign; a circle is refused.
+// - **A level may extend a level that extends another**, from any story; a circle is refused.
 //
 // Pure, and on plain JSON: the shapes are checked after, on the level as it is made (`load.ts`).
 
@@ -40,8 +40,8 @@ function patchedMission(base: unknown, patch: MissionPatch): unknown {
 }
 
 /**
- * Every level of `levels` made whole, by id, with a problem said for a level that extends one no campaign has, or
- * that extends itself in a circle. `levels` holds every campaign's levels, so one may extend another's.
+ * Every level of `levels` made whole, by id, with a problem said for a level that extends one no story has, or
+ * that extends itself in a circle. `levels` holds every story's levels, so one may extend another's.
  */
 export function wholeLevels(levels: ReadonlyMap<string, LevelEntry>, say: (level: string, problem: string) => void): Map<string, WholeLevel> {
   const whole = new Map<string, WholeLevel>()
@@ -64,7 +64,7 @@ export function wholeLevels(levels: ReadonlyMap<string, LevelEntry>, say: (level
     const base = make(entry.extends)
     making.delete(id)
     if (base === null) {
-      if (!levels.has(entry.extends)) say(id, `extends "${entry.extends}", which is not a level any campaign has`)
+      if (!levels.has(entry.extends)) say(id, `extends "${entry.extends}", which is not a level any story has`)
       return null
     }
     const { extends: _extends, mission: patch, ...own } = entry
@@ -78,7 +78,7 @@ export function wholeLevels(levels: ReadonlyMap<string, LevelEntry>, say: (level
   return whole
 }
 
-/** `mission` with every spawn of "@commander" bringing `unit`, the campaign's Commander's. */
+/** `mission` with every spawn of "@commander" bringing `unit`, the story's Commander's. */
 export function withCommander(mission: MissionDefinition, unit: string): MissionDefinition {
   let changed = false
   const triggers = mission.triggers.map((trigger) => ({

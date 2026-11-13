@@ -1,0 +1,64 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Proving Grounds - a wall segment, not a wall builder",
+  "notes": "The control case commander-armies.md Section 7 predicted needs nothing new: a straight 4x1 footprint (already RULE, engine.md 3.5) and behavior: static (already legal - nobody had authored an armed static non-structure before). Placed already standing across the one gap in a rock barrier, so three approaching troopers have no way through except to fight it or die trying: formation is the unit, not a structure placed around it.",
+  "setup": {
+    "map": {
+      "id": "bench-wallsegment-blockade",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "##########....##########",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 700004,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 260,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":8,"y":2},
+      "rows": [
+        "t",
+        "t",
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":10,"y":8,"width":4,"height":1}
+    },
+    "p2": {
+      "at": {"x":11,"y":8},
+      "rows": [
+        "w"
+      ],
+      "legend": {
+        "w": {"content":"unit.bench.wallsegment"}
+      }
+    }
+  }
+}

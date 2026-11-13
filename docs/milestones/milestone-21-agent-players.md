@@ -1,7 +1,7 @@
 # Milestone 21 — Agent players
 
 **Status:** PLANNED
-**Depends on:** Milestone 17 (the save file, `skirmish round` and the reserved `agent:<profile>` controller), Milestone 20
+**Depends on:** Milestone 17 (the save file, the `skirmish` command and the reserved `agent:<profile>` controller), Milestone 20
 (a Skirmish worth playing against); after friends have played, while their notes come in
 
 The owner, 2026-11-11 ([his words](../history/feedback/2026-11-11-game-modes.md)): "keep improving the scripted UI AI at

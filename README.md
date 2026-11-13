@@ -37,14 +37,14 @@ Two programs exist today.
 from a seed, with a levelled report and an ASCII view. It is not the game. It is the tool that builds
 and replays it.
 
-**`terminal-nexus`** is the game's own executable. It opens on a menu (Campaign, Challenge, Settings, About,
+**`terminal-nexus`** is the game's own executable. It opens on a menu (Skirmish, Story, Settings, About,
 Exit) that works by hotkey, by arrows and Enter, or by mouse.
 
 The game has three modes ([the game modes](docs/game-design/game-modes.md)): **Skirmish**, one battle against a scripted
-Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. On today's menu, Challenge is what
-becomes Skirmish and Campaign what becomes Story. `--at` opens any place in the game by its route, written like a web address without the
+Commander Army; **Story**, a Commander's story of missions; and **Versus**, later. Skirmish on the menu starts one battle
+against Dob Hunter's scripted army; Esc then Save game keeps it in a file, and `--load <file>` opens it again. `--at` opens any place in the game by its route, written like a web address without the
 site (`--help` lists them). The playable part is the **Build Phase** of PERIMETER, Vasse's first
-mission, opened with `--at 'campaign?level=vasse-test-1'`, and at any of its rounds with `&round=2`:
+mission, opened with `--at 'story?mission=vasse-test-1'`, and at any of its rounds with `&round=2`:
 
 - A map bigger than the screen, in a closed rectangle whose sides show where there is more map. The
   cursor scrolls the view, and the view slides.
@@ -87,11 +87,11 @@ Make your terminal **at least 80 x 24** — bigger is fine — then:
 
 ```bash
 npm install     # only needed once, and only for typechecking and the OpenTUI backend
-npm run grid -- scenarios/citizens-versus-ravels --glyphs unicode --colors truecolor
+npm run grid -- citizens-versus-ravels --glyphs unicode --colors truecolor
 ```
 
-`<map>` is a path to a `.map.json` file — the `.map.json` suffix is optional, and there is no
-subcommand: the first argument is always the map, and the default action is `watch`, the ASCII view.
+`<save>` is a testing save from `skirmish-testing/`: its path, the `.save.json` suffix optional, or only its id; there
+is no subcommand: the first argument is always the save, and the default action is `watch`, the ASCII view.
 
 | While it runs |                                            |
 | -------------- | ----------------------------------------- |
@@ -105,16 +105,16 @@ subcommand: the first argument is always the map, and the default action is `wat
 A few more worth watching, in this order:
 
 ```bash
-npm run grid -- scenarios/ravel-cascade --glyphs unicode --colors truecolor --speed 0.5
-npm run grid -- scenarios/citizens-versus-ravels --no-effects --glyphs unicode --colors truecolor
-npm run grid -- scenarios/citizens-versus-ravels --colors monochrome   # can you still follow it?
-npm run grid -- scenarios/citizen-mirror-skirmish                          # the baseline mirror match
+npm run grid -- ravel-cascade --glyphs unicode --colors truecolor --speed 0.5
+npm run grid -- citizens-versus-ravels --no-effects --glyphs unicode --colors truecolor
+npm run grid -- citizens-versus-ravels --colors monochrome   # can you still follow it?
+npm run grid -- citizen-mirror-skirmish                          # the baseline mirror match
 ```
 
-`npm run maps` lists every checked-in map. `watch` takes the same options on any of them:
+`npm run testing-saves` lists every testing save. `watch` takes the same options on any of them:
 
 ```bash
-npm run grid -- <map> \
+npm run grid -- <save> \
   --colors monochrome|color256|truecolor \
   --glyphs ascii|unicode \
   --speed 2 --no-effects --reduced-motion --seed 0x1234 --turn 90
@@ -127,13 +127,15 @@ tick 90 instead of playing from the start, in watch, headless and verify alike.
 ### The game
 
 ```bash
-npm run terminal-nexus              # the menu: Campaign, Challenge, Settings, About, Exit
-npm run terminal-nexus -- --at 'campaign?level=vasse-test-1'           # PERIMETER: the Build Phase and the Battle Round
-npm run terminal-nexus -- --at 'campaign?level=vasse-test-1&round=3'   # its last round
+npm run terminal-nexus              # the menu: Skirmish, Story, Settings, About, Exit
+npm run terminal-nexus -- --at 'skirmish?seed=7'                      # a Skirmish on seed 7
+npm run terminal-nexus -- --load mine.save.json                       # a saved Skirmish, at its Build Phase
+npm run terminal-nexus -- --at 'story?mission=vasse-test-1'           # PERIMETER: the Build Phase and the Battle Round
+npm run terminal-nexus -- --at 'story?mission=vasse-test-1&round=3'   # its last round
 npm run terminal-nexus -- --at settings                                # any screen of the title menu
 ```
 
-Every menu row shows its hotkey (`[1] Campaign`) and works three ways: press the hotkey, arrow to it
+Every menu row shows its hotkey (`[1] Skirmish`) and works three ways: press the hotkey, arrow to it
 and press Enter, or click it. Inside the Build Phase, press `?` for every key. Esc opens the game
 menu, and `d` jumps to the Experiments.
 
@@ -143,18 +145,18 @@ menu, and `d` jumps to the Experiments.
 log — one stream, closed by a `report` line carrying the outcome, losses, and hashes:
 
 ```bash
-./bin/grid.ts scenarios/citizens-versus-ravels --headless                  # WARN by default
-./bin/grid.ts scenarios/ravel-cascade --headless | grep blast              # just the detonations
-./bin/grid.ts scenarios/citizens-versus-ravels --headless --log-level info # the story, not just anomalies
-./bin/grid.ts scenarios/citizens-versus-ravels --headless --turn 90        # jump straight to tick 90
+./bin/grid.ts citizens-versus-ravels --headless                  # WARN by default
+./bin/grid.ts ravel-cascade --headless | grep blast              # just the detonations
+./bin/grid.ts citizens-versus-ravels --headless --log-level info # the story, not just anomalies
+./bin/grid.ts citizens-versus-ravels --headless --turn 90        # jump straight to tick 90
 ```
 
 `--verify` is the same resolution, re-run 10 times by default, and fails if any run's hashes
 disagree — also headless:
 
 ```bash
-./bin/grid.ts scenarios/citizen-mirror-skirmish --verify              # same hashes every time?
-./bin/grid.ts scenarios/citizen-mirror-skirmish --verify --runs 20
+./bin/grid.ts citizen-mirror-skirmish --verify              # same hashes every time?
+./bin/grid.ts citizen-mirror-skirmish --verify --runs 20
 ```
 
 `--save-log <file>` writes the levelled log to a file in any of the three actions, so you can watch
@@ -197,10 +199,11 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 │   ├── history/               What happened: timeline, reports, feedback, the visual record
 │   └── claude-web.md          Setting up Claude Code on the web
 ├── src/                   The game and its tools: pulse (the rules kernel), match, mission, content,
-│                          scenario, state, events, grid, report, log, terminal, view, build (the Build
+│                          skirmish, state, events, grid, report, log, terminal, view, build (the Build
 │                          Phase), title-menu, cli, settings, web (the browser playtest page)
 ├── tests/                 The test suite; Node's runner and Bun both run it
-├── scenarios/             Checked-in .map.json fixtures, one file per rule under test
+├── skirmish-testing/      Testing saves: Skirmish saves whose first Battle Round is written by hand, one per rule
+├── saves/                 Example Skirmish saves and the save format's JSON Schema
 ├── scripts/               Repository validation and development tooling (its README lists them)
 ├── bin/                   grid.ts and terminal-nexus.ts, the two entry points
 ├── .claude/               Skills for coding agents working in this repository

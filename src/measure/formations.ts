@@ -14,10 +14,10 @@ import { FIXTURE_REGISTRY, withProduction } from "../content/index.ts"
 import type { Coord } from "../grid/types.ts"
 import { centreTile } from "../match/index.ts"
 import type { RoofExit } from "../match/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../scenario/types.ts"
+import type { PlacementBlock, BattleOpening } from "../skirmish/opening/types.ts"
 import type { PlayerId } from "../state/types.ts"
 import type { BattleRecord } from "./battle.ts"
-import { measureScenario } from "./suites.ts"
+import { measureSave } from "./suites.ts"
 
 /** How a side's four Barracks stand. */
 export type Shape = "block" | "apart" | "line"
@@ -125,13 +125,13 @@ function sideOf(side: PlayerId, shape: Shape | null, support: Support | null): P
   return placements(entries)
 }
 
-/** The east side in a few words, for a scenario's id and name. */
+/** The east side in a few words, for an opening's id and name. */
 const opponentName = (west: Shape, east: Opponent): string =>
   east.shape === null ? `${west}-against-${east.support}-alone` : `${west}-against-${east.shape}${east.support === null ? "" : `-with-${east.support}`}`
 
 /** The battle of `west`'s shape against `east`: a shape, with a support or none, or a support alone. `true` for the old
  *  blast, the siege crawlers beside the same shape. */
-export function formationScenario(west: Shape, east: Shape | Opponent, blast = false): ScenarioDefinition {
+export function formationOpening(west: Shape, east: Shape | Opponent, blast = false): BattleOpening {
   const opponent: Opponent = typeof east === "string" ? { shape: east, support: blast ? "crawlers" : null } : east
   const id = opponentName(west, opponent)
   return {
@@ -158,8 +158,8 @@ export function measureFormations(seeds: readonly number[], exit: RoofExit = "ro
   for (const support of SUPPORTS) for (const west of SHAPES) opponents.push({ west, east: { shape: null, support } })
   const battles: FormationBattle[] = []
   for (const { west, east } of opponents) {
-    const scenario = formationScenario(west, east)
-    for (const seed of seeds) battles.push({ west, east, seed, battle: measureScenario(scenario, seed, REGISTRIES[exit]).battle })
+    const opening = formationOpening(west, east)
+    for (const seed of seeds) battles.push({ west, east, seed, battle: measureSave(opening, seed, REGISTRIES[exit]).battle })
   }
   return battles
 }

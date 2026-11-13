@@ -48,15 +48,28 @@ enemy plays new and how they're plotting to counter your build." The plans stay 
 
 ### Step 20C — A script that answers
 
+What the Skirmish milestone's test runs found (2026-11-12, `skirmish --play-to end --seeds`): on the Pocket, over
+four seeds and every pairing of Commanders, the script decided every battle and the Commander never did — `steady`
+(balanced) beat `agro` (rush) and `defensive` (turtle) four to nothing (three to one in the Dob mirror), and
+`defensive` beat `agro` four to nothing. With the sides swapped, `steady` in the east won 22 of 24 the same way, so it is
+the scripts, not the west. A strict order, nothing that answers anything.
+
 - [ ] One script profile that reads what the player did (the brief a duel already writes) and answers it: a kept front,
       a rush, a turtle, an army it is losing to, the counter to what it saw built. Measured against the existing scripts
       over seeds, then offered as the default opponent if it is better.
 
-### Step 20D — A battle that stays open
+### Step 20D — A battle that stays open, and one that ends
 
 The duels found that an early lead decides a battle: the side ahead after round 2 wins 50 of 54
 ([the report](../history/reports/2026-10-21-the-march.md)). A battle decided in round 2 is not one a player wants to
-finish.
+finish. The other end is as bad, found while testing the Skirmish milestone (2026-11-12): on the Crossing, `agro`
+(Vasse) against `defensive` (Dob Hunter) played to round 100 on all six seeds tried without either Nexus taking a hit,
+"won by damage" — the rush never reaches a turtle on the big map. Eight rounds hide it behind a judged result. And on
+the Pocket a player can lose in round 1 before doing anything: a plan whose buildings are all refused (the forward
+ground clashes with Dob's) meets Dob's rush with only the starting troops, and the Nexus fell at tick 206.
+
+- [ ] Measured: how often a battle on Skirmish's defaults ends by a Nexus falling, by map, and the longest battles; the
+      Crossing's stalemate and the Pocket's round-1 loss each looked at and answered (a fix, or a reason they are fine).
 
 - [ ] Measured first, on Skirmish's defaults with the economy and the counters in: how often the side ahead after round
       1, 2 and 3 wins, and by how much; how gathered resource and the round's credits combine is settled here (the

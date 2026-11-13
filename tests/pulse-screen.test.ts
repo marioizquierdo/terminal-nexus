@@ -226,12 +226,12 @@ test("a lost Pulse and a timed-out one say so plainly, and a round with nobody o
 test("at 80x24 the result's words are never cut off, whichever way the Pulse ended", () => {
   // The status line is one row, 76 characters wide; the panel's text is 27 columns and its prose keeps the
   // last one clear, so nothing touches the divider. A result that ran off the edge would be one nobody could read.
-  const scenarios = [{}, { plan: DEFENCE }, { raid: "none" }, { crew: "none" }, { raid: "heavy" }, { plan: [DEFENCE[0]!] }] as const
-  for (const scenario of scenarios) {
-    const played = play(scenario)
+  const openings = [{}, { plan: DEFENCE }, { raid: "none" }, { crew: "none" }, { raid: "heavy" }, { plan: [DEFENCE[0]!] }] as const
+  for (const opening of openings) {
+    const played = play(opening)
     atHome(played)
     const lines = screenText(played).split("\n")
-    const name = JSON.stringify(scenario)
+    const name = JSON.stringify(opening)
     const statusRows = lines.filter((line) => /^\| (Round \d of \d over|MISSION (COMPLETE|FAILED)) - /.test(line))
     assert.equal(statusRows.length, 1, `${name}: the status line is missing`)
     assert.match(statusRows[0]!, /(Build Phase \d|fell|held)\. +\|$/, `${name}: the status line is cut off: ${statusRows[0]}`)

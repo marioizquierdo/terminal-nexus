@@ -10,7 +10,7 @@ import { buildTimeline } from "../src/cli/timeline.ts"
 import { footprintCentre, tilesOf } from "../src/grid/coords.ts"
 import { tilesWithin } from "../src/grid/reach.ts"
 import type { Coord } from "../src/grid/types.ts"
-import { loadScenario } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
 import { outlineWithin } from "../src/view/reach-outline.ts"
 import {
   COLOR_DEPTHS,
@@ -37,7 +37,7 @@ import type {
   EffectInstance,
   PositionedCell,
 } from "../src/view/index.ts"
-import { loadScenarioFile, resolveScenario, scenarioFiles } from "./helpers.ts"
+import { loadTestingSaveFile, playTestingSave, testingSaveFiles } from "./helpers.ts"
 
 const GRID = { width: 24, height: 12 }
 
@@ -230,7 +230,7 @@ test("every effect paints in a legal band, and never in one the simulation owns"
       `${instance.recipe} paints in ${instance.band}`,
     )
   }
-  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
+  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
   const derived = deriveEffects({
     states: [],
     events: resolved.run.events,
@@ -444,14 +444,14 @@ test("a real fight's damage flash carries fade all the way to the composed frame
   // roles.test.ts and end-to-end in view.test.ts) gates it by tier. This test's job is narrower and
   // upstream of that: proving the real recipe -> real compositor -> compose.ts wiring actually
   // produces a `fade` on a real cell during a real fight, not a hand-built one.
-  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
-    scenario,
+    opening,
     loaded.state,
     loaded.registry,
-    scenario.pulseTicks,
-    scenario.seed,
+    opening.pulseTicks,
+    opening.seed,
   )
   const view = createView(timeline)
   const tickMs = 1000 / 12
@@ -482,14 +482,14 @@ test("cosmetic randomness is a hash, not a stream: the same instance always scat
 
 test("the cosmetic seed cannot reach the kernel", async () => {
   // The load-bearing separation: presentation randomness must not perturb a single hash.
-  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
-    scenario,
+    opening,
     loaded.state,
     loaded.registry,
-    scenario.pulseTicks,
-    scenario.seed,
+    opening.pulseTicks,
+    opening.seed,
   )
   const hashes = new Set<string>()
   const framesPerSeed = new Map<number, string[]>()
@@ -513,14 +513,14 @@ test("the cosmetic seed cannot reach the kernel", async () => {
 })
 
 test("effects are derived from the event stream, and turning them off changes only the picture", async () => {
-  const scenario = await loadScenarioFile("ravel-cascade.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("ravel-cascade.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
-    scenario,
+    opening,
     loaded.state,
     loaded.registry,
-    scenario.pulseTicks,
-    scenario.seed,
+    opening.pulseTicks,
+    opening.seed,
   )
   const withEffects = createView(timeline, DEFAULT_PRESENTATION)
   const without = createView(timeline, { ...DEFAULT_PRESENTATION, effects: false })
@@ -539,15 +539,15 @@ test("effects are derived from the event stream, and turning them off changes on
 })
 
 test("composed frames stay inside the Grid, one ASCII cell each, at every render tier", async () => {
-  for (const name of ["citizens-versus-ravels.map.json", "ravel-cascade.map.json", "citizen-mirror-skirmish.map.json"]) {
-    const scenario = await loadScenarioFile(name)
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  for (const name of ["citizens-versus-ravels.save.json", "ravel-cascade.save.json", "citizen-mirror-skirmish.save.json"]) {
+    const opening = await loadTestingSaveFile(name)
+    const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     const timeline = buildTimeline(
-      scenario,
+      opening,
       loaded.state,
       loaded.registry,
-      scenario.pulseTicks,
-      scenario.seed,
+      opening.pulseTicks,
+      opening.seed,
     )
     for (const reducedMotion of [false, true]) {
       const view = createView(timeline, { ...DEFAULT_PRESENTATION, reducedMotion })
@@ -565,16 +565,16 @@ test("composed frames stay inside the Grid, one ASCII cell each, at every render
 })
 
 test("every render tier shows the same Pulse, and only monochrome shows no colour", async () => {
-  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
+  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
   void resolved
-  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
-    scenario,
+    opening,
     loaded.state,
     loaded.registry,
-    scenario.pulseTicks,
-    scenario.seed,
+    opening.pulseTicks,
+    opening.seed,
   )
   const view = createView(timeline)
   const timeMs = 200 * (1000 / 12)
@@ -599,9 +599,9 @@ test("the effect timeline finds the same instances however it is sampled", () =>
   }
 })
 
-test("every scenario derives effects without inventing a recipe", async () => {
-  for (const name of scenarioFiles()) {
-    const resolved = await resolveScenario(name)
+test("every testing save derives effects without inventing a recipe", async () => {
+  for (const name of testingSaveFiles()) {
+    const resolved = await playTestingSave(name)
     const instances = deriveEffects({
       states: [],
       events: resolved.run.events,
@@ -619,14 +619,14 @@ test("every scenario derives effects without inventing a recipe", async () => {
 })
 
 test("the glyph pack changes the field and the frame, never the actors", async () => {
-  const scenario = await loadScenarioFile("citizens-versus-ravels.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
-    scenario,
+    opening,
     loaded.state,
     loaded.registry,
-    scenario.pulseTicks,
-    scenario.seed,
+    opening.pulseTicks,
+    opening.seed,
   )
   const ascii = createView(timeline, { ...DEFAULT_PRESENTATION, glyphPack: "ascii" })
   const unicode = createView(timeline, { ...DEFAULT_PRESENTATION, glyphPack: "unicode" })
@@ -664,7 +664,7 @@ test("a same-tick ranged kill holds its death and blast until the tracer lands, 
   // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces it: a
   // marksman's shot with a flight window kills a runner whose volatile munitions then go off, and every
   // such kill in the battle is checked below.
-  const resolved = await resolveScenario("citizens-versus-ravels.map.json")
+  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
   const derived = deriveEffects({
     states: [],
     events: resolved.run.events,
@@ -1195,8 +1195,8 @@ test("every blast in a battle flashes only what the battle's own blast reached",
   const blast = EFFECT_RECIPES["fx.blast.detonation"]
   assert.ok(blast !== undefined)
   let blasts = 0
-  for (const name of ["ravel-cascade.map.json", "citizens-versus-ravels.map.json", "heavies-clash.map.json"]) {
-    const { run, registry } = await resolveScenario(name)
+  for (const name of ["ravel-cascade.save.json", "citizens-versus-ravels.save.json", "heavies-clash.save.json"]) {
+    const { run, registry } = await playTestingSave(name)
     const derived = deriveEffects({ states: [], events: run.events, registry, ticksPerSecond: 12 })
     for (const event of run.events) {
       if (event.kind !== "entity.detonated") continue

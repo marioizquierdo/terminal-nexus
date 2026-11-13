@@ -1,7 +1,7 @@
 # Terminal Nexus — play strategies
 
-_What duels have taught about playing a Build Phase well, as advice a player can act on. A model player reads this
-page in its brief (`npm run duel`, [`duels.md`](../system-design/duels.md)), so each entry is written to it: one thing
+_What battles have taught about playing a Build Phase well, as advice a player can act on. A model player reads this
+page in its brief (`npm run skirmish`, [`duels.md`](../system-design/duels.md)), so each entry is written to it: one thing
 to do or not to do, why, and the measurement it comes from. Add an entry when a measured duel or a playtest teaches
 something a player could use; change or remove one when a later measurement says otherwise. Never an entry no
 measurement or playtest backs._
@@ -42,5 +42,5 @@ advice as where to start, not a law.
 - **Pick the army for the pass.** Eighteen melee troopers beat a mixed army on open ground and lose to it at a short pass
   by a wide margin: a gap four rows wide, two rows or one tile, and a long corridor. A two-row door lets two strike
   abreast; ranged units fire over it and flyers cross it. If the way between the Nexuses is a short pass, field ranged,
-  area and flying units, or hold the door yourself. [The engage scenarios, 12 seeds, 2026-10-29: the melee army left 33,
+  area and flying units, or hold the door yourself. [The engage saves, 12 seeds, 2026-10-29: the melee army left 33,
   54 and 68 points of health behind at four rows, two and one tile.]

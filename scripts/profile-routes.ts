@@ -4,7 +4,7 @@
 //   node scripts/profile-routes.ts [--duels N] [--first-duel K] [--seeds 1,2] [--maps route|all|none] [--detail]
 //                                  [--out <file>]
 //
-// Plays every map in `scenarios/` (or only the route scenarios) on the seeds given, and N duels on the Crossing
+// Plays every testing save in `skirmish-testing/` (or only the route saves) on the seeds given, and N duels on the Crossing
 // (Commander pairs by the scripted players, eight rounds at most), timing each tick by the wall clock and
 // fingerprinting each battle: the SHA-256 of every event it emitted, in order, and of its last state. Prints the
 // fingerprints, then how long a tick took by how many units stood in it. `--out` writes the fingerprints as JSON;
@@ -14,10 +14,10 @@
 import { createHash } from "node:crypto"
 import { writeFileSync } from "node:fs"
 import { briefOf, newDuel, playRound, scriptedPlayer } from "../src/duel/index.ts"
-import type { DuelSetup, Side, SidePlan } from "../src/duel/index.ts"
+import type { DuelSetup, Side, BuildActions } from "../src/duel/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/load.ts"
-import { loadMapFile, mapCatalog } from "../src/scenario/load-map-file.ts"
+import { openBattle } from "../src/skirmish/opening/open.ts"
+import { loadTestingSave, testingSaveCatalog } from "../src/skirmish/testing-saves.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
@@ -92,16 +92,16 @@ class Fingerprint {
 }
 
 if (maps !== "none") {
-  const entries = mapCatalog().filter((entry) => maps === "all" || entry.id.startsWith("route-"))
+  const entries = testingSaveCatalog().filter((entry) => maps === "all" || entry.id.startsWith("route-"))
   for (const entry of entries) {
-    const scenario = await loadMapFile(entry.path)
+    const opening = await loadTestingSave(entry.path)
     for (const seed of seeds) {
-      const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed })
-      const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
+      const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed })
+      const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
       const print = new Fingerprint()
       let state = loaded.state
       battleBegan()
-      while (state.outcome === null && state.tick < scenario.pulseTicks) {
+      while (state.outcome === null && state.tick < opening.pulseTicks) {
         const units = state.entities.length
         const began = clock()
         const step = stepTick(state, context)
@@ -113,7 +113,7 @@ if (maps !== "none") {
         print.add(step.events)
       }
       battleEnded(state.tick)
-      fingerprints[`map ${scenario.id} seed ${seed}`] = print.done(state)
+      fingerprints[`map ${opening.id} seed ${seed}`] = print.done(state)
     }
   }
 }
@@ -133,7 +133,7 @@ for (let n = firstDuel; n < firstDuel + duelCount; n += 1) {
   const setup: DuelSetup = { map: "crossing", seed, rounds: 8, pulseTicks: 600, commanders: { A: a, B: b } }
   let duel = newDuel(setup)
   while (duel.result === null) {
-    const plans: Record<Side, SidePlan> = { A: player(briefOf(duel, "A").data), B: player(briefOf(duel, "B").data) }
+    const plans: Record<Side, BuildActions> = { A: player(briefOf(duel, "A").data), B: player(briefOf(duel, "B").data) }
     const print = new Fingerprint()
     let last: MatchState | null = null
     let began = 0

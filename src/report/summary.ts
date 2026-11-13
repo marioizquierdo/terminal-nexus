@@ -12,7 +12,7 @@ import type { ReportInput } from "./log.ts"
 const SUMMARY_HASH_DIGITS = 16
 
 export type RunSummary = Readonly<{
-  scenario: string
+  battle: string
   seed: number
   ticks: number
   pulseTicks: number
@@ -37,7 +37,7 @@ export function summarize(input: ReportInput): RunSummary {
   }
 
   return {
-    scenario: input.scenarioId,
+    battle: input.battleId,
     seed: input.seed,
     ticks: input.finalState.tick,
     pulseTicks: input.pulseTicks,
@@ -77,7 +77,7 @@ export function formatSummary(summary: RunSummary): string {
   ).join("    ")
 
   return [
-    `${label("scenario")}${summary.scenario}`,
+    `${label("battle")}${summary.battle}`,
     `${label("seed")}${hexSeed(summary.seed)}`,
     `${label("ticks")}${ticksText}`,
     `${label("outcome")}${outcomeText}`,

@@ -58,8 +58,8 @@ export type HintSituation =
   | "controls"
   | "activity-logs"
   | "dialog"
-  | "run-draft"
-  | "run-draft-remove"
+  | "save-game"
+  | "note"
   | "banner-place"
   | "banner-stance"
   | "committed"
@@ -84,8 +84,8 @@ export function hintSituation(context: BuildContext, state: BuildState): HintSit
     case "activity-logs":
     case "game-menu":
     case "dialog":
-    case "run-draft":
-    case "run-draft-remove":
+    case "save-game":
+    case "note":
     case "banner-place":
     case "banner-stance":
       return state.popup
@@ -164,19 +164,18 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
     return line < of ? `Line ${line} of ${of}. [enter] next line, [esc] skips the rest.` : `Line ${line} of ${of}. [enter] or [esc] closes it.`
   },
 
-  // A run's draft cannot be closed, so its line says what to do instead; with nothing to remove it says that too.
-  "run-draft": (context) =>
-    (context.runDraft?.removable.length ?? 0) > 0
-      ? "Number or [enter] takes a card, [r] removes one, [t] takes the requisition."
-      : "Number or [enter] takes a card, [t] takes requisition. Nothing to remove.",
-  "run-draft-remove": () => "Number or [enter] removes that card for good. [esc] back to the draft.",
+  "save-game": () => "Type a name, [enter] saves. [esc] back to the menu.",
+  note: () => "Type what you noticed, [enter] saves the note with this moment. [esc] back.",
 
   // --- A committed plan with no Pulse on screen (a Pulse says its own line) ---
   committed: () => "The plan is locked in. [esc] opens the menu.",
 
   // --- The menu, by the highlighted row ---
   "menu-mouse": () => "Click a row or press its key - or use up/down and [enter].",
-  "menu-explore": () => "Explore Map: look around and read what is on each tile. [enter] opens it.",
+  "menu-explore": (context) =>
+    context.spectating === true
+      ? "Explore Map: look around while you watch. [s] starts the next round."
+      : "Explore Map: look around and read what is on each tile. [enter] opens it.",
   // A dealt power is optional for now (the owner, round 5: "it's easier for testing if I can just start a
   // round"): the hints say one is waiting, never that it must be picked.
   "menu-nexus": (context, state) =>
@@ -195,7 +194,9 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       : `${item.label} - ${effect}. Costs ${item.cost}. [enter] to place one.`
   },
   "menu-start": (context, state) =>
-    pendingPicks(context, state) > 0
+    context.spectating === true
+      ? `Start round ${state.pulseNumber}: both scripts' plans play. [enter] begins.`
+      : pendingPicks(context, state) > 0
       ? setting(state, "powerPick") === "required"
         ? `Start Battle Round ${state.pulseNumber}: pick a Nexus power first, [n] opens them.`
         : `Start Battle Round ${state.pulseNumber} without a Nexus power? [n] picks one, [enter] begins.`
@@ -384,26 +385,14 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
       ],
     },
     {
-      // A run's draft, as a battle's first round opens on it: nothing closes it.
-      heading: "THE DRAFT",
+      // Save game's name, typed: every key a file's name can hold types into it.
+      heading: "SAVE GAME",
       lines: [
-        { keys: "1 2 3", text: "take that card" },
-        { keys: "r", text: "remove a card instead" },
-        { keys: "t", text: "take the requisition" },
-        { keys: "up/down", text: "choose a row" },
-        { keys: "enter/space", text: "press the chosen row" },
-        { keys: "click a row", text: "press it" },
-        { keys: "esc/x", text: "nothing: choose first" },
-        { keys: "q", text: "the game menu, then back" },
-      ],
-    },
-    {
-      heading: "THE REMOVE LIST",
-      lines: [
-        { keys: "1-9 a-z", text: "remove that card" },
-        { keys: "up/down", text: "choose a card; scrolls" },
-        { keys: "enter/space", text: "remove the chosen card" },
-        { keys: "esc/x", text: "back to the draft" },
+        { keys: "a-z 0-9 - . /", text: "type the save's name" },
+        { keys: "space", text: "types -" },
+        { keys: "bksp/delete", text: "take a character off" },
+        { keys: "enter", text: "save" },
+        { keys: "esc", text: "back to the game menu" },
       ],
     },
     {
@@ -436,6 +425,8 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "[ and ]", text: "slower, faster" },
         { keys: ". and ,", text: "step a frame, a tick" },
         { keys: "r", text: "replay" },
+        { keys: "enter", text: "go on, once it is over" },
+        { keys: "n", text: "a new seed, a Skirmish's end" },
         { keys: "arrows", text: "look around the map" },
       ],
     },
@@ -450,6 +441,7 @@ export function controlsPage(numbers: MoveNumbers = defaultMoveNumbers()): reado
         { keys: "q", text: "the game menu" },
         { keys: "d", text: "the Experiments (playtests)" },
         { keys: "?", text: "this page" },
+        { keys: "!", text: "a note: this moment, saved" },
         { keys: "ctrl+c", text: "quit at once" },
       ],
     },

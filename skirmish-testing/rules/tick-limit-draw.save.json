@@ -1,0 +1,59 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Tick-limit draw - a wall neither can cross",
+  "notes": "An unbroken rock wall divides the Grid. Neither trooper can reach the other, both are reported stuck, and the Pulse ends on its tick count as a draw.",
+  "setup": {
+    "map": {
+      "id": "tick-limit-draw",
+      "rows": [
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#...........",
+        "............#..........."
+      ]
+    },
+    "seed": 40971,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 120,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":2,"y":5},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":20,"y":5,"width":1,"height":1}
+    },
+    "p2": {
+      "at": {"x":20,"y":5},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":2,"y":5,"width":1,"height":1}
+    }
+  }
+}

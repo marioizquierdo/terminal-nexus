@@ -122,18 +122,25 @@ export type BuildCommand =
   | Readonly<{ kind: "open-game-menu" }>
   /** Pick Nexus power *n* — a digit or a click while the Nexus Pulse popup is open. */
   | Readonly<{ kind: "pick-nexus"; index: number }>
-  /**
-   * **A run's draft** (`BuildContext.runDraft`), settled one of three ways. Take card *n* of the three dealt — a digit, Enter on
-   * its row or a click while the draft popup is open — or take the requisition instead (`t`). Both record the choice
-   * (`BuildState.draftChoice`) and close the popup; the session hands it on (`BuildSessionOptions.draft`).
-   */
-  | Readonly<{ kind: "draft-take"; index: number }>
-  | Readonly<{ kind: "draft-requisition" }>
-  /** `r` on the draft popup, or its row: open the list of cards the army holds that could be removed instead. Refused,
-   *  saying so, when none can be. */
-  | Readonly<{ kind: "draft-open-remove" }>
-  /** Remove card *n* of that list (`RunDraft.removable`) — a digit, a letter, Enter or a click on its row: the draft is settled. */
-  | Readonly<{ kind: "draft-remove"; index: number }>
+  /** The game menu's `[v] Save game`: the popup that names the save file, over the game menu. Refused, with the reason,
+   *  where nothing can be saved: outside a Skirmish, or once the plan is locked in for the Battle Round. */
+  | Readonly<{ kind: "open-save-game" }>
+  /** A key typed into the save's name (`text`), or Backspace taking the last character off (`text` absent). */
+  | Readonly<{ kind: "save-name"; text?: string }>
+  /** Enter, or the `[enter] Save` row: write the save under the name typed (`BuildState.saveRequests`), which the session
+   *  hands to the shell. */
+  | Readonly<{ kind: "save-game" }>
+  /** What the shell answers once it has written the save, or failed to: the line the bottom says. A save written closes
+   *  the popups; one that failed leaves the name to change. Sent by the session, never by a key. */
+  | Readonly<{ kind: "save-result"; ok: boolean; text: string }>
+  /** `!`, on every screen: the note popup, one line to type about this moment, over whatever is open. */
+  | Readonly<{ kind: "open-note" }>
+  /** A key typed into the note's line (`text`), or Backspace taking the last character off (`text` absent). */
+  | Readonly<{ kind: "note-text"; text?: string }>
+  /** Enter in the note: save it (`BuildState.noteRequests`), which the session hands to the shell with the moment. */
+  | Readonly<{ kind: "save-note" }>
+  /** What the shell answers once the note is written, or not: the bottom line's words. Sent by the session. */
+  | Readonly<{ kind: "note-result"; ok: boolean; text: string }>
   /** `s` (or `p`), or the menu's last row, `[s] Start Battle Round` — open the Battle Round confirmation.
    *  Refused while a Nexus power is still waiting to be picked — the one thing that pick refuses — and
    *  while a building is armed. */
@@ -253,7 +260,7 @@ export type BuildCommand =
    * after the result, when the Next round Experiment says so. Like `pulse`, the reducer never sees it: the
    * session swaps in the next round's context, which the shell works out (`src/cli/pulse-run.ts`).
    */
-  | Readonly<{ kind: "next-round" }>
+  | Readonly<{ kind: "next-round"; alternative?: boolean; setup?: boolean }>
   /**
    * **The dialog**: the next line of the round's scene — Enter, Space, or a click anywhere while the dialog
    * is open — or, after its last line, the dialog closes and the Build Phase is exactly as the round opened
@@ -305,9 +312,7 @@ export type MenuEntry =
  *  Quit), Settings, the export, a message — `BuildState.message`, a title and text with nothing to
  *  choose — the Controls and hotkeys page, the Activity logs window, and **the dialog**: a round's scene,
  *  a line at a time, docked at the bottom of the map — the one popup the player does not open
- *  (`BuildState.dialog`) — and **a run's draft**, with the list of cards it can remove: a round whose context
- *  carries one opens on it, and it cannot be closed without choosing (`BuildState.draftChoice`), the second popup
- *  the player does not open. */
+ *  (`BuildState.dialog`) — and **Save game**, a name to type over the game menu. */
 export type Popup =
   | "nexus-powers"
   | "battle-round"
@@ -318,8 +323,8 @@ export type Popup =
   | "controls"
   | "activity-logs"
   | "dialog"
-  | "run-draft"
-  | "run-draft-remove"
+  | "save-game"
+  | "note"
   | "banner-place"
   | "banner-stance"
 
@@ -344,35 +349,6 @@ export type DialogLine = Readonly<{
   text: string
   focus: DialogFocus | null
 }>
-
-/** A card on a run's draft, as the screen reads it: plain words, from the run (docs/history/challenge-runs-design.md). `key` names it to the
- *  run (`structure:turret`); `family` is its kind in a player's words ("Structure", "Nexus power", "Doctrine"). */
-export type RunDraftCard = Readonly<{ key: string; name: string; family: string; rarity: string; role: string; line: string }>
-
-/**
- * **A run's draft**, waiting at the start of a battle's first round (docs/history/challenge-runs-design.md, the army): three cards to take
- * one of, the cards the army holds that it could remove instead, and the requisition to take instead of either. The round
- * opens on it and does not close until the player has chosen, because what is chosen changes the army the round is
- * played with. Plain data: the run (`src/run/`) deals it, the screen only reads it.
- */
-export type RunDraft = Readonly<{
-  /** The popup's title: "Draft after battle 1". */
-  title: string
-  /** Lines above the cards: how the last battle ended, and what the draft is for. */
-  intro: readonly string[]
-  cards: readonly RunDraftCard[]
-  removable: readonly RunDraftCard[]
-  /** The requisition for taking neither. */
-  requisition: number
-  /** The army as it stands, by card name, family by family: what the draft adds to or takes from. */
-  army: readonly Readonly<{ family: string; names: readonly string[] }>[]
-}>
-
-/** What the player chose from a run's draft: the key of a card to take, the key of a card to remove, or the requisition. */
-export type RunDraftChoice =
-  | Readonly<{ kind: "take"; key: string }>
-  | Readonly<{ kind: "remove"; key: string }>
-  | Readonly<{ kind: "requisition" }>
 
 /**
  * Which export a text is, so the shell that copies it out knows where it goes: the settings and

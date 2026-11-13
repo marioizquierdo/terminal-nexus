@@ -1,14 +1,14 @@
 // How a battle is measured (docs/system-design/measurement.md, src/measure/): a battle's record says who won, what
-// each side lost, how long units stood blocked and how tight an army met the enemy; a duel and a campaign level are
+// each side lost, how long units stood blocked and how tight an army met the enemy; a duel and a story level are
 // recorded round by round; and the same inputs measure the same every run.
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { levelById } from "../src/cli/levels.ts"
 import { SCRIPTED } from "../src/duel/index.ts"
-import { LEVEL_PLANS, measureDuel, measureLevel, measureScenario, spreadOf, STALL_TICKS, summaryLines } from "../src/measure/index.ts"
+import { LEVEL_PLANS, measureDuel, measureLevel, measureSave, spreadOf, STALL_TICKS, summaryLines } from "../src/measure/index.ts"
 import type { Measurement } from "../src/measure/index.ts"
-import { loadScenarioFile } from "./helpers.ts"
+import { loadTestingSaveFile } from "./helpers.ts"
 
 test("a spread is how far, on average, points stand from their middle, a row counting two columns", () => {
   assert.equal(spreadOf([]), 0)
@@ -20,8 +20,8 @@ test("a spread is how far, on average, points stand from their middle, a row cou
 })
 
 test("a hauler before a gap too narrow for it stands for good: measured as stalled, and never strikes", async () => {
-  const scenario = await loadScenarioFile("hauler-two-tile-gap.map.json")
-  const run = measureScenario(scenario, scenario.seed)
+  const opening = await loadTestingSaveFile("hauler-two-tile-gap.save.json")
+  const run = measureSave(opening, opening.seed)
   assert.equal(run.battle.winner, null)
   assert.equal(run.battle.reason, "tick-limit")
   assert.equal(run.battle.sides.A.firstContact, null)
@@ -30,8 +30,8 @@ test("a hauler before a gap too narrow for it stands for good: measured as stall
 })
 
 test("a squad that reaches its target is measured by when it first struck and how tight it stood", async () => {
-  const scenario = await loadScenarioFile("route-crowd.map.json")
-  const run = measureScenario(scenario, 1)
+  const opening = await loadTestingSaveFile("route-crowd.save.json")
+  const run = measureSave(opening, 1)
   assert.equal(run.battle.winner, "A")
   assert.equal(run.battle.reason, "nexus-destroyed")
   assert.equal(run.battle.sides.B.structuresLost, 1)
@@ -39,7 +39,7 @@ test("a squad that reaches its target is measured by when it first struck and ho
   assert.equal(run.battle.sides.A.unitsAtContact, 8)
   assert.ok((run.battle.sides.A.spreadAtContact ?? 0) > 0)
   assert.ok(run.battle.sides.A.dealt >= 400, "the Nexus's health is what it dealt, at least")
-  assert.deepEqual(measureScenario(scenario, 1), run, "the same scenario and seed measured twice differ")
+  assert.deepEqual(measureSave(opening, 1), run, "the same testing save and seed measured twice differ")
 })
 
 test("a duel is measured round by round: the hands dealt, the card kept, each battle and the Nexus left", () => {
@@ -58,7 +58,7 @@ test("a duel is measured round by round: the hands dealt, the card kept, each ba
   assert.deepEqual(measureDuel(setup, { A: { name: "balanced", player: balanced }, B: { name: "balanced", player: balanced } }), duel)
 })
 
-test("a campaign level is played by each plan to its end, every round's battle recorded", { timeout: 120_000 }, () => {
+test("a story level is played by each plan to its end, every round's battle recorded", { timeout: 120_000 }, () => {
   const level = levelById("vasse-test-2")
   assert.ok(level !== undefined)
   const plan = LEVEL_PLANS[0]
@@ -71,14 +71,14 @@ test("a campaign level is played by each plan to its end, every round's battle r
 })
 
 test("a measurement says in plain words what it found", async () => {
-  const scenario = await loadScenarioFile("route-dead-end.map.json")
+  const opening = await loadTestingSaveFile("route-dead-end.save.json")
   const measurement: Measurement = {
     spec: "test",
     build: "abc1234",
     date: "2026-10-20",
     routing: "the greedy step",
     msPerTick: 0.25,
-    scenarios: [measureScenario(scenario, 1), measureScenario(scenario, 2)],
+    saves: [measureSave(opening, 1), measureSave(opening, 2)],
     duels: [],
     levels: [],
   }

@@ -1,29 +1,29 @@
 ---
 name: grid
-description: Working with grid, the engine, editor and replay tool (bin/grid.ts): the report grammar, the log levels, the map format and how to author a scenario that exercises one rule. Use when running or reading a battle, adding a map, or debugging a kernel rule.
+description: Working with grid, the engine, editor and replay tool (bin/grid.ts): the report grammar, the log levels, the testing save format and how to author one that exercises one rule. Use when running or reading a battle, adding a testing save, or debugging a kernel rule.
 ---
 # Working with `grid`
 
-`grid` is not the game: it is the tool the game gets built and tested with, a `.map.json` map file
+`grid` is not the game: it is the tool the game gets built and tested with, a testing save (`skirmish-testing/`)
 plus a CLI that places entities on a Grid, resolves a deterministic Pulse from a seed, and reports
 what happened (design: [`docs/system-design/runtime.md`](../../../docs/system-design/runtime.md)). It
 grew out of the first milestone's Pulse Playground and is permanent infrastructure. If a change
-touches a rule, a map is how you prove it, and how the next session proves it again.
+touches a rule, a testing save is how you prove it, and how the next session proves it again.
 
 ## Running it
 
-The map is the first argument; the suffix is optional. There is no subcommand: the default action is
+The testing save is the first argument, by path or id; the suffix is optional. There is no subcommand: the default action is
 watch, `--headless` resolves without a terminal and prints the levelled log, `--verify` re-resolves
 (10 runs by default, `--runs N`) and fails if any run's hashes disagree. The full command line and
 the options both programs share are in [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 1.
-`./bin/grid.ts <map> ...` and `npm run grid -- <map> ...` are the same. `npm run maps` runs every
-checked-in fixture (`ls scenarios/*.map.json | wc -l` counts them). A bare `grid` with no map is
+`./bin/grid.ts <save> ...` and `npm run grid -- <save> ...` are the same. `npm run testing-saves` lists every
+testing save (`ls skirmish-testing/*/*.save.json | wc -l` counts them). A bare `grid` with no map is
 reserved for the map editor and is a usage error today.
 
 ## Reading the report
 
 One output stream, closed by a report line — a second stream for the summary turned out not to earn
-its keep. `grid <map> --headless > run.log` captures the whole thing; by default it prints to the
+its keep. `grid <save> --headless > run.log` captures the whole thing; by default it prints to the
 terminal.
 
 ```text
@@ -53,7 +53,7 @@ runs precisely:
 
 ```json
 {
-  "scenario": "melee-kill", "seed": 40961, "ticks": 49, "endedEarly": true,
+  "battle": "melee-kill", "seed": 40961, "ticks": 49, "endedEarly": true,
   "outcome": { "winner": "A", "reason": "annihilation" },
   "losses": { "A": { "lost": 0, "started": 2 }, "B": { "lost": 1, "started": 1 } },
   "stateHash": "94dfe7aa...", "eventsHash": "0e9f9a6d...",
@@ -94,10 +94,10 @@ The fast loop is text before pixels — a headless run costs nothing and answers
    `[tick] LEVEL kind subject [-> object] detail…`, stable across every map.
 3. Compare `--json` output (or `--events`) across two runs or two versions of a change when "did the
    outcome actually change" needs a precise answer rather than a read of the log.
-4. `grid <map> --verify` after any kernel change — determinism is the one property nothing else in
+4. `grid <save> --verify` after any kernel change — determinism is the one property nothing else in
    the test suite can substitute for.
 
-Only watch it (`grid <map>`, the default action) once the headless report already makes sense — the
+Only watch it (`grid <save>`, the default action) once the headless report already makes sense — the
 view answers "is this legible," not "is this correct."
 
 ## Trials: a map over many seeds
@@ -107,7 +107,7 @@ surely", play a trial ([`docs/system-design/testing-ground.md`](../../../docs/sy
 
 ```text
 grid engage-gap2-melee-vs-mix --seeds 1-12 --swap --shuffle --army-a trooper:6,skyraider:6   # as built vs a variant
-grid engage-bench                                  # a trial file from scenarios/trials/, failing if what it expects fails
+grid engage-bench                                  # a trial file from skirmish-testing/trials/, failing if what it expects fails
 grid engage-bench --tune trooper.maxHp=50          # every variant of a trial file with a unit tuned
 grid engage-bench --against HEAD --profile --jobs 4   # uncommitted work beside the last commit, with what a tick cost
 grid engage-bench --out before.json                # or before a change spanning commits ...
@@ -122,87 +122,89 @@ each part lives (a measure, a variant, a column, a profile hook).
 `--swap` plays each seed again mirrored with the sides swapped (always, for which army is better); `--shuffle` swaps
 units of a formation line among their places by the seed. The variant options (`--set`, `--army-a`, `--army-b`,
 `--tune`, `--terrain`, `--target-a`, `--target-b`) work on every action, so the one battle a trial points at can be
-watched (`grid <map> --seed 7 --swap --army-a ...`). Read a `*` as "beyond chance"; no `*`, no claim. Compare armies at
+watched (`grid <save> --seed 7 --swap --army-a ...`). Read a `*` as "beyond chance"; no `*`, no claim. Compare armies at
 the same supply (the last column).
 
-## Writing a map
+## Writing a testing save
 
-Maps live in `scenarios/` in a folder for what they are for: `rules/`, `units/`, `movement/`, `engage/` (the bench),
-`showcase/`; the id is the file name and every command finds a map by it. **Give each side that fights a goal**: a
-`targets` entry, or an enemy Nexus to head for — `tests/scenario.test.ts` refuses a checked-in map without one, since
-the game never plays such a battle. A question about troops usually needs a variant of an engage map, not a new map.
+The battles `grid` plays are **testing saves**: Skirmish saves in `skirmish-testing/` that open on a Battle Round written
+by hand ([`docs/system-design/skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md), the `start`). They live
+in a folder for what they are for: `rules/`, `units/`, `movement/`, `engage/` (the bench), `showcase/`, with the trial
+files in `trials/`; the id is the file name and every command finds a save by it. **Give each side that fights a goal**:
+a `target` in its start, or an enemy Nexus to head for — `tests/testing-saves.test.ts` refuses a checked-in save without
+one, since the game never plays such a battle. A question about troops usually needs a variant of an engage save, not a
+new save. `skirmish --load <save> --play-to next` plays the same Battle Round and prints the same report.
 
-Every rule gets a named, checked-in `.map.json` file — that is the regression suite and the
-documentation at once (`AGENTS.md`: every rule has a named scenario). A map is plain JSON, the same
-shape a mission and a map-editor-authored map will eventually share:
+Every rule gets a named, checked-in testing save — that is the regression suite and the documentation at once. It is a
+save like any other, read by the same loader (`readSave`, every problem at once), with a map drawn inline, both slots
+`script:idle`, one round, and a `start` for each slot:
 
 ```json
 {
-  "id": "melee-kill",
+  "format": "terminal-nexus.save/1",
   "name": "Melee kill - two troopers close on one",
-  "notes": "What this fixture exists to prove, in one sentence.",
-  "grid": { "preset": "small-wide" },
-  "seed": 40961,
-  "pulseTicks": 180,
-  "terrain": [ "one character per tile, one string per row, north to south" ],
-  "terrainLegend": { ".": "terrain.plain", "#": "terrain.rock", "*": "terrain.deposit" },
-  "placements": {
-    "A": {
-      "at": { "x": 5, "y": 5 },
-      "rows": [ "t" ],
-      "legend": { "t": { "content": "unit.citizen.trooper" } }
+  "notes": "What this save exists to prove, in one sentence.",
+  "setup": {
+    "map": {
+      "id": "melee-kill",
+      "rows": [ "one character per tile, one string per row, north to south" ],
+      "legend": { ".": "terrain.plain", ",": "terrain.scrub" }
     },
-    "B": {
-      "at": { "x": 6, "y": 5 },
+    "seed": 40961, "goal": "elimination", "modifiers": [], "rounds": 1, "roundTicks": 180,
+    "slots": { "p1": { "controller": "script:idle" }, "p2": { "controller": "script:idle" } }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":5,"y":5},
+      "rows": [ "t" ],
+      "legend": { "t": {"content":"unit.citizen.trooper"} },
+      "target": {"x":6,"y":5,"width":1,"height":1}
+    },
+    "p2": {
+      "at": {"x":6,"y":5},
       "rows": [ "t d" ],
       "legend": {
-        "t": { "content": "unit.citizen.trooper" },
-        "d": { "content": "unit.citizen.trooper", "hp": 25 }
+        "t": {"content":"unit.citizen.trooper"},
+        "d": {"content":"unit.citizen.trooper","hp":25}
       }
     }
   }
 }
 ```
 
-One placement block per player — `placements.A`, `placements.B`, a future player its own key. A
-block's `at` is where its `rows[0][0]` sits, so `rows` only needs to cover the tiles that block
-actually places, not the whole Grid — write a tight box around one player's squad, not a
-Grid-sized overlay with everyone else blank. A placement symbol marks a unit's **centre tile**: for
-a 1×1 unit that's the only tile it has, but for a multi-tile unit (`scenarios/showcase/heavies-clash.map.json`
-is the checked-in example, a 3×3 colossus and a 5×2 leviathan) the symbol sits on the footprint's
-middle tile and the loader derives the anchor from it (`footprintCentre`, `src/grid/coords.ts`). A
-legend entry is `{ "content": "..." }`, or `{ "content": "...", "hp": 12 }` to start that placement
-already damaged — `hp` must fall inside `1..maxHp` for the content or the loader rejects it.
+The map's `legend` may be left out when the rows use only `.` open, `#` rock and `*` a deposit; its size is its rows'.
+`p1` is the engine's side A (west), `p2` side B. A slot's start places what it has on the Grid when the round opens:
+`at` is where its `rows[0][0]` sits, so `rows` only needs to cover the tiles that slot places, not the whole Grid —
+write a tight box around one side's squad. A symbol marks a unit's **centre tile**: for a 1×1 unit that's the only tile
+it has, but for a multi-tile unit (`skirmish-testing/showcase/heavies-clash.save.json` is the checked-in example, a 3×3
+colossus and a 5×2 leviathan) the symbol sits on the footprint's middle tile and the opening derives the anchor from it
+(`footprintCentre`, `src/grid/coords.ts`). A legend entry is `{ "content": "..." }`, or `{ "content": "...", "hp": 12 }`
+to start it already damaged — `hp` must fall inside `1..maxHp` for the content. `target` is where the slot's troops head.
 
-`(0,0)` is the north-west tile; rows read north to south, exactly how they draw. The loader fails
-loudly — wrong dimensions, an undefined legend key, an overlapping footprint (within a block or
-**across** the two players — a tile two players both claim, even on different layers, is always an
-error now that each has its own block), an off-Grid placement, an out-of-range `hp` — naming the
-block, symbol, and tile, so a broken fixture is obvious immediately rather than a mysterious kernel
-failure later. A **custom grid is capped at 10,000 tiles** (`src/scenario/load.ts`,
-`MAX_DECLARED_GRID_TILES`) — a declared-mode sanity bound, not a real map-size limit; raise it
-deliberately if a map genuinely needs to be bigger.
-
-JSON has no comments, which is the one thing the old TypeScript-module format could carry and this
-one can't — put anything worth explaining in `notes` instead. `src/scenario/types.ts`'s
-`defineScenario` still exists for TypeScript-authored content that compiles down to a `.map.json`
-file; nothing checked in uses it that way today, so `.map.json` files are written and read directly.
+`(0,0)` is the north-west tile; rows read north to south, exactly how they draw. The opening fails loudly — wrong
+dimensions, an undefined legend key, an overlapping footprint (within a slot or **across** the two — a tile both claim,
+even on different layers, is always an error), an off-Grid placement, an out-of-range `hp` — naming the slot, symbol and
+tile, so a broken save is obvious immediately rather than a mysterious kernel failure later. A **Grid is capped at
+10,000 tiles** (`src/skirmish/opening/open.ts`, `MAX_DECLARED_GRID_TILES`) — a sanity bound, not a real map-size limit;
+raise it deliberately if a save genuinely needs to be bigger. JSON has no comments: put anything worth explaining in
+`notes`.
 
 ## Testing
 
-After adding a map file run `./scripts/run-tests.sh bun`, not only `npm test`: Bun enforces a 5000 ms
-per-test timeout that Node does not, and a test that loops over every map needs an explicit
+After adding a testing save run `./scripts/run-tests.sh bun`, not only `npm test`: Bun enforces a 5000 ms
+per-test timeout that Node does not, and a test that loops over every testing save needs an explicit
 `{ timeout }` ([`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 2).
 
 ## Where things live
 
 `src/pulse` — the kernel (imports nothing presentation- or clock-related; `tests/architecture.test.ts`
 enforces the import graph). `src/content` — unit/structure definitions, the Citizen and Ravel fixture
-rosters and the Proving Grounds bench roster (`proving-grounds.ts`), all disposable. `src/scenario` — the map format and loader (`load.ts` validates the
-shape once parsed; `load-map-file.ts` reads and parses a `.map.json` path, suffix optional). `src/report`
+rosters and the Proving Grounds bench roster (`proving-grounds.ts`), all disposable. `src/skirmish` — the save format
+(`save.ts`), a save's `start` (`start.ts`), the testing saves found by id (`testing-saves.ts`) and the opening the
+kernel starts from (`opening/open.ts`, which validates it). `src/report`
 — the levelled log and summary. `src/view` — the ASCII compositor and terminal backends. `src/cli` —
-this tool's own entry points. `scenarios/*/*.map.json` — the fixtures themselves, by folder; `scenarios/trials/` — the
-trial files. `src/scenario/variant.ts`, `src/measure/trial.ts`, `src/cli/trial.ts` — variants and trials.
+this tool's own entry points. `skirmish-testing/*/*.save.json` — the testing saves themselves, by folder; `skirmish-testing/trials/` — the
+trial files. `src/skirmish/opening/variant.ts`, `src/measure/trial.ts`, `src/cli/trial.ts` — variants and trials.
 
 ## Related
 

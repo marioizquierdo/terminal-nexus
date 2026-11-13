@@ -1,6 +1,6 @@
 // The match layer's data — what a Battle Round starts from.
 //
-// `src/match/` is the rules layer *around* the tick kernel (the "scenario runtime" of grid-engine.md):
+// `src/match/` is the rules layer *around* the tick kernel (the "rules runtime" of grid-engine.md):
 // it builds the state a Pulse starts from out of what the Build Phase committed, and it does what
 // pulse.md says happens when a Pulse ends. It sits beside `src/pulse` and never inside its
 // tick — nothing here is called by `stepTick`, so no existing hash can move — and it is deterministic

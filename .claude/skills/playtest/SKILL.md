@@ -1,13 +1,16 @@
 ---
 name: playtest
-description: Press keys on the Terminal Nexus Build Phase screen without a terminal and get back every step's screen as text, PNGs and an animated GIF (scripts/playtest.mjs). Use to see a change working, to check a flow someone described ("Down, Down, Space, Space"), to reproduce a playtest report, and to make the before/after pictures or GIF a pull request shows. Prefer it over tmux screenshots for anything about layout or a flow; it cannot capture one key early.
+description: Press keys on the Terminal Nexus screens — the title menu, the Skirmish setup screen and the Build Phase — without a terminal and get back every step's screen as text, PNGs and an animated GIF (scripts/playtest.mjs). Use to see a change working, to check a flow someone described ("Down, Down, Space, Space"), to reproduce a playtest report, and to make the before/after pictures or GIF a pull request shows. Prefer it over tmux screenshots for anything about layout or a flow; it cannot capture one key early.
 ---
 
 # Scripted playtests
 
 `scripts/playtest.mjs` takes a key script, feeds it one key at a time through the real keyboard and
-mouse adapters (`BuildSession.handleData`) as the exact bytes a terminal sends, and composes the frame
-after every key with the same composer the live screen uses. No terminal, no timing, no race.
+mouse adapters (`BuildSession.handleData` on a Build Phase, `TitleScreens.handleKey` on the title menu) as the exact
+bytes a terminal sends, and composes the frame after every key with the same composer the live screen uses. It follows
+the game from screen to screen: New game's Start (or a loaded save's Open) hands the rest of the script to that
+battle's Build Phase, and a result's `[m] Setup screen` hands it back to New game (`src/playtest/game.ts`). No
+terminal, no timing, no race.
 
 ## Commands
 
@@ -19,24 +22,49 @@ node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --name hatchery-r
 node scripts/playtest.mjs --file flow.keys --size 104x30 --colors monochrome --png all
 node scripts/playtest.mjs --settings "popupPulseMs=3000 nextRound=auto" --keys "Esc 1 Enter"  # start from an export
 node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --activity Interactions   # what the run recorded
-node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=3' --png final   # round 3, no keys at all
-node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=2' --keys "n 1 s s wait~1000*26"
+node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=3' --png final   # round 3, no keys at all
+node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=2' --keys "n 1 s s wait~1000*26"
+node scripts/playtest.mjs --at 'skirmish?seed=7' --keys "Esc n 1 1 Enter"    # a Skirmish: a power, a building
+node scripts/playtest.mjs --load tmp/mine.save.json --p2 script:rush          # a save, at its Build Phase
+node scripts/playtest.mjs --at menu --keys "1 1 1 2 s Esc"   # title -> Skirmish -> New game: the Pocket, Averno, Start
+node scripts/playtest.mjs --at 'skirmish?setup=load' --keys "2 1 s Esc s"   # Load game: round 4, p1 a script, watch
+node scripts/playtest.mjs --note .playtest/notes/note-20261112-153012.note.json     # a playtest note (!), at its moment
 node scripts/playtest.mjs --help
 ```
 
-**Start from a Skirmish.** A change to the battle or the Build Phase is seen in a Skirmish, not in PERIMETER: today
-`--at 'challenge?seed=7'` (Esc skips its opening lines); once the Skirmish milestone builds save files, `--load <save>`
-with `--slot` as the `skirmish` command takes it ([`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md)).
-Open a mission only for a change about missions.
+**Start from a save.** A change to the battle or the Build Phase is seen in a Skirmish, not in PERIMETER, and with no
+`--at`, `--load` or `--note` the script opens `saves/crossing-new.save.json` (a new battle on the Crossing, Vasse
+against Dob Hunter's `balanced` script, seed 7; Esc skips its opening lines). `--load <save>` opens another at its
+Build Phase with the plan it was saved with, and `--p1`/`--p2` as the `skirmish` command takes them
+([`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md)). Which save shows what: `crossing-new` round 1
+and its first hand; `crossing-round-4` bases built and armies regrouped; `mirror-vasse` both slots scripted
+(spectating); `pocket-short` a whole battle to its result and `[m] Setup screen` in a few rounds (`--p1 script:agro` to
+watch it). Open a mission (`--at 'story?mission=vasse-test-1'`) only for a change about missions.
+
+**The title menu and the setup screen**: `--at menu`, `--at 'skirmish?setup'`, `--at 'skirmish?setup=new'` or
+`--at 'skirmish?setup=load'`. New game opens on Start, so `Enter` starts its defaults; `1`-`0` come a row round (the
+map, each slot's Commander, who plays it, its credits, the modifiers), `e` types the seed (digits, Enter), `s` starts.
+New game's seed comes from a fixed clock (567890), so a script plays the same battle every run. Load game lists the
+script's own saves folder (`.playtest/saves/`, or `--saves <dir>`) then `saves/`; a row's key chooses one, its rows change who
+plays each side, `s` opens it. The name a `Player` slot shows is `--player <name>` (`player` unless given). The
+summary line of a title step says the screen, its highlighted row and its notice.
+
+**A note** (`!`, on any screen, a line, Enter) is written into `.playtest/notes/` (or `--notes <dir>`): a script never
+writes into the player's own notes. `--note <file>` opens it at its moment: its round as it opened, the commands
+pressed since replayed at their times, the very screen the note shows; `--keys` go on from there.
+
+**Save game in a script**: `Esc v`, then the name (`Bksp*40` clears the offered one, then `type:mine`; Space types
+`-`), then `Enter`. A bare name goes into the script's own saves folder (`.playtest/saves/`, git-ignored, or
+`--saves <dir>`), never the player's; a name with a folder is written there, from the working folder. The file then
+opens with `--load .playtest/saves/mine.save.json`, on the round it was saved at, with the plan restored, or from the
+title menu: `--at 'skirmish?setup=load'`.
 
 `--at <route>` opens a mission at a round, in the game's own route grammar (`src/cli/route.ts`,
-the same as `terminal-nexus --at`): `campaign?level=vasse-test-1` is PERIMETER's first round (what runs
-without `--at`), and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who builds nothing and keeps no Nexus power
+the same as `terminal-nexus --at`): `story?mission=vasse-test-1` is PERIMETER's first round, and `&round=3` its third Battle Round, counted from 1 as the screen counts. A later round is reached as a player who builds nothing and keeps no Nexus power
 reaches it, played with the run's `--settings`, so it is the very screen the keys `Esc s s wait~1000*26
 Enter` reach for round 2, without them (the battle lasts about 21 seconds, then the
-result Enter goes on from). Quote the route: the shell reads `?` and `&`. A title menu route
-(`settings`) is refused, since only a Build Phase is wired up here: a mission's, or a Challenge battle's (`challenge?seed=<n>`, a Skirmish once the Skirmish milestone renames it); with `--at`, `--keys`
-may be left out to see the round as it opens.
+result Enter goes on from). Quote the route: the shell reads `?` and `&`. A title menu route opens that screen; with
+`--at`, `--load` or `--note`, `--keys` may be left out to see the screen as it opens.
 
 Output lands in `.playtest/` (git-ignored): `<name>.txt` always holds every step's screen as text.
 Only for an image going into a pull request, add `--out docs/pr-pictures` (see Workflow; keep each
@@ -63,12 +91,12 @@ the same targets. `#` starts a comment in a `--file`. The table with bytes is at
 
 ## Useful openings
 
-Each reaches a state on a mission's Build Phase (PERIMETER's first round unless `--at` says
-another); what the screens are and every key on them is in
+Each reaches a state on a Build Phase — the scripted playtest's own save unless `--at` or `--load` says another; the
+ones that name the raid are PERIMETER's (`--at 'story?mission=vasse-test-1'`); what the screens are and every key on them is in
 [`docs/system-design/ui-patterns.md`](../../../docs/system-design/ui-patterns.md) and
-[`docs/system-design/input.md`](../../../docs/system-design/input.md). **PERIMETER opens on its intro**, the
-dialog at the bottom, which holds the keyboard: every opening below starts after `Esc`, which skips it
-(`Enter` reads the next line; `--keys "Enter Enter Enter" --png all` shows each line).
+[`docs/system-design/input.md`](../../../docs/system-design/input.md). **A round opens on its lines** (a Skirmish's
+opening, PERIMETER's intro), the dialog at the bottom, which holds the keyboard: every opening below starts after `Esc`,
+which skips it (`Enter` reads the next line; `--keys "Enter Enter Enter" --png all` shows each line).
 
 - `n 1`: pick the first Nexus power dealt; the popup closes and the highlight stays on the Nexus Pulse row. The hand
   is two powers dealt from the pool, then War Chest (`n 3`, 2000 to spend), dealt the same way every run.
@@ -77,7 +105,7 @@ dialog at the bottom, which holds the keyboard: every opening below starts after
   picked first, the bottom line says so instead).
 - `s s wait~1000*20`: a whole Battle Round with nothing built and no power kept, twenty seconds in; the second `s`
   starts it.
-- `--at 'campaign?level=vasse-test-1&round=2'` with no keys: round 2 as it opens, round 1 played with
+- `--at 'story?mission=vasse-test-1&round=2'` with no keys: round 2 as it opens, round 1 played with
   nothing built. A round that opens with a scene (PERIMETER's first, a Commander's return) plays it first,
   as the game does; `Esc` skips it.
 - `Esc s`: Settings from the menu; from the map it is `Tab Esc Esc s` (Esc on the map goes back to the
@@ -89,8 +117,8 @@ dialog at the bottom, which holds the keyboard: every opening below starts after
 - `--activity [filter]`: print what the run recorded in the Activity Logs (Everything when no filter
   is named; `Interactions`, `Problems`) and save `<name>-activity.txt`, with times on the script's own
   clock. The quickest check that an event you added fires, and with what.
-- `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys "Esc n 1 1 Enter"`: the same route
-  and key script open the live game in a state (`#at=campaign?level=vasse-test-1&keys=Esc n 1 1 Enter` on
+- `./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys "Esc n 1 1 Enter"`: the same route
+  and key script open the live game in a state (`#at=story?mission=vasse-test-1&keys=Esc n 1 1 Enter` on
   a local copy of the browser page; a demo's `at` and `keys` on a published one), for a demo or to hand
   Mario the exact state a report is about.
 
@@ -98,7 +126,7 @@ What a script cannot show is time between keys on the live screen: the view slid
 building going up (script frames always draw buildings finished). Two things are the exception, since a
 `wait` moves their clock: a Battle Round, and the raid's intent trail, whose arrows step on toward what the raid
 goes for from the first frame that drew them moving (after `Esc` closes PERIMETER's intro, or as a round
-opened by `--at` starts). `--at 'campaign?level=vasse-test-1&round=2' --keys "wait~100*23" --gif --delay 100
+opened by `--at` starts). `--at 'story?mission=vasse-test-1&round=2' --keys "wait~100*23" --gif --delay 100
 --hold 100 --scale 1` makes a GIF of it moving, a frame every 100 ms, as fast as it plays. For those, compose a frame with `camera` / `refusedTry` / `ack` /
 `placing: [{ ordinal, elapsedMs }]` / `removing: [{ ordinal, contentId, anchor, elapsedMs }]`
 yourself, or step `BuildAnimation` (`src/view/build-live.ts`) with a fake clock: `slideGif`,
@@ -131,8 +159,7 @@ yourself, or step `BuildAnimation` (`src/view/build-live.ts`) with a fake clock:
 
 ## Extending to another screen
 
-Only the Build Phase is wired. For the title menu, write a sibling of `src/playtest/build.ts` (take
-steps, drive that screen's session through `handleData`, return frames), and let `--at` pick it: a title
-menu route is refused today exactly where it would be handed over (`playtestOpening`). A `grid` battle
-is not a place in the game and would take its own option. The key grammar and the image code
-(`scripts/lib/frame-capture.mjs`) do not change.
+The title menu and the Build Phase are wired (`src/playtest/game.ts` runs `TitleScreens` and a `BuildDriver`,
+`src/playtest/build.ts`, and hands the script between them). Another screen gets a driver of the same shape (take a
+step, return its frame) and a place in `runGamePlaytest`'s hand-over. A `grid` battle is not a place in the game and
+would take its own option. The key grammar and the image code (`scripts/lib/frame-capture.mjs`) do not change.

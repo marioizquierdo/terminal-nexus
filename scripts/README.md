@@ -8,6 +8,7 @@ Tools for checking the repository and for seeing a change. Anything they write l
 - `check-markdown-links.mjs` - fails on a broken local Markdown link; the validator runs it.
 - `run-tests.sh` - the test suite on one runtime; `./scripts/run-tests.sh` (Node) or `./scripts/run-tests.sh bun`.
 - `grid-pictures.ts` - the grid design's pictures of distance, reach and walking, drawn by the rules' own code; `node scripts/grid-pictures.ts` prints them, `--write` redraws them in `docs/system-design/grid.md`, and `tests/grid-pictures.test.ts` fails when one drifts.
+- `make-example-saves.ts` - writes the example Skirmish saves in `saves/` from their setups and the rounds scripts played to reach them; `node scripts/make-example-saves.ts` after a rule or content change, and `tests/skirmish-save.test.ts` fails when one is not as the game writes it.
 
 **Measuring a tick**
 - `profile-routes.ts` - plays every map and a run of duels, prints a fingerprint of each battle's events and last state and what a tick cost by how many entities stood in it; `node scripts/profile-routes.ts --duels 3 --maps route`, `--out <file>` to diff the fingerprints before and after a change that must move no outcome, `--detail` to time each route question.
@@ -15,9 +16,9 @@ Tools for checking the repository and for seeing a change. Anything they write l
 **Seeing a change**
 - `playtest.mjs` - press keys on the Build Phase without a terminal; text, PNGs and a GIF in `.playtest/`; `--keys "Down Space"`.
 - `capture-build-phase-screenshots.mjs` - every Build Phase screenshot and GIF, in-process or through tmux; `--only <name>`, `--force`.
-- `capture-menu-screenshot.mjs` - the title menu, Settings, About and Campaign screens on a real terminal (tmux); no flags needed.
+- `capture-menu-screenshot.mjs` - the title menu, Settings, About and Story screens on a real terminal (tmux); no flags needed.
 - `capture-screenshots.mjs` - screenshots of the engine tool `grid` on a real terminal (tmux); `--only <name>`.
-- `capture-engagement.mjs` - a run of sub-tick frames around one engagement, on request only; `--scenario <name>`.
+- `capture-engagement.mjs` - a run of sub-tick frames around one engagement, on request only; `--save <testing save id>`.
 - `build-web.mjs` - the browser playtest page, one HTML file; `bun scripts/build-web.mjs [--demos <file>]`.
 - `demos/` - the key scripts and settings a pull request's playable page opens on, kept until its question is answered.
 

@@ -1,0 +1,59 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Air crossing - a sealed rock room no ground unit could ever leave",
+  "notes": "A flying unit (unit.ravel.buzzard, layer \"air\") starts walled into a 1x1 rock room a ground unit placed on the same tile would be entombed in for the rest of the Pulse (the opening still refuses to place a ground entity on impassable terrain, but a sealed room reachable only through rock is a case the loader cannot catch - it is a movement claim, not a placement one). The buzzard flies straight out on its very first move and crosses more rock reaching the trooper waiting to the east - proving maskForActor's terrain: \"ignore\" for air (src/pulse/shared.ts) end to end, in a real Pulse, rather than only in the unit test that exercises the mask directly (tests/grid.test.ts).",
+  "setup": {
+    "map": {
+      "id": "air-crossing",
+      "rows": [
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "....###.................",
+        "....#.#.................",
+        "....###.................",
+        "........................",
+        "........................",
+        "........................",
+        "........................",
+        "........................"
+      ]
+    },
+    "seed": 8814,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 200,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":5,"y":5},
+      "rows": [
+        "b"
+      ],
+      "legend": {
+        "b": {"content":"unit.ravel.buzzard"}
+      },
+      "target": {"x":16,"y":5,"width":1,"height":1}
+    },
+    "p2": {
+      "at": {"x":16,"y":5},
+      "rows": [
+        "t"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      },
+      "target": {"x":5,"y":5,"width":1,"height":1}
+    }
+  }
+}

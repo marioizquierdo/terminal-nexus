@@ -38,12 +38,15 @@ export function chromiumPath() {
       .map((name) => ({ name, revision: /^chromium-(\d+)$/.exec(name)?.[1] }))
       .filter((entry) => entry.revision !== undefined)
       .sort((a, b) => Number(b.revision) - Number(a.revision))
-      .map((entry) => join(root, entry.name, "chrome-linux", "chrome"))
+      // Playwright's folder is `chrome-linux` in older revisions and `chrome-linux64` in newer ones.
+      .flatMap((entry) => [join(root, entry.name, "chrome-linux", "chrome"), join(root, entry.name, "chrome-linux64", "chrome")])
       .filter((candidate) => existsSync(candidate))
   } catch {
     // an unreadable or missing folder is the same as an empty one: the error below says where we looked
   }
   if (found.length > 0) return found[0]
+  // Some images link a plain `chromium` beside the revisions to the browser itself.
+  if (existsSync(join(root, "chromium"))) return join(root, "chromium")
   throw new Error(
     `no Chromium found: set CHROMIUM_PATH to a chrome executable, or put one at ` +
       `${join(root, "chromium-<revision>", "chrome-linux", "chrome")} ` +

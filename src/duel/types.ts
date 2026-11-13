@@ -7,6 +7,7 @@
 
 import type { Absence } from "../match/commander.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
+import type { DuelMap } from "./maps.ts"
 
 /** A side of the duel, the state's own `PlayerId`: A starts in the west, B in the east. */
 export type Side = PlayerId
@@ -26,22 +27,26 @@ export type Roster = Readonly<{
 /** What a duel is: the map, the gameplay seed, how many rounds at most, how long each Battle Round may last, and the
  *  Commander each side plays; and, for a side that is not its Commander's whole army, its roster. */
 export type DuelSetup = Readonly<{
-  map: string
+  /** A map of `DUEL_MAPS` by id, or one drawn in full (a Skirmish save may carry its own map). */
+  map: string | DuelMap
   seed: number
   rounds: number
   /** Ticks a Battle Round lasts at most (12 a second). */
   pulseTicks: number
   commanders: Readonly<Record<Side, string>>
   rosters?: Readonly<Partial<Record<Side, Roster>>>
+  /** What each side's round income is multiplied by (1 unless set): a script profile's credits share, and the
+   *  `double-income` modifier. Rounded to whole credits. */
+  income?: Readonly<Partial<Record<Side, number>>>
 }>
 
 /** **A duel's Battle Round: 30 seconds**, 360 ticks at 12 a second (the owner, 2026-10-26: "Shorter rounds: 30
  *  seconds"), with the front kept between rounds (`src/match/regroup.ts`). What a duel plays when it is not told
- *  otherwise, a run's battles and the measure spec's duels. */
+ *  otherwise, a Skirmish's and the measure spec's duels. */
 export const DUEL_PULSE_TICKS = 360
 
-/** **Rounds a duel lasts at most when it is not told otherwise: 8**, a run battle's too — measured for 30-second rounds
- *  with the front kept (`RUN_ROUNDS`, `src/run/run.ts`, says how). */
+/** **Rounds a duel lasts at most when it is not told otherwise: 8**, a Skirmish's too — measured for 30-second rounds
+ *  with the front kept, for the retired runs (docs/history/challenge-runs-design.md). */
 export const DUEL_ROUNDS = 8
 
 /** Where a building should go, as a plan names it: a place relative to the side's own base, or a tile. A named place
@@ -82,7 +87,7 @@ export const APART_GAP = 10
  * the buildings that train units (`formation`; absent, each goes where its placement says), and the stance.
  * `note` is the player's own words on why, kept in the record and shown to nobody else during the duel.
  */
-export type SidePlan = Readonly<{
+export type BuildActions = Readonly<{
   power?: number
   build: readonly Placement[]
   formation?: Formation

@@ -84,7 +84,7 @@ A loop, not a line.
 
 ## How it is judged
 
-Automated: every card has a named scenario exercising its rule, determinism holds across runs and
+Automated: every card has a named testing save exercising its rule, determinism holds across runs and
 runtimes after every content change, and the step 12B report regenerates from logs alone.
 
 Human: a player who has never read the lore can state each faction's philosophy from a Skirmish. This is
@@ -93,7 +93,13 @@ rather than bench fixtures.
 
 ## Done when, for each pass
 
-- [ ] The pass's cards are authored with tags and scenarios, and each has a line in the pull request.
+- [ ] The pass's cards are authored with tags and testing saves, and each has a line in the pull request.
 - [ ] The step 12B numbers are in the pull request, with the interpretation kept separate from them.
 - [ ] The Commander Army and game-modes designs are updated with what the pass learned.
 - [ ] `./scripts/check-repository.sh` passes.
+
+## Found while testing the Skirmish milestone (2026-11-12)
+
+- Many testing saves in `skirmish-testing/` field content no army uses (workers, haulers, the colossus, sentinel,
+  corsair, leviathan, bench units). Once this milestone settles the roster, prune the testing saves that only exercise
+  content no Commander fields, keeping the ones that pin a kernel rule.

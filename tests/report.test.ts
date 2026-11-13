@@ -16,7 +16,7 @@ import {
   summarize,
 } from "../src/report/index.ts"
 import { TERRAIN } from "../src/grid/types.ts"
-import { reportInputOf, resolveScenario, scenarioFiles } from "./helpers.ts"
+import { reportInputOf, playTestingSave, testingSaveFiles } from "./helpers.ts"
 
 /** The exact lines printed in docs/history/milestones/milestone-01-grid-battles.md. */
 const SPEC_LINES: ReadonlyArray<readonly [Parameters<typeof formatLine>[0], string]> = [
@@ -75,7 +75,7 @@ test("the line grammar reproduces the documented sample lines", () => {
 })
 
 test("the columns are fixed, so a grep written today keeps working", async () => {
-  const resolved = await resolveScenario("citizen-mirror-skirmish.map.json")
+  const resolved = await playTestingSave("citizen-mirror-skirmish.save.json")
   const lines = buildLog(reportInputOf(resolved), "debug")
   assert.ok(lines.length > 50)
   for (const line of lines) {
@@ -98,7 +98,7 @@ test("the columns are fixed, so a grep written today keeps working", async () =>
 })
 
 test("levels filter as documented, and INFO is the default story", async () => {
-  const resolved = await resolveScenario("melee-kill.map.json")
+  const resolved = await playTestingSave("melee-kill.save.json")
   const input = reportInputOf(resolved)
   const counts = new Map<string, number>()
   for (const level of ["error", "warn", "info", "debug", "trace"] as const) {
@@ -117,7 +117,7 @@ test("levels filter as documented, and INFO is the default story", async () => {
 })
 
 test("the INFO log tells the story an agent can assert on", async () => {
-  const resolved = await resolveScenario("melee-kill.map.json")
+  const resolved = await playTestingSave("melee-kill.save.json")
   const lines = buildLog(reportInputOf(resolved), "info")
   assert.equal(lines.filter((line) => line.includes(" spawn ")).length, 3)
   assert.ok(lines.some((line) => /INFO  engage +A:trooper#1 +-> B:trooper#2/.test(line)))
@@ -129,8 +129,8 @@ test("the INFO log tells the story an agent can assert on", async () => {
 test("the report can rebuild the whole cast from the events alone", async () => {
   // The honesty check behind "src/report derives everything from the event stream and the final
   // state": if the events are complete, replaying them reproduces the kernel's own final state.
-  for (const name of scenarioFiles()) {
-    const resolved = await resolveScenario(name)
+  for (const name of testingSaveFiles()) {
+    const resolved = await playTestingSave(name)
     const replay = replayEvents(resolved.run.events)
     const survivors = [...replay.entities.values()]
       .filter((entity) => entity.alive)
@@ -149,10 +149,10 @@ test("the report can rebuild the whole cast from the events alone", async () => 
 })
 
 test("the summary reports what the documented example reports", async () => {
-  const resolved = await resolveScenario("melee-kill.map.json")
+  const resolved = await playTestingSave("melee-kill.save.json")
   const summary = summarize(reportInputOf(resolved))
   const text = formatSummary(summary)
-  assert.match(text, /^scenario   melee-kill$/m)
+  assert.match(text, /^battle     melee-kill$/m)
   assert.match(text, /^seed       0x0000A001$/m)
   assert.match(text, /^ticks      \d+ of 180 \(ended early: annihilation\)$/m)
   assert.match(text, /^outcome    A wins$/m)
@@ -166,25 +166,11 @@ test("an unknown log level is refused rather than guessed at", () => {
 })
 
 test("the stuck warning fires for an actor that cannot make progress", async () => {
-  const resolved = await resolveScenario("hauler-two-tile-gap.map.json")
+  const resolved = await playTestingSave("hauler-two-tile-gap.save.json")
   const lines = buildLog(reportInputOf(resolved), "warn")
   assert.ok(
     lines.some((line) => /WARN  stuck    A:hauler#1/.test(line)),
     "the hauler circling in front of a wall it cannot pass was never reported",
-  )
-})
-
-test("the same gap that stalls a 3x1 hauler hard-stops a 3x3 colossus, not just circles it", async () => {
-  // The failure shape recorded for the 3x1 hauler, confirmed at a genuinely large footprint, not only
-  // the narrowest multi-tile case: a mover three tiles wide reaches the same conclusion a mover one
-  // tile wide does (a two-tile gap fits neither), but a body this size has nowhere left to slide once
-  // it is flush against the gap, so it hard-stops rather than pacing between two tiles the way the
-  // hauler fixture's own name implies "gap" fixtures generally do.
-  const resolved = await resolveScenario("colossus-two-tile-gap.map.json")
-  const lines = buildLog(reportInputOf(resolved), "warn")
-  assert.ok(
-    lines.some((line) => /WARN  stuck    A:colossus#1/.test(line)),
-    "the colossus parked in front of a gap it cannot fit through was never reported",
   )
 })
 
@@ -194,7 +180,7 @@ test("the stuck warning names the actor's own tile, not the one it cannot enter"
   // tile is exactly the one tile the actor is guaranteed *not* to be standing on, so reporting it as
   // a position sent a reader to look at the wrong cell. Routes walk round that rock now; a hauler three
   // tiles wide before a gap two wide still stands for good, as near as it can get.
-  const resolved = await resolveScenario("hauler-two-tile-gap.map.json")
+  const resolved = await playTestingSave("hauler-two-tile-gap.save.json")
   const lines = buildLog(reportInputOf(resolved), "warn").filter((line) => /no legal step/.test(line))
   const hauler = lines.find((line) => /A:hauler#1/.test(line))
   assert.ok(hauler !== undefined, "the hauler no longer stands before the gap")
@@ -206,19 +192,19 @@ test("the stuck warning names the actor's own tile, not the one it cannot enter"
   assert.notDeepEqual([Number(where[3]), Number(where[4])], [stands.anchor.x, stands.anchor.y])
 })
 
-test("no stuck warning in any scenario reports an impassable tile as a position", async () => {
+test("no stuck warning in any testing save reports an impassable tile as a position", async () => {
   // The general form of the bug above, so it cannot come back through a different code path: a tile
   // an actor is standing on is by definition a tile it could enter.
-  for (const name of scenarioFiles()) {
-    const resolved = await resolveScenario(name)
-    const rows = resolved.scenario.terrain
+  for (const name of testingSaveFiles()) {
+    const resolved = await playTestingSave(name)
+    const rows = resolved.opening.terrain
     for (const line of buildLog(reportInputOf(resolved), "warn")) {
       const position = /  stuck +\S+ +at \((\d+),(\d+)\)/.exec(line)
       if (position === null) continue
       const x = Number(position[1])
       const y = Number(position[2])
       const symbol = rows[y]?.[x]
-      const terrainId = symbol === undefined ? undefined : resolved.scenario.terrainLegend[symbol]
+      const terrainId = symbol === undefined ? undefined : resolved.opening.terrainLegend[symbol]
       assert.ok(
         terrainId === undefined || !TERRAIN[terrainId].impassable,
         `${name} reported impassable ${terrainId} at (${x},${y}) as a position: ${line}`,

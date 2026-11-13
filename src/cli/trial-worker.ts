@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import { playTrial } from "../measure/trial.ts"
 import type { TrialBattle, TrialSpec } from "../measure/trial.ts"
-import type { ScenarioDefinition } from "../scenario/types.ts"
+import type { BattleOpening } from "../skirmish/opening/types.ts"
 import { loadEngine } from "./engine.ts"
 import { routeCounter } from "./profile.ts"
 
@@ -15,7 +15,7 @@ import { routeCounter } from "./profile.ts"
 export type TrialJob = Readonly<{
   root: string
   spec: TrialSpec
-  maps: readonly ScenarioDefinition[]
+  maps: readonly BattleOpening[]
   only: readonly number[]
   profile: boolean
   out: string

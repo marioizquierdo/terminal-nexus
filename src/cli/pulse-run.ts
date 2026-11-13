@@ -57,7 +57,7 @@ import { targetRegionsAt } from "../match/index.ts"
 import type { BannerOrder } from "../match/index.ts"
 import { bannerOrder } from "../build/banner.ts"
 import type { MatchState } from "../state/types.ts"
-import { TICKS_PER_SECOND } from "../scenario/load.ts"
+import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
 import { setting } from "../build/all-settings.ts"
 import { status } from "../build/status.ts"
 import { resultOf } from "../view/ending.ts"
@@ -534,7 +534,7 @@ export function missionPlay(mission: MissionDefinition): MissionPlay {
 }
 
 /** The mission the Build Phase's screen plays: PERIMETER's three Battle Rounds, on the starter map — the mission of the
- *  first level of Vasse's campaign (`armies/vasse/army.json`, level `vasse-test-1`). */
+ *  first level of Vasse's story (`armies/vasse/army.json`, level `vasse-test-1`). */
 export const STARTER_MISSION: MissionPlay = missionPlay(PERIMETER)
 
 /** The screen's connections to it, as `BuildSession` takes them. */

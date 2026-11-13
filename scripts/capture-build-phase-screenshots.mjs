@@ -33,7 +33,7 @@ import { mkdirSync, rmSync } from "node:fs"
 import { dirname, join, relative, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseKeyScript } from "../src/playtest/keys.ts"
-import { runBuildPlaytest } from "../src/playtest/build.ts"
+import { playtestOpening, runBuildPlaytest } from "../src/playtest/build.ts"
 import { frameToText } from "../src/view/frame.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
 import { BuildAnimation, FRAME_MS, livePresentation, popupBorderEffect } from "../src/view/build-live.ts"
@@ -77,9 +77,11 @@ const PICK_FIRST_POWER = "n 1"
  *  A `wait~MS` step in `keys` lets a Battle Round on screen run that long on the script's own clock.
  *  `colors` and `theme` are the player's settings in the playtest as well as the picture's, so a
  *  screen that shows them (Settings) says what the picture is. */
-function scripted(name, caption, { keys, expect, cols = 80, rows = 24, colors = "truecolor", theme = "dark", present, experiments }) {
+function scripted(name, caption, { keys, expect, cols = 80, rows = 24, colors = "truecolor", theme = "dark", present, experiments, load, slots }) {
   if (only !== null && only !== name) return
   const run = runBuildPlaytest({ scenes: false,
+    // A shot about the battle starts from a save (`load`, with `slots` as --p1/--p2 take them); one about a mission, on it.
+    ...(load === undefined ? {} : { at: playtestOpening({}, "--keys", { load, ...(slots === undefined ? {} : { slots }) }).at }),
     steps: parseKeyScript(keys),
     columns: cols,
     rows,
@@ -622,6 +624,27 @@ scripted(
 
 popupGif("build-battle-round-opening", { keys: `${PICK_FIRST_POWER} s`, expect: "Battle Round 1", glyphPack: "unicode" })
 
+// A Skirmish's battle, from the saves in `saves/` (the Skirmish milestone: the battle is tested in a Skirmish, a mission
+// only where the shot is about the mission).
+
+scripted(
+  "skirmish-round-4",
+  "A Skirmish from a save, round 4 on the Crossing: Vasse's base built up, Dob Hunter's army regrouped where it fought",
+  { keys: "", expect: "round 4 of 8", load: "saves/crossing-round-4.save.json" },
+)
+
+scripted(
+  "skirmish-spectating",
+  "Spectating: the same save with a script in p1 too - only Explore Map and Start next round, nothing to build",
+  { keys: "", expect: "[s] Start next round", load: "saves/crossing-round-4.save.json", slots: { p1: "script:defensive" } },
+)
+
+scripted(
+  "skirmish-result",
+  "A Skirmish's result: who won and why, then [m] Setup screen, [n] New seed and [enter] Same battle again",
+  { keys: "s wait~20000 wait~20000 Enter s wait~20000 wait~20000", expect: "Setup screen", load: "saves/pocket-short.save.json", slots: { p1: "script:agro" } },
+)
+
 // The early Battle Round shots (`pulse-start`, `pulse-fight` and the rest) were taken against a placeholder Pulse that
 // PERIMETER's raid replaced; they are no longer made. The shots that follow are on PERIMETER.
 
@@ -799,7 +822,7 @@ function live(name, caption, { cols = 80, rows = 24, args = "--colors truecolor 
     "-y",
     String(rows),
     // `--keys Esc`: past round 1's intro before the first frame, so these shots open where they always did.
-    `./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys Esc ${args}`,
+    `./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys Esc ${args}`,
   ])
   waitFor(
     repoRoot,

@@ -1,8 +1,8 @@
 // How what a level offers becomes what the Build Phase offers — its build menu and its Nexus Pulse's hand — and the
-// starter content the screen opens on: what PERIMETER, the first level of Vasse's campaign, offers.
+// starter content the screen opens on: what PERIMETER, the first level of Vasse's story, offers.
 //
 // What can be built and drafted is not chosen here: it is the level's offer (`src/armies`), everything its
-// campaign has unlocked by then. The starter map is the map table's (`./maps.ts`), re-exported here so the
+// story has unlocked by then. The starter map is the map table's (`./maps.ts`), re-exported here so the
 // screens keep reading it where they always have.
 
 import { PERIMETER_LEVEL, creditsOf } from "../armies/index.ts"

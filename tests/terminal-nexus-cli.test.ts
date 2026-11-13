@@ -32,7 +32,7 @@ test("--help prints usage and exits zero without needing a terminal at all", () 
   const result = runTerminalNexus(["--help"])
   assert.equal(result.status, 0)
   assert.match(result.stdout, /terminal-nexus/)
-  assert.match(result.stdout, /Campaign, Challenge, Settings, About, Exit/)
+  assert.match(result.stdout, /Skirmish, Story, Settings, About, Exit/)
 })
 
 test("an unknown --colors is a clear error, not a silent fallback", () => {
@@ -53,12 +53,12 @@ test("an argument the game does not read is refused before any screen, and a rem
   const old = runTerminalNexus(["--build-phase"])
   assert.equal(old.status, 2)
   assert.equal(old.stdout, "")
-  assert.equal(old.stderr, "terminal-nexus: --build-phase is gone: --at 'campaign?level=vasse-test-1' opens its Build Phase.\nterminal-nexus --help lists every option.\n")
-  const several = runTerminalNexus(["--spike", "--fast", "scenarios/rules/melee-kill.map.json"])
+  assert.equal(old.stderr, "terminal-nexus: --build-phase is gone: --at 'story?mission=vasse-test-1' opens its Build Phase.\nterminal-nexus --help lists every option.\n")
+  const several = runTerminalNexus(["--spike", "--fast", "skirmish-testing/rules/melee-kill.save.json"])
   assert.equal(several.status, 2)
-  assert.match(several.stderr, /--spike is gone: --at 'campaign\?level=vasse-test-1'/)
+  assert.match(several.stderr, /--spike is gone: --at 'story\?mission=vasse-test-1'/)
   assert.match(several.stderr, /unknown option --fast\./)
-  assert.match(several.stderr, /unexpected "scenarios\/rules\/melee-kill\.map\.json"\./)
+  assert.match(several.stderr, /unexpected "skirmish-testing\/rules\/melee-kill\.save\.json"\./)
   // A retired option says what changed, its value refused with it.
   const retired = runTerminalNexus(["--tile-width", "2"])
   assert.equal(retired.status, 2)
@@ -74,14 +74,17 @@ test("an unknown --theme is a clear error", () => {
   assert.match(result.stderr, /unknown theme/)
 })
 
-test("--at reaches the screen loop its route names: a campaign level the Build Phase, a title menu place the menu", () => {
+test("--at reaches the screen loop its route names: a story mission and a Skirmish the Build Phase, a title menu place the menu", () => {
   // Same rule as a plain launch: no terminal, no escape sequences, one line — the screen loop's own, which is how
   // this shows which loop the route reached.
   for (const [route, loop] of [
-    ["campaign?level=vasse-test-1&round=2", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
-    ["campaign?level=vasse-test-1", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["story?mission=vasse-test-1&round=2", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["story?mission=vasse-test-1", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
     ["settings", /^terminal-nexus needs an interactive terminal for its menu\.$/],
-    ["challenge", /^terminal-nexus needs an interactive terminal for its menu\.$/],
+    ["skirmish", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["skirmish?seed=7", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["skirmish?load=saves/crossing-round-4.save.json", /^terminal-nexus needs an interactive terminal for the Build Phase\.$/],
+    ["story", /^terminal-nexus needs an interactive terminal for its menu\.$/],
     ["", /^terminal-nexus needs an interactive terminal for its menu\.$/],
   ] as const) {
     const result = runTerminalNexus(["--at", route])
@@ -93,23 +96,27 @@ test("--at reaches the screen loop its route names: a campaign level the Build P
 })
 
 test("a route that is not a place is refused before any screen, every problem at once, naming what exists", () => {
-  const result = runTerminalNexus(["--at", "campaign?level=nowhere&round=9&colour=red"])
+  const result = runTerminalNexus(["--at", "story?mission=nowhere&round=9&colour=red"])
   assert.equal(result.status, 2)
   assert.equal(result.stdout, "")
-  assert.match(result.stderr, /--at "campaign\?level=nowhere&round=9&colour=red" is not a place in the game:/)
-  assert.match(result.stderr, /campaign takes no colour: it reads level and round/)
-  assert.match(result.stderr, /no level "nowhere": the levels are vasse-test-1 \(/)
+  assert.match(result.stderr, /--at "story\?mission=nowhere&round=9&colour=red" is not a place in the game:/)
+  assert.match(result.stderr, /story takes no colour: it reads mission and round/)
+  assert.match(result.stderr, /no mission "nowhere": the missions are vasse-test-1 \(/)
   const place = runTerminalNexus(["--at", "nowhere"])
   assert.equal(place.status, 2)
-  assert.match(place.stderr, /no place named "nowhere": the places are menu, campaign, challenge, settings and about/)
+  assert.match(place.stderr, /no place named "nowhere": the places are menu, skirmish, story, settings and about/)
+  // An old note's route says what replaced it.
+  const old = runTerminalNexus(["--at", "campaign?level=vasse-test-1"])
+  assert.equal(old.status, 2)
+  assert.match(old.stderr, /campaign is Story now: story, or story\?mission=vasse-test-1/)
   assert.doesNotMatch(place.stderr + place.stdout, new RegExp(ESC))
 })
 
-test("--keys and --scroll-margin are refused on a title menu route: only a campaign level reads them", () => {
+test("--keys and --scroll-margin are refused on a title menu route: only a Build Phase reads them", () => {
   for (const argv of [["--at", "settings", "--keys", "Down"], ["--scroll-margin", "20"], ["--at", "menu", "--keys", "q", "--scroll-margin", "20"]]) {
     const result = runTerminalNexus(argv)
     assert.equal(result.status, 2, argv.join(" "))
-    assert.match(result.stderr, /for a campaign level's Build Phase/, argv.join(" "))
+    assert.match(result.stderr, /for a Build Phase/, argv.join(" "))
   }
 })
 
@@ -118,16 +125,51 @@ test("--help documents --at with every place and level, and the one tuning flag"
   // find is a flag nobody can try.
   const result = runTerminalNexus(["--help"])
   assert.match(result.stdout, /--at <route>/)
-  for (const place of ["menu", "campaign", "challenge", "settings", "about"]) assert.match(result.stdout, new RegExp(`^ +${place} +the`, "m"))
-  assert.match(result.stdout, /--at 'campaign\?level=vasse-test-1'/)
-  assert.match(result.stdout, /--at 'campaign\?level=vasse-test-1&round=3'/)
+  for (const place of ["menu", "story", "settings", "about"]) assert.match(result.stdout, new RegExp(`^ +${place} +the`, "m"))
+  assert.match(result.stdout, /^ +skirmish +a Skirmish/m)
+  assert.match(result.stdout, /--at 'story\?mission=vasse-test-1'/)
+  assert.match(result.stdout, /--at 'story\?mission=vasse-test-1&round=3'/)
+  assert.match(result.stdout, /--load <file>/)
+  assert.match(result.stdout, /--p1 <who>, --p2 <who>/)
   assert.match(result.stdout, /vasse-test-1 +Perimeter, rounds 1 to 3/)
   assert.match(result.stdout, /--scroll-margin/)
   assert.match(result.stdout, /jumpStep=12&reducedMotion=true/)
 })
 
+test("--load opens a save at its Build Phase, with --p1 and --p2 as the skirmish command takes them, and refuses what the screen cannot play", () => {
+  const loaded = runTerminalNexus(["--load", "saves/crossing-round-4.save.json", "--p2", "script:turtle"])
+  assert.equal(loaded.status, 0, loaded.stderr)
+  assert.match(loaded.stdout.trimEnd(), /^terminal-nexus needs an interactive terminal for the Build Phase\.$/)
+  // A save the loader refuses is refused by name, every problem at once, before any screen.
+  const missing = runTerminalNexus(["--load", "nowhere.save.json"])
+  assert.equal(missing.status, 2)
+  assert.match(missing.stderr, /^terminal-nexus: cannot read the save nowhere\.save\.json/u)
+  const notSave = runTerminalNexus(["--load", "package.json"])
+  assert.equal(notSave.status, 2)
+  assert.match(notSave.stderr, /package\.json is not a save the game can load:\n {2}format: /u)
+  // The screen plays p1 against a script in p2, or watches two scripts; p2 as its only player waits.
+  const spectating = runTerminalNexus(["--load", "saves/crossing-round-4.save.json", "--p1", "script:rush"])
+  assert.equal(spectating.status, 0, spectating.stderr)
+  const p2Alone = runTerminalNexus(["--load", "saves/crossing-round-4.save.json", "--p1", "script:rush", "--p2", "build:"])
+  assert.equal(p2Alone.status, 2)
+  assert.match(p2Alone.stderr, /p2 as the player is not built yet/u)
+  const versus = runTerminalNexus(["--at", "skirmish", "--p2", "build:"])
+  assert.equal(versus.status, 2)
+  assert.match(versus.stderr, /both slots are players: two players at one screen wait for Versus/u)
+  const unknown = runTerminalNexus(["--at", "skirmish", "--p2", "script:aggro"])
+  assert.equal(unknown.status, 2)
+  assert.match(unknown.stderr, /--p2 script:aggro: no script or profile "aggro"/u)
+  // --p1 and --p2 are a Skirmish's; --load and --at are two ways to say where.
+  const story = runTerminalNexus(["--at", "story?mission=vasse-test-1", "--p2", "script:rush"])
+  assert.equal(story.status, 2)
+  assert.match(story.stderr, /name who plays a Skirmish's slots/u)
+  const both = runTerminalNexus(["--at", "settings", "--load", "saves/crossing-round-4.save.json"])
+  assert.equal(both.status, 2)
+  assert.match(both.stderr, /give one of them/u)
+})
+
 test("a nonsense --scroll-margin is a clear error, not a silently ignored flag", () => {
-  const result = runTerminalNexus(["--at", "campaign?level=vasse-test-1", "--scroll-margin", "wide"])
+  const result = runTerminalNexus(["--at", "story?mission=vasse-test-1", "--scroll-margin", "wide"])
   assert.notEqual(result.status, 0)
   assert.match(result.stderr, /--scroll-margin must be an integer/)
 })

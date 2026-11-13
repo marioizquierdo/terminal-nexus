@@ -1,0 +1,70 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Route: the breach - buildings close the only way, far from the straight line",
+  "notes": "A ridge of rock the whole height of the map with one gap at its top, and the enemy's Barracks standing just past the gap, closing it. Four troopers west of the ridge, the enemy's Grid Nexus east, level with them and far below the gap. Walking as near as they can get would leave them at the rock straight across from the Nexus, where the Barracks is beyond their reach; a unit that tells rock from buildings goes up to the gap and breaks the Barracks. Done when the Barracks falls and then the Nexus.",
+  "setup": {
+    "map": {
+      "id": "route-breach",
+      "rows": [
+        "........................#.......................",
+        "................................................",
+        "................................................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#.......................",
+        "........................#......................."
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 1800,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":10,"y":7},
+      "rows": [
+        "tt",
+        "tt"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"}
+      }
+    },
+    "p2": {
+      "at": {"x":26,"y":1},
+      "rows": [
+        "b",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "              n"
+      ],
+      "legend": {
+        "b": {"content":"structure.citizen.barracks"},
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

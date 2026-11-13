@@ -1,4 +1,4 @@
-// The battles a measurement plays (docs/system-design/measurement.md): a map from `scenarios/` on a seed, a duel
+// The battles a measurement plays (docs/system-design/measurement.md): a map from `skirmish-testing/` on a seed, a duel
 // between two Commanders round by round, and a campaign level played by a fixed plan. Each comes back as the records of
 // its battles (`battle.ts`) and what decided it. Pure: the same inputs measure the same on every machine. Reading the
 // maps from disk, the clock and writing the results down are the command's (`bin/measure.ts`).
@@ -14,33 +14,33 @@ import { createBuildState, withoutScene } from "../build/state.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
-import type { DuelResult, DuelSetup, Side, SidePlan } from "../duel/index.ts"
+import type { DuelResult, DuelSetup, Side, BuildActions } from "../duel/index.ts"
 import { briefOf, newDuel, playRound } from "../duel/index.ts"
 import type { Player } from "../duel/index.ts"
 import { centreTile } from "../match/index.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
-import { loadScenario } from "../scenario/load.ts"
-import type { ScenarioDefinition } from "../scenario/types.ts"
+import { openBattle } from "../skirmish/opening/open.ts"
+import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MatchState } from "../state/types.ts"
 import type { BattleRecord } from "./battle.ts"
 import { BattleRecorder, recordBattle } from "./battle.ts"
 
-/** A map from `scenarios/`, played on one seed. */
-export type ScenarioMeasure = Readonly<{ scenario: string; seed: number; battle: BattleRecord }>
+/** A map from `skirmish-testing/`, played on one seed. */
+export type SaveMeasure = Readonly<{ save: string; seed: number; battle: BattleRecord }>
 
-/** Plays a scenario on `seed` to its end and records it. */
-export function measureScenario(scenario: ScenarioDefinition, seed: number, registry: ContentRegistry = FIXTURE_REGISTRY): ScenarioMeasure {
-  const loaded = loadScenario(scenario, { registry, seed })
-  const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
+/** Plays a testing save's opening on `seed` to its end and records it. */
+export function measureSave(opening: BattleOpening, seed: number, registry: ContentRegistry = FIXTURE_REGISTRY): SaveMeasure {
+  const loaded = openBattle(opening, { registry, seed })
+  const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
   const recorder = new BattleRecorder(loaded.registry)
   let state = loaded.state
   recorder.observe(state, [])
-  while (state.outcome === null && state.tick < scenario.pulseTicks) {
+  while (state.outcome === null && state.tick < opening.pulseTicks) {
     const step = stepTick(state, context)
     state = step.state
     recorder.observe(state, step.events)
   }
-  return { scenario: scenario.id, seed, battle: recorder.record() }
+  return { save: opening.id, seed, battle: recorder.record() }
 }
 
 /** One side of one duel round: the rarities of the hand it was dealt, the rarity of the card it kept (null for none)
@@ -65,7 +65,7 @@ export function measureDuel(setup: DuelSetup, players: Readonly<Record<Side, Rea
   const rounds: DuelRound[] = []
   while (state.result === null) {
     const briefs = { A: briefOf(state, "A").data, B: briefOf(state, "B").data }
-    const plans: Record<Side, SidePlan> = { A: players.A.player(briefs.A), B: players.B.player(briefs.B) }
+    const plans: Record<Side, BuildActions> = { A: players.A.player(briefs.A), B: players.B.player(briefs.B) }
     let recorder: BattleRecorder | null = null
     const played = playRound(state, plans, (battle, events, registry, sides) => {
       recorder ??= new BattleRecorder(registry, sides)
@@ -91,7 +91,7 @@ export function measureDuel(setup: DuelSetup, players: Readonly<Record<Side, Rea
   return {
     commanders: setup.commanders,
     players: { A: players.A.name, B: players.B.name },
-    map: setup.map,
+    map: typeof setup.map === "string" ? setup.map : setup.map.id,
     seed: setup.seed,
     result: state.result as DuelResult,
     rounds,

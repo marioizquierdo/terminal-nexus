@@ -41,7 +41,7 @@ const shots = [
   {
     name: "multicell-open",
     caption: "Small multicell skirmish, tick 0 - a 2x2 sentinel and a 2x1 flying corsair, escorted",
-    scenario: "small-multicell-skirmish",
+    save: "small-multicell-skirmish",
     tick: 0,
     cols: 80,
     rows: 24,
@@ -51,7 +51,7 @@ const shots = [
   {
     name: "multicell-death",
     caption: "Small multicell skirmish, tick 133 - the corsair and its slinger escort both down, mid-collapse",
-    scenario: "small-multicell-skirmish",
+    save: "small-multicell-skirmish",
     tick: 133,
     cols: 80,
     rows: 24,
@@ -61,7 +61,7 @@ const shots = [
   {
     name: "heavies-open",
     caption: "Heavies clash, tick 0 - a 3x3 colossus and a 5x2 leviathan among their 1-tile escorts",
-    scenario: "heavies-clash",
+    save: "heavies-clash",
     tick: 0,
     cols: 80,
     rows: 24,
@@ -74,7 +74,7 @@ const shots = [
     // ending up in multiple debris" is a sequence, and a sequence needs more than one frame to judge.
     name: "heavies-death-impact",
     caption: "Tick 321 - the leviathan dies: the interior ignites, the shockwave already a tile out",
-    scenario: "heavies-clash",
+    save: "heavies-clash",
     tick: 321,
     cols: 80,
     rows: 24,
@@ -90,7 +90,7 @@ const shots = [
     // death choreography long enough to outlast the blow that caused it.
     name: "heavies-death-shockwave",
     caption: "2 presentation ticks past the frozen 0321 footer - the shockwave reaches its full radius",
-    scenario: "heavies-clash",
+    save: "heavies-clash",
     tick: 323,
     afterTick: 321,
     cols: 80,
@@ -101,7 +101,7 @@ const shots = [
   {
     name: "heavies-death-flight",
     caption: "6 ticks past the frozen 0321 footer - pieces mid-arc, scattered irregularly, not a tidy ring",
-    scenario: "heavies-clash",
+    save: "heavies-clash",
     tick: 327,
     afterTick: 321,
     cols: 80,
@@ -112,7 +112,7 @@ const shots = [
   {
     name: "heavies-death-settle",
     caption: "12 ticks past the frozen 0321 footer - every piece landed, scattered around and beyond the 5x2 footprint",
-    scenario: "heavies-clash",
+    save: "heavies-clash",
     tick: 333,
     afterTick: 321,
     cols: 80,
@@ -123,7 +123,7 @@ const shots = [
   {
     name: "heavies-death-monochrome",
     caption: "The same mid-flight instant at the acceptance floor - monochrome ASCII, no colour to lean on",
-    scenario: "heavies-clash",
+    save: "heavies-clash",
     tick: 327,
     afterTick: 321,
     cols: 80,
@@ -136,7 +136,7 @@ const shots = [
     // travel and the launch delay gone, causality (something this size died and left wreckage) kept.
     name: "heavies-death-reduced-motion",
     caption: "The death's very first instant with reduced motion - no travel, every piece already at rest",
-    scenario: "heavies-clash",
+    save: "heavies-clash",
     tick: 321,
     cols: 80,
     rows: 24,
@@ -147,7 +147,7 @@ const shots = [
   {
     name: "mortar-fire",
     caption: "Tick 30 - the mortar's first shell has landed on the block and the ground there burns",
-    scenario: "mortar-burning-ground",
+    save: "mortar-burning-ground",
     tick: 30,
     cols: 80,
     rows: 24,
@@ -155,7 +155,7 @@ const shots = [
   {
     name: "mortar-shelled",
     caption: "Tick 190 - the block stands at its target, shelled, the ground burning under it",
-    scenario: "mortar-burning-ground",
+    save: "mortar-burning-ground",
     tick: 190,
     cols: 80,
     rows: 24,
@@ -163,7 +163,7 @@ const shots = [
   {
     name: "fire-flicker",
     caption: "Tick 45 - the block walks out of the first patch: a faint scorch, red flames low, yellow ones flashing",
-    scenario: "mortar-burning-ground",
+    save: "mortar-burning-ground",
     tick: 45,
     cols: 80,
     rows: 24,
@@ -171,7 +171,7 @@ const shots = [
   {
     name: "march-start",
     caption: "Tick 3 - a mixed army sets out, marksmen and the mortar in front of the troopers",
-    scenario: "march-lines",
+    save: "march-lines",
     tick: 3,
     cols: 80,
     rows: 24,
@@ -179,7 +179,7 @@ const shots = [
   {
     name: "march-lines",
     caption: "Tick 120 - sorted on the move: troopers ahead, marksmen behind them, the mortar further back",
-    scenario: "march-lines",
+    save: "march-lines",
     tick: 120,
     cols: 80,
     rows: 24,
@@ -187,7 +187,7 @@ const shots = [
   {
     name: "march-commander",
     caption: "Tick 100 - Vasse walks in her place across the map: the troopers pass her, the marksmen settle behind her",
-    scenario: "march-commander",
+    save: "march-commander",
     tick: 100,
     cols: 80,
     rows: 24,
@@ -195,7 +195,7 @@ const shots = [
   {
     name: "bomber-burst",
     caption: "Tick 39 - the bomber runs past the lone trooper and bursts in the thickest knot",
-    scenario: "bomber-crowd",
+    save: "bomber-crowd",
     tick: 39,
     cols: 80,
     rows: 24,
@@ -203,7 +203,7 @@ const shots = [
   {
     name: "mirror-open",
     caption: "Tick 0 - both squads placed, nothing has moved",
-    scenario: "citizen-mirror-skirmish",
+    save: "citizen-mirror-skirmish",
     tick: 0,
     cols: 80,
     rows: 24,
@@ -211,7 +211,7 @@ const shots = [
   {
     name: "mirror-first-shots",
     caption: "Tick 112 - the marksmen open fire at range five",
-    scenario: "citizen-mirror-skirmish",
+    save: "citizen-mirror-skirmish",
     tick: 112,
     cols: 80,
     rows: 24,
@@ -219,7 +219,7 @@ const shots = [
   {
     name: "mirror-melee",
     caption: "Tick 160 - troopers in contact, first salvage on the ground",
-    scenario: "citizen-mirror-skirmish",
+    save: "citizen-mirror-skirmish",
     tick: 160,
     cols: 80,
     rows: 24,
@@ -227,7 +227,7 @@ const shots = [
   {
     name: "mirror-monochrome",
     caption: "Tick 160 in monochrome - the acceptance floor",
-    scenario: "citizen-mirror-skirmish",
+    save: "citizen-mirror-skirmish",
     tick: 160,
     cols: 80,
     rows: 24,
@@ -236,7 +236,7 @@ const shots = [
   {
     name: "nexus-falls",
     caption: "Tick 361 - a 3x2 Grid Nexus goes down and ends the Pulse",
-    scenario: "structure-destruction",
+    save: "structure-destruction",
     tick: 361,
     cols: 80,
     rows: 24,
@@ -244,7 +244,7 @@ const shots = [
   {
     name: "hauler-gap",
     caption: "Tick 120 - the 3x1 hauler threading a three-tile gap",
-    scenario: "hauler-three-tile-gap",
+    save: "hauler-three-tile-gap",
     tick: 120,
     cols: 80,
     rows: 24,
@@ -252,7 +252,7 @@ const shots = [
   {
     name: "resize-gate",
     caption: "A 64x18 terminal - below the composition, so playback freezes behind the gate",
-    scenario: "citizen-mirror-skirmish",
+    save: "citizen-mirror-skirmish",
     tick: 0,
     cols: 64,
     rows: 18,
@@ -261,7 +261,7 @@ const shots = [
   {
     name: "ravels-clash",
     caption: "Citizens meet Ravels in the ruined middle - truecolor, Unicode pack, effects on",
-    scenario: "citizens-versus-ravels",
+    save: "citizens-versus-ravels",
     tick: 178,
     cols: 80,
     rows: 24,
@@ -275,7 +275,7 @@ const shots = [
     // anything else is built on it.
     name: "palette-derivation-256",
     caption: "Tick 178, 256-colour tier - derived from rgb vs. the former hand-authored table",
-    scenario: "citizens-versus-ravels",
+    save: "citizens-versus-ravels",
     tick: 178,
     cols: 80,
     rows: 24,
@@ -285,7 +285,7 @@ const shots = [
   {
     name: "ravels-clash-no-effects",
     caption: "The same instant with effects off - the comparison the change is judged on",
-    scenario: "citizens-versus-ravels",
+    save: "citizens-versus-ravels",
     tick: 178,
     cols: 80,
     rows: 24,
@@ -296,7 +296,7 @@ const shots = [
   {
     name: "cascade-blast",
     caption: "The worst frame first - eight fuel wagons and a runner, one tick",
-    scenario: "ravel-cascade",
+    save: "ravel-cascade",
     tick: 25,
     cols: 80,
     rows: 24,
@@ -306,7 +306,7 @@ const shots = [
   {
     name: "cascade-monochrome",
     caption: "The same cascade at the acceptance floor - monochrome ASCII, reduced motion",
-    scenario: "ravel-cascade",
+    save: "ravel-cascade",
     tick: 25,
     cols: 80,
     rows: 24,
@@ -316,7 +316,7 @@ const shots = [
   {
     name: "mirror-light-theme",
     caption: "Tick 160 in the light theme - --theme light",
-    scenario: "citizen-mirror-skirmish",
+    save: "citizen-mirror-skirmish",
     tick: 160,
     cols: 80,
     rows: 24,
@@ -335,7 +335,7 @@ const shots = [
     // the code as it stood before the change) rather than only described.
     name: "easing-blast-ring",
     caption: "Tick 206 - two ticks into B:wagon#20's radius-2 blast, ease-out vs. the old linear ramp",
-    scenario: "citizens-versus-ravels",
+    save: "citizens-versus-ravels",
     tick: 206,
     cols: 80,
     rows: 24,
@@ -348,7 +348,7 @@ const shots = [
     // ring to still read as one explosion, far enough that the hash-seeded sub-burst(s) have started.
     name: "blast-sub-explosions",
     caption: "Tick 207 - B:wagon#20's radius-2 blast, main ring plus its own hash-seeded sub-bursts",
-    scenario: "citizens-versus-ravels",
+    save: "citizens-versus-ravels",
     tick: 207,
     cols: 80,
     rows: 24,
@@ -363,7 +363,7 @@ const shots = [
     // with it normally, no restriction of its own.
     name: "bench-sky-ground-asymmetry",
     caption: "Tick 50 - a flak trooper trades fire with the skyraider; the grunt beside it never even tries",
-    scenario: "bench-sky-ground-asymmetry",
+    save: "bench-sky-ground-asymmetry",
     tick: 50,
     cols: 80,
     rows: 24,
@@ -374,7 +374,7 @@ const shots = [
     // windup + splash: the crawler's first shot, landing on both clustered troopers at once.
     name: "bench-siegecrawler-windup",
     caption: "Tick 58 - the siege crawler's first shot after its windup, splash catching both troopers",
-    scenario: "bench-siegecrawler-windup",
+    save: "bench-siegecrawler-windup",
     tick: 58,
     cols: 80,
     rows: 24,
@@ -386,7 +386,7 @@ const shots = [
     // flak trooper (right) press the attack - the heal and the melee/ranged exchange in one frame.
     name: "bench-medic-support",
     caption: "Tick 48 - the medic heals its trooper mid-melee, the grunt and flak trooper still pressing",
-    scenario: "bench-medic-support",
+    save: "bench-medic-support",
     tick: 48,
     cols: 80,
     rows: 24,
@@ -397,7 +397,7 @@ const shots = [
     // splitOnDeath: the instant the shard-giant falls, two spawnlings appear beside the wreck.
     name: "bench-shardgiant-split",
     caption: "Tick 33 - the shard-giant dies to focused fire and splits into two spawnlings on the spot",
-    scenario: "bench-shardgiant-split",
+    save: "bench-shardgiant-split",
     tick: 33,
     cols: 80,
     rows: 24,
@@ -410,7 +410,7 @@ const shots = [
     // with no new kernel code, all visible at once.
     name: "bench-hog-saboteur-bomber",
     caption: "Tick 49 - hog rider and saboteur ignore the troopers chasing them to keep working the barracks",
-    scenario: "bench-hog-saboteur-bomber",
+    save: "bench-hog-saboteur-bomber",
     tick: 49,
     cols: 80,
     rows: 24,
@@ -437,7 +437,7 @@ function captureGate(shot) {
   killSession(repoRoot, SESSION)
   const command = [
     "./bin/grid.ts",
-    shot.scenario,
+    shot.save,
     ...extraArgsFor(shot),
   ].join(" ")
   tmux(repoRoot, [
@@ -457,7 +457,7 @@ function capture(shot) {
   startWatch(
     repoRoot,
     SESSION,
-    shot.scenario,
+    shot.save,
     shot.cols,
     shot.rows,
     extraArgsFor(shot),

@@ -2,7 +2,7 @@
 // shell around `src/measure/`: it reads the maps, keeps time, asks git for the build and writes the result down.
 // Commands:
 //
-//   measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
+//   measure run [--spec quick|full] [--seeds 1-6] [--parts saves,duels,levels] [--players balanced,rush]
 //               [--formations block,apart] [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
 //       plays the spec and prints what it says; with --out, writes every battle's record as JSON too; with --jobs,
 //       as up to N processes side by side, merged into one result; with --formations, each player's duels set the
@@ -10,7 +10,7 @@
 //   measure merge <file>... [--out <file>]
 //       makes parts of one spec, played apart, one measurement
 //   measure who <content id> [--plan nothing|defended|both] [--levels <id>,<id>]
-//       what one kind of unit or building did in each round of each campaign level
+//       what one kind of unit or building did in each round of each story level
 //   measure show <file>
 //       prints what a measurement written down says
 //   measure compare <before> <after>
@@ -32,17 +32,18 @@ import {
   measureFormations,
   measureUnit,
   mergeMeasurements,
+  readMeasurement,
   runSpec,
   SPECS,
   summaryLines,
   unitLines,
 } from "../measure/index.ts"
-import { TICKS_PER_SECOND } from "../scenario/load.ts"
-import { loadMapFile, mapCatalog } from "../scenario/load-map-file.ts"
+import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
+import { loadTestingSave, testingSaveCatalog } from "../skirmish/testing-saves.ts"
 
 const HELP = `measure: battles measured the same way before and after a rule changes (docs/system-design/measurement.md).
 
-  measure run [--spec quick|full] [--seeds 1-6] [--parts scenarios,duels,levels] [--players balanced,rush]
+  measure run [--spec quick|full] [--seeds 1-6] [--parts saves,duels,levels] [--players balanced,rush]
               [--formations block,apart] [--routing "<words>"] [--question "<words>"] [--jobs N] [--out <file>]
       plays the spec and prints what it says; with --out, writes every battle's record as JSON too. --jobs plays
       it as up to N processes side by side (the maps, the levels, and the duels a few at a time) and merges what
@@ -56,7 +57,7 @@ const HELP = `measure: battles measured the same way before and after a rule cha
       makes parts of one spec, played apart, one measurement, and prints what it says; refuses parts of different
       builds or specs
   measure who <content id> [--plan nothing|defended|both] [--levels <id>,<id>]
-      plays every campaign level (or those named) by the plan and says what that unit or building did in each
+      plays every story level (or those named) by the plan and says what that unit or building did in each
       round: hits on the enemy, damage, kills and when it first hit. Run it before telling anyone to watch a
       unit do something in a round
   measure show <file>
@@ -67,10 +68,10 @@ const HELP = `measure: battles measured the same way before and after a rule cha
       plays four Barracks built three ways (a block, set apart, a line) against each other and against a blast, and
       says how tight each army meets the enemy and who wins; --exit is the "Way off the roof" Experiment's value
 
-The quick spec plays the route scenarios and one scripted player's duels on two seeds; the full spec every map, three
-players' duels and every campaign level by its plans on six seeds. --routing names the rules it measured (the routes,
+The quick spec plays the route saves and one scripted player's duels on two seeds; the full spec every map, three
+players' duels and every story level by its plans on six seeds. --routing names the rules it measured (the routes,
 the Nexus, a tier), in a few words, for the record. A build ending "+uncommitted" was measured with changes to the
-code, armies, campaigns or maps not yet committed.`
+code, armies, stories or maps not yet committed.`
 
 type Options = Record<string, string>
 
@@ -107,19 +108,19 @@ function seedsOf(text: string): number[] {
   })
 }
 
-/** The commit measured, "+uncommitted" when what a battle is made of (the code, the armies, the campaigns, the maps)
+/** The commit measured, "+uncommitted" when what a battle is made of (the code, the armies, the stories, the maps)
  *  differs from it, new files included: a result is only as named as its build. A document being written is not. */
 function build(): string {
   try {
     const head = execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim()
-    const changed = execSync("git status --porcelain -- src bin armies campaigns scenarios", { encoding: "utf8" }).trim() !== ""
+    const changed = execSync("git status --porcelain -- src bin armies stories skirmish-testing", { encoding: "utf8" }).trim() !== ""
     return changed ? `${head}+uncommitted` : head
   } catch {
     return "unknown"
   }
 }
 
-const read = (path: string): Measurement => JSON.parse(readFileSync(path, "utf8")) as Measurement
+const read = (path: string): Measurement => readMeasurement(readFileSync(path, "utf8"))
 
 /** What a merge prints and writes down. */
 function finish(measurement: Measurement, out: string | undefined): number {
@@ -225,7 +226,7 @@ export async function main(args: readonly string[]): Promise<number> {
       ...(options["formations"] === undefined ? {} : { formations: options["formations"].split(",") }),
     },
   }
-  const parts = new Set((options["parts"] ?? "scenarios,duels,levels").split(","))
+  const parts = new Set((options["parts"] ?? "saves,duels,levels").split(","))
   const jobs = Number(options["jobs"] ?? "1")
   if (!Number.isInteger(jobs) || jobs < 1) throw new Error(`--jobs takes a whole number from 1, not "${options["jobs"]}"`)
   if (jobs > 1) {
@@ -239,11 +240,11 @@ export async function main(args: readonly string[]): Promise<number> {
     ])
     return finish(mergeMeasurements(played, spec, Math.min(jobs, played.length)), options["out"])
   }
-  const scenarios = await Promise.all(
-    mapCatalog().map((entry) => loadMapFile(entry.path)),
+  const saves = await Promise.all(
+    testingSaveCatalog().map((entry) => loadTestingSave(entry.path)),
   )
   const started = performance.now()
-  const result = runSpec(spec, { scenarios, levels: LEVELS, parts, progress: (line) => process.stderr.write(`${line}\n`) })
+  const result = runSpec(spec, { saves, levels: LEVELS, parts, progress: (line) => process.stderr.write(`${line}\n`) })
   const elapsed = performance.now() - started
   const measurement: Measurement = {
     spec: spec.name,
@@ -252,7 +253,7 @@ export async function main(args: readonly string[]): Promise<number> {
     routing: options["routing"] ?? "not named",
     ...(options["question"] === undefined ? {} : { question: options["question"] }),
     msPerTick: result.ticks === 0 ? null : Math.round((elapsed / result.ticks) * 1000) / 1000,
-    scenarios: result.scenarios,
+    saves: result.saves,
     duels: result.duels,
     levels: result.levels,
   }

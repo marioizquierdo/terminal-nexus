@@ -1,0 +1,372 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/marioizquierdo/terminal-nexus/saves/save.schema.json",
+  "title": "Terminal Nexus Skirmish save",
+  "description": "A Skirmish's setup and the battle as it stands at the opening of a Build Phase, or, for a testing save (skirmish-testing/), the first Battle Round a person writes by hand in start (docs/system-design/skirmish-saves.md). The loader, src/skirmish/save.ts, is the authority: it checks what a schema cannot (a Commander, a script, a map's rows, units that fit the ground).",
+  "type": "object",
+  "required": [
+    "format",
+    "setup"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "terminal-nexus.save/1"
+    },
+    "name": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "setup": {
+      "type": "object",
+      "required": [
+        "map",
+        "seed",
+        "goal",
+        "modifiers",
+        "rounds",
+        "roundTicks",
+        "slots"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "map": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "A built-in map by id: crossing, pocket."
+            },
+            {
+              "type": "object",
+              "description": "A map drawn in full: rows of text (. open, # rock, * deposit unless a legend says otherwise), and each slot's Nexus (its north-west tile) and where its troops hold. A testing save, whose start places the Nexuses, may leave out nexus and hold.",
+              "required": [
+                "id",
+                "rows"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "string"
+                },
+                "rows": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                },
+                "legend": {
+                  "type": "object",
+                  "description": "The ground each character of the rows is (terrain.plain, terrain.rock, terrain.deposit, terrain.scrub). A battle the duel plays reads only . # * as they are.",
+                  "additionalProperties": {
+                    "type": "string",
+                    "pattern": "^terrain\\."
+                  }
+                },
+                "nexus": {
+                  "type": "object",
+                  "required": [
+                    "p1",
+                    "p2"
+                  ],
+                  "properties": {
+                    "p1": {
+                      "$ref": "#/$defs/tile"
+                    },
+                    "p2": {
+                      "$ref": "#/$defs/tile"
+                    }
+                  }
+                },
+                "hold": {
+                  "type": "object",
+                  "required": [
+                    "p1",
+                    "p2"
+                  ],
+                  "properties": {
+                    "p1": {
+                      "$ref": "#/$defs/area"
+                    },
+                    "p2": {
+                      "$ref": "#/$defs/area"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "seed": {
+          "type": "integer"
+        },
+        "goal": {
+          "enum": [
+            "elimination"
+          ]
+        },
+        "modifiers": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "fast-rounds",
+              "double-income"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "Named rules over the battle: fast-rounds (each Battle Round half as long), double-income (every side's round income doubled)."
+        },
+        "rounds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "roundTicks": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Ticks a Battle Round lasts at most, 12 a second."
+        },
+        "slots": {
+          "type": "object",
+          "required": [
+            "p1",
+            "p2"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "p1": {
+              "$ref": "#/$defs/slot"
+            },
+            "p2": {
+              "$ref": "#/$defs/slot"
+            }
+          }
+        }
+      }
+    },
+    "state": {
+      "type": "object",
+      "description": "Written by the game: the duel's state between rounds (DuelState, src/duel/types.ts) without its setup and without the map's ground, in the engine's words (side A is p1, side B is p2).",
+      "required": [
+        "round",
+        "carried",
+        "sides",
+        "history",
+        "result"
+      ],
+      "properties": {
+        "round": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "carried": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "sides": {
+          "type": "object",
+          "required": [
+            "A",
+            "B"
+          ]
+        },
+        "history": {
+          "type": "array"
+        },
+        "result": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      }
+    },
+    "draft": {
+      "type": "object",
+      "description": "A slot's plan so far this Build Phase (the duel's plan, docs/system-design/duels.md).",
+      "additionalProperties": false,
+      "properties": {
+        "p1": {
+          "$ref": "#/$defs/plan"
+        },
+        "p2": {
+          "$ref": "#/$defs/plan"
+        }
+      }
+    },
+    "start": {
+      "type": "object",
+      "description": "A testing save: what each slot places by hand before round 1, its first Battle Round opened from it exactly. Its slots are script:idle, rounds is 1, and it has no state or draft.",
+      "additionalProperties": false,
+      "properties": {
+        "p1": {
+          "$ref": "#/$defs/start"
+        },
+        "p2": {
+          "$ref": "#/$defs/start"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "tile": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer"
+        },
+        "y": {
+          "type": "integer"
+        }
+      }
+    },
+    "area": {
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer"
+        },
+        "y": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "required": [
+        "controller"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "commander": {
+          "type": "string",
+          "description": "vasse, averno or dob. Needed unless the save has a start, whose units are given."
+        },
+        "controller": {
+          "type": "string",
+          "pattern": "^(player(:.+)?|script:.+|agent:.+)$",
+          "description": "player, script:<profile or script> (profiles are players/scripts/*.json) or agent:<profile> (not built yet)."
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "credits": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 10,
+              "description": "The slot's share of the curve's income, 1 unless set."
+            }
+          }
+        }
+      }
+    },
+    "start": {
+      "type": "object",
+      "description": "One slot's start: its units and buildings as rows of text from at (one character a tile, the centre tile of what the legend names, a space nothing), and where its troops head (none: the enemy Nexus).",
+      "additionalProperties": false,
+      "properties": {
+        "at": {
+          "$ref": "#/$defs/tile"
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "legend": {
+          "type": "object",
+          "propertyNames": {
+            "minLength": 1,
+            "maxLength": 1
+          },
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "content"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "content": {
+                "type": "string"
+              },
+              "hp": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Starting health, when it does not start whole."
+              }
+            }
+          }
+        },
+        "target": {
+          "$ref": "#/$defs/area"
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "properties": {
+        "power": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "build": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "building"
+            ]
+          }
+        },
+        "formation": {
+          "enum": [
+            "block",
+            "apart",
+            "zones"
+          ]
+        },
+        "stance": {
+          "enum": [
+            "attack",
+            "hold"
+          ]
+        },
+        "hold": {
+          "type": "array"
+        },
+        "actions": {
+          "type": "array"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "id": "averno",
   "title": "Marshal Averno",
-  "notes": "Marshal Averno, the second Citizen Commander: the mirror. His army requires the Citizen faction for its buildings and the Ravel faction for the two cards that leak to him from the Ravel Nexus (Raider Contract, Runner Crew: each marked from ravel, and dealt only by a schedule slot that asks for that Nexus). His campaign is campaigns/averno.",
+  "notes": "Marshal Averno, the second Citizen Commander: the mirror. His army requires the Citizen faction for its buildings and the Ravel faction for the two cards that leak to him from the Ravel Nexus (Raider Contract, Runner Crew: each marked from ravel, and dealt only by a schedule slot that asks for that Nexus). His story is stories/averno.",
   "requires": ["citizen", "ravel"],
   "content": [
     {
@@ -79,7 +79,6 @@
       {"unit": "unit.citizen.trooper", "count": 3},
       {"unit": "unit.citizen.marksman", "count": 2}
     ],
-    "run": {"buildings": ["barracks", "depot", "turret"], "powers": ["reserve-callup", "drill-schedule"]},
     "schedule": [
       {"round": 1, "deal": ["common", "common", "uncommon"]},
       {"round": 2, "deal": ["common", "uncommon", {"from": "ravel"}]},

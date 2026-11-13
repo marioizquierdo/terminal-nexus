@@ -1,6 +1,6 @@
 ---
 name: feedback-round
-description: Run one round of owner (Mario) feedback end to end — log his words item by item, add the round as a step on the current milestone, split the work across parallel agents in worktrees, merge and reconcile it, update the design documents, regenerate the screenshots, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback, a pasted settings export or an Activity Logs export, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
+description: Run one round of owner (Mario) feedback end to end — log his words item by item, add the round as a step on the current milestone, split the work across parallel agents in worktrees, merge and reconcile it, update the design documents, regenerate the screenshots, republish the playable page, and rewrite the pull request. Use whenever Mario sends playtest feedback, a pasted settings export, an Activity Logs export or playtest note files, or when a change is big enough to split across several agents. Read it before spawning your first worktree agent.
 ---
 # A feedback round, start to finish
 
@@ -17,9 +17,19 @@ only half is (round 3's "keep scrolling while armed": the agent built "a click a
 the scrolling half); a **pasted settings export** (answers, not description: start the game with it,
 `--settings "<text>"`); a **pasted Activity Logs export** (its header names the build and the filter,
 each line is one event, oldest first: replay the moment with his settings and the keys it implies, and
-read it against the event's description in `src/log/activity.ts`); an ambiguity to register rather
-than guess ("press `b`": a letter, or the building's digit?). Screenshots and voice notes arrive as
-ordinary text and pictures: log them the same way.
+read it against the event's description in `src/log/activity.ts`); **playtest notes** (`*.note.json`, from
+`~/.terminal-nexus/notes/`, or pasted from the browser page's text box: the `!` key writes one, on any
+screen); an ambiguity to register rather than guess ("press `b`": a letter, or the building's digit?).
+Screenshots and voice notes arrive as ordinary text and pictures: log them the same way.
+
+**A note is the moment itself**, not a description of how to reach it (`src/cli/notes.ts`). Read its `line` (his words:
+log it verbatim like any other item), its `screen` (what he was looking at, as text), its `activity` (the last events,
+oldest first) and its `pressed` (every named command since the round opened, with milliseconds). Then open it:
+`node scripts/playtest.mjs --note <file> --print final` shows that exact screen, the round opened from the note's
+`save` (a Skirmish) or its `at` route (a story mission) with its `settings`, its commands replayed at their times; add
+`--keys` to go on from there, and `--png final` for the picture the log quotes. `terminal-nexus --note <file>` opens it
+live. A title menu note has no commands: it opens on its screen (`at`). A note is not the replay format: only the
+build that wrote it (`build`) promises to replay it, so open it on that commit when the rules have moved since.
 
 Log it before building: `docs/history/feedback/<date>-<round>.md`, one `### F<n>` per point, numbered
 on from the last log, his words verbatim in a blockquote, then a status (**Built**, **Scheduled**,

@@ -101,12 +101,12 @@ function noteText(side: BuildSide): string {
 
 // --- The game menu's row ----------------------------------------------------------------------------
 
-test("the game menu has [a] Activity logs between Controls and Restart, saying what it is for", () => {
-  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "restart", "quit"])
+test("the game menu has [a] Activity logs between Controls and Save game, saying what it is for", () => {
+  assert.deepEqual(GAME_MENU_ROWS, ["settings", "controls", "activity", "save", "restart", "quit"])
   const side = session()
   keys(side, ESC)
   const text = screenText(side)
-  assert.match(text, /\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[r\] Restart/)
+  assert.match(text, /\[c\] Controls and hotkeys[\s\S]*\[a\] Activity logs[\s\S]*\[v\] Save game[\s\S]*\[r\] Restart/)
   assert.ok(text.includes(ACTIVITY_DESCRIPTION), "the row does not say what it is for")
 })
 
@@ -658,7 +658,7 @@ test("the live screen records where it started, and hands an Activity Logs expor
     columns: 80,
     rows: 24,
     colors: "monochrome",
-    at: "campaign?level=vasse-test-1",
+    at: "story?mission=vasse-test-1",
   })
   const resized = log.entries().filter((entry) => entry.event === "session.resize")
   assert.deepEqual(resized.map((entry) => entry.props), [{ columns: 104, rows: 32 }])

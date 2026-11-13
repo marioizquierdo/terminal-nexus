@@ -1,7 +1,7 @@
 {
   "id": "dob",
   "title": "Dob Hunter",
-  "notes": "Dob Hunter, the Ravel Nexus's gambler (commander-armies.md): variance as a build. His army requires the Ravel faction and brings his unit and his own powers. Where a Citizen plans, Dob posts a price: his Bounty pays credits for what falls near him, so his economy is the fight itself, and his Loaded Dice make every exchange a throw. He has no campaign yet; he plays in duels (src/duel/).",
+  "notes": "Dob Hunter, the Ravel Nexus's gambler (commander-armies.md): variance as a build. His army requires the Ravel faction and brings his unit and his own powers. Where a Citizen plans, Dob posts a price: his Bounty pays credits for what falls near him, so his economy is the fight itself, and his Loaded Dice make every exchange a throw. He has no story yet; he plays in duels (src/duel/).",
   "requires": ["ravel"],
   "content": [
     {
@@ -88,7 +88,6 @@
     "faction": "ravel",
     "lean": ["economy", "commander"],
     "start": [{"unit": "unit.ravel.runner", "count": 5}, {"unit": "unit.ravel.slinger", "count": 2}],
-    "run": {"buildings": ["den", "stash", "turret"], "powers": ["scrap-rush", "hot-shift"]},
     "portrait": [" ,$, ", "(^_~)", "/{$}\\"],
     "portraitFalls": [[" ,$, ", "(O_O)", "/{$}\\"], [" *$* ", "(x_x)", "/{$}\\"]],
     "barks": {

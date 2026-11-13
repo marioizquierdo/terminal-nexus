@@ -68,10 +68,10 @@ day its own battle or mission needs it. Nothing here is more authorized than it 
   ([`story.md`](../game-design/story.md), the opponents a mission brings) may not need it, so a level
   pulls it in only once a mission actually hides something from the player.
 - **Replay format.** The full game log: content locks, hashes, versions, committed plans per Build Phase,
-  and a `verify` path that re-simulates recorded inputs rather than re-running a scenario file.
+  and a `verify` path that re-simulates recorded inputs rather than re-running a testing save.
   [`replay-format.md`](../system-design/replay-format.md) is the starting design and works through why a
   persisted recording replays soundly. `grid` today hashes final state and the ordered event stream and
-  `grid --verify` re-resolves a scenario, which proves the kernel is deterministic but not that a
+  `grid --verify` re-resolves a testing save, which proves the kernel is deterministic but not that a
   *recording* can be replayed. It is the first thing worth doing once a level's own save or replay needs
   force the question.
 
@@ -175,6 +175,28 @@ for it because we don't know the gameplay yet." The ideas, from how roguelikes c
 - Arming a building where the last one of its kind went (Crawl and Cogmind start on the last target).
 
 Which keys is the open part: Tab is focus, and the left hand's letters are hotkeys.
+
+## Skirmish follow-ups (found while building it, 2026-11-12)
+
+Small things noticed while the Skirmish milestone was built and tested, none needed for it:
+
+- **A testing save that opens on a Build Phase**: a testing save's `start` places units and buildings, but not a side's
+  credits or roster, so it can only open on a Battle Round. Adding both would let a testing save show a Build Phase with
+  units already in place.
+- **The round limit on the setup screen**: a loaded save keeps its own limit (the Pocket example's 4) when it goes back to
+  New game, and the setup screen does not show the limit at all. A Rounds row, or the limit in the summary line.
+- **A note's settings as lines**: a playtest note keeps the settings export as one JSON string; its lines would read
+  better.
+- **The battle log's spawn lines**: at `info` a 100-round log is about 3 MB, most of it units coming out of buildings. A
+  spawn could log at `debug`, if the grid reports' tests allow it.
+- **Carrying on the last save** from a bare launch: still the open idea in the routing page, the owner's call.
+
+## Units circling in a lane (found 2026-11-12)
+
+Running the testing saves after they moved to `skirmish-testing/`: `engage/engage-lanes-melee-vs-mix` warns of units
+"circling" between two tiles in a lane, and `movement/route-breach`, `showcase/heavies-clash` and
+`rules/tick-limit-draw` warn of stuck units. The last three look expected for what they test; the lane circling may be a
+routing case worth a testing save of its own before the pathfinding is next touched.
 
 ## Decisions fine to leave open for now
 

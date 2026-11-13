@@ -1,4 +1,4 @@
-// `grid`'s trials (docs/system-design/testing-ground.md): a trial file (`scenarios/trials/*.trial.json`) or one map
+// `grid`'s trials (docs/system-design/testing-ground.md): a trial file (`skirmish-testing/trials/*.trial.json`) or one map
 // played over many seeds (`grid <map> --seeds 1-12`), as it is and as the command line's variant changes it. The
 // summary printed; the battles written down with `--out`, set against a file written before with `--baseline`, or
 // against another build played there and then with `--against <ref>`; split across processes with `--jobs`; what a
@@ -20,15 +20,15 @@ import { routeCounter } from "./profile.ts"
 import { TickRoutes } from "../pulse/routes.ts"
 import { DistanceField } from "../routing/index.ts"
 import type { TrialJob, TrialJobResult } from "./trial-worker.ts"
-import { loadMapFile, SCENARIOS_ROOT } from "../scenario/load-map-file.ts"
-import type { ScenarioDefinition } from "../scenario/types.ts"
-import type { Variant } from "../scenario/variant.ts"
-import { VariantError } from "../scenario/variant.ts"
+import { loadTestingSave, TESTING_ROOT } from "../skirmish/testing-saves.ts"
+import type { BattleOpening } from "../skirmish/opening/types.ts"
+import type { Variant } from "../skirmish/opening/variant.ts"
+import { VariantError } from "../skirmish/opening/variant.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { ParsedArgs } from "./args.ts"
 
 export const TRIAL_FILE_SUFFIX = ".trial.json"
-export const TRIALS_ROOT = join(SCENARIOS_ROOT, "trials")
+export const TRIALS_ROOT = join(TESTING_ROOT, "trials")
 
 /** The checked-in trials, as `{ id, path }`, sorted. */
 export function trialCatalog(root: string = TRIALS_ROOT): { id: string; path: string }[] {
@@ -101,13 +101,13 @@ export function variantFromArgs(args: ParsedArgs): Variant | null {
 }
 
 /** A trial of one map from the command line: the map as built, and beside it the variant its options ask for. */
-export function adHocTrial(scenario: ScenarioDefinition, args: ParsedArgs): TrialSpec {
+export function adHocTrial(opening: BattleOpening, args: ParsedArgs): TrialSpec {
   const variant = variantFromArgs(args)
   const ticks = args.options.get("ticks")
   const asBuilt: Variant = ticks === undefined ? {} : { ticks: Number(ticks) }
   return {
-    id: scenario.id,
-    maps: [scenario.id],
+    id: opening.id,
+    maps: [opening.id],
     seeds: parseSeeds(args.options.get("seeds") ?? "1-12"),
     shuffle: args.flags.has("shuffle"),
     swap: args.flags.has("swap"),
@@ -121,7 +121,7 @@ const WORKER = resolve(import.meta.dirname, "trial-worker.ts")
  * Plays `spec` by the build at `root`: in this process when it is this build and one job is asked, else split across
  * `jobs` worker processes, each its share of the battles, merged back in the trial's order.
  */
-async function playBy(root: string, spec: TrialSpec, maps: ReadonlyMap<string, ScenarioDefinition>, jobs: number, profile: boolean, progress: (done: number, total: number) => void): Promise<TrialBattle[]> {
+async function playBy(root: string, spec: TrialSpec, maps: ReadonlyMap<string, BattleOpening>, jobs: number, profile: boolean, progress: (done: number, total: number) => void): Promise<TrialBattle[]> {
   const total = trialRuns(spec).length
   if (root === OWN_ROOT && jobs <= 1) {
     const counter = profile ? routeCounter(() => performance.now(), TickRoutes, DistanceField) : null
@@ -171,7 +171,7 @@ async function withCheckout<T>(ref: string, use: (root: string) => Promise<T>): 
 }
 
 /** Plays `spec`, prints its summary (or its cells as JSON), writes its battles to `--out`; 1 when an expectation fails. */
-export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: ScenarioDefinition): Promise<number> {
+export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: BattleOpening): Promise<number> {
   // A trial file run with variant options plays every variant with them on top (`--tune runner.maxHp=24`); its
   // `--swap` and `--shuffle` turn those on; `--seeds` plays other seeds.
   const seedsOption = args.options.get("seeds")
@@ -183,8 +183,8 @@ export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: Sc
     ...(preloaded === undefined && args.flags.has("swap") ? { swap: true } : {}),
     ...(preloaded === undefined && args.flags.has("shuffle") ? { shuffle: true } : {}),
   }
-  const maps = new Map<string, ScenarioDefinition>()
-  for (const id of played.maps) maps.set(id, preloaded !== undefined && preloaded.id === id ? preloaded : await loadMapFile(id))
+  const maps = new Map<string, BattleOpening>()
+  for (const id of played.maps) maps.set(id, preloaded !== undefined && preloaded.id === id ? preloaded : await loadTestingSave(id))
   const quiet = args.flags.has("json")
   const profile = args.flags.has("profile")
   const jobs = Number(args.options.get("jobs") ?? "1")

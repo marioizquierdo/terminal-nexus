@@ -38,6 +38,10 @@ const VALUE_OPTIONS = new Set([
   "at",
   "settings",
   "keys",
+  // The game's Skirmish (src/cli/terminal-nexus.ts): a save file to open, and who plays each slot.
+  "load",
+  "p1",
+  "p2",
 ])
 
 /**

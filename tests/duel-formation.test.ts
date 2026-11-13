@@ -6,9 +6,9 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { roundLines } from "../src/cli/duel.ts"
-import type { DuelState, Formation, RoundReport, SidePlan } from "../src/duel/index.ts"
-import { APART_GAP, briefOf, duelArmy, loadoutOf, newDuel, playRound, readPlan, SCRIPTED, scriptedName, scriptedPlayer } from "../src/duel/index.ts"
+import { roundLines } from "../src/skirmish/lines.ts"
+import type { DuelState, Formation, RoundReport, BuildActions } from "../src/duel/index.ts"
+import { APART_GAP, briefOf, duelArmy, loadoutOf, newDuel, playRound, readBuildActions, SCRIPTED, scriptedName, scriptedPlayer } from "../src/duel/index.ts"
 import { footprintDistance, footprintSteps } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { MeasureSpec } from "../src/measure/index.ts"
@@ -26,7 +26,7 @@ const anchorsOf = (report: RoundReport, side: "A" | "B"): Coord[] =>
 /** Two rounds of a side building `count` then `more` of `building` forward by `formation`, both sides alike, holding
  *  through a battle too short to reach anything, so the first round's buildings stand in the second. */
 function twoRounds(commander: string, building: string, formation: Formation): RoundReport[] {
-  const plan = (count: number): SidePlan => ({ power: 0, build: Array.from({ length: count }, () => ({ building, at: "forward" as const })), formation, stance: "hold" })
+  const plan = (count: number): BuildActions => ({ power: 0, build: Array.from({ length: count }, () => ({ building, at: "forward" as const })), formation, stance: "hold" })
   let state: DuelState = newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 24, commanders: { A: commander, B: commander } })
   const reports: RoundReport[] = []
   for (const count of [3, 5]) {
@@ -114,11 +114,11 @@ test("zones is how every plan placed before formations: the same duel, building 
 })
 
 test("a model's plan states a formation, read like any other field, and the brief says what a formation wins and loses", () => {
-  const read = readPlan('{"power": 0, "build": ["den"], "formation": "apart", "stance": "attack"}')
-  assert.deepEqual(read.plan, { power: 0, build: [{ building: "den" }], formation: "apart", stance: "attack" })
+  const read = readBuildActions('{"power": 0, "build": ["den"], "formation": "apart", "stance": "attack"}')
+  assert.deepEqual(read.actions, { power: 0, build: [{ building: "den" }], formation: "apart", stance: "attack" })
   assert.deepEqual(read.problems, [])
-  const wrong = readPlan('{"build": [], "formation": "tight", "stance": "hold"}')
-  assert.equal(wrong.plan.formation, undefined)
+  const wrong = readBuildActions('{"build": [], "formation": "tight", "stance": "hold"}')
+  assert.equal(wrong.actions.formation, undefined)
   assert.deepEqual(wrong.problems, ['"formation" should be "block", "apart", "zones"; each building goes where its "at" says'])
   const brief = briefOf(newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" } }), "A")
   for (const words of ["## How tight your army fights", "come out on the roofs", "an area attack catches few", '"formation"', '"block"', '"apart"', "What their buildings can train", "bursts for"]) {
@@ -130,7 +130,7 @@ test("a model's plan states a formation, read like any other field, and the brie
 const TINY: MeasureSpec = {
   name: "tiny",
   seeds: [1],
-  scenarios: "routes",
+  saves: "routes",
   duels: { map: "pocket", rounds: 2, pulseTicks: 240, commanders: ["vasse", "dob"], players: ["rush"], formations: ["block", "apart"] },
   levels: [],
   plans: LEVEL_PLANS,
@@ -147,14 +147,14 @@ test("a measurement sets formations against each other from both ends, splits an
   assert.deepEqual(playerPairs({ ...TINY.duels, formations: ["block"] }, "rush"), [{ A: "rush-block", B: "rush-block" }])
   assert.equal(pairingIndex(TINY.duels, { A: "rush-apart", B: "rush-block" }), 1)
   const parts = new Set(["duels"])
-  const whole = runSpec(TINY, { scenarios: [], levels: [], parts })
+  const whole = runSpec(TINY, { saves: [], levels: [], parts })
   assert.equal(whole.duels.length, 2 * 2 * 2)
   assert.deepEqual(
     whole.duels.slice(0, 4).map((duel) => duel.players),
     Array.from({ length: 4 }, () => ({ A: "rush-block", B: "rush-apart" })),
   )
-  const written = (duels: typeof whole.duels) => ({ spec: "tiny", build: "abc", date: "2026-10-21", routing: "test", msPerTick: 1, scenarios: [], duels, levels: [] })
-  const played = jobsOf(TINY, parts).map((job) => written(runSpec({ ...TINY, seeds: job.seeds, duels: { ...TINY.duels, players: job.players, west: job.west } }, { scenarios: [], levels: [], parts }).duels))
+  const written = (duels: typeof whole.duels) => ({ spec: "tiny", build: "abc", date: "2026-10-21", routing: "test", msPerTick: 1, saves: [], duels, levels: [] })
+  const played = jobsOf(TINY, parts).map((job) => written(runSpec({ ...TINY, seeds: job.seeds, duels: { ...TINY.duels, players: job.players, west: job.west } }, { saves: [], levels: [], parts }).duels))
   assert.deepEqual(mergeMeasurements([...played].reverse(), TINY).duels, whole.duels)
   const summary = summaryLines(written(whole.duels)).join("\n")
   assert.match(summary, /players set against each other \(8 duels, from both ends\):\n {4}rush-block v rush-apart: rush-block \d, rush-apart \d, draw \d; \d by a Nexus falling/u)

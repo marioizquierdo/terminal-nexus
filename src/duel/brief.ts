@@ -1,8 +1,8 @@
 // What a duel side is told before it plans a round (`briefOf`): one brief, two forms — `data`, for a script, and `text`,
-// the same facts written out for a language model (docs/system-design/duels.md, "Playing with a model"). Everything
+// the same facts written out for a language model (docs/system-design/duels.md, "The brief and the build actions"). Everything
 // in it is what a player on the Build Phase screen could see: their own army, credits, hand and map; the enemy's
 // buildings and units where they stand, its Nexus's health and the powers it has kept (kept powers are public:
-// commander-armies.md, catch-up); and what happened last round. The enemy's plan for this round is never in it.
+// commander-armies.md, catch-up); and what happened last round. The enemy's build actions for this round are never in it.
 //
 // Pure: the same duel gives the same brief. Presentation of the duel, so it may read the art and card tables.
 
@@ -286,7 +286,7 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
  *  plan it is asked for. */
 export function briefText(data: BriefData, strategies?: string): string {
   const lines: string[] = []
-  lines.push(`# Duel, round ${data.round} of ${data.rounds}: you are side ${data.side}, base in the ${data.base}`)
+  lines.push(`# Skirmish, round ${data.round} of ${data.rounds}: you are ${data.side === "A" ? "p1" : "p2"} (side ${data.side}), base in the ${data.base}`)
   lines.push("")
   lines.push(`You lead ${data.commander.name} (${data.commander.stats}). ${data.commander.card}`)
   for (const skill of data.commander.skills) lines.push(`- ${skill}`)
@@ -310,7 +310,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push("")
   if (data.actions.length > 0) {
     lines.push("## What your buildings can do (by x, y and action id)")
-    lines.push("An upgrade is bought with credits and kept by that one building for the rest of the duel; a mode is a state it stays in until switched; an order is for this round only.")
+    lines.push("An upgrade is bought with credits and kept by that one building for the rest of the battle; a mode is a state it stays in until switched; an order is for this round only.")
     const at = new Map<string, BriefAction[]>()
     for (const action of data.actions) at.set(`${action.x},${action.y}`, [...(at.get(`${action.x},${action.y}`) ?? []), action])
     for (const [where, own] of at) {
@@ -352,8 +352,8 @@ export function briefText(data: BriefData, strategies?: string): string {
     lines.push(strategies.trim())
   }
   lines.push("")
-  lines.push("## Your plan")
-  lines.push("Answer with one JSON object and nothing else:")
+  lines.push("## Your build actions")
+  lines.push("Both sides make their build actions from this same moment, blind, and the round plays them together: there are no turns. Answer with one JSON object and nothing else:")
   lines.push("```json")
   lines.push(`{ "power": 1, "build": [ { "building": "${data.buildings[0]?.id ?? "barracks"}", "at": "forward" } ], "formation": "block", "stance": "attack", "note": "one sentence on why" }`)
   lines.push("```")

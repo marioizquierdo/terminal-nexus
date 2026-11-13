@@ -53,7 +53,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     salvage: 10,
   },
 
-  // --- The ground-air asymmetry (`sky-ground-asymmetry.map.json`) -------------------------------
+  // --- The ground-air asymmetry (`sky-ground-asymmetry.save.json`) -------------------------------
   {
     // "Ground units cannot reach air" is not automatic - the layer model deliberately lets a ground
     // and an air entity share a tile, and nothing in `attacks()` ever checked layer compatibility
@@ -76,7 +76,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // A flanker on the bench (`ContentDef.line`, movement.md, the march): a Ravel runner that goes beyond the enemy's
     // line, marching ahead of everyone's pace and choosing the shooters behind the front before it. No army fields one
     // yet — the runner itself is melee, since a whole army of runners as flankers left its front empty — so the
-    // march's tests and scenarios show the line with this.
+    // march's tests and testing saves show the line with this.
     id: "unit.bench.flanker",
     short: "flanker",
     layer: "units",
@@ -124,7 +124,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     salvage: 16,
   },
 
-  // --- Contact detonation (`spitter-contact.map.json`) ------------------------------------------
+  // --- Contact detonation (`spitter-contact.save.json`) ------------------------------------------
   {
     // The baneling rule shape: existing `detonation` only ever fired on death, which is a different
     // thing than a unit *choosing* to blow up on approach - a Ravel runner still has to be killed
@@ -148,7 +148,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
   {
     // Hog Rider: `targetLayers: ["obstacles"]` alone - the exact mechanism the grunt uses to lose a
     // layer, pointed at a different one - makes a unit ignore every enemy soldier entirely and beeline
-    // whatever it can knock down. No new capability; `bench-siege-composition.map.json`.
+    // whatever it can knock down. No new capability; `bench-siege-composition.save.json`.
     id: "unit.bench.hogrider",
     short: "hog",
     layer: "units",
@@ -206,7 +206,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // 4x1 footprint (multi-tile is a RULE, grid.md) and `behavior: "static"` (an armed structure
     // never chased anything before this spike either, and did not need to start). Placed already
     // standing, it blocks a whole corridor and fights back at anything that reaches it, but never
-    // advances - `bench-siege-composition.map.json` places it as the line the rushers above have to
+    // advances - `bench-siege-composition.save.json` places it as the line the rushers above have to
     // get through, or fly over.
     id: "unit.bench.wallsegment",
     short: "wall",
@@ -220,7 +220,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     salvage: 40,
   },
 
-  // --- Siege crawler: windup + splash (`siege-crawler-windup.map.json`) --------------------------
+  // --- Siege crawler: windup + splash (`siege-crawler-windup.save.json`) --------------------------
   {
     // "Moves, then anchors with a delay, then shoots with explosive AOE" needed two small, reusable
     // additions: `windupTicks` (a one-time hold before the first shot after arriving, spent only while
@@ -249,7 +249,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     salvage: 30,
   },
 
-  // --- Siege giant: targetPreference, a soft bias (`ram-breach.map.json`) ------------------------
+  // --- Siege giant: targetPreference, a soft bias (`ram-breach.save.json`) ------------------------
   {
     // "Targets buildings" needed a *soft* bias, not `targetLayers`'s hard restriction: a giant that
     // could never fight back once every building fell would be a worse unit for the same idea.
@@ -270,7 +270,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     targetPreference: STRUCTURE_ONLY_TARGETS,
   },
 
-  // --- Healer: ally-seeking support (`medic-support.map.json`) -----------------------------------
+  // --- Healer: ally-seeking support (`medic-support.save.json`) -----------------------------------
   {
     // The biggest single gap on this bench: every existing behavior seeks the nearest *hostile*.
     // `behavior: "support"` is a fourth value that tells perception to seek wounded *allies* instead
@@ -278,7 +278,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // and `AttackKind: "heal"` plus `applyHeal` (shared.ts) is `applyDamage`'s mirror: clamped at
     // `maxHp` instead of zero, reported as its own `heal.applied` event rather than a negative
     // `damage.applied`, because a heal is a different *meaning*, not just a different sign
-    // (pulse.md). Flying on purpose - Clash of Clans' own Healer is a flyer - so its own scenario
+    // (pulse.md). Flying on purpose - Clash of Clans' own Healer is a flyer - so its own testing save
     // doubles as an integration check: the medic answers whether ally-targeting composes cleanly with
     // the ground-air asymmetry built for the skyraider, not just whether it works in isolation.
     id: "unit.bench.medic",
@@ -294,7 +294,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     salvage: 14,
   },
 
-  // --- Bulwark: a push, the rule for a unit that did not walk (`bench-bulwark-shove.map.json`) ----------
+  // --- Bulwark: a push, the rule for a unit that did not walk (`bench-bulwark-shove.save.json`) ----------
   {
     // Milestone 16's test effect for a Grid that changes under a unit: every two seconds it shoves each enemy
     // touching it two tiles straight away (`shove`, src/abilities/shove.ts, through the kernel's `displace`). A pushed
@@ -314,7 +314,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     abilities: [{ kind: "shove", name: "Shove", tiles: 2, everyTicks: 24 }],
   },
 
-  // --- Spawner: a combat-only summon primitive (`hatchery-spawn.map.json`) -----------------------
+  // --- Spawner: a combat-only summon primitive (`hatchery-spawn.save.json`) -----------------------
   {
     // "Large unit that creates smaller units" needed real, new machinery: nothing in the kernel could
     // create an entity after tick 0 before this spike. `ContentDef.spawn` plus `pulse/spawn.ts`'s
@@ -372,7 +372,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     splitOnDeath: { contentId: "unit.bench.spawnling", count: 2 },
   },
 
-  // --- Focus turret: damage that ramps with a held lock (`beamturret-focus.map.json`) ------------
+  // --- Focus turret: damage that ramps with a held lock (`beamturret-focus.save.json`) ------------
   {
     // The Inferno-Tower rule shape needed one thing nothing on the bench had before: per-actor combat
     // *memory* beyond a cooldown - `EntityState.focusStreak`, reset the instant perception reassigns a
@@ -400,7 +400,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     constructionRadius: 6,
   },
   {
-    // The Grid Nexus as it was before it fought back: a target and nothing more. The kernel's own scenarios that send
+    // The Grid Nexus as it was before it fought back: a target and nothing more. The kernel's own testing saves that send
     // a lone trooper round a wall, or ask what ends a Pulse, are about routes and rules, not about a Nexus that shoots
     // the trooper dead on arrival, so they stand this one where the Citizen Nexus stood.
     id: "structure.bench.nexus",

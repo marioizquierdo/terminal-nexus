@@ -8,23 +8,23 @@ import { DOMAIN_EVENT_KINDS } from "../src/events/types.ts"
 import { contextFor, resolvePulse, spawnEvents, stepTick } from "../src/pulse/index.ts"
 import { buildLog } from "../src/report/index.ts"
 import { cosmeticRng } from "../src/rng/pcg32.ts"
-import { loadScenario } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
 import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
 import {
-  loadScenarioFile,
+  loadTestingSaveFile,
   reportInputOf,
-  resolveScenario,
-  scenarioFiles,
+  playTestingSave,
+  testingSaveFiles,
 } from "./helpers.ts"
 
 const RUNS = 20
 
-test("twenty runs of every scenario produce identical hashes and identical INFO logs", { timeout: 120_000 }, async () => {
-  for (const name of scenarioFiles()) {
-    const first = await resolveScenario(name)
+test("twenty runs of every testing save produce identical hashes and identical INFO logs", { timeout: 120_000 }, async () => {
+  for (const name of testingSaveFiles()) {
+    const first = await playTestingSave(name)
     const firstLog = buildLog(reportInputOf(first), "info").join("\n")
     for (let run = 1; run < RUNS; run += 1) {
-      const again = await resolveScenario(name)
+      const again = await playTestingSave(name)
       assert.equal(again.run.stateHash, first.run.stateHash, `${name}: state hash drifted`)
       assert.equal(again.run.eventsHash, first.run.eventsHash, `${name}: event hash drifted`)
       assert.equal(
@@ -37,15 +37,15 @@ test("twenty runs of every scenario produce identical hashes and identical INFO 
 })
 
 test("resolving in one call equals resolving tick by tick", async () => {
-  for (const name of scenarioFiles()) {
-    const scenario = await loadScenarioFile(name)
-    const oneCall = await resolveScenario(name)
+  for (const name of testingSaveFiles()) {
+    const opening = await loadTestingSaveFile(name)
+    const oneCall = await playTestingSave(name)
 
-    const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
-    const context = contextFor(loaded.state, loaded.registry, scenario.pulseTicks)
+    const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
+    const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
     const events = spawnEvents(loaded.state, loaded.registry)
     let state = loaded.state
-    while (state.outcome === null && state.tick < scenario.pulseTicks) {
+    while (state.outcome === null && state.tick < opening.pulseTicks) {
       const result = stepTick(state, context)
       state = result.state
       events.push(...result.events)
@@ -57,8 +57,8 @@ test("resolving in one call equals resolving tick by tick", async () => {
 })
 
 test("the kernel calls no clock and no Math.random", async () => {
-  const scenario = await loadScenarioFile("citizen-mirror-skirmish.map.json")
-  const loaded = loadScenario(scenario, { registry: FIXTURE_REGISTRY, seed: scenario.seed })
+  const opening = await loadTestingSaveFile("citizen-mirror-skirmish.save.json")
+  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
 
   const realRandom = Math.random
   const realNow = Date.now
@@ -73,8 +73,8 @@ test("the kernel calls no clock and no Math.random", async () => {
     const run = resolvePulse({
       initialState: loaded.state,
       registry: loaded.registry,
-      pulseTicks: scenario.pulseTicks,
-      seed: scenario.seed,
+      pulseTicks: opening.pulseTicks,
+      seed: opening.seed,
     })
     assert.ok(run.events.length > 0)
   } finally {
@@ -85,7 +85,7 @@ test("the kernel calls no clock and no Math.random", async () => {
 })
 
 test("changing only the cosmetic seed changes nothing about state, events, or the log", async () => {
-  const baseline = await resolveScenario("citizen-mirror-skirmish.map.json")
+  const baseline = await playTestingSave("citizen-mirror-skirmish.save.json")
   const baselineLog = buildLog(reportInputOf(baseline), "debug").join("\n")
 
   // The cosmetic stream is a separate object with its own seed. Drawing from it heavily must not
@@ -93,15 +93,15 @@ test("changing only the cosmetic seed changes nothing about state, events, or th
   const cosmetic = cosmeticRng(0xdecaf)
   for (let draw = 0; draw < 10_000; draw += 1) cosmetic.nextUint32()
 
-  const again = await resolveScenario("citizen-mirror-skirmish.map.json")
+  const again = await playTestingSave("citizen-mirror-skirmish.save.json")
   assert.equal(again.run.stateHash, baseline.run.stateHash)
   assert.equal(again.run.eventsHash, baseline.run.eventsHash)
   assert.equal(buildLog(reportInputOf(again), "debug").join("\n"), baselineLog)
 })
 
 test("parse(serialize(state)) hashes identically", async () => {
-  for (const name of scenarioFiles()) {
-    const resolved = await resolveScenario(name)
+  for (const name of testingSaveFiles()) {
+    const resolved = await playTestingSave(name)
     const text = serializeState(resolved.run.finalState)
     const parsed = parseState(text)
     assert.equal(hashState(parsed), resolved.run.stateHash, `${name}: round trip changed the hash`)
@@ -116,17 +116,17 @@ test("a different gameplay seed can change the fight, and the same one never doe
   // clean mirror simply never produces, so it stopped being a fixture that could show a seed
   // mattering. jammed-corridor is built to force exactly that contest (rules.test.ts asserts it
   // happens), which is what this test actually needs to exercise.
-  const first = await resolveScenario("jammed-corridor.map.json", { seed: 1 })
-  const same = await resolveScenario("jammed-corridor.map.json", { seed: 1 })
-  const other = await resolveScenario("jammed-corridor.map.json", { seed: 2 })
+  const first = await playTestingSave("jammed-corridor.save.json", { seed: 1 })
+  const same = await playTestingSave("jammed-corridor.save.json", { seed: 1 })
+  const other = await playTestingSave("jammed-corridor.save.json", { seed: 2 })
   assert.equal(same.run.eventsHash, first.run.eventsHash)
   assert.notEqual(other.run.eventsHash, first.run.eventsHash)
 })
 
 test("the JSONL event stream round-trips, and every kind it emits is a declared kind", async () => {
   const seen = new Set<string>()
-  for (const name of scenarioFiles()) {
-    const resolved = await resolveScenario(name)
+  for (const name of testingSaveFiles()) {
+    const resolved = await playTestingSave(name)
     const text = serializeEvents(resolved.run.events)
     const parsed = parseEvents(text)
     assert.equal(
@@ -150,6 +150,6 @@ test("the JSONL event stream round-trips, and every kind it emits is a declared 
   assert.deepEqual(
     never,
     ["arbitration.bounded"],
-    `these kinds are declared but never emitted by any scenario: ${never.join(", ")}`,
+    `these kinds are declared but never emitted by any testing save: ${never.join(", ")}`,
   )
 })

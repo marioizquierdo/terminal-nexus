@@ -1,0 +1,69 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "March: a one-wide corridor never deadlocks - troopers swap past the slower marksmen in their way",
+  "notes": "A wall of rock with two corridors one tile tall, eight rows apart, each 28 columns long. In the north corridor three troopers walk behind two marksmen; in the south one a raider, three tiles wide, walks behind a marksman. The marksmen walk at half speed while the melee comes up behind them, and cannot be stepped round: each trooper swaps tiles with the marksman in its way and walks on, the marksman stepping back onto its tile. The raider, too wide to swap, waits behind its marksman, who keeps walking at half speed and never stops. Done when every unit is through and the Nexus falls, with no unit standing still for good.",
+  "setup": {
+    "map": {
+      "id": "march-narrow-gap",
+      "rows": [
+        "..........############################..........",
+        "..........############################..........",
+        "................................................",
+        "..........############################..........",
+        "..........############################..........",
+        "..........############################..........",
+        "..........############################..........",
+        "..........############################..........",
+        "..........############################..........",
+        "..........############################..........",
+        "................................................",
+        "..........############################..........",
+        "..........############################.........."
+      ]
+    },
+    "seed": 1,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 2400,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "p1": {
+      "at": {"x":1,"y":2},
+      "rows": [
+        "          ttt mm",
+        "",
+        "",
+        "",
+        "n",
+        "",
+        "",
+        "",
+        "           r   m"
+      ],
+      "legend": {
+        "t": {"content":"unit.citizen.trooper"},
+        "m": {"content":"unit.citizen.marksman"},
+        "r": {"content":"unit.ravel.raider"},
+        "n": {"content":"structure.bench.nexus"}
+      }
+    },
+    "p2": {
+      "at": {"x":45,"y":6},
+      "rows": [
+        "n"
+      ],
+      "legend": {
+        "n": {"content":"structure.bench.nexus"}
+      }
+    }
+  }
+}

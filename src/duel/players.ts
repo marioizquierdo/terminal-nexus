@@ -19,11 +19,11 @@
 // Pure: a plan is a function of the brief.
 
 import type { BriefBuilding, BriefCard, BriefData } from "./brief.ts"
-import type { BuildingOrder, Formation, Placement, SidePlan, Zone } from "./types.ts"
+import type { BuildingOrder, Formation, Placement, BuildActions, Zone } from "./types.ts"
 import { FORMATIONS } from "./types.ts"
 
 /** A player: a plan from a brief. */
-export type Player = (brief: BriefData) => SidePlan
+export type Player = (brief: BriefData) => BuildActions
 
 const RARITY = ["common", "uncommon", "rare", "legendary"]
 

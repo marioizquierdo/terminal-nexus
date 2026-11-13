@@ -1,8 +1,8 @@
-// Armies and campaigns (src/armies; the data in armies/ and campaigns/): what a side may build and draft, written as
+// Armies and stories (src/armies; the data in armies/ and stories/): what a side may build and draft, written as
 // data a modder can write, each army naming the armies it builds on — the shared one, a faction, a Commander's — and
-// each campaign naming the armies it plays with. The owner, 2026-10-04: "a tree where the campaign progression is at
+// each story naming the armies it plays with. The owner, 2026-10-04: "a tree where the story progression is at
 // the top, depending on levels, that depend on buildings and units (that may be on the same bundle or another
-// dependent bundle like the common)". A level offers what its campaign has unlocked by then; the loader refuses a
+// dependent bundle like the common)". A level offers what its story has unlocked by then; the loader refuses a
 // broken file by name, every problem at once.
 
 import { test } from "node:test"
@@ -10,11 +10,11 @@ import assert from "node:assert/strict"
 import all from "../armies/all/army.json" with { type: "json" }
 import citizen from "../armies/citizen/army.json" with { type: "json" }
 import vasse from "../armies/vasse/army.json" with { type: "json" }
-import vasseCampaign from "../campaigns/vasse/campaign.json" with { type: "json" }
+import vasseStory from "../stories/vasse/story.json" with { type: "json" }
 import { constructMenu, nexusDraftOf, STARTER_ALLOTMENT, STARTER_CATALOG, STARTER_NEXUS_DRAFT } from "../src/build/catalog.ts"
 import { MAPS } from "../src/build/maps.ts"
 import type { Armies, GameFiles, LoadWorld, Offer, PowerCard } from "../src/armies/index.ts"
-import { ARMIES, ARMY_FILES, ArmyError, CAMPAIGN_FILES, dealHand, loadArmies, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
+import { ARMIES, ARMY_FILES, ArmyError, STORY_FILES, dealHand, loadArmies, PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import { levelContext, starterContext } from "../src/cli/starter.ts"
 import type { ContentDef } from "../src/content/index.ts"
 import { createRegistry, FIXTURE_REGISTRY } from "../src/content/index.ts"
@@ -36,20 +36,20 @@ function problemsOf(files: GameFiles, world: LoadWorld = WORLD): readonly string
 }
 
 /** The game's own files and `more`, loaded. */
-const withGame = (more: Readonly<{ armies?: readonly object[]; campaigns?: readonly object[] }> = {}): Armies =>
-  loadArmies({ armies: [...ARMY_FILES, ...(more.armies ?? [])], campaigns: [...CAMPAIGN_FILES, ...(more.campaigns ?? [])] }, WORLD)
+const withGame = (more: Readonly<{ armies?: readonly object[]; stories?: readonly object[] }> = {}): Armies =>
+  loadArmies({ armies: [...ARMY_FILES, ...(more.armies ?? [])], stories: [...STORY_FILES, ...(more.stories ?? [])] }, WORLD)
 
-/** What loading the game's own armies, with `armies` and `campaigns` beside them, reports. */
-const problemsWithGame = (more: Readonly<{ armies?: readonly object[]; campaigns?: readonly object[] }>, world: LoadWorld = WORLD): readonly string[] =>
-  problemsOf({ armies: [...ARMY_FILES, ...(more.armies ?? [])], campaigns: more.campaigns ?? [] }, world)
+/** What loading the game's own armies, with `armies` and `stories` beside them, reports. */
+const problemsWithGame = (more: Readonly<{ armies?: readonly object[]; stories?: readonly object[] }>, world: LoadWorld = WORLD): readonly string[] =>
+  problemsOf({ armies: [...ARMY_FILES, ...(more.armies ?? [])], stories: more.stories ?? [] }, world)
 
 /** A level on the starter map playing PERIMETER's mission under its own id. */
 const level = (id: string, extra: object = {}): object => ({ id, map: "starter", credits: 100, mission: { ...PERIMETER, id: `mission.${id}` }, ...extra })
 
-/** A campaign Vasse leads, with the Ravel raid, of `levels`. */
-const testCampaign = (levels: readonly object[], extra: object = {}): object => ({
+/** A story Vasse leads, with the Ravel raid, of `levels`. */
+const testStory = (levels: readonly object[], extra: object = {}): object => ({
   id: "test",
-  title: "A test campaign",
+  title: "A test story",
   commander: "vasse",
   requires: ["vasse", "ravel"],
   levels,
@@ -71,7 +71,7 @@ const registryWith = (...more: readonly ContentDef[]) => createRegistry([...FIXT
 
 // --- What the game ships ---------------------------------------------------------------------------------
 
-test("the game ships the shared army, two factions and three Commanders on top of them, and a campaign for the two Citizens", () => {
+test("the game ships the shared army, two factions and three Commanders on top of them, and a story for the two Citizens", () => {
   assert.deepEqual(
     ARMIES.armies.map((army) => [army.id, army.requires]),
     [
@@ -84,7 +84,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ],
   )
   assert.deepEqual(
-    ARMIES.commanders.map(({ barks: _barks, portraitFalls: _falls, start: _start, schedule: _schedule, faction: _faction, run: _run, ...commander }) => commander),
+    ARMIES.commanders.map(({ barks: _barks, portraitFalls: _falls, start: _start, schedule: _schedule, faction: _faction, ...commander }) => commander),
     [
       { id: "vasse", army: "vasse", name: "Edda Vasse", unit: "unit.citizen.vasse", lean: ["structures", "commander"], portrait: [" _@_ ", "(-_-)", "/|@|\\"] },
       { id: "averno", army: "averno", name: "Marshal Averno", unit: "unit.citizen.averno", lean: ["units", "nexus"], portrait: [" _&_ ", "(o_-)", "/[&]\\"] },
@@ -98,15 +98,6 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ARMIES.commanders.map((commander) => commander.start.map(({ unit, count }) => `${count} ${unit}`).join(", ")),
     ["3 unit.citizen.trooper, 2 unit.citizen.marksman", "3 unit.citizen.trooper, 2 unit.citizen.marksman", "5 unit.ravel.runner, 2 unit.ravel.slinger"],
   )
-  // A run starts each with a small army (docs/history/challenge-runs-design.md): a few buildings and two commons, the rest left to the draft.
-  assert.deepEqual(
-    ARMIES.commanders.map((commander) => [commander.id, commander.run?.buildings.join(" "), commander.run?.powers.join(" ")]),
-    [
-      ["vasse", "barracks depot turret", "reserve-callup drill-schedule"],
-      ["averno", "barracks depot turret", "reserve-callup drill-schedule"],
-      ["dob", "den stash turret", "scrap-rush hot-shift"],
-    ],
-  )
   assert.deepEqual(
     ARMIES.commanders[1]?.schedule?.flatMap((entry) => entry.deal.filter((slot) => typeof slot !== "string" && "from" in slot).map(() => entry.round)),
     [2, 4],
@@ -114,23 +105,23 @@ test("the game ships the shared army, two factions and three Commanders on top o
   assert.equal(ARMIES.commanders[0]?.schedule, undefined)
   // Their lines in battle come with them (tests/voice.test.ts has what is said when).
   for (const commander of ARMIES.commanders) assert.ok(Object.keys(commander.barks).length > 0, `${commander.name} has nothing to say`)
-  assert.equal(ARMIES.campaigns.length, 2)
+  assert.equal(ARMIES.stories.length, 2)
   assert.deepEqual(
-    ARMIES.campaigns[1]?.levels.map((entry) => [entry.number, entry.id, entry.campaign, entry.map, entry.mission.name, entry.mission.pulses]),
+    ARMIES.stories[1]?.levels.map((entry) => [entry.number, entry.id, entry.story, entry.map, entry.mission.name, entry.mission.pulses]),
     [[1, "averno-test-1", "averno", "starter-open", "The curve, pressed", 5]],
   )
-  const [campaign] = ARMIES.campaigns
-  assert.ok(campaign !== undefined)
-  assert.deepEqual([campaign.id, campaign.army, campaign.commander.unit], ["vasse", "vasse", "unit.citizen.vasse"])
+  const [story] = ARMIES.stories
+  assert.ok(story !== undefined)
+  assert.deepEqual([story.id, story.army, story.commander.unit], ["vasse", "vasse", "unit.citizen.vasse"])
   assert.deepEqual(
-    campaign.levels.map((entry) => [entry.number, entry.id, entry.campaign, entry.map, entry.mission.name]),
+    story.levels.map((entry) => [entry.number, entry.id, entry.story, entry.map, entry.mission.name]),
     [
       [1, "vasse-test-1", "vasse", "starter", "Perimeter"],
       [2, "vasse-test-2", "vasse", "starter", "The Commander falls"],
       [3, "vasse-test-3", "vasse", "starter-open", "The curve"],
     ],
   )
-  assert.deepEqual(ARMIES.levels, [...campaign.levels, ...(ARMIES.campaigns[1]?.levels ?? [])])
+  assert.deepEqual(ARMIES.levels, [...story.levels, ...(ARMIES.stories[1]?.levels ?? [])])
   // What the levels stand on: the shared army's bench buildings and War Chest, and the Citizen faction's buildings
   // and powers, which every Citizen Commander may use.
   const [shared, citizens, , hers] = ARMIES.armies
@@ -211,7 +202,7 @@ test("a Commander army defines its Commander as data: her unit's numbers, her ca
   )
 })
 
-test("a level offers what its campaign has unlocked by then: PERIMETER unlocks all of it, the cadence level nothing new", () => {
+test("a level offers what its story has unlocked by then: PERIMETER unlocks all of it, the cadence level nothing new", () => {
   const [perimeter, cadence] = ARMIES.levels
   assert.ok(perimeter !== undefined && cadence !== undefined)
   const everything = {
@@ -245,19 +236,19 @@ test("a level extends another: Averno's is Vasse's third with his own rounds, an
   const ids = (mission: MissionDefinition) => mission.triggers.map((trigger) => trigger.id)
   assert.deepEqual(ids(his.mission), ids(hers.mission).filter((id) => !["raid-6", "raid-6-reserve", "reinforcements-6"].includes(id)))
   assert.deepEqual(his.mission.triggers.find((trigger) => trigger.id === "hold")?.when, { event: "pulse.end", pulse: 5 })
-  // One mission for every Commander: "@commander" brings whoever leads the campaign that plays it.
+  // One mission for every Commander: "@commander" brings whoever leads the story that plays it.
   const squads = (mission: MissionDefinition) => mission.triggers.find((trigger) => trigger.id === "squads")?.do[0]
   assert.deepEqual(squads(hers.mission), { spawn: { side: "A", units: [{ unit: "unit.citizen.vasse", count: 1 }, { unit: "unit.citizen.trooper", count: 3 }, { unit: "unit.citizen.marksman", count: 2 }], at: "muster", group: "squads" } })
   assert.deepEqual(squads(his.mission), { spawn: { side: "A", units: [{ unit: "unit.citizen.averno", count: 1 }, { unit: "unit.citizen.trooper", count: 3 }, { unit: "unit.citizen.marksman", count: 2 }], at: "muster", group: "squads" } })
-  const written = vasseCampaign.levels.find((entry) => entry.id === "vasse-test-3")
+  const written = vasseStory.levels.find((entry) => entry.id === "vasse-test-3")
   assert.ok(JSON.stringify(written).includes('"@commander"'), "her level brings her as @commander")
 })
 
-test("a level that extends one no campaign has, or extends itself in a circle, is refused by name", () => {
+test("a level that extends one no story has, or extends itself in a circle, is refused by name", () => {
   assert.deepEqual(
     problemsWithGame({
-      campaigns: [
-        testCampaign([
+      stories: [
+        testStory([
           { id: "orphan", extends: "nowhere" },
           { id: "ping", extends: "pong" },
           { id: "pong", extends: "ping" },
@@ -266,28 +257,28 @@ test("a level that extends one no campaign has, or extends itself in a circle, i
       ],
     }),
     [
-      'campaign "test": levels[bare].map is needed: the level extends no other',
-      'campaign "test": levels[bare].credits is needed: the level extends no other',
-      'campaign "test": levels[bare].mission is needed: the level extends no other',
-      'campaign "test": level "orphan" extends "nowhere", which is not a level any campaign has',
-      'campaign "test": level "ping" extends "pong", which extends it back: a circle',
-      'campaign "test": level "pong" extends "ping", which extends it back: a circle',
-      'campaign "test": levels[bare].mission should be an object, not nothing',
+      'story "test": levels[bare].map is needed: the level extends no other',
+      'story "test": levels[bare].credits is needed: the level extends no other',
+      'story "test": levels[bare].mission is needed: the level extends no other',
+      'story "test": level "orphan" extends "nowhere", which is not a level any story has',
+      'story "test": level "ping" extends "pong", which extends it back: a circle',
+      'story "test": level "pong" extends "ping", which extends it back: a circle',
+      'story "test": levels[bare].mission should be an object, not nothing',
     ],
   )
 })
 
 test("unlocks add up level by level, in the order unlocked, so no hotkey moves; each level sets its own credits", () => {
   const loaded = withGame({
-    campaigns: [
-      testCampaign([
+    stories: [
+      testStory([
         level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["reserve-callup"] } }),
         level("test-2", { credits: 60, unlocks: { buildings: ["barracks"] } }),
         level("test-3", { unlocks: { buildings: ["hatchery"], powers: ["war-chest"] } }),
       ]),
     ],
   })
-  const levels = loaded.levels.filter((entry) => entry.campaign === "test")
+  const levels = loaded.levels.filter((entry) => entry.story === "test")
   assert.deepEqual(
     levels.map((entry) => offered(entry.offer)),
     [
@@ -309,7 +300,7 @@ test("unlocks add up level by level, in the order unlocked, so no hotkey moves; 
 })
 
 test("a level's offer is what its Build Phase offers: the menu, the credits and the Nexus Pulse's hand", () => {
-  const loaded = withGame({ campaigns: [testCampaign([level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["war-chest"] } })])] })
+  const loaded = withGame({ stories: [testStory([level("test-1", { credits: 45, unlocks: { buildings: ["turret"], powers: ["war-chest"] } })])] })
   const turretsOnly = loaded.levels.find((entry) => entry.id === "test-1")
   assert.ok(turretsOnly !== undefined)
   const context = levelContext(turretsOnly)
@@ -353,11 +344,11 @@ test("the screen opens on PERIMETER's offer: the starter menu, credits and Nexus
 test("PERIMETER and the cadence level are pinned as data: a change to either mission is a change on purpose", () => {
   // Pinned from the TypeScript literals they were, notes aside, and moved on purpose since: PERIMETER's raid
   // triggers and its second round's group were renamed when "wave" left the game (the owner, 2026-10-04); then
-  // both lost the raid's inert `order`, PERIMETER gained the line its troops head for (the owner: "the campaign
+  // both lost the raid's inert `order`, PERIMETER gained the line its troops head for (the owner: "the story
   // levels should have a target well defined"), and the cadence level's ambush two runners, so Vasse still falls
   // in round 1 now that By the Book guards her; then PERIMETER lost `trains`, since what a building spawns is the
   // building's own, on its card (the owner, 2026-10-05); then its flanking group's intent says "flank", the genre's
-  // word (the owner, 2026-10-07: "use standard rpg/strategy-game language"). Moving the campaigns into their own
+  // word (the owner, 2026-10-07: "use standard rpg/strategy-game language"). Moving the stories into their own
   // files, and writing her as "@commander" there, changed neither: the loader hands out the missions it did.
   const withoutNotes = (value: unknown): unknown => {
     if (Array.isArray(value)) return value.map(withoutNotes)
@@ -388,8 +379,8 @@ test("a level's target for the player's troops is data the loader checks: a regi
     triggers: [...PERIMETER.triggers.filter((trigger) => trigger.id !== "post"), { id: "post", when: { pulse: 1, tick: 0 }, do: [{ target }] }],
   })
   const problems = problemsWithGame({
-    campaigns: [
-      testCampaign([
+    stories: [
+      testStory([
         level("nowhere", { mission: withPost({ side: "A", region: "moon" }) }),
         level("unnamed", { mission: withPost({ side: "A", region: "line" }, PERIMETER.regions.map(({ name: _name, ...region }) => region)) }),
         level("misspelt", { mission: withPost({ side: "A", place: "line" }) }),
@@ -406,11 +397,11 @@ test("a level's target for the player's troops is data the loader checks: a regi
     ],
   })
   assert.deepEqual(problems, [
-    'campaign "test": level "nowhere", mission "mission.post": trigger "post", action 1 (target) names the unknown region "moon"',
-    'campaign "test": level "unnamed", mission "mission.post": trigger "post", action 1 (target) sends troops to the region "line", which has no name for the screen to say',
-    'campaign "test": levels[misspelt].mission.triggers[post].do[0].target needs "region"',
-    'campaign "test": levels[misspelt].mission.triggers[post].do[0].target has "place", which is not one of its fields ("side", "region")',
-    'campaign "test": levels[ordered].mission.triggers[raid-1].do[0].spawn has "order", which is not one of its fields ("side", "units", "at", "group", "intent")',
+    'story "test": level "nowhere", mission "mission.post": trigger "post", action 1 (target) names the unknown region "moon"',
+    'story "test": level "unnamed", mission "mission.post": trigger "post", action 1 (target) sends troops to the region "line", which has no name for the screen to say',
+    'story "test": levels[misspelt].mission.triggers[post].do[0].target needs "region"',
+    'story "test": levels[misspelt].mission.triggers[post].do[0].target has "place", which is not one of its fields ("side", "region")',
+    'story "test": levels[ordered].mission.triggers[raid-1].do[0].spawn has "order", which is not one of its fields ("side", "units", "at", "group", "intent")',
   ])
 })
 
@@ -444,9 +435,9 @@ test("the loader refuses, by name and all at once: requires unknown or in a circ
       },
       { id: "vasse", title: "Vasse again", requires: [] },
     ],
-    campaigns: [
-      vasseCampaign,
-      testCampaign([
+    stories: [
+      vasseStory,
+      testStory([
         level("vasse-test-1"),
         level("test-2", { unlocks: { buildings: ["factory", "turret"], powers: ["jackpot"] } }),
         level("test-3", {
@@ -462,25 +453,25 @@ test("the loader refuses, by name and all at once: requires unknown or in a circ
           },
         }),
       ]),
-      { ...testCampaign([level("lost-1")]), id: "astray", requires: ["vasse", "ravel", "nowhere"] },
+      { ...testStory([level("lost-1")]), id: "astray", requires: ["vasse", "ravel", "nowhere"] },
     ],
   })
   assert.deepEqual(problems, [
     'two armies are called "vasse"; the second is left out',
     'army "lost" requires "nowhere", which is not an army',
     'armies "a" and "b" require each other in a circle: a -> b -> a',
-    'campaign "astray" requires "nowhere", which is not an army',
+    'story "astray" requires "nowhere", which is not an army',
     'the building "barracks" is in both "citizen" and "cards"',
     'the level "vasse-test-1" is in both "vasse" and "test"',
     'army "cards": the building "factory" names "structure.citizen.factory", which is not content the game has',
     'army "cards": the building "drill" names "unit.citizen.trooper", which is not a building',
-    'campaign "test": level "test-2" unlocks the building "factory", which "cards" has and "test" does not require',
-    'campaign "test": level "test-2" unlocks the Nexus power "jackpot", which no army has',
-    'campaign "test": levels[test-3].mission.pulses should be a number, not "three"',
-    'campaign "test": levels[test-3].mission needs "regions"',
-    'campaign "test": levels[test-3].mission.triggers[dance].do[0] should be an action: an object with one of "spawn", "target", "commitPlan", "win", "lose", "say", not "dance"',
-    'campaign "test": levels[test-3].mission.triggers[dawn].when.event should be one of "pulse.end", "nexus.destroyed", "build.start", not "dawn"',
-    'campaign "test": levels[test-3].mission.triggers[dawn].do[0] should be an action: an object with one of "spawn", "target", "commitPlan", "win", "lose", "say", not "win" and "lose"',
+    'story "test": level "test-2" unlocks the building "factory", which "cards" has and "test" does not require',
+    'story "test": level "test-2" unlocks the Nexus power "jackpot", which no army has',
+    'story "test": levels[test-3].mission.pulses should be a number, not "three"',
+    'story "test": levels[test-3].mission needs "regions"',
+    'story "test": levels[test-3].mission.triggers[dance].do[0] should be an action: an object with one of "spawn", "target", "commitPlan", "win", "lose", "say", not "dance"',
+    'story "test": levels[test-3].mission.triggers[dawn].when.event should be one of "pulse.end", "nexus.destroyed", "build.start", not "dawn"',
+    'story "test": levels[test-3].mission.triggers[dawn].do[0] should be an action: an object with one of "spawn", "target", "commitPlan", "win", "lose", "say", not "win" and "lose"',
   ])
   // An army that requires itself is a circle of one.
   assert.deepEqual(problemsOf({ armies: [{ id: "me", title: "Me", requires: ["me"] }] }), ['army "me" requires itself'])
@@ -522,8 +513,8 @@ test("what a building spawns is its own, on its card: the loader refuses by name
         ],
       },
     ],
-    campaigns: [
-      testCampaign(
+    stories: [
+      testStory(
         [
           level("test-1", { unlocks: { buildings: ["barracks", "big-barracks"] } }),
           level("test-2", { mission: { ...PERIMETER, id: "mission.test-2", trains: [{ structure: "structure.citizen.barracks", unit: "unit.citizen.trooper" }] } }),
@@ -541,8 +532,8 @@ test("what a building spawns is its own, on its card: the loader refuses by name
     'army "yards": the building "ghost" spawns "unit.citizen.ghost", which is not content the game has',
     'army "yards": the building "nested" spawns "structure.citizen.barracks", which is a building, not a unit',
     'army "yards": the building "officer" spawns "unit.citizen.vasse", which "vasse" brings and "yards" does not require',
-    'campaign "test": level "test-1" offers "structure.citizen.barracks" as the buildings "barracks" and "big-barracks", which spawn differently; a building spawns one way',
-    `campaign "test": levels[test-2].mission has "trains", which is not one of its fields (${fields})`,
+    'story "test": level "test-1" offers "structure.citizen.barracks" as the buildings "barracks" and "big-barracks", which spawn differently; a building spawns one way',
+    `story "test": levels[test-2].mission has "trains", which is not one of its fields (${fields})`,
   ])
 })
 
@@ -562,7 +553,7 @@ test("a file's shape is checked field by field, by path: the wrong kind of value
       { title: "No id", requires: [] },
       "not an army",
     ],
-    campaigns: [{ id: "c", title: "C", commander: "vasse", requires: ["vasse"], levels: [{ id: "l", map: "starter", credits: 1.5, mission: PERIMETER }] }, { id: "nothing" }],
+    stories: [{ id: "c", title: "C", commander: "vasse", requires: ["vasse"], levels: [{ id: "l", map: "starter", credits: 1.5, mission: PERIMETER }] }, { id: "nothing" }],
   })
   assert.deepEqual(problems, [
     'army "shapes": title should be text, not 5',
@@ -573,11 +564,11 @@ test("a file's shape is checked field by field, by path: the wrong kind of value
     'army "shapes": powers[1] should be an object, not "not a power"',
     'army 8: the file needs "id"',
     'army 9: the file should be an object, not "not an army"',
-    'campaign "c": levels[l].credits should be a whole number, not 1.5',
-    'campaign "nothing": the file needs "title"',
-    'campaign "nothing": the file needs "commander"',
-    'campaign "nothing": the file needs "requires"',
-    'campaign "nothing": the file needs "levels"',
+    'story "c": levels[l].credits should be a whole number, not 1.5',
+    'story "nothing": the file needs "title"',
+    'story "nothing": the file needs "commander"',
+    'story "nothing": the file needs "requires"',
+    'story "nothing": the file needs "levels"',
   ])
 })
 
@@ -629,7 +620,7 @@ test("a unit an army defines as data is checked by path: its numbers, its glyph 
   assert.deepEqual(loaded.registry.get("unit.test.squire").collidesWith, ["obstacles", "units"])
 })
 
-test("a level's mission is checked against its map, its content against what its campaign sees, and an army's cards and Commander against what it sees", () => {
+test("a level's mission is checked against its map, its content against what its story sees, and an army's cards and Commander against what it sees", () => {
   const hero: ContentDef = { ...FIXTURE_REGISTRY.get("unit.citizen.vasse"), id: "unit.test.hero", short: "hero" }
   const nest: ContentDef = {
     ...FIXTURE_REGISTRY.get("structure.bench.hatchery"),
@@ -669,7 +660,7 @@ test("a level's mission is checked against its map, its content against what its
     commander: { id: "hero", name: "Hero", unit: "unit.test.hero", faction: "solo", lean: ["units"] },
   }
   const pretender = { id: "pretender", title: "Pretender", requires: ["citizen"], commander: { id: "trooper", name: "Not one", unit: "unit.citizen.trooper", faction: "citizen", lean: ["units"] } }
-  const soloCampaign = {
+  const soloStory = {
     id: "solo",
     title: "Solo",
     commander: "hero",
@@ -703,7 +694,7 @@ test("a level's mission is checked against its map, its content against what its
     ],
   }
   const empty = { id: "empty", title: "Empty", commander: "nobody", requires: [], levels: [] }
-  assert.deepEqual(problemsWithGame({ armies: [solo, pretender], campaigns: [soloCampaign, empty] }, { registry: registryWith(hero, nest, grub), maps: MAPS }), [
+  assert.deepEqual(problemsWithGame({ armies: [solo, pretender], stories: [soloStory, empty] }, { registry: registryWith(hero, nest, grub), maps: MAPS }), [
     'the content "unit.citizen.trooper" is in both "citizen" and "solo"',
     'army "solo": "structure.test.nest" puts on the Grid "unit.test.grub", which no army brings',
     'army "solo": content names "unit.test.ghost", which is not content the game has',
@@ -717,23 +708,23 @@ test("a level's mission is checked against its map, its content against what its
     'army "solo": the Nexus power "lost-permit" names the building "missing", which no army has',
     'army "solo": the Commander "hero" names the faction "solo", which brings no Grid Nexus',
     'army "pretender": the Commander "trooper" is "unit.citizen.trooper", which is not a Commander',
-    'campaign "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter", "starter-open")',
-    'campaign "solo": level "solo-1" unlocks the building "nest" twice',
-    'campaign "solo": level "solo-1" unlocks the building "war-chest", which no army has (it is a Nexus power)',
-    'campaign "solo": level "solo-1", mission "mission.solo-1" uses "unit.citizen.vasse", which "vasse" brings and "solo" does not require',
-    'campaign "solo": level "solo-1", mission "mission.solo-1" uses "unit.ravel.runner", which "ravel" brings and "solo" does not require',
-    'campaign "solo": level "solo-1", mission "mission.solo-1": trigger "start", action 1 (spawn) brings the Commander "unit.citizen.vasse" for the player, whose campaign\'s Commander is "unit.test.hero": bring "@commander"',
-    'campaign "solo": level "solo-2" unlocks the building "nest", which level "solo-1" already unlocked',
-    'campaign "solo": level "solo-2", mission "mission.solo-2": region "far" reaches off the 96x40 map',
-    'campaign "solo": level "solo-2" is played on the map "starter", which has standing on it "structure.citizen.nexus", which "citizen" brings and "solo" does not require',
-    'campaign "solo": level "solo-2" is played on the map "starter", which has standing on it "structure.citizen.barracks", which "citizen" brings and "solo" does not require',
-    'campaign "empty": it is led by "nobody", which is not a Commander any army has',
-    'campaign "empty": it has no levels',
+    'story "solo": level "solo-1" is played on the map "nowhere", which is not one the game has ("starter", "starter-open")',
+    'story "solo": level "solo-1" unlocks the building "nest" twice',
+    'story "solo": level "solo-1" unlocks the building "war-chest", which no army has (it is a Nexus power)',
+    'story "solo": level "solo-1", mission "mission.solo-1" uses "unit.citizen.vasse", which "vasse" brings and "solo" does not require',
+    'story "solo": level "solo-1", mission "mission.solo-1" uses "unit.ravel.runner", which "ravel" brings and "solo" does not require',
+    'story "solo": level "solo-1", mission "mission.solo-1": trigger "start", action 1 (spawn) brings the Commander "unit.citizen.vasse" for the player, whose story\'s Commander is "unit.test.hero": bring "@commander"',
+    'story "solo": level "solo-2" unlocks the building "nest", which level "solo-1" already unlocked',
+    'story "solo": level "solo-2", mission "mission.solo-2": region "far" reaches off the 96x40 map',
+    'story "solo": level "solo-2" is played on the map "starter", which has standing on it "structure.citizen.nexus", which "citizen" brings and "solo" does not require',
+    'story "solo": level "solo-2" is played on the map "starter", which has standing on it "structure.citizen.barracks", which "citizen" brings and "solo" does not require',
+    'story "empty": it is led by "nobody", which is not a Commander any army has',
+    'story "empty": it has no levels',
   ])
 })
 
-test("the Commander a level brings for the player is her campaign's", () => {
-  // A second Commander, only for this test: the campaign is Vasse's, so bringing anyone else is refused.
+test("the Commander a level brings for the player is her story's", () => {
+  // A second Commander, only for this test: the story is Vasse's, so bringing anyone else is refused.
   const other: ContentDef = { ...FIXTURE_REGISTRY.get("unit.citizen.vasse"), id: "unit.test.other-commander" }
   // Without the intro, whose lines name Vasse and would be refused for that alone.
   const triggers = PERIMETER.triggers
@@ -751,9 +742,9 @@ test("the Commander a level brings for the player is her campaign's", () => {
           },
     )
   const officers = { id: "officers", title: "Officers", requires: ["citizen"], content: [other.id] }
-  const campaign = testCampaign([{ ...level("test-1"), mission: { ...PERIMETER, id: "mission.test-1", triggers } }], { requires: ["vasse", "ravel", "officers"] })
-  assert.deepEqual(problemsWithGame({ armies: [officers], campaigns: [campaign] }, { registry: registryWith(other), maps: MAPS }), [
-    'campaign "test": level "test-1", mission "mission.test-1": trigger "squads", action 1 (spawn) brings the Commander "unit.test.other-commander" for the player, whose campaign\'s Commander is "unit.citizen.vasse": bring "@commander"',
+  const story = testStory([{ ...level("test-1"), mission: { ...PERIMETER, id: "mission.test-1", triggers } }], { requires: ["vasse", "ravel", "officers"] })
+  assert.deepEqual(problemsWithGame({ armies: [officers], stories: [story] }, { registry: registryWith(other), maps: MAPS }), [
+    'story "test": level "test-1", mission "mission.test-1": trigger "squads", action 1 (spawn) brings the Commander "unit.test.other-commander" for the player, whose story\'s Commander is "unit.citizen.vasse": bring "@commander"',
   ])
 })
 
@@ -762,8 +753,8 @@ test("the Commander a level brings for the player is her campaign's", () => {
 /** Vasse's army with her lines replaced by `barks`. */
 const vasseSaying = (barks: unknown): object => ({ ...vasse, commander: { ...vasse.commander, barks } })
 
-/** The game's armies with Vasse's replaced by `hers`, and her campaign. */
-const withHer = (hers: object): GameFiles => ({ armies: ARMY_FILES.map((file) => (file === vasse ? hers : file)), campaigns: [vasseCampaign] })
+/** The game's armies with Vasse's replaced by `hers`, and her story. */
+const withHer = (hers: object): GameFiles => ({ armies: ARMY_FILES.map((file) => (file === vasse ? hers : file)), stories: [vasseStory] })
 
 test("her lines in battle are refused by name: a moment she cannot speak at, one with no lines, a line that says nothing or does not fit", () => {
   assert.deepEqual(
@@ -794,8 +785,8 @@ test("her lines in battle are refused by name: a moment she cannot speak at, one
     `army "vasse": the Commander "vasse"'s line 1 for "round-start" is too long to show beside her: quoted, it is 51 columns with a blank either side, and the map is 49 wide at 80 x 24`,
   ])
   // Their shape is the file's: an object of lists of text. A Commander of the wrong shape is left out of everything
-  // after, as any part is, so her campaign finds no Commander either.
-  const ledByNobody = 'campaign "vasse": it is led by "vasse", which is not a Commander any army has'
+  // after, as any part is, so her story finds no Commander either.
+  const ledByNobody = 'story "vasse": it is led by "vasse", which is not a Commander any army has'
   assert.deepEqual(problemsOf(withHer(vasseSaying(["Positions."]))), ['army "vasse": commander.barks should be an object, not a list', ledByNobody])
   assert.deepEqual(problemsOf(withHer(vasseSaying({ "round-start": ["Positions.", 5] }))), ['army "vasse": commander.barks.round-start[1] should be text, not 5', ledByNobody])
   // Lines are optional, moment by moment and altogether: a Commander with none says nothing.
@@ -821,7 +812,7 @@ test("how the Nexus Pulse deals a power is data the loader checks by name: a cha
       { id: "always-upgrade", name: "Always", description: "Nothing.", effect: credits, ...tags, always: true, upgrades: "needy" },
     ],
   }
-  const campaign = {
+  const story = {
     id: "deck",
     title: "Deck",
     commander: "vasse",
@@ -841,7 +832,7 @@ test("how the Nexus Pulse deals a power is data the loader checks by name: a cha
       { id: "deck-2", map: "starter", credits: 10, schedule: [], mission: PERIMETER_LEVEL.mission },
     ],
   }
-  assert.deepEqual(problemsWithGame({ armies: [deck], campaigns: [campaign] }), [
+  assert.deepEqual(problemsWithGame({ armies: [deck], stories: [story] }), [
     'army "deck": the Nexus power "flat-chance" has a chance 1 times as likely, which changes nothing',
     'army "deck": the Nexus power "flat-chance" has a chance from round 3 to round 2, which ends before it starts',
     'army "deck": the Nexus power "needy" requires itself, so it is never dealt',
@@ -851,12 +842,12 @@ test("how the Nexus Pulse deals a power is data the loader checks by name: a cha
     'army "deck": the Nexus power "chest-upgrade" upgrades "war-chest", which is offered beside every hand and never kept',
     'army "deck": the Nexus power "lost-upgrade" upgrades the Nexus power "missing", which no army has',
     'army "deck": the Nexus power "always-upgrade" is offered beside every hand, so it cannot be an upgrade',
-    'campaign "deck": level "deck-1" has a schedule whose first entry is for round 2: it starts at round 1',
-    'campaign "deck": level "deck-1" has a schedule entry for round 1 after one for round 2: entries go in order',
-    'campaign "deck": level "deck-1" deals a rare from round 1: the power curve deals a rare from round 4',
-    'campaign "deck": level "deck-1" makes sure of the Nexus power "drill-schedule" in round 1, which the level does not offer',
-    'campaign "deck": level "deck-1" makes sure of "war-chest" in round 1, which is offered beside every hand anyway',
-    'campaign "deck": level "deck-2" has a schedule with no entries: leave it out for the default',
+    'story "deck": level "deck-1" has a schedule whose first entry is for round 2: it starts at round 1',
+    'story "deck": level "deck-1" has a schedule entry for round 1 after one for round 2: entries go in order',
+    'story "deck": level "deck-1" deals a rare from round 1: the power curve deals a rare from round 4',
+    'story "deck": level "deck-1" makes sure of the Nexus power "drill-schedule" in round 1, which the level does not offer',
+    'story "deck": level "deck-1" makes sure of "war-chest" in round 1, which is offered beside every hand anyway',
+    'story "deck": level "deck-2" has a schedule with no entries: leave it out for the default',
   ])
 })
 
@@ -870,7 +861,7 @@ test("a Nexus power's rarity and role, and each card of a schedule, are words fr
       { id: "odd", name: "Odd", description: "Nothing.", effect: { credits: 1 }, rarity: "epic", role: "magic" },
     ],
   }
-  const campaign = {
+  const story = {
     id: "deck",
     title: "Deck",
     commander: "vasse",
@@ -878,12 +869,12 @@ test("a Nexus power's rarity and role, and each card of a schedule, are words fr
     levels: [{ id: "deck-1", map: "starter", credits: 10, schedule: [{ round: 1, deal: ["epic", 3] }], mission: PERIMETER_LEVEL.mission }],
   }
   const rarities = '"common", "uncommon", "rare", "legendary"'
-  assert.deepEqual(problemsWithGame({ armies: [deck], campaigns: [campaign] }), [
+  assert.deepEqual(problemsWithGame({ armies: [deck], stories: [story] }), [
     'army "deck": powers[no-tags] needs "rarity"',
     'army "deck": powers[no-tags] needs "role"',
     `army "deck": powers[odd].rarity should be one of ${rarities}, not "epic"`,
     'army "deck": powers[odd].role should be one of "troops", "production", "offense", "defense", "support", "economy", "commander", "information", "movement", not "magic"',
-    `campaign "deck": levels[deck-1].schedule[0].deal[0] should be one of ${rarities}, not "epic"`,
-    `campaign "deck": levels[deck-1].schedule[0].deal[1] should be a rarity (${rarities}), { "power": its id } or { "from": a Nexus }, not 3`,
+    `story "deck": levels[deck-1].schedule[0].deal[0] should be one of ${rarities}, not "epic"`,
+    `story "deck": levels[deck-1].schedule[0].deal[1] should be a rarity (${rarities}), { "power": its id } or { "from": a Nexus }, not 3`,
   ])
 })

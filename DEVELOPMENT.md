@@ -19,43 +19,48 @@ npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
 npm run check       # ./scripts/check-repository.sh — the repository validator
 npm run test:all    # typecheck, then both runtimes: what to run before every push
-npm run verify-maps # every checked-in map resolves to the same hashes twenty times (CI runs this)
+npm run verify-testing-saves # every testing save resolves to the same hashes twenty times (CI runs this)
 
-# grid — the engine, editor and replay tool. <map> is a .map.json path, suffix optional, or a map's id.
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish                       # watch (the default)
-./bin/grid.ts scenarios/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
-./bin/grid.ts scenarios/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
-npm run maps                                                          # every checked-in map
+# grid — the engine, editor and replay tool. <save> is a testing save (skirmish-testing/): its path, suffix optional, or its id.
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish                       # watch (the default)
+./bin/grid.ts skirmish-testing/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
+./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
+npm run testing-saves                                                 # every testing save
 ./bin/grid.ts engage-gap2-melee-vs-mix --seeds 1-12 --swap --army-a trooper:6,skyraider:6   # a trial: as built vs a variant
-./bin/grid.ts engage-bench                                             # a trial file (scenarios/trials/), with what it expects
+./bin/grid.ts engage-bench                                             # a trial file (skirmish-testing/trials/), with what it expects
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
-./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, campaign
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1'                   # PERIMETER's Build Phase
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1&round=3'           # its round 3, no keys to walk there
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --settings 'jumpStep=12&reducedMotion=true'
-./bin/terminal-nexus.ts --at 'campaign?level=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
+./bin/terminal-nexus.ts --at settings                                        # a title menu screen: settings, about, story
+./bin/terminal-nexus.ts --at 'skirmish?setup=new'                           # the setup screen: map, Commanders, who plays, Start
+./bin/terminal-nexus.ts --at 'skirmish?setup=load'                          # Load game: the saves folder, then saves/
+./bin/terminal-nexus.ts --at 'skirmish?seed=7'                              # a Skirmish: Vasse against Dob Hunter's balanced script
+./bin/terminal-nexus.ts --load mine.save.json --p2 script:rush              # a save (Esc, Save game), another script in p2
+./bin/terminal-nexus.ts --load saves/mirror-vasse.save.json                 # both slots scripts: spectating
+./bin/terminal-nexus.ts --note ~/.terminal-nexus/notes/<note>.note.json     # a playtest note (!), at its moment
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1'                   # PERIMETER's Build Phase
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1&round=3'           # its round 3, no keys to walk there
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings "$(pbpaste)"   # start from a pasted settings export
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --settings 'jumpStep=12&reducedMotion=true'
+./bin/terminal-nexus.ts --at 'story?mission=vasse-test-1' --keys "Esc n 1 1 Enter"  # open already in a state (Esc skips the intro)
 
 bun scripts/build-web.mjs                                             # the browser playtest page
 ```
 
 **A route** names a place in the game the way a web address names a page, without the site: the place,
 then `?` and `name=value` pairs joined by `&`. The title menu's places are `menu`, `settings`, `about`,
-`campaign` and `challenge`; a campaign level is `campaign?level=<id>`, with `&round=<n>` counting Battle
+`story` and the Skirmish screens (`skirmish?setup`, `skirmish?setup=new`, `skirmish?setup=load`); a Skirmish is `skirmish`, `skirmish?seed=<n>` or `skirmish?load=<file>`; a mission is `story?mission=<id>`, with `&round=<n>` counting Battle
 Rounds from 1 as the screen does. Quote a route on a command line, since the shell reads `?` and `&` itself. The
 same routes serve the game's `--at`, the scripted playtest's `--at`, the browser page's `#at=` and a
 demo's `at`; each title menu row names the route it opens; a route that is not a place is refused with
 every problem at once and what exists instead. The grammar and its table, where adding a place is one
 entry, are `src/cli/route.ts`; a route is read with the settings text and the key script as one launch, the
-same way for all four (`src/cli/launch.ts`). A bare launch opens the title menu for now; once the game can
-save, it is meant to continue the saved game from beside the settings in `~/.terminal-nexus/`, and `--at`
-stays the way to go anywhere else. An argument the game does not read is refused, and the removed
-`--build-phase` says that `--at 'campaign?level=vasse-test-1'` replaced it.
+same way for all four (`src/cli/launch.ts`). A bare launch opens the title menu; Save game (Esc, `v`, on a Skirmish) writes a
+save into `~/.terminal-nexus/saves/` (or the folder its name gives), and `--load <file>` opens it again. An argument the game does not read is refused, and the removed
+`--build-phase` says that `--at 'story?mission=vasse-test-1'` replaced it.
 
 Pinned versions, re-checked rather than remembered:
 
@@ -124,15 +129,15 @@ catch.
 What the suite proves, by area, is in [`docs/system-design/testing.md`](docs/system-design/testing.md):
 determinism (identical hashes across runs and runtimes, one call equals tick by tick, the kernel
 imports no renderer and calls no clock), the Grid's occupancy and collision masks, every rule with a
-named scenario, structured-cell snapshots across backends, the terminal lifecycle through one
+named testing save, structured-cell snapshots across backends, the terminal lifecycle through one
 disposer, and the browser page held to the terminal's characters, colours and keys.
 
 Things that bite:
 
 - **Bun has a 5000 ms per-test timeout; Node does not.** A test whose cost scales with the fixture
-  count (`for (const name of scenarioFiles())`) creeps up on it silently. Give it an explicit
+  count (`for (const name of testingSaveFiles())`) creeps up on it silently. Give it an explicit
   `{ timeout: 120_000 }` (third-argument form; identical under Node). Run the Bun suite once before
-  adding a scenario file.
+  adding a testing save.
 - **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
   failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
   test to make a busy machine pass.
@@ -158,31 +163,46 @@ remembering a rule instead of relying on one.
 
 A passing test says nothing about spacing, density or where the eye goes. Look.
 
-**A Skirmish is where a change is seen** ([`game-modes.md`](docs/game-design/game-modes.md), how a Skirmish is tested).
-Once the Skirmish milestone builds save files, every way of looking starts from one, under the same names the setup
-screen uses: `--load <save>` on the game and the playtest script, `--slot B=script:rush` to change who plays a side, and
-`skirmish play`, `round` and `brief` to play it headless, a whole battle or one round at a time
-([`skirmish-saves.md`](docs/system-design/skirmish-saves.md)). Until then, a Challenge battle (`--at 'challenge?seed=<n>'`)
-is a Skirmish against Dob Hunter's `balanced` script, and the duel commands play the same battle headless; open a
-mission by its route only when the change is about a mission.
+**A Skirmish is where a change is seen** ([`game-modes.md`](docs/game-design/game-modes.md), one battle on screen or not).
+Headless, a Skirmish is played from a save file, a round a command: `npm run skirmish -- -f <save>` prints the brief,
+`--p1 build:b.json` checks a slot's build actions, `--play-to next` plays the round and saves the next Build Phase, and `--p2 script:rush`
+changes who plays a side (the command's manual is `npm run skirmish -- --help`; how each kind of test uses it is
+[`testing-ground.md`](docs/system-design/testing-ground.md), testing through Skirmishes). On
+screen, `--load <save>` opens a save at its Build Phase, `--at 'skirmish?seed=<n>'` a new battle against Dob Hunter's
+`balanced` script, and `--at 'skirmish?setup=new'` the setup screen; open a mission by its route only when the change is
+about a mission. Which save shows what:
 
-**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on a mission's
-Build Phase without a terminal (a Skirmish's, once the Skirmish milestone makes it the default) and keeps what the screen showed after every key: text for every step
+| Save | Shows |
+| --- | --- |
+| `saves/crossing-new.save.json` | A new battle, round 1: the opening lines, the first hand, an empty base (the scripted playtest's start) |
+| `saves/crossing-round-4.save.json` | Three rounds in: bases built, armies regrouped, a Commander's return, Save game offering its own name |
+| `saves/mirror-vasse.save.json` | Both slots scripted: spectating, the result naming a winner |
+| `saves/pocket-short.save.json` | Four rounds on the small map: a whole battle to its result and `[m] Setup screen` in minutes |
+| `skirmish-testing/<folder>/*.save.json` | One Battle Round written by hand, one rule each: watched in `grid`, not on the game's screen |
+
+**The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on the game's screens
+without a terminal — a Skirmish from `saves/crossing-new.save.json` unless told otherwise, the title menu from a title
+route, a mission from its route — follows the game from screen to screen (New game's Start opens the battle, a
+result's `[m]` comes back to the setup screen), and keeps what the screen showed after every key: text for every step
 in `.playtest/<name>.txt`, PNGs on request (`--png final`, `--png all`), an animated GIF of the whole
 sequence (`--gif`). Keys go through the real keyboard and mouse adapters as the bytes a terminal
 sends, one at a time, and every frame comes from the composer the live screen uses, so there is no
-capture race. `--at <route>` opens a level at a round (PERIMETER's first unless given; a later round as
-a player who builds nothing reaches it, so a picture of round 3 needs no keys at all, and a title menu
-route is refused); `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
+capture race. `--at <route>` opens a title menu screen (`menu`, `skirmish?setup=new`, `skirmish?setup=load`), a
+mission at a round (a later round as a player who builds nothing reaches it, so a picture of round 3 needs no keys at
+all) or a Skirmish (`skirmish?seed=<n>`), `--load <save>` a save with `--p1`/`--p2`, and `--note <file>` a playtest
+note at its moment; `--settings "<text>"` starts from a pasted export; `--activity [filter]` prints what the
 run recorded in the Activity Logs, as the game's window would export it; `--size`, `--colors`,
 `--theme` and `--glyphs` set the terminal. The key names (`Down`, `S-Left`, `Name*N`, `Name~MS`, `wait~MS`,
 `click:X,Y`, `Right/release`) are at the top of `src/playtest/keys.ts`.
 
 ```bash
-node scripts/playtest.mjs --keys "Esc Down Down Space*4"                   # every step's status, then the final screen
-node scripts/playtest.mjs --keys "Esc Down Down Space*4" --gif --png final --name hatchery-run
+node scripts/playtest.mjs --keys "Esc n 1 1 Enter"                         # a Skirmish from a save: a power, a Hatchery
+node scripts/playtest.mjs --keys "Esc n 1 1 Enter" --gif --png final --name hatchery-run
 node scripts/playtest.mjs --keys "Esc n 2 s s wait~1000*20"                # a Battle Round, twenty seconds in
-node scripts/playtest.mjs --at 'campaign?level=vasse-test-1&round=3' --png final   # round 3 as it opens
+node scripts/playtest.mjs --at skirmish?setup=new --keys "1 3 s Esc s"     # the setup screen: the Pocket, both scripts, watched
+node scripts/playtest.mjs --load saves/crossing-round-4.save.json --png final   # round 4 as it opens
+node scripts/playtest.mjs --note ~/.terminal-nexus/notes/note-20261112-153012.note.json   # a note, at its moment
+node scripts/playtest.mjs --at 'story?mission=vasse-test-1&round=3' --png final   # a mission's round 3, for a mission change
 ```
 
 Output goes to `.playtest/`, which git ignores, and so does every capture script's. **Pictures are not
@@ -205,7 +225,7 @@ regeneration touches only the pictures a change shows up in. Set an Experiment b
 `--settings`, never by counting rows.
 
 **The browser playtest page** (`bun scripts/build-web.mjs`, one self-contained HTML file) runs the
-real menu, Build Phase and Battle Round through a stand-in terminal, painted on a canvas, with an on-screen
+real menu, Build Phase and Battle Round through a stand-in terminal, opening on a Skirmish,, painted on a canvas, with an on-screen
 key bar for the keys a phone lacks. It is a development tool, never a platform: the build fails if
 anything the page reaches imports a Node-only module, and a terminal at 80 × 24 stays the acceptance
 target. It cannot show raw keyboard mode, terminal cleanup, signals, a real terminal's own key
@@ -216,28 +236,29 @@ per demo, each opening the game at a route (a level at a round, with no key scri
 key script with given settings, and saying what to try (`scripts/build-web.mjs` describes the file; a bad
 route or key script fails the build; keep a pull request's file in `scripts/demos/` until its question is
 answered). Its mode buttons that are game screens open their routes, and a copy on disk opens wherever its
-address says: `#at=campaign?level=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A
+address says: `#at=story?mission=vasse-test-1&round=3`, with `&settings=` and `&keys=` after it. A
 claude.ai link cannot carry an address with `=` in it, so a published page opens at a place through a demo.
 
-**Duels put two armies against each other** (`npm run duel -- ...`, [`duels.md`](docs/system-design/duels.md),
-the `duel` skill). Headless: each round both sides keep a Nexus power and plan a Build Phase blind, then a Battle
-Round plays between them. Scripts play in one process; a model plays through files, one agent a side. Use them to
-see how an army spends its power curve, never as a verdict on balance.
+**Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill). Headless: each
+round both sides keep a Nexus power and plan a Build Phase blind, then a Battle Round plays between them
+([`duels.md`](docs/system-design/duels.md)). Scripts play in one process; a model writes each round's build actions
+from its brief. Use them to see how an army spends its power curve, never as a verdict on balance.
 
 ```bash
-npm run duel -- bench --seeds 1-6 --rounds 8                          # every Commander, every script, both sides
-npm run duel -- play --a vasse --b dob --player-a script:rush --seed 2 --out .playtest/duel
-npm run duel -- new --dir .playtest/d1 --a averno --b dob --seed 11 --rounds 8   # then one model agent a side:
-npm run duel -- wait --dir .playtest/d1 --side A     # prints the brief; the agent writes a plan, then
-npm run duel -- submit --dir .playtest/d1 --side A --plan .playtest/d1/plan-A.json
+npm run skirmish -- --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --rounds 8 --play-to end
+npm run skirmish -- --map crossing --p1 script:agro --p2 script:defensive --play-to end --out .playtest/rounds --log .playtest/battle.log
+npm run skirmish -- --map crossing --p1 build: --p2 build: --seed 11 --save .playtest/m1.save.json   # one model agent a slot:
+npm run skirmish -- -f .playtest/m1.save.json      # both briefs; each agent answers with its build actions, then
+npm run skirmish -- -f .playtest/m1.save.json --p1 build:.playtest/p1.json --p2 build:.playtest/p2.json --play-to next
 ```
 
-Model against model, step by step and with the task to give each agent, is in [`duels.md`](docs/system-design/duels.md):
-use a small, cheap model, play each pairing from both sides, and read the reports beside `result.md` for why.
+Model against model, with the task to give each agent, is in [`testing-ground.md`](docs/system-design/testing-ground.md),
+testing through Skirmishes: use a small, cheap model, play each pairing from both sides, and read every round's report
+for why.
 
 **Measuring a change plays the same battles before and after it** (`node bin/measure.ts`,
 [`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill):
-the route scenarios and every map, duels between every Commander, and every mission by fixed plans, written
+the route saves and every map, duels between every Commander, and every mission by fixed plans, written
 down as one JSON file per run and compared in plain words. Play only what the change can move, written down with
 the one question it must answer; after a power-curve change, mark what the new result supersedes rather than
 leaving old numbers to read as current; and check every sentence that tells Mario where to look against the events
@@ -318,7 +339,7 @@ The unit-architecture spike and the menu spike in `docs/history/reports/` are th
 ## 6. The feedback loop
 
 Mario plays merged builds, several at a time, and sends long, specific feedback, sometimes with a
-pasted **settings export** or an **Activity Logs export**. This is the most valuable input the project
+pasted **settings export**, an **Activity Logs export** or **playtest notes**. This is the most valuable input the project
 gets; the loop is built to turn it around within hours. The exact procedure is the `feedback-round`
 skill; the ideas behind it:
 
@@ -338,13 +359,18 @@ skill; the ideas behind it:
    filter for it at the top of `ACTIVITY_FILTERS` in `src/log/activity.ts`, check with
    `playtest.mjs --activity` that a flow logs it, and ask him to play, open Esc then `a`, export and paste
    it. Remove both once answered, as an Experiment is.
-5. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
+5. **A note is the moment itself.** `!`, on any screen, takes one line and saves a note file (in
+   `~/.terminal-nexus/notes/`; the browser page copies it): the round as its Build Phase opened, every command pressed
+   since with its time, the screen as text, the settings and the last Activity Logs events. `--note <file>` on the game
+   or the playtest script opens it at exactly that moment, so a note needs no paragraph saying how to get there: read
+   its line, open it, and log it like any item (the `feedback-round` skill).
+6. **His export is the answer.** Export settings (`e` in Settings) copies every setting and
    Experiment as `name = value` text; reproduce what he saw with `--settings "<text>"` on the game,
    the playtest script or `#settings=` on the browser page. Then settle each Experiment it answers:
    his value becomes the default, its tier becomes *tuned* with who chose it and when, and the
    Experiment is deleted. A few stay longer (a number that depends on the player's keyboard, a stand-in
    value) or graduate into real Settings.
-6. **Size the Demo to the change** (the `pr-description` skill): a code block or nothing when nothing
+7. **Size the Demo to the change** (the `pr-description` skill): a code block or nothing when nothing
    shows on screen, screenshots for a look, a GIF for motion, a playable page only when it must be
    played. Rewrite the pull request against `main` after every round, then wait; do not start the
    next step.

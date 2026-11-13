@@ -1,0 +1,4 @@
+{
+  "script": "turtle",
+  "about": "Builds Turrets and holds in front of its Nexus, attacking only once its army is large."
+}

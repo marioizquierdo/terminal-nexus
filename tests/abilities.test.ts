@@ -14,8 +14,8 @@ import { literal, positiveWholeNumber, record } from "../src/content/shape.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import { creditsEarned } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { loadScenario } from "../src/scenario/index.ts"
-import type { PlacementBlock, ScenarioDefinition } from "../src/scenario/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
 
 /** A unit that stands where it is put and has `abilities` — nothing else, so a test sees the ability alone. */
@@ -66,7 +66,7 @@ function block(placed: readonly Placed[]): PlacementBlock {
 
 /** A small Grid with each side placed as given, resolved tick by tick: every event, in order. */
 function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number, registry = REGISTRY, abilities?: AbilityTable, seed = 1): DomainEvent[] {
-  const scenario: ScenarioDefinition = {
+  const opening: BattleOpening = {
     id: "abilities",
     name: "abilities",
     grid: { width: 24, height: 8 },
@@ -76,7 +76,7 @@ function run(sides: Readonly<Record<PlayerId, readonly Placed[]>>, ticks: number
     terrainLegend: { ".": "terrain.plain" },
     placements: { A: block(sides.A), B: block(sides.B) },
   }
-  const loaded = loadScenario(scenario, { registry })
+  const loaded = openBattle(opening, { registry })
   const context = { ...contextFor(loaded.state, registry, ticks), ...(abilities === undefined ? {} : { abilities }) }
   const events: DomainEvent[] = []
   let state = loaded.state
