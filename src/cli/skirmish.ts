@@ -54,7 +54,9 @@
 //   --commanders <a,b|all>   every pairing of these Commanders, each from both sides, once a seed: who won by Commander
 //
 // What it writes:
-//   --show <0,120,end>       each Battle Round played drawn as text at these ticks (end: as it ends), after its report
+//   --show <0,120,end>       each Battle Round played as an ASCII screenshot at these ticks (end: as it ends), after its
+//                            report: the Grid as the screen draws it, with a legend and what stands under what
+//   --show-effects           the ASCII screenshots with the effects on (shots, bursts); without, only what stands
 //   --json                   the briefs as data rather than text
 //   --out <dir>              every round played: its save (round-<n>.save.json) and its report (round-<n>.txt)
 //   --log <file>             every round's Battle Round as grid logs it, at --log-level (info: error, warn, info,
@@ -88,7 +90,7 @@ export const EXIT = { done: 0, failed: 1, refused: 2 } as const
 
 /** The options that take no value, and those that take one: the words that ask for a Skirmish, which the game's route
  *  takes too (`src/skirmish/ask.ts`), and the command's own. */
-const FLAGS = new Set(["json", "help"])
+const FLAGS = new Set(["json", "help", "show-effects"])
 const VALUES = new Set([...Object.keys(ASK_WORDS), "save", "file", "seeds", "commanders", "play-to", "out", "log", "log-level", "name", "notes", "show"])
 
 /** The options as written: each value by its name, and the flags given. */
@@ -113,6 +115,8 @@ export type SkirmishRequest = Readonly<{
   logLevel?: LogLevel
   /** The ticks of every Battle Round played to draw the battle at (`end`: as the round ends): `--show 0,120,end`. */
   show?: readonly (number | "end")[]
+  /** `--show-effects`: the ASCII screenshots with the effects on screen at that instant (shots, bursts, fire's light). */
+  showEffects: boolean
   json: boolean
   name?: string
   notes?: string
@@ -189,6 +193,7 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
     throw new Error(`--show is ticks and end, with commas (0,120,end), not "${values["show"]}"`)
   })
   if (show !== undefined && playTo === undefined) throw new Error("--show draws the Battle Rounds played: it needs --play-to")
+  if (flags.has("show-effects") && show === undefined) throw new Error("--show-effects dresses the ASCII screenshots --show takes: name the ticks with --show")
   return {
     ...given("load", load),
     ...given("save", save),
@@ -203,6 +208,7 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
     ...given("logLevel", level === undefined ? undefined : parseLevel(level)),
     ...given("show", show),
     json: flags.has("json"),
+    showEffects: flags.has("show-effects"),
     ...given("name", values["name"]),
     ...given("notes", values["notes"]),
   }

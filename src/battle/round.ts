@@ -29,7 +29,7 @@ import type { BattleMap } from "./maps.ts"
 import { BATTLE_MAPS, battleGrid } from "./maps.ts"
 import type { BattleArmy } from "./sides.ts"
 import { armyOf, battleArmy, loadoutOf, powerOf } from "./sides.ts"
-import { nameOf, roundReader, scoreOf } from "./reading.ts"
+import { nameOf, roundReader, scoreOf } from "./reading/index.ts"
 import type { BattleResult, BattleSetup, BattleState, Formation, Placement, RoundReport, Side, BuildActions, SideReport, SideState, Zone } from "./types.ts"
 import { APART_GAP, SIDES } from "./types.ts"
 
@@ -522,7 +522,7 @@ export function playRound(
   // The Battle Round, each side on its own content.
   const context = contextFor(start, sides.A, state.setup.pulseTicks, { sides })
   const events: DomainEvent[] = []
-  const reader = roundReader(start, sides)
+  const reader = roundReader(start, sides, { A: phases.A.catalog, B: phases.B.catalog })
   let current = start
   watch?.(current, [], sides.A, sides)
   while (current.outcome === null && current.tick < state.setup.pulseTicks) {
@@ -548,7 +548,7 @@ export function playRound(
     reports[side] = sideReport(side, phases[side], plans[side], state.sides[side].credits, earned, start, current, events, sides, fell.some((absence) => absence.player === side))
   }
   const ended = current.outcome?.reason === "nexus-destroyed" ? "nexus" : "time"
-  const report: RoundReport = { round, sides: reports, ticks: current.tick, ended, reading: reader.reading() }
+  const report: RoundReport = { round, sides: reports, ticks: current.tick, ended, reading: reader.reading(current) }
   const result: BattleResult | null =
     ended === "nexus" && current.outcome !== null
       ? { winner: current.outcome.winner, by: current.outcome.winner === null ? "draw" : "nexus", round }

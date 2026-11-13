@@ -1648,7 +1648,7 @@ function place(context: BuildContext, state: BuildState): BuildState {
   return {
     ...back,
     ...(back.focus === "menu" ? { ack: acknowledge(state, "pressed", entry) } : {}),
-    status: status(`${item.label} placed (resources: ${remaining(context, placed)}) - [u] undo`, "success"),
+    status: status(`${item.label} placed (credits: ${remaining(context, placed)}) - [u] undo`, "success"),
   }
 }
 

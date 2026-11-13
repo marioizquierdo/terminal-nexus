@@ -15,10 +15,9 @@ import { baseContentId, fittingsOf } from "../content/index.ts"
 import { supplyOf } from "../content/supply.ts"
 import type { BattleArmy } from "./sides.ts"
 import { armyOf, loadoutOf, powerOf } from "./sides.ts"
-import { handOf, mapOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
-import { battlePicture } from "./picture.ts"
-import type { Score } from "./reading.ts"
-import { readingLines, scoreLine, scoreOf } from "./reading.ts"
+import { handOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
+import type { Score } from "./reading/index.ts"
+import { readingLines, scoreLine, scoreOf } from "./reading/index.ts"
 import type { BattleState, RoundReport, Side, SideReport } from "./types.ts"
 import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
 
@@ -91,6 +90,7 @@ export type BriefData = Readonly<{
      *  powers are): where to look for an attack that hits an area. */
     trains: readonly string[]
   }>
+  /** The Grid as the round opens, as its printer drew it (`DrawMap`); empty when nothing drew it (a script's brief). */
   map: readonly string[]
   /** The score so far: each side's damage dealt and Nexus share, and who leads by the rule a battle that runs out of
    *  rounds is judged by (`scoreOf`, `./reading.ts`). */
@@ -128,13 +128,9 @@ export function strengthOf(definition: ContentDef): number {
 /** What a power does, in its card's own line. */
 const cardOf = (card: PowerCard, number: number): BriefCard => ({ number, id: card.id, name: card.name, does: card.description, rarity: card.rarity })
 
-/** The map as rows of text, drawn as every picture of a battle is (`battlePicture`): the Grid as the round opens. */
-function picture(state: BattleState, registry: (side: Side) => ContentRegistry): string[] {
-  const things = state.carried === null
-    ? (["A", "B"] as const).flatMap((side) => standingOf(state, side).map((structure) => ({ contentId: structure.contentId, player: side, anchor: structure.anchor })))
-    : state.carried.entities.map((entity) => ({ contentId: entity.contentId, player: entity.player as Side, anchor: entity.anchor }))
-  return battlePicture(mapOf(state), things, registry)
-}
+/** What the Grid looks like as a round opens, drawn by whoever prints the brief (the `skirmish` command draws an ASCII
+ *  screenshot, `src/cli/battle-map.ts`): the battle never reaches the view itself. Given each side's content. */
+export type DrawMap = (state: BattleState, registry: (side: Side) => ContentRegistry) => readonly string[]
 
 /** A side's round report as one line: what it built, kept, fielded, lost, dealt. */
 function reportLine(label: string, report: SideReport): string {
@@ -151,7 +147,7 @@ function reportLine(label: string, report: SideReport): string {
 
 /** The brief side `side` reads before it plans the battle's next round. `strategies`, when given, is what battles have
  *  taught so far (`docs/game-design/play-strategies.md`), for a player that reads words: the text carries it. */
-export function briefOf(state: BattleState, side: Side, strategies?: string): Brief {
+export function briefOf(state: BattleState, side: Side, strategies?: string, drawMap?: DrawMap): Brief {
   const enemy = other(side)
   const army: BattleArmy = armyOf(state, side)
   const enemyArmy: BattleArmy = armyOf(state, enemy)
@@ -260,7 +256,7 @@ export function briefOf(state: BattleState, side: Side, strategies?: string): Br
         item.spawns === undefined ? [] : [`${item.label}: ${item.spawns.perWave * item.spawns.waves} ${titleOf(item.spawns.unit)} a round (${statsOf(enemyLoadout.registry.get(item.spawns.unit))})`],
       ),
     },
-    map: picture(state, registryOf),
+    map: drawMap === undefined ? [] : drawMap(state, registryOf),
     score: scoreOf(state.history),
     last,
     reports: state.history,
@@ -287,6 +283,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push(`Credits to spend: ${data.credits}. Supply: ${data.supply.used} of ${data.supply.cap ?? "unlimited"} places used (a building stops training while the army is full).`)
   lines.push(`Your Nexus: ${data.nexus.health} of ${data.nexus.most}. Theirs (${data.enemy.commander}): ${data.enemy.nexus.health} of ${data.enemy.nexus.most}. A side whose Nexus falls loses.`)
   lines.push(`Score: ${scoreLine(data.score, data.side)}`)
+  lines.push("Public and private: everything the Battle Round showed (the score, the last round, the map) the enemy sees too; your credits, your hand and the build actions you are about to give are yours alone.")
   lines.push("")
   lines.push("## The Nexus Pulse's hand: keep one (by its number), or none")
   for (const card of data.hand) lines.push(`${card.number}. ${card.name} (${card.rarity}): ${card.does}`)
@@ -311,10 +308,12 @@ export function briefText(data: BriefData, strategies?: string): string {
     }
     lines.push("")
   }
-  lines.push("## The map (your things lower case, theirs upper case; # rock, . open ground)")
-  lines.push("```")
-  lines.push(...data.map)
-  lines.push("```")
+  if (data.map.length > 0) {
+    lines.push(`## The map, as the screen draws it (p1's things lower case, p2's upper case; you are ${data.side === "A" ? "p1" : "p2"})`)
+    lines.push("```")
+    lines.push(...data.map)
+    lines.push("```")
+  }
   lines.push(`Places you can name for a building (it goes to the legal spot nearest): ${Object.entries(data.zones).map(([zone, tile]) => `${zone} (${tile.x},${tile.y})`).join(", ")}. "forward" is ahead of your furthest building, so a base pushed forward builds further forward. You may give x and y instead.`)
   lines.push(`You build within 6 of your Nexus and of buildings linked to it (a row counting two columns); buildings may touch.`)
   lines.push("")

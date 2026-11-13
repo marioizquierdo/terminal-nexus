@@ -586,7 +586,7 @@ Behind the **Battle banner** Experiment (on by default; off keeps the centred st
   refusal about a tile goes when the cursor leaves it. (RULE — `tests/build-help.test.ts`)
 - **A message is typed** — text, a tone and its tile, never a bare string; hints have the quieter `hint`
   tone, and tones resolve onto style roles in one place (`src/view/status.ts`).
-- **Say the result and the way back**: `Hatchery placed (resources: 70) - [u] undo`. **A refusal names its
+- **Say the result and the way back**: `Hatchery placed (credits: 70) - [u] undo`. **A refusal names its
   tile**: affordability comes first, then the build range (a region; with no tile of the building inside it,
   its first tile is named), then the tile's own problem. Buildings may touch: one that makes units sets them on its
   roof, so no refusal is about room round it. (RULE — `tests/build-help.test.ts`)

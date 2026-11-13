@@ -8,7 +8,7 @@
 import type { Absence } from "../match/commander.ts"
 import type { MatchState, PlayerId } from "../state/types.ts"
 import type { BattleMap } from "./maps.ts"
-import type { RoundReading } from "./reading.ts"
+import type { RoundReading } from "./reading/index.ts"
 
 /** A side of the battle, the state's own `PlayerId`: A starts in the west, B in the east. */
 export type Side = PlayerId

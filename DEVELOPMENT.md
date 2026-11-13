@@ -416,6 +416,20 @@ framework before two concrete uses reveal its contract; treat a passing test as 
 something feels; hide a blocker by changing a pinned runtime, fixture or target; add a secret, a
 service or an external write.
 
+**Which past decisions bind** (the owner, 2026-11-13: "Decisions are important for general design, architecture, but
+not small details"). The game is not playable yet, and the core mechanics (the banner, the economy, the interface's
+feel for a person) are still being tried. So:
+
+- **They bind:** the rules that do not bend (`AGENTS.md`), the architecture, the modes and the shape of a battle, and
+  every RULE in the design documents. Changing one is a design change, as above.
+- **They do not bind:** small details: a line's wording, a number, a label, which of two near words a screen uses.
+  Make them agree with the [glossary](docs/game-design/glossary.md) and move on. When a later milestone settles the
+  thing they describe (one resource or two waits for the worker economy), they change with it, together.
+- **The priority now is the `skirmish` command and automated testing:** headless battles, readings an agent can act
+  on, scripts worth playing against. It comes before any past detail it trips over.
+- **Quote the owner only with a link to his words in a feedback log.** A note an agent wrote (in a test, a comment, a
+  report) is never attributed to him: the placement line's "resources", long cited as his, was an agent's.
+
 **When the design does not answer you**, in this order: decide it yourself if it is reversible; make
 it observable (an Experiment, a toggle, a side-by-side fixture) so Mario can look at both answers;
 register it in `docs/milestones/open-questions.md` if it is genuinely his call, with the question in a

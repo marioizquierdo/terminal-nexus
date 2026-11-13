@@ -56,6 +56,9 @@ are defined once, in the [glossary](docs/game-design/glossary.md).
   ([`game-modes.md`](docs/game-design/game-modes.md), how the game grows).
 - **Mario's time is the scarcest thing we have.** Play every change yourself before asking him; every ask says whether
   it is to play, watch, decide or do; at most five wait on him (the manual's "The feedback loop").
+- **The priority now: the `skirmish` command and automated testing.** Past decisions on design and architecture
+  bind; small details (a line's wording, a number, a label) do not, and are made to agree with the glossary (the
+  manual's "Changing the design", which past decisions bind). Quote Mario only with a link to his words.
 - **Whatever Mario's latest feedback asks for comes first.** A pasted settings export is feedback:
   start the game with it (`--settings`) and settle each Experiment it answers.
 - **One word, one thing: check the [glossary](docs/game-design/glossary.md) before naming anything** — a

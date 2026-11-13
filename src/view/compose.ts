@@ -137,14 +137,24 @@ export function gridOrigin(grid: GridTerrain): { column: number; row: number } {
   return { column: 1 + offsetTilesX, row: 1 + HEADER_ROWS + offsetTilesY }
 }
 
-export function composeFrame(input: CompositionInput, colors: ColorDepth): ReadonlyCellFrame {
-  void colors
-  const size = COMPOSITION_SIZE
+/** What the Grid's own layers are drawn from: the ground, what stands and walks on it, the fire, and the effects. */
+export type GridLayersInput = Pick<CompositionInput, "grid" | "registry" | "positions" | "effects" | "glyphPack" | "heldCorpses" | "fire"> &
+  Readonly<{
+    /** What stands on the Grid: a tick's state, or anything shaped like its entities and ground items. */
+    state: Readonly<{
+      entities: readonly Readonly<{ ordinal: number; contentId: string; player: PlayerId; anchor: Coord }>[]
+      groundItems: readonly Readonly<{ at: Coord }>[]
+    }>
+  }>
+
+/**
+ * **The Grid's own layers**, every tile: terrain, salvage, buildings, units and air, burning ground and the effects, each
+ * in its band, a tile drawn on the cell `cellOf` gives. Every picture of the Grid as the game draws it is this: the
+ * engine tool's frame (`composeFrame`) and the ASCII screenshot (`./ascii-screenshot.ts`). Returns the tiles an entity
+ * stands on.
+ */
+export function drawGridLayers(cells: BandCell[], input: GridLayersInput, cellOf: (tile: Coord) => Coord): ReadonlySet<string> {
   const pack: GlyphPack = input.glyphPack ?? "ascii"
-  const cells: BandCell[] = []
-  const origin = gridOrigin(input.grid)
-  // The frame cell a tile is drawn on: one cell a tile.
-  const cellOf = (tile: Coord): Coord => ({ x: origin.column + tile.x, y: origin.row + tile.y })
 
   // Band 1 — terrain.
   for (let y = 0; y < input.grid.height; y += 1) {
@@ -212,12 +222,6 @@ export function composeFrame(input: CompositionInput, colors: ColorDepth): Reado
     standing: (tile) => occupied.has(`${tile.x},${tile.y}`) || salvage.has(`${tile.x},${tile.y}`),
   })
 
-  // A quiet rule around the play area, where the Grid is smaller than the pane. Without it a
-  // lattice-drawn field has no visible edge, and a player cannot tell empty ground from off-Grid.
-  // When the Grid fills the pane — the default 48 x 16 preset does — the frame's own border is
-  // already that edge, so this draws nothing.
-  drawGridEdge(cells, input.grid, origin, pack)
-
   // Bands 3, 7, 8 and 9 — effects. They may paint here and nowhere else (`effects.md`),
   // they are clipped to the Grid, and they can never move a glyph the simulation put down.
   //
@@ -245,6 +249,23 @@ export function composeFrame(input: CompositionInput, colors: ColorDepth): Reado
   // replace a unit, a structure or a wreck's glyph is dropped on that tile — the screen may look wrong;
   // the player must still be able to see what is attacking them.
   paintEffectCells(cells, effectSources, cellOf, (tile) => occupied.has(`${tile.x},${tile.y}`))
+  return occupied
+}
+
+export function composeFrame(input: CompositionInput, colors: ColorDepth): ReadonlyCellFrame {
+  void colors
+  const size = COMPOSITION_SIZE
+  const pack: GlyphPack = input.glyphPack ?? "ascii"
+  const cells: BandCell[] = []
+  const origin = gridOrigin(input.grid)
+  // The frame cell a tile is drawn on: one cell a tile.
+  drawGridLayers(cells, input, (tile) => ({ x: origin.column + tile.x, y: origin.row + tile.y }))
+
+  // A quiet rule around the play area, where the Grid is smaller than the pane. Without it a
+  // lattice-drawn field has no visible edge, and a player cannot tell empty ground from off-Grid.
+  // When the Grid fills the pane — the default 48 x 16 preset does — the frame's own border is
+  // already that edge, so this draws nothing.
+  drawGridEdge(cells, input.grid, origin, pack)
 
   // Band 10 — chrome: frame, header, footer, side panel.
   drawChrome(cells, input, size, pack)

@@ -9,6 +9,7 @@ import assert from "node:assert/strict"
 import { playStrategies } from "../src/cli/play-strategies.ts"
 import type { BattleSetup, BattleState, Roster, BuildActions } from "../src/battle/index.ts"
 import { armyOf, briefOf, battleArmy, handOf, loadoutOf, beginBattle, playToEnd, playRound, readBuildActions, SCRIPTED } from "../src/battle/index.ts"
+import { drawBattleMap } from "../src/cli/battle-map.ts"
 import { hashOf } from "../src/state/canonical.ts"
 
 const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
@@ -108,8 +109,11 @@ test("a plan is read leniently: the first JSON object in the text, a building as
 })
 
 test("the brief says what a player needs: the round, the Commander and her skills, the hand, the buildings, the map, the plan's form", () => {
-  const brief = briefOf(beginBattle(setup({ commanders: { A: "dob", B: "vasse" } })), "A")
+  // The map is drawn by whoever prints the brief: the `skirmish` command draws an ASCII screenshot of it.
+  const brief = briefOf(beginBattle(setup({ commanders: { A: "dob", B: "vasse" } })), "A", undefined, drawBattleMap)
   assert.equal(brief.data.side, "A")
+  assert.match(brief.text, /^Legend: /mu, "the map's legend says what each glyph is")
+  assert.deepEqual(briefOf(beginBattle(setup()), "A").data.map, [], "a brief nobody draws has no map: a script reads the data")
   assert.equal(brief.data.hand.length, 3)
   assert.ok(brief.data.buildings.some((building) => building.id === "den" && building.strength > 0))
   assert.ok(brief.data.buildings.some((building) => building.id === "chop-shop" && !building.open))

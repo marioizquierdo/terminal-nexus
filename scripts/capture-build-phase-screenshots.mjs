@@ -470,7 +470,7 @@ scriptedGif("build-hatchery-run", {
   // cursor, on the Grid Nexus, moves to the nearest good spot), place it, arm it again (the cursor, now
   // on the first, moves a free tile away from it), place it again — no arrow key on the Grid at all.
   keys: "Down*3 Space*4",
-  expect: "Hatchery placed (resources: 40)",
+  expect: "Hatchery placed (credits: 40)",
 })
 
 scripted(
@@ -561,7 +561,7 @@ scripted(
 scripted(
   "build-just-placed",
   "Right after a placement: the building is drawn in full, the keyboard is back on the menu on the same row, and the bottom line says what is left and how to take it back",
-  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down*4 Enter`, expect: "Barracks placed (resources: 90) - [u] undo" },
+  { keys: `${PICK_FIRST_POWER} 1 Right*6 Down*4 Enter`, expect: "Barracks placed (credits: 90) - [u] undo" },
 )
 
 scripted(

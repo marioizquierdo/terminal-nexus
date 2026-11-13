@@ -263,7 +263,7 @@ terminals that could not be tested are in
   illegal-placement block on top of what the player had just correctly built, reading as a failure. It
   holds by construction: every placement disarms and returns focus to the menu (the menu orchestrates,
   above), so no ghost is left on the Grid to recheck the tile, and the status line reports the success —
-  `Barracks placed (resources: 60) - [u] undo`.
+  `Barracks placed (credits: 60) - [u] undo`.
 
 ## 7. Taps, holds and releases
 

@@ -124,10 +124,10 @@ Not a balance verdict, but where this milestone's steps should look first:
   the other side's base.
 - **Reading the opponent, and reading a loss**: the brief should show the score that decides (the damage totals while
   damage decides), and a round's report should say what hit the Nexus and what destroyed the buildings, by source.
-  **Built headless on 2026-11-13** ([his words](../history/feedback/2026-11-13-reading-the-battle.md)): one reader of
-  the battle (`src/battle/reading.ts`: the score, the front, first contact, the nearest the enemy came, what hit each
-  Nexus, each building lost and by what, a side's own blasts), in every brief and round report; the battle drawn as
-  text at chosen ticks (`skirmish --show`); and `script:reader`, which plans from it. The screen saying the same waits
+  **Built headless on 2026-11-13** ([his words](../history/feedback/2026-11-13-reading-the-battle.md)): the battle
+  reading (`src/battle/reading/`: the score, each army and its losses with their value, the buildings standing, damaged
+  and destroyed, the advance, the damage taken by source, the engagements), in every brief and round report; ASCII
+  screenshots at chosen ticks (`skirmish --show`); and `script:reactive`, which plans from it. The screen saying the same waits
   for this milestone's steps.
 - **What the player is never told**: a death's blast hurts its own side unless the content says enemies alone (the
   Ravel bombers emptied their own base), a building action's effect, and whether a power is once or every round.

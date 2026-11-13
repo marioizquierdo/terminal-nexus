@@ -548,6 +548,23 @@ the owner's had, and the owner's verdict on it is in [the feedback](feedback/202
   enemy moved the round the Nexus fell in, not what the player had to decide; what a person could weigh needs a second
   resource and units that counter each other.
 
+## Reading the battle, and whose words a note holds (2026-11-13)
+
+1. **A quote in a test is not the owner's word because the comment says so.** "Barracks placed (resources: 60)" was
+   cited as his for weeks in a test's comment; it was an agent's note. Quote him only with a link to his words in a
+   feedback log, and treat a small detail (wording, a number, a label) as changeable whoever wrote it
+   (DEVELOPMENT.md, which past decisions bind).
+2. **A typed save rejects a fraction.** The battle's state is hashed as integers only, so a reading kept in a round's
+   report must be whole numbers: the first front, a share from 0 to 1, failed the save tests; whole percent passed.
+3. **A script that reads one round flips.** Reading only the last round's trade, the reactive script attacked, lost,
+   held, lost, attacked, giving back the kept front each time. Reading the whole battle's trades by stance settled it.
+4. **A forced shape can leave credits unspent.** A block for every building fit the Crossing and not the Pocket's
+   small build range, where refused buildings left a third of the credits unspent and lost 2 to 16. Measure a script's
+   rule on both maps before keeping it.
+5. **Draw the screen's picture with the screen's code.** A text picture written apart from the view disagreed with it
+   (units drawn over buildings differently); the ASCII screenshot now draws with the frame's own layers, and what text
+   cannot show (what is under a unit, which side a symbol is) is listed beside it.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".

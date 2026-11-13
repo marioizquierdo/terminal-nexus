@@ -70,3 +70,76 @@ is no good player.
 
 **Ready for it.** The reading is in the brief a model reads, as words and as data (`--json`), so the agent players'
 milestone injects the brief as it stands.
+
+## The second round, the same day: notes on pull request 99
+
+### F288 — "resources" was never his, and which decisions bind
+
+> The footer barracks place resources 60 is wording, I did not choose myself in an earlier playtest. That might have been a note from the agent. I would like you to also review how are we tracking those decisions, because remember, we still don't have a playable game … On this milestone right now for the skirmish, we are focusing a lot on the skirmish command, which allows for automated testing, which is very, very important. And that should be the priority right now, on top of any past decisions that we made. Decisions are important for general design, architecture, but no small details like what we use resources. … So just credits.
+
+**Built.** The placement line says credits, as the glossary does; the test that called "resources" his words no longer
+does. `DEVELOPMENT.md` now says which past decisions bind (the rules, the architecture, the modes, every RULE) and which
+do not (a line's wording, a number, a label: made to agree with the glossary, and changed together when a later
+milestone settles them), that the priority now is the `skirmish` command and automated testing, and that he is quoted
+only with a link to his words. `AGENTS.md` says it in a line.
+
+### F289 — what earns a glossary entry, and how it is organised
+
+> Let's simply add one note on top that have some basic rules about what makes a new glossary term … a general abstraction that makes sense across the game, not a small focus detail under a specific module. … Perhaps we can also create some 3 or 4 subcategories if it makes sense to point at different layers of abstraction.
+
+**Built** (by a sub-agent). "What belongs here" opens the glossary: a general abstraction met in more than one place,
+never one module's detail, checked against the words already there and the retired ones. Four layers, alphabetical
+within each: the game, the world, making and testing, the engine and the code; 191 entries pruned to 138.
+
+### F290 — duel is the battle
+
+> I see that the general folder is called duel, and now I'm not so sure the term duel makes sense. … Perhaps there is no need to have a dual folder. … The file itself could be called bottle reading.
+
+**Built.** `src/duel/` is `src/battle/` (`BattleState`, `BattleSetup`, `BattleResult`, `BattleMap`, `beginBattle`,
+`playToEnd`), `duels.md` is `battles.md`, and the word is retired. The measurement keeps "duels" as the name of its part
+that plays scripted battles over seeds (`measure run --parts duels`), because its stored records use it. The battle
+reading is a folder, `src/battle/reading/`.
+
+### F291 — simpler readings, public and private, a place to add more
+
+> Make sure that the different readings we're making are not too elaborate … I know very well from watching StarCraft replays that they usually track the resources, the army value … the supply … So just make sure that the readings are properly labeled as public information … Perhaps losses on each round. … both the total value for both value of army and a list of the units … Buildings seems very useful as well … a list of the damaged buildings … with a special mention to the nexus, but the nexus could just be part of this list … What really matters here is to have a place where we can keep adding more metrics.
+
+**Built.** One small file a reading, each a tracker shown every tick: the score; each army as the round opened and
+ended and what it lost, each with its value in credits (a unit at what its building pays for one); the buildings
+standing, damaged (the Nexus among them, nothing special) and destroyed, with what destroyed each; the advance; the
+damage taken by source; the engagements. The "front" (an average of where hits landed) is gone: the advance and the
+engagements say it plainer. Every reading is public, and the brief says the Build Phase's credits, hand and build
+actions are private. A new reading is a new file and one line.
+
+### F292 — the ASCII screenshot is the screen's render, with the overlaps beside it
+
+> I will encourage to show exactly the same as the final render, so there is no ambiguity, but have an additional property that will list overlaps. … the screenshot stays as close as possible to the actual view … clearly differentiated through the documentation … We should probably keep the particles out, but maybe there should be an option to include particles if they want to see them … only if it's simple.
+
+**Built.** The Grid's layers are drawn by one function the screen's frame and the ASCII screenshot share
+(`drawGridLayers`), from the same view the screen plays, so a screenshot at a tick is what the screen draws there,
+lattice ground and a unit on a roof included. Beside it, never in it: a ruler, a legend (each building with its art and
+where it stands, since two sides' buildings can look alike in text), and the overlaps (each cell where one thing
+stands over another). `--show-effects` adds the effects, a flag, since the view already has them. The documents call
+it an ASCII screenshot, never a screenshot (an image).
+
+Read back as a model reads it, a screenshot of the Pocket at tick 120 was enough to say where each army stood, which
+buildings were whose and that a trooper stood on the Citizen Nexus's roof; the sparse ground lattice makes empty
+ground harder to count than a dot a tile would, which is the price of matching the screen.
+
+### F293 — reactive, and maps classified for testing
+
+> The script that reads should be renamed, because reader sounds like a functionality, not like a script. I will probably call it reactive … perhaps the script's documentation can include some of the stats that were measured … I like this idea of trying different scripts in different key maps … classify these maps with a specific documentation that explains what they're good at for testing and what they're bad at for testing.
+
+**Built.** `script:reactive`; its measurement against the other scripts is in `battles.md`, dated, as a record to
+measure again. Each map has a line on what it is good and bad for testing (the Pocket: round 1 and 2, a rush, a Nexus
+under fire; not formations or the long game. The Crossing: the long game and the kept front; not a quick answer or a
+Nexus falling).
+
+### F294 — what to read next: the front's movement and engagements
+
+> How far the front moved it around. Yes, that sounds really good. And perhaps I would love to identify places of first conflict … maybe 5 seconds difference until of no fire … perhaps 5 tiles, a radius … formation engagement … That way we can probably track conflicts in a much more precise way.
+
+**Built.** The advance (each army's place between the Nexuses as the round opened and ended) and the engagements: an
+engagement starts at a hit, takes in every hit within 5 tiles of one in it, and ends after 5 seconds with none; each
+says when, where and how wide, and per side the damage dealt, the units engaged and what was lost, with their values.
+Both numbers are named constants to tune (`ENGAGEMENT_REACH`, `ENGAGEMENT_QUIET`).

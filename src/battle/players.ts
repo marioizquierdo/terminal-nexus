@@ -101,21 +101,21 @@ export const turtle: Player = (brief) => {
 }
 
 /**
- * **reader**: a player that reads the battle (`src/battle/reading.ts`) before it plans, where the others follow a fixed
+ * **reactive**: a player that reacts to what the battle said (`src/battle/reading/`) before it plans, where the others follow a fixed
  * idea. It builds as `balanced` does, and then:
  *
  * - **the stance from the battle's trades**: it plays the stance that has traded better over the battle (what it dealt for
  *   each point it took, in the rounds it played that stance), trying each once; it attacks when both sides held (a
  *   round that trades nothing says nothing), attacks a Nexus brought under half, holds a lead on Nexus health in the
  *   last round, and attacks when behind on it;
- * - **a Turret when the enemy reached its Nexus** (a hit, or an enemy within 8 tiles), placed by the Nexus, first;
+ * - **a Turret when the enemy reached its Nexus** (it is hurt, or an enemy came within 8 tiles), placed by the Nexus, first;
  * - **apart against area damage**: its buildings that train units set apart once the enemy has a building standing
  *   whose units aim at the thickest knot; otherwise each where `balanced` puts it (a block was tried, and on the
  *   Pocket's small build range it left credits unspent).
  *
  * Still one plain idea, read a round at a time: it plans nothing more than one round ahead, and is no good player.
  */
-export const reader: Player = (brief) => {
+export const reactive: Player = (brief) => {
   const enemy = brief.side === "A" ? "B" : "A"
   const last = brief.last
   const read = last?.reading?.sides[brief.side]
@@ -154,7 +154,7 @@ export const reader: Player = (brief) => {
   const stance = decided.stance
   const why: string[] = [decided.because]
 
-  const threatened = read !== undefined && (Object.keys(read.nexusHits).length > 0 || (read.closest !== null && read.closest <= 8))
+  const threatened = brief.nexus.health < brief.nexus.most || (read !== undefined && read.advance.closest !== null && read.advance.closest <= 8)
   const turret = brief.buildings.find((building) => building.spawns === undefined && building.supply === undefined && building.open)
   const first = threatened && turret !== undefined && turret.cost <= brief.credits ? turret : undefined
   if (first !== undefined) why.push("a Turret by the Nexus, since the enemy reached it")
@@ -168,7 +168,7 @@ export const reader: Player = (brief) => {
     build: first === undefined ? plan.build : [{ building: first.id, at: "nexus" }, ...plan.build],
     ...(facesArea ? { formation: "apart" as const } : {}),
     stance,
-    note: `reader: ${why.join("; ")}`,
+    note: `reactive: ${why.join("; ")}`,
   }
 }
 
@@ -225,7 +225,7 @@ export const SCRIPTED: Readonly<Record<string, Player>> = {
   balanced,
   rush,
   turtle,
-  reader,
+  reactive,
   "balanced-area": withArea(balanced),
   "rush-area": withArea(rush),
   "turtle-area": withArea(turtle),

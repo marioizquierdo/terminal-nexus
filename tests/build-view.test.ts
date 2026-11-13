@@ -267,8 +267,8 @@ test("right after a placement the tile reads as built, and the status line says 
   assert.doesNotMatch(justPlaced.text, /Cannot build here/i, "nothing refuses the tile it just built on")
   const cell = cellForTile(justPlaced.layout, justPlaced.build.state.camera, { x: 26, y: 13 })
   assert.notEqual(cellAt(justPlaced.frame, cell.x, cell.y).glyph, "x", "no illegal block over the built structure")
-  // Owner, 2026-09-27: "hatch placed (resources: 30) - [u] undo" — what is left, and the way back.
-  assert.match(justPlaced.text, /Barracks placed \(resources: 60\) - \[u\] undo/, "the footer reports the success")
+  // Owner, 2026-09-27: "hatch placed (credits: 30) - [u] undo" — what is left, and the way back.
+  assert.match(justPlaced.text, /Barracks placed \(credits: 60\) - \[u\] undo/, "the footer reports the success")
   // Armed by its digit on the map, so the keyboard stays on the map, where the arming began.
   assert.equal(justPlaced.build.state.focus, "grid", "and the keyboard is back where the arming began")
   assert.equal(justPlaced.build.state.armed, null)

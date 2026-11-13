@@ -46,7 +46,7 @@
     {
       "id": "war-chest",
       "name": "War Chest",
-      "description": "Adds 2000 resources to spend.",
+      "description": "Adds 2000 credits to spend.",
       "effect": {"credits": 2000},
       "rarity": "common",
       "role": "economy",

@@ -77,7 +77,7 @@ test("the bottom bar is one row, and 80 x 24 shows 49 x 18 tiles of Grid; the fl
 test("the bottom line shows a command's answer, and after a command that says nothing, the hint", () => {
   const side = buildSide()
   keys(side, "1", ENTER)
-  assert.equal(bottomLineText(side), "Barracks placed (resources: 60) - [u] undo")
+  assert.equal(bottomLineText(side), "Barracks placed (credits: 60) - [u] undo")
   assert.equal(line(side).tone, "success")
   keys(side, DOWN) // says nothing: the answer lapses
   assert.equal(side.build.state.status.text, "")
@@ -90,7 +90,7 @@ test("the bottom line shows a command's answer, and after a command that says no
 
 test("the answers players rely on still show right after their command, and lapse at the next silent one", () => {
   const cases: ReadonlyArray<readonly [name: string, drive: (side: Side) => void, text: RegExp, tone?: string]> = [
-    ["a placement", (side) => keys(side, "1", ENTER), /^Barracks placed \(resources: 60\) - \[u\] undo$/, "success"],
+    ["a placement", (side) => keys(side, "1", ENTER), /^Barracks placed \(credits: 60\) - \[u\] undo$/, "success"],
     ["a pick", (side) => keys(side, "n", "1"), new RegExp(`^${starterContext().nexusDraft[0]!.name} picked\\.$`), "success"],
     ["undo", (side) => keys(side, "1", ENTER, "u"), /^Barracks undone, 40 refunded\.$/],
     ["remove", (side) => keys(side, TAB, "1", ENTER, BACKSPACE), /^Barracks removed, 40 refunded\.$/],

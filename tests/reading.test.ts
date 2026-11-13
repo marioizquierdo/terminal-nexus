@@ -6,7 +6,8 @@ import assert from "node:assert/strict"
 import { main } from "../src/cli/skirmish.ts"
 import type { BattleSetup, RoundReport } from "../src/battle/index.ts"
 import { briefOf, beginBattle, playToEnd, playRound, SCRIPTED } from "../src/battle/index.ts"
-import { readingLines, scoreOf } from "../src/battle/reading.ts"
+import { hashOf } from "../src/state/canonical.ts"
+import { readingLines, scoreOf } from "../src/battle/reading/index.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 
 const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "pocket", seed: 2, rounds: 3, pulseTicks: 240, commanders: { A: "dob", B: "vasse" }, ...extra })
@@ -20,30 +21,34 @@ test("the score is the rule a battle is judged by: Nexus health by share, then t
   assert.deepEqual([onDamage.leader, onDamage.by, onDamage.dealt.A, onDamage.dealt.B], ["A", "damage", 11, 10], "damage counts over every round")
 })
 
-test("a round is read as it plays: the front, first contact, what hit each Nexus, the buildings lost and by what", { timeout: 60_000 }, () => {
-  const players = { A: SCRIPTED.rush!, B: SCRIPTED.turtle! }
-  const state = playToEnd(setup(), players)
-  const read = state.history.map((report) => report.reading)
-  assert.ok(read.every((reading) => reading !== undefined), "every round played carries its reading")
-  for (const reading of read) {
-    for (const side of ["A", "B"] as const) {
-      const front = reading!.sides[side].front
-      assert.ok(front === null || (Number.isInteger(front) && front >= 0 && front <= 100))
-    }
-    const { A, B } = reading!.sides
-    if (A.front !== null && B.front !== null) assert.equal(A.front + B.front, 100, "one front, read from both ends")
-  }
-  // What hit a Nexus adds up to what it lost (it is not mended inside a round).
+test("a round is read as it plays: each army and its losses with their value, the buildings, the advance, the damage by source, the engagements", { timeout: 60_000 }, () => {
+  const state = playToEnd(setup(), { A: SCRIPTED.rush!, B: SCRIPTED.turtle! })
   for (const report of state.history) {
+    const reading = report.reading!
+    assert.ok(reading !== undefined, "every round played carries its reading")
     for (const side of ["A", "B"] as const) {
-      const hits = Object.values(report.reading!.sides[side].nexusHits).reduce((sum, amount) => sum + amount, 0)
-      const lost = report.sides[side].nexus.before - report.sides[side].nexus.after
-      assert.ok(hits >= lost, `side ${side} lost ${lost} and was hit for ${hits}`)
+      const own = reading.sides[side]
+      // The army's and the buildings' losses are the round report's losses, counted again.
+      const lost = Object.values(report.sides[side].lost).reduce((sum, count) => sum + count, 0)
+      const buildingsLost = Object.values(own.buildings.lost).reduce((sum, count) => sum + count, 0)
+      assert.equal(own.army.lost.count + buildingsLost, lost, `side ${side}'s losses in round ${report.round}`)
+      for (const at of [own.advance.start, own.advance.end]) assert.ok(at === null || (Number.isInteger(at) && at >= 0 && at <= 100))
+      // The Nexus is a building like any other: hurt, it is among the damaged.
+      if (report.sides[side].nexus.after > 0 && report.sides[side].nexus.after < report.sides[side].nexus.most) {
+        assert.ok(own.buildings.damaged.some((building) => building.hp === report.sides[side].nexus.after), `side ${side}'s hurt Nexus is listed`)
+      }
+      const taken = Object.values(own.damage.taken).reduce((sum, amount) => sum + amount, 0)
+      assert.ok(own.damage.own <= taken)
     }
+    for (const engagement of reading.engagements) {
+      assert.ok(engagement.start <= engagement.end)
+      assert.ok(engagement.sides.A.dealt + engagement.sides.B.dealt > 0, "an engagement is where someone was hit")
+    }
+    const starts = reading.engagements.map((engagement) => engagement.start)
+    assert.deepEqual(starts, [...starts].sort((a, b) => a - b), "engagements in the order they began")
   }
-  // Reading watches and never feeds: the round plays the same whether or not anything else watches it.
-  const once = playRound(beginBattle(setup()), { A: { build: [], stance: "attack" }, B: { build: [], stance: "hold" } })
-  assert.ok(once.report.reading !== undefined)
+  // A reading is whole numbers, as everything a battle's state keeps (it is saved and hashed with it).
+  assert.doesNotThrow(() => hashOf(state))
 })
 
 test("the brief carries the score and the last round's reading, as data and as words", { timeout: 60_000 }, () => {
@@ -53,22 +58,23 @@ test("the brief carries the score and the last round's reading, as data and as w
   assert.deepEqual(brief.data.score, scoreOf(first.state.history))
   assert.match(brief.text, /^Score: /mu)
   for (const line of readingLines(first.report.reading!, "B")) assert.ok(brief.text.includes(line), `the brief says "${line}"`)
-  assert.match(brief.text, /^Front: /mu)
+  assert.match(brief.text, /^Advance \(0% your Nexus, 100% theirs\): /mu)
+  assert.match(brief.text, /^Public and private: /mu)
 })
 
-test("the reader script plans from what the battle said: it holds after an attack that lost the trade, and says why", () => {
+test("the reactive script plans from what the battle said: it holds after an attack that lost the trade, and says why", () => {
   const battle = beginBattle(setup())
   const brief = briefOf(battle, "A").data
-  assert.equal(SCRIPTED.reader!(brief).stance, "hold", "round 1: it gathers")
+  assert.equal(SCRIPTED.reactive!(brief).stance, "hold", "round 1: it gathers")
   const lost = { ...brief, last: { round: 1, ticks: 240, ended: "time", sides: {
     A: { stance: "attack", dealt: { units: 10, buildings: 0, nexus: 0 } },
     B: { stance: "hold", dealt: { units: 90, buildings: 0, nexus: 0 } },
   } } as unknown as RoundReport }
-  const plan = SCRIPTED.reader!({ ...lost, reports: [lost.last!] })
+  const plan = SCRIPTED.reactive!({ ...lost, reports: [lost.last!] })
   assert.equal(plan.stance, "hold")
   assert.match(plan.note ?? "", /lost the trade/u)
   const won = { ...lost, last: { ...lost.last!, sides: { ...lost.last!.sides, A: { ...lost.last!.sides.A, dealt: { units: 200, buildings: 0, nexus: 0 } } } } as RoundReport }
-  assert.equal(SCRIPTED.reader!({ ...won, reports: [won.last!] }).stance, "attack", "an attack that won the trade presses on")
+  assert.equal(SCRIPTED.reactive!({ ...won, reports: [won.last!] }).stance, "attack", "an attack that won the trade presses on")
 })
 
 test("skirmish --show draws each Battle Round played at the ticks asked for, and as it ends", { timeout: 60_000 }, () => {
@@ -76,9 +82,11 @@ test("skirmish --show draws each Battle Round played at the ticks asked for, and
   const code = main(["--map", "pocket", "--p1", "script:agro", "--p2", "script:defensive", "--seed", "2", "--play-to", "next", "--show", "60,end"], (line) => lines.push(line), readProfiles(), (line) => lines.push(line))
   assert.equal(code, 0)
   const text = lines.join("\n")
-  assert.match(text, /--- the battle at tick 60\n {3}0 {9}1 {9}2/u)
-  assert.match(text, /--- the battle at tick 360/u, "the round's end")
-  assert.match(text, /front \d+% toward the enemy/u, "the round's report carries its reading")
+  assert.match(text, /--- ASCII screenshot at tick 60\n {3}0 {9}1 {9}2/u)
+  assert.match(text, /^Legend: .*\(p1\)/mu)
+  assert.match(text, /^Overlaps \(the top one is what is drawn\): /mu)
+  assert.match(text, /--- ASCII screenshot at tick 360 \(the round's end\)/u)
+  assert.match(text, /p1: army \d+ \(\d+\) -> /u, "the round's report carries its reading")
   const refused: string[] = []
   assert.notEqual(main(["--map", "pocket", "--p1", "script:agro", "--p2", "script:agro", "--show", "60"], () => {}, readProfiles(), (line) => refused.push(line)), 0)
   assert.match(refused.join("\n"), /--show .*needs --play-to/u)

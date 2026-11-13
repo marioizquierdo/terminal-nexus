@@ -132,7 +132,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     "garrison structure.citizen.garrison 100",
     "battery structure.citizen.battery 50",
   ])
-  assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [["War Chest", "Adds 2000 resources to spend.", "+2000"]])
+  assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [["War Chest", "Adds 2000 credits to spend.", "+2000"]])
   assert.deepEqual(citizens?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
     ["Standard Heavy Rounds", "Every Turret hits harder.", "modifyAttack"],
     ["Long Barrels", "Marksmen reach two tiles further.", "modifyAttack"],

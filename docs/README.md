@@ -7,7 +7,7 @@ version of the design beyond git.
 
 ## Current — what the game is (`game-design/`)
 
-- [`glossary.md`](game-design/glossary.md) — every word the project made its own, one line each, grouped, with the page that holds its rules; the words that do two jobs and the words we stopped using. Check it before naming anything.
+- [`glossary.md`](game-design/glossary.md) — every word the project made its own, one line each: what earns an entry, then four layers (the game, the world, making and testing, the engine and the code), alphabetical within each, with the page that holds its rules; the words that do two jobs and the words we stopped using. Check it before naming anything.
 - [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a battle works, the three modes, the promise.
 - [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language.
 - [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: the words they share, every way a Skirmish is set up, save files, how each mode is tested.

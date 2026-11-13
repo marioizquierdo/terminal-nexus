@@ -12,9 +12,15 @@
 import { appendFileSync, mkdirSync, readFileSync, renameSync, rmdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import type { ContentRegistry } from "../content/index.ts"
-import type { BattleState, Side } from "../battle/index.ts"
-import { actionsFor, briefOf, checkBuildActions, mapOf } from "../battle/index.ts"
-import { battlePicture } from "../battle/picture.ts"
+import type { BattleState } from "../battle/index.ts"
+import { actionsFor, briefOf, checkBuildActions } from "../battle/index.ts"
+import { titleOf } from "../battle/index.ts"
+import type { DomainEvent } from "../events/types.ts"
+import { spawnEvents } from "../pulse/index.ts"
+import { asciiScreenshot, asciiScreenshotLines } from "../view/ascii-screenshot.ts"
+import { createView, DEFAULT_PRESENTATION } from "../view/index.ts"
+import { drawBattleMap } from "./battle-map.ts"
+import { timelineOf } from "./timeline.ts"
 import { hashEvents } from "../events/serialize.ts"
 import type { LogLevel } from "../report/index.ts"
 import { buildLog } from "../report/index.ts"
@@ -102,13 +108,14 @@ function locked<T>(file: string, work: () => T): T {
 }
 
 /** Where each round played is kept, and how: its save and report in `out`, its Battle Round's log in `log`. */
-export type Keep = Readonly<{ out?: string; log?: string; level: LogLevel; prefix?: string; quiet?: boolean; show?: readonly (number | "end")[] }>
+export type Keep = Readonly<{ out?: string; log?: string; level: LogLevel; prefix?: string; quiet?: boolean; show?: readonly (number | "end")[]; effects?: boolean }>
 
 /** Where the request keeps each round. */
 export const keepOf = (request: SkirmishRequest, more: Partial<Keep> = {}): Keep => ({
   ...(request.out === undefined ? {} : { out: request.out }),
   ...(request.log === undefined ? {} : { log: request.log }),
   ...(request.show === undefined ? {} : { show: request.show }),
+  ...(request.showEffects ? { effects: true } : {}),
   level: request.logLevel ?? "info",
   ...more,
 })
@@ -139,24 +146,22 @@ function roundLog(played: Played, setup: SaveSetup, round: number, level: LogLev
  */
 export function playRounds(setup: SaveSetup, start: BattleState, builds: Seated["builds"], stop: number, profiles: Profiles, keep: Keep, write: Write): Ran {
   if (keep.out !== undefined) mkdirSync(keep.out, { recursive: true })
-  // `--show`: the Battle Round drawn at the ticks asked for, and as it ends, printed after its report.
-  const ticks = new Set((keep.show ?? []).filter((tick): tick is number => tick !== "end"))
-  const map = mapOf(start)
-  const draw = (battle: MatchState, sides: Readonly<Record<Side, ContentRegistry>>): string[] => [
-    `--- the battle at tick ${battle.tick}`,
-    ...battlePicture(map, battle.entities.map((entity) => ({ contentId: entity.contentId, player: entity.player as Side, anchor: entity.anchor })), (side) => sides[side]),
-  ]
-  let pictures: string[] = []
-  let last: string[] = []
-  const watch: RoundWatch | undefined = keep.show === undefined ? undefined : (battle, _events, _drawn, sides) => {
-    if (ticks.has(battle.tick)) pictures.push(...draw(battle, sides))
-    if (keep.show?.includes("end") === true) last = draw(battle, sides)
+  // `--show`: each Battle Round played, as an ASCII screenshot at the ticks asked for and as it ends, after its report.
+  let states: MatchState[] = []
+  let events: DomainEvent[] = []
+  let drawn: ContentRegistry | null = null
+  const watch: RoundWatch | undefined = keep.show === undefined ? undefined : (battle, happened, registry) => {
+    states.push(battle)
+    events.push(...happened)
+    drawn ??= registry
   }
   return playOn(setup, start, builds, stop, profiles, ({ before, played }) => {
     const round = before.round
-    const report = [...roundLines(played.report), ...pictures, ...last]
-    pictures = []
-    last = []
+    const pictures = keep.show === undefined || drawn === null ? [] : roundScreenshots(states, events, drawn, setup.seed, keep.show, keep.effects === true)
+    states = []
+    events = []
+    drawn = null
+    const report = [...roundLines(played.report), ...pictures]
     if (keep.quiet !== true) for (const line of report) write(line)
     if (keep.log !== undefined) appendFileSync(keep.log, `${roundLog(played, setup, round, keep.level).join("\n")}\n`)
     if (keep.out !== undefined) {
@@ -167,9 +172,31 @@ export function playRounds(setup: SaveSetup, start: BattleState, builds: Seated[
   }, watch)
 }
 
+/**
+ * A Battle Round played, as ASCII screenshots (`asciiScreenshot`, `src/view/ascii-screenshot.ts`) at `ticks` and as it
+ * ends (`end`): the round's states and events made into the view the screen plays (`createView`), sampled at each tick
+ * — so each is what the screen draws there — with its ruler, legend and overlaps. Effects only when asked for.
+ */
+function roundScreenshots(states: readonly MatchState[], events: readonly DomainEvent[], registry: ContentRegistry, seed: number, ticks: readonly (number | "end")[], effects: boolean): string[] {
+  const first = states[0]
+  if (first === undefined) return []
+  const timeline = timelineOf({ id: "skirmish", name: "Skirmish" }, states, [...spawnEvents(first, registry), ...events], states.length - 1, seed, registry)
+  const view = createView(timeline, { ...DEFAULT_PRESENTATION, effects })
+  const lastTick = states.length - 1
+  const asked = [...new Set(ticks.map((tick) => (tick === "end" ? lastTick : tick)).filter((tick) => tick <= lastTick))].sort((a, b) => a - b)
+  return asked.flatMap((tick) => {
+    const sample = view.sampleAt(tick * view.tickDurationMs, "monochrome")
+    const shot = asciiScreenshot(
+      { grid: timeline.grid, registry, state: sample.state, positions: sample.positions, fire: sample.fire, ...(effects ? { effects: sample.effects, heldCorpses: sample.heldCorpses } : {}) },
+      { side: (player) => (player === "A" ? "p1" : "p2"), content: titleOf },
+    )
+    return [`--- ASCII screenshot at tick ${tick}${tick === lastTick ? " (the round's end)" : ""}`, ...asciiScreenshotLines(shot)]
+  })
+}
+
 /** A slot's brief, as text with the play strategies (a player that reads words), or as data. */
 export function writeBrief(setup: SaveSetup, state: BattleState, slot: Slot, json: boolean, write: Write): void {
-  const brief = briefOf(state, SIDE_OF[slot], playStrategies())
+  const brief = briefOf(state, SIDE_OF[slot], playStrategies(), drawBattleMap)
   write(`--- brief for ${slotLabel(setup, slot)}`)
   write(json ? JSON.stringify(brief.data, null, 1) : brief.text)
 }

@@ -35,6 +35,14 @@ health wins; on an even share, the side that dealt more damage over the battle; 
 (`start` in her army), and round 1's credits. Maps are files in `maps/`, read by `src/battle/maps.ts`: the Crossing (72 by 28, a ridge with one
 gap) and the Pocket (22 by 12, the bases close enough that their build ranges meet).
 
+**The maps for testing** (measured with the scripts, 2026-11-13; a script is no good player, so read these as where a
+map leans, and add to them when a battle teaches more):
+
+| Map | Good for testing | Bad for testing |
+| --- | --- | --- |
+| **The Crossing** | A long battle: the kept front, economy and scaling over eight rounds, area damage against a big army, a stance held or pressed; most battles end on time, judged on damage | A quick answer (rounds run to the limit); whether a Nexus can be taken (one rarely falls); round-1 play |
+| **The Pocket** | Round 1 and 2 decisions, a rush and the answer to it, blind building on contested ground (the build ranges meet, so two sides often plan the same tile), a Nexus under fire: units meet at tick 1 and a Nexus falls in two to four rounds | Anything that needs room: formations (a block rarely fits the small build range and leaves credits unspent), the long game, movement round obstacles |
+
 **A side that is not its Commander's whole army** has a **roster** (RULE — `Roster`, `src/battle/types.ts`; `restrictedTo`, `src/battle/sides.ts`; `tests/battle.test.ts`): the building cards on its build menu and the Nexus powers in the pool its Pulse deals from, by id, and the Doctrines it keeps from the first round. Everything else its army could field is left out as if the army never had it; a building a listed power adds still joins the menu when the power is kept. The retired Challenge run played its player on one ([the retired design](../history/challenge-runs-design.md)), and a Skirmish's battle file may name one ([`game-modes.md`](../game-design/game-modes.md)); the opponent, and every battle the measurement commands play, has none and fields the whole army.
 
 ## 2. Playing one
@@ -155,38 +163,62 @@ player: its games show what an army does in the hands of a plain plan, not balan
 
 ## 7. Reading a battle
 
-**What a battle says is read in one place** (RULE — `src/battle/reading.ts`, `tests/reading.test.ts`), so the brief, the
-round's report, the `skirmish` command, a script and a model all read the same facts. A reading reads the record and
-never feeds the rules: a round plays the same whether or not it is read.
+**What a battle says is read in one place, the battle reading** (RULE — `src/battle/reading/`, `tests/reading.test.ts`),
+so the brief, the round's report, the `skirmish` command, a script and a model read the same facts. A reading reads
+the record and never feeds the rules: a round plays the same whether or not it is read.
 
-- **The score** (`scoreOf`): each side's damage dealt over the battle and its Nexus's share of health, and who leads by
-  the rule a battle that runs out of rounds is judged by (the healthier Nexus, then the damage). The brief says it
-  every round: `Score: You lead on damage: damage dealt 518 to 382; both Nexuses whole.` A battle judged on damage is
-  no longer won on a total nobody sees (from the agent's play of 2026-11-13).
-- **A round's reading** (`roundReader`, played through by `playRound` and kept in its report as `reading`):
-  - **the front**, where the fighting was between the two Nexuses, in whole percent, 0 at a side's own and 100 at the enemy's — the map's
-    tempo in one number: on the Pocket the scripts fight from tick 1, on the Crossing in the middle by tick 130;
-  - **first contact**, the tick units first hurt each other;
-  - **the nearest an enemy came** to each Nexus, in tiles;
-  - **what hit each Nexus**, damage by the content that dealt it, its own side's blasts included;
-  - **each building lost, and what destroyed it** (`2 Barracks by Bomber`);
-  - **what a side's own blasts and splashes cost it**: a death's blast hurts friend and foe unless its content says
-    enemies alone ([`pulse.md`](pulse.md)), and now the player is told.
+**Public and private.** Every reading is public: the Battle Round is fought in the open and both sides see all of it.
+The Build Phase is private: a side's credits, its hand and the build actions it is about to give are its own, and no
+reading touches them. The brief says so in a line.
 
-  The brief prints the side's own reading under the last round (`Front: …`, `Your Nexus was hit by: …`), and each round's
-  report in the command prints both sides' in a line.
-- **The battle drawn as text** (`battlePicture`, `src/battle/picture.ts`): the ground, each building in its art, each unit
-  by its name's first letter, p1's in lower case and p2's in upper case; a unit on a roof is counted under the picture
-  rather than drawn over the building. The brief's map is it, between rounds; `skirmish --show 0,120,end` draws each
-  Battle Round played at those ticks and as it ends, after the round's report, so an agent reading text sees the battle
-  at the moment it asks about. Played from any kept round (`--out` keeps each round's save), that is the inspection a
-  test needs: load the round, give its build actions, `--play-to next --show <ticks>`, and nothing is saved over.
-- **A script that reads** (`reader`, `src/battle/players.ts`): builds as `balanced`, then plays the stance that has traded
-  better over the battle, trying each once (every round's report is in the brief's data, `reports`), attacks when both
-  sides held, attacks a Nexus under half, holds a lead on Nexus health in the last round and attacks when behind; puts a
-  Turret by its Nexus first when the enemy reached it, and sets its producers apart once the enemy has a building
-  standing whose units aim at the thickest knot (a block otherwise was tried: on the Pocket's small build range it
-  left credits unspent, and lost). Measured on 2026-11-13 ([the table](../history/feedback/2026-11-13-reading-the-battle.md)):
-  better than `balanced` on the Pocket and faster against a rush, worse on the Crossing, where a hold gives back the
-  kept front. Its note says why each round. A new reading is a new field here, read
-  by the brief and offered to every script at once.
+**The readings**, each one small file (`Tracker`: shown each tick, asked for its value as the round ends), kept plain —
+a count, a total, a place — with the meaning left to the reader:
+
+| Reading | What it says, for each side | File |
+| --- | --- | --- |
+| **score** | damage dealt over the battle, its Nexus's share of health, who leads and on which rule (the rule a battle the rounds run out on is judged by) | `score.ts` |
+| **army** | its units as the round opened and as it ended, and what it lost: each a composition — how many of each, how many in all, and the **army value** in credits (each unit at what its building pays for one: the card's cost over the units it makes a round; a Commander and a starting unit count nothing) | `army.ts` |
+| **buildings** | what stands at the end (a composition with its value), what is damaged and how badly — the Nexus among them, as any building — and each one destroyed, with what destroyed it | `buildings.ts` |
+| **advance** | where its army stood between its Nexus (0%) and the enemy's (100%) as the round opened and as it ended — the end less the start is how far the front moved — and the nearest an enemy came to its Nexus | `advance.ts` |
+| **damage** | the damage it took, by the content that dealt it, and how much of that was its own blasts and splashes (a death's blast hurts friend and foe unless its content says enemies alone) | `damage.ts` |
+| **engagements** | where and when the sides fought: an engagement starts at a hit of one side on the other, takes in every hit within 5 tiles of one already in it, and ends after 5 seconds with no hit there; it says when, where and how wide, and for each side the damage dealt there, the units engaged (a composition with its value) and what it lost there | `engagements.ts` |
+
+`context.ts` keeps what they share (who each entity is, what it costs, where a tile lies between the Nexuses) and
+`lines.ts` says them in words. **A new reading is a new file and one line in `index.ts`**; the round's report keeps it,
+and the brief and every script get it at once. Add one only for a question a test or a script asks; a reading nobody
+reads is deleted.
+
+**Where they are said.** Each brief: the score every round, and under the last round the side's army and the enemy's,
+its buildings, the advance, the damage it took and each engagement. Each round's report in the `skirmish` command: both
+sides' in a line each, then each engagement.
+
+**The ASCII screenshot** (`asciiScreenshot`, `src/view/ascii-screenshot.ts`): the Grid exactly as the game's screen
+draws it — the same layers and glyphs (`drawGridLayers`, shared with the screen's own frame), featureless ground as the
+screen's sparse lattice, a unit on a roof drawn over its building — written out as text. What the picture cannot say
+is said beside it, never in it: a ruler and row numbers, a legend (each glyph; each building with its art and where it
+stands, since a symbol has no case and two sides' buildings can look alike) and the **overlaps**, each cell where one
+thing stands over another and what is under it (a unit on a roof; later a flyer over the ground). The brief's map is
+one, between rounds. `skirmish --show 0,120,end` takes one of each Battle Round played at those ticks and as it ends,
+from the same view the screen plays (so a unit mid-step stands where the screen shows it), after the round's report;
+`--show-effects` adds the effects on screen at that instant. Played from any kept round (`--out` keeps each round's
+save), that is the inspection a test needs: load the round, give its build actions, `--play-to next --show <ticks>`,
+and nothing is saved over. It is not a **screenshot**, which is an image of the screen (PNG: `scripts/playtest.mjs`,
+the grid-screenshots skill): an agent reads the one as text and looks at the other.
+
+**A script that reacts** (`reactive`, `src/battle/players.ts`): builds as `balanced`, then plays the stance that has
+traded better over the battle, trying each once (every round's report is in the brief's data, `reports`), attacks when
+both sides held, attacks a Nexus under half, holds a lead on Nexus health in the last round and attacks when behind;
+puts a Turret by its Nexus first when its Nexus is hurt or an enemy came within 8 tiles, and sets its producers apart
+once the enemy has a building standing whose units aim at the thickest knot. Its note says why each round.
+
+**How the scripts did against each other, 2026-11-13** (as p1, every pairing of Commanders, seeds 1 to 3, 8 rounds, 18
+battles a row; a record of that day, to be measured again rather than trusted after a change):
+
+| p1 against | the Pocket: reactive | the Pocket: steady | the Crossing: reactive | the Crossing: steady |
+| --- | --- | --- | --- | --- |
+| `agro` | 18–0 | 18–0 | 18–0, in 3.0 rounds | 18–0, in 4.1 |
+| `defensive` | 15–3 | 12–6 | 14–4 | 18–0 |
+| `steady` | 10–8 | 8–10 | 6–12 | 8–10 |
+
+Reacting pays on the Pocket; on the Crossing steady pressure from round 3 still wins more, since a hold gives back the
+kept front, which no one round's trade shows.

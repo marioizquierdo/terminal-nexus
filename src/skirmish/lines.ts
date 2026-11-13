@@ -4,7 +4,7 @@
 
 import type { BattleState, RoundReport } from "../battle/index.ts"
 import { SIDES } from "../battle/index.ts"
-import { namedCounts } from "../battle/reading.ts"
+import { roundReadingLines } from "../battle/reading/index.ts"
 import type { SaveSetup, Slot } from "./save.ts"
 import { SLOT_OF } from "./save.ts"
 import { mapNameOf } from "./words.ts"
@@ -37,19 +37,8 @@ export function roundLines(report: RoundReport): string[] {
       `     fielded ${counts(own.fielded)}; trained ${counts(own.trained)}; lost ${counts(own.lost)}`,
       `     dealt ${own.dealt.units}/${own.dealt.buildings}/${own.dealt.nexus} (units/buildings/Nexus); Nexus ${own.nexus.after}/${own.nexus.most}${own.commanderFell ? "; Commander fell" : ""}${Object.keys(own.abilities).length > 0 ? `; ${counts(own.abilities)}` : ""}`,
     )
-    const read = report.reading?.sides[side]
-    if (read !== undefined) {
-      const parts = [
-        read.front === null ? "no fighting" : `front ${read.front}% toward the enemy`,
-        ...(read.closest === null ? [] : [`nearest enemy ${read.closest} from its Nexus`]),
-        ...(Object.keys(read.nexusHits).length === 0 ? [] : [`Nexus hit by ${namedCounts(read.nexusHits)}`]),
-        ...(Object.keys(read.buildingsLost).length === 0 ? [] : [`buildings lost ${namedCounts(read.buildingsLost)}`]),
-        ...(read.ownDamage === 0 ? [] : [`own blasts ${read.ownDamage}`]),
-      ]
-      lines.push(`     ${parts.join("; ")}`)
-    }
   }
-  if (report.reading !== undefined) lines[0] += report.reading.contact === null ? "; no contact" : `; first contact at tick ${report.reading.contact}`
+  if (report.reading !== undefined) lines.push(...roundReadingLines(report.reading))
   return lines
 }
 

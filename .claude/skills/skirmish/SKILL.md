@@ -33,17 +33,30 @@ npm run skirmish -- --load .playtest/rounds/round-3.save.json --p1 script:steady
 npm run skirmish -- --load .playtest/rounds/round-3.save.json --play-to next --show 0,120,240,end   # see round 4 at those ticks
 ```
 
-**Read before you guess.** Every brief says the score (who leads, on Nexus health or on damage) and what the last round
-said: the front (0% at your Nexus, 100% at theirs), first contact, the nearest the enemy came, what hit your Nexus, what
-destroyed your buildings and by what, and what your own blasts cost you. Each round's report prints both sides' in a
-line. `--show` draws the Battle Round as text at the ticks you name, after the round's report: load any kept round
-and play it again to see a moment, nothing saved over without `--save`. What the battle says is read in one place
-(`src/battle/reading.ts`, [`battles.md`](../../../docs/system-design/battles.md), reading a battle); a reading a test needs is
-added there, and the brief and every script get it at once. `script:reader` plays from it, a better sparring partner
-than the fixed scripts.
+**Read before you guess.** Every brief says the score (who leads, on Nexus health or on damage) and, under the last
+round, the battle reading: each army as it opened and ended and what it lost (with its value in credits), your
+buildings standing, damaged and destroyed (and by what), the advance (0% your Nexus, 100% theirs), the damage you took
+by source (your own blasts included), and each engagement (where and when the sides fought, who engaged and lost what).
+Each round's report prints both sides' in a line each, then the engagements. All of it is public; credits, the hand and
+build actions are private. `--show 0,120,end` takes an **ASCII screenshot** of the Battle Round at those ticks: the Grid
+exactly as the screen draws it, then its legend and the overlaps (what stands under a unit on a roof). Load any kept
+round and play it again to see a moment; nothing is saved over without `--save`. It is text, not an image: for a
+picture of the screen, the `playtest` and `grid-screenshots` skills. What the battle says is read in one place
+(`src/battle/reading/`, [`battles.md`](../../../docs/system-design/battles.md), reading a battle): a reading a test needs is
+one new file there, and the brief and every script get it at once. `script:reactive` plays from it, a better sparring
+partner than the fixed scripts.
+
+**When an ASCII screenshot helps** (and when it does not): where units stand is the question — a formation came out
+tight or loose, a regroup's line, an army reaching a building, troops held at a gap, a moment from a playtest note.
+Take two or three ticks, not every tick: the readings already say how much, the picture says where. For how it
+looks to a person (colour, effects, the panels) take a screenshot instead.
+
+**Pick the map for the question** ([`battles.md`](../../../docs/system-design/battles.md), the maps for testing): the
+Pocket for round 1 and 2, a rush and its answer, a Nexus under fire; the Crossing for the long game, the kept front and
+scaling.
 
 Formations (`rush-block` against `rush-apart`) and the power curve over many battles are the measurement's
-(`node bin/measure.ts run --spec quick --parts battles --players rush --formations block,apart`, the `remeasure` skill).
+(`node bin/measure.ts run --spec quick --parts duels --players rush --formations block,apart`, the `remeasure` skill).
 
 ## 3. Model against model (some 75 thousand small-model tokens a slot for six rounds)
 
