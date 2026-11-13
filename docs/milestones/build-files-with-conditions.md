@@ -376,7 +376,7 @@ Two uses, both reading the same table:
 
 **What it tests**
 
-- Each fact on a brief made from a known save (`saves/` or `skirmish-testing/`): the number it reads.
+- Each fact on a brief made from a known save (`saves/` or `sandboxes/`): the number it reads.
 - `holds`: `min`, `max`, both, `of`, the string short form, `any`, `not`, a bare number refused.
 - `checkCondition`: an unknown fact name, an `of` on a fact that takes none, an unknown id, all said at once.
 - The first match wins with conditions: a file whose second entry holds and first does not plays the second.

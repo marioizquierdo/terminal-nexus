@@ -705,7 +705,7 @@ export function pendingPicks(context: BuildContext, state: BuildState): number {
 
 /**
  * The cursor points at a structure's **centre tile**, not its anchor — the same convention the
- * testing save's start already uses for a placement symbol (`footprintCentre`, `src/grid/coords.ts`).
+ * sandbox's start already uses for a placement symbol (`footprintCentre`, `src/grid/coords.ts`).
  * A 3x2 barracks under the cursor therefore straddles the cursor the way it looks like it does,
  * rather than hanging south-east of it.
  */

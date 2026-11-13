@@ -1,6 +1,6 @@
-// The testing saves (skirmish-testing/) and the opening they start from, and one assertion per rule they show.
+// The sandboxes (sandboxes/) and the opening they start from, and one assertion per rule they show.
 //
-// "Every rule is a testing save — checked in, named, runnable. That is the regression suite and
+// "Every rule is a sandbox — checked in, named, runnable. That is the regression suite and
 // the documentation at the same time" (docs/system-design/testing.md).
 
 import { test } from "node:test"
@@ -12,7 +12,7 @@ import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/inde
 import type { DomainEvent } from "../src/events/types.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
 import { VISION } from "../src/pulse/target.ts"
-import { loadTestingSaveFile, playTestingSave, testingSaveFiles } from "./helpers.ts"
+import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 import { creditsEarned } from "../src/match/index.ts"
 import { VIEWPORT_TILES } from "../src/view/compose.ts"
 
@@ -131,7 +131,7 @@ test("ordinals follow Grid reading order, not the order the blocks are written i
 })
 
 test("a placement may start damaged, and defaults to the definition's full health", () => {
-  // The reason the legend is an object rather than a bare content id: a testing save that opens
+  // The reason the legend is an object rather than a bare content id: a sandbox that opens
   // mid-match needs some units already hurt, without spending ticks damaging them first.
   const loaded = openBattle(
     {
@@ -260,24 +260,24 @@ test("the loader fails loudly, naming the offending line and column", () => {
 })
 
 test("a .save.json file loads as plain data, safely, from a test", async () => {
-  const opening = await loadTestingSaveFile("citizen-mirror-skirmish.save.json")
+  const opening = await loadSandbox("citizen-mirror-skirmish.save.json")
   assert.equal(opening.id, "citizen-mirror-skirmish")
   assert.equal(opening.terrain.length, 12)
   assert.equal(opening.terrain[0]?.length, 24)
 })
 
-test("at least ten testing saves exist, plus the mirror skirmish", () => {
-  const files = testingSaveFiles()
+test("at least ten sandboxes exist, plus the mirror skirmish", () => {
+  const files = sandboxFiles()
   assert.ok(files.includes("citizen-mirror-skirmish.save.json"))
   assert.ok(
     files.length >= 11,
-    `only ${files.length} testing saves exist; the first milestone asks for ten plus the mirror`,
+    `only ${files.length} sandboxes exist; the first milestone asks for ten plus the mirror`,
   )
 })
 
-test("every testing save loads, and its id matches its file name", async () => {
-  for (const name of testingSaveFiles()) {
-    const opening = await loadTestingSaveFile(name)
+test("every sandbox loads, and its id matches its file name", async () => {
+  for (const name of sandboxFiles()) {
+    const opening = await loadSandbox(name)
     assert.equal(`${opening.id}.save.json`, name, `${name} declares the id "${opening.id}"`)
     assert.doesNotThrow(() => openBattle(opening, { registry: FIXTURE_REGISTRY }), name)
   }
@@ -287,20 +287,20 @@ test("every checked-in map gives each side that fights somewhere to go: its own 
   // The game never plays a battle where a side has neither; its units would fall back on the nearest enemy wherever it
   // is, a rule no player ever sees. A map that tests a rule tests it as the game plays it.
   const missing: string[] = []
-  for (const name of testingSaveFiles()) {
-    const opening = await loadTestingSaveFile(name)
+  for (const name of sandboxFiles()) {
+    const opening = await loadSandbox(name)
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
     for (const side of sidesWithoutGoal(loaded.state, loaded.registry)) missing.push(`${opening.id} side ${side}`)
   }
   assert.deepEqual(missing, [], `no target and no enemy Nexus: ${missing.join("; ")}`)
 })
 
-test("every testing save fits the engine tool's Grid pane, so no map is cut or drawn over the side panel", async () => {
+test("every sandbox fits the engine tool's Grid pane, so no map is cut or drawn over the side panel", async () => {
   // The engine tool draws one fixed composition: a smaller Grid is centred in the pane, a bigger one is cut and its
   // columns past the pane drawn over the panel.
   const misfits: string[] = []
-  for (const name of testingSaveFiles()) {
-    const { grid } = await loadTestingSaveFile(name)
+  for (const name of sandboxFiles()) {
+    const { grid } = await loadSandbox(name)
     const { width, height } = "preset" in grid ? presetDimensions(grid.preset) : grid
     if (width > VIEWPORT_TILES.width || height > VIEWPORT_TILES.height) misfits.push(`${name} is ${width} x ${height}`)
   }
@@ -308,7 +308,7 @@ test("every testing save fits the engine tool's Grid pane, so no map is cut or d
 })
 
 test("melee-kill: a defender dies to melee and the attackers survive", async () => {
-  const resolved = await playTestingSave("melee-kill.save.json")
+  const resolved = await playSandbox("melee-kill.save.json")
   const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(deaths.length, 1)
   assert.equal(deaths[0]?.player, "B")
@@ -325,7 +325,7 @@ test("ranged-kill: the fixture's own arithmetic", async () => {
   // before dying to its fire. A wins, having lost one marksman and wounded the other. The units are as fast as
   // the owner's speed passes made them (2026-08-22), and the numbers are left as the fixture's content plays,
   // not retuned to the trooper dying at range, which it did when units moved slower.
-  const resolved = await playTestingSave("ranged-kill.save.json")
+  const resolved = await playSandbox("ranged-kill.save.json")
   const shots = resolved.run.events.filter(
     (event) => event.kind === "attack.launched" && event.attackKind === "ranged",
   )
@@ -353,7 +353,7 @@ test("ranged-kill: the fixture's own arithmetic", async () => {
 })
 
 test("worker-flight: the worker runs, and workers count for annihilation", async () => {
-  const resolved = await playTestingSave("worker-flight.save.json")
+  const resolved = await playSandbox("worker-flight.save.json")
   const fleeing = resolved.run.events.filter((event) => event.kind === "behavior.flee")
   assert.ok(fleeing.length > 0, "the worker never fled")
 
@@ -370,13 +370,13 @@ test("worker-flight: the worker runs, and workers count for annihilation", async
 })
 
 test("structure-destruction: destroying a Grid Nexus ends the Pulse", async () => {
-  const resolved = await playTestingSave("structure-destruction.save.json")
+  const resolved = await playSandbox("structure-destruction.save.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
   assert.equal(resolved.run.finalState.outcome?.winner, "A")
 })
 
 test("salvage-drop: death leaves a ground item on the tile it died on", async () => {
-  const resolved = await playTestingSave("salvage-drop.save.json")
+  const resolved = await playSandbox("salvage-drop.save.json")
   const death = resolved.run.events.find((event) => event.kind === "entity.died")
   const salvage = resolved.run.events.find((event) => event.kind === "salvage.dropped")
   assert.ok(death !== undefined && death.kind === "entity.died")
@@ -390,7 +390,7 @@ test("salvage-drop: death leaves a ground item on the tile it died on", async ()
 
 test("nexus-stands: a side whose Grid Nexus stands is never wiped out; its Pulse goes on until the Nexus falls", async () => {
   // Mario, 2026-10-01: "the player should only lose when the nexus is destroyed".
-  const resolved = await playTestingSave("nexus-stands.save.json")
+  const resolved = await playSandbox("nexus-stands.save.json")
   const fell = resolved.run.events.find((event) => event.kind === "entity.died" && event.player === "A")
   assert.ok(fell !== undefined, "the trooper never fell")
   const outcome = resolved.run.finalState.outcome
@@ -400,7 +400,7 @@ test("nexus-stands: a side whose Grid Nexus stands is never wiped out; its Pulse
 })
 
 test("annihilation-victory: the Pulse ends only once every mobile entity is dead", async () => {
-  const resolved = await playTestingSave("annihilation-victory.save.json")
+  const resolved = await playSandbox("annihilation-victory.save.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "annihilation")
   const dead = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(dead.filter((event) => event.player === "B").length, 2)
@@ -409,7 +409,7 @@ test("annihilation-victory: the Pulse ends only once every mobile entity is dead
 })
 
 test("tick-limit-draw: neither side can reach the other, and the Pulse ends on its count", async () => {
-  const resolved = await playTestingSave("tick-limit-draw.save.json")
+  const resolved = await playSandbox("tick-limit-draw.save.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "tick-limit")
   assert.equal(resolved.run.finalState.outcome?.winner, null)
   assert.equal(resolved.run.finalState.tick, resolved.run.pulseTicks)
@@ -417,7 +417,7 @@ test("tick-limit-draw: neither side can reach the other, and the Pulse ends on i
 })
 
 test("target-head-engage-stand: a side with a target heads for it, fights what comes within reach on the way, and stands there", async () => {
-  const resolved = await playTestingSave("target-head-engage-stand.save.json")
+  const resolved = await playSandbox("target-head-engage-stand.save.json")
   const { run } = resolved
   const area = run.initialState.targets?.A
   assert.deepEqual(area, { x: 15, y: 2, width: 3, height: 3 })
@@ -459,7 +459,7 @@ test("target-head-engage-stand: a side with a target heads for it, fights what c
   assert.deepEqual([run.finalState.outcome?.winner, run.finalState.outcome?.reason], [null, "tick-limit"])
 
   // A side with no target keeps the one rule every unit had: the same squad, the runner dead, marches on the Nexus.
-  const opening = await loadTestingSaveFile("target-head-engage-stand.save.json")
+  const opening = await loadSandbox("target-head-engage-stand.save.json")
   const { targets: _targets, ...untargeted } = opening
   const loaded = openBattle(untargeted, { registry: FIXTURE_REGISTRY })
   assert.equal(loaded.state.targets, undefined)
@@ -468,7 +468,7 @@ test("target-head-engage-stand: a side with a target heads for it, fights what c
 })
 
 test("aura-by-the-book: the units near Vasse take three quarters of every hit, she does too, and the one beyond her reach takes it all", async () => {
-  const resolved = await playTestingSave("aura-by-the-book.save.json")
+  const resolved = await playSandbox("aura-by-the-book.save.json")
   const { run } = resolved
   const vasse = run.initialState.entities.find((entity) => entity.contentId === "unit.citizen.vasse")
   assert.ok(vasse !== undefined)
@@ -496,7 +496,7 @@ test("aura-by-the-book: the units near Vasse take three quarters of every hit, s
 })
 
 test("dob-bounty: what falls near Dob pays his side, and one throw in four lands three times as hard", async () => {
-  const resolved = await playTestingSave("dob-bounty.save.json")
+  const resolved = await playSandbox("dob-bounty.save.json")
   const { run } = resolved
   const dob = run.initialState.entities.find((entity) => entity.contentId === "unit.ravel.dob")
   assert.ok(dob !== undefined)

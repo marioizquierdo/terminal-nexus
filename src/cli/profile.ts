@@ -1,4 +1,4 @@
-// What a battle costs to play (docs/system-design/testing-ground.md, cost): the wall clock around the kernel's ticks,
+// What a battle costs to play (docs/system-design/sandboxes.md, cost): the wall clock around the kernel's ticks,
 // and the route work a tick did, counted by wrapping each of the tick's route questions (`TickRoutes`) in a counter
 // and a timer, and counting the distance fields they built and the anchors those settled. The counts are the same on
 // every machine, so they compare two movement algorithms where the clock only compares two runs on one machine.

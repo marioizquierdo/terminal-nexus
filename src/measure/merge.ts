@@ -1,5 +1,5 @@
 // A spec played as several processes side by side, and their results made one (docs/system-design/measurement.md).
-// `jobsOf` splits a spec into the maps, each scripted player's duels on each seed, and the campaign levels; and
+// `jobsOf` splits a spec into the maps, each scripted player's duels on each seed, and the Story levels; and
 // `mergeMeasurements` puts the parts back in the order `runSpec` plays them, whatever order they finished or were
 // named in, so a spec played in parallel writes down the same battles, in the same order, as one process would. Pure:
 // starting the processes and keeping their files are the command's (`src/cli/measure.ts`).

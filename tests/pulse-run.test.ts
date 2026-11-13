@@ -32,7 +32,7 @@ test("every ending the player can meet is reachable from the starter map's own d
   // The question is whether the ending reads "regardless of whether they won, lost, or
   // reached the mission's own tick limit". Nothing can be judged that cannot be reached. A defeat is
   // only ever the Nexus falling (Mario, 2026-10-01): a force wiped out with its Nexus standing plays on,
-  // so a side wiped out and a draw belong to battles with no Nexus (`grid`'s testing saves), and their words
+  // so a side wiped out and a draw belong to battles with no Nexus (`grid`'s sandboxes), and their words
   // are ending.test.ts's.
   const table: readonly (readonly [string, TestSetup, string, string | null, string])[] = [
     // name, setup, headline, winner, reason

@@ -499,7 +499,7 @@ export class TitleScreens {
       const { name, value } = fieldText(loading.setup, field, playerName, profiles)
       return { id: fieldId(field), hotkey: String(index + 1), label: `${name.padEnd(24)}${value}`, ...(fieldDimmed(loading.setup, field) ? { disabled: true } : {}) }
     })
-    const problem = loading.save.start !== undefined ? "a testing save" : startProblem(loading.setup)
+    const problem = loading.save.start !== undefined ? "a sandbox" : startProblem(loading.setup)
     rows.push({ id: "open", hotkey: "s", label: problem === null ? "Open" : "Open (not yet: see below)", ...(problem === null ? {} : { disabled: true }) })
     rows.push({ id: "back", hotkey: "b", label: "Back" })
     const session = this.sessions["load-edit"]
@@ -524,7 +524,7 @@ export class TitleScreens {
     const loading = this.loading
     if (loading === null) return
     if (loading.save.start !== undefined) {
-      this.noticeNow = "A testing save plays one Battle Round in grid: grid <file>, not here."
+      this.noticeNow = "A sandbox plays one Battle Round in grid: grid <file>, not here."
       return
     }
     const problem = startProblem(loading.setup)
@@ -547,7 +547,7 @@ export class TitleScreens {
     if (this.screenNow === "new-game" || this.screenNow === "load-edit") {
       const setup = this.screenNow === "new-game" ? this.setup : (this.loading?.setup ?? this.setup)
       if (item.id === "start" || item.id === "open") {
-        const problem = this.screenNow === "load-edit" && this.loading?.save.start !== undefined ? "A testing save plays in grid, not here." : startProblem(setup)
+        const problem = this.screenNow === "load-edit" && this.loading?.save.start !== undefined ? "A sandbox plays in grid, not here." : startProblem(setup)
         if (problem !== null) return problem
         const watching = SLOTS.every((slot) => controllerKind(setup.slots[slot].controller) !== "player")
         return `${commanderNameOf(setup.slots.p1.commander)} against ${commanderNameOf(setup.slots.p2.commander)} on ${mapNameOf(setup.map)}, seed ${setup.seed}${watching ? ": both scripts, a battle to watch." : "."}`
@@ -626,6 +626,6 @@ export function saveLine(entry: SaveEntry): string {
   const name = entry.shown.slice(entry.shown.lastIndexOf("/") + 1).replace(/\.save\.json$|\.json$/u, "")
   if (save === null) return `${name.padEnd(26)}cannot be loaded`
   const round = save.state?.result !== undefined && save.state.result !== null ? "over" : `round ${save.state?.round ?? 1}`
-  const who = save.start !== undefined ? "testing save" : `${commanderNameOf(save.setup.slots.p1.commander)} v ${commanderNameOf(save.setup.slots.p2.commander)}`
+  const who = save.start !== undefined ? "sandbox" : `${commanderNameOf(save.setup.slots.p1.commander)} v ${commanderNameOf(save.setup.slots.p2.commander)}`
   return `${name.slice(0, 25).padEnd(26)}${round.padEnd(9)}${who}`
 }

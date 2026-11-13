@@ -8,7 +8,7 @@ export type MeasureSpec = Readonly<{
   name: string
   /** The seeds every route save and every duel is played on. */
   seeds: readonly number[]
-  /** Which testing saves of `skirmish-testing/`: every one, or only the route saves (`route-*`). */
+  /** Which sandboxes of `sandboxes/`: every one, or only the route saves (`route-*`). */
   saves: "all" | "routes"
   duels: Readonly<{
     map: string
@@ -28,7 +28,7 @@ export type MeasureSpec = Readonly<{
      *  the duels, for one of several processes (`jobsOf`, `src/measure/merge.ts`). */
     west?: readonly string[]
   }>
-  /** Campaign levels by id (empty: every level), each played by every plan. */
+  /** Story levels (missions) by id (empty: every level), each played by every plan. */
   levels: readonly string[]
   plans: readonly LevelPlan[]
 }>
@@ -59,7 +59,7 @@ export function pairingIndex(duels: MeasureSpec["duels"], players: Readonly<{ A:
 const BARRACKS = "structure.citizen.barracks"
 const DEPOT = "structure.citizen.depot"
 
-/** The plans every campaign level is played by: building nothing, and a base that trains a defence each round. */
+/** The plans every Story level is played by: building nothing, and a base that trains a defence each round. */
 export const LEVEL_PLANS: readonly LevelPlan[] = [
   { name: "nothing built", buys: [[]] },
   { name: "a defended base", buys: [[BARRACKS, DEPOT]] },
@@ -108,7 +108,7 @@ export type Measurement = Readonly<{
   levels: readonly LevelMeasure[]
 }>
 
-/** A measurement from its file's text. One written before the testing saves (the records kept in
+/** A measurement from its file's text. One written before the sandboxes (the records kept in
  *  docs/history/measurements/) named its part, and each run's save, by the word the maps had then: it is read as this
  *  build writes it. */
 export function readMeasurement(text: string): Measurement {

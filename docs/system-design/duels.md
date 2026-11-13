@@ -5,7 +5,7 @@ by a script, a person or a model. How its rounds play, the brief a player reads 
 formation a player builds by, and what its numbers can and cannot say. The code is `src/duel/`, pure; a person plays it
 as a Skirmish ([`game-modes.md`](../game-design/game-modes.md)), the `skirmish` command plays it headless
 ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), whose opening comment is its manual), and how a test uses that
-is [`testing-ground.md`](testing-ground.md), testing through Skirmishes._
+is [`sandboxes.md`](sandboxes.md), testing through Skirmishes._
 
 It began as the development bench for armies (the owner, 2026-10-17: "put each commander nexus on one side of the map
 and play a pvp ... script vs script", and a model planning each side from "the relevant logs plus current map state,
@@ -40,7 +40,7 @@ gap) and the Pocket (22 by 12, the bases close enough that their build ranges me
 ## 2. Playing one
 
 A duel is played as a Skirmish: on the Build Phase screen (`src/cli/skirmish-play.ts`), or headless by the `skirmish`
-command, a round a command, many battles over seeds, every pairing of Commanders, or two sessions taking turns through
+command, a round a command, many battles over seeds, every pairing of Commanders, or two sessions handing in build actions through
 one save file. Both play every round through one function (`playNext`, `src/skirmish/play.ts`), so a duel played on
 screen and one played headless are the same duel. The command's options and examples are its opening comment
 ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); the save it plays from is [`skirmish-saves.md`](skirmish-saves.md).
@@ -137,7 +137,7 @@ them in first (a building on the same ground, above; no turns, in [`concept.md`]
 
 A cheap model plays a side well enough to put an army through its paces: each round, each model reads its brief and
 answers with its build actions, and the round plays both. The recipe, its cost and how to read what it shows are
-[`testing-ground.md`](testing-ground.md), testing through Skirmishes. A scripted or small-model player is not a good
+[`sandboxes.md`](sandboxes.md), testing through Skirmishes. A scripted or small-model player is not a good
 player: its games show what an army does in the hands of a plain plan, not balance.
 
 ## 6. What a duel measures, and what biases it

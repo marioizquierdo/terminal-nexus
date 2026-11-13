@@ -23,8 +23,8 @@ remains.
 | [16 — Pathfinding](../history/milestones/milestone-16-pathfinding.md) | COMPLETE | done | Does every unit get where it is going — round rock, through crowds and narrow gaps, on a Grid that changes mid-round — by a route a player would call sensible, while a Battle Round stays deterministic, fair from either end and fast; and can where a player builds send their army out tight or loose? |
 | [11 — Challenge Mode: Runs](../history/milestones/milestone-11-challenge-runs.md) | COMPLETE | done | Can a player play a seeded run of battles with a run draft between them? Closed when runs were retired: its battle mechanics (building actions, the kept front, troop movement, the banner prototype) carry on in every mode |
 | [13 — The Nexus Pulse](../history/milestones/milestone-13-nexus-pulse.md) | COMPLETE | retired unbuilt | Retired on 2026-11-12: the Skirmish milestones polish the Build Phase and the Battle Round; its powers went to content, its moment on screen to the backlog |
-| [17 — Skirmish: setup and save files](milestone-17-skirmish.md) | CURRENT | 8 | Can Mario set up a Skirmish by map and slots, play, save, load and carry on, and can an agent take the same save, change who plays each side and play it headless, round by round? |
-| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | PLANNED | 9, its first pass beside 17; then repeating after friends | Does each new unit and card make a Skirmish more interesting — measured by duels and the testing ground, then played? The first pass: units that counter each other |
+| [17 — Skirmish: setup and save files](../history/milestones/milestone-17-skirmish.md) | COMPLETE | done | Can Mario set up a Skirmish by map and slots, play, save, load and carry on, and can an agent take the same save, change who plays each side and play it headless, round by round? |
+| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | CURRENT | 9, its first pass now; then repeating after friends | Does each new unit and card make a Skirmish more interesting — measured by duels and sandboxes, then played? The first pass: units that counter each other |
 | [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 10, narrow, a map choice | Can workers be built and gather resources deterministically during the Battle Round? |
 | [20 — A Skirmish Worth Showing](milestone-20-skirmish-worth-showing.md) | PLANNED | 11, ends with friends playing | Does a player read what the enemy did, answer it with their build and banner, see the answer matter, and finish a battle that stayed open; and do friends say the same? |
 | [21 — Agent Players](milestone-21-agent-players.md) | PLANNED | 12, after friends, while their notes come in | Can a player choose `Agent: <profile>` for a slot and play against a language model planning the other side each round? |
@@ -35,7 +35,12 @@ remains.
 | [18 — The Endless Stand](milestone-18-endless-stand.md) | PLANNED | not placed: after Story's first missions | Does an endless stand test what a story collected, play in fifteen to twenty-five minutes, and turn the story to its final battle? |
 | [15 — ASCII Art](milestone-15-ascii-art.md) | PLANNED | not placed: Mario's call, after friends | Is there a workflow — research, a tool, an image model and a pass by hand — that makes ASCII and ANSI art a person calls good, for every unit, portrait and vignette? |
 
-**Skirmish is current, 2026-11-11**: the owner set the modes ("Let's turn Skirmish into the center stone for game
+**Milestone 17 closed on 2026-11-13** (the owner: "With that, I think we can call the skirmish milestone done"): a
+Skirmish is set up on the screen or by words, saved and loaded at any Build Phase, and played headless by anything that
+answers a brief. Its banner and its playtest session carry on as asks in [the next steps](next-steps.md) and as
+Milestone 20's banner step. Content and Balance (12) is current, and its first step waits on his word.
+
+**Skirmish became the centre, 2026-11-11**: the owner set the modes ("Let's turn Skirmish into the center stone for game
 design and testing", [his words](../history/feedback/2026-11-11-game-modes.md)) and retired runs of many battles. A
 Skirmish is one battle against a scripted Commander Army, set up on a screen or from a save file; it is the loop a
 player plays from the title screen, and the place every change is seen.

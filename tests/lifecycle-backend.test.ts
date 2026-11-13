@@ -14,7 +14,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { watchPulse } from "../src/cli/watch.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
-import { RUNTIME_IS_BUN, loadTestingSaveFile } from "./helpers.ts"
+import { RUNTIME_IS_BUN, loadSandbox } from "./helpers.ts"
 
 const ESC = String.fromCharCode(27)
 
@@ -190,7 +190,7 @@ if (!RUNTIME_IS_BUN) {
 async function watchSession(
   end: (stdin: FakeStdin) => void,
 ): Promise<{ stdout: FakeStdout; stdin: FakeStdin; exits: number[] }> {
-  const opening = await loadTestingSaveFile("melee-kill.save.json")
+  const opening = await loadSandbox("melee-kill.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -238,7 +238,7 @@ test("q also finishes the playback itself, so whatever ran the Pulse can carry o
   // The bug the browser playtest page found: q restored the terminal, then the loop waited forever
   // on a promise nothing settled. A terminal hid it (exit ends the process first); anything that runs
   // a Pulse and then carries on — the page, and later a Pulse handing back to the Build Phase — hung.
-  const opening = await loadTestingSaveFile("melee-kill.save.json")
+  const opening = await loadSandbox("melee-kill.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
   const { stdout, stdin } = fakes()
@@ -299,7 +299,7 @@ test("watch holds on the final frame after the Pulse ends, and only quits on q",
   // Pulse finished, which could vanish a fight out from under someone still looking at it. Speed is
   // cranked so the Pulse (180 ticks, 15s of presentation time) finishes in well under a second of
   // real test time, rather than waiting it out at 1x.
-  const opening = await loadTestingSaveFile("melee-kill.save.json")
+  const opening = await loadSandbox("melee-kill.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -338,7 +338,7 @@ test("watch holds on the final frame after the Pulse ends, and only quits on q",
 })
 
 test("a render failure is caught, and still restores the terminal", async () => {
-  const opening = await loadTestingSaveFile("melee-kill.save.json")
+  const opening = await loadSandbox("melee-kill.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,

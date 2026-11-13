@@ -40,7 +40,7 @@ export function terminalPlayerName(): string {
 /**
  * **The saves Load game lists**: the player's own in the saves folder (`folder`), newest first, then the examples the
  * game ships in `saves/`, by name. Each is read and checked as the game would load it (`readSave`), so one that cannot
- * be loaded says why on the list rather than when opened. A testing save is listed, and refused when opened.
+ * be loaded says why on the list rather than when opened. A sandbox is listed, and refused when opened.
  */
 export function listSaves(profiles: Profiles, folder: string = savesFolder(), examples: string = EXAMPLE_SAVES_DIR): readonly SaveEntry[] {
   const read = (dir: string): readonly Readonly<{ path: string; at: number }>[] => {

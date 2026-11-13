@@ -19,18 +19,18 @@ npm test            # Node's runner over tests/*.test.ts
 npm run test:bun    # the same suite under Bun, one file at a time
 npm run check       # ./scripts/check-repository.sh — the repository validator
 npm run test:all    # typecheck, then both runtimes: what to run before every push
-npm run verify-testing-saves # every testing save resolves to the same hashes twenty times (CI runs this)
+npm run verify-sandboxes # every sandbox resolves to the same hashes twenty times (CI runs this)
 
-# grid — the engine, editor and replay tool. <save> is a testing save (skirmish-testing/): its path, suffix optional, or its id.
-./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish                       # watch (the default)
-./bin/grid.ts skirmish-testing/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
-./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
-./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
-./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
-./bin/grid.ts skirmish-testing/showcase/citizen-mirror-skirmish --headless --turn 90 # jump straight to tick 90
-npm run testing-saves                                                 # every testing save
+# grid — the engine, editor and replay tool. <save> is a sandbox (sandboxes/): its path, suffix optional, or its id.
+./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish                       # watch (the default)
+./bin/grid.ts sandboxes/showcase/citizens-versus-ravels --glyphs unicode --colors truecolor
+./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --log-level info --ticks 120
+./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --events events.jsonl --json
+./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --verify --runs 20   # same hashes every run?
+./bin/grid.ts sandboxes/showcase/citizen-mirror-skirmish --headless --from-tick 90 # jump straight to tick 90
+npm run sandboxes                                                 # every sandbox
 ./bin/grid.ts engage-gap2-melee-vs-mix --seeds 1-12 --swap --army-a trooper:6,skyraider:6   # a trial: as built vs a variant
-./bin/grid.ts engage-bench                                             # a trial file (skirmish-testing/trials/), with what it expects
+./bin/grid.ts engage-bench                                             # a trial file (sandboxes/trials/), with what it expects
 
 # terminal-nexus — the game. No map: the title menu, or the place a route names (--help lists them).
 ./bin/terminal-nexus.ts                                                      # the title menu
@@ -129,15 +129,15 @@ catch.
 What the suite proves, by area, is in [`docs/system-design/testing.md`](docs/system-design/testing.md):
 determinism (identical hashes across runs and runtimes, one call equals tick by tick, the kernel
 imports no renderer and calls no clock), the Grid's occupancy and collision masks, every rule with a
-named testing save, structured-cell snapshots across backends, the terminal lifecycle through one
+named sandbox, structured-cell snapshots across backends, the terminal lifecycle through one
 disposer, and the browser page held to the terminal's characters, colours and keys.
 
 Things that bite:
 
 - **Bun has a 5000 ms per-test timeout; Node does not.** A test whose cost scales with the fixture
-  count (`for (const name of testingSaveFiles())`) creeps up on it silently. Give it an explicit
+  count (`for (const name of sandboxFiles())`) creeps up on it silently. Give it an explicit
   `{ timeout: 120_000 }` (third-argument form; identical under Node). Run the Bun suite once before
-  adding a testing save.
+  adding a sandbox.
 - **Timing tests flake under load.** With agents building in parallel the frame-budget tests have
   failed once and passed alone. Re-run the file alone and measure before and after; never loosen a
   test to make a busy machine pass.
@@ -167,7 +167,7 @@ A passing test says nothing about spacing, density or where the eye goes. Look.
 Headless, a Skirmish is played from a save file, a round a command: `npm run skirmish -- -f <save>` prints the brief,
 `--p1 build:b.json` checks a slot's build actions, `--play-to next` plays the round and saves the next Build Phase, and `--p2 script:rush`
 changes who plays a side (the command's manual is `npm run skirmish -- --help`; how each kind of test uses it is
-[`testing-ground.md`](docs/system-design/testing-ground.md), testing through Skirmishes). On
+[`sandboxes.md`](docs/system-design/sandboxes.md), testing through Skirmishes). On
 screen, `--load <save>` opens a save at its Build Phase, `--at 'skirmish?seed=<n>'` a new battle against Dob Hunter's
 `balanced` script, and `--at 'skirmish?setup=new'` the setup screen; open a mission by its route only when the change is
 about a mission. Which save shows what:
@@ -178,7 +178,7 @@ about a mission. Which save shows what:
 | `saves/crossing-round-4.save.json` | Three rounds in: bases built, armies regrouped, a Commander's return, Save game offering its own name |
 | `saves/mirror-vasse.save.json` | Both slots scripted: spectating, the result naming a winner |
 | `saves/pocket-short.save.json` | Four rounds on the small map: a whole battle to its result and `[m] Setup screen` in minutes |
-| `skirmish-testing/<folder>/*.save.json` | One Battle Round written by hand, one rule each: watched in `grid`, not on the game's screen |
+| `sandboxes/<folder>/*.save.json` | One Battle Round written by hand, one rule each: watched in `grid`, not on the game's screen |
 
 **The scripted playtest** (`node scripts/playtest.mjs`, the `playtest` skill) presses keys on the game's screens
 without a terminal — a Skirmish from `saves/crossing-new.save.json` unless told otherwise, the title menu from a title
@@ -252,7 +252,7 @@ npm run skirmish -- -f .playtest/m1.save.json      # both briefs; each agent ans
 npm run skirmish -- -f .playtest/m1.save.json --p1 build:.playtest/p1.json --p2 build:.playtest/p2.json --play-to next
 ```
 
-Model against model, with the task to give each agent, is in [`testing-ground.md`](docs/system-design/testing-ground.md),
+Model against model, with the task to give each agent, is in [`sandboxes.md`](docs/system-design/sandboxes.md),
 testing through Skirmishes: use a small, cheap model, play each pairing from both sides, and read every round's report
 for why.
 

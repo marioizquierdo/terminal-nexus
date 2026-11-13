@@ -1,4 +1,4 @@
-// How a trial is printed (docs/system-design/testing-ground.md, reading a trial): for each map, three small tables —
+// How a trial is printed (docs/system-design/sandboxes.md, reading a trial): for each map, three small tables —
 // the outcome, how the armies engaged, what a tick cost when it was measured — a row per variant, a `*` where a row
 // differs from the one it is compared with by more than chance; then the battles worth watching, each with the command
 // that watches it. Pure: lines of text.

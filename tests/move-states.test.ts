@@ -13,10 +13,10 @@ import type { MoveStateChange } from "../src/report/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
 import type { MatchState } from "../src/state/types.ts"
-import { loadTestingSaveFile, playTestingSave } from "./helpers.ts"
+import { loadSandbox, playSandbox } from "./helpers.ts"
 
 async function changesOf(name: string): Promise<Readonly<{ changes: MoveStateChange[]; states: MatchState[]; events: DomainEvent[] }>> {
-  const map = await loadTestingSaveFile(name)
+  const map = await loadSandbox(name)
   const loaded = openBattle(map, { registry: FIXTURE_REGISTRY, seed: map.seed })
   const context = contextFor(loaded.state, loaded.registry, map.pulseTicks)
   const states = [loaded.state]
@@ -61,11 +61,11 @@ test("a worker running from a threat retreats, on the tick it is said to flee", 
 })
 
 test("the record is the same every run, and reading it moves no hash", async () => {
-  const first = await playTestingSave("engage-gap2-melee-vs-mix.save.json")
+  const first = await playSandbox("engage-gap2-melee-vs-mix.save.json")
   const again = await changesOf("engage-gap2-melee-vs-mix.save.json")
   const second = await changesOf("engage-gap2-melee-vs-mix.save.json")
   assert.deepEqual(again.changes, second.changes)
-  const resolvedAgain = await playTestingSave("engage-gap2-melee-vs-mix.save.json")
+  const resolvedAgain = await playSandbox("engage-gap2-melee-vs-mix.save.json")
   assert.equal(resolvedAgain.run.stateHash, first.run.stateHash)
   assert.equal(resolvedAgain.run.eventsHash, first.run.eventsHash)
 })

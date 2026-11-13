@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/marioizquierdo/terminal-nexus/saves/save.schema.json",
   "title": "Terminal Nexus Skirmish save",
-  "description": "A Skirmish's setup and the battle as it stands at the opening of a Build Phase, or, for a testing save (skirmish-testing/), the first Battle Round a person writes by hand in start (docs/system-design/skirmish-saves.md). The loader, src/skirmish/save.ts, is the authority: it checks what a schema cannot (a Commander, a script, a map's rows, units that fit the ground).",
+  "description": "A Skirmish's setup and the battle as it stands at the opening of a Build Phase, or, for a sandbox (sandboxes/), the first Battle Round a person writes by hand in start (docs/system-design/skirmish-saves.md). The loader, src/skirmish/save.ts, is the authority: it checks what a schema cannot (a Commander, a script, a map's rows, units that fit the ground).",
   "type": "object",
   "required": [
     "format",
@@ -40,7 +40,7 @@
             },
             {
               "type": "object",
-              "description": "A map drawn in full: rows of text (. open, # rock, * deposit unless a legend says otherwise), and each slot's Nexus (its north-west tile) and where its troops hold. A testing save, whose start places the Nexuses, may leave out nexus and hold.",
+              "description": "A map drawn in full: rows of text (. open, # rock, * deposit unless a legend says otherwise), and each slot's Nexus (its north-west tile) and where its troops hold. A sandbox, whose start places the Nexuses, may leave out nexus and hold.",
               "required": [
                 "id",
                 "rows"
@@ -204,7 +204,7 @@
     },
     "start": {
       "type": "object",
-      "description": "A testing save: what each slot places by hand before round 1, its first Battle Round opened from it exactly. Its slots are script:idle, rounds is 1, and it has no state or draft.",
+      "description": "A sandbox: what each slot places by hand before round 1, its first Battle Round opened from it exactly. Its slots are script:idle, rounds is 1, and it has no state or draft.",
       "additionalProperties": false,
       "properties": {
         "p1": {

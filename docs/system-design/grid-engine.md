@@ -146,7 +146,7 @@ are not repeated here.
 | Gameplay randomness is one seeded PCG32 stream; cosmetic randomness is a hash of an effect instance's identity, never a stream; the Nexus Pulse, a rule outside the kernel, deals from a seeded stream of its own, so a hand never moves a battle | `tests/rng.test.ts`, `tests/effects.test.ts`, `tests/nexus-draft.test.ts` | [`pulse.md`](pulse.md), [`effects.md`](effects.md) |
 | The simulation emits canonical state and ordered semantic events: events carry meaning, not appearance, and no renderer reads cells back into mechanics | `tests/architecture.test.ts` | [`pulse.md`](pulse.md) |
 | The simulation never knows a glyph; it knows semantic ids such as `unit.worker` | `tests/architecture.test.ts` | [`presentation.md`](presentation.md) |
-| `(0,0)` is the north-west tile, `x` grows east, `y` grows south, testing save rows read north to south: one convention in every module | `tests/testing-saves.test.ts` | [`grid.md`](grid.md) |
+| `(0,0)` is the north-west tile, `x` grows east, `y` grows south, sandbox rows read north to south: one convention in every module | `tests/sandboxes.test.ts` | [`grid.md`](grid.md) |
 | The Grid has five layers; layers define render order only, and collision is a mask composed from a chosen set of layers | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | Every entity has an anchor, a footprint and a facing; units as well as structures may span tiles, a mover tests its whole footprint, range measures to the nearest occupied tile | `tests/grid.test.ts` | [`grid.md`](grid.md) |
 | A unit stands two squares tall: every distance, range, reach and radius counts a row up or down as two columns (`ROW_DISTANCE`), a step takes as long as the distance it covers, a reach is a diamond as wide as it is tall on screen, and touching is a side shared, which melee reaches with its range of 1 | `tests/rows.test.ts`, `tests/grid-pictures.test.ts` | [`grid.md`](grid.md), [`pulse.md`](pulse.md) |
@@ -185,42 +185,11 @@ Design commitments the game documents own, GUIDANCE until built and played:
 
 ## 4. Vocabulary
 
-- **Grid** — the rectangular integer playfield a match is fought on.
-- **Grid Nexus**, **Prime Nexus** — the Nexus replica that sits on the Grid, and the one that stays home and replicates it.
-- **round** — one Nexus Pulse, one Build Phase and one Battle Round, in that order: the unit the player counts, "round 2 of 3". In code the round's number is `pulseNumber`; identifiers are not renamed.
-- **Nexus Pulse** — the moment each round opens, when the Grid Nexus speaks to its Commander and deals a hand of Nexus powers; the player may keep one during the Build Phase (for now the pick is optional). In the lore it is the Nexus's pulse, felt by its Symbol. It took the place of "the Nexus draft" as the name of that moment and of the dealing (the owner, 2026-10-07: "The Nexus Pulse signals the start of a new round"); "draft" is still the word for choosing from a hand.
-- **Build Phase** — the hidden, simultaneous, untimed phase where each player builds their plan.
-- **Battle Round** — the fixed-tick, deterministic battle that ends each round and resolves both plans in ASCII. It is the battle's name everywhere, on screen and in the writing, and the player never reads Pulse for it. The owner named it for the player first (2026-10-04: "We can refer to it as Nexus Pulse in lore and design, but Battle Round is better for the player and UI"), and for the design and the lore too once the Nexus Pulse became the round's opening (2026-10-07).
-- **the Pulse** (engine) — the engine's name for the deterministic simulation step that resolves a Battle Round: `src/pulse/`, `pulseTicks`, `startPulse`, [`pulse.md`](pulse.md) and the three worlds above. Kept for now in the code and the engine documents; it is never a player's word, and it is not the Nexus Pulse.
-- **Skirmish**, **Story**, **Versus** — the three modes: one battle against a scripted Commander Army; a Commander's story of missions; one battle between two people. Their words (slot, save file, endless stand, technology) are defined in [`game-modes.md`](../game-design/game-modes.md); a save file's, a controller's, a goal's and a modifier's in [`skirmish-saves.md`](skirmish-saves.md).
-- **mission** — a battle with a script, words and a goal, played in rounds driven by triggers; it exists only inside Story ([`game-modes.md`](../game-design/game-modes.md)).
-- **group** — units a mission trigger brings onto the Grid together during a round, at a chosen tick, with a name and an intention. A group is never a wave (the owner, 2026-10-04).
-- **wave** — the units one building spawns at once in a Battle Round, set down together beside it (the owner, 2026-10-05: "The first wave is at 5 seconds"). How many a wave, how many waves a round and the seconds between them are the building's own, on its card in its army; the first wave comes at the same moment for every building (`firstWave`). The word means only this: a round's battle is a Battle Round, and what a mission brings is a group.
-- **Popup pulse** — an Experiment, unrelated to the above: a slow breath of light on a popup's border.
-- **Regroup** — what happens when a Battle Round ends: survivors stay where they fought, step back and form up across their march line, so the next round starts from the front. (It replaced Recall, the walk home, on 2026-10-26.)
-- **starter map** — the Build Phase's one disposable map and the small catalog of buildings it offers; it exists to be played and replaced, and is not a mission.
-- **army file** — `armies/<id>/army.json`, an army written as data: it names the armies it builds on and sees only what they bring. `armies/all` holds what any Commander may use, a faction army (`armies/citizen`, `armies/ravel`) its Nexus, units and buildings, and a Commander army her unit, her own powers and her starting package; a story is `stories/<id>/story.json` ([`army-authoring.md`](army-authoring.md)).
-- **ability** — what a unit does on its own, by a kind from one table (`src/abilities/`): an aura, a bounty, loaded dice.
-- **testing save** — a Skirmish save in `skirmish-testing/` that opens on a Battle Round written by hand (its `start`: what each side has on the Grid, and where its troops head), with both slots planning nothing: a rule, a unit, a kind of ground or a showcase that `grid`, the trials, the measurement and the tests open exactly ([`skirmish-saves.md`](skirmish-saves.md)).
-- **duel** — two Commander Armies fought out headless, round by round, a script or a model planning each side ([`duels.md`](duels.md)).
-- **target** — the place a level sends a side's troops: they head for it, engage what comes within reach on the way, and stand there ([`pulse.md`](pulse.md)). PERIMETER's is the line.
-- **build range** — the ground a new building needs a tile on: within the construction radius of the player's Grid Nexus and of every standing building linked to it, counted as any reach is; a building planned this round gives its range from the next ([`pulse.md`](pulse.md)).
-- **room** — the tiles a building that makes units keeps free round it, so its waves have somewhere to appear: no other building may stand there ([`pulse.md`](pulse.md)).
-- **distance** — columns across plus two for each row up or down, between the nearest tiles of two footprints: every range, reach and radius counts in it, a reach is every tile within it, and a reach of 1 is touching, a side shared ([`grid.md`](grid.md)).
-- **route** — a place in the game written like a web address without its site (`settings`, `story?mission=vasse-test-1&round=2`); `--at`, the title menu's rows and the browser page's `#at=` all read it ([`routing.md`](routing.md)).
-- **bench rosters** — the Citizen, Ravel and Proving Grounds fixtures the tests and the engine tool use; they are not Commander Armies. "Placeholder" is kept for a stand-in number or piece of text, never for content.
-- **Commander Army** — the playable package for one player: faction, Commander, starting units and structures, blueprints, upgrades, Nexus powers and Specials.
-- **Nexus power** — a named effect with one plain line of description, dealt to the player in a hand at each Nexus Pulse.
-- **Experiment** — a design choice put behind a switch in Settings, so Mario can feel both answers and send back the settings export.
-- **tuned value** — a number kept in one place in the code (`src/build/tuning.ts`) because it is set by feel and expected to change.
-- **menu** — the Build Phase's side panel: one list of rows, each with its hotkey.
-- **build menu** — the menu's buildings, each with its cost: what the player can place this round (`constructMenu` and the `catalog` in code).
-- **card** — the panel that replaces the menu while something has the map's attention: what is under the cursor, or the building being placed.
-- **popup** — one overlay shape: a title and rows, closed by Esc or a click outside.
-- **message** — a popup with nothing to choose.
-- **hand-off** — a menu row giving the keyboard to the map, shown by a focus arrow or a see-through cursor travelling to the cursor.
-- **see-through style** — a glyphless cell write that blends a colour into whatever is under it at a given opacity; the cursor uses it.
-- **resize gate** — the TERMINAL TOO SMALL screen shown below the minimum size instead of a cropped Grid.
+Every word the project made its own is defined once, in the [glossary](../game-design/glossary.md): the words of a
+battle (round, Nexus Pulse, Build Phase, Battle Round, tick, regroup, wave, group), of the ground, of armies, of the
+modes, of setting up a Skirmish, of testing (sandbox, trial, duel, measurement) and of the screen, and the words the
+engine keeps that a player never reads (the Pulse, match). A new word goes there in the pull request that brings it
+in.
 
 ## 5. How troops move
 

@@ -1,23 +1,23 @@
 ---
 name: grid
-description: Working with grid, the engine, editor and replay tool (bin/grid.ts): the report grammar, the log levels, the testing save format and how to author one that exercises one rule. Use when running or reading a battle, adding a testing save, or debugging a kernel rule.
+description: Working with grid, the engine, editor and replay tool (bin/grid.ts): the report grammar, the log levels, the sandbox format and how to author one that exercises one rule. Use when running or reading a battle, adding a sandbox, or debugging a kernel rule.
 ---
 # Working with `grid`
 
-`grid` is not the game: it is the tool the game gets built and tested with, a testing save (`skirmish-testing/`)
+`grid` is not the game: it is the tool the game gets built and tested with, a sandbox (`sandboxes/`)
 plus a CLI that places entities on a Grid, resolves a deterministic Pulse from a seed, and reports
 what happened (design: [`docs/system-design/runtime.md`](../../../docs/system-design/runtime.md)). It
 grew out of the first milestone's Pulse Playground and is permanent infrastructure. If a change
-touches a rule, a testing save is how you prove it, and how the next session proves it again.
+touches a rule, a sandbox is how you prove it, and how the next session proves it again.
 
 ## Running it
 
-The testing save is the first argument, by path or id; the suffix is optional. There is no subcommand: the default action is
+The sandbox is the first argument, by path or id; the suffix is optional. There is no subcommand: the default action is
 watch, `--headless` resolves without a terminal and prints the levelled log, `--verify` re-resolves
 (10 runs by default, `--runs N`) and fails if any run's hashes disagree. The full command line and
 the options both programs share are in [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 1.
-`./bin/grid.ts <save> ...` and `npm run grid -- <save> ...` are the same. `npm run testing-saves` lists every
-testing save (`ls skirmish-testing/*/*.save.json | wc -l` counts them). A bare `grid` with no map is
+`./bin/grid.ts <save> ...` and `npm run grid -- <save> ...` are the same. `npm run sandboxes` lists every
+sandbox (`ls sandboxes/*/*.save.json | wc -l` counts them). A bare `grid` with no map is
 reserved for the map editor and is a usage error today.
 
 ## Reading the report
@@ -66,7 +66,7 @@ to give up the ASCII view to keep a record of what happened.
 
 ## Jumping to a tick
 
-`--turn <tick>` seeks straight to that tick instead of playing from the start, in all three actions:
+`--from-tick <tick>` seeks straight to that tick instead of playing from the start, in all three actions:
 
 - `watch` starts playback there instead of at tick 0 — the states are already resolved, so this is
   free, not a re-simulation;
@@ -103,11 +103,11 @@ view answers "is this legible," not "is this correct."
 ## Trials: a map over many seeds
 
 When the question is not "what happened in this battle" but "is this army, unit, number or rule better, and how
-surely", play a trial ([`docs/system-design/testing-ground.md`](../../../docs/system-design/testing-ground.md)):
+surely", play a trial ([`docs/system-design/sandboxes.md`](../../../docs/system-design/sandboxes.md)):
 
 ```text
 grid engage-gap2-melee-vs-mix --seeds 1-12 --swap --shuffle --army-a trooper:6,skyraider:6   # as built vs a variant
-grid engage-bench                                  # a trial file from skirmish-testing/trials/, failing if what it expects fails
+grid engage-bench                                  # a trial file from sandboxes/trials/, failing if what it expects fails
 grid engage-bench --tune trooper.maxHp=50          # every variant of a trial file with a unit tuned
 grid engage-bench --against HEAD --profile --jobs 4   # uncommitted work beside the last commit, with what a tick cost
 grid engage-bench --out before.json                # or before a change spanning commits ...
@@ -125,17 +125,17 @@ units of a formation line among their places by the seed. The variant options (`
 watched (`grid <save> --seed 7 --swap --army-a ...`). Read a `*` as "beyond chance"; no `*`, no claim. Compare armies at
 the same supply (the last column).
 
-## Writing a testing save
+## Writing a sandbox
 
-The battles `grid` plays are **testing saves**: Skirmish saves in `skirmish-testing/` that open on a Battle Round written
+The battles `grid` plays are **sandboxes**: Skirmish saves in `sandboxes/` that open on a Battle Round written
 by hand ([`docs/system-design/skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md), the `start`). They live
 in a folder for what they are for: `rules/`, `units/`, `movement/`, `engage/` (the bench), `showcase/`, with the trial
 files in `trials/`; the id is the file name and every command finds a save by it. **Give each side that fights a goal**:
-a `target` in its start, or an enemy Nexus to head for — `tests/testing-saves.test.ts` refuses a checked-in save without
+a `target` in its start, or an enemy Nexus to head for — `tests/sandboxes.test.ts` refuses a checked-in save without
 one, since the game never plays such a battle. A question about troops usually needs a variant of an engage save, not a
 new save. `skirmish --load <save> --play-to next` plays the same Battle Round and prints the same report.
 
-Every rule gets a named, checked-in testing save — that is the regression suite and the documentation at once. It is a
+Every rule gets a named, checked-in sandbox — that is the regression suite and the documentation at once. It is a
 save like any other, read by the same loader (`readSave`, every problem at once), with a map drawn inline, both slots
 `script:idle`, one round, and a `start` for each slot:
 
@@ -176,7 +176,7 @@ The map's `legend` may be left out when the rows use only `.` open, `#` rock and
 `p1` is the engine's side A (west), `p2` side B. A slot's start places what it has on the Grid when the round opens:
 `at` is where its `rows[0][0]` sits, so `rows` only needs to cover the tiles that slot places, not the whole Grid —
 write a tight box around one side's squad. A symbol marks a unit's **centre tile**: for a 1×1 unit that's the only tile
-it has, but for a multi-tile unit (`skirmish-testing/showcase/heavies-clash.save.json` is the checked-in example, a 3×3
+it has, but for a multi-tile unit (`sandboxes/showcase/heavies-clash.save.json` is the checked-in example, a 3×3
 colossus and a 5×2 leviathan) the symbol sits on the footprint's middle tile and the opening derives the anchor from it
 (`footprintCentre`, `src/grid/coords.ts`). A legend entry is `{ "content": "..." }`, or `{ "content": "...", "hp": 12 }`
 to start it already damaged — `hp` must fall inside `1..maxHp` for the content. `target` is where the slot's troops head.
@@ -191,8 +191,8 @@ raise it deliberately if a save genuinely needs to be bigger. JSON has no commen
 
 ## Testing
 
-After adding a testing save run `./scripts/run-tests.sh bun`, not only `npm test`: Bun enforces a 5000 ms
-per-test timeout that Node does not, and a test that loops over every testing save needs an explicit
+After adding a sandbox run `./scripts/run-tests.sh bun`, not only `npm test`: Bun enforces a 5000 ms
+per-test timeout that Node does not, and a test that loops over every sandbox needs an explicit
 `{ timeout }` ([`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 2).
 
 ## Where things live
@@ -200,10 +200,10 @@ per-test timeout that Node does not, and a test that loops over every testing sa
 `src/pulse` — the kernel (imports nothing presentation- or clock-related; `tests/architecture.test.ts`
 enforces the import graph). `src/content` — unit/structure definitions, the Citizen and Ravel fixture
 rosters and the Proving Grounds bench roster (`proving-grounds.ts`), all disposable. `src/skirmish` — the save format
-(`save.ts`), a save's `start` (`start.ts`), the testing saves found by id (`testing-saves.ts`) and the opening the
+(`save.ts`), a save's `start` (`start.ts`), the sandboxes found by id (`sandboxes.ts`) and the opening the
 kernel starts from (`opening/open.ts`, which validates it). `src/report`
 — the levelled log and summary. `src/view` — the ASCII compositor and terminal backends. `src/cli` —
-this tool's own entry points. `skirmish-testing/*/*.save.json` — the testing saves themselves, by folder; `skirmish-testing/trials/` — the
+this tool's own entry points. `sandboxes/*/*.save.json` — the sandboxes themselves, by folder; `sandboxes/trials/` — the
 trial files. `src/skirmish/opening/variant.ts`, `src/measure/trial.ts`, `src/cli/trial.ts` — variants and trials.
 
 ## Related

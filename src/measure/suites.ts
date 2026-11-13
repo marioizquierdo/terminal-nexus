@@ -1,5 +1,5 @@
-// The battles a measurement plays (docs/system-design/measurement.md): a map from `skirmish-testing/` on a seed, a duel
-// between two Commanders round by round, and a campaign level played by a fixed plan. Each comes back as the records of
+// The battles a measurement plays (docs/system-design/measurement.md): a map from `sandboxes/` on a seed, a duel
+// between two Commanders played as a Skirmish (the same save, seating and round loop the `skirmish` command plays by), and a Story level played by a fixed plan. Each comes back as the records of
 // its battles (`battle.ts`) and what decided it. Pure: the same inputs measure the same on every machine. Reading the
 // maps from disk, the clock and writing the results down are the command's (`bin/measure.ts`).
 
@@ -14,32 +14,27 @@ import { createBuildState, withoutScene } from "../build/state.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
-import type { DuelResult, DuelSetup, Side, BuildActions } from "../duel/index.ts"
-import { briefOf, newDuel, playRound } from "../duel/index.ts"
-import type { Player } from "../duel/index.ts"
+import type { DuelResult, Side } from "../duel/index.ts"
+import { briefOf } from "../duel/index.ts"
 import { centreTile } from "../match/index.ts"
-import { contextFor, stepTick } from "../pulse/index.ts"
-import { openBattle } from "../skirmish/opening/open.ts"
+import { playOn } from "../skirmish/play.ts"
+import { playSandboxRound } from "../skirmish/sandbox-round.ts"
+import { newBattle, seat, withRules } from "../skirmish/request.ts"
+import type { Profiles } from "../skirmish/save.ts"
+import { duelOf } from "../skirmish/save.ts"
+import { slotAsk } from "../skirmish/slots.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MatchState } from "../state/types.ts"
 import type { BattleRecord } from "./battle.ts"
 import { BattleRecorder, recordBattle } from "./battle.ts"
 
-/** A map from `skirmish-testing/`, played on one seed. */
+/** A map from `sandboxes/`, played on one seed. */
 export type SaveMeasure = Readonly<{ save: string; seed: number; battle: BattleRecord }>
 
-/** Plays a testing save's opening on `seed` to its end and records it. */
+/** Plays a sandbox's opening on `seed` to its end and records it. */
 export function measureSave(opening: BattleOpening, seed: number, registry: ContentRegistry = FIXTURE_REGISTRY): SaveMeasure {
-  const loaded = openBattle(opening, { registry, seed })
-  const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
-  const recorder = new BattleRecorder(loaded.registry)
-  let state = loaded.state
-  recorder.observe(state, [])
-  while (state.outcome === null && state.tick < opening.pulseTicks) {
-    const step = stepTick(state, context)
-    state = step.state
-    recorder.observe(state, step.events)
-  }
+  const recorder = new BattleRecorder(registry)
+  playSandboxRound(opening, { registry, seed, watch: (state, events) => recorder.observe(state, events) })
   return { save: opening.id, seed, battle: recorder.record() }
 }
 
@@ -59,41 +54,58 @@ export type DuelMeasure = Readonly<{
   rounds: readonly DuelRound[]
 }>
 
-/** A whole duel, each side's plans from its player, every round recorded. */
-export function measureDuel(setup: DuelSetup, players: Readonly<Record<Side, Readonly<{ name: string; player: Player }>>>): DuelMeasure {
-  let state = newDuel(setup)
+/** A duel a measurement plays: where, on which seed, for how long, and whose armies, side A (p1, west) and side B. */
+export type DuelBattle = Readonly<{ map: string; seed: number; rounds: number; pulseTicks: number; commanders: Readonly<Record<Side, string>> }>
+
+const NO_PROFILES: Profiles = new Map()
+
+/**
+ * **A whole duel, played as a Skirmish**: a new battle set up as `battle` says, each slot played by its script (`players`,
+ * by name, as `--p1 script:<name>` names one), played to its end by the Skirmish's own loop (`playOn`, the one the
+ * `skirmish` command and the screens play by), and every round's Battle Round recorded.
+ */
+export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, string>>): DuelMeasure {
+  const save = newBattle({ map: battle.map, seed: battle.seed, roundTicks: battle.pulseTicks, commanders: { p1: battle.commanders.A, p2: battle.commanders.B } }, NO_PROFILES)
+  const seated = seat(save, { p1: { ask: slotAsk(`script:${players.A}`, NO_PROFILES) }, p2: { ask: slotAsk(`script:${players.B}`, NO_PROFILES) } }, () => "")
+  const setup = withRules(seated.setup, 1, { rounds: battle.rounds })
   const rounds: DuelRound[] = []
-  while (state.result === null) {
-    const briefs = { A: briefOf(state, "A").data, B: briefOf(state, "B").data }
-    const plans: Record<Side, BuildActions> = { A: players.A.player(briefs.A), B: players.B.player(briefs.B) }
-    let recorder: BattleRecorder | null = null
-    const played = playRound(state, plans, (battle, events, registry, sides) => {
-      recorder ??= new BattleRecorder(registry, sides)
-      recorder.observe(battle, events)
-    })
-    const sideRound = (side: Side): DuelSideRound => {
-      const hand = briefs[side].hand
-      const picked = plans[side].power === undefined || plans[side].power === 0 ? undefined : hand[(plans[side].power ?? 0) - 1]
-      const report = played.report.sides[side]
-      return {
-        hand: hand.map((card) => card.rarity as Rarity),
-        kept: picked === undefined ? null : (picked.rarity as Rarity),
-        keptId: picked === undefined ? null : picked.id,
-        nexus: report.nexus.after,
-        nexusMost: report.nexus.most,
+  let recorder: BattleRecorder | null = null
+  const ran = playOn(
+    setup,
+    duelOf({ ...save, setup }, NO_PROFILES),
+    {},
+    Number.POSITIVE_INFINITY,
+    NO_PROFILES,
+    ({ before, played }) => {
+      const record = (recorder as BattleRecorder | null)?.record()
+      recorder = null
+      if (record === undefined) throw new Error(`round ${before.round} of the duel played no battle`)
+      const sideRound = (side: Side): DuelSideRound => {
+        const hand = briefOf(before, side).data.hand
+        const power = played.actions[side === "A" ? "p1" : "p2"].power
+        const picked = power === undefined || power === 0 ? undefined : hand[power - 1]
+        const report = played.report.sides[side]
+        return {
+          hand: hand.map((card) => card.rarity as Rarity),
+          kept: picked === undefined ? null : (picked.rarity as Rarity),
+          keptId: picked === undefined ? null : picked.id,
+          nexus: report.nexus.after,
+          nexusMost: report.nexus.most,
+        }
       }
-    }
-    const battle = (recorder as BattleRecorder | null)?.record()
-    if (battle === undefined) throw new Error(`round ${state.round} of the duel played no battle`)
-    rounds.push({ round: state.round, battle, sides: { A: sideRound("A"), B: sideRound("B") } })
-    state = played.state
-  }
+      rounds.push({ round: before.round, battle: record, sides: { A: sideRound("A"), B: sideRound("B") } })
+    },
+    (state, events, registry, sides) => {
+      recorder ??= new BattleRecorder(registry, sides)
+      recorder.observe(state, events)
+    },
+  )
   return {
-    commanders: setup.commanders,
-    players: { A: players.A.name, B: players.B.name },
-    map: typeof setup.map === "string" ? setup.map : setup.map.id,
-    seed: setup.seed,
-    result: state.result as DuelResult,
+    commanders: battle.commanders,
+    players,
+    map: battle.map,
+    seed: battle.seed,
+    result: ran.state.result as DuelResult,
     rounds,
   }
 }
@@ -101,7 +113,7 @@ export function measureDuel(setup: DuelSetup, players: Readonly<Record<Side, Rea
 /** How lucky a hand kept was: its rarity's place among the rarities, common 1 up to legendary 4; none kept 0. */
 export const luckOf = (kept: Rarity | null): number => (kept === null ? 0 : RARITIES.indexOf(kept) + 1)
 
-/** A plan a campaign level is played by: what it buys each round, near the player's Grid Nexus. */
+/** A plan a Story level is played by: what it buys each round, near the player's Grid Nexus. */
 export type LevelPlan = Readonly<{ name: string; buys: CurvePlan["buys"] }>
 
 export type LevelMeasure = Readonly<{

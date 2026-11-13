@@ -2,12 +2,11 @@
 
 import { dirname, join, resolve as resolvePath } from "node:path"
 import { fileURLToPath } from "node:url"
-import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import type { ContentRegistry } from "../src/content/index.ts"
-import { resolvePulse } from "../src/pulse/index.ts"
-import type { PulseRun } from "../src/pulse/index.ts"
-import { openBattle } from "../src/skirmish/opening/index.ts"
-import { loadTestingSave, testingSaveCatalog } from "../src/skirmish/testing-saves.ts"
+import { playSandboxRound } from "../src/skirmish/sandbox-round.ts"
+import type { SandboxRound } from "../src/skirmish/sandbox-round.ts"
+import { loadSandbox, sandboxCatalog } from "../src/skirmish/sandboxes.ts"
+
+export { loadSandbox }
 import type { BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { ReportInput } from "../src/report/index.ts"
 
@@ -18,58 +17,28 @@ export const REPO_ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), ".
  * is registered conditionally rather than skipped. Both branches assert something true.
  */
 export const RUNTIME_IS_BUN = (globalThis as { Bun?: unknown }).Bun !== undefined
-export const TESTING_DIR = join(REPO_ROOT, "skirmish-testing")
+export const SANDBOX_DIR = join(REPO_ROOT, "sandboxes")
 
-/** Every checked-in map's file name (`melee-kill.save.json`), from every folder under `skirmish-testing/`, sorted. */
-export function testingSaveFiles(): string[] {
-  return testingSaveCatalog(TESTING_DIR).map((entry) => `${entry.id}.save.json`)
+/** Every checked-in map's file name (`melee-kill.save.json`), from every folder under `sandboxes/`, sorted. */
+export function sandboxFiles(): string[] {
+  return sandboxCatalog(SANDBOX_DIR).map((entry) => `${entry.id}.save.json`)
 }
 
-/** A checked-in map by its file name, whichever folder it is in. */
-export async function loadTestingSaveFile(name: string): Promise<BattleOpening> {
-  return loadTestingSave(name)
+/** A sandbox played (`playSandboxRound`, the one path every door plays one by), with the opening it was read as. */
+export type Resolved = SandboxRound & Readonly<{ opening: BattleOpening }>
+
+export async function playSandbox(name: string, overrides: Readonly<{ seed?: number; ticks?: number }> = {}): Promise<Resolved> {
+  const opening = await loadSandbox(name)
+  return { opening, ...playSandboxRound(opening, overrides) }
 }
 
-export type Resolved = Readonly<{
-  opening: BattleOpening
-  registry: ContentRegistry
-  run: PulseRun
-}>
+/** What a played sandbox's report is written from. */
+export const reportInputOf = (resolved: Resolved): ReportInput => resolved.report
 
-export async function playTestingSave(
-  name: string,
-  overrides: Readonly<{ seed?: number; ticks?: number }> = {},
-): Promise<Resolved> {
-  const opening = await loadTestingSaveFile(name)
-  const seed = overrides.seed ?? opening.seed
-  const pulseTicks = overrides.ticks ?? opening.pulseTicks
-  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed })
-  const run = resolvePulse({
-    initialState: loaded.state,
-    registry: loaded.registry,
-    pulseTicks,
-    seed,
-  })
-  return { opening, registry: loaded.registry, run }
-}
-
-export function reportInputOf(resolved: Resolved): ReportInput {
-  return {
-    battleId: resolved.opening.id,
-    seed: resolved.run.seed,
-    pulseTicks: resolved.run.pulseTicks,
-    registry: resolved.registry,
-    events: resolved.run.events,
-    finalState: resolved.run.finalState,
-    stateHash: resolved.run.stateHash,
-    eventsHash: resolved.run.eventsHash,
-  }
-}
-
-/** Every testing save in the repository, resolved once — the regression suite's raw material. */
-export async function playAllTestingSaves(): Promise<Resolved[]> {
+/** Every sandbox in the repository, resolved once — the regression suite's raw material. */
+export async function playAllSandboxes(): Promise<Resolved[]> {
   const resolved: Resolved[] = []
-  for (const name of testingSaveFiles()) resolved.push(await playTestingSave(name))
+  for (const name of sandboxFiles()) resolved.push(await playSandbox(name))
   return resolved
 }
 

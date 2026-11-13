@@ -140,7 +140,7 @@ export function footprintBox(anchor: Coord, footprint: Footprint): FootprintBox 
 }
 
 /**
- * The offset from a footprint's anchor to the tile a testing save's start calls its **centre** — the one tile a
+ * The offset from a footprint's anchor to the tile a sandbox's start calls its **centre** — the one tile a
  * placement symbol occupies, however many tiles the entity actually covers.
  *
  * `floor((extent - 1) / 2)` on each axis, so an odd extent has a true middle (a 3-wide unit centres

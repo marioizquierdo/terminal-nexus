@@ -57,7 +57,7 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `skirmish?setup=load` | Load game: the saves folder, then the examples in `saves/` |
 | `skirmish` | a Skirmish's first Build Phase on the defaults (Vasse against Dob Hunter's `balanced` script on the Crossing), on a seed from the clock |
 | `skirmish?seed=1234` | the same battle on that seed |
-| `skirmish?seed=7&map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds` | a new battle set up as named, under the `skirmish` command's names (`map`, `p1`, `p2`, `p1-commander`, `p2-commander`, `modifiers`); what is not named is the default. A battle started from the setup screen has this route, so it can be opened again |
+| `skirmish?seed=7&map=pocket&p2=script:agro&p2-commander=averno&modifiers=fast-rounds` | a new battle set up as named, in the `skirmish` command's own words, read by its own reader (`src/skirmish/ask.ts`: `map`, `seed`, `ticks`, `rounds`, `modifiers`, `p1`, `p2`, `p1-commander`, `p2-commander`, `p1-credits`, `p2-credits`); what is not named is the default, and the game's flags take the same words (`--map pocket`). A battle started from the setup screen has this route, so it can be opened again |
 | `skirmish?load=<file>` | a save file at its Build Phase, the plan it was saved with restored (`--load <file>` says the same) |
 | `story` | the title menu's Story screen, a placeholder until the Story menu is built |
 | `settings` | the title menu's Settings screen |

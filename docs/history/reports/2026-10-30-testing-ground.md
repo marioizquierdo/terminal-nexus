@@ -2,7 +2,7 @@
 
 _Mario asked for a benchmark and testing ground to try new units, buildings, formations and terrain, a spec for it, a
 better `grid` for configuring and reading trials, the scenario folders reorganised and the legacy maps removed. This is
-what was built and what the first trials found. The design is [the testing ground](../../system-design/testing-ground.md)._
+what was built and what the first trials found. The design is [the testing ground](../../system-design/sandboxes.md)._
 
 ## What was built
 

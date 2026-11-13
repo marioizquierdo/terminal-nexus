@@ -444,7 +444,7 @@ animation track are defined in [`effects.md`](effects.md).
 - ASCII-safe is the baseline; Unicode packs map the same semantic roles separately.
 - Monochrome, 256-colour, and truecolor are explicit modes; there is no 16-colour mode.
 - **Colour never carries ownership, target, danger, or health alone** (RULE — `tests/view.test.ts`:
-  monochrome renders every testing save and no cell depends on colour to exist).
+  monochrome renders every sandbox and no cell depends on colour to exist).
 - Reduced motion keeps anticipation, impact, and settled state; it removes decorative movement only
   (RULE — `tests/effects.test.ts`).
 - Structured snapshots include glyph, foreground and background roles, and attributes

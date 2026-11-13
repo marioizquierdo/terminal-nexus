@@ -16,10 +16,10 @@
     "grid": "node bin/grid.ts",
     "skirmish": "node bin/skirmish.ts",
     "terminal-nexus": "node bin/terminal-nexus.ts",
-    "testing-saves": "ls skirmish-testing/*/*.save.json",
-    "trials": "ls skirmish-testing/trials/*.trial.json",
+    "sandboxes": "ls sandboxes/*/*.save.json",
+    "trials": "ls sandboxes/trials/*.trial.json",
     "test:all": "npm run typecheck && npm test && npm run test:bun",
-    "verify-testing-saves": "for save in skirmish-testing/*/*.save.json; do ./bin/grid.ts \"$save\" --verify --runs 20 || exit 1; done"
+    "verify-sandboxes": "for save in sandboxes/*/*.save.json; do ./bin/grid.ts \"$save\" --verify --runs 20 || exit 1; done"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

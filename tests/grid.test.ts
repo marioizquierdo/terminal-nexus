@@ -9,15 +9,15 @@ import type { GridTerrain, TerrainId } from "../src/grid/index.ts"
 import { contextFor, occupancyFor, stepTick } from "../src/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { loadTestingSaveFile, playTestingSave, testingSaveFiles } from "./helpers.ts"
+import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 
 function plainGrid(width: number, height: number): GridTerrain {
   return { width, height, tiles: new Array<TerrainId>(width * height).fill("terrain.plain") }
 }
 
 test("no two entities overlap in a mask that includes both their layers, at any tick", async () => {
-  for (const name of testingSaveFiles()) {
-    const opening = await loadTestingSaveFile(name)
+  for (const name of sandboxFiles()) {
+    const opening = await loadSandbox(name)
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
     let state = loaded.state
@@ -53,7 +53,7 @@ test("no two entities overlap in a mask that includes both their layers, at any 
 test("a worker and a ground unit may share a tile", async () => {
   // Collision is a mask composed from chosen layers, so at some tick a unit and a worker stand on
   // the same tile — asserted rather than forbidden.
-  const opening = await loadTestingSaveFile("share-tile-worker-unit.save.json")
+  const opening = await loadSandbox("share-tile-worker-unit.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
   let state = loaded.state
@@ -150,9 +150,9 @@ test("a 3x1 hauler is refused a two-tile gap and admitted a three-tile one", () 
   }
 })
 
-test("the hauler testing saves agree with the mask: three crosses the wall, two never does", async () => {
+test("the hauler sandboxes agree with the mask: three crosses the wall, two never does", async () => {
   const crossed = async (name: string): Promise<boolean> => {
-    const resolved = await playTestingSave(name)
+    const resolved = await playSandbox(name)
     return resolved.run.events.some((event) => event.kind === "entity.moved" && event.to.y > 6)
   }
   assert.equal(await crossed("hauler-three-tile-gap.save.json"), true)
@@ -160,7 +160,7 @@ test("the hauler testing saves agree with the mask: three crosses the wall, two 
 })
 
 test("a multi-tile entity is damaged and destroyed as one entity", async () => {
-  const resolved = await playTestingSave("structure-destruction.save.json")
+  const resolved = await playSandbox("structure-destruction.save.json")
   const destroyed = resolved.run.events.filter((event) => event.kind === "structure.destroyed")
   assert.equal(destroyed.length, 1, "a 3x2 Grid Nexus died more than once")
   const nexus = destroyed[0]

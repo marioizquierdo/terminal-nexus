@@ -1,12 +1,10 @@
 // Measuring battles the same way before and after a rule changes (docs/system-design/measurement.md): the spec of
 // what is played (`spec.ts`), the battles themselves (`suites.ts`), a battle's record (`battle.ts`), and the plain
 // words a measurement says (`summary.ts`); a spec split into processes and merged back (`merge.ts`); and what one
-// unit did in each round of each campaign level (`who.ts`). `runSpec` plays a whole spec; the command around it
+// unit did in each round of each Story level (`who.ts`). `runSpec` plays a whole spec; the command around it
 // (`bin/measure.ts`) reads the maps, keeps time and writes the result down.
 
 import type { PlayableLevel } from "../cli/levels.ts"
-import type { Player } from "../duel/index.ts"
-import { scriptedNames, scriptedPlayer } from "../duel/index.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MeasureSpec } from "./spec.ts"
 import { playerPairs } from "./spec.ts"
@@ -52,31 +50,25 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
   if (inputs.parts.has("saves")) {
     const maps = inputs.saves.filter((opening) => spec.saves === "all" || opening.id.startsWith("route-"))
     for (const opening of maps) {
-      // A route save is played on every seed; every other testing save on its own seed, the one its tests use.
+      // A route save is played on every seed; every other sandbox on its own seed, the one its tests use.
       const seeds = opening.id.startsWith("route-") ? spec.seeds : [opening.seed]
       for (const seed of seeds) {
         const run = measureSave(opening, seed)
         ticks += run.battle.ticks
         saves.push(run)
-        say(`testing save ${opening.id} seed ${seed}: ${run.battle.winner ?? "draw"} at ${run.battle.ticks}`)
+        say(`sandbox ${opening.id} seed ${seed}: ${run.battle.winner ?? "draw"} at ${run.battle.ticks}`)
       }
     }
   }
   if (inputs.parts.has("duels")) {
     const { duels: setup } = spec
-    const scripted = (name: string): Player => {
-      const player = scriptedPlayer(name)
-      if (player === undefined) throw new Error(`no scripted player "${name}" (${scriptedNames()})`)
-      return player
-    }
     for (const name of setup.players) {
       for (const pair of playerPairs(setup, name)) {
-        const players = { A: { name: pair.A, player: scripted(pair.A) }, B: { name: pair.B, player: scripted(pair.B) } }
         const label = pair.A === pair.B ? pair.A : `${pair.A} v ${pair.B}`
         for (const a of setup.west ?? setup.commanders) {
           for (const b of setup.commanders) {
             for (const seed of spec.seeds) {
-              const duel = measureDuel({ map: setup.map, seed, rounds: setup.rounds, pulseTicks: setup.pulseTicks, commanders: { A: a, B: b } }, players)
+              const duel = measureDuel({ map: setup.map, seed, rounds: setup.rounds, pulseTicks: setup.pulseTicks, commanders: { A: a, B: b } }, pair)
               ticks += duel.rounds.reduce((sum, round) => sum + round.battle.ticks, 0)
               duels.push(duel)
               const won = duel.result.winner

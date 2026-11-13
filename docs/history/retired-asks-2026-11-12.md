@@ -13,7 +13,7 @@ validator. Each ask's full text is in git, in `docs/milestones/next-steps.md` be
 | Try a building's actions | Folded into the banner ask |
 | Settle the keyboard's steps, with a settings export | Folded into the banner ask |
 | Feel the Nexus fighting back, in PERIMETER's round 3 | Folded into the banner ask: the Nexus shoots in every battle |
-| Try the testing ground beside main | Retired: a tool for agents, described in [`testing-ground.md`](../system-design/testing-ground.md) |
+| Try the testing ground beside main | Retired: a tool for agents, described in [`sandboxes.md`](../system-design/sandboxes.md) |
 | Play the pathfinding milestone's wrap-up (march lines, Vasse as a regular troop, the lighter fire, PERIMETER's round 2) | Retired: any Skirmish shows the march; PERIMETER's balance waits for [its milestone](../milestones/milestone-10-first-and-second-missions.md) |
 | Look at the colour work on a terminal whose colours are not the game's | Retired: polish of the look waits behind a fun basic game; the colour notes stay in the carry-over |
 | Play the curve level (supply, the Garrison, holding production) | Retired: supply and the Garrison are in every Skirmish |

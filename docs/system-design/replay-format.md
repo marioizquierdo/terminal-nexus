@@ -71,7 +71,7 @@ PlayerId | null, reason: VictoryReason, tick: number }`.
 
 ```ts
 type ReplaySetup = Readonly<{
-  /** A checked-in testing save by id, or a fully embedded one: "map id, or map ascii if not one of
+  /** A checked-in sandbox by id, or a fully embedded one: "map id, or map ascii if not one of
    *  the core maps". Both cases exist today: BattleOpening already is a map plus a starting
    *  placement (src/skirmish/opening/types.ts). */
   map: Readonly<{ battleId: string }> | Readonly<{ opening: BattleOpening }>
@@ -85,7 +85,7 @@ type ReplayPlayerSetup = Readonly<{
   /** Reserved, until real armies exist. */
   armyId?: string
   /** Reserved, same reason. Today a player's faction is implicit in which content ids their
-   *  a testing save's start uses: there is nothing to record here yet, only a slot to record it into
+   *  a sandbox's start uses: there is nothing to record here yet, only a slot to record it into
    *  later without reopening this file's shape. */
   faction?: string
 }>
@@ -119,7 +119,7 @@ type ReplayPhase =
     }>
 ```
 
-A "grid-playground" replay has exactly one `build` phase (the testing save's static placements, standing in
+A "grid-playground" replay has exactly one `build` phase (the sandbox's static placements, standing in
 for a real Build Phase) followed by exactly one `pulse` phase. A "match" replay is the general case:
 `build`, `pulse`, `build`, `pulse`, … until the last Pulse's `finalState.outcome` is non-null. Each
 `build` and `pulse` pair is one round, and `pulseNumber` counts rounds.

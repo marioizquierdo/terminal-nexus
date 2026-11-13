@@ -1,11 +1,11 @@
 // A save's `start` (docs/system-design/skirmish-saves.md): what a person places by hand before round 1, a slot at a
 // time: the units and buildings already on the Grid, written as a picture with a legend, and where its troops head.
-// A save with a `start` is a **testing save** (`skirmish-testing/`): it opens on a Battle Round written by hand, which
+// A save with a `start` is a **sandbox** (`sandboxes/`): it opens on a Battle Round written by hand, which
 // is what it tests, and both slots plan nothing (`script:idle`).
 //
 // Pure: it turns a save's text, already read, into the opening the kernel starts from (`BattleOpening`,
 // `src/skirmish/opening/`), and names what is wrong with a `start`. It imports the save's types only, so the browser
-// page can open a testing save without the duel.
+// page can open a sandbox without the duel.
 
 import type { Coord, TerrainId } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
@@ -88,7 +88,7 @@ function groundOf(map: string | SaveMap): Readonly<{ id: string; name: string; r
 }
 
 /**
- * The opening a testing save starts its Battle Round from: its map's ground, each slot's start as the side it plays
+ * The opening a sandbox starts its Battle Round from: its map's ground, each slot's start as the side it plays
  * (`p1` is A, `p2` is B), its seed and its round's ticks. Opened by `openBattle` (`src/skirmish/opening/open.ts`),
  * which checks that every unit fits the ground. Throws for a save with no `start`.
  */

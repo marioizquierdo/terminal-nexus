@@ -1,4 +1,4 @@
-// The route saves (skirmish-testing/route-*.save.json; docs/system-design/measurement.md): each shape a route must manage,
+// The route saves (sandboxes/route-*.save.json; docs/system-design/measurement.md): each shape a route must manage,
 // played on several seeds. Every one of them failed or queued on the first routing's greedy step (the baseline in
 // docs/history/measurements/); on routes each is walked, and no unit stands still for good where a way exists.
 
@@ -8,7 +8,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { measureSave } from "../src/measure/index.ts"
 import { contextFor, resolvePulse, stepTick } from "../src/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
-import { loadTestingSaveFile, playTestingSave, testingSaveFiles } from "./helpers.ts"
+import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 
 const SEEDS = [1, 2, 3, 4]
 
@@ -20,7 +20,7 @@ for (const [name, what] of [
   ["route-crowd", "eight troopers in a file spread round one Nexus"],
 ] as const) {
   test(`${name}: ${what}, and the Nexus falls`, async () => {
-    const opening = await loadTestingSaveFile(`${name}.save.json`)
+    const opening = await loadSandbox(`${name}.save.json`)
     for (const seed of SEEDS) {
       const { battle } = measureSave(opening, seed)
       assert.equal(battle.winner, "A", `seed ${seed}: ${battle.reason} at ${battle.ticks}`)
@@ -31,14 +31,14 @@ for (const [name, what] of [
 }
 
 test("route-crowd: the file spreads round its target, and it falls in under a third of the time the greedy queue took", async () => {
-  const opening = await loadTestingSaveFile("route-crowd.save.json")
+  const opening = await loadSandbox("route-crowd.save.json")
   const { battle } = measureSave(opening, 1)
   // On the greedy step the file queued and the Nexus stood until tick 785; spread round it, it falls in under a third.
   assert.ok(battle.ticks < 785 / 3, `the Nexus stood until tick ${battle.ticks}`)
 })
 
 test("route-corridor: two squads in one corridor never stand still for good, and either end wins about as often", async () => {
-  const opening = await loadTestingSaveFile("route-corridor.save.json")
+  const opening = await loadSandbox("route-corridor.save.json")
   const won = { A: 0, B: 0 }
   for (let seed = 1; seed <= 16; seed += 1) {
     const { battle } = measureSave(opening, seed)
@@ -46,7 +46,7 @@ test("route-corridor: two squads in one corridor never stand still for good, and
     // The battle, not every unit: a corridor two rows tall holds two fights at its front, and those behind wait for a
     // gap — a queue, which can last as long as a fight does. What must never happen is the whole battle standing still:
     // five seconds with nobody stepping and nobody struck.
-    const { run } = await playTestingSave("route-corridor.save.json", { seed })
+    const { run } = await playSandbox("route-corridor.save.json", { seed })
     const busy = run.events.filter((event) => event.kind === "entity.moved" || event.kind === "damage.applied").map((event) => event.tick)
     let still = 0
     for (let index = 1; index < busy.length; index += 1) still = Math.max(still, (busy[index] as number) - (busy[index - 1] as number))
@@ -58,7 +58,7 @@ test("route-corridor: two squads in one corridor never stand still for good, and
 })
 
 test("route-falling-building: the troopers break the Barracks closing the gap and go through once it falls", async () => {
-  const opening = await loadTestingSaveFile("route-falling-building.save.json")
+  const opening = await loadSandbox("route-falling-building.save.json")
   const { battle } = measureSave(opening, 1)
   assert.equal(battle.winner, "A")
   assert.equal(battle.sides.B.structuresLost, 2, "the Barracks and then the Nexus")
@@ -68,9 +68,9 @@ test("route-breach: buildings closing the only way, far from the straight line, 
   // The owner, 2026-10-21: "if the enemy blocks the entrance with buildings, then the pathfinding should know the
   // difference between rocks and buildings and should decide to target one of the buildings." Walking as near as they
   // could get, the troopers stood at the rock straight across from the Nexus until the time ran out.
-  const opening = await loadTestingSaveFile("route-breach.save.json")
+  const opening = await loadSandbox("route-breach.save.json")
   for (const seed of SEEDS) {
-    const { run } = await playTestingSave("route-breach.save.json", { seed })
+    const { run } = await playSandbox("route-breach.save.json", { seed })
     const fell = run.events.flatMap((event) => (event.kind === "structure.destroyed" ? [event.contentId] : []))
     assert.deepEqual(fell, ["structure.citizen.barracks", "structure.bench.nexus"], `seed ${seed}: ${run.finalState.outcome?.reason}`)
     assert.equal(run.finalState.outcome?.winner, "A")
@@ -89,10 +89,10 @@ test("route-breach: buildings closing the only way, far from the straight line, 
 })
 
 test("route-slow-ground: a route goes round a band of scrub when that is quicker, and never sets foot on it", async () => {
-  const opening = await loadTestingSaveFile("route-slow-ground.save.json")
+  const opening = await loadSandbox("route-slow-ground.save.json")
   const scrub = (tile: { x: number; y: number }): boolean => opening.terrain[tile.y]?.[tile.x] === ","
   for (const seed of SEEDS) {
-    const resolved = await playTestingSave("route-slow-ground.save.json", { seed })
+    const resolved = await playSandbox("route-slow-ground.save.json", { seed })
     assert.equal(resolved.run.finalState.outcome?.winner, "A", `seed ${seed}`)
     const onScrub = resolved.run.events.filter((event) => event.kind === "entity.moved" && scrub(event.to))
     assert.deepEqual(onScrub, [], `seed ${seed}: the trooper walked the scrub`)
@@ -100,9 +100,9 @@ test("route-slow-ground: a route goes round a band of scrub when that is quicker
 })
 
 test("route-scrub-crossing: a step onto scrub takes twice as long as one onto open ground", async () => {
-  const opening = await loadTestingSaveFile("route-scrub-crossing.save.json")
+  const opening = await loadSandbox("route-scrub-crossing.save.json")
   const scrub = (tile: { x: number; y: number }): boolean => opening.terrain[tile.y]?.[tile.x] === ","
-  const resolved = await playTestingSave("route-scrub-crossing.save.json")
+  const resolved = await playSandbox("route-scrub-crossing.save.json")
   const steps = resolved.run.events.flatMap((event) => (event.kind === "entity.moved" ? [event] : []))
   assert.ok(steps.some((step) => scrub(step.to)), "it never crossed the scrub")
   const beat = 4 // a trooper's step across, in ticks
@@ -115,7 +115,7 @@ test("route-scrub-crossing: a step onto scrub takes twice as long as one onto op
 })
 
 test("worker-flight-between: a worker between two threats runs off their row, away from both, and lives twice as long", async () => {
-  const resolved = await playTestingSave("worker-flight-between.save.json")
+  const resolved = await playSandbox("worker-flight-between.save.json")
   const moves = resolved.run.events.flatMap((event) => (event.kind === "entity.moved" && event.entity.startsWith("A:") ? [event] : []))
   assert.ok(moves.length >= 3)
   // Off the threats' row within its first two steps, and down the map away from both until the edge stops it (there it
@@ -128,9 +128,9 @@ test("worker-flight-between: a worker between two threats runs off their row, aw
 })
 
 test("a worker crosses its own side's troops and never an enemy's, and a trooper the same with workers", async () => {
-  // Over every testing save on file, at every tick: an enemy worker and trooper never share a tile.
-  for (const name of testingSaveFiles()) {
-    const opening = await loadTestingSaveFile(name)
+  // Over every sandbox on file, at every tick: an enemy worker and trooper never share a tile.
+  for (const name of sandboxFiles()) {
+    const opening = await loadSandbox(name)
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
     let state = loaded.state

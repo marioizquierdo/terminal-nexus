@@ -71,7 +71,7 @@ const distance = gridDistance
 // The opening state
 // ---------------------------------------------------------------------------------------------
 
-test("the opening state follows the conventions of a testing save's opening: ids, reading-order ordinals, fresh fields", () => {
+test("the opening state follows the conventions of a sandbox's opening: ids, reading-order ordinals, fresh fields", () => {
   const state = open(
     [
       { contentId: NEXUS, anchor: { x: 4, y: 6 } },
@@ -109,7 +109,7 @@ test("the opening state follows the conventions of a testing save's opening: ids
   assert.equal(hatchery?.spawnCooldown, FIXTURE_REGISTRY.get(HATCHERY).spawn?.intervalTicks)
 })
 
-test("a state built here is the state a testing save's opening builds from the same picture", () => {
+test("a state built here is the state a sandbox's opening builds from the same picture", () => {
   const grid = gridOf([
     "........................",
     "........................",
@@ -133,7 +133,7 @@ test("a state built here is the state a testing save's opening builds from the s
     ],
     grid,
   )
-  // Redraw exactly what was built as a testing save's character grids, and load it.
+  // Redraw exactly what was built as a sandbox's character grids, and load it.
   const symbols = new Map<string, string>()
   const letter = (contentId: string): string => {
     const known = symbols.get(contentId)

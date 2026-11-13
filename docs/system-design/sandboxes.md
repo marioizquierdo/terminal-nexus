@@ -1,4 +1,4 @@
-# Terminal Nexus — the testing ground
+# Terminal Nexus — sandboxes and trials
 
 _How a change to troops is tested before it is believed: which tool answers which question, the loop a change goes
 through, the shape of a trial and how to extend each part of it, how to read one, how two builds are compared, the
@@ -24,7 +24,7 @@ the tool measures a few general things, and a session that needs another measure
 | How does it read on screen, round by round? | the **scripted playtest from a save**: `node scripts/playtest.mjs --load saves/crossing-round-4.save.json --keys "..."` (no `--load`: `saves/crossing-new.save.json`); `--p1 script:<profile>` watches both scripts; a playtest note (`!`) opens at its moment with `--note`. Which save shows what is in DEVELOPMENT.md, how to see a change |
 | How do whole armies play, with a Build Phase each round? | **Skirmishes headless**: the `skirmish` command, script against script over seeds (`--seeds`), every pairing of Commanders (`--commanders`), or a model a side (section 9); many with `measure run --parts duels` |
 | How does the power curve play? | `measure run --spec quick` or `full`, `measure compare` ([`measurement.md`](measurement.md), the [`remeasure` skill](../../.claude/skills/remeasure/SKILL.md)) |
-| Must this stay true? | a rule's testing save and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |
+| Must this stay true? | a rule's sandbox and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |
 
 Trials ask about troops: how units move, choose, arrange themselves and fight, on ground chosen to show it. Duels and
 measurements ask about the game: what Build Phase choices do over rounds. A change to troops starts with trials and
@@ -59,8 +59,8 @@ Recipes by kind of change, as starting points:
 ## 3. The shape of a trial
 
 ```text
-testing save ─variant─▶ map for one battle ──engine──▶ states and events ──record──▶ battle record
- (skirmish-testing/) (pure) (shuffled, mirrored)  (kernel and content,        (BattleRecorder:      │
+sandbox ─variant─▶ map for one battle ──engine──▶ states and events ──record──▶ battle record
+ (sandboxes/) (pure) (shuffled, mirrored)  (kernel and content,        (BattleRecorder:      │
                                                 this build or another)      the same for duels)  │
                                                          ▲                                       ▼
                                                      meter: cost                  cells (map × variant): stats, marks
@@ -71,7 +71,7 @@ testing save ─variant─▶ map for one battle ──engine──▶ states an
 
 | Part | Where | What it is |
 | --- | --- | --- |
-| Testing save | `skirmish-testing/**/*.save.json`, `src/skirmish/testing-saves.ts`, `src/skirmish/start.ts` | the ground, the armies, each side's target, as a Skirmish save's `start` ([`skirmish-saves.md`](skirmish-saves.md)); found by id, opened by `openBattle` (`src/skirmish/opening/open.ts`) |
+| Sandbox | `sandboxes/**/*.save.json`, `src/skirmish/sandboxes.ts`, `src/skirmish/start.ts` | the ground, the armies, each side's target, as a Skirmish save's `start` ([`skirmish-saves.md`](skirmish-saves.md)); found by id, opened by `openBattle` (`src/skirmish/opening/open.ts`) and played by `playSandboxRound` (`src/skirmish/sandbox-round.ts`), the one path `grid`, the `skirmish` command and the measurement share |
 | Variant | `src/skirmish/opening/variant.ts` | a pure function of a map and its content to another: a unit, an army, a tune, a terrain, a target; and `shuffled` and `mirrored`, which make each seed's opening |
 | Trial | `src/measure/trial.ts` | the spec (maps, seeds, variants, expectations), its runs in order, each played by an `Engine` and timed by a `Meter`, both passed in |
 | Engine | `src/cli/engine.ts` | the kernel, content and opening (`openBattle`) of a build's folder: this one, or another commit's checked out beside it |
@@ -99,7 +99,7 @@ machine, in one process or many, which is what lets two builds be compared at al
   that variants compose with mirroring and shuffling.
 - **A cost** (work the kernel does): wrap the class that does it in `routeCounter` (`src/cli/profile.ts`), add its count
   to `BattleCost` and `CostCell`. Counts the same on every machine are worth more than times.
-- **A trial file**: `skirmish-testing/trials/<id>.trial.json` (section 5), naming the testing saves it plays. Give it `expect` and a test runs it.
+- **A trial file**: `sandboxes/trials/<id>.trial.json` (section 5), naming the sandboxes it plays. Give it `expect` and a test runs it.
 - **A one-off question**: a probe script in the scratchpad is fine for a question asked once. Asked twice, it belongs in
   the tool; if a session finds itself rewriting a probe, that is the sign.
 
@@ -182,24 +182,24 @@ engage-gap2-melee-vs-mix
   proof is no line differing. `--detail` says where route time went, question by question.
 - **Duels and missions**: `measure run ... --out`, then `measure compare`.
 
-## 8. The testing saves
+## 8. The sandboxes
 
-The maps a trial plays are **testing saves**: Skirmish saves in `skirmish-testing/` whose `start` writes the first
+The maps a trial plays are **sandboxes**: Skirmish saves in `sandboxes/` whose `start` writes the first
 Battle Round by hand, both slots `script:idle` ([`skirmish-saves.md`](skirmish-saves.md)). `grid <save>` and
 `skirmish --load <save> --play-to next` open the same Battle Round.
 
-| Folder | What its testing saves are for |
+| Folder | What its sandboxes are for |
 | --- | --- |
-| `skirmish-testing/rules/` | one rule each, as small as shows it |
-| `skirmish-testing/units/` | one unit's mechanic each, the proving grounds |
-| `skirmish-testing/movement/` | one shape a route must manage each |
-| `skirmish-testing/engage/` | **the bench**: twelve units a side on six grounds (open, gaps of six and two rows, a corridor, two lanes), each side's target the enemy Nexus, exactly symmetric |
-| `skirmish-testing/showcase/` | whole battles to look at |
-| `skirmish-testing/trials/` | trial files |
+| `sandboxes/rules/` | one rule each, as small as shows it |
+| `sandboxes/units/` | one unit's mechanic each, the proving grounds |
+| `sandboxes/movement/` | one shape a route must manage each |
+| `sandboxes/engage/` | **the bench**: twelve units a side on six grounds (open, gaps of six and two rows, a corridor, two lanes), each side's target the enemy Nexus, exactly symmetric |
+| `sandboxes/showcase/` | whole battles to look at |
+| `sandboxes/trials/` | trial files |
 
-A testing save's id is its file name, and every command finds one by it (RULE — `testingSaveCatalog`). **Every side that fights has
+A sandbox's id is its file name, and every command finds one by it (RULE — `sandboxCatalog`). **Every side that fights has
 somewhere to go**, its own target or an enemy Nexus, as in every battle the game plays (RULE — `sidesWithoutGoal`,
-`tests/testing-saves.test.ts`). A new testing save for the bench is drawn at 48 by 16, mirrored exactly, each side's target the enemy
+`tests/sandboxes.test.ts`). A new sandbox for the bench is drawn at 48 by 16, mirrored exactly, each side's target the enemy
 Nexus, and checked even before anything is read on it: the same army on both sides, `--swap`, a dozen seeds.
 
 ## 9. Testing through Skirmishes
@@ -211,10 +211,10 @@ comment it opens with ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), `npm 
 is how each kind of test uses it, cheapest first. The duel it plays, the brief and the build actions are [`duels.md`](duels.md);
 the save file is [`skirmish-saves.md`](skirmish-saves.md).
 
-**A rule or a unit, in one Battle Round**: a testing save (section 8) plays its round and prints `grid`'s report.
+**A rule or a unit, in one Battle Round**: a sandbox (section 8) plays its round and prints `grid`'s report.
 
 ```bash
-npm run skirmish -- --load skirmish-testing/rules/melee-kill.save.json --play-to next
+npm run skirmish -- --load sandboxes/rules/melee-kill.save.json --play-to next
 grid melee-kill --headless --log-level info             # the same round, tick by tick
 ```
 

@@ -101,7 +101,6 @@ range) held to the same rule; `roundsOut` only on a Commander; a structure never
 | --- | --- |
 | `lean` | One or two of `units`, `nexus`, `structures`, `commander`, `economy`: what the build leans on (commander-armies.md). |
 | `start` | Her starting package: units that walk out with her where a mode scripts none (a duel's first round). |
-| `run` | What a Challenge run starts her army with (retired with runs; removed by the Skirmish milestone): `buildings` (card ids on the build menu) and `powers` (Nexus power ids in the pool). Everything else her army can field waited in the run's draft. Absent: the whole of her army (`docs/history/challenge-runs-design.md`). |
 | `schedule` | How her army bends the Nexus Pulse, in every mode (Averno's: a card from the Ravel Nexus in rounds 2 and 4). A level's own schedule replaces it. |
 | `barks`, `portrait`, `portraitFalls` | Her voice in battle and her face (`src/armies/barks.ts`, `src/view/commander-moments.ts`), checked to fit the panel at 80 x 24. |
 
@@ -222,7 +221,7 @@ what it unlocks, a schedule if it bends the default, and a mission (`docs/game-d
 2. A new skill that no kind expresses: a module in `src/abilities/` and a line in `ABILITIES`, with a test.
 3. A new kind of power: an entry in `EFFECTS` and its line in the `PowerEffect` union, with a test.
 4. One line in `src/shipped.ts`. Run `npm test`: the loader says what is wrong.
-5. Play her: `npm run skirmish -- --map crossing --p1-commander <id> --p1 script:steady --p2 script:steady --play-to end`, and against every Commander with `--commanders all --seeds 1-6` ([`testing-ground.md`](testing-ground.md), testing through Skirmishes), and a story when she has one
+5. Play her: `npm run skirmish -- --map crossing --p1-commander <id> --p1 script:steady --p2 script:steady --play-to end`, and against every Commander with `--commanders all --seeds 1-6` ([`sandboxes.md`](sandboxes.md), testing through Skirmishes), and a story when she has one
    (`stories/<id>/story.json`, its levels extending existing ones where they can).
 6. A test that she reads apart from the others where it counts (`tests/averno.test.ts` is the pattern).
 

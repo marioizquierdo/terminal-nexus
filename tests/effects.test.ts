@@ -37,7 +37,7 @@ import type {
   EffectInstance,
   PositionedCell,
 } from "../src/view/index.ts"
-import { loadTestingSaveFile, playTestingSave, testingSaveFiles } from "./helpers.ts"
+import { loadSandbox, playSandbox, sandboxFiles } from "./helpers.ts"
 
 const GRID = { width: 24, height: 12 }
 
@@ -230,7 +230,7 @@ test("every effect paints in a legal band, and never in one the simulation owns"
       `${instance.recipe} paints in ${instance.band}`,
     )
   }
-  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
+  const resolved = await playSandbox("citizens-versus-ravels.save.json")
   const derived = deriveEffects({
     states: [],
     events: resolved.run.events,
@@ -444,7 +444,7 @@ test("a real fight's damage flash carries fade all the way to the composed frame
   // roles.test.ts and end-to-end in view.test.ts) gates it by tier. This test's job is narrower and
   // upstream of that: proving the real recipe -> real compositor -> compose.ts wiring actually
   // produces a `fade` on a real cell during a real fight, not a hand-built one.
-  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -482,7 +482,7 @@ test("cosmetic randomness is a hash, not a stream: the same instance always scat
 
 test("the cosmetic seed cannot reach the kernel", async () => {
   // The load-bearing separation: presentation randomness must not perturb a single hash.
-  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -513,7 +513,7 @@ test("the cosmetic seed cannot reach the kernel", async () => {
 })
 
 test("effects are derived from the event stream, and turning them off changes only the picture", async () => {
-  const opening = await loadTestingSaveFile("ravel-cascade.save.json")
+  const opening = await loadSandbox("ravel-cascade.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -540,7 +540,7 @@ test("effects are derived from the event stream, and turning them off changes on
 
 test("composed frames stay inside the Grid, one ASCII cell each, at every render tier", async () => {
   for (const name of ["citizens-versus-ravels.save.json", "ravel-cascade.save.json", "citizen-mirror-skirmish.save.json"]) {
-    const opening = await loadTestingSaveFile(name)
+    const opening = await loadSandbox(name)
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     const timeline = buildTimeline(
       opening,
@@ -565,9 +565,9 @@ test("composed frames stay inside the Grid, one ASCII cell each, at every render
 })
 
 test("every render tier shows the same Pulse, and only monochrome shows no colour", async () => {
-  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
+  const resolved = await playSandbox("citizens-versus-ravels.save.json")
   void resolved
-  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -599,9 +599,9 @@ test("the effect timeline finds the same instances however it is sampled", () =>
   }
 })
 
-test("every testing save derives effects without inventing a recipe", async () => {
-  for (const name of testingSaveFiles()) {
-    const resolved = await playTestingSave(name)
+test("every sandbox derives effects without inventing a recipe", async () => {
+  for (const name of sandboxFiles()) {
+    const resolved = await playSandbox(name)
     const instances = deriveEffects({
       states: [],
       events: resolved.run.events,
@@ -619,7 +619,7 @@ test("every testing save derives effects without inventing a recipe", async () =
 })
 
 test("the glyph pack changes the field and the frame, never the actors", async () => {
-  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -664,7 +664,7 @@ test("a same-tick ranged kill holds its death and blast until the tracer lands, 
   // unit could visibly explode before its own tracer arrived. citizens-versus-ravels reproduces it: a
   // marksman's shot with a flight window kills a runner whose volatile munitions then go off, and every
   // such kill in the battle is checked below.
-  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
+  const resolved = await playSandbox("citizens-versus-ravels.save.json")
   const derived = deriveEffects({
     states: [],
     events: resolved.run.events,
@@ -1196,7 +1196,7 @@ test("every blast in a battle flashes only what the battle's own blast reached",
   assert.ok(blast !== undefined)
   let blasts = 0
   for (const name of ["ravel-cascade.save.json", "citizens-versus-ravels.save.json", "heavies-clash.save.json"]) {
-    const { run, registry } = await playTestingSave(name)
+    const { run, registry } = await playSandbox(name)
     const derived = deriveEffects({ states: [], events: run.events, registry, ticksPerSecond: 12 })
     for (const event of run.events) {
       if (event.kind !== "entity.detonated") continue

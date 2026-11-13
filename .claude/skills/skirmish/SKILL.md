@@ -1,6 +1,6 @@
 ---
 name: skirmish
-description: Play Skirmish battles headless to test a change — the skirmish command (bin/skirmish.ts) from a save or a new setup, a round at a time or to the end, scripts or your own plans on either side, many seeds with a tally, every pairing of Commanders, two model agents taking turns through one save, the battle's log — to see how an army spends its power curve. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
+description: Play Skirmish battles headless to test a change — the skirmish command (bin/skirmish.ts) from a save or a new setup, a round at a time or to the end, scripts or your own plans on either side, many seeds with a tally, every pairing of Commanders, two model agents answering through one save, the battle's log — to see how an army spends its power curve. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
 ---
 
 # Skirmishes: armies against each other, headless
@@ -10,7 +10,7 @@ Where each piece is, so this page stays the procedure:
 - **The command's manual** is the comment [`src/cli/skirmish.ts`](../../../src/cli/skirmish.ts) opens with
   (`npm run skirmish -- --help`): every option, what it refuses, the exit codes.
 - **How each kind of test uses it**, with the commands and the task to give a model agent:
-  [`testing-ground.md`](../../../docs/system-design/testing-ground.md), testing through Skirmishes.
+  [`sandboxes.md`](../../../docs/system-design/sandboxes.md), testing through Skirmishes.
 - **The rules, the brief, the build actions, formations and the biases**: [`duels.md`](../../../docs/system-design/duels.md).
 - **The save file**: [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md).
 

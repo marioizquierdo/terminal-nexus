@@ -4,7 +4,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { CITIZEN_CONTENT, FIXTURE_REGISTRY, RAVEL_CONTENT } from "../src/content/index.ts"
 import { stepCost } from "../src/pulse/index.ts"
-import { playTestingSave } from "./helpers.ts"
+import { playSandbox } from "./helpers.ts"
 
 /** Ticks between steps at a given rate — the cadence a viewer actually sees. */
 function cadence(numerator: number, denominator: number): number {
@@ -42,7 +42,7 @@ test("Ravels claim and swing before Citizens of the same role", () => {
 test("volatile munitions damage friend and foe alike", async () => {
   // The cascade fixture, built so blasts reach into both lines: in the asymmetric skirmish the Ravels walk round
   // each other since pathfinding, and a blast there no longer happens to catch its own side.
-  const resolved = await playTestingSave("ravel-cascade.save.json")
+  const resolved = await playSandbox("ravel-cascade.save.json")
   const blasts = resolved.run.events.filter((event) => event.kind === "entity.detonated")
   assert.ok(blasts.length > 3, "nothing detonated in the cascade fixture")
 
@@ -62,7 +62,7 @@ test("volatile munitions damage friend and foe alike", async () => {
 test("a detonation is announced after the death that caused it", async () => {
   // A reader of the event stream should see the entity die and then take its neighbours with it,
   // in that order, within the tick.
-  const resolved = await playTestingSave("ravel-cascade.save.json")
+  const resolved = await playSandbox("ravel-cascade.save.json")
   const events = resolved.run.events
   for (const [index, event] of events.entries()) {
     if (event.kind !== "entity.detonated") continue
@@ -79,7 +79,7 @@ test("a detonation is announced after the death that caused it", async () => {
 })
 
 test("chains are bounded: nothing detonates twice, and the cascade resolves inside one tick", async () => {
-  const resolved = await playTestingSave("ravel-cascade.save.json")
+  const resolved = await playSandbox("ravel-cascade.save.json")
   const blasts = resolved.run.events.filter((event) => event.kind === "entity.detonated")
   const seen = new Set<number>()
   for (const blast of blasts) {
@@ -109,8 +109,8 @@ test("a Grid Nexus is a flag on the definition, not a content id the kernel know
   assert.equal(ravel.nexus, true)
   assert.equal(FIXTURE_REGISTRY.get("structure.ravel.den").nexus, undefined)
 
-  // Destroying a Grid Nexus ends a Pulse whatever its id: the testing save's is the bench's passive one, a third id.
-  const resolved = await playTestingSave("structure-destruction.save.json")
+  // Destroying a Grid Nexus ends a Pulse whatever its id: the sandbox's is the bench's passive one, a third id.
+  const resolved = await playSandbox("structure-destruction.save.json")
   assert.equal(resolved.run.finalState.outcome?.reason, "nexus-destroyed")
 })
 

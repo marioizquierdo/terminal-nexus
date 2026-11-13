@@ -5,10 +5,9 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { levelById } from "../src/cli/levels.ts"
-import { SCRIPTED } from "../src/duel/index.ts"
 import { LEVEL_PLANS, measureDuel, measureLevel, measureSave, spreadOf, STALL_TICKS, summaryLines } from "../src/measure/index.ts"
 import type { Measurement } from "../src/measure/index.ts"
-import { loadTestingSaveFile } from "./helpers.ts"
+import { loadSandbox } from "./helpers.ts"
 
 test("a spread is how far, on average, points stand from their middle, a row counting two columns", () => {
   assert.equal(spreadOf([]), 0)
@@ -20,7 +19,7 @@ test("a spread is how far, on average, points stand from their middle, a row cou
 })
 
 test("a hauler before a gap too narrow for it stands for good: measured as stalled, and never strikes", async () => {
-  const opening = await loadTestingSaveFile("hauler-two-tile-gap.save.json")
+  const opening = await loadSandbox("hauler-two-tile-gap.save.json")
   const run = measureSave(opening, opening.seed)
   assert.equal(run.battle.winner, null)
   assert.equal(run.battle.reason, "tick-limit")
@@ -30,7 +29,7 @@ test("a hauler before a gap too narrow for it stands for good: measured as stall
 })
 
 test("a squad that reaches its target is measured by when it first struck and how tight it stood", async () => {
-  const opening = await loadTestingSaveFile("route-crowd.save.json")
+  const opening = await loadSandbox("route-crowd.save.json")
   const run = measureSave(opening, 1)
   assert.equal(run.battle.winner, "A")
   assert.equal(run.battle.reason, "nexus-destroyed")
@@ -39,14 +38,12 @@ test("a squad that reaches its target is measured by when it first struck and ho
   assert.equal(run.battle.sides.A.unitsAtContact, 8)
   assert.ok((run.battle.sides.A.spreadAtContact ?? 0) > 0)
   assert.ok(run.battle.sides.A.dealt >= 400, "the Nexus's health is what it dealt, at least")
-  assert.deepEqual(measureSave(opening, 1), run, "the same testing save and seed measured twice differ")
+  assert.deepEqual(measureSave(opening, 1), run, "the same sandbox and seed measured twice differ")
 })
 
 test("a duel is measured round by round: the hands dealt, the card kept, each battle and the Nexus left", () => {
-  const balanced = SCRIPTED["balanced"]
-  assert.ok(balanced !== undefined)
   const setup = { map: "pocket", seed: 3, rounds: 2, pulseTicks: 240, commanders: { A: "vasse", B: "dob" } }
-  const duel = measureDuel(setup, { A: { name: "balanced", player: balanced }, B: { name: "balanced", player: balanced } })
+  const duel = measureDuel(setup, { A: "balanced", B: "balanced" })
   assert.ok(duel.rounds.length >= 1 && duel.rounds.length <= 2)
   for (const round of duel.rounds) {
     assert.ok(round.battle.ticks > 0 && round.battle.ticks <= 240)
@@ -55,7 +52,7 @@ test("a duel is measured round by round: the hands dealt, the card kept, each ba
       assert.ok(round.sides[side].kept === null || round.sides[side].hand.includes(round.sides[side].kept))
     }
   }
-  assert.deepEqual(measureDuel(setup, { A: { name: "balanced", player: balanced }, B: { name: "balanced", player: balanced } }), duel)
+  assert.deepEqual(measureDuel(setup, { A: "balanced", B: "balanced" }), duel)
 })
 
 test("a story level is played by each plan to its end, every round's battle recorded", { timeout: 120_000 }, () => {
@@ -71,7 +68,7 @@ test("a story level is played by each plan to its end, every round's battle reco
 })
 
 test("a measurement says in plain words what it found", async () => {
-  const opening = await loadTestingSaveFile("route-dead-end.save.json")
+  const opening = await loadSandbox("route-dead-end.save.json")
   const measurement: Measurement = {
     spec: "test",
     build: "abc1234",

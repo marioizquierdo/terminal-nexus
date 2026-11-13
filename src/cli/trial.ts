@@ -1,4 +1,4 @@
-// `grid`'s trials (docs/system-design/testing-ground.md): a trial file (`skirmish-testing/trials/*.trial.json`) or one map
+// `grid`'s trials (docs/system-design/sandboxes.md): a trial file (`sandboxes/trials/*.trial.json`) or one map
 // played over many seeds (`grid <map> --seeds 1-12`), as it is and as the command line's variant changes it. The
 // summary printed; the battles written down with `--out`, set against a file written before with `--baseline`, or
 // against another build played there and then with `--against <ref>`; split across processes with `--jobs`; what a
@@ -20,7 +20,7 @@ import { routeCounter } from "./profile.ts"
 import { TickRoutes } from "../pulse/routes.ts"
 import { DistanceField } from "../routing/index.ts"
 import type { TrialJob, TrialJobResult } from "./trial-worker.ts"
-import { loadTestingSave, TESTING_ROOT } from "../skirmish/testing-saves.ts"
+import { loadSandbox, SANDBOX_ROOT } from "../skirmish/sandboxes.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { Variant } from "../skirmish/opening/variant.ts"
 import { VariantError } from "../skirmish/opening/variant.ts"
@@ -28,7 +28,7 @@ import type { PlayerId, TargetArea } from "../state/types.ts"
 import type { ParsedArgs } from "./args.ts"
 
 export const TRIAL_FILE_SUFFIX = ".trial.json"
-export const TRIALS_ROOT = join(TESTING_ROOT, "trials")
+export const TRIALS_ROOT = join(SANDBOX_ROOT, "trials")
 
 /** The checked-in trials, as `{ id, path }`, sorted. */
 export function trialCatalog(root: string = TRIALS_ROOT): { id: string; path: string }[] {
@@ -184,7 +184,7 @@ export async function runTrial(spec: TrialSpec, args: ParsedArgs, preloaded?: Ba
     ...(preloaded === undefined && args.flags.has("shuffle") ? { shuffle: true } : {}),
   }
   const maps = new Map<string, BattleOpening>()
-  for (const id of played.maps) maps.set(id, preloaded !== undefined && preloaded.id === id ? preloaded : await loadTestingSave(id))
+  for (const id of played.maps) maps.set(id, preloaded !== undefined && preloaded.id === id ? preloaded : await loadSandbox(id))
   const quiet = args.flags.has("json")
   const profile = args.flags.has("profile")
   const jobs = Number(args.options.get("jobs") ?? "1")

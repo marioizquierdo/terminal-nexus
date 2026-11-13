@@ -2,7 +2,7 @@
 // against the runtime's own `node:crypto` — which this test may use, being a test and not the game.
 //
 // Why the switch was allowed (measured 2026-09-27, this container, Node 22.22.2):
-//   `for map in skirmish-testing/*.save.json; do ./bin/grid.ts "$map" --verify --runs 20; done`
+//   `for map in sandboxes/*.save.json; do ./bin/grid.ts "$map" --verify --runs 20; done`
 //   node:crypto 19.8 s, plain JavaScript 20.7 s (about 4% slower); `npm test` 44.7 s -> 46.3 s.
 // Hashing alone is about 4.5x slower (15 ms per MB), but it is a small share of resolving a battle.
 
@@ -14,7 +14,7 @@ import { sha256Hex } from "../src/state/sha256.ts"
 import { canonicalJson, hashOf } from "../src/state/canonical.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { loadTestingSaveFile } from "./helpers.ts"
+import { loadSandbox } from "./helpers.ts"
 
 const native = (text: string): string => createHash("sha256").update(text, "utf8").digest("hex")
 
@@ -38,8 +38,8 @@ test("every padding boundary and multi-byte text agree with node:crypto", () => 
   }
 })
 
-test("a real testing save's canonical state hashes the same either way", async () => {
-  const opening = await loadTestingSaveFile("grand-battle.save.json")
+test("a real sandbox's canonical state hashes the same either way", async () => {
+  const opening = await loadSandbox("grand-battle.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   assert.equal(hashOf(loaded.state), native(canonicalJson(loaded.state)))
 })

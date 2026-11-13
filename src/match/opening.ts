@@ -2,7 +2,7 @@
 // valid construction becomes operational." The Build Phase's plan is a list of placements on a screen;
 // this is where it becomes entities the kernel can resolve.
 //
-// It follows the conventions of a testing save's opening (`openBattle`) exactly — ids, ordinals in Grid reading order, a
+// It follows the conventions of a sandbox's opening (`openBattle`) exactly — ids, ordinals in Grid reading order, a
 // fresh entity's fields from `freshEntityFields`, sides facing each other — so a Pulse that starts here
 // is indistinguishable, to the kernel, from one a `.save.json` file started. What it adds is the two
 // things a Build Phase has and a file does not: structures given by an anchor (the way the Build Phase
@@ -90,7 +90,7 @@ function refitted(input: OpeningInput): MatchState | undefined {
 
 /**
  * The opening `MatchState` for a Pulse. Throws `PulseSetupError`, naming what is wrong, for anything
- * a testing save's opening would refuse too: an unknown content id, a footprint off the Grid, a ground
+ * a sandbox's opening would refuse too: an unknown content id, a footprint off the Grid, a ground
  * entity on rock, two things on one layer overlapping — or a force with no room to stand.
  */
 export function openingState(input: OpeningInput): MatchState {

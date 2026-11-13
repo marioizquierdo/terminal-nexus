@@ -15,7 +15,7 @@ import {
   stepTick,
 } from "../src/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
-import { loadTestingSaveFile, playAllTestingSaves, playTestingSave } from "./helpers.ts"
+import { loadSandbox, playAllSandboxes, playSandbox } from "./helpers.ts"
 
 /** The cadence table of docs/system-design/pulse.md (logical time), reproduced exactly at every rate it lists: a
  *  step across every so many ticks, and a step up or down every twice as many (a row counts two columns). */
@@ -86,7 +86,7 @@ test("a blocked actor keeps its credit and steps the tick the tile frees", async
   // "blocked" — so this fixture demonstrates credit-holding through move.blocked events rather than
   // through move.intended ones; every one of them still reports full credit, which is only true if
   // a refused step never spends any.
-  const resolved = await playTestingSave("hauler-two-tile-gap.save.json")
+  const resolved = await playSandbox("hauler-two-tile-gap.save.json")
   const intents = resolved.run.events.filter((event) => event.kind === "move.intended")
   assert.ok(intents.length > 0, "the hauler never even declared its approach")
   for (const intent of intents) {
@@ -104,7 +104,7 @@ test("a blocked actor keeps its credit and steps the tick the tile frees", async
   // And the point of keeping it: an actor jostled out of a claim steps the moment the tile frees,
   // rather than restarting its timer. In the jammed corridor that shows up as a block on one tick
   // and a move by the same entity on the next.
-  const jam = await playTestingSave("jammed-corridor.save.json")
+  const jam = await playSandbox("jammed-corridor.save.json")
   const blocks = new Set<string>()
   const moves = new Set<string>()
   for (const event of jam.run.events) {
@@ -122,7 +122,7 @@ test("a blocked actor keeps its credit and steps the tick the tile frees", async
 })
 
 test("two equal-speed actors that kill each other on the same tick both die", async () => {
-  const resolved = await playTestingSave("mutual-kill.save.json")
+  const resolved = await playSandbox("mutual-kill.save.json")
   const deaths = resolved.run.events.filter((event) => event.kind === "entity.died")
   assert.equal(deaths.length, 2, "a mutual kill left a survivor")
   const [first, second] = deaths
@@ -136,7 +136,7 @@ test("two equal-speed actors that kill each other on the same tick both die", as
 test("speed tier is initiative and lower acts first", async () => {
   // The marksman is tier 1 and the trooper tier 2, so on a tick where both attack, the marksman's
   // attack is emitted — and resolved — first.
-  const resolved = await playTestingSave("citizen-mirror-skirmish.save.json")
+  const resolved = await playSandbox("citizen-mirror-skirmish.save.json")
   const byTick = new Map<number, string[]>()
   for (const event of resolved.run.events) {
     if (event.kind !== "attack.launched") continue
@@ -163,7 +163,7 @@ test("speed tier is initiative and lower acts first", async () => {
 test("the flight window is presentation metadata that no rule reads", async () => {
   // Changing only the projectile speed changes the flight window on the event and nothing else:
   // not the damage, not the state, not the tick anything resolved on.
-  const opening = await loadTestingSaveFile("ranged-kill.save.json")
+  const opening = await loadSandbox("ranged-kill.save.json")
   const definitions = FIXTURE_REGISTRY.ids().map((id) => FIXTURE_REGISTRY.get(id))
   const slowed = definitions.map((definition) =>
     definition.attack?.kind === "ranged"
@@ -203,7 +203,7 @@ test("the flight window is presentation metadata that no rule reads", async () =
 })
 
 test("arbitration terminates under a bounded pass count with a decreasing progress measure", async () => {
-  const opening = await loadTestingSaveFile("jammed-corridor.save.json")
+  const opening = await loadSandbox("jammed-corridor.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
 
@@ -231,7 +231,7 @@ test("arbitration terminates under a bounded pass count with a decreasing progre
 })
 
 test("contested claims resolve by speed tier before the seeded stream is consulted", async () => {
-  const resolved = await playTestingSave("jammed-corridor.save.json")
+  const resolved = await playSandbox("jammed-corridor.save.json")
   const contests = resolved.run.events.filter((event) => event.kind === "move.contested")
   assert.ok(contests.length > 0)
   for (const event of contests) {
@@ -246,7 +246,7 @@ test("a vacated tile stays blocked for DEATH_SETTLE_TICKS after the entity on it
   // The corridor is one tile wide, so the trooper's only route to the worker beyond is straight
   // through the tile its melee kill just vacated - the fixture's whole point is that it wants that
   // exact tile on the very next tick.
-  const resolved = await playTestingSave("settle-delay.save.json")
+  const resolved = await playSandbox("settle-delay.save.json")
   const death = resolved.run.events.find((event) => event.kind === "entity.died")
   assert.ok(death !== undefined && death.kind === "entity.died", "the blocker never died")
   if (death === undefined || death.kind !== "entity.died") return
@@ -291,9 +291,9 @@ test("a vacated tile stays blocked for DEATH_SETTLE_TICKS after the entity on it
 test("an actor that settled a move this tick does not also attack on it", async () => {
   // Every entity.moved event in the fixture library should be free of a same-tick attack.launched
   // from the same actor - "stop, then attack" applies everywhere a unit both closes distance and
-  // fires, not just in one hand-built fixture, so check it across every testing save the report already
+  // fires, not just in one hand-built fixture, so check it across every sandbox the report already
   // resolves rather than adding a single narrow case.
-  const resolvedAll = await playAllTestingSaves()
+  const resolvedAll = await playAllSandboxes()
   let checked = 0
   for (const resolved of resolvedAll) {
     const movedThisTick = new Set<string>()
@@ -326,7 +326,7 @@ test("a killer holds for one full movement cadence before its next step", async 
   // runner further down the row gives the trooper somewhere new to walk to once the first is dead.
   // Checked for every killer the fixture produces, not just the trooper: the second runner also
   // lands the killing blow eventually, and the rule is not specific to one side or attack kind.
-  const resolved = await playTestingSave("kill-then-hold.save.json")
+  const resolved = await playSandbox("kill-then-hold.save.json")
   const contentOf = new Map<string, string>()
   for (const event of resolved.run.events) {
     if (event.kind === "entity.spawned") contentOf.set(event.entity, event.contentId)
@@ -371,7 +371,7 @@ test("a multi-tile mover blocked inside its own footprint reports the real block
   // a speed parade's emergent timing (a demo map, since retired), which drifted out from under this test twice - once
   // per movement-speed pass - since a demo save's job is showing every rate side by side, not
   // holding a specific tick's worth of incidental crowding stable.
-  const resolved = await playTestingSave("raider-tail-crowded.save.json")
+  const resolved = await playSandbox("raider-tail-crowded.save.json")
   const blocked = resolved.run.events.filter(
     (event) => event.kind === "move.blocked" && event.entity.includes("raider"),
   )
@@ -398,7 +398,7 @@ test("a 3x3 and a 5x2 unit fight, range-gated by footprint distance, not anchor 
   // The two heavies alone: with their escorts about, each commits to the nearest small unit it meets (a unit keeps the
   // target it holds) and the showcase's colossus falls to the runners before the two ever touch. The map keeps its
   // escorts for the eye; the rule under test needs only the two bodies.
-  const showcase = await loadTestingSaveFile("heavies-clash.save.json")
+  const showcase = await loadSandbox("heavies-clash.save.json")
   const heavyOnly = (block: NonNullable<typeof showcase.placements.A>): typeof block => ({
     ...block,
     rows: block.rows.map((row) => [...row].map((symbol) => (block.legend[symbol]?.content.match(/colossus|leviathan/) === null ? " " : symbol)).join("")),
@@ -448,7 +448,7 @@ test("an air unit crosses terrain a ground unit could never enter, end to end in
   // (maskForActor gives it terrain: "impassable"). The buzzard's mask ignores terrain entirely
   // (shared.ts), which tests/grid.test.ts already proves for one call to maskFrom directly; this
   // proves the same claim the way it actually matters, by watching a full Pulse resolve.
-  const resolved = await playTestingSave("air-crossing.save.json")
+  const resolved = await playSandbox("air-crossing.save.json")
   const { width, tiles } = resolved.run.initialState.grid
   const impassableAt = (x: number, y: number): boolean => {
     const terrainId = tiles[y * width + x]
@@ -497,7 +497,7 @@ test("a 2x2 ground unit and a 2x1 air unit fight, each within its own escort", a
   // unit.ravel.corsair (2x1, air) are the two new pieces of content; this pins that they are
   // genuinely the sizes their footprints claim and that they actually fight each other, not just
   // their escorts.
-  const resolved = await playTestingSave("small-multicell-skirmish.save.json")
+  const resolved = await playSandbox("small-multicell-skirmish.save.json")
   const sentinel = resolved.registry.get("unit.citizen.sentinel")
   const corsair = resolved.registry.get("unit.ravel.corsair")
   assert.deepEqual(footprintExtent(sentinel.footprint), { width: 2, height: 2 })

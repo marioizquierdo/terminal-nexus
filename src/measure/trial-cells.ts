@@ -1,4 +1,4 @@
-// What a trial's battles say (docs/system-design/testing-ground.md, reading a trial): one cell for each map and variant,
+// What a trial's battles say (docs/system-design/sandboxes.md, reading a trial): one cell for each map and variant,
 // each army's share of wins with its interval, how soon battles were decided, how many units ever struck and how soon,
 // how many stood idle or stalled, how often units switched targets, what a battle cost to play when it was measured;
 // whether two cells differ by more than chance; what a trial expects of them; and which battles are worth watching.

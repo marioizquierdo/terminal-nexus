@@ -91,7 +91,7 @@ test("a scripted player plays by a formation under a name that says it, and the 
   assert.equal(scriptedName("sprint-block"), undefined)
   assert.equal(scriptedPlayer("rush"), SCRIPTED.rush, "a bare name is the script as it was")
   const setup = { map: "crossing", seed: 2, rounds: 2, pulseTicks: 240, commanders: { A: "vasse", B: "vasse" } } as const
-  const duel = measureDuel(setup, { A: { name: "rush-block", player: scriptedPlayer("rush-block")! }, B: { name: "rush-apart", player: scriptedPlayer("rush-apart")! } })
+  const duel = measureDuel(setup, { A: "rush-block", B: "rush-apart" })
   assert.deepEqual(duel.players, { A: "rush-block", B: "rush-apart" })
   const state = newDuel(setup)
   const plans = { A: scriptedPlayer("rush-block")!(briefOf(state, "A").data), B: scriptedPlayer("rush-apart")!(briefOf(state, "B").data) }
@@ -107,8 +107,8 @@ test("a scripted player plays by a formation under a name that says it, and the 
 test("zones is how every plan placed before formations: the same duel, building for building and tick for tick", { timeout: 60_000 }, () => {
   const setup = { map: "crossing", seed: 1, rounds: 2, pulseTicks: 300, commanders: { A: "averno", B: "dob" } } as const
   for (const script of ["balanced", "turtle"]) {
-    const bare = measureDuel(setup, { A: { name: "x", player: scriptedPlayer(script)! }, B: { name: "x", player: scriptedPlayer(script)! } })
-    const zoned = measureDuel(setup, { A: { name: "x", player: scriptedPlayer(`${script}-zones`)! }, B: { name: "x", player: scriptedPlayer(`${script}-zones`)! } })
+    const { players: _bare, ...bare } = measureDuel(setup, { A: script, B: script })
+    const { players: _zoned, ...zoned } = measureDuel(setup, { A: `${script}-zones`, B: `${script}-zones` })
     assert.deepEqual(zoned, bare, `${script}-zones played otherwise than ${script}`)
   }
 })

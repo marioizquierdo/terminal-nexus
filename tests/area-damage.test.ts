@@ -19,7 +19,7 @@ import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { BurningGround, MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
-import { playTestingSave } from "./helpers.ts"
+import { playSandbox } from "./helpers.ts"
 
 const TROOPER = "unit.citizen.trooper"
 const BOMBER = "unit.ravel.bomber"
@@ -156,7 +156,7 @@ test("the loader holds a unit that aims at a crowd to having an area, and a burn
 // --- Aiming at a crowd ------------------------------------------------------------------------------------------------
 
 test("a bomber runs past the nearest enemy to the thickest knot and bursts in it (bomber-crowd)", async () => {
-  const { run } = await playTestingSave("bomber-crowd.save.json")
+  const { run } = await playSandbox("bomber-crowd.save.json")
   const bomber = run.initialState.entities.find((entity) => entity.contentId === BOMBER)
   const lone = run.initialState.entities.find((entity) => entity.anchor.x === 8 && entity.anchor.y === 2)
   assert.ok(bomber !== undefined && lone !== undefined)
@@ -386,15 +386,15 @@ test("battles with a bomber and with burning ground resolve to the same hashes o
     "mortar-burning-ground.save.json": ["77e07c9e5a083a461000b1806ec3f482e5362323bd2a05db2603e40417f7c491", "03efa2d64ed413f94453bd758d687ade00ca5985fe8876bc61f7ecb7a8644dbf", 200],
   }
   for (const [name, [stateHash, eventsHash, ticks]] of Object.entries(pins)) {
-    const first = await playTestingSave(name)
-    const again = await playTestingSave(name)
+    const first = await playSandbox(name)
+    const again = await playSandbox(name)
     assert.equal(first.run.stateHash, again.run.stateHash)
     assert.deepEqual([first.run.stateHash, first.run.eventsHash, first.run.finalState.tick], [stateHash, eventsHash, ticks], name)
   }
 })
 
-test("in the mortar's testing save the ground burns both the block and, standing in it, the block at its target; a walker behind goes round the patch", async () => {
-  const { run } = await playTestingSave("mortar-burning-ground.save.json")
+test("in the mortar's sandbox the ground burns both the block and, standing in it, the block at its target; a walker behind goes round the patch", async () => {
+  const { run } = await playSandbox("mortar-burning-ground.save.json")
   const lit = run.events.filter((event) => event.kind === "ground.lit")
   assert.ok(lit.length >= 2)
   const caught = run.events.flatMap((event) => (event.kind === "ground.burned" ? event.caught : []))

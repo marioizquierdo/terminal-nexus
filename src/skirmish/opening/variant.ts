@@ -1,4 +1,4 @@
-// A map made into another for a trial (docs/system-design/testing-ground.md): the same ground with another unit in a
+// A map made into another for a trial (docs/system-design/sandboxes.md): the same ground with another unit in a
 // slot, another army on a side, its units shuffled by a seed, the whole map mirrored end for end, a unit's numbers
 // tuned, a terrain swapped, a target moved. Each is a pure function of a map (and the content it is read with) to a
 // map, so a trial is the same battles on every machine, and nothing here touches the kernel: a variant is a different

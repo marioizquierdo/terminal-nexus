@@ -15,7 +15,7 @@ import { briefOf, playRound, SCRIPTED } from "../src/duel/index.ts"
 import { spawnSync } from "node:child_process"
 import { duelOf, newSetup, readSave, saveOf, saveText } from "../src/skirmish/save.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
-import { loadTestingSave, testingSaveCatalog } from "../src/skirmish/testing-saves.ts"
+import { loadSandbox, sandboxCatalog } from "../src/skirmish/sandboxes.ts"
 import { hashOf } from "../src/state/canonical.ts"
 import { REPO_ROOT } from "./helpers.ts"
 
@@ -101,8 +101,8 @@ test("skirmish: a plan is checked without building, a round is played and saved,
     assert.deepEqual([after.state?.round, after.draft], [3, undefined])
 
     // What a loaded battle keeps, and an option nobody knows, are refused by name.
-    assert.throws(() => run(["--load", save, "--p1-commander", "averno"]), /keeps its Commanders/)
-    assert.throws(() => run(["--load", save, "--map", "crossing"]), /keeps its map/)
+    assert.throws(() => run(["--load", save, "--p1-commander", "averno"]), /--p1-commander sets up a new battle: a loaded save keeps its own/)
+    assert.throws(() => run(["--load", save, "--map", "crossing"]), /--map sets up a new battle: a loaded save keeps its own/)
     assert.throws(() => run(["--load", save, "--battel"]), /no option --battel/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
@@ -142,11 +142,11 @@ test("every save checked in loads and plays its next round", { timeout: 120_000 
   }
 })
 
-// --- Testing saves: a save whose start writes its first Battle Round by hand ----------------------------------------
+// --- Sandboxes: a save whose start writes its first Battle Round by hand ----------------------------------------
 
-test("every testing save reads as a save, plays one Battle Round with idle slots, and is as the game writes it", () => {
-  const catalog = testingSaveCatalog()
-  assert.ok(catalog.length >= 11, `only ${catalog.length} testing saves in skirmish-testing/`)
+test("every sandbox reads as a save, plays one Battle Round with idle slots, and is as the game writes it", () => {
+  const catalog = sandboxCatalog()
+  assert.ok(catalog.length >= 11, `only ${catalog.length} sandboxes in sandboxes/`)
   for (const { id, path } of catalog) {
     const text = readFileSync(path, "utf8")
     const { save, problems } = readSave(text)
@@ -158,10 +158,10 @@ test("every testing save reads as a save, plays one Battle Round with idle slots
   }
 })
 
-test("a testing save's start opens the kernel as the map it came from did: the same entities, targets and seed", async () => {
+test("a sandbox's start opens the kernel as the map it came from did: the same entities, targets and seed", async () => {
   // melee-kill, as its map file wrote it before the maps became saves: two troopers at (10,5) and (10,6) close on one
   // at (13,5), each side's target the other.
-  const opening = await loadTestingSave("melee-kill")
+  const opening = await loadSandbox("melee-kill")
   assert.deepEqual(opening.placements, {
     A: { at: { x: 10, y: 5 }, rows: ["t", "t"], legend: { t: { content: "unit.citizen.trooper" } } },
     B: { at: { x: 13, y: 5 }, rows: ["t"], legend: { t: { content: "unit.citizen.trooper" } } },
@@ -172,7 +172,7 @@ test("a testing save's start opens the kernel as the map it came from did: the s
   assert.deepEqual(openBattle(opening).state.entities.map((entity) => entity.id), ["A:trooper#1", "B:trooper#2", "A:trooper#3"])
 })
 
-test("a testing save the loader refuses names every problem at once, its units' fit included", () => {
+test("a sandbox the loader refuses names every problem at once, its units' fit included", () => {
   const map = { id: "broken", rows: ["....", "...."] }
   const slots = { p1: { controller: "script:rush" }, p2: { controller: "script:idle" } }
   const shape = readSave(
@@ -199,11 +199,11 @@ test("a testing save the loader refuses names every problem at once, its units' 
   assert.match(fit.problems.join("\n"), /^start: broken: .*outside the 4x2 Grid/m)
 })
 
-test("skirmish: a testing save's --play-to plays the Battle Round grid plays, and says so in grid's report", () => {
-  const path = join(REPO_ROOT, "skirmish-testing/rules/melee-kill.save.json")
+test("skirmish: a sandbox's --play-to plays the Battle Round grid plays, and says so in grid's report", () => {
+  const path = join(REPO_ROOT, "sandboxes/rules/melee-kill.save.json")
   const brief = run(["--load", path])
   assert.equal(brief.code, 0)
-  assert.match(brief.out, /a testing save, its Battle Round written by hand/)
+  assert.match(brief.out, /a sandbox, its Battle Round written by hand/)
   assert.match(brief.out, /add --play-to next to play it/)
   const played = run(["--load", path, "--play-to", "next"])
   assert.equal(played.code, 0)

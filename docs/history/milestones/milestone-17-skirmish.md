@@ -1,19 +1,22 @@
 # Milestone 17 — Skirmish: setup and save files
 
-**Status:** CURRENT
-**Current step:** 17K — the owner plays the session this milestone is for (17C to 17J are built; 17A, the banner, waits on his playtest).
-**Depends on:** [the runs milestone](../history/milestones/milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
+**Status:** COMPLETE
+**Closed:** 2026-11-13, on the owner's word ([his words](../feedback/2026-11-13-one-path.md)): "With that, I think we can call
+the skirmish milestone done." 17C to 17J and 17L are built. Two items carry on elsewhere: the banner's playtest and its
+real placement (17A) are Milestone 20's banner step and an ask in [the next steps](../../milestones/next-steps.md); his
+session (17K) is the Skirmish ask there, played whenever he next sits down.
+**Depends on:** [the runs milestone](milestone-11-challenge-runs.md) (duels on the Build Phase screen, building actions, the kept front, troop movement, the
 banner prototype), Milestone 14 (three Commander Armies and the duel scripts)
 
-Made current on 2026-11-11 ([the owner's words](../history/feedback/2026-11-11-game-modes.md)): "Let's turn Skirmish into
-the center stone for game design and testing." Shaped on 2026-11-12 ([his words](../history/feedback/2026-11-12-skirmish-saves.md)):
+Made current on 2026-11-11 ([the owner's words](../feedback/2026-11-11-game-modes.md)): "Let's turn Skirmish into
+the center stone for game design and testing." Shaped on 2026-11-12 ([his words](../feedback/2026-11-12-skirmish-saves.md)):
 a Skirmish is set up by map, then a Commander and a controller for each slot, then a goal and modifiers; "scenarios
 basically become saved skirmish saves… that works both from the UI and from the CLI"; and an agent plays it headless,
-round by round, from save to save. The design is [`skirmish-saves.md`](../system-design/skirmish-saves.md) for the setup,
-the save file and the command line, and [`game-modes.md`](../game-design/game-modes.md) for what Skirmish is for.
+round by round, from save to save. The design is [`skirmish-saves.md`](../../system-design/skirmish-saves.md) for the setup,
+the save file and the command line, and [`game-modes.md`](../../game-design/game-modes.md) for what Skirmish is for.
 
 What makes a Skirmish worth showing friends (reading the opponent, a battle that stays open, the banner as a decision)
-is the next milestone, [20](milestone-20-skirmish-worth-showing.md). This one makes every battle something anyone can set
+is the next milestone, [20](../../milestones/milestone-20-skirmish-worth-showing.md). This one makes every battle something anyone can set
 up, save, load, hand to an agent and replay.
 
 **While 17A waits on Mario's playtest**, the steps that do not depend on his answer about the banner go on (his word,
@@ -33,13 +36,13 @@ an agent before it is offered to Mario (DEVELOPMENT.md, the feedback loop).
 
 ### Step 17A — The banner
 
-Moved from the runs milestone. The owner, 2026-10-31 ([his words](../history/feedback/2026-10-31-banner-first.md)):
+Moved from the runs milestone. The owner, 2026-10-31 ([his words](../feedback/2026-10-31-banner-first.md)):
 "test placing the banner on the map first, because the UX to do it is the big question… if we can't, we will fallback
 to the stance." Tried behind the Battle banner Experiment.
 
 - [x] **The placement, as a prototype**: Start Battle docks a panel over the menu with the target and stance, the camera
       on the banner; Change Target makes the cursor a pulsing banner that names the spot under it, refuses ground troops
-      cannot reach, and plants with a ring and a stance choice ([`ui-patterns.md`](../system-design/ui-patterns.md),
+      cannot reach, and plants with a ring and a stance choice ([`ui-patterns.md`](../../system-design/ui-patterns.md),
       "The battle banner"). Where no enemy Nexus stands, the default is the level's own target.
 - [x] The march line runs to the banner, from the Nexus and from the Commander, and on to the enemy when aggressive.
 - [ ] The owner plays it in a Challenge battle (a Skirmish once 17C lands: an enemy Nexus to aim at, which PERIMETER
@@ -75,11 +78,11 @@ Built only if the owner chooses the stance over the banner in step 17A.
 
 ### Step 17D — The save file, headless
 
-Taken before 17C on the owner's word (2026-11-12, [his words](../history/feedback/2026-11-12-skirmish-command.md)): "start
+Taken before 17C on the owner's word (2026-11-12, [his words](../feedback/2026-11-12-skirmish-command.md)): "start
 working on implementing the skirmish save files, and then convert the current testing scenarios", with one `skirmish`
 command in place of `play`, `round` and `brief`, and the slots numbered `p1` and `p2`.
 
-- [x] The save file's format ([`skirmish-saves.md`](../system-design/skirmish-saves.md), the save file): `setup` (map,
+- [x] The save file's format ([`skirmish-saves.md`](../../system-design/skirmish-saves.md), the save file): `setup` (map,
       seed, slots, goal, modifiers, rounds, round length), `state` (the battle after the regroup, without the map's
       ground) and `draft`; a JSON Schema checked in beside the examples (`saves/save.schema.json`). A file the loader
       refuses is refused by name, every problem at once. `start` waits for 17J, which needs it.
@@ -124,7 +127,7 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
       scripts' plans. Every round on screen is played by `playNext` with the profiles, as headless (a test holds them
       equal); the browser page carries the profiles and example saves as JSON imports.
 - [x] Keys, mouse and driver, its hotkeys shown, on the title menu's 80 × 24 frame
-      ([`ui-patterns.md`](../system-design/ui-patterns.md), the setup screen). Two `Player:` slots, an agent and p2 as the
+      ([`ui-patterns.md`](../../system-design/ui-patterns.md), the setup screen). Two `Player:` slots, an agent and p2 as the
       only player are refused, the reason said. The scripted playtest drives the title menu too (`src/playtest/game.ts`).
 - [x] The result dialog offers the same battle again, a new seed, or the setup screen (`[m]`, New game on that battle's
       setup).
@@ -142,7 +145,7 @@ command in place of `play`, `round` and `brief`, and the slots numbered `p1` and
 
 ### Step 17H — Notes from a playtest
 
-The parked idea of notes made inside the game ([why it was parked](../history/reports/2026-10-01-feedback-pipeline-parked.md)),
+The parked idea of notes made inside the game ([why it was parked](../reports/2026-10-01-feedback-pipeline-parked.md)),
 brought back on 2026-11-12, built on save files: a note is the moment itself, not a paragraph describing how to reach it.
 
 - [x] **A note key**, `!`, on every screen: one line to type (Enter alone is fine), and it saves a note file: the save as the
@@ -163,45 +166,63 @@ promises to replay it.
       PERIMETER (`saves/crossing-new.save.json` when told nowhere; the capture's battle shots from saves); a mission is
       still opened by its route when a change is about a mission.
 - [x] The testing pages, the `duel` skill (renamed `skirmish`) and the playtest skill say which save shows which rule,
-      and how an agent plays round by round ([`skirmish-saves.md`](../system-design/skirmish-saves.md), how an agent
-      plays a Skirmish). Said (DEVELOPMENT.md's table of saves, the testing ground, the playtest and `skirmish` skills).
+      and how an agent plays round by round ([`skirmish-saves.md`](../../system-design/skirmish-saves.md), how an agent
+      plays a Skirmish). Said (DEVELOPMENT.md's table of saves, the sandboxes page, the playtest and `skirmish` skills).
 
-### Step 17J — The testing saves
+### Step 17J — The sandboxes
 
-Shaped on 2026-11-12 ([his words](../history/feedback/2026-11-12-skirmish-saves.md)): keep the maps that still test
-something, in a folder of their own (`skirmish-testing/`), remove those that no longer add much, and drop the old word
+Shaped on 2026-11-12 ([his words](../feedback/2026-11-12-skirmish-saves.md)): keep the maps that still test
+something, in a folder of their own (`sandboxes/`), remove those that no longer add much, and drop the old word
 for the concept from the files, the documents and the code.
 
 - [x] A save's `start`: what each slot has on the Grid before round 1, by hand (its units and buildings as rows and a
-      legend, starting health included, and where its troops head). A save with a `start` is a **testing save**: one
+      legend, starting health included, and where its troops head). A save with a `start` is a **sandbox**: one
       Battle Round, both slots `script:idle`, its map drawn inline (a `legend` for ground beyond `. # *`; `nexus` and
       `hold` optional), its slots' Commanders optional. `readSave` names every problem at once, the units' fit
       included. A side's credits and roster in `start` wait for a save that needs them.
-- [x] The engine's rule, unit, movement, bench and showcase maps are testing saves in `skirmish-testing/`, by folder,
-      with the trial files in `skirmish-testing/trials/`; converted by a script, and every Battle Round opens to the
+- [x] The engine's rule, unit, movement, bench and showcase maps are sandboxes in `sandboxes/`, by folder,
+      with the trial files in `sandboxes/trials/`; converted by a script, and every Battle Round opens to the
       same state hash and plays to the same events as before (every pinned hash unchanged, on Node and Bun). One map
       removed: the colossus before a two-tile gap, which its own notes called a confirmation of the hauler's, not a
       new case.
 - [x] `grid`, the trials (`--against` an older commit included), the measurement, `profile-routes`, the picture scripts,
-      the browser page's two showcase battles and every test read testing saves; the old loader is the opening a
-      testing save starts from (`src/skirmish/opening/`). `skirmish --load <testing save> --play-to next` plays the same
+      the browser page's two showcase battles and every test read sandboxes; the old loader is the opening a
+      sandbox starts from (`src/skirmish/opening/`). `skirmish --load <sandbox> --play-to next` plays the same
       Battle Round and prints `grid`'s report.
 - [x] The duel maps as files in `maps/` (`crossing.map.json`, `pocket.map.json`, the shape a save draws a map in), read by
       `src/duel/maps.ts` and offered by id.
-- [x] **`duel` folded into `skirmish`** ([his words](../history/feedback/2026-11-12-skirmish-command.md): "there's no
+- [x] **`duel` folded into `skirmish`** ([his words](../feedback/2026-11-12-skirmish-command.md): "there's no
       need to have two commands for the same thing"): every pairing of Commanders from both sides over seeds
       (`--commanders`), and a finished battle's every report on loading it. The command's file is its manual and its options alone; the work is in its modules, the
       steps the screen shares in `src/skirmish/request.ts`; each document says the command at its own level (the
-      manual in the code, the testing uses in the testing ground, the duel's rules in its page, the game in the game
+      manual in the code, the testing uses in the sandboxes page, the duel's rules in its page, the game in the game
       modes). The `cmd:` player, a command run each round, is gone: a model plays through the save file.
-- [x] **No turns, build actions, `--play-to`** ([his words](../history/feedback/2026-11-12-skirmish-command.md): "in
+- [x] **No turns, build actions, `--play-to`** ([his words](../feedback/2026-11-12-skirmish-command.md): "in
       Terminal Nexus there are no turns"): a round's "plan" is now **build actions** everywhere (code, command, brief,
       documents); a build file holds them by round (`"round": 3`, `"2-4"`, `"*"`), played blind; `--play-to next|n|end`
       replaces `--battle`, `--battles` and `--play-until-win`, stopping at a Build Phase with the briefs of the slots
       that have nothing for it; the two-session `--wait` and `--ready` are gone (either slot hands its actions in alone,
       in any order). The rule written into the concept: every player answers the same brief, and clashes, powers and
       upgrades settle together as the Battle Round starts (two Nexuses falling on one tick is a draw, tested). Build
-      files with conditions are the next pull request's proposal ([`build-files-with-conditions.md`](build-files-with-conditions.md)).
+      files with conditions are the next pull request's proposal ([`build-files-with-conditions.md`](../../milestones/build-files-with-conditions.md)).
+- [x] **One path for each thing** ([his words](../feedback/2026-11-13-one-path.md)): a measurement's duels are
+      Skirmishes, played by the loop the command plays by (`playOn`), to the same records as before; a sandbox's
+      Battle Round has one path (`playSandboxRound`) for `grid`, the command and the measurement; the words that ask
+      for a Skirmish have one reader (`src/skirmish/ask.ts`) for the command's flags, the route and the game's flags.
+
+### Step 17L — One name for each thing, and a player's eye
+
+Asked on 2026-11-13 ([his words](../feedback/2026-11-13-one-path.md)): make the words sound through the code and the
+documents, so the specs and the code say the same.
+
+- [x] **Sandboxes**: a Battle Round set by hand, with no Commander's plan and no Build Phase, is a *sandbox*, in
+      `sandboxes/` (it was a testing save, in `skirmish-testing/`); the code, the documents and the skills say so.
+- [x] **`grid --from-tick`** in place of `--turn`: it was always a tick, and there are no turns.
+- [x] **A glossary** ([`glossary.md`](../../game-design/glossary.md)): every word the project made its own, one line
+      each, with the page that holds its rules and the words we stopped using; the validator refuses the old ones.
+- [x] **One more path**: the tests play a sandbox by `playSandboxRound`, as every door does.
+- [x] **A player's eye**: an agent played Skirmishes through the command as a player would and said where the fun is
+      and is not ([the notes](../feedback/2026-11-13-one-path.md)).
 
 ### Step 17K — Playing it
 
@@ -228,6 +249,7 @@ Human: Mario's session above, start to save to load to an agent's report, withou
 
 ## Done when
 
-- [ ] Steps 17A, 17C to 17K are built and tested (17B only if the stance replaced the banner).
-- [ ] No mode, route, file or screen says Campaign or Challenge, and every document outside the history calls a hand-written Battle Round a testing save.
-- [ ] `./scripts/check-repository.sh` passes.
+- [x] Steps 17C to 17J and 17L are built and tested. Closed on the owner's word with 17A's playtest and real banner moved
+      to Milestone 20, and 17K, his session, kept as an ask (17B only if the stance replaces the banner).
+- [x] No mode, route, file or screen says Campaign or Challenge, and every document outside the history calls a hand-written Battle Round a sandbox.
+- [x] `./scripts/check-repository.sh` passes.

@@ -14,7 +14,7 @@
 //   node scripts/capture-engagement.mjs --save grand-battle --lead-ticks 2 --frames 12
 //   node scripts/capture-engagement.mjs --save ravel-cascade --around-tick 25 --frames 20
 //
-// `--save` names a testing save (skirmish-testing/) by its id. Output lands in .playtest/screenshots/engagement-<save>/frame-NN.png (git ignores it; --out <dir>
+// `--save` names a sandbox (sandboxes/) by its id. Output lands in .playtest/screenshots/engagement-<save>/frame-NN.png (git ignores it; --out <dir>
 // replaces .playtest/screenshots), oldest first, plus an index.md naming the presentation-ms each one landed on.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
@@ -44,7 +44,7 @@ function arg(name, fallback) {
 
 const saveId = arg("save", null)
 if (saveId === null) {
-  console.error("usage: capture-engagement.mjs --save <testing save id> [--around-tick N] [--frames N] " +
+  console.error("usage: capture-engagement.mjs --save <sandbox id> [--around-tick N] [--frames N] " +
     "[--lead-ticks N] [--colors c] [--glyphs g] [--out dir]")
   process.exit(1)
 }
@@ -65,18 +65,9 @@ const scratch = join(repoRoot, ".capture-tmp")
  * to survive.
  */
 async function findEngagementTick(id) {
-  const { openBattle } = await import("../src/skirmish/opening/index.ts")
-  const { loadTestingSave } = await import("../src/skirmish/testing-saves.ts")
-  const { resolvePulse } = await import("../src/pulse/index.ts")
-  const { FIXTURE_REGISTRY } = await import("../src/content/index.ts")
-  const definition = await loadTestingSave(id)
-  const loaded = openBattle(definition, { registry: FIXTURE_REGISTRY, seed: definition.seed })
-  const run = resolvePulse({
-    initialState: loaded.state,
-    registry: loaded.registry,
-    pulseTicks: definition.pulseTicks,
-    seed: definition.seed,
-  })
+  const { loadSandbox } = await import("../src/skirmish/sandboxes.ts")
+  const { playSandboxRound } = await import("../src/skirmish/sandbox-round.ts")
+  const { run } = playSandboxRound(await loadSandbox(id))
   const firstAttack = run.events.find((event) => event.kind === "attack.launched")
   if (firstAttack === undefined) {
     throw new Error(`${id}: no attack.launched event in the whole Pulse`)

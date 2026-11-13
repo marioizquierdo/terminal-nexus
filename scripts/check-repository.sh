@@ -186,6 +186,10 @@ retired_terms=(
   'backlog-pulse-completion'
   'project-governance\.md'
   'milestones/completed/'
+  # Renamed words (docs/game-design/glossary.md, the words we stopped using).
+  '\btesting saves?\b'
+  'skirmish-testing'
+  '(^|[^-])--turn\b'
 )
 
 # Scan for one pattern; extra arguments go to grep (e.g. -i). Prints the surviving hits.

@@ -21,10 +21,10 @@ document, screen and new piece of code uses these. The routes are `skirmish` and
 | **Story** | A Commander's story: missions in order, with technologies carried from one to the next, ending in a final battle |
 | **Versus** | One battle between two people. Later |
 | **Mission** | A battle with a script, words and a goal. **A mission exists only inside Story** |
-| **Endless stand** | A kind of mission: waves that grow until the Nexus falls, scored by how far the player got. It comes before a story's final battle |
-| **Slot** | One side of a battle, fixed by the map: its Commander and its **controller**, who plans it (`Player: marioiz`, `Scripted: agro`, later `Agent: curious`) |
+| **Endless stand** | A kind of mission: groups that grow until the Nexus falls, scored by how far the player got. It comes before a story's final battle |
+| **Slot** | One side of a battle, fixed by the map: its Commander and its **controller**, who plans it: `player:<name>` (a person), `script:<profile>`, later `agent:<profile>`; the setup screen shows them as `Player: marioiz`, `Scripted: agro`, `Agent: curious` |
 | **Save file** | A Skirmish's setup and, once played, the battle as it stands at the opening of a Build Phase: what the setup screen, Load game, the command line and every test start from ([`skirmish-saves.md`](../system-design/skirmish-saves.md)) |
-| **Opponent** | What plans the other side of a Skirmish: a script profile (`balanced`, `rush`, `turtle` and their variants, in `players/scripts/`) driving a Commander Army |
+| **Opponent** | What plans the other side of a Skirmish: a script profile (`agro`, `defensive`, `steady`, `agro-rich`, in `players/scripts/`), each playing one of the scripts (`balanced`, `rush`, `turtle` and their variants) and driving a Commander Army |
 | **Technology** | A card a mission in Story grants and later missions keep: a building, an upgrade, a Nexus power. The story file stores it in a level's `unlocks` |
 | **Level** | The code's word for a mission's entry in its story file (`story?mission=<id>`); say *mission* in writing |
 
@@ -45,7 +45,7 @@ taught in a mission. A Story mission is a Skirmish setup with a script and words
 
 **On equal ground** (the owner, 2026-11-12, [his words](../history/feedback/2026-11-12-the-new-focus.md): "the main idea
 of fighting an enemy on equal ground before we start adding other challenges like scripted missions"). By default both
-sides of a Skirmish play the same rules on the same power curve, with the same credits; the opponent differs only in
+sides of a Skirmish play the same rules on the same credits curve; the opponent differs only in
 how it plans. A handicap (the opponent's credits) is a setting the player chooses, never a default.
 
 **How the game grows** (the owner, 2026-11-11, [his words](../history/feedback/2026-11-11-game-modes.md)). Through
@@ -71,7 +71,7 @@ that stays open past its second round, and a few ways to set it up. New effects,
 
 The player picks a map, then a Commander and a controller for each of its slots, a goal and a few modifiers, and plays
 one battle of up to eight rounds. **A Skirmish battle is a duel** ([`duels.md`](../system-design/duels.md)): the player
-plans side A on the Build Phase screen, the opponent's script plans side B under the same rules, the two plans are
+plans slot p1 on the Build Phase screen, the opponent's script plans slot p2 under the same rules, the two plans are
 revealed together, and the Battle Round plays them. It ends when a Nexus falls, or after the last round on the larger
 share of Nexus health kept.
 
@@ -97,9 +97,9 @@ the setup screen asks them in this order.
 | Setting | Set on the screen | Set in a save file | Default |
 | --- | --- | --- | --- |
 | The map (it fixes the slots) | yes | yes, by name | the Crossing |
-| Each slot's Commander | yes | yes | Vasse (A), Dob Hunter (B) |
-| Each slot's controller: `Player`, `Scripted` with a profile, later `Agent` | yes | yes | Player (A), `Scripted: steady` (B; the `balanced` script) |
-| A script profile's options, among them its credits as a share of the curve's | yes | yes | 100% |
+| Each slot's Commander | yes | yes | Vasse (p1), Dob Hunter (p2) |
+| Each slot's controller: `player:<name>`, `script:<profile>`, later `agent:<profile>` (shown `Player: …`, `Scripted: …`) | yes | yes | `player:<name>` (p1), `script:steady` (p2; the `balanced` script) |
+| Each slot's credits share (a profile may carry its own) | yes | yes | 100% (share 1) |
 | The goal | yes | yes | Elimination |
 | Modifiers | yes | yes | none |
 | The seed | shown, editable | yes | from the clock |
@@ -135,7 +135,7 @@ others are removed.
 A Skirmish is saved and loaded at the opening of a Build Phase, from the game menu and from the command line
 ([`skirmish-saves.md`](../system-design/skirmish-saves.md) is the format). A save file is a battle anyone can pick up:
 a person carries on from it, an agent plays it on headless with any slot given to a script, and every demo of a rule, a
-Commander or a starting position is one, the engine's rule maps included (the testing saves, `skirmish-testing/`, each
+Commander or a starting position is one, the engine's rule maps included (the sandboxes, `sandboxes/`, each
 opening on a Battle Round written by hand). A save checked in is already a preset.
 
 ### 3.4 One battle, on screen or not
@@ -145,7 +145,7 @@ the same save, seed and plans give the same battle, hash for hash, on Node and B
 screen or the `skirmish` command plays it headless. That is what makes it the place every change is tried: headless
 script against script, an agent planning round by round, the playtest pressing keys, an agent's player's diary
 (Milestone 20), then a person, with `!` saving the moment as a note that opens again where it was. How a test does
-each is [`testing-ground.md`](../system-design/testing-ground.md), testing through Skirmishes.
+each is [`sandboxes.md`](../system-design/sandboxes.md), testing through Skirmishes.
 
 A Skirmish is the default place to see a change: the browser page and the playtest script open on a save, and the
 Build Phase pictures of a battle start from one. PERIMETER is opened only for a change about missions.
@@ -165,7 +165,7 @@ a mission built before the battle is fun would be built twice.
 ## 5. Versus — IDEA
 
 Two people, one battle: hidden simultaneous plans and deterministic resolution already fit play over a network and play
-by turns. Versus builds on Skirmish: the settings found to make the most enjoyable Skirmish are where a fair Versus
+by correspondence. Versus builds on Skirmish: the settings found to make the most enjoyable Skirmish are where a fair Versus
 battle starts. The cheapest version already half exists: each slot's build actions for a round may be handed in to one
 save file alone, in any order, and the round plays both, so a battle by correspondence is close. Nothing is designed, and multiplayer stays out
 of scope until a milestone asks for it.
