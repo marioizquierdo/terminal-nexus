@@ -8,7 +8,7 @@ export type ParsedArgs = Readonly<{
 export const VALUE_OPTIONS: ReadonlySet<string> = new Set([
   "seed",
   "ticks",
-  "turn",
+  "from-tick",
   "log-level",
   "save-log",
   "events",

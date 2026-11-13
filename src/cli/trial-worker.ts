@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// One process's share of a trial (docs/system-design/testing-ground.md): `grid --jobs` and `--against` hand each worker
+// One process's share of a trial (docs/system-design/sandboxes.md): `grid --jobs` and `--against` hand each worker
 // a job file — the build to play by, the trial, its maps, which of its battles, whether to measure their cost — and
 // read back the battles it wrote, merging them in the trial's own order. A worker plays exactly what one process
 // would; splitting a trial changes when its battles are played, never what they are.

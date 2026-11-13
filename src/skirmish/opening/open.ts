@@ -1,4 +1,4 @@
-// The opening of a Battle Round written by hand (a testing save's `start`, src/skirmish/start.ts), as the state the
+// The opening of a Battle Round written by hand (a sandbox's `start`, src/skirmish/start.ts), as the state the
 // kernel starts from. **Validation lives here, not in a later linter** — dimension mismatch,
 // unknown legend key, overlapping footprint, and unknown content id all fail loudly, naming the
 // offending line and column.
@@ -23,10 +23,10 @@ export class OpeningError extends Error {}
  * yet, so an unbounded custom grid isn't a slow map, it's an unbounded per-tick allocation:
  * `OccupancyIndex` sizes four `Int32Array`s to `width * height` and rebuilds them every tick
  * (grid/occupancy.ts). This cap is a declared-mode convention, not a promise about what the
- * engine can render or path across — it exists so a mistyped or exploratory testing save fails loudly
+ * engine can render or path across — it exists so a mistyped or exploratory sandbox fails loudly
  * at load time instead of degrading silently, tick after tick. The largest current preset
  * (extra-large-extra-wide, 72x24 = 1728 tiles) has roughly 5x headroom under it; raise it
- * deliberately, with measurements, when a testing save actually needs to be bigger — see
+ * deliberately, with measurements, when a sandbox actually needs to be bigger — see
  * docs/system-design/grid-engine.md ("Scaling toward hundreds or thousands of units").
  */
 export const MAX_DECLARED_GRID_TILES = 10_000

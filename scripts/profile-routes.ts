@@ -4,7 +4,7 @@
 //   node scripts/profile-routes.ts [--duels N] [--first-duel K] [--seeds 1,2] [--maps route|all|none] [--detail]
 //                                  [--out <file>]
 //
-// Plays every testing save in `skirmish-testing/` (or only the route saves) on the seeds given, and N duels on the Crossing
+// Plays every sandbox in `sandboxes/` (or only the route saves) on the seeds given, and N duels on the Crossing
 // (Commander pairs by the scripted players, eight rounds at most), timing each tick by the wall clock and
 // fingerprinting each battle: the SHA-256 of every event it emitted, in order, and of its last state. Prints the
 // fingerprints, then how long a tick took by how many units stood in it. `--out` writes the fingerprints as JSON;
@@ -17,7 +17,7 @@ import { briefOf, newDuel, playRound, scriptedPlayer } from "../src/duel/index.t
 import type { DuelSetup, Side, BuildActions } from "../src/duel/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
-import { loadTestingSave, testingSaveCatalog } from "../src/skirmish/testing-saves.ts"
+import { loadSandbox, sandboxCatalog } from "../src/skirmish/sandboxes.ts"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { hashState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
@@ -92,9 +92,9 @@ class Fingerprint {
 }
 
 if (maps !== "none") {
-  const entries = testingSaveCatalog().filter((entry) => maps === "all" || entry.id.startsWith("route-"))
+  const entries = sandboxCatalog().filter((entry) => maps === "all" || entry.id.startsWith("route-"))
   for (const entry of entries) {
-    const opening = await loadTestingSave(entry.path)
+    const opening = await loadSandbox(entry.path)
     for (const seed of seeds) {
       const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed })
       const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)

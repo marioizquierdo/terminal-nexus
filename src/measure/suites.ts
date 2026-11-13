@@ -1,4 +1,4 @@
-// The battles a measurement plays (docs/system-design/measurement.md): a map from `skirmish-testing/` on a seed, a duel
+// The battles a measurement plays (docs/system-design/measurement.md): a map from `sandboxes/` on a seed, a duel
 // between two Commanders played as a Skirmish (the same save, seating and round loop the `skirmish` command plays by), and a campaign level played by a fixed plan. Each comes back as the records of
 // its battles (`battle.ts`) and what decided it. Pure: the same inputs measure the same on every machine. Reading the
 // maps from disk, the clock and writing the results down are the command's (`bin/measure.ts`).
@@ -18,7 +18,7 @@ import type { DuelResult, Side } from "../duel/index.ts"
 import { briefOf } from "../duel/index.ts"
 import { centreTile } from "../match/index.ts"
 import { playOn } from "../skirmish/play.ts"
-import { playTestingRound } from "../skirmish/testing-round.ts"
+import { playSandboxRound } from "../skirmish/sandbox-round.ts"
 import { newBattle, seat, withRules } from "../skirmish/request.ts"
 import type { Profiles } from "../skirmish/save.ts"
 import { duelOf } from "../skirmish/save.ts"
@@ -28,13 +28,13 @@ import type { MatchState } from "../state/types.ts"
 import type { BattleRecord } from "./battle.ts"
 import { BattleRecorder, recordBattle } from "./battle.ts"
 
-/** A map from `skirmish-testing/`, played on one seed. */
+/** A map from `sandboxes/`, played on one seed. */
 export type SaveMeasure = Readonly<{ save: string; seed: number; battle: BattleRecord }>
 
-/** Plays a testing save's opening on `seed` to its end and records it. */
+/** Plays a sandbox's opening on `seed` to its end and records it. */
 export function measureSave(opening: BattleOpening, seed: number, registry: ContentRegistry = FIXTURE_REGISTRY): SaveMeasure {
   const recorder = new BattleRecorder(registry)
-  playTestingRound(opening, { registry, seed, watch: (state, events) => recorder.observe(state, events) })
+  playSandboxRound(opening, { registry, seed, watch: (state, events) => recorder.observe(state, events) })
   return { save: opening.id, seed, battle: recorder.record() }
 }
 

@@ -116,7 +116,7 @@ kernel is unchanged. With no banner, a level's own target and the march on the e
 | A secondary banner (a building's) | That building's waves follow its banner instead | The same rules, the goal read from the unit's building (`EntityState.home`) |
 
 Two banners and the secondary banner wait; the banner (and the stance, if it replaces the banner) are the Skirmish
-milestone's first steps ([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md)).
+milestone's first steps ([`milestone-17-skirmish.md`](../history/milestones/milestone-17-skirmish.md)).
 
 ## Troop spawning
 
@@ -265,7 +265,7 @@ stops at its reach and fires over the front.
 
 ## Breaching
 
-RULE (`TickRoutes.breachOf`, `skirmish-testing/movement/route-breach.save.json`). Troops already fight the buildings they see, so a
+RULE (`TickRoutes.breachOf`, `sandboxes/movement/route-breach.save.json`). Troops already fight the buildings they see, so a
 building in the way is usually fought before it is ever a wall. When the enemy's buildings close every way to what a
 unit wants, it **breaches**: a second field is worked out with the enemy's buildings open, each step onto one weighing
 eight steps of open ground, so the way through the fewest buildings is taken; the first enemy building on it becomes
@@ -415,7 +415,7 @@ Every way a unit moves is one of three things: **a new goal** for the same field
   not struck it) is in the state and hashed.
 - **Mirror-fair**: everything is read from the state the tick began with, in whole numbers; a tie between steps goes by
   facing, then by the seeded draw ([`pulse.md`](pulse.md), no side wins by where it stands; `march-mirror`).
-- **Measured**: the route and march saves (`skirmish-testing/movement/route-*.save.json`, `skirmish-testing/movement/march-*.save.json`) are each a
+- **Measured**: the route and march saves (`sandboxes/movement/route-*.save.json`, `sandboxes/movement/march-*.save.json`) are each a
   shape movement must manage; `node bin/measure.ts run` measures how long units stand blocked before and after a change
   ([`measurement.md`](measurement.md)).
 

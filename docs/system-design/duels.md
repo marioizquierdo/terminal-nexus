@@ -5,7 +5,7 @@ by a script, a person or a model. How its rounds play, the brief a player reads 
 formation a player builds by, and what its numbers can and cannot say. The code is `src/duel/`, pure; a person plays it
 as a Skirmish ([`game-modes.md`](../game-design/game-modes.md)), the `skirmish` command plays it headless
 ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), whose opening comment is its manual), and how a test uses that
-is [`testing-ground.md`](testing-ground.md), testing through Skirmishes._
+is [`sandboxes.md`](sandboxes.md), testing through Skirmishes._
 
 It began as the development bench for armies (the owner, 2026-10-17: "put each commander nexus on one side of the map
 and play a pvp ... script vs script", and a model planning each side from "the relevant logs plus current map state,
@@ -137,7 +137,7 @@ them in first (a building on the same ground, above; no turns, in [`concept.md`]
 
 A cheap model plays a side well enough to put an army through its paces: each round, each model reads its brief and
 answers with its build actions, and the round plays both. The recipe, its cost and how to read what it shows are
-[`testing-ground.md`](testing-ground.md), testing through Skirmishes. A scripted or small-model player is not a good
+[`sandboxes.md`](sandboxes.md), testing through Skirmishes. A scripted or small-model player is not a good
 player: its games show what an army does in the hands of a plain plan, not balance.
 
 ## 6. What a duel measures, and what biases it

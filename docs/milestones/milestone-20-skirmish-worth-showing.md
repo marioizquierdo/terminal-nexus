@@ -24,6 +24,14 @@ Not started; the order is a first guess, and each step is played by an agent bef
 
 ### Step 20A — The banner as a decision
 
+Carried from the Skirmish milestone's banner step when it closed (2026-11-13), where the placement was built as a
+prototype behind the Battle banner Experiment:
+
+- [ ] The owner plays the placement in a Skirmish and says whether it is comfortable and clear, or a stance row
+      replaces it (the plan already carries a stance: attack or hold).
+- [ ] **A banner** placed in the Build Phase, aggressive or defensive; by default on the enemy Nexus, aggressive.
+      Aggressive elsewhere: the army goes there first, then on to the enemy Nexus. Defensive: it holds the line there.
+      Duels carry it: a plan names a banner, and the brief says where each side's stood last round.
 - [ ] The duel scripts place a banner, so a kept front has an answer: a script whose front is beaten holds or falls
       back.
 - [ ] **Strategic, measured**: over seeds, a script that plants well beats the same script planting at the default, and
@@ -105,6 +113,20 @@ showed:
       makes a battle enjoyable becomes the defaults.
 - [ ] When he says the basic game is fun, the browser page goes to his friends with the note key, and their notes are
       the next feedback round.
+
+## Found by a player's eye (2026-11-13)
+
+An agent played Skirmishes through the command as a player would ([the report](../history/reports/2026-11-13-a-players-eye.md)).
+Not a balance verdict, but where this milestone's steps should look first:
+
+- **A battle that stays open**: on the Crossing neither Nexus was touched in eight rounds and the damage total decided;
+  on the Pocket a round-1 rush decided. Both maps need their tempo looked at, and survivors should not regroup inside
+  the other side's base.
+- **Reading the opponent, and reading a loss**: the brief should show the score that decides (the damage totals while
+  damage decides), and a round's report should say what hit the Nexus and what destroyed the buildings, by source.
+- **What the player is never told**: a death's blast hurts its own side unless the content says enemies alone (the
+  Ravel bombers emptied their own base), a building action's effect, and whether a power is once or every round.
+- **The defensive script builds Turrets inside the other side's base**, reaching it through a forward Garrison.
 
 ## Out of scope
 

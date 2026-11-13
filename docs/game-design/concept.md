@@ -25,7 +25,7 @@ The terminal is not a novelty wrapper. Fixed cells, symbols, ANSI color, keyboar
 
 1. **Nexus Pulse.** The round opens: each player's Grid Nexus speaks to its Commander and deals a hand of Nexus powers.
 2. **Build Phase.** Both players study the same resolved Grid and secretly commit construction, production state, and one Nexus upgrade choice: a power kept from that hand, which for now may be left unpicked. Planning is hidden, simultaneous and untimed: there are no turns.
-3. **Battle Round.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the battle plays on screen is presentation only and is independent of that logical time. The code still calls this step `pulse`, the engine's word (the vocabulary in [`grid-engine.md`](../system-design/grid-engine.md)).
+3. **Battle Round.** Plans reveal simultaneously. New buildings activate, workers choose jobs, producers spawn fixed recipes when resources and supply allow, and armies move and fight automatically for a fixed number of deterministic logical ticks. How fast the battle plays on screen is presentation only and is independent of that logical time. The code still calls this step `pulse`, the engine's word ([the glossary](glossary.md)).
 
 **No turns, and everything at once** (RULE — the owner, 2026-11-12: "in Terminal Nexus there are no turns: all players
 move simultaneously during the build phase"). Every player, a person, a script or a model, makes its build actions from

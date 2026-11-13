@@ -2,7 +2,7 @@
 
 _After the testing ground merged, Mario asked for one pull request doing two things: fix the bugs the better metrics
 had found, and step back so the testing ground stays generic, its guide about concepts that let a later session extend
-it rather than about the troop movement problem at hand. The guide is [the testing ground](../../system-design/testing-ground.md)._
+it rather than about the troop movement problem at hand. The guide is [the testing ground](../../system-design/sandboxes.md)._
 
 ## Bugs fixed
 

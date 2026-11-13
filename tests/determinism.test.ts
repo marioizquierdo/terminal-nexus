@@ -11,20 +11,20 @@ import { cosmeticRng } from "../src/rng/pcg32.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
 import {
-  loadTestingSaveFile,
+  loadSandbox,
   reportInputOf,
-  playTestingSave,
-  testingSaveFiles,
+  playSandbox,
+  sandboxFiles,
 } from "./helpers.ts"
 
 const RUNS = 20
 
-test("twenty runs of every testing save produce identical hashes and identical INFO logs", { timeout: 120_000 }, async () => {
-  for (const name of testingSaveFiles()) {
-    const first = await playTestingSave(name)
+test("twenty runs of every sandbox produce identical hashes and identical INFO logs", { timeout: 120_000 }, async () => {
+  for (const name of sandboxFiles()) {
+    const first = await playSandbox(name)
     const firstLog = buildLog(reportInputOf(first), "info").join("\n")
     for (let run = 1; run < RUNS; run += 1) {
-      const again = await playTestingSave(name)
+      const again = await playSandbox(name)
       assert.equal(again.run.stateHash, first.run.stateHash, `${name}: state hash drifted`)
       assert.equal(again.run.eventsHash, first.run.eventsHash, `${name}: event hash drifted`)
       assert.equal(
@@ -37,9 +37,9 @@ test("twenty runs of every testing save produce identical hashes and identical I
 })
 
 test("resolving in one call equals resolving tick by tick", async () => {
-  for (const name of testingSaveFiles()) {
-    const opening = await loadTestingSaveFile(name)
-    const oneCall = await playTestingSave(name)
+  for (const name of sandboxFiles()) {
+    const opening = await loadSandbox(name)
+    const oneCall = await playSandbox(name)
 
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     const context = contextFor(loaded.state, loaded.registry, opening.pulseTicks)
@@ -57,7 +57,7 @@ test("resolving in one call equals resolving tick by tick", async () => {
 })
 
 test("the kernel calls no clock and no Math.random", async () => {
-  const opening = await loadTestingSaveFile("citizen-mirror-skirmish.save.json")
+  const opening = await loadSandbox("citizen-mirror-skirmish.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
 
   const realRandom = Math.random
@@ -85,7 +85,7 @@ test("the kernel calls no clock and no Math.random", async () => {
 })
 
 test("changing only the cosmetic seed changes nothing about state, events, or the log", async () => {
-  const baseline = await playTestingSave("citizen-mirror-skirmish.save.json")
+  const baseline = await playSandbox("citizen-mirror-skirmish.save.json")
   const baselineLog = buildLog(reportInputOf(baseline), "debug").join("\n")
 
   // The cosmetic stream is a separate object with its own seed. Drawing from it heavily must not
@@ -93,15 +93,15 @@ test("changing only the cosmetic seed changes nothing about state, events, or th
   const cosmetic = cosmeticRng(0xdecaf)
   for (let draw = 0; draw < 10_000; draw += 1) cosmetic.nextUint32()
 
-  const again = await playTestingSave("citizen-mirror-skirmish.save.json")
+  const again = await playSandbox("citizen-mirror-skirmish.save.json")
   assert.equal(again.run.stateHash, baseline.run.stateHash)
   assert.equal(again.run.eventsHash, baseline.run.eventsHash)
   assert.equal(buildLog(reportInputOf(again), "debug").join("\n"), baselineLog)
 })
 
 test("parse(serialize(state)) hashes identically", async () => {
-  for (const name of testingSaveFiles()) {
-    const resolved = await playTestingSave(name)
+  for (const name of sandboxFiles()) {
+    const resolved = await playSandbox(name)
     const text = serializeState(resolved.run.finalState)
     const parsed = parseState(text)
     assert.equal(hashState(parsed), resolved.run.stateHash, `${name}: round trip changed the hash`)
@@ -116,17 +116,17 @@ test("a different gameplay seed can change the fight, and the same one never doe
   // clean mirror simply never produces, so it stopped being a fixture that could show a seed
   // mattering. jammed-corridor is built to force exactly that contest (rules.test.ts asserts it
   // happens), which is what this test actually needs to exercise.
-  const first = await playTestingSave("jammed-corridor.save.json", { seed: 1 })
-  const same = await playTestingSave("jammed-corridor.save.json", { seed: 1 })
-  const other = await playTestingSave("jammed-corridor.save.json", { seed: 2 })
+  const first = await playSandbox("jammed-corridor.save.json", { seed: 1 })
+  const same = await playSandbox("jammed-corridor.save.json", { seed: 1 })
+  const other = await playSandbox("jammed-corridor.save.json", { seed: 2 })
   assert.equal(same.run.eventsHash, first.run.eventsHash)
   assert.notEqual(other.run.eventsHash, first.run.eventsHash)
 })
 
 test("the JSONL event stream round-trips, and every kind it emits is a declared kind", async () => {
   const seen = new Set<string>()
-  for (const name of testingSaveFiles()) {
-    const resolved = await playTestingSave(name)
+  for (const name of sandboxFiles()) {
+    const resolved = await playSandbox(name)
     const text = serializeEvents(resolved.run.events)
     const parsed = parseEvents(text)
     assert.equal(
@@ -150,6 +150,6 @@ test("the JSONL event stream round-trips, and every kind it emits is a declared 
   assert.deepEqual(
     never,
     ["arbitration.bounded"],
-    `these kinds are declared but never emitted by any testing save: ${never.join(", ")}`,
+    `these kinds are declared but never emitted by any sandbox: ${never.join(", ")}`,
   )
 })

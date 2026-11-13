@@ -51,8 +51,8 @@ import { KEY_BAR, StandInKeyboard, mouseBytes, withShift } from "./keys.ts"
 import { activity } from "../log/activity.ts"
 import { openingOf } from "../skirmish/start.ts"
 import type { SaveFile } from "../skirmish/save.ts"
-import grandBattle from "../../skirmish-testing/showcase/grand-battle.save.json" with { type: "json" }
-import citizensVersusRavels from "../../skirmish-testing/showcase/citizens-versus-ravels.save.json" with { type: "json" }
+import grandBattle from "../../sandboxes/showcase/grand-battle.save.json" with { type: "json" }
+import citizensVersusRavels from "../../sandboxes/showcase/citizens-versus-ravels.save.json" with { type: "json" }
 
 /** Stamped in by the build: which commit this page is, so a screenshot from a phone says so. */
 declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: string }>

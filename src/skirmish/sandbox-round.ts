@@ -1,9 +1,9 @@
-// A testing save's one Battle Round, played (docs/system-design/testing-ground.md): its opening opened on the content
-// it is played with, and the kernel run from it to its end or its ticks. The one path every door plays a testing save
-// by: `grid --headless`, the `skirmish` command (`src/cli/skirmish-testing.ts`), a measurement (`measureSave`,
-// `src/measure/suites.ts`) and the formations bench, so a testing save says the same through each.
+// A sandbox's one Battle Round, played (docs/system-design/sandboxes.md): its opening opened on the content
+// it is played with, and the kernel run from it to its end or its ticks. The one path every door plays a sandbox
+// by: `grid --headless`, the `skirmish` command (`src/cli/skirmish-sandbox.ts`), a measurement (`measureSave`,
+// `src/measure/suites.ts`) and the formations bench, so a sandbox says the same through each.
 //
-// Not the duel: a testing save tests one rule on the bench's content, with no Commander, Build Phase or wave a battle
+// Not the duel: a sandbox tests one rule on the bench's content, with no Commander, Build Phase or wave a battle
 // adds, so it starts the kernel straight from the units its `start` places. Pure: the save is already read.
 
 import type { ContentRegistry } from "../content/index.ts"
@@ -16,8 +16,8 @@ import type { MatchState } from "../state/types.ts"
 import { openBattle } from "./opening/open.ts"
 import type { BattleOpening } from "./opening/types.ts"
 
-/** How a testing save is played: on other content (a variant's), another seed, more or fewer ticks; and who watches. */
-export type TestingRoundOptions = Readonly<{
+/** How a sandbox is played: on other content (a variant's), another seed, more or fewer ticks; and who watches. */
+export type SandboxRoundOptions = Readonly<{
   registry?: ContentRegistry
   seed?: number
   ticks?: number
@@ -25,11 +25,11 @@ export type TestingRoundOptions = Readonly<{
   watch?: (state: MatchState, events: readonly DomainEvent[]) => void
 }>
 
-/** A testing save's Battle Round played: the run, and what its report is written from (`buildLog`). */
-export type TestingRound = Readonly<{ run: PulseRun; registry: ContentRegistry; report: ReportInput }>
+/** A sandbox's Battle Round played: the run, and what its report is written from (`buildLog`). */
+export type SandboxRound = Readonly<{ run: PulseRun; registry: ContentRegistry; report: ReportInput }>
 
-/** **A testing save's Battle Round**, from its opening to its end or its last tick. */
-export function playTestingRound(opening: BattleOpening, options: TestingRoundOptions = {}): TestingRound {
+/** **A sandbox's Battle Round**, from its opening to its end or its last tick. */
+export function playSandboxRound(opening: BattleOpening, options: SandboxRoundOptions = {}): SandboxRound {
   const seed = options.seed ?? opening.seed
   const pulseTicks = options.ticks ?? opening.pulseTicks
   const loaded = openBattle(opening, { registry: options.registry ?? FIXTURE_REGISTRY, seed })

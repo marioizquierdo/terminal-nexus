@@ -3,11 +3,11 @@
 _How a Skirmish is set up, saved, loaded and played without a screen: one vocabulary for the setup screen, the save
 file, the command line and the routes. What a Skirmish is for a player is [`game-modes.md`](../game-design/game-modes.md);
 the duel it plays is [`duels.md`](duels.md); the `skirmish` command's manual is the comment it opens with
-([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); how a test plays one is [`testing-ground.md`](testing-ground.md),
+([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts)); how a test plays one is [`sandboxes.md`](sandboxes.md),
 testing through Skirmishes. The code: the save and the steps the screen and the command share in `src/skirmish/`
 (`save.ts`, `request.ts`, `play.ts`), the screen in `src/cli/skirmish-play.ts` and `src/cli/skirmish-open.ts`, the setup
 screen in `src/cli/title-screens.ts`; what is left is in the Skirmish milestone
-([`milestone-17-skirmish.md`](../milestones/milestone-17-skirmish.md))._
+([`milestone-17-skirmish.md`](../history/milestones/milestone-17-skirmish.md))._
 
 _Licence: Apache-2.0._
 
@@ -30,7 +30,7 @@ headless with scripts on either side.
 | **Modifier** | A named rule laid over the battle: `fast-rounds`, `double-income`. A playground for experiments; the good ones are kept |
 | **Setup** | The map, the seed, the slots, the goal, the modifiers and the settings text: everything chosen before round 1 |
 | **Save file** | A setup, and the battle as it stands at the opening of a Build Phase (`*.save.json`) |
-| **Testing save** | A save that opens on a Battle Round written by hand (its `start`), both slots planning nothing: a rule, a unit, a kind of ground or a showcase, in `skirmish-testing/` |
+| **Sandbox** | A save that opens on a Battle Round written by hand (its `start`), both slots planning nothing: a rule, a unit, a kind of ground or a showcase, in `sandboxes/` |
 | **Spectating** | A battle with no `player:` slot: the Build Phase has nothing to build, only Explore Map and Start next round |
 
 The code's word for the two-sided battle stays *duel* (as the engine's word for a battle is *match*); a person reads
@@ -67,9 +67,9 @@ What follows from it:
   `skirmish --map pocket --p2-commander averno`, `terminal-nexus --map pocket --p2-commander averno` and
   `--at 'skirmish?map=pocket&p2-commander=averno'` are one battle, refused for the same reasons. The save's names are
   the setup screen's.
-- **A testing save is not a battle.** It tests one rule on the bench's content, with no Commander, Build Phase or wave,
-  so it starts the kernel straight from the units it places. It too has one path, `playTestingRound`
-  (`src/skirmish/testing-round.ts`), which `grid`, the `skirmish` command and the measurement all play it by.
+- **A sandbox is not a battle.** It tests one rule on the bench's content, with no Commander, Build Phase or wave,
+  so it starts the kernel straight from the units it places. It too has one path, `playSandboxRound`
+  (`src/skirmish/sandbox-round.ts`), which `grid`, the `skirmish` command and the measurement all play it by.
 
 ## 3. Setting up a Skirmish
 
@@ -133,7 +133,7 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
 
 - **`setup`** is exactly what the setup screen chooses, under the same names. A file with only `format` and `setup` is
   a new battle. `map` is a built-in map's id (`crossing`, `pocket`) or a map drawn in full (`id`, `name`, `rows`, and
-  `nexus` and `hold` by slot; a `legend` only in a testing save), as a map file is. A slot may carry `options`
+  `nexus` and `hold` by slot; a `legend` only in a sandbox), as a map file is. A slot may carry `options`
   (`credits`, its share of the income). Elimination is the only goal.
 - **`state`** is written by the game: the duel's own state between rounds (`DuelState`, `src/duel/types.ts`), in the
   engine's words, where side A is `p1` and side B is `p2`: the round to play, each side's credits, kept powers and
@@ -143,8 +143,8 @@ on any slot: there is no difficulty setting, and both sides start on equal groun
   actions), so a load returns to where it stopped: half made, as Save game leaves them mid-Build Phase, or whole, handed in
   by one slot before the other's.
   It is cleared when the round is played.
-- **`start`** is what each slot has on the Grid before round 1, placed by hand: a save with one is a **testing save**
-  (section 5). A side's credits and roster in `start` are not built: no testing save needs them yet.
+- **`start`** is what each slot has on the Grid before round 1, placed by hand: a save with one is a **sandbox**
+  (section 5). A side's credits and roster in `start` are not built: no sandbox needs them yet.
 - **The log is never in a save** (the owner: "Logging is a separate concern").
 - **A save the loader refuses is refused whole**, every problem named at once, by its place in the file
   (`setup.slots.p2.controller: no script "aggro"`).
@@ -174,14 +174,14 @@ screen moves during a Build Phase (a regroup still animating, a unit stepping of
 presentation: the Battle Round opens from the saved places, so a battle loaded from a save plays as the one played
 straight through (tested on Node and Bun).
 
-## 5. Testing saves
+## 5. Sandboxes
 
-**A testing save opens on a Battle Round written by hand** (RULE — `src/skirmish/start.ts`,
-`src/skirmish/testing-saves.ts`, `tests/skirmish-save.test.ts`, `tests/testing-saves.test.ts`): a save with a `start`,
-whose first Battle Round is what it tests. The engine's rule, unit, movement, bench and showcase battles are testing
-saves, in [`skirmish-testing/`](../../skirmish-testing), a folder for each purpose (`rules/`, `units/`, `movement/`,
-`engage/`, `showcase/`), with the trial files that play them in `skirmish-testing/trials/`
-([`testing-ground.md`](testing-ground.md)). A file may be named anything; its id is its file name.
+**A sandbox opens on a Battle Round written by hand** (RULE — `src/skirmish/start.ts`,
+`src/skirmish/sandboxes.ts`, `tests/skirmish-save.test.ts`, `tests/sandboxes.test.ts`): a save with a `start`,
+whose first Battle Round is what it tests. The engine's rule, unit, movement, bench and showcase battles are
+sandboxes, in [`sandboxes/`](../../sandboxes), a folder for each purpose (`rules/`, `units/`, `movement/`,
+`engage/`, `showcase/`), with the trial files that play them in `sandboxes/trials/`
+([`sandboxes.md`](sandboxes.md)). A file may be named anything; its id is its file name.
 
 ```json
 {
@@ -225,7 +225,7 @@ The built-in maps are files in `maps/` (`crossing.map.json`, `pocket.map.json`),
 by the Build Phase's rules, plays a round or the battle to its end, many battles over seeds or every pairing of
 Commanders, two sessions taking turns through one save, and keeps every round as a save, a report and the battle's
 log. Its manual, every option with examples, is the comment [`src/cli/skirmish.ts`](../../src/cli/skirmish.ts) opens
-with (`npm run skirmish -- --help`); how each kind of test uses it is [`testing-ground.md`](testing-ground.md).
+with (`npm run skirmish -- --help`); how each kind of test uses it is [`sandboxes.md`](sandboxes.md).
 
 **Parity with the command** (RULE — the owner, 2026-11-12: "formalize the concept that works both from the UI and from
 the CLI"): the screen and the command open a battle by the same steps (`src/skirmish/request.ts`: a new setup or a save
@@ -246,7 +246,7 @@ for a new battle under the command's names, the defaults for what it leaves out.
 Round by round from a save file, as a person would: the brief of its slot, build actions written from it, checked,
 then played against the other slot's script and saved at the next Build Phase; or two agents, one a slot, each
 answering the same brief; or on the screen by keys through the scripted playtest. The commands for each are
-[`testing-ground.md`](testing-ground.md), testing through Skirmishes. The player's diary (Milestone 20) plays a whole
+[`sandboxes.md`](sandboxes.md), testing through Skirmishes. The player's diary (Milestone 20) plays a whole
 battle on the screen this way.
 
 ## 8. Spectating

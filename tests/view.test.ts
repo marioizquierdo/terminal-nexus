@@ -23,10 +23,10 @@ import {
 } from "../src/view/index.ts"
 import type { PulseTimeline } from "../src/view/index.ts"
 import type { PlayerId } from "../src/state/types.ts"
-import { isColourCode, loadTestingSaveFile, testingSaveFiles, sgrCodes } from "./helpers.ts"
+import { isColourCode, loadSandbox, sandboxFiles, sgrCodes } from "./helpers.ts"
 
 async function timelineFor(name: string): Promise<PulseTimeline> {
-  const opening = await loadTestingSaveFile(name)
+  const opening = await loadSandbox(name)
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   return buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
 }
@@ -43,8 +43,8 @@ test("frames are exactly the composition size: the 80 x 24 floor, a column for e
   assert.equal(frame.cells.length, COMPOSITION_SIZE.width * COMPOSITION_SIZE.height)
 })
 
-test("every glyph in every testing save is one printable ASCII cell", async () => {
-  for (const name of testingSaveFiles()) {
+test("every glyph in every sandbox is one printable ASCII cell", async () => {
+  for (const name of sandboxFiles()) {
     const view = createView(await timelineFor(name))
     for (const fraction of [0, 0.25, 0.5, 0.9]) {
       const timeMs = view.durationMs * fraction
@@ -127,8 +127,8 @@ test("at a tick boundary every entity stands on the tile the kernel put it on", 
   }
 })
 
-test("monochrome renders every testing save, and no cell depends on colour to exist", async () => {
-  for (const name of testingSaveFiles()) {
+test("monochrome renders every sandbox, and no cell depends on colour to exist", async () => {
+  for (const name of sandboxFiles()) {
     const view = createView(await timelineFor(name))
     const timeMs = view.durationMs / 2
     const mono = view.snapshotAt(timeMs, "monochrome")
@@ -201,12 +201,12 @@ test("the compositor only ever emits roles from the committed vocabulary", async
   }
 })
 
-// It plays every map in skirmish-testing/ twice, once headless and once for the view: longer than Bun's five seconds a
+// It plays every map in sandboxes/ twice, once headless and once for the view: longer than Bun's five seconds a
 // test, so it says how long it may take.
 test("the view and the headless run agree on the fight they describe", { timeout: 60_000 }, async () => {
-  const { playTestingSave } = await import("./helpers.ts")
-  for (const name of testingSaveFiles()) {
-    const headless = await playTestingSave(name)
+  const { playSandbox } = await import("./helpers.ts")
+  for (const name of sandboxFiles()) {
+    const headless = await playSandbox(name)
     const timeline = await timelineFor(name)
     assert.equal(timeline.stateHash, headless.run.stateHash, `${name}: watch and run disagree`)
     assert.equal(timeline.eventsHash, headless.run.eventsHash, `${name}: watch and run disagree`)
@@ -255,8 +255,8 @@ test("a ranged kill's target stays on screen until its own tracer lands", async 
   // (there is always at least one - the fixture is built to be a real, populated fight) and checks
   // the target's own glyph is still drawn through the hold, then gone the instant the impact beat
   // that fx.death.collapse/fx.impact.burst already wait for arrives.
-  const { playTestingSave } = await import("./helpers.ts")
-  const resolved = await playTestingSave("citizens-versus-ravels.save.json")
+  const { playSandbox } = await import("./helpers.ts")
+  const resolved = await playSandbox("citizens-versus-ravels.save.json")
   const timeline = await timelineFor("citizens-versus-ravels.save.json")
   const view = createView(timeline)
   const tickMs = view.tickDurationMs

@@ -10,7 +10,7 @@ import { join } from "node:path"
 import { levelById } from "../src/cli/levels.ts"
 import type { Measurement, MeasureSpec, SpecResult } from "../src/measure/index.ts"
 import { jobsOf, LEVEL_PLANS, measureLevel, measureSave, measureUnit, mergeMeasurements, readMeasurement, runSpec, summaryLines, tallyUnit } from "../src/measure/index.ts"
-import { REPO_ROOT, loadTestingSaveFile, playTestingSave } from "./helpers.ts"
+import { REPO_ROOT, loadSandbox, playSandbox } from "./helpers.ts"
 
 const TINY: MeasureSpec = {
   name: "tiny",
@@ -33,7 +33,7 @@ const written = (result: SpecResult, build = "abc1234"): Measurement => ({
 })
 
 test("a spec split into jobs and merged back is what one process plays, in the same order, whatever order the parts come in", { timeout: 120_000 }, async () => {
-  const saves = [await loadTestingSaveFile("route-dead-end.save.json")]
+  const saves = [await loadSandbox("route-dead-end.save.json")]
   const parts = new Set(["saves", "duels"])
   const whole = runSpec(TINY, { saves, levels: [], parts })
   const jobs = jobsOf(TINY, parts)
@@ -69,7 +69,7 @@ test("the summary says how many duels were over by the end of rounds 1, 2 and 3,
 })
 
 test("what one kind of unit did is read from the battle's events, for each side it stood on", async () => {
-  const resolved = await playTestingSave("route-crowd.save.json")
+  const resolved = await playSandbox("route-crowd.save.json")
   const states = [resolved.run.initialState, resolved.run.finalState]
   const troopers = tallyUnit(states, resolved.run.events, "unit.citizen.trooper")
   assert.equal(troopers.A?.stood, 8)

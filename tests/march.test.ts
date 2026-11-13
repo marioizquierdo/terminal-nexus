@@ -19,11 +19,11 @@ import type { Actor } from "../src/pulse/shared.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
-import { loadTestingSaveFile } from "./helpers.ts"
+import { loadSandbox } from "./helpers.ts"
 
-/** Every state of a testing save's battle, and every event, on its own seed or `seed`. */
+/** Every state of a sandbox's battle, and every event, on its own seed or `seed`. */
 async function play(name: string, seed?: number, opening?: BattleOpening): Promise<Readonly<{ states: MatchState[]; events: DomainEvent[] }>> {
-  const map = opening ?? (await loadTestingSaveFile(`${name}.save.json`))
+  const map = opening ?? (await loadSandbox(`${name}.save.json`))
   return playMap(map, seed)
 }
 
@@ -275,7 +275,7 @@ test("march-commander: the Commander is a regular troop - the troopers pass her,
 })
 
 test("march-narrow-gap: troopers swap past the slower marksmen in a one-wide corridor, a raider waits behind its marksman, and nothing jams", async () => {
-  const opening = await loadTestingSaveFile("march-narrow-gap.save.json")
+  const opening = await loadSandbox("march-narrow-gap.save.json")
   for (const seed of [1, 2, 3, 4]) {
     const { battle } = measureSave(opening, seed)
     assert.equal(battle.winner, "A", `seed ${seed}: ${battle.reason} at ${battle.ticks}`)
@@ -310,7 +310,7 @@ function rows(state: MatchState, width: number, mirrored: boolean): string[] {
 }
 
 test("march-mirror: two mirrored armies sort themselves and march at each other, a mirror tick for tick", async () => {
-  const opening = await loadTestingSaveFile("march-mirror.save.json")
+  const opening = await loadSandbox("march-mirror.save.json")
   const { states, events } = await play("march-mirror")
   const width = "width" in opening.grid ? opening.grid.width : 0
   states.forEach((state, tick) => assert.deepEqual(rows(state, width, false), rows(state, width, true), `parted at tick ${tick}`))
@@ -321,7 +321,7 @@ test("march-mirror: two mirrored armies sort themselves and march at each other,
 })
 
 test("a march with its sides' names swapped is the same march: nothing favours A for being A", async () => {
-  const opening = await loadTestingSaveFile("march-lines.save.json")
+  const opening = await loadSandbox("march-lines.save.json")
   const swapped: BattleOpening = {
     ...opening,
     placements: { A: opening.placements.B ?? { rows: [], legend: {} }, B: opening.placements.A ?? { rows: [], legend: {} } },

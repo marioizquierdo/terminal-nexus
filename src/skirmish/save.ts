@@ -6,7 +6,7 @@
 // engine's words, where side A is `p1` and side B is `p2`. The Grid's ground is never saved (the map has it) and the
 // log never is (the owner, 2026-11-12: "Logging is a separate concern").
 //
-// A save may instead open on a Battle Round written by hand: a **testing save** (`skirmish-testing/`), whose `start`
+// A save may instead open on a Battle Round written by hand: a **sandbox** (`sandboxes/`), whose `start`
 // says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the kernel from that `start`
 // (`src/skirmish/opening/`), not by the duel, and both its slots plan nothing.
 
@@ -71,14 +71,14 @@ export const IDLE_SCRIPT = "idle"
  */
 export type Controller = string
 
-/** A slot as the setup chooses it: its Commander, who plans it, and its options. A testing save's slots may name no
+/** A slot as the setup chooses it: its Commander, who plans it, and its options. A sandbox's slots may name no
  *  Commander: their units are given in `start`. */
 export type SlotSetup = Readonly<{ commander?: string; controller: Controller; options?: SlotOptions }>
 
 /**
  * A map drawn in full inside a save, as `DuelMap` is but by slot. `legend` names the ground each character of the rows
  * is (`.` open, `#` rock, `*` a deposit unless given), and `nexus` and `hold` say where each slot's Nexus stands and
- * its troops hold: a testing save, whose `start` places the Nexuses, may leave them out.
+ * its troops hold: a sandbox, whose `start` places the Nexuses, may leave them out.
  */
 export type SaveMap = Readonly<{
   id: string
@@ -117,7 +117,7 @@ export type SaveFile = Readonly<{
   state?: SavedState
   /** A slot's plan so far this Build Phase, so loading returns to exactly where it stopped. */
   draft?: Readonly<Partial<Record<Slot, BuildActions>>>
-  /** What each slot places by hand before round 1: a testing save, which opens on its first Battle Round. */
+  /** What each slot places by hand before round 1: a sandbox, which opens on its first Battle Round. */
   start?: SaveStart
 }>
 
@@ -190,7 +190,7 @@ const groundOf = (map: SaveSetup["map"]): ReturnType<typeof duelGrid> => {
 /** The duel a save's setup describes, its modifiers and the slots' credits shares laid over it. */
 export function duelSetupOf(setup: SaveSetup, profiles: Profiles = NO_PROFILES): DuelSetup {
   const { p1, p2 } = setup.slots
-  if (p1.commander === undefined || p2.commander === undefined) throw new Error("a slot names no Commander: a testing save opens from its start, not the duel")
+  if (p1.commander === undefined || p2.commander === undefined) throw new Error("a slot names no Commander: a sandbox opens from its start, not the duel")
   const modifiers = new Set(setup.modifiers)
   const income = (slot: Slot): number => shareOf(setup.slots[slot], profiles) * (modifiers.has("double-income") ? 2 : 1)
   const shares = { A: income("p1"), B: income("p2") }
@@ -255,7 +255,7 @@ export function newSetup(given: Readonly<Partial<Omit<SaveSetup, "slots">> & { s
 const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value)
 const isWhole = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value)
 
-/** The problems with a map drawn in full. A testing save's (`started`) may leave out where the Nexuses stand and its
+/** The problems with a map drawn in full. A sandbox's (`started`) may leave out where the Nexuses stand and its
  *  troops hold, and may name ground the duel does not draw. */
 function mapProblems(map: unknown, started: boolean): string[] {
   if (typeof map === "string") return DUEL_MAPS[map] === undefined ? [`setup.map: no map "${map}" (${Object.keys(DUEL_MAPS).join(", ")}), or draw one in full`] : []
@@ -269,7 +269,7 @@ function mapProblems(map: unknown, started: boolean): string[] {
     if (!isRecord(legend) || !Object.values(legend).every((terrain) => typeof terrain === "string" && terrain.startsWith("terrain."))) {
       problems.push(`setup.map.legend: { "<character>": "terrain.<kind>" }, the ground each character of the rows is`)
     } else if (!started && Object.entries(legend).some(([symbol, terrain]) => MAP_LEGEND[symbol] !== terrain)) {
-      problems.push(`setup.map.legend: a battle the duel plays draws its map in ${Object.keys(MAP_LEGEND).join(" ")}; another legend is for a testing save's start`)
+      problems.push(`setup.map.legend: a battle the duel plays draws its map in ${Object.keys(MAP_LEGEND).join(" ")}; another legend is for a sandbox's start`)
     }
   }
   for (const part of ["nexus", "hold"] as const) {
@@ -298,7 +298,7 @@ function slotProblems(slot: Slot, value: unknown, started: boolean, profiles: Pr
   const problems: string[] = []
   const commander = value["commander"]
   if (started && commander === undefined) {
-    // A testing save's units are given in its start: its slot needs no Commander.
+    // A sandbox's units are given in its start: its slot needs no Commander.
   } else if (typeof commander !== "string") problems.push(`setup.slots.${slot}.commander: a Commander's id (vasse, averno, dob)`)
   else {
     try {
@@ -312,7 +312,7 @@ function slotProblems(slot: Slot, value: unknown, started: boolean, profiles: Pr
   else {
     const problem = controllerProblem(controller, profiles)
     if (problem !== null) problems.push(`setup.slots.${slot}.controller: ${problem}`)
-    else if (started && controller !== `script:${IDLE_SCRIPT}`) problems.push(`setup.slots.${slot}.controller: a testing save's slots plan nothing: script:${IDLE_SCRIPT}`)
+    else if (started && controller !== `script:${IDLE_SCRIPT}`) problems.push(`setup.slots.${slot}.controller: a sandbox's slots plan nothing: script:${IDLE_SCRIPT}`)
   }
   const options = value["options"]
   if (options !== undefined) {
@@ -349,7 +349,7 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
     if (!Array.isArray(modifiers)) problems.push("setup.modifiers: a list, [] for none")
     else for (const modifier of modifiers) if (!(MODIFIERS as readonly unknown[]).includes(modifier)) problems.push(`setup.modifiers: no modifier ${JSON.stringify(modifier)} (${MODIFIERS.join(", ")})`)
     for (const field of ["rounds", "roundTicks"]) if (!isWhole(setup[field]) || (setup[field] as number) < 1) problems.push(`setup.${field}: a whole number, 1 or more`)
-    if (started && isWhole(setup["rounds"]) && setup["rounds"] !== 1) problems.push("setup.rounds: 1, a testing save plays the one Battle Round its start writes")
+    if (started && isWhole(setup["rounds"]) && setup["rounds"] !== 1) problems.push("setup.rounds: 1, a sandbox plays the one Battle Round its start writes")
     const slots = setup["slots"]
     if (!isRecord(slots)) problems.push("setup.slots: { p1, p2 }")
     else {
@@ -375,7 +375,7 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
   }
   if (started) {
     problems.push(...startProblems(value["start"]))
-    for (const part of ["state", "draft"]) if (value[part] !== undefined) problems.push(`${part}: a testing save opens on the Battle Round its start writes; remove ${part} or start`)
+    for (const part of ["state", "draft"]) if (value[part] !== undefined) problems.push(`${part}: a sandbox opens on the Battle Round its start writes; remove ${part} or start`)
     // The shape is right: whether its units fit the ground (on the Grid, off rock, not on each other) is the opening's
     // to say, and its first refusal is named here with the rest.
     if (problems.length === 0) {

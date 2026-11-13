@@ -61,7 +61,7 @@ const DEPOSITS: readonly Readonly<{ x: number; y: number }>[] = [
 ]
 
 /**
- * Built by a function rather than checked in as a testing save (`.save.json`): a testing save is
+ * Built by a function rather than checked in as a sandbox (`.save.json`): a sandbox is
  * simulation input and the determinism suite replays every one of them twenty times. This Grid never
  * reaches the kernel. Deterministic all the same — no randomness, no clock, the same tiles each run.
  */

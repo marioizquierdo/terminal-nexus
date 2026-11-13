@@ -72,7 +72,7 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
   if (seated.problems.length > 0) throw new Error(seated.problems.join("\n"))
   const p1 = actionsFor(seated.builds.p1 ?? [], round, round)
   const draft = p1 === undefined ? save.draft : { ...save.draft, p1 }
-  if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a testing save: it plays one Battle Round in grid (grid <file>), not on the game's screen`)
+  if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a sandbox: it plays one Battle Round in grid (grid <file>), not on the game's screen`)
   const opened: SaveFile = { ...save, setup, ...(draft === undefined ? {} : { draft }) }
   // A file named without a folder is the working folder's: said so, so Save game writes it back there, not into the saves folder.
   const file = ask.load === undefined ? undefined : ask.load.includes("/") ? ask.load : `./${ask.load}`

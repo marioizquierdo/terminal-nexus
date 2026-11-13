@@ -68,10 +68,10 @@ day its own battle or mission needs it. Nothing here is more authorized than it 
   ([`story.md`](../game-design/story.md), the opponents a mission brings) may not need it, so a level
   pulls it in only once a mission actually hides something from the player.
 - **Replay format.** The full game log: content locks, hashes, versions, committed plans per Build Phase,
-  and a `verify` path that re-simulates recorded inputs rather than re-running a testing save.
+  and a `verify` path that re-simulates recorded inputs rather than re-running a sandbox.
   [`replay-format.md`](../system-design/replay-format.md) is the starting design and works through why a
   persisted recording replays soundly. `grid` today hashes final state and the ordered event stream and
-  `grid --verify` re-resolves a testing save, which proves the kernel is deterministic but not that a
+  `grid --verify` re-resolves a sandbox, which proves the kernel is deterministic but not that a
   *recording* can be replayed. It is the first thing worth doing once a level's own save or replay needs
   force the question.
 
@@ -180,8 +180,8 @@ Which keys is the open part: Tab is focus, and the left hand's letters are hotke
 
 Small things noticed while the Skirmish milestone was built and tested, none needed for it:
 
-- **A testing save that opens on a Build Phase**: a testing save's `start` places units and buildings, but not a side's
-  credits or roster, so it can only open on a Battle Round. Adding both would let a testing save show a Build Phase with
+- **A sandbox that opens on a Build Phase**: a sandbox's `start` places units and buildings, but not a side's
+  credits or roster, so it can only open on a Battle Round. Adding both would let a sandbox show a Build Phase with
   units already in place.
 - **The round limit on the setup screen**: a loaded save keeps its own limit (the Pocket example's 4) when it goes back to
   New game, and the setup screen does not show the limit at all. A Rounds row, or the limit in the summary line.
@@ -193,10 +193,10 @@ Small things noticed while the Skirmish milestone was built and tested, none nee
 
 ## Units circling in a lane (found 2026-11-12)
 
-Running the testing saves after they moved to `skirmish-testing/`: `engage/engage-lanes-melee-vs-mix` warns of units
+Running the sandboxes after they moved to `sandboxes/`: `engage/engage-lanes-melee-vs-mix` warns of units
 "circling" between two tiles in a lane, and `movement/route-breach`, `showcase/heavies-clash` and
 `rules/tick-limit-draw` warn of stuck units. The last three look expected for what they test; the lane circling may be a
-routing case worth a testing save of its own before the pathfinding is next touched.
+routing case worth a sandbox of its own before the pathfinding is next touched.
 
 ## Decisions fine to leave open for now
 

@@ -31,7 +31,7 @@ export type WatchOptions = Readonly<{
   /** A backend name, or a backend itself (the browser playtest page's canvas). */
   backend: string | NamedBackend
   presentation: PresentationOptions
-  /** `grid --turn` — start playback seeked to this tick instead of tick 0. */
+  /** `grid --from-tick` — start playback seeked to this tick instead of tick 0. */
   startTick?: number
   stdout: TerminalOutput
   stdin: TerminalInput

@@ -42,8 +42,8 @@ If that is empty too, say so and stop; never start the next step to fill the tim
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) is the practices manual: the toolchain, the tests, how to see a
 change, how milestones and spikes work, the feedback loop with Mario, how a design change lands. The
-project's own words (Nexus Pulse, Battle Round, Skirmish, Story, mission, group, regroup, Experiment, starter map, bench roster, army file, testing save)
-are defined once, in the engine overview's [vocabulary](docs/system-design/grid-engine.md).
+project's own words (Nexus Pulse, Battle Round, Skirmish, Story, mission, group, regroup, Experiment, starter map, bench roster, army file, sandbox)
+are defined once, in the [glossary](docs/game-design/glossary.md).
 
 ## How we work
 
@@ -108,8 +108,8 @@ IDEA (a sketch). The ones every session needs:
 | `armies/`, `stories/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions `armies/citizen` and `armies/ravel`, and one army per Commander (`vasse`, `averno`, `dob`); each Commander's story and its missions in `stories/` (`stories/<id>/story.json`); the loader and the effects table. How to write one: `docs/system-design/army-authoring.md`. |
 | `src/abilities/` | What a unit does on its own (an aura, a bounty, loaded dice): one table of kinds the kernel calls at fixed moments. |
 | `src/duel/`, `src/skirmish/`, `bin/skirmish.ts`, `saves/` | The duel, two armies fought out a round at a time, script or model a side (`docs/system-design/duels.md`): the battle a Skirmish plays. A Skirmish's save file, the steps the screen and the command share to open and play one (`docs/system-design/skirmish-saves.md`), and example saves. Headless it is the `skirmish` command (`src/cli/skirmish.ts`, whose opening comment is its manual; its modules are `src/cli/skirmish-*.ts`); on screen `src/cli/skirmish-play.ts`, opened by `src/cli/skirmish-open.ts`. |
-| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: testing saves, duels, missions (`docs/system-design/measurement.md`), and trials, a testing save over many seeds as built and as variants change it (`grid <save> --seeds`). |
-| `src/content/`, `src/skirmish/opening/`, `skirmish-testing/` | Content definitions; the opening of a Battle Round written by hand and its variants; the testing saves by folder (rules, units, movement, the engage bench, showcases) with the trial files (`docs/system-design/testing-ground.md`). |
+| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: sandboxes, duels, missions (`docs/system-design/measurement.md`), and trials, a sandbox over many seeds as built and as variants change it (`grid <save> --seeds`). |
+| `src/content/`, `src/skirmish/opening/`, `sandboxes/` | Content definitions; the opening of a Battle Round written by hand and its variants; the sandboxes by folder (rules, units, movement, the engage bench, showcases) with the trial files (`docs/system-design/sandboxes.md`). |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, the regroup, missions and their trigger runner. |
 | `src/build/`, `src/title-menu/`, `src/settings/` | The Build Phase reducer and adapters, the title screen's list reducer and adapters, saved settings; `src/build/all-settings.ts` declares every setting and Experiment once. |

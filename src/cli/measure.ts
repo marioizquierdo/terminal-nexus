@@ -39,7 +39,7 @@ import {
   unitLines,
 } from "../measure/index.ts"
 import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
-import { loadTestingSave, testingSaveCatalog } from "../skirmish/testing-saves.ts"
+import { loadSandbox, sandboxCatalog } from "../skirmish/sandboxes.ts"
 
 const HELP = `measure: battles measured the same way before and after a rule changes (docs/system-design/measurement.md).
 
@@ -113,7 +113,7 @@ function seedsOf(text: string): number[] {
 function build(): string {
   try {
     const head = execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim()
-    const changed = execSync("git status --porcelain -- src bin armies stories skirmish-testing", { encoding: "utf8" }).trim() !== ""
+    const changed = execSync("git status --porcelain -- src bin armies stories sandboxes", { encoding: "utf8" }).trim() !== ""
     return changed ? `${head}+uncommitted` : head
   } catch {
     return "unknown"
@@ -241,7 +241,7 @@ export async function main(args: readonly string[]): Promise<number> {
     return finish(mergeMeasurements(played, spec, Math.min(jobs, played.length)), options["out"])
   }
   const saves = await Promise.all(
-    testingSaveCatalog().map((entry) => loadTestingSave(entry.path)),
+    sandboxCatalog().map((entry) => loadSandbox(entry.path)),
   )
   const started = performance.now()
   const result = runSpec(spec, { saves, levels: LEVELS, parts, progress: (line) => process.stderr.write(`${line}\n`) })

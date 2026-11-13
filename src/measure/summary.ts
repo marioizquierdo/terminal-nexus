@@ -1,4 +1,4 @@
-// A measurement in plain words (docs/system-design/measurement.md): what each testing save did, how the duels went —
+// A measurement in plain words (docs/system-design/measurement.md): what each sandbox did, how the duels went —
 // who beat whom, how evenly a mirror split between the two ends of the map, whether an early lucky hand or an early
 // lead predicted the winner, how long units stood blocked and how tight armies met — and how each campaign level
 // played by each plan. Lines of text, so the command prints them and a report quotes them.
@@ -111,7 +111,7 @@ export function summaryLines(measurement: Measurement): string[] {
   }
 
   if (measurement.saves.length > 0) {
-    lines.push("", "Testing saves (how often side A won, the ticks a run took, A's first strike, how long units stood blocked):")
+    lines.push("", "Sandboxes (how often side A won, the ticks a run took, A's first strike, how long units stood blocked):")
     const bySave = new Map<string, BattleRecord[]>()
     for (const run of measurement.saves) {
       const list = bySave.get(run.save)

@@ -46,7 +46,7 @@ import { openBattle } from "../src/skirmish/opening/index.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState, PlayerId, TargetArea } from "../src/state/types.ts"
-import { loadTestingSaveFile, testingSaveFiles } from "./helpers.ts"
+import { loadSandbox, sandboxFiles } from "./helpers.ts"
 
 const ONE: Footprint = [{ x: 0, y: 0 }]
 const ORIGIN: Coord = { x: 10, y: 10 }
@@ -507,8 +507,8 @@ test("a state measures the Grid by the one rule and carries no measure: one that
 })
 
 test("every battle on file keeps every unit's credit between none and its dearest step: no step is taken on credit it did not have", async () => {
-  for (const name of testingSaveFiles()) {
-    const opening = await loadTestingSaveFile(name)
+  for (const name of sandboxFiles()) {
+    const opening = await loadSandbox(name)
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     let state: MatchState = loaded.state
     const context = contextFor(state, loaded.registry, opening.pulseTicks)
@@ -623,7 +623,7 @@ test("the forecast's way ends touching what it goes for, straight above or below
 })
 
 test("the battle with the most rules in it resolves the same way on every run, and on Node and Bun alike", async () => {
-  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const resolve = (): readonly [string, string] => {
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
     const run = resolvePulse({ initialState: loaded.state, registry: loaded.registry, pulseTicks: opening.pulseTicks, seed: opening.seed })

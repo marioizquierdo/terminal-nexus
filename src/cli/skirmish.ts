@@ -61,7 +61,7 @@
 //
 // Exit codes: 0 done; 1 the command could not run (it says why); 2 the rules refused part of the build actions it
 // checked. Saving and loading happen only at a Build Phase, and a save it writes opens on the game's screen
-// (terminal-nexus --load <file>). A testing save (skirmish-testing/) plays its one Battle Round with --play-to and
+// (terminal-nexus --load <file>). A sandbox (sandboxes/) plays its one Battle Round with --play-to and
 // prints grid's report.
 //
 // The words for the battle and the slots are the game's too, read by one reader (src/skirmish/ask.ts): terminal-nexus
@@ -69,8 +69,8 @@
 // route skirmish?map=pocket&p2=script:agro.
 //
 // This comment is what `skirmish --help` prints. The rest of this file reads the options into a request; the work is
-// in its modules: ./skirmish-battle.ts (one battle), ./skirmish-seeds.ts (many), ./skirmish-testing.ts (a testing
-// save), on the steps the game's screen shares (src/skirmish/request.ts, play.ts).
+// in its modules: ./skirmish-battle.ts (one battle), ./skirmish-seeds.ts (many), ./skirmish-sandbox.ts (a
+// sandbox), on the steps the game's screen shares (src/skirmish/request.ts, play.ts).
 
 import { readFileSync } from "node:fs"
 import type { LogLevel } from "../report/index.ts"

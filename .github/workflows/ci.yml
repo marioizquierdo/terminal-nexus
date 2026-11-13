@@ -63,5 +63,5 @@ jobs:
       - name: Build the browser playtest page
         run: bun scripts/build-web.mjs
 
-      - name: Verify every testing save resolves identically
-        run: npm run verify-testing-saves
+      - name: Verify every sandbox resolves identically
+        run: npm run verify-sandboxes

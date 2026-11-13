@@ -76,7 +76,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // A flanker on the bench (`ContentDef.line`, movement.md, the march): a Ravel runner that goes beyond the enemy's
     // line, marching ahead of everyone's pace and choosing the shooters behind the front before it. No army fields one
     // yet — the runner itself is melee, since a whole army of runners as flankers left its front empty — so the
-    // march's tests and testing saves show the line with this.
+    // march's tests and sandboxes show the line with this.
     id: "unit.bench.flanker",
     short: "flanker",
     layer: "units",
@@ -278,7 +278,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     // and `AttackKind: "heal"` plus `applyHeal` (shared.ts) is `applyDamage`'s mirror: clamped at
     // `maxHp` instead of zero, reported as its own `heal.applied` event rather than a negative
     // `damage.applied`, because a heal is a different *meaning*, not just a different sign
-    // (pulse.md). Flying on purpose - Clash of Clans' own Healer is a flyer - so its own testing save
+    // (pulse.md). Flying on purpose - Clash of Clans' own Healer is a flyer - so its own sandbox
     // doubles as an integration check: the medic answers whether ally-targeting composes cleanly with
     // the ground-air asymmetry built for the skyraider, not just whether it works in isolation.
     id: "unit.bench.medic",
@@ -400,7 +400,7 @@ export const PROVING_GROUND_CONTENT: readonly ContentDef[] = [
     constructionRadius: 6,
   },
   {
-    // The Grid Nexus as it was before it fought back: a target and nothing more. The kernel's own testing saves that send
+    // The Grid Nexus as it was before it fought back: a target and nothing more. The kernel's own sandboxes that send
     // a lone trooper round a wall, or ask what ends a Pulse, are about routes and rules, not about a Nexus that shoots
     // the trooper dead on arrival, so they stand this one where the Citizen Nexus stood.
     id: "structure.bench.nexus",

@@ -8,7 +8,7 @@ export type GridSpec = Readonly<{ preset: GridPreset }> | Readonly<{ width: numb
  * What one placement symbol means, for one player.
  *
  * Deliberately an object with one required field rather than a bare content-id string: everything a
- * testing save will eventually want to vary per placed entity — starting damage now, and later whatever
+ * sandbox will eventually want to vary per placed entity — starting damage now, and later whatever
  * a Build Phase or a mid-match Pulse needs to carry forward — belongs here, and a bare string would
  * have to be widened into this shape the first time any of it arrived.
  */
@@ -16,7 +16,7 @@ export type PlacementEntry = Readonly<{
   content: string
   /**
    * Starting health, when this entity does not begin the Pulse intact. Defaults to the definition's
-   * `maxHp`. A testing save that opens mid-match — the third Pulse of a game, say — needs some units
+   * `maxHp`. A sandbox that opens mid-match — the third Pulse of a game, say — needs some units
    * already hurt, and the alternative is a fixture that has to spend ticks damaging them first.
    *
    * The symbol is what carries the difference: `t` and `T` can both be troopers and differ only in
@@ -78,7 +78,7 @@ export type BattleOpening = Readonly<{
   /**
    * A side's target (pulse.md): the rectangle its fighting units head for, engaging what comes within their
    * reach on the way and standing there when nothing does — a campaign level's target, written into a map
-   * so the rule has a testing save of its own. Absent for a side that engages the nearest enemy wherever it is,
+   * so the rule has a sandbox of its own. Absent for a side that engages the nearest enemy wherever it is,
    * as every side did before targets.
    */
   targets?: Readonly<Partial<Record<PlayerId, TargetArea>>>

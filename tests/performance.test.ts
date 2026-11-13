@@ -9,7 +9,7 @@ import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { buildTimeline } from "../src/cli/timeline.ts"
 import { openBattle } from "../src/skirmish/opening/index.ts"
 import { createView, frameToAnsi } from "../src/view/index.ts"
-import { loadTestingSaveFile } from "./helpers.ts"
+import { loadSandbox } from "./helpers.ts"
 
 const FRAMES_PER_SECOND = 30
 const SECONDS = 60
@@ -51,7 +51,7 @@ function assertSustained(inOrder: readonly number[]): void {
 }
 
 test("thirty frames a second for sixty seconds stays inside the budget", async () => {
-  const opening = await loadTestingSaveFile("citizen-mirror-skirmish.save.json")
+  const opening = await loadSandbox("citizen-mirror-skirmish.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -96,7 +96,7 @@ test("thirty frames a second for sixty seconds stays inside the budget", async (
 test("the worst case stays inside the budget too: two armies, 48x16, every effect on", async () => {
   // The first craft rule of docs/system-design/effects.md applies to the frame budget as much as to the art: measure the
   // busiest frame, not the calm one.
-  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(
     opening,
@@ -131,7 +131,7 @@ test("the worst case stays inside the budget too: two armies, 48x16, every effec
 test("the worst case with ground burning stays inside the budget: four patches alight under the fight", async () => {
   // Burning ground is drawn every frame it burns, a flicker worked out per tile (src/view/burning.ts): the busiest
   // battle again, with four wide patches burning round where the armies meet for the whole of it.
-  const opening = await loadTestingSaveFile("citizens-versus-ravels.save.json")
+  const opening = await loadSandbox("citizens-versus-ravels.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const resolved = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
   const middle = resolved.states[Math.floor(resolved.states.length / 6)]?.entities ?? []
@@ -169,7 +169,7 @@ test("the worst case with ground burning stays inside the budget: four patches a
 })
 
 test("resolving a whole Pulse costs less than a single frame's budget", async () => {
-  const opening = await loadTestingSaveFile("citizen-mirror-skirmish.save.json")
+  const opening = await loadSandbox("citizen-mirror-skirmish.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const started = performance.now()
   const timeline = buildTimeline(

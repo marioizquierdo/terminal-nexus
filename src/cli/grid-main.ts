@@ -4,10 +4,10 @@
 //   grid <map>                                    # watch — the ASCII view (the default)
 //   grid <map> --headless [--log-level info]      # resolve headlessly, print the levelled log
 //   grid <map> --verify [--runs 10]               # same hashes every run? (headless)
-//   grid <map> --turn 90                          # jump straight to a tick, in any of the above
+//   grid <map> --from-tick 90                          # jump straight to a tick, in any of the above
 //
-// `<map>` is a path to a `.save.json` file; the suffix is optional (`grid skirmish-testing/rules/melee-kill` and
-// `grid skirmish-testing/rules/melee-kill.save.json` are the same file). There is no subcommand: the first
+// `<map>` is a path to a `.save.json` file; the suffix is optional (`grid sandboxes/rules/melee-kill` and
+// `grid sandboxes/rules/melee-kill.save.json` are the same file). There is no subcommand: the first
 // positional argument is always the map, and the default action is `watch`. A bare `grid` with no
 // map is reserved for the map editor — not built yet, so it is a usage error today.
 //
@@ -22,8 +22,8 @@ import { buildLog, parseLevel, summarize, summaryJson } from "../report/index.ts
 import type { ReportInput } from "../report/index.ts"
 import { hashState } from "../state/serialize.ts"
 import { applyVariant, openBattle, mirrored, shuffled, sidesWithoutGoal } from "../skirmish/opening/index.ts"
-import { loadTestingSave } from "../skirmish/testing-saves.ts"
-import { playTestingRound } from "../skirmish/testing-round.ts"
+import { loadSandbox } from "../skirmish/sandboxes.ts"
+import { playSandboxRound } from "../skirmish/sandbox-round.ts"
 import type { MatchState } from "../state/types.ts"
 import type { BattleOpening } from "../skirmish/opening/index.ts"
 import type { ContentRegistry } from "../content/index.ts"
@@ -37,27 +37,27 @@ import { watchPulse } from "./watch.ts"
 
 const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay)
 
-  grid <save.save.json>         [--seed 0xABCD] [--ticks 120] [--turn 90] [--speed 1]
+  grid <save.save.json>         [--seed 0xABCD] [--ticks 120] [--from-tick 90] [--speed 1]
                                 [--colors monochrome|color256|truecolor]
                                 [--theme dark|light] [--glyphs ascii|unicode]
                                 [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
                                 [--backend auto|ansi|opentui] [--save-log <file>] [--log-level info]
-      the ASCII view (the default action) — watches the testing save's Battle Round resolve live
+      the ASCII view (the default action) — watches the sandbox's Battle Round resolve live
 
-  grid <save.save.json> --headless [--seed] [--ticks] [--turn 90] [--log-level info]
+  grid <save.save.json> --headless [--seed] [--ticks] [--from-tick 90] [--log-level info]
                                    [--events events.jsonl] [--json] [--save-log <file>]
       resolves without a terminal and prints the levelled log
 
-  grid <save.save.json> --verify [--runs 10] [--seed] [--ticks] [--turn 90]
+  grid <save.save.json> --verify [--runs 10] [--seed] [--ticks] [--from-tick 90]
       re-resolves 10 times (default) and fails if any run's hashes disagree — also headless
 
   grid <save.save.json> --seeds 1-12 [--swap] [--shuffle] [variant options] [trial options]
-      a trial: plays the testing save on every seed (with --swap mirrored too, its sides swapped; with --shuffle each
+      a trial: plays the sandbox on every seed (with --swap mirrored too, its sides swapped; with --shuffle each
       side's units shuffled within their formation line by the seed) as built and as the variant options make it, and
       prints the outcome, how the armies engaged, and with --profile what a tick cost, then the battles worth watching
 
   grid <trial.trial.json> [--seeds 1-12] [variant options] [trial options]
-      a trial file (skirmish-testing/trials/): testing saves, seeds, variants and what it expects; fails
+      a trial file (sandboxes/trials/): sandboxes, seeds, variants and what it expects; fails
       when an expectation does not hold. Variant options given here apply to every variant
 
 Trial options:
@@ -75,7 +75,7 @@ Variant options, for every action (watch, --headless, --verify and a trial):
   --target-a x,y,w,h              a side's target moved (--target-b)
   --swap, --shuffle               one battle mirrored with its sides swapped; its units shuffled by --seed
 
-<save> is a testing save (skirmish-testing/, a save whose start writes its Battle Round), with or without the
+<save> is a sandbox (sandboxes/, a save whose start writes its Battle Round), with or without the
 .save.json suffix, or its id (grid melee-kill). There is no subcommand. skirmish --load <save> --play-to next plays the same.
 
 Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
@@ -110,7 +110,7 @@ type RunOptions = Readonly<{ seed?: number; ticks?: number }>
  * played with. Warns, once, of a side that fights with nowhere to go.
  */
 async function openMap(path: string, args: ParsedArgs, seed?: number): Promise<{ opening: BattleOpening; registry: ContentRegistry }> {
-  const loaded = await loadTestingSave(path)
+  const loaded = await loadSandbox(path)
   const variant = variantFromArgs(args)
   const made = variant === null ? { opening: loaded, registry: FIXTURE_REGISTRY } : applyVariant(loaded, FIXTURE_REGISTRY, variant)
   let opening = made.opening
@@ -132,17 +132,17 @@ function optionsFrom(args: ParsedArgs): RunOptions {
   }
 }
 
-function turnFrom(args: ParsedArgs): number | undefined {
-  const value = args.options.get("turn")
-  return value === undefined ? undefined : parseInteger(value, "--turn")
+function tickFrom(args: ParsedArgs): number | undefined {
+  const value = args.options.get("from-tick")
+  return value === undefined ? undefined : parseInteger(value, "--from-tick")
 }
 
 /**
- * `--turn N`: drop every line before tick N so a headless report can be read starting from the
+ * `--from-tick N`: drop every line before tick N so a headless report can be read starting from the
  * moment in question, without scrolling past everything that came before it. Never drops an ERROR
  * (an invariant violation is never hidden) or the trailing `report` line (always worth seeing).
  */
-function fromTurn(lines: readonly string[], turn: number): string[] {
+function fromTick(lines: readonly string[], turn: number): string[] {
   return lines.filter((line) => {
     if (line.includes(" ERROR ") || line.includes(" WARN  report ")) return true
     const match = /^\[(\d+)\]/.exec(line)
@@ -155,11 +155,11 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
   const { opening, registry } = await openMap(path, args, overrides.seed)
   const seed = overrides.seed ?? opening.seed
   const pulseTicks = overrides.ticks ?? opening.pulseTicks
-  const { run, report: input } = playTestingRound(opening, { registry, seed, ticks: pulseTicks })
+  const { run, report: input } = playSandboxRound(opening, { registry, seed, ticks: pulseTicks })
 
   const level = parseLevel(args.options.get("log-level") ?? "warn")
-  const turn = turnFrom(args)
-  const lines = turn === undefined ? buildLog(input, level) : fromTurn(buildLog(input, level), turn)
+  const turn = tickFrom(args)
+  const lines = turn === undefined ? buildLog(input, level) : fromTick(buildLog(input, level), turn)
 
   const savePath = args.options.get("save-log")
   if (savePath !== undefined) await writeFile(savePath, `${lines.join("\n")}\n`, "utf8")
@@ -185,7 +185,7 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
   }
 
   // Any ERROR fails the run. Checked against the full log, not
-  // the --turn-filtered view, but ERROR lines survive that filter unconditionally anyway.
+  // the --from-tick-filtered view, but ERROR lines survive that filter unconditionally anyway.
   return lines.some((line) => line.includes(" ERROR ")) ? 1 : 0
 }
 
@@ -197,7 +197,7 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   const seed = overrides.seed ?? opening.seed
   const pulseTicks = overrides.ticks ?? opening.pulseTicks
   const runs = parseInteger(args.options.get("runs") ?? String(DEFAULT_VERIFY_RUNS), "--runs")
-  const turn = turnFrom(args)
+  const turn = tickFrom(args)
 
   let stateHash: string | null = null
   let eventsHash: string | null = null
@@ -205,9 +205,9 @@ async function commandVerify(path: string, args: ParsedArgs): Promise<number> {
   let snapshotHash: string | null = null
 
   for (let index = 0; index < runs; index += 1) {
-    // The state at `--turn`, caught as the run passes it: none when the battle ends first.
+    // The state at `--from-tick`, caught as the run passes it: none when the battle ends first.
     let snapshot: MatchState | null = null
-    const { run, report } = playTestingRound(opening, { registry, seed, ticks: pulseTicks, watch: (state) => (snapshot ??= state.tick === turn ? state : null) })
+    const { run, report } = playSandboxRound(opening, { registry, seed, ticks: pulseTicks, watch: (state) => (snapshot ??= state.tick === turn ? state : null) })
     const caught = snapshot as MatchState | null
     const snapshotAt = caught === null ? null : hashState(caught)
 
@@ -290,7 +290,7 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
         : parseInteger(cosmeticSeed, "--cosmetic-seed"),
     glyphPack: parseGlyphPack(args.options.get("glyphs") ?? "ascii"),
   }
-  const turn = turnFrom(args)
+  const turn = tickFrom(args)
   return watchPulse({
     timeline,
     colors: parseColorDepth(args.options.get("colors") ?? detectColorDepth()),
@@ -310,7 +310,7 @@ const GRID_FLAGS: ReadonlySet<string> = new Set(["help", "headless", "verify", "
 const GRID_OPTIONS: ReadonlySet<string> = new Set([
   "seed",
   "ticks",
-  "turn",
+  "from-tick",
   "log-level",
   "save-log",
   "events",
@@ -366,7 +366,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   const trial = trialPath(path)
   if (trial !== null) return runTrial(await loadTrialFile(trial), args)
   if (args.options.has("seeds")) {
-    const opening = await loadTestingSave(path)
+    const opening = await loadSandbox(path)
     return runTrial(adHocTrial(opening, args), args, opening)
   }
   if (args.flags.has("verify")) return commandVerify(path, args)

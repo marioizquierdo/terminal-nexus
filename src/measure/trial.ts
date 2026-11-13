@@ -1,4 +1,4 @@
-// A trial (docs/system-design/testing-ground.md): the same maps played over many seeds, as they are and as variants
+// A trial (docs/system-design/sandboxes.md): the same maps played over many seeds, as they are and as variants
 // change them (another unit, another army, a tuned number, other ground), every battle recorded as every battle is
 // (`battle.ts`). Optionally each seed is also played with the map mirrored and the sides swapped, so a result is the
 // army's and not its end's. What the battles say is `trial-cells.ts`'s; how it is printed, `trial-summary.ts`'s.

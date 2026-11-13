@@ -10,7 +10,7 @@ Where each piece is, so this page stays the procedure:
 - **The command's manual** is the comment [`src/cli/skirmish.ts`](../../../src/cli/skirmish.ts) opens with
   (`npm run skirmish -- --help`): every option, what it refuses, the exit codes.
 - **How each kind of test uses it**, with the commands and the task to give a model agent:
-  [`testing-ground.md`](../../../docs/system-design/testing-ground.md), testing through Skirmishes.
+  [`sandboxes.md`](../../../docs/system-design/sandboxes.md), testing through Skirmishes.
 - **The rules, the brief, the build actions, formations and the biases**: [`duels.md`](../../../docs/system-design/duels.md).
 - **The save file**: [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md).
 

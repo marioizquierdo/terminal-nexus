@@ -255,7 +255,7 @@ that did not earn its place (marching on past the fight) was removed instead of 
 > related to testing scenarios, and remove legacy scenarios that don't add much value (e.g having no target, all game
 > modes should have a target). I'm curious to see how you come out with better ways to validate changes in the gameplay
 
-**Built** ([the report](../reports/2026-10-30-testing-ground.md), [the spec](../../system-design/testing-ground.md)):
+**Built** ([the report](../reports/2026-10-30-testing-ground.md), [the spec](../../system-design/sandboxes.md)):
 the maps in folders by purpose, five retired, every side given a goal and a test that holds it; trials in `grid` over
 seeds from both ends, with variants for another unit, army, number, ground or target, trial files with expectations and
 a round robin of armies, and a before-and-after comparison. Replicated: the wrong army for the narrow pass, flyers

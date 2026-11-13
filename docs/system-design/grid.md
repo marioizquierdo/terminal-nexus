@@ -12,7 +12,7 @@ the `nexus` field).
 ## 2. Size and shape
 
 A Grid may be any integer size. Content and tools standardise on a small matrix of presets so that
-maps, testing saves and compositions can be reasoned about without measuring each one. The matrix is
+maps, sandboxes and compositions can be reasoned about without measuring each one. The matrix is
 GUIDANCE: add, drop or rename a preset when content shows a better set.
 
 **Shape** is the ratio of width to height in tiles. A tile is twice as tall as it is wide (section 7), so on screen,
@@ -43,13 +43,13 @@ Which gives twelve presets:
 | `large` | 20 × 20 | 40 × 20 | 60 × 20 |
 | `extra-large` | 24 × 24 | 48 × 24 | 72 × 24 |
 
-**RULE — `src/skirmish/opening/presets.ts`, `tests/testing-saves.test.ts`: the default preset is `medium-extra-wide`
-(48 × 16)** and the one every early testing save uses. It is locked because the floor is derived from it: a
+**RULE — `src/skirmish/opening/presets.ts`, `tests/sandboxes.test.ts`: the default preset is `medium-extra-wide`
+(48 × 16)** and the one every early sandbox uses. It is locked because the floor is derived from it: a
 tile is one column ([`presentation.md`](presentation.md)), so 48 tiles + 2 border + a 30-column side panel =
 **exactly 80 columns**, and 16 rows of Grid within the 8-row chrome budget below = **exactly 24 rows**. Change
 48 × 16 and the 80 × 24 floor stops falling out of one number.
 
-A preset is a convenience, not a constraint. A testing save may declare explicit dimensions.
+A preset is a convenience, not a constraint. A sandbox may declare explicit dimensions.
 
 **The vertical chrome budget in the Build Phase is 6 rows**: 2 border, a 2-row header (the top bar's
 own line, and the rule that closes the Grid's top) and a 2-row footer (the rule that closes the Grid's
@@ -283,9 +283,9 @@ or thousands of units is in [`runtime.md`](runtime.md).
 
 ## 6. Placement, footprint, anchor and facing
 
-**Coordinates** (RULE — `tests/testing-saves.test.ts`, `src/grid/coords.ts`). `(0,0)` is the Grid's
+**Coordinates** (RULE — `tests/sandboxes.test.ts`, `src/grid/coords.ts`). `(0,0)` is the Grid's
 north-west tile; `x` grows **east**, `y` grows **south**. The direction `n` points toward `y - 1`. A
-testing save's terrain and placement rows are listed north to south, so the file reads the way the
+sandbox's terrain and placement rows are listed north to south, so the file reads the way the
 Grid draws. Every module (kernel, loader, compositor) uses this one convention; it is the cheapest
 possible source of mirror-image bugs.
 

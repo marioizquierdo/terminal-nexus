@@ -135,7 +135,7 @@ others are removed.
 A Skirmish is saved and loaded at the opening of a Build Phase, from the game menu and from the command line
 ([`skirmish-saves.md`](../system-design/skirmish-saves.md) is the format). A save file is a battle anyone can pick up:
 a person carries on from it, an agent plays it on headless with any slot given to a script, and every demo of a rule, a
-Commander or a starting position is one, the engine's rule maps included (the testing saves, `skirmish-testing/`, each
+Commander or a starting position is one, the engine's rule maps included (the sandboxes, `sandboxes/`, each
 opening on a Battle Round written by hand). A save checked in is already a preset.
 
 ### 3.4 One battle, on screen or not
@@ -145,7 +145,7 @@ the same save, seed and plans give the same battle, hash for hash, on Node and B
 screen or the `skirmish` command plays it headless. That is what makes it the place every change is tried: headless
 script against script, an agent planning round by round, the playtest pressing keys, an agent's player's diary
 (Milestone 20), then a person, with `!` saving the moment as a note that opens again where it was. How a test does
-each is [`testing-ground.md`](../system-design/testing-ground.md), testing through Skirmishes.
+each is [`sandboxes.md`](../system-design/sandboxes.md), testing through Skirmishes.
 
 A Skirmish is the default place to see a change: the browser page and the playtest script open on a save, and the
 Build Phase pictures of a battle start from one. PERIMETER is opened only for a change about missions.

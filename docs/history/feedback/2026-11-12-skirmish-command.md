@@ -87,9 +87,9 @@ Script profiles are `players/scripts/*.json` (agro, defensive, steady, agro-rich
 
 ### F261 — testing scenarios become testing saves, and the word "scenario" goes
 
-> And when moving the previous scenarios into the equivalent skirmish save files, keep the ones that offer valid testing scenarios and feel free to remove those that don't add much value anymore or are too complicated to port. Even though they are save files, make sure to keep them at a separate folder called something like "skirmish-testing". Then cleanup, remove the term "scenario" from the files, docs and code (but feel free to name some save files scenario-1, etc. that is fine, we just need to cleanup the concept).
+> And when moving the previous scenarios into the equivalent skirmish save files, keep the ones that offer valid testing scenarios and feel free to remove those that don't add much value anymore or are too complicated to port. Even though they are save files, make sure to keep them at a separate folder called something like "sandboxes". Then cleanup, remove the term "scenario" from the files, docs and code (but feel free to name some save files scenario-1, etc. that is fine, we just need to cleanup the concept).
 
-**Built.** 62 of the 63 rule, unit, movement, engage and showcase maps are testing saves in `skirmish-testing/`, every
+**Built.** 62 of the 63 rule, unit, movement, engage and showcase maps are testing saves in `sandboxes/`, every
 kernel hash unchanged; `colossus-two-tile-gap` was dropped as a repeat of `hauler-two-tile-gap`, with its test. The
 duel maps are files in `maps/`. "Scenario" is gone from the code and the documents but for the history and the two
 places that still read an older build's files for `--against`.

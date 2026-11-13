@@ -90,7 +90,7 @@ npm install     # only needed once, and only for typechecking and the OpenTUI ba
 npm run grid -- citizens-versus-ravels --glyphs unicode --colors truecolor
 ```
 
-`<save>` is a testing save from `skirmish-testing/`: its path, the `.save.json` suffix optional, or only its id; there
+`<save>` is a sandbox from `sandboxes/`: its path, the `.save.json` suffix optional, or only its id; there
 is no subcommand: the first argument is always the save, and the default action is `watch`, the ASCII view.
 
 | While it runs |                                            |
@@ -111,17 +111,17 @@ npm run grid -- citizens-versus-ravels --colors monochrome   # can you still fol
 npm run grid -- citizen-mirror-skirmish                          # the baseline mirror match
 ```
 
-`npm run testing-saves` lists every testing save. `watch` takes the same options on any of them:
+`npm run sandboxes` lists every sandbox. `watch` takes the same options on any of them:
 
 ```bash
 npm run grid -- <save> \
   --colors monochrome|color256|truecolor \
   --glyphs ascii|unicode \
-  --speed 2 --no-effects --reduced-motion --seed 0x1234 --turn 90
+  --speed 2 --no-effects --reduced-motion --seed 0x1234 --from-tick 90
 ```
 
 **If the screen says `TERMINAL TOO SMALL`,** it needs 80 x 24 and your window is smaller — resize and
-it resumes from the same instant. That is the resize screen, not a crash. `--turn 90` seeks straight to
+it resumes from the same instant. That is the resize screen, not a crash. `--from-tick 90` seeks straight to
 tick 90 instead of playing from the start, in watch, headless and verify alike.
 
 ### The game
@@ -148,7 +148,7 @@ log — one stream, closed by a `report` line carrying the outcome, losses, and 
 ./bin/grid.ts citizens-versus-ravels --headless                  # WARN by default
 ./bin/grid.ts ravel-cascade --headless | grep blast              # just the detonations
 ./bin/grid.ts citizens-versus-ravels --headless --log-level info # the story, not just anomalies
-./bin/grid.ts citizens-versus-ravels --headless --turn 90        # jump straight to tick 90
+./bin/grid.ts citizens-versus-ravels --headless --from-tick 90        # jump straight to tick 90
 ```
 
 `--verify` is the same resolution, re-run 10 times by default, and fails if any run's hashes
@@ -202,7 +202,7 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for the toolchain, testing and how work is 
 │                          skirmish, state, events, grid, report, log, terminal, view, build (the Build
 │                          Phase), title-menu, cli, settings, web (the browser playtest page)
 ├── tests/                 The test suite; Node's runner and Bun both run it
-├── skirmish-testing/      Testing saves: Skirmish saves whose first Battle Round is written by hand, one per rule
+├── sandboxes/      Sandboxes: Skirmish saves whose first Battle Round is written by hand, one per rule
 ├── saves/                 Example Skirmish saves and the save format's JSON Schema
 ├── scripts/               Repository validation and development tooling (its README lists them)
 ├── bin/                   grid.ts and terminal-nexus.ts, the two entry points

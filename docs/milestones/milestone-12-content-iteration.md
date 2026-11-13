@@ -1,6 +1,7 @@
 # Milestone 12 — Content and Balance Iteration
 
-**Status:** PLANNED
+**Status:** CURRENT
+**Current step:** none open — 12A waits on Mario's word (Milestone 17 closed on 2026-11-13).
 **Depends on:** Milestone 17 (Skirmish, to play new content in); this milestone repeats rather than closing once
 
 Content comes after the experience, on purpose. Mario's brief: "Once we create some vocabulary and
@@ -13,7 +14,7 @@ get authored, one card at a time, each judged in a Skirmish. A mission teaches i
 
 Since 2026-11-11 this is how the game grows ([the owner's words](../history/feedback/2026-11-11-game-modes.md)): "keep
 adding a few units, keep polishing how to automatically test units, formations, balance adjustments". Each pass also
-improves the testing ground, so the next unit is cheaper to judge ([`testing-ground.md`](../system-design/testing-ground.md)).
+improves the sandboxes and trials, so the next unit is cheaper to judge ([`sandboxes.md`](../system-design/sandboxes.md)).
 
 **What the first pass starts from** (moved here from the "Waiting on Mario" list on 2026-11-12):
 
@@ -30,7 +31,7 @@ improves the testing ground, so the next unit is cheaper to judge ([`testing-gro
 **Two kinds of pass** (2026-11-12, [the review](../history/feedback/2026-11-12-skirmish-saves.md)):
 
 - **The first pass, before friends**, beside the Skirmish milestone: three or four units that counter each other (what
-  beats a swarm, what beats a wall, what beats air), each measured by duels and the testing ground, so a Skirmish has
+  beats a swarm, what beats a wall, what beats air), each measured by duels and sandboxes, so a Skirmish has
   something to weigh beyond "buy what you can afford". It needs no playtime until Milestone 20 plays it.
 - **Later passes, after friends**, chosen by their notes: the full rosters below, tagging and the pick-rate report, and
   more Nexus powers for each Commander. Vasse's designed powers come from the retired Nexus Pulse milestone
@@ -84,7 +85,7 @@ A loop, not a line.
 
 ## How it is judged
 
-Automated: every card has a named testing save exercising its rule, determinism holds across runs and
+Automated: every card has a named sandbox exercising its rule, determinism holds across runs and
 runtimes after every content change, and the step 12B report regenerates from logs alone.
 
 Human: a player who has never read the lore can state each faction's philosophy from a Skirmish. This is
@@ -93,13 +94,21 @@ rather than bench fixtures.
 
 ## Done when, for each pass
 
-- [ ] The pass's cards are authored with tags and testing saves, and each has a line in the pull request.
+- [ ] The pass's cards are authored with tags and sandboxes, and each has a line in the pull request.
 - [ ] The step 12B numbers are in the pull request, with the interpretation kept separate from them.
 - [ ] The Commander Army and game-modes designs are updated with what the pass learned.
 - [ ] `./scripts/check-repository.sh` passes.
 
 ## Found while testing the Skirmish milestone (2026-11-12)
 
-- Many testing saves in `skirmish-testing/` field content no army uses (workers, haulers, the colossus, sentinel,
-  corsair, leviathan, bench units). Once this milestone settles the roster, prune the testing saves that only exercise
+- Many sandboxes in `sandboxes/` field content no army uses (workers, haulers, the colossus, sentinel,
+  corsair, leviathan, bench units). Once this milestone settles the roster, prune the sandboxes that only exercise
   content no Commander fields, keeping the ones that pin a kernel rule.
+
+## Found by a player's eye (2026-11-13)
+
+From [an agent's play through the command](../history/reports/2026-11-13-a-players-eye.md): the hand thins to two
+commons by round 5 and Reserve Callup can be kept again and again, so the Nexus Pulse stops mattering after round 4;
+the Hatchery (3 strength a credit) is never worth a Barracks (28); about a hundred troopers a side by round 8 turn a
+report into "lost 83". Strength a credit ignores area damage, so the brief undersells the Battery and leaves out the
+bombers.

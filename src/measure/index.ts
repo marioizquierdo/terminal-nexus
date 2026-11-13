@@ -50,13 +50,13 @@ export function runSpec(spec: MeasureSpec, inputs: SpecInputs): SpecResult {
   if (inputs.parts.has("saves")) {
     const maps = inputs.saves.filter((opening) => spec.saves === "all" || opening.id.startsWith("route-"))
     for (const opening of maps) {
-      // A route save is played on every seed; every other testing save on its own seed, the one its tests use.
+      // A route save is played on every seed; every other sandbox on its own seed, the one its tests use.
       const seeds = opening.id.startsWith("route-") ? spec.seeds : [opening.seed]
       for (const seed of seeds) {
         const run = measureSave(opening, seed)
         ticks += run.battle.ticks
         saves.push(run)
-        say(`testing save ${opening.id} seed ${seed}: ${run.battle.winner ?? "draw"} at ${run.battle.ticks}`)
+        say(`sandbox ${opening.id} seed ${seed}: ${run.battle.winner ?? "draw"} at ${run.battle.ticks}`)
       }
     }
   }

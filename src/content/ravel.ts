@@ -154,7 +154,7 @@ export const RAVEL_CONTENT: readonly ContentDef[] = [
     // already ignores terrain for anything on this layer (maskForActor, shared.ts) and the loader
     // already exempts it from the on-rock-at-spawn check (skirmish/opening/open.ts), so a walled rock room
     // no ground unit could ever leave is just a tile to this thing - see
-    // `skirmish-testing/rules/air-crossing.save.json`. Small, fragile, and it still detonates on death: the
+    // `sandboxes/rules/air-crossing.save.json`. Small, fragile, and it still detonates on death: the
     // doctrine does not change because the wreckage falls from higher up.
     id: "unit.ravel.buzzard",
     short: "buzzard",

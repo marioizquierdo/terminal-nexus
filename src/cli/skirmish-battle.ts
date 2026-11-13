@@ -27,7 +27,7 @@ import { hashState } from "../state/serialize.ts"
 import { playStrategies } from "./play-strategies.ts"
 import type { SkirmishRequest } from "./skirmish.ts"
 import { readGameFile } from "./skirmish-files.ts"
-import { playTestingSave } from "./skirmish-testing.ts"
+import { playSandbox } from "./skirmish-sandbox.ts"
 
 /** How many rounds `--play-to end` plays at most, unless `--rounds` says otherwise. */
 export const UNTIL_END_ROUNDS = 100
@@ -183,13 +183,13 @@ function atBuildPhase(setup: SaveSetup, state: DuelState, seated: Seated, first:
 /**
  * **One battle**: opened, played to the round asked for, then, at the Build Phase it stops at, each player's build
  * actions checked or brief printed (for a battle over, every round's report). Saved when asked: build actions handed
- * in without a round played are kept as the save's draft. A testing save plays its one Battle Round instead
- * (`./skirmish-testing.ts`). Returns whether the rules refused part of the build actions checked.
+ * in without a round played are kept as the save's draft. A sandbox plays its one Battle Round instead
+ * (`./skirmish-sandbox.ts`). Returns whether the rules refused part of the build actions checked.
  */
 export function playBattle(request: SkirmishRequest, profiles: Profiles, write: Write): Readonly<{ refused: boolean }> {
   const run = (): Readonly<{ refused: boolean }> => {
     const save = startingSave(request, profiles)
-    if (save.start !== undefined) return playTestingSave(save, request, write)
+    if (save.start !== undefined) return playSandbox(save, request, write)
     const { setup, state, seated } = openSave(save, request, profiles, write)
     write(`${battleLine(setup)}: ${standing(setup, state)}`)
     const first = state.round

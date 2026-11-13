@@ -21,7 +21,7 @@ export type PlaybackOptions = Readonly<{
   /** Milliseconds between frames — one step of `step-frame`. */
   frameDurationMs: number
   speed?: number
-  /** Presentation time to start at — `grid --turn`, seeking straight to a tick. Defaults to 0. */
+  /** Presentation time to start at — `grid --from-tick`, seeking straight to a tick. Defaults to 0. */
   startTimeMs?: number
 }>
 

@@ -1,4 +1,4 @@
-// The kernel and content a trial is played by, loaded from a build's folder (docs/system-design/testing-ground.md,
+// The kernel and content a trial is played by, loaded from a build's folder (docs/system-design/sandboxes.md,
 // comparing two builds): this repository's own, or another commit's checked out beside it (`grid <trial> --against
 // <ref>`). Only the kernel, the content and the Battle Round's opening come from that folder; the trial, its variants and
 // the battle's record are this build's, so both sides of a comparison are asked the same question the same way.
@@ -15,7 +15,7 @@ export type LoadedEngine = Readonly<{ engine: Engine; routes?: Constructor; fiel
 /** This repository's root: what `--against` compares with. */
 export const OWN_ROOT = resolve(import.meta.dirname, "../..")
 
-/** The opening of a Battle Round in a build's folder. A build from before the testing saves kept the same function,
+/** The opening of a Battle Round in a build's folder. A build from before the sandboxes kept the same function,
  *  with the same shape and arguments, under its old file and name, so a comparison with an older commit still opens. */
 async function openingIn(at: (path: string) => string): Promise<Engine["openBattle"]> {
   try {

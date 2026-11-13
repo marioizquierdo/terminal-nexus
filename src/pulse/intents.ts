@@ -155,7 +155,7 @@ export function intents(context: TickContext): Intent[] {
       // goal" tile can itself be perfectly clear while a *different* tile in its footprint is what's
       // actually occupied - checking only the anchor then reports "edge" (blockReasonFor's fallback
       // for "nothing was wrong with the one tile I looked at"), which is simply false. A three-tile
-      // raider crowded by an ally's tail in a populous testing save is what surfaced this.
+      // raider crowded by an ally's tail in a populous sandbox is what surfaced this.
       const blocker = noRoute ? null : mask.footprintBlockerAt(desired, actor.definition.footprint)
       held.push({ plan, desired, cost, blocker, noRoute })
       continue

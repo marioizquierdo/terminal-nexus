@@ -288,7 +288,7 @@ test("the game's playtest walks from the title menu through New game into the Bu
 
 test("Save game never offers back a save that ships with the game: a battle opened from saves/ gets a new name", () => {
   assert.equal(isShippedSave("saves/crossing-new.save.json"), true)
-  assert.equal(isShippedSave("skirmish-testing/rules/melee-kill.save.json"), true)
+  assert.equal(isShippedSave("sandboxes/rules/melee-kill.save.json"), true)
   assert.equal(isShippedSave("/home/me/.terminal-nexus/saves/mine.save.json"), false)
   assert.equal(isShippedSave(".playtest/saves/mine.save.json"), false)
   assert.equal(isShippedSave("tmp/mine.save.json"), false)

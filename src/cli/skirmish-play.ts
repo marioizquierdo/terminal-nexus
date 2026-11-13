@@ -151,9 +151,9 @@ function carriedOver(context: Partial<BuildContext>): Partial<BuildContext> {
   }
 }
 
-/** Whether a file is one of the example saves that ship with the game (`saves/`, or `skirmish-testing/`): never offered
+/** Whether a file is one of the example saves that ship with the game (`saves/`, or `sandboxes/`): never offered
  *  back by Save game, which would write over a file in the repository. */
-export const isShippedSave = (file: string): boolean => /(^|\/)(saves|skirmish-testing)\/[^/]+(\/[^/]+)?\.save\.json$/u.test(file) && !file.includes(".terminal-nexus/") && !file.includes(".playtest/")
+export const isShippedSave = (file: string): boolean => /(^|\/)(saves|sandboxes)\/[^/]+(\/[^/]+)?\.save\.json$/u.test(file) && !file.includes(".terminal-nexus/") && !file.includes(".playtest/")
 
 /** The name Save game offers for a round: the file it was loaded from or last saved to (but never a shipped example),
  *  or a new one by its setup. */

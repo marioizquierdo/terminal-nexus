@@ -7,7 +7,7 @@ words](../feedback/2026-11-11-game-modes.md), [why](../reports/2026-11-11-single
 
 **How it closed.** Steps 11A to 11E were built and merged, and 11G's prototype with them. The banner (11G) and the
 stance (11F) moved to the Skirmish milestone as its first steps, because single battles need them most
-([`milestone-17-skirmish.md`](../../milestones/milestone-17-skirmish.md)). The route, the opponents, the run shell and
+([`milestone-17-skirmish.md`](milestone-17-skirmish.md)). The route, the opponents, the run shell and
 playing a run (11H to 11K) were retired with runs; their design is [kept in history](../challenge-runs-design.md). The
 run's code plays until the Skirmish milestone retires it.
 
@@ -145,7 +145,7 @@ so how they move, sort themselves and choose what to fight is what a player read
 - [x] **The testing ground** (the owner, 2026-10-30): the maps in folders by purpose, five legacy maps retired, every
       side that fights given a goal; trials in `grid` over seeds from both ends with variants, trial files with what they
       expect, and a comparison before and after a change
-      ([the testing ground](../../system-design/testing-ground.md)). The engage maps rebuilt symmetric; their test is the
+      ([the testing ground](../../system-design/sandboxes.md)). The engage maps rebuilt symmetric; their test is the
       bench's trial. Then the tools themselves: idle units, target switches and stall queues in every record, what a
       tick costs (`--profile`), another build beside this one (`--against`), trials across processes, the battles worth
       watching, and the spec as a playbook for each kind of change.

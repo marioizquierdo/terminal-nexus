@@ -42,7 +42,7 @@ export function buildTimeline(
 /**
  * A timeline from a Pulse already resolved elsewhere — a mission's, by the trigger runner, which steps
  * the same kernel and keeps the same states and events (`src/match/mission.ts`). Hashed the same way, so a
- * mission's Pulse and a testing save's are compared by the same two numbers.
+ * mission's Pulse and a sandbox's are compared by the same two numbers.
  */
 export function timelineOf(
   opening: Pick<BattleOpening, "id" | "name">,

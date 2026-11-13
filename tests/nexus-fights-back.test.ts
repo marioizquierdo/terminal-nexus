@@ -5,7 +5,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
-import { playTestingSave } from "./helpers.ts"
+import { playSandbox } from "./helpers.ts"
 
 test("the Citizen and the Ravel Nexus each shoot alike: enough to drop a trooper or a runner in one hit, at units only", () => {
   const citizen = FIXTURE_REGISTRY.get("structure.citizen.nexus")
@@ -18,7 +18,7 @@ test("the Citizen and the Ravel Nexus each shoot alike: enough to drop a trooper
   assert.ok(citizen.attack.damage < FIXTURE_REGISTRY.get("unit.ravel.raider").maxHp, "a raider falls to one shot: the Nexus is a stop, not a wall")
   assert.equal(citizen.attack.range, FIXTURE_REGISTRY.get("unit.citizen.marksman").attack?.range)
   assert.ok(!(citizen.targetLayers ?? []).includes("obstacles"), "it may shoot a building")
-  // The bench's own Grid Nexus, the testing saves' target, stays as the Nexus was: it never shoots and never mends.
+  // The bench's own Grid Nexus, the sandboxes' target, stays as the Nexus was: it never shoots and never mends.
   const bench = FIXTURE_REGISTRY.get("structure.bench.nexus")
   assert.equal(bench.nexus, true)
   assert.equal(bench.attack, undefined)
@@ -26,7 +26,7 @@ test("the Citizen and the Ravel Nexus each shoot alike: enough to drop a trooper
 })
 
 test("nexus-fights-back: a trooper walking at the Nexus falls to its one shot, and the Den in its reach is never shot", async () => {
-  const { run: battle } = await playTestingSave("nexus-fights-back.save.json")
+  const { run: battle } = await playSandbox("nexus-fights-back.save.json")
   const shots = battle.events.filter((event) => event.kind === "damage.applied" && event.source === "A:nexus#1")
   assert.equal(shots.length, 1, "it took more than one shot")
   assert.equal(shots[0]?.kind === "damage.applied" ? shots[0].entity : undefined, "B:trooper#2")
