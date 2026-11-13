@@ -60,7 +60,8 @@ are defined once, in the [glossary](docs/game-design/glossary.md).
   start the game with it (`--settings`) and settle each Experiment it answers.
 - **One word, one thing: check the [glossary](docs/game-design/glossary.md) before naming anything** — a
   screen, a setting, a flag, a field, a file, a heading, a line a player reads. Use the word it gives; if the
-  word is missing, add it there in the same pull request; never bring back a word from its "Words we stopped using".
+  word is missing and is a general term used across the game (not one module's detail), add it there in the same pull
+  request; never bring back a word from its "Words we stopped using".
 - **Small, reviewable changes**, each with its tests, green on both runtimes (`npm test`,
   `npm run test:bun`, `npm run typecheck`), and the validator passing.
 - **See it before you claim it.** The playtest script presses keys without a terminal and returns
