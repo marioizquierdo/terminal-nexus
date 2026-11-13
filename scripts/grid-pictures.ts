@@ -14,7 +14,8 @@ import { ENTITY_LAYERS, OccupancyIndex, gridDistance, maskFrom, rowsWithin, tile
 import type { Coord, Footprint, GridTerrain } from "../src/grid/index.ts"
 import { nearestFit } from "../src/match/index.ts"
 import { contextFor, stepTick } from "../src/pulse/index.ts"
-import { TICKS_PER_SECOND, openBattle } from "../src/skirmish/opening/index.ts"
+import { openBattle } from "../src/skirmish/opening/index.ts"
+import { TICKS_PER_SECOND } from "../src/state/types.ts"
 import type { MatchState } from "../src/state/types.ts"
 
 /** The design document the pictures are in, from the repository's root. */

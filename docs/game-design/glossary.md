@@ -41,8 +41,8 @@ and planning the game) and [the engine and the code](#the-engine-and-the-code).
 - **battle reading** — what a battle says, read in one place (`src/battle/reading/`) for the brief, the round's report
   and the scripts: the score; each side's army (composition and army value at the round's start and end, its losses);
   its buildings (standing, damaged, lost and what destroyed each); the advance; the nearest an enemy came to each Nexus;
-  damage taken by source; and the engagements. Each reading is **public** (what the Battle Round shows both sides) or
-  **private** (the Build Phase's credits, hand and build actions) ([`battles.md`](../system-design/battles.md)).
+  damage taken by source; and the engagements. Every reading is **public** (what the Battle Round shows both sides); the Build Phase's
+  credits, hand and build actions are private, and no reading touches them ([`battles.md`](../system-design/battles.md)).
 - **Battle Round** — the fixed-tick, deterministic battle that ends each round and plays both sides' build actions out
   in ASCII; the player's word everywhere. The code calls it the Pulse (`src/pulse/`).
 - **build actions** — a side's answer for one round: the power it keeps, what it builds and where, its building
@@ -320,7 +320,7 @@ the words it was written with. A line that quotes one on purpose ends with `<!--
 
 | Old word | Say instead | Why |
 | --- | --- | --- |
-| duel, `src/duel/`, `duels.md`, the `duel` command | battle, `src/battle/`, `battles.md`, the `skirmish` command | One word for the battle a Skirmish plays. The measurement keeps *duels* as the name of its part that plays scripted battles over seeds (`measure run --parts duels`) |
+| duel, `src/duel/`, `duels.md`, the `duel` command | battle, `src/battle/`, `battles.md`, the `skirmish` command | One word for the battle a Skirmish plays. The measurement keeps *duels* as the name of its part that plays scripted battles over seeds (`measure run --parts duels`) | <!-- stale-ok -->
 | `reader` (the script) | `reactive` | It reacts to the battle reading; *reader* sounded like the reading itself |
 | front (as a battle reading) | advance | How far each army moved toward the enemy Nexus; the kept front is the regroup's ground |
 | turn, `--turn` | round (a player's), tick (the engine's), `--from-tick` | Both slots answer at once; there are no turns | <!-- stale-ok -->

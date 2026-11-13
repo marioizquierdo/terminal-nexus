@@ -19,7 +19,7 @@ import type { Force, MissionPulse } from "../src/match/index.ts"
 import { PERIMETER, PERIMETER_LEVEL } from "../src/armies/index.ts"
 import type { BuildingSpawns } from "../src/armies/index.ts"
 import { resolvePulse } from "../src/pulse/index.ts"
-import { TICKS_PER_SECOND } from "../src/skirmish/opening/open.ts"
+import { TICKS_PER_SECOND } from "../src/state/types.ts"
 import { hashState, serializeState } from "../src/state/serialize.ts"
 import type { MatchState } from "../src/state/types.ts"
 

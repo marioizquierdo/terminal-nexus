@@ -190,13 +190,19 @@ retired_terms=(
   '\btesting saves?\b'
   'skirmish-testing'
   '(^|[^-])--turn\b'
+  'src/duel\b'
+  '\bduels\.md'
+  '\bDuel(State|Setup|Result)\b'
+  'script:reader\b'
+  'battle/reading\.ts'
+  'battle/picture\.ts'
 )
 
 # Scan for one pattern; extra arguments go to grep (e.g. -i). Prints the surviving hits.
 scan_term() {
   local term="$1"
   shift
-  grep -RInE "$@" "$term" --include='*.md' --include='*.sh' --include='*.ts' --include='*.mjs' \
+  grep -RInE "$@" "$term" --include='*.md' --include='*.sh' --include='*.ts' --include='*.mjs' --include='*.schema.json' \
     --exclude-dir='.git' --exclude-dir='node_modules' --exclude-dir='worktrees' --exclude-dir='history' \
     --exclude-dir='.playtest' --exclude-dir='dist' . 2>/dev/null \
     | grep -v 'stale-ok' \

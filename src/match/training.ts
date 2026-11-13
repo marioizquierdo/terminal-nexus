@@ -8,7 +8,7 @@
 import type { BuildingSpawns } from "../armies/types.ts"
 import type { ContentRegistry, ProductionRecipe } from "../content/index.ts"
 import { withProduction } from "../content/index.ts"
-import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
+import { TICKS_PER_SECOND } from "../state/types.ts"
 
 /** The recipe a building's spawns become in a battle: its waves, the first `firstTicks` into the round and
  *  each after it `secondsBetween` later. */

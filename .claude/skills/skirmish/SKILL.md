@@ -1,6 +1,6 @@
 ---
 name: skirmish
-description: Play Skirmish battles headless to test a change — the skirmish command (bin/skirmish.ts) from a save or a new setup, a round at a time or to the end, scripts or your own plans on either side, many seeds with a tally, every pairing of Commanders, two model agents answering through one save, the battle's log — to see how an army spends its power curve. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
+description: Play Skirmish battles headless to test a change — the skirmish command (bin/skirmish.ts) from a save or a new setup, a round at a time or to the end, scripts or your own build actions on either side, many seeds with a tally, every pairing of Commanders, two model agents answering through one save, the battle's log — to see how an army spends its power curve. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
 ---
 
 # Skirmishes: armies against each other, headless
@@ -39,7 +39,10 @@ buildings standing, damaged and destroyed (and by what), the advance (0% your Ne
 by source (your own blasts included), and each engagement (where and when the sides fought, who engaged and lost what).
 Each round's report prints both sides' in a line each, then the engagements. All of it is public; credits, the hand and
 build actions are private. `--show 0,120,end` takes an **ASCII screenshot** of the Battle Round at those ticks: the Grid
-exactly as the screen draws it, then its legend and the overlaps (what stands under a unit on a roof). Load any kept
+exactly as the screen draws it, then its legend, the overlaps (what stands under a unit on a roof) and a standing line
+(each Nexus's health and units), which the picture cannot show. Ticks past the round's end are named, not drawn; one
+battle only, never with `--seeds` or a sandbox (a sandbox is drawn by `grid`). `--json` writes only data on stdout, a
+brief a line with its `slot`, everything else on stderr, so it pipes straight into a parser. Load any kept
 round and play it again to see a moment; nothing is saved over without `--save`. It is text, not an image: for a
 picture of the screen, the `playtest` and `grid-screenshots` skills. What the battle says is read in one place
 (`src/battle/reading/`, [`battles.md`](../../../docs/system-design/battles.md), reading a battle): a reading a test needs is

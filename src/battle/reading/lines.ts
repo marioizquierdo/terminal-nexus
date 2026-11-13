@@ -5,7 +5,7 @@ import { cardTextFor } from "../../content/cards.ts"
 import { baseContentId } from "../../content/index.ts"
 import type { Side } from "../types.ts"
 import type { Composition } from "./context.ts"
-import type { RoundReading } from "./index.ts"
+import type { RoundReading, SideReading } from "./index.ts"
 import type { Score } from "./score.ts"
 
 /** A content id as a person reads it: its card's title (`unit.ravel.bomber` → Bomber). */
@@ -30,7 +30,7 @@ export function scoreLine(score: Score, side: Side): string {
   const who = score.leader === null ? "Even" : score.leader === side ? "You lead" : "The enemy leads"
   const rule = score.by === "health" ? "on Nexus health" : score.by === "damage" ? "on damage" : "on Nexus health and on damage"
   const nexus = score.nexus[side] === 1 && score.nexus[enemy] === 1 ? "both Nexuses whole" : `your Nexus ${percent(score.nexus[side])}, theirs ${percent(score.nexus[enemy])}`
-  return `${who} ${rule}: damage dealt ${score.dealt[side]} to ${score.dealt[enemy]}; ${nexus}. A battle the rounds run out on is judged on Nexus health, then damage.`
+  return `${who} ${rule}: damage dealt over the battle, yours ${score.dealt[side]}, theirs ${score.dealt[enemy]}; ${nexus === "both Nexuses whole" ? nexus : `Nexus health as the last round ended (before it mends), ${nexus}`}. A battle the rounds run out on is judged on Nexus health, then damage.`
 }
 
 /** A round's reading as `side`'s brief says it, a few lines: its army, its buildings, how far it got, what hurt it,
@@ -39,8 +39,13 @@ export function readingLines(reading: RoundReading, side: Side): string[] {
   const mine = reading.sides[side]
   const theirs = reading.sides[other(side)]
   const lines: string[] = []
-  lines.push(`Your army: ${said(mine.army.start)} as it opened; ${said(mine.army.end)} as it ended; lost ${said(mine.army.lost)}.`)
-  lines.push(`Their army: ${said(theirs.army.start)} as it opened; ${said(theirs.army.end)} as it ended; lost ${said(theirs.army.lost)}.`)
+  // Units trained during the round are in neither the army it opened with nor, once lost, the one it ended with.
+  const trained = (army: SideReading["army"]): string => {
+    const count = army.end.count - army.start.count + army.lost.count
+    return count > 0 ? `; ${count} more trained during it` : ""
+  }
+  lines.push(`Your army: ${said(mine.army.start)} as it opened${trained(mine.army)}; ${said(mine.army.end)} as it ended; lost ${said(mine.army.lost)}.`)
+  lines.push(`Their army: ${said(theirs.army.start)} as it opened${trained(theirs.army)}; ${said(theirs.army.end)} as it ended; lost ${said(theirs.army.lost)}.`)
   const damaged = mine.buildings.damaged.map((building) => `${nameOf(building.contentId)} at ${building.at.x},${building.at.y} ${building.hp}/${building.most}`)
   lines.push(`Your buildings: ${said(mine.buildings.standing)} standing${damaged.length === 0 ? "" : `; damaged ${damaged.join(", ")}`}${Object.keys(mine.buildings.lost).length === 0 ? "" : `; destroyed ${namedCounts(mine.buildings.lost)}`}.`)
   const where = (at: number | null): string => (at === null ? "none on the Grid" : `${at}%`)
@@ -72,7 +77,7 @@ export function roundReadingLines(reading: RoundReading): string[] {
     const slot = side === "A" ? "p1" : "p2"
     const parts = [
       `army ${own.army.start.count} (${own.army.start.value}) -> ${own.army.end.count} (${own.army.end.value})`,
-      `advance ${own.advance.start ?? "-"}% -> ${own.advance.end ?? "-"}%`,
+      `advance from its own Nexus ${own.advance.start ?? "-"}% -> ${own.advance.end ?? "-"}%`,
       ...(own.advance.closest === null ? [] : [`nearest enemy ${own.advance.closest} from its Nexus`]),
       ...(own.buildings.damaged.length === 0 ? [] : [`damaged ${own.buildings.damaged.map((building) => `${nameOf(building.contentId)} ${building.hp}/${building.most}`).join(", ")}`]),
       ...(Object.keys(own.buildings.lost).length === 0 ? [] : [`buildings lost ${namedCounts(own.buildings.lost)}`]),

@@ -143,3 +143,26 @@ Nexus falling).
 engagement starts at a hit, takes in every hit within 5 tiles of one in it, and ends after 5 seconds with none; each
 says when, where and how wide, and per side the damage dealt, the units engaged and what was lost, with their values.
 Both numbers are named constants to tune (`ENGAGEMENT_REACH`, `ENGAGEMENT_QUIET`).
+
+## The third round, the same day: verified by testers
+
+### F295 — an extra round of verification, by agents at two levels
+
+> The last round of cleanup was large. Let's do an extra round to verify changes and consistency. Let's test some of our new skirmish and sandbox testing capabilities using subagents. Please generate a few profiles with specific goals to test, most of them should be Sonnet, but you can have one Opus as well, to see how they work at different levels of intelligence. Before closing, please aggregate learnings and think if there are any more simplifications that we can do to avoid code duplication or improve layers of abstraction.
+
+**Built.** Six testers, each with one goal: a reading auditor, an ASCII screenshot reader, a sandbox author, a document
+checker and two players against `script:reactive` (one on each model). What they found and what changed:
+
+- Engagements dropped every killing blow, so a side's damage in its engagements fell 5–40% short of its real damage;
+  fixed, and a test now sums it both ways.
+- The brief as data carried the other side's credits, spending, hand, refusals and note; they are gone from it now, and
+  a test checks it.
+- The round-1 brief said "Your units: none" while the starting troops marched out; it lists them now. The score says
+  whose damage is whose and that its Nexus share is as the last round ended, before it mends. The army line says how
+  many were trained during the round. The round report gives a refusal's reason, not only a count.
+- `--json` writes only data on stdout, a brief a line. `--show` refuses `--seeds` and a sandbox, names a tick past the
+  round's end, and adds a standing line (each Nexus's health and units) under each picture; with effects on, the legend
+  says that the unnamed marks are effects.
+- The tick rate moved to the kernel's state types, so the battle and the rules layer no longer reach into a Skirmish's
+  folder; a test pins it. Stale words (the save schema's "duel", two dead paths, "resources" on a card) fixed, and the
+  validator now rejects the retired names and reads the save schema.

@@ -29,6 +29,8 @@ export type AsciiScreenshot = Readonly<{
   legend: readonly string[]
   /** Each cell where one thing stands over another: `x 12, y 5: p1 trooper over p2 barracks`. */
   overlaps: readonly string[]
+  /** Whether the effects were drawn: then a mark the legend does not name is an effect. */
+  effects: boolean
 }>
 
 /** How the screenshot names a side and a content id, for the legend and the overlaps. */
@@ -80,7 +82,7 @@ export function asciiScreenshot(input: GridLayersInput, names: ScreenshotNames =
     const [bx, by] = (b.match(/\d+/gu) ?? []).map(Number)
     return (ay ?? 0) - (by ?? 0) || (ax ?? 0) - (bx ?? 0)
   })
-  return { grid: rows, framed, legend: [...legend.keys()].sort(), overlaps }
+  return { grid: rows, framed, legend: [...legend.keys()].sort(), overlaps, effects: input.effects !== undefined }
 }
 
 /** An ASCII screenshot as lines to print: the framed Grid, then the legend and the overlaps, each under its heading. */
@@ -89,5 +91,6 @@ export function asciiScreenshotLines(screenshot: AsciiScreenshot): string[] {
     ...screenshot.framed,
     `Legend: ${screenshot.legend.join("; ") || "nothing on the Grid"}. Ground: . open (every fourth tile drawn, as on screen), # rock, * ore, % salvage.`,
     `Overlaps (the top one is what is drawn): ${screenshot.overlaps.length === 0 ? "none" : screenshot.overlaps.join("; ")}.`,
+    ...(screenshot.effects ? ["Effects are on: any mark the legend does not name (' , | / : and the like) is a shot, a burst or fire's light, not a thing on the Grid."] : []),
   ]
 }

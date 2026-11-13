@@ -10,11 +10,9 @@ import type { Coord, GridTerrain, TerrainId } from "../../grid/types.ts"
 import { TERRAIN } from "../../grid/types.ts"
 import { gameplayRng } from "../../rng/pcg32.ts"
 import type { EntityState, MatchState, PlayerId, TargetArea } from "../../state/types.ts"
-import { PLAYERS, SCHEMA_VERSION } from "../../state/types.ts"
+import { PLAYERS, SCHEMA_VERSION, TICKS_PER_SECOND } from "../../state/types.ts"
 import { presetDimensions } from "./presets.ts"
 import type { PlacementEntry, BattleOpening } from "./types.ts"
-
-export const TICKS_PER_SECOND = 12
 
 export class OpeningError extends Error {}
 

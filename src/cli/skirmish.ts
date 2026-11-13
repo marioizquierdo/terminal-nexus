@@ -42,7 +42,7 @@
 //   --p1, --p2 <who>         build:<build file>: a player, and its build actions ("build:." reads ./build.json;
 //                            "build:" alone, the save's draft or nothing). script:<profile>: a profile in
 //                            players/scripts/ (agro, defensive, steady, agro-rich) or a script by its own name
-//                            (balanced, rush, turtle and their variants); "script:" alone builds nothing.
+//                            (balanced, rush, turtle, reactive and their variants); "script:" alone builds nothing.
 //                            A loaded battle keeps each slot's controller unless named.
 //   --p1-credits, --p2-credits <share>     a slot's share of the curve's income (1; a profile may carry one)
 //
@@ -57,7 +57,8 @@
 //   --show <0,120,end>       each Battle Round played as an ASCII screenshot at these ticks (end: as it ends), after its
 //                            report: the Grid as the screen draws it, with a legend and what stands under what
 //   --show-effects           the ASCII screenshots with the effects on (shots, bursts); without, only what stands
-//   --json                   the briefs as data rather than text
+//   --json                   the briefs as data rather than text: stdout is one JSON object a brief, a line each
+//                            (with its "slot"); every other line goes to stderr
 //   --out <dir>              every round played: its save (round-<n>.save.json) and its report (round-<n>.txt)
 //   --log <file>             every round's Battle Round as grid logs it, at --log-level (info: error, warn, info,
 //                            debug, trace)
@@ -179,6 +180,7 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
   if (many) {
     refuse(["load", "file"], "many battles are new ones: use --map")
     refuse(["save"], "many battles are kept with --out <dir>")
+    refuse(["show", "show-effects"], "an ASCII screenshot is of one battle: play one seed with --seed")
     if (playTo === undefined) throw new Error(`--${values["seeds"] !== undefined ? "seeds" : "commanders"} needs --play-to next, a round or end: how far each battle plays`)
   }
   if (values["commanders"] !== undefined) refuse(["p1-commander", "p2-commander"], "--commanders names every Commander played")
@@ -228,6 +230,11 @@ export function main(
       return args.length === 0 ? EXIT.failed : EXIT.done
     }
     const request = requestOf(options, profiles)
+    // --json: stdout is only data, a brief a line (JSON Lines); every other line goes to stderr.
+    if (request.json) {
+      const data = write
+      write = (line) => (line.startsWith("{") ? data(line) : fail(line))
+    }
     if (request.commanders !== undefined) playPairings(request, profiles, write)
     else if (request.seeds !== undefined) playSeeds(request, profiles, write)
     else return playBattle(request, profiles, write).refused ? EXIT.refused : EXIT.done

@@ -66,7 +66,7 @@ export function roundReader(
   const buildings = readBuildings(context)
   const advance = readAdvance(context, start)
   const damage = readDamage(context)
-  const engagements = readEngagements(context)
+  const engagements = readEngagements(context, start)
   const trackers: readonly Tracker<unknown>[] = [army, buildings, advance, damage, engagements]
   return {
     step(state, events) {

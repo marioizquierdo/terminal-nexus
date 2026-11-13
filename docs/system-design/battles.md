@@ -169,7 +169,9 @@ the record and never feeds the rules: a round plays the same whether or not it i
 
 **Public and private.** Every reading is public: the Battle Round is fought in the open and both sides see all of it.
 The Build Phase is private: a side's credits, its hand and the build actions it is about to give are its own, and no
-reading touches them. The brief says so in a line.
+reading touches them. The brief says so in a line, and keeps to it as data: the other side's part of each round's report
+reaches a brief without its credits, what it spent and earned, its hand, what the rules refused it and its note
+(`seenBy`, `src/battle/brief.ts`). The command's own round report, which a tester reads, shows both sides whole.
 
 **The readings**, each one small file (`Tracker`: shown each tick, asked for its value as the round ends), kept plain —
 a count, a total, a place — with the meaning left to the reader:
@@ -179,7 +181,7 @@ a count, a total, a place — with the meaning left to the reader:
 | **score** | damage dealt over the battle, its Nexus's share of health, who leads and on which rule (the rule a battle the rounds run out on is judged by) | `score.ts` |
 | **army** | its units as the round opened and as it ended, and what it lost: each a composition — how many of each, how many in all, and the **army value** in credits (each unit at what its building pays for one: the card's cost over the units it makes a round; a Commander and a starting unit count nothing) | `army.ts` |
 | **buildings** | what stands at the end (a composition with its value), what is damaged and how badly — the Nexus among them, as any building — and each one destroyed, with what destroyed it | `buildings.ts` |
-| **advance** | where its army stood between its Nexus (0%) and the enemy's (100%) as the round opened and as it ended — the end less the start is how far the front moved — and the nearest an enemy came to its Nexus | `advance.ts` |
+| **advance** | where its army stood between its Nexus (0%) and the enemy's (100%) as the round opened and as it ended — the end less the start is how far the army moved — and the nearest an enemy came to its Nexus | `advance.ts` |
 | **damage** | the damage it took, by the content that dealt it, and how much of that was its own blasts and splashes (a death's blast hurts friend and foe unless its content says enemies alone) | `damage.ts` |
 | **engagements** | where and when the sides fought: an engagement starts at a hit of one side on the other, takes in every hit within 5 tiles of one already in it, and ends after 5 seconds with no hit there; it says when, where and how wide, and for each side the damage dealt there, the units engaged (a composition with its value) and what it lost there | `engagements.ts` |
 

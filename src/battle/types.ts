@@ -164,8 +164,9 @@ export type RoundReport = Readonly<{
   /** The tick the battle ended on, and why: a Nexus fell, or time ran out. */
   ticks: number
   ended: "nexus" | "time"
-  /** What the Battle Round said beyond its totals: the front, first contact, the nearest the enemy came, what hit each
-   *  Nexus and destroyed each building (`src/battle/reading.ts`). Absent in a save written before it was read. */
+  /** The battle reading: what the Battle Round showed both sides — each army and its losses with their value, the
+   *  buildings, the advance, the damage taken by source, the engagements (`src/battle/reading/`). Absent in a save
+   *  written before it was read. */
   reading?: RoundReading
 }>
 

@@ -39,8 +39,11 @@ type Open = {
   lost: Record<Side, string[]>
 }
 
-export function readEngagements(context: RoundContext): Tracker<readonly Engagement[]> {
+export function readEngagements(context: RoundContext, start: Pick<MatchState, "entities">): Tracker<readonly Engagement[]> {
   const open: Open[] = []
+  // Where each entity last stood: a unit killed by a hit is gone from the state the tick ends on, and its killing blow
+  // still lands where it stood.
+  const seen = new Map(start.entities.map((entity) => [entity.id, entity.anchor] as const))
   const closed: Open[] = []
   const near = (engagement: Open, at: Coord): boolean => engagement.tiles.some((tile) => gridDistance(tile, at) <= ENGAGEMENT_REACH)
   const finish = (engagement: Open): Engagement => {
@@ -63,11 +66,13 @@ export function readEngagements(context: RoundContext): Tracker<readonly Engagem
         if (state.tick - (open[index] as Open).last > ENGAGEMENT_QUIET) closed.push(...open.splice(index, 1))
       }
       const position = new Map(state.entities.map((entity) => [entity.id, entity.anchor] as const))
+      for (const [id, at] of position) if (!seen.has(id)) seen.set(id, at)
+      for (const event of events) if (event.kind === "entity.spawned" && !seen.has(event.entity)) seen.set(event.entity, event.at)
       for (const event of events) {
         if (event.kind === "damage.applied") {
           const victim = context.owner(event.entity)
           const attacker = context.owner(event.source)
-          const at = position.get(event.entity)
+          const at = position.get(event.entity) ?? seen.get(event.entity)
           if (victim === undefined || attacker === undefined || attacker === victim || at === undefined) continue
           let engagement = open.find((candidate) => near(candidate, at))
           if (engagement === undefined) {
@@ -85,6 +90,7 @@ export function readEngagements(context: RoundContext): Tracker<readonly Engagem
           if (engagement !== undefined) engagement.lost[event.player as Side].push(event.contentId)
         }
       }
+      for (const [id, at] of position) seen.set(id, at)
     },
     done() {
       return [...closed, ...open].sort((a, b) => a.start - b.start).map(finish)

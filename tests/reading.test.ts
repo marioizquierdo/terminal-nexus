@@ -44,6 +44,12 @@ test("a round is read as it plays: each army and its losses with their value, th
       assert.ok(engagement.start <= engagement.end)
       assert.ok(engagement.sides.A.dealt + engagement.sides.B.dealt > 0, "an engagement is where someone was hit")
     }
+    for (const side of ["A", "B"] as const) {
+      // Every hit lands in an engagement, the killing blow included (the unit it kills is gone from the tick's state).
+      const inEngagements = reading.engagements.reduce((sum, engagement) => sum + engagement.sides[side].dealt, 0)
+      const dealt = report.sides[side].dealt
+      assert.equal(inEngagements, dealt.units + dealt.buildings + dealt.nexus, `side ${side}'s damage in round ${report.round} is all in its engagements`)
+    }
     const starts = reading.engagements.map((engagement) => engagement.start)
     assert.deepEqual(starts, [...starts].sort((a, b) => a - b), "engagements in the order they began")
   }
@@ -60,6 +66,10 @@ test("the brief carries the score and the last round's reading, as data and as w
   for (const line of readingLines(first.report.reading!, "B")) assert.ok(brief.text.includes(line), `the brief says "${line}"`)
   assert.match(brief.text, /^Advance \(0% your Nexus, 100% theirs\): /mu)
   assert.match(brief.text, /^Public and private: /mu)
+  // What is private stays out of the other side's brief, as data too.
+  const theirs = brief.data.last!.sides.A as Record<string, unknown>
+  for (const key of ["credits", "spent", "earned", "hand", "refused", "note"]) assert.equal(theirs[key], undefined, `the enemy's ${key} is private`)
+  assert.equal(typeof brief.data.last!.sides.B.credits, "number", "its own credits it may read")
 })
 
 test("the reactive script plans from what the battle said: it holds after an attack that lost the trade, and says why", () => {
@@ -90,4 +100,22 @@ test("skirmish --show draws each Battle Round played at the ticks asked for, and
   const refused: string[] = []
   assert.notEqual(main(["--map", "pocket", "--p1", "script:agro", "--p2", "script:agro", "--show", "60"], () => {}, readProfiles(), (line) => refused.push(line)), 0)
   assert.match(refused.join("\n"), /--show .*needs --play-to/u)
+  assert.match(text, /^Standing: p1 Nexus (\d+\/\d+|fallen), \d+ units?; p2 Nexus /mu, "each picture says what it cannot show: Nexus health and units")
+  const many: string[] = []
+  assert.notEqual(main(["--map", "pocket", "--p1", "script:agro", "--p2", "script:agro", "--seeds", "1-2", "--play-to", "end", "--show", "0"], () => {}, readProfiles(), (line) => many.push(line)), 0)
+  assert.match(many.join("\n"), /--show: an ASCII screenshot is of one battle/u)
+  const past: string[] = []
+  main(["--map", "pocket", "--p1", "script:agro", "--p2", "script:agro", "--play-to", "next", "--show", "9999"], (line) => past.push(line), readProfiles(), () => {})
+  assert.match(past.join("\n"), /not drawn: tick 9999 is past this round's end/u)
+})
+
+test("skirmish --json writes only data on stdout, a brief a line, and the round-1 brief names the starting troops", () => {
+  const out: string[] = []
+  const err: string[] = []
+  assert.equal(main(["--map", "pocket", "--p1", "build:", "--p2", "script:reactive", "--json"], (line) => out.push(line), readProfiles(), (line) => err.push(line)), 0)
+  const briefs = out.map((line) => JSON.parse(line) as { slot: string; yours: { units: Record<string, number> } })
+  assert.equal(briefs.length, 1)
+  assert.equal(briefs[0]?.slot, "p1")
+  assert.ok(Object.keys(briefs[0]?.yours.units ?? {}).length > 0, "round 1's brief lists the Commander and its starting troops")
+  assert.ok(err.length > 0, "the opening line goes to stderr")
 })

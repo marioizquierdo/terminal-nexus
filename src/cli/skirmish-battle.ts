@@ -184,21 +184,35 @@ function roundScreenshots(states: readonly MatchState[], events: readonly Domain
   const view = createView(timeline, { ...DEFAULT_PRESENTATION, effects })
   const lastTick = states.length - 1
   const asked = [...new Set(ticks.map((tick) => (tick === "end" ? lastTick : tick)).filter((tick) => tick <= lastTick))].sort((a, b) => a - b)
-  return asked.flatMap((tick) => {
+  const past = ticks.filter((tick): tick is number => tick !== "end" && tick > lastTick)
+  const note = past.length === 0 ? [] : [`--- not drawn: tick ${past.join(", ")} is past this round's end (tick ${lastTick})`]
+  return [...note, ...asked.flatMap((tick) => {
     const sample = view.sampleAt(tick * view.tickDurationMs, "monochrome")
     const shot = asciiScreenshot(
       { grid: timeline.grid, registry, state: sample.state, positions: sample.positions, fire: sample.fire, ...(effects ? { effects: sample.effects, heldCorpses: sample.heldCorpses } : {}) },
       { side: (player) => (player === "A" ? "p1" : "p2"), content: titleOf },
     )
-    return [`--- ASCII screenshot at tick ${tick}${tick === lastTick ? " (the round's end)" : ""}`, ...asciiScreenshotLines(shot)]
-  })
+    return [`--- ASCII screenshot at tick ${tick}${tick === lastTick ? " (the round's end)" : ""}`, ...asciiScreenshotLines(shot), standingLine(sample.state, registry)]
+  })]
+}
+
+/** What the picture cannot show: each side's Nexus health and how many units it has on the Grid at that tick. */
+function standingLine(state: Pick<MatchState, "entities">, registry: ContentRegistry): string {
+  const side = (player: "A" | "B", label: string): string => {
+    const own = state.entities.filter((entity) => entity.player === player)
+    const nexus = own.find((entity) => registry.get(entity.contentId).nexus === true)
+    const units = own.filter((entity) => registry.get(entity.contentId).layer !== "obstacles").length
+    return `${label} Nexus ${nexus === undefined ? "fallen" : `${nexus.hp}/${registry.get(nexus.contentId).maxHp}`}, ${units} unit${units === 1 ? "" : "s"}`
+  }
+  return `Standing: ${side("A", "p1")}; ${side("B", "p2")}.`
 }
 
 /** A slot's brief, as text with the play strategies (a player that reads words), or as data. */
 export function writeBrief(setup: SaveSetup, state: BattleState, slot: Slot, json: boolean, write: Write): void {
   const brief = briefOf(state, SIDE_OF[slot], playStrategies(), drawBattleMap)
+  if (json) return write(JSON.stringify({ slot, ...brief.data }))
   write(`--- brief for ${slotLabel(setup, slot)}`)
-  write(json ? JSON.stringify(brief.data, null, 1) : brief.text)
+  write(brief.text)
 }
 
 /**

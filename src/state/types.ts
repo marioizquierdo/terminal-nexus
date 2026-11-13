@@ -155,3 +155,6 @@ export type MatchState = Readonly<{
  * spike's siege-crawler, spawner, and focus-turret rule shapes.
  */
 export const SCHEMA_VERSION = 3
+
+/** How many ticks make one second of a Battle Round: the kernel's clock, read by everything that turns ticks into seconds. */
+export const TICKS_PER_SECOND = 12
