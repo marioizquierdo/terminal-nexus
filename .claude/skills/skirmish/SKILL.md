@@ -1,6 +1,6 @@
 ---
 name: skirmish
-description: Skirmish battles played headless (bin/skirmish.ts) to see how armies and their power curves behave: one battle from a save or a new setup, every Commander pairing, many seeds, build actions by script or model agent. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Not a balance verdict.
+description: Skirmish battles played headless (bin/skirmish.ts) to see how armies and their power curves behave: one battle from a save or a new setup, every Commander pairing, many seeds, build actions by script or model agent. Use after a rule, army, power or ability change, to play a person's save on, and when Mario asks how armies compare. Balance and gameplay are measured here, over seeds and both maps; a script is not a person, so a result says where to look, not what Mario will feel.
 ---
 
 # Skirmishes: armies against each other, headless
