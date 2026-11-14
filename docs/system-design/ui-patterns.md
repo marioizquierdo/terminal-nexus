@@ -237,7 +237,7 @@ click is `x`. (RULE — `tests/build-cancel.test.ts`)
   the menu, which stays active as it travels); and **refused** — when a key reached the row but
   had nothing to do, **the words turn grey for a moment and the background stays**, reading "nothing
   here" rather than a press (dim in monochrome). (RULE — `tests/build-menu.test.ts`, `tests/build-card.test.ts`)
-- **Disabled** rows (unaffordable, or Start Battle Round before the Nexus pick) are dimmed, and pressing one is
+- **Disabled** rows (unaffordable, Start Battle Round before the Nexus pick, or Start on a battle that is over: "The battle is over: there is no next round.", the words the `skirmish` command refuses with) are dimmed, and pressing one is
   refused with its reason on the bottom line. (RULE — `tests/build-start.test.ts`)
 - **A building's actions are on its card** (the owner, 2026-10-16: "When a building is selected during build-phase
   map exploration, it should show the available actions, with hotkeys as usual"). Explore Map on a building of the

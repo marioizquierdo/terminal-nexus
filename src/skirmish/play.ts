@@ -10,6 +10,7 @@ import type { RegroupResult } from "../match/index.ts"
 import type { MatchState } from "../state/types.ts"
 import type { Profiles, SaveSetup, Slot } from "./save.ts"
 import { controllerKind, battleSetupOf, IDLE_SCRIPT, scriptPlayed, SIDE_OF, SLOTS } from "./save.ts"
+import { BATTLE_OVER_REFUSAL } from "./words.ts"
 
 /** The plan an idle slot hands in: nothing kept, nothing built, holding. */
 export const IDLE_ACTIONS: BuildActions = { build: [], stance: "hold" }
@@ -54,7 +55,7 @@ export type RoundWatch = (battle: MatchState, events: readonly DomainEvent[], re
  * attacks), each scripted slot its script's plan, then the Battle Round.
  */
 export function playNext(setup: SaveSetup, state: BattleState, plans: Readonly<Partial<Record<Slot, BuildActions>>>, profiles?: Profiles, watch?: RoundWatch): Played {
-  if (state.result !== null) throw new Error("the battle is over: there is no next round to play")
+  if (state.result !== null) throw new Error(BATTLE_OVER_REFUSAL)
   const current: BattleState = { ...state, setup: { ...battleSetupOf(setup, profiles), ...(state.setup.rosters === undefined ? {} : { rosters: state.setup.rosters }) } }
   const plan = (slot: Slot): BuildActions => (isPlayer(setup, slot) ? (plans[slot] ?? NO_ACTIONS) : scriptPlan(setup, current, slot, profiles))
   const events: DomainEvent[] = []

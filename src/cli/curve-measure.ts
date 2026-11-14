@@ -1,4 +1,4 @@
-// The power curve, measured on the Grid (Commander Armies): a scripted player climbs a level's tech tree round by
+// The power curve, measured on the Grid (docs/game-design/commander-armies.md): a scripted player climbs a level's tech tree round by
 // round, and the measure says how much of the army that fights the last round each round bought.
 //
 // The owner, 2026-10-13: survivors stack, and "new unlocked units should be a lot stronger so that makes the initial
@@ -58,7 +58,9 @@ function candidates(context: BuildContext, near: Coord): Coord[] {
   return tiles.sort((a, b) => distance(a) - distance(b) || a.y - b.y || a.x - b.x)
 }
 
-/** Round `context`'s plan: what `plan` buys, placed legally nearest its point. The measure (`src/measure/`) plays a level by it too. */
+/** Plans one round: what `plan` buys this round, each item placed on the legal tile nearest `plan.near`. `playLevel`
+ *  (`src/measure/suites.ts`) plans its rounds with it too: `src/measure` imports this shell module, a known layering
+ *  break accepted while balance is measured in Skirmish (docs/system-design/measurement.md). */
 export function planRound(context: BuildContext, state: BuildState, plan: CurvePlan): Readonly<{ state: BuildState; bought: string[] }> {
   let planned: PlannedPlacement[] = []
   let ordinal = state.nextOrdinal

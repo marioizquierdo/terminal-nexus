@@ -28,6 +28,10 @@ sides A and B; a Skirmish calls them slots `p1` (west) and `p2` (east).
 4. **Between rounds**: survivors stay on the Grid and regroup across their march line (`src/match/regroup.ts`), a Commander who fell is out by her own rule, credits carry over,
    and each side adds the curve's credits for the round and what its abilities earned (Dob's bounty).
 
+**A round opens in one function** (`roundOpening`, `src/battle/round-opening.ts`): the Commanders due back set down, the
+buildings, the first round's Commander and starting package, the call-ups. `playRound` opens every Battle Round with it, and
+the Skirmish's Build Phase asks it what arrives, so the see-through units on the screen are the ones the battle sets down.
+
 **A battle ends** when a Nexus falls, or after its last round: then the side whose Nexus kept the larger share of its
 health wins; on an even share, the side that dealt more damage over the battle; on that too, a draw.
 

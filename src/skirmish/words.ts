@@ -105,6 +105,9 @@ export function reasonWords(result: BattleResult, opponentName: string): string 
 }
 
 /** The line that says how a battle ended: "Won in round 4. Dob Hunter's Nexus fell." */
+/** What a finished battle answers to being asked for a next round, on the screen and in the `skirmish` command alike. */
+export const BATTLE_OVER_REFUSAL = "the battle is over: there is no next round"
+
 export function endedLine(setup: SaveSetup, result: BattleResult): string {
   const outcome = outcomeFor(result)
   return `${outcome[0]?.toUpperCase() ?? ""}${outcome.slice(1)} in round ${result.round}. ${reasonWords(result, commanderNameOf(setup.slots.p2.commander))}`

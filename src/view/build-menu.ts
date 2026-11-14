@@ -268,7 +268,7 @@ export function menuRowSpec(input: BuildCompositionInput, entry: number): MenuRo
     case "start":
       // Never dim: a Nexus power still waiting to be picked does not hold the round back (the owner, round 5:
       // "Nexus Powers should be optional for now"), and the Battle Round screen says it is waiting.
-      return { hotkey: START_KEY, label: context.spectating === true ? "Start next round" : START_LABEL, ...look }
+      return { hotkey: START_KEY, label: context.spectating === true ? "Start next round" : START_LABEL, ...look, ...(context.battleOver === undefined ? {} : { disabled: true }) }
     case "construct": {
       const item = context.catalog[target.index]
       if (item === undefined) return null

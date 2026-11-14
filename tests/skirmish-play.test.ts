@@ -9,7 +9,7 @@
 
 import { test } from "node:test"
 import assert from "node:assert/strict"
-import { mkdtempSync, readFileSync, rmSync } from "node:fs"
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { buildLayout } from "../src/build/layout.ts"
@@ -19,7 +19,12 @@ import type { Player } from "../src/battle/index.ts"
 import { briefOf, battleArmy, handOf, mapOf, beginBattle, placementsOf, playRound, scriptedPlayer } from "../src/battle/index.ts"
 import type { PlayableLevel } from "../src/cli/levels.ts"
 import { driveSkirmish, newSkirmishLevel, playedOf, positionOf, saveOfRound, scriptedRound, buildActionsOf, skirmishLevel } from "../src/cli/skirmish-play.ts"
-import { readSave, saveText } from "../src/skirmish/save.ts"
+import { readSave, saveOf, saveText } from "../src/skirmish/save.ts"
+import { playNext, playOn } from "../src/skirmish/play.ts"
+import { readProfiles } from "../src/skirmish/profile-files.ts"
+import { newBattle, openSave } from "../src/skirmish/request.ts"
+import { slotAsk } from "../src/skirmish/slots.ts"
+import { BATTLE_OVER_REFUSAL } from "../src/skirmish/words.ts"
 import { roundIncome } from "../src/armies/curve.ts"
 import type { ResolvedPulse } from "../src/view/pulse-live.ts"
 import { parseKeyScript } from "../src/playtest/keys.ts"
@@ -336,4 +341,25 @@ test("a save written by the saver is the round's file from then on, and a failed
     throw new Error("disk full")
   }).onSave(context, state, "x")
   assert.deepEqual([failed.ok, failed.text], [false, "Not saved: disk full"])
+})
+
+test("a finished battle opens to be read, and its next round is refused with the command's words", { timeout: 60_000 }, () => {
+  const profiles = readProfiles()
+  const scripts = { p1: { ask: slotAsk("script:agro", profiles) }, p2: { ask: slotAsk("script:agro", profiles) } }
+  const opened = openSave(newBattle({ map: "pocket" }, profiles), { slots: scripts, rules: { rounds: 2 }, profiles })
+  const ran = playOn(opened.setup, opened.state, {}, Number.POSITIVE_INFINITY, profiles)
+  assert.notEqual(ran.state.result, null)
+  const folder = mkdtempSync(join(tmpdir(), "tn-over-"))
+  try {
+    const file = join(folder, "over.save.json")
+    writeFileSync(file, saveText(saveOf(opened.setup, ran.state)))
+    const run = runBuildPlaytest({ steps: parseKeyScript("Esc s"), at: playtestOpening({}, "--keys", { load: file }).at })
+    assert.match(run.frames[1]!.state.status.text, /battle over, read only/u)
+    const last = run.frames[run.frames.length - 1]!.state
+    assert.equal(last.status.text, "The battle is over: there is no next round.")
+    assert.equal(last.committed, false, "the round was not started")
+    assert.throws(() => playNext(opened.setup, ran.state, {}, profiles), new RegExp(BATTLE_OVER_REFUSAL))
+  } finally {
+    rmSync(folder, { recursive: true, force: true })
+  }
 })

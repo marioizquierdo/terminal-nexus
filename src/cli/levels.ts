@@ -5,7 +5,8 @@
 // screens that open it (the title menu, a route, the browser page, the scripted playtest): they ask for a level by
 // id and get its first round, or any later round, ready for the Build Phase. Every level of every shipped
 // story is here, in story order. In the application shell because opening a round plays the mission, which
-// reaches the kernel (`tests/architecture.test.ts`).
+// reaches the kernel (`tests/architecture.test.ts`). `src/measure` imports it
+// to play a level: a known layering break, accepted while balance is measured in Skirmish (docs/system-design/measurement.md).
 
 import { STARTER_START_CURSOR } from "../build/catalog.ts"
 import { buildLayout } from "../build/layout.ts"
