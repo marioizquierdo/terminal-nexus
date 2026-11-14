@@ -2,13 +2,13 @@
 
 # Claude-specific entry point
 
-Follow the imported repository instructions. What is specific to a Claude session:
+What is specific to a Claude session, on top of the imported repository instructions:
 
-- On Claude Code on the web, work on the task branch created for the session, propose changes
-  through a pull request, and never push to `main`.
-- Run `./scripts/check-repository.sh` first and again before handing back.
-- Use the skills: `playtest` to see a change and make pictures, `grid-screenshots` for the engine
-  tool's own view, `feedback-round` when Mario sends playtest feedback, a settings export or an
-  Activity Logs export, `skirmish` to play battles headless from a save and fight armies against each other after a change, `remeasure` to
-  measure a rule, content or power-curve change and clean up the tests and measurements it leaves behind, and
-  `pr-description` for every pull request body.
+- On Claude Code on the web, work on the task branch created for the session and propose changes
+  through a pull request; `main` changes only by a merged pull request, never by a push.
+- Use the skills: `playtest` to see a change and make pictures, `grid` to run or debug one battle or
+  write a sandbox, `grid-screenshots` for the engine tool's view on a real terminal, `skirmish` to
+  play whole battles headless and fight armies against each other after a change, `remeasure` after
+  a rule, content or power-curve change and when many pinned tests fail at once, `feedback-round`
+  when Mario sends playtest feedback or an export, `pr-description` for every pull request body, and
+  `writing-for-agents` when creating or editing a skill, `AGENTS.md` or `CLAUDE.md`.
