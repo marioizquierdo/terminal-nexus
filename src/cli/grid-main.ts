@@ -21,7 +21,7 @@ import { serializeEvents } from "../events/serialize.ts"
 import { buildLog, parseLevel, summarize, summaryJson } from "../report/index.ts"
 import type { ReportInput } from "../report/index.ts"
 import { hashState } from "../state/serialize.ts"
-import { applyVariant, openBattle, mirrored, shuffled, sidesWithoutGoal } from "../skirmish/opening/index.ts"
+import { applyVariant, openBattle, mirrored, phaseOf, shuffled, sidesWithoutGoal } from "../skirmish/opening/index.ts"
 import { loadSandbox } from "../skirmish/sandboxes.ts"
 import { playSandboxRound } from "../skirmish/sandbox-round.ts"
 import type { MatchState } from "../state/types.ts"
@@ -117,7 +117,8 @@ async function openMap(path: string, args: ParsedArgs, seed?: number): Promise<{
   if (args.flags.has("shuffle")) opening = shuffled(opening, made.registry, seed ?? opening.seed)
   if (args.flags.has("swap")) opening = mirrored(opening, made.registry)
   const state = openBattle(opening, { registry: made.registry }).state
-  for (const side of sidesWithoutGoal(state, made.registry)) {
+  // Only a Battle Round has sides that fight: in the Build Phase nobody goes anywhere, so nobody needs a goal.
+  for (const side of phaseOf(opening) === "battle-round" ? sidesWithoutGoal(state, made.registry) : []) {
     process.stderr.write(`grid: side ${side} of ${opening.id} fights with no target and no enemy Nexus, a battle the game never plays\n`)
   }
   return { opening, registry: made.registry }
@@ -270,7 +271,7 @@ async function commandWatch(path: string, args: ParsedArgs): Promise<number> {
     const input: ReportInput = {
       battleId: timeline.battleId,
       seed,
-      pulseTicks,
+      pulseTicks: timeline.pulseTicks,
       registry: timeline.registry,
       events: timeline.events,
       finalState: timeline.states[timeline.states.length - 1] ?? loaded.state,

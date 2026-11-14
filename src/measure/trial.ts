@@ -13,6 +13,7 @@ import { supplyCostOf } from "../content/supply.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
 import { openBattle } from "../skirmish/opening/open.ts"
+import { phaseOf } from "../skirmish/opening/phase.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { Variant } from "../skirmish/opening/variant.ts"
 import { applyVariant, mirrored, shuffled } from "../skirmish/opening/variant.ts"
@@ -146,6 +147,7 @@ export function playTrialBattle(
   seed: number,
   options: Readonly<{ shuffle?: boolean; swapped?: boolean; engine?: Engine; meter?: Meter }> = {},
 ): Readonly<{ battle: BattleRecord; supply: Readonly<Record<PlayerId, number>>; cost?: BattleCost }> {
+  if (phaseOf(opening) !== "battle-round") throw new Error(`${opening.id} is in the ${phaseOf(opening)}: a trial plays battles, and a Build Phase has none`)
   const engine = options.engine ?? OWN_ENGINE
   const made = trialMap(opening, variant, seed, { ...options, registry: engine.registry })
   const opened = engine.openBattle(made.unmirrored, { registry: made.registry }).state

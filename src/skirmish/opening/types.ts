@@ -1,6 +1,7 @@
 import type { Coord, TerrainId } from "../../grid/types.ts"
 import type { PlayerId, TargetArea } from "../../state/types.ts"
 import type { GridPreset } from "./presets.ts"
+import type { SandboxPhase } from "./phase.ts"
 
 export type GridSpec = Readonly<{ preset: GridPreset }> | Readonly<{ width: number; height: number }>
 
@@ -82,6 +83,12 @@ export type BattleOpening = Readonly<{
    * as every side did before targets.
    */
   targets?: Readonly<Partial<Record<PlayerId, TargetArea>>>
+  /**
+   * Which part of a round the opening is in (`playPhase`, `./phase.ts`): the Battle Round, where the kernel runs, or the
+   * Build Phase, where units stand idle and only the regroup moves them. Absent: the Battle Round, as every opening
+   * was before phases.
+   */
+  phase?: SandboxPhase
 }>
 
 /**

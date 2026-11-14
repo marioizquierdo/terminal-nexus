@@ -8,27 +8,28 @@
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { hashEvents } from "../events/serialize.ts"
-import { resolvePulse } from "../pulse/index.ts"
+import { phaseOf, playPhase } from "../skirmish/opening/index.ts"
 import { hashState } from "../state/serialize.ts"
 import type { MatchState } from "../state/types.ts"
 import type { PulseTimeline } from "../view/index.ts"
 import type { BattleOpening } from "../skirmish/opening/index.ts"
 
 export function buildTimeline(
-  opening: Pick<BattleOpening, "id" | "name">,
+  opening: Pick<BattleOpening, "id" | "name" | "phase">,
   initialState: MatchState,
   registry: ContentRegistry,
   pulseTicks: number,
   seed: number,
 ): PulseTimeline {
-  // The kernel's own run, every state it reaches kept: the same events and hashes `grid --headless` reports.
+  // The sandbox's own run, every state it reaches kept: the same events and hashes `grid --headless` reports (the
+  // kernel's in the Battle Round, the regroup's in the Build Phase, `playPhase`).
   const states: MatchState[] = []
-  const run = resolvePulse({ initialState, registry, pulseTicks, seed, watch: (state) => states.push(state) })
+  const run = playPhase(phaseOf(opening), initialState, registry, pulseTicks, seed, { watch: (state) => states.push(state) })
   return {
     battleId: opening.id,
     battleName: opening.name,
     seed,
-    pulseTicks,
+    pulseTicks: run.pulseTicks,
     ticksPerSecond: initialState.ticksPerSecond,
     grid: initialState.grid,
     registry,
@@ -45,7 +46,7 @@ export function buildTimeline(
  * mission's Pulse and a sandbox's are compared by the same two numbers.
  */
 export function timelineOf(
-  opening: Pick<BattleOpening, "id" | "name">,
+  opening: Pick<BattleOpening, "id" | "name" | "phase">,
   states: readonly MatchState[],
   events: readonly DomainEvent[],
   pulseTicks: number,

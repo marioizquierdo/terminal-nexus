@@ -8,7 +8,7 @@ import { DOMAIN_EVENT_KINDS } from "../src/events/types.ts"
 import { contextFor, resolvePulse, spawnEvents, stepTick } from "../src/pulse/index.ts"
 import { buildLog } from "../src/report/index.ts"
 import { cosmeticRng } from "../src/rng/pcg32.ts"
-import { openBattle } from "../src/skirmish/opening/index.ts"
+import { openBattle, phaseOf } from "../src/skirmish/opening/index.ts"
 import { hashState, parseState, serializeState } from "../src/state/serialize.ts"
 import {
   loadSandbox,
@@ -39,6 +39,7 @@ test("twenty runs of every sandbox produce identical hashes and identical INFO l
 test("resolving in one call equals resolving tick by tick", async () => {
   for (const name of sandboxFiles()) {
     const opening = await loadSandbox(name)
+    if (phaseOf(opening) !== "battle-round") continue // the Build Phase is the regroup, not the kernel: no tick to step
     const oneCall = await playSandbox(name)
 
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
