@@ -14,6 +14,7 @@ import type { Coord, TerrainId } from "../grid/types.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
 import type { BattleMap, BattleSetup, BattleState, Side, BuildActions } from "../battle/index.ts"
 import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, battleArmy, battleGrid, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
+import { isObject, isWhole } from "../content/shape.ts"
 import { openBattle } from "./opening/open.ts"
 import type { SaveStart } from "./start.ts"
 import { MAP_LEGEND, openingOf, startProblems } from "./start.ts"
@@ -179,8 +180,8 @@ export function battleMapOf(map: SaveSetup["map"]): string | BattleMap {
   }
 }
 
-/** The map's ground, whichever way the save names it. */
-const groundOf = (map: SaveSetup["map"]): ReturnType<typeof battleGrid> => {
+/** The map's Grid, whichever way the save names it. */
+const mapGrid = (map: SaveSetup["map"]): ReturnType<typeof battleGrid> => {
   const battle = battleMapOf(map)
   return battleGrid(typeof battle === "string" ? (BATTLE_MAPS[battle] as BattleMap) : battle)
 }
@@ -211,7 +212,7 @@ export function battleOf(save: SaveFile, profiles: Profiles = NO_PROFILES): Batt
   const setup = battleSetupOf(save.setup, profiles)
   if (save.state === undefined) return beginBattle(setup)
   const { carried, ...rest } = save.state
-  return { ...rest, setup, carried: carried === null ? null : { ...carried, grid: groundOf(save.setup.map) } }
+  return { ...rest, setup, carried: carried === null ? null : { ...carried, grid: mapGrid(save.setup.map) } }
 }
 
 /** A save of the battle as it stands, with the slots' controllers and drafts. */
@@ -252,21 +253,19 @@ export function newSetup(given: Readonly<Partial<Omit<SaveSetup, "slots">> & { s
 
 // --- Reading -----------------------------------------------------------------------------------------------------------
 
-const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value)
-const isWhole = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value)
 
 /** The problems with a map drawn in full. A sandbox's (`started`) may leave out where the Nexuses stand and its
  *  troops hold, and may name ground the battle does not draw. */
 function mapProblems(map: unknown, started: boolean): string[] {
   if (typeof map === "string") return BATTLE_MAPS[map] === undefined ? [`setup.map: no map "${map}" (${Object.keys(BATTLE_MAPS).join(", ")}), or draw one in full`] : []
-  if (!isRecord(map)) return ["setup.map: a map's id, or a map drawn in full ({ id, name, rows, legend?, nexus, hold })"]
+  if (!isObject(map)) return ["setup.map: a map's id, or a map drawn in full ({ id, name, rows, legend?, nexus, hold })"]
   const problems: string[] = []
   if (typeof map["id"] !== "string") problems.push("setup.map.id: a name for the map")
   if (map["name"] !== undefined && typeof map["name"] !== "string") problems.push("setup.map.name: the map's name for a person")
   if (!Array.isArray(map["rows"]) || !map["rows"].every((row) => typeof row === "string")) problems.push("setup.map.rows: the map's rows of text (. open, # rock, * deposit)")
   const legend = map["legend"]
   if (legend !== undefined) {
-    if (!isRecord(legend) || !Object.values(legend).every((terrain) => typeof terrain === "string" && terrain.startsWith("terrain."))) {
+    if (!isObject(legend) || !Object.values(legend).every((terrain) => typeof terrain === "string" && terrain.startsWith("terrain."))) {
       problems.push(`setup.map.legend: { "<character>": "terrain.<kind>" }, the ground each character of the rows is`)
     } else if (!started && Object.entries(legend).some(([symbol, terrain]) => MAP_LEGEND[symbol] !== terrain)) {
       problems.push(`setup.map.legend: a battle the battle plays draws its map in ${Object.keys(MAP_LEGEND).join(" ")}; another legend is for a sandbox's start`)
@@ -276,8 +275,8 @@ function mapProblems(map: unknown, started: boolean): string[] {
     const value = map[part]
     if (started && value === undefined) continue
     for (const slot of SLOTS) {
-      const at = isRecord(value) ? value[slot] : undefined
-      if (!isRecord(at) || !isWhole(at["x"]) || !isWhole(at["y"]) || (part === "hold" && (!isWhole(at["width"]) || !isWhole(at["height"])))) {
+      const at = isObject(value) ? value[slot] : undefined
+      if (!isObject(at) || !isWhole(at["x"]) || !isWhole(at["y"]) || (part === "hold" && (!isWhole(at["width"]) || !isWhole(at["height"])))) {
         problems.push(`setup.map.${part}.${slot}: ${part === "nexus" ? "{ x, y }, its Nexus's north-west tile" : "{ x, y, width, height }, where its troops hold"}`)
       }
     }
@@ -294,7 +293,7 @@ function mapProblems(map: unknown, started: boolean): string[] {
 
 /** The problems with a slot. */
 function slotProblems(slot: Slot, value: unknown, started: boolean, profiles: Profiles): string[] {
-  if (!isRecord(value)) return [`setup.slots.${slot}: { commander, controller }`]
+  if (!isObject(value)) return [`setup.slots.${slot}: { commander, controller }`]
   const problems: string[] = []
   const commander = value["commander"]
   if (started && commander === undefined) {
@@ -316,7 +315,7 @@ function slotProblems(slot: Slot, value: unknown, started: boolean, profiles: Pr
   }
   const options = value["options"]
   if (options !== undefined) {
-    if (!isRecord(options)) problems.push(`setup.slots.${slot}.options: { credits }`)
+    if (!isObject(options)) problems.push(`setup.slots.${slot}.options: { credits }`)
     else {
       const credits = options["credits"]
       if (credits !== undefined && (typeof credits !== "number" || !(credits > 0) || credits > 10)) problems.push(`setup.slots.${slot}.options.credits: a share of the income above 0, at most 10 (1 is the curve's)`)
@@ -334,13 +333,13 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
   } catch (error) {
     return { save: null, problems: [`not JSON: ${error instanceof Error ? error.message : String(error)}`] }
   }
-  if (!isRecord(value)) return { save: null, problems: ["a save is a JSON object with format and setup"] }
+  if (!isObject(value)) return { save: null, problems: ["a save is a JSON object with format and setup"] }
   const problems: string[] = []
   if (value["format"] !== SAVE_FORMAT) problems.push(`format: "${SAVE_FORMAT}", not ${JSON.stringify(value["format"])}`)
   for (const field of ["name", "notes"]) if (value[field] !== undefined && typeof value[field] !== "string") problems.push(`${field}: text`)
   const setup = value["setup"]
   const started = value["start"] !== undefined
-  if (!isRecord(setup)) problems.push("setup: { map, seed, goal, modifiers, rounds, roundTicks, slots }")
+  if (!isObject(setup)) problems.push("setup: { map, seed, goal, modifiers, rounds, roundTicks, slots }")
   else {
     problems.push(...mapProblems(setup["map"], started))
     if (!isWhole(setup["seed"])) problems.push("setup.seed: a whole number")
@@ -351,7 +350,7 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
     for (const field of ["rounds", "roundTicks"]) if (!isWhole(setup[field]) || (setup[field] as number) < 1) problems.push(`setup.${field}: a whole number, 1 or more`)
     if (started && isWhole(setup["rounds"]) && setup["rounds"] !== 1) problems.push("setup.rounds: 1, a sandbox plays the one Battle Round its start writes")
     const slots = setup["slots"]
-    if (!isRecord(slots)) problems.push("setup.slots: { p1, p2 }")
+    if (!isObject(slots)) problems.push("setup.slots: { p1, p2 }")
     else {
       for (const slot of SLOTS) problems.push(...slotProblems(slot, slots[slot], started, profiles))
       for (const key of Object.keys(slots)) if (!(SLOTS as readonly string[]).includes(key)) problems.push(`setup.slots.${key}: the slots are ${SLOTS.join(" and ")}`)
@@ -359,18 +358,18 @@ export function readSave(text: string, profiles: Profiles = NO_PROFILES): ReadSa
   }
   const state = value["state"]
   if (state !== undefined) {
-    if (!isRecord(state) || !isWhole(state["round"]) || !isRecord(state["sides"]) || !Array.isArray(state["history"]) || !("carried" in state) || !("result" in state)) {
+    if (!isObject(state) || !isWhole(state["round"]) || !isObject(state["sides"]) || !Array.isArray(state["history"]) || !("carried" in state) || !("result" in state)) {
       problems.push("state: the battle as the game wrote it ({ round, carried, sides, history, result }); remove it to start from round 1")
     } else {
       // Every round's report carries its reading (the battle's numbers live there); a save from before that is written again.
       state["history"].forEach((report, index) => {
-        if (!isRecord(report) || !isRecord(report["reading"])) problems.push(`state.history[${index}]: a round's report with its "reading" (a save from before the one battle reader: play it again, or remove state to start from round 1)`)
+        if (!isObject(report) || !isObject(report["reading"])) problems.push(`state.history[${index}]: a round's report with its "reading" (a save from before the one battle reader: play it again, or remove state to start from round 1)`)
       })
     }
   }
   const draft = value["draft"]
   if (draft !== undefined) {
-    if (!isRecord(draft)) problems.push("draft: { p1?, p2? }, each a plan")
+    if (!isObject(draft)) problems.push("draft: { p1?, p2? }, each a plan")
     else {
       for (const [slot, plan] of Object.entries(draft)) {
         if (!(SLOTS as readonly string[]).includes(slot)) problems.push(`draft.${slot}: the slots are ${SLOTS.join(" and ")}`)
@@ -407,7 +406,7 @@ export function saveText(save: SaveFile): string {
     save,
     (key: string, value: unknown) => {
       // A legend, a map's or a start's: each character and what it is on a line of its own.
-      if (key === "legend" && isRecord(value)) {
+      if (key === "legend" && isObject(value)) {
         return Object.fromEntries(
           Object.entries(value).map(([symbol, entry]) => {
             compact.push(JSON.stringify(entry))

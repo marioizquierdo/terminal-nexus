@@ -46,6 +46,11 @@ export function isObject(value: unknown): value is Readonly<Record<string, unkno
   return value !== null && typeof value === "object" && !Array.isArray(value)
 }
 
+/** A whole number, of any sign. */
+export function isWhole(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value)
+}
+
 /** A shape one test decides; `name` is what a problem says was expected: "a number". */
 function simple<T>(name: string, test: (value: unknown) => boolean): Shape<T> {
   return {
