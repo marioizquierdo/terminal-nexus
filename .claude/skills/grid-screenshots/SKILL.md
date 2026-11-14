@@ -1,18 +1,16 @@
 ---
 name: grid-screenshots
-description: Run `grid` (the Terminal Nexus engine/editor/replay tool) on a real terminal and capture PNG screenshots of the ASCII view. Use when judging how the composition looks, comparing render tiers, glyph packs, effects on and off, or reduced motion, or when a change touches src/view and someone should see it rather than read a frame as text.
+description: Screenshots of `grid`'s ASCII view on a real terminal (tmux, PNG): judge how a composition looks, compare render tiers, glyph packs, effects on and off, or reduced motion. Use when a change touches src/view, or when a battle's look, not its text frame, is the question.
 ---
 
 # Screenshotting `grid`
 
-The tests assert what a frame *contains*; this is how you look at how it **looks**. What the
-pipeline is and why (tmux, a real PTY, Chromium as the renderer) is in
-[`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 3.
+The tests assert what a frame *contains*; this is how you look at how it **looks**. The pipeline (tmux, a real PTY,
+Chromium as the renderer) is described in [`DEVELOPMENT.md`](../../../DEVELOPMENT.md), "Seeing a change".
 
-**For the Build Phase screen, use the `playtest` skill first** (`scripts/playtest.mjs`): it presses
-keys without a terminal and renders frames composed in-process, so a picture can never be captured one
-key early, and it makes GIFs. This skill's tmux pipeline is for `grid` battles, the menu, and the few
-shots whose subject is the real terminal path itself (startup, resize, real modified-key and mouse
+The Build Phase screen belongs to the `playtest` skill (`scripts/playtest.mjs`): it renders frames in-process, so a
+picture can never be captured one key early, and it makes GIFs. This skill's tmux pipeline is for `grid` battles, the
+menu, and the shots whose subject is the real terminal path itself (startup, resize, real modified-key and mouse
 bytes).
 
 ## The two-speed rule
@@ -33,8 +31,8 @@ console.log(v.frameToText(view.snapshotAt(178 * 1000 / 12 + 40, "truecolor")))
 '
 ```
 
-Screenshots are for colour, for the final judgement, and for showing someone. They are expensive to
-look at — take few, and make each one answer a question.
+Screenshots are for colour, for the final judgement, and for showing someone. Each costs attention to look at, so take
+few and let each answer a question.
 
 ## Capturing
 
@@ -55,9 +53,8 @@ Add a frame worth looking at by editing the `shots` array at the top of the scri
 `theme`, `effects`, `reducedMotion`, and `expectGate` (true for a shot of a terminal too small
 for the composition, where playback freezes behind the too-small notice).
 
-**The tick is exact.** The script pauses the session and steps to the tick you asked for, so a
-screenshot lands where you meant rather than wherever the wall clock reached. Find the tick worth
-shooting from the log first:
+**The tick is exact**: the script pauses the session and steps to the tick you asked for. Find the tick worth shooting
+from the log first:
 
 ```bash
 ./bin/grid.ts sandboxes/rules/ravel-cascade --headless | grep -E "blast|death"
@@ -87,10 +84,11 @@ Use `-l` on `send-keys`: without it tmux reads `,` and `[` as key names.
 
 ## What to look at, and in what order
 
-1. **The worst frame first** ([`effects.md`](../../../docs/system-design/effects.md) craft rule 1). Late in a battle, both armies engaged,
-   several effects overlapping — `ravel-cascade` at the tick the chain runs. If that reads, the calm
-   frames will. Designing the calm frame first guarantees a beautiful opening and an unreadable
-   climax.
+Done when the worst frame has passed all five checks.
+
+1. **The worst frame first** ([`effects.md`](../../../docs/system-design/effects.md), "Craft rules"): late in a battle,
+   both armies engaged, several effects overlapping (`ravel-cascade` at the tick the chain runs). If that reads, the
+   calm frames will.
 2. **Monochrome.** It is the acceptance floor: every fact must read in it, though it is not the look the
    game is made for. If you cannot follow who moved, who shot whom, and who died without colour, the
    frame is not finished.
