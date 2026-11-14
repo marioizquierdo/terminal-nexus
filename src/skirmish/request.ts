@@ -7,7 +7,7 @@
 import type { BattleState, BuildActions, BuildEntry } from "../battle/index.ts"
 import { readBuildFile } from "../battle/index.ts"
 import type { Profiles, SaveFile, SaveMap, SaveSetup, Slot } from "./save.ts"
-import { battleOf, MODIFIERS, newSetup, readSave, SAVE_FORMAT, SLOTS } from "./save.ts"
+import { battleOf, mapMismatch, MODIFIERS, newSetup, readSave, SAVE_FORMAT, SLOTS } from "./save.ts"
 import type { SlotAsk } from "./slots.ts"
 import { isPlayer } from "./play.ts"
 
@@ -115,6 +115,8 @@ export type OpenSave = Readonly<{
   rules?: Readonly<{ rounds?: number; modifiers?: readonly string[] }>
   /** A build file's text. Absent: a build file named is refused ("no files to read <path> from"). */
   readFile?: (path: string) => string
+  /** The save's file, named in a refusal; else the save's own name. */
+  file?: string
   profiles: Profiles
 }>
 
@@ -125,11 +127,13 @@ export type Opened = Readonly<{ save: SaveFile; setup: SaveSetup; state: BattleS
 /**
  * **A save opened** as a door asks: its slots seated (`seat`), its rules changed from the round the battle is at
  * (`withRules`; round 1 when the battle is over, since a battle over has no next round to limit), and the battle read
- * back under the new setup (`battleOf`). Throws for a sandbox (a save with a `start`), which no Build Phase opens.
+ * back under the new setup (`battleOf`). Throws for a sandbox (a save with a `start`), which no Build Phase opens, and for a save whose battle does not fit its map (`mapMismatch`).
  * Problems a build file's reader dropped come back in `seated.problems`; the caller writes them or refuses them.
  */
 export function openSave(save: SaveFile, options: OpenSave): Opened {
   if (save.start !== undefined) throw new Error("this save is a sandbox: it plays one Battle Round in grid (grid <file>), not from a Build Phase")
+  const mismatch = mapMismatch(save)
+  if (mismatch !== null) throw new Error(`${options.file ?? (save.name === undefined ? "this save" : `the save "${save.name}"`)} does not fit its map: ${mismatch}`)
   const readFile = options.readFile ?? ((path: string): string => { throw new Error(`no files to read ${path} from`) })
   const seated = seat(save, options.slots ?? {}, readFile)
   const before = battleOf({ ...save, setup: seated.setup }, options.profiles)

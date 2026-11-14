@@ -65,7 +65,7 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
   const changes = slotChangesOf(written, profiles, (word) => `--${word}`)
   // The same seating the `skirmish` command does: p1's build actions for the round it opens at (from its build file,
   // else the draft) are laid on the Build Phase as it opens. The screen plays only p1, so only p1's are kept.
-  const opened = openSave(save, { slots: changes, rules: rulesOf(ask), readFile: read, profiles })
+  const opened = openSave(save, { slots: changes, rules: rulesOf(ask), readFile: read, profiles, ...(ask.load === undefined ? {} : { file: ask.load }) })
   const { setup, seated } = opened
   const round = opened.state.round
   const refused = screenProblem(setup)

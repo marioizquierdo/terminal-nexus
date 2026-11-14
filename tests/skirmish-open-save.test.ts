@@ -61,3 +61,13 @@ test("a sandbox is refused", () => {
   const save = readSave(readFileSync(join(dir, file), "utf8"), profiles).save!
   assert.throws(() => openSave(save, { profiles }), /sandbox/)
 })
+
+test("a save from another map is refused at open, naming the save, the map and the first unit that does not fit", () => {
+  const path = join(REPO_ROOT, "saves", "crossing-round-4.save.json")
+  const parsed = JSON.parse(readFileSync(path, "utf8"))
+  const other = JSON.stringify({ ...parsed, setup: { ...parsed.setup, map: "pocket" } })
+  const message = /othermap\.save\.json does not fit its map: .* stands at \d+,\d+, which is outside the map pocket/
+  assert.throws(() => openSave(readSave(other, profiles).save!, { profiles, file: "othermap.save.json" }), message)
+  // The screen's door refuses the same way.
+  assert.throws(() => openSkirmish({ load: "othermap.save.json" }, { readFile: () => other, profiles }), message)
+})

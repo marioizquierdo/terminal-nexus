@@ -55,7 +55,7 @@ export function startingSave(request: SkirmishRequest, profiles: Profiles, seed?
 export function openRequested(save: SaveFile, request: SkirmishRequest, profiles: Profiles, write: Write): Opened {
   const toEnd = request.playTo === "end" ? Math.max(save.setup.rounds, UNTIL_END_ROUNDS) : undefined
   const rounds = request.rules.rounds ?? toEnd
-  const opened = openSave(save, { slots: request.slots, rules: { ...request.rules, ...(rounds === undefined ? {} : { rounds }) }, readFile: readGameFile, profiles })
+  const opened = openSave(save, { slots: request.slots, rules: { ...request.rules, ...(rounds === undefined ? {} : { rounds }) }, readFile: readGameFile, profiles, ...(request.load === undefined ? {} : { file: request.load }) })
   for (const problem of opened.seated.problems) write(problem)
   return opened
 }

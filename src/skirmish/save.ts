@@ -10,7 +10,11 @@
 // says what each slot has on the Grid before round 1 (`./start.ts`). It is opened by the kernel from that `start`
 // (`src/skirmish/opening/`), not by the battle, and both its slots plan nothing.
 
+import { inBounds, tileIndex, tilesOf } from "../grid/coords.ts"
 import type { Coord, TerrainId } from "../grid/types.ts"
+import { TERRAIN } from "../grid/types.ts"
+import type { Armies } from "../armies/index.ts"
+import { ARMIES } from "../armies/index.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
 import type { BattleMap, BattleSetup, BattleState, Side, BuildActions } from "../battle/index.ts"
 import { BATTLE_MAPS, BATTLE_ROUND_TICKS, BATTLE_ROUNDS, battleArmy, battleGrid, beginBattle, readBuildActions, scriptedName } from "../battle/index.ts"
@@ -213,6 +217,28 @@ export function battleOf(save: SaveFile, profiles: Profiles = NO_PROFILES): Batt
   if (save.state === undefined) return beginBattle(setup)
   const { carried, ...rest } = save.state
   return { ...rest, setup, carried: carried === null ? null : { ...carried, grid: mapGrid(save.setup.map) } }
+}
+
+/**
+ * **Whether the battle a save carries fits its map**: the first entity (by ordinal) whose footprint leaves the Grid, or,
+ * for one that is not in the air, lies on ground no one may enter. `null` when all fit or when the save carries no
+ * battle between rounds. Says the map by name and the entity by its id and tile.
+ */
+export function mapMismatch(save: SaveFile, armies: Armies = ARMIES): string | null {
+  const carried = save.state?.carried
+  if (carried === undefined || carried === null) return null
+  const grid = mapGrid(save.setup.map)
+  const map = typeof save.setup.map === "string" ? save.setup.map : save.setup.map.id
+  for (const entity of carried.entities) {
+    if (!armies.registry.has(entity.contentId)) continue
+    const definition = armies.registry.get(entity.contentId)
+    for (const tile of tilesOf(entity.anchor, definition.footprint)) {
+      const at = `${entity.id} (${entity.contentId}) stands at ${tile.x},${tile.y}`
+      if (!inBounds(grid, tile)) return `${at}, which is outside the map ${map} (${grid.width} by ${grid.height})`
+      if (definition.layer !== "air" && TERRAIN[grid.tiles[tileIndex(grid, tile)] as TerrainId].impassable) return `${at}, which is rock on the map ${map}`
+    }
+  }
+  return null
 }
 
 /** A save of the battle as it stands, with the slots' controllers and drafts. */
