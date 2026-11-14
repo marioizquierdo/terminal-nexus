@@ -1,7 +1,7 @@
 // What a measurement plays, and what it writes down (docs/system-design/measurement.md). One spec, so a result
 // measured before a rule changed and one measured after it compare like with like.
 
-import { DUEL_PULSE_TICKS, DUEL_ROUNDS } from "../duel/types.ts"
+import { BATTLE_ROUND_TICKS, BATTLE_ROUNDS } from "../battle/types.ts"
 import type { DuelMeasure, LevelMeasure, LevelPlan, SaveMeasure } from "./suites.ts"
 
 export type MeasureSpec = Readonly<{
@@ -16,10 +16,10 @@ export type MeasureSpec = Readonly<{
     pulseTicks: number
     /** Every ordered pair of these, mirrors included, so each Commander plays from both ends of the map. */
     commanders: readonly string[]
-    /** Scripted players (`src/duel/players.ts`); both sides of a duel play the same one, unless `formations` sets
+    /** Scripted players (`src/battle/players.ts`); both sides of a duel play the same one, unless `formations` sets
      *  them apart. */
     players: readonly string[]
-    /** Formations the players play by (`Formation`, `src/duel/types.ts`): one, and both sides play it; several, and
+    /** Formations the players play by (`Formation`, `src/battle/types.ts`): one, and both sides play it; several, and
      *  each player plays every ordered pair of two different ones, side A by the first, so each formation meets each
      *  other from both ends. Its duels' players are named with it, `rush-block` against `rush-apart`. Absent: each
      *  player as it is, by its bare name. */
@@ -70,7 +70,7 @@ export const FULL_SPEC: MeasureSpec = {
   name: "full",
   seeds: [1, 2, 3, 4, 5, 6],
   saves: "all",
-  duels: { map: "crossing", rounds: DUEL_ROUNDS, pulseTicks: DUEL_PULSE_TICKS, commanders: ["vasse", "averno", "dob"], players: ["balanced", "rush", "turtle"] },
+  duels: { map: "crossing", rounds: BATTLE_ROUNDS, pulseTicks: BATTLE_ROUND_TICKS, commanders: ["vasse", "averno", "dob"], players: ["balanced", "rush", "turtle"] },
   levels: [],
   plans: LEVEL_PLANS,
 }

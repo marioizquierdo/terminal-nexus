@@ -92,7 +92,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     ],
   )
   assert.deepEqual(ARMIES.commanders[0]?.portraitFalls, [[" _@_ ", "(>_<)", "/|@|\\"], [" _@_ ", "(x_x)", "/|@|\\"]])
-  // Each walks out with a starting package where a mode scripts none (a duel), and Averno's army bends the Nexus Pulse
+  // Each walks out with a starting package where a mode scripts none (a battle), and Averno's army bends the Nexus Pulse
   // in every mode: a card from the Ravel Nexus in rounds 2 and 4.
   assert.deepEqual(
     ARMIES.commanders.map((commander) => commander.start.map(({ unit, count }) => `${count} ${unit}`).join(", ")),
@@ -132,7 +132,7 @@ test("the game ships the shared army, two factions and three Commanders on top o
     "garrison structure.citizen.garrison 100",
     "battery structure.citizen.battery 50",
   ])
-  assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [["War Chest", "Adds 2000 resources to spend.", "+2000"]])
+  assert.deepEqual(shared?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [["War Chest", "Adds 2000 credits to spend.", "+2000"]])
   assert.deepEqual(citizens?.powers?.map((card) => [card.name, card.description, effectOf(card)]), [
     ["Standard Heavy Rounds", "Every Turret hits harder.", "modifyAttack"],
     ["Long Barrels", "Marksmen reach two tiles further.", "modifyAttack"],

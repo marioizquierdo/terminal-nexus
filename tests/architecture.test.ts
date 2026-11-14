@@ -91,8 +91,15 @@ test("src/match never reaches the view, the report, the shell, or the Build Phas
   assertNoDependencyOn("match", ["view", "report", "cli", "build"])
 })
 
+test("src/battle and src/match sit below the mode: they never reach src/skirmish, the view or the shell", () => {
+  // A Skirmish plays a battle; the battle and the rules under it never know which mode plays them. The tick rate they
+  // share with every layer is the kernel's (src/state/types.ts), not a Skirmish's.
+  assertNoDependencyOn("battle", ["skirmish", "view", "cli", "web"])
+  assertNoDependencyOn("match", ["skirmish"])
+})
+
 test("src/skirmish is a mode, pure: it never reaches the view, the shell or the browser page", () => {
-  // A Skirmish is a save: its setup, the duel as it stands and a draft, read and written as text; playing one on the
+  // A Skirmish is a save: its setup, the battle as it stands and a draft, read and written as text; playing one on the
   // Build Phase screen is the shell's (src/cli/skirmish-play.ts), so nothing below the mode knows it serves a Skirmish.
   assertNoDependencyOn("skirmish", ["view", "cli", "web"])
 })
@@ -176,7 +183,7 @@ test("src/view never reaches the kernel", () => {
 })
 
 test("the deterministic modules name no clock, no Math.random, and no terminal", () => {
-  const kernel = ["grid", "rng", "content", "events", "state", "skirmish", "pulse", "match", "mission", "armies", "abilities", "duel"]
+  const kernel = ["grid", "rng", "content", "events", "state", "skirmish", "pulse", "match", "mission", "armies", "abilities", "battle"]
   const forbidden = [
     /\bMath\s*\.\s*random\b/,
     /\bDate\s*\.\s*now\b/,

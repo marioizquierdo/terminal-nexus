@@ -747,7 +747,7 @@ test("the scripted playtest plays scenes as the game does: an old script runs as
   assert.equal(run.frames[1]?.state.popup, null)
   const last = run.frames[run.frames.length - 1]
   assert.equal(last?.state.planned.length, 2)
-  assert.match(frameToText(last?.frame ?? run.frames[0]!.frame), /Hatchery placed \(resources: 40\)/)
+  assert.match(frameToText(last?.frame ?? run.frames[0]!.frame), /Hatchery placed \(credits: 40\)/)
 })
 
 // --- The live game ------------------------------------------------------------------------------------

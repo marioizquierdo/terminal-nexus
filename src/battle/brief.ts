@@ -1,25 +1,24 @@
-// What a duel side is told before it plans a round (`briefOf`): one brief, two forms — `data`, for a script, and `text`,
-// the same facts written out for a language model (docs/system-design/duels.md, "The brief and the build actions"). Everything
+// What a battle side is told before it plans a round (`briefOf`): one brief, two forms — `data`, for a script, and `text`,
+// the same facts written out for a language model (docs/system-design/battles.md, "The brief and the build actions"). Everything
 // in it is what a player on the Build Phase screen could see: their own army, credits, hand and map; the enemy's
 // buildings and units where they stand, its Nexus's health and the powers it has kept (kept powers are public:
 // commander-armies.md, catch-up); and what happened last round. The enemy's build actions for this round are never in it.
 //
-// Pure: the same duel gives the same brief. Presentation of the duel, so it may read the art and card tables.
+// Pure: the same battle gives the same brief. Presentation of the battle, so it may read the art and card tables.
 
 import { abilityLines } from "../abilities/index.ts"
 import type { ActionKind, PowerCard } from "../armies/index.ts"
 import { modeIn, modeSet } from "../armies/index.ts"
-import { artFor } from "../content/art.ts"
 import { CARD_TEXT } from "../content/cards.ts"
 import type { ContentDef, ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittingsOf } from "../content/index.ts"
 import { supplyOf } from "../content/supply.ts"
-import { tilesOf } from "../grid/coords.ts"
-import { duelGrid } from "./maps.ts"
-import type { DuelArmy } from "./sides.ts"
+import type { BattleArmy } from "./sides.ts"
 import { armyOf, loadoutOf, powerOf } from "./sides.ts"
-import { handOf, mapOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
-import type { DuelState, RoundReport, Side, SideReport } from "./types.ts"
+import { handOf, other, standingOf, titleOf, zonePoint } from "./round.ts"
+import type { Score } from "./reading/index.ts"
+import { readingLines, scoreLine, scoreOf } from "./reading/index.ts"
+import type { BattleState, RoundReport, Side, SideReport } from "./types.ts"
 import { APART_GAP, FORMATIONS, STANCES, ZONES } from "./types.ts"
 
 /** A building the side can build: its card id, name, cost, what it needs standing, and what it does. */
@@ -91,8 +90,14 @@ export type BriefData = Readonly<{
      *  powers are): where to look for an attack that hits an area. */
     trains: readonly string[]
   }>
+  /** The Grid as the round opens, as its printer drew it (`DrawMap`); empty when nothing drew it (a script's brief). */
   map: readonly string[]
-  last: RoundReport | null
+  /** The score so far: each side's damage dealt and Nexus share, and who leads by the rule a battle that runs out of
+   *  rounds is judged by (`scoreOf`, `./reading/score.ts`). */
+  score: Score
+  last: SeenReport | null
+  /** Every round's report so far, the last one included, for a script that reads more than the last round. */
+  reports: readonly SeenReport[]
   history: readonly string[]
 }>
 
@@ -123,49 +128,45 @@ export function strengthOf(definition: ContentDef): number {
 /** What a power does, in its card's own line. */
 const cardOf = (card: PowerCard, number: number): BriefCard => ({ number, id: card.id, name: card.name, does: card.description, rarity: card.rarity })
 
-/** The map as rows of text: ground, then every building and unit drawn with its glyph — your side in lower case, the
- *  enemy's in upper case — so the picture is the screen's. */
-function picture(state: DuelState, registry: (side: Side) => ContentRegistry): string[] {
-  const map = mapOf(state)
-  const grid = duelGrid(map)
-  const rows = map.rows.map((row) => [...row])
-  const draw = (contentId: string, anchor: Readonly<{ x: number; y: number }>, side: Side): void => {
-    const footprint = registry(side).get(contentId).footprint
-    const art = artFor(contentId)
-    for (const tile of tilesOf(anchor, footprint)) {
-      if (tile.x < 0 || tile.y < 0 || tile.x >= grid.width || tile.y >= grid.height) continue
-      const glyph = art?.[tile.y - anchor.y]?.[tile.x - anchor.x] ?? contentId.slice(contentId.lastIndexOf(".") + 1, contentId.lastIndexOf(".") + 2)
-      ;(rows[tile.y] as string[])[tile.x] = side === "B" ? glyph.toUpperCase() : glyph.toLowerCase()
-    }
-  }
-  if (state.carried === null) {
-    for (const side of ["A", "B"] as const) for (const structure of standingOf(state, side)) draw(structure.contentId, structure.anchor, side)
-  } else {
-    for (const entity of state.carried.entities) draw(entity.contentId, entity.anchor, entity.player)
-  }
-  const header = `   ${Array.from({ length: grid.width }, (_, x) => (x % 10 === 0 ? String(x / 10) : " ")).join("")}`
-  return [header, ...rows.map((row, y) => `${String(y).padStart(2, " ")} ${row.join("")}`)]
-}
+/** What the Grid looks like as a round opens, drawn by whoever prints the brief (the `skirmish` command draws an ASCII
+ *  screenshot, `src/cli/battle-map.ts`): the battle never reaches the view itself. Given each side's content. */
+export type DrawMap = (state: BattleState, registry: (side: Side) => ContentRegistry) => readonly string[]
 
 /** A side's round report as one line: what it built, kept, fielded, lost, dealt. */
-function reportLine(label: string, report: SideReport): string {
+/** What of a side's Build Phase is its own: the credits it had, spent and earned, the hand it was dealt, what the rules
+ *  refused it and the note its player wrote. The other side's brief never carries them. */
+const PRIVATE = ["credits", "spent", "earned", "hand", "refused", "note"] as const
+type PrivateKey = (typeof PRIVATE)[number]
+
+/** A round's report as one side may read it: its own side whole, the other side's without what is private. */
+export type SeenReport = Omit<RoundReport, "sides"> & Readonly<{ sides: Readonly<Record<Side, Omit<SideReport, PrivateKey> & Partial<Pick<SideReport, PrivateKey>>>> }>
+
+/** `report` as `side` may read it (`SeenReport`). */
+export function seenBy(report: RoundReport, side: Side): SeenReport {
+  const enemy: Side = side === "A" ? "B" : "A"
+  const theirs: Record<string, unknown> = { ...report.sides[enemy] }
+  for (const key of PRIVATE) delete theirs[key]
+  return { ...report, sides: { ...report.sides, [enemy]: theirs } as SeenReport["sides"] }
+}
+
+function reportLine(label: string, report: SeenReport["sides"][Side]): string {
   const counts = (record: Readonly<Record<string, number>>): string =>
     Object.entries(record)
       .map(([name, count]) => `${count} ${name}`)
       .join(", ") || "none"
   return [
-    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${report.refused.length === 0 ? "" : `; refused ${report.refused.join("; ")}`}; stance ${report.stance}.`,
+    `${label} (${report.commander}): kept ${report.kept ?? "nothing"}; built ${report.built.length === 0 ? "nothing" : report.built.join(", ")}${report.formation === undefined ? "" : ` (formation ${report.formation})`}${report.actions === undefined ? "" : `; took ${report.actions.join(", ")}`}${(report.refused ?? []).length === 0 ? "" : `; refused ${(report.refused ?? []).join("; ")}`}; stance ${report.stance}.`,
     `  fielded ${counts(report.fielded)}; trained ${counts(report.trained)}; lost ${counts(report.lost)}.`,
-    `  dealt ${report.dealt.units} to units, ${report.dealt.buildings} to buildings, ${report.dealt.nexus} to the Nexus; Nexus ${report.nexus.before} -> ${report.nexus.after} of ${report.nexus.most}${report.commanderFell ? "; the Commander fell" : ""}${report.earned > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(report.abilities).length === 0 ? "" : `; abilities ${counts(report.abilities)}`}.`,
+    `  dealt ${report.dealt.units} to units, ${report.dealt.buildings} to buildings, ${report.dealt.nexus} to the Nexus; Nexus ${report.nexus.before} -> ${report.nexus.after} of ${report.nexus.most}${report.commanderFell ? "; the Commander fell" : ""}${(report.earned ?? 0) > 0 ? `; earned ${report.earned} credits` : ""}${Object.keys(report.abilities).length === 0 ? "" : `; abilities ${counts(report.abilities)}`}.`,
   ].join("\n")
 }
 
-/** The brief side `side` reads before it plans the duel's next round. `strategies`, when given, is what duels have
+/** The brief side `side` reads before it plans the battle's next round. `strategies`, when given, is what battles have
  *  taught so far (`docs/game-design/play-strategies.md`), for a player that reads words: the text carries it. */
-export function briefOf(state: DuelState, side: Side, strategies?: string): Brief {
+export function briefOf(state: BattleState, side: Side, strategies?: string, drawMap?: DrawMap): Brief {
   const enemy = other(side)
-  const army: DuelArmy = armyOf(state, side)
-  const enemyArmy: DuelArmy = armyOf(state, enemy)
+  const army: BattleArmy = armyOf(state, side)
+  const enemyArmy: BattleArmy = armyOf(state, enemy)
   const loadout = loadoutOf(army, state.sides[side])
   const enemyLoadout = loadoutOf(enemyArmy, state.sides[enemy])
   const registryOf = (who: Side): ContentRegistry => (who === side ? loadout.registry : enemyLoadout.registry)
@@ -230,7 +231,13 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
   }
   const unitsOf = (who: Side): Record<string, number> => {
     const units: Record<string, number> = {}
-    for (const entity of state.carried?.entities ?? []) {
+    if (state.carried === null) {
+      // Round 1: nothing is on the Grid yet, but each side's Commander and its starting troops march out as it opens.
+      const commander = armyOf(state, who).commander
+      for (const { unit, count } of [{ unit: commander.unit, count: 1 }, ...commander.start]) units[titleOf(unit)] = (units[titleOf(unit)] ?? 0) + count
+      return units
+    }
+    for (const entity of state.carried.entities) {
       if (entity.player !== who || registryOf(who).get(entity.contentId).layer === "obstacles") continue
       units[titleOf(entity.contentId)] = (units[titleOf(entity.contentId)] ?? 0) + 1
     }
@@ -271,8 +278,10 @@ export function briefOf(state: DuelState, side: Side, strategies?: string): Brie
         item.spawns === undefined ? [] : [`${item.label}: ${item.spawns.perWave * item.spawns.waves} ${titleOf(item.spawns.unit)} a round (${statsOf(enemyLoadout.registry.get(item.spawns.unit))})`],
       ),
     },
-    map: picture(state, registryOf),
-    last,
+    map: drawMap === undefined ? [] : drawMap(state, registryOf),
+    score: scoreOf(state.history),
+    last: last === null ? null : seenBy(last, side),
+    reports: state.history.map((report) => seenBy(report, side)),
     history: state.history.map((report) => {
       const ours = report.sides[side]
       const theirs = report.sides[enemy]
@@ -292,9 +301,11 @@ export function briefText(data: BriefData, strategies?: string): string {
   for (const skill of data.commander.skills) lines.push(`- ${skill}`)
   lines.push(`Your Commander is ${data.commander.status}.`)
   lines.push("")
-  lines.push(`Your buildings: ${data.yours.buildings.join(", ")}. Your units on the Grid: ${Object.entries(data.yours.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}.`)
+  lines.push(`Your buildings: ${data.yours.buildings.join(", ")}. Your units ${data.round === 1 ? "(the starting troops, who march out as the round opens)" : "on the Grid"}: ${Object.entries(data.yours.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}.`)
   lines.push(`Credits to spend: ${data.credits}. Supply: ${data.supply.used} of ${data.supply.cap ?? "unlimited"} places used (a building stops training while the army is full).`)
   lines.push(`Your Nexus: ${data.nexus.health} of ${data.nexus.most}. Theirs (${data.enemy.commander}): ${data.enemy.nexus.health} of ${data.enemy.nexus.most}. A side whose Nexus falls loses.`)
+  lines.push(`Score: ${scoreLine(data.score, data.side)}`)
+  lines.push("Public and private: everything the Battle Round showed (the score, the last round, the map) the enemy sees too; your credits, your hand and the build actions you are about to give are yours alone.")
   lines.push("")
   lines.push("## The Nexus Pulse's hand: keep one (by its number), or none")
   for (const card of data.hand) lines.push(`${card.number}. ${card.name} (${card.rarity}): ${card.does}`)
@@ -319,10 +330,12 @@ export function briefText(data: BriefData, strategies?: string): string {
     }
     lines.push("")
   }
-  lines.push("## The map (your things lower case, theirs upper case; # rock, . open ground)")
-  lines.push("```")
-  lines.push(...data.map)
-  lines.push("```")
+  if (data.map.length > 0) {
+    lines.push(`## The map, as the screen draws it (p1's things lower case, p2's upper case; you are ${data.side === "A" ? "p1" : "p2"})`)
+    lines.push("```")
+    lines.push(...data.map)
+    lines.push("```")
+  }
   lines.push(`Places you can name for a building (it goes to the legal spot nearest): ${Object.entries(data.zones).map(([zone, tile]) => `${zone} (${tile.x},${tile.y})`).join(", ")}. "forward" is ahead of your furthest building, so a base pushed forward builds further forward. You may give x and y instead.`)
   lines.push(`You build within 6 of your Nexus and of buildings linked to it (a row counting two columns); buildings may touch.`)
   lines.push("")
@@ -333,7 +346,7 @@ export function briefText(data: BriefData, strategies?: string): string {
   lines.push("What the enemy's buildings train, and whether any of it hits an area, is under The enemy, below.")
   lines.push("")
   lines.push("## The enemy")
-  lines.push(`${data.enemy.commander}. Buildings: ${data.enemy.buildings.join(", ") || "none"}. Units on the Grid after the last round: ${Object.entries(data.enemy.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}. Powers kept: ${data.enemy.kept.join(", ") || "none"}.`)
+  lines.push(`${data.enemy.commander}. Buildings: ${data.enemy.buildings.join(", ") || "none"}. Units ${data.round === 1 ? "(the starting troops)" : "on the Grid after the last round"}: ${Object.entries(data.enemy.units).map(([name, count]) => `${count} ${name}`).join(", ") || "none"}. Powers kept: ${data.enemy.kept.join(", ") || "none"}.`)
   if (data.enemy.trains.length > 0) lines.push(`What their buildings can train: ${data.enemy.trains.join("; ")}.`)
   if (data.last !== null) {
     lines.push("")
@@ -341,6 +354,7 @@ export function briefText(data: BriefData, strategies?: string): string {
     const enemy = data.side === "A" ? "B" : "A"
     lines.push(reportLine("You", data.last.sides[data.side]))
     lines.push(reportLine("They", data.last.sides[enemy]))
+    if (data.last.reading !== undefined) lines.push(...readingLines(data.last.reading, data.side))
   }
   if (data.history.length > 1) {
     lines.push("")

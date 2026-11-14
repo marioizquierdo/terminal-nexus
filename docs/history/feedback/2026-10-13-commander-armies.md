@@ -303,7 +303,7 @@ tuned values are her army's data and their Experiments are gone; a Nexus power's
 one entry of a table, so no reader branches on a kind and a new kind is one file; Dob Hunter, the third Commander,
 on the Ravel Nexus with a bounty and loaded dice; an adversarial review of the code's readability, its findings
 applied; and duels, two armies on one map, script or model a side, with a bench and model games run. The guide is
-`docs/system-design/army-authoring.md`; duels and model against model are `docs/system-design/duels.md`.
+`docs/system-design/army-authoring.md`; duels and model against model are `docs/system-design/battles.md`.
 
 ## Mirror fairness, and the pathfinding coming (2026-10-19)
 

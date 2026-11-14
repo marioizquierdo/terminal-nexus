@@ -14,7 +14,7 @@
 //   mission. It names the armies it plays with (`requires`: the Commander's, and the raid's), and a level may extend
 //   another level, its own story's or another's, so a second Commander replays a first one's rounds unchanged.
 //
-// The Story is one mode reading armies; the duel (`src/duel/`) is another, over the same cards and units. Nothing
+// The Story is one mode reading armies; the battle (`src/battle/`) is another, over the same cards and units. Nothing
 // here knows which mode reads it, and the kernel never reads an army. docs/system-design/army-authoring.md is the guide.
 
 import type { ContentEntry } from "../content/data.ts"
@@ -84,7 +84,7 @@ export type ActionKind = (typeof ACTION_KINDS)[number]
  * power would apply to every building of its kind — and applies to this one building alone (`fittedId`, `src/content`).
  */
 export type BuildingActionCard = Readonly<{
-  /** Its name in data, in a building's content id and in a duel plan: lower case, digits and dashes, unique on its
+  /** Its name in data, in a building's content id and in a battle plan: lower case, digits and dashes, unique on its
    *  card. */
   id: string
   kind: ActionKind
@@ -224,7 +224,7 @@ export type Schedule = readonly ScheduleEntry[]
 /** A Commander army's Commander: her name, and her unit — a content definition flagged `commander`, usually defined
  *  in the same file. How a card names her (she, he, they) is her unit's card's `pronouns`. */
 export type CommanderEntry = Readonly<{
-  /** What a story's `commander` and a duel's `--a` name her by. By convention her army's id too (`vasse` leads
+  /** What a story's `commander` and a battle's `--a` name her by. By convention her army's id too (`vasse` leads
    *  `armies/vasse` and `stories/vasse`): a story's `requires` names armies, its `commander` names her. */
   id: string
   name: string
@@ -236,7 +236,7 @@ export type CommanderEntry = Readonly<{
   /** What her army's build leans on, one or two of `LEANS` (`curve.ts`): where it takes its power from on the
    *  expected power curve. Every army names one. */
   lean: readonly Lean[]
-  /** Her starting package: the units that walk out with her where a mode does not script its own (a duel's first
+  /** Her starting package: the units that walk out with her where a mode does not script its own (a battle's first
    *  round). A story's level brings its own. Absent: she walks out alone. */
   start?: readonly Readonly<{ unit: string; count: number }>[]
   /** How her army bends the Nexus Pulse's schedule, in every mode: what each round's hand deals (Averno's: a card
@@ -411,7 +411,7 @@ export type Armies = Readonly<{
   /** Every story's levels: story by story, each story's in order. */
   levels: readonly Level[]
   /** What each army can field, by its id: every building card and Nexus power of the armies in its sight, its own
-   *  and what it requires — what a mode that is not a story offers a side (`src/duel/`). */
+   *  and what it requires — what a mode that is not a story offers a side (`src/battle/`). */
   arsenals: Readonly<Record<string, Arsenal>>
   /** The content the files were checked against, with everything the armies define as data. */
   registry: ContentRegistry

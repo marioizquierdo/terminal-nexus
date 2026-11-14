@@ -1,7 +1,7 @@
-// A duel side's building actions (`BuildActions.actions`, `src/duel/round.ts`): a plan names a building of its own by its
+// A battle side's building actions (`BuildActions.actions`, `src/battle/round.ts`): a plan names a building of its own by its
 // anchor and one of its card's actions — an upgrade bought, a mode switched to, an order given — taken by the Build
 // Phase's own rules after its buildings are placed, from the credits they leave; the battle runs on what each building
-// carries, and the regroup carries it into the next round. A run's battle hands the screen's actions to its duel the same
+// carries, and the regroup carries it into the next round. A run's battle hands the screen's actions to its battle the same
 // way, and one scripted player (`balanced-upgrade`) spends what its plan leaves on its buildings' upgrades.
 
 import { test } from "node:test"
@@ -10,27 +10,27 @@ import { buildLayout } from "../src/build/layout.ts"
 import type { BuildState } from "../src/build/state.ts"
 import { createBuildState, nexusTile, withoutScene } from "../src/build/state.ts"
 import { newSkirmishLevel, playedOf, buildActionsOf } from "../src/cli/skirmish-play.ts"
-import type { DuelSetup, DuelState, Player, BuildActions } from "../src/duel/index.ts"
-import { SCRIPTED, briefOf, newDuel, placementsOf, playDuel, playRound, readBuildActions } from "../src/duel/index.ts"
+import type { BattleSetup, BattleState, Player, BuildActions } from "../src/battle/index.ts"
+import { SCRIPTED, briefOf, beginBattle, placementsOf, playToEnd, playRound, readBuildActions } from "../src/battle/index.ts"
 
 const BARRACKS = "structure.citizen.barracks"
-const setup = (extra: Partial<DuelSetup> = {}): DuelSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
+const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
 const hold: BuildActions = { build: [], stance: "hold" }
 
-/** A duel after its first round, side A having built one Barracks by its Nexus and a Supply Depot: the duel, and where
+/** A battle after its first round, side A having built one Barracks by its Nexus and a Supply Depot: the battle, and where
  *  the Barracks stands. */
-function withBarracks(): Readonly<{ duel: DuelState; at: Readonly<{ x: number; y: number }> }> {
+function withBarracks(): Readonly<{ battle: BattleState; at: Readonly<{ x: number; y: number }> }> {
   // A Supply Depot beside it, so the army has room for whole waves.
   const plan: BuildActions = { build: [{ building: "barracks", at: "nexus" }, { building: "depot", at: "back" }], stance: "hold" }
-  const at = placementsOf(newDuel(setup()), "A", plan)[0]?.anchor
+  const at = placementsOf(beginBattle(setup()), "A", plan)[0]?.anchor
   assert.ok(at !== undefined, "the Barracks found no spot")
-  return { duel: playRound(newDuel(setup()), { A: plan, B: hold }).state, at }
+  return { battle: playRound(beginBattle(setup()), { A: plan, B: hold }).state, at }
 }
 
-test("a duel round with a production line: bought from what is left, the Barracks sends five a wave, and the regroup carries it", { timeout: 60_000 }, () => {
-  const { duel, at } = withBarracks()
-  const bought = playRound(duel, { A: { ...hold, actions: [{ ...at, action: "production-line" }] }, B: hold })
-  const plain = playRound(duel, { A: hold, B: hold })
+test("a battle round with a production line: bought from what is left, the Barracks sends five a wave, and the regroup carries it", { timeout: 60_000 }, () => {
+  const { battle, at } = withBarracks()
+  const bought = playRound(battle, { A: { ...hold, actions: [{ ...at, action: "production-line" }] }, B: hold })
+  const plain = playRound(battle, { A: hold, B: hold })
   assert.deepEqual(bought.report.sides.A.actions, [`production-line on barracks at ${at.x},${at.y}`])
   assert.equal(bought.report.sides.A.spent, 15)
   assert.equal(bought.state.sides.A.credits, plain.state.sides.A.credits - 15)
@@ -55,8 +55,8 @@ test("a duel round with a production line: bought from what is left, the Barrack
 })
 
 test("a plan's building actions are held to the rules: a building of its own, an action its card has, and the credits for it", { timeout: 60_000 }, () => {
-  const { duel, at } = withBarracks()
-  const poor: DuelState = { ...duel, sides: { ...duel.sides, A: { ...duel.sides.A, credits: 10 } } }
+  const { battle, at } = withBarracks()
+  const poor: BattleState = { ...battle, sides: { ...battle.sides, A: { ...battle.sides.A, credits: 10 } } }
   const { report } = playRound(poor, {
     A: {
       ...hold,
@@ -86,24 +86,24 @@ test("a plan reads its actions leniently: each a building by x and y and an acti
   assert.equal(readBuildActions('{ "build": [], "stance": "attack" }').actions.actions, undefined)
 })
 
-test("the balanced script with upgrades spends what its plan leaves on its Barracks's production line, and the duel plays it", { timeout: 120_000 }, () => {
+test("the balanced script with upgrades spends what its plan leaves on its Barracks's production line, and the battle plays it", { timeout: 120_000 }, () => {
   const player = SCRIPTED["balanced-upgrade"] as Player
-  const duel = playDuel(setup({ rounds: 4 }), { A: player, B: SCRIPTED["rush"] as Player })
-  const bought = duel.history.flatMap((report) => report.sides.A.actions ?? [])
-  assert.ok(bought.some((action) => action.startsWith("production-line on barracks")), `it bought no production line: ${JSON.stringify(duel.history.map((report) => report.sides.A))}`)
+  const battle = playToEnd(setup({ rounds: 4 }), { A: player, B: SCRIPTED["rush"] as Player })
+  const bought = battle.history.flatMap((report) => report.sides.A.actions ?? [])
+  assert.ok(bought.some((action) => action.startsWith("production-line on barracks")), `it bought no production line: ${JSON.stringify(battle.history.map((report) => report.sides.A))}`)
   // The plain script buys none: the scripts that measured the curve before play as they did.
-  const plain = playDuel(setup({ rounds: 4 }), { A: SCRIPTED["balanced"] as Player, B: SCRIPTED["rush"] as Player })
+  const plain = playToEnd(setup({ rounds: 4 }), { A: SCRIPTED["balanced"] as Player, B: SCRIPTED["rush"] as Player })
   assert.ok(plain.history.every((report) => report.sides.A.actions === undefined))
 })
 
-// Re-pinned from a Challenge run's battle on a Skirmish's: the same screen hands its actions to the same duel.
-test("a Skirmish hands the screen's actions to its duel: a production line bought on the screen is bought in the battle", { timeout: 120_000 }, () => {
+// Re-pinned from a Challenge run's battle on a Skirmish's: the same screen hands its actions to the same battle.
+test("a Skirmish hands the screen's actions to its battle: a production line bought on the screen is bought in the battle", { timeout: 120_000 }, () => {
   const { play, firstRound } = newSkirmishLevel(1)
   const context = withoutScene(firstRound())
   const viewport = buildLayout({ columns: 80, rows: 24 }, context.grid).viewport
   const opened = createBuildState(context, nexusTile(context) ?? { x: 0, y: 0 }, viewport)
-  const { duel } = (context.mode as { duel: DuelState })
-  const spot = placementsOf(duel, "A", { build: [{ building: "barracks", at: "nexus" }], stance: "attack" })[0]
+  const { battle } = (context.mode as { battle: BattleState })
+  const spot = placementsOf(battle, "A", { build: [{ building: "barracks", at: "nexus" }], stance: "attack" })[0]
   assert.ok(spot !== undefined)
   const key = `${spot.anchor.x},${spot.anchor.y}`
   const state: BuildState = { ...opened, planned: [{ ordinal: 0, contentId: BARRACKS, anchor: spot.anchor }], nextOrdinal: 1, fitted: [{ anchor: key, action: "production-line" }] }
@@ -114,7 +114,7 @@ test("a Skirmish hands the screen's actions to its duel: a production line bough
   const played = playedOf(resolved)
   assert.deepEqual(played?.report.sides.A.actions, [`production-line on barracks at ${key}`])
   assert.equal(played?.report.sides.A.spent, 40 + 15)
-  const barracks = played?.duel.carried?.entities.find((entity) => entity.anchor.x === spot.anchor.x && entity.anchor.y === spot.anchor.y)
+  const barracks = played?.battle.carried?.entities.find((entity) => entity.anchor.x === spot.anchor.x && entity.anchor.y === spot.anchor.y)
   assert.equal(barracks?.contentId, `${BARRACKS}+production-line`)
   // The next round's Build Phase stands it as it is, its card's upgrade offered no more.
   const next = play.nextRound(context, state, resolved)

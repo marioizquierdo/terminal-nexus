@@ -1,15 +1,15 @@
-// Playing a Skirmish a round at a time: who plans each slot, and the round itself, from a save's setup and the duel as
-// it stands. Pure, like the duel it plays (`src/duel/`): the command line (`src/cli/skirmish.ts`) and the game's screens
+// Playing a Skirmish a round at a time: who plans each slot, and the round itself, from a save's setup and the battle as
+// it stands. Pure, like the battle it plays (`src/battle/`): the command line (`src/cli/skirmish.ts`) and the game's screens
 // both play through here, so a battle played headless and one played on screen are the same battle.
 
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
-import type { BuildActions, BuildEntry, DuelState, RoundReport, Side } from "../duel/index.ts"
-import { actionsFor, briefOf, playRound, scriptedPlayer } from "../duel/index.ts"
+import type { BuildActions, BuildEntry, BattleState, RoundReport, Side } from "../battle/index.ts"
+import { actionsFor, briefOf, playRound, scriptedPlayer } from "../battle/index.ts"
 import type { RegroupResult } from "../match/index.ts"
 import type { MatchState } from "../state/types.ts"
 import type { Profiles, SaveSetup, Slot } from "./save.ts"
-import { controllerKind, duelSetupOf, IDLE_SCRIPT, scriptPlayed, SIDE_OF, SLOTS } from "./save.ts"
+import { controllerKind, battleSetupOf, IDLE_SCRIPT, scriptPlayed, SIDE_OF, SLOTS } from "./save.ts"
 
 /** The plan an idle slot hands in: nothing kept, nothing built, holding. */
 export const IDLE_ACTIONS: BuildActions = { build: [], stance: "hold" }
@@ -21,7 +21,7 @@ export const NO_ACTIONS: BuildActions = { build: [], stance: "attack" }
 export const isPlayer = (setup: SaveSetup, slot: Slot): boolean => controllerKind(setup.slots[slot].controller) === "player"
 
 /** The plan a scripted slot makes this round, from its own brief. Throws for a slot no script plays. */
-export function scriptPlan(setup: SaveSetup, state: DuelState, slot: Slot, profiles?: Profiles): BuildActions {
+export function scriptPlan(setup: SaveSetup, state: BattleState, slot: Slot, profiles?: Profiles): BuildActions {
   const controller = setup.slots[slot].controller
   if (controllerKind(controller) === "agent") throw new Error(`${slot} is ${controller}: agent players are not built yet`)
   const script = scriptPlayed(controller, profiles)
@@ -32,9 +32,9 @@ export function scriptPlan(setup: SaveSetup, state: DuelState, slot: Slot, profi
   return player(briefOf(state, SIDE_OF[slot]).data)
 }
 
-/** A round played: the duel after it, what happened, and, when asked, every event and the battle's last state. */
+/** A round played: the battle after it, what happened, and, when asked, every event and the battle's last state. */
 export type Played = Readonly<{
-  state: DuelState
+  state: BattleState
   report: RoundReport
   /** The build actions each slot played: a player's as given, a script's as it made them. */
   actions: Readonly<Record<Slot, BuildActions>>
@@ -49,13 +49,13 @@ export type Played = Readonly<{
 export type RoundWatch = (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry, sides: Readonly<Record<Side, ContentRegistry>>) => void
 
 /**
- * **The next round of a Skirmish**: the duel brought up to the setup (who plans each slot, the modifiers and the credits
+ * **The next round of a Skirmish**: the battle brought up to the setup (who plans each slot, the modifiers and the credits
  * shares take effect from this round), each player's slot playing the plan given for it (or none: it builds nothing and
  * attacks), each scripted slot its script's plan, then the Battle Round.
  */
-export function playNext(setup: SaveSetup, state: DuelState, plans: Readonly<Partial<Record<Slot, BuildActions>>>, profiles?: Profiles, watch?: RoundWatch): Played {
+export function playNext(setup: SaveSetup, state: BattleState, plans: Readonly<Partial<Record<Slot, BuildActions>>>, profiles?: Profiles, watch?: RoundWatch): Played {
   if (state.result !== null) throw new Error("the battle is over: there is no next round to play")
-  const current: DuelState = { ...state, setup: { ...duelSetupOf(setup, profiles), ...(state.setup.rosters === undefined ? {} : { rosters: state.setup.rosters }) } }
+  const current: BattleState = { ...state, setup: { ...battleSetupOf(setup, profiles), ...(state.setup.rosters === undefined ? {} : { rosters: state.setup.rosters }) } }
   const plan = (slot: Slot): BuildActions => (isPlayer(setup, slot) ? (plans[slot] ?? NO_ACTIONS) : scriptPlan(setup, current, slot, profiles))
   const events: DomainEvent[] = []
   let final: MatchState | null = null
@@ -89,11 +89,11 @@ export function actionsAt(
   return { actions, missing }
 }
 
-/** A round `playOn` played: the duel as it stood before it, and what it played. */
-export type RoundPlayed = Readonly<{ before: DuelState; played: Played }>
+/** A round `playOn` played: the battle as it stood before it, and what it played. */
+export type RoundPlayed = Readonly<{ before: BattleState; played: Played }>
 
-/** A run of rounds played: the duel after them, how many were played, and the player slots it stopped for. */
-export type Ran = Readonly<{ state: DuelState; played: number; waiting: readonly Slot[] }>
+/** A run of rounds played: the battle after them, how many were played, and the player slots it stopped for. */
+export type Ran = Readonly<{ state: BattleState; played: number; waiting: readonly Slot[] }>
 
 /**
  * **Rounds played on** until the battle reaches round `stop`'s Build Phase, or ends, or a player slot has no build
@@ -102,7 +102,7 @@ export type Ran = Readonly<{ state: DuelState; played: number; waiting: readonly
  */
 export function playOn(
   setup: SaveSetup,
-  start: DuelState,
+  start: BattleState,
   builds: Readonly<Partial<Record<Slot, readonly BuildEntry[]>>>,
   stop: number,
   profiles?: Profiles,

@@ -223,7 +223,7 @@ The owner, 2026-10-19: "the solution should be deterministic independently of th
 diagonal". **Every tie a rule breaks goes first by what the deciding unit faces — the enemy, or where it is headed —
 and what is still tied after that by one draw from the seeded stream** (`drawAmong`, `src/pulse/shared.ts`). Never
 by reading order, compass order or entity id: the opening hands ids out in reading order, so each of those favours
-the side the map put west, north or first. Before this rule one end of the map won nearly every mirror duel: the west with a rushing plan, the east with a
+the side the map put west, north or first. Before this rule one end of the map won nearly every mirror battle: the west with a rushing plan, the east with a
 balanced one.
 
 - **Blows land together.** Every hit of a speed tier is worked out against the state as the tier began and applied
@@ -246,7 +246,7 @@ balanced one.
   arrivals break a tie toward the enemy's Grid Nexus (`enemyNexusMiddle`); the regroup's slots and the order units make
   room for a building go by what a side faces, and the sides alternate. Forces whose
   musters meet are set down in turns, a unit of each at a time, the order reversed each turn, so the first listed does
-  not take all the ground between them. A duel places a building by its footprint's middle, not its north-west
+  not take all the ground between them. A battle places a building by its footprint's middle, not its north-west
   corner.
 
 One order is left inside a side: of several attackers whose blows kill a unit in the same tick, the lowest id is
@@ -256,7 +256,7 @@ building nothing) more than anything else did, so it waits for a
 reason of its own.
 
 A mirror battle with nothing tied stays a mirror tick for tick; with ties, each side wins it as often over seeds, and
-mirror duels split about evenly (`tests/fairness.test.ts`, over forty-eight duels; `tests/route-saves.test.ts`,
+mirror battles split about evenly (`tests/fairness.test.ts`, over forty-eight battles; `tests/route-saves.test.ts`,
 two squads in one corridor). Entity id still orders iteration and the events.
 
 ### 1.4 Determinism and replay — RULE — `tests/determinism.test.ts`
@@ -473,7 +473,7 @@ the same every time. The numbers are a starting point (the owner: "the idea is w
 
 **A building placed where units stand pushes them out** (RULE — the owner, 2026-10-26; `src/match/make-room.ts`,
 `tests/kept-front.test.ts`), the player's or the enemy's alike; a flyer stays put. As a round opens, each planned
-building in turn (a duel's two sides interleaved) sends the units under it, nearest its middle first, the shortest way
+building in turn (a battle's two sides interleaved) sends the units under it, nearest its middle first, the shortest way
 to the nearest free tile off every building; a unit standing there is pushed on as the pusher arrives, a ripple. The
 Build Phase draws those walks for the player's own plan as it is placed. A carried building that the Build Phase
 upgraded or switched opens the Pulse as its new content id (`refits`, [`content.md`](content.md)); its health and place

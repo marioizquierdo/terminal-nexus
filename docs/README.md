@@ -7,13 +7,13 @@ version of the design beyond git.
 
 ## Current — what the game is (`game-design/`)
 
-- [`glossary.md`](game-design/glossary.md) — every word the project made its own, one line each, with the page that holds its rules, and the words we stopped using.
+- [`glossary.md`](game-design/glossary.md) — every word the project made its own, one line each: what earns an entry, then four layers (the game, the world, making and testing, the engine and the code), alphabetical within each, with the page that holds its rules; the words that do two jobs and the words we stopped using. Check it before naming anything.
 - [`concept.md`](game-design/concept.md) — the game in one page: who it is for, how a battle works, the three modes, the promise.
 - [`lore.md`](game-design/lore.md) — the universe, the Nexuses, the factions, voice and visual language.
 - [`game-modes.md`](game-design/game-modes.md) — Skirmish, Story and Versus: the words they share, every way a Skirmish is set up, save files, how each mode is tested.
 - [`commander-armies.md`](game-design/commander-armies.md) — factions, Commanders and the shape of a playable army.
 - [`story.md`](game-design/story.md) — a Commander's story (tutorial, technology missions, endless stand, final battle), what a mission is, Vasse's story and PERIMETER, cutscenes, testing a mission.
-- [`play-strategies.md`](game-design/play-strategies.md) — what duels have taught about playing a Build Phase well, as advice a model player reads in its brief.
+- [`play-strategies.md`](game-design/play-strategies.md) — what battles have taught about playing a Build Phase well, as advice a model player reads in its brief.
 - [`scripted-opponent.md`](game-design/scripted-opponent.md) — raids, intentions, and where an opponent planner for missions and Skirmish comes from (working design).
 - [`ascii-art-references.md`](game-design/ascii-art-references.md) — where to learn terminal art and what to take from each source.
 - [`concept-art/`](game-design/concept-art/README.md) — early concept art and the first prototype captures.
@@ -27,10 +27,10 @@ version of the design beyond git.
 - [`replay-format.md`](system-design/replay-format.md) — the unbuilt replay file design (GUIDANCE).
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
 - [`army-authoring.md`](system-design/army-authoring.md) — how to write an army, a Commander, a Nexus power, an ability and a story as data: the file structure, the conventions, the checklist for a new Commander, and what a modder can do today.
-- [`duels.md`](system-design/duels.md) — the duel, the battle a Skirmish plays: how its rounds play, the brief a player reads and the plan it answers with, formations, and what its numbers can say.
+- [`battles.md`](system-design/battles.md) — the battle, the battle a Skirmish plays: how its rounds play, the brief a player reads and the plan it answers with, formations, and what its numbers can say.
 - [`skirmish-saves.md`](system-design/skirmish-saves.md) — how a Skirmish is set up (map, slots and controllers, goal, modifiers), saved and loaded at a Build Phase, and opened the same way by the screen and the `skirmish` command, whose manual is the comment [`src/cli/skirmish.ts`](../src/cli/skirmish.ts) opens with; the sandboxes, spectating and playtest notes; one vocabulary for the screen, the save file, the command line and the routes.
 - [`sandboxes.md`](system-design/sandboxes.md) — how a change is tested: which tool answers which question, the shape of a trial (sandbox, variant, engine, record, summary) and how to extend each part, the sandboxes by folder, comparing two builds, testing through Skirmishes with the `skirmish` command (scripts over seeds, every pairing of Commanders, a plan round by round, model against model), and the principles earlier rounds learned.
-- [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route saves, duels and story missions played, seeds, how a result is written down and retired when it goes stale, and the `measure` command.
+- [`measurement.md`](system-design/measurement.md) — how a battle is measured, so results before and after a rule change compare: a battle's record, the route saves, battles and story missions played, seeds, how a result is written down and retired when it goes stale, and the `measure` command.
 - [`movement.md`](system-design/movement.md) — troop movement: the seven rules a player should be able to predict, then where an army goes, banners (an idea), spawning, the three states (march, battle, retreat), formation, targeting and attacking, breaching, workers, the machinery underneath, what is still to smooth, and strategies.
 - [`routing.md`](system-design/routing.md) — how a place in the game is named and reached: routes, `--at`, the title menu's rows and the browser page's links.
 

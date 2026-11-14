@@ -20,7 +20,7 @@
 //   skirmish --map crossing --p1 script:steady --p2 script:steady --commanders all --seeds 1-6 --play-to end
 //
 // A build file is a slot's build actions as JSON: the power it keeps, what it builds and where, the actions taken on
-// its buildings, the formation and the stance (docs/system-design/duels.md, the brief and the build actions). One object
+// its buildings, the formation and the stance (docs/system-design/battles.md, the brief and the build actions). One object
 // is for the first round played; a list of them is by round, each with "round": 3, "2-4" or "*", the first that
 // fits winning:
 //   [{ "round": 1, "build": [{ "building": "barracks", "at": "forward" }], "stance": "hold" },
@@ -42,7 +42,7 @@
 //   --p1, --p2 <who>         build:<build file>: a player, and its build actions ("build:." reads ./build.json;
 //                            "build:" alone, the save's draft or nothing). script:<profile>: a profile in
 //                            players/scripts/ (agro, defensive, steady, agro-rich) or a script by its own name
-//                            (balanced, rush, turtle and their variants); "script:" alone builds nothing.
+//                            (balanced, rush, turtle, reactive and their variants); "script:" alone builds nothing.
 //                            A loaded battle keeps each slot's controller unless named.
 //   --p1-credits, --p2-credits <share>     a slot's share of the curve's income (1; a profile may carry one)
 //
@@ -54,7 +54,11 @@
 //   --commanders <a,b|all>   every pairing of these Commanders, each from both sides, once a seed: who won by Commander
 //
 // What it writes:
-//   --json                   the briefs as data rather than text
+//   --show <0,120,end>       each Battle Round played as an ASCII screenshot at these ticks (end: as it ends), after its
+//                            report: the Grid as the screen draws it, with a legend and what stands under what
+//   --show-effects           the ASCII screenshots with the effects on (shots, bursts); without, only what stands
+//   --json                   the briefs as data rather than text: stdout is one JSON object a brief, a line each
+//                            (with its "slot"); every other line goes to stderr
 //   --out <dir>              every round played: its save (round-<n>.save.json) and its report (round-<n>.txt)
 //   --log <file>             every round's Battle Round as grid logs it, at --log-level (info: error, warn, info,
 //                            debug, trace)
@@ -87,8 +91,8 @@ export const EXIT = { done: 0, failed: 1, refused: 2 } as const
 
 /** The options that take no value, and those that take one: the words that ask for a Skirmish, which the game's route
  *  takes too (`src/skirmish/ask.ts`), and the command's own. */
-const FLAGS = new Set(["json", "help"])
-const VALUES = new Set([...Object.keys(ASK_WORDS), "save", "file", "seeds", "commanders", "play-to", "out", "log", "log-level", "name", "notes"])
+const FLAGS = new Set(["json", "help", "show-effects"])
+const VALUES = new Set([...Object.keys(ASK_WORDS), "save", "file", "seeds", "commanders", "play-to", "out", "log", "log-level", "name", "notes", "show"])
 
 /** The options as written: each value by its name, and the flags given. */
 export type Options = Readonly<{ values: Readonly<Record<string, string>>; flags: ReadonlySet<string> }>
@@ -110,6 +114,10 @@ export type SkirmishRequest = Readonly<{
   out?: string
   log?: string
   logLevel?: LogLevel
+  /** The ticks of every Battle Round played to draw the battle at (`end`: as the round ends): `--show 0,120,end`. */
+  show?: readonly (number | "end")[]
+  /** `--show-effects`: the ASCII screenshots with the effects on screen at that instant (shots, bursts, fire's light). */
+  showEffects: boolean
   json: boolean
   name?: string
   notes?: string
@@ -172,6 +180,7 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
   if (many) {
     refuse(["load", "file"], "many battles are new ones: use --map")
     refuse(["save"], "many battles are kept with --out <dir>")
+    refuse(["show", "show-effects"], "an ASCII screenshot is of one battle: play one seed with --seed")
     if (playTo === undefined) throw new Error(`--${values["seeds"] !== undefined ? "seeds" : "commanders"} needs --play-to next, a round or end: how far each battle plays`)
   }
   if (values["commanders"] !== undefined) refuse(["p1-commander", "p2-commander"], "--commanders names every Commander played")
@@ -179,6 +188,14 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
   if (load === undefined && ask.map === undefined) throw new Error("a battle needs --map <id|file> to start a new one, or --load <file> (skirmish --help)")
 
   const level = values["log-level"]
+  const show = values["show"]?.split(",").map((part) => {
+    const tick = part.trim()
+    if (tick === "end") return "end" as const
+    if (/^\d+$/u.test(tick)) return Number(tick)
+    throw new Error(`--show is ticks and end, with commas (0,120,end), not "${values["show"]}"`)
+  })
+  if (show !== undefined && playTo === undefined) throw new Error("--show draws the Battle Rounds played: it needs --play-to")
+  if (flags.has("show-effects") && show === undefined) throw new Error("--show-effects dresses the ASCII screenshots --show takes: name the ticks with --show")
   return {
     ...given("load", load),
     ...given("save", save),
@@ -191,7 +208,9 @@ export function requestOf(options: Options, profiles: Profiles): SkirmishRequest
     ...given("out", values["out"]),
     ...given("log", values["log"]),
     ...given("logLevel", level === undefined ? undefined : parseLevel(level)),
+    ...given("show", show),
     json: flags.has("json"),
+    showEffects: flags.has("show-effects"),
     ...given("name", values["name"]),
     ...given("notes", values["notes"]),
   }
@@ -211,6 +230,11 @@ export function main(
       return args.length === 0 ? EXIT.failed : EXIT.done
     }
     const request = requestOf(options, profiles)
+    // --json: stdout is only data, a brief a line (JSON Lines); every other line goes to stderr.
+    if (request.json) {
+      const data = write
+      write = (line) => (line.startsWith("{") ? data(line) : fail(line))
+    }
     if (request.commanders !== undefined) playPairings(request, profiles, write)
     else if (request.seeds !== undefined) playSeeds(request, profiles, write)
     else return playBattle(request, profiles, write).refused ? EXIT.refused : EXIT.done

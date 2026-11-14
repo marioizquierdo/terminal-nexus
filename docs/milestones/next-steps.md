@@ -19,7 +19,7 @@ A new ask replaces an old one or waits its turn. Asks retired on 2026-11-12, and
   has an enemy Nexus to aim at). Esc skips its opening lines. Build as you like, press
   `s` for the start panel, `t` to change the target: move the banner with the arrows or the mouse, Enter, then `a`
   (aggressive) or `d` (defensive), and `s` to start. Is placing it comfortable and clear, or should a simpler stance row
-  replace it? In a duel the banner does not move the army yet (the step's next item), so judge the placing, not the
+  replace it? In a battle the banner does not move the army yet (the step's next item), so judge the placing, not the
   battle. While you are there, say anything about the kept front (survivors step back and form up in the first
   10 seconds), a building's actions (`e` onto a Barracks, then `c`), and the Nexus shooting back. In Settings, under
   Experiments, try the keyboard's Arrow step, Shift step, Shift pace and Hold pace, then export the settings and paste

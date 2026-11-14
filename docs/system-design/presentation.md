@@ -191,7 +191,7 @@ tuned time), and moving off it ends the flash (RULE — `tests/build-motion.test
 **The bottom bar is one line, the contextual line** (RULE for what it is — `tests/build-help.test.ts`,
 `tests/build-view.test.ts`; GUIDANCE for its words and tones). It is the one place any screen answers
 "what just happened, or why not" and, when nothing did, "what can I do here". **It says the last
-command's answer while that command said something** ("Barracks placed (resources: 60) - [u] undo",
+command's answer while that command said something** ("Barracks placed (credits: 60) - [u] undo",
 "Cannot build here: rock in the way at 8,5."), **and otherwise a hint for where the keyboard is**: the
 highlighted menu row's description and cost, how to place, how to leave Explore Map, what an open
 popup's keys do. The hints come from **one list of situations in the code**, a line each (`HINTS` in
@@ -218,7 +218,7 @@ not bind (RULE — `tests/build-view.test.ts`, `tests/build-help.test.ts`).
 **Planned buildings are drawn at full strength.** A planned structure uses the same glyphs, role and
 weight as a standing one. What keeps a plan revisable is undo and remove, which work until the
 Battle Round starts, and the status line after a placement says so with what is left to spend and the way back
-(`Hatchery placed (resources: 70) - [u] undo`; RULE — `tests/build-view.test.ts`).
+(`Hatchery placed (credits: 70) - [u] undo`; RULE — `tests/build-view.test.ts`).
 
 **The Build Phase menu is one list.** `[e] Explore Map` is the panel's first line and `[n] Nexus Pulse` sits
 straight under it, with the number of picks waiting and how many powers are active. Then the **credits

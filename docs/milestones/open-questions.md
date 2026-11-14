@@ -168,7 +168,8 @@ closer together. Raw speed helps every Battle Round; regrouping would specifical
 
 Missions are now several rounds long ([`story.md`](../game-design/story.md)) and PERIMETER plays three
 rounds, so "regroup between Battle Rounds" is no longer hypothetical. What is still unowned is the outpost
-itself: no structure does it, and Recall already walks units home to their buildings at the end of a Battle Round.
+itself: no building does it, and the regroup already forms survivors up where they fought at the end of a Battle
+Round.
 
 | Option | Cost |
 | --- | --- |

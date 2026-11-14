@@ -26,7 +26,8 @@ Every document is on one of three shelves, and the path says which:
 
 1. Run `./scripts/check-repository.sh`. It validates the repository and prints the current milestone
    and its current step.
-2. Read [`docs/README.md`](docs/README.md), the index of every document, one line each.
+2. Read [`docs/README.md`](docs/README.md), the index of every document, one line each, and keep the
+   [glossary](docs/game-design/glossary.md) at hand: the project's words, one line each.
 3. Read the current milestone in [`docs/milestones/`](docs/milestones/README.md) through its current
    step, and [`docs/milestones/next-steps.md`](docs/milestones/next-steps.md) for what is waiting on
    Mario, the owner, and what rode along.
@@ -55,8 +56,15 @@ are defined once, in the [glossary](docs/game-design/glossary.md).
   ([`game-modes.md`](docs/game-design/game-modes.md), how the game grows).
 - **Mario's time is the scarcest thing we have.** Play every change yourself before asking him; every ask says whether
   it is to play, watch, decide or do; at most five wait on him (the manual's "The feedback loop").
+- **The priority now: the `skirmish` command and automated testing.** Past decisions on design and architecture
+  bind; small details (a line's wording, a number, a label) do not, and are made to agree with the glossary (the
+  manual's "Changing the design", which past decisions bind). Quote Mario only with a link to his words.
 - **Whatever Mario's latest feedback asks for comes first.** A pasted settings export is feedback:
   start the game with it (`--settings`) and settle each Experiment it answers.
+- **One word, one thing: check the [glossary](docs/game-design/glossary.md) before naming anything** — a
+  screen, a setting, a flag, a field, a file, a heading, a line a player reads. Use the word it gives; if the
+  word is missing and is a general term used across the game (not one module's detail), add it there in the same pull
+  request; never bring back a word from its "Words we stopped using".
 - **Small, reviewable changes**, each with its tests, green on both runtimes (`npm test`,
   `npm run test:bun`, `npm run typecheck`), and the validator passing.
 - **See it before you claim it.** The playtest script presses keys without a terminal and returns
@@ -107,8 +115,8 @@ IDEA (a sketch). The ones every session needs:
 | `src/pulse/`, `src/state/`, `src/grid/`, `src/events/`, `src/rng/` | The deterministic kernel. |
 | `armies/`, `stories/`, `src/armies/` | Armies as data, stacked: `armies/all` (what any Commander may use), the factions `armies/citizen` and `armies/ravel`, and one army per Commander (`vasse`, `averno`, `dob`); each Commander's story and its missions in `stories/` (`stories/<id>/story.json`); the loader and the effects table. How to write one: `docs/system-design/army-authoring.md`. |
 | `src/abilities/` | What a unit does on its own (an aura, a bounty, loaded dice): one table of kinds the kernel calls at fixed moments. |
-| `src/duel/`, `src/skirmish/`, `bin/skirmish.ts`, `saves/` | The duel, two armies fought out a round at a time, script or model a side (`docs/system-design/duels.md`): the battle a Skirmish plays. A Skirmish's save file, the steps the screen and the command share to open and play one (`docs/system-design/skirmish-saves.md`), and example saves. Headless it is the `skirmish` command (`src/cli/skirmish.ts`, whose opening comment is its manual; its modules are `src/cli/skirmish-*.ts`); on screen `src/cli/skirmish-play.ts`, opened by `src/cli/skirmish-open.ts`. |
-| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: sandboxes, duels, missions (`docs/system-design/measurement.md`), and trials, a sandbox over many seeds as built and as variants change it (`grid <save> --seeds`). |
+| `src/battle/`, `src/skirmish/`, `bin/skirmish.ts`, `saves/` | The battle, two armies fought out a round at a time, script or model a side (`docs/system-design/battles.md`): the battle a Skirmish plays. A Skirmish's save file, the steps the screen and the command share to open and play one (`docs/system-design/skirmish-saves.md`), and example saves. Headless it is the `skirmish` command (`src/cli/skirmish.ts`, whose opening comment is its manual; its modules are `src/cli/skirmish-*.ts`); on screen `src/cli/skirmish-play.ts`, opened by `src/cli/skirmish-open.ts`. |
+| `src/measure/`, `bin/measure.ts` | Battles measured the same way before and after a rule changes: sandboxes, battles, missions (`docs/system-design/measurement.md`), and trials, a sandbox over many seeds as built and as variants change it (`grid <save> --seeds`). |
 | `src/content/`, `src/skirmish/opening/`, `sandboxes/` | Content definitions; the opening of a Battle Round written by hand and its variants; the sandboxes by folder (rules, units, movement, the engage bench, showcases) with the trial files (`docs/system-design/sandboxes.md`). |
 | `src/report/`, `src/events/` | The levelled log and the report a run ends with; the events the kernel emits. |
 | `src/match/`, `src/mission/` | The rules layer between the Build Phase and the kernel: openings, the regroup, missions and their trigger runner. |
@@ -125,6 +133,7 @@ IDEA (a sketch). The ones every session needs:
 
 - [ ] `./scripts/check-repository.sh` passes; both test runtimes and the type check are green.
 - [ ] The milestone's step list is ticked for what was built, and nothing else.
+- [ ] Every new word is in the glossary, and no retired one came back.
 - [ ] New questions carry a recommendation; new Experiments name the question they serve.
 - [ ] The pull request says what a person will notice, how to try it, and what is left to decide.
 - [ ] Anything learned the hard way is in `docs/history/lessons-learned.md`, not only fixed.

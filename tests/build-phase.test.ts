@@ -184,7 +184,7 @@ test("after a placement the keyboard goes back to where the arming came from, di
     assert.equal(build.state.focus, start)
     assert.equal(build.state.exploreMap, false)
     assert.equal(build.state.menuHighlight, entryOfConstruct(0), "the highlight stays on the row just built from")
-    assert.match(build.state.status.text, /Barracks placed \(resources: 60\) - \[u\] undo/)
+    assert.match(build.state.status.text, /Barracks placed \(credits: 60\) - \[u\] undo/)
   }
 })
 

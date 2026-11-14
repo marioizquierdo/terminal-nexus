@@ -8,8 +8,7 @@
 import type { SideRecord } from "./battle.ts"
 import type { TrialBattle, TrialSpec } from "./trial.ts"
 import type { PlayerId } from "../state/types.ts"
-
-const TICKS_PER_SECOND = 12
+import { TICKS_PER_SECOND } from "../state/types.ts"
 
 export type Interval = Readonly<{ share: number; low: number; high: number }>
 

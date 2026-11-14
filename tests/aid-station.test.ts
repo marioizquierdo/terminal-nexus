@@ -209,7 +209,7 @@ test("a patch lands after the tick's blows: a unit a blow kills is never saved b
 
 // --- The sandbox ------------------------------------------------------------------------------------
 
-test("aid-station-repair: the trooper beside the station wins its duel and is mended to full; the same duel beyond its reach is a mutual kill", async () => {
+test("aid-station-repair: the trooper beside the station wins its battle and is mended to full; the same battle beyond its reach is a mutual kill", async () => {
   const { run: battle } = await playSandbox("aid-station-repair.save.json")
   const opening = battle.initialState.entities
   const station = opening.find((entity) => entity.contentId === AID)
@@ -223,7 +223,7 @@ test("aid-station-repair: the trooper beside the station wins its duel and is me
     assert.ok(heal.amount <= 4 && heal.hpAfter <= 40)
   }
   assert.deepEqual([heals.at(-1)?.amount, heals.at(-1)?.hpAfter], [2, 40], "the last patch was not only what was missing")
-  // The duel beside it is won; the same duel five rows below, beyond its reach, ends with both down at once.
+  // The battle beside it is won; the same battle five rows below, beyond its reach, ends with both down at once.
   const fell = (entity: string): number | undefined => battle.events.find((event) => event.kind === "entity.died" && event.entity === entity)?.tick
   assert.equal(fell("A:trooper#3"), undefined, "the trooper beside the station fell")
   assert.equal(fell("B:trooper#4"), fell("A:trooper#5"))
@@ -282,7 +282,7 @@ test("a heal shows on screen: a cross of light beside the mended unit, then rise
   const opening = await loadSandbox("aid-station-repair.save.json")
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
   const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
-  // A patch with nothing else happening: the duels are over, the trooper beside the station stands at the line.
+  // A patch with nothing else happening: the battles are over, the trooper beside the station stands at the line.
   const patch = timeline.events.find((event) => event.kind === "heal.applied" && event.tick > 70)
   assert.ok(patch !== undefined && patch.kind === "heal.applied")
   const mended = timeline.states[patch.tick]?.entities.find((entity) => entity.ordinal === patch.ordinal)

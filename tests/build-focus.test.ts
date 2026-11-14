@@ -299,7 +299,7 @@ test("after a placement armed from the menu the keyboard is back on the menu, di
   assert.equal(side.build.state.focus, "menu")
   assert.equal(side.build.state.armed, null)
   assert.equal(side.build.state.menuHighlight, entryOfConstruct(1))
-  assert.equal(side.build.state.status.text, "Hatchery placed (resources: 70) - [u] undo")
+  assert.equal(side.build.state.status.text, "Hatchery placed (credits: 70) - [u] undo")
 })
 
 test("the owner's flow — highlight, then space, space, space, space — lays two buildings with no arrow key", () => {
@@ -532,7 +532,7 @@ test("a building armed on the map goes back to the map after a placement: plain 
   assert.equal(side.build.state.exploreMap, false)
   assert.deepEqual(side.build.state.cursor, OPEN_GROUND, "the cursor left the building just placed")
   // The placement's answer, then — at the next key that says nothing — the map's hint.
-  assert.equal(bottomLineText(side), "Barracks placed (resources: 60) - [u] undo")
+  assert.equal(bottomLineText(side), "Barracks placed (credits: 60) - [u] undo")
   assert.match(screenText(side), /\[1\] Barracks/)
   keys(side, RIGHT)
   assert.equal(bottomLineText(side), "Arrows move the cursor, [enter] explores here, a number selects a building.")

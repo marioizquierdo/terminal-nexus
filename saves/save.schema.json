@@ -64,7 +64,7 @@
                 },
                 "legend": {
                   "type": "object",
-                  "description": "The ground each character of the rows is (terrain.plain, terrain.rock, terrain.deposit, terrain.scrub). A battle the duel plays reads only . # * as they are.",
+                  "description": "The ground each character of the rows is (terrain.plain, terrain.rock, terrain.deposit, terrain.scrub). A battle reads only . # * as they are.",
                   "additionalProperties": {
                     "type": "string",
                     "pattern": "^terrain\\."
@@ -152,7 +152,7 @@
     },
     "state": {
       "type": "object",
-      "description": "Written by the game: the duel's state between rounds (DuelState, src/duel/types.ts) without its setup and without the map's ground, in the engine's words (side A is p1, side B is p2).",
+      "description": "Written by the game: the battle's state between rounds (BattleState, src/battle/types.ts) without its setup and without the map's ground, in the engine's words (side A is p1, side B is p2).",
       "required": [
         "round",
         "carried",
@@ -191,7 +191,7 @@
     },
     "draft": {
       "type": "object",
-      "description": "A slot's plan so far this Build Phase (the duel's plan, docs/system-design/duels.md).",
+      "description": "A slot's build actions so far this Build Phase (docs/system-design/battles.md, the brief and the build actions).",
       "additionalProperties": false,
       "properties": {
         "p1": {

@@ -9,9 +9,9 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSy
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { EXIT, main } from "../src/cli/skirmish.ts"
-import { scriptedName } from "../src/duel/index.ts"
+import { scriptedName } from "../src/battle/index.ts"
 import { agentProfiles, readProfiles } from "../src/skirmish/profile-files.ts"
-import { duelOf, duelSetupOf, newSetup, readSave as readWith } from "../src/skirmish/save.ts"
+import { battleOf, battleSetupOf, newSetup, readSave as readWith } from "../src/skirmish/save.ts"
 
 /** A save read with the profiles that ship. */
 const readSave = (text: string): ReturnType<typeof readWith> => readWith(text, readProfiles())
@@ -113,8 +113,8 @@ test("profiles and shares: a profile names a script and may carry a share; a slo
   assert.equal(credits(["--p1-credits", "1.5"]), 150)
   // The rich profile's share is the profile's, side B's alone.
   const setup = newSetup({ map: "pocket", slots: { p2: { controller: "script:agro-rich" } } })
-  assert.deepEqual(duelSetupOf(setup, profiles).income, { A: 1, B: 1.25 })
-  assert.equal(duelOf({ format: "terminal-nexus.save/1", setup }, profiles).sides.B.credits, 125)
+  assert.deepEqual(battleSetupOf(setup, profiles).income, { A: 1, B: 1.25 })
+  assert.equal(battleOf({ format: "terminal-nexus.save/1", setup }, profiles).sides.B.credits, 125)
   assert.throws(() => run(["--map", "pocket", "--p2", "script:nobody"]), /no script or profile "nobody"/)
   assert.throws(() => run(["--map", "pocket", "--p2", "agent:curious"]), /agent players are not built yet/)
 })

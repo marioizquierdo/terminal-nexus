@@ -13,7 +13,7 @@ run's code plays until the Skirmish milestone retires it.
 
 Made current on 2026-10-22, when the owner closed Pathfinding: "For now, we want to focus on building a basic game
 loop. Let's move into the next most important milestone" ([his words](../feedback/2026-10-21-pathfinding-wrap-up.md)).
-Since this plan was written, duels were built (`src/duel/`, [`duels.md`](../../system-design/duels.md)): two Commander
+Since this plan was written, duels were built (`src/battle/`, [`battles.md`](../../system-design/battles.md)): two Commander
 Armies fought round by round, each planned by a script or a model under the Build Phase's own rules. **A run's battle
 is a duel**: the player plans one side on the Build Phase screen, a scripted player plans the Commander Army on the
 other. That is the "heuristic policy driving a Commander Army" the design names, already built and measured.

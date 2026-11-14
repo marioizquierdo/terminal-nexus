@@ -9,7 +9,7 @@ a mode where we can play against Claude. So the LLM itself can be playing simult
 2026-11-12 ([his words](../history/feedback/2026-11-12-skirmish-saves.md)): "Working on the Agent/LLM player should
 probably be it's own milestone, that defines how exactly the model is selected, how to build the context that explains
 how to play the game, what interface and tools are available to the model to play, and how to define different
-profiles." The duel already lets a model play a side through files or a command ([`duels.md`](../system-design/duels.md),
+profiles." The battle already lets a model play a side through files or a command ([`battles.md`](../system-design/battles.md),
 model against model); this milestone makes it a controller a player chooses on the setup screen.
 
 ## Question
@@ -25,7 +25,7 @@ Not started; each waits for Mario's word, and the order is a first guess.
 ### Step 21A — What the model reads and how it answers
 
 - [ ] The context that teaches the game: the rules a player needs, written once for a model and kept beside the
-      brief a duel already writes, small enough to send every round.
+      brief a battle already writes, small enough to send every round.
 - [ ] The interface it plays through: the plan as JSON with a schema, or a few tools (look at the Grid, read a
       building's card, submit the plan), whichever measures better; a plan refused is refused by name and the model
       may try once more.

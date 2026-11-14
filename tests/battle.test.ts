@@ -1,5 +1,5 @@
-// The duel (src/duel/): two Commander Armies on one map, a round at a time — each side's Nexus Pulse and Build Phase
-// planned blind and revealed together, then a Battle Round between them. Here: a duel resolves the same every run, a
+// The battle (src/battle/): two Commander Armies on one map, a round at a time — each side's Nexus Pulse and Build Phase
+// planned blind and revealed together, then a Battle Round between them. Here: a battle resolves the same every run, a
 // plan is held to the Build Phase's rules, what one side keeps changes its own content and never the other's, two
 // buildings on one tile are both refused, a plan is read leniently, and the brief says what a player needs. Two sessions
 // playing one battle through its save are the skirmish command's (tests/skirmish-command.test.ts).
@@ -7,44 +7,45 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { playStrategies } from "../src/cli/play-strategies.ts"
-import type { DuelSetup, DuelState, Roster, BuildActions } from "../src/duel/index.ts"
-import { armyOf, briefOf, duelArmy, handOf, loadoutOf, newDuel, playDuel, playRound, readBuildActions, SCRIPTED } from "../src/duel/index.ts"
+import type { BattleSetup, BattleState, Roster, BuildActions } from "../src/battle/index.ts"
+import { armyOf, briefOf, battleArmy, handOf, loadoutOf, beginBattle, playToEnd, playRound, readBuildActions, SCRIPTED } from "../src/battle/index.ts"
+import { drawBattleMap } from "../src/cli/battle-map.ts"
 import { hashOf } from "../src/state/canonical.ts"
 
-const setup = (extra: Partial<DuelSetup> = {}): DuelSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
+const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
 const hold: BuildActions = { build: [], stance: "hold" }
 
-// It plays a whole duel twice over: longer than Bun's five seconds a test, so it says how long it may take.
-test("a duel resolves the same every run: the same setup and plans give the same duel, round by round", { timeout: 60_000 }, () => {
+// It plays a whole battle twice over: longer than Bun's five seconds a test, so it says how long it may take.
+test("a battle resolves the same every run: the same setup and plans give the same battle, round by round", { timeout: 60_000 }, () => {
   const players = { A: SCRIPTED.balanced!, B: SCRIPTED.rush! }
-  const once = playDuel(setup(), players)
-  const twice = playDuel(setup(), players)
+  const once = playToEnd(setup(), players)
+  const twice = playToEnd(setup(), players)
   assert.equal(hashOf(once), hashOf(twice))
   assert.ok(once.result !== null && once.history.length >= 1)
   // A round can be watched, a state a tick from the opening on, and watching changes nothing.
   const seen: number[] = []
   let events = 0
-  const watched = playRound(newDuel(setup()), { A: hold, B: hold }, (battle, happened) => {
+  const watched = playRound(beginBattle(setup()), { A: hold, B: hold }, (battle, happened) => {
     seen.push(battle.tick)
     events += happened.length
   })
   assert.deepEqual([seen[0], seen.length], [0, watched.report.ticks + 1])
   assert.ok(events > 0, "the watcher saw no events")
-  assert.equal(hashOf(watched.state), hashOf(playRound(newDuel(setup()), { A: hold, B: hold }).state))
+  assert.equal(hashOf(watched.state), hashOf(playRound(beginBattle(setup()), { A: hold, B: hold }).state))
   // Another seed deals other hands.
-  assert.notDeepEqual(handOf(newDuel(setup({ seed: 4 })), "A").map((card) => card.id), handOf(newDuel(setup()), "A").map((card) => card.id), "two seeds dealt the same hand")
+  assert.notDeepEqual(handOf(beginBattle(setup({ seed: 4 })), "A").map((card) => card.id), handOf(beginBattle(setup()), "A").map((card) => card.id), "two seeds dealt the same hand")
 })
 
 test("each side fields its own army: its Commander, its faction's Nexus, its buildings and a starting package", () => {
-  const vasse = duelArmy("vasse")
-  const dob = duelArmy("dob")
+  const vasse = battleArmy("vasse")
+  const dob = battleArmy("dob")
   assert.equal(vasse.nexus, "structure.citizen.nexus")
   assert.equal(dob.nexus, "structure.ravel.nexus")
   assert.ok(vasse.buildings.some((card) => card.id === "barracks") && !vasse.buildings.some((card) => card.id === "den"))
   assert.ok(dob.buildings.some((card) => card.id === "den") && !dob.buildings.some((card) => card.id === "barracks"))
-  // War Chest, the owner's testing tool, is never dealt in a duel.
+  // War Chest, the owner's testing tool, is never dealt in a battle.
   assert.ok(!vasse.powers.some((card) => card.always === true))
-  const { state, report } = playRound(newDuel(setup()), { A: hold, B: hold })
+  const { state, report } = playRound(beginBattle(setup()), { A: hold, B: hold })
   assert.deepEqual(report.sides.A.fielded, { Trooper: 3, Marksman: 2, Vasse: 1 })
   assert.deepEqual(report.sides.B.fielded, { Runner: 5, Slinger: 2, Dob: 1 })
   // Credits carry over, and the next round adds the curve's: 100, then 120 more.
@@ -63,7 +64,7 @@ test("a plan is held to the Build Phase's rules: its menu, its tree, its credits
     ],
     stance: "hold",
   }
-  const { report } = playRound(newDuel(setup()), { A: plan, B: hold })
+  const { report } = playRound(beginBattle(setup()), { A: plan, B: hold })
   const { built, refused, spent } = report.sides.A
   assert.equal(built.length, 2, built.join("; "))
   assert.equal(spent, 80)
@@ -74,11 +75,11 @@ test("a plan is held to the Build Phase's rules: its menu, its tree, its credits
 })
 
 test("what a side keeps changes its own content, never the other side's: Unfiled Ordnance on Averno's troopers alone", () => {
-  let state: DuelState = newDuel(setup({ commanders: { A: "averno", B: "vasse" } }))
+  let state: BattleState = beginBattle(setup({ commanders: { A: "averno", B: "vasse" } }))
   // Keep Unfiled Ordnance for A by naming it in A's kept list, as a round would have.
   state = { ...state, sides: { ...state.sides, A: { ...state.sides.A, kept: ["unfiled-ordnance"] } } }
-  const a = loadoutOf(duelArmy("averno"), state.sides.A).registry
-  const b = loadoutOf(duelArmy("vasse"), state.sides.B).registry
+  const a = loadoutOf(battleArmy("averno"), state.sides.A).registry
+  const b = loadoutOf(battleArmy("vasse"), state.sides.B).registry
   assert.deepEqual(a.get("unit.citizen.trooper").detonation, { radius: 2, damage: 8 })
   assert.equal(b.get("unit.citizen.trooper").detonation, undefined)
   // In the battle too: only A's troopers burst.
@@ -88,7 +89,7 @@ test("what a side keeps changes its own content, never the other side's: Unfiled
 
 test("two buildings planned on one tile, one by each side, are both refused and paid back", () => {
   // On the Pocket the two bases' build ranges meet in the middle from the first round: both sides name the same tile.
-  const state = newDuel(setup({ map: "pocket", commanders: { A: "vasse", B: "averno" } }))
+  const state = beginBattle(setup({ map: "pocket", commanders: { A: "vasse", B: "averno" } }))
   const tile = { x: 9, y: 5 }
   const { report } = playRound(state, { A: { build: [{ building: "depot", ...tile }], stance: "hold" }, B: { build: [{ building: "depot", ...tile }], stance: "hold" } })
   for (const side of ["A", "B"] as const) {
@@ -108,8 +109,11 @@ test("a plan is read leniently: the first JSON object in the text, a building as
 })
 
 test("the brief says what a player needs: the round, the Commander and her skills, the hand, the buildings, the map, the plan's form", () => {
-  const brief = briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A")
+  // The map is drawn by whoever prints the brief: the `skirmish` command draws an ASCII screenshot of it.
+  const brief = briefOf(beginBattle(setup({ commanders: { A: "dob", B: "vasse" } })), "A", undefined, drawBattleMap)
   assert.equal(brief.data.side, "A")
+  assert.match(brief.text, /^Legend: /mu, "the map's legend says what each glyph is")
+  assert.deepEqual(briefOf(beginBattle(setup()), "A").data.map, [], "a brief nobody draws has no map: a script reads the data")
   assert.equal(brief.data.hand.length, 3)
   assert.ok(brief.data.buildings.some((building) => building.id === "den" && building.strength > 0))
   assert.ok(brief.data.buildings.some((building) => building.id === "chop-shop" && !building.open))
@@ -122,35 +126,35 @@ test("the brief says what a player needs: the round, the Commander and her skill
 
 test("a player that reads words finds the play strategies in its brief, just before the plan it is asked for", () => {
   const strategies = playStrategies()
-  assert.ok(strategies.startsWith("## What duels have taught so far"), "the brief takes the page from its marker on, the advice alone")
-  const text = briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A", strategies).text
-  const taught = text.indexOf("## What duels have taught so far")
+  assert.ok(strategies.startsWith("## What battles have taught so far"), "the brief takes the page from its marker on, the advice alone")
+  const text = briefOf(beginBattle(setup({ commanders: { A: "dob", B: "vasse" } })), "A", strategies).text
+  const taught = text.indexOf("## What battles have taught so far")
   assert.ok(taught > 0 && taught < text.indexOf("## Your build actions"), "the strategies come before the build actions")
   // A script reads the data, which carries no strategies: the brief without them is whole.
-  assert.ok(!briefOf(newDuel(setup({ commanders: { A: "dob", B: "vasse" } })), "A").text.includes("What duels have taught"))
+  assert.ok(!briefOf(beginBattle(setup({ commanders: { A: "dob", B: "vasse" } })), "A").text.includes("What battles have taught"))
 })
 
-// Moved from the retired run's tests (tests/run-draft.test.ts): a roster is the duel's own, which a Skirmish's battle
+// Moved from the retired run's tests (tests/run-draft.test.ts): a roster is the battle's own, which a Skirmish's battle
 // file may name one day; the run that first played one is gone, the rule is not.
 test("a battle is played on the roster: a Doctrine is kept from round one, and what the army lacks cannot be built or dealt", () => {
   const roster: Roster = { buildings: ["barracks", "depot", "turret"], powers: ["reserve-callup", "drill-schedule"], doctrines: ["heavy-rounds-standard"] }
-  const duel = newDuel({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" }, rosters: { A: roster } })
-  assert.deepEqual(duel.sides.A.kept, ["heavy-rounds-standard"])
-  const army = armyOf(duel, "A")
+  const battle = beginBattle({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" }, rosters: { A: roster } })
+  assert.deepEqual(battle.sides.A.kept, ["heavy-rounds-standard"])
+  const army = armyOf(battle, "A")
   assert.deepEqual(army.buildings.map((card) => card.id), ["turret", "barracks", "depot"].filter((id) => army.buildings.some((card) => card.id === id)))
   assert.ok(!army.buildings.some((card) => card.id === "garrison" || card.id === "battery"), "the Garrison was not drafted")
-  const whole = loadoutOf(armyOf(newDuel({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } }), "A"), { kept: [] })
-  const fielded = loadoutOf(army, duel.sides.A)
+  const whole = loadoutOf(armyOf(beginBattle({ map: "crossing", seed: 3, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } }), "A"), { kept: [] })
+  const fielded = loadoutOf(army, battle.sides.A)
   const damage = (loadout: typeof whole): number => (loadout.registry.get("structure.bench.beamturret").attack?.damage ?? 0)
   assert.equal(damage(fielded), damage(whole) + 3, "the Doctrine's three damage is on every Turret from the first round")
   assert.equal(whole.catalog.length > fielded.catalog.length, true, "a side on a roster builds from a smaller menu")
   // Neither the Pulse nor the roster's pool deals a Doctrine or a power the army lacks.
   for (let seed = 0; seed < 40; seed += 1) {
-    const hand = handOf({ ...duel, setup: { ...duel.setup, seed } }, "A").map((card) => card.id)
+    const hand = handOf({ ...battle, setup: { ...battle.setup, seed } }, "A").map((card) => card.id)
     for (const id of hand) assert.ok(roster.powers.includes(id), `${id} is in the hand but not in the pool`)
   }
   for (let seed = 0; seed < 20; seed += 1) {
-    const free = handOf(newDuel({ map: "crossing", seed, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } }), "A").map((card) => card.id)
+    const free = handOf(beginBattle({ map: "crossing", seed, rounds: 6, pulseTicks: 600, commanders: { A: "vasse", B: "dob" } }), "A").map((card) => card.id)
     assert.ok(!free.some((id) => id.endsWith("-standard") || id === "long-barrels"), "a Doctrine was dealt by the Nexus Pulse")
   }
 })

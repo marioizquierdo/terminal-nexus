@@ -1,6 +1,6 @@
 // The kept front around the regroup (`src/match/regroup.ts`, its own tests in `tests/regroup.test.ts`): a building may
 // go where units stand, the player's or the enemy's, and they walk out from under it (`src/match/make-room.ts`), the
-// way the Build Phase draws it; the duel's scripts place by the same rule; a Battle Round ends without a walk home and
+// way the Build Phase draws it; the battle's scripts place by the same rule; a Battle Round ends without a walk home and
 // the next Build Phase plays the regroup over its first ten seconds, presentation only.
 
 import { test } from "node:test"
@@ -14,8 +14,8 @@ import { createBuildState, legalityAt, nexusTile, withoutScene } from "../src/bu
 import type { FieldEntity } from "../src/build/types.ts"
 import { starterContext } from "../src/cli/starter.ts"
 import { newSkirmishLevel, playedOf, scriptedRound } from "../src/cli/skirmish-play.ts"
-import type { DuelState, Player } from "../src/duel/index.ts"
-import { DUEL_PULSE_TICKS, newDuel, placementsOf, playRound, scriptedPlayer } from "../src/duel/index.ts"
+import type { BattleState, Player } from "../src/battle/index.ts"
+import { BATTLE_ROUND_TICKS, beginBattle, placementsOf, playRound, scriptedPlayer } from "../src/battle/index.ts"
 import { ROOM_STEP_TICKS, makeRoom, openingState } from "../src/match/index.ts"
 import type { Force } from "../src/match/index.ts"
 import type { EntityState, MatchState } from "../src/state/types.ts"
@@ -132,10 +132,10 @@ test("a building on a crowd walks everyone out by the way, friend and foe alike,
 /** A plan that builds nothing, keeps no power and holds its ground: both armies live through the round. */
 const NOTHING = { build: [], stance: "hold" } as const
 
-test("a duel's plan builds where units stand, its own or the enemy's, and they walk out as the round begins", { timeout: 120_000 }, () => {
-  let duel: DuelState = newDuel({ map: "crossing", seed: 4, rounds: 6, pulseTicks: DUEL_PULSE_TICKS, commanders: { A: "vasse", B: "dob" } })
-  duel = playRound(duel, { A: NOTHING, B: NOTHING }).state
-  const carried = duel.carried as MatchState
+test("a battle's plan builds where units stand, its own or the enemy's, and they walk out as the round begins", { timeout: 120_000 }, () => {
+  let battle: BattleState = beginBattle({ map: "crossing", seed: 4, rounds: 6, pulseTicks: BATTLE_ROUND_TICKS, commanders: { A: "vasse", B: "dob" } })
+  battle = playRound(battle, { A: NOTHING, B: NOTHING }).state
+  const carried = battle.carried as MatchState
   const unit = (entity: EntityState): boolean => FIXTURE_REGISTRY.has(entity.contentId) && FIXTURE_REGISTRY.get(entity.contentId).layer === "units"
   const intruder = carried.entities.find((entity) => entity.player === "B" && unit(entity)) as EntityState
   const owned = carried.entities.find((entity) => entity.player === "A" && unit(entity)) as EntityState
@@ -145,9 +145,9 @@ test("a duel's plan builds where units stand, its own or the enemy's, and they w
     carried.entities.flatMap((entity) => tilesOf(entity.anchor, FIXTURE_REGISTRY.has(entity.contentId) ? FIXTURE_REGISTRY.get(entity.contentId).footprint : [{ x: 0, y: 0 }]).map((tile) => `${tile.x},${tile.y}`)),
   )
   let spot: Coord | null = null
-  for (let x = 10; x < 16 && spot === null; x += 1) for (let y = 9; y < 18 && spot === null; y += 1) if (!taken.has(`${x},${y}`) && placementsOf(duel, "A", plan({ x, y })).length === 1) spot = { x, y }
+  for (let x = 10; x < 16 && spot === null; x += 1) for (let y = 9; y < 18 && spot === null; y += 1) if (!taken.has(`${x},${y}`) && placementsOf(battle, "A", plan({ x, y })).length === 1) spot = { x, y }
   assert.ok(spot !== null, "a spot for the turret")
-  const moved = (entity: EntityState): DuelState => ({ ...duel, carried: { ...carried, entities: carried.entities.map((each) => (each.ordinal === entity.ordinal ? { ...each, anchor: spot as Coord } : each)) } })
+  const moved = (entity: EntityState): BattleState => ({ ...battle, carried: { ...carried, entities: carried.entities.map((each) => (each.ordinal === entity.ordinal ? { ...each, anchor: spot as Coord } : each)) } })
   for (const standing of [intruder, owned]) {
     assert.equal(placementsOf(moved(standing), "A", plan(spot)).length, 1, `on ${standing.id} the turret goes up`)
     const opened: MatchState[] = []
@@ -160,9 +160,9 @@ test("a duel's plan builds where units stand, its own or the enemy's, and they w
   }
 })
 
-test("Battle Rounds of duels and Skirmishes last 30 seconds", () => {
-  assert.equal(DUEL_PULSE_TICKS, 30 * 12)
-  assert.equal(newSkirmishLevel(1).firstRound().mode !== undefined && (newSkirmishLevel(1).firstRound().mode as { setup: { roundTicks: number } }).setup.roundTicks, DUEL_PULSE_TICKS)
+test("Battle Rounds of battles and Skirmishes last 30 seconds", () => {
+  assert.equal(BATTLE_ROUND_TICKS, 30 * 12)
+  assert.equal(newSkirmishLevel(1).firstRound().mode !== undefined && (newSkirmishLevel(1).firstRound().mode as { setup: { roundTicks: number } }).setup.roundTicks, BATTLE_ROUND_TICKS)
 })
 
 test("the regroup's clock plays once from the round's first frame, and not at all under reduced motion", () => {
@@ -260,7 +260,7 @@ test("a Skirmish's round ends without a walk home, and the next Build Phase hold
   const ending = live.frame({ colors: "monochrome", reducedMotion: false, view: { camera: { x: 0, y: 0 }, viewport: { width: 48, height: 16 } } })
   assert.ok(ending.times.homeMs >= ending.times.stopMs, "the result follows the cease fire: no walk")
   const played = playedOf(resolved)
-  assert.ok(played !== undefined && played.duel.result === null, "the battle goes on after its first round")
+  assert.ok(played !== undefined && played.battle.result === null, "the battle goes on after its first round")
   const next = skirmish.play.nextRound(planned.context, planned.state, resolved) as BuildContext
   const walkers = (next.field ?? []).filter((entity) => entity.walk !== undefined)
   assert.ok(walkers.length > 0, "the survivors regroup as the round opens")

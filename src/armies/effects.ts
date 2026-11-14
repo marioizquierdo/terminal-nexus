@@ -5,7 +5,7 @@
 // - `problems`: what the army loader refuses about it, given what the power's army can see (`load.ts`);
 // - `apply`: what keeping it changes, for the rest of the mission, in a side's `Loadout` — its content, its build
 //   menu, the units called up for this round — so the Build Phase shows it the moment it is picked and the battle
-//   runs on it. The same function serves the story (`src/cli/pulse-run.ts`) and the duel (`src/duel/`);
+//   runs on it. The same function serves the story (`src/cli/pulse-run.ts`) and the battle (`src/battle/`);
 // - `lasts`: whether it stays on the Nexus Pulse's list of kept powers, or is spent where it is picked;
 // - `credits`: the credits it adds to spend when it is picked, if any.
 //

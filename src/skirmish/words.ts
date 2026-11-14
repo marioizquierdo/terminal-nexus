@@ -2,10 +2,10 @@
 // (`src/cli/skirmish-play.ts`) and the command line read them, and nothing here knows a terminal or a clock.
 
 import { ARMIES } from "../armies/index.ts"
-import type { DuelResult, Side } from "../duel/index.ts"
-import { DUEL_MAPS } from "../duel/index.ts"
+import type { BattleResult, Side } from "../battle/index.ts"
+import { BATTLE_MAPS } from "../battle/index.ts"
 import type { Profiles, SaveSetup, Slot } from "./save.ts"
-import { controllerKind, duelMapOf, IDLE_SCRIPT, scriptOf, SIDE_OF } from "./save.ts"
+import { controllerKind, battleMapOf, IDLE_SCRIPT, scriptOf, SIDE_OF } from "./save.ts"
 
 /** A seed a person reads out and types back: six digits at most. */
 export const SKIRMISH_SEED_LIMIT = 1_000_000
@@ -22,8 +22,8 @@ export const commanderNameOf = (id: string | undefined): string => (id === undef
 
 /** A map's name for a person: "the Crossing" is `crossing`'s. */
 export function mapNameOf(map: SaveSetup["map"]): string {
-  const duel = duelMapOf(map)
-  return typeof duel === "string" ? (DUEL_MAPS[duel]?.name ?? duel) : duel.name
+  const battle = battleMapOf(map)
+  return typeof battle === "string" ? (BATTLE_MAPS[battle]?.name ?? battle) : battle.name
 }
 
 /** What each scripted player does, in a few words a battle's opening says. */
@@ -65,7 +65,7 @@ export function openingLines(setup: SaveSetup, profiles?: Profiles): string[] {
 }
 
 /** Why a battle watched between two scripts ended as it did, naming the sides: "Dob Hunter's Nexus fell." */
-export function spectatorReason(setup: SaveSetup, result: DuelResult): string {
+export function spectatorReason(setup: SaveSetup, result: BattleResult): string {
   const name = (side: Side): string => commanderNameOf(setup.slots[side === "A" ? "p1" : "p2"].commander)
   const loser = result.winner === null ? null : name(result.winner === "A" ? "B" : "A")
   const winner = result.winner === null ? null : name(result.winner)
@@ -85,12 +85,12 @@ export function spectatorReason(setup: SaveSetup, result: DuelResult): string {
 export type BattleOutcome = "won" | "lost" | "drawn"
 
 /** How a battle ended for `side`. */
-export const outcomeFor = (result: DuelResult, side: Side = SIDE_OF.p1): BattleOutcome =>
+export const outcomeFor = (result: BattleResult, side: Side = SIDE_OF.p1): BattleOutcome =>
   result.winner === null ? "drawn" : result.winner === side ? "won" : "lost"
 
 /** Why a battle ended as it did, for the player: "Dob Hunter's Nexus fell.", "The rounds ran out, and your Nexus kept
  *  more of its health." */
-export function reasonWords(result: DuelResult, opponentName: string): string {
+export function reasonWords(result: BattleResult, opponentName: string): string {
   const won = outcomeFor(result) === "won"
   switch (result.by) {
     case "nexus":
@@ -105,7 +105,7 @@ export function reasonWords(result: DuelResult, opponentName: string): string {
 }
 
 /** The line that says how a battle ended: "Won in round 4. Dob Hunter's Nexus fell." */
-export function endedLine(setup: SaveSetup, result: DuelResult): string {
+export function endedLine(setup: SaveSetup, result: BattleResult): string {
   const outcome = outcomeFor(result)
   return `${outcome[0]?.toUpperCase() ?? ""}${outcome.slice(1)} in round ${result.round}. ${reasonWords(result, commanderNameOf(setup.slots.p2.commander))}`
 }

@@ -1,4 +1,4 @@
-// The duel's scripted players: plans worked out from the same brief a language model reads (`BriefData`), so a
+// The battle's scripted players: plans worked out from the same brief a language model reads (`BriefData`), so a
 // script, a model and a person all play from the same facts. None of them is a good player — each is one plain idea of
 // how to spend a round, there to give a Commander something to fight in every seed and to measure against:
 //
@@ -19,7 +19,7 @@
 // Pure: a plan is a function of the brief.
 
 import type { BriefBuilding, BriefCard, BriefData } from "./brief.ts"
-import type { BuildingOrder, Formation, Placement, BuildActions, Zone } from "./types.ts"
+import type { BuildingOrder, Formation, Placement, BuildActions, Stance, Zone } from "./types.ts"
 import { FORMATIONS } from "./types.ts"
 
 /** A player: a plan from a brief. */
@@ -101,6 +101,78 @@ export const turtle: Player = (brief) => {
 }
 
 /**
+ * **reactive**: a player that reacts to what the battle said (`src/battle/reading/`) before it plans, where the others follow a fixed
+ * idea. It builds as `balanced` does, and then:
+ *
+ * - **the stance from the battle's trades**: it plays the stance that has traded better over the battle (what it dealt for
+ *   each point it took, in the rounds it played that stance), trying each once; it attacks when both sides held (a
+ *   round that trades nothing says nothing), attacks a Nexus brought under half, holds a lead on Nexus health in the
+ *   last round, and attacks when behind on it;
+ * - **a Turret when the enemy reached its Nexus** (it is hurt, or an enemy came within 8 tiles), placed by the Nexus, first;
+ * - **apart against area damage**: its buildings that train units set apart once the enemy has a building standing
+ *   whose units aim at the thickest knot; otherwise each where `balanced` puts it (a block was tried, and on the
+ *   Pocket's small build range it left credits unspent).
+ *
+ * Still one plain idea, read a round at a time: it plans nothing more than one round ahead, and is no good player.
+ */
+export const reactive: Player = (brief) => {
+  const enemy = brief.side === "A" ? "B" : "A"
+  const last = brief.last
+  const read = last?.reading?.sides[brief.side]
+  const enemyShare = brief.enemy.nexus.most === 0 ? 1 : brief.enemy.nexus.health / brief.enemy.nexus.most
+  const lastRound = brief.round >= brief.rounds
+  // How each stance has traded over the battle: what it dealt for each point it took, in the rounds it was played and
+  // something was traded (a round both sides held trades next to nothing, and says nothing).
+  const trade = (stance: Stance): number | null => {
+    let dealt = 0
+    let taken = 0
+    for (const report of brief.reports) {
+      if (report.sides[brief.side].stance !== stance) continue
+      const d = report.sides[brief.side].dealt.units + report.sides[brief.side].dealt.buildings + report.sides[brief.side].dealt.nexus
+      const t = report.sides[enemy].dealt.units + report.sides[enemy].dealt.buildings + report.sides[enemy].dealt.nexus
+      if (d + t < 50) continue
+      dealt += d
+      taken += t
+    }
+    return dealt + taken === 0 ? null : dealt / Math.max(1, taken)
+  }
+  const decided = ((): Readonly<{ stance: Stance; because: string }> => {
+    if (enemyShare <= 0.5) return { stance: "attack", because: "their Nexus is under half" }
+    if (lastRound && brief.score.leader === brief.side && brief.score.by === "health") return { stance: "hold", because: "the last round, ahead on Nexus health" }
+    if (brief.score.leader === enemy && brief.score.by === "health") return { stance: "attack", because: "behind on Nexus health" }
+    if (last === null) return { stance: "hold", because: "round 1: gathering" }
+    if (last.sides[brief.side].stance === "hold" && last.sides[enemy].stance === "hold") return { stance: "attack", because: "both held: someone has to move" }
+    const attack = trade("attack")
+    const hold = trade("hold")
+    if (attack === null) return { stance: "attack", because: "attacking has not been tried" }
+    if (hold === null) return attack >= 1 ? { stance: "attack", because: "its attacks have won the trade" } : { stance: "hold", because: "its attacks lost the trade, and holding has not been tried" }
+    const pct = (ratio: number): string => `${Math.round(ratio * 100)}%`
+    return attack >= hold
+      ? { stance: "attack", because: `attacking has traded better (${pct(attack)} of what it took, holding ${pct(hold)})` }
+      : { stance: "hold", because: `holding has traded better (${pct(hold)} of what it took, attacking ${pct(attack)})` }
+  })()
+  const stance = decided.stance
+  const why: string[] = [decided.because]
+
+  const threatened = brief.nexus.health < brief.nexus.most || (read !== undefined && read.advance.closest !== null && read.advance.closest <= 8)
+  const turret = brief.buildings.find((building) => building.spawns === undefined && building.supply === undefined && building.open)
+  const first = threatened && turret !== undefined && turret.cost <= brief.credits ? turret : undefined
+  if (first !== undefined) why.push("a Turret by the Nexus, since the enemy reached it")
+  const plan = balanced({ ...brief, credits: brief.credits - (first?.cost ?? 0) })
+
+  const knots = brief.enemy.trains.filter((line) => /thickest knot/u.test(line)).map((line) => line.slice(0, line.indexOf(":")))
+  const facesArea = knots.some((name) => brief.enemy.buildings.some((standing) => standing.startsWith(`${name} at`)))
+  if (facesArea) why.push("apart, against their area damage")
+  return {
+    ...plan,
+    build: first === undefined ? plan.build : [{ building: first.id, at: "nexus" }, ...plan.build],
+    ...(facesArea ? { formation: "apart" as const } : {}),
+    stance,
+    note: `reactive: ${why.join("; ")}`,
+  }
+}
+
+/**
  * A player that plays `player`'s plan with area damage: each round it buys one building whose units hit an area and aim
  * at the thickest knot (`BriefBuilding.area`: the Ravels' Fuse Shed, the Citizens' Battery) first, when one is open and
  * affordable, placed where the script puts its producers, and spends what is left as `player` would. The scripts value
@@ -153,6 +225,7 @@ export const SCRIPTED: Readonly<Record<string, Player>> = {
   balanced,
   rush,
   turtle,
+  reactive,
   "balanced-area": withArea(balanced),
   "rush-area": withArea(rush),
   "turtle-area": withArea(turtle),

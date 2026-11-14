@@ -22,7 +22,7 @@ import { listSaves } from "../src/cli/skirmish-files.ts"
 import { readProfiles } from "../src/skirmish/profile-files.ts"
 import { SHIPPED_PROFILES, SHIPPED_SAVES } from "../src/skirmish/shipped-players.ts"
 import type { SaveFile, SaveSetup } from "../src/skirmish/save.ts"
-import { duelOf, SAVE_FORMAT } from "../src/skirmish/save.ts"
+import { battleOf, SAVE_FORMAT } from "../src/skirmish/save.ts"
 import { playNext } from "../src/skirmish/play.ts"
 import { controllerChoices, nextValue, setupDefaults, startProblem } from "../src/skirmish/setup.ts"
 import { screenProblem } from "../src/skirmish/slots.ts"
@@ -32,7 +32,7 @@ import { parseKeyScript } from "../src/playtest/keys.ts"
 import { runGamePlaytest } from "../src/playtest/game.ts"
 import { BuildSession } from "../src/view/build-session.ts"
 import { composeBuildFrame } from "../src/view/build.ts"
-import type { BuildActions } from "../src/duel/index.ts"
+import type { BuildActions } from "../src/battle/index.ts"
 
 const ENTER = "\r"
 
@@ -183,7 +183,7 @@ test("Load game lists the saves with their round and Commanders, and a loaded sa
   const round = withoutScene(opened[0]!.level.firstRound())
   const position = positionOf(round)
   assert.equal(position.setup.map, "crossing")
-  assert.equal(position.duel.round, 4)
+  assert.equal(position.battle.round, 4)
   assert.equal(position.file, "saves/crossing-round-4.save.json")
   assert.equal(round.spectating, true, "both slots scripts: spectating")
 })
@@ -191,7 +191,7 @@ test("Load game lists the saves with their round and Commanders, and a loaded sa
 /** A setup with a profile in p2 whose credits share and the modifiers both change the battle. */
 const RICH: SaveSetup = { ...setupDefaults(77, "marioiz", SHIPPED_PROFILES), modifiers: ["double-income", "fast-rounds"], slots: { p1: { commander: "vasse", controller: "player:marioiz", options: { credits: 0.75 } }, p2: { commander: "dob", controller: "script:agro-rich" } } }
 
-test("the screen plays a round exactly as playNext plays it headless: the same setup and plan give the same duel, profiles, credits and modifiers included", { timeout: 120_000 }, () => {
+test("the screen plays a round exactly as playNext plays it headless: the same setup and plan give the same battle, profiles, credits and modifiers included", { timeout: 120_000 }, () => {
   const save: SaveFile = { format: SAVE_FORMAT, setup: RICH }
   const level = skirmishLevel(save, {}, { profiles: SHIPPED_PROFILES })
   const context = withoutScene(level.firstRound())
@@ -203,11 +203,11 @@ test("the screen plays a round exactly as playNext plays it headless: the same s
   assert.ok(resolved !== null)
   const onScreen = playedOf(resolved)
   assert.ok(onScreen !== undefined)
-  const headless = playNext(RICH, duelOf(save, SHIPPED_PROFILES), { p1: { ...plan, stance: "attack" } }, SHIPPED_PROFILES)
-  assert.deepEqual(onScreen.duel, headless.state)
+  const headless = playNext(RICH, battleOf(save, SHIPPED_PROFILES), { p1: { ...plan, stance: "attack" } }, SHIPPED_PROFILES)
+  assert.deepEqual(onScreen.battle, headless.state)
   // The share and the modifiers acted: p2 earns more than the curve, p1 less, and the round was half as long.
-  assert.equal(onScreen.duel.setup.pulseTicks, Math.round(RICH.roundTicks / 2))
-  assert.deepEqual(onScreen.duel.setup.income, { A: 1.5, B: 2.5 })
+  assert.equal(onScreen.battle.setup.pulseTicks, Math.round(RICH.roundTicks / 2))
+  assert.deepEqual(onScreen.battle.setup.income, { A: 1.5, B: 2.5 })
 })
 
 test("spectating: with no player the Build Phase offers only Explore Map and Start next round, and the round is both scripts' plans", { timeout: 120_000 }, () => {
@@ -233,7 +233,7 @@ test("spectating: with no player the Build Phase offers only Explore Map and Sta
   assert.equal(session.state.committed, true, "Start next round begins it at once")
   const played = session.pulse === null ? undefined : playedOf(session.pulse.resolved)
   assert.ok(played !== undefined)
-  assert.deepEqual(played.duel, playNext(setup, duelOf(save, SHIPPED_PROFILES), {}, SHIPPED_PROFILES).state)
+  assert.deepEqual(played.battle, playNext(setup, battleOf(save, SHIPPED_PROFILES), {}, SHIPPED_PROFILES).state)
   // Watched, the Battle Round names both sides: neither is "yours" nor "the enemy".
   assert.deepEqual(session.pulse?.resolved.watched, { A: "Vasse", B: "Dob" })
   session.handleData("", layout)

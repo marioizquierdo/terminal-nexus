@@ -1,4 +1,4 @@
-// A formation a duel player chooses (docs/system-design/duels.md, "How tight an army fights: formations"): its buildings that
+// A formation a battle player chooses (docs/system-design/battles.md, "How tight an army fights: formations"): its buildings that
 // train units set touching in a block, or set apart, so how tight its army fights is a choice a script, a model or a
 // measurement can make. Here: each formation places within the Build Phase's rules on the Crossing from both ends,
 // mirrored, round after round; a block's producers touch and an apart's do not; the plan, the round's record and the
@@ -7,8 +7,8 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { roundLines } from "../src/skirmish/lines.ts"
-import type { DuelState, Formation, RoundReport, BuildActions } from "../src/duel/index.ts"
-import { APART_GAP, briefOf, duelArmy, loadoutOf, newDuel, playRound, readBuildActions, SCRIPTED, scriptedName, scriptedPlayer } from "../src/duel/index.ts"
+import type { BattleState, Formation, RoundReport, BuildActions } from "../src/battle/index.ts"
+import { APART_GAP, briefOf, battleArmy, loadoutOf, beginBattle, playRound, readBuildActions, SCRIPTED, scriptedName, scriptedPlayer } from "../src/battle/index.ts"
 import { footprintDistance, footprintSteps } from "../src/grid/coords.ts"
 import type { Coord } from "../src/grid/types.ts"
 import type { MeasureSpec } from "../src/measure/index.ts"
@@ -27,7 +27,7 @@ const anchorsOf = (report: RoundReport, side: "A" | "B"): Coord[] =>
  *  through a battle too short to reach anything, so the first round's buildings stand in the second. */
 function twoRounds(commander: string, building: string, formation: Formation): RoundReport[] {
   const plan = (count: number): BuildActions => ({ power: 0, build: Array.from({ length: count }, () => ({ building, at: "forward" as const })), formation, stance: "hold" })
-  let state: DuelState = newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 24, commanders: { A: commander, B: commander } })
+  let state: BattleState = beginBattle({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 24, commanders: { A: commander, B: commander } })
   const reports: RoundReport[] = []
   for (const count of [3, 5]) {
     const played = playRound(state, { A: plan(count), B: plan(count) })
@@ -42,7 +42,7 @@ for (const [commander, building] of [
   ["dob", "den"],
 ] as const) {
   test(`each formation places ${commander}'s ${building}s within the rules from both ends of the Crossing, one side the other's mirror`, () => {
-    const footprint = loadoutOf(duelArmy(commander), { kept: [] }).registry.get(duelArmy(commander).buildings.find((card) => card.id === building)?.structure ?? "").footprint
+    const footprint = loadoutOf(battleArmy(commander), { kept: [] }).registry.get(battleArmy(commander).buildings.find((card) => card.id === building)?.structure ?? "").footprint
     const width = Math.max(...footprint.map((tile) => tile.x)) + 1
     for (const formation of ["block", "apart"] as const) {
       const reports = twoRounds(commander, building, formation)
@@ -91,9 +91,9 @@ test("a scripted player plays by a formation under a name that says it, and the 
   assert.equal(scriptedName("sprint-block"), undefined)
   assert.equal(scriptedPlayer("rush"), SCRIPTED.rush, "a bare name is the script as it was")
   const setup = { map: "crossing", seed: 2, rounds: 2, pulseTicks: 240, commanders: { A: "vasse", B: "vasse" } } as const
-  const duel = measureDuel(setup, { A: "rush-block", B: "rush-apart" })
-  assert.deepEqual(duel.players, { A: "rush-block", B: "rush-apart" })
-  const state = newDuel(setup)
+  const battle = measureDuel(setup, { A: "rush-block", B: "rush-apart" })
+  assert.deepEqual(battle.players, { A: "rush-block", B: "rush-apart" })
+  const state = beginBattle(setup)
   const plans = { A: scriptedPlayer("rush-block")!(briefOf(state, "A").data), B: scriptedPlayer("rush-apart")!(briefOf(state, "B").data) }
   assert.deepEqual([plans.A.formation, plans.B.formation], ["block", "apart"])
   assert.match(plans.A.note ?? "", /built as a block$/u)
@@ -104,7 +104,7 @@ test("a scripted player plays by a formation under a name that says it, and the 
   assert.equal(playRound(state, { A: SCRIPTED.rush!(briefOf(state, "A").data), B: plans.B }).report.sides.A.formation, undefined)
 })
 
-test("zones is how every plan placed before formations: the same duel, building for building and tick for tick", { timeout: 60_000 }, () => {
+test("zones is how every plan placed before formations: the same battle, building for building and tick for tick", { timeout: 60_000 }, () => {
   const setup = { map: "crossing", seed: 1, rounds: 2, pulseTicks: 300, commanders: { A: "averno", B: "dob" } } as const
   for (const script of ["balanced", "turtle"]) {
     const { players: _bare, ...bare } = measureDuel(setup, { A: script, B: script })
@@ -120,7 +120,7 @@ test("a model's plan states a formation, read like any other field, and the brie
   const wrong = readBuildActions('{"build": [], "formation": "tight", "stance": "hold"}')
   assert.equal(wrong.actions.formation, undefined)
   assert.deepEqual(wrong.problems, ['"formation" should be "block", "apart", "zones"; each building goes where its "at" says'])
-  const brief = briefOf(newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" } }), "A")
+  const brief = briefOf(beginBattle({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" } }), "A")
   for (const words of ["## How tight your army fights", "come out on the roofs", "an area attack catches few", '"formation"', '"block"', '"apart"', "What their buildings can train", "bursts for"]) {
     assert.ok(brief.text.includes(words), `the brief does not say ${words}`)
   }
@@ -169,7 +169,7 @@ test("a script with area damage buys its army's area building, or what opens it,
     ["vasse", "battery", "barracks"],
     ["dob", "fuse-shed", "den"],
   ] as const) {
-    const brief = briefOf(newDuel({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: commander, B: commander } }), "A").data
+    const brief = briefOf(beginBattle({ map: "crossing", seed: 1, rounds: 3, pulseTicks: 240, commanders: { A: commander, B: commander } }), "A").data
     const building = brief.buildings.find((candidate) => candidate.id === area)
     assert.ok(building !== undefined && building.area === true, `${commander}'s ${area} is not marked as area damage`)
     const plan = scriptedPlayer("rush-area")!(brief)

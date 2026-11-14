@@ -241,7 +241,7 @@ claude.ai link cannot carry an address with `=` in it, so a published page opens
 
 **Skirmishes put two armies against each other** (`npm run skirmish -- ...`, the `skirmish` skill). Headless: each
 round both sides keep a Nexus power and plan a Build Phase blind, then a Battle Round plays between them
-([`duels.md`](docs/system-design/duels.md)). Scripts play in one process; a model writes each round's build actions
+([`battles.md`](docs/system-design/battles.md)). Scripts play in one process; a model writes each round's build actions
 from its brief. Use them to see how an army spends its power curve, never as a verdict on balance.
 
 ```bash
@@ -258,7 +258,7 @@ for why.
 
 **Measuring a change plays the same battles before and after it** (`node bin/measure.ts`,
 [`measurement.md`](docs/system-design/measurement.md), the [`remeasure`](.claude/skills/remeasure/SKILL.md) skill):
-the route saves and every map, duels between every Commander, and every mission by fixed plans, written
+the route saves and every map, battles between every Commander, and every mission by fixed plans, written
 down as one JSON file per run and compared in plain words. Play only what the change can move, written down with
 the one question it must answer; after a power-curve change, mark what the new result supersedes rather than
 leaving old numbers to read as current; and check every sentence that tells Mario where to look against the events
@@ -416,6 +416,20 @@ framework before two concrete uses reveal its contract; treat a passing test as 
 something feels; hide a blocker by changing a pinned runtime, fixture or target; add a secret, a
 service or an external write.
 
+**Which past decisions bind** (the owner, 2026-11-13: "Decisions are important for general design, architecture, but
+not small details"). The game is not playable yet, and the core mechanics (the banner, the economy, the interface's
+feel for a person) are still being tried. So:
+
+- **They bind:** the rules that do not bend (`AGENTS.md`), the architecture, the modes and the shape of a battle, and
+  every RULE in the design documents. Changing one is a design change, as above.
+- **They do not bind:** small details: a line's wording, a number, a label, which of two near words a screen uses.
+  Make them agree with the [glossary](docs/game-design/glossary.md) and move on. When a later milestone settles the
+  thing they describe (one resource or two waits for the worker economy), they change with it, together.
+- **The priority now is the `skirmish` command and automated testing:** headless battles, readings an agent can act
+  on, scripts worth playing against. It comes before any past detail it trips over.
+- **Quote the owner only with a link to his words in a feedback log.** A note an agent wrote (in a test, a comment, a
+  report) is never attributed to him: the placement line's "resources", long cited as his, was an agent's.
+
 **When the design does not answer you**, in this order: decide it yourself if it is reversible; make
 it observable (an Experiment, a toggle, a side-by-side fixture) so Mario can look at both answers;
 register it in `docs/milestones/open-questions.md` if it is genuinely his call, with the question in a
@@ -431,7 +445,8 @@ not think of. One home per fact; everything else links.
 
 **Retired words.** "Canon", "gate", "evidence", the old folder paths and the old document names (engine, ascii-effects, the governance document) are retired outside `docs/history/`; the validator rejects them in documents, skills, source, tests and scripts alike. <!-- stale-ok -->
 Say "the design documents", "milestone step", "screenshots", "in scope", and cite a design page by its
-current name. History keeps the words it was written with.
+current name. History keeps the words it was written with. Every retired word, game words included, is in the
+[glossary](docs/game-design/glossary.md)'s "Words we stopped using", with what to say instead.
 
 ## 8. Writing for Mario
 
@@ -447,7 +462,9 @@ He does not have section numbers, question ids or feedback item numbers memorise
 have to; those index things for the next agent, and a reply that says "item 87" has failed. A sentence he
 has to look up before he can judge it has failed. Name the rule, decision or idea in plain English;
 if the source matters, put it in parentheses after the idea. Define a project word (milestone step,
-Experiment, regroup) the first time it appears in anything he reads, or use an ordinary word. Say what
+Experiment, regroup) the first time it appears in anything he reads, or use an ordinary word. **The
+[glossary](docs/game-design/glossary.md) is where to check a word**: its one line is the definition to use, a
+word that does two jobs says which, and a thing that needs a new name gets it there, in the same pull request. Say what
 no person has tried yet and what is known to be broken. Internal shorthand is fine where the audience
 is the next agent: a note in a design document for the next session, a code comment.
 

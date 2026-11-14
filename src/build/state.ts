@@ -150,7 +150,7 @@ export type BuildContext = Readonly<{
     stage?: string
   }>
   /**
-   * What the mode playing this round keeps between its rounds — a Skirmish's setup and the duel in
+   * What the mode playing this round keeps between its rounds — a Skirmish's setup and the battle in
    * play — handed back to the shell untouched, as `carried` is: the reducer and the view never read it, so nothing
    * below the mode knows which mode it serves. Absent: a story mission, whose rounds need nothing more.
    */
@@ -1648,7 +1648,7 @@ function place(context: BuildContext, state: BuildState): BuildState {
   return {
     ...back,
     ...(back.focus === "menu" ? { ack: acknowledge(state, "pressed", entry) } : {}),
-    status: status(`${item.label} placed (resources: ${remaining(context, placed)}) - [u] undo`, "success"),
+    status: status(`${item.label} placed (credits: ${remaining(context, placed)}) - [u] undo`, "success"),
   }
 }
 

@@ -21,8 +21,8 @@ improves the sandboxes and trials, so the next unit is cheaper to judge ([`sandb
 - **Units that counter each other.** After showing the game, the owner: "it's kind of obvious what to do. Just place
   some buildings and use your money" ([his words](../history/feedback/2026-11-11-showing-the-game.md)). With one
   resource and no counters, buying what you can afford is the whole plan; counters and the worker economy answer it.
-- **What the duels found** ([the report](../history/reports/2026-10-20-pathfinding-measured.md)): Averno wins most (65%
-  of 72 scripted duels); Ravel buildings train about half the strength per credit that Citizen ones do; Dob Hunter wins
+- **What the battles found** ([the report](../history/reports/2026-10-20-pathfinding-measured.md)): Averno wins most (65%
+  of 72 scripted battles); Ravel buildings train about half the strength per credit that Citizen ones do; Dob Hunter wins
   mostly when he holds. The early lead deciding a battle is the Skirmish milestone's own step.
 - **A sparse formation** ([his idea](../history/feedback/2026-10-06-rows-x2.md)): units prefer a free column beside
   them and not to stand straight above or below another, so a group spreads into a staggered grid, a preference that
@@ -31,7 +31,7 @@ improves the sandboxes and trials, so the next unit is cheaper to judge ([`sandb
 **Two kinds of pass** (2026-11-12, [the review](../history/feedback/2026-11-12-skirmish-saves.md)):
 
 - **The first pass, before friends**, beside the Skirmish milestone: three or four units that counter each other (what
-  beats a swarm, what beats a wall, what beats air), each measured by duels and sandboxes, so a Skirmish has
+  beats a swarm, what beats a wall, what beats air), each measured by battles and sandboxes, so a Skirmish has
   something to weigh beyond "buy what you can afford". It needs no playtime until Milestone 20 plays it.
 - **Later passes, after friends**, chosen by their notes: the full rosters below, tagging and the pick-rate report, and
   more Nexus powers for each Commander. Vasse's designed powers come from the retired Nexus Pulse milestone
@@ -62,7 +62,7 @@ A loop, not a line.
 
 ### Step 12B — Measure
 
-- [ ] Pick rate and win rate per card and per tier, from duels and driver-played Skirmish battles under a few simple
+- [ ] Pick rate and win rate per card and per tier, from battles and driver-played Skirmish battles under a few simple
       policies and from human sessions, in a small report derived from events the way the `grid`
       report already is.
 - [ ] Follow the Slay the Spire discipline from the game-modes design: weekly-sized changes, metrics

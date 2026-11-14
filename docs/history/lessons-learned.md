@@ -548,6 +548,23 @@ the owner's had, and the owner's verdict on it is in [the feedback](feedback/202
   enemy moved the round the Nexus fell in, not what the player had to decide; what a person could weigh needs a second
   resource and units that counter each other.
 
+## Reading the battle, and whose words a note holds (2026-11-13)
+
+1. **A quote in a test is not the owner's word because the comment says so.** "Barracks placed (resources: 60)" was
+   cited as his for weeks in a test's comment; it was an agent's note. Quote him only with a link to his words in a
+   feedback log, and treat a small detail (wording, a number, a label) as changeable whoever wrote it
+   (DEVELOPMENT.md, which past decisions bind).
+2. **A typed save rejects a fraction.** The battle's state is hashed as integers only, so a reading kept in a round's
+   report must be whole numbers: the first front, a share from 0 to 1, failed the save tests; whole percent passed.
+3. **A script that reads one round flips.** Reading only the last round's trade, the reactive script attacked, lost,
+   held, lost, attacked, giving back the kept front each time. Reading the whole battle's trades by stance settled it.
+4. **A forced shape can leave credits unspent.** A block for every building fit the Crossing and not the Pocket's
+   small build range, where refused buildings left a third of the credits unspent and lost 2 to 16. Measure a script's
+   rule on both maps before keeping it.
+5. **Draw the screen's picture with the screen's code.** A text picture written apart from the view disagreed with it
+   (units drawn over buildings differently); the ASCII screenshot now draws with the frame's own layers, and what text
+   cannot show (what is under a unit, which side a symbol is) is listed beside it.
+
 ## Habits to keep
 
 - Say what you did not verify: "no human has played this build", "the probe has not run in iTerm2".
@@ -720,3 +737,19 @@ rewrite of the same file; a backup taken before the probe saved it. Probe on a c
   saves through `grid` and `skirmish` were written to files; after, the same runs were compared with them, record for
   record. The tests would have passed on a measurement that drifted (they check a duel's shape, not its numbers); the
   comparison could not.
+
+- **Testers with a goal find what tests with an assertion miss.** Six agents given one job each (audit the reading,
+  read the ASCII screenshots, author a sandbox, check the documents, play to win, on two models) found in an hour two
+  real bugs the suite passed: engagements dropped every killing blow (the dying unit was gone from the tick's state, so
+  its position was looked up and not found), and the JSON brief carried the other side's credits, hand and note, which
+  the text brief's own line said were private. Each finding became an invariant in a test (an engagement's damage sums
+  to the side's; the other side's private fields are absent). An auditor who sums one number two ways is the cheapest
+  test there is; give every new reading a second way to count it.
+
+- **A flag that ignores its input is a bug, not a convenience.** `--show` said nothing when given a tick past the round,
+  `--seeds` or a sandbox; each looked like a picture that was empty. Refuse or name what is not done.
+
+- **A stronger model finds the contradiction; a quicker one finds the gap.** The Sonnet player won in round 3 and
+  wanted what it could not see (the enemy's credits, a refusal's reason); the Opus player won in round 1 and found the
+  brief contradicting itself (no units in round 1, a Nexus at 400 beside a score at 97%, JSON that would not parse).
+  Both readings were worth having; the second costs more.

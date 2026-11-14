@@ -151,7 +151,7 @@
       "requires": ["barracks"],
       "spawns": {"unit": "unit.citizen.mortar", "perWave": 2, "waves": 1, "secondsBetween": 10},
       "actions": [{"id": "hold", "kind": "order", "label": "Hold production", "order": "hold"}],
-      "notes": "Two mortars a wave once a Barracks stands, for a little more than a Barracks. A mortar's strength by the duel's measure (health times damage a second) is small, since most of its harm is the fire it leaves, so no scripted player picks it yet: a player chooses it against a tight army. First numbers, to be measured."
+      "notes": "Two mortars a wave once a Barracks stands, for a little more than a Barracks. A mortar's strength by the battle's measure (health times damage a second) is small, since most of its harm is the fire it leaves, so no scripted player picks it yet: a player chooses it against a tight army. First numbers, to be measured."
     }
   ],
   "powers": [

@@ -14,14 +14,14 @@ import { createBuildState, withoutScene } from "../build/state.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
 import { FIXTURE_REGISTRY } from "../content/index.ts"
-import type { DuelResult, Side } from "../duel/index.ts"
-import { briefOf } from "../duel/index.ts"
+import type { BattleResult, Side } from "../battle/index.ts"
+import { briefOf } from "../battle/index.ts"
 import { centreTile } from "../match/index.ts"
 import { playOn } from "../skirmish/play.ts"
 import { playSandboxRound } from "../skirmish/sandbox-round.ts"
 import { newBattle, seat, withRules } from "../skirmish/request.ts"
 import type { Profiles } from "../skirmish/save.ts"
-import { duelOf } from "../skirmish/save.ts"
+import { battleOf } from "../skirmish/save.ts"
 import { slotAsk } from "../skirmish/slots.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MatchState } from "../state/types.ts"
@@ -50,7 +50,7 @@ export type DuelMeasure = Readonly<{
   players: Readonly<Record<Side, string>>
   map: string
   seed: number
-  result: DuelResult
+  result: BattleResult
   rounds: readonly DuelRound[]
 }>
 
@@ -72,7 +72,7 @@ export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, s
   let recorder: BattleRecorder | null = null
   const ran = playOn(
     setup,
-    duelOf({ ...save, setup }, NO_PROFILES),
+    battleOf({ ...save, setup }, NO_PROFILES),
     {},
     Number.POSITIVE_INFINITY,
     NO_PROFILES,
@@ -105,7 +105,7 @@ export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, s
     players,
     map: battle.map,
     seed: battle.seed,
-    result: ran.state.result as DuelResult,
+    result: ran.state.result as BattleResult,
     rounds,
   }
 }

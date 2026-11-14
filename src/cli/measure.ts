@@ -38,7 +38,7 @@ import {
   summaryLines,
   unitLines,
 } from "../measure/index.ts"
-import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
+import { TICKS_PER_SECOND } from "../state/types.ts"
 import { loadSandbox, sandboxCatalog } from "../skirmish/sandboxes.ts"
 
 const HELP = `measure: battles measured the same way before and after a rule changes (docs/system-design/measurement.md).

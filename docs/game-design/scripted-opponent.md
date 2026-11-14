@@ -56,8 +56,8 @@ A mission's opponent, and a Skirmish's (a script that answers in Milestone 20, a
 - the plan is **data**, so the Build Phase can show it and its intention, exactly as it shows a hand-written group;
 - the kernel executes it, deterministic and replayable — the planner runs between rounds, never inside a tick;
 - a stronger opponent is a better planner (or more credits), not a different rule, and "the AI cheated" can be checked by reading its plan;
-- a language model is one such planner: Claude, reading the public state as a duel's brief and writing the plan, as a
-  duel's model player already does ([`duels.md`](../system-design/duels.md));
+- a language model is one such planner: Claude, reading the public state as a battle's brief and writing the plan, as a
+  battle's model player already does ([`battles.md`](../system-design/battles.md));
 - it is the tier Story calls "weighted faction heuristics" ([`story.md`](story.md), the opponents a mission brings): a Ravel planner likes fast flanks, a Feudal one siege lines.
 
 **Should the planner see the player's plan?** No — it plans before the player does, from what is public, which is also what makes showing its plan fair. The player sees the raid's intention; the raid never sees the player's buildings until they reveal at the round's start. That asymmetry is Story's whole deal with the player: "the Nexus is ahead of you" (the PERIMETER lore hint) is true mechanically — the player's own Nexus is telling them what is coming.
@@ -68,7 +68,7 @@ Not detailed on purpose. The direction: a mission's raids live beside its map as
 
 ## 4. The names
 
-The battle has had several names (Pulse, Battle step, round, Nexus Pulse). Mario settled it: the player reads **Battle Round** wherever the interface names the battle (2026-10-04), and since 2026-10-07 the design and the lore call it the Battle Round too, while the **Nexus Pulse** is the moment that opens each round, when the Nexus deals its hand of powers. The code still calls the battle step `pulse`, the engine's word (the words are defined in [`grid-engine.md`](../system-design/grid-engine.md)). A mission's cycle is a round to the player: "round 2 of 3", "Next round", "Battle Round 2".
+The battle has had several names (Pulse, Battle step, round, Nexus Pulse). Mario settled it: the player reads **Battle Round** wherever the interface names the battle (2026-10-04), and since 2026-10-07 the design and the lore call it the Battle Round too, while the **Nexus Pulse** is the moment that opens each round, when the Nexus deals its hand of powers. The code still calls the battle step `pulse`, the engine's word (the words are defined in the [glossary](glossary.md)). A mission's cycle is a round to the player: "round 2 of 3", "Next round", "Battle Round 2".
 
 ## 5. A sensible order — IDEA
 

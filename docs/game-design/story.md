@@ -101,7 +101,7 @@ A mission selects and configures:
 - what the player may build and the Nexus may deal: what this mission offers, and what the story has collected;
 - the starting state and credits;
 - goals, loss conditions, triggers and scripted events;
-- the opponent: a trigger list, a duel script, or a group schedule (section 7);
+- the opponent: a trigger list, a battle script, or a group schedule (section 7);
 - its scenes and lines (section 6);
 - the technologies it grants, and the bonus goals that grant more.
 
@@ -385,7 +385,7 @@ The opening image should make the Prime Nexus physically impossible before the p
 ## 7. The opponents a mission brings
 
 Three kinds, one for each kind of battle a story holds: **a trigger list** (a scripted raid: what spawns, where, and what
-it means to do; PERIMETER's is built), **a duel script** driving a Commander Army with a Nexus (the final battle, and any
+it means to do; PERIMETER's is built), **a battle script** driving a Commander Army with a Nexus (the final battle, and any
 mission played Nexus against Nexus; the Skirmish opponent), and **a group schedule** (the endless stand, section 2.3).
 
 A mission's opponents are local game AIs by default, not LLMs. They receive a bounded planning view and the same legal action vocabulary available to a human plan validator.

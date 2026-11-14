@@ -7,14 +7,14 @@
 // under the same names, so New game's Start is `skirmishLevel({ format, setup })` and nothing is translated.
 
 import { ARMIES } from "../armies/index.ts"
-import { DUEL_MAPS } from "../duel/index.ts"
+import { BATTLE_MAPS } from "../battle/index.ts"
 import type { Controller, Modifier, Profiles, SaveSetup, Slot, SlotSetup } from "./save.ts"
 import { controllerKind, MODIFIERS, newSetup, scriptOf, shareOf, SLOTS } from "./save.ts"
 import { commanderNameOf, mapNameOf } from "./words.ts"
 import { screenRefusal } from "./slots.ts"
 
-/** The maps New game offers, in order: the duel's built-in ones. */
-export const SETUP_MAPS: readonly string[] = Object.keys(DUEL_MAPS)
+/** The maps New game offers, in order: the battle's built-in ones. */
+export const SETUP_MAPS: readonly string[] = Object.keys(BATTLE_MAPS)
 
 /** The Commanders a slot may have, in order. */
 export const SETUP_COMMANDERS: readonly string[] = ARMIES.commanders.map((commander) => commander.id)
@@ -28,7 +28,7 @@ export const SETUP_AGENT = "agent:curious"
 /** The player's name a `Player` slot shows when nothing names one. */
 export const DEFAULT_PLAYER_NAME = "player"
 
-/** The script profile New game's p2 starts on: `steady`, which plays the duel's `balanced` script. */
+/** The script profile New game's p2 starts on: `steady`, which plays the battle's `balanced` script. */
 export const DEFAULT_OPPONENT = "script:steady"
 
 /** A new battle's setup as New game opens it: Vasse as `Player: <name>` against Dob Hunter's `steady` profile on the
@@ -128,7 +128,7 @@ export function fieldText(setup: SaveSetup, field: SetupField, playerName: strin
 export function fieldAbout(setup: SaveSetup, field: SetupField, profiles: Profiles): string {
   switch (field.kind) {
     case "map": {
-      const map = typeof setup.map === "string" ? DUEL_MAPS[setup.map] : undefined
+      const map = typeof setup.map === "string" ? BATTLE_MAPS[setup.map] : undefined
       return map?.notes ?? "The map fixes the slots: two Nexuses, west and east."
     }
     case "commander":

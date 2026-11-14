@@ -186,10 +186,11 @@ Design commitments the game documents own, GUIDANCE until built and played:
 ## 4. Vocabulary
 
 Every word the project made its own is defined once, in the [glossary](../game-design/glossary.md): the words of a
-battle (round, Nexus Pulse, Build Phase, Battle Round, tick, regroup, wave, group), of the ground, of armies, of the
-modes, of setting up a Skirmish, of testing (sandbox, trial, duel, measurement) and of the screen, and the words the
-engine keeps that a player never reads (the Pulse, match). A new word goes there in the pull request that brings it
-in.
+battle (round, Nexus Pulse, Build Phase, Battle Round, tick, regroup, wave, group), of movement, of the ground, of the
+universe, of armies, of the modes, of setting up a Skirmish, of testing (sandbox, trial, battle, measurement), of
+settings and feedback, of the screen and of effects, and the words the engine keeps that a player never reads (the
+Pulse, match); then the words that do two jobs and the words we stopped using. A new word goes there in the pull
+request that brings it in.
 
 ## 5. How troops move
 

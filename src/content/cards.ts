@@ -116,7 +116,7 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
   "terrain.deposit": {
     title: "Deposit",
     subtitle: "Resources lie here",
-    description: "A seam of the resources you spend, under the same mark. For now you can build and walk on it.",
+    description: "A seam of the credits you spend, under the same mark. For now you can build and walk on it.",
   },
 }
 

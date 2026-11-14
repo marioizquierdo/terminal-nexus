@@ -402,7 +402,7 @@ export type FieldEntity = Readonly<{
   ordinal?: number
   player: "A" | "B"
   hp: number
-  /** The walk that brought it there, when the survivors regrouped as the round ended (a duel's, a run's:
+  /** The walk that brought it there, when the survivors regrouped as the round ended (a battle's, a run's:
    *  `src/match/regroup.ts`): where it stood when the last Battle Round ended, and each step, by the tick of the regroup
    *  it lands on (12 a second). The Build Phase plays it over its first seconds; nothing reads it but the picture. */
   walk?: FieldWalk

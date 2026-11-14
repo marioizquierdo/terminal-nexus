@@ -1,7 +1,7 @@
-// One round of a duel, both sides at once (`playRound`): each side's Nexus Pulse deals it a hand, its plan keeps a card
+// One round of a battle, both sides at once (`playRound`): each side's Nexus Pulse deals it a hand, its plan keeps a card
 // and places buildings by the Build Phase's own rules, the two plans reveal together, and a Battle Round between the
-// two armies decides what is left for the next round. Pure: the same duel and plans give the same round on every
-// machine; nothing here reads a clock, a screen or a model — plans are handed in (`src/duel/players.ts` makes them).
+// two armies decides what is left for the next round. Pure: the same battle and plans give the same round on every
+// machine; nothing here reads a clock, a screen or a model — plans are handed in (`src/battle/players.ts` makes them).
 //
 // What it reuses rather than restates: the dealer (`dealHand`), the effect table (`applyEffect`, through each side's
 // loadout), the Build Phase's legality (`legalityAt`: build range, footprint, rock, cost — the rules a player's cursor
@@ -15,7 +15,6 @@ import { defaultValue } from "../build/all-settings.ts"
 import type { BuildContext } from "../build/state.ts"
 import { legalityAt, missingFor } from "../build/state.ts"
 import type { ConstructItem, FieldEntity, PlannedPlacement } from "../build/types.ts"
-import { cardTextFor } from "../content/cards.ts"
 import type { ContentRegistry } from "../content/index.ts"
 import { baseContentId, fittedId, fittingsOf } from "../content/index.ts"
 import type { DomainEvent } from "../events/types.ts"
@@ -24,31 +23,32 @@ import type { Coord, Footprint, GridTerrain } from "../grid/types.ts"
 import { centreTile, creditsEarned, fallen, opening, regroup, restoreCommanders, spawningRegistry, standDown } from "../match/index.ts"
 import type { Force, RegroupResult, StructurePlacement } from "../match/index.ts"
 import { contextFor, stepTick } from "../pulse/index.ts"
-import { TICKS_PER_SECOND } from "../skirmish/opening/open.ts"
+import { TICKS_PER_SECOND } from "../state/types.ts"
 import type { MatchState, TargetArea } from "../state/types.ts"
-import type { DuelMap } from "./maps.ts"
-import { DUEL_MAPS, duelGrid } from "./maps.ts"
-import type { DuelArmy } from "./sides.ts"
-import { armyOf, duelArmy, loadoutOf, powerOf } from "./sides.ts"
-import type { DuelResult, DuelSetup, DuelState, Formation, Placement, RoundReport, Side, BuildActions, SideReport, SideState, Zone } from "./types.ts"
+import type { BattleMap } from "./maps.ts"
+import { BATTLE_MAPS, battleGrid } from "./maps.ts"
+import type { BattleArmy } from "./sides.ts"
+import { armyOf, battleArmy, loadoutOf, powerOf } from "./sides.ts"
+import { nameOf, roundReader, scoreOf } from "./reading/index.ts"
+import type { BattleResult, BattleSetup, BattleState, Formation, Placement, RoundReport, Side, BuildActions, SideReport, SideState, Zone } from "./types.ts"
 import { APART_GAP, SIDES } from "./types.ts"
 
 /** The other side. */
 export const other = (side: Side): Side => (side === "A" ? "B" : "A")
 
 /** Which way a side faces the enemy along the map's width: east (+1) when the enemy's Nexus stands east of its own. */
-const facing = (map: DuelMap, side: Side): number => (map.nexus[other(side)].x >= map.nexus[side].x ? 1 : -1)
+const facing = (map: BattleMap, side: Side): number => (map.nexus[other(side)].x >= map.nexus[side].x ? 1 : -1)
 
-/** A side's income for a round: the curve's, times its multiplier (`DuelSetup.income`), in whole credits. */
-export function incomeOf(setup: DuelSetup, side: Side, round: number): number {
+/** A side's income for a round: the curve's, times its multiplier (`BattleSetup.income`), in whole credits. */
+export function incomeOf(setup: BattleSetup, side: Side, round: number): number {
   return Math.round(roundIncome(round) * (setup.income?.[side] ?? 1))
 }
 
-/** A duel's first state: round 1 to play, nothing on the Grid yet, each side with round 1's credits. */
-export function newDuel(setup: DuelSetup): DuelState {
-  if (typeof setup.map === "string" && DUEL_MAPS[setup.map] === undefined) throw new Error(`no duel map "${setup.map}" (${Object.keys(DUEL_MAPS).join(", ")})`)
-  if (typeof setup.map !== "string") duelGrid(setup.map)
-  for (const side of SIDES) duelArmy(setup.commanders[side])
+/** A battle's first state: round 1 to play, nothing on the Grid yet, each side with round 1's credits. */
+export function beginBattle(setup: BattleSetup): BattleState {
+  if (typeof setup.map === "string" && BATTLE_MAPS[setup.map] === undefined) throw new Error(`no battle map "${setup.map}" (${Object.keys(BATTLE_MAPS).join(", ")})`)
+  if (typeof setup.map !== "string") battleGrid(setup.map)
+  for (const side of SIDES) battleArmy(setup.commanders[side])
   const side = (which: Side): SideState => {
     const roster = setup.rosters?.[which]
     return { commander: setup.commanders[which], ...(roster === undefined ? {} : { roster }), credits: incomeOf(setup, which, 1), kept: roster?.doctrines ?? [], absent: [] }
@@ -56,15 +56,15 @@ export function newDuel(setup: DuelSetup): DuelState {
   return { setup, round: 1, carried: null, sides: { A: side("A"), B: side("B") }, history: [], result: null }
 }
 
-/** The duel's map. */
-export function mapOf(state: Pick<DuelState, "setup">): DuelMap {
-  return typeof state.setup.map === "string" ? (DUEL_MAPS[state.setup.map] as DuelMap) : state.setup.map
+/** The battle's map. */
+export function mapOf(state: Pick<BattleState, "setup">): BattleMap {
+  return typeof state.setup.map === "string" ? (BATTLE_MAPS[state.setup.map] as BattleMap) : state.setup.map
 }
 
 /** The hand a side's Nexus Pulse deals it this round: from its army's powers, by its Commander's schedule, for the
  *  buildings it has standing as the round opens. Each side's seed differs, so two armies of one faction are dealt
  *  apart. */
-export function handOf(state: DuelState, side: Side): PowerCard[] {
+export function handOf(state: BattleState, side: Side): PowerCard[] {
   const army = armyOf(state, side)
   const kept = state.sides[side].kept.flatMap((id) => powerOf(army, id) ?? [])
   const standing = new Set(army.buildings.filter((card) => standingOf(state, side).some((structure) => baseContentId(structure.contentId) === card.structure)).map((card) => card.id))
@@ -79,7 +79,7 @@ export function handOf(state: DuelState, side: Side): PowerCard[] {
 }
 
 /** A side's structures standing as the round opens: its Nexus alone before the first round. */
-export function standingOf(state: DuelState, side: Side): readonly StructurePlacement[] {
+export function standingOf(state: BattleState, side: Side): readonly StructurePlacement[] {
   if (state.carried === null) return [{ contentId: armyOf(state, side).nexus, player: side, anchor: mapOf(state).nexus[side] }]
   return state.carried.entities.flatMap((entity) =>
     entity.player === side && contentFor(state, side).get(entity.contentId).layer === "obstacles" ? [{ contentId: entity.contentId, player: side, anchor: entity.anchor }] : [],
@@ -87,13 +87,13 @@ export function standingOf(state: DuelState, side: Side): readonly StructurePlac
 }
 
 /** The content a side is defined by this round. */
-function contentFor(state: DuelState, side: Side): ContentRegistry {
+function contentFor(state: BattleState, side: Side): ContentRegistry {
   return loadoutOf(armyOf(state, side), state.sides[side]).registry
 }
 
 /** A Build Phase's context for one side: its own structures as what it builds from, everything else as the field —
- *  what the Build Phase's legality needs to hold a duel's placement to a player's rules. */
-function sideBuild(state: DuelState, side: Side, grid: GridTerrain, catalog: readonly ConstructItem[], registry: ContentRegistry, credits: number): BuildContext {
+ *  what the Build Phase's legality needs to hold a battle's placement to a player's rules. */
+function sideBuild(state: BattleState, side: Side, grid: GridTerrain, catalog: readonly ConstructItem[], registry: ContentRegistry, credits: number): BuildContext {
   const field: FieldEntity[] = []
   if (state.carried === null) {
     const enemy = other(side)
@@ -120,13 +120,13 @@ function sideBuild(state: DuelState, side: Side, grid: GridTerrain, catalog: rea
  * (`forward`); behind its Nexus (`back`); and beside it to the north or the south. A placement goes to the legal spot
  * nearest it.
  */
-export function zonePoint(state: DuelState, side: Side, zone: Zone, registry: ContentRegistry): Coord {
+export function zonePoint(state: BattleState, side: Side, zone: Zone, registry: ContentRegistry): Coord {
   const map = mapOf(state)
   const nexusAt = map.nexus[side]
   const nexusFootprint = registry.get(armyOf(state, side).nexus).footprint
   const centre = centreTile(nexusAt, nexusFootprint)
   const way = facing(map, side)
-  const grid = duelGrid(map)
+  const grid = battleGrid(map)
   const clamp = (tile: Coord): Coord => ({ x: Math.max(0, Math.min(grid.width - 1, tile.x)), y: Math.max(0, Math.min(grid.height - 1, tile.y)) })
   switch (zone) {
     case "nexus":
@@ -178,7 +178,7 @@ type Producer = Readonly<{ anchor: Coord; footprint: Footprint }>
  *
  * **Neither builds past its centre toward the enemy while it has room behind it**: an anchor whose middle stands
  * further toward the enemy than the centre comes after every one that does not. Without it, set apart, a base reached
- * further forward each round than a block did (a building furthest forward moves `forward` with it), and a duel of
+ * further forward each round than a block did (a building furthest forward moves `forward` with it), and a battle of
  * block against apart measured how far forward a base was as much as how tight its army stood.
  *
  * Mirror-fair: the order is mirrored for the other side (`nearest`, `way`) and the distances are a footprint's to a
@@ -213,7 +213,7 @@ function formationOrder(
  *  than `zones`, each building that trains units goes where the formation sets it (`formationOrder`), round where the
  *  plan asks for the first of them; every other building where its own placement says. */
 function placeAll(
-  state: DuelState,
+  state: BattleState,
   side: Side,
   plan: BuildActions,
   catalog: readonly ConstructItem[],
@@ -221,7 +221,7 @@ function placeAll(
   credits: number,
 ): Readonly<{ planned: PlannedPlacement[]; spent: number; built: string[]; refused: string[] }> {
   const map = mapOf(state)
-  const grid = duelGrid(map)
+  const grid = battleGrid(map)
   const army = armyOf(state, side)
   const planned: PlannedPlacement[] = []
   const built: string[] = []
@@ -295,7 +295,7 @@ type Acted = Readonly<{
  * whose price is left; a mode not already in force; an order, given. Each building carries what was taken on it as its
  * content id (`fittedId`), which the opening sets it down as.
  */
-function actOn(state: DuelState, side: Side, plan: BuildActions, catalog: readonly ConstructItem[], planned: readonly PlannedPlacement[], credits: number): Acted {
+function actOn(state: BattleState, side: Side, plan: BuildActions, catalog: readonly ConstructItem[], planned: readonly PlannedPlacement[], credits: number): Acted {
   const army = armyOf(state, side)
   const key = (anchor: Readonly<{ x: number; y: number }>): string => `${anchor.x},${anchor.y}`
   const standing = standingOf(state, side)
@@ -370,7 +370,7 @@ function actOn(state: DuelState, side: Side, plan: BuildActions, catalog: readon
  * other side's plan is revealed (a clash with it is settled only once both are): each building's card and anchor, in
  * order. For a driver that plays a side through the Build Phase's own functions, which take a plan as placed buildings.
  */
-export function placementsOf(state: DuelState, side: Side, plan: BuildActions): PlannedPlacement[] {
+export function placementsOf(state: BattleState, side: Side, plan: BuildActions): PlannedPlacement[] {
   const army = armyOf(state, side)
   const hand = handOf(state, side)
   const pick = plan.power !== undefined && plan.power >= 1 ? (hand[plan.power - 1] ?? null) : null
@@ -380,10 +380,10 @@ export function placementsOf(state: DuelState, side: Side, plan: BuildActions): 
 }
 
 /** A building card's id for its menu row. */
-const buildingIdOf = (army: DuelArmy, item: ConstructItem): string => army.buildings.find((card) => card.structure === item.contentId)?.id ?? item.contentId
+const buildingIdOf = (army: BattleArmy, item: ConstructItem): string => army.buildings.find((card) => card.structure === item.contentId)?.id ?? item.contentId
 
 /** What a card calls a content id, or its short name. */
-export const titleOf = (contentId: string): string => cardTextFor(contentId)?.title ?? baseContentId(contentId).slice(baseContentId(contentId).lastIndexOf(".") + 1)
+export const titleOf = nameOf
 
 /** `registry` with each building of `catalog` that makes units making them in waves, as its card says. */
 function battleContent(registry: ContentRegistry, catalog: readonly ConstructItem[]): ContentRegistry {
@@ -401,7 +401,7 @@ function tally(contentIds: readonly string[]): Record<string, number> {
 
 /** A side's Build Phase as its plan played it, before the other side's plan is revealed. */
 type Planned = Readonly<{
-  army: DuelArmy
+  army: BattleArmy
   registry: ContentRegistry
   catalog: readonly ConstructItem[]
   hand: PowerCard[]
@@ -411,7 +411,7 @@ type Planned = Readonly<{
   acted: Acted
   side: SideState
 }>
-function buildPhase(state: DuelState, side: Side, plan: BuildActions): Planned {
+function buildPhase(state: BattleState, side: Side, plan: BuildActions): Planned {
   const army = armyOf(state, side)
   const hand = handOf(state, side)
   const pick = plan.power !== undefined && plan.power >= 1 ? (hand[plan.power - 1] ?? null) : null
@@ -442,7 +442,7 @@ function buildPhase(state: DuelState, side: Side, plan: BuildActions): Planned {
  * rules, and what it would be refused, with the credits it would leave. Blind to the other side, as the Build Phase is:
  * a clash with the other side's plan over one tile is settled only once both are revealed (`playRound`).
  */
-export function checkBuildActions(state: DuelState, side: Side, plan: BuildActions): Readonly<{ kept: string | null; built: readonly string[]; actions: readonly string[]; refused: readonly string[]; credits: number; spent: number }> {
+export function checkBuildActions(state: BattleState, side: Side, plan: BuildActions): Readonly<{ kept: string | null; built: readonly string[]; actions: readonly string[]; refused: readonly string[]; credits: number; spent: number }> {
   const phase = buildPhase(state, side, plan)
   return {
     kept: phase.pick === null ? null : phase.pick.name,
@@ -455,23 +455,23 @@ export function checkBuildActions(state: DuelState, side: Side, plan: BuildActio
 }
 
 /**
- * **One round of the duel.** Each side keeps the card its plan names from its hand, builds what its plan asks for that
+ * **One round of the battle.** Each side keeps the card its plan names from its hand, builds what its plan asks for that
  * the rules allow, and its troops take its stance; the Battle Round runs until a Nexus falls or time runs out; the
  * survivors stay on the Grid and regroup (`regroup`, `src/match/regroup.ts`): a step back, then a formation across each
  * side's march line, which the next round opens from; a Commander who fell is out by her own rule; credits carry over,
- * the next round adds the curve's and each side's battle earnings. Returns the duel after the round, what happened in
- * it, and the regroup's walks (`null` once the duel is over: nothing regroups after the last round). `watch`, when
+ * the next round adds the curve's and each side's battle earnings. Returns the battle after the round, what happened in
+ * it, and the regroup's walks (`null` once the battle is over: nothing regroups after the last round). `watch`, when
  * given, sees every state of the battle from its opening on, and each tick's events, with side A's content to draw it by and
  * each side's own: for a picture, a viewer or a measure, never read back.
  */
 export function playRound(
-  state: DuelState,
+  state: BattleState,
   plans: Readonly<Record<Side, BuildActions>>,
   watch?: (battle: MatchState, events: readonly DomainEvent[], registry: ContentRegistry, sides: Readonly<Record<Side, ContentRegistry>>) => void,
-): Readonly<{ state: DuelState; report: RoundReport; regroup: RegroupResult | null }> {
-  if (state.result !== null) throw new Error("the duel is over")
+): Readonly<{ state: BattleState; report: RoundReport; regroup: RegroupResult | null }> {
+  if (state.result !== null) throw new Error("the battle is over")
   const map = mapOf(state)
-  const grid = duelGrid(map)
+  const grid = battleGrid(map)
   const round = state.round
 
   // Each side's Build Phase, blind to the other's.
@@ -522,12 +522,14 @@ export function playRound(
   // The Battle Round, each side on its own content.
   const context = contextFor(start, sides.A, state.setup.pulseTicks, { sides })
   const events: DomainEvent[] = []
+  const reader = roundReader(start, sides, { A: phases.A.catalog, B: phases.B.catalog })
   let current = start
   watch?.(current, [], sides.A, sides)
   while (current.outcome === null && current.tick < state.setup.pulseTicks) {
     const step = stepTick(current, context)
     current = step.state
     events.push(...step.events)
+    reader.step(current, step.events)
     watch?.(current, step.events, sides.A, sides)
   }
 
@@ -546,14 +548,14 @@ export function playRound(
     reports[side] = sideReport(side, phases[side], plans[side], state.sides[side].credits, earned, start, current, events, sides, fell.some((absence) => absence.player === side))
   }
   const ended = current.outcome?.reason === "nexus-destroyed" ? "nexus" : "time"
-  const report: RoundReport = { round, sides: reports, ticks: current.tick, ended }
-  const result: DuelResult | null =
+  const report: RoundReport = { round, sides: reports, ticks: current.tick, ended, reading: reader.reading(current) }
+  const result: BattleResult | null =
     ended === "nexus" && current.outcome !== null
       ? { winner: current.outcome.winner, by: current.outcome.winner === null ? "draw" : "nexus", round }
       : round >= state.setup.rounds
         ? judged([...state.history, report], round)
         : null
-  // Between rounds the survivors regroup where they fought; once the duel is over they stand where it left them.
+  // Between rounds the survivors regroup where they fought; once the battle is over they stand where it left them.
   const between = result === null ? regroup(current, sides.A, sides) : null
   const carried = (between ?? standDown(current, sides.A, sides)).state
   return {
@@ -604,7 +606,7 @@ function clashesSettled<P extends Readonly<{ placed: ReturnType<typeof placeAll>
 
 /** The buildings both plans hold this round (Hold production), each a building of its own side standing as the round
  *  opens: what the opening holds. Nothing when neither plan holds any, as every script plays. */
-function heldBy(state: DuelState, plans: Readonly<Record<Side, BuildActions>>, phases: Readonly<Record<Side, Readonly<{ acted: Acted }>>>): Readonly<{ held?: readonly Coord[] }> {
+function heldBy(state: BattleState, plans: Readonly<Record<Side, BuildActions>>, phases: Readonly<Record<Side, Readonly<{ acted: Acted }>>>): Readonly<{ held?: readonly Coord[] }> {
   const held = SIDES.flatMap((side) => {
     const own = standingOf(state, side)
     const asked = (plans[side].hold ?? []).filter((anchor) => own.some((structure) => structure.anchor.x === anchor.x && structure.anchor.y === anchor.y))
@@ -622,14 +624,14 @@ function refitsOf(phases: Readonly<Record<Side, Readonly<{ acted: Acted }>>>): R
 }
 
 /** Where a side's arriving units gather: in front of its Nexus, toward the enemy. */
-export function musterOf(state: DuelState, side: Side, registry: ContentRegistry): Coord {
+export function musterOf(state: BattleState, side: Side, registry: ContentRegistry): Coord {
   const map = mapOf(state)
   const centre = centreTile(map.nexus[side], registry.get(armyOf(state, side).nexus).footprint)
   return { x: centre.x + facing(map, side) * 4, y: centre.y }
 }
 
 /** Where a side's troops head: the enemy's Nexus when it attacks, its own holding ground when it holds. */
-function targetOf(state: DuelState, side: Side, stance: BuildActions["stance"], sides: Readonly<Record<Side, ContentRegistry>>): TargetArea {
+function targetOf(state: BattleState, side: Side, stance: BuildActions["stance"], sides: Readonly<Record<Side, ContentRegistry>>): TargetArea {
   const map = mapOf(state)
   if (stance === "hold") return map.hold[side]
   const enemy = other(side)
@@ -644,7 +646,7 @@ function targetOf(state: DuelState, side: Side, stance: BuildActions["stance"], 
 /** What one side did and suffered in the round, from its phase, the opening, the end and the events. */
 function sideReport(
   side: Side,
-  phase: Readonly<{ army: DuelArmy; hand: PowerCard[]; pick: PowerCard | null; placed: ReturnType<typeof placeAll>; acted: Acted }>,
+  phase: Readonly<{ army: BattleArmy; hand: PowerCard[]; pick: PowerCard | null; placed: ReturnType<typeof placeAll>; acted: Acted }>,
   plan: BuildActions,
   credits: number,
   earned: number,
@@ -706,15 +708,9 @@ function sideReport(
   }
 }
 
-/**
- * The rounds ran out: the side whose Nexus kept the larger share of its health wins; on an even share, the side that
- * dealt more damage over the whole duel; on that too, a draw.
- */
-function judged(history: readonly RoundReport[], round: number): DuelResult {
-  const last = history.at(-1) as RoundReport
-  const share = (side: Side): number => (last.sides[side].nexus.most === 0 ? 0 : last.sides[side].nexus.after / last.sides[side].nexus.most)
-  if (share("A") !== share("B")) return { winner: share("A") > share("B") ? "A" : "B", by: "health", round }
-  const dealt = (side: Side): number => history.reduce((sum, report) => sum + report.sides[side].dealt.units + report.sides[side].dealt.buildings + report.sides[side].dealt.nexus, 0)
-  if (dealt("A") !== dealt("B")) return { winner: dealt("A") > dealt("B") ? "A" : "B", by: "damage", round }
-  return { winner: null, by: "draw", round }
+/** The rounds ran out: judged by the score (`scoreOf`) — the healthier Nexus by share, then the damage dealt over the whole
+ *  battle; on both, a draw. */
+function judged(history: readonly RoundReport[], round: number): BattleResult {
+  const score = scoreOf(history)
+  return score.leader === null ? { winner: null, by: "draw", round } : { winner: score.leader, by: score.by === "health" ? "health" : "damage", round }
 }

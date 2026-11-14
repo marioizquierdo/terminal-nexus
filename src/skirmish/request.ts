@@ -4,8 +4,8 @@
 // means the same on both, and a battle asked for one way opens as it would the other. Pure: the caller hands in a
 // file's text (`readFile`), and each problem is thrown as an `Error` that says every problem at once.
 
-import type { BuildActions, BuildEntry } from "../duel/index.ts"
-import { readBuildFile } from "../duel/index.ts"
+import type { BuildActions, BuildEntry } from "../battle/index.ts"
+import { readBuildFile } from "../battle/index.ts"
 import type { Profiles, SaveFile, SaveMap, SaveSetup, Slot } from "./save.ts"
 import { MODIFIERS, newSetup, readSave, SAVE_FORMAT, SLOTS } from "./save.ts"
 import type { SlotAsk } from "./slots.ts"

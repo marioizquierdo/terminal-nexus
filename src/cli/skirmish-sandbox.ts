@@ -17,6 +17,7 @@ import type { SkirmishRequest } from "./skirmish.ts"
  */
 export function playSandbox(save: SaveFile, request: SkirmishRequest, write: (line: string) => void): Readonly<{ refused: boolean }> {
   for (const slot of SLOTS) if (request.slots[slot] !== undefined) throw new Error(`--${slot}: a sandbox's slots plan nothing, its units are in its start`)
+  if (request.show !== undefined) throw new Error("--show: a sandbox's round is drawn by grid (grid <sandbox>, or the grid-screenshots skill), not by --show")
   if (request.save !== undefined) throw new Error("--save: a sandbox plays the one Battle Round its start writes, with nothing to save after it")
   const opening = openingOf(save)
   write(`${opening.name} (${opening.id}), seed ${save.setup.seed}: a sandbox, its Battle Round written by hand, ${save.setup.roundTicks} ticks at most`)

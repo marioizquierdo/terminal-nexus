@@ -114,7 +114,7 @@ between commanders" ([his words](../feedback/2026-10-13-commander-armies.md)).
 - [x] Duels: two armies on one map, a round at a time, a script or a model planning each side through files; a
       bench of every pairing from both sides, and model games played.
 - [x] The guide for writing an army ([`army-authoring.md`](../../system-design/army-authoring.md)) and for duels and
-      model against model ([`duels.md`](../../system-design/duels.md)).
+      model against model ([`battles.md`](../../system-design/battles.md)).
 
 ### Step 14C, round 3 — No side wins by where it stands
 

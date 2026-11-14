@@ -12,10 +12,10 @@ export type Roster = Readonly<{
 export type PulseContext = Readonly<{
   registry: ContentRegistry
   /**
-   * A side's own content, when the two sides' differ: a duel's, where what one side's Nexus powers changed (troopers
+   * A side's own content, when the two sides' differ: a battle's, where what one side's Nexus powers changed (troopers
    * that burst, a wider aura) is that side's alone, though both field troopers. A side without one reads `registry`.
    * Every lookup of a unit's definition goes through its side (`contentOf`). Absent: one content for both sides, as in
-   * every battle before duels.
+   * every battle before battles.
    */
   sides?: Readonly<Partial<Record<PlayerId, ContentRegistry>>>
   pulseTicks: number

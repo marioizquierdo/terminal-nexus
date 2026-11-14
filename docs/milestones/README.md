@@ -24,7 +24,7 @@ remains.
 | [11 — Challenge Mode: Runs](../history/milestones/milestone-11-challenge-runs.md) | COMPLETE | done | Can a player play a seeded run of battles with a run draft between them? Closed when runs were retired: its battle mechanics (building actions, the kept front, troop movement, the banner prototype) carry on in every mode |
 | [13 — The Nexus Pulse](../history/milestones/milestone-13-nexus-pulse.md) | COMPLETE | retired unbuilt | Retired on 2026-11-12: the Skirmish milestones polish the Build Phase and the Battle Round; its powers went to content, its moment on screen to the backlog |
 | [17 — Skirmish: setup and save files](../history/milestones/milestone-17-skirmish.md) | COMPLETE | done | Can Mario set up a Skirmish by map and slots, play, save, load and carry on, and can an agent take the same save, change who plays each side and play it headless, round by round? |
-| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | CURRENT | 9, its first pass now; then repeating after friends | Does each new unit and card make a Skirmish more interesting — measured by duels and sandboxes, then played? The first pass: units that counter each other |
+| [12 — Content and Balance Iteration](milestone-12-content-iteration.md) | CURRENT | 9, its first pass now; then repeating after friends | Does each new unit and card make a Skirmish more interesting — measured by battles and sandboxes, then played? The first pass: units that counter each other |
 | [7 — Worker Economy](milestone-07-worker-economy.md) | PLANNED | 10, narrow, a map choice | Can workers be built and gather resources deterministically during the Battle Round? |
 | [20 — A Skirmish Worth Showing](milestone-20-skirmish-worth-showing.md) | PLANNED | 11, ends with friends playing | Does a player read what the enemy did, answer it with their build and banner, see the answer matter, and finish a battle that stayed open; and do friends say the same? |
 | [21 — Agent Players](milestone-21-agent-players.md) | PLANNED | 12, after friends, while their notes come in | Can a player choose `Agent: <profile>` for a slot and play against a language model planning the other side each round? |
@@ -52,7 +52,7 @@ no longer the testing map, and no Story mission is built for now. In order:
 1. **Skirmish: setup and save files** (17): set up by map and slots, saved and loaded at a Build Phase, played headless
    by an agent round by round. Every later step is tested from a save, which is what spares Mario's playtime.
 2. **Units that counter each other** (12's first pass, beside 17): the cheapest answer to a friend's "it's kind of
-   obvious what to do", measured by duels, no playtime needed.
+   obvious what to do", measured by battles, no playtime needed.
 3. **The worker economy, narrow** (7): the second answer, offered as a map choice.
 4. **A Skirmish worth showing** (20): the banner as a decision, reading the opponent, a script that answers, a battle
    that stays open, measured on the real rules. **Its last step is friends playing.**
