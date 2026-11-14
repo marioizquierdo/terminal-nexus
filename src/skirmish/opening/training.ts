@@ -16,7 +16,6 @@ import { defaultValue } from "../../build/all-settings.ts"
 import type { ContentRegistry } from "../../content/index.ts"
 import { spawningRegistry } from "../../match/index.ts"
 import { TICKS_PER_SECOND } from "../../state/types.ts"
-import { phaseOf } from "./phase.ts"
 import type { BattleOpening } from "./types.ts"
 
 /** Each structure's spawns by the first card of the armies that gives it any. */
@@ -28,11 +27,10 @@ const CARD_SPAWNS: Readonly<Record<string, BuildingSpawns>> = (() => {
 
 /**
  * `registry`, with each building the opening places that has a card that spawns training as the card says, in a Battle
- * Round; `registry` itself in the Build Phase, or when nothing placed trains. Called before the entities are made:
+ * Round; `registry` itself when nothing placed trains. Called before the entities are made:
  * a building's production counters start from the registry it is created with.
  */
 export function trainingRegistry(opening: BattleOpening, registry: ContentRegistry): ContentRegistry {
-  if (phaseOf(opening) !== "battle-round") return registry
   const spawns: Record<string, BuildingSpawns> = {}
   for (const block of Object.values(opening.placements)) {
     for (const entry of Object.values(block.legend)) {

@@ -20,9 +20,8 @@ import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { serializeEvents } from "../events/serialize.ts"
 import { buildLog, endStateLines, parseLevel, summarize, summaryJson } from "../report/index.ts"
 import type { ReportInput } from "../report/index.ts"
-import { REGROUP_TICKS } from "../match/index.ts"
 import { hashState } from "../state/serialize.ts"
-import { applyVariant, openBattle, mirrored, phaseOf, shuffled, sidesWithoutGoal } from "../skirmish/opening/index.ts"
+import { applyVariant, openBattle, mirrored, shuffled, sidesWithoutGoal } from "../skirmish/opening/index.ts"
 import { loadSandbox } from "../skirmish/sandboxes.ts"
 import { playSandboxRound } from "../skirmish/sandbox-round.ts"
 import type { MatchState } from "../state/types.ts"
@@ -43,13 +42,12 @@ const USAGE = `grid — the Terminal Nexus Grid tool (engine, editor, and replay
                                 [--theme dark|light] [--glyphs ascii|unicode]
                                 [--no-effects] [--reduced-motion] [--cosmetic-seed 0x1234]
                                 [--backend auto|ansi|opentui] [--save-log <file>] [--log-level info]
-      the ASCII view (the default action) — watches the sandbox's round live: its Battle Round resolving, or, when
-      its start.phase is "build-phase", the Build Phase's regroup walking (see the end of this help)
+      the ASCII view (the default action) — watches the sandbox's Battle Round resolve live
 
   grid <save.save.json> --headless [--seed] [--ticks] [--from-tick 90] [--log-level info]
                                    [--events events.jsonl] [--json] [--save-log <file>] [--end-states]
       resolves without a terminal and prints the levelled log; --end-states closes it with one line per entity: its hp
-      and tile at the start and at the end (a Build Phase run always does)
+      and tile at the start and at the end
 
   grid <save.save.json> --verify [--runs 10] [--seed] [--ticks] [--from-tick 90]
       re-resolves 10 times (default) and fails if any run's hashes disagree — also headless
@@ -78,12 +76,8 @@ Variant options, for every action (watch, --headless, --verify and a trial):
   --target-a x,y,w,h              a side's target moved (--target-b)
   --swap, --shuffle               one battle mirrored with its sides swapped; its units shuffled by --seed
 
-<save> is a sandbox (sandboxes/, a save whose start writes its Battle Round or its Build Phase), with or without the
+<save> is a sandbox (sandboxes/, a save whose start writes its one Battle Round), with or without the
 .save.json suffix, or its id (grid melee-kill). There is no subcommand. skirmish --load <save> --play-to next plays the same.
-
-start.phase: absent or one of "battle-round" (the default) and "build-phase". A "build-phase" sandbox runs no kernel: units
-and buildings stand placed and idle, a Nexus mends and a unit in a fight steps back and forms up, over the regroup's own
-120 ticks, so --ticks is refused; a headless run ends with each entity's hp and tile, start to end. A trial refuses one.
 
 Log levels: ERROR, WARN (default), INFO, DEBUG, TRACE — one stream, closed by a WARN "report" line
 carrying the outcome, losses, and hashes. --save-log writes the same lines to a file in any mode.
@@ -124,8 +118,7 @@ async function openMap(path: string, args: ParsedArgs, seed?: number): Promise<{
   if (args.flags.has("shuffle")) opening = shuffled(opening, made.registry, seed ?? opening.seed)
   if (args.flags.has("swap")) opening = mirrored(opening, made.registry)
   const state = openBattle(opening, { registry: made.registry }).state
-  // Only a Battle Round has sides that fight: in the Build Phase nobody goes anywhere, so nobody needs a goal.
-  for (const side of phaseOf(opening) === "battle-round" ? sidesWithoutGoal(state, made.registry) : []) {
+  for (const side of sidesWithoutGoal(state, made.registry)) {
     process.stderr.write(`grid: side ${side} of ${opening.id} fights with no target and no enemy Nexus, a battle the game never plays\n`)
   }
   return { opening, registry: made.registry }
@@ -168,10 +161,8 @@ async function commandHeadless(path: string, args: ParsedArgs): Promise<number> 
   const level = parseLevel(args.options.get("log-level") ?? "warn")
   const startTick = tickFrom(args)
   const built = startTick === undefined ? buildLog(input, level) : fromTick(buildLog(input, level), startTick)
-  // What each entity became, before the report line that closes the log: always in the Build Phase, whose run has no events
-  // to show a mending Nexus or a step back; on request (--end-states) in a Battle Round.
-  const showEnds = args.flags.has("end-states") || phaseOf(opening) === "build-phase"
-  const ends = showEnds ? endStateLines(run.initialState, run.finalState, registry) : []
+  // What each entity became, before the report line that closes the log, on request (--end-states).
+  const ends = args.flags.has("end-states") ? endStateLines(run.initialState, run.finalState, registry) : []
   const lines = [...built.slice(0, -1), ...ends, ...built.slice(-1)]
 
   const savePath = args.options.get("save-log")
@@ -350,14 +341,6 @@ function unknownArgument(argument: string): string {
   return `grid: ${argument.startsWith("--") ? `unknown option ${argument}` : `unexpected "${argument}"`}.\n`
 }
 
-/** What a Build Phase sandbox's run does not read, refused rather than ignored: its walk is the regroup's own length. */
-async function refusedInBuildPhase(path: string, args: ParsedArgs): Promise<string | null> {
-  if (!args.options.has("ticks")) return null
-  const opening = await loadSandbox(path)
-  if (phaseOf(opening) !== "build-phase") return null
-  return `grid: --ticks does not apply to ${opening.id}: it starts in the Build Phase, whose run is the regroup's own ${REGROUP_TICKS} ticks, whatever --ticks says. Drop --ticks.`
-}
-
 export async function main(argv: readonly string[]): Promise<number> {
   const args = parseArgs(argv)
   if (args.flags.has("help") || args.positional[0] === "help") {
@@ -389,11 +372,6 @@ export async function main(argv: readonly string[]): Promise<number> {
   if (args.options.has("seeds")) {
     const opening = await loadSandbox(path)
     return runTrial(adHocTrial(opening, args), args, opening)
-  }
-  const refused = await refusedInBuildPhase(path, args)
-  if (refused !== null) {
-    process.stderr.write(`${refused}\n`)
-    return 2
   }
   if (args.flags.has("verify")) return commandVerify(path, args)
   if (args.flags.has("headless")) return commandHeadless(path, args)

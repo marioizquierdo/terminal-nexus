@@ -28,8 +28,6 @@ export type ReportInput = Readonly<{
   finalState: MatchState
   stateHash: string
   eventsHash: string
-  /** Set only for a Build Phase run (a regroup, not a Battle Round): the report's summary line names it so. */
-  phase?: "build-phase"
 }>
 
 type Streak = { start: number; last: number; warned: boolean }

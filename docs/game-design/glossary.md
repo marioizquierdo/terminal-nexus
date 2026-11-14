@@ -228,7 +228,7 @@ Who these people are is in [`lore.md`](lore.md); what playing them is like, in [
 - **sandbox** — a testing ground, like a unit test's context: a save that opens one round set by hand, a slice of the
   Grid where units fight or move around obstacles, to test one rule, effect, movement or ability. It measures what
   happens in the slice (damage, deaths, paths, timings), not who wins; the whole game is the `skirmish` command's. It
-  opens in the Battle Round, or in the Build Phase (`start.phase`), in `sandboxes/` ([`sandboxes.md`](../system-design/sandboxes.md)).
+  is one Battle Round, in `sandboxes/` ([`sandboxes.md`](../system-design/sandboxes.md)).
 - **save file** — a setup and the battle as it stands at the opening of a Build Phase (`*.save.json`); every way into
   a Skirmish opens one ([`skirmish-saves.md`](../system-design/skirmish-saves.md)).
 - **screenshot** — an image (PNG) of the screen, made by the playtest and grid-screenshots tools. Never an ASCII

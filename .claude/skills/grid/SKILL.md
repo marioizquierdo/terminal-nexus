@@ -95,8 +95,7 @@ A sandbox is a Skirmish save in `sandboxes/<folder>/` (`rules/`, `units/`, `move
 files in `trials/`) whose `start` writes a Battle Round by hand; the id is the file name and every command finds a
 save by it. Every rule gets a named, checked-in sandbox: the regression suite and the documentation at once. The
 format is [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md); the sandbox page says what each folder is for.
-A sandbox is in the Battle Round unless `start.phase` says `build-phase`: then nothing attacks, spawns or trains, a
-Nexus mends and units in a fight step back; a headless run ends with each entity's hp and tile, start to end, and refuses `--ticks` ([`sandboxes.md`](../../../docs/system-design/sandboxes.md), Build Phase or Battle Round).
+A sandbox is always one Battle Round; `--end-states` closes a headless run with each entity's hp and tile, start to end.
 
 1. Copy the nearest checked-in sandbox (`sandboxes/rules/melee-kill.save.json` is the smallest template; a multi-tile
    unit is `sandboxes/showcase/heavies-clash.save.json`), and put in `notes` the one sentence the save exists to prove

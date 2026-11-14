@@ -177,9 +177,6 @@ Which keys is the open part: Tab is focus, and the left hand's letters are hotke
 
 Small things noticed while the Skirmish milestone was built and tested, none needed for it:
 
-- **A sandbox that opens on a Build Phase**: a sandbox's `start` places units and buildings, but not a side's
-  credits or roster, so it can only open on a Battle Round. Adding both would let a sandbox show a Build Phase with
-  units already in place.
 - **The round limit on the setup screen**: a loaded save keeps its own limit (the Pocket example's 4) when it goes back to
   New game, and the setup screen does not show the limit at all. A Rounds row, or the limit in the summary line.
 - **A note's settings as lines**: a playtest note keeps the settings export as one JSON string; its lines would read

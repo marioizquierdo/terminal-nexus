@@ -5,6 +5,7 @@
 import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
+import type { ContentRegistry } from "../src/content/index.ts"
 import { gridDistance, tilesOf } from "../src/grid/coords.ts"
 import type { Coord, GridTerrain, TerrainId } from "../src/grid/types.ts"
 import { PulseSetupError, centreTile, openingState, regroup } from "../src/match/index.ts"
@@ -45,8 +46,9 @@ function open(
   structures: readonly StructurePlacement[],
   forces: readonly Force[],
   grid: GridTerrain = OPEN,
+  registry: ContentRegistry = FIXTURE_REGISTRY,
 ): MatchState {
-  return openingState({ grid, registry: FIXTURE_REGISTRY, structures, setup: setupOf(forces) })
+  return openingState({ grid, registry, structures, setup: setupOf(forces) })
 }
 
 const definitionOf = (entity: EntityState) => FIXTURE_REGISTRY.get(entity.contentId)
@@ -122,7 +124,7 @@ test("a state built here is the state a sandbox's opening builds from the same p
     "........................",
     "........................",
   ])
-  const built = open(
+  const picture = [
     [
       { contentId: NEXUS, anchor: { x: 8, y: 1 } },
       { contentId: BARRACKS, anchor: { x: 8, y: 6 } },
@@ -131,8 +133,8 @@ test("a state built here is the state a sandbox's opening builds from the same p
       { player: "A", muster: { x: 13, y: 4 }, units: [TROOPER, TROOPER, MARKSMAN] },
       { player: "B", muster: { x: 20, y: 4 }, units: [RAIDER, RUNNER] },
     ],
-    grid,
-  )
+  ] as const
+  const built = open(picture[0], picture[1], grid)
   // Redraw exactly what was built as a sandbox's character grids, and load it.
   const symbols = new Map<string, string>()
   const letter = (contentId: string): string => {
@@ -163,7 +165,6 @@ test("a state built here is the state a sandbox's opening builds from the same p
   const legend = Object.fromEntries([...symbols].map(([contentId, symbol]) => [symbol, { content: contentId }]))
   const opening: BattleOpening = {
     id: "opening-parity",
-    phase: "build-phase",
     name: "opening parity",
     grid: { width: grid.width, height: grid.height },
     seed: 4242,
@@ -176,7 +177,9 @@ test("a state built here is the state a sandbox's opening builds from the same p
     },
   }
   const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
-  assert.equal(hashState(built), hashState(loaded.state), "the opening is not the state the loader builds from the same picture")
+  // A sandbox's Barracks trains its army card's wave, so the picture is built again on the registry the opening ran on.
+  const builtOnIt = open(picture[0], picture[1], grid, loaded.registry)
+  assert.equal(hashState(builtOnIt), hashState(loaded.state), "the opening is not the state the loader builds from the same picture")
 })
 
 test("units gather on the free tiles nearest their muster point, none on top of another", () => {

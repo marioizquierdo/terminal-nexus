@@ -1,6 +1,5 @@
 // A building placed in a sandbox's Battle Round does what its army's card says it does: it trains its wave, the same
-// recipe and first-wave time a battle gives it (docs/system-design/sandboxes.md, "A building's wave"). In the Build
-// Phase nothing trains. The decision is the owner's: "if you are testing a building, you are placing it in there in
+// recipe and first-wave time a battle gives it (docs/system-design/sandboxes.md, "A building's wave"). The decision is the owner's: "if you are testing a building, you are placing it in there in
 // battle mode, and the sandbox has enough resources, then the buildings will start doing its thing."
 
 import { test } from "node:test"
@@ -16,7 +15,7 @@ import { playSandboxRound } from "../src/skirmish/sandbox-round.ts"
 const ground = Array.from({ length: 16 }, () => ".".repeat(40))
 const BARRACKS = "structure.citizen.barracks"
 
-function opening(phase?: BattleOpening["phase"], content = BARRACKS): BattleOpening {
+function opening(content = BARRACKS): BattleOpening {
   return {
     id: "training-fixture",
     name: "Training fixture",
@@ -30,7 +29,6 @@ function opening(phase?: BattleOpening["phase"], content = BARRACKS): BattleOpen
       B: { at: { x: 36, y: 14 }, rows: ["t"], legend: { t: { content: "unit.citizen.trooper" } } },
     },
     targets: { A: { x: 36, y: 0, width: 2, height: 2 }, B: { x: 30, y: 14, width: 2, height: 2 } },
-    ...(phase === undefined ? {} : { phase }),
   }
 }
 
@@ -51,14 +49,8 @@ test("a Barracks in a Battle Round sandbox trains its card's units: perWave time
   assert.ok(spawns.waves * 1 >= 1 && round.run.events.some((event) => event.kind === "entity.spawned" && event.tick === defaultValue("firstWave") * TICKS_PER_SECOND))
 })
 
-test("the same opening in the Build Phase trains nothing", () => {
-  const round = playSandboxRound(opening("build-phase"))
-  assert.equal(spawnedLater(round.run.events as never).length, 0)
-  assert.equal(round.run.finalState.entities.filter((entity) => entity.player === "A").length, 1)
-})
-
 test("a building with no card that spawns stays idle, and a recipe a caller gave is not doubled up", () => {
-  assert.equal(openBattle(opening(undefined, "structure.citizen.nexus")).registry.get("structure.citizen.nexus").production, undefined)
+  assert.equal(openBattle(opening("structure.citizen.nexus")).registry.get("structure.citizen.nexus").production, undefined)
   const own = withProduction(FIXTURE_REGISTRY, { [BARRACKS]: { output: "unit.citizen.trooper", perWave: 1, waves: 2, firstTicks: 60, intervalTicks: 120 } })
   const round = playSandboxRound(opening(), { registry: own })
   assert.equal(spawnedLater(round.run.events as never).length, 2)

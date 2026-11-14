@@ -16,7 +16,6 @@ import {
   summarize,
 } from "../src/report/index.ts"
 import { TERRAIN } from "../src/grid/types.ts"
-import { phaseOf } from "../src/skirmish/opening/index.ts"
 import { reportInputOf, playSandbox, sandboxFiles } from "./helpers.ts"
 
 /** The exact lines printed in docs/history/milestones/milestone-01-grid-battles.md. */
@@ -132,7 +131,6 @@ test("the report can rebuild the whole cast from the events alone", async () => 
   // state": if the events are complete, replaying them reproduces the kernel's own final state.
   for (const name of sandboxFiles()) {
     const resolved = await playSandbox(name)
-    if (phaseOf(resolved.opening) !== "battle-round") continue // the regroup moves units without events
     const replay = replayEvents(resolved.run.events)
     const survivors = [...replay.entities.values()]
       .filter((entity) => entity.alive)
