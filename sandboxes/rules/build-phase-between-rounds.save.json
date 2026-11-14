@@ -1,0 +1,64 @@
+{
+  "format": "terminal-nexus.save/1",
+  "name": "Between rounds - a Build Phase: placed and idle, a Nexus mends, a fight steps back",
+  "notes": "The same Grid as a Battle Round would open on, in the Build Phase: two troopers three tiles apart, a hurt Citizen Nexus and a Ravel one. Nothing attacks, nothing spawns and nobody dies; the Nexus mends and each trooper steps back toward its own Nexus (the regroup, ten seconds). Change start.phase to battle-round to watch the same placement fight.",
+  "setup": {
+    "map": {
+      "id": "build-phase-between-rounds",
+      "rows": [
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................",
+        "........................................"
+      ]
+    },
+    "seed": 700100,
+    "goal": "elimination",
+    "modifiers": [],
+    "rounds": 1,
+    "roundTicks": 180,
+    "slots": {
+      "p1": {
+        "controller": "script:idle"
+      },
+      "p2": {
+        "controller": "script:idle"
+      }
+    }
+  },
+  "start": {
+    "phase": "build-phase",
+    "p1": {
+      "at": {"x":4,"y":8},
+      "rows": [
+        "n         t"
+      ],
+      "legend": {
+        "n": {"content":"structure.citizen.nexus","hp":100},
+        "t": {"content":"unit.citizen.trooper"}
+      }
+    },
+    "p2": {
+      "at": {"x":17,"y":8},
+      "rows": [
+        "t                  n"
+      ],
+      "legend": {
+        "n": {"content":"structure.ravel.nexus"},
+        "t": {"content":"unit.citizen.trooper"}
+      }
+    }
+  }
+}

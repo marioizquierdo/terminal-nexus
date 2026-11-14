@@ -10,6 +10,8 @@
 import type { Coord, TerrainId } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import { BATTLE_MAPS } from "../battle/maps.ts"
+import { SANDBOX_PHASES } from "./opening/phase.ts"
+import type { SandboxPhase } from "./opening/phase.ts"
 import type { BattleOpening, PlacementBlock, PlacementEntry } from "./opening/types.ts"
 import type { SaveFile, SaveMap, Slot } from "./save.ts"
 
@@ -30,8 +32,9 @@ export type StartSlot = Readonly<{
   target?: TargetArea
 }>
 
-/** What each slot places by hand before round 1. */
-export type SaveStart = Readonly<Partial<Record<Slot, StartSlot>>>
+/** What each slot places by hand before round 1, and the `phase` the sandbox is in: the Battle Round unless it says
+ *  `"build-phase"` (`src/skirmish/opening/phase.ts`). */
+export type SaveStart = Readonly<Partial<Record<Slot, StartSlot>>> & Readonly<{ phase?: SandboxPhase }>
 
 const SIDE: Readonly<Record<Slot, PlayerId>> = { p1: "A", p2: "B" }
 
@@ -45,8 +48,12 @@ export function startProblems(start: unknown): string[] {
   const problems: string[] = []
   for (const [slot, value] of Object.entries(start)) {
     const at = `start.${slot}`
+    if (slot === "phase") {
+      if (!(SANDBOX_PHASES as readonly unknown[]).includes(value)) problems.push(`start.phase: one of ${SANDBOX_PHASES.join(", ")}, the part of a round the sandbox is in`)
+      continue
+    }
     if (slot !== "p1" && slot !== "p2") {
-      problems.push(`${at}: the slots are p1 and p2`)
+      problems.push(`${at}: a start has the slots p1 and p2, and a phase`)
       continue
     }
     if (!isRecord(value)) {
@@ -119,5 +126,6 @@ export function openingOf(save: SaveFile): BattleOpening {
     terrainLegend: ground.legend,
     placements,
     ...(Object.keys(targets).length === 0 ? {} : { targets }),
+    ...(start.phase === undefined ? {} : { phase: start.phase }),
   }
 }
