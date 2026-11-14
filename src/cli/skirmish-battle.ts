@@ -30,6 +30,7 @@ import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
 import { saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
 import type { Opened, Seated } from "../skirmish/request.ts"
 import { loadedBattle, newBattle, openSave } from "../skirmish/request.ts"
+import { BATTLE_OVER_REFUSAL } from "../skirmish/words.ts"
 import { battleLine, historyLines, roundLines, slotLabel, standing } from "../skirmish/lines.ts"
 import { hashState } from "../state/serialize.ts"
 import type { MatchState } from "../state/types.ts"
@@ -249,7 +250,7 @@ export function playBattle(request: SkirmishRequest, profiles: Profiles, write: 
     write(`${battleLine(setup)}: ${standing(setup, state)}`)
     const first = state.round
     const stop = stopRound(request.playTo, state)
-    if (state.result !== null && stop > state.round) throw new Error("the battle is over: there is no next round to play")
+    if (state.result !== null && stop > state.round) throw new Error(BATTLE_OVER_REFUSAL)
     const ran: Ran = stop > state.round ? playRounds(setup, state, seated.builds, stop, profiles, keepOf(request), write) : { state, played: 0, waiting: [] }
     const next = ran.state
     if (ran.played > 0) write(standing(setup, next))

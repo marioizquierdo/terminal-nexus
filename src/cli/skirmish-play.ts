@@ -44,7 +44,7 @@ import { controllerKind, battleOf, battleSetupOf, newSetup, saveOf, SLOTS } from
 import { isPlayer, playNext } from "../skirmish/play.ts"
 import { spectating } from "../skirmish/setup.ts"
 import { skirmishRoute } from "./route.ts"
-import { commanderNameOf, endedLine, mapNameOf, openingLines, outcomeFor, reasonWords, spectatorReason } from "../skirmish/words.ts"
+import { BATTLE_OVER_REFUSAL, commanderNameOf, endedLine, mapNameOf, openingLines, outcomeFor, reasonWords, spectatorReason } from "../skirmish/words.ts"
 import type { MatchState } from "../state/types.ts"
 import { resultOf } from "../view/ending.ts"
 import type { MissionEnding, MissionRound, ResolvedPulse } from "../view/pulse-live.ts"
@@ -189,6 +189,7 @@ function roundContext(position: SkirmishPosition, previous: Partial<BuildContext
     allotment: watching ? 0 : battle.sides.A.credits,
     nexusDraft: watching ? [] : nexusDraftOf({ powers: handOf(battle, "A") }),
     ...(watching ? { spectating: true } : {}),
+    ...(battle.result === null ? {} : { battleOver: BATTLE_OVER_REFUSAL }),
     kept: battle.sides.A.kept.flatMap((id) => army.powers.find((card) => card.id === id) ?? []),
     buildingCards: army.buildings,
     callups: [],
@@ -490,8 +491,8 @@ export function skirmishLevel(save: SaveFile, source: SkirmishSource = {}, optio
       const watching = spectating(setup)
       const scene = [said(`Loaded ${file}: ${where}, ${commanderNameOf(setup.slots.p1.commander)} against ${commanderNameOf(setup.slots.p2.commander)} on ${mapNameOf(setup.map)}, seed ${setup.seed}.${restored}${watching ? " Both sides are scripts: watch, and start each round." : ""}`)]
       const short = file.slice(file.lastIndexOf("/") + 1)
-      const next = watching ? ": watching. [s] starts the round." : draft === undefined ? ". The Nexus Pulse deals: [n]." : ", the plan so far restored."
-      return roundContext(position, previous, scene, `Loaded ${short}: ${where}${next}`)
+      const next = battle.result !== null ? ", read only." : watching ? ": watching. [s] starts the round." : draft === undefined ? ". The Nexus Pulse deals: [n]." : ", the plan so far restored."
+      return roundContext(position, previous, scene, `Loaded ${short}: ${battle.result === null ? where : "battle over"}${next}`)
     },
   }
 }
