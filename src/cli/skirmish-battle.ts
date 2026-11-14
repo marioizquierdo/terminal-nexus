@@ -173,7 +173,7 @@ export function playRounds(setup: SaveSetup, start: BattleState, builds: Seated[
  * ends (`end`): the round's states and events made into the view the screen plays (`createView`), sampled at each tick
  * — so each is what the screen draws there — with its ruler, legend and overlaps. Effects only when asked for.
  */
-function roundScreenshots(states: readonly MatchState[], events: readonly DomainEvent[], registry: ContentRegistry, seed: number, ticks: readonly (number | "end")[], effects: boolean): string[] {
+export function roundScreenshots(states: readonly MatchState[], events: readonly DomainEvent[], registry: ContentRegistry, seed: number, ticks: readonly (number | "end")[], effects: boolean): string[] {
   const first = states[0]
   if (first === undefined) return []
   const timeline = timelineOf({ id: "skirmish", name: "Skirmish" }, states, [...spawnEvents(first, registry), ...events], states.length - 1, seed, registry)

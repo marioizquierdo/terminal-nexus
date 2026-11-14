@@ -2,8 +2,8 @@
 //
 // A development tool, never a supported platform (`runtime.md`): iTerm2 at 80 x 24 stays the
 // acceptance target. The rule that keeps it honest is that the browser gets **no game loop of its
-// own**. It runs the terminal's three screen loops, unmodified — `runMenu`, `runBuildPhase` (the Build
-// Phase) and `watchPulse` — and hands them a stand-in terminal. The only things converted here are:
+// own**. It runs the terminal's two screen loops, unmodified — `runMenu` and `runBuildPhase` (the Build
+// Phase) — and hands them a stand-in terminal. The only things converted here are:
 //
 //   frames  -> pixels         `CanvasBackend` (src/view/backends/canvas.ts)
 //   keys    -> terminal bytes `src/web/keys.ts`, through the scripted playtest's own key names
@@ -33,26 +33,16 @@ import { openSkirmish } from "../cli/skirmish-open.ts"
 import type { Destination } from "../cli/route.ts"
 import { readAddress } from "./address.ts"
 import type { Demo } from "./demos.ts"
-import { watchPulse } from "../cli/watch.ts"
-import { buildTimeline } from "../cli/timeline.ts"
 import type { Host } from "../cli/lifecycle.ts"
-import { openBattle } from "../skirmish/opening/open.ts"
-import type { BattleOpening } from "../skirmish/opening/types.ts"
-import { FIXTURE_REGISTRY } from "../content/index.ts"
 import { DEFAULT_SETTINGS, parseSettings } from "../settings/types.ts"
 import { importSettings } from "../build/settings-export.ts"
 import type { Settings, SettingsStore } from "../settings/types.ts"
-import { DEFAULT_PRESENTATION } from "../view/snapshot.ts"
 import { CanvasBackend } from "../view/backends/canvas.ts"
 import type { TerminalInput, TerminalOutput } from "../view/backends/ports.ts"
 import { MOUSE_LEFT, MOUSE_RIGHT, MOUSE_WHEEL_DOWN, MOUSE_WHEEL_UP } from "../build/mouse.ts"
 import { keyBytes } from "../playtest/keys.ts"
 import { KEY_BAR, StandInKeyboard, mouseBytes, withShift } from "./keys.ts"
 import { activity } from "../log/activity.ts"
-import { openingOf } from "../skirmish/start.ts"
-import type { SaveFile } from "../skirmish/save.ts"
-import grandBattle from "../../sandboxes/showcase/grand-battle.save.json" with { type: "json" }
-import citizensVersusRavels from "../../sandboxes/showcase/citizens-versus-ravels.save.json" with { type: "json" }
 
 /** Stamped in by the build: which commit this page is, so a screenshot from a phone says so. */
 declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: string }>
@@ -64,19 +54,11 @@ declare const __TN_BUILD__: Readonly<{ commit: string; branch: string; builtAt: 
  */
 declare const __TN_DEMOS__: readonly Demo[]
 
-/** The engine tool's two battle replays a mode button opens: battles, not places in the game. */
-type PulseName = "pulse-grand" | "pulse-mirror"
-
-/** Which screen loop runs: the title menu's, a story level's Build Phase, or a Pulse replay. */
-type Screen = "menu" | "build" | PulseName
+/** Which screen loop runs: the title menu's or a Build Phase's. */
+type Screen = "menu" | "build"
 
 /** The screen loop a place in the game runs in. */
 const screenAt = (destination: Destination): Screen => (destination.kind === "title" ? "menu" : "build")
-
-const PULSES: Readonly<Record<PulseName, BattleOpening>> = {
-  "pulse-grand": openingOf(grandBattle as unknown as SaveFile),
-  "pulse-mirror": openingOf(citizensVersusRavels as unknown as SaveFile),
-}
 
 // --- The stand-in terminal ------------------------------------------------------------------------
 
@@ -250,10 +232,9 @@ async function switchTo(screen: Screen, route: string | null, notes: readonly st
 function showScreen(screen: Screen, route: string | null): void {
   shown = route === null ? { screen } : { screen, route }
   document.body.dataset["mode"] = screen
-  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at], [data-pulse]")) {
+  for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at]")) {
     const at = button.dataset["at"]
-    const own = at === undefined ? button.dataset["pulse"] : screenAt(parseRoute(at))
-    button.setAttribute("aria-pressed", String(own === screen))
+    button.setAttribute("aria-pressed", String(at !== undefined && screenAt(parseRoute(at)) === screen))
   }
   renderKeyBar()
 }
@@ -288,26 +269,6 @@ function track(loop: Promise<number>): void {
       running = null
       status.textContent = `That screen could not open: ${error instanceof Error ? error.message : String(error)}`
     },
-  )
-}
-
-/** One of the engine tool's two battle replays, in the saved settings. */
-async function startPulse(pulse: PulseName): Promise<void> {
-  await switchTo(pulse, null, [])
-  const settings = await savedSettings()
-  const opening = PULSES[pulse]
-  const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY, seed: opening.seed })
-  const timeline = buildTimeline(opening, loaded.state, loaded.registry, opening.pulseTicks, opening.seed)
-  track(
-    watchPulse({
-      ...pageTerminal,
-      backend: canvasFor(settings),
-      timeline,
-      colors: settings.colors,
-      theme: settings.theme,
-      speed: 1,
-      presentation: { ...DEFAULT_PRESENTATION, reducedMotion: settings.reducedMotion, glyphPack: settings.glyphPack },
-    }),
   )
 }
 
@@ -381,7 +342,7 @@ async function startAt(at: string | undefined, from: string, demo?: Demo): Promi
 
 function renderKeyBar(): void {
   const { screen } = shown
-  const own = screen === "menu" ? KEY_BAR.menu : screen === "build" ? KEY_BAR.build : KEY_BAR.pulse
+  const own = screen === "menu" ? KEY_BAR.menu : KEY_BAR.build
   const keys = [...KEY_BAR.common, ...own]
   keyBar.replaceChildren()
   const button = (label: string, name: string, extra: Partial<HTMLButtonElement> = {}): void => {
@@ -473,12 +434,9 @@ canvas.addEventListener(
   { passive: false },
 )
 
-// The mode buttons that are game screens open their routes; the replays are the engine tool's battles.
+// Each mode button opens its route.
 for (const button of document.querySelectorAll<HTMLButtonElement>("[data-at]")) {
   button.addEventListener("click", () => void startAt(button.dataset["at"], "this button"))
-}
-for (const button of document.querySelectorAll<HTMLButtonElement>("[data-pulse]")) {
-  button.addEventListener("click", () => void startPulse(button.dataset["pulse"] as PulseName))
 }
 
 // The terminal size the loops lay out for: 80 x 24 is the game's floor and acceptance target.

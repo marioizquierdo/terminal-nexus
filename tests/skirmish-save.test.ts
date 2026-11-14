@@ -12,7 +12,6 @@ import { join } from "node:path"
 import { EXIT, main } from "../src/cli/skirmish.ts"
 import type { BattleState } from "../src/battle/index.ts"
 import { briefOf, playRound, SCRIPTED } from "../src/battle/index.ts"
-import { spawnSync } from "node:child_process"
 import { battleOf, newSetup, readSave, saveOf, saveText } from "../src/skirmish/save.ts"
 import { openBattle } from "../src/skirmish/opening/open.ts"
 import { loadSandbox, sandboxCatalog } from "../src/skirmish/sandboxes.ts"
@@ -199,17 +198,18 @@ test("a sandbox the loader refuses names every problem at once, its units' fit i
   assert.match(fit.problems.join("\n"), /^start: broken: .*outside the 4x2 Grid/m)
 })
 
-test("skirmish: a sandbox's --play-to plays the Battle Round grid plays, and says so in grid's report", () => {
+test("skirmish: a sandbox's --play-to plays its Battle Round, and --show draws it", () => {
   const path = join(REPO_ROOT, "sandboxes/rules/melee-kill.save.json")
   const brief = run(["--load", path])
   assert.equal(brief.code, 0)
-  assert.match(brief.out, /a sandbox, its Battle Round written by hand/)
+  assert.match(brief.out, /a sandbox, its board written by hand/)
   assert.match(brief.out, /add --play-to next to play it/)
   const played = run(["--load", path, "--play-to", "next"])
   assert.equal(played.code, 0)
   assert.match(played.out, /WARN {2}report {3}melee-kill .* outcome A wins/)
-  const grid = spawnSync(process.execPath, [join(REPO_ROOT, "bin/grid.ts"), "melee-kill", "--headless"], { encoding: "utf8" })
-  assert.ok(played.out.includes(grid.stdout.trim()), `skirmish and grid disagree:\n${played.out}\n---\n${grid.stdout}`)
+  const shown = run(["--load", path, "--play-to", "next", "--show", "0,end"])
+  assert.match(shown.out, /--- ASCII screenshot at tick 0\n/)
+  assert.match(shown.out, /--- ASCII screenshot at tick 33 \(the round's end\)/)
   assert.throws(() => run(["--load", path, "--play-to", "next", "--save", join(tmpdir(), "x.save.json")]), /nothing to save/)
   assert.throws(() => run(["--load", path, "--p1", "script:rush"]), /plan nothing/)
 })

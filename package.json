@@ -13,13 +13,10 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.web.json",
     "test": "./scripts/run-tests.sh node",
     "test:bun": "./scripts/run-tests.sh bun",
-    "grid": "node bin/grid.ts",
     "skirmish": "node bin/skirmish.ts",
     "terminal-nexus": "node bin/terminal-nexus.ts",
     "sandboxes": "ls sandboxes/*/*.save.json",
-    "trials": "ls sandboxes/trials/*.trial.json",
-    "test:all": "npm run typecheck && npm test && npm run test:bun",
-    "verify-sandboxes": "for save in sandboxes/*/*.save.json; do ./bin/grid.ts \"$save\" --verify --runs 20 || exit 1; done"
+    "test:all": "npm run typecheck && npm test && npm run test:bun"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

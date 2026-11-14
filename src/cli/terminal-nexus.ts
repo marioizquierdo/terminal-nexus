@@ -21,7 +21,7 @@ import { mkdir, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 import { parseColorDepth, parseGlyphPack, parseTheme } from "../view/index.ts"
-import { detectColorDepth } from "./grid-main.ts"
+import type { ColorDepth } from "../view/index.ts"
 import { parseArgs, parseInteger, retiredOption } from "./args.ts"
 import { runMenu } from "./menu.ts"
 import { runBuildPhase } from "./build-phase.ts"
@@ -241,7 +241,7 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   const settingsStore = createSettingsStore(defaultSettingsPath())
   const saved = await settingsStore.load()
-  // Nothing saved yet: guess the way `grid` always has, rather than a fixed baseline nobody chose.
+  // Nothing saved yet: guess from what the terminal advertises, rather than a fixed baseline nobody chose.
   // Once anything is saved, that choice is what a plain relaunch (no flags) sees from here on.
   const base: Settings = saved ?? { ...DEFAULT_SETTINGS, colors: detectColorDepth() }
 
@@ -404,4 +404,13 @@ export function terminalExporter(stdout: TerminalOutput, path: string): Exporter
 /** OSC 52: "set the clipboard to this base64 text", ended by BEL, which more terminals accept than ST. */
 export function osc52(text: string): string {
   return `\u001b]52;c;${Buffer.from(text, "utf8").toString("base64")}\u0007`
+}
+
+/** The colour depth the terminal advertises: COLORTERM, then TERM; monochrome when neither says more. */
+export function detectColorDepth(env: NodeJS.ProcessEnv = process.env): ColorDepth {
+  const colorterm = env["COLORTERM"]
+  if (colorterm === "truecolor" || colorterm === "24bit") return "truecolor"
+  const term = env["TERM"] ?? ""
+  if (term.includes("256color")) return "color256"
+  return "monochrome"
 }

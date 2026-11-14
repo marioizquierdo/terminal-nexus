@@ -128,7 +128,7 @@ export type KeyBarKey = Readonly<{ name: string; label: string }>
 /** The keys an iPhone's own keyboard lacks, plus the letters each screen's rows and hints name, so a
  *  whole Build Phase plays from the bar alone. Shift is the bar's one toggle: it turns the next arrow
  *  into Shift+Arrow, the fast move. */
-export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", readonly KeyBarKey[]>> = {
+export const KEY_BAR: Readonly<Record<"common" | "menu" | "build", readonly KeyBarKey[]>> = {
   common: [
     { name: "Left", label: "←" },
     { name: "Up", label: "↑" },
@@ -167,14 +167,6 @@ export const KEY_BAR: Readonly<Record<"common" | "menu" | "build" | "pulse", rea
     // Every key and click, by situation (the game menu's Controls and hotkeys page).
     { name: "?", label: "? controls" },
     { name: "r", label: "r" },
-    { name: "q", label: "q" },
-  ],
-  pulse: [
-    { name: ".", label: ". frame" },
-    { name: ",", label: ", tick" },
-    { name: "[", label: "[ slower" },
-    { name: "]", label: "] faster" },
-    { name: "r", label: "r restart" },
     { name: "q", label: "q" },
   ],
 }

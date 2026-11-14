@@ -12,7 +12,7 @@ import {
   STYLE_ROLES,
   THEMES,
 } from "../src/view/roles.ts"
-import { detectColorDepth } from "../src/cli/grid-main.ts"
+import { detectColorDepth } from "../src/cli/terminal-nexus.ts"
 
 test("parseTheme accepts dark and light, and rejects everything else", () => {
   assert.equal(parseTheme("dark"), "dark")

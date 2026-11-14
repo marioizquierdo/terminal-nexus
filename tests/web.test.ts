@@ -79,8 +79,8 @@ test("the page reaches no Node module and no package, only the game's own files"
   const { files, external } = reachableFrom("src/web/host.ts")
   assert.deepEqual(external, [], "the page imports something that is not the game's own code")
   const names = [...files].map((file) => relative(ROOT, file))
-  // The three screen loops themselves — not copies of them.
-  for (const loop of ["src/cli/menu.ts", "src/cli/build-phase.ts", "src/cli/watch.ts"]) {
+  // The two screen loops themselves — not copies of them.
+  for (const loop of ["src/cli/menu.ts", "src/cli/build-phase.ts"]) {
     assert.ok(names.includes(loop), `the page does not run ${loop}`)
   }
   // And none of the files that exist only for a terminal or a disk.
@@ -195,7 +195,7 @@ test("the canvas takes its colours from the terminal's role table, inverse and d
 // --- 4. The page's keys are the scripted playtest's keys ------------------------------------------
 
 test("every key on the page's key bar is a playtest key name and reaches the game as one key", () => {
-  for (const key of [...KEY_BAR.common, ...KEY_BAR.menu, ...KEY_BAR.build, ...KEY_BAR.pulse]) {
+  for (const key of [...KEY_BAR.common, ...KEY_BAR.menu, ...KEY_BAR.build]) {
     const bytes = keyBytes(withShift(key.name, false))
     assert.equal(keysFromChunk(bytes).length, 1, key.name)
   }
@@ -330,12 +330,12 @@ test("#at= opens a route, whole: a part runs to the next part the page knows, no
   assert.deepEqual(readAddress("#at=about&at=settings"), { at: "about" })
 })
 
-test("the page's mode buttons that are game screens open their routes; the replays are named as replays", () => {
+test("the page's mode buttons open their routes", () => {
   const html = readFileSync(resolve(ROOT, "src/web/page.html"), "utf8")
   const routes = [...html.matchAll(/data-at="([^"]*)"/gu)].map((match) => match[1] as string)
   assert.deepEqual(routes, ["menu", "skirmish", DEFAULT_LEVEL_ROUTE])
   for (const route of routes) assert.equal(formatRoute(parseRoute(route)), route)
-  assert.deepEqual([...html.matchAll(/data-pulse="([^"]*)"/gu)].map((match) => match[1]), ["pulse-grand", "pulse-mirror"])
+  assert.doesNotMatch(html, /data-pulse=/u)
   assert.doesNotMatch(html, /data-mode=/u, "a mode button still names a mode rather than a route")
 })
 
