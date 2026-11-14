@@ -138,7 +138,7 @@ export function openBattle(
           fail(opening, `${where} uses "${character}", which that player's legend does not define`)
         }
         if (!registry.has(entry.content)) {
-          fail(opening, `${where} names the unknown content id "${entry.content}"`)
+          fail(opening, `${where} names the unknown content id "${entry.content}"${entry.content.includes("+") ? ": a fitted building (an upgrade or mode, structure.x+fitting) cannot stand in a sandbox, place the building without its fitting" : ""}`)
         }
         const definition = registry.get(entry.content)
 
