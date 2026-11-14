@@ -4,7 +4,10 @@ description: Grid, the engine tool (bin/grid.ts): run, read or debug a battle, c
 ---
 # Working with `grid`
 
-`grid` is not the game: it is the tool the game is built and tested with, a sandbox (`sandboxes/`) plus a CLI that
+`grid` is not the game: it is the tool the game is built and tested with. It plays a sandbox (`sandboxes/`), a testing
+ground like a unit test's context: a slice of the Grid for one rule, effect, movement or ability, with no Nexus power,
+credits or round count, measuring what happens in the slice, not who wins (that is the `skirmish` command). Every unit
+and building stands in one alone (`tests/sandbox-spawn.test.ts`). It is a sandbox plus a CLI that
 resolves a deterministic Pulse from a seed and reports what happened (design:
 [`runtime.md`](../../../docs/system-design/runtime.md)). A change to a rule is proved by a sandbox, and the next session
 proves it again the same way.
@@ -92,6 +95,8 @@ A sandbox is a Skirmish save in `sandboxes/<folder>/` (`rules/`, `units/`, `move
 files in `trials/`) whose `start` writes a Battle Round by hand; the id is the file name and every command finds a
 save by it. Every rule gets a named, checked-in sandbox: the regression suite and the documentation at once. The
 format is [`skirmish-saves.md`](../../../docs/system-design/skirmish-saves.md); the sandbox page says what each folder is for.
+A sandbox is in the Battle Round unless `start.phase` says `build-phase`: then nothing attacks, spawns or trains, a
+Nexus mends and units in a fight step back ([`sandboxes.md`](../../../docs/system-design/sandboxes.md), Build Phase or Battle Round).
 
 1. Copy the nearest checked-in sandbox (`sandboxes/rules/melee-kill.save.json` is the smallest template; a multi-tile
    unit is `sandboxes/showcase/heavies-clash.save.json`), and put in `notes` the one sentence the save exists to prove

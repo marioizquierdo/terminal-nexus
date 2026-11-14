@@ -43,8 +43,9 @@ for the long game, the kept front and scaling (`battles.md`, "The maps for testi
 **Read before you guess.** Every brief gives the score (who leads, on Nexus health or on damage) and, under the last
 round, the battle reading: each army as it opened and ended and what it lost (in credits), buildings standing,
 damaged and destroyed (and by what), the advance (0% your Nexus, 100% theirs), damage taken by source (your own blasts
-included), and each engagement (where and when, who engaged, who lost what). Each round's report prints both sides in a
-line each, then the engagements. All of it is public; credits, the hand and build actions are private. A reading a test
+included), and each engagement (where and when, who engaged, who lost what). Each round's report prints both sides' Build
+Phase record and battle numbers, then the engagements: the battle numbers are the round's reading (`report.reading`,
+in the save's `state.history`), and `report.sides` is the Build Phase record only. All of it is public; credits, the hand and build actions are private. A reading a test
 needs is one new file in `src/battle/reading/`, and the brief and every script get it at once; `script:reactive` plays
 from the reading, a better sparring partner than the fixed scripts.
 
