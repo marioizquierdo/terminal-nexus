@@ -117,7 +117,7 @@ export type LevelPlan = Readonly<{ name: string; buys: CurvePlan["buys"] }>
 export type LevelMeasure = Readonly<{
   level: string
   plan: string
-  /** The round the level ended in, and how: won, lost, or still going when its rounds ran out. */
+  /** The round the level ended in, and the mission's verdict: won, lost, none (the rounds ran out undecided), or unplayed (no round ran). */
   ended: Readonly<{ round: number; verdict: string }>
   rounds: readonly Readonly<{ round: number; bought: readonly string[]; battle: BattleRecord }>[]
 }>
