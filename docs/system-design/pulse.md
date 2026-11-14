@@ -23,8 +23,7 @@ wants:
 
 A step up or down takes twice as many ticks.
 
-Rates are rational, never floating point. `tests/rules.test.ts` reproduces the cadence table above
-exactly at all eight rates on every run.
+Rates are rational, never floating point; `tests/rules.test.ts` reproduces the table at all eight rates.
 
 **The kernel has no real-time loop**, and **resolution speed is independent of logical time** (RULE —
 `tests/playback.test.ts`, `tests/pulse-run.test.ts`). It may resolve 12 ticks in a microsecond or
@@ -33,13 +32,10 @@ and stepping change when a tick is shown, never what a tick does. Presentation t
 per second**, which is 2.5 frames per tick — deliberately not an integer, because effects sample
 absolute time and must not quietly start depending on a frame:tick alignment.
 
-**What changing the rate would cost.** Content durations are authored in raw ticks (`cooldownTicks`,
-`intervalTicks`, and every cooldown in a fixture), so the number 12 is baked into every one of them.
-Moving the tick rate is a migration of every duration in every definition and sandbox, not a
-constant to edit. The alternative, authoring durations as rational seconds, buys rate-independence
-at the cost of arithmetic at every use site; it was considered and rejected as the worse trade. The
-rate stays cheap to change only while little content exists, and once real rosters are authored it
-is expensive.
+**Changing the rate is a migration**, not a constant to edit: content durations are authored in raw ticks
+(`cooldownTicks`, `intervalTicks`, every cooldown in a fixture), so 12 is baked into each. Authoring durations as
+rational seconds was considered and rejected as the worse trade (arithmetic at every use site). The rate is cheap
+to change only while little content exists.
 
 ### 1.2 Movement credit — RULE — `tests/rules.test.ts`, `tests/rows.test.ts`
 
@@ -53,11 +49,10 @@ An integer accumulator, no floating point:
   row counts two columns ([`grid.md`](grid.md), distance, reach and movement)
 - when `credit >= cost` of the step it wants, the actor attempts that step and `credit -= cost`
 
-So a step across takes exactly one beat and a step up or down exactly two, at every rate: a walk takes as many
-beats as its distance. Check it against the table: `1/1` has a beat of 12 and accrues 1 against a cost of 12 — one step every
-12 ticks; `3/2` a beat of 8, accruing 3 against 24 — every 8 ticks. It reproduces the table exactly. A rate whose
-numerator does not divide `12 × denominator` rounds its step across up to whole ticks: a raider's `8/3`
-steps across every 5 ticks (40 credit) and down every 10 (80).
+So a step across takes exactly one beat and a step up or down exactly two, at every rate, and a walk takes as many
+beats as its distance. `1/1`: a beat of 12, accruing 1 against a cost of 12, a step every 12 ticks; `3/2`: a beat
+of 8, accruing 3 against 24, every 8. A rate whose numerator does not divide `12 × denominator` rounds its step
+across up to whole ticks: a raider's `8/3` steps across every 5 ticks (40 credit) and down every 10 (80).
 
 Two rules govern what happens when an actor cannot step:
 
@@ -71,13 +66,12 @@ Two rules govern what happens when an actor cannot step:
   frees, rather than restarting its timer. This stops traffic jams from silently halving an army's
   speed.
 
-`tests/rules.test.ts` asserts both: the cadence holds across a second step, credit never exceeds one step's
-cost over five hundred ticks, and in the jammed-corridor fixture a mover blocked on one tick steps on
-the next — which is only possible if a refused step spends nothing.
+Held by `tests/rules.test.ts`: the cadence holds across a second step, credit never exceeds one step's cost over
+five hundred ticks, and in the jammed-corridor fixture a mover blocked on one tick steps on the next, which is
+only possible if a refused step spends nothing.
 
-Which step a unit wants is its route's (section 1.6): the step along a shortest walk to where its attack reaches its
-target. A step down costs two beats and a step across one, so a route counts a row as two columns, and a unit walks
-the screen's diagonal, two columns across for each row down (`tests/rows.test.ts`).
+Which step a unit wants is its route's (section 1.6); a route counts a row as two columns, so a unit walks the
+screen's diagonal, two columns across for each row down (`tests/rows.test.ts`).
 
 ### 1.3 Tick order — RULE — `src/pulse/tick.ts`, `tests/rules.test.ts`
 
@@ -90,10 +84,10 @@ over entities can never decide an outcome:
    mid-Pulse combat spawn (a spawner, a unit that splits on death) runs just ahead of it.
 3. **Perception.** Each actor scores and selects a target: the nearest; among equally near ones the one it
    already holds, then the one with least health (a squad fires into the same enemy), then a seeded draw; a unit that
-   aims at a crowd first takes the enemies with the most of their side round them (below). Then the
-   tick's routes are built from who walks and who stands (section 1.6), and a unit that would walk chooses again by
-   what it can reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all. Every target set,
-   who marches and who of them walks at half speed (the march, section 1.6).
+   aims at a crowd first takes the enemies with the most of their side round them (below). Then the tick's routes
+   are built from who walks and who stands (section 1.6), and a unit that would walk chooses again by what it can
+   reach: a melee unit the enemy nearest to walk to, any unit one it can reach at all. The march (section 1.6)
+   also fixes who marches and which of them walks at half speed.
 4. **Intents.** Each actor with movement credit declares one destination tile: the best step of its route it
    fits now. A unit held up behind allies that are stuck walks round them; two allies that want each other's tile
    swap. A marcher walking at half speed accrues its movement credit on every second tick only; an ally of higher priority
@@ -200,11 +194,10 @@ then by the shooter's ordinal). A guard still softens it; a boost round the shoo
 blow the shooter strikes where it stands. A kill by fire is the shooter's, named by its id whether it still stands or
 not, and gives no killer's pause. A patch whose time is up goes out after it burns its last (`ground.lit`,
 `ground.burned`, `ground.out`). The state carries `burning` only while something burns, so a state without fire hashes
-as it did before fire existed. Routes weigh it while it burns (section 1.6), and it is put out between rounds (section 2). The
-Citizen mortar's shell is the first that burns, and it has two jobs (the owner, 2026-10-21): its burst, 12 within 2,
-hurts only the enemy (an area's `hits: "enemies"`, which a splash and a death's blast both read; without it an area
-hurts friend and foe), and the fire it leaves, 8 a second within 4 for four seconds (48 ticks), hurts everyone on it,
-either side.
+as it always did. Routes weigh it while it burns (section 1.6), and it is put out between rounds (section 2). The
+Citizen mortar's shell is the first that burns, with two jobs (the owner, 2026-10-21): its burst, 12 within 2, hurts
+only the enemy (an area's `hits: "enemies"`, read by a splash and a death's blast; without it an area hurts friend
+and foe), and the fire it leaves, 8 a second within 4 for 48 ticks, hurts everyone on it.
 
 **A healer heals the nearest wounded ally, and a building heals only within its reach** (RULE —
 `src/pulse/perception.ts`, `tests/aid-station.test.ts`, the `aid-station-repair` sandbox). A healer — content's
@@ -219,12 +212,12 @@ bench medic names none and heals every wounded ally, as it always did.
 
 ### 1.3a No side wins by where it stands — RULE — `tests/fairness.test.ts`
 
-The owner, 2026-10-19: "the solution should be deterministic independently of the side or top vs down or
-diagonal". **Every tie a rule breaks goes first by what the deciding unit faces — the enemy, or where it is headed —
-and what is still tied after that by one draw from the seeded stream** (`drawAmong`, `src/pulse/shared.ts`). Never
-by reading order, compass order or entity id: the opening hands ids out in reading order, so each of those favours
-the side the map put west, north or first. Before this rule one end of the map won nearly every mirror battle: the west with a rushing plan, the east with a
-balanced one.
+**Every tie a rule breaks goes first by what the deciding unit faces — the enemy, or where it is headed —
+and what is still tied after that by one draw from the seeded stream** (`drawAmong`, `src/pulse/shared.ts`).
+Never by reading order, compass order or entity id: the opening hands ids out in reading order, so each of those
+favours the side the map put west, north or first (before this rule one end of the map won nearly every mirror
+battle). The owner, 2026-10-19: "the solution should be deterministic independently of the side or top vs down or
+diagonal".
 
 - **Blows land together.** Every hit of a speed tier is worked out against the state as the tier began and applied
   at once (the attacks step), so two equal units that strike each other in the same tick both fall.
@@ -251,9 +244,8 @@ balanced one.
 
 One order is left inside a side: of several attackers whose blows kill a unit in the same tick, the lowest id is
 named its killer and takes a killer's pause. It never decides which side gains, only which of one side's units
-waits; changing it tipped the missions' empty-base walks (a route to a later round plays the rounds before it
-building nothing) more than anything else did, so it waits for a
-reason of its own.
+waits; changing it tipped the missions' empty-base walks more than anything else did, so it waits for a reason of
+its own.
 
 A mirror battle with nothing tied stays a mirror tick for tick; with ties, each side wins it as often over seeds, and
 mirror battles split about evenly (`tests/fairness.test.ts`, over forty-eight battles; `tests/route-saves.test.ts`,
@@ -277,21 +269,18 @@ expected output of the `imneme/pcg-c` repository's own check program, seeded 42/
 separated by the `initseq` parameter, which is what PCG provides it for.
 
 **Cosmetic randomness is a hash of an effect instance's identity, never a stream** (RULE —
-`tests/effects.test.ts`, `tests/determinism.test.ts`). A stream's answers depend on how many times it
-was asked, which is exactly what effect purity forbids. The two randomness sources never touch: the
-cosmetic seed changes no state hash, event hash or log.
+`tests/effects.test.ts`, `tests/determinism.test.ts`; [`effects.md`](effects.md)): a stream's answer depends on
+how many times it was asked, which effect purity forbids. The cosmetic seed changes no state hash, event hash or
+log.
 
-The kernel:
-
-- uses one named PRNG with serialized state and published test vectors;
-- never calls `Math.random`, reads a clock, or depends on locale-sensitive ordering (RULE —
-  `tests/determinism.test.ts`, `tests/architecture.test.ts`);
-- makes entity order and every tie-break explicit;
-- hashes state and events through one canonical serialization;
-- treats the tick rate as replay metadata that cannot change inside a ruleset version.
+The kernel's purity (no `Math.random`, no clock, no locale-sensitive ordering) is a rule of
+[`grid-engine.md`](grid-engine.md). Here it adds (RULE — `tests/determinism.test.ts`): one named PRNG with
+serialized state and published test vectors; every entity order and tie-break explicit; one canonical
+serialization hashing state and events; a tick rate that is replay metadata and cannot change inside a
+ruleset version.
 
 Verification re-runs the inputs and compares hashes. Palette, glyph pack, resize, dropped frames,
-playback speed, and the cosmetic seed sit outside that boundary entirely.
+playback speed and the cosmetic seed sit outside that boundary entirely.
 
 A game log records schema, engine, and ruleset versions; content ids and hashes; map id and hash;
 tick rate; PRNG name and seed; armies; initial state; committed plans per Build Phase; ordered events
@@ -420,10 +409,10 @@ map take a third of a frame at most, and a battle's stop far sooner. A whole tic
 
 ## 2. Match structure
 
-**A Grid Nexus is a flag on a content definition, never a content id the kernel recognises** (RULE —
-`tests/ravel.test.ts`, `src/pulse/victory.ts`). An early victory condition keyed on the id
-`structure.citizen.nexus` broke the moment the second faction existed. Anything a faction calls its
-Grid Nexus declares itself one, and the rules read the flag.
+**A Grid Nexus is a flag on a content definition**, never a content id the kernel recognises (RULE —
+[`grid-engine.md`](grid-engine.md), invariants; `tests/ravel.test.ts`, `src/pulse/victory.ts`): a victory
+condition keyed on the id `structure.citizen.nexus` broke the moment the second faction existed. Anything a
+faction calls its Grid Nexus declares itself one, and the rules read the flag.
 
 A match alternates (RULE — `tests/pulse-run.test.ts`, `tests/mission.test.ts`):
 
@@ -507,10 +496,8 @@ was before, so a lone trooper sent round a wall is not shot on arrival.
 **A side whose Grid Nexus stands is never wiped out** (RULE — Mario, 2026-10-01; `src/pulse/victory.ts`,
 `sandboxes/rules/nexus-stands.save.json`, `tests/sandboxes.test.ts`). Its Pulse goes on until the Nexus falls or
 the time runs out, and a mission may add a losing condition of its own; a side with no Nexus, a raid, is
-still beaten by losing every unit. So a defence round no longer stops with the raid at the gate when the
-player's units fall: the raid comes on to the Nexus, and the round ends when it falls or the time is up.
-Before this, every side was wiped out by losing its last unit, and a defence round could end with the
-Nexus untouched and count as held.
+still beaten by losing every unit. So a defence round does not stop with the raid at the gate when the player's
+units fall: the raid comes on to the Nexus, and the round ends when it falls or the time is up.
 
 ### 2.1 Commander
 
@@ -524,21 +511,9 @@ R + 1 + roundsOut opens. Vasse sits none out, so the Nexus restores her as the r
 a Commander may be given, proven on a test-only Commander who sits one round out, and one who sits two. **Commander death is not the victory condition** (RULE —
 `src/pulse/victory.ts`, which reads only the Grid Nexus flag and annihilation).
 
-What is built is that cadence, for the Commanders in `armies/` (Vasse, Averno and Dob Hunter, each in her own army). A unit is a
-Commander by a flag on its content (`commander`), which only the rules between rounds read: the kernel
-sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her
-back. When she falls, the round loop carries an absence beside the state — whose, which, the round she fell
-in and the round she is due — and as that round begins, after the regroup and before its Build Phase, the
-Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body, at full health, standing
-there through the Build Phase like any survivor. "May replicate" is taken as "does", as the story's
-third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to
-restore her to, so her absence goes on until it has one. At a Pulse's end she regroups with her army, in the
-middle of her rank. A mission brings its Commander once (`src/mission/validate.ts`
-refuses a second arrival, or two of her), and the Commander it brings for the player is its story's
-(`src/armies/load.ts` refuses another). How much she can take is her army's data, settled at 80 for Vasse. Her skill, By the Book, is an ability the kernel
-keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names
-a target for the player's troops she heads there with them, fights what comes within reach and stands with them
-(a side's target, above). Holding a post waits (posts, in the backlog).
+What is built is that cadence, for the Commanders in `armies/`. A unit is a Commander by a content flag (`commander`) that only the rules between rounds read: the kernel sees a unit like any other, so she fights and dies by the ordinary rules and nothing in a Pulse brings her back. When she falls, the round loop carries an absence beside the state (whose, which, the round she fell in, the round she is due); as that round begins, after the regroup and before its Build Phase, the Nexus sets her down on the free tile nearest her side's Grid Nexus: a new body at full health. "May replicate" is taken as "does", as the story's third mission reads it ("the next restores her"); a side with no Grid Nexus standing has nowhere to restore her, so her absence goes on until it has one. At a Pulse's end she regroups with her army, in the middle of her rank.
+
+A mission brings its Commander once (`src/mission/validate.ts` refuses a second arrival, or two of her), and the Commander it brings for the player is its story's (`src/armies/load.ts` refuses another). How much she can take is her army's data (80 for Vasse). Her skill, By the Book, is an ability the kernel keeps (above); its strength is an Experiment while it is tuned (**By the Book**). Where she goes is her side's: where a level names a target for the player's troops she heads there with them, fights what comes within reach and stands with them (a side's target, above). Holding a post waits (posts, in the backlog).
 
 ### 2.2 Structures
 
@@ -590,10 +565,10 @@ an enemy that cannot reach it passes it over (section 1.6, targeting knows what 
 by the tiles it covers. A building that falls with units on it leaves them standing where they were, now on
 ground. A unit in the air, and one a unit makes, is set down round its maker as before. **How it leaves** is the
 building's (`ProductionRecipe.exit`): along its route, Mario's idea and the default, or to the nearest open ground
-first while the "Way off the roof" Experiment says nearest (`src/pulse/routes.ts`, `offTheRoofFirst`), which a
-simulated game shows spills a block's wave off every side ([formations](../history/reports/2026-10-20-formations.md)). A recipe costs nothing yet, because a Pulse has no resource, so no two attempts
-can compete and the contention process has nothing to decide; it is not built, and arrives with cost and
-supply in the worker economy. A unit a building spawned says so on its `entity.spawned` event (`trainedBy`),
+first while the "Way off the roof" Experiment says nearest (`src/pulse/routes.ts`, `offTheRoofFirst`; why:
+[formations](../history/reports/2026-10-20-formations.md)). A recipe costs nothing yet, because a Pulse has no
+resource, so no two attempts can compete and the contention process is not built; it arrives with cost in the worker
+economy. A unit a building spawned says so on its `entity.spawned` event (`trainedBy`),
 which is how the battle feed and the Activity Logs tell it from an arrival.
 
 **What a building spawns is its own** (RULE — `src/armies/load.ts`, `src/match/training.ts`,
@@ -642,15 +617,13 @@ not dealt again unless it may be kept again. What it does reaches the battle thr
 rule the kernel reads: the content the Pulse runs on (a Commander's aura reach, a building's waves), the build
 menu (a building added), and the units set down at its opening — a power's **called-up units** muster on the
 player's Grid Nexus at tick 0, after the mission's own arrivals, and are survivors like any other once the round
-ends. The whole of how the Nexus Pulse deals — rarities, roles, the schedule and a level's own, chance,
-requirements, upgrades — is in [`commander-armies.md`](../game-design/commander-armies.md); the legendary hand every
-few rounds and what a Commander may bend are designed there and not built.
+ends. How the Nexus Pulse deals (rarities, roles, the schedule, chance, requirements, upgrades) is in
+[`commander-armies.md`](../game-design/commander-armies.md), which also holds the designed-not-built legendary hand
+and what a Commander may bend.
 
-What a power may *do*: to a player, a power is a name and a plain description of what it does — no
-classification to learn — and in code the effect is one of a small bounded union: `addBuilding`,
-`spawnUnits`, `addWaves`, `setDetonation`, `modifyAbility`, and, designed, `modifyRule` and `reveal` (see
-[`commander-armies.md`](../game-design/commander-armies.md)). That union is what a Build Phase panel
-actually renders, so it is worth reading before building one.
+To a player a power is a name and a plain description; in code its effect is one entry of the `EFFECTS` table
+([`army-authoring.md`](army-authoring.md), Nexus powers), which is what a Build Phase panel renders. `modifyRule`
+and `reveal` are designed and not built ([`commander-armies.md`](../game-design/commander-armies.md)).
 
 ---
 
@@ -721,8 +694,7 @@ kernel never reads it, since the Build Phase is the only way a player's plan is 
 
 **Buildings may touch** (RULE — `src/build/state.ts`, `tests/build-territory.test.ts`). A building that makes units
 sets them on its own roof (section 2, units walk out over the roofs), so it keeps no room round it: two Barracks may
-stand side by side, and a block of them is a choice of where an army forms. The room each once kept, and the
-"Spawn space" Experiment with it, went with the pathfinding milestone.
+stand side by side, and a block of them is a choice of where an army forms.
 
 Still open, because nothing reaches them yet: building inside enemy coverage that was public at Build Phase
 start (no raid stands a building at the start of a Build Phase), simultaneous same-cell conflicts and refunds

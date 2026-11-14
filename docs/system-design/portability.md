@@ -2,10 +2,10 @@
 
 _What the game already needs from a host, where the code is more terminal-shaped than it has to be, and the platform ideas that follow; the working design for running on more surfaces than a terminal._
 
-The Build Phase runs in three places: a real terminal, the browser playtest page, and a scripted
-playtest with no display at all, all from the same screen code. That is a sign the seams are in roughly
-the right places. A keyboard-and-click game with a grid of cells could run on many more platforms, *as
-long as map navigation works well*. This page says what that takes.
+The Build Phase runs in three places from the same screen code: a real terminal, the browser playtest page and a
+scripted playtest with no display. A keyboard-and-click game on a grid of cells could run on many more platforms,
+*as long as map navigation works well*. This page says what that takes; everything past what runs today is a
+direction, not a plan.
 
 ## 1. What runs where today
 
@@ -25,10 +25,9 @@ host (src/cli/terminal-nexus.ts,        stdin/stdout, settings file, clipboard  
   Cells carry style *roles*, never colours, so any surface that can draw a character on a coloured
   square can show the game. The terminal, a `<canvas>` and a PNG renderer already do, and the canvas
   is tested against the terminal's own characters and colour table.
-- **The browser page runs the terminal's own loops unmodified** (`runMenu`, `runBuildPhase`, `watchPulse`)
-  and hands them a stand-in terminal; it converts only frames, key names, taps, settings storage and
-  the export. RULE — `tests/web.test.ts`. That is why it needed almost no game code, and it is also the
-  part that looks most like a workaround (see below).
+- **The browser page runs the terminal's own loops unmodified** (`runMenu`, `runBuildPhase`, `watchPulse`; RULE,
+  [`runtime.md`](runtime.md), delivery ladder) and hands them a stand-in terminal. That is why it needed almost no
+  game code, and why it looks most like a workaround (section 5).
 
 ## 2. What a host must provide
 
@@ -145,8 +144,8 @@ Nothing here is built, and nothing depends on it.
 
 ## 7. What not to do
 
-- Do not give the browser page a game loop of its own; it is a way to *see* the terminal's loops.
-  RULE — `tests/web.test.ts`.
+- Give the browser page no game loop of its own: it *sees* the terminal's loops (RULE, owned by
+  [`runtime.md`](runtime.md), delivery ladder; `tests/web.test.ts`).
 - Do not let a host reach into the reducer or add commands: hosts translate, the vocabulary stays one.
   RULE — `tests/title-menu-adapters.test.ts`, `tests/build-motion.test.ts` ("keys and the untimed arrows the
   web page and scripts send still land on the same state").

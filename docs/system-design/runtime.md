@@ -26,8 +26,8 @@ runs on both.
   content cost. Not designed; do not assume it.
 - **Bubble Tea + Wish** — **IDEA**, a Go hosted-SSH contingency. Not designed; do not assume it.
 
-Bun and Node are both present in the project's environments; Deno is not, and nothing measured needs
-it. Versions are pinned in `package.json` and the toolchain is described in `DEVELOPMENT.md`.
+Bun and Node are both present in the project's environments; Deno is not, and nothing measured needs it.
+Versions are pinned in `package.json`; the toolchain is in `DEVELOPMENT.md`.
 
 ## 2. Terminal lifecycle — RULE
 
@@ -102,14 +102,11 @@ executable is what launches the game built on it. What "replay tool" means concr
 writing a persisted, levelled game log rather than only resolving a map fresh each time — is designed,
 not built, in [`replay-format.md`](replay-format.md).
 
-RULE — `tests/grid-cli.test.ts`. There is no subcommand: `grid <save>` takes a sandbox (`sandboxes/`) by path or id
-(the suffix is optional) and defaults to `watch`, the ASCII view; `--headless` resolves without a
-terminal and `--verify` re-resolves 10 times and fails on any hash disagreement. One output stream, not
-two: a headless run's **levelled log** (default `WARN`) carries the story in fixed, greppable columns,
-closed by a `report` line carrying the outcome, the losses and the hashes, so an agent can assert on
-behaviour without parsing prose and a designer can read what happened without a second stream to
-catch. `--save-log <file>` writes the same lines to a file in any action, and `--from-tick <tick>` seeks
-straight to a tick instead of playing from the start, in `watch`, `--headless` and `--verify` alike.
+RULE — `tests/grid-cli.test.ts`. `grid` has no subcommand: `grid <save>` takes a sandbox by path or id and
+defaults to `watch`, the ASCII view; the flags (`--headless`, `--verify`, `--save-log`, `--from-tick`) are in
+`grid --help`. **One output stream, not two:** a headless run's **levelled log** (default `WARN`) carries the story in
+fixed, greppable columns, closed by a `report` line with the outcome, the losses and the hashes, so an agent can
+assert on behaviour without parsing prose.
 
 **Modding-first architecture, not mod-loader-first development.** Seams are kept so that content,
 themes and maps could one day be extended from outside; no public SDK, remote loader, marketplace,
@@ -119,10 +116,9 @@ font, so every pack keeps an ASCII-safe fallback.
 
 ### Scaling toward hundreds or thousands of units
 
-The sandboxes top out at a few dozen actors on a preset Grid. Whether the kernel's shape holds at
-"hundreds or thousands of units, and possible future epic-large maps" has not been measured, and
-nothing here claims it has. This section records what a code review found about *where* cost would
-appear first, and which design moves are cheap to take now versus expensive to retrofit later.
+The sandboxes top out at a few dozen actors on a preset Grid. Whether the kernel holds at "hundreds or
+thousands of units, and possible future epic-large maps" is unmeasured. This section records where a code review
+found cost would appear first, and which moves are cheap now and expensive to retrofit later.
 
 Grid size (`A`, tile count) and actor count (`N`) are different axes, and the kernel does not couple
 them uniformly:
@@ -141,12 +137,8 @@ Perception is the one place cost is quadratic in actor count with no cap at all,
 thing to bound before "hundreds or thousands" is a real target. The other rows scale acceptably at that
 range or are already bounded.
 
-Two cheap fixes are already in, because they cost nothing and change nothing observable (verified
-hash-identical across every sandbox, the multi-death chain in `ravel-cascade` included): attacks
-bucket actors by speed tier once per tick instead of re-scanning every actor per tier, and death
-resolution uses a reverse `target → observers` index, maintained at the few places a target is
-written, instead of scanning every observer. The kernel's tick is one file per phase under
-`src/pulse/`.
+Two hash-identical fixes are already in: attacks bucket actors by speed tier once per tick, and death resolution
+uses a reverse `target → observers` index instead of scanning every observer.
 
 **Four design rules, adoptable without building real spatial pathfinding:**
 
@@ -174,6 +166,5 @@ written, instead of scanning every observer. The kernel's tick is one file per p
    [the answered register](../history/answered-questions.md)). Land the cap itself inert until a sandbox
    actually needs it.
 
-**What this section is not.** It is not a commitment to build real pathfinding, a spatial index or a
-radius cap, and not a claim that the sandboxes are slow: nothing here is a measurement, only an
-assessment of where a future measurement would first go red.
+**This is an assessment, not a commitment** to build a spatial index or a radius cap, and not a measurement: it
+says where a future measurement would first go red.
