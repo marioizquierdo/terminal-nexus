@@ -378,7 +378,7 @@ Every way a unit moves is one of three things: **a new goal** for the same field
 | The raid's trail in the Build Phase | The same field, walked ahead of time over the plan | Yes |
 | Regrouping between rounds | A goal per unit, its slot in its side's formation across the march line, walked beside the kernel's tick (`src/match/regroup.ts`) | Yes |
 | Making room for a building | The walk to the nearest free ground off every building, pushing on whoever stands there in turn (`src/match/make-room.ts`) | Yes |
-| A banner | A goal: the banner, then the Nexus; or the banner's tiles, held | IDEA |
+| A banner | A goal: the banner, then the Nexus; or the banner's tiles, held | Prototype, behind the Battle banner Experiment ("Banners — prototype" above); a second banner is IDEA |
 | A worker's job | A goal: every free job slot | IDEA (Milestone 7) |
 
 ### Where modifiers plug in

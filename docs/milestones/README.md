@@ -82,4 +82,4 @@ Neither is a file yet, and no number is reserved; each gets one when the milesto
 enough to done that its contents are no longer a guess.
 
 Horizontal kernel work that no milestone needs yet (a second resource, the full replay format, visibility) is in
-[`backlog.md`](backlog.md); real routing has its own milestone, 16.
+[`backlog.md`](backlog.md); unit routing was built by the Pathfinding milestone, 16.

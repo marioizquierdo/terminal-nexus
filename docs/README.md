@@ -22,7 +22,7 @@ version of the design beyond git.
 
 - [`grid-engine.md`](system-design/grid-engine.md) — the engine design: the three worlds, the Grid, the Pulse, content, presentation, input, runtime. Start at its first section; every statement is RULE, GUIDANCE or IDEA.
 - [`effects.md`](system-design/effects.md) — animations, particles, shading and tweens: the contract and the vocabulary.
-- [`ui-patterns.md`](system-design/ui-patterns.md) — how every screen, menu, popup, effect and key behaves; read its goals and checklist before interface work.
+- [`ui-patterns.md`](system-design/ui-patterns.md) — how every screen, menu, popup, effect and key behaves; follow its steps for a new screen, then read its goals, before interface work.
 - [`testing.md`](system-design/testing.md) — what the suite proves and how.
 - [`replay-format.md`](system-design/replay-format.md) — the unbuilt replay file design (GUIDANCE).
 - [`portability.md`](system-design/portability.md) — what a host must provide to run the game elsewhere (working design).
