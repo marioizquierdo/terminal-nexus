@@ -35,8 +35,9 @@ Every document is on one of three shelves, and the path says which:
    first: follow its steps for a new screen, then read its goals.
 
 **When no step is open** (the current one is built and waits for Mario's playtest, or the next waits
-for his word), the work is what his latest feedback or the "Waiting on Mario" list asks for. If both
-are empty, say so and stop.
+for his word), the work is what his latest feedback asks for, or what makes an ask on the "Waiting on
+Mario" list ready for him (each ask is his to play, watch, decide or do; yours is to have tried it
+first). If neither leaves work, say so and stop.
 
 [`DEVELOPMENT.md`](DEVELOPMENT.md) is the practices manual, "the manual" below; the bullets that
 follow name the section to read for each practice.

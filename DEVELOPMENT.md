@@ -118,18 +118,24 @@ measurement after, testers with a goal, and only then Mario. Each step ends on a
    ([`testing.md`](docs/system-design/testing.md), two instruments; [`sandboxes.md`](docs/system-design/sandboxes.md), which
    tool answers which question). *Done when* the sentence, the threshold and the command that counts it are written in the
    step's notes or the pull request, before any code.
-2. **Take the before.** Commit first, then measure on both maps, `crossing` and `pocket`, over seeds: `npm run skirmish --
-   --map <map> --p1 script:steady --p2 script:steady --commanders all --seeds 1-12 --play-to end` (the `skirmish` skill), and for
-   a power-curve or route change the kept run through `measure run` (the [`remeasure`](.claude/skills/remeasure/SKILL.md)
-   skill, [`measurement.md`](docs/system-design/measurement.md)). *Done when* the result is saved with its date and the
-   commit it ran on (no `+uncommitted`), for both maps.
+2. **Take the before.** Commit first, then measure with the instrument step 1 named, on its own record:
+   - **Whole game:** both maps, `crossing` and `pocket`, over seeds: `npm run skirmish -- --map <map> --p1 script:steady
+     --p2 script:steady --commanders all --seeds 1-12 --play-to end > <date>-<what>-<map>-before.txt` (the `skirmish`
+     skill). The tally is the record: the file name carries the date, and its first line the commit (`git rev-parse --short HEAD`).
+   - **One rule, effect, movement or ability:** a sandbox or a trial, `npm run grid -- <trial> --out before.json` (the
+     `grid` skill).
+   - **The power curve or a route:** the kept run, `node bin/measure.ts run --out before.json` (the
+     [`remeasure`](.claude/skills/remeasure/SKILL.md) skill, [`measurement.md`](docs/system-design/measurement.md)).
+   *Done when* the before is saved with its date and the commit it ran on (no `+uncommitted`), for both maps when it is a
+   whole-game measurement. Records kept for history go in `docs/history/measurements/`.
 3. **Build it with its second count.** Each new reading comes with a second way to count it, and that check is an
    invariant test ([`testing.md`](docs/system-design/testing.md), invariant tests). Every option you add refuses a value it
    does not use, or says what is not done, and is registered in `src/cli/args.ts` with a test that it arrives. *Done when*
    each new reading has a test that goes red when you break the reading, and each option refuses odd input.
-4. **Take the after and compare.** Same commands, same seeds, both maps; `node bin/measure.ts compare <before> <after>`. Sort
-   what the change broke before fixing any test (the `remeasure` skill; "Things that bite" below). *Done when* the number
-   from step 1 met its threshold on both maps, or the notes say what moved instead and why; a result the change makes stale
+4. **Take the after and compare**, with the same instrument, commands and seeds: two skirmish tallies side by side; a trial
+   with `--baseline before.json`; a kept run with `node bin/measure.ts compare <before> <after>`. Sort what the change broke
+   before fixing any test (the `remeasure` skill; "Things that bite" below). *Done when* the number from step 1 met its
+   threshold (on both maps, for the whole game), or the notes say what moved instead and why; a result the change makes stale
    is marked superseded ([`measurement.md`](docs/system-design/measurement.md), when a measurement goes stale).
 5. **Send testers with a goal.** After the step, run three or four tester agents, each with one goal: audit a reading by
    counting it two ways, play to win against a script, break the command with odd input, check the documents against the

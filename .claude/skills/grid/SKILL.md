@@ -71,6 +71,7 @@ When the question is "is this army, unit, number or rule better, and how surely"
 ([`sandboxes.md`](../../../docs/system-design/sandboxes.md)):
 
 ```text
+# grid is `npm run grid --` (or ./bin/grid.ts)
 grid engage-gap2-melee-vs-mix --seeds 1-12 --swap --shuffle --army-a trooper:6,skyraider:6   # as built vs a variant
 grid engage-bench                                  # a trial file from sandboxes/trials/, failing if what it expects fails
 grid engage-bench --tune trooper.maxHp=50          # every variant of a trial file with a unit tuned
