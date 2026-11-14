@@ -12,9 +12,7 @@ art are CC BY-SA 4.0. Unmarked statements are GUIDANCE._
 world through each Commander, and ends on an epic. It is judged on three things: a player comes out of it able to play a
 Skirmish well, the world feels real, and the last battle feels earned.
 
-**A mission exists only inside Story** (RULE — settled 2026-11-11, [`game-modes.md`](game-modes.md)). Skirmish never plays a mission; a
-mission is a Skirmish's setup with a script, words and a goal. **Any mission opens directly for testing**, by its route
-(`story?mission=<id>`, [`routing.md`](../system-design/routing.md)), with no story played before it.
+**A mission exists only inside Story** (RULE, owned by [`game-modes.md`](game-modes.md)): a mission is a Skirmish's setup with a script, words and a goal. **Any mission opens directly for testing**, by its route (`story?mission=<id>`, [`routing.md`](../system-design/routing.md)), with no story played before it.
 
 **Story is built after Skirmish has been played by people** (the owner's friends first, 2026-11-11), one mission at a time. A mission pulls in exactly the systems it needs; nothing here
 is built until a milestone step asks for it, and the mission list below is direction, not a count the game owes. Built
@@ -187,7 +185,7 @@ The `{ atTick, action }` list the first raid used is this model with one conditi
 
 ### 3.2 Goals
 
-**A mission has goals, not a fixed length, and a goal is one of a bounded union** (RULE — settled; no code holds it yet). A mission is not given a strict length; it is given a few different goals. The goal is most often "destroy the enemy Grid Nexus," but equally "survive N rounds," "capture and hold X by round N," "accumulate X of Y," "keep Z alive." A small bounded union says all of them, in the same spirit as the six Nexus-power effect kinds. The built `MissionDefinition` decides its end with `win` and `lose` triggers and has no objective field.
+**A mission has goals, not a fixed length, and a goal is one of a bounded union** (RULE — settled; no code holds it yet). The goal is most often "destroy the enemy Grid Nexus," but equally "survive N rounds," "capture and hold X by round N," "accumulate X of Y," "keep Z alive": a small bounded union, in the spirit of the Nexus-power effect kinds. The built `MissionDefinition` decides its end with `win` and `lose` triggers and has no objective field.
 
 ```ts
 type ObjectiveDefinition =
@@ -202,10 +200,7 @@ type ObjectiveDefinition =
 
 This is a **local data shape**: reversible and narrow, so a session may change it alone (see "What a session decides alone" in [`DEVELOPMENT.md`](../../DEVELOPMENT.md)). What stays genuinely open is only implementation detail: whether `captureAndHold`'s region needs a new kernel primitive (a capture structure is already GUIDANCE, [`pulse.md`](../system-design/pulse.md)) or composes from existing ones. The milestone that builds it decides that on the fixture it actually builds.
 
-**Missions have goals, not fixed lengths** (RULE — settled; no code holds it yet). A mission declares:
-
-- **a main goal** — most often *destroy the enemy Grid Nexus*, but equally *survive N rounds*, *capture and hold X by round N*, *accumulate X of Y*, or *keep Z alive*. Standard strategy-campaign shapes, every one of them expressible as a trigger condition with an `objective`, `win`, or `lose` action (section 3.1);
-- **a bonus goal** — harder, optional, achievement-shaped, and it **grants a technology or an achievement**. *Win without losing a unit. Reach supply 100. Win by round 4. Never lose a structure.* This is what gives a finished mission a reason to be replayed before the story is over.
+**A mission declares a main goal and may declare a bonus goal** (RULE — settled; no code holds it yet). The main goal is one of the union above, each expressible as a trigger condition with an `objective`, `win` or `lose` action (section 3.1). The **bonus goal** is harder, optional, achievement-shaped, and **grants a technology or an achievement**: *win without losing a unit, reach supply 100, win by round 4, never lose a structure.* It gives a finished mission a reason to be replayed before the story is over.
 
 **Bonus goals are shown in the briefing, never a surprise** (RULE — settled; no code holds it yet). The briefing states both goals plainly, the same way it states the main one; a player decides whether to play toward it from the start, rather than discovering after the fact what they were being scored on. This is also the faction's own voice: the Citizen Nexus files the standard before the shift begins, it does not grade on a curve afterwards.
 
@@ -355,7 +350,7 @@ The rule that follows, for anyone authoring the second side of any battle: **che
 
 **What each mission deliberately withholds**, so it is not built early: mission 1 has no economy, and of the Nexus Pulse only the hand — five powers, commons and uncommons, three a round over three rounds, its first upgrade among them and no legendary hand. Its Commander is Vasse as the Commander milestone pulled her forward: on the Grid with her aura, falling when the raid reaches her and coming back the round after. Mission 2 adds no more of her; mission 3 is the first with everything on, and the first to make her restoration a story. Removal and deck editing never appear in the opening: a story grows the army, it does not prune it.
 
-**The Nexus Pulse across the opening** (GUIDANCE; its shape is in [`commander-armies.md`](commander-armies.md), how the Nexus Pulse deals). Each part arrives with the first mission whose pool or length needs it, and a level sets its own schedule the way it sets its own credits (RULE — built: a level's `schedule`), so a mission teaches one part at a time and makes sure of a power in the round it teaches. PERIMETER deals the hand by its own schedule, three a round, with the first upgrade — Drill Schedule's third wave, once its second is kept — and Aid Station Permit made sure of in round 2, so the Aid Station can stand in the line before the third raid; both came early, while the Nexus Pulse is tested, and may move to a later mission when the missions are designed. The legendary hand comes with the first mission long enough to reach it. PRECOMMITTED's card that arrives already kept, `SOURCE: NEXUS`, is the one pick in the opening the player did not make.
+**The Nexus Pulse across the opening** (GUIDANCE; its shape is in [`commander-armies.md`](commander-armies.md), how the Nexus Pulse deals). Each part arrives with the first mission whose pool or length needs it, and a level sets its own schedule the way it sets its own credits (RULE — built: a level's `schedule`), so a mission teaches one part at a time and makes sure of a power in the round it teaches. PERIMETER's own schedule, first upgrade and sure Aid Station Permit are in [`commander-armies.md`](commander-armies.md) (PERIMETER's hand); they came early, while the Nexus Pulse is tested, and may move to a later mission when the missions are designed. The legendary hand comes with the first mission long enough to reach it. PRECOMMITTED's card that arrives already kept, `SOURCE: NEXUS`, is the one pick in the opening the player did not make.
 
 ## 6. Cutscenes
 

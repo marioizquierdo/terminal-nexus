@@ -12,24 +12,17 @@ _Licence: structure and schemas Apache-2.0; names and fiction CC BY-SA 4.0._
 document, screen and new piece of code uses these. The routes are `skirmish` and `story`, the story files are in
 `stories/`; `campaign` and `challenge` routes are refused with what replaced them.
 
+Battle, Round, Mode, Skirmish, Story, Versus, Mission, Save file and Level are defined in the [glossary](glossary.md);
+**a mission exists only inside Story**. Said once more here, because this page decides them:
+
 | Word | Means |
 | --- | --- |
-| **Battle** | One Grid, two sides, rounds until a result: the unit of play. The engine's word is *match*; nothing above a battle is visible to the kernel |
-| **Round** | A Nexus Pulse, a Build Phase and the Battle Round that follows ([`concept.md`](concept.md)) |
-| **Mode** | What decides which battles are played, in what order, against whom, and what carries between them |
-| **Skirmish** | One battle against a scripted Commander Army, set up by the player. The centre of the game and of its testing |
-| **Story** | A Commander's story: missions in order, with technologies carried from one to the next, ending in a final battle |
-| **Versus** | One battle between two people. Later |
-| **Mission** | A battle with a script, words and a goal. **A mission exists only inside Story** |
-| **Endless stand** | A kind of mission: groups that grow until the Nexus falls, scored by how far the player got. It comes before a story's final battle |
 | **Slot** | One side of a battle, fixed by the map: its Commander and its **controller**, who plans it: `player:<name>` (a person), `script:<profile>`, later `agent:<profile>`; the setup screen shows them as `Player: marioiz`, `Scripted: agro`, `Agent: curious` |
-| **Save file** | A Skirmish's setup and, once played, the battle as it stands at the opening of a Build Phase: what the setup screen, Load game, the command line and every test start from ([`skirmish-saves.md`](../system-design/skirmish-saves.md)) |
 | **Opponent** | What plans the other side of a Skirmish: a script profile (`agro`, `defensive`, `steady`, `agro-rich`, in `players/scripts/`), each playing one of the scripts (`balanced`, `rush`, `turtle` and their variants) and driving a Commander Army |
+| **Endless stand** | A kind of mission: groups that grow until the Nexus falls, scored by how far the player got. It comes before a story's final battle |
 | **Technology** | A card a mission in Story grants and later missions keep: a building, an upgrade, a Nexus power. The story file stores it in a level's `unlocks` |
-| **Level** | The code's word for a mission's entry in its story file (`story?mission=<id>`); say *mission* in writing |
 
-**Retired names**: *Campaign* is now Story; *Challenge* and its *run* of many battles are retired (section 6). The
-word *run* is free again; do not use it for a mode.
+**Retired names**: *Campaign* is now Story; *Challenge* and its *run* of many battles are retired (section 6); the word *run* is free again, for anything but a mode.
 
 ## 2. Why these three, and why Skirmish first
 
@@ -156,8 +149,7 @@ A Commander's story, the same shape for every Commander: a tutorial, three or fo
 collections carry forward, an endless stand scored until the Nexus falls, and a final battle ([`story.md`](story.md)
 is the design).
 
-**A mission exists only inside Story** (RULE — settled 2026-11-11, held in code since the Skirmish milestone's rename).
-Any mission still opens directly for testing, by its route (`story?mission=<id>`), without playing the story before it.
+**A mission exists only inside Story** (RULE — settled 2026-11-11, held in code since the Skirmish milestone's rename); any mission still opens directly for testing by its route ([`story.md`](story.md)).
 
 Story comes after Skirmish has been played by people, because every mission is a Skirmish setup plus a script and words:
 a mission built before the battle is fun would be built twice.
@@ -201,10 +193,7 @@ Three rules of thumb (GUIDANCE):
 3. **The dealer reads the role.** Three offers of the same role is a dead hand; the dealer prefers variety across roles
    before it weighs rarity.
 
-**"The army is a deck" is parked, not decided** ([`commander-armies.md`](commander-armies.md) has the retraction):
-*card*, *rarity*, *tier* and *draft* are working words for an offer, weighted and gated, that a player accepts or
-declines. Nexus powers are almost always strictly good, so a deckbuilder's "adding things can make my draws worse"
-does not hold for them.
+**"The army is a deck" is parked, not decided** ([`commander-armies.md`](commander-armies.md) owns the retraction, and why a Nexus power never dilutes a draw): *card*, *rarity*, *tier* and *draft* are working words for an offer, weighted and gated, that a player accepts or declines.
 
 Balance is **measured, then judged**: battles and Skirmish battles played by scripts and the driver, then by people
 ([`measurement.md`](../system-design/measurement.md)). Metrics diagnose; they do not define fun.

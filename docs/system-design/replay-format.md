@@ -1,44 +1,36 @@
 # Terminal Nexus — the replay format
 
-_A schema and a set of design decisions for the persisted, levelled game log; it is not built, and everything here is GUIDANCE except the parts marked IDEA._
+_A design sketch of the persisted, levelled game log. **Not built:** no code reads or writes a `.replay.json` file, and AGENTS.md lists the replay format among what no step asks for yet. Everything here is GUIDANCE except the parts marked IDEA._
 
-## What this is, and what it is not
+**Status.** Built today: `grid --headless --events file.jsonl` (one canonical `DomainEvent` per line), `--save-log`,
+`--verify` (re-resolve and compare hashes), and a Skirmish's session record for playtest notes
+([`skirmish-saves.md`](skirmish-saves.md)), which is not a replay. Not built: everything below. Read it as a
+recommendation for whoever picks the work up; build none of it until a milestone step asks.
 
-This is a schema and a set of design decisions for a file format that does not exist yet. No code in
-this repository reads or writes a `.replay.json` file, and nothing here is a plan to build one. It is a
-recommendation for whoever picks the work up.
+## Why it exists
 
-It exists because the game log already has required contents ([`pulse.md`](pulse.md), determinism and
-replay): "schema, engine, and ruleset versions; content ids and hashes; map id and hash; tick rate;
-PRNG name and seed; armies; initial state; committed plans per Build Phase; ordered events per Pulse;
-final hashes; outcome; and any presentation markers, explicitly excluded from verification" — without
-saying what file holds it or what shape it takes. Every field below traces back to a clause in that
-sentence. This document adds no new commitment; it is a first attempt at fulfilling an existing one.
+The game log already has required contents ([`pulse.md`](pulse.md), determinism and replay): "schema, engine, and
+ruleset versions; content ids and hashes; map id and hash; tick rate; PRNG name and seed; armies; initial state;
+committed plans per Build Phase; ordered events per Pulse; final hashes; outcome; and any presentation markers,
+explicitly excluded from verification". It does not say what file holds that or what shape it takes. Every field
+below traces back to a clause in that sentence; this page adds no new commitment.
 
-It also exists because of where the log lives. `grid` is permanent infrastructure, the backbone of
-development ([`runtime.md`](runtime.md)). A persisted, versioned, levelled game log turns a run of
-`grid` from "a fight that happened once, in a terminal, and is gone" into a durable artifact: a bug
-report, a regression fixture, a feedback recording from a real playtester, a highlight to watch back.
-That is worth designing for before it is needed, the same way the collision-mask and layer rules were
-designed before the kernel needed them.
+A persisted, versioned, levelled log turns a run of `grid` ([`runtime.md`](runtime.md)) from "a fight that happened
+once, in a terminal, and is gone" into a durable artifact: a bug report, a regression fixture, a feedback recording,
+a highlight to watch back.
 
-## Non-goals, right now
+## What the format leaves open
 
-- **No Build Phase exists to record in the kernel.** The kernel has no notion of construction, cost or
-  a hidden simultaneous-reveal plan. Every Build Phase field below is reserved shape, not working code:
-  the same move as reserving an API surface at zero cost, applied to a file format instead of a
-  function signature.
-- **No Commander Army exists to reference.** `AGENTS.md` forbids building one before a milestone asks
-  for it. `armyId` and `faction` are reserved fields for the same reason: so adding armies does not
-  reopen this file's shape.
-- **No sandbox, rewind or fast-forward UI.** Whether and where those live is an open question (Q19 in
-  [`open-questions.md`](../milestones/open-questions.md): where a sandbox placement mode, rewind and
-  fast-forward, and a feedback replay engine should live). This document is a dependency of that
-  question's recommendation (per-tick state has to be cheap to address for rewind to be arithmetic
-  rather than a re-simulation), not a replacement for it.
-- **This is not an implementation plan.** There is no file list, no estimate. It is a schema and the
-  reasoning behind it, so that whoever implements it chooses among informed defaults rather than
-  inventing the shape from nothing.
+- **The Build Phase's plan.** The kernel has no notion of a plan; `committedPlans` is reserved shape, the way an API
+  surface is reserved at zero cost, so that whatever defines the plan format does not reopen this file.
+- **Armies.** Armies exist as data (`armies/`, [`army-authoring.md`](army-authoring.md)); `armyId` and `faction` are
+  reserved fields, bare strings or references into the army registry, not pre-decided here.
+- **A sandbox, rewind and fast-forward UI.** Where those live is Q19 in
+  [`open-questions.md`](../milestones/open-questions.md). This page is a dependency of that question's
+  recommendation (per-tick state has to be cheap to address for rewind to be arithmetic rather than
+  re-simulation), not a replacement for it.
+- **An implementation plan.** There is no file list and no estimate: only a schema and the reasoning behind it, so
+  that an implementer chooses among informed defaults.
 
 ## The top-level shape
 
@@ -278,17 +270,13 @@ Not built. The shape the tool could grow into:
   `.save.json` map today plays a `.replay.json`'s setup the same way, then steps through its recorded
   Pulse the same way `grid` already steps through a live resolution.
 
-## Naming: "grid-playground" replays, and recording the engine version now
+## Naming, and the engine version
 
-A replay "could contain a single pulse only (the replay type would be 'grid playground', using the
-build phase as setup)". `replayType: "grid-playground"` is that case exactly, spelled to match the
-tool's own name.
-
-The engine version is recorded from the first file this format ever writes. That is already
-`ReplayFile.gridEngineVersion`: `ENGINE_VERSION` (`src/pulse/resolve.ts`) under the field name this
-format uses. One gap in the *current* implementation, not this design: `PulseRun` today has no `prng`
-field, even though the game log's required contents name "PRNG name". One named PRNG exists, so nothing
-depends on the field yet, but it is a cheap thing to add whenever `PulseRun`'s shape is next touched.
+`replayType: "grid-playground"` is a single Pulse using the build phase as setup, spelled to match the tool's own
+name. The engine version is recorded from the first file the format writes: `ReplayFile.gridEngineVersion` is
+`ENGINE_VERSION` (`src/pulse/resolve.ts`). One gap in the current code, not in this design: `PulseRun` has no `prng`
+field though the game log's required contents name one; with one PRNG nothing depends on it, and it is cheap to add
+whenever `PulseRun`'s shape is next touched.
 
 ## What is still undecided
 
@@ -306,6 +294,5 @@ because none of them block finishing the shape and none have a fixture or a hash
 - Whether `armyId`/`faction` end up as bare strings or references into a Commander Army registry:
   deliberately not pre-decided here.
 
-None of these is registered as a question in `open-questions.md`: none currently blocks anything, which
-is the register's own bar for a row. If one starts blocking real work before this document has been
-revisited, it earns a row then.
+None of these is a row in `open-questions.md`: none blocks anything, the register's own bar. One that starts to
+earns a row then.

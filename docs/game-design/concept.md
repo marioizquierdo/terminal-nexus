@@ -51,14 +51,11 @@ The emotional loop is:
 
 Three modes share that battle ([`game-modes.md`](game-modes.md)):
 
-- **Skirmish** — one battle against a scripted Commander Army: the player picks a map, a Commander and a controller
-  for each slot (themselves, or a scripted opponent's play style and credits), or loads a save file that sets up anything at all. The centre of the game, and where every change is tested.
-- **Story** — after Skirmish has been played by people, a Commander's story: a tutorial, missions that collect technologies, an endless stand scored by how far
-  the player gets, and a final battle ([`story.md`](story.md)). The only home of missions.
+- **Skirmish** — one battle against a scripted Commander Army, set up by the player or loaded from a save file. The centre of the game, and where every change is tested.
+- **Story** — built after people have played Skirmish: a Commander's story of missions ([`story.md`](story.md)), the only home of missions.
 - **Versus** — one battle between two people, built on Skirmish. Later.
 
-**RULE: a mode is data over one battle** — nothing below the mode knows which one it is serving (`game-modes.md` holds
-the rule).
+**RULE: a mode is data over one battle**: nothing below the mode knows which one it is serving ([`game-modes.md`](game-modes.md) owns the rule).
 
 ## What makes it special
 
@@ -66,7 +63,7 @@ the rule).
 - **Automatic battle preserves strategic authorship.** The spectacle is hands-off, but its causes should be readable in the player's previous decisions.
 - **Persistence creates short stories.** Survivors matter, workers flee, factories can be lost, salvage can be contested, and a commander can fall and later return.
 - **Modern drafting disrupts solved build orders.** Each round the Nexus Pulse deals a small hand of Nexus powers to keep one from, so no build order is solved in advance.
-- **A Commander Army is a bounded composition, not (necessarily) a deck.** The faction is the pool of everything it can field; an army brings a Commander, starting units and structures, a tech tree, upgrades, a small pool of Nexus powers, and a Special to one fight ([`commander-armies.md`](commander-armies.md)). A Commander's story grows that composition mission by mission. Whether it is well described as a "deck of cards" is retracted as a claim, not decided either way.
+- **A Commander Army is a bounded composition, not (necessarily) a deck.** The faction is the pool of everything it can field; an army brings a Commander, starting units and structures, a tech tree, upgrades, a small pool of Nexus powers, and a Special to one fight ([`commander-armies.md`](commander-armies.md)). A Commander's story grows that composition mission by mission. Whether it is a "deck of cards" is retracted as a claim, not decided either way.
 - **It plays at typing speed.** Every menu item shows its hotkey, every hotkey is also a click, and the whole game can be driven from a command stream — by a proficient player, by a mouse, or by an agent playtesting it.
 - **Faction identity is mechanical and symbolic.** Strategy, geometry, glyphs, motion, color, prose, portraits, and effects all express the same civilization.
 - **The simulation is deterministic (RULE — `tests/determinism.test.ts`).** A seed and complete committed plans reproduce the same outcome. Playback speed, animation frames, palette, and renderer never alter play.
@@ -105,7 +102,7 @@ Each question is worthless without the one before it. A battle that looks great 
 
 Everything else — packaging and remote delivery, public mod loading, multiplayer, sound, and model-driven opponents — waits behind those proofs and is built only when a milestone step asks for it.
 
-The sequence of milestones and the current step are in [`docs/milestones/README.md`](../milestones/README.md). Before deciding anything the design leaves open, check [`open-questions.md`](../milestones/open-questions.md). For the visual direction these proofs are chasing, see [`concept-art/README.md`](concept-art/README.md).
+The milestone sequence and the current step are in [`milestones/README.md`](../milestones/README.md); check [`open-questions.md`](../milestones/open-questions.md) before deciding anything the design leaves open; [`concept-art/README.md`](concept-art/README.md) holds the visual direction these proofs chase.
 
 ## Design statement
 

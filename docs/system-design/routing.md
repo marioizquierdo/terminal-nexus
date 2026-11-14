@@ -2,6 +2,11 @@
 
 _How a place in the game is named and reached: the route grammar, every route that exists, how a route reaches each screen, how to add a place, the bare command and save files, and the browser page's links. Every unmarked statement is GUIDANCE._
 
+**Status: built.** Everything here that carries a RULE marking is implemented (`src/cli/route.ts`, `src/cli/launch.ts`)
+and tested. Not built, and marked **IDEA** where they appear: a route straight into a mission round's Battle Round, a
+route to a saved replay (there is no replay file, [`replay-format.md`](replay-format.md)), and a bare launch that
+resumes the last save. This page is about addresses of screens; how troops route is [`movement.md`](movement.md).
+
 ## 1. What a route is
 
 A **route** names a place in the game the way a web address names a page, without the site: the place,
@@ -43,8 +48,8 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
   before anything is decoded, so an encoded `?` belongs to the place's name.
 - **A route that is not a place is refused whole, with every problem at once**, each naming what was
   written and what exists instead: the places, the query names the place reads, the missions, a mission's
-  rounds. Nothing opens. The places the Skirmish milestone renamed say what replaced them: `campaign` is Story now,
-  and Challenge runs are retired for `skirmish`. (RULE — `tests/route.test.ts`, `tests/terminal-nexus-cli.test.ts`)
+  rounds. Nothing opens. A place renamed says what replaced it: `campaign` is Story now, and Challenge runs are
+  retired for `skirmish`. (RULE — `tests/route.test.ts`, `tests/terminal-nexus-cli.test.ts`)
 - On a command line, quote a route with `?` or `&` in it: the shell reads both itself.
 
 ## 2. Every route today
@@ -62,15 +67,8 @@ How a route is read (`parseRoute`, `src/cli/route.ts`):
 | `story` | the title menu's Story screen, a placeholder until the Story menu is built |
 | `settings` | the title menu's Settings screen |
 | `about` | the title menu's About screen |
-| `story?mission=vasse-test-1` | PERIMETER's Build Phase, round 1 |
-| `story?mission=vasse-test-1&round=2` | its round 2 (`&round=3`, its last) |
-| `story?mission=vasse-test-2` | the Commander's cadence, the story's second test mission: Vasse falls in round 1 |
-| `story?mission=vasse-test-2&round=2` | its round 2, which opens on the Nexus Pulse restoring her |
-| `story?mission=vasse-test-2&round=3` | its round 3, its last |
-| `story?mission=vasse-test-3` | the power curve's test level: six rounds, the Garrison locked until a Barracks stands |
-| `story?mission=vasse-test-3&round=6` | its round 6, its last (`&round=2` to `&round=5` the ones between) |
-| `story?mission=averno-test-1` | the same curve with Marshal Averno in Vasse's place: her first five rounds |
-| `story?mission=averno-test-1&round=2` | his round 2: one card of the hand is from the Ravel Nexus (`&round=4` too) |
+| `story?mission=<id>` | that mission's Build Phase, round 1: `vasse-test-1` (PERIMETER, 3 rounds), `vasse-test-2` (the Commander's cadence: Vasse falls in round 1), `vasse-test-3` (the power curve's test level: six rounds, the Garrison locked until a Barracks stands), `averno-test-1` (the same curve with Averno in Vasse's place, five rounds) |
+| `story?mission=<id>&round=<n>` | its round `n`, as the screen counts them (`vasse-test-2&round=2` opens on the Nexus Pulse restoring her) |
 
 Every mission the game can open is a route the same way, `story?mission=<id>` with each of its rounds: the
 missions are every shipped story's (`stories/<id>/story.json`, [`content.md`](content.md)). `terminal-nexus --help`
@@ -79,9 +77,8 @@ have. A Skirmish's slots are not a route's: `--p1` and `--p2` beside it name who
 takes them ([`skirmish-saves.md`](skirmish-saves.md)).
 
 **Battle Rounds.** `round` counts Battle Rounds from 1, as the screen counts ("round 2 of 3"), and is the
-only way a route names one: the owner's first route counted from 0 with another word, and he then settled
-the word (2026-10-04, "let's settle in Battle Rounds"). A route that says anything else is refused like any
-query name the place does not read, naming `mission` and `round` as what `story` reads.
+only way a route names one (the owner, 2026-10-04: "let's settle in Battle Rounds"). A route that says anything else
+is refused like any query name the place does not read, naming `mission` and `round` as what `story` reads.
 
 **A later round is reached as a player who builds nothing reaches it**: the rounds before it are played
 out with no Nexus power kept (a power would change the battle), with the run's own settings and Experiments

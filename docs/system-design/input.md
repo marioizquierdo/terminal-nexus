@@ -66,21 +66,12 @@ over a few frames while the state is already at the destination; that is present
 never wait for it.
 
 **The menu orchestrates the Build Phase — RULE** (`tests/build-focus.test.ts`, `tests/build-cancel.test.ts`,
-`tests/build-holds-menu.test.ts`). Keyboard focus is reducer state, on the menu or on the Grid, and the
-screen is always in one of four plain modes: **the menu** (the highlight bar, no Grid cursor),
-**placing** (focus on the Grid with a structure armed: its row drawn active, the cursor carrying its
-ghost), **Explore Map** (focus on the Grid, nothing armed, the tile panel in the menu's place) and
-**plain navigation** (focus on the Grid, nothing armed, the bare cursor and the menu beside it).
-**A structure is armed only while the Grid has focus**, so a stale ghost can never sit on the map while
-the player works the menu. **Finishing goes back to where it began**: a placement, or Esc while placing,
-goes back — disarmed — to plain navigation when the arming began on the map (a digit pressed there), and
-to the menu, on the row just used, when it began on the menu (Enter or Space or a click on its row, or a
-digit while the menu had focus); Explore Map follows the same rule. With the mouse, "back to the menu"
-leaves no highlight bar. How the screen draws each mode, and where the cursor lands when a building is
-armed, are in [`ui-patterns.md`](ui-patterns.md); in short, arming puts the building where the cursor is
-when it fits, otherwise at the nearest good spot within reach (`armSearchTiles` and `armVerticalCost`
-in `src/build/tuning.ts`, `armingSpot` in `src/build/state.ts`), so pressing a building's key twice
-lays a row.
+`tests/build-holds-menu.test.ts`). Keyboard focus is reducer state, on the menu or on the Grid, and a structure is
+armed only while the Grid has focus, so a stale ghost can never sit on the map while the player works the menu.
+**Finishing goes back to where it began.** The four modes (the menu, placing, Explore Map, plain navigation), what
+the screen draws in each, where the cursor lands when a building is armed (`armingSpot`, `src/build/state.ts`, tuned
+by `armSearchTiles` and `armVerticalCost` in `src/build/tuning.ts`) and why pressing a building's key twice lays a row
+are [`ui-patterns.md`](ui-patterns.md), *The screen and the keyboard* and *Hand-offs to the map*.
 
 ## 3. Bindings
 
@@ -89,13 +80,13 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 
 | Key | Command | Note |
 | --- | --- | --- |
-| `1`–`9`, `0` | select item *n* of the panel's current list: the build menu, the Nexus Pulse's hand, or a menu screen's options. While a building is being placed its own digit cancels it and every other building's digit is refused until it is placed or cancelled | digits always address the list; they never mean anything else. The build menu is one list; if groups come back, **they share one digit sequence**: a hotkey addresses the whole menu, never a position within a group, because per-group numbering needs a focused group and that is the mode this convention exists to forbid |
+| `1`–`9`, `0` | select item *n* of the panel's current list: the build menu, the Nexus Pulse's hand, or a menu screen's options. While a building is being placed its own digit cancels it and every other building's digit is refused (*A selection holds the menu*) | digits always address the list; they never mean anything else. The build menu is one list; if groups come back, **they share one digit sequence**: a hotkey addresses the whole menu, never a position within a group, because per-group numbering needs a focused group and that is the mode this convention exists to forbid |
 | Arrows | on the Grid: move the cursor one tile (the *Arrow step* Experiment). On the menu and in every list: Up and Down move the highlight one row, stopping at the first and last row (no wrapping), a hold at the map cursor's pace; Left and Right have nothing to do there, so the highlighted row flickers, and **the keyboard stays on the menu** | the cursor drives the camera at the scroll margin (see [`grid.md`](grid.md)); **an arrow always moves the same distance**: a tap, and each move of a held arrow at the game's own pace, whatever the keyboard's repeat rate. **No acceleration — RULE** (`tests/build-motion.test.ts`): only Shift changes the speed, as in every roguelike surveyed; the counted taps and the long hold that went further were removed on the owner's word ("that was a bad idea"). Where the terminal reports key events, a quick tap is never taken for a hold and a release stops the cursor at once. The flicker tells the player that focus is on the menu |
 | Shift+Arrow | the fast move: a **jump of 9 tiles left or right and 6 up or down** (the *Shift step across* and *Shift step up/down* Experiments; the owner's numbers of 2026-10-09, since a row is about twice as tall on screen as a column is wide), the view following by the ordinary margin; held, it jumps again at most every 100 ms (*Shift pace*). Set below the arrow step, Shift is the slow, exact move instead. **In a list, the fast move goes to the first or last row** | fast pan across a scrolling Grid. **Two sequence families, both bound — RULE** (`tests/playback.test.ts`, `tests/build-phase.test.ts`): xterm's `CSI 1;<modifier>` and rxvt's `CSI a/b/c/d`. Any modifier counts, not Shift alone — nothing else on these screens binds a modified arrow, so a terminal that eats Shift but passes Alt or Ctrl still gives its player the fast pan. **Option+Arrow as a Mac sends it is the same move**: macOS terminals send Option+Left/Right as `ESC b`/`ESC f`, and one set to treat Option as Meta sends `ESC` before an ordinary arrow; the input splitter keeps both whole rather than breaking them into a bare Escape plus a stray key (a bare Escape with nothing armed leaves the screen). Bound from the terminals' documented defaults; **not yet measured on the owner's own iTerm2** — `node scripts/lib/key-echo.mjs`, run in that terminal, prints exactly what each key sends |
 | PageUp / PageDown, Home / End | the fast move — the modifier-free fallback | **Required, not optional — RULE** (`tests/build-phase.test.ts`, `tests/playback.test.ts`): four surveyed terminal families send no shifted arrow at all, so without this they would have no fast pan. Decoded from a table, because Home and End have three live spellings between xterm, screen/tmux/linux and rxvt |
 | `h` `j` `k` `l`, and with Shift `H` `J` `K` `L` | the arrows — Left, Down, Up, Right — and with Shift the fast move, everywhere the arrows work: the map, the menu, every popup's list and setting, the title screen, a Battle Round | vim's keys, which a terminal audience expects. **RULE: the right hand's keys may be navigation; the left hand's are hotkeys** (`tests/build-phase.test.ts`, `tests/title-menu-list.test.ts`) — the owner: "keys that are usually on the right side of the keyboard can be used as aliases, while keys on the left side should be reserved for hotkeys (just like Starcraft or Diablo)". So none of the four may ever be a row's hotkey. Caps Lock turns them into the fast move, as Shift does |
 | Enter, Space | on the menu: activate the highlighted entry — arm a structure (focus moves to the Grid), open the Nexus Pulse, or explore. On the Grid while placing: place the armed structure at the cursor. On the map after a click brought the keyboard there: open Explore Map. In the Nexus Pulse popup: pick the highlighted power (the two questions answer to their own letters) | Space is an alias of Enter everywhere on this screen, never a second meaning of its own |
-| Esc, `x` | **go back one level** — Esc is the `cancel` command, `x` the `back` command: close the open popup, returning to the popup it was opened from if any (Settings to the game menu, the export to Settings); else leave placing or Explore Map for where it began, disarming; else leave plain navigation for the menu; else, on the menu, **Esc** opens the **game menu** (`[s] Settings`, `[c] Controls and hotkeys`, `[a] Activity logs`, `[r] Restart`, `[q] Quit`) while **`x` does nothing** — no message, no flicker, on the menu, a committed plan or a Battle Round alike — so `x x x` always lands on the menu. No popup has a row that only goes back | **RULE: Esc never leaves the game by itself — leaving always asks** (`tests/build-settings.test.ts`, `tests/lifecycle-build-phase.test.ts`). `x` is Esc everywhere but there, and a right click is `x`. A lone Esc at the end of a read waits a short timeout (50 ms, a tuned value) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (`tests/build-motion.test.ts`) |
+| Esc, `x` | **go back one level** — Esc is the `cancel` command, `x` the `back` command; the levels, the game menu Esc opens on the menu, and why `x` does nothing there are *Back, cancel and close* in [`ui-patterns.md`](ui-patterns.md). No popup has a row that only goes back | **RULE: Esc never leaves the game by itself — leaving always asks** (`tests/build-settings.test.ts`, `tests/lifecycle-build-phase.test.ts`). `x` is Esc everywhere but there, and a right click is `x`. A lone Esc at the end of a read waits a short timeout (50 ms, a tuned value) for the rest of a sequence; Esc then a letter or digit in one read is two keys; Esc then an arrow in one read is Option+Arrow, so anything scripting keys pauses after Esc (`tests/build-motion.test.ts`) |
 | Tab | toggle keyboard focus between the side panel's menu and the Grid (arriving on the Grid in plain navigation, nothing armed); does nothing while a popup is open | **Focus is its own state beside `armed`**, and a structure is armed only while the Grid has focus; finishing returns focus to where it began. The bottom line's hint is written for where focus is, because focus makes arrows mean two things. Whether a key should jump the cursor to the player's next own structure is an open question (Q53) |
 | Backspace, Delete | on the Grid: remove the planned, uncommitted placement under the cursor | plans are revisable until commit. The Mac key labelled "delete" sends Backspace, so it cannot also return focus to the menu; Esc does. On the menu, where the cursor is hidden, it is refused: the row flickers, as Left and Right do |
 | `u` | undo the last planned placement | plans are revisable until commit |
@@ -107,8 +98,8 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 | Ctrl+C | quit at once | the one immediate way out, from anywhere |
 | `?` | the **Controls and hotkeys** page — every key and click, grouped by where the player is; also the game menu's `[c]` row | one scrolling popup, from one table (`src/build/help.ts`); opened from the game menu, Esc goes back to it; opened with `?`, Esc closes it |
 | `q`, Space, `.`, `,`, `[`, `]`, `r` | unchanged from `grid` during a Battle Round: quit, pause, step, speed, restart | one keymap across `grid` and `terminal-nexus` |
-| Mouse: click a menu row | **activate at once**, whatever had focus: arm the building (its preview at the cursor when it fits there, else at the nearest good spot; what a row click starts returns to the menu), open the Nexus Pulse, or open Explore Map — the row's hotkey. While a card covers the menu (Explore Map, or a building being placed), a click on the panel only gives the menu back | **RULE: a click activates what it lands on** (`tests/build-focus.test.ts`, `tests/build-menu.test.ts`). The selected state only makes sense with the keyboard. After the mouse works the menu no highlight bar is drawn; the first menu key only shows it again, on the row it remembers. An armed row is drawn active (see [`presentation.md`](presentation.md)), never with the keyboard's bar. The whole row is the target, the width its highlight bar is drawn |
-| Mouse: click a Grid tile | move focus to the Grid and the cursor to the tile, the armed preview with it; **a second click on the same tile places it, and so does a quick double click on the same spot**. With nothing armed it only moves the cursor: in Explore Map the panel follows it; from the menu, the menu stays drawn beside the map | see "A second click on the same tile" below. A click near an edge scrolls in proportion, armed or not; an unarmed click near an edge scrolls in proportion to how near it is, the settled answer (Q62). A `Shift+click` to place in one click is planned |
+| Mouse: click a menu row | **activate at once**, whatever had focus: the row's hotkey. While a card covers the menu, a click on the panel only gives the menu back | **RULE: a click activates what it lands on** (`tests/build-focus.test.ts`, `tests/build-menu.test.ts`). The selected state only makes sense with the keyboard: after the mouse works the menu no highlight bar is drawn, and the first menu key only shows it again, on the row it remembers. The whole row is the target, the width its highlight bar is drawn; the pattern is *Keys and clicks* in [`ui-patterns.md`](ui-patterns.md) |
+| Mouse: click a Grid tile | move focus to the Grid and the cursor to the tile, the armed preview with it; **a second click on the same tile places it, and so does a quick double click on the same spot**. With nothing armed it only moves the cursor: in Explore Map the panel follows it; from the menu, the menu stays drawn beside the map | see "A second click on the same tile" below. A click near an edge scrolls in proportion to how near it is, armed or not (the settled answer, Q62). A `Shift+click` to place in one click is planned |
 | Mouse: click outside an open popup | close the popup and move focus to where the click landed — and nothing more | **RULE: a dismissing click never also places, picks or activates** (`tests/build-nexus.test.ts`, `tests/build-holds-menu.test.ts`): a player who clicked a button, missed the popup in the middle of the screen and clicked again must not have the second click do anything else. A click on the top bar's `close [esc]` goes back one level, as Esc does, where a click outside closes every popup at once; a click on one of its options chooses it |
 | Mouse: click the top bar's right end | Esc — the `cancel` command, one level back | the right end names what Esc does now: `menu [esc]` on the menu (or a committed Build Phase), `back [esc]` while the Grid has focus, `close [esc]` while a popup is open (`tests/build-popups.test.ts`). It is the one place Esc is named on screen |
 | Mouse: wheel | **move the cursor five tiles**; the camera follows it, as it follows every other cursor move | the mouse's Shift+Arrow, literally. An independent camera would be the separate pan mode [`grid.md`](grid.md) forbids, and would strand the cursor off screen. Inside a popup, the wheel walks its list. Whether the wheel should follow Shift's step instead of five is an open question (Q63) |
@@ -116,16 +107,15 @@ terminals send and the fallbacks they need are RULE, marked where they appear.
 
 **Letters are spoken for before they are built**, so a new binding does not collide with a planned one:
 `d` opens Settings at its Experiments, and `m` is kept for a whole-map popup (an open question, Q59);
-inside their own popups `s` is Settings (the game menu) and `e` is Export (Settings), while outside them
-`e` is still Explore Map. The entries above the building rows get **letters**, never digits — a digit
-would renumber every building row beneath it, which is exactly what one digit sequence per menu exists
-to prevent: `[e] Explore Map` and `[n] Nexus Pulse`. Inside the game menu `c` is Controls and hotkeys and `a` is Activity logs. `g`, `p`,
-`q`, `s`, `u` and `x` are taken, and `h`, `j`, `k` and `l` are the arrows.
+inside their own popups `s` is Settings (the game menu), `e` is Export (Settings), `c` is Controls and hotkeys and
+`a` is Activity logs, while outside them `e` is still Explore Map. The entries above the building rows get
+**letters**, never digits — a digit would renumber every building row beneath it, which is exactly what one digit
+sequence per menu exists to prevent: `[e] Explore Map` and `[n] Nexus Pulse`. `g`, `p`, `q`, `s`, `u` and `x` are
+taken, and `h`, `j`, `k` and `l` are the arrows.
 
-**The left hand's keys are hotkeys; the right hand's may be navigation**, as in StarCraft or Diablo:
-the left hand stays on the letters while the right hand moves. A new hotkey goes on the left (`q` to
-`t`, `a` to `g`, `z` to `b`) unless playtesting says otherwise. Four of today's hotkeys already sit under
-the right hand — `u` Undo, `n` Nexus Pulse, `p` Start Battle Round's second key, and the battle-round popup's
+**The left hand's keys are hotkeys; the right hand's may be navigation**, as in StarCraft or Diablo. A new hotkey goes
+on the left (`q` to `t`, `a` to `g`, `z` to `b`) unless playtesting says otherwise. Four of today's hotkeys already sit
+under the right hand — `u` Undo, `n` Nexus Pulse, `p` Start Battle Round's second key, and the battle-round popup's
 unlisted `y` — and stay where they are until a playtest says they get in the way.
 
 Three conventions behind that table, so a retune keeps them:
@@ -147,52 +137,18 @@ Three conventions behind that table, so a retune keeps them:
 
 ## 4. The Nexus power pick
 
-**The Nexus power pick is a popup the player opens, not a screen forced on them.** The menu's
-`[n] Nexus Pulse` entry, with the number of picks waiting after its name in the hotkey's colour, opens a
-popup (`NEXUS PULSE`, the hand this round's Nexus Pulse dealt) in the middle of the screen only when the
-player actively selects it, never forced open when the Build Phase begins; inside it they make a pending
-pick by keyboard or mouse, read what each power does, and review the ones already active (RULE —
-`tests/build-nexus.test.ts`: nothing opens the popup but the player). The popup holds the keyboard and the
-mouse until it closes. **It closes on the pick**: open, pick, and the player is back on the menu; the status
-line and the entry's "1 active" confirm it, and reopening lists the pick as active. Esc, `n` or a click outside close it without a pick. The popup is
-one of the shapes in [`ui-patterns.md`](ui-patterns.md).
-
-**For now a dealt Nexus power may be left unpicked**
-([`commander-armies.md`](../game-design/commander-armies.md)): nothing is refused for want of a pick, the
-commit included (RULE — `tests/build-nexus.test.ts`, `tests/build-start.test.ts`). The menu's "(1)" still says
-one is waiting, the Start row's hint asks whether to start without one, and the Battle Round screen says in
-one quiet line that a power is still waiting.
+The menu's `[n] Nexus Pulse` opens a popup the player opens, never one forced on them: nothing but the player opens it,
+and it closes on the pick (RULE — `tests/build-nexus.test.ts`). For now a dealt power may be left unpicked: nothing is
+refused for want of a pick, the commit included (RULE — `tests/build-nexus.test.ts`, `tests/build-start.test.ts`;
+[`commander-armies.md`](../game-design/commander-armies.md)). The popup's rows, what a pick changes and what the menu
+and the Start row say about it are *The Build Phase menu* in [`ui-patterns.md`](ui-patterns.md).
 
 ## 5. Settings and Experiments
 
-The game menu's `[s] Settings` is one scrolling popup, the same shape as every other, in titled sections
-with a blank line before each: Display (**the player's own settings**: background, colour depth,
-symbols, reduced motion, which apply at once and are saved through the same store as the title menu's
-Settings) and then the sections whose rows are **Experiments**: live-editable playtest settings (a step
-size, a timing, a look) so the owner can try an idea during a playtest instead of asking for a new
-command-line flag and a rebuild.
+How Settings is drawn and what it holds, the tiers (player, experiment, tuned) and the export are
+[`ui-patterns.md`](ui-patterns.md), *Settings, the export, the Controls page and the Activity logs* and *Experiments
+and tuned values*. Reading an export back is this page's, because it is an input:
 
-- **Every setting is declared once with its tier** — player, experiment, or tuned (a constant in code,
-  not shown) — and its section, label, question, values and default (`src/build/all-settings.ts`).
-  Moving one between tiers or sections is a one-word edit, and code reads any setting through one lookup
-  that does not care which tier it is on (RULE — `tests/build-all-settings.test.ts`).
-- **Every Experiment names the question it serves and is normally deleted before its pull request is
-  accepted**, a few staying longer or graduating into real settings. Experiments are Build Phase state,
-  per session, **never saved**, because their defaults change from build to build. The reducer reads
-  those that change what a command does; the input path and the live loop read the timing ones. The game
-  menu's `[r] Restart` starts the Build Phase over keeping every setting and experiment. `d` opens
-  Settings at the first Experiment.
-- **A row shows its value between `<` and `>`**, Left and Right change it, and each half of the value
-  box is a click target; the title says where the highlight is (`SETTINGS (5/20)`, counting only rows the
-  keyboard can be on), and what the highlighted row is for is written under a line below the list. A
-  setting that only takes effect when the Build Phase starts over says so on the status line when
-  changed and, when Settings closes with such a change pending, once in a message popup.
-- **Export settings** — the list's last row, and `[e]` from anywhere in it — shows every setting and
-  experiment as `name = value` text: the experiments that differ from this build's defaults first, each
-  with the default it replaced, then the settings, then the rest, with the build's commit near the top,
-  so the owner can paste what felt right into a pull request comment. The adapter, never the reducer,
-  also copies it to the clipboard (OSC 52 in a terminal, the clipboard API on the browser page) and saves
-  it to a file beside the settings (RULE — `tests/build-settings.test.ts`).
 - **`--settings "<text>"`** (the terminal game and the scripted playtest) and `#settings=` (the browser
   page) read an export back, skipping an unknown name or a bad value one at a time, so an agent sees
   exactly what the owner saw. Pairs may be separated by spaces, lines or `&`, as a route's query is
@@ -201,9 +157,9 @@ command-line flag and a rebuild.
   pulse's `false` is 0); a yes word with several "on" values to choose from is skipped, not guessed. An
   old export's names are read by the tier each setting is on now: a settled one is skipped quietly, a
   renamed one is read as its new name (RULE — `tests/build-settings.test.ts`).
-
-The title menu's Settings screen has the player settings only. How the popup is drawn is in
-[`ui-patterns.md`](ui-patterns.md).
+- **Experiments are Build Phase state, per session, never saved**, because their defaults change from build to
+  build; the reducer reads those that change what a command does, the input path and the live loop the timing ones.
+  `[r] Restart` keeps every setting and Experiment.
 
 ## 6. What terminals actually send
 
@@ -242,20 +198,15 @@ terminals that could not be tested are in
   cursor goes (RULE — `tests/build-motion.test.ts`, `src/terminal/key-events.ts`).
 - **A second click on the same tile places the armed structure — RULE**
   (`tests/build-phase.test.ts`, `tests/build-motion.test.ts`, `tests/build-focus.test.ts`). A first click
-  on a tile only moves the cursor there and shows the armed preview, the same as arriving there by arrow
-  keys; a second click **on that same tile** is what commits the placement. A first click within the
-  scroll margin can slide the Grid under the pointer, so a second click at the same *screen position* can
-  land on a different *tile*; this is safe because the check is on tile identity, never on screen
-  position, so a camera-shifted second click is correctly read as a fresh first click on a new tile (one
-  more click confirms it), not a placement on the wrong one. A later `Shift+click` is planned as a
-  one-click escape hatch for a proficient player; it is not built. Keyboard placement (Enter, and Space)
-  stays a single press, which already asks for two deliberate actions (arm, then place) the way a first
-  click now also does. An armed click scrolls the view like any other, so a player can keep clicking
-  to scroll with the ghost and double click to place: a quick double click (two left clicks on the same
-  screen cell within 400 ms, an Experiment) places where the first click pointed, and a slow second click
-  on a moved view is a fresh first click. **What makes any of this safe is that a plan is
-  revisable** — undo, remove-under-cursor, and nothing committed until the commit key. If a future Build
-  Phase action is genuinely irreversible, confirmation belongs on that one action, never back on every
+  on a tile only moves the cursor there and shows the armed preview, as arriving by arrow keys does; a second click
+  **on that same tile** commits the placement. A first click within the scroll margin can slide the Grid under the
+  pointer, so a second click at the same *screen position* can land on a different *tile*; this is safe because the
+  check is on tile identity, never screen position, so a camera-shifted second click is read as a fresh first click.
+  A quick double click (two left clicks on the same screen cell within 400 ms, an Experiment) places where the first
+  click pointed. Keyboard placement (Enter, Space) stays a single press, which already asks two deliberate actions
+  (arm, then place). A later `Shift+click` is planned as a one-click escape hatch, not built. **What makes any of this
+  safe is that a plan is revisable** — undo, remove-under-cursor, and nothing committed until the commit key. If a
+  future Build Phase action is genuinely irreversible, confirmation belongs on that one action, never back on every
   click.
 - **The tile just built on never reads as a refusal — RULE** (`tests/build-view.test.ts`). The moment
   after a structure is placed, the tile under the cursor is occupied by that same structure; a preview
@@ -291,7 +242,7 @@ navigation section or a tuned constant (`src/build/all-settings.ts`).
   or last row for Shift. Without key events a press of the same arrow within the **hold window** (`holdWindowMs`, 200 ms) of the
   one before is a repeat; anything slower is a tap. The window must stay above the keyboard's own repeat
   delay, which is why it is live to retune.
-- **Tier 3, releases (a host that reports them).** The terminal's keyboard protocol (section 6) and the
+- **Tier 3, releases (a host that reports them).** The terminal's keyboard protocol (*What terminals actually send*) and the
   page's `keydown` and `keyup` say which presses are taps, which are a hold's repeats and when it ends:
   a quick tap is never taken for a hold and a release stops the cursor at once. Only how a repeat is
   *recognised* changes, never where the cursor goes: the same intent as timed presses and as

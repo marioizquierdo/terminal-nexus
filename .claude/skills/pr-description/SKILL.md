@@ -1,6 +1,6 @@
 ---
 name: pr-description
-description: Write or update a pull request description for Terminal Nexus. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body. Produces a phone-readable description that leads with what the player will see, a Demo section sized to the change (a code block, screenshots, a GIF, or a playable page — the cheapest one that shows it), the decisions waiting on Mario as Experiments to flip and Activity Logs to export, and keeps the project bookkeeping in a collapsed footer.
+description: Pull request description for Terminal Nexus: phone-readable, leading with what the player will see, a Demo sized to the change, decisions as Experiments to flip and Activity Logs to export, bookkeeping in a collapsed footer. Use whenever opening a PR, pushing commits to an open PR, or rewriting a PR body.
 ---
 
 # Writing a pull request description
@@ -16,7 +16,7 @@ when a change needs more than a page — link it from the footer and do not repe
 
 ## The loop it starts
 
-A pull request is a question asked by playing (the feedback loop, [`DEVELOPMENT.md`](../../../DEVELOPMENT.md) section 6).
+A pull request is a question asked by playing ([`DEVELOPMENT.md`](../../../DEVELOPMENT.md), "The feedback loop").
 The **Demo** lets him — or friends he shares the page with — play it; **Decisions** asks him to feel an
 Experiment and paste the settings export; when you need to know *what happened*, it asks for an
 **Activity Logs** export too. His answers come back as two blocks of text you can replay. Plan both
@@ -47,8 +47,8 @@ thing a person can now do: "Scripted playtests that make GIFs without a terminal
 **Changes** — player-visible bullets, "before -> after" where it helps. At most one bullet for
 internal work.
 
-**Workflow and tools** — only when the PR changes skills, scripts or agent instructions (see
-"Pushing more commits" below).
+**Workflow and tools** — only when the PR changes how agents work (a skill, the playtest tooling, the demo page, the
+agent instructions): what an agent or Mario can now do that it could not, in a few bullets, after **Changes**.
 
 **Demo** — how to see the change, and what to look for while you do. One section: the pictures, the
 playable page and the steps to try all live here (it replaced separate "Try it" and "Screenshots"
@@ -158,15 +158,10 @@ main, which has a larger umbrella vs the last iteration"). A long-lived PR gathe
 its description is still one "before → after" from main. If the pictures changed, add a new pictures
 commit and re-link to its SHA. No "Update:" sections, no changelog of the PR's own history.
 
-When a revision adds work beside the main change — a follow-up from his notes, a refactor, small
-fixes — list it under **Additional changes** rather than stretching **Changes**.
+Work a revision adds beside the main change goes under **Additional changes**, not into **Changes**.
 
 Leave out what is minor and temporary — a placeholder number, a stand-in for content a later
 milestone brings (the owner, of a placeholder Nexus power's value: "that is minor and temporal").
-
-When the PR changes how agents work — a skill, the playtest tooling, the demo page, the agent
-instructions — give it its own short section after **Changes**, **Workflow and tools**: what an agent
-(or Mario) can now do that it could not, in a few bullets.
 
 ## Before submitting
 
