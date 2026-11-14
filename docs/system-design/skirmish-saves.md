@@ -67,8 +67,8 @@ What follows from it:
   `skirmish --map pocket --p2-commander averno`, `terminal-nexus --map pocket --p2-commander averno` and
   `--at 'skirmish?map=pocket&p2-commander=averno'` are one battle, refused for the same reasons. The save's names are
   the setup screen's.
-- **A sandbox is not a battle.** It tests one rule on the bench's content, with no Commander, Build Phase or wave,
-  so it starts the kernel straight from the units it places. It too has one path, `playSandboxRound`
+- **A sandbox is not a battle.** It tests one rule on the bench's content, with no Commander, Build Phase or round count (a building in it
+  trains the wave its army's card gives it), so it starts the kernel straight from the units it places. It too has one path, `playSandboxRound`
   (`src/skirmish/sandbox-round.ts`), which `grid`, the `skirmish` command and the measurement all play it by.
 
 ## 3. Setting up a Skirmish

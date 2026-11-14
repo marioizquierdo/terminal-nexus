@@ -213,7 +213,7 @@ test("aid-station-repair: the trooper beside the station wins its battle and is 
   const { run: battle } = await playSandbox("aid-station-repair.save.json")
   const opening = battle.initialState.entities
   const station = opening.find((entity) => entity.contentId === AID)
-  const barracks = opening.find((entity) => entity.contentId === "structure.citizen.barracks")
+  const barracks = opening.find((entity) => entity.contentId === "structure.bench.barracks")
   assert.ok(station !== undefined && barracks !== undefined)
   const heals = healsOf(battle.events)
   assert.ok(heals.length > 0, "the station mended nobody")
@@ -259,9 +259,10 @@ test("the bench medic, the one healer before buildings could heal, heals exactly
 // (commitment), the healer to keep its patient while it is wounded, and a building to take only what its attack reaches.
 // Its state's hash pinned again when every map came to give each side that fights a goal: the raid now has a target
 // of its own, where the station's side stands, carried in the state; its events are the same battle's.
+// Pinned again when a building in a sandbox came to train as its card says: the sandbox's Barracks became the bench's Practice Barracks, which trains nothing, so the battle is the same one under another content id.
 const PINNED_AID_STATION = [
-  "512a020fdcc41a5f62ac9a5252221c83f38eeac3f797833a1a1dfa8a1b288072",
-  "4f9602c34e41efda28e1407e2aab36d892197d01b5be69b9c81c264da4835a93",
+  "9f8c5b4541be010815cae01a90c9f2946fcc38b3e042c7b455c8a7cac7fe27c4",
+  "ab9bdcca53a9dc31d9e60e9cf0c852f530aa23e906a70ff55db674a0fa73e168",
 ]
 // Its state's hash was the one from before the Aid Station, its events' pinned again when a unit among equally near
 // enemies came to keep the one it holds, then take the weakest (no side wins by where it stands): the same battle,

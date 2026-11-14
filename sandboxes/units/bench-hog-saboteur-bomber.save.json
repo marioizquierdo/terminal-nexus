@@ -59,7 +59,7 @@
       ],
       "legend": {
         "t": {"content":"unit.citizen.trooper"},
-        "b": {"content":"structure.citizen.barracks"}
+        "b": {"content":"structure.bench.barracks"}
       },
       "target": {"x":2,"y":4,"width":1,"height":3}
     }

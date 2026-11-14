@@ -578,10 +578,10 @@ mission offers spawns in that mission's battles as its card says. When the first
 for every building, a tuned value (`firstWave`, five seconds in). The Barracks sends four troopers and the
 Hatchery three swarmers, one wave a round each; a Nexus power that gives a building a second or third wave
 raises its `waves` and nothing else. **No content spawns this way by default** (RULE — `withProduction`,
-`src/content/index.ts`): a sandbox's buildings, and a map that merely has a barracks on it, resolve
-exactly as they always did. **A building makes its units one way in a battle**: one given a recipe loses any
-spawner of its own, so a mission's Hatchery breeds only its wave, while the bench Hatchery in its `grid`
-sandbox keeps its timer. A producer's counters (ticks to its next wave, waves come this Pulse, units still
+`src/content/index.ts`): a battle, and a Battle Round sandbox's opening (`src/skirmish/opening/training.ts`), give
+each building its card's recipe; any other registry resolves exactly as it always did. **A building makes its units one way in a battle**: one given a recipe loses any
+spawner of its own, so the Hatchery, in a mission or in a Battle Round sandbox, breeds only its wave; its own
+spawner runs only where nothing gives it a recipe. A producer's counters (ticks to its next wave, waves come this Pulse, units still
 owed) are on its state only while it has a recipe, so a state without one serializes byte for byte as before.
 
 Players shape composition by building, protecting, upgrading, pausing, or losing producers.

@@ -32,6 +32,11 @@ const BUILT_IN_CARD_TEXT: Readonly<Record<string, CardText>> = {
     subtitle: "Trains troopers",
     description: "Trains a wave of troopers, a few seconds into each Battle Round. They fight, and come home to it after.",
   },
+  "structure.bench.barracks": {
+    title: "Practice Barracks",
+    subtitle: "A wall that trains nothing",
+    description: "A Barracks for the engine's own test maps: the same body, but it trains no troopers.",
+  },
   "structure.bench.nexus": {
     title: "Practice Nexus",
     subtitle: "A target that never shoots",

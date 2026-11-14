@@ -12,6 +12,7 @@ import { gameplayRng } from "../../rng/pcg32.ts"
 import type { EntityState, MatchState, PlayerId, TargetArea } from "../../state/types.ts"
 import { PLAYERS, SCHEMA_VERSION, TICKS_PER_SECOND } from "../../state/types.ts"
 import { presetDimensions } from "./presets.ts"
+import { trainingRegistry } from "./training.ts"
 import type { PlacementEntry, BattleOpening } from "./types.ts"
 
 export class OpeningError extends Error {}
@@ -79,7 +80,8 @@ export function openBattle(
   opening: BattleOpening,
   options: Readonly<{ registry?: ContentRegistry; seed?: number }> = {},
 ): OpenedBattle {
-  const registry = options.registry ?? FIXTURE_REGISTRY
+  // A Battle Round's buildings train as their army's card says; the registry returned is the one the kernel runs on.
+  const registry = trainingRegistry(opening, options.registry ?? FIXTURE_REGISTRY)
   const { width, height } = dimensionsOf(opening)
 
   checkOverlay(opening, opening.terrain, "terrain", width, height)

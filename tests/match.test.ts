@@ -163,6 +163,7 @@ test("a state built here is the state a sandbox's opening builds from the same p
   const legend = Object.fromEntries([...symbols].map(([contentId, symbol]) => [symbol, { content: contentId }]))
   const opening: BattleOpening = {
     id: "opening-parity",
+    phase: "build-phase",
     name: "opening parity",
     grid: { width: grid.width, height: grid.height },
     seed: 4242,

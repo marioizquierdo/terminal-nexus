@@ -72,8 +72,8 @@ Small, none blocking. What rounds on PERIMETER left unfinished moved to
 
 - A recipe costs nothing and nothing competes, so the seeded contention process is not built; it comes with
   cost and supply in the worker economy.
-- Only the buildings a mission offers spawn: a barracks in a sandbox still spawns nothing,
-  and the bench Hatchery there keeps its own breeding.
+- A building spawns in a mission's battles, and in a Battle Round sandbox, as its army's card says (Mario's
+  decision, [Q94](../history/answered-questions.md)); a map that merely has a barracks on it in the Build Phase does not.
 
 **From the Build Phase and the menu spike** ([report](../history/reports/2026-09-30-menu-spike.md)):
 

@@ -47,7 +47,7 @@
       ],
       "legend": {
         "a": {"content":"structure.citizen.aidstation"},
-        "b": {"content":"structure.citizen.barracks","hp":60},
+        "b": {"content":"structure.bench.barracks","hp":60},
         "t": {"content":"unit.citizen.trooper"}
       },
       "target": {"x":8,"y":3,"width":3,"height":1}

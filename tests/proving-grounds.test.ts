@@ -130,7 +130,9 @@ test("support: a heal clamps at maxHp, raises hp, and reports as heal.applied, n
   assert.equal(medicDamageDealt.length, 0, "the medic dealt damage.applied instead of heal.applied")
 })
 
-test("spawn: a structure creates entities mid-Pulse, capped at maxAlive", async () => {
+test("spawn: a structure creates entities mid-Pulse, never more alive than the Hatchery's maxAlive", async () => {
+  // In a Battle Round sandbox the Hatchery trains its card's wave (`src/skirmish/opening/training.ts`), which takes the
+  // place of its own periodic spawner; the three of the wave stay within the spawner's cap all the same.
   const resolved = await playSandbox("bench-hatchery-spawn.save.json")
   const events = resolved.run.events
   const spawnlingBirths = events.filter(
