@@ -110,7 +110,9 @@ session needs:
   Skirmish milestone's session record for playtest notes is not it), a unit route still marked IDEA
   in [`movement.md`](docs/system-design/movement.md) (a second banner, a worker's job), multiplayer,
   sound, packaging, a mod loader, any mission beyond PERIMETER and RIGHT OF SALVAGE, and a full
-  Commander Army.
+  Commander Army. The Commander Armies in `armies/` are drafts on purpose: a few units each, enough
+  to test the difference between two armies in a Skirmish; filling one out waits until the gameplay
+  is solid.
 
 ## Where things are
 
