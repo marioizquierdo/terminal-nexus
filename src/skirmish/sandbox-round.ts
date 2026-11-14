@@ -37,6 +37,6 @@ export function playSandboxRound(opening: BattleOpening, options: SandboxRoundOp
   return {
     run,
     registry: loaded.registry,
-    report: { battleId: opening.id, seed, pulseTicks: run.pulseTicks, registry: loaded.registry, events: run.events, finalState: run.finalState, stateHash: run.stateHash, eventsHash: run.eventsHash },
+    report: { battleId: opening.id, seed, pulseTicks: run.pulseTicks, registry: loaded.registry, events: run.events, finalState: run.finalState, stateHash: run.stateHash, eventsHash: run.eventsHash, ...(phaseOf(opening) === "build-phase" ? { phase: "build-phase" as const } : {}) },
   }
 }

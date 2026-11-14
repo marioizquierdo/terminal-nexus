@@ -78,14 +78,14 @@ measurement of a battle the game never plays misleads; a probe in the scratchpad
 A sandbox says which part of a round it is in, so a unit's state is clear. **The Battle Round is the default**, so
 every sandbox keeps its meaning and its pinned numbers.
 
-| `start.phase` | What plays | What a unit and a building do |
+| `start.phase` (absent, or one of these two) | What plays | What a unit and a building do |
 | --- | --- | --- |
 | `"battle-round"` (absent) | The kernel, from the opening, for `roundTicks` or until the round ends (`src/pulse/`). | Units march, choose, strike, spawn and die; a building shoots or spawns by its content. |
 | `"build-phase"` | No kernel: the regroup's walk, `REGROUP_TICKS` long whatever `roundTicks` say (`src/match/regroup.ts`). | Everything stands placed and idle, as the Build Phase finds it between two rounds. What a round's end resets is reset (`freshEntityFields`), a building that `mends` mends, and a unit with an enemy within reach steps back toward its own Nexus and forms up. Nothing attacks, trains, spawns or burns. A side with neither Commander nor Nexus has no line to form on, and its units stand. |
 
 `playPhase` (`src/skirmish/opening/phase.ts`) plays either, and `playSandboxRound`, `grid`'s watch and every measurement
 play a sandbox through it, so one file reads the same through each door. The Build Phase run has no events but who is
-placed where, so a test reads its states. A ghost (the building armed on the Build Phase's map) is the screen's and is
+placed where, so a test reads its states, and `grid <save> --headless` ends with one `end` line per entity: its hp and tile at the start and at the end (`--end-states` asks the same of a Battle Round). `--ticks` is refused for a Build Phase sandbox, since its run is `REGROUP_TICKS` long. The run's state hash still follows `--seed`: the state carries the random stream the seed starts, though nothing in a regroup draws from it, so the events hash is the one that does not. The attack line of the log says the damage that landed, the base beside it when an aura changed it (`dmg 8 (base 7)`). A ghost (the building armed on the Build Phase's map) is the screen's and is
 not state: the Build Phase sandbox shows the placed building. A trial plays battles and refuses a sandbox in the Build
 Phase; `sandboxes/rules/build-phase-between-rounds.save.json` shows the difference, and `tests/sandbox-phase.test.ts`
 holds each row of the table.
