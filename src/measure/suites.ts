@@ -19,9 +19,8 @@ import { briefOf } from "../battle/index.ts"
 import { centreTile } from "../match/index.ts"
 import { playOn } from "../skirmish/play.ts"
 import { playSandboxRound } from "../skirmish/sandbox-round.ts"
-import { newBattle, seat, withRules } from "../skirmish/request.ts"
+import { newBattle, openSave } from "../skirmish/request.ts"
 import type { Profiles } from "../skirmish/save.ts"
-import { battleOf } from "../skirmish/save.ts"
 import { slotAsk } from "../skirmish/slots.ts"
 import type { BattleOpening } from "../skirmish/opening/types.ts"
 import type { MatchState } from "../state/types.ts"
@@ -66,13 +65,12 @@ const NO_PROFILES: Profiles = new Map()
  */
 export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, string>>): DuelMeasure {
   const save = newBattle({ map: battle.map, seed: battle.seed, roundTicks: battle.pulseTicks, commanders: { p1: battle.commanders.A, p2: battle.commanders.B } }, NO_PROFILES)
-  const seated = seat(save, { p1: { ask: slotAsk(`script:${players.A}`, NO_PROFILES) }, p2: { ask: slotAsk(`script:${players.B}`, NO_PROFILES) } }, () => "")
-  const setup = withRules(seated.setup, 1, { rounds: battle.rounds })
+  const opened = openSave(save, { slots: { p1: { ask: slotAsk(`script:${players.A}`, NO_PROFILES) }, p2: { ask: slotAsk(`script:${players.B}`, NO_PROFILES) } }, rules: { rounds: battle.rounds }, profiles: NO_PROFILES })
   const rounds: DuelRound[] = []
   let recorder: BattleRecorder | null = null
   const ran = playOn(
-    setup,
-    battleOf({ ...save, setup }, NO_PROFILES),
+    opened.setup,
+    opened.state,
     {},
     Number.POSITIVE_INFINITY,
     NO_PROFILES,

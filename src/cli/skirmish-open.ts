@@ -3,7 +3,7 @@
 // setup screen's New game and Load game, and the scripted playtest all open one here.
 //
 // **Parity with the `skirmish` command** (`./skirmish.ts`): a battle is opened by the same steps the command takes
-// (`src/skirmish/request.ts`: a new battle or a save read back, then the slots seated), under the same words (`--p1`,
+// (`src/skirmish/request.ts`: a new battle or a save read back, then `openSave`: the slots seated and the rules changed), under the same words (`--p1`,
 // `--p2`, `build:<build file>`, `script:<profile>`), and played by the same `playNext`; so a battle asked for on one opens
 // and plays as it would on the other. What differs is what a screen can play (`screenProblem`): p1 as its player, or
 // two scripts to watch.
@@ -11,7 +11,7 @@
 import { actionsFor } from "../battle/index.ts"
 import type { SkirmishAsk } from "../skirmish/ask.ts"
 import { newBattleOf, rulesOf, slotChangesOf } from "../skirmish/ask.ts"
-import { loadedBattle, newBattle, seat, withRules } from "../skirmish/request.ts"
+import { loadedBattle, newBattle, openSave } from "../skirmish/request.ts"
 import type { Profiles, SaveFile, Slot } from "../skirmish/save.ts"
 import { SHIPPED_PROFILES } from "../skirmish/shipped-players.ts"
 import { screenProblem } from "../skirmish/slots.ts"
@@ -59,23 +59,23 @@ export function openSkirmish(ask: Omit<SkirmishDestination, "kind">, options: Op
   } else {
     save = newBattle({ ...newBattleOf(ask, read), seed: ask.seed ?? clockSeed(now()) }, profiles)
   }
+  if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a sandbox: it plays one Battle Round in grid (grid <file>), not on the game's screen`)
   // The command line's --p1/--p2 over the route's p1/p2; then who plays each slot, read as the command reads it.
   const written: SkirmishAsk = { ...ask, slots: { ...ask.slots, ...options.slots } }
   const changes = slotChangesOf(written, profiles, (word) => `--${word}`)
   // The same seating the `skirmish` command does: p1's build actions for the round it opens at (from its build file,
   // else the draft) are laid on the Build Phase as it opens. The screen plays only p1, so only p1's are kept.
-  const seated = seat(save, changes, read)
-  const round = save.state?.round ?? 1
-  const setup = withRules(seated.setup, round, rulesOf(ask))
+  const opened = openSave(save, { slots: changes, rules: rulesOf(ask), readFile: read, profiles })
+  const { setup, seated } = opened
+  const round = opened.state.round
   const refused = screenProblem(setup)
   if (refused !== null) throw new Error(`the game cannot open this Skirmish: ${refused}`)
   if (seated.problems.length > 0) throw new Error(seated.problems.join("\n"))
   const p1 = actionsFor(seated.builds.p1 ?? [], round, round)
   const draft = p1 === undefined ? save.draft : { ...save.draft, p1 }
-  if (save.start !== undefined) throw new Error(`${ask.load ?? "this save"} is a sandbox: it plays one Battle Round in grid (grid <file>), not on the game's screen`)
-  const opened: SaveFile = { ...save, setup, ...(draft === undefined ? {} : { draft }) }
+  const ready: SaveFile = { ...save, setup, ...(draft === undefined ? {} : { draft }) }
   // A file named without a folder is the working folder's: said so, so Save game writes it back there, not into the saves folder.
   const file = ask.load === undefined ? undefined : ask.load.includes("/") ? ask.load : `./${ask.load}`
-  const level = skirmishLevel(opened, file === undefined ? {} : { file }, { newSeed: () => clockSeed(now()), profiles })
+  const level = skirmishLevel(ready, file === undefined ? {} : { file }, { newSeed: () => clockSeed(now()), profiles })
   return { kind: "level", level, round: 1 }
 }

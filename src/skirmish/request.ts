@@ -4,10 +4,10 @@
 // means the same on both, and a battle asked for one way opens as it would the other. Pure: the caller hands in a
 // file's text (`readFile`), and each problem is thrown as an `Error` that says every problem at once.
 
-import type { BuildActions, BuildEntry } from "../battle/index.ts"
+import type { BattleState, BuildActions, BuildEntry } from "../battle/index.ts"
 import { readBuildFile } from "../battle/index.ts"
 import type { Profiles, SaveFile, SaveMap, SaveSetup, Slot } from "./save.ts"
-import { MODIFIERS, newSetup, readSave, SAVE_FORMAT, SLOTS } from "./save.ts"
+import { battleOf, MODIFIERS, newSetup, readSave, SAVE_FORMAT, SLOTS } from "./save.ts"
 import type { SlotAsk } from "./slots.ts"
 import { isPlayer } from "./play.ts"
 
@@ -107,4 +107,32 @@ export function withRules(setup: SaveSetup, round: number, rules: Readonly<{ rou
     ...(rules.rounds === undefined ? {} : { rounds: rules.rounds }),
     ...(rules.modifiers === undefined ? {} : { modifiers: rules.modifiers }),
   }
+}
+
+/** What opening a save may change: who plays each slot, the rules from now on, where build files are read from. */
+export type OpenSave = Readonly<{
+  slots?: Readonly<Partial<Record<Slot, SlotChange>>>
+  rules?: Readonly<{ rounds?: number; modifiers?: readonly string[] }>
+  /** A build file's text. Absent: a build file named is refused ("no files to read <path> from"). */
+  readFile?: (path: string) => string
+  profiles: Profiles
+}>
+
+/** A save opened: the save as read, its setup with the slots seated and the rules changed, the battle as it stands
+ *  under that setup, and the seating (each player slot's build file or draft, and what its reader dropped). */
+export type Opened = Readonly<{ save: SaveFile; setup: SaveSetup; state: BattleState; seated: Seated }>
+
+/**
+ * **A save opened** as a door asks: its slots seated (`seat`), its rules changed from the round the battle is at
+ * (`withRules`; round 1 when the battle is over, since a battle over has no next round to limit), and the battle read
+ * back under the new setup (`battleOf`). Throws for a sandbox (a save with a `start`), which no Build Phase opens.
+ * Problems a build file's reader dropped come back in `seated.problems`; the caller writes them or refuses them.
+ */
+export function openSave(save: SaveFile, options: OpenSave): Opened {
+  if (save.start !== undefined) throw new Error("this save is a sandbox: it plays one Battle Round in grid (grid <file>), not from a Build Phase")
+  const readFile = options.readFile ?? ((path: string): string => { throw new Error(`no files to read ${path} from`) })
+  const seated = seat(save, options.slots ?? {}, readFile)
+  const before = battleOf({ ...save, setup: seated.setup }, options.profiles)
+  const setup = withRules(seated.setup, before.result === null ? before.round : 1, options.rules ?? {})
+  return { save, setup, state: battleOf({ ...save, setup }, options.profiles), seated }
 }
