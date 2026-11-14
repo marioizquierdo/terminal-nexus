@@ -1,17 +1,33 @@
 # Terminal Nexus — sandboxes and trials
 
-_How a change to troops is tested before it is believed: which tool answers which question, the loop a change goes
-through, the shape of a trial and how to extend each part of it, how to read one, how two builds are compared, the
-maps, and the principles earlier rounds learned. Every unmarked statement is GUIDANCE._
+_What a sandbox is for, what it leaves out and how each absence is handled, the part of a round it can be in, and how a
+change to troops is tested before it is believed: which tool answers which question, the loop a change goes through,
+the shape of a trial and how to extend each part of it, how to read one, how two builds are compared, the sandboxes
+there are, and the principles earlier rounds learned. Every unmarked statement is GUIDANCE._
+
+## 1. What a sandbox is for
+
+**A sandbox is a testing ground, the context of a unit test.** It is a slice of the Grid where units fight each other
+or move around obstacles, set up to test one rule, effect, movement or ability in isolation, without the game built
+around it: no Nexus power, credits, Build Phase economy, Commander or round count. Place what the question needs,
+play one round, read what happened.
+
+**It measures what happens in the slice**: damage, deaths, paths, timings, effects, how units engage. **It does not
+measure who wins the game.** The Grid Nexus (its powers, its hand), credits, the Build Phase economy and the whole
+battle are the `skirmish` command's to measure (section 12), and the power curve is the measurement's
+([`measurement.md`](measurement.md)). A sandbox that needs the Nexus to answer its question is a Skirmish.
+
+A sandbox is a Skirmish save (`sandboxes/`, [`skirmish-saves.md`](skirmish-saves.md)) whose `start` writes the round
+by hand, both slots `script:idle`. `grid <save>` and `skirmish --load <save> --play-to next` open the same round.
 
 A game like this is balanced by iteration: a new unit or Commander, a number tuned, a targeting or movement rule, how an
 army arranges itself, a new class, a kind of ground. The engine resolves a battle in a fraction of a second with no
 terminal, so the cheap way to know whether a change is good is to play it hundreds of times on the same grounds before
 and after, read what moved, and watch the few battles that explain it. This page is the shape of that, not a catalogue:
 the tool measures a few general things, and a session that needs another measure adds it, the same way the last one did
-(section 4). A measure nobody reads any more is deleted.
+(section 7). A measure nobody reads any more is deleted.
 
-## 1. Which tool answers which question
+## 2. Which tool answers which question
 
 | The question | The tool |
 | --- | --- |
@@ -20,9 +36,9 @@ the tool measures a few general things, and a session that needs another measure
 | Is this better, how often, how surely, at what cost? | a **trial**: `grid <save> --seeds 1-12 --swap` with a variant, or a trial file |
 | What did my change move? | `grid <trial> --against HEAD --profile` |
 | Did a refactor change no outcome at all? | `node scripts/profile-routes.ts --out <file>` before and after, then `diff` |
-| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --play-to next`, a round a command, or build actions of your own with `--p1 build:b.json` (section 9) |
+| How does a battle play on from this position, with these players? | a **Skirmish save**: `skirmish --load <save> --p1 script:turtle --p2 script:rush --play-to next`, a round a command, or build actions of your own with `--p1 build:b.json` (section 12) |
 | How does it read on screen, round by round? | the **scripted playtest from a save**: `node scripts/playtest.mjs --load saves/crossing-round-4.save.json --keys "..."` (no `--load`: `saves/crossing-new.save.json`); `--p1 script:<profile>` watches both scripts; a playtest note (`!`) opens at its moment with `--note`. Which save shows what is in DEVELOPMENT.md, how to see a change |
-| How do whole armies play, with a Build Phase each round? | **Skirmishes headless**: the `skirmish` command, script against script over seeds (`--seeds`), every pairing of Commanders (`--commanders`), or a model a side (section 9); many with `measure run --parts duels` |
+| How do whole armies play, with a Build Phase each round? | **Skirmishes headless**: the `skirmish` command, script against script over seeds (`--seeds`), every pairing of Commanders (`--commanders`), or a model a side (section 12); many with `measure run --parts duels` |
 | How does the power curve play? | `measure run --spec quick` or `full`, `measure compare` ([`measurement.md`](measurement.md), the [`remeasure` skill](../../.claude/skills/remeasure/SKILL.md)) |
 | Must this stay true? | a rule's sandbox and its test ([`testing.md`](testing.md)), or a trial file's `expect` run by a test |
 
@@ -30,7 +46,51 @@ Trials ask about troops: how units move, choose, arrange themselves and fight, o
 measurements ask about the game: what Build Phase choices do over rounds. A change to troops starts with trials and
 ends with whatever Skirmishes and battles its `remeasure` row asks for.
 
-## 2. The loop
+## 3. What a slice leaves out
+
+**Any unit or building the game has stands in a sandbox with none of the game around it** (RULE —
+`tests/sandbox-spawn.test.ts`). The test loops over every content id the registry holds, each on either side, alone,
+against a trooper, among both Nexuses and sent to a target, and requires that it runs without throwing, leaves a
+sound state and leaves the same state and event hashes every run. A new unit is covered the moment it exists; one that
+breaks in a slice is fixed **in the kernel or match code**, so it handles the absence, and never by teaching the
+sandbox format to supply it.
+
+What the game builds around a unit, and what the unit does without it:
+
+| What is absent | What happens | Where |
+| --- | --- | --- |
+| **Banner** (the stance's rally point) | A side with no target heads for the enemy's Grid Nexus, and with none engages the nearest enemy. A sandbox that wants a banner writes a `target` in a start: that is the banner, mocked as the area the side heads for and holds. A stance's second leg (aggressive: there, then on) is the match layer's (`src/match/banner.ts`) and a sandbox has none. | the kernel reads `targets` (`src/pulse/target.ts`) and never a banner |
+| **Own Grid Nexus** | The side's march has no guide line (the band) and its units march from where they stand. A Nexus is only a building here; it is placed like one. | `src/pulse/march.ts` |
+| **Enemy Grid Nexus** | Units engage the nearest enemy. With no enemy at all they stand, and the round ends on its ticks, a draw. | `src/pulse/perception.ts` |
+| **Commander** | A Commander is a regular troop. A Commander's content id (`unit.citizen.vasse`) is placed like any unit and fights with its own attack and abilities; nothing else needs her on the Grid. | `src/pulse/abilities.ts` reads `commander` for abilities only |
+| **Credits** | A bounty or a salvage drop is noted as an event with its credits; the rules between rounds add them up. The kernel never reads credits, so a sandbox earns none and loses nothing. | `src/abilities/`, `src/match/earnings.ts` |
+| **Round number, Nexus Pulse, hand, cards** | The kernel has none: the round count, the hand and the cards are the match layer's and the Build Phase's. A sandbox is one round with no hand dealt. | `src/match/` |
+| **Lane** | The Grid has none. What the kernel calls a lane (`march.ts`) is a side's guide line, absent without a Nexus. | `src/pulse/march.ts` |
+| **A building's wave** | A building spawns nothing by itself: a wave is a recipe the battle gives a building from its army's card (`src/match/training.ts`), and a sandbox gives none, so a Barracks placed in one stands idle. The bench Hatchery has a spawner of its own and does spawn. Whether a sandbox may ask for the card's wave is open: recommended, a start's opt-in, since the default must keep every pinned number. | `src/content/index.ts` (`withProduction`) |
+| **A fitted building** (an upgrade or mode, `structure.x+fitting`) | Not placed: only the loader's registry resolves one, and a sandbox's is the fixture registry. | `src/content/fitted.ts` |
+
+A side that fights with nowhere to go (no target, no enemy Nexus) falls back on the nearest enemy wherever it is, a
+battle the game never plays. Checked-in sandboxes still give every fighting side a goal (section 11), because a
+measurement of a battle the game never plays misleads; a probe in the scratchpad needs none.
+
+## 4. Build Phase or Battle Round
+
+A sandbox says which part of a round it is in, so a unit's state is clear. **The Battle Round is the default**, so
+every sandbox keeps its meaning and its pinned numbers.
+
+| `start.phase` (absent, or one of these two) | What plays | What a unit and a building do |
+| --- | --- | --- |
+| `"battle-round"` (absent) | The kernel, from the opening, for `roundTicks` or until the round ends (`src/pulse/`). | Units march, choose, strike, spawn and die; a building shoots or spawns by its content. |
+| `"build-phase"` | No kernel: the regroup's walk, `REGROUP_TICKS` long whatever `roundTicks` say (`src/match/regroup.ts`). | Everything stands placed and idle, as the Build Phase finds it between two rounds. What a round's end resets is reset (`freshEntityFields`), a building that `mends` mends, and a unit with an enemy within reach steps back toward its own Nexus and forms up. Nothing attacks, trains, spawns or burns. A side with neither Commander nor Nexus has no line to form on, and its units stand. |
+
+`playPhase` (`src/skirmish/opening/phase.ts`) plays either, and `playSandboxRound`, `grid`'s watch and every measurement
+play a sandbox through it, so one file reads the same through each door. The Build Phase run has no events but who is
+placed where, so a test reads its states, and `grid <save> --headless` ends with one `end` line per entity: its hp and tile at the start and at the end (`--end-states` asks the same of a Battle Round). `--ticks` is refused for a Build Phase sandbox, since its run is `REGROUP_TICKS` long. The run's state hash still follows `--seed`: the state carries the random stream the seed starts, though nothing in a regroup draws from it, so the events hash is the one that does not. The attack line of the log says the damage that landed, the base beside it when an aura changed it (`dmg 8 (base 7)`). A ghost (the building armed on the Build Phase's map) is the screen's and is
+not state: the Build Phase sandbox shows the placed building. A trial plays battles and refuses a sandbox in the Build
+Phase; `sandboxes/rules/build-phase-between-rounds.save.json` shows the difference, and `tests/sandbox-phase.test.ts`
+holds each row of the table.
+
+## 5. The loop
 
 1. **Write the question**, and what would answer it: "units at a narrow pass change target less, and battles are not
    slower".
@@ -48,7 +108,7 @@ Recipes by kind of change, as starting points:
 
 - **A unit's numbers**: `--tune <unit>.<field>=<n>` on the trials it fights in; then `--against HEAD` once written.
 - **A new unit**: put it in an army, `--army-a trooper:6,<unit>:6` or `--set A.marksman=<unit>`; does its army win, and
-  do its units ever reach the fight (struck, first strike)?
+  do its units ever reach the fight (struck, first strike)? Its slice test is already written (section 3).
 - **A targeting or movement rule**: the bench `--against HEAD --profile`; engagement and cost first, outcomes should
   move only on purpose; then the quick spec's battles.
 - **How an army arranges itself**: mixed armies in several orders with `--army-a`; when the back of the army first
@@ -56,7 +116,7 @@ Recipes by kind of change, as starting points:
 - **A kind of ground**: `--terrain "#=scrub"` on the bench, or a new map of the shape.
 - **A refactor**: fingerprints before and after; no line may differ.
 
-## 3. The shape of a trial
+## 6. The shape of a trial
 
 ```text
 sandbox ─variant─▶ map for one battle ──engine──▶ states and events ──record──▶ battle record
@@ -85,7 +145,10 @@ a record reads what the kernel already emits, and a profile wraps a class from o
 battle differ from the game's. **Everything but the command is pure**: the same trial plays the same battles on every
 machine, in one process or many, which is what lets two builds be compared at all.
 
-## 4. Extending it
+## 7. Extending it
+
+Extend the tool when a question needs a number the summary does not show; a one-off probe in the scratchpad is fine for
+a question asked once, and a probe written twice belongs in the tool.
 
 - **A measure** (a count a battle should report): add an optional field to `SideRecord` and count it in
   `BattleRecorder.observe` from the tick's events and state (`src/measure/battle.ts`); sum it in `armyCell`
@@ -99,11 +162,19 @@ machine, in one process or many, which is what lets two builds be compared at al
   that variants compose with mirroring and shuffling.
 - **A cost** (work the kernel does): wrap the class that does it in `routeCounter` (`src/cli/profile.ts`), add its count
   to `BattleCost` and `CostCell`. Counts the same on every machine are worth more than times.
-- **A trial file**: `sandboxes/trials/<id>.trial.json` (section 5), naming the sandboxes it plays. Give it `expect` and a test runs it.
-- **A one-off question**: a probe script in the scratchpad is fine for a question asked once. Asked twice, it belongs in
-  the tool; if a session finds itself rewriting a probe, that is the sign.
+- **A trial file**: `sandboxes/trials/<id>.trial.json` (section 8), naming the sandboxes it plays. Give it `expect` and a test runs it.
 
-## 5. Trials and trial files
+## 8. Trials and trial files
+
+`grid --help` lists every option a trial and a variant take; the variant options work on every `grid` action, so
+`grid <save> --seed 7 --swap --army-a ...` watches the battle a trial pointed at. What the help leaves unsaid:
+
+- **Seeds**: twelve from both ends for a question, three for a look.
+- **`--swap`** plays each seed again with the map mirrored end for end and the sides swapped; rows name sides by army,
+  so what an end gives cancels out. Always, for which army is better.
+- **`--shuffle`** swaps each side's units among the places of units of their size and formation line, by the seed.
+- **`--jobs 4`** plays the same battles in four processes, merged in order.
+- **`--against <ref>`, `--baseline <file>`, `--out <file>`, `--json`**: section 10; `--json` prints the cells as data.
 
 ```text
 grid engage-gap2-melee-vs-mix --seeds 1-12 --swap --shuffle --army-a trooper:6,skyraider:6
@@ -111,22 +182,7 @@ grid engage-bench                                    # a trial file; fails when 
 grid engage-bench --against HEAD --profile --jobs 4  # the working tree beside the last commit, with what a tick cost
 ```
 
-| Option | What it does |
-| --- | --- |
-| `--seeds 1-12` | the seeds (`1,3,5`, `1-4,9`); twelve from both ends for a question, three for a look |
-| `--swap` | each seed again with the map mirrored end for end and the sides swapped; rows name sides by army, so what an end gives cancels out |
-| `--shuffle` | each side's units swapped among the places of units of their size and formation line by the seed |
-| `--set A.t=raider` | a side's legend symbol, or every symbol of a content (`A.trooper=raider`), made another content |
-| `--army-a trooper:6,skyraider:6` | a side's one-tile units replaced, front to back (`--army-b` for B) |
-| `--tune trooper.maxHp=60` | a content's field changed (any field it has, or `vision`); a misspelt field is refused |
-| `--terrain "#=scrub"` | a terrain symbol made another terrain |
-| `--target-a x,y,w,h` | a side's target moved (`--target-b`) |
-| `--profile` | what a tick cost: milliseconds, and route work (distance fields built, anchors settled) |
-| `--jobs 4` | four processes; the same battles merged in order |
-| `--against <ref>`, `--baseline <file>`, `--out <file>`, `--json` | section 7; `--json` prints the cells as data |
-
-The variant options work on every `grid` action, so `grid <save> --seed 7 --swap --army-a ...` watches the battle a
-trial pointed at. A trial file keeps a question:
+A trial file keeps a question:
 
 ```json
 {
@@ -145,7 +201,7 @@ trial pointed at. A trial file keeps a question:
 every variant starts from, and variant options on the command line go on top of it. `expect` names a measure from
 `TRIAL_MEASURES` and a bound; `grid` fails when one does not hold, and `tests/engage-bench.test.ts` runs the bench's.
 
-## 6. Reading a trial
+## 9. Reading a trial
 
 ```text
 engage-gap2-melee-vs-mix
@@ -172,7 +228,7 @@ engage-gap2-melee-vs-mix
 - **Worth watching**: for each map and variant, the upset, the slowest battle and the most stalled, when one stands out,
   each with the command that replays it exactly (`tests/trial.test.ts` holds it to that).
 
-## 7. Comparing two builds
+## 10. Comparing two builds
 
 - **`--against <ref>`**: the trial is played by that commit's kernel and content as well, in a temporary worktree removed
   after; the maps, trial and record are the working tree's, so both are asked the same question. `--against HEAD`
@@ -182,11 +238,7 @@ engage-gap2-melee-vs-mix
   proof is no line differing. `--detail` says where route time went, question by question.
 - **Battles and missions**: `measure run ... --out`, then `measure compare`.
 
-## 8. The sandboxes
-
-The maps a trial plays are **sandboxes**: Skirmish saves in `sandboxes/` whose `start` writes the first
-Battle Round by hand, both slots `script:idle` ([`skirmish-saves.md`](skirmish-saves.md)). `grid <save>` and
-`skirmish --load <save> --play-to next` open the same Battle Round.
+## 11. The sandboxes
 
 | Folder | What its sandboxes are for |
 | --- | --- |
@@ -199,10 +251,11 @@ Battle Round by hand, both slots `script:idle` ([`skirmish-saves.md`](skirmish-s
 
 A sandbox's id is its file name, and every command finds one by it (RULE — `sandboxCatalog`). **Every side that fights has
 somewhere to go**, its own target or an enemy Nexus, as in every battle the game plays (RULE — `sidesWithoutGoal`,
-`tests/sandboxes.test.ts`). A new sandbox for the bench is drawn at 48 by 16, mirrored exactly, each side's target the enemy
-Nexus, and checked even before anything is read on it: the same army on both sides, `--swap`, a dozen seeds.
+`tests/sandboxes.test.ts`); a sandbox in the Build Phase has no fighting side and needs none. A new sandbox for the bench
+is drawn at 48 by 16, mirrored exactly, each side's target the enemy Nexus, and checked even before anything is read on
+it: the same army on both sides, `--swap`, a dozen seeds. To write one, see the [`grid` skill](../../.claude/skills/grid/SKILL.md).
 
-## 9. Testing through Skirmishes
+## 12. Testing through Skirmishes
 
 **A Skirmish played headless is the one the screen plays** (RULE — `src/skirmish/play.ts`, `tests/skirmish-save.test.ts`):
 the `skirmish` command and the game's screen open a battle by the same steps and play every round through `playNext`,
@@ -211,7 +264,7 @@ comment it opens with ([`src/cli/skirmish.ts`](../../src/cli/skirmish.ts), `npm 
 is how each kind of test uses it, cheapest first. The battle it plays, the brief and the build actions are [`battles.md`](battles.md);
 the save file is [`skirmish-saves.md`](skirmish-saves.md).
 
-**A rule or a unit, in one Battle Round**: a sandbox (section 8) plays its round and prints `grid`'s report.
+**A rule or a unit, in one Battle Round**: a sandbox (section 11) plays its round and prints `grid`'s report.
 
 ```bash
 npm run skirmish -- --load sandboxes/rules/melee-kill.save.json --play-to next
@@ -295,7 +348,7 @@ browser page, and `!` saves the moment as a note that opens again where it was (
 does in the hands of a plain plan, where its strengths come from, and where the rules or the brief let a player down.
 It does not show balance. Read the numbers for direction, the reports for why, and say so every time.
 
-## 10. Principles
+## 13. Principles
 
 - **Set a battle up as the game sets it up.** A rule once seemed to cut blocked time by nine tenths: its units had
   stopped trying, on maps that gave no side a target. Hence the goal rule, and idle units counted beside stalled ones.

@@ -84,13 +84,13 @@ export function measureDuel(battle: DuelBattle, players: Readonly<Record<Side, s
         const hand = briefOf(before, side).data.hand
         const power = played.actions[side === "A" ? "p1" : "p2"].power
         const picked = power === undefined || power === 0 ? undefined : hand[power - 1]
-        const report = played.report.sides[side]
+        const nexus = played.report.reading.sides[side].buildings.nexus
         return {
           hand: hand.map((card) => card.rarity as Rarity),
           kept: picked === undefined ? null : (picked.rarity as Rarity),
           keptId: picked === undefined ? null : picked.id,
-          nexus: report.nexus.after,
-          nexusMost: report.nexus.most,
+          nexus: nexus.after,
+          nexusMost: nexus.most,
         }
       }
       rounds.push({ round: before.round, battle: record, sides: { A: sideRound("A"), B: sideRound("B") } })

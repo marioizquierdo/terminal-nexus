@@ -7,7 +7,7 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import { FIXTURE_REGISTRY } from "../src/content/index.ts"
 import { tilesOf } from "../src/grid/index.ts"
-import { DEFAULT_PRESET, OpeningError, openBattle, presetDimensions, sidesWithoutGoal } from "../src/skirmish/opening/index.ts"
+import { DEFAULT_PRESET, OpeningError, openBattle, phaseOf, presetDimensions, sidesWithoutGoal } from "../src/skirmish/opening/index.ts"
 import { TICKS_PER_SECOND } from "../src/state/types.ts"
 import type { PlacementBlock, BattleOpening } from "../src/skirmish/opening/index.ts"
 import type { DomainEvent } from "../src/events/types.ts"
@@ -290,6 +290,7 @@ test("every checked-in map gives each side that fights somewhere to go: its own 
   const missing: string[] = []
   for (const name of sandboxFiles()) {
     const opening = await loadSandbox(name)
+    if (phaseOf(opening) !== "battle-round") continue // in the Build Phase nobody goes anywhere
     const loaded = openBattle(opening, { registry: FIXTURE_REGISTRY })
     for (const side of sidesWithoutGoal(loaded.state, loaded.registry)) missing.push(`${opening.id} side ${side}`)
   }

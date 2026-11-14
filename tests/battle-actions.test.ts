@@ -14,6 +14,7 @@ import type { BattleSetup, BattleState, Player, BuildActions } from "../src/batt
 import { SCRIPTED, briefOf, beginBattle, placementsOf, playToEnd, playRound, readBuildActions } from "../src/battle/index.ts"
 
 const BARRACKS = "structure.citizen.barracks"
+const BASE_TROOPER = "unit.citizen.trooper"
 const setup = (extra: Partial<BattleSetup> = {}): BattleSetup => ({ map: "crossing", seed: 3, rounds: 3, pulseTicks: 240, commanders: { A: "vasse", B: "dob" }, ...extra })
 const hold: BuildActions = { build: [], stance: "hold" }
 
@@ -34,8 +35,8 @@ test("a battle round with a production line: bought from what is left, the Barra
   assert.deepEqual(bought.report.sides.A.actions, [`production-line on barracks at ${at.x},${at.y}`])
   assert.equal(bought.report.sides.A.spent, 15)
   assert.equal(bought.state.sides.A.credits, plain.state.sides.A.credits - 15)
-  assert.equal(bought.report.sides.A.trained["Trooper"], 5)
-  assert.equal(plain.report.sides.A.trained["Trooper"], 4)
+  assert.equal(bought.report.reading.sides.A.army.trained.counts[BASE_TROOPER], 5)
+  assert.equal(plain.report.reading.sides.A.army.trained.counts[BASE_TROOPER], 4)
   assert.equal(plain.report.sides.A.actions, undefined)
   // The next round's Barracks carries it, offers it no more in the brief, and a plan asking again is refused.
   const standing = bought.state.carried?.entities.find((entity) => entity.anchor.x === at.x && entity.anchor.y === at.y)
@@ -51,7 +52,7 @@ test("a battle round with a production line: bought from what is left, the Barra
   assert.match(briefOf(bought.state, "A").text, /production-line \(upgrade, Production line, 15 credits, has it\)/u)
   const again = playRound(bought.state, { A: { ...hold, actions: [{ ...at, action: "production-line" }] }, B: hold })
   assert.deepEqual(again.report.sides.A.refused, [`production-line at ${at.x},${at.y}: it has it already`])
-  assert.equal(again.report.sides.A.trained["Trooper"], 5)
+  assert.equal(again.report.reading.sides.A.army.trained.counts[BASE_TROOPER], 5)
 })
 
 test("a plan's building actions are held to the rules: a building of its own, an action its card has, and the credits for it", { timeout: 60_000 }, () => {
@@ -76,7 +77,7 @@ test("a plan's building actions are held to the rules: a building of its own, an
   ])
   // An order is taken too: Hold production, by its id, holds the Barracks's wave.
   assert.deepEqual(report.sides.A.actions, [`hold on barracks at ${at.x},${at.y}`])
-  assert.equal(report.sides.A.trained["Trooper"], undefined)
+  assert.equal(report.reading.sides.A.army.trained.counts[BASE_TROOPER], undefined)
 })
 
 test("a plan reads its actions leniently: each a building by x and y and an action by id, a broken one said and dropped", () => {

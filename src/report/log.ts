@@ -28,6 +28,8 @@ export type ReportInput = Readonly<{
   finalState: MatchState
   stateHash: string
   eventsHash: string
+  /** Set only for a Build Phase run (a regroup, not a Battle Round): the report's summary line names it so. */
+  phase?: "build-phase"
 }>
 
 type Streak = { start: number; last: number; warned: boolean }
@@ -244,6 +246,9 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             result !== undefined && (result.kind === "damage.applied" || result.kind === "heal.applied")
               ? `hp ${result.hpBefore}->${result.hpAfter}`
               : "hp unchanged"
+          // What landed, not what was swung: an aura (Forward Order, By the Book) changes the hit, and the line must agree with its own hp.
+          const landed = result !== undefined && result.kind === "damage.applied" ? result.amount : event.damage
+          const amount = landed === event.damage ? `${event.damage}` : `${landed} (base ${event.damage})`
           const flight = event.attackKind === "ranged" ? `  flight ${event.flightWindowTicks}` : ""
           const amountLabel = event.attackKind === "heal" ? "heal" : "dmg"
           emit({
@@ -253,7 +258,7 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             subject: event.attacker,
             object: event.target,
             detail:
-              `${event.attackKind.padEnd(6, " ")} ${amountLabel} ${event.damage}  ${health}` +
+              `${event.attackKind.padEnd(6, " ")} ${amountLabel} ${amount}  ${health}` +
               `${flight}`,
           })
           break
@@ -264,8 +269,9 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             tick,
             level: "debug",
             kind: "damage",
-            subject: event.entity,
-            object: event.source,
+            // Source first, as the attack line has the attacker first: `A:trooper#11 -> B:runner#29` is who hit whom.
+            subject: event.source,
+            object: event.entity,
             // An aura that guarded the hit is named, so `grep guarded` finds every hit one softened.
             detail: `amount ${event.amount}  hp ${event.hpBefore}->${event.hpAfter}${event.guardedBy === undefined ? "" : `  guarded by ${event.guardedBy}`}`,
           })
@@ -276,8 +282,9 @@ export function buildLog(input: ReportInput, level: LogLevel): string[] {
             tick,
             level: "debug",
             kind: "heal",
-            subject: event.entity,
-            object: event.source,
+            // Source first, as the attack line has the attacker first: `A:trooper#11 -> B:runner#29` is who hit whom.
+            subject: event.source,
+            object: event.entity,
             detail: `amount ${event.amount}  hp ${event.hpBefore}->${event.hpAfter}`,
           })
           break

@@ -17,6 +17,8 @@ export type RunSummary = Readonly<{
   ticks: number
   pulseTicks: number
   endedEarly: boolean
+  /** Present only for a Build Phase run: its ticks are the regroup's walk, not a Battle Round's. */
+  phase?: "build-phase"
   outcome: Readonly<{ winner: PlayerId | null; reason: VictoryReason }> | null
   losses: Readonly<Record<PlayerId, { lost: number; started: number }>>
   stateHash: string
@@ -42,6 +44,7 @@ export function summarize(input: ReportInput): RunSummary {
     ticks: input.finalState.tick,
     pulseTicks: input.pulseTicks,
     endedEarly: input.finalState.tick < input.pulseTicks,
+    ...(input.phase === undefined ? {} : { phase: input.phase }),
     outcome: ended,
     losses: {
       A: { lost: lost.A, started: started.A },
@@ -60,17 +63,25 @@ function hexSeed(seed: number): string {
   return `0x${(seed >>> 0).toString(16).toUpperCase().padStart(8, "0")}`
 }
 
+/** The ticks line: a Build Phase run is the regroup's walk, which has no outcome and no early end. */
+function ticksTextOf(summary: RunSummary): string {
+  if (summary.phase === "build-phase") return `${summary.ticks} of ${summary.pulseTicks} (Build Phase regroup)`
+  return summary.endedEarly
+    ? `${summary.ticks} of ${summary.pulseTicks} (ended early: ${summary.outcome?.reason ?? "unknown"})`
+    : `${summary.ticks} of ${summary.pulseTicks} (full pulse)`
+}
+
 export function formatSummary(summary: RunSummary): string {
   const outcomeText =
-    summary.outcome === null
+    summary.phase === "build-phase"
+      ? "none (no battle is played)"
+      : summary.outcome === null
       ? "unresolved"
       : summary.outcome.winner === null
         ? `draw (${summary.outcome.reason})`
         : `${summary.outcome.winner} wins`
 
-  const ticksText = summary.endedEarly
-    ? `${summary.ticks} of ${summary.pulseTicks} (ended early: ${summary.outcome?.reason ?? "unknown"})`
-    : `${summary.ticks} of ${summary.pulseTicks} (full pulse)`
+  const ticksText = ticksTextOf(summary)
 
   const lossesText = PLAYERS.map(
     (player) => `${player}: ${summary.losses[player].lost} of ${summary.losses[player].started}`,
@@ -94,15 +105,15 @@ export function summaryJson(summary: RunSummary, extra: Readonly<Record<string, 
 /** The `detail` column of `buildLog`'s trailing `report` line — `formatSummary`'s facts, one line. */
 export function reportLineDetail(summary: RunSummary): string {
   const outcomeText =
-    summary.outcome === null
+    summary.phase === "build-phase"
+      ? "none (no battle is played)"
+      : summary.outcome === null
       ? "unresolved"
       : summary.outcome.winner === null
         ? `draw (${summary.outcome.reason})`
         : `${summary.outcome.winner} wins`
 
-  const ticksText = summary.endedEarly
-    ? `${summary.ticks} of ${summary.pulseTicks} (ended early: ${summary.outcome?.reason ?? "unknown"})`
-    : `${summary.ticks} of ${summary.pulseTicks} (full pulse)`
+  const ticksText = ticksTextOf(summary)
 
   const lossesText = PLAYERS.map(
     (player) => `${player}: ${summary.losses[player].lost} of ${summary.losses[player].started}`,

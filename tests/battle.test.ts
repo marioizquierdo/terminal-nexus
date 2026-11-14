@@ -46,8 +46,8 @@ test("each side fields its own army: its Commander, its faction's Nexus, its bui
   // War Chest, the owner's testing tool, is never dealt in a battle.
   assert.ok(!vasse.powers.some((card) => card.always === true))
   const { state, report } = playRound(beginBattle(setup()), { A: hold, B: hold })
-  assert.deepEqual(report.sides.A.fielded, { Trooper: 3, Marksman: 2, Vasse: 1 })
-  assert.deepEqual(report.sides.B.fielded, { Runner: 5, Slinger: 2, Dob: 1 })
+  assert.deepEqual(report.reading.sides.A.army.start.counts, { "unit.citizen.trooper": 3, "unit.citizen.marksman": 2, "unit.citizen.vasse": 1 })
+  assert.deepEqual(report.reading.sides.B.army.start.counts, { "unit.ravel.runner": 5, "unit.ravel.slinger": 2, "unit.ravel.dob": 1 })
   // Credits carry over, and the next round adds the curve's: 100, then 120 more.
   assert.equal(state.sides.A.credits, 100 + 120)
 })

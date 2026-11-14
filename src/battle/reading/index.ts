@@ -37,6 +37,7 @@ export { ENGAGEMENT_QUIET, ENGAGEMENT_REACH } from "./engagements.ts"
 export type { Score } from "./score.ts"
 export { scoreOf } from "./score.ts"
 export { nameOf, namedCounts, readingLines, roundReadingLines, scoreLine } from "./lines.ts"
+export { dealtOf, lostCount, lostOf } from "./totals.ts"
 
 /** One reading as a round plays: shown each tick's state and events, it gives its value at the end. */
 export type Tracker<T> = Readonly<{ step: (state: MatchState, events: readonly DomainEvent[]) => void; done: (end: MatchState) => T }>
@@ -63,7 +64,7 @@ export function roundReader(
 ): RoundReader {
   const { context, step } = roundContext(start, sides, catalogs)
   const army = readArmy(context, start)
-  const buildings = readBuildings(context)
+  const buildings = readBuildings(context, start)
   const advance = readAdvance(context, start)
   const damage = readDamage(context)
   const engagements = readEngagements(context, start)

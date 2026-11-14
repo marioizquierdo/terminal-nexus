@@ -164,30 +164,38 @@ player: its games show what an army does in the hands of a plain plan, not balan
 ## 7. Reading a battle
 
 **What a battle says is read in one place, the battle reading** (RULE — `src/battle/reading/`, `tests/reading.test.ts`),
-so the brief, the round's report, the `skirmish` command, a script and a model read the same facts. A reading reads
-the record and never feeds the rules: a round plays the same whether or not it is read.
+so the brief, the round's report, the score, the `skirmish` command, the measurement, a script and a model read the same
+facts. It is the only reader of a round's events: every number of the battle (what a side fielded, trained, lost and
+killed, the damage it dealt, its Nexus's health, its Commander's fall, what its abilities did) is a reading, and
+`totals.ts` holds the sums over them (`lostOf`, `lostCount`, `dealtOf`). A reading reads the record and never feeds the
+rules: a round plays the same whether or not it is read.
 
-**Public and private.** Every reading is public: the Battle Round is fought in the open and both sides see all of it.
-The Build Phase is private: a side's credits, its hand and the build actions it is about to give are its own, and no
-reading touches them. The brief says so in a line, and keeps to it as data: the other side's part of each round's report
-reaches a brief without its credits, what it spent and earned, its hand, what the rules refused it and its note
-(`seenBy`, `src/battle/brief.ts`). The command's own round report, which a tester reads, shows both sides whole.
+**Public and private.** A round's report (`RoundReport`) has two halves, and the split is the brief's. `reading` is the
+Battle Round: fought in the open, every part of it public, both sides see all of it. `sides` (`SideReport`) is the Build
+Phase: a side's commander, credits, spent, earned, kept power, hand, built, actions, refused, stance, formation and note,
+all its own, and no reading touches them. The brief says so in a line, and keeps to it as data: the other side's part of
+each round's `sides` reaches a brief without its credits, what it spent and earned, its hand, what the rules refused it
+and its note (`seenBy`, `src/battle/brief.ts`), and `reading` reaches it whole. The command's own round report, which a
+tester reads, shows both sides whole.
+
+**A save holds each round's reading with its report.** A save written before this has none; the loader refuses it by the
+round (`state.history[n]`), and `node scripts/make-example-saves.ts` writes the examples again.
 
 **The readings**, each one small file (`Tracker`: shown each tick, asked for its value as the round ends), kept plain —
 a count, a total, a place — with the meaning left to the reader:
 
 | Reading | What it says, for each side | File |
 | --- | --- | --- |
-| **score** | damage dealt over the battle, its Nexus's share of health, who leads and on which rule (the rule a battle the rounds run out on is judged by) | `score.ts` |
-| **army** | its units as the round opened and as it ended, and what it lost: each a composition — how many of each, how many in all, and the **army value** in credits (each unit at what its building pays for one: the card's cost over the units it makes a round; a Commander and a starting unit count nothing) | `army.ts` |
-| **buildings** | what stands at the end (a composition with its value), what is damaged and how badly — the Nexus among them, as any building — and each one destroyed, with what destroyed it | `buildings.ts` |
+| **score** | damage dealt over the battle, its Nexus's share of health, who leads and on which rule (the rule a battle the rounds run out on is judged by), from the rounds' other readings | `score.ts` |
+| **army** | its units as the round opened and as it ended, those its buildings trained and what it lost: each a composition — how many of each, how many in all, and the **army value** in credits (each unit at what its building pays for one: the card's cost over the units it makes a round; a Commander and a starting unit count nothing); whether its Commander fell; what its abilities did, counted by name | `army.ts` |
+| **buildings** | what stands at the end (a composition with its value), what is damaged and how badly — the Nexus among them, as any building — each one destroyed, with what destroyed it, and its Nexus's health as the round opened and ended, and its most | `buildings.ts` |
 | **advance** | where its army stood between its Nexus (0%) and the enemy's (100%) as the round opened and as it ended — the end less the start is how far the army moved — and the nearest an enemy came to its Nexus | `advance.ts` |
-| **damage** | the damage it took, by the content that dealt it, and how much of that was its own blasts and splashes (a death's blast hurts friend and foe unless its content says enemies alone) | `damage.ts` |
+| **damage** | the damage it took, by the content that dealt it, and how much of that was its own blasts and splashes (a death's blast hurts friend and foe unless its content says enemies alone), and what it dealt to the enemy: to units, to buildings, to the Nexus | `damage.ts` |
 | **engagements** | where and when the sides fought: an engagement starts at a hit of one side on the other, takes in every hit within 5 tiles of one already in it, and ends after 5 seconds with no hit there; it says when, where and how wide, and for each side the damage dealt there, the units engaged (a composition with its value) and what it lost there | `engagements.ts` |
 
 `context.ts` keeps what they share (who each entity is, what it costs, where a tile lies between the Nexuses) and
-`lines.ts` says them in words. **A new reading is a new file and one line in `index.ts`**; the round's report keeps it,
-and the brief and every script get it at once. Add one only for a question a test or a script asks; a reading nobody
+`lines.ts` says them in words, counted by `namedCounts`. **A new reading is a new file and one line in `index.ts`**; the
+round's report keeps it, and the brief and every script get it at once. Add one only for a question a test or a script asks; a reading nobody
 reads is deleted.
 
 **Where they are said.** Each brief: the score every round, and under the last round the side's army and the enemy's,

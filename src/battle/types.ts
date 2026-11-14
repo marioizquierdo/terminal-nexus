@@ -121,7 +121,8 @@ export type SideState = Readonly<{
   absent: readonly Absence[]
 }>
 
-/** What one side did and suffered in a round. */
+/** What one side planned and spent in a round: the Build Phase, private to it (`seenBy`, `brief.ts`). What the Battle Round
+ *  did to it is public, and read in one place: the round's `reading`. */
 export type SideReport = Readonly<{
   commander: string
   /** Credits as the Build Phase opened, the ones spent, and the ones the battle earned (a bounty's). */
@@ -142,19 +143,6 @@ export type SideReport = Readonly<{
   /** The formation its plan named, when it named one. */
   formation?: Formation
   note?: string
-  /** Its units on the Grid as the battle began, by name and count; those its buildings trained during it; its losses
-   *  and kills, by name and count. */
-  fielded: Readonly<Record<string, number>>
-  trained: Readonly<Record<string, number>>
-  lost: Readonly<Record<string, number>>
-  killed: Readonly<Record<string, number>>
-  /** Damage it dealt to units, to buildings, and to the enemy Nexus. */
-  dealt: Readonly<{ units: number; buildings: number; nexus: number }>
-  /** Its Nexus's health as the battle began and ended. */
-  nexus: Readonly<{ before: number; after: number; most: number }>
-  commanderFell: boolean
-  /** Notable things its abilities did, counted by name ("Bounty": 4, "Loaded Dice": 2). */
-  abilities: Readonly<Record<string, number>>
 }>
 
 /** One round of the battle, both sides. */
@@ -164,10 +152,10 @@ export type RoundReport = Readonly<{
   /** The tick the battle ended on, and why: a Nexus fell, or time ran out. */
   ticks: number
   ended: "nexus" | "time"
-  /** The battle reading: what the Battle Round showed both sides — each army and its losses with their value, the
-   *  buildings, the advance, the damage taken by source, the engagements (`src/battle/reading/`). Absent in a save
-   *  written before it was read. */
-  reading?: RoundReading
+  /** The battle reading: what the Battle Round showed both sides, and every number of it — each army, trained and lost
+   *  with their value, the buildings and the Nexus's health, the advance, the damage dealt and taken, the engagements
+   *  (`src/battle/reading/`). */
+  reading: RoundReading
 }>
 
 /** How a battle ended: who won, and how. */

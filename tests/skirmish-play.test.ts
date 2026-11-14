@@ -200,8 +200,8 @@ test("a building held this round trains nothing (Hold production)", { timeout: 6
   const one = playRound(battle, { A: { build: [{ building: "barracks", at: "back" }], stance: "hold" }, B: quiet }).state
   const barracks = one.carried?.entities.find((entity) => entity.player === "A" && entity.contentId === "structure.citizen.barracks")
   assert.ok(barracks !== undefined, "the Barracks did not stand")
-  const free = playRound(one, { A: quiet, B: quiet }).report.sides.A.trained
-  const held = playRound(one, { A: { ...quiet, hold: [barracks.anchor] }, B: quiet }).report.sides.A.trained
+  const free = playRound(one, { A: quiet, B: quiet }).report.reading.sides.A.army.trained.counts
+  const held = playRound(one, { A: { ...quiet, hold: [barracks.anchor] }, B: quiet }).report.reading.sides.A.army.trained.counts
   assert.ok(Object.values(free).reduce((sum, count) => sum + count, 0) > 0, "the Barracks trained nothing even unheld")
   assert.deepEqual(held, {})
 })
