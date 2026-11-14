@@ -10,6 +10,7 @@
 import type { Coord, TerrainId } from "../grid/types.ts"
 import type { PlayerId, TargetArea } from "../state/types.ts"
 import { BATTLE_MAPS } from "../battle/maps.ts"
+import { isObject, isWhole } from "../content/shape.ts"
 import { SANDBOX_PHASES } from "./opening/phase.ts"
 import type { SandboxPhase } from "./opening/phase.ts"
 import type { BattleOpening, PlacementBlock, PlacementEntry } from "./opening/types.ts"
@@ -38,13 +39,11 @@ export type SaveStart = Readonly<Partial<Record<Slot, StartSlot>>> & Readonly<{ 
 
 const SIDE: Readonly<Record<Slot, PlayerId>> = { p1: "A", p2: "B" }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value)
-const isWhole = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value)
 
 /** The problems with a save's `start`, by their place in the file. Whether the units fit the ground is the
  *  opening's to say, once the shape is right. */
 export function startProblems(start: unknown): string[] {
-  if (!isRecord(start)) return ["start: { p1?, p2? }, what each slot places by hand before round 1"]
+  if (!isObject(start)) return ["start: { p1?, p2? }, what each slot places by hand before round 1"]
   const problems: string[] = []
   for (const [slot, value] of Object.entries(start)) {
     const at = `start.${slot}`
@@ -56,30 +55,30 @@ export function startProblems(start: unknown): string[] {
       problems.push(`${at}: a start has the slots p1 and p2, and a phase`)
       continue
     }
-    if (!isRecord(value)) {
+    if (!isObject(value)) {
       problems.push(`${at}: { at?, rows, legend, target? }`)
       continue
     }
     for (const key of Object.keys(value)) if (!["at", "rows", "legend", "target"].includes(key)) problems.push(`${at}.${key}: a start has at, rows, legend and target`)
     const origin = value["at"]
-    if (origin !== undefined && (!isRecord(origin) || !isWhole(origin["x"]) || !isWhole(origin["y"]))) problems.push(`${at}.at: { x, y }, where the rows' north-west corner stands`)
+    if (origin !== undefined && (!isObject(origin) || !isWhole(origin["x"]) || !isWhole(origin["y"]))) problems.push(`${at}.at: { x, y }, where the rows' north-west corner stands`)
     const rows = value["rows"]
     const legend = value["legend"]
     if (rows !== undefined && (!Array.isArray(rows) || !rows.every((row) => typeof row === "string"))) problems.push(`${at}.rows: the slot's units as rows of text, one character a tile`)
     if (rows !== undefined && legend === undefined) problems.push(`${at}.legend: what each character of the rows places`)
     if (legend !== undefined) {
-      if (!isRecord(legend)) problems.push(`${at}.legend: { "<character>": { content, hp? } }`)
+      if (!isObject(legend)) problems.push(`${at}.legend: { "<character>": { content, hp? } }`)
       else {
         for (const [symbol, entry] of Object.entries(legend)) {
           if ([...symbol].length !== 1) problems.push(`${at}.legend."${symbol}": a legend names one character`)
-          if (!isRecord(entry) || typeof entry["content"] !== "string" || (entry["hp"] !== undefined && !isWhole(entry["hp"]))) {
+          if (!isObject(entry) || typeof entry["content"] !== "string" || (entry["hp"] !== undefined && !isWhole(entry["hp"]))) {
             problems.push(`${at}.legend."${symbol}": { content, hp? }, a content id and its starting health`)
           }
         }
       }
     }
     const target = value["target"]
-    if (target !== undefined && (!isRecord(target) || !["x", "y", "width", "height"].every((key) => isWhole(target[key])))) {
+    if (target !== undefined && (!isObject(target) || !["x", "y", "width", "height"].every((key) => isWhole(target[key])))) {
       problems.push(`${at}.target: { x, y, width, height }, where its troops head`)
     }
   }
