@@ -213,3 +213,14 @@ test("skirmish: a sandbox's --play-to plays the Battle Round grid plays, and say
   assert.throws(() => run(["--load", path, "--play-to", "next", "--save", join(tmpdir(), "x.save.json")]), /nothing to save/)
   assert.throws(() => run(["--load", path, "--p1", "script:rush"]), /plan nothing/)
 })
+
+test("a save whose round reports carry no reading is refused, by the round", () => {
+  const setup = newSetup({ map: "crossing", seed: 7 })
+  const played = round(battleOf({ format: "terminal-nexus.save/1", setup }))
+  const saved = JSON.parse(saveText(saveOf(setup, played)))
+  assert.deepEqual(readSave(JSON.stringify(saved)).problems, [], "as written, it loads")
+  delete saved.state.history[0].reading
+  const { save, problems } = readSave(JSON.stringify(saved))
+  assert.equal(save, null)
+  assert.match(problems.join("\n"), /state\.history\[0\]: a round's report with its "reading"/u)
+})
