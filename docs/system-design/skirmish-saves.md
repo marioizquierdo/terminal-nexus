@@ -231,7 +231,7 @@ with (`npm run skirmish -- --help`); how each kind of test uses it is [`sandboxe
 
 **Parity with the command** (RULE — the owner, 2026-11-12: "formalize the concept that works both from the UI and from
 the CLI"): the screen and the command open a battle by the same steps (`src/skirmish/request.ts`: a new setup or a save
-read back, then each slot seated with its controller, its credits share and a player's build file) and play every round
+read back, then `openSave`: each slot seated with its controller, its credits share and a player's build file, the rules changed from the round the battle is at) and play every round
 through `playNext`. A slot is written the same everywhere: `--p1`/`--p2` with `build:<build file>` (a player; `build:`
 alone, the draft or nothing) or `script:<profile>` (`script:` alone plans nothing); a loaded battle keeps its map,
 Commanders and seed, and each slot's controller unless named. A change to one is a change to both.

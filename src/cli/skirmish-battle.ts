@@ -27,9 +27,10 @@ import { buildLog } from "../report/index.ts"
 import type { Played, Ran, RoundWatch } from "../skirmish/play.ts"
 import { actionsAt, isPlayer, playOn } from "../skirmish/play.ts"
 import type { Profiles, SaveFile, SaveSetup, Slot } from "../skirmish/save.ts"
-import { battleOf, saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
-import type { Seated } from "../skirmish/request.ts"
-import { loadedBattle, newBattle, seat, withRules } from "../skirmish/request.ts"
+import { saveOf, saveText, SIDE_OF, SLOTS } from "../skirmish/save.ts"
+import type { Opened, Seated } from "../skirmish/request.ts"
+import { loadedBattle, newBattle, openSave } from "../skirmish/request.ts"
+import { BATTLE_OVER_REFUSAL } from "../skirmish/words.ts"
 import { battleLine, historyLines, roundLines, slotLabel, standing } from "../skirmish/lines.ts"
 import { hashState } from "../state/serialize.ts"
 import type { MatchState } from "../state/types.ts"
@@ -44,25 +45,20 @@ export const UNTIL_END_ROUNDS = 100
 /** What a line is written to. */
 export type Write = (line: string) => void
 
-/** A battle opened: the save it came from, its setup with the slots seated and the rules changed, the battle as it
- *  stands, and the build actions the player slots bring. */
-export type Opened = Readonly<{ save: SaveFile; setup: SaveSetup; state: BattleState; seated: Seated }>
-
 /** The save a request starts from: read from `--load`, or a new battle on `seed` (the request's own unless given). */
 export function startingSave(request: SkirmishRequest, profiles: Profiles, seed?: number): SaveFile {
   if (request.load !== undefined) return loadedBattle(readFileSync(request.load, "utf8"), request.load, profiles)
   return newBattle({ ...request.battle, ...(seed === undefined ? {} : { seed }) }, profiles)
 }
 
-/** A save opened as the request asks: its slots seated (each build file's problems written) and its rules changed. */
-export function openSave(save: SaveFile, request: SkirmishRequest, profiles: Profiles, write: Write): Opened {
-  const seated = seat(save, request.slots, readGameFile)
-  for (const problem of seated.problems) write(problem)
-  const before = battleOf({ ...save, setup: seated.setup }, profiles)
+/** A save opened as the request asks (`openSave`, `src/skirmish/request.ts`): its slots seated, each build file's
+ *  problems written, and its rules changed, `--play-to end` raising the round limit. */
+export function openRequested(save: SaveFile, request: SkirmishRequest, profiles: Profiles, write: Write): Opened {
   const toEnd = request.playTo === "end" ? Math.max(save.setup.rounds, UNTIL_END_ROUNDS) : undefined
   const rounds = request.rules.rounds ?? toEnd
-  const setup = withRules(seated.setup, before.result === null ? before.round : 1, { ...request.rules, ...(rounds === undefined ? {} : { rounds }) })
-  return { save, setup, state: battleOf({ ...save, setup }, profiles), seated }
+  const opened = openSave(save, { slots: request.slots, rules: { ...request.rules, ...(rounds === undefined ? {} : { rounds }) }, readFile: readGameFile, profiles, ...(request.load === undefined ? {} : { file: request.load }) })
+  for (const problem of opened.seated.problems) write(problem)
+  return opened
 }
 
 /** The round whose Build Phase a run stops at: the one it is at (nothing to play), the next, a round named, or never
@@ -250,11 +246,11 @@ export function playBattle(request: SkirmishRequest, profiles: Profiles, write: 
   const run = (): Readonly<{ refused: boolean }> => {
     const save = startingSave(request, profiles)
     if (save.start !== undefined) return playSandbox(save, request, write)
-    const { setup, state, seated } = openSave(save, request, profiles, write)
+    const { setup, state, seated } = openRequested(save, request, profiles, write)
     write(`${battleLine(setup)}: ${standing(setup, state)}`)
     const first = state.round
     const stop = stopRound(request.playTo, state)
-    if (state.result !== null && stop > state.round) throw new Error("the battle is over: there is no next round to play")
+    if (state.result !== null && stop > state.round) throw new Error(BATTLE_OVER_REFUSAL)
     const ran: Ran = stop > state.round ? playRounds(setup, state, seated.builds, stop, profiles, keepOf(request), write) : { state, played: 0, waiting: [] }
     const next = ran.state
     if (ran.played > 0) write(standing(setup, next))

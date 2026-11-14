@@ -10,13 +10,13 @@ import type { Tally } from "../skirmish/lines.ts"
 import { counted, emptyTally, slotLabel, standing, tallyLine, winnerOf } from "../skirmish/lines.ts"
 import type { SkirmishRequest } from "./skirmish.ts"
 import type { Write } from "./skirmish-battle.ts"
-import { keepOf, openSave, playRounds, startingSave, stopRound } from "./skirmish-battle.ts"
+import { keepOf, openRequested, playRounds, startingSave, stopRound } from "./skirmish-battle.ts"
 
 /** One new battle, as the request sets it up but on `seed` and with these Commanders, played as far as it asks. A
  *  player slot must have build actions for every round played: there is nobody to stop for. */
 function playOne(request: SkirmishRequest, profiles: Profiles, seed: number, commanders: SkirmishRequest["battle"]["commanders"], prefix: string, write: Write): Readonly<{ setup: SaveSetup; state: BattleState }> {
   const save = startingSave({ ...request, battle: { ...request.battle, ...(commanders === undefined ? {} : { commanders }) } }, profiles, seed)
-  const { setup, state, seated } = openSave(save, request, profiles, write)
+  const { setup, state, seated } = openRequested(save, request, profiles, write)
   const ran = playRounds(setup, state, seated.builds, stopRound(request.playTo, state), profiles, keepOf(request, { prefix, quiet: true }), write)
   const waiting = ran.waiting[0]
   if (waiting !== undefined) throw new Error(`${waiting} has no build actions for round ${ran.state.round}: give its build file a "*" entry, or the slot a script, to play many battles`)

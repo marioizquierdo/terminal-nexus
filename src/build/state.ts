@@ -77,7 +77,7 @@ import type {
   BannerStance,
   PlantedBanner,
 } from "./types.ts"
-import { bannerSpot, currentBanner, defaultBanner } from "./banner.ts"
+import { bannerSpot, capitalised, currentBanner, defaultBanner } from "./banner.ts"
 
 /** Everything about the screen that never changes while it is open. Split from the state proper so
  *  the reducer's signature says plainly which half a command can move. */
@@ -206,6 +206,12 @@ export type BuildContext = Readonly<{
    * buildings, and Start begins the round at once. Absent: a player plans it.
    */
   spectating?: boolean
+  /**
+   * **A battle that is over**, opened to be read and watched: the words that refuse its next round ("the battle is
+   * over: there is no next round"). Start is dimmed and refused with them, as the `skirmish` command refuses.
+   * Absent: a round is there to play.
+   */
+  battleOver?: string
   /** Where a note goes, said in the note popup ("Saved in ~/.terminal-nexus/notes/."). Absent: the popup says nothing. */
   noteDestination?: string
   /** Where the adapter writes a save, said in the Save game popup — "Saved under ~/.terminal-nexus/saves/ unless the
@@ -1395,6 +1401,8 @@ function activateEntry(context: BuildContext, state: BuildState, entry: number):
  *  (`refuseWhileArmed`). */
 function openBattleRound(context: BuildContext, state: BuildState): BuildState {
   const entry = startEntry(context.catalog.length)
+  // A battle over has no next round: refused the way a disabled row is, the reason on the bottom line.
+  if (context.battleOver !== undefined) return { ...state, menuHighlight: entry, ack: acknowledge(state, "refused", entry), status: status(`${capitalised(context.battleOver)}.`, "warning") }
   // Spectating, there is no plan to confirm: Start next round begins it at once.
   if (context.spectating === true) {
     const lock = editLock(state)

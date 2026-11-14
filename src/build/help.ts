@@ -194,7 +194,9 @@ export const HINTS: Readonly<Record<HintSituation, (context: BuildContext, state
       : `${item.label} - ${effect}. Costs ${item.cost}. [enter] to place one.`
   },
   "menu-start": (context, state) =>
-    context.spectating === true
+    context.battleOver !== undefined
+      ? `Start round ${state.pulseNumber}: ${context.battleOver}.`
+      : context.spectating === true
       ? `Start round ${state.pulseNumber}: both scripts' plans play. [enter] begins.`
       : pendingPicks(context, state) > 0
       ? setting(state, "powerPick") === "required"
